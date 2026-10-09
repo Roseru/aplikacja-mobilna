@@ -1,0 +1,614 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$ref": "#/$defs/Package",
+  "$defs": {
+    "ProductRef": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "product_id": {
+          "$ref": "common.schema.json#/$defs/Uuid"
+        },
+        "revision": {
+          "$ref": "common.schema.json#/$defs/Revision"
+        }
+      },
+      "required": [
+        "product_id",
+        "revision"
+      ]
+    },
+    "Counts": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "products": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 10000
+        },
+        "rations": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 1000
+        },
+        "components": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 100000
+        },
+        "sources": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 10000
+        }
+      },
+      "required": [
+        "products",
+        "rations",
+        "components",
+        "sources"
+      ]
+    },
+    "Source": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "source_id": {
+          "$ref": "common.schema.json#/$defs/Uuid"
+        },
+        "document_id": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 2000
+        },
+        "url": {
+          "anyOf": [
+            {
+              "type": "string",
+              "format": "uri",
+              "pattern": "^https://"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "checked_on": {
+          "$ref": "common.schema.json#/$defs/Date"
+        },
+        "market": {
+          "anyOf": [
+            {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 2000
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "manufacturer": {
+          "anyOf": [
+            {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 2000
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "variant": {
+          "anyOf": [
+            {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 2000
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "basis": {
+          "enum": [
+            "assumed_listed_quantity",
+            "per_100_g",
+            "per_100_ml",
+            "label_serving",
+            "mixed_labels"
+          ]
+        },
+        "status": {
+          "enum": [
+            "unverified",
+            "verified"
+          ]
+        },
+        "missing_data": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 2000
+          },
+          "minItems": 0,
+          "maxItems": 100
+        },
+        "notes": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 2000
+          },
+          "minItems": 0,
+          "maxItems": 100
+        }
+      },
+      "required": [
+        "source_id",
+        "document_id",
+        "url",
+        "checked_on",
+        "market",
+        "manufacturer",
+        "variant",
+        "basis",
+        "status",
+        "missing_data",
+        "notes"
+      ]
+    },
+    "Density": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "amount": {
+          "$ref": "common.schema.json#/$defs/PositiveDecimal"
+        },
+        "source_id": {
+          "$ref": "common.schema.json#/$defs/Uuid"
+        }
+      },
+      "required": [
+        "amount",
+        "source_id"
+      ]
+    },
+    "Product": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "product_id": {
+          "$ref": "common.schema.json#/$defs/Uuid"
+        },
+        "revision": {
+          "$ref": "common.schema.json#/$defs/Revision"
+        },
+        "name": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 2000
+        },
+        "aliases": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 2000
+          },
+          "minItems": 0,
+          "maxItems": 100
+        },
+        "brand": {
+          "anyOf": [
+            {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 2000
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "variant": {
+          "anyOf": [
+            {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 2000
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "basis_unit": {
+          "enum": [
+            "g",
+            "ml"
+          ]
+        },
+        "nutrition_per_100": {
+          "$ref": "common.schema.json#/$defs/Nutrition"
+        },
+        "package_quantity": {
+          "$ref": "common.schema.json#/$defs/Quantity"
+        },
+        "density_g_per_ml": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/Density"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "source_id": {
+          "$ref": "common.schema.json#/$defs/Uuid"
+        },
+        "source_locator": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 2000
+        },
+        "status": {
+          "enum": [
+            "unverified",
+            "verified"
+          ]
+        },
+        "preparation": {
+          "anyOf": [
+            {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 2000
+            },
+            {
+              "type": "null"
+            }
+          ]
+        }
+      },
+      "required": [
+        "product_id",
+        "revision",
+        "name",
+        "aliases",
+        "brand",
+        "variant",
+        "basis_unit",
+        "nutrition_per_100",
+        "package_quantity",
+        "density_g_per_ml",
+        "source_id",
+        "source_locator",
+        "status",
+        "preparation"
+      ]
+    },
+    "Component": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "position": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 100000
+        },
+        "group": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 2000
+        },
+        "product": {
+          "$ref": "#/$defs/ProductRef"
+        },
+        "quantity": {
+          "$ref": "common.schema.json#/$defs/Quantity"
+        },
+        "optional": {
+          "type": "boolean"
+        }
+      },
+      "required": [
+        "position",
+        "group",
+        "product",
+        "quantity",
+        "optional"
+      ]
+    },
+    "ExcludedItem": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "source_locator": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 2000
+        },
+        "name": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 2000
+        },
+        "classification": {
+          "enum": [
+            "food",
+            "seasoning",
+            "equipment"
+          ]
+        },
+        "source_amount": {
+          "anyOf": [
+            {
+              "$ref": "common.schema.json#/$defs/PositiveDecimal"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "source_unit": {
+          "anyOf": [
+            {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 2000
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "reasons": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 2000
+          },
+          "minItems": 1,
+          "maxItems": 20
+        }
+      },
+      "required": [
+        "source_locator",
+        "name",
+        "classification",
+        "source_amount",
+        "source_unit",
+        "reasons"
+      ]
+    },
+    "Ration": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "ration_id": {
+          "$ref": "common.schema.json#/$defs/Uuid"
+        },
+        "revision": {
+          "$ref": "common.schema.json#/$defs/Revision"
+        },
+        "name": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 2000
+        },
+        "manufacturer": {
+          "anyOf": [
+            {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 2000
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "variant": {
+          "anyOf": [
+            {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 2000
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "status": {
+          "enum": [
+            "unverified",
+            "verified"
+          ]
+        },
+        "source_id": {
+          "$ref": "common.schema.json#/$defs/Uuid"
+        },
+        "complete": {
+          "type": "boolean"
+        },
+        "components": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/Component"
+          },
+          "minItems": 1,
+          "maxItems": 100000
+        },
+        "excluded_items": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/ExcludedItem"
+          },
+          "minItems": 0,
+          "maxItems": 1000
+        }
+      },
+      "required": [
+        "ration_id",
+        "revision",
+        "name",
+        "manufacturer",
+        "variant",
+        "status",
+        "source_id",
+        "complete",
+        "components",
+        "excluded_items"
+      ]
+    },
+    "Package": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "package_id": {
+          "$ref": "common.schema.json#/$defs/Uuid"
+        },
+        "release": {
+          "$ref": "common.schema.json#/$defs/Revision"
+        },
+        "schema_version": {
+          "const": 1
+        },
+        "min_reader_version": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 1
+        },
+        "published_at": {
+          "$ref": "common.schema.json#/$defs/Timestamp"
+        },
+        "kind": {
+          "enum": [
+            "demo",
+            "official"
+          ]
+        },
+        "counts": {
+          "$ref": "#/$defs/Counts"
+        },
+        "sources": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/Source"
+          },
+          "minItems": 1,
+          "maxItems": 10000
+        },
+        "products": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/Product"
+          },
+          "minItems": 1,
+          "maxItems": 10000
+        },
+        "rations": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/Ration"
+          },
+          "minItems": 1,
+          "maxItems": 1000
+        }
+      },
+      "required": [
+        "package_id",
+        "release",
+        "schema_version",
+        "min_reader_version",
+        "published_at",
+        "kind",
+        "counts",
+        "sources",
+        "products",
+        "rations"
+      ]
+    },
+    "Manifest": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "package_id": {
+          "$ref": "common.schema.json#/$defs/Uuid"
+        },
+        "release": {
+          "$ref": "common.schema.json#/$defs/Revision"
+        },
+        "schema_version": {
+          "const": 1
+        },
+        "min_reader_version": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 1
+        },
+        "published_at": {
+          "$ref": "common.schema.json#/$defs/Timestamp"
+        },
+        "kind": {
+          "enum": [
+            "demo",
+            "official"
+          ]
+        },
+        "counts": {
+          "$ref": "#/$defs/Counts"
+        },
+        "path": {
+          "type": "string",
+          "pattern": "^base-pl\\.[1-9][0-9]*\\.json\\.gz$"
+        },
+        "compressed_bytes": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 10485760
+        },
+        "uncompressed_bytes": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 52428800
+        },
+        "sha256": {
+          "type": "string",
+          "pattern": "^[0-9a-f]{64}$"
+        },
+        "source_ids": {
+          "type": "array",
+          "items": {
+            "$ref": "common.schema.json#/$defs/Uuid"
+          },
+          "minItems": 1,
+          "maxItems": 10000
+        }
+      },
+      "required": [
+        "package_id",
+        "release",
+        "schema_version",
+        "min_reader_version",
+        "published_at",
+        "kind",
+        "counts",
+        "path",
+        "compressed_bytes",
+        "uncompressed_bytes",
+        "sha256",
+        "source_ids"
+      ]
+    }
+  }
+}

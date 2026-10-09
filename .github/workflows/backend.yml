@@ -1,4 +1,4 @@
-name: Backend E1
+name: Backend E2
 on:
   pull_request:
     branches: [main]
@@ -18,6 +18,7 @@ jobs:
         with:
           version: '0.9.5'
       - run: uv sync --project tools/contracts --locked
+      - run: python backend/sync_catalog_schemas.py --check
       - run: uv run --project tools/contracts --locked --offline python tools/contracts/validate.py
   quality:
     runs-on: ubuntu-latest
@@ -30,10 +31,25 @@ jobs:
         with:
           version: '0.9.5'
       - run: uv sync --project backend --locked
-      - run: uv run --project backend --locked ruff check backend
-      - run: uv run --project backend --locked ruff format --check backend
+      - run: uv run --project backend --locked ruff check --config backend/pyproject.toml backend tools/offline_catalog
+      - run: uv run --project backend --locked ruff format --check --config backend/pyproject.toml backend tools/offline_catalog
       - run: uv run --project backend --locked python -m pytest backend/tests/unit
       - run: uv build backend
+      - name: Verify the installed wheel outside the checkout
+        run: |
+          uv venv "$RUNNER_TEMP/e2-wheel" --python 3.13
+          uv export --project backend --locked --no-dev --no-emit-project --no-hashes \
+            --format requirements-txt --output-file "$RUNNER_TEMP/e2-lock.txt" > /dev/null
+          uv pip install --python "$RUNNER_TEMP/e2-wheel/bin/python" \
+            --constraint "$RUNNER_TEMP/e2-lock.txt" backend/dist/*.whl
+          seed="$GITHUB_WORKSPACE/backend/data/demo/seed.json"
+          cd "$RUNNER_TEMP"
+          e2-wheel/bin/python -I -m calorie_app.modules.catalog.cli validate --input "$seed"
+          e2-wheel/bin/python -I -m calorie_app.modules.catalog.offline_import \
+            --database e2-wheel.sqlite \
+            --manifest "$GITHUB_WORKSPACE/backend/data/demo/export/manifest.json" \
+            --package "$GITHUB_WORKSPACE/backend/data/demo/export/base-pl.1.json.gz" \
+            --expected-package-id 47bdff67-e58b-5437-919b-ec00159afbc5 --expected-kind demo
       - run: docker build -t calorie-backend:test backend
       - name: Smoke test built API image
         run: |
@@ -77,6 +93,45 @@ jobs:
           KEYCLOAK_DB_PASSWORD: ci-keycloak-only
         run: bash infra/local/init-db.sh
       - run: uv run --project backend --locked python -m pytest backend/tests/integration
+      - run: docker build -t calorie-backend:e2 backend
+      - name: Real PostgreSQL export and offline import in the built image
+        run: |
+          storage="$RUNNER_TEMP/e2-artifacts"
+          mkdir -p "$storage"
+          chmod 777 "$storage"
+          image=(docker run --rm --network host -v "$storage:/artifacts"
+            -e DATABASE_URL=postgresql+psycopg://calorie_app_migrator:ci-migrator-only@127.0.0.1:5432/calorie_app
+            -e CATALOG_ARTIFACT_ROOT=/artifacts/storage calorie-backend:e2)
+          "${image[@]}" .venv/bin/alembic upgrade head
+          "${image[@]}" .venv/bin/python -m calorie_app.modules.catalog.cli import \
+            --input data/demo/seed.json > "$storage/import-first.json"
+          jq -e '.created == true' "$storage/import-first.json"
+          "${image[@]}" .venv/bin/python -m calorie_app.modules.catalog.cli import \
+            --input data/demo/seed.json > "$storage/import-repeat.json"
+          jq -e '.created == false' "$storage/import-repeat.json"
+          "${image[@]}" .venv/bin/python -m calorie_app.modules.catalog.cli export \
+            --package-id 47bdff67-e58b-5437-919b-ec00159afbc5 --release 1 --output /artifacts/export
+          "${image[@]}" .venv/bin/python -m calorie_app.modules.catalog.cli export \
+            --package-id 47bdff67-e58b-5437-919b-ec00159afbc5 --release 1 --output /artifacts/repeat
+          cmp "$storage/export/base-pl.1.json.gz" "$storage/repeat/base-pl.1.json.gz"
+          cmp "$storage/export/manifest.json" "$storage/repeat/manifest.json"
+          cmp "$storage/export/base-pl.1.json.gz" backend/data/demo/export/base-pl.1.json.gz
+          "${image[@]}" .venv/bin/python -m calorie_app.modules.catalog.cli publish \
+            --package-id 47bdff67-e58b-5437-919b-ec00159afbc5 --release 1
+          "${image[@]}" .venv/bin/python -m calorie_app.modules.catalog.offline_import \
+            --database /artifacts/catalog.sqlite --manifest /artifacts/export/manifest.json \
+            --package /artifacts/export/base-pl.1.json.gz \
+            --expected-package-id 47bdff67-e58b-5437-919b-ec00159afbc5 --expected-kind demo
+          "${image[@]}" .venv/bin/python -c 'from calorie_app.modules.catalog.offline_import import OfflineCatalog; p=OfflineCatalog("/artifacts/catalog.sqlite", "47bdff67-e58b-5437-919b-ec00159afbc5", "demo").read_active_package(); assert p["counts"] == {"products":18,"rations":1,"components":18,"sources":1}; assert p["rations"][0]["complete"] is False'
+          docker run -d --name e2-built-api --network host -v "$storage:/artifacts:ro" \
+            -e DATABASE_URL=postgresql+psycopg://calorie_app_api:ci-api-only@127.0.0.1:5432/calorie_app \
+            -e CATALOG_ARTIFACT_ROOT=/artifacts/storage calorie-backend:e2
+          trap 'docker logs e2-built-api; docker rm -f e2-built-api' EXIT
+          curl --retry 10 --retry-all-errors --retry-delay 1 --retry-max-time 30 --max-time 5 \
+            -f http://127.0.0.1:8000/health/ready
+          curl -fsS http://127.0.0.1:8000/api/v1/rations | jq -e '.items == [] and .next_page_token == null'
+          test "$(curl -s -o "$storage/no-official.json" -w '%{http_code}' http://127.0.0.1:8000/api/v1/offline-package/manifest)" = 404
+          jq -e '.code == "not_found" and .details == []' "$storage/no-official.json"
   ci-required:
     if: always()
     needs: [contracts, quality, postgres]

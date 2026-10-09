@@ -34,7 +34,7 @@ def test_ready_with_database_down_has_safe_error(client):
     assert response.json() == {
         "code": "service_unavailable",
         "message": "Baza nie jest gotowa.",
-        "details": {},
+        "details": [],
         "request_id": response.headers["x-request-id"],
     }
     assert "secret" not in response.text
@@ -93,9 +93,17 @@ def test_configuration_rejects_other_drivers(url):
         Settings(database_url=url)
 
 
-def test_generated_api_only_claims_implemented_health(client):
+def test_generated_api_only_claims_implemented_operations(client):
     schema = client.get("/openapi.json").json()
-    assert set(schema["paths"]) == {"/health/live", "/health/ready"}
+    assert set(schema["paths"]) == {
+        "/health/live",
+        "/health/ready",
+        "/api/v1/rations",
+        "/api/v1/rations/{id}",
+        "/api/v1/offline-package/manifest",
+        "/api/v1/offline-package/{filename}",
+    }
+    assert "/api/v1/products" not in schema["paths"]
     assert "503" in schema["paths"]["/health/ready"]["get"]["responses"]
     # The committed artifact must equal the generated contract.
     from pathlib import Path

@@ -23,6 +23,15 @@ def test_migration_and_database_readiness(database):
         "products",
         "product_sources",
         "product_versions",
+        "rations",
+        "ration_versions",
+        "ration_components",
+        "offline_channels",
+        "offline_packages",
+        "offline_package_products",
+        "offline_package_rations",
+        "offline_package_sources",
+        "ration_page_tokens",
     }
     migrate("check")
     with TestClient(create_app(Settings(database_url=url), engine=engine)) as client:
