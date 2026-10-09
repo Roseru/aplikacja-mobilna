@@ -1,0 +1,85 @@
+{
+  "scenario_id": "restore_same_revision",
+  "purpose": "Ta sama rewizja z różnych epok nie dowodzi zgodności.",
+  "test_stage": "E4",
+  "execution": "contract_fixture_only",
+  "preconditions": {
+    "server_time": "2026-10-09T12:00:00Z",
+    "sync_epoch": "00000000-0000-4000-8000-000000000064",
+    "account_ids": [
+      "00000000-0000-4000-8000-000000000001"
+    ],
+    "checkpoint_issued_at": "2026-10-09T11:00:00Z",
+    "facts": [
+      "Lokalna epoka99/rewizja1 ma masę81; nowa epoka100/rewizja1 ma masę80.",
+      "Przed backupem zachowano potwierdzenie operacji300 z masą80."
+    ]
+  },
+  "steps": [
+    {
+      "kind": "http",
+      "label": "Snapshot z zachowanym potwierdzeniem",
+      "endpoint": "pull",
+      "account": "00000000-0000-4000-8000-000000000001",
+      "session_generation": 1,
+      "request": {
+        "recovery_operation_ids": [
+          "00000000-0000-4000-8000-00000000012c"
+        ]
+      },
+      "expected_status": 200,
+      "response": {
+        "sync_epoch": "00000000-0000-4000-8000-000000000064",
+        "mode": "snapshot",
+        "snapshot_token": "snapshot-demo-A-E100",
+        "page_token": null,
+        "checkpoint": "checkpoint-demo-A-E100",
+        "server_time": "2026-10-09T12:00:00Z",
+        "entities": [
+          {
+            "entity_type": "weight",
+            "entity_id": "00000000-0000-4000-8000-0000000000c8",
+            "revision": 1,
+            "deleted": false,
+            "payload": {
+              "weight_kg": "80",
+              "occurred_at": "2026-10-09T06:00:00Z",
+              "time_zone": "Europe/Warsaw",
+              "local_date": "2026-10-09"
+            }
+          }
+        ],
+        "goal_timeline_revision": 0,
+        "recovery_mappings": [],
+        "operation_receipts": [
+          {
+            "source_epoch": "00000000-0000-4000-8000-000000000063",
+            "operation_id": "00000000-0000-4000-8000-00000000012c",
+            "entity_id": "00000000-0000-4000-8000-0000000000c8",
+            "status": "accepted",
+            "revision": 1,
+            "code": null
+          }
+        ]
+      },
+      "delivery": "received",
+      "expected_behavior": [
+        "Zachowaj lokalne dane i zastosuj wyłącznie potwierdzony wynik we właściwym zakresie konta."
+      ]
+    },
+    {
+      "kind": "client",
+      "label": "Porównanie obu treści i epok",
+      "action": "compare_snapshot",
+      "active_account": "00000000-0000-4000-8000-000000000001",
+      "session_generation": 1,
+      "expected_behavior": [
+        "Różne treści są konfliktem mimo liczbowo równych rewizji.",
+        "Zachowane potwierdzenie nie zezwala na ponowne wykonanie starej operacji."
+      ]
+    }
+  ],
+  "expected_future_behavior": [
+    "Żadna wersja lokalna nie jest automatycznie kasowana."
+  ]
+}

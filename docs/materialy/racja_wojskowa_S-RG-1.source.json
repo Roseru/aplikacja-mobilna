@@ -1,0 +1,291 @@
+{
+  "nazwa": "Polska wojskowa racja żywnościowa S-RG-1",
+  "typ": "całodobowa",
+  "okres_godziny": 24,
+  "deklarowana_energia_kcal": 3600,
+  "wartosci_oszacowane_policzonych_produktow": {
+    "kcal": 3468,
+    "bialko_g": 130.5,
+    "tluszcz_g": 139.8,
+    "weglowodany_g": 406.2
+  },
+  "posilki": [
+    {
+      "id": "A",
+      "nazwa": "śniadanie",
+      "suma_oszacowana": {
+        "kcal": 926,
+        "bialko_g": 56.0,
+        "tluszcz_g": 34.6,
+        "weglowodany_g": 94.7
+      },
+      "produkty": [
+        {
+          "nazwa": "Gulasz drobiowy",
+          "ilosc": 300,
+          "jednostka": "g",
+          "wartosci_odzywcze": {
+            "kcal": 261,
+            "bialko_g": 33,
+            "tluszcz_g": 9.9,
+            "weglowodany_g": 8.7
+          }
+        },
+        {
+          "nazwa": "Konserwa tyrolska",
+          "ilosc": 100,
+          "jednostka": "g",
+          "wartosci_odzywcze": {
+            "kcal": 264,
+            "bialko_g": 16,
+            "tluszcz_g": 21,
+            "weglowodany_g": 2.8
+          }
+        },
+        {
+          "nazwa": "Pieczywo chrupkie",
+          "ilosc": 50,
+          "jednostka": "g",
+          "wartosci_odzywcze": {
+            "kcal": 165,
+            "bialko_g": 4,
+            "tluszcz_g": 1.1,
+            "weglowodany_g": 32.7
+          }
+        },
+        {
+          "nazwa": "Miód pszczeli",
+          "ilosc": 25,
+          "jednostka": "g",
+          "wartosci_odzywcze": {
+            "kcal": 76,
+            "bialko_g": 0,
+            "tluszcz_g": 0,
+            "weglowodany_g": 20.6
+          }
+        },
+        {
+          "nazwa": "Czekolada do picia bananowa",
+          "ilosc": 25,
+          "jednostka": "g",
+          "wartosci_odzywcze": {
+            "kcal": 102,
+            "bialko_g": 3,
+            "tluszcz_g": 2.6,
+            "weglowodany_g": 15.5
+          }
+        },
+        {
+          "nazwa": "Napój malinowy instant",
+          "ilosc": 15,
+          "jednostka": "g",
+          "wartosci_odzywcze": {
+            "kcal": 58,
+            "bialko_g": 0,
+            "tluszcz_g": 0,
+            "weglowodany_g": 14.4
+          }
+        }
+      ]
+    },
+    {
+      "id": "B",
+      "nazwa": "obiad",
+      "suma_oszacowana": {
+        "kcal": 800,
+        "bialko_g": 31.9,
+        "tluszcz_g": 15.6,
+        "weglowodany_g": 129.9
+      },
+      "produkty": [
+        {
+          "nazwa": "Pulpety w sosie warzywnym",
+          "ilosc": 300,
+          "jednostka": "g",
+          "wartosci_odzywcze": {
+            "kcal": 246,
+            "bialko_g": 24,
+            "tluszcz_g": 9.3,
+            "weglowodany_g": 15.3
+          }
+        },
+        {
+          "nazwa": "Suchary wojskowe SU-1",
+          "ilosc": 90,
+          "jednostka": "g",
+          "wartosci_odzywcze": {
+            "kcal": 347,
+            "bialko_g": 7.2,
+            "tluszcz_g": 6.1,
+            "weglowodany_g": 64.9
+          }
+        },
+        {
+          "nazwa": "Napój izotoniczny w proszku",
+          "ilosc": 40,
+          "jednostka": "g",
+          "wartosci_odzywcze": {
+            "kcal": 154,
+            "bialko_g": 0,
+            "tluszcz_g": 0,
+            "weglowodany_g": 38.4
+          }
+        },
+        {
+          "nazwa": "Owoce liofilizowane",
+          "ilosc": 15,
+          "jednostka": "g",
+          "wartosci_odzywcze": {
+            "kcal": 52,
+            "bialko_g": 0.7,
+            "tluszcz_g": 0.2,
+            "weglowodany_g": 11.3
+          }
+        }
+      ]
+    },
+    {
+      "id": "C",
+      "nazwa": "kolacja",
+      "suma_oszacowana": {
+        "kcal": 882,
+        "bialko_g": 30.7,
+        "tluszcz_g": 48.7,
+        "weglowodany_g": 77.8
+      },
+      "produkty": [
+        {
+          "nazwa": "Konserwa z boczku",
+          "ilosc": 190,
+          "jednostka": "g",
+          "wartosci_odzywcze": {
+            "kcal": 534,
+            "bialko_g": 26.6,
+            "tluszcz_g": 47.5,
+            "weglowodany_g": 0
+          }
+        },
+        {
+          "nazwa": "Pieczywo chrupkie",
+          "ilosc": 50,
+          "jednostka": "g",
+          "wartosci_odzywcze": {
+            "kcal": 165,
+            "bialko_g": 4,
+            "tluszcz_g": 1.1,
+            "weglowodany_g": 32.7
+          }
+        },
+        {
+          "nazwa": "Dżem z czarnej porzeczki",
+          "ilosc": 25,
+          "jednostka": "g",
+          "wartosci_odzywcze": {
+            "kcal": 66,
+            "bialko_g": 0.1,
+            "tluszcz_g": 0.1,
+            "weglowodany_g": 16.3
+          }
+        },
+        {
+          "nazwa": "Napój instant, owoce leśne",
+          "ilosc": 30,
+          "jednostka": "g",
+          "wartosci_odzywcze": {
+            "kcal": 117,
+            "bialko_g": 0,
+            "tluszcz_g": 0,
+            "weglowodany_g": 28.8
+          }
+        }
+      ]
+    }
+  ],
+  "dodatki_spozywcze": [
+    {
+      "nazwa": "Czekolada gorzka 60%",
+      "ilosc": 100,
+      "jednostka": "g",
+      "wartosci_odzywcze": {
+        "kcal": 516,
+        "bialko_g": 7,
+        "tluszcz_g": 32,
+        "weglowodany_g": 45
+      }
+    },
+    {
+      "nazwa": "Baton owocowo-zbożowy morelowy",
+      "ilosc": 35,
+      "jednostka": "g",
+      "wartosci_odzywcze": {
+        "kcal": 129,
+        "bialko_g": 1.9,
+        "tluszcz_g": 3.1,
+        "weglowodany_g": 22
+      }
+    },
+    {
+      "nazwa": "Baton z galaretką malinową",
+      "ilosc": 40,
+      "jednostka": "g",
+      "wartosci_odzywcze": {
+        "kcal": 174,
+        "bialko_g": 3,
+        "tluszcz_g": 5.8,
+        "weglowodany_g": 26.8
+      },
+      "opcjonalny": true
+    },
+    {
+      "nazwa": "Cukier",
+      "ilosc": 10,
+      "jednostka": "g",
+      "wartosci_odzywcze": {
+        "kcal": 40,
+        "bialko_g": 0,
+        "tluszcz_g": 0,
+        "weglowodany_g": 10
+      }
+    },
+    {
+      "nazwa": "Kawa rozpuszczalna",
+      "ilosc": 4,
+      "jednostka": "g",
+      "wartosci_odzywcze": null
+    },
+    {
+      "nazwa": "Cukierki z witaminą C",
+      "ilosc": 3,
+      "jednostka": "szt.",
+      "wartosci_odzywcze": null
+    },
+    {
+      "nazwa": "Cukierki kawowe",
+      "ilosc": 3,
+      "jednostka": "szt.",
+      "wartosci_odzywcze": null
+    },
+    {
+      "nazwa": "Guma do żucia",
+      "ilosc": 6,
+      "jednostka": "szt.",
+      "wartosci_odzywcze": null
+    }
+  ],
+  "wyposazenie": [
+    "podgrzewacz do posiłków",
+    "sztućce",
+    "kubki",
+    "serwetki",
+    "chusteczki nawilżane",
+    "papier toaletowy",
+    "woreczki",
+    "sól i pieprz"
+  ],
+  "uwagi": [
+    "Wartości odżywcze są orientacyjne, na podstawie wcześniejszego zestawienia, a nie jednej zweryfikowanej etykiety całej racji.",
+    "Suma 3468 kcal obejmuje produkty z dostępnymi danymi, w tym opcjonalny baton z galaretką; pomija m.in. cukierki, gumę i kawę.",
+    "Sumy podano w przybliżeniu i mogą różnić się o 1–2 kcal od sumy pozycji z powodu zaokrągleń.",
+    "Skład może się różnić między partiami produkcyjnymi."
+  ]
+}

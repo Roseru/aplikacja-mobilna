@@ -52,7 +52,7 @@ flowchart LR
 
 API i worker to dwa procesy **jednej modularnej aplikacji**. Moduły komunikują się przez funkcje/usługi wewnątrz procesu i jedną bazę; nie uruchamiamy osobnych mikroserwisów do profili, posiłków czy rankingu. Ten wybór ułatwia transakcje i utrzymanie przez trzy osoby.
 
-Przeglądarka obsługuje logowanie, a Android przekazuje API access token. Klucz Gemini występuje tylko po stronie serwera. Brak Gemini ogranicza funkcję AI; brak serwera nie zatrzymuje lokalnego dziennika.
+Przeglądarka obsługuje logowanie, a Android przekazuje API access token. Klucz Gemini Free Tier występuje tylko po stronie serwera, w projekcie bez aktywnego billing. Wydanie funkcji użytkownikom w Polsce ma ograniczenie warunków dostawcy opisane w wymaganiach 11.6. Brak Gemini ogranicza funkcję AI; brak serwera nie zatrzymuje lokalnego dziennika.
 
 ## 3. Moduły backendu i granice odpowiedzialności
 
@@ -65,7 +65,7 @@ Przeglądarka obsługuje logowanie, a Android przekazuje API access token. Klucz
 | `sync` | Push/pull, rewizje, checkpointy, snapshot, idempotencja i retencja | Koordynuje transakcję, ale wywołuje walidację modułu domenowego |
 | `analytics` | Statystyki, punkty, odznaki i rankingi | Wylicza wyniki z danych, nie akceptuje punktów dostarczonych przez klienta |
 | `nemesis` | Zaproszenia, zgody, projekcje dzienne, finalizacja | Projekcje są zapisywane razem ze zmianą źródłową przed terminem |
-| `ai` | Zlecenia, adapter Gemini, schemat wyniku, limity i rozliczenia | Wynik modelu jest danymi do walidacji; nie wykonuje SQL ani poleceń modelu |
+| `ai` | Zlecenia, adapter Gemini, schemat wyniku, limity i zużycie darmowej puli | Wynik modelu jest danymi do walidacji; nie wykonuje SQL ani poleceń modelu |
 | `jobs` | Trwała kolejka, dzierżawy, harmonogramy i retry | Przejęcie zadania nie pozwala staremu workerowi zapisać wyniku |
 
 Przepływ żądania: **router HTTP → schemat wejścia → usługa przypadku użycia → repozytorium SQLAlchemy → transakcja PostgreSQL**. Router obsługuje transport i kontekst konta; reguły nie są kopiowane do endpointów. Usługa określa granicę transakcji; repozytorium nie wykonuje samodzielnego commit ukrytego przed usługą. Wspólne kalkulacje używają Decimal, a Android BigDecimal i tych samych wektorów obliczeń.
@@ -104,7 +104,7 @@ Kluczowe grupy tabel w `calorie_app`:
 | Synchronizacja | `sync_state` z epoką instalacji, `sync_counters`, `sync_operations`, `change_log`, `deleted_entity_ids`, `sync_snapshots`, `sync_recovery_mappings`; unikalne operacje i przypisania odzyskanych rekordów, uporządkowanie transakcji |
 | Społeczność | `product_votes`, `product_reports`, `moderation_actions`; jeden aktywny głos danego autora na produkt |
 | Wyniki | `achievement_rules`, `user_achievements`, `day_scores`, `nemesis_challenges`, `nemesis_day_projections`; unikalność naliczeń i jawne wersje reguł |
-| AI / zadania | `ai_analyses`, `energy_adjustments`, `ai_budget_reservations`, `jobs`; właściciel, wejściowe rewizje, status, terminy i idempotencja |
+| AI / zadania | `ai_analyses`, `energy_adjustments`, `ai_quota_reservations`, `jobs`; właściciel, wejściowe rewizje, status, terminy i idempotencja |
 
 `meal_items` przechowuje ilość, jednostkę, kcal/B/T/W zastosowane przy zapisie, wersję formuły i opcjonalną referencję katalogową. Referencja służy identyfikacji, a obliczenie historii korzysta z zapisanej wartości. Wycofanie produktu lub nowa receptura nie przelicza dawnych posiłków. Istotne wersje i źródła są archiwizowane; nie stosujemy kaskadowego usuwania historii przy usunięciu produktu.
 
@@ -176,7 +176,7 @@ SHA-256 wykrywa uszkodzenie i niezgodność pliku; zaufanie do dostawy zapewnia 
 - Worker, API i eksporter korzystają z tych samych modeli i usług. Harmonogram obejmuje kolejkę, punkty po północy, Nemesis, retencję sync, snapshoty i usuwanie zdjęć. Dokładne reguły retry/kwalifikacji wynikają z wymagań.
 - Zdjęcia nie trafiają do PostgreSQL jako wielkie obiekty ani do repozytorium. Przy jednym VPS API i worker mają prywatny wspólny katalog plików z losowymi nazwami i kontrolą właściciela. Pliki te są wyłączone z kopii; TTL backendu wynosi maksymalnie 24 h według wymagań.
 - Osoba 3 tworzy kopie obu baz i konfiguracji tożsamości oraz zachowuje opublikowane artefakty katalogu. Kopia aplikacji obejmuje także liczniki sync, potwierdzenia operacji i rezerwacje AI. Restore odbywa się przy zatrzymanym API i workerach: przed otwarciem ruchu dostaje nowy `sync_epoch`, unieważnia stare snapshoty i sesje oraz sprawdza zgodność obu baz. Klient przechodzi osobny tryb odzyskiwania, zachowując także wcześniej potwierdzone dane; brak rekordu po cofnięciu bazy nie dowodzi usunięcia. Dokładny kontrakt określa 11.3 wymagań.
-- Po restore płatne AI pozostaje wyłączone do uzgodnienia kosztów niezależnie od przywróconego ledgeru. Niepewny bieżący okres jest konserwatywnie rozliczony jako wykorzystany; stare zadania nie są ponownie wysyłane. Zasady 11.6 wymagań obowiązują również przy przenoszeniu płatnego środowiska. O3 dokumentuje RPO/RTO z próby; dane nieobecne w kopii i na urządzeniach mogą być utracone.
+- Po restore rzeczywisty adapter Free Tier pozostaje wstrzymany do uzgodnienia liczników albo wygaśnięcia niepewnych okien limitów; stare zadania nie są ponownie wysyłane. Zasady 11.6 wymagań obowiązują również przy przenoszeniu środowiska z kluczem. O3 dokumentuje RPO/RTO z próby; dane nieobecne w kopii i na urządzeniach mogą być utracone.
 - Wprowadzamy mechanizmy potrzebne do obecnych wymagań. Podział na mikroserwisy, osobna baza katalogu, Redis, osobny broker, wyszukiwarka zewnętrzna i aktualizacje różnicowe pakietu wymagają dopiero uzasadnienia pomiarem obciążenia.
 
 ## 8. Podstawa decyzji

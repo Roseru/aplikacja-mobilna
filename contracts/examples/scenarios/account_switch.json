@@ -1,0 +1,129 @@
+{
+  "scenario_id": "account_switch",
+  "purpose": "Spóźniona odpowiedź A po przełączeniu na B.",
+  "test_stage": "E4",
+  "execution": "contract_fixture_only",
+  "preconditions": {
+    "server_time": "2026-10-09T12:00:00Z",
+    "sync_epoch": "00000000-0000-4000-8000-000000000064",
+    "account_ids": [
+      "00000000-0000-4000-8000-000000000001",
+      "00000000-0000-4000-8000-000000000002"
+    ],
+    "checkpoint_issued_at": "2026-10-09T11:00:00Z",
+    "facts": [
+      "Push A rozpoczyna się w generacji 1; odpowiedź dociera dopiero po lokalnym przełączeniu w generacji 2."
+    ]
+  },
+  "steps": [
+    {
+      "kind": "http",
+      "label": "Żądanie A w toku",
+      "endpoint": "push",
+      "account": "00000000-0000-4000-8000-000000000001",
+      "session_generation": 1,
+      "request": {
+        "protocol_version": 1,
+        "sync_epoch": "00000000-0000-4000-8000-000000000064",
+        "checkpoint": "checkpoint-demo-A-E100",
+        "operations": [
+          {
+            "operation_id": "00000000-0000-4000-8000-00000000012c",
+            "entity_type": "weight",
+            "entity_id": "00000000-0000-4000-8000-0000000000c8",
+            "action": "upsert",
+            "base_revision": null,
+            "sync_epoch": "00000000-0000-4000-8000-000000000064",
+            "payload": {
+              "weight_kg": "80",
+              "occurred_at": "2026-10-09T06:00:00Z",
+              "time_zone": "Europe/Warsaw",
+              "local_date": "2026-10-09"
+            }
+          }
+        ]
+      },
+      "expected_status": 200,
+      "response": {
+        "sync_epoch": "00000000-0000-4000-8000-000000000064",
+        "server_time": "2026-10-09T12:00:00Z",
+        "results": [
+          {
+            "operation_id": "00000000-0000-4000-8000-00000000012c",
+            "entity_id": "00000000-0000-4000-8000-0000000000c8",
+            "status": "accepted",
+            "revision": 1,
+            "recovery_mapping": null
+          }
+        ]
+      },
+      "delivery": "received",
+      "expected_behavior": [
+        "Odpowiedź została przygotowana przez serwer, ale lokalne zastosowanie czeka do sprawdzenia generacji."
+      ]
+    },
+    {
+      "kind": "client",
+      "label": "Aktywacja B",
+      "action": "switch_account",
+      "active_account": "00000000-0000-4000-8000-000000000002",
+      "session_generation": 2,
+      "expected_behavior": [
+        "Outbox A pozostaje w A; aktywny zakres i generacja to B/2."
+      ]
+    },
+    {
+      "kind": "client",
+      "label": "Weryfikacja opóźnionej odpowiedzi",
+      "action": "discard_stale_response",
+      "active_account": "00000000-0000-4000-8000-000000000002",
+      "session_generation": 2,
+      "expected_behavior": [
+        "Nie zapisuj odpowiedzi A w B; stara generacja 1 nie pasuje do aktywnej 2.",
+        "Ponowna aktywacja A może bezpiecznie ponowić operację po pull."
+      ]
+    },
+    {
+      "kind": "http",
+      "label": "Konto B próbuje użyć checkpointu A",
+      "endpoint": "push",
+      "account": "00000000-0000-4000-8000-000000000002",
+      "session_generation": 2,
+      "request": {
+        "protocol_version": 1,
+        "sync_epoch": "00000000-0000-4000-8000-000000000064",
+        "checkpoint": "checkpoint-demo-A-E100",
+        "operations": [
+          {
+            "operation_id": "00000000-0000-4000-8000-00000000012c",
+            "entity_type": "weight",
+            "entity_id": "00000000-0000-4000-8000-0000000000c8",
+            "action": "upsert",
+            "base_revision": null,
+            "sync_epoch": "00000000-0000-4000-8000-000000000064",
+            "payload": {
+              "weight_kg": "80",
+              "occurred_at": "2026-10-09T06:00:00Z",
+              "time_zone": "Europe/Warsaw",
+              "local_date": "2026-10-09"
+            }
+          }
+        ]
+      },
+      "expected_status": 422,
+      "response": {
+        "code": "invalid_sync_token",
+        "message": "Token nie należy do bieżącego konta.",
+        "details": {},
+        "request_id": "00000000-0000-4000-8000-0000000003e7"
+      },
+      "delivery": "received",
+      "expected_behavior": [
+        "Bez mutacji w A i B; token A nie uprawnia konta B do odczytu ani zapisu."
+      ]
+    }
+  ],
+  "expected_future_behavior": [
+    "Żadne dane A nie trafiają do B; B nie wysyła operacji A."
+  ]
+}

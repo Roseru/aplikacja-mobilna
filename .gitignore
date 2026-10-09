@@ -1,0 +1,4 @@
+.tools/
+.uv-cache/
+**/.venv/
+**/__pycache__/

@@ -1,0 +1,376 @@
+{
+  "items": [
+    {
+      "ration_id": "1ed32646-7248-5733-8979-c7cb4f9f25d2",
+      "revision": 1,
+      "name": "Polska wojskowa racja żywnościowa S-RG-1 — demo niepełne",
+      "manufacturer": null,
+      "variant": "S-RG-1",
+      "status": "unverified",
+      "source_id": "571bc0bc-0ce2-57ca-b248-7dd43079bdda",
+      "complete": false,
+      "components": [
+        {
+          "position": 1,
+          "group": "śniadanie",
+          "product": {
+            "product_id": "71b3a020-3627-5f95-bdba-e63ef138a7b2",
+            "revision": 1
+          },
+          "quantity": {
+            "amount": "300",
+            "unit": "g"
+          },
+          "optional": false
+        },
+        {
+          "position": 2,
+          "group": "śniadanie",
+          "product": {
+            "product_id": "9ad285ad-b5f6-557d-b02f-2fefc6bf0822",
+            "revision": 1
+          },
+          "quantity": {
+            "amount": "100",
+            "unit": "g"
+          },
+          "optional": false
+        },
+        {
+          "position": 3,
+          "group": "śniadanie",
+          "product": {
+            "product_id": "20c2b242-55dd-5628-a39a-5c486482a637",
+            "revision": 1
+          },
+          "quantity": {
+            "amount": "50",
+            "unit": "g"
+          },
+          "optional": false
+        },
+        {
+          "position": 4,
+          "group": "śniadanie",
+          "product": {
+            "product_id": "2c6a5a17-93b1-5327-a42a-7b3f0f364986",
+            "revision": 1
+          },
+          "quantity": {
+            "amount": "25",
+            "unit": "g"
+          },
+          "optional": false
+        },
+        {
+          "position": 5,
+          "group": "śniadanie",
+          "product": {
+            "product_id": "abf953fa-3017-593f-94cf-76e74294cd7f",
+            "revision": 1
+          },
+          "quantity": {
+            "amount": "25",
+            "unit": "g"
+          },
+          "optional": false
+        },
+        {
+          "position": 6,
+          "group": "śniadanie",
+          "product": {
+            "product_id": "c4e18119-6919-57a3-93d8-08941ec93bde",
+            "revision": 1
+          },
+          "quantity": {
+            "amount": "15",
+            "unit": "g"
+          },
+          "optional": false
+        },
+        {
+          "position": 7,
+          "group": "obiad",
+          "product": {
+            "product_id": "709ee435-9e50-54a6-8f63-bd8e0d65d836",
+            "revision": 1
+          },
+          "quantity": {
+            "amount": "300",
+            "unit": "g"
+          },
+          "optional": false
+        },
+        {
+          "position": 8,
+          "group": "obiad",
+          "product": {
+            "product_id": "9a3a41f5-560e-5c9e-b696-cf6cf4f0c5ba",
+            "revision": 1
+          },
+          "quantity": {
+            "amount": "90",
+            "unit": "g"
+          },
+          "optional": false
+        },
+        {
+          "position": 9,
+          "group": "obiad",
+          "product": {
+            "product_id": "75d35d2d-e6ec-513c-98a1-703de17c5d0e",
+            "revision": 1
+          },
+          "quantity": {
+            "amount": "40",
+            "unit": "g"
+          },
+          "optional": false
+        },
+        {
+          "position": 10,
+          "group": "obiad",
+          "product": {
+            "product_id": "824918be-2e74-5da2-81c0-7d7ca49dd255",
+            "revision": 1
+          },
+          "quantity": {
+            "amount": "15",
+            "unit": "g"
+          },
+          "optional": false
+        },
+        {
+          "position": 11,
+          "group": "kolacja",
+          "product": {
+            "product_id": "efe20cdf-6267-59f4-8970-6f6ec0dc1084",
+            "revision": 1
+          },
+          "quantity": {
+            "amount": "190",
+            "unit": "g"
+          },
+          "optional": false
+        },
+        {
+          "position": 12,
+          "group": "kolacja",
+          "product": {
+            "product_id": "55077ed8-a067-588a-80de-de2b4f2afa9d",
+            "revision": 1
+          },
+          "quantity": {
+            "amount": "50",
+            "unit": "g"
+          },
+          "optional": false
+        },
+        {
+          "position": 13,
+          "group": "kolacja",
+          "product": {
+            "product_id": "578f3508-1a9f-5b85-a228-5711de9f4373",
+            "revision": 1
+          },
+          "quantity": {
+            "amount": "25",
+            "unit": "g"
+          },
+          "optional": false
+        },
+        {
+          "position": 14,
+          "group": "kolacja",
+          "product": {
+            "product_id": "1885e8d9-2e1b-56b4-a10f-6308103439d5",
+            "revision": 1
+          },
+          "quantity": {
+            "amount": "30",
+            "unit": "g"
+          },
+          "optional": false
+        },
+        {
+          "position": 15,
+          "group": "dodatki",
+          "product": {
+            "product_id": "58ae4c58-c7e9-5455-b3a5-62b8bea9c6f0",
+            "revision": 1
+          },
+          "quantity": {
+            "amount": "100",
+            "unit": "g"
+          },
+          "optional": false
+        },
+        {
+          "position": 16,
+          "group": "dodatki",
+          "product": {
+            "product_id": "45aa39f9-f688-56bc-8fa9-6b9365ac31cd",
+            "revision": 1
+          },
+          "quantity": {
+            "amount": "35",
+            "unit": "g"
+          },
+          "optional": false
+        },
+        {
+          "position": 17,
+          "group": "dodatki",
+          "product": {
+            "product_id": "972734ee-3d8d-529f-9939-2a63dacd2f62",
+            "revision": 1
+          },
+          "quantity": {
+            "amount": "40",
+            "unit": "g"
+          },
+          "optional": true
+        },
+        {
+          "position": 18,
+          "group": "dodatki",
+          "product": {
+            "product_id": "cb26ee3b-01f1-54f3-8fee-76ce57fb6e6b",
+            "revision": 1
+          },
+          "quantity": {
+            "amount": "10",
+            "unit": "g"
+          },
+          "optional": false
+        }
+      ],
+      "excluded_items": [
+        {
+          "source_locator": "/dodatki_spozywcze/4",
+          "name": "Kawa rozpuszczalna",
+          "classification": "food",
+          "source_amount": "4",
+          "source_unit": "g",
+          "reasons": [
+            "Brak wartości odżywczych."
+          ]
+        },
+        {
+          "source_locator": "/dodatki_spozywcze/5",
+          "name": "Cukierki z witaminą C",
+          "classification": "food",
+          "source_amount": "3",
+          "source_unit": "szt.",
+          "reasons": [
+            "Brak wartości odżywczych.",
+            "Brak masy sztuki; nie można przeliczyć na g."
+          ]
+        },
+        {
+          "source_locator": "/dodatki_spozywcze/6",
+          "name": "Cukierki kawowe",
+          "classification": "food",
+          "source_amount": "3",
+          "source_unit": "szt.",
+          "reasons": [
+            "Brak wartości odżywczych.",
+            "Brak masy sztuki; nie można przeliczyć na g."
+          ]
+        },
+        {
+          "source_locator": "/dodatki_spozywcze/7",
+          "name": "Guma do żucia",
+          "classification": "food",
+          "source_amount": "6",
+          "source_unit": "szt.",
+          "reasons": [
+            "Brak wartości odżywczych.",
+            "Brak masy sztuki; nie można przeliczyć na g."
+          ]
+        },
+        {
+          "source_locator": "/wyposazenie/0",
+          "name": "podgrzewacz do posiłków",
+          "classification": "equipment",
+          "source_amount": null,
+          "source_unit": null,
+          "reasons": [
+            "Wyposażenie niejadalne; poza obliczeniami."
+          ]
+        },
+        {
+          "source_locator": "/wyposazenie/1",
+          "name": "sztućce",
+          "classification": "equipment",
+          "source_amount": null,
+          "source_unit": null,
+          "reasons": [
+            "Wyposażenie niejadalne; poza obliczeniami."
+          ]
+        },
+        {
+          "source_locator": "/wyposazenie/2",
+          "name": "kubki",
+          "classification": "equipment",
+          "source_amount": null,
+          "source_unit": null,
+          "reasons": [
+            "Wyposażenie niejadalne; poza obliczeniami."
+          ]
+        },
+        {
+          "source_locator": "/wyposazenie/3",
+          "name": "serwetki",
+          "classification": "equipment",
+          "source_amount": null,
+          "source_unit": null,
+          "reasons": [
+            "Wyposażenie niejadalne; poza obliczeniami."
+          ]
+        },
+        {
+          "source_locator": "/wyposazenie/4",
+          "name": "chusteczki nawilżane",
+          "classification": "equipment",
+          "source_amount": null,
+          "source_unit": null,
+          "reasons": [
+            "Wyposażenie niejadalne; poza obliczeniami."
+          ]
+        },
+        {
+          "source_locator": "/wyposazenie/5",
+          "name": "papier toaletowy",
+          "classification": "equipment",
+          "source_amount": null,
+          "source_unit": null,
+          "reasons": [
+            "Wyposażenie niejadalne; poza obliczeniami."
+          ]
+        },
+        {
+          "source_locator": "/wyposazenie/6",
+          "name": "woreczki",
+          "classification": "equipment",
+          "source_amount": null,
+          "source_unit": null,
+          "reasons": [
+            "Wyposażenie niejadalne; poza obliczeniami."
+          ]
+        },
+        {
+          "source_locator": "/wyposazenie/7",
+          "name": "sól i pieprz",
+          "classification": "seasoning",
+          "source_amount": null,
+          "source_unit": null,
+          "reasons": [
+            "Dodatki wymagają ilości i danych odżywczych; brak nie oznacza zera."
+          ]
+        }
+      ]
+    }
+  ],
+  "next_page_token": null
+}

@@ -1,0 +1,83 @@
+{
+  "scenario_id": "revision_conflict",
+  "purpose": "Edycja ze starą rewizją zachowuje obie wersje.",
+  "test_stage": "E4",
+  "execution": "contract_fixture_only",
+  "preconditions": {
+    "server_time": "2026-10-09T12:00:00Z",
+    "sync_epoch": "00000000-0000-4000-8000-000000000064",
+    "account_ids": [
+      "00000000-0000-4000-8000-000000000001"
+    ],
+    "checkpoint_issued_at": "2026-10-09T11:00:00Z",
+    "facts": [
+      "Pomiar serwera ma rewizję 2 i masę 82; klient zna rewizję 1."
+    ]
+  },
+  "steps": [
+    {
+      "kind": "http",
+      "label": "Konflikt",
+      "endpoint": "push",
+      "account": "00000000-0000-4000-8000-000000000001",
+      "session_generation": 1,
+      "request": {
+        "protocol_version": 1,
+        "sync_epoch": "00000000-0000-4000-8000-000000000064",
+        "checkpoint": "checkpoint-demo-A-E100",
+        "operations": [
+          {
+            "operation_id": "00000000-0000-4000-8000-00000000012c",
+            "entity_type": "weight",
+            "entity_id": "00000000-0000-4000-8000-0000000000c8",
+            "action": "upsert",
+            "base_revision": 1,
+            "sync_epoch": "00000000-0000-4000-8000-000000000064",
+            "payload": {
+              "weight_kg": "81",
+              "occurred_at": "2026-10-09T06:00:00Z",
+              "time_zone": "Europe/Warsaw",
+              "local_date": "2026-10-09"
+            }
+          }
+        ]
+      },
+      "expected_status": 200,
+      "response": {
+        "sync_epoch": "00000000-0000-4000-8000-000000000064",
+        "server_time": "2026-10-09T12:00:00Z",
+        "results": [
+          {
+            "operation_id": "00000000-0000-4000-8000-00000000012c",
+            "entity_id": "00000000-0000-4000-8000-0000000000c8",
+            "status": "conflict",
+            "code": "revision_conflict",
+            "message": "Oczekiwany wynik operacji w przyszłym serwerze.",
+            "current": {
+              "entity_type": "weight",
+              "entity_id": "00000000-0000-4000-8000-0000000000c8",
+              "revision": 2,
+              "deleted": false,
+              "payload": {
+                "weight_kg": "82",
+                "occurred_at": "2026-10-09T06:00:00Z",
+                "time_zone": "Europe/Warsaw",
+                "local_date": "2026-10-09"
+              }
+            },
+            "recovery_mapping": null,
+            "details_retained": true
+          }
+        ]
+      },
+      "delivery": "received",
+      "expected_behavior": [
+        "Zachowaj lokalne dane i zastosuj wyłącznie potwierdzony wynik we właściwym zakresie konta."
+      ]
+    }
+  ],
+  "expected_future_behavior": [
+    "Brak cichego nadpisania; wersja 81 pozostaje lokalnie obok serwerowej 82.",
+    "Zależne zmiany czekają na decyzję."
+  ]
+}

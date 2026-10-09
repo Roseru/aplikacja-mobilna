@@ -1,0 +1,10 @@
+{
+  "code": "sync_epoch_changed",
+  "message": "Wymagane ponowne pobranie stanu bez usuwania danych lokalnych.",
+  "details": {
+    "current_sync_epoch": "00000000-0000-4000-8000-000000000064",
+    "requested_sync_epoch": "00000000-0000-4000-8000-000000000063",
+    "recovery_required": "epoch_recovery"
+  },
+  "request_id": "00000000-0000-4000-8000-0000000003e7"
+}

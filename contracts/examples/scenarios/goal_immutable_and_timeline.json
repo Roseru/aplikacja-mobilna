@@ -1,0 +1,185 @@
+{
+  "scenario_id": "goal_immutable_and_timeline",
+  "purpose": "Niezmienność wersji celu i konflikt równoległych decyzji o osi czasu.",
+  "test_stage": "E4",
+  "execution": "contract_fixture_only",
+  "preconditions": {
+    "server_time": "2026-10-09T12:00:00Z",
+    "sync_epoch": "00000000-0000-4000-8000-000000000064",
+    "account_ids": [
+      "00000000-0000-4000-8000-000000000001"
+    ],
+    "checkpoint_issued_at": "2026-10-09T11:00:00Z",
+    "facts": [
+      "Cel UUID400 rewizja1 jest używany w historii; oś ma rewizję1.",
+      "Dwie decyzje offline powstały z timeline_base_revision=0."
+    ]
+  },
+  "steps": [
+    {
+      "kind": "http",
+      "label": "Edycja istniejącej wersji",
+      "endpoint": "push",
+      "account": "00000000-0000-4000-8000-000000000001",
+      "session_generation": 1,
+      "request": {
+        "protocol_version": 1,
+        "sync_epoch": "00000000-0000-4000-8000-000000000064",
+        "checkpoint": "checkpoint-demo-A-E100",
+        "operations": [
+          {
+            "operation_id": "00000000-0000-4000-8000-00000000019a",
+            "entity_type": "goal",
+            "entity_id": "00000000-0000-4000-8000-000000000190",
+            "action": "upsert",
+            "base_revision": 1,
+            "sync_epoch": "00000000-0000-4000-8000-000000000064",
+            "payload": {
+              "effective_from": "2026-10-09",
+              "decided_at": "2026-10-09T06:00:00Z",
+              "time_zone": "Europe/Warsaw",
+              "goal_type": "maintain",
+              "energy_kcal": "2600",
+              "protein_g": null,
+              "fat_g": null,
+              "carbs_g": null,
+              "activity_class": "line",
+              "estimate": null,
+              "timeline_base_revision": 0,
+              "reason": "user_decision",
+              "correction_of": null
+            }
+          }
+        ]
+      },
+      "expected_status": 200,
+      "response": {
+        "sync_epoch": "00000000-0000-4000-8000-000000000064",
+        "server_time": "2026-10-09T12:00:00Z",
+        "results": [
+          {
+            "operation_id": "00000000-0000-4000-8000-00000000019a",
+            "entity_id": "00000000-0000-4000-8000-000000000190",
+            "status": "rejected",
+            "code": "goal_immutable",
+            "message": "Oczekiwana kontrola celu i jego osi.",
+            "current": null,
+            "recovery_mapping": null,
+            "details_retained": true
+          }
+        ]
+      },
+      "delivery": "received",
+      "expected_behavior": [
+        "Zachowaj lokalne dane i zastosuj wyłącznie potwierdzony wynik we właściwym zakresie konta."
+      ]
+    },
+    {
+      "kind": "http",
+      "label": "Usunięcie używanego celu",
+      "endpoint": "push",
+      "account": "00000000-0000-4000-8000-000000000001",
+      "session_generation": 1,
+      "request": {
+        "protocol_version": 1,
+        "sync_epoch": "00000000-0000-4000-8000-000000000064",
+        "checkpoint": "checkpoint-demo-A-E100",
+        "operations": [
+          {
+            "operation_id": "00000000-0000-4000-8000-00000000019b",
+            "entity_type": "goal",
+            "entity_id": "00000000-0000-4000-8000-000000000190",
+            "action": "delete",
+            "base_revision": 1,
+            "sync_epoch": "00000000-0000-4000-8000-000000000064",
+            "payload": null
+          }
+        ]
+      },
+      "expected_status": 200,
+      "response": {
+        "sync_epoch": "00000000-0000-4000-8000-000000000064",
+        "server_time": "2026-10-09T12:00:00Z",
+        "results": [
+          {
+            "operation_id": "00000000-0000-4000-8000-00000000019b",
+            "entity_id": "00000000-0000-4000-8000-000000000190",
+            "status": "rejected",
+            "code": "goal_in_use",
+            "message": "Oczekiwana kontrola celu i jego osi.",
+            "current": null,
+            "recovery_mapping": null,
+            "details_retained": true
+          }
+        ]
+      },
+      "delivery": "received",
+      "expected_behavior": [
+        "Zachowaj lokalne dane i zastosuj wyłącznie potwierdzony wynik we właściwym zakresie konta."
+      ]
+    },
+    {
+      "kind": "http",
+      "label": "Nowa decyzja ze starą osią",
+      "endpoint": "push",
+      "account": "00000000-0000-4000-8000-000000000001",
+      "session_generation": 1,
+      "request": {
+        "protocol_version": 1,
+        "sync_epoch": "00000000-0000-4000-8000-000000000064",
+        "checkpoint": "checkpoint-demo-A-E100",
+        "operations": [
+          {
+            "operation_id": "00000000-0000-4000-8000-00000000019c",
+            "entity_type": "goal",
+            "entity_id": "00000000-0000-4000-8000-000000000191",
+            "action": "upsert",
+            "base_revision": null,
+            "sync_epoch": "00000000-0000-4000-8000-000000000064",
+            "payload": {
+              "effective_from": "2026-10-09",
+              "decided_at": "2026-10-09T06:00:00Z",
+              "time_zone": "Europe/Warsaw",
+              "goal_type": "maintain",
+              "energy_kcal": "2500",
+              "protein_g": null,
+              "fat_g": null,
+              "carbs_g": null,
+              "activity_class": "line",
+              "estimate": null,
+              "timeline_base_revision": 0,
+              "reason": "user_decision",
+              "correction_of": null
+            }
+          }
+        ]
+      },
+      "expected_status": 200,
+      "response": {
+        "sync_epoch": "00000000-0000-4000-8000-000000000064",
+        "server_time": "2026-10-09T12:00:00Z",
+        "results": [
+          {
+            "operation_id": "00000000-0000-4000-8000-00000000019c",
+            "entity_id": "00000000-0000-4000-8000-000000000191",
+            "status": "conflict",
+            "code": "goal_timeline_conflict",
+            "message": "Oczekiwana kontrola celu i jego osi.",
+            "current": null,
+            "recovery_mapping": null,
+            "details_retained": true
+          }
+        ]
+      },
+      "delivery": "received",
+      "expected_behavior": [
+        "Zachowaj lokalne dane i zastosuj wyłącznie potwierdzony wynik we właściwym zakresie konta."
+      ]
+    }
+  ],
+  "expected_future_behavior": [
+    "Żadna z trzech operacji nie zmienia istniejącej historii.",
+    "Klient pobiera bieżącą rewizję osi, rozwiązuje konflikt i wysyła nową wersję z nowym ID operacji.",
+    "Posiłek zależny od nowej wersji czeka na potwierdzenie celu."
+  ]
+}

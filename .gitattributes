@@ -1,0 +1,6 @@
+* text=auto
+
+# Preserve exact bytes used by the source audit and the gzip fixture.
+/docs/materialy/racja_wojskowa_S-RG-1.source.json -text
+/contracts/examples/valid/catalog-demo.json -text whitespace=blank-at-eol,blank-at-eof,space-before-tab,cr-at-eol
+*.gz binary

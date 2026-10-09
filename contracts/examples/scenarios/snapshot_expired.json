@@ -1,0 +1,71 @@
+{
+  "scenario_id": "snapshot_expired",
+  "purpose": "Przerwane pobieranie snapshotu po 60 min.",
+  "test_stage": "E4",
+  "execution": "contract_fixture_only",
+  "preconditions": {
+    "server_time": "2026-10-09T12:00:00Z",
+    "sync_epoch": "00000000-0000-4000-8000-000000000064",
+    "account_ids": [
+      "00000000-0000-4000-8000-000000000001"
+    ],
+    "checkpoint_issued_at": "2026-10-09T11:00:00Z",
+    "facts": [
+      "Token snapshotu wydano 2026-10-09T11:00:00Z; w chwili 12:00:00Z jest nieważny.",
+      "page_token pochodzi z tego snapshotu, checkpoint nie został wystawiony."
+    ]
+  },
+  "steps": [
+    {
+      "kind": "http",
+      "label": "Wznowienie wygasłego snapshotu",
+      "endpoint": "pull",
+      "account": "00000000-0000-4000-8000-000000000001",
+      "session_generation": 1,
+      "request": {
+        "sync_epoch": "00000000-0000-4000-8000-000000000064",
+        "snapshot_token": "snapshot-demo-A-E100",
+        "page_token": "page-demo-2"
+      },
+      "expected_status": 410,
+      "response": {
+        "code": "snapshot_expired",
+        "message": "Oczekiwany błąd bez mutacji danych.",
+        "details": {},
+        "request_id": "00000000-0000-4000-8000-0000000003e7"
+      },
+      "delivery": "received",
+      "expected_behavior": [
+        "Zachowaj lokalne dane i zastosuj wyłącznie potwierdzony wynik we właściwym zakresie konta."
+      ]
+    },
+    {
+      "kind": "http",
+      "label": "Restart pełnego odczytu",
+      "endpoint": "pull",
+      "account": "00000000-0000-4000-8000-000000000001",
+      "session_generation": 1,
+      "request": {},
+      "expected_status": 200,
+      "response": {
+        "sync_epoch": "00000000-0000-4000-8000-000000000064",
+        "mode": "snapshot",
+        "snapshot_token": "snapshot-demo-A-E100",
+        "page_token": null,
+        "checkpoint": "checkpoint-demo-A-E100",
+        "server_time": "2026-10-09T12:00:00Z",
+        "entities": [],
+        "goal_timeline_revision": 0,
+        "recovery_mappings": [],
+        "operation_receipts": []
+      },
+      "delivery": "received",
+      "expected_behavior": [
+        "Zachowaj lokalne dane i zastosuj wyłącznie potwierdzony wynik we właściwym zakresie konta."
+      ]
+    }
+  ],
+  "expected_future_behavior": [
+    "Nowy snapshot powstaje od początku; lokalne zmiany i outbox pozostają."
+  ]
+}

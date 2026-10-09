@@ -1,0 +1,2049 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "Sync v1 design draft — E0",
+  "$defs": {
+    "OpaqueToken": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 4096,
+      "description": "Opaque account/protocol/epoch-bound token; client must not parse or generate it."
+    },
+    "EntityType": {
+      "enum": [
+        "profile",
+        "goal",
+        "meal",
+        "weight",
+        "diary_day",
+        "product_draft"
+      ]
+    },
+    "RecoverySource": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "source_epoch": {
+          "$ref": "common.schema.json#/$defs/Uuid"
+        },
+        "source_entity_id": {
+          "$ref": "common.schema.json#/$defs/Uuid"
+        },
+        "source_revision": {
+          "anyOf": [
+            {
+              "$ref": "common.schema.json#/$defs/Revision"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "source_operation_id": {
+          "anyOf": [
+            {
+              "$ref": "common.schema.json#/$defs/Uuid"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "decision": {
+          "enum": [
+            "recreate_missing",
+            "resolve_existing"
+          ]
+        }
+      },
+      "required": [
+        "source_epoch",
+        "source_entity_id",
+        "source_revision",
+        "source_operation_id",
+        "decision"
+      ]
+    },
+    "RecoveryMapping": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "source_epoch": {
+          "$ref": "common.schema.json#/$defs/Uuid"
+        },
+        "source_entity_id": {
+          "$ref": "common.schema.json#/$defs/Uuid"
+        },
+        "target_entity_id": {
+          "$ref": "common.schema.json#/$defs/Uuid"
+        },
+        "target_revision": {
+          "$ref": "common.schema.json#/$defs/Revision"
+        }
+      },
+      "required": [
+        "source_epoch",
+        "source_entity_id",
+        "target_entity_id",
+        "target_revision"
+      ]
+    },
+    "Entity": {
+      "oneOf": [
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "entity_type": {
+              "const": "profile"
+            },
+            "entity_id": {
+              "$ref": "common.schema.json#/$defs/Uuid"
+            },
+            "revision": {
+              "$ref": "common.schema.json#/$defs/Revision"
+            },
+            "deleted": {
+              "const": false
+            },
+            "payload": {
+              "$ref": "domain.schema.json#/$defs/Profile"
+            }
+          },
+          "required": [
+            "entity_type",
+            "entity_id",
+            "revision",
+            "deleted",
+            "payload"
+          ]
+        },
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "entity_type": {
+              "const": "profile"
+            },
+            "entity_id": {
+              "$ref": "common.schema.json#/$defs/Uuid"
+            },
+            "revision": {
+              "$ref": "common.schema.json#/$defs/Revision"
+            },
+            "deleted": {
+              "const": true
+            },
+            "payload": {
+              "type": "null"
+            }
+          },
+          "required": [
+            "entity_type",
+            "entity_id",
+            "revision",
+            "deleted",
+            "payload"
+          ]
+        },
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "entity_type": {
+              "const": "goal"
+            },
+            "entity_id": {
+              "$ref": "common.schema.json#/$defs/Uuid"
+            },
+            "revision": {
+              "$ref": "common.schema.json#/$defs/Revision"
+            },
+            "deleted": {
+              "const": false
+            },
+            "payload": {
+              "$ref": "domain.schema.json#/$defs/Goal"
+            }
+          },
+          "required": [
+            "entity_type",
+            "entity_id",
+            "revision",
+            "deleted",
+            "payload"
+          ]
+        },
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "entity_type": {
+              "const": "goal"
+            },
+            "entity_id": {
+              "$ref": "common.schema.json#/$defs/Uuid"
+            },
+            "revision": {
+              "$ref": "common.schema.json#/$defs/Revision"
+            },
+            "deleted": {
+              "const": true
+            },
+            "payload": {
+              "type": "null"
+            }
+          },
+          "required": [
+            "entity_type",
+            "entity_id",
+            "revision",
+            "deleted",
+            "payload"
+          ]
+        },
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "entity_type": {
+              "const": "meal"
+            },
+            "entity_id": {
+              "$ref": "common.schema.json#/$defs/Uuid"
+            },
+            "revision": {
+              "$ref": "common.schema.json#/$defs/Revision"
+            },
+            "deleted": {
+              "const": false
+            },
+            "payload": {
+              "$ref": "domain.schema.json#/$defs/Meal"
+            }
+          },
+          "required": [
+            "entity_type",
+            "entity_id",
+            "revision",
+            "deleted",
+            "payload"
+          ]
+        },
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "entity_type": {
+              "const": "meal"
+            },
+            "entity_id": {
+              "$ref": "common.schema.json#/$defs/Uuid"
+            },
+            "revision": {
+              "$ref": "common.schema.json#/$defs/Revision"
+            },
+            "deleted": {
+              "const": true
+            },
+            "payload": {
+              "type": "null"
+            }
+          },
+          "required": [
+            "entity_type",
+            "entity_id",
+            "revision",
+            "deleted",
+            "payload"
+          ]
+        },
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "entity_type": {
+              "const": "weight"
+            },
+            "entity_id": {
+              "$ref": "common.schema.json#/$defs/Uuid"
+            },
+            "revision": {
+              "$ref": "common.schema.json#/$defs/Revision"
+            },
+            "deleted": {
+              "const": false
+            },
+            "payload": {
+              "$ref": "domain.schema.json#/$defs/Weight"
+            }
+          },
+          "required": [
+            "entity_type",
+            "entity_id",
+            "revision",
+            "deleted",
+            "payload"
+          ]
+        },
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "entity_type": {
+              "const": "weight"
+            },
+            "entity_id": {
+              "$ref": "common.schema.json#/$defs/Uuid"
+            },
+            "revision": {
+              "$ref": "common.schema.json#/$defs/Revision"
+            },
+            "deleted": {
+              "const": true
+            },
+            "payload": {
+              "type": "null"
+            }
+          },
+          "required": [
+            "entity_type",
+            "entity_id",
+            "revision",
+            "deleted",
+            "payload"
+          ]
+        },
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "entity_type": {
+              "const": "diary_day"
+            },
+            "entity_id": {
+              "$ref": "common.schema.json#/$defs/Uuid"
+            },
+            "revision": {
+              "$ref": "common.schema.json#/$defs/Revision"
+            },
+            "deleted": {
+              "const": false
+            },
+            "payload": {
+              "$ref": "domain.schema.json#/$defs/DiaryDay"
+            }
+          },
+          "required": [
+            "entity_type",
+            "entity_id",
+            "revision",
+            "deleted",
+            "payload"
+          ]
+        },
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "entity_type": {
+              "const": "diary_day"
+            },
+            "entity_id": {
+              "$ref": "common.schema.json#/$defs/Uuid"
+            },
+            "revision": {
+              "$ref": "common.schema.json#/$defs/Revision"
+            },
+            "deleted": {
+              "const": true
+            },
+            "payload": {
+              "type": "null"
+            }
+          },
+          "required": [
+            "entity_type",
+            "entity_id",
+            "revision",
+            "deleted",
+            "payload"
+          ]
+        },
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "entity_type": {
+              "const": "product_draft"
+            },
+            "entity_id": {
+              "$ref": "common.schema.json#/$defs/Uuid"
+            },
+            "revision": {
+              "$ref": "common.schema.json#/$defs/Revision"
+            },
+            "deleted": {
+              "const": false
+            },
+            "payload": {
+              "$ref": "domain.schema.json#/$defs/ProductDraft"
+            }
+          },
+          "required": [
+            "entity_type",
+            "entity_id",
+            "revision",
+            "deleted",
+            "payload"
+          ]
+        },
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "entity_type": {
+              "const": "product_draft"
+            },
+            "entity_id": {
+              "$ref": "common.schema.json#/$defs/Uuid"
+            },
+            "revision": {
+              "$ref": "common.schema.json#/$defs/Revision"
+            },
+            "deleted": {
+              "const": true
+            },
+            "payload": {
+              "type": "null"
+            }
+          },
+          "required": [
+            "entity_type",
+            "entity_id",
+            "revision",
+            "deleted",
+            "payload"
+          ]
+        }
+      ]
+    },
+    "Operation": {
+      "oneOf": [
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "operation_id": {
+              "$ref": "common.schema.json#/$defs/Uuid"
+            },
+            "entity_type": {
+              "const": "profile"
+            },
+            "entity_id": {
+              "$ref": "common.schema.json#/$defs/Uuid"
+            },
+            "action": {
+              "const": "upsert"
+            },
+            "base_revision": {
+              "anyOf": [
+                {
+                  "$ref": "common.schema.json#/$defs/Revision"
+                },
+                {
+                  "type": "null"
+                }
+              ]
+            },
+            "sync_epoch": {
+              "$ref": "common.schema.json#/$defs/Uuid"
+            },
+            "payload": {
+              "$ref": "domain.schema.json#/$defs/Profile"
+            },
+            "recovery": {
+              "$ref": "#/$defs/RecoverySource"
+            }
+          },
+          "required": [
+            "operation_id",
+            "entity_type",
+            "entity_id",
+            "action",
+            "base_revision",
+            "sync_epoch",
+            "payload"
+          ]
+        },
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "operation_id": {
+              "$ref": "common.schema.json#/$defs/Uuid"
+            },
+            "entity_type": {
+              "const": "profile"
+            },
+            "entity_id": {
+              "$ref": "common.schema.json#/$defs/Uuid"
+            },
+            "action": {
+              "const": "delete"
+            },
+            "base_revision": {
+              "$ref": "common.schema.json#/$defs/Revision"
+            },
+            "sync_epoch": {
+              "$ref": "common.schema.json#/$defs/Uuid"
+            },
+            "payload": {
+              "type": "null"
+            },
+            "recovery": {
+              "$ref": "#/$defs/RecoverySource"
+            }
+          },
+          "required": [
+            "operation_id",
+            "entity_type",
+            "entity_id",
+            "action",
+            "base_revision",
+            "sync_epoch",
+            "payload"
+          ]
+        },
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "operation_id": {
+              "$ref": "common.schema.json#/$defs/Uuid"
+            },
+            "entity_type": {
+              "const": "goal"
+            },
+            "entity_id": {
+              "$ref": "common.schema.json#/$defs/Uuid"
+            },
+            "action": {
+              "const": "upsert"
+            },
+            "base_revision": {
+              "anyOf": [
+                {
+                  "$ref": "common.schema.json#/$defs/Revision"
+                },
+                {
+                  "type": "null"
+                }
+              ]
+            },
+            "sync_epoch": {
+              "$ref": "common.schema.json#/$defs/Uuid"
+            },
+            "payload": {
+              "$ref": "domain.schema.json#/$defs/Goal"
+            },
+            "recovery": {
+              "$ref": "#/$defs/RecoverySource"
+            }
+          },
+          "required": [
+            "operation_id",
+            "entity_type",
+            "entity_id",
+            "action",
+            "base_revision",
+            "sync_epoch",
+            "payload"
+          ]
+        },
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "operation_id": {
+              "$ref": "common.schema.json#/$defs/Uuid"
+            },
+            "entity_type": {
+              "const": "goal"
+            },
+            "entity_id": {
+              "$ref": "common.schema.json#/$defs/Uuid"
+            },
+            "action": {
+              "const": "delete"
+            },
+            "base_revision": {
+              "$ref": "common.schema.json#/$defs/Revision"
+            },
+            "sync_epoch": {
+              "$ref": "common.schema.json#/$defs/Uuid"
+            },
+            "payload": {
+              "type": "null"
+            },
+            "recovery": {
+              "$ref": "#/$defs/RecoverySource"
+            }
+          },
+          "required": [
+            "operation_id",
+            "entity_type",
+            "entity_id",
+            "action",
+            "base_revision",
+            "sync_epoch",
+            "payload"
+          ]
+        },
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "operation_id": {
+              "$ref": "common.schema.json#/$defs/Uuid"
+            },
+            "entity_type": {
+              "const": "meal"
+            },
+            "entity_id": {
+              "$ref": "common.schema.json#/$defs/Uuid"
+            },
+            "action": {
+              "const": "upsert"
+            },
+            "base_revision": {
+              "anyOf": [
+                {
+                  "$ref": "common.schema.json#/$defs/Revision"
+                },
+                {
+                  "type": "null"
+                }
+              ]
+            },
+            "sync_epoch": {
+              "$ref": "common.schema.json#/$defs/Uuid"
+            },
+            "payload": {
+              "$ref": "domain.schema.json#/$defs/Meal"
+            },
+            "recovery": {
+              "$ref": "#/$defs/RecoverySource"
+            }
+          },
+          "required": [
+            "operation_id",
+            "entity_type",
+            "entity_id",
+            "action",
+            "base_revision",
+            "sync_epoch",
+            "payload"
+          ]
+        },
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "operation_id": {
+              "$ref": "common.schema.json#/$defs/Uuid"
+            },
+            "entity_type": {
+              "const": "meal"
+            },
+            "entity_id": {
+              "$ref": "common.schema.json#/$defs/Uuid"
+            },
+            "action": {
+              "const": "delete"
+            },
+            "base_revision": {
+              "$ref": "common.schema.json#/$defs/Revision"
+            },
+            "sync_epoch": {
+              "$ref": "common.schema.json#/$defs/Uuid"
+            },
+            "payload": {
+              "type": "null"
+            },
+            "recovery": {
+              "$ref": "#/$defs/RecoverySource"
+            }
+          },
+          "required": [
+            "operation_id",
+            "entity_type",
+            "entity_id",
+            "action",
+            "base_revision",
+            "sync_epoch",
+            "payload"
+          ]
+        },
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "operation_id": {
+              "$ref": "common.schema.json#/$defs/Uuid"
+            },
+            "entity_type": {
+              "const": "weight"
+            },
+            "entity_id": {
+              "$ref": "common.schema.json#/$defs/Uuid"
+            },
+            "action": {
+              "const": "upsert"
+            },
+            "base_revision": {
+              "anyOf": [
+                {
+                  "$ref": "common.schema.json#/$defs/Revision"
+                },
+                {
+                  "type": "null"
+                }
+              ]
+            },
+            "sync_epoch": {
+              "$ref": "common.schema.json#/$defs/Uuid"
+            },
+            "payload": {
+              "$ref": "domain.schema.json#/$defs/Weight"
+            },
+            "recovery": {
+              "$ref": "#/$defs/RecoverySource"
+            }
+          },
+          "required": [
+            "operation_id",
+            "entity_type",
+            "entity_id",
+            "action",
+            "base_revision",
+            "sync_epoch",
+            "payload"
+          ]
+        },
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "operation_id": {
+              "$ref": "common.schema.json#/$defs/Uuid"
+            },
+            "entity_type": {
+              "const": "weight"
+            },
+            "entity_id": {
+              "$ref": "common.schema.json#/$defs/Uuid"
+            },
+            "action": {
+              "const": "delete"
+            },
+            "base_revision": {
+              "$ref": "common.schema.json#/$defs/Revision"
+            },
+            "sync_epoch": {
+              "$ref": "common.schema.json#/$defs/Uuid"
+            },
+            "payload": {
+              "type": "null"
+            },
+            "recovery": {
+              "$ref": "#/$defs/RecoverySource"
+            }
+          },
+          "required": [
+            "operation_id",
+            "entity_type",
+            "entity_id",
+            "action",
+            "base_revision",
+            "sync_epoch",
+            "payload"
+          ]
+        },
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "operation_id": {
+              "$ref": "common.schema.json#/$defs/Uuid"
+            },
+            "entity_type": {
+              "const": "diary_day"
+            },
+            "entity_id": {
+              "$ref": "common.schema.json#/$defs/Uuid"
+            },
+            "action": {
+              "const": "upsert"
+            },
+            "base_revision": {
+              "anyOf": [
+                {
+                  "$ref": "common.schema.json#/$defs/Revision"
+                },
+                {
+                  "type": "null"
+                }
+              ]
+            },
+            "sync_epoch": {
+              "$ref": "common.schema.json#/$defs/Uuid"
+            },
+            "payload": {
+              "$ref": "domain.schema.json#/$defs/DiaryDay"
+            },
+            "recovery": {
+              "$ref": "#/$defs/RecoverySource"
+            }
+          },
+          "required": [
+            "operation_id",
+            "entity_type",
+            "entity_id",
+            "action",
+            "base_revision",
+            "sync_epoch",
+            "payload"
+          ]
+        },
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "operation_id": {
+              "$ref": "common.schema.json#/$defs/Uuid"
+            },
+            "entity_type": {
+              "const": "diary_day"
+            },
+            "entity_id": {
+              "$ref": "common.schema.json#/$defs/Uuid"
+            },
+            "action": {
+              "const": "delete"
+            },
+            "base_revision": {
+              "$ref": "common.schema.json#/$defs/Revision"
+            },
+            "sync_epoch": {
+              "$ref": "common.schema.json#/$defs/Uuid"
+            },
+            "payload": {
+              "type": "null"
+            },
+            "recovery": {
+              "$ref": "#/$defs/RecoverySource"
+            }
+          },
+          "required": [
+            "operation_id",
+            "entity_type",
+            "entity_id",
+            "action",
+            "base_revision",
+            "sync_epoch",
+            "payload"
+          ]
+        },
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "operation_id": {
+              "$ref": "common.schema.json#/$defs/Uuid"
+            },
+            "entity_type": {
+              "const": "product_draft"
+            },
+            "entity_id": {
+              "$ref": "common.schema.json#/$defs/Uuid"
+            },
+            "action": {
+              "const": "upsert"
+            },
+            "base_revision": {
+              "anyOf": [
+                {
+                  "$ref": "common.schema.json#/$defs/Revision"
+                },
+                {
+                  "type": "null"
+                }
+              ]
+            },
+            "sync_epoch": {
+              "$ref": "common.schema.json#/$defs/Uuid"
+            },
+            "payload": {
+              "$ref": "domain.schema.json#/$defs/ProductDraft"
+            },
+            "recovery": {
+              "$ref": "#/$defs/RecoverySource"
+            }
+          },
+          "required": [
+            "operation_id",
+            "entity_type",
+            "entity_id",
+            "action",
+            "base_revision",
+            "sync_epoch",
+            "payload"
+          ]
+        },
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "operation_id": {
+              "$ref": "common.schema.json#/$defs/Uuid"
+            },
+            "entity_type": {
+              "const": "product_draft"
+            },
+            "entity_id": {
+              "$ref": "common.schema.json#/$defs/Uuid"
+            },
+            "action": {
+              "const": "delete"
+            },
+            "base_revision": {
+              "$ref": "common.schema.json#/$defs/Revision"
+            },
+            "sync_epoch": {
+              "$ref": "common.schema.json#/$defs/Uuid"
+            },
+            "payload": {
+              "type": "null"
+            },
+            "recovery": {
+              "$ref": "#/$defs/RecoverySource"
+            }
+          },
+          "required": [
+            "operation_id",
+            "entity_type",
+            "entity_id",
+            "action",
+            "base_revision",
+            "sync_epoch",
+            "payload"
+          ]
+        }
+      ]
+    },
+    "PushRequest": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "protocol_version": {
+          "const": 1
+        },
+        "sync_epoch": {
+          "$ref": "common.schema.json#/$defs/Uuid"
+        },
+        "checkpoint": {
+          "$ref": "#/$defs/OpaqueToken"
+        },
+        "operations": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/Operation"
+          },
+          "maxItems": 100,
+          "minItems": 1
+        }
+      },
+      "required": [
+        "protocol_version",
+        "sync_epoch",
+        "checkpoint",
+        "operations"
+      ]
+    },
+    "OperationResult": {
+      "oneOf": [
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "operation_id": {
+              "$ref": "common.schema.json#/$defs/Uuid"
+            },
+            "entity_id": {
+              "$ref": "common.schema.json#/$defs/Uuid"
+            },
+            "status": {
+              "const": "accepted"
+            },
+            "revision": {
+              "$ref": "common.schema.json#/$defs/Revision"
+            },
+            "recovery_mapping": {
+              "anyOf": [
+                {
+                  "$ref": "#/$defs/RecoveryMapping"
+                },
+                {
+                  "type": "null"
+                }
+              ]
+            }
+          },
+          "required": [
+            "operation_id",
+            "entity_id",
+            "status",
+            "revision",
+            "recovery_mapping"
+          ]
+        },
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "operation_id": {
+              "$ref": "common.schema.json#/$defs/Uuid"
+            },
+            "entity_id": {
+              "$ref": "common.schema.json#/$defs/Uuid"
+            },
+            "status": {
+              "const": "already_applied"
+            },
+            "revision": {
+              "$ref": "common.schema.json#/$defs/Revision"
+            },
+            "recovery_mapping": {
+              "anyOf": [
+                {
+                  "$ref": "#/$defs/RecoveryMapping"
+                },
+                {
+                  "type": "null"
+                }
+              ]
+            }
+          },
+          "required": [
+            "operation_id",
+            "entity_id",
+            "status",
+            "revision",
+            "recovery_mapping"
+          ]
+        },
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "operation_id": {
+              "$ref": "common.schema.json#/$defs/Uuid"
+            },
+            "entity_id": {
+              "$ref": "common.schema.json#/$defs/Uuid"
+            },
+            "status": {
+              "const": "conflict"
+            },
+            "code": {
+              "enum": [
+                "revision_conflict",
+                "entity_deleted",
+                "entity_id_reserved",
+                "goal_timeline_conflict",
+                "recovery_content_conflict",
+                "recovery_target_conflict"
+              ]
+            },
+            "message": {
+              "type": "string",
+              "minLength": 1
+            },
+            "current": {
+              "anyOf": [
+                {
+                  "$ref": "#/$defs/Entity"
+                },
+                {
+                  "type": "null"
+                }
+              ]
+            },
+            "recovery_mapping": {
+              "anyOf": [
+                {
+                  "$ref": "#/$defs/RecoveryMapping"
+                },
+                {
+                  "type": "null"
+                }
+              ]
+            },
+            "details_retained": {
+              "type": "boolean"
+            }
+          },
+          "required": [
+            "operation_id",
+            "entity_id",
+            "status",
+            "code",
+            "message",
+            "current",
+            "recovery_mapping",
+            "details_retained"
+          ]
+        },
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "operation_id": {
+              "$ref": "common.schema.json#/$defs/Uuid"
+            },
+            "entity_id": {
+              "$ref": "common.schema.json#/$defs/Uuid"
+            },
+            "status": {
+              "const": "rejected"
+            },
+            "code": {
+              "enum": [
+                "operation_id_reused",
+                "goal_in_use",
+                "goal_immutable",
+                "dependency_missing",
+                "invalid_payload",
+                "entity_too_large",
+                "recovery_source_invalid"
+              ]
+            },
+            "message": {
+              "type": "string",
+              "minLength": 1
+            },
+            "current": {
+              "anyOf": [
+                {
+                  "$ref": "#/$defs/Entity"
+                },
+                {
+                  "type": "null"
+                }
+              ]
+            },
+            "recovery_mapping": {
+              "anyOf": [
+                {
+                  "$ref": "#/$defs/RecoveryMapping"
+                },
+                {
+                  "type": "null"
+                }
+              ]
+            },
+            "details_retained": {
+              "type": "boolean"
+            }
+          },
+          "required": [
+            "operation_id",
+            "entity_id",
+            "status",
+            "code",
+            "message",
+            "current",
+            "recovery_mapping",
+            "details_retained"
+          ]
+        }
+      ]
+    },
+    "PushResponse": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "sync_epoch": {
+          "$ref": "common.schema.json#/$defs/Uuid"
+        },
+        "server_time": {
+          "$ref": "common.schema.json#/$defs/Timestamp"
+        },
+        "results": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/OperationResult"
+          },
+          "maxItems": 100,
+          "minItems": 1
+        }
+      },
+      "required": [
+        "sync_epoch",
+        "server_time",
+        "results"
+      ]
+    },
+    "PullRequest": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "sync_epoch": {
+          "$ref": "common.schema.json#/$defs/Uuid"
+        },
+        "checkpoint": {
+          "$ref": "#/$defs/OpaqueToken"
+        },
+        "snapshot_token": {
+          "$ref": "#/$defs/OpaqueToken"
+        },
+        "page_token": {
+          "$ref": "#/$defs/OpaqueToken"
+        },
+        "limit": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 500,
+          "default": 500
+        },
+        "recovery_operation_ids": {
+          "type": "array",
+          "items": {
+            "$ref": "common.schema.json#/$defs/Uuid"
+          },
+          "minItems": 1,
+          "maxItems": 100,
+          "uniqueItems": true
+        }
+      },
+      "required": [],
+      "oneOf": [
+        {
+          "not": {
+            "anyOf": [
+              {
+                "required": [
+                  "checkpoint"
+                ]
+              },
+              {
+                "required": [
+                  "snapshot_token"
+                ]
+              },
+              {
+                "required": [
+                  "page_token"
+                ]
+              }
+            ]
+          }
+        },
+        {
+          "required": [
+            "sync_epoch",
+            "checkpoint"
+          ],
+          "not": {
+            "required": [
+              "snapshot_token"
+            ]
+          }
+        },
+        {
+          "required": [
+            "sync_epoch",
+            "snapshot_token",
+            "page_token"
+          ],
+          "not": {
+            "required": [
+              "checkpoint"
+            ]
+          }
+        }
+      ],
+      "allOf": [
+        {
+          "if": {
+            "required": [
+              "recovery_operation_ids"
+            ]
+          },
+          "then": {
+            "not": {
+              "anyOf": [
+                {
+                  "required": [
+                    "checkpoint"
+                  ]
+                },
+                {
+                  "required": [
+                    "snapshot_token"
+                  ]
+                },
+                {
+                  "required": [
+                    "page_token"
+                  ]
+                }
+              ]
+            }
+          }
+        }
+      ]
+    },
+    "PullResponse": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "sync_epoch": {
+          "$ref": "common.schema.json#/$defs/Uuid"
+        },
+        "mode": {
+          "enum": [
+            "snapshot",
+            "incremental"
+          ]
+        },
+        "snapshot_token": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/OpaqueToken"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "page_token": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/OpaqueToken"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "checkpoint": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/OpaqueToken"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "server_time": {
+          "$ref": "common.schema.json#/$defs/Timestamp"
+        },
+        "entities": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/Entity"
+          },
+          "maxItems": 500
+        },
+        "goal_timeline_revision": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "recovery_mappings": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/RecoveryMapping"
+          },
+          "maxItems": 500
+        },
+        "operation_receipts": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/OperationReceipt"
+          },
+          "maxItems": 100
+        }
+      },
+      "required": [
+        "sync_epoch",
+        "mode",
+        "snapshot_token",
+        "page_token",
+        "checkpoint",
+        "server_time",
+        "entities",
+        "goal_timeline_revision",
+        "recovery_mappings",
+        "operation_receipts"
+      ],
+      "allOf": [
+        {
+          "if": {
+            "properties": {
+              "mode": {
+                "const": "snapshot"
+              }
+            }
+          },
+          "then": {
+            "properties": {
+              "snapshot_token": {
+                "$ref": "#/$defs/OpaqueToken"
+              }
+            }
+          },
+          "else": {
+            "properties": {
+              "snapshot_token": {
+                "type": "null"
+              }
+            }
+          }
+        },
+        {
+          "oneOf": [
+            {
+              "properties": {
+                "page_token": {
+                  "type": "null"
+                },
+                "checkpoint": {
+                  "$ref": "#/$defs/OpaqueToken"
+                }
+              }
+            },
+            {
+              "properties": {
+                "page_token": {
+                  "$ref": "#/$defs/OpaqueToken"
+                },
+                "checkpoint": {
+                  "type": "null"
+                }
+              }
+            }
+          ]
+        }
+      ]
+    },
+    "SyncErrorDetails": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "current_sync_epoch": {
+          "$ref": "common.schema.json#/$defs/Uuid"
+        },
+        "requested_sync_epoch": {
+          "$ref": "common.schema.json#/$defs/Uuid"
+        },
+        "recovery_required": {
+          "enum": [
+            "full_snapshot",
+            "epoch_recovery"
+          ]
+        },
+        "limit_bytes": {
+          "type": "integer",
+          "minimum": 1
+        },
+        "limit_operations": {
+          "type": "integer",
+          "minimum": 1
+        }
+      },
+      "required": []
+    },
+    "SyncError": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "code": {
+          "enum": [
+            "unauthorized",
+            "forbidden",
+            "not_found",
+            "sync_epoch_changed",
+            "sync_reconciliation_required",
+            "sync_cursor_expired",
+            "snapshot_expired",
+            "invalid_sync_token",
+            "invalid_request",
+            "request_too_large",
+            "rate_limited",
+            "service_unavailable"
+          ]
+        },
+        "message": {
+          "type": "string",
+          "minLength": 1
+        },
+        "details": {
+          "$ref": "#/$defs/SyncErrorDetails"
+        },
+        "request_id": {
+          "$ref": "common.schema.json#/$defs/Uuid"
+        }
+      },
+      "required": [
+        "code",
+        "message",
+        "details",
+        "request_id"
+      ],
+      "allOf": [
+        {
+          "if": {
+            "properties": {
+              "code": {
+                "const": "sync_epoch_changed"
+              }
+            }
+          },
+          "then": {
+            "properties": {
+              "details": {
+                "required": [
+                  "current_sync_epoch",
+                  "requested_sync_epoch",
+                  "recovery_required"
+                ],
+                "properties": {
+                  "recovery_required": {
+                    "const": "epoch_recovery"
+                  }
+                }
+              }
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "code": {
+                "enum": [
+                  "sync_reconciliation_required",
+                  "sync_cursor_expired"
+                ]
+              }
+            }
+          },
+          "then": {
+            "properties": {
+              "details": {
+                "required": [
+                  "current_sync_epoch",
+                  "recovery_required"
+                ],
+                "properties": {
+                  "recovery_required": {
+                    "const": "full_snapshot"
+                  }
+                }
+              }
+            }
+          }
+        }
+      ]
+    },
+    "HttpStep": {
+      "oneOf": [
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "kind": {
+              "const": "http"
+            },
+            "label": {
+              "type": "string",
+              "minLength": 1
+            },
+            "endpoint": {
+              "const": "push"
+            },
+            "account": {
+              "$ref": "common.schema.json#/$defs/Uuid"
+            },
+            "session_generation": {
+              "type": "integer",
+              "minimum": 1
+            },
+            "request": {
+              "$ref": "#/$defs/PushRequest"
+            },
+            "expected_status": {
+              "const": 200
+            },
+            "response": {
+              "$ref": "#/$defs/PushResponse"
+            },
+            "delivery": {
+              "enum": [
+                "received",
+                "lost"
+              ]
+            },
+            "expected_behavior": {
+              "type": "array",
+              "items": {
+                "type": "string",
+                "minLength": 1
+              },
+              "minItems": 1
+            }
+          },
+          "required": [
+            "kind",
+            "label",
+            "endpoint",
+            "account",
+            "session_generation",
+            "request",
+            "expected_status",
+            "response",
+            "delivery",
+            "expected_behavior"
+          ]
+        },
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "kind": {
+              "const": "http"
+            },
+            "label": {
+              "type": "string",
+              "minLength": 1
+            },
+            "endpoint": {
+              "const": "push"
+            },
+            "account": {
+              "$ref": "common.schema.json#/$defs/Uuid"
+            },
+            "session_generation": {
+              "type": "integer",
+              "minimum": 1
+            },
+            "request": {
+              "$ref": "#/$defs/PushRequest"
+            },
+            "expected_status": {
+              "enum": [
+                401,
+                403,
+                404,
+                409,
+                410,
+                413,
+                422,
+                429,
+                503
+              ]
+            },
+            "response": {
+              "$ref": "#/$defs/SyncError"
+            },
+            "delivery": {
+              "enum": [
+                "received",
+                "lost"
+              ]
+            },
+            "expected_behavior": {
+              "type": "array",
+              "items": {
+                "type": "string",
+                "minLength": 1
+              },
+              "minItems": 1
+            }
+          },
+          "required": [
+            "kind",
+            "label",
+            "endpoint",
+            "account",
+            "session_generation",
+            "request",
+            "expected_status",
+            "response",
+            "delivery",
+            "expected_behavior"
+          ]
+        },
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "kind": {
+              "const": "http"
+            },
+            "label": {
+              "type": "string",
+              "minLength": 1
+            },
+            "endpoint": {
+              "const": "pull"
+            },
+            "account": {
+              "$ref": "common.schema.json#/$defs/Uuid"
+            },
+            "session_generation": {
+              "type": "integer",
+              "minimum": 1
+            },
+            "request": {
+              "$ref": "#/$defs/PullRequest"
+            },
+            "expected_status": {
+              "const": 200
+            },
+            "response": {
+              "$ref": "#/$defs/PullResponse"
+            },
+            "delivery": {
+              "enum": [
+                "received",
+                "lost"
+              ]
+            },
+            "expected_behavior": {
+              "type": "array",
+              "items": {
+                "type": "string",
+                "minLength": 1
+              },
+              "minItems": 1
+            }
+          },
+          "required": [
+            "kind",
+            "label",
+            "endpoint",
+            "account",
+            "session_generation",
+            "request",
+            "expected_status",
+            "response",
+            "delivery",
+            "expected_behavior"
+          ]
+        },
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "kind": {
+              "const": "http"
+            },
+            "label": {
+              "type": "string",
+              "minLength": 1
+            },
+            "endpoint": {
+              "const": "pull"
+            },
+            "account": {
+              "$ref": "common.schema.json#/$defs/Uuid"
+            },
+            "session_generation": {
+              "type": "integer",
+              "minimum": 1
+            },
+            "request": {
+              "$ref": "#/$defs/PullRequest"
+            },
+            "expected_status": {
+              "enum": [
+                401,
+                403,
+                404,
+                409,
+                410,
+                413,
+                422,
+                429,
+                503
+              ]
+            },
+            "response": {
+              "$ref": "#/$defs/SyncError"
+            },
+            "delivery": {
+              "enum": [
+                "received",
+                "lost"
+              ]
+            },
+            "expected_behavior": {
+              "type": "array",
+              "items": {
+                "type": "string",
+                "minLength": 1
+              },
+              "minItems": 1
+            }
+          },
+          "required": [
+            "kind",
+            "label",
+            "endpoint",
+            "account",
+            "session_generation",
+            "request",
+            "expected_status",
+            "response",
+            "delivery",
+            "expected_behavior"
+          ]
+        }
+      ]
+    },
+    "ClientStep": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "kind": {
+          "const": "client"
+        },
+        "label": {
+          "type": "string",
+          "minLength": 1
+        },
+        "action": {
+          "enum": [
+            "switch_account",
+            "bind_guest",
+            "preserve_outbox",
+            "compare_snapshot",
+            "confirm_recovery",
+            "discard_stale_response"
+          ]
+        },
+        "active_account": {
+          "anyOf": [
+            {
+              "$ref": "common.schema.json#/$defs/Uuid"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "session_generation": {
+          "type": "integer",
+          "minimum": 1
+        },
+        "expected_behavior": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "minLength": 1
+          },
+          "minItems": 1
+        }
+      },
+      "required": [
+        "kind",
+        "label",
+        "action",
+        "active_account",
+        "session_generation",
+        "expected_behavior"
+      ]
+    },
+    "Scenario": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "scenario_id": {
+          "type": "string",
+          "pattern": "^[a-z][a-z0-9_]+$"
+        },
+        "purpose": {
+          "type": "string",
+          "minLength": 1
+        },
+        "test_stage": {
+          "const": "E4"
+        },
+        "execution": {
+          "const": "contract_fixture_only"
+        },
+        "preconditions": {
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "server_time": {
+              "$ref": "common.schema.json#/$defs/Timestamp"
+            },
+            "sync_epoch": {
+              "$ref": "common.schema.json#/$defs/Uuid"
+            },
+            "account_ids": {
+              "type": "array",
+              "items": {
+                "$ref": "common.schema.json#/$defs/Uuid"
+              },
+              "minItems": 1,
+              "uniqueItems": true
+            },
+            "checkpoint_issued_at": {
+              "anyOf": [
+                {
+                  "$ref": "common.schema.json#/$defs/Timestamp"
+                },
+                {
+                  "type": "null"
+                }
+              ]
+            },
+            "facts": {
+              "type": "array",
+              "items": {
+                "type": "string",
+                "minLength": 1
+              },
+              "minItems": 1
+            }
+          },
+          "required": [
+            "server_time",
+            "sync_epoch",
+            "account_ids",
+            "checkpoint_issued_at",
+            "facts"
+          ]
+        },
+        "steps": {
+          "type": "array",
+          "items": {
+            "oneOf": [
+              {
+                "$ref": "#/$defs/HttpStep"
+              },
+              {
+                "$ref": "#/$defs/ClientStep"
+              }
+            ]
+          },
+          "minItems": 1
+        },
+        "expected_future_behavior": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "minLength": 1
+          },
+          "minItems": 1
+        }
+      },
+      "required": [
+        "scenario_id",
+        "purpose",
+        "test_stage",
+        "execution",
+        "preconditions",
+        "steps",
+        "expected_future_behavior"
+      ]
+    },
+    "OperationReceipt": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "source_epoch": {
+          "$ref": "common.schema.json#/$defs/Uuid"
+        },
+        "operation_id": {
+          "$ref": "common.schema.json#/$defs/Uuid"
+        },
+        "entity_id": {
+          "$ref": "common.schema.json#/$defs/Uuid"
+        },
+        "status": {
+          "enum": [
+            "accepted",
+            "conflict",
+            "rejected"
+          ]
+        },
+        "revision": {
+          "anyOf": [
+            {
+              "$ref": "common.schema.json#/$defs/Revision"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "code": {
+          "anyOf": [
+            {
+              "type": "string",
+              "minLength": 1
+            },
+            {
+              "type": "null"
+            }
+          ]
+        }
+      },
+      "required": [
+        "source_epoch",
+        "operation_id",
+        "entity_id",
+        "status",
+        "revision",
+        "code"
+      ],
+      "oneOf": [
+        {
+          "properties": {
+            "status": {
+              "const": "accepted"
+            },
+            "revision": {
+              "$ref": "common.schema.json#/$defs/Revision"
+            },
+            "code": {
+              "type": "null"
+            }
+          }
+        },
+        {
+          "properties": {
+            "status": {
+              "enum": [
+                "conflict",
+                "rejected"
+              ]
+            },
+            "revision": {
+              "type": "null"
+            },
+            "code": {
+              "type": "string",
+              "minLength": 1
+            }
+          }
+        }
+      ]
+    }
+  }
+}
