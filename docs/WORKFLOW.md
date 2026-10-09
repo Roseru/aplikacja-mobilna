@@ -1,6 +1,6 @@
 # Workflow pracy i dostarczania zmian - osoba 2
 
-Status: ustalony proces dla zespołu, 9 października 2026 r. Realizujemy [plan Osoby 2](PLAN_PRAC.md) według [architektury](ARCHITEKTURA.md). Ten plik opisuje workflow pracy oraz wymagania CI/CD. Pliki wykonywalne GitHub Actions i ochrona gałęzi są zadaniem E1 Osoby 3; ich działania nie deklarujemy przed uruchomieniem repozytorium z kodem i sprawdzeń na GitHubie.
+Status: ustalony proces dla zespołu, 9 października 2026 r. Realizujemy [plan Osoby 2](PLAN_PRAC.md) według [architektury](ARCHITEKTURA.md). E1 dostarcza wykonywalny [workflow backendu](../.github/workflows/backend.yml); jego rzeczywisty wynik określa [raport E1](e1/RAPORT_E1.md). O3 potwierdza ochronę gałęzi i rozszerza CI o Androida oraz wdrożenie.
 
 ## 1. Przepływ pojedynczego zadania
 
