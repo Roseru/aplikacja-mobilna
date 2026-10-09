@@ -1,6 +1,6 @@
 # Plan prac - osoba 2
 
-Data: 9 października 2026 r. Plan dotyczy implementacji [wymagań](../WYMAGANIA_PROJEKTOWE.md) według [architektury](ARCHITEKTURA.md). Repozytorium zawiera dokumentację i [artefakty E0 z walidatorem](../contracts/README.md); wynik kontroli określa [raport odbioru](e0/ODBIOR.md). Nie oznacza to rozpoczęcia E1. Nie podajemy terminu końcowego bez pomiaru czasu pierwszych zadań i dostępności trzech osób.
+Data: 9 października 2026 r. Plan dotyczy implementacji [wymagań](../WYMAGANIA_PROJEKTOWE.md) według [architektury](ARCHITEKTURA.md). Repozytorium zawiera [odebrane E0](e0/ODBIOR.md) i fundament backendu E1; wyniki jego odbioru określa [raport E1](e1/RAPORT_E1.md). Nie podajemy terminu końcowego bez pomiaru czasu pierwszych zadań i dostępności trzech osób.
 
 ## 1. Etapy i warunki zakończenia
 
