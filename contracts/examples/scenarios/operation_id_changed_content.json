@@ -1,0 +1,72 @@
+{
+  "scenario_id": "operation_id_changed_content",
+  "purpose": "Zmieniona treść pod przyjętym operation_id.",
+  "test_stage": "E4",
+  "execution": "contract_fixture_only",
+  "preconditions": {
+    "server_time": "2026-10-09T12:00:00Z",
+    "sync_epoch": "00000000-0000-4000-8000-000000000064",
+    "account_ids": [
+      "00000000-0000-4000-8000-000000000001"
+    ],
+    "checkpoint_issued_at": "2026-10-09T11:00:00Z",
+    "facts": [
+      "Operacja 300 została przyjęta z masą 80 i rewizją 1."
+    ]
+  },
+  "steps": [
+    {
+      "kind": "http",
+      "label": "Ten sam ID, zmieniona masa",
+      "endpoint": "push",
+      "account": "00000000-0000-4000-8000-000000000001",
+      "session_generation": 1,
+      "request": {
+        "protocol_version": 1,
+        "sync_epoch": "00000000-0000-4000-8000-000000000064",
+        "checkpoint": "checkpoint-demo-A-E100",
+        "operations": [
+          {
+            "operation_id": "00000000-0000-4000-8000-00000000012c",
+            "entity_type": "weight",
+            "entity_id": "00000000-0000-4000-8000-0000000000c8",
+            "action": "upsert",
+            "base_revision": null,
+            "sync_epoch": "00000000-0000-4000-8000-000000000064",
+            "payload": {
+              "weight_kg": "81",
+              "occurred_at": "2026-10-09T06:00:00Z",
+              "time_zone": "Europe/Warsaw",
+              "local_date": "2026-10-09"
+            }
+          }
+        ]
+      },
+      "expected_status": 200,
+      "response": {
+        "sync_epoch": "00000000-0000-4000-8000-000000000064",
+        "server_time": "2026-10-09T12:00:00Z",
+        "results": [
+          {
+            "operation_id": "00000000-0000-4000-8000-00000000012c",
+            "entity_id": "00000000-0000-4000-8000-0000000000c8",
+            "status": "rejected",
+            "code": "operation_id_reused",
+            "message": "Oczekiwany wynik operacji w przyszłym serwerze.",
+            "current": null,
+            "recovery_mapping": null,
+            "details_retained": true
+          }
+        ]
+      },
+      "delivery": "received",
+      "expected_behavior": [
+        "Zachowaj lokalne dane i zastosuj wyłącznie potwierdzony wynik we właściwym zakresie konta."
+      ]
+    }
+  ],
+  "expected_future_behavior": [
+    "Serwer nie nadpisuje wpisu ani pierwotnego potwierdzenia.",
+    "Nowa decyzja wymaga nowego ID i aktualnej base_revision."
+  ]
+}

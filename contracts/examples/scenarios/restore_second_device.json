@@ -1,0 +1,155 @@
+{
+  "scenario_id": "restore_second_device",
+  "purpose": "Dwa urządzenia odzyskują to samo źródło.",
+  "test_stage": "E4",
+  "execution": "contract_fixture_only",
+  "preconditions": {
+    "server_time": "2026-10-09T12:00:00Z",
+    "sync_epoch": "00000000-0000-4000-8000-000000000064",
+    "account_ids": [
+      "00000000-0000-4000-8000-000000000001"
+    ],
+    "checkpoint_issued_at": "2026-10-09T11:00:00Z",
+    "facts": [
+      "Mapowanie starego źródła do UUID 201 już istnieje z masą 80.",
+      "Drugie urządzenie proponuje UUID 202; użytkownik potwierdził odzyskanie."
+    ]
+  },
+  "steps": [
+    {
+      "kind": "http",
+      "label": "Równoważna treść innego urządzenia",
+      "endpoint": "push",
+      "account": "00000000-0000-4000-8000-000000000001",
+      "session_generation": 1,
+      "request": {
+        "protocol_version": 1,
+        "sync_epoch": "00000000-0000-4000-8000-000000000064",
+        "checkpoint": "checkpoint-demo-A-E100",
+        "operations": [
+          {
+            "operation_id": "00000000-0000-4000-8000-00000000012e",
+            "entity_type": "weight",
+            "entity_id": "00000000-0000-4000-8000-0000000000ca",
+            "action": "upsert",
+            "base_revision": null,
+            "sync_epoch": "00000000-0000-4000-8000-000000000064",
+            "payload": {
+              "weight_kg": "80",
+              "occurred_at": "2026-10-09T06:00:00Z",
+              "time_zone": "Europe/Warsaw",
+              "local_date": "2026-10-09"
+            },
+            "recovery": {
+              "source_epoch": "00000000-0000-4000-8000-000000000063",
+              "source_entity_id": "00000000-0000-4000-8000-0000000000c8",
+              "source_revision": 1,
+              "source_operation_id": "00000000-0000-4000-8000-00000000012c",
+              "decision": "recreate_missing"
+            }
+          }
+        ]
+      },
+      "expected_status": 200,
+      "response": {
+        "sync_epoch": "00000000-0000-4000-8000-000000000064",
+        "server_time": "2026-10-09T12:00:00Z",
+        "results": [
+          {
+            "operation_id": "00000000-0000-4000-8000-00000000012e",
+            "entity_id": "00000000-0000-4000-8000-0000000000ca",
+            "status": "already_applied",
+            "revision": 1,
+            "recovery_mapping": {
+              "source_epoch": "00000000-0000-4000-8000-000000000063",
+              "source_entity_id": "00000000-0000-4000-8000-0000000000c8",
+              "target_entity_id": "00000000-0000-4000-8000-0000000000c9",
+              "target_revision": 1
+            }
+          }
+        ]
+      },
+      "delivery": "received",
+      "expected_behavior": [
+        "Zachowaj lokalne dane i zastosuj wyłącznie potwierdzony wynik we właściwym zakresie konta."
+      ]
+    },
+    {
+      "kind": "http",
+      "label": "Inna treść nie nadpisuje mapowania",
+      "endpoint": "push",
+      "account": "00000000-0000-4000-8000-000000000001",
+      "session_generation": 1,
+      "request": {
+        "protocol_version": 1,
+        "sync_epoch": "00000000-0000-4000-8000-000000000064",
+        "checkpoint": "checkpoint-demo-A-E100",
+        "operations": [
+          {
+            "operation_id": "00000000-0000-4000-8000-00000000012f",
+            "entity_type": "weight",
+            "entity_id": "00000000-0000-4000-8000-0000000000cb",
+            "action": "upsert",
+            "base_revision": null,
+            "sync_epoch": "00000000-0000-4000-8000-000000000064",
+            "payload": {
+              "weight_kg": "81",
+              "occurred_at": "2026-10-09T06:00:00Z",
+              "time_zone": "Europe/Warsaw",
+              "local_date": "2026-10-09"
+            },
+            "recovery": {
+              "source_epoch": "00000000-0000-4000-8000-000000000063",
+              "source_entity_id": "00000000-0000-4000-8000-0000000000c8",
+              "source_revision": 1,
+              "source_operation_id": "00000000-0000-4000-8000-00000000012c",
+              "decision": "recreate_missing"
+            }
+          }
+        ]
+      },
+      "expected_status": 200,
+      "response": {
+        "sync_epoch": "00000000-0000-4000-8000-000000000064",
+        "server_time": "2026-10-09T12:00:00Z",
+        "results": [
+          {
+            "operation_id": "00000000-0000-4000-8000-00000000012f",
+            "entity_id": "00000000-0000-4000-8000-0000000000cb",
+            "status": "conflict",
+            "code": "recovery_content_conflict",
+            "message": "Oczekiwany wynik operacji w przyszłym serwerze.",
+            "current": {
+              "entity_type": "weight",
+              "entity_id": "00000000-0000-4000-8000-0000000000c9",
+              "revision": 1,
+              "deleted": false,
+              "payload": {
+                "weight_kg": "80",
+                "occurred_at": "2026-10-09T06:00:00Z",
+                "time_zone": "Europe/Warsaw",
+                "local_date": "2026-10-09"
+              }
+            },
+            "recovery_mapping": {
+              "source_epoch": "00000000-0000-4000-8000-000000000063",
+              "source_entity_id": "00000000-0000-4000-8000-0000000000c8",
+              "target_entity_id": "00000000-0000-4000-8000-0000000000c9",
+              "target_revision": 1
+            },
+            "details_retained": true
+          }
+        ]
+      },
+      "delivery": "received",
+      "expected_behavior": [
+        "Zachowaj lokalne dane i zastosuj wyłącznie potwierdzony wynik we właściwym zakresie konta."
+      ]
+    }
+  ],
+  "expected_future_behavior": [
+    "Unikalne przypisanie źródła prowadzi oba urządzenia do UUID 201; nie powstają UUID 202/203.",
+    "Różnica treści pozostaje konfliktem wymagającym decyzji.",
+    "W E4 uruchomić też równoległe transakcje obu urządzeń z barierą przed zapisem mapowania; UNIQUE zapewnia dokładnie jeden rekord."
+  ]
+}

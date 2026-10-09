@@ -1,0 +1,1318 @@
+{
+  "version": 1,
+  "examples": [
+    {
+      "id": "profile",
+      "purpose": "Przykład struktury Profile; dane demonstracyjne",
+      "path": "valid/profile.json",
+      "schema": "../schemas/domain.schema.json#/$defs/Profile",
+      "local": {
+        "result": "valid"
+      },
+      "server": {
+        "result": "not_executed",
+        "stage": "E3",
+        "expected_result": "Struktura poprawnego komunikatu HTTP; przetworzenie zależy od stanu konta i preconditions przyszłego testu."
+      },
+      "detection_layer": "schema_and_fixture_semantics"
+    },
+    {
+      "id": "goal",
+      "purpose": "Przykład struktury Goal; dane demonstracyjne",
+      "path": "valid/goal.json",
+      "schema": "../schemas/domain.schema.json#/$defs/Goal",
+      "local": {
+        "result": "valid"
+      },
+      "server": {
+        "result": "not_executed",
+        "stage": "E3",
+        "expected_result": "Struktura poprawnego komunikatu HTTP; przetworzenie zależy od stanu konta i preconditions przyszłego testu."
+      },
+      "detection_layer": "schema_and_fixture_semantics"
+    },
+    {
+      "id": "meal",
+      "purpose": "Przykład struktury Meal; dane demonstracyjne",
+      "path": "valid/meal.json",
+      "schema": "../schemas/domain.schema.json#/$defs/Meal",
+      "local": {
+        "result": "valid"
+      },
+      "server": {
+        "result": "not_executed",
+        "stage": "E3",
+        "expected_result": "Struktura poprawnego komunikatu HTTP; przetworzenie zależy od stanu konta i preconditions przyszłego testu."
+      },
+      "detection_layer": "schema_and_fixture_semantics"
+    },
+    {
+      "id": "weight",
+      "purpose": "Przykład struktury Weight; dane demonstracyjne",
+      "path": "valid/weight.json",
+      "schema": "../schemas/domain.schema.json#/$defs/Weight",
+      "local": {
+        "result": "valid"
+      },
+      "server": {
+        "result": "not_executed",
+        "stage": "E3",
+        "expected_result": "Struktura poprawnego komunikatu HTTP; przetworzenie zależy od stanu konta i preconditions przyszłego testu."
+      },
+      "detection_layer": "schema_and_fixture_semantics"
+    },
+    {
+      "id": "diary-day",
+      "purpose": "Przykład struktury DiaryDay; dane demonstracyjne",
+      "path": "valid/diary-day.json",
+      "schema": "../schemas/domain.schema.json#/$defs/DiaryDay",
+      "local": {
+        "result": "valid"
+      },
+      "server": {
+        "result": "not_executed",
+        "stage": "E3",
+        "expected_result": "Struktura poprawnego komunikatu HTTP; przetworzenie zależy od stanu konta i preconditions przyszłego testu."
+      },
+      "detection_layer": "schema_and_fixture_semantics"
+    },
+    {
+      "id": "product-draft",
+      "purpose": "Przykład struktury ProductDraft; dane demonstracyjne",
+      "path": "valid/product-draft.json",
+      "schema": "../schemas/domain.schema.json#/$defs/ProductDraft",
+      "local": {
+        "result": "valid"
+      },
+      "server": {
+        "result": "not_executed",
+        "stage": "E3",
+        "expected_result": "Struktura poprawnego komunikatu HTTP; przetworzenie zależy od stanu konta i preconditions przyszłego testu."
+      },
+      "detection_layer": "schema_and_fixture_semantics"
+    },
+    {
+      "id": "estimate-input",
+      "purpose": "Przykład struktury EstimateInput; dane demonstracyjne",
+      "path": "valid/estimate-input.json",
+      "schema": "../schemas/domain.schema.json#/$defs/EstimateInput",
+      "local": {
+        "result": "valid"
+      },
+      "server": {
+        "result": "not_executed",
+        "stage": "E3",
+        "expected_result": "Struktura poprawnego komunikatu HTTP; przetworzenie zależy od stanu konta i preconditions przyszłego testu."
+      },
+      "detection_layer": "schema_and_fixture_semantics"
+    },
+    {
+      "id": "estimate",
+      "purpose": "Przykład struktury Estimate; dane demonstracyjne",
+      "path": "valid/estimate.json",
+      "schema": "../schemas/domain.schema.json#/$defs/Estimate",
+      "local": {
+        "result": "valid"
+      },
+      "server": {
+        "result": "not_executed",
+        "stage": "E3",
+        "expected_result": "Struktura poprawnego komunikatu HTTP; przetworzenie zależy od stanu konta i preconditions przyszłego testu."
+      },
+      "detection_layer": "schema_and_fixture_semantics"
+    },
+    {
+      "id": "consent-input",
+      "purpose": "Przykład struktury ConsentInput; dane demonstracyjne",
+      "path": "valid/consent-input.json",
+      "schema": "../schemas/domain.schema.json#/$defs/ConsentInput",
+      "local": {
+        "result": "valid"
+      },
+      "server": {
+        "result": "not_executed",
+        "stage": "E3",
+        "expected_result": "Struktura poprawnego komunikatu HTTP; przetworzenie zależy od stanu konta i preconditions przyszłego testu."
+      },
+      "detection_layer": "schema_and_fixture_semantics"
+    },
+    {
+      "id": "consent",
+      "purpose": "Przykład struktury Consent; dane demonstracyjne",
+      "path": "valid/consent.json",
+      "schema": "../schemas/domain.schema.json#/$defs/Consent",
+      "local": {
+        "result": "valid"
+      },
+      "server": {
+        "result": "not_executed",
+        "stage": "E3",
+        "expected_result": "Struktura poprawnego komunikatu HTTP; przetworzenie zależy od stanu konta i preconditions przyszłego testu."
+      },
+      "detection_layer": "schema_and_fixture_semantics"
+    },
+    {
+      "id": "bootstrap",
+      "purpose": "Przykład struktury Bootstrap; dane demonstracyjne",
+      "path": "valid/bootstrap.json",
+      "schema": "../schemas/domain.schema.json#/$defs/Bootstrap",
+      "local": {
+        "result": "valid"
+      },
+      "server": {
+        "result": "not_executed",
+        "stage": "E3",
+        "expected_result": "Struktura poprawnego komunikatu HTTP; przetworzenie zależy od stanu konta i preconditions przyszłego testu."
+      },
+      "detection_layer": "schema_and_fixture_semantics"
+    },
+    {
+      "id": "profile-read",
+      "purpose": "Przykład struktury ProfileRead; dane demonstracyjne",
+      "path": "valid/profile-read.json",
+      "schema": "../schemas/domain.schema.json#/$defs/ProfileRead",
+      "local": {
+        "result": "valid"
+      },
+      "server": {
+        "result": "not_executed",
+        "stage": "E3",
+        "expected_result": "Struktura poprawnego komunikatu HTTP; przetworzenie zależy od stanu konta i preconditions przyszłego testu."
+      },
+      "detection_layer": "schema_and_fixture_semantics"
+    },
+    {
+      "id": "decimal-number",
+      "purpose": "Odrzucenie: type",
+      "path": "invalid/decimal-number.json",
+      "schema": "../schemas/domain.schema.json#/$defs/Weight",
+      "local": {
+        "result": "invalid",
+        "layer": "schema",
+        "reason": "type"
+      },
+      "server": {
+        "result": "not_executed",
+        "stage": "E3",
+        "expected_result": "Odrzucenie niepoprawnego wejścia przed mutacją; dokładny status zależy od kontenera żądania."
+      },
+      "detection_layer": "schema"
+    },
+    {
+      "id": "decimal-zero-quantity",
+      "purpose": "Odrzucenie: not",
+      "path": "invalid/decimal-zero-quantity.json",
+      "schema": "../schemas/domain.schema.json#/$defs/Meal",
+      "local": {
+        "result": "invalid",
+        "layer": "schema",
+        "reason": "not"
+      },
+      "server": {
+        "result": "not_executed",
+        "stage": "E3",
+        "expected_result": "Odrzucenie niepoprawnego wejścia przed mutacją; dokładny status zależy od kontenera żądania."
+      },
+      "detection_layer": "schema"
+    },
+    {
+      "id": "invalid-date",
+      "purpose": "Odrzucenie: format",
+      "path": "invalid/invalid-date.json",
+      "schema": "../schemas/domain.schema.json#/$defs/Weight",
+      "local": {
+        "result": "invalid",
+        "layer": "schema",
+        "reason": "format"
+      },
+      "server": {
+        "result": "not_executed",
+        "stage": "E3",
+        "expected_result": "Odrzucenie niepoprawnego wejścia przed mutacją; dokładny status zależy od kontenera żądania."
+      },
+      "detection_layer": "schema"
+    },
+    {
+      "id": "invalid-uuid",
+      "purpose": "Odrzucenie: format",
+      "path": "invalid/invalid-uuid.json",
+      "schema": "../schemas/domain.schema.json#/$defs/Meal",
+      "local": {
+        "result": "invalid",
+        "layer": "schema",
+        "reason": "format"
+      },
+      "server": {
+        "result": "not_executed",
+        "stage": "E3",
+        "expected_result": "Odrzucenie niepoprawnego wejścia przed mutacją; dokładny status zależy od kontenera żądania."
+      },
+      "detection_layer": "schema"
+    },
+    {
+      "id": "unknown-timezone",
+      "purpose": "Odrzucenie: format",
+      "path": "invalid/unknown-timezone.json",
+      "schema": "../schemas/domain.schema.json#/$defs/Profile",
+      "local": {
+        "result": "invalid",
+        "layer": "schema",
+        "reason": "format"
+      },
+      "server": {
+        "result": "not_executed",
+        "stage": "E3",
+        "expected_result": "Odrzucenie niepoprawnego wejścia przed mutacją; dokładny status zależy od kontenera żądania."
+      },
+      "detection_layer": "schema"
+    },
+    {
+      "id": "missing-density",
+      "purpose": "Odrzucenie: density_required",
+      "path": "invalid/missing-density.json",
+      "schema": "../schemas/domain.schema.json#/$defs/Meal",
+      "local": {
+        "result": "invalid",
+        "layer": "semantic",
+        "reason": "density_required"
+      },
+      "server": {
+        "result": "not_executed",
+        "stage": "E3",
+        "expected_result": "Odrzucenie niepoprawnego wejścia przed mutacją; dokładny status zależy od kontenera żądania."
+      },
+      "detection_layer": "semantic"
+    },
+    {
+      "id": "local-date-mismatch",
+      "purpose": "Odrzucenie: local_date_mismatch",
+      "path": "invalid/local-date-mismatch.json",
+      "schema": "../schemas/domain.schema.json#/$defs/Meal",
+      "local": {
+        "result": "invalid",
+        "layer": "semantic",
+        "reason": "local_date_mismatch"
+      },
+      "server": {
+        "result": "not_executed",
+        "stage": "E3",
+        "expected_result": "Odrzucenie niepoprawnego wejścia przed mutacją; dokładny status zależy od kontenera żądania."
+      },
+      "detection_layer": "semantic"
+    },
+    {
+      "id": "duplicate-meal-item",
+      "purpose": "Odrzucenie: duplicate_item",
+      "path": "invalid/duplicate-meal-item.json",
+      "schema": "../schemas/domain.schema.json#/$defs/Meal",
+      "local": {
+        "result": "invalid",
+        "layer": "semantic",
+        "reason": "duplicate_item"
+      },
+      "server": {
+        "result": "not_executed",
+        "stage": "E3",
+        "expected_result": "Odrzucenie niepoprawnego wejścia przed mutacją; dokładny status zależy od kontenera żądania."
+      },
+      "detection_layer": "semantic"
+    },
+    {
+      "id": "missing-is-not-null",
+      "purpose": "Odrzucenie: required",
+      "path": "invalid/missing-is-not-null.json",
+      "schema": "../schemas/domain.schema.json#/$defs/Meal",
+      "local": {
+        "result": "invalid",
+        "layer": "schema",
+        "reason": "required"
+      },
+      "server": {
+        "result": "not_executed",
+        "stage": "E3",
+        "expected_result": "Odrzucenie niepoprawnego wejścia przed mutacją; dokładny status zależy od kontenera żądania."
+      },
+      "detection_layer": "schema"
+    },
+    {
+      "id": "goal-page",
+      "purpose": "Przykład HTTP GoalPage",
+      "path": "valid/goal-page.json",
+      "schema": "../schemas/domain.schema.json#/$defs/GoalPage",
+      "local": {
+        "result": "valid"
+      },
+      "server": {
+        "result": "not_executed",
+        "stage": "E3",
+        "expected_result": "Struktura poprawnego komunikatu HTTP; przetworzenie zależy od stanu konta i preconditions przyszłego testu."
+      },
+      "detection_layer": "schema_and_fixture_semantics"
+    },
+    {
+      "id": "meal-page",
+      "purpose": "Przykład HTTP MealPage",
+      "path": "valid/meal-page.json",
+      "schema": "../schemas/domain.schema.json#/$defs/MealPage",
+      "local": {
+        "result": "valid"
+      },
+      "server": {
+        "result": "not_executed",
+        "stage": "E3",
+        "expected_result": "Struktura poprawnego komunikatu HTTP; przetworzenie zależy od stanu konta i preconditions przyszłego testu."
+      },
+      "detection_layer": "schema_and_fixture_semantics"
+    },
+    {
+      "id": "weight-page",
+      "purpose": "Przykład HTTP WeightPage",
+      "path": "valid/weight-page.json",
+      "schema": "../schemas/domain.schema.json#/$defs/WeightPage",
+      "local": {
+        "result": "valid"
+      },
+      "server": {
+        "result": "not_executed",
+        "stage": "E3",
+        "expected_result": "Struktura poprawnego komunikatu HTTP; przetworzenie zależy od stanu konta i preconditions przyszłego testu."
+      },
+      "detection_layer": "schema_and_fixture_semantics"
+    },
+    {
+      "id": "diary-day-page",
+      "purpose": "Przykład HTTP DiaryDayPage",
+      "path": "valid/diary-day-page.json",
+      "schema": "../schemas/domain.schema.json#/$defs/DiaryDayPage",
+      "local": {
+        "result": "valid"
+      },
+      "server": {
+        "result": "not_executed",
+        "stage": "E3",
+        "expected_result": "Struktura poprawnego komunikatu HTTP; przetworzenie zależy od stanu konta i preconditions przyszłego testu."
+      },
+      "detection_layer": "schema_and_fixture_semantics"
+    },
+    {
+      "id": "product",
+      "purpose": "Przykład HTTP Product",
+      "path": "valid/product.json",
+      "schema": "../schemas/catalog.schema.json#/$defs/Product",
+      "local": {
+        "result": "valid"
+      },
+      "server": {
+        "result": "not_executed",
+        "stage": "E2",
+        "expected_result": "Nie dotyczy operacji serwera: walidacja pliku katalogu przed importem E2."
+      },
+      "detection_layer": "schema_and_fixture_semantics"
+    },
+    {
+      "id": "product-page",
+      "purpose": "Przykład HTTP ProductPage",
+      "path": "valid/product-page.json",
+      "schema": "../schemas/domain.schema.json#/$defs/ProductPage",
+      "local": {
+        "result": "valid"
+      },
+      "server": {
+        "result": "not_executed",
+        "stage": "E3",
+        "expected_result": "Struktura poprawnego komunikatu HTTP; przetworzenie zależy od stanu konta i preconditions przyszłego testu."
+      },
+      "detection_layer": "schema_and_fixture_semantics"
+    },
+    {
+      "id": "ration",
+      "purpose": "Przykład HTTP Ration",
+      "path": "valid/ration.json",
+      "schema": "../schemas/catalog.schema.json#/$defs/Ration",
+      "local": {
+        "result": "valid"
+      },
+      "server": {
+        "result": "not_executed",
+        "stage": "E2",
+        "expected_result": "Nie dotyczy operacji serwera: walidacja pliku katalogu przed importem E2."
+      },
+      "detection_layer": "schema_and_fixture_semantics"
+    },
+    {
+      "id": "ration-page",
+      "purpose": "Przykład HTTP RationPage",
+      "path": "valid/ration-page.json",
+      "schema": "../schemas/domain.schema.json#/$defs/RationPage",
+      "local": {
+        "result": "valid"
+      },
+      "server": {
+        "result": "not_executed",
+        "stage": "E3",
+        "expected_result": "Struktura poprawnego komunikatu HTTP; przetworzenie zależy od stanu konta i preconditions przyszłego testu."
+      },
+      "detection_layer": "schema_and_fixture_semantics"
+    },
+    {
+      "id": "error-401",
+      "purpose": "Przykład HTTP Error",
+      "path": "valid/error-401.json",
+      "schema": "../schemas/domain.schema.json#/$defs/Error",
+      "local": {
+        "result": "valid"
+      },
+      "server": {
+        "result": "not_executed",
+        "stage": "E3",
+        "expected_result": "Struktura poprawnego komunikatu HTTP; przetworzenie zależy od stanu konta i preconditions przyszłego testu."
+      },
+      "detection_layer": "schema_and_fixture_semantics"
+    },
+    {
+      "id": "error-403",
+      "purpose": "Przykład HTTP Error",
+      "path": "valid/error-403.json",
+      "schema": "../schemas/domain.schema.json#/$defs/Error",
+      "local": {
+        "result": "valid"
+      },
+      "server": {
+        "result": "not_executed",
+        "stage": "E3",
+        "expected_result": "Struktura poprawnego komunikatu HTTP; przetworzenie zależy od stanu konta i preconditions przyszłego testu."
+      },
+      "detection_layer": "schema_and_fixture_semantics"
+    },
+    {
+      "id": "error-404",
+      "purpose": "Przykład HTTP Error",
+      "path": "valid/error-404.json",
+      "schema": "../schemas/domain.schema.json#/$defs/Error",
+      "local": {
+        "result": "valid"
+      },
+      "server": {
+        "result": "not_executed",
+        "stage": "E3",
+        "expected_result": "Struktura poprawnego komunikatu HTTP; przetworzenie zależy od stanu konta i preconditions przyszłego testu."
+      },
+      "detection_layer": "schema_and_fixture_semantics"
+    },
+    {
+      "id": "error-409",
+      "purpose": "Przykład HTTP Error",
+      "path": "valid/error-409.json",
+      "schema": "../schemas/domain.schema.json#/$defs/Error",
+      "local": {
+        "result": "valid"
+      },
+      "server": {
+        "result": "not_executed",
+        "stage": "E3",
+        "expected_result": "Struktura poprawnego komunikatu HTTP; przetworzenie zależy od stanu konta i preconditions przyszłego testu."
+      },
+      "detection_layer": "schema_and_fixture_semantics"
+    },
+    {
+      "id": "error-410",
+      "purpose": "Przykład HTTP Error",
+      "path": "valid/error-410.json",
+      "schema": "../schemas/domain.schema.json#/$defs/Error",
+      "local": {
+        "result": "valid"
+      },
+      "server": {
+        "result": "not_executed",
+        "stage": "E3",
+        "expected_result": "Struktura poprawnego komunikatu HTTP; przetworzenie zależy od stanu konta i preconditions przyszłego testu."
+      },
+      "detection_layer": "schema_and_fixture_semantics"
+    },
+    {
+      "id": "error-413",
+      "purpose": "Przykład HTTP Error",
+      "path": "valid/error-413.json",
+      "schema": "../schemas/domain.schema.json#/$defs/Error",
+      "local": {
+        "result": "valid"
+      },
+      "server": {
+        "result": "not_executed",
+        "stage": "E3",
+        "expected_result": "Struktura poprawnego komunikatu HTTP; przetworzenie zależy od stanu konta i preconditions przyszłego testu."
+      },
+      "detection_layer": "schema_and_fixture_semantics"
+    },
+    {
+      "id": "error-422",
+      "purpose": "Przykład HTTP Error",
+      "path": "valid/error-422.json",
+      "schema": "../schemas/domain.schema.json#/$defs/Error",
+      "local": {
+        "result": "valid"
+      },
+      "server": {
+        "result": "not_executed",
+        "stage": "E3",
+        "expected_result": "Struktura poprawnego komunikatu HTTP; przetworzenie zależy od stanu konta i preconditions przyszłego testu."
+      },
+      "detection_layer": "schema_and_fixture_semantics"
+    },
+    {
+      "id": "error-429",
+      "purpose": "Przykład HTTP Error",
+      "path": "valid/error-429.json",
+      "schema": "../schemas/domain.schema.json#/$defs/Error",
+      "local": {
+        "result": "valid"
+      },
+      "server": {
+        "result": "not_executed",
+        "stage": "E3",
+        "expected_result": "Struktura poprawnego komunikatu HTTP; przetworzenie zależy od stanu konta i preconditions przyszłego testu."
+      },
+      "detection_layer": "schema_and_fixture_semantics"
+    },
+    {
+      "id": "error-503",
+      "purpose": "Przykład HTTP Error",
+      "path": "valid/error-503.json",
+      "schema": "../schemas/domain.schema.json#/$defs/Error",
+      "local": {
+        "result": "valid"
+      },
+      "server": {
+        "result": "not_executed",
+        "stage": "E3",
+        "expected_result": "Struktura poprawnego komunikatu HTTP; przetworzenie zależy od stanu konta i preconditions przyszłego testu."
+      },
+      "detection_layer": "schema_and_fixture_semantics"
+    },
+    {
+      "id": "sync_lost_response",
+      "purpose": "Utrata odpowiedzi po commit i ponowienie operacji.",
+      "path": "scenarios/lost_response.json",
+      "schema": "../schemas/sync.schema.json#/$defs/Scenario",
+      "local": {
+        "result": "valid"
+      },
+      "server": {
+        "result": "not_executed",
+        "stage": "E4",
+        "expected_result": "Oczekiwane statusy HTTP, wyniki operacji i zachowanie klienta w steps oraz expected_future_behavior scenariusza; jeszcze niewykonane."
+      },
+      "detection_layer": "schema_and_scenario_contract"
+    },
+    {
+      "id": "sync_operation_id_changed_content",
+      "purpose": "Zmieniona treść pod przyjętym operation_id.",
+      "path": "scenarios/operation_id_changed_content.json",
+      "schema": "../schemas/sync.schema.json#/$defs/Scenario",
+      "local": {
+        "result": "valid"
+      },
+      "server": {
+        "result": "not_executed",
+        "stage": "E4",
+        "expected_result": "Oczekiwane statusy HTTP, wyniki operacji i zachowanie klienta w steps oraz expected_future_behavior scenariusza; jeszcze niewykonane."
+      },
+      "detection_layer": "schema_and_scenario_contract"
+    },
+    {
+      "id": "sync_revision_conflict",
+      "purpose": "Edycja ze starą rewizją zachowuje obie wersje.",
+      "path": "scenarios/revision_conflict.json",
+      "schema": "../schemas/sync.schema.json#/$defs/Scenario",
+      "local": {
+        "result": "valid"
+      },
+      "server": {
+        "result": "not_executed",
+        "stage": "E4",
+        "expected_result": "Oczekiwane statusy HTTP, wyniki operacji i zachowanie klienta w steps oraz expected_future_behavior scenariusza; jeszcze niewykonane."
+      },
+      "detection_layer": "schema_and_scenario_contract"
+    },
+    {
+      "id": "sync_expired_session",
+      "purpose": "401 i wznowienie po ponownym logowaniu.",
+      "path": "scenarios/expired_session.json",
+      "schema": "../schemas/sync.schema.json#/$defs/Scenario",
+      "local": {
+        "result": "valid"
+      },
+      "server": {
+        "result": "not_executed",
+        "stage": "E4",
+        "expected_result": "Oczekiwane statusy HTTP, wyniki operacji i zachowanie klienta w steps oraz expected_future_behavior scenariusza; jeszcze niewykonane."
+      },
+      "detection_layer": "schema_and_scenario_contract"
+    },
+    {
+      "id": "sync_account_switch",
+      "purpose": "Spóźniona odpowiedź A po przełączeniu na B.",
+      "path": "scenarios/account_switch.json",
+      "schema": "../schemas/sync.schema.json#/$defs/Scenario",
+      "local": {
+        "result": "valid"
+      },
+      "server": {
+        "result": "not_executed",
+        "stage": "E4",
+        "expected_result": "Oczekiwane statusy HTTP, wyniki operacji i zachowanie klienta w steps oraz expected_future_behavior scenariusza; jeszcze niewykonane."
+      },
+      "detection_layer": "schema_and_scenario_contract"
+    },
+    {
+      "id": "sync_checkpoint_30_days",
+      "purpose": "Granica dokładnie 30 × 24 h jest włączona.",
+      "path": "scenarios/checkpoint_30_days.json",
+      "schema": "../schemas/sync.schema.json#/$defs/Scenario",
+      "local": {
+        "result": "valid"
+      },
+      "server": {
+        "result": "not_executed",
+        "stage": "E4",
+        "expected_result": "Oczekiwane statusy HTTP, wyniki operacji i zachowanie klienta w steps oraz expected_future_behavior scenariusza; jeszcze niewykonane."
+      },
+      "detection_layer": "schema_and_scenario_contract"
+    },
+    {
+      "id": "sync_checkpoint_30_days_plus_one",
+      "purpose": "Checkpoint starszy o 1 s wymaga pełnego uzgodnienia.",
+      "path": "scenarios/checkpoint_30_days_plus_one.json",
+      "schema": "../schemas/sync.schema.json#/$defs/Scenario",
+      "local": {
+        "result": "valid"
+      },
+      "server": {
+        "result": "not_executed",
+        "stage": "E4",
+        "expected_result": "Oczekiwane statusy HTTP, wyniki operacji i zachowanie klienta w steps oraz expected_future_behavior scenariusza; jeszcze niewykonane."
+      },
+      "detection_layer": "schema_and_scenario_contract"
+    },
+    {
+      "id": "sync_snapshot_expired",
+      "purpose": "Przerwane pobieranie snapshotu po 60 min.",
+      "path": "scenarios/snapshot_expired.json",
+      "schema": "../schemas/sync.schema.json#/$defs/Scenario",
+      "local": {
+        "result": "valid"
+      },
+      "server": {
+        "result": "not_executed",
+        "stage": "E4",
+        "expected_result": "Oczekiwane statusy HTTP, wyniki operacji i zachowanie klienta w steps oraz expected_future_behavior scenariusza; jeszcze niewykonane."
+      },
+      "detection_layer": "schema_and_scenario_contract"
+    },
+    {
+      "id": "sync_restore_missing_record",
+      "purpose": "Restore utracił wcześniej potwierdzony wpis; odzyskanie nowym UUID.",
+      "path": "scenarios/restore_missing_record.json",
+      "schema": "../schemas/sync.schema.json#/$defs/Scenario",
+      "local": {
+        "result": "valid"
+      },
+      "server": {
+        "result": "not_executed",
+        "stage": "E4",
+        "expected_result": "Oczekiwane statusy HTTP, wyniki operacji i zachowanie klienta w steps oraz expected_future_behavior scenariusza; jeszcze niewykonane."
+      },
+      "detection_layer": "schema_and_scenario_contract"
+    },
+    {
+      "id": "sync_restore_second_device",
+      "purpose": "Dwa urządzenia odzyskują to samo źródło.",
+      "path": "scenarios/restore_second_device.json",
+      "schema": "../schemas/sync.schema.json#/$defs/Scenario",
+      "local": {
+        "result": "valid"
+      },
+      "server": {
+        "result": "not_executed",
+        "stage": "E4",
+        "expected_result": "Oczekiwane statusy HTTP, wyniki operacji i zachowanie klienta w steps oraz expected_future_behavior scenariusza; jeszcze niewykonane."
+      },
+      "detection_layer": "schema_and_scenario_contract"
+    },
+    {
+      "id": "sync_restore_same_revision",
+      "purpose": "Ta sama rewizja z różnych epok nie dowodzi zgodności.",
+      "path": "scenarios/restore_same_revision.json",
+      "schema": "../schemas/sync.schema.json#/$defs/Scenario",
+      "local": {
+        "result": "valid"
+      },
+      "server": {
+        "result": "not_executed",
+        "stage": "E4",
+        "expected_result": "Oczekiwane statusy HTTP, wyniki operacji i zachowanie klienta w steps oraz expected_future_behavior scenariusza; jeszcze niewykonane."
+      },
+      "detection_layer": "schema_and_scenario_contract"
+    },
+    {
+      "id": "sync_guest_unknown_epoch",
+      "purpose": "Świadomy import starej historii gościa bez znanej epoki.",
+      "path": "scenarios/guest_unknown_epoch.json",
+      "schema": "../schemas/sync.schema.json#/$defs/Scenario",
+      "local": {
+        "result": "valid"
+      },
+      "server": {
+        "result": "not_executed",
+        "stage": "E4",
+        "expected_result": "Oczekiwane statusy HTTP, wyniki operacji i zachowanie klienta w steps oraz expected_future_behavior scenariusza; jeszcze niewykonane."
+      },
+      "detection_layer": "schema_and_scenario_contract"
+    },
+    {
+      "id": "sync_delete_and_stale_edit",
+      "purpose": "Usunięcie, tombstone i spóźniona edycja.",
+      "path": "scenarios/delete_and_stale_edit.json",
+      "schema": "../schemas/sync.schema.json#/$defs/Scenario",
+      "local": {
+        "result": "valid"
+      },
+      "server": {
+        "result": "not_executed",
+        "stage": "E4",
+        "expected_result": "Oczekiwane statusy HTTP, wyniki operacji i zachowanie klienta w steps oraz expected_future_behavior scenariusza; jeszcze niewykonane."
+      },
+      "detection_layer": "schema_and_scenario_contract"
+    },
+    {
+      "id": "sync_snapshot_pagination",
+      "purpose": "Checkpoint dopiero po ostatniej stronie snapshotu.",
+      "path": "scenarios/snapshot_pagination.json",
+      "schema": "../schemas/sync.schema.json#/$defs/Scenario",
+      "local": {
+        "result": "valid"
+      },
+      "server": {
+        "result": "not_executed",
+        "stage": "E4",
+        "expected_result": "Oczekiwane statusy HTTP, wyniki operacji i zachowanie klienta w steps oraz expected_future_behavior scenariusza; jeszcze niewykonane."
+      },
+      "detection_layer": "schema_and_scenario_contract"
+    },
+    {
+      "id": "sync_push_request",
+      "purpose": "Poprawny komunikat PushRequest",
+      "path": "valid/sync-push-request.json",
+      "schema": "../schemas/sync.schema.json#/$defs/PushRequest",
+      "local": {
+        "result": "valid"
+      },
+      "server": {
+        "result": "not_executed",
+        "stage": "E4",
+        "expected_result": "Struktura poprawnego komunikatu HTTP; przetworzenie zależy od stanu konta i preconditions przyszłego testu."
+      },
+      "detection_layer": "schema_and_semantic"
+    },
+    {
+      "id": "sync_push_response",
+      "purpose": "Poprawny komunikat PushResponse",
+      "path": "valid/sync-push-response.json",
+      "schema": "../schemas/sync.schema.json#/$defs/PushResponse",
+      "local": {
+        "result": "valid"
+      },
+      "server": {
+        "result": "not_executed",
+        "stage": "E4",
+        "expected_result": "Struktura poprawnego komunikatu HTTP; przetworzenie zależy od stanu konta i preconditions przyszłego testu."
+      },
+      "detection_layer": "schema_and_semantic"
+    },
+    {
+      "id": "sync_pull_response",
+      "purpose": "Poprawny komunikat PullResponse",
+      "path": "valid/sync-pull-response.json",
+      "schema": "../schemas/sync.schema.json#/$defs/PullResponse",
+      "local": {
+        "result": "valid"
+      },
+      "server": {
+        "result": "not_executed",
+        "stage": "E4",
+        "expected_result": "Struktura poprawnego komunikatu HTTP; przetworzenie zależy od stanu konta i preconditions przyszłego testu."
+      },
+      "detection_layer": "schema_and_semantic"
+    },
+    {
+      "id": "sync_error",
+      "purpose": "Błąd żądania sync sync_epoch_changed",
+      "path": "valid/sync-error.json",
+      "schema": "../schemas/sync.schema.json#/$defs/SyncError",
+      "local": {
+        "result": "valid"
+      },
+      "server": {
+        "result": "not_executed",
+        "stage": "E4",
+        "expected_result": "Struktura poprawnego komunikatu HTTP; przetworzenie zależy od stanu konta i preconditions przyszłego testu."
+      },
+      "detection_layer": "schema_and_semantic"
+    },
+    {
+      "id": "sync_expired",
+      "purpose": "Błąd żądania sync snapshot_expired",
+      "path": "valid/sync-expired.json",
+      "schema": "../schemas/sync.schema.json#/$defs/SyncError",
+      "local": {
+        "result": "valid"
+      },
+      "server": {
+        "result": "not_executed",
+        "stage": "E4",
+        "expected_result": "Struktura poprawnego komunikatu HTTP; przetworzenie zależy od stanu konta i preconditions przyszłego testu."
+      },
+      "detection_layer": "schema_and_semantic"
+    },
+    {
+      "id": "sync_minimal_receipts_after_61_days",
+      "purpose": "KO-19: ponowienie po 61 dniach korzysta z trwałych potwierdzeń po usunięciu szczegółów.",
+      "path": "scenarios/minimal_receipts_after_61_days.json",
+      "schema": "../schemas/sync.schema.json#/$defs/Scenario",
+      "local": {
+        "result": "valid"
+      },
+      "server": {
+        "result": "not_executed",
+        "stage": "E4",
+        "expected_result": "Oczekiwane statusy HTTP, wyniki operacji i zachowanie klienta w steps oraz expected_future_behavior scenariusza; jeszcze niewykonane."
+      },
+      "detection_layer": "schema_and_scenario_contract"
+    },
+    {
+      "id": "sync_goal_immutable_and_timeline",
+      "purpose": "Niezmienność wersji celu i konflikt równoległych decyzji o osi czasu.",
+      "path": "scenarios/goal_immutable_and_timeline.json",
+      "schema": "../schemas/sync.schema.json#/$defs/Scenario",
+      "local": {
+        "result": "valid"
+      },
+      "server": {
+        "result": "not_executed",
+        "stage": "E4",
+        "expected_result": "Oczekiwane statusy HTTP, wyniki operacji i zachowanie klienta w steps oraz expected_future_behavior scenariusza; jeszcze niewykonane."
+      },
+      "detection_layer": "schema_and_scenario_contract"
+    },
+    {
+      "id": "sync_invalid_mixed_epochs",
+      "purpose": "Odrzucenie lokalne: sync_mixed_epochs",
+      "path": "invalid/sync-mixed-epochs.json",
+      "schema": "../schemas/sync.schema.json#/$defs/PushRequest",
+      "local": {
+        "result": "invalid",
+        "layer": "semantic",
+        "reason": "sync_mixed_epochs"
+      },
+      "server": {
+        "result": "not_executed",
+        "stage": "E4",
+        "expected_result": "Odrzucenie niepoprawnego wejścia przed mutacją; dokładny status zależy od kontenera żądania."
+      },
+      "detection_layer": "semantic"
+    },
+    {
+      "id": "sync_invalid_duplicate_entity",
+      "purpose": "Odrzucenie lokalne: sync_duplicate_entity",
+      "path": "invalid/sync-duplicate-entity.json",
+      "schema": "../schemas/sync.schema.json#/$defs/PushRequest",
+      "local": {
+        "result": "invalid",
+        "layer": "semantic",
+        "reason": "sync_duplicate_entity"
+      },
+      "server": {
+        "result": "not_executed",
+        "stage": "E4",
+        "expected_result": "Odrzucenie niepoprawnego wejścia przed mutacją; dokładny status zależy od kontenera żądania."
+      },
+      "detection_layer": "semantic"
+    },
+    {
+      "id": "sync_invalid_wrong_payload",
+      "purpose": "Odrzucenie lokalne: oneOf",
+      "path": "invalid/sync-wrong-payload.json",
+      "schema": "../schemas/sync.schema.json#/$defs/PushRequest",
+      "local": {
+        "result": "invalid",
+        "layer": "schema",
+        "reason": "oneOf"
+      },
+      "server": {
+        "result": "not_executed",
+        "stage": "E4",
+        "expected_result": "Odrzucenie niepoprawnego wejścia przed mutacją; dokładny status zależy od kontenera żądania."
+      },
+      "detection_layer": "schema"
+    },
+    {
+      "id": "catalog-demo",
+      "purpose": "Demo katalogu i kontrola Package",
+      "path": "valid/catalog-demo.json",
+      "schema": "../schemas/catalog.schema.json#/$defs/Package",
+      "local": {
+        "result": "valid"
+      },
+      "server": {
+        "result": "not_executed",
+        "stage": "E2",
+        "expected_result": "Nie dotyczy operacji serwera: walidacja pliku katalogu przed importem E2."
+      },
+      "detection_layer": "schema_and_fixture_semantics"
+    },
+    {
+      "id": "catalog-manifest",
+      "purpose": "Demo katalogu i kontrola Manifest",
+      "path": "valid/catalog-manifest.json",
+      "schema": "../schemas/catalog.schema.json#/$defs/Manifest",
+      "local": {
+        "result": "valid"
+      },
+      "server": {
+        "result": "not_executed",
+        "stage": "E2",
+        "expected_result": "Nie dotyczy operacji serwera: walidacja pliku katalogu przed importem E2."
+      },
+      "detection_layer": "schema_and_fixture_semantics"
+    },
+    {
+      "id": "catalog-reference",
+      "purpose": "Demo katalogu i kontrola catalog_reference",
+      "path": "invalid/catalog-reference.json",
+      "schema": "../schemas/catalog.schema.json#/$defs/Package",
+      "local": {
+        "result": "invalid",
+        "layer": "semantic",
+        "reason": "catalog_reference"
+      },
+      "server": {
+        "result": "not_executed",
+        "stage": "E2",
+        "expected_result": "Nie dotyczy operacji serwera: walidacja pliku katalogu przed importem E2."
+      },
+      "detection_layer": "schema_and_fixture_semantics"
+    },
+    {
+      "id": "catalog-counts",
+      "purpose": "Demo katalogu i kontrola catalog_counts",
+      "path": "invalid/catalog-counts.json",
+      "schema": "../schemas/catalog.schema.json#/$defs/Package",
+      "local": {
+        "result": "invalid",
+        "layer": "semantic",
+        "reason": "catalog_counts"
+      },
+      "server": {
+        "result": "not_executed",
+        "stage": "E2",
+        "expected_result": "Nie dotyczy operacji serwera: walidacja pliku katalogu przed importem E2."
+      },
+      "detection_layer": "schema_and_fixture_semantics"
+    },
+    {
+      "id": "catalog-official",
+      "purpose": "Demo katalogu i kontrola catalog_official",
+      "path": "invalid/catalog-official.json",
+      "schema": "../schemas/catalog.schema.json#/$defs/Package",
+      "local": {
+        "result": "invalid",
+        "layer": "semantic",
+        "reason": "catalog_official"
+      },
+      "server": {
+        "result": "not_executed",
+        "stage": "E2",
+        "expected_result": "Nie dotyczy operacji serwera: walidacja pliku katalogu przed importem E2."
+      },
+      "detection_layer": "schema_and_fixture_semantics"
+    },
+    {
+      "id": "catalog-unit",
+      "purpose": "Demo katalogu i kontrola catalog_unit",
+      "path": "invalid/catalog-unit.json",
+      "schema": "../schemas/catalog.schema.json#/$defs/Package",
+      "local": {
+        "result": "invalid",
+        "layer": "semantic",
+        "reason": "catalog_unit"
+      },
+      "server": {
+        "result": "not_executed",
+        "stage": "E2",
+        "expected_result": "Nie dotyczy operacji serwera: walidacja pliku katalogu przed importem E2."
+      },
+      "detection_layer": "schema_and_fixture_semantics"
+    },
+    {
+      "id": "catalog-duplicate",
+      "purpose": "Demo katalogu i kontrola catalog_duplicate",
+      "path": "invalid/catalog-duplicate.json",
+      "schema": "../schemas/catalog.schema.json#/$defs/Package",
+      "local": {
+        "result": "invalid",
+        "layer": "semantic",
+        "reason": "catalog_duplicate"
+      },
+      "server": {
+        "result": "not_executed",
+        "stage": "E2",
+        "expected_result": "Nie dotyczy operacji serwera: walidacja pliku katalogu przed importem E2."
+      },
+      "detection_layer": "schema_and_fixture_semantics"
+    },
+    {
+      "id": "weight-utc-midnight",
+      "purpose": "Warszawa UTC i granice DST; data nie zależy od czasu sync",
+      "path": "valid/weight-utc-midnight.json",
+      "schema": "../schemas/domain.schema.json#/$defs/Weight",
+      "local": {
+        "result": "valid"
+      },
+      "server": {
+        "result": "not_executed",
+        "stage": "E4",
+        "expected_result": "Zapis z pierwotnym UTC/IANA/local_date; weryfikacja integralności czasu."
+      },
+      "detection_layer": "schema_and_fixture_semantics"
+    },
+    {
+      "id": "weight-dst-first",
+      "purpose": "Warszawa UTC i granice DST; data nie zależy od czasu sync",
+      "path": "valid/weight-dst-first.json",
+      "schema": "../schemas/domain.schema.json#/$defs/Weight",
+      "local": {
+        "result": "valid"
+      },
+      "server": {
+        "result": "not_executed",
+        "stage": "E4",
+        "expected_result": "Zapis z pierwotnym UTC/IANA/local_date; weryfikacja integralności czasu."
+      },
+      "detection_layer": "schema_and_fixture_semantics"
+    },
+    {
+      "id": "weight-dst-second",
+      "purpose": "Warszawa UTC i granice DST; data nie zależy od czasu sync",
+      "path": "valid/weight-dst-second.json",
+      "schema": "../schemas/domain.schema.json#/$defs/Weight",
+      "local": {
+        "result": "valid"
+      },
+      "server": {
+        "result": "not_executed",
+        "stage": "E4",
+        "expected_result": "Zapis z pierwotnym UTC/IANA/local_date; weryfikacja integralności czasu."
+      },
+      "detection_layer": "schema_and_fixture_semantics"
+    },
+    {
+      "id": "weight-dst-spring",
+      "purpose": "Warszawa UTC i granice DST; data nie zależy od czasu sync",
+      "path": "valid/weight-dst-spring.json",
+      "schema": "../schemas/domain.schema.json#/$defs/Weight",
+      "local": {
+        "result": "valid"
+      },
+      "server": {
+        "result": "not_executed",
+        "stage": "E4",
+        "expected_result": "Zapis z pierwotnym UTC/IANA/local_date; weryfikacja integralności czasu."
+      },
+      "detection_layer": "schema_and_fixture_semantics"
+    },
+    {
+      "id": "estimate-submicro",
+      "purpose": "Niezależny rachunek:6.25*180.000001 daje1125.00000625;R1780.00000625 iPAL1.8 daje3204.00001125; wyjście zachowuje9 miejsc.",
+      "path": "valid/estimate-submicro.json",
+      "schema": "../schemas/domain.schema.json#/$defs/Estimate",
+      "local": {
+        "result": "valid"
+      },
+      "server": {
+        "result": "not_executed",
+        "stage": "E3",
+        "expected_result": "Kalkulator zwraca dokładny wynik, bez obcięcia do skali wejść6."
+      },
+      "detection_layer": "schema_and_fixture_semantics"
+    },
+    {
+      "id": "sync-error-401",
+      "purpose": "Wspólny błąd sync HTTP401, ten sam schemat w OpenAPI i scenariuszach.",
+      "path": "valid/sync-error-401.json",
+      "schema": "../schemas/sync.schema.json#/$defs/SyncError",
+      "local": {
+        "result": "valid"
+      },
+      "server": {
+        "result": "not_executed",
+        "stage": "E4",
+        "expected_result": "HTTP401 bez mutacji encji."
+      },
+      "detection_layer": "schema_and_fixture_semantics"
+    },
+    {
+      "id": "sync-error-403",
+      "purpose": "Wspólny błąd sync HTTP403, ten sam schemat w OpenAPI i scenariuszach.",
+      "path": "valid/sync-error-403.json",
+      "schema": "../schemas/sync.schema.json#/$defs/SyncError",
+      "local": {
+        "result": "valid"
+      },
+      "server": {
+        "result": "not_executed",
+        "stage": "E4",
+        "expected_result": "HTTP403 bez mutacji encji."
+      },
+      "detection_layer": "schema_and_fixture_semantics"
+    },
+    {
+      "id": "sync-error-413",
+      "purpose": "Wspólny błąd sync HTTP413, ten sam schemat w OpenAPI i scenariuszach.",
+      "path": "valid/sync-error-413.json",
+      "schema": "../schemas/sync.schema.json#/$defs/SyncError",
+      "local": {
+        "result": "valid"
+      },
+      "server": {
+        "result": "not_executed",
+        "stage": "E4",
+        "expected_result": "HTTP413 bez mutacji encji."
+      },
+      "detection_layer": "schema_and_fixture_semantics"
+    },
+    {
+      "id": "sync-error-422",
+      "purpose": "Wspólny błąd sync HTTP422, ten sam schemat w OpenAPI i scenariuszach.",
+      "path": "valid/sync-error-422.json",
+      "schema": "../schemas/sync.schema.json#/$defs/SyncError",
+      "local": {
+        "result": "valid"
+      },
+      "server": {
+        "result": "not_executed",
+        "stage": "E4",
+        "expected_result": "HTTP422 bez mutacji encji."
+      },
+      "detection_layer": "schema_and_fixture_semantics"
+    },
+    {
+      "id": "sync-error-429",
+      "purpose": "Wspólny błąd sync HTTP429, ten sam schemat w OpenAPI i scenariuszach.",
+      "path": "valid/sync-error-429.json",
+      "schema": "../schemas/sync.schema.json#/$defs/SyncError",
+      "local": {
+        "result": "valid"
+      },
+      "server": {
+        "result": "not_executed",
+        "stage": "E4",
+        "expected_result": "HTTP429 bez mutacji encji."
+      },
+      "detection_layer": "schema_and_fixture_semantics"
+    },
+    {
+      "id": "sync-error-503",
+      "purpose": "Wspólny błąd sync HTTP503, ten sam schemat w OpenAPI i scenariuszach.",
+      "path": "valid/sync-error-503.json",
+      "schema": "../schemas/sync.schema.json#/$defs/SyncError",
+      "local": {
+        "result": "valid"
+      },
+      "server": {
+        "result": "not_executed",
+        "stage": "E4",
+        "expected_result": "HTTP503 bez mutacji encji."
+      },
+      "detection_layer": "schema_and_fixture_semantics"
+    },
+    {
+      "id": "profile-read-height",
+      "purpose": "Regresja niezależnej recenzji: height_range",
+      "path": "invalid/profile-read-height.json",
+      "schema": "../schemas/domain.schema.json#/$defs/ProfileRead",
+      "local": {
+        "result": "invalid",
+        "layer": "semantic",
+        "reason": "height_range"
+      },
+      "server": {
+        "result": "not_executed",
+        "stage": "E3",
+        "expected_result": "Odrzucenie wadliwej struktury fixture; brak uruchomienia serwera."
+      },
+      "detection_layer": "semantic"
+    },
+    {
+      "id": "draft-package-density",
+      "purpose": "Regresja niezależnej recenzji: density_required",
+      "path": "invalid/draft-package-density.json",
+      "schema": "../schemas/domain.schema.json#/$defs/ProductDraft",
+      "local": {
+        "result": "invalid",
+        "layer": "semantic",
+        "reason": "density_required"
+      },
+      "server": {
+        "result": "not_executed",
+        "stage": "E3",
+        "expected_result": "Odrzucenie wadliwej struktury fixture; brak uruchomienia serwera."
+      },
+      "detection_layer": "semantic"
+    },
+    {
+      "id": "sync-result-entity",
+      "purpose": "Regresja niezależnej recenzji: scenario_entity_correspondence",
+      "path": "invalid/sync-result-entity.json",
+      "schema": "../schemas/sync.schema.json#/$defs/Scenario",
+      "local": {
+        "result": "invalid",
+        "layer": "semantic",
+        "reason": "scenario_entity_correspondence"
+      },
+      "server": {
+        "result": "not_executed",
+        "stage": "E4",
+        "expected_result": "Odrzucenie wadliwej struktury fixture; brak uruchomienia serwera."
+      },
+      "detection_layer": "semantic"
+    },
+    {
+      "id": "restore-missing-profile",
+      "purpose": "Odzyskanie profilu o UUID niezależnym od account_id; singleton owner nie blokuje nowego UUID po restore.",
+      "path": "scenarios/restore_missing_profile.json",
+      "schema": "../schemas/sync.schema.json#/$defs/Scenario",
+      "local": {
+        "result": "valid"
+      },
+      "server": {
+        "result": "not_executed",
+        "stage": "E4",
+        "expected_result": "Opisane w steps: stara operacja409, snapshot200, świadome odzyskanie nowego UUID accepted; bez drugiego profilu właściciela."
+      },
+      "detection_layer": "schema_and_scenario_contract"
+    }
+  ],
+  "source_material": {
+    "path": "docs/materialy/racja_wojskowa_S-RG-1.source.json",
+    "status": "unverified_source_not_contract",
+    "sha256": "e79a1781e40af020e7affe9cac60fb6eb65b5d5b8c72bb568d62bb7edbaa55e2"
+  },
+  "binary_fixtures": [
+    {
+      "path": "valid/base-pl.1.json.gz",
+      "manifest": "valid/catalog-manifest.json",
+      "uncompressed": "valid/catalog-demo.json",
+      "purpose": "Rzeczywisty gzip małego demo; hash i rozmiary sprawdzane z manifestem."
+    }
+  ]
+}

@@ -1,0 +1,25 @@
+{
+  "sync_epoch": "00000000-0000-4000-8000-000000000064",
+  "mode": "incremental",
+  "snapshot_token": null,
+  "page_token": null,
+  "checkpoint": "checkpoint-demo-A-E100",
+  "server_time": "2026-10-09T12:00:00Z",
+  "entities": [
+    {
+      "entity_type": "weight",
+      "entity_id": "00000000-0000-4000-8000-0000000000c8",
+      "revision": 1,
+      "deleted": false,
+      "payload": {
+        "weight_kg": "80",
+        "occurred_at": "2026-10-09T06:00:00Z",
+        "time_zone": "Europe/Warsaw",
+        "local_date": "2026-10-09"
+      }
+    }
+  ],
+  "goal_timeline_revision": 0,
+  "recovery_mappings": [],
+  "operation_receipts": []
+}

@@ -1,0 +1,6 @@
+{
+  "code": "forbidden",
+  "message": "Przykładowy błąd całego żądania sync HTTP 403; brak mutacji.",
+  "details": {},
+  "request_id": "a1111111-1111-4111-8111-111111111111"
+}

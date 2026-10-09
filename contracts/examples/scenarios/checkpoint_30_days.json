@@ -1,0 +1,96 @@
+{
+  "scenario_id": "checkpoint_30_days",
+  "purpose": "Granica dokładnie 30 × 24 h jest włączona.",
+  "test_stage": "E4",
+  "execution": "contract_fixture_only",
+  "preconditions": {
+    "server_time": "2026-10-09T12:00:00Z",
+    "sync_epoch": "00000000-0000-4000-8000-000000000064",
+    "account_ids": [
+      "00000000-0000-4000-8000-000000000001"
+    ],
+    "checkpoint_issued_at": "2026-09-09T12:00:00Z",
+    "facts": [
+      "Czas oceny checkpointu po stronie serwera wynosi dokładnie 2592000 s."
+    ]
+  },
+  "steps": [
+    {
+      "kind": "http",
+      "label": "Pull przy granicy",
+      "endpoint": "pull",
+      "account": "00000000-0000-4000-8000-000000000001",
+      "session_generation": 1,
+      "request": {
+        "sync_epoch": "00000000-0000-4000-8000-000000000064",
+        "checkpoint": "checkpoint-demo-A-E100"
+      },
+      "expected_status": 200,
+      "response": {
+        "sync_epoch": "00000000-0000-4000-8000-000000000064",
+        "mode": "incremental",
+        "snapshot_token": null,
+        "page_token": null,
+        "checkpoint": "checkpoint-demo-A-E100",
+        "server_time": "2026-10-09T12:00:00Z",
+        "entities": [],
+        "goal_timeline_revision": 0,
+        "recovery_mappings": [],
+        "operation_receipts": []
+      },
+      "delivery": "received",
+      "expected_behavior": [
+        "Zachowaj lokalne dane i zastosuj wyłącznie potwierdzony wynik we właściwym zakresie konta."
+      ]
+    },
+    {
+      "kind": "http",
+      "label": "Push przy granicy",
+      "endpoint": "push",
+      "account": "00000000-0000-4000-8000-000000000001",
+      "session_generation": 1,
+      "request": {
+        "protocol_version": 1,
+        "sync_epoch": "00000000-0000-4000-8000-000000000064",
+        "checkpoint": "checkpoint-demo-A-E100",
+        "operations": [
+          {
+            "operation_id": "00000000-0000-4000-8000-00000000012c",
+            "entity_type": "weight",
+            "entity_id": "00000000-0000-4000-8000-0000000000c8",
+            "action": "upsert",
+            "base_revision": null,
+            "sync_epoch": "00000000-0000-4000-8000-000000000064",
+            "payload": {
+              "weight_kg": "80",
+              "occurred_at": "2026-10-09T06:00:00Z",
+              "time_zone": "Europe/Warsaw",
+              "local_date": "2026-10-09"
+            }
+          }
+        ]
+      },
+      "expected_status": 200,
+      "response": {
+        "sync_epoch": "00000000-0000-4000-8000-000000000064",
+        "server_time": "2026-10-09T12:00:00Z",
+        "results": [
+          {
+            "operation_id": "00000000-0000-4000-8000-00000000012c",
+            "entity_id": "00000000-0000-4000-8000-0000000000c8",
+            "status": "accepted",
+            "revision": 1,
+            "recovery_mapping": null
+          }
+        ]
+      },
+      "delivery": "received",
+      "expected_behavior": [
+        "Zachowaj lokalne dane i zastosuj wyłącznie potwierdzony wynik we właściwym zakresie konta."
+      ]
+    }
+  ],
+  "expected_future_behavior": [
+    "Oba żądania dopuszczone; kryterium to wiek <= 2592000 s."
+  ]
+}

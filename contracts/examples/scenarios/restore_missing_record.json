@@ -1,0 +1,164 @@
+{
+  "scenario_id": "restore_missing_record",
+  "purpose": "Restore utracił wcześniej potwierdzony wpis; odzyskanie nowym UUID.",
+  "test_stage": "E4",
+  "execution": "contract_fixture_only",
+  "preconditions": {
+    "server_time": "2026-10-09T12:00:00Z",
+    "sync_epoch": "00000000-0000-4000-8000-000000000064",
+    "account_ids": [
+      "00000000-0000-4000-8000-000000000001"
+    ],
+    "checkpoint_issued_at": "2026-10-09T11:00:00Z",
+    "facts": [
+      "Serwer zmienił epokę z 99 na 100; lokalny potwierdzony pomiar i oryginalna operacja pozostają.",
+      "Odtworzony rejestr nie zawiera potwierdzenia 300; brak wpisu nie jest dowodem usunięcia."
+    ]
+  },
+  "steps": [
+    {
+      "kind": "http",
+      "label": "Stara operacja z nowym checkpointem",
+      "endpoint": "push",
+      "account": "00000000-0000-4000-8000-000000000001",
+      "session_generation": 1,
+      "request": {
+        "protocol_version": 1,
+        "sync_epoch": "00000000-0000-4000-8000-000000000063",
+        "checkpoint": "checkpoint-demo-A-E100",
+        "operations": [
+          {
+            "operation_id": "00000000-0000-4000-8000-00000000012c",
+            "entity_type": "weight",
+            "entity_id": "00000000-0000-4000-8000-0000000000c8",
+            "action": "upsert",
+            "base_revision": null,
+            "sync_epoch": "00000000-0000-4000-8000-000000000063",
+            "payload": {
+              "weight_kg": "80",
+              "occurred_at": "2026-10-09T06:00:00Z",
+              "time_zone": "Europe/Warsaw",
+              "local_date": "2026-10-09"
+            }
+          }
+        ]
+      },
+      "expected_status": 409,
+      "response": {
+        "code": "sync_epoch_changed",
+        "message": "Oczekiwany błąd bez mutacji danych.",
+        "details": {
+          "current_sync_epoch": "00000000-0000-4000-8000-000000000064",
+          "requested_sync_epoch": "00000000-0000-4000-8000-000000000063",
+          "recovery_required": "epoch_recovery"
+        },
+        "request_id": "00000000-0000-4000-8000-0000000003e7"
+      },
+      "delivery": "received",
+      "expected_behavior": [
+        "Zachowaj lokalne dane i zastosuj wyłącznie potwierdzony wynik we właściwym zakresie konta."
+      ]
+    },
+    {
+      "kind": "http",
+      "label": "Snapshot i wyszukanie starego potwierdzenia",
+      "endpoint": "pull",
+      "account": "00000000-0000-4000-8000-000000000001",
+      "session_generation": 1,
+      "request": {
+        "recovery_operation_ids": [
+          "00000000-0000-4000-8000-00000000012c"
+        ]
+      },
+      "expected_status": 200,
+      "response": {
+        "sync_epoch": "00000000-0000-4000-8000-000000000064",
+        "mode": "snapshot",
+        "snapshot_token": "snapshot-demo-A-E100",
+        "page_token": null,
+        "checkpoint": "checkpoint-demo-A-E100",
+        "server_time": "2026-10-09T12:00:00Z",
+        "entities": [],
+        "goal_timeline_revision": 0,
+        "recovery_mappings": [],
+        "operation_receipts": []
+      },
+      "delivery": "received",
+      "expected_behavior": [
+        "Zachowaj lokalne dane i zastosuj wyłącznie potwierdzony wynik we właściwym zakresie konta."
+      ]
+    },
+    {
+      "kind": "client",
+      "label": "Użytkownik wybiera odzyskanie brakującego wpisu",
+      "action": "confirm_recovery",
+      "active_account": "00000000-0000-4000-8000-000000000001",
+      "session_generation": 1,
+      "expected_behavior": [
+        "Zachowaj kolejkę i kopie lokalnych danych do rozstrzygnięcia."
+      ]
+    },
+    {
+      "kind": "http",
+      "label": "Nowy UUID i nowa operacja",
+      "endpoint": "push",
+      "account": "00000000-0000-4000-8000-000000000001",
+      "session_generation": 1,
+      "request": {
+        "protocol_version": 1,
+        "sync_epoch": "00000000-0000-4000-8000-000000000064",
+        "checkpoint": "checkpoint-demo-A-E100",
+        "operations": [
+          {
+            "operation_id": "00000000-0000-4000-8000-00000000012d",
+            "entity_type": "weight",
+            "entity_id": "00000000-0000-4000-8000-0000000000c9",
+            "action": "upsert",
+            "base_revision": null,
+            "sync_epoch": "00000000-0000-4000-8000-000000000064",
+            "payload": {
+              "weight_kg": "80",
+              "occurred_at": "2026-10-09T06:00:00Z",
+              "time_zone": "Europe/Warsaw",
+              "local_date": "2026-10-09"
+            },
+            "recovery": {
+              "source_epoch": "00000000-0000-4000-8000-000000000063",
+              "source_entity_id": "00000000-0000-4000-8000-0000000000c8",
+              "source_revision": 1,
+              "source_operation_id": "00000000-0000-4000-8000-00000000012c",
+              "decision": "recreate_missing"
+            }
+          }
+        ]
+      },
+      "expected_status": 200,
+      "response": {
+        "sync_epoch": "00000000-0000-4000-8000-000000000064",
+        "server_time": "2026-10-09T12:00:00Z",
+        "results": [
+          {
+            "operation_id": "00000000-0000-4000-8000-00000000012d",
+            "entity_id": "00000000-0000-4000-8000-0000000000c9",
+            "status": "accepted",
+            "revision": 1,
+            "recovery_mapping": {
+              "source_epoch": "00000000-0000-4000-8000-000000000063",
+              "source_entity_id": "00000000-0000-4000-8000-0000000000c8",
+              "target_entity_id": "00000000-0000-4000-8000-0000000000c9",
+              "target_revision": 1
+            }
+          }
+        ]
+      },
+      "delivery": "received",
+      "expected_behavior": [
+        "Zachowaj lokalne dane i zastosuj wyłącznie potwierdzony wynik we właściwym zakresie konta."
+      ]
+    }
+  ],
+  "expected_future_behavior": [
+    "Nowy rekord i mapowanie źródła powstają w jednej transakcji.",
+    "Stare UUID/epoka/operacja pozostają w obszarze odzyskiwania do potwierdzenia."
+  ]
+}

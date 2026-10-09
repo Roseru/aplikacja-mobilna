@@ -1,0 +1,162 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$ref": "#/$defs/Nutrition",
+  "$defs": {
+    "Uuid": {
+      "type": "string",
+      "format": "uuid",
+      "pattern": "^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$"
+    },
+    "Revision": {
+      "type": "integer",
+      "minimum": 1,
+      "maximum": 2147483647
+    },
+    "Decimal": {
+      "type": "string",
+      "pattern": "^(0|[1-9][0-9]{0,5})(\\.[0-9]{0,5}[1-9])?$",
+      "description": "Kanoniczne 0..999999.999999, maksymalnie 6 miejsc; bez znaku, wykładnika i końcowych zer."
+    },
+    "Timestamp": {
+      "type": "string",
+      "format": "date-time",
+      "pattern": "^\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}(\\.[0-9]{1,6})?Z$"
+    },
+    "Date": {
+      "type": "string",
+      "format": "date"
+    },
+    "Timezone": {
+      "type": "string",
+      "format": "iana-time-zone",
+      "maxLength": 100
+    },
+    "Token": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 4096
+    },
+    "PositiveDecimal": {
+      "allOf": [
+        {
+          "$ref": "common.schema.json#/$defs/Decimal"
+        },
+        {
+          "not": {
+            "const": "0"
+          }
+        }
+      ]
+    },
+    "Nutrition": {
+      "type": "object",
+      "properties": {
+        "energy_kcal": {
+          "anyOf": [
+            {
+              "$ref": "common.schema.json#/$defs/Decimal"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "protein_g": {
+          "anyOf": [
+            {
+              "$ref": "common.schema.json#/$defs/Decimal"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "fat_g": {
+          "anyOf": [
+            {
+              "$ref": "common.schema.json#/$defs/Decimal"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "carbs_g": {
+          "anyOf": [
+            {
+              "$ref": "common.schema.json#/$defs/Decimal"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        }
+      },
+      "required": [
+        "energy_kcal",
+        "protein_g",
+        "fat_g",
+        "carbs_g"
+      ],
+      "additionalProperties": false
+    },
+    "Quantity": {
+      "type": "object",
+      "properties": {
+        "amount": {
+          "$ref": "common.schema.json#/$defs/PositiveDecimal"
+        },
+        "unit": {
+          "enum": [
+            "g",
+            "ml"
+          ]
+        }
+      },
+      "required": [
+        "amount",
+        "unit"
+      ],
+      "additionalProperties": false
+    },
+    "Aggregate": {
+      "type": "object",
+      "properties": {
+        "known_sum": {
+          "type": "string",
+          "pattern": "^(0|[1-9][0-9]{0,17})(\\.[0-9]*[1-9])?$"
+        },
+        "missing_count": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "complete": {
+          "type": "boolean"
+        }
+      },
+      "required": [
+        "known_sum",
+        "missing_count",
+        "complete"
+      ],
+      "additionalProperties": false
+    },
+    "ComputedDecimal": {
+      "type": "string",
+      "pattern": "^(0|[1-9][0-9]{0,5})(\\.[0-9]{0,11}[1-9])?$",
+      "description": "Dokładny wynik kalkulatora: do12 miejsc; kanonizacja jak Decimal, bez zaokrąglania do skali wejściowej6."
+    },
+    "PositiveComputedDecimal": {
+      "allOf": [
+        {
+          "$ref": "#/$defs/ComputedDecimal"
+        },
+        {
+          "not": {
+            "const": "0"
+          }
+        }
+      ]
+    }
+  }
+}

@@ -11,3 +11,14 @@
 *.hprof
 android/captures/
 output-apk/
+.tools/
+.uv-cache/
+**/.venv/
+**/__pycache__/
+.env
+.env.*
+!.env.example
+**/.pytest_cache/
+**/.ruff_cache/
+**/dist/
+**/*.egg-info/

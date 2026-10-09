@@ -1,0 +1,89 @@
+name: Backend E1
+on:
+  pull_request:
+    branches: [main]
+  push:
+    branches: [main]
+permissions:
+  contents: read
+jobs:
+  contracts:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5
+      - uses: actions/setup-python@ece7cb06caefa5fff74198d8649806c4678c61a1 # v6
+        with:
+          python-version: '3.13'
+      - uses: astral-sh/setup-uv@94527f2e458b27549849d47d273a16bec83a01e9 # v7
+        with:
+          version: '0.9.5'
+      - run: uv sync --project tools/contracts --locked
+      - run: uv run --project tools/contracts --locked --offline python tools/contracts/validate.py
+  quality:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5
+      - uses: actions/setup-python@ece7cb06caefa5fff74198d8649806c4678c61a1 # v6
+        with:
+          python-version: '3.13'
+      - uses: astral-sh/setup-uv@94527f2e458b27549849d47d273a16bec83a01e9 # v7
+        with:
+          version: '0.9.5'
+      - run: uv sync --project backend --locked
+      - run: uv run --project backend --locked ruff check backend
+      - run: uv run --project backend --locked ruff format --check backend
+      - run: uv run --project backend --locked python -m pytest backend/tests/unit
+      - run: uv build backend
+      - run: docker build -t calorie-backend:test backend
+      - name: Smoke test built API image
+        run: |
+          docker run -d --name e1-backend-test -p 127.0.0.1:8000:8000 \
+            -e DATABASE_URL=postgresql+psycopg://unused@127.0.0.1:1/unused calorie-backend:test
+          trap 'docker logs e1-backend-test; docker rm -f e1-backend-test' EXIT
+          curl --retry 10 --retry-all-errors --retry-delay 1 --retry-max-time 30 --max-time 5 \
+            -f http://127.0.0.1:8000/health/live
+          test "$(curl -s -o /tmp/e1-health.json -w '%{http_code}' http://127.0.0.1:8000/health/ready)" = 503
+  postgres:
+    runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgres:17
+        env:
+          POSTGRES_PASSWORD: ci-test-only
+          POSTGRES_DB: postgres
+        ports: ['5432:5432']
+        options: >-
+          --health-cmd "pg_isready -U postgres"
+          --health-interval 5s --health-timeout 3s --health-retries 12
+    env:
+      TEST_DATABASE_URL: postgresql+psycopg://postgres:ci-test-only@127.0.0.1:5432/calorie_test
+    steps:
+      - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5
+      - uses: actions/setup-python@ece7cb06caefa5fff74198d8649806c4678c61a1 # v6
+        with:
+          python-version: '3.13'
+      - uses: astral-sh/setup-uv@94527f2e458b27549849d47d273a16bec83a01e9 # v7
+        with:
+          version: '0.9.5'
+      - run: uv sync --project backend --locked
+      - name: Provision separate databases and runtime roles
+        env:
+          POSTGRES_USER: postgres
+          PGHOST: 127.0.0.1
+          PGPASSWORD: ci-test-only
+          APP_MIGRATOR_PASSWORD: ci-migrator-only
+          APP_API_PASSWORD: ci-api-only
+          APP_WORKER_PASSWORD: ci-worker-only
+          KEYCLOAK_DB_PASSWORD: ci-keycloak-only
+        run: bash infra/local/init-db.sh
+      - run: uv run --project backend --locked python -m pytest backend/tests/integration
+  ci-required:
+    if: always()
+    needs: [contracts, quality, postgres]
+    runs-on: ubuntu-latest
+    steps:
+      - name: Require actual successful checks
+        env:
+          RESULTS: ${{ toJSON(needs) }}
+        run: |
+          echo "$RESULTS" | jq -e 'all(.[]; .result == "success")'

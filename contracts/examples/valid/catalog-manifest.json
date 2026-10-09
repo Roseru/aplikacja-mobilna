@@ -1,0 +1,21 @@
+{
+  "package_id": "47bdff67-e58b-5437-919b-ec00159afbc5",
+  "release": 1,
+  "schema_version": 1,
+  "min_reader_version": 1,
+  "published_at": "2026-10-09T12:00:00Z",
+  "kind": "demo",
+  "counts": {
+    "products": 18,
+    "rations": 1,
+    "components": 18,
+    "sources": 1
+  },
+  "path": "base-pl.1.json.gz",
+  "compressed_bytes": 3278,
+  "uncompressed_bytes": 24695,
+  "sha256": "307360b84fdac192f434969a323728ec835795e474095d0a1f0c0807a952f7f0",
+  "source_ids": [
+    "571bc0bc-0ce2-57ca-b248-7dd43079bdda"
+  ]
+}
