@@ -1,0 +1,485 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$ref": "#/$defs/Index",
+  "$defs": {
+    "Index": {
+      "type": "object",
+      "properties": {
+        "version": {
+          "const": 1
+        },
+        "examples": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "id": {
+                "type": "string",
+                "minLength": 1,
+                "maxLength": 200
+              },
+              "purpose": {
+                "type": "string",
+                "minLength": 1,
+                "maxLength": 2000
+              },
+              "path": {
+                "type": "string",
+                "minLength": 1,
+                "maxLength": 300
+              },
+              "schema": {
+                "type": "string",
+                "minLength": 1,
+                "maxLength": 300
+              },
+              "local": {
+                "oneOf": [
+                  {
+                    "type": "object",
+                    "properties": {
+                      "result": {
+                        "const": "valid"
+                      }
+                    },
+                    "required": [
+                      "result"
+                    ],
+                    "additionalProperties": false
+                  },
+                  {
+                    "type": "object",
+                    "properties": {
+                      "result": {
+                        "const": "invalid"
+                      },
+                      "layer": {
+                        "enum": [
+                          "schema",
+                          "semantic"
+                        ]
+                      },
+                      "reason": {
+                        "type": "string",
+                        "minLength": 1,
+                        "maxLength": 200
+                      }
+                    },
+                    "required": [
+                      "result",
+                      "layer",
+                      "reason"
+                    ],
+                    "additionalProperties": false
+                  }
+                ]
+              },
+              "server": {
+                "type": "object",
+                "properties": {
+                  "result": {
+                    "const": "not_executed"
+                  },
+                  "expected_result": {
+                    "type": "string",
+                    "minLength": 1,
+                    "maxLength": 2000
+                  },
+                  "stage": {
+                    "enum": [
+                      "E1",
+                      "E2",
+                      "E3",
+                      "E4",
+                      "E5"
+                    ]
+                  }
+                },
+                "required": [
+                  "result",
+                  "expected_result",
+                  "stage"
+                ],
+                "additionalProperties": false
+              },
+              "detection_layer": {
+                "type": "string",
+                "minLength": 1,
+                "maxLength": 200
+              }
+            },
+            "required": [
+              "id",
+              "purpose",
+              "path",
+              "schema",
+              "local",
+              "server",
+              "detection_layer"
+            ],
+            "additionalProperties": false
+          },
+          "minItems": 1,
+          "maxItems": 1000
+        },
+        "source_material": {
+          "type": "object",
+          "properties": {
+            "path": {
+              "const": "docs/materialy/racja_wojskowa_S-RG-1.source.json"
+            },
+            "status": {
+              "const": "unverified_source_not_contract"
+            },
+            "sha256": {
+              "type": "string",
+              "pattern": "^[0-9a-f]{64}$"
+            }
+          },
+          "required": [
+            "path",
+            "status",
+            "sha256"
+          ],
+          "additionalProperties": false
+        },
+        "binary_fixtures": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "path": {
+                "type": "string",
+                "minLength": 1,
+                "maxLength": 300
+              },
+              "manifest": {
+                "type": "string",
+                "minLength": 1,
+                "maxLength": 300
+              },
+              "uncompressed": {
+                "type": "string",
+                "minLength": 1,
+                "maxLength": 300
+              },
+              "purpose": {
+                "type": "string",
+                "minLength": 1,
+                "maxLength": 1000
+              }
+            },
+            "required": [
+              "path",
+              "manifest",
+              "uncompressed",
+              "purpose"
+            ],
+            "additionalProperties": false
+          },
+          "minItems": 1,
+          "maxItems": 1
+        }
+      },
+      "required": [
+        "version",
+        "examples",
+        "source_material",
+        "binary_fixtures"
+      ],
+      "additionalProperties": false
+    },
+    "NutritionVectors": {
+      "type": "object",
+      "properties": {
+        "formula_version": {
+          "const": "nutrition_v1"
+        },
+        "expected_results_source": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 2000
+        },
+        "cases": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "id": {
+                "type": "string",
+                "minLength": 1,
+                "maxLength": 200
+              },
+              "derivation": {
+                "type": "string",
+                "minLength": 1,
+                "maxLength": 2000
+              },
+              "items": {
+                "type": "array",
+                "items": {
+                  "type": "object",
+                  "properties": {
+                    "amount": {
+                      "type": "string",
+                      "minLength": 1,
+                      "maxLength": 100
+                    },
+                    "unit": {
+                      "enum": [
+                        "g",
+                        "ml"
+                      ]
+                    },
+                    "basis_unit": {
+                      "enum": [
+                        "g",
+                        "ml"
+                      ]
+                    },
+                    "nutrition_per_100": {
+                      "$ref": "common.schema.json#/$defs/Nutrition"
+                    },
+                    "density_g_per_ml": {
+                      "anyOf": [
+                        {
+                          "$ref": "common.schema.json#/$defs/PositiveDecimal"
+                        },
+                        {
+                          "type": "null"
+                        }
+                      ]
+                    }
+                  },
+                  "required": [
+                    "amount",
+                    "unit",
+                    "basis_unit",
+                    "nutrition_per_100",
+                    "density_g_per_ml"
+                  ],
+                  "additionalProperties": false
+                },
+                "minItems": 1,
+                "maxItems": 100
+              },
+              "expected": {
+                "type": "object",
+                "properties": {
+                  "energy_kcal": {
+                    "type": "object",
+                    "properties": {
+                      "known_sum": {
+                        "type": "string",
+                        "minLength": 1,
+                        "maxLength": 100
+                      },
+                      "display": {
+                        "type": "string",
+                        "minLength": 1,
+                        "maxLength": 100
+                      },
+                      "missing_count": {
+                        "type": "integer",
+                        "minimum": 0
+                      },
+                      "complete": {
+                        "type": "boolean"
+                      }
+                    },
+                    "required": [
+                      "known_sum",
+                      "display",
+                      "missing_count",
+                      "complete"
+                    ],
+                    "additionalProperties": false
+                  },
+                  "protein_g": {
+                    "type": "object",
+                    "properties": {
+                      "known_sum": {
+                        "type": "string",
+                        "minLength": 1,
+                        "maxLength": 100
+                      },
+                      "display": {
+                        "type": "string",
+                        "minLength": 1,
+                        "maxLength": 100
+                      },
+                      "missing_count": {
+                        "type": "integer",
+                        "minimum": 0
+                      },
+                      "complete": {
+                        "type": "boolean"
+                      }
+                    },
+                    "required": [
+                      "known_sum",
+                      "display",
+                      "missing_count",
+                      "complete"
+                    ],
+                    "additionalProperties": false
+                  },
+                  "fat_g": {
+                    "type": "object",
+                    "properties": {
+                      "known_sum": {
+                        "type": "string",
+                        "minLength": 1,
+                        "maxLength": 100
+                      },
+                      "display": {
+                        "type": "string",
+                        "minLength": 1,
+                        "maxLength": 100
+                      },
+                      "missing_count": {
+                        "type": "integer",
+                        "minimum": 0
+                      },
+                      "complete": {
+                        "type": "boolean"
+                      }
+                    },
+                    "required": [
+                      "known_sum",
+                      "display",
+                      "missing_count",
+                      "complete"
+                    ],
+                    "additionalProperties": false
+                  },
+                  "carbs_g": {
+                    "type": "object",
+                    "properties": {
+                      "known_sum": {
+                        "type": "string",
+                        "minLength": 1,
+                        "maxLength": 100
+                      },
+                      "display": {
+                        "type": "string",
+                        "minLength": 1,
+                        "maxLength": 100
+                      },
+                      "missing_count": {
+                        "type": "integer",
+                        "minimum": 0
+                      },
+                      "complete": {
+                        "type": "boolean"
+                      }
+                    },
+                    "required": [
+                      "known_sum",
+                      "display",
+                      "missing_count",
+                      "complete"
+                    ],
+                    "additionalProperties": false
+                  }
+                },
+                "required": [
+                  "energy_kcal",
+                  "protein_g",
+                  "fat_g",
+                  "carbs_g"
+                ],
+                "additionalProperties": false
+              },
+              "expected_error": {
+                "enum": [
+                  "quantity_range",
+                  "density_required",
+                  "density_range"
+                ]
+              }
+            },
+            "required": [
+              "id",
+              "derivation",
+              "items"
+            ],
+            "additionalProperties": false,
+            "oneOf": [
+              {
+                "required": [
+                  "expected"
+                ],
+                "not": {
+                  "required": [
+                    "expected_error"
+                  ]
+                }
+              },
+              {
+                "required": [
+                  "expected_error"
+                ],
+                "not": {
+                  "required": [
+                    "expected"
+                  ]
+                }
+              }
+            ]
+          },
+          "minItems": 1,
+          "maxItems": 1000
+        },
+        "day_cases": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "id": {
+                "type": "string",
+                "minLength": 1,
+                "maxLength": 200
+              },
+              "declared_complete": {
+                "type": "boolean"
+              },
+              "meal_count": {
+                "type": "integer",
+                "minimum": 0
+              },
+              "missing_energy_count": {
+                "type": "integer",
+                "minimum": 0
+              },
+              "known_energy": {
+                "$ref": "common.schema.json#/$defs/Decimal"
+              },
+              "expected_complete": {
+                "type": "boolean"
+              }
+            },
+            "required": [
+              "id",
+              "declared_complete",
+              "meal_count",
+              "missing_energy_count",
+              "known_energy",
+              "expected_complete"
+            ],
+            "additionalProperties": false
+          },
+          "minItems": 1,
+          "maxItems": 100
+        }
+      },
+      "required": [
+        "formula_version",
+        "expected_results_source",
+        "cases",
+        "day_cases"
+      ],
+      "additionalProperties": false
+    }
+  }
+}

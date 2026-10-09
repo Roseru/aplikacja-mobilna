@@ -1,0 +1,24 @@
+{
+  "product_id": "71b3a020-3627-5f95-bdba-e63ef138a7b2",
+  "revision": 1,
+  "name": "Gulasz drobiowy",
+  "aliases": [],
+  "brand": null,
+  "variant": null,
+  "basis_unit": "g",
+  "nutrition_per_100": {
+    "energy_kcal": "87",
+    "protein_g": "11",
+    "fat_g": "3.3",
+    "carbs_g": "2.9"
+  },
+  "package_quantity": {
+    "amount": "300",
+    "unit": "g"
+  },
+  "density_g_per_ml": null,
+  "source_id": "571bc0bc-0ce2-57ca-b248-7dd43079bdda",
+  "source_locator": "/posilki/0/produkty/0",
+  "status": "unverified",
+  "preparation": null
+}

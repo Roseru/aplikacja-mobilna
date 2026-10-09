@@ -1,0 +1,6 @@
+{
+  "code": "unauthorized",
+  "message": "Przykładowy błąd HTTP 401",
+  "details": [],
+  "request_id": "a1111111-1111-4111-8111-111111111111"
+}

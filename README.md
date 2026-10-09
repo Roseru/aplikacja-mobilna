@@ -7,9 +7,13 @@ Projekt aplikacji Android z backendem Python i PostgreSQL, działającej równie
 - [Architektura, bazy danych i pakiet racji offline](docs/ARCHITEKTURA.md)
 - [Plan etapów, zależności i potrzebne zasoby](docs/PLAN_PRAC.md)
 - [Workflow pracy, recenzji, CI i wdrożeń](docs/WORKFLOW.md)
+- [Kontrakty E0 i komenda walidacji](contracts/README.md)
+- [Raport odbioru E0](docs/e0/ODBIOR.md)
 
 W tym obszarze pracy realizujemy zadania **Osoby 2: backend, baza, API i integracje**. Przyjęty stos to FastAPI, SQLAlchemy, Alembic i PostgreSQL; logowanie przez Keycloak. Maksymalny wspierany okres synchronizacji przyrostowej po pracy offline wynosi **30 dni**. Dłuższa przerwa wymaga pełnego uzgodnienia stanu z zachowaniem lokalnych danych.
 
 Przechowywanie: PostgreSQL z oddzielnymi bazami `keycloak` i `calorie_app`; produkty, racje i profile aplikacyjne w `calorie_app`. Na telefonie Room/SQLite. Katalog startowy i aktualizacje są dostarczane jako JSON gzip i importowane do Room; JSON nie zastępuje roboczej bazy dziennika.
 
-Aktualny stan repozytorium: dokumentacja, architektura, plan etapów i workflow pracy. Kod backendu, migracje, katalog danych, testy oraz wykonywalne pipeline’y GitHub Actions są do zaimplementowania w opisanych etapach.
+Aktualny stan repozytorium: dokumentacja oraz artefakty E0 — projekt OpenAPI/JSON Schema, przykłady, demo katalogu i lokalny walidator. Kod backendu, migracje, oficjalny katalog, testy integracyjne oraz wykonywalne pipeline’y GitHub Actions są do zaimplementowania w kolejnych etapach.
+
+Gemini: wyłącznie darmowe API (Free Tier), bez aktywnego billing; CI korzysta z mocka. Darmowe limity są wspólne dla projektu. Ograniczenie udostępniania funkcji Gemini użytkownikom w Polsce/EOG opisuje rozdział 11.6 wymagań; nie blokuje ono prac E0.

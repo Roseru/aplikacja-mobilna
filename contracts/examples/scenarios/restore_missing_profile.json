@@ -1,0 +1,165 @@
+{
+  "scenario_id": "restore_missing_profile",
+  "purpose": "Odzyskanie profilu o UUID niezależnym od account_id; singleton owner nie blokuje nowego UUID po restore.",
+  "test_stage": "E4",
+  "execution": "contract_fixture_only",
+  "preconditions": {
+    "server_time": "2026-10-09T12:00:00Z",
+    "sync_epoch": "00000000-0000-4000-8000-000000000064",
+    "account_ids": [
+      "00000000-0000-4000-8000-000000000001"
+    ],
+    "checkpoint_issued_at": "2026-10-09T11:00:00Z",
+    "facts": [
+      "Serwer zmienił epokę, po restore konto istnieje bez żywego profilu; zachowano lokalny profil i źródłową operację.",
+      "UUID profilu jest niezależny od account_id. Nowy profil jest unikalny w zakresie owner; starego UUID nie wskrzeszamy."
+    ]
+  },
+  "steps": [
+    {
+      "kind": "http",
+      "label": "Stara operacja z nowym checkpointem",
+      "endpoint": "push",
+      "account": "00000000-0000-4000-8000-000000000001",
+      "session_generation": 1,
+      "request": {
+        "protocol_version": 1,
+        "sync_epoch": "00000000-0000-4000-8000-000000000063",
+        "checkpoint": "checkpoint-demo-A-E100",
+        "operations": [
+          {
+            "operation_id": "00000000-0000-4000-8000-00000000012c",
+            "entity_type": "profile",
+            "entity_id": "00000000-0000-4000-8000-0000000000c8",
+            "action": "upsert",
+            "base_revision": null,
+            "sync_epoch": "00000000-0000-4000-8000-000000000063",
+            "payload": {
+              "pseudonym": "Użytkownik demo",
+              "height_cm": "180",
+              "activity_class": "line",
+              "time_zone": "Europe/Warsaw"
+            }
+          }
+        ]
+      },
+      "expected_status": 409,
+      "response": {
+        "code": "sync_epoch_changed",
+        "message": "Oczekiwany błąd bez mutacji danych.",
+        "details": {
+          "current_sync_epoch": "00000000-0000-4000-8000-000000000064",
+          "requested_sync_epoch": "00000000-0000-4000-8000-000000000063",
+          "recovery_required": "epoch_recovery"
+        },
+        "request_id": "00000000-0000-4000-8000-0000000003e7"
+      },
+      "delivery": "received",
+      "expected_behavior": [
+        "Zachowaj lokalne dane i zastosuj wyłącznie potwierdzony wynik we właściwym zakresie konta."
+      ]
+    },
+    {
+      "kind": "http",
+      "label": "Snapshot i wyszukanie starego potwierdzenia",
+      "endpoint": "pull",
+      "account": "00000000-0000-4000-8000-000000000001",
+      "session_generation": 1,
+      "request": {
+        "recovery_operation_ids": [
+          "00000000-0000-4000-8000-00000000012c"
+        ]
+      },
+      "expected_status": 200,
+      "response": {
+        "sync_epoch": "00000000-0000-4000-8000-000000000064",
+        "mode": "snapshot",
+        "snapshot_token": "snapshot-demo-A-E100",
+        "page_token": null,
+        "checkpoint": "checkpoint-demo-A-E100",
+        "server_time": "2026-10-09T12:00:00Z",
+        "entities": [],
+        "goal_timeline_revision": 0,
+        "recovery_mappings": [],
+        "operation_receipts": []
+      },
+      "delivery": "received",
+      "expected_behavior": [
+        "Zachowaj lokalne dane i zastosuj wyłącznie potwierdzony wynik we właściwym zakresie konta."
+      ]
+    },
+    {
+      "kind": "client",
+      "label": "Użytkownik wybiera odzyskanie brakującego wpisu",
+      "action": "confirm_recovery",
+      "active_account": "00000000-0000-4000-8000-000000000001",
+      "session_generation": 1,
+      "expected_behavior": [
+        "Zachowaj kolejkę i kopie lokalnych danych do rozstrzygnięcia."
+      ]
+    },
+    {
+      "kind": "http",
+      "label": "Nowy UUID i nowa operacja",
+      "endpoint": "push",
+      "account": "00000000-0000-4000-8000-000000000001",
+      "session_generation": 1,
+      "request": {
+        "protocol_version": 1,
+        "sync_epoch": "00000000-0000-4000-8000-000000000064",
+        "checkpoint": "checkpoint-demo-A-E100",
+        "operations": [
+          {
+            "operation_id": "00000000-0000-4000-8000-00000000012d",
+            "entity_type": "profile",
+            "entity_id": "00000000-0000-4000-8000-0000000000c9",
+            "action": "upsert",
+            "base_revision": null,
+            "sync_epoch": "00000000-0000-4000-8000-000000000064",
+            "payload": {
+              "pseudonym": "Użytkownik demo",
+              "height_cm": "180",
+              "activity_class": "line",
+              "time_zone": "Europe/Warsaw"
+            },
+            "recovery": {
+              "source_epoch": "00000000-0000-4000-8000-000000000063",
+              "source_entity_id": "00000000-0000-4000-8000-0000000000c8",
+              "source_revision": 1,
+              "source_operation_id": "00000000-0000-4000-8000-00000000012c",
+              "decision": "recreate_missing"
+            }
+          }
+        ]
+      },
+      "expected_status": 200,
+      "response": {
+        "sync_epoch": "00000000-0000-4000-8000-000000000064",
+        "server_time": "2026-10-09T12:00:00Z",
+        "results": [
+          {
+            "operation_id": "00000000-0000-4000-8000-00000000012d",
+            "entity_id": "00000000-0000-4000-8000-0000000000c9",
+            "status": "accepted",
+            "revision": 1,
+            "recovery_mapping": {
+              "source_epoch": "00000000-0000-4000-8000-000000000063",
+              "source_entity_id": "00000000-0000-4000-8000-0000000000c8",
+              "target_entity_id": "00000000-0000-4000-8000-0000000000c9",
+              "target_revision": 1
+            }
+          }
+        ]
+      },
+      "delivery": "received",
+      "expected_behavior": [
+        "Zachowaj lokalne dane i zastosuj wyłącznie potwierdzony wynik we właściwym zakresie konta."
+      ]
+    }
+  ],
+  "expected_future_behavior": [
+    "Konto zachowuje swój UUID; odzyskany profil dostaje nowy UUID i jeden RecoveryMapping.",
+    "Unikalność żywego profilu owner oraz mapowania źródła jest wymuszona atomowo, drugi profil nie powstaje.",
+    "Po zwykłym usunięciu profilu ponowne utworzenie również wymaga nowego UUID. Zgody online pozostają oddzielne."
+  ]
+}

@@ -1,0 +1,1002 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$ref": "#/$defs/Meal",
+  "$defs": {
+    "Profile": {
+      "type": "object",
+      "properties": {
+        "pseudonym": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 80
+        },
+        "height_cm": {
+          "anyOf": [
+            {
+              "$ref": "common.schema.json#/$defs/PositiveDecimal"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "activity_class": {
+          "enum": [
+            "stationary",
+            "line",
+            "commando"
+          ]
+        },
+        "time_zone": {
+          "$ref": "common.schema.json#/$defs/Timezone"
+        }
+      },
+      "required": [
+        "pseudonym",
+        "height_cm",
+        "activity_class",
+        "time_zone"
+      ],
+      "additionalProperties": false
+    },
+    "EstimateInput": {
+      "type": "object",
+      "properties": {
+        "age_years": {
+          "type": "integer",
+          "minimum": 18,
+          "maximum": 120
+        },
+        "height_cm": {
+          "$ref": "common.schema.json#/$defs/PositiveDecimal"
+        },
+        "weight_kg": {
+          "$ref": "common.schema.json#/$defs/PositiveDecimal"
+        },
+        "equation_variant": {
+          "enum": [
+            "plus_5",
+            "minus_161"
+          ]
+        },
+        "activity_class": {
+          "enum": [
+            "stationary",
+            "line",
+            "commando"
+          ]
+        }
+      },
+      "required": [
+        "age_years",
+        "height_cm",
+        "weight_kg",
+        "equation_variant",
+        "activity_class"
+      ],
+      "additionalProperties": false
+    },
+    "Estimate": {
+      "type": "object",
+      "properties": {
+        "method": {
+          "const": "mifflin_pal_v1"
+        },
+        "input": {
+          "$ref": "domain.schema.json#/$defs/EstimateInput"
+        },
+        "resting_kcal": {
+          "$ref": "common.schema.json#/$defs/PositiveComputedDecimal"
+        },
+        "pal": {
+          "enum": [
+            "1.5",
+            "1.8",
+            "2.2"
+          ]
+        },
+        "maintenance_kcal": {
+          "$ref": "common.schema.json#/$defs/PositiveComputedDecimal"
+        },
+        "estimated_at": {
+          "$ref": "common.schema.json#/$defs/Timestamp"
+        }
+      },
+      "required": [
+        "method",
+        "input",
+        "resting_kcal",
+        "pal",
+        "maintenance_kcal",
+        "estimated_at"
+      ],
+      "additionalProperties": false
+    },
+    "Goal": {
+      "type": "object",
+      "properties": {
+        "effective_from": {
+          "$ref": "common.schema.json#/$defs/Date"
+        },
+        "decided_at": {
+          "$ref": "common.schema.json#/$defs/Timestamp"
+        },
+        "time_zone": {
+          "$ref": "common.schema.json#/$defs/Timezone"
+        },
+        "goal_type": {
+          "enum": [
+            "reduce",
+            "maintain",
+            "gain"
+          ]
+        },
+        "energy_kcal": {
+          "$ref": "common.schema.json#/$defs/PositiveDecimal"
+        },
+        "protein_g": {
+          "anyOf": [
+            {
+              "$ref": "common.schema.json#/$defs/Decimal"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "fat_g": {
+          "anyOf": [
+            {
+              "$ref": "common.schema.json#/$defs/Decimal"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "carbs_g": {
+          "anyOf": [
+            {
+              "$ref": "common.schema.json#/$defs/Decimal"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "activity_class": {
+          "enum": [
+            "stationary",
+            "line",
+            "commando"
+          ]
+        },
+        "estimate": {
+          "anyOf": [
+            {
+              "$ref": "domain.schema.json#/$defs/Estimate"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "timeline_base_revision": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 2147483647
+        },
+        "reason": {
+          "enum": [
+            "user_decision",
+            "history_correction"
+          ]
+        },
+        "correction_of": {
+          "anyOf": [
+            {
+              "$ref": "common.schema.json#/$defs/Uuid"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        }
+      },
+      "required": [
+        "effective_from",
+        "decided_at",
+        "time_zone",
+        "goal_type",
+        "energy_kcal",
+        "protein_g",
+        "fat_g",
+        "carbs_g",
+        "activity_class",
+        "estimate",
+        "timeline_base_revision",
+        "reason",
+        "correction_of"
+      ],
+      "additionalProperties": false
+    },
+    "ProductRef": {
+      "type": "object",
+      "properties": {
+        "product_id": {
+          "$ref": "common.schema.json#/$defs/Uuid"
+        },
+        "revision": {
+          "$ref": "common.schema.json#/$defs/Revision"
+        }
+      },
+      "required": [
+        "product_id",
+        "revision"
+      ],
+      "additionalProperties": false
+    },
+    "MealItem": {
+      "type": "object",
+      "properties": {
+        "item_id": {
+          "$ref": "common.schema.json#/$defs/Uuid"
+        },
+        "name": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 200
+        },
+        "product": {
+          "anyOf": [
+            {
+              "$ref": "domain.schema.json#/$defs/ProductRef"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "quantity": {
+          "$ref": "common.schema.json#/$defs/Quantity"
+        },
+        "basis_unit": {
+          "enum": [
+            "g",
+            "ml"
+          ]
+        },
+        "nutrition_per_100": {
+          "$ref": "common.schema.json#/$defs/Nutrition"
+        },
+        "density_g_per_ml": {
+          "anyOf": [
+            {
+              "$ref": "common.schema.json#/$defs/PositiveDecimal"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "density_source": {
+          "anyOf": [
+            {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 500
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "nutrition_origin": {
+          "enum": [
+            "catalog_snapshot",
+            "manual",
+            "ai_estimate"
+          ]
+        },
+        "formula_version": {
+          "const": "nutrition_v1"
+        },
+        "ration_component_position": {
+          "anyOf": [
+            {
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 100000
+            },
+            {
+              "type": "null"
+            }
+          ]
+        }
+      },
+      "required": [
+        "item_id",
+        "name",
+        "product",
+        "quantity",
+        "basis_unit",
+        "nutrition_per_100",
+        "density_g_per_ml",
+        "density_source",
+        "nutrition_origin",
+        "formula_version",
+        "ration_component_position"
+      ],
+      "additionalProperties": false
+    },
+    "Meal": {
+      "type": "object",
+      "properties": {
+        "title": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 200
+        },
+        "occurred_at": {
+          "$ref": "common.schema.json#/$defs/Timestamp"
+        },
+        "time_zone": {
+          "$ref": "common.schema.json#/$defs/Timezone"
+        },
+        "local_date": {
+          "$ref": "common.schema.json#/$defs/Date"
+        },
+        "meal_type": {
+          "anyOf": [
+            {
+              "enum": [
+                "breakfast",
+                "lunch",
+                "dinner",
+                "snack"
+              ]
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "goal_id": {
+          "anyOf": [
+            {
+              "$ref": "common.schema.json#/$defs/Uuid"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "ration": {
+          "anyOf": [
+            {
+              "type": "object",
+              "properties": {
+                "ration_id": {
+                  "$ref": "common.schema.json#/$defs/Uuid"
+                },
+                "revision": {
+                  "$ref": "common.schema.json#/$defs/Revision"
+                },
+                "name": {
+                  "type": "string",
+                  "minLength": 1,
+                  "maxLength": 200
+                }
+              },
+              "required": [
+                "ration_id",
+                "revision",
+                "name"
+              ],
+              "additionalProperties": false
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "items": {
+          "type": "array",
+          "items": {
+            "$ref": "domain.schema.json#/$defs/MealItem"
+          },
+          "minItems": 1,
+          "maxItems": 100
+        }
+      },
+      "required": [
+        "title",
+        "occurred_at",
+        "time_zone",
+        "local_date",
+        "meal_type",
+        "goal_id",
+        "ration",
+        "items"
+      ],
+      "additionalProperties": false
+    },
+    "Weight": {
+      "type": "object",
+      "properties": {
+        "weight_kg": {
+          "$ref": "common.schema.json#/$defs/PositiveDecimal"
+        },
+        "occurred_at": {
+          "$ref": "common.schema.json#/$defs/Timestamp"
+        },
+        "time_zone": {
+          "$ref": "common.schema.json#/$defs/Timezone"
+        },
+        "local_date": {
+          "$ref": "common.schema.json#/$defs/Date"
+        }
+      },
+      "required": [
+        "weight_kg",
+        "occurred_at",
+        "time_zone",
+        "local_date"
+      ],
+      "additionalProperties": false
+    },
+    "DiaryDay": {
+      "type": "object",
+      "properties": {
+        "local_date": {
+          "$ref": "common.schema.json#/$defs/Date"
+        },
+        "time_zone": {
+          "$ref": "common.schema.json#/$defs/Timezone"
+        },
+        "declared_complete": {
+          "type": "boolean"
+        }
+      },
+      "required": [
+        "local_date",
+        "time_zone",
+        "declared_complete"
+      ],
+      "additionalProperties": false
+    },
+    "ProductDraft": {
+      "type": "object",
+      "properties": {
+        "name": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 200
+        },
+        "brand": {
+          "anyOf": [
+            {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 200
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "variant": {
+          "anyOf": [
+            {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 200
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "basis_unit": {
+          "enum": [
+            "g",
+            "ml"
+          ]
+        },
+        "nutrition_per_100": {
+          "$ref": "common.schema.json#/$defs/Nutrition"
+        },
+        "package_quantity": {
+          "anyOf": [
+            {
+              "$ref": "common.schema.json#/$defs/Quantity"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "density_g_per_ml": {
+          "anyOf": [
+            {
+              "$ref": "common.schema.json#/$defs/PositiveDecimal"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "density_source": {
+          "anyOf": [
+            {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 500
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "source_description": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 2000
+        }
+      },
+      "required": [
+        "name",
+        "brand",
+        "variant",
+        "basis_unit",
+        "nutrition_per_100",
+        "package_quantity",
+        "density_g_per_ml",
+        "density_source",
+        "source_description"
+      ],
+      "additionalProperties": false
+    },
+    "Consent": {
+      "type": "object",
+      "properties": {
+        "revision": {
+          "$ref": "common.schema.json#/$defs/Revision"
+        },
+        "ranking": {
+          "type": "boolean"
+        },
+        "automatic_energy_adjustment": {
+          "type": "boolean"
+        },
+        "updated_at": {
+          "$ref": "common.schema.json#/$defs/Timestamp"
+        }
+      },
+      "required": [
+        "revision",
+        "ranking",
+        "automatic_energy_adjustment",
+        "updated_at"
+      ],
+      "additionalProperties": false
+    },
+    "ConsentInput": {
+      "type": "object",
+      "properties": {
+        "ranking": {
+          "type": "boolean"
+        },
+        "automatic_energy_adjustment": {
+          "type": "boolean"
+        }
+      },
+      "required": [
+        "ranking",
+        "automatic_energy_adjustment"
+      ],
+      "additionalProperties": false
+    },
+    "Bootstrap": {
+      "type": "object",
+      "properties": {
+        "account_id": {
+          "$ref": "common.schema.json#/$defs/Uuid"
+        },
+        "sync_epoch": {
+          "$ref": "common.schema.json#/$defs/Uuid"
+        },
+        "account_generation": {
+          "$ref": "common.schema.json#/$defs/Revision"
+        },
+        "server_time": {
+          "$ref": "common.schema.json#/$defs/Timestamp"
+        }
+      },
+      "required": [
+        "account_id",
+        "sync_epoch",
+        "account_generation",
+        "server_time"
+      ],
+      "additionalProperties": false
+    },
+    "ProfileRead": {
+      "type": "object",
+      "properties": {
+        "account_id": {
+          "$ref": "common.schema.json#/$defs/Uuid"
+        },
+        "sync_epoch": {
+          "$ref": "common.schema.json#/$defs/Uuid"
+        },
+        "profile": {
+          "anyOf": [
+            {
+              "type": "object",
+              "properties": {
+                "entity_id": {
+                  "$ref": "common.schema.json#/$defs/Uuid"
+                },
+                "revision": {
+                  "$ref": "common.schema.json#/$defs/Revision"
+                },
+                "payload": {
+                  "$ref": "domain.schema.json#/$defs/Profile"
+                }
+              },
+              "required": [
+                "entity_id",
+                "revision",
+                "payload"
+              ],
+              "additionalProperties": false
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "consents": {
+          "$ref": "domain.schema.json#/$defs/Consent"
+        },
+        "goal_timeline_revision": {
+          "type": "integer",
+          "minimum": 0
+        }
+      },
+      "required": [
+        "account_id",
+        "sync_epoch",
+        "profile",
+        "consents",
+        "goal_timeline_revision"
+      ],
+      "additionalProperties": false
+    },
+    "Error": {
+      "type": "object",
+      "properties": {
+        "code": {
+          "enum": [
+            "invalid_request",
+            "unauthorized",
+            "forbidden",
+            "not_found",
+            "version_conflict",
+            "idempotency_key_reused",
+            "rate_limited",
+            "service_unavailable",
+            "request_too_large",
+            "account_deleting",
+            "page_expired"
+          ]
+        },
+        "message": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 1000
+        },
+        "details": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "field": {
+                "type": "string",
+                "minLength": 1,
+                "maxLength": 200
+              },
+              "reason": {
+                "type": "string",
+                "minLength": 1,
+                "maxLength": 500
+              }
+            },
+            "required": [
+              "field",
+              "reason"
+            ],
+            "additionalProperties": false
+          },
+          "minItems": 0,
+          "maxItems": 100
+        },
+        "request_id": {
+          "$ref": "common.schema.json#/$defs/Uuid"
+        }
+      },
+      "required": [
+        "code",
+        "message",
+        "details",
+        "request_id"
+      ],
+      "additionalProperties": false
+    },
+    "GoalRecord": {
+      "type": "object",
+      "properties": {
+        "entity_id": {
+          "$ref": "common.schema.json#/$defs/Uuid"
+        },
+        "revision": {
+          "$ref": "common.schema.json#/$defs/Revision"
+        },
+        "payload": {
+          "$ref": "domain.schema.json#/$defs/Goal"
+        }
+      },
+      "required": [
+        "entity_id",
+        "revision",
+        "payload"
+      ],
+      "additionalProperties": false
+    },
+    "GoalPage": {
+      "type": "object",
+      "properties": {
+        "items": {
+          "type": "array",
+          "items": {
+            "$ref": "domain.schema.json#/$defs/GoalRecord"
+          },
+          "minItems": 0,
+          "maxItems": 500
+        },
+        "next_page_token": {
+          "anyOf": [
+            {
+              "$ref": "common.schema.json#/$defs/Token"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "sync_epoch": {
+          "$ref": "common.schema.json#/$defs/Uuid"
+        }
+      },
+      "required": [
+        "items",
+        "next_page_token",
+        "sync_epoch"
+      ],
+      "additionalProperties": false
+    },
+    "MealRecord": {
+      "type": "object",
+      "properties": {
+        "entity_id": {
+          "$ref": "common.schema.json#/$defs/Uuid"
+        },
+        "revision": {
+          "$ref": "common.schema.json#/$defs/Revision"
+        },
+        "payload": {
+          "$ref": "domain.schema.json#/$defs/Meal"
+        }
+      },
+      "required": [
+        "entity_id",
+        "revision",
+        "payload"
+      ],
+      "additionalProperties": false
+    },
+    "MealPage": {
+      "type": "object",
+      "properties": {
+        "items": {
+          "type": "array",
+          "items": {
+            "$ref": "domain.schema.json#/$defs/MealRecord"
+          },
+          "minItems": 0,
+          "maxItems": 500
+        },
+        "next_page_token": {
+          "anyOf": [
+            {
+              "$ref": "common.schema.json#/$defs/Token"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "sync_epoch": {
+          "$ref": "common.schema.json#/$defs/Uuid"
+        }
+      },
+      "required": [
+        "items",
+        "next_page_token",
+        "sync_epoch"
+      ],
+      "additionalProperties": false
+    },
+    "WeightRecord": {
+      "type": "object",
+      "properties": {
+        "entity_id": {
+          "$ref": "common.schema.json#/$defs/Uuid"
+        },
+        "revision": {
+          "$ref": "common.schema.json#/$defs/Revision"
+        },
+        "payload": {
+          "$ref": "domain.schema.json#/$defs/Weight"
+        }
+      },
+      "required": [
+        "entity_id",
+        "revision",
+        "payload"
+      ],
+      "additionalProperties": false
+    },
+    "WeightPage": {
+      "type": "object",
+      "properties": {
+        "items": {
+          "type": "array",
+          "items": {
+            "$ref": "domain.schema.json#/$defs/WeightRecord"
+          },
+          "minItems": 0,
+          "maxItems": 500
+        },
+        "next_page_token": {
+          "anyOf": [
+            {
+              "$ref": "common.schema.json#/$defs/Token"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "sync_epoch": {
+          "$ref": "common.schema.json#/$defs/Uuid"
+        }
+      },
+      "required": [
+        "items",
+        "next_page_token",
+        "sync_epoch"
+      ],
+      "additionalProperties": false
+    },
+    "DiaryDayRecord": {
+      "type": "object",
+      "properties": {
+        "entity_id": {
+          "$ref": "common.schema.json#/$defs/Uuid"
+        },
+        "revision": {
+          "$ref": "common.schema.json#/$defs/Revision"
+        },
+        "payload": {
+          "$ref": "domain.schema.json#/$defs/DiaryDay"
+        }
+      },
+      "required": [
+        "entity_id",
+        "revision",
+        "payload"
+      ],
+      "additionalProperties": false
+    },
+    "DiaryDayPage": {
+      "type": "object",
+      "properties": {
+        "items": {
+          "type": "array",
+          "items": {
+            "$ref": "domain.schema.json#/$defs/DiaryDayRecord"
+          },
+          "minItems": 0,
+          "maxItems": 500
+        },
+        "next_page_token": {
+          "anyOf": [
+            {
+              "$ref": "common.schema.json#/$defs/Token"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "sync_epoch": {
+          "$ref": "common.schema.json#/$defs/Uuid"
+        }
+      },
+      "required": [
+        "items",
+        "next_page_token",
+        "sync_epoch"
+      ],
+      "additionalProperties": false
+    },
+    "ProductPage": {
+      "type": "object",
+      "properties": {
+        "items": {
+          "type": "array",
+          "items": {
+            "$ref": "catalog.schema.json#/$defs/Product"
+          },
+          "minItems": 0,
+          "maxItems": 500
+        },
+        "next_page_token": {
+          "anyOf": [
+            {
+              "$ref": "common.schema.json#/$defs/Token"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        }
+      },
+      "required": [
+        "items",
+        "next_page_token"
+      ],
+      "additionalProperties": false
+    },
+    "RationPage": {
+      "type": "object",
+      "properties": {
+        "items": {
+          "type": "array",
+          "items": {
+            "$ref": "catalog.schema.json#/$defs/Ration"
+          },
+          "minItems": 0,
+          "maxItems": 500
+        },
+        "next_page_token": {
+          "anyOf": [
+            {
+              "$ref": "common.schema.json#/$defs/Token"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        }
+      },
+      "required": [
+        "items",
+        "next_page_token"
+      ],
+      "additionalProperties": false
+    }
+  }
+}

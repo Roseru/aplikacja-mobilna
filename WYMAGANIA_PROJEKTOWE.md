@@ -1,6 +1,6 @@
 # Wojskowy licznik kalorii — wymagania projektowe - osoba 2
 
-Wersja: 1.2, 9 października 2026 r. Zespół: 3 osoby. Ustalenia backendu: Osoba 2.
+Wersja: 1.3, 9 października 2026 r. Zespół: 3 osoby. Ustalenia backendu: Osoba 2.
 
 Dokument łączy bazowy opis projektu z wymaganiami dotyczącymi trybu poligonowego, analityki, społeczności, rywalizacji i Gemini. Opisuje zakres do wykonania; nie oznacza, że aplikacja została już zaimplementowana. Na polecenie użytkownika maksymalny wspierany okres offline wynosi 30 dni. Rozdział 11 ustala decyzje Osoby 2 dla wersji v1; zmiana tych zasad wymaga aktualizacji dokumentacji, kontraktu i odpowiednich testów.
 
@@ -16,7 +16,7 @@ Celem jest rejestrowanie posiłków, wojskowych racji oraz spożytych kalorii i 
 | Pamięć urządzenia | Room/SQLite dla dziennika, katalogu i kolejki; JSON gzip do dostawy pakietu katalogu; DataStore dla ustawień; WorkManager dla synchronizacji |
 | Backend | Python, FastAPI, Pydantic, SQLAlchemy, Alembic; REST/JSON i kontrakt OpenAPI |
 | Baza serwerowa | PostgreSQL 17; oddzielne bazy `calorie_app` (profile, jedzenie, dziennik i logika) oraz `keycloak` (logowanie); osobne konta techniczne |
-| AI | Gemini wywoływany wyłącznie przez backend; model i limity konfigurowane na serwerze |
+| AI | Gemini wywoływany wyłącznie przez backend; wyłącznie Free Tier, model i limity konfigurowane na serwerze |
 | Logowanie | Keycloak / OIDC; Authorization Code z PKCE S256 dla Androida; role sprawdzane przez backend |
 | Repozytorium i CI/CD | GitHub, pull requesty, GitHub Actions |
 | Wdrożenie | Zewnętrzny serwer/VPS z HTTPS; proponowane kontenery Docker Compose i reverse proxy |
@@ -288,7 +288,7 @@ AI -- Need
 
 ## 7. Kontrakt API do podziału pracy
 
-Wersja początkowa `/api/v1`. Backend dostarcza OpenAPI i przykładowe odpowiedzi przed integracją mobilną. Poniższe ścieżki są projektem kontraktu do implementacji, a nie opisem działającego serwera.
+Wersja początkowa `/api/v1`. Backend dostarcza OpenAPI i przykładowe odpowiedzi przed integracją mobilną. Poniższe ścieżki są projektem kontraktu do implementacji, a nie opisem działającego serwera. Szczegóły E0: [OpenAPI, schematy i walidacja](contracts/README.md); pozostałe operacje są planem dalszych etapów.
 
 | Obszar | Operacje |
 |---|---|
@@ -296,9 +296,9 @@ Wersja początkowa `/api/v1`. Backend dostarcza OpenAPI i przykładowe odpowiedz
 | Kalkulator | `POST /energy-estimates` — wyliczenie propozycji bez zapisu celu |
 | Zgody online | `PUT /me/consents` — ranking i automatyczne korekty; Nemesis przez własne operacje |
 | Katalog | `GET /products?query=...`, `GET /products/{id}`, `POST /products`, `POST /products/matches` |
-| Racje i pakiet | `GET /rations`, `GET /rations/{id}`, `GET /offline-package/manifest`, `GET /offline-package/{version}` |
+| Racje i pakiet | `GET /rations`, `GET /rations/{id}`, `GET /offline-package/manifest`, `GET /offline-package/{filename}` |
 | Dziennik | `GET /me/meals?from=...&to=...`, `GET /me/weights?from=...&to=...` |
-| Synchronizacja | `POST /sync/push`, `GET /sync/pull?cursor=...` |
+| Synchronizacja | `POST /sync/push`, `GET /sync/pull?checkpoint=...` |
 | Zdjęcia AI | `POST /ai/meal-analyses`, `GET /ai/meal-analyses/{id}`, `POST /ai/meal-analyses/{id}/confirm` |
 | Zapotrzebowanie AI | `POST /ai/energy-analyses`, `GET /ai/energy-analyses/{id}`, `POST /ai/energy-analyses/{id}/decision` |
 | Oceny i zgłoszenia | `PUT /products/{id}/vote`, `DELETE /products/{id}/vote`, `POST /products/{id}/reports` |
@@ -319,7 +319,7 @@ Backend zwraca wynik osobno dla każdej operacji: `accepted`, `already_applied`,
 
 Wszystkie zmiany posiłków, wagi, kompletności dni, profilu, celów i prywatnych szkiców produktów z Androida przechodzą przez wspólny protokół synchronizacji. `PATCH /me` i `POST /me/goals` nie wchodzą do v1. Potwierdzenie analizy zdjęcia AI zwraca zatwierdzony szkic i referencje produktów; zapis posiłku nadal idzie przez tę samą kolejkę. Decyzja o korekcie zapotrzebowania jest operacją online tworzącą nową wersję celu po stronie serwera, przez tę samą usługę wersjonowania i dziennik zmian.
 
-Błędy API mają spójne pola `code`, `message`, `details`, `request_id`. Statusy: 401 — ponowne logowanie, 403 — brak wymaganej roli, 404 — brak zasobu lub cudzy prywatny zasób, 409 — konflikt/konieczne uzgodnienie stanu, 410 — wygasły kursor lub snapshot, 422 — błędne dane, 429 — limit, 5xx — błąd serwera. Poprawna strukturalnie paczka `push` zwraca HTTP 200 i wyniki poszczególnych operacji, także konfliktów; błąd całego żądania ma odpowiedni status HTTP. Ponowienia respektują `Retry-After`; trwała walidacja wymaga poprawy danych.
+Błędy API mają spójne pola `code`, `message`, `details`, `request_id`. Statusy: 401 — ponowne logowanie, 403 — brak wymaganej roli, 404 — brak zasobu lub cudzy prywatny zasób, 409 — konflikt/konieczne uzgodnienie stanu, 410 — wygasły kursor lub snapshot, 422 — błędne dane, 429 — limit, 5xx — błąd serwera. Paczka `push` dopuszczona po kontroli uwierzytelnienia, checkpointu, epoki i limitów zwraca HTTP 200 i wyniki poszczególnych operacji, także konfliktów; błąd całego żądania ma odpowiedni status HTTP i nie wykonuje mutacji. Ponowienia respektują `Retry-After`; trwała walidacja wymaga poprawy danych.
 
 ## 8. Podział odpowiedzialności między trzy osoby
 
@@ -364,11 +364,11 @@ Błędy API mają spójne pola `code`, `message`, `details`, `request_id`. Statu
 - Konfiguracja dostawcy OIDC: środowiska/realmy, publiczny klient Androida z wymaganym PKCE S256, audience API, role, dokładne adresy powrotu i obsługa poczty do odzyskiwania konta. Hasła nie trafiają do aplikacji ani backendu.
 - Sekrety bazy, Gemini, poczty, wdrożeń i podpisywania APK przechowywane poza repozytorium; kontrolowany dostęp i rotacja. Konfiguracja wersjonowana bez sekretów.
 - GitHub Actions: Android — kompilacja, lint i testy; Python — lint i testy z testowym PostgreSQL; następnie budowa oznaczonego obrazu i publikacja artefaktów.
-- PR uruchamia sprawdzenia bez dostępu do sekretów produkcyjnych. Testy CI nie wykonują płatnych wywołań Gemini.
+- PR uruchamia sprawdzenia bez dostępu do sekretów produkcyjnych. Testy CI używają mocka Gemini i nie zużywają darmowej puli.
 - Wdrożenie testowe po scaleniu; docelowe z wersjonowanego wydania, z kontrolowanym zatwierdzeniem w GitHub. Przed migracją kopia bazy; po wdrożeniu test gotowości i podstawowy test działania.
 - Procedura wycofania obrazu i osobna procedura awarii migracji danych. Sam powrót do starego obrazu nie gwarantuje odwrócenia migracji.
 - Kopie PostgreSQL aplikacji i systemu tożsamości, przechowywane również poza serwerem; co najmniej jedna sprawdzona procedura odtworzenia.
-- Monitoring dostępności, błędów, czasu odpowiedzi, dysku, zadań synchronizacji, procesu roboczego i kosztu/liczby analiz AI; alerty na awarie i przekroczenie limitów.
+- Monitoring dostępności, błędów, czasu odpowiedzi, dysku, zadań synchronizacji, procesu roboczego i liczby analiz AI i wykorzystania darmowej puli; alerty na awarie i przekroczenie limitów.
 - Instrukcja konfiguracji, wdrożenia, odtwarzania, aktualizacji i obsługi awarii. Publikacja w Google Play jest osobnym zadaniem; zakres podstawowy obejmuje APK.
 
 **Dostarcza:** pliki infrastruktury, workflowy GitHub Actions, działające środowisko, kopie i instrukcje operacyjne. Kod reguł, migracji i zadań okresowych tworzy osoba 2; ich uruchamianie i monitoring zapewnia osoba 3.
@@ -380,7 +380,7 @@ Błędy API mają spójne pola `code`, `message`, `details`, `request_id`. Statu
 | Offline/synchronizacja | Room, kolejka, ekran konfliktów | Protokół, wersje i idempotencja | Dostępność i monitoring API |
 | Logowanie | Klient Android i tokeny | Walidacja tokenów i dostęp do danych | Konfiguracja dostawcy i domen |
 | Racje/katalog | Wybór i obliczenie porcji | Źródła, dane, wersje i deduplikacja | Dostarczanie pakietu i kopie |
-| Gemini | Zdjęcie, zgoda i korekta | Analiza, walidacja i dopasowanie | Sekrety, proces roboczy i limity kosztu |
+| Gemini | Zdjęcie, zgoda i korekta | Analiza, walidacja i dopasowanie | Sekrety, proces roboczy i limity darmowej puli |
 | Nemesis/ranking | Widoki, zaproszenia, zgody | Punktacja i kontrola udostępniania | Harmonogram i monitoring |
 | Wydanie | Poprawna aplikacja i testy | Poprawne API i migracje | Pipeline, deploy i odtworzenie |
 
@@ -418,18 +418,18 @@ Etap 2 jest pierwszą użyteczną wersją. Etapy 3–5 pozostają częścią pe�
 | KO-18 | Kursor w wieku dokładnie 30 × 24 h działa; starszy o 1 s wymaga pełnego uzgodnienia; lokalna kolejka i historia pozostają zachowane |
 | KO-19 | Powrót po 61 dniach i ponowienie wcześniej przyjętego create/delete nie duplikuje ani nie wskrzesza danych; wynik potwierdza trwały rejestr operacji |
 | KO-20 | Równoległe transakcje zatwierdzane w innej kolejności niż rozpoczęcie nie pomijają żadnej zmiany w pull; przerwany snapshot daje się wznowić lub rozpocząć od nowa |
-| KO-21 | Gemini: jednoczesne żądania i timeout nie przekraczają zarezerwowanego budżetu; CI używa mocka, a błąd modelu pozostawia możliwość ręcznego wpisu |
+| KO-21 | Gemini: jednoczesne żądania i timeout respektują wspólne limity darmowej puli i obsługują 429; CI używa mocka, a błąd modelu pozostawia możliwość ręcznego wpisu |
 | KO-22 | Nemesis uwzględnia wpis przyjęty do końca 30-dniowego terminu; wpis po terminie zmienia historię, lecz nie zamknięty wynik; anulowanie odcina dostęp |
 | KO-23 | 250 ml po 42 kcal/100 ml daje 105 kcal; brak gęstości nie blokuje ml, ale blokuje przeliczenie na g; brak makr pozostaje null |
 | KO-24 | Aktualizacja celu przyjęta z opóźnieniem stosuje datę zadeklarowaną przy utworzeniu offline; nowa korekta AI zaczyna obowiązywać od następnego dnia i nie nadpisuje historii |
 | KO-25 | Pusty dzień, same wpisy z 0 kcal lub brak energii nie stają się kompletne po ustawieniu flagi; nie dają punktów i nie wchodzą jako zero do średniej ani korekty energii |
 | KO-26 | Termin Nemesis 12:00, korekta 12:01, worker 12:05: wynik zamyka się według projekcji sprzed terminu; korekta późniejsza zmienia tylko historię/ranking ogólny |
 | KO-27 | Transakcja Nemesis zakwalifikowana pod blokadą przed terminem, zakończona po terminie, wchodzi do wyniku dopiero po commit; rollback niczego nie nalicza, a finalizer czeka na blokadę |
-| KO-28 | Dwa środowiska nie mogą mieć niezależnych płatnych liczników: środowisko bez roli płatnej używa mocka; wszystkie płatne próby referencyjne przechodzą przez jeden ledger |
+| KO-28 | Jedno środowisko używa prawdziwego Free Tier i wspólnych liczników; pozostałe używają mocka; brak billing i brak płatnego fallbacku; rotacja klucza nie resetuje puli |
 | KO-29 | Dzień kompletny przed północą otrzymuje należne punkty po zamknięciu doby bez nowego zapisu klienta; ponowienie zadania i restart workera nie duplikują punktów, także przy zmianie czasu |
 | KO-30 | Aktualizacja pakietu: uszkodzony gzip/hash, zła referencja, brak miejsca lub restart importu pozostawiają stary kompletny katalog; udana aktywacja nie zmienia dziennika, outbox ani historycznych wartości; później zakończony import starszego release nie zastępuje nowszego |
 | KO-31 | Przełączenie konta A na B podczas żądania WorkManager nie zapisuje odpowiedzi ani operacji A w zakresie B; import gościa jest przypisany tylko raz |
-| KO-32 | Odtworzenie kopii sprzed potwierdzonego posiłku i płatnego wywołania zmienia sync_epoch: telefon zachowuje potwierdzony posiłek i outbox do uzgodnienia, stary checkpoint/operacja nie wykonuje zapisu, zadania nie powtarzają płatnego wywołania, a niepewny budżet nie staje się ponownie dostępny |
+| KO-32 | Odtworzenie kopii sprzed potwierdzonego posiłku i wywołania Gemini zmienia sync_epoch: telefon zachowuje potwierdzony posiłek i outbox do uzgodnienia, stary checkpoint/operacja nie wykonuje zapisu, zadania nie powtarzają wywołania Gemini, a niepewna wykorzystana pula nie staje się ponownie dostępna |
 
 Dodatkowe wymagania:
 
@@ -506,7 +506,7 @@ W pull przyrostowym pierwsza strona zamraża górną granicę `H`; kolejne stron
 2. Bootstrap/pull podają aktualną epokę. Android zapisuje ją przy stanie serwerowym, rewizjach i operacjach outbox. Token albo operacja ze starej epoki daje 409 `sync_epoch_changed` bez wykonania mutacji, także gdy żądanie ma nowy checkpoint. Weryfikacja epoki po uwierzytelnieniu ma pierwszeństwo przed błędem wieku kursora.
 3. Klient zatrzymuje push i zachowuje wszystkie lokalne dane, również wcześniej potwierdzone wpisy oraz pierwotne ID operacji. Pobiera świeży snapshot do osobnego obszaru uzgodnienia. Brak wpisu po restore nie dowodzi usunięcia. Różna treść przy tej samej liczbowej rewizji także jest konfliktem, bo rewizje należą do różnych epok.
 4. Operacja mająca potwierdzenie w odtworzonym rejestrze zachowuje swój wynik. Pozostałe rozbieżności wymagają porównania obu wersji i świadomej decyzji użytkownika; nie wykonujemy automatycznego ponownego push starej kolejki. Przyjęte odzyskanie tworzy nową operację z bieżącą epoką i rewizją. Jeśli brakujący rekord ma być utworzony ponownie, otrzymuje nowy UUID; zastrzeżone UUID nadal obowiązują. Serwer zapisuje atomowo z odzyskanym rekordem unikalne przypisanie `(owner_id, source_epoch, source_entity_id) → target_entity_id`, zachowane do usunięcia konta. Drugie urządzenie trafia na ten sam rekord, a różna treść wymaga rozwiązania konfliktu. Wpisy zależne odzyskuje się z aktualizacją referencji, bez drugiej kopii tego samego posiłku.
-5. Nie kasujemy zachowanej lokalnej wersji przed rozstrzygnięciem i potwierdzeniem odzyskania. Dane nieobecne zarówno w kopii, jak i na urządzeniach mogą być utracone w granicach RPO; procedura nie obiecuje ich odtworzenia. Przywrócenie płatnego AI podlega dodatkowej blokadzie opisanej w 11.6.
+5. Nie kasujemy zachowanej lokalnej wersji przed rozstrzygnięciem i potwierdzeniem odzyskania. Dane nieobecne zarówno w kopii, jak i na urządzeniach mogą być utracone w granicach RPO; procedura nie obiecuje ich odtworzenia. Przywrócenie rzeczywistego adaptera AI podlega dodatkowej blokadzie opisanej w 11.6.
 
 ### 11.4. Katalog początkowy i jednostki
 
@@ -520,7 +520,7 @@ Wybieramy mały, identyfikowalny pakiet zamiast deklarowania nieudowodnionej pop
 | Baton owocowo-zbożowy 35 g występujący w wybranej racji | Etykieta konkretnego producenta i wariantu; samo określenie „baton” nie wystarcza do publikacji |
 | Coca-Cola Original Taste, rynek PL | [Polska karta producenta](https://www.coca-cola.com/pl/pl/brands/brand-products-coca-cola), podstawa 100 ml; nie zastępujemy jej danymi wariantu z innego kraju |
 
-Dokumentacja producenta racji nie daje automatycznie pełnych makr wszystkich składników. Zbieranie etykiet i identyfikatorów FDC jest zadaniem implementacji seeda, a nie zamkniętą weryfikacją danych. Oficjalny pakiet do odbioru etapu 2 musi mieć zweryfikowane kcal i B/T/W wszystkich wymienionych pozycji jadalnych; brak źródła blokuje jego publikację. Do czasu zebrania danych testy używają wyraźnie oznaczonego pakietu demonstracyjnego o osobnym ID, który nie trafia jako oficjalny katalog do wydania. Nie rozdzielamy sumy kcal całej racji proporcjonalnie między składniki. Akcesoria niejadalne nie są produktami dziennika; proszki zapisują wartości suchego produktu i instrukcję przygotowania, a dodana woda nie zwiększa energii.
+Dokumentacja producenta racji nie daje automatycznie pełnych makr wszystkich składników. Zbieranie etykiet i identyfikatorów FDC jest zadaniem implementacji seeda, a nie zamkniętą weryfikacją danych. Oficjalny pakiet do odbioru E5 musi mieć zweryfikowane kcal i B/T/W wszystkich wymienionych pozycji jadalnych; brak źródła blokuje jego publikację. Do czasu zebrania danych testy używają wyraźnie oznaczonego pakietu demonstracyjnego o osobnym ID, który nie trafia jako oficjalny katalog do wydania. Nie rozdzielamy sumy kcal całej racji proporcjonalnie między składniki. Akcesoria niejadalne nie są produktami dziennika; proszki zapisują wartości suchego produktu i instrukcję przygotowania, a dodana woda nie zwiększa energii.
 
 Każda wersja produktu przechowuje URL lub identyfikator dokumentu/etykiety, datę odczytu, rynek, jednostkę i producenta. Pakiet ma stałe UUID, `schema_version`, numer wydania, SHA-256, rozmiar i datę publikacji. Manifest oraz plik są pobierane przez HTTPS; niespójna suma kontrolna blokuje instalację. Zmiana danych tworzy nową wersję, bez przeliczania historycznych posiłków.
 
@@ -544,32 +544,35 @@ Korekta `energy_adjustment_v1`:
 
 Cele mają wersjonowaną oś czasu, jedną obowiązującą wersję dla danej lokalnej daty i rewizję całej osi do wykrywania konfliktów. Nowa decyzja użytkownika może obowiązywać dziś lub w przyszłości. Zmiana rzeczywiście zapisana wcześniej offline zachowuje zadeklarowaną datę obowiązywania po dosynchronizowaniu i może uzupełnić serwerowe podsumowania; nie jest zastępowana datą przyjęcia przez API. Korekta błędnej historii wymaga jawnej operacji z audytem, nie nadpisania istniejącej wersji. Zmiana strefy profilu nie przesuwa już zapisanych lokalnych dat posiłków.
 
-### 11.6. Gemini: model, koszty i trwałość zadań
+### 11.6. Gemini: darmowe API, limity i trwałość zadań
 
-Wybieramy `gemini-3.5-flash-lite` jako model początkowy dla ekstrakcji posiłku i wyjaśnienia korekty. Obsługuje obrazy i odpowiedzi strukturalne według [dokumentacji modelu](https://ai.google.dev/gemini-api/docs/models/gemini-3.5-flash-lite). ID jest konfigurowane na serwerze i zapisywane przy analizie; nie używamy aliasu `latest`. Niedostępność modelu zwraca kontrolowany błąd, bez automatycznego przełączenia na droższy model. Dla rzeczywistych danych użytkowników wybieramy płatny wariant API; CI i rozwój domyślnie używają mocka. To wybór architektury, nie uruchomienie płatnej usługi.
+Korzystamy wyłącznie z Gemini Developer API w **Free Tier**, zgodnie z decyzją użytkownika. O3 przygotowuje osobny projekt bez aktywnego Cloud Billing; nie podłączamy rozliczeń ani automatycznego przejścia na płatną usługę. Model początkowy to `gemini-3.5-flash-lite`, którego wejście i wyjście Standard mają darmową pulę według [cennika Google](https://ai.google.dev/gemini-api/docs/pricing#gemini-3.5-flash-lite). ID jest konfigurowane na serwerze i zapisywane przy analizie. Dostępność dla konkretnego projektu sprawdzamy przed E7; jej brak daje kontrolowany błąd. CI i codzienny rozwój używają mocka.
+
+**Zakres użycia i wydanie w Polsce.** Odczytane 9.10.2026 [warunki Google](https://ai.google.dev/gemini-api/terms) wymagają Paid Services przy udostępnianiu klientów API użytkownikom w EOG, Szwajcarii lub Wielkiej Brytanii. Dla Gemini API oznacza to projekt z aktywnym kontem rozliczeniowym. Darmowy wariant przyjmujemy do prac deweloperskich; udostępnienie funkcji Gemini użytkownikom w Polsce jest zablokowane przy obecnych warunkach i decyzji o braku płatnej usługi. E0–E6 mogą postępować. E7/E9 mogą być rozwijane i testowane lokalnie, ale ich odbiór jako funkcji udostępnionej oraz pełne E10 wymagają rozwiązania tej sprzeczności (zmiany warunków dostawcy lub osobnej decyzji o alternatywie). Mock nie spełnia odbioru rzeczywistej funkcji AI. Nie włączamy billing w celu obejścia tego ograniczenia.
 
 | Parametr v1 | Ustalenie |
 |---|---|
-| Limity użytkownika | 10 nowych analiz zdjęcia na dobę UTC; 1 nowa analiza energii na 14 × 24 h; ponowienie tego samego klucza nie nalicza nowego zlecenia |
-| Równoległość | 1 aktywne zlecenie na konto, 2 wywołania dostawcy na całe środowisko, kontrolowane w bazie |
+| Limity użytkownika | Do 10 nowych analiz zdjęcia na dobę UTC; 1 nowa analiza energii na 14 × 24 h; dostępność zależy także od wspólnej puli projektu; ponowienie tego samego klucza nie tworzy nowego zlecenia |
+| Limity dostawcy | RPM/TPM/RPD i ewentualne inne limity odczytane dla wybranego modelu/projektu w AI Studio; brak potwierdzonej konfiguracji blokuje prawdziwy adapter |
+| Równoległość | 1 aktywne zlecenie na konto, najwyżej 2 wywołania dostawcy na środowisko; dodatkowe ograniczenie tempa wspólne w bazie |
 | Obraz | 1 plik JPEG/PNG/WebP, maks. 5 MiB, 4096 px na bok i 16 mln pikseli po dekodowaniu; backend usuwa metadane i skaluje do maks. 1600 px na dłuższym boku |
 | Odpowiedź | JSON Schema, najwyżej 30 składników; wartości dodatnie/nieujemne zgodnie z polem, brak makr jako null, odrzucenie NaN/Infinity i nieznanych jednostek |
-| Tokeny | Maks. 8192 tokeny wejścia po przygotowaniu obrazu i promptu oraz 2048 tokenów całego rozliczanego wyjścia, włącznie z reasoning; brak narzędzi, wyszukiwania i generowania obrazów |
-| Czas / próby | 45 s na próbę, najwyżej 2 próby w obrębie 120 s; po 5 min oczekiwania w kolejce zadanie kończy się czytelnym błędem |
-| Budżet całego projektu | 1 USD na dobę UTC i 10 USD na miesiąc kalendarzowy UTC; jedno wskazane środowisko płatne i jeden centralny ledger wszystkich analiz oraz ponowień |
+| Tokeny | Maks. 8192 tokeny wejścia po przygotowaniu obrazu i promptu oraz 2048 tokenów wyjścia, włącznie z reasoning; brak narzędzi, wyszukiwania, cache dostawcy i generowania obrazów |
+| Czas / próby | 45 s na próbę, najwyżej 2 próby w obrębie 120 s; po 5 min oczekiwania zadanie kończy się czytelnym błędem; wyczerpana pula dobowa nie powoduje oczekiwania do następnej doby |
+| Opłaty API | Wyłącznie Free Tier na projekcie bez aktywnego billing; aplikacja nie realizuje płatnych wywołań |
 | Retencja | Obraz w backendzie do zakończenia zlecenia, maks. 24 h; wyjaśnienie, decyzja i wersje reguł w historii użytkownika |
 
-Według [cennika Google odczytanego 9.10.2026](https://ai.google.dev/gemini-api/docs/pricing#gemini-3.5-flash-lite) stawki Standard wynoszą 0.30 USD / mln tokenów wejścia i 2.50 USD / mln wyjścia. Dla limitów powyżej górny koszt tokenów jednej próby to 0.0075776 USD; rezerwujemy 0.01 USD na próbę. Cena, wersja tabeli opłat i limit są konfiguracją serwera. Przed włączeniem integracji test potwierdza sposób liczenia tokenów obrazu i reasoning; jeśli adapter nie potrafi narzucić tych granic, nie dopuszcza płatnego żądania. Zmiana ceny wymaga aktualizacji rezerwacji. Budżet nie obejmuje podatków i infrastruktury.
+[Limity Google](https://ai.google.dev/gemini-api/docs/rate-limits) obowiązują na projekt, nie klucz, i mogą się zmieniać. RPD resetuje się o północy czasu Pacific: używamy `America/Los_Angeles`, z uwzględnieniem zmiany czasu; limit użytkownika UTC pozostaje osobny. Nie wpisujemy niezweryfikowanej stałej darmowej liczby zapytań. O3 przekazuje odczyt limitów z datą; lokalny limiter nie gwarantuje dostępności dostawcy. Przekroczenie puli daje `ai_quota_exhausted`, a użytkownik zachowuje zapis ręczny i możliwość ponownej analizy później.
 
-W v1 tylko jedno wskazane środowisko może otrzymać płatny klucz Gemini; jego baza zawiera wspólny ledger. Pozostałe środowiska używają mocka. Płatne testy referencyjne są zlecane przez API tego samego środowiska, z tymi samymi rezerwacjami, limitami i audytem, a nie przez osobny skrypt z kluczem. Przeniesienie roli płatnego środowiska wymaga wyłączenia poprzedniego workera i przeniesienia bieżących liczników/rezerwacji; ich zerowanie nie resetuje budżetu.
+Tylko jedno wskazane środowisko otrzymuje prawdziwy klucz tego projektu. Wszystkie próby, także testy referencyjne, przechodzą przez jego API i wspólny rejestr `ai_quota_reservations`; pozostałe środowiska używają mocka. Worker atomowo zajmuje miejsce w limitach zapytań i tokenów przed wysłaniem. Wynik zapisuje zużycie; przy nieznanym wyniku zachowujemy rezerwację do końca właściwego okna. Rotacja klucza ani restart nie resetują liczników. Nie tworzymy kolejnych projektów/kluczy w celu obchodzenia limitów.
 
-Po odtworzeniu starszej kopii ledger nie jest dowodem pozostałego budżetu. Procedura restore pozostawia płatny adapter wyłączony, a wszystkie niedokończone zadania z kopii w stanie wymagającym uzgodnienia, bez ponownego wysyłania do dostawcy. O3/O2 uzgadniają wydatki i próby o nieznanym wyniku z niezależnym rejestrem rozliczeń dostawcy, uwzględniając opóźnione naliczenia. Bez wiarygodnego uzgodnienia bieżąca doba i miesiąc UTC otrzymują pozostały budżet 0; samo wgranie bazy nie odblokowuje ani jednego płatnego wywołania. Nowy okres może odzyskać swój zwykły limit dopiero po zatrzymaniu wszystkich starych workerów i zablokowaniu odtwarzania starych zadań. W razie nadal niepewnego obciążenia nowego okresu adapter pozostaje wyłączony do wyjaśnienia. Dziennik i zapis ręczny działają niezależnie od tej blokady.
+Po restore stare zadania nie wywołują dostawcy automatycznie. Rzeczywisty adapter pozostaje wstrzymany do odcięcia starych workerów i uzgodnienia liczników albo wygaśnięcia wszystkich niepewnych okien limitów (w tym doby Pacific i właściwych limitów użytkownika). Cofnięty rejestr nie oznacza ponownego udostępnienia wykorzystanej puli. To ochrona limitów i powtórzeń; nie prowadzimy ledgeru wydatków ani rezerwacji USD.
 
-Przed wywołaniem worker atomowo rezerwuje koszt w licznikach dobowym i miesięcznym; brak miejsca daje `ai_budget_exhausted`. Po odpowiedzi rozlicza faktyczne zużycie, a przy nieznanym wyniku lub koszcie zachowuje pełną rezerwację. Timeout po możliwym wykonaniu po stronie dostawcy nie jest automatycznie ponawiany. Ponawiamy tylko jednoznaczne 429 lub błąd przed wysłaniem żądania, z `Retry-After` i osobną rezerwacją. Po utracie workera zadanie, którego wywołanie rozpoczęto, kończy się `provider_result_unknown`; nie jest wysyłane ponownie automatycznie. Dodatkowe żądanie użytkownika jest nową, świadomą analizą.
+Timeout po możliwym wykonaniu u dostawcy nie jest automatycznie ponawiany. Ponawiamy tylko jednoznaczny chwilowy 429 lub błąd przed wysłaniem, z `Retry-After`, opóźnieniem i nową rezerwacją limitu; dobowe wyczerpanie kończy próbę, a nie uruchamia pętlę retry. Nieznany rodzaj 429 także kończy analizę czytelnym błędem. Po utracie workera rozpoczęte wywołanie kończy się `provider_result_unknown`. Kolejna analiza wymaga nowego świadomego zlecenia.
 
-Do modelu trafia przygotowane zdjęcie lub agregaty, bez tokenów, identyfikatora konta i pełnego dziennika. Tekst znaleziony na zdjęciu jest danymi, nie instrukcją. Zlecenie i jego wynik są dostępne wyłącznie właścicielowi. Walidacja JSON nie potwierdza poprawności żywieniowej — propozycję posiłku zawsze zatwierdza użytkownik. Potwierdzenie analizy nie publikuje produktu i nie zapisuje posiłku poza sync.
+Do modelu trafia przygotowane zdjęcie lub minimalne agregaty, bez tokenów, identyfikatora konta i pełnego dziennika. Warunki przetwarzania sprawdzamy dla regionu: Google stosuje do EOG zasady wykorzystania danych opisane dla Paid Services także przy darmowej puli; nie znosi to ograniczenia udostępniania aplikacji powyżej. Próbki deweloperskie są syntetyczne lub pozbawione danych osobowych. Zgoda w aplikacji wskazuje dostawcę i zakres wysyłki; retencja 24 h dotyczy naszego backendu. Tekst na zdjęciu jest danymi, nie instrukcją. Wynik dostępny jest tylko właścicielowi, wymaga walidacji i zatwierdzenia; zapis posiłku nadal przechodzi przez sync.
 
-Przed wydaniem: zestaw minimum 30 opisanych zdjęć obejmujący pojedyncze produkty, dania mieszane, racje i nieczytelne ujęcia. Kryteria: 100% niepoprawnych struktur zatrzymuje walidacja, 100% przypadków pozostawia ręczny zapis, a co najmniej 90% czytelnych zdjęć identyfikuje główne składniki według przygotowanej listy referencyjnej. Masa i kcal pozostają szacunkiem; ten test nie certyfikuje dokładności dietetycznej. Brak spełnienia kryterium blokuje wydanie funkcji AI i wymaga poprawy promptu lub ponownego wyboru modelu z aktualizacją kosztów.
+Przed odbiorem AI: zestaw minimum 30 opisanych zdjęć produktów, dań mieszanych, racji i nieczytelnych ujęć, rozłożony na dostępne darmowe limity. Kryteria: 100% błędnych struktur zatrzymuje walidacja, 100% przypadków pozostawia ręczny zapis, co najmniej 90% czytelnych zdjęć identyfikuje główne składniki z listy referencyjnej. Masa i kcal pozostają szacunkiem. Niespełnienie kryterium wymaga poprawy promptu lub wyboru innego dostępnego darmowego modelu i ponownego testu; ograniczenie wydania opisane wyżej nadal obowiązuje.
 
 ### 11.7. Analityka, punkty i Nemesis
 
@@ -595,9 +598,9 @@ Priorytety implementacji Osoby 2 (szczegółowe etapy E0–E10 i warunki odbioru
 3. OIDC, izolacja kont i prywatne modele (E3), następnie idempotencja, push/pull, snapshot, import gościa, testy 30 dni i zmiany epoki (E4).
 4. Zweryfikowany oficjalny katalog i statystyki (E5), następnie moderacja, Gemini, punkty i Nemesis (E6–E8); korekty zapotrzebowania po testach reguł (E9), pełny odbiór (E10).
 
-Testy integracyjne działają na PostgreSQL tej samej głównej wersji co wdrożenie. Wymagane są równoległe zapisy i utrata odpowiedzi, konta A/B, niepoprawne issuer/audience/podpisy, rotacja JWKS, stare kursory, snapshot w czasie zmian, ponowienia po sprzątaniu, brak makr, granice zaokrągleń, zmiana czasu, cofnięcie zgód oraz budżet AI przy równoległych zleceniach. Kontrolowane cofnięcie migracji albo odtworzenie kopii jest sprawdzane przed wydaniem. Dokumentacja nie zastępuje wyników tych testów.
+Testy integracyjne działają na PostgreSQL tej samej głównej wersji co wdrożenie. Wymagane są równoległe zapisy i utrata odpowiedzi, konta A/B, niepoprawne issuer/audience/podpisy, rotacja JWKS, stare kursory, snapshot w czasie zmian, ponowienia po sprzątaniu, brak makr, granice zaokrągleń, zmiana czasu, cofnięcie zgód oraz limity Free Tier przy równoległych zleceniach. Kontrolowane cofnięcie migracji albo odtworzenie kopii jest sprawdzane przed wydaniem. Dokumentacja nie zastępuje wyników tych testów.
 
-Zadania wykonawcze pozostałych osób: Osoba 1 dobiera minimalny Android i urządzenia testowe; Osoba 3 dostawcę VPS, domenę, SMTP, certyfikaty oraz rzeczywiste dane konfiguracyjne Keycloak. To przypisane im czynności wdrożeniowe, nie otwarte wybory logiki backendu. Zebranie etykiet katalogu i sprawdzenie modelu na zestawie referencyjnym pozostaje zadaniem Osoby 2 w toku implementacji. Wybór limitu kosztów nie upoważnia do zakupu usług w tym etapie.
+Zadania wykonawcze pozostałych osób: Osoba 1 dobiera minimalny Android i urządzenia testowe; Osoba 3 dostawcę VPS, domenę, SMTP, certyfikaty oraz rzeczywiste dane konfiguracyjne Keycloak. To przypisane im czynności wdrożeniowe, nie otwarte wybory logiki backendu. Zebranie etykiet katalogu i sprawdzenie modelu na zestawie referencyjnym pozostaje zadaniem Osoby 2 w toku implementacji. Gemini pozostaje wyłącznie darmowe; ograniczenie wydania w EOG opisuje 11.6.
 
 Poza podstawowym zakresem: iOS, zegarki/automatyczny odczyt kroków, analiza obrazu offline na urządzeniu, czat, panel dowódczy, integracja z wojskowymi systemami organizacji i publikacja sklepowa.
 

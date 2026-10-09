@@ -1,0 +1,14 @@
+[project]
+name = "calorie-contracts"
+version = "0.1.0"
+description = "Lokalna walidacja artefaktów E0; bez serwera aplikacji"
+requires-python = ">=3.12,<3.14"
+dependencies = [
+  "jsonschema[format]==4.25.1",
+  "openapi-spec-validator==0.7.2",
+  "PyYAML==6.0.3",
+  "tzdata==2025.2",
+]
+
+[tool.uv]
+package = false

@@ -58,7 +58,7 @@ Uruchomienia: PR do `main` oraz zmiana `main`. Każdy PR otrzymuje stabilne spra
 
 W E1 uruchamiamy kontrole istniejącego kodu, migracji i jakości. Kolejne kontrole stają się wymagane razem z funkcją z danego etapu. Brak kodu lub zbioru testów nie jest dowodem działania; PR nie dodaje „zielonego” pustego zadania w miejsce przyszłego sprawdzenia. Zmiana tylko dokumentacji wymaga odpowiednich kontroli dokumentacji, nie pełnego zestawu emulatorów.
 
-Testy PR nie korzystają z produkcyjnych danych, hasła administratora Keycloak ani płatnego Gemini. Gemini jest mockowane, a tokeny testowe i efemeryczna baza powstają na potrzeby testu. Kontrola kryptografii obejmuje rzeczywiście podpisane tokeny i testowe JWKS; e2e z prawdziwym Keycloak następuje na środowisku integracyjnym przed E4 i przy zmianach logowania.
+Testy PR nie korzystają z produkcyjnych danych, hasła administratora Keycloak ani rzeczywistego Gemini. Gemini jest mockowane, a tokeny testowe i efemeryczna baza powstają na potrzeby testu. Kontrola kryptografii obejmuje rzeczywiście podpisane tokeny i testowe JWKS; e2e z prawdziwym Keycloak następuje na środowisku integracyjnym przed E4 i przy zmianach logowania.
 
 O3 stosuje minimalne `GITHUB_TOKEN` permissions, akcje przypięte do pełnych SHA, automatyczne propozycje aktualizacji zależności i skanowanie sekretów. Kod niezaufanego PR nie działa z sekretami przez `pull_request_target`. Dokumentacja bezpieczeństwa GitHub jest źródłem reguł, a konkretna konfiguracja jest częścią E1.
 
@@ -66,14 +66,14 @@ O3 stosuje minimalne `GITHUB_TOKEN` permissions, akcje przypięte do pełnych SH
 
 | Moment | Działania |
 |---|---|
-| PR | Sprawdzenie i budowa; bez publikacji produkcyjnej i bez płatnego AI |
+| PR | Sprawdzenie i budowa; bez publikacji produkcyjnej i Gemini mockowane |
 | Merge do `main` | Oznaczenie obrazu SHA, wdrożenie integracyjne, migracja jednorazowa, smoke test API i wymaganych usług |
 | Wydanie wersjonowane | Uzgodniony zestaw APK/API/pakietu; test zgodności, kopia, zatwierdzenie środowiska produkcyjnego przez O3 i wdrożenie |
 | Awaria | Wstrzymanie dalszych wdrożeń, diagnoza na identyfikatorze wydania; rollback obrazu tylko przy kompatybilnym schemacie, w przeciwnym razie poprawka migracji lub sprawdzone odtworzenie |
 
 Migracje uruchamia osobny krok z rolą migratora; kilka replik API nie próbuje ich wykonać równolegle. Dla zmian schematu stosujemy, gdy potrzeba, rozszerzenie → migrację danych → przełączenie kodu → późniejsze usunięcie starego pola. Usunięcie kolumny używanej przez poprzedni obraz uniemożliwia prosty rollback tego obrazu.
 
-Odtworzenie starszej kopii jest osobną procedurą awaryjną: O3 zatrzymuje ruch i workery, przywraca spójny zestaw baz/artefaktów, ustawia nowy `sync_epoch`, unieważnia stare sesje/snapshoty i sprawdza zgodność tożsamości. O2 sprawdza odzyskiwanie telefonu z zachowaniem potwierdzonych i niewysłanych wpisów. Płatne AI pozostaje zablokowane, dopóki nie rozliczono niepewnego budżetu zgodnie z wymaganiami 11.6; zadania ze starej kopii nie wywołują dostawcy automatycznie. Dopiero wynik KO-32 pozwala otworzyć właściwe funkcje. Zwykły restart lub kompatybilny rollback obrazu nie zmienia epoki.
+Odtworzenie starszej kopii jest osobną procedurą awaryjną: O3 zatrzymuje ruch i workery, przywraca spójny zestaw baz/artefaktów, ustawia nowy `sync_epoch`, unieważnia stare sesje/snapshoty i sprawdza zgodność tożsamości. O2 sprawdza odzyskiwanie telefonu z zachowaniem potwierdzonych i niewysłanych wpisów. Rzeczywiste AI pozostaje wstrzymane do uzgodnienia lub wygaśnięcia niepewnych okien limitów zgodnie z wymaganiami 11.6; zadania ze starej kopii nie wywołują dostawcy automatycznie. Dopiero wynik KO-32 pozwala otworzyć właściwe funkcje. Zwykły restart lub kompatybilny rollback obrazu nie zmienia epoki.
 
 Backend wspiera aktualny kontrakt mobilny przez cały gwarantowany okres offline: zmiana kompatybilna może być dodana, ale usunięcie pól/semantyki wymaga nowej wersji API i planu aktualizacji. Stary kontrakt oraz format operacji utrzymujemy co najmniej do końca ważności ostatniego checkpointu wystawionego dla tej wersji, czyli 30 × 24 h od jego wystawienia. Przed wycofaniem wersji ogłaszamy migrację i przestajemy wydawać dla niej nowe checkpointy; wydanie kolejnego przedłuża termin utrzymania. Po upływie tego czasu nadal nie wolno zgubić starej kolejki: aktualizacja klienta ma migrację/reconciliation, a niewspierane żądanie dostaje jawny błąd. Żaden deploy nie skraca ważności istniejącego checkpointu bez bezpiecznej ścieżki odzyskiwania.
 
@@ -89,7 +89,7 @@ Zadanie jest ukończone, gdy:
 - Dokumentacja i generowane kontrakty odpowiadają kodowi; O1/O3 mają potrzebne przykłady i konfigurację.
 - Integracja i wdrożenie objęte zadaniem zostały sprawdzone; pozostałe ograniczenia są jawne i nie podważają kryterium odbioru.
 
-Recenzent sprawdza przede wszystkim: izolację kont, niezawodność transakcji, zachowanie po utracie odpowiedzi, brak destrukcyjnego nadpisania outbox/historii, zgodność jednostek/dat oraz koszty i uprawnienia usług zewnętrznych. Dla zmiany dokumentacji wystarcza kontrola spójności, linków i opisanych scenariuszy; nie tworzymy testów aplikacji udających weryfikację samej treści.
+Recenzent sprawdza przede wszystkim: izolację kont, niezawodność transakcji, zachowanie po utracie odpowiedzi, brak destrukcyjnego nadpisania outbox/historii, zgodność jednostek/dat oraz limity i uprawnienia usług zewnętrznych. Dla zmiany dokumentacji wystarcza kontrola spójności, linków i opisanych scenariuszy; nie tworzymy testów aplikacji udających weryfikację samej treści.
 
 ## 6. Oficjalne źródła
 
@@ -98,3 +98,5 @@ Recenzent sprawdza przede wszystkim: izolację kont, niezawodność transakcji, 
 - [Android: migracje Room](https://developer.android.com/training/data-storage/room/migrating-db-versions).
 
 Te dokumenty opisują mechanizmy narzędzi; przyjęty podział ról, etapy i kryteria są zasadami naszego projektu.
+
+Przed udostępnieniem funkcji AI O3 sprawdza warunki dostawcy dla regionu odbiorców. Dla przyjętego Free Tier obecne ograniczenie EOG z wymagań 11.6 blokuje wydanie Gemini użytkownikom w Polsce; nie aktywujemy rozliczeń automatycznie.

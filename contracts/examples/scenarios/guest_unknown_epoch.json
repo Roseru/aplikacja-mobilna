@@ -1,0 +1,106 @@
+{
+  "scenario_id": "guest_unknown_epoch",
+  "purpose": "Świadomy import starej historii gościa bez znanej epoki.",
+  "test_stage": "E4",
+  "execution": "contract_fixture_only",
+  "preconditions": {
+    "server_time": "2026-10-09T12:00:00Z",
+    "sync_epoch": "00000000-0000-4000-8000-000000000064",
+    "account_ids": [
+      "00000000-0000-4000-8000-000000000001"
+    ],
+    "checkpoint_issued_at": null,
+    "facts": [
+      "Gość ma lokalny szkic z epoch unknown, bez komunikatu wire Operation.",
+      "Zbiór gościa nie ma wcześniejszego przypisania do konta; historia pochodzi sprzed ponad30 dni."
+    ]
+  },
+  "steps": [
+    {
+      "kind": "client",
+      "label": "Trwałe przypisanie zbioru do A",
+      "action": "bind_guest",
+      "active_account": "00000000-0000-4000-8000-000000000001",
+      "session_generation": 1,
+      "expected_behavior": [
+        "Użytkownik zatwierdza A; jedna transakcja zapisuje niezmienne przypisanie zbioru do konta A."
+      ]
+    },
+    {
+      "kind": "http",
+      "label": "Pełny stan konta przed importem",
+      "endpoint": "pull",
+      "account": "00000000-0000-4000-8000-000000000001",
+      "session_generation": 1,
+      "request": {},
+      "expected_status": 200,
+      "response": {
+        "sync_epoch": "00000000-0000-4000-8000-000000000064",
+        "mode": "snapshot",
+        "snapshot_token": "snapshot-demo-A-E100",
+        "page_token": null,
+        "checkpoint": "checkpoint-demo-A-E100",
+        "server_time": "2026-10-09T12:00:00Z",
+        "entities": [],
+        "goal_timeline_revision": 0,
+        "recovery_mappings": [],
+        "operation_receipts": []
+      },
+      "delivery": "received",
+      "expected_behavior": [
+        "Zachowaj lokalne dane i zastosuj wyłącznie potwierdzony wynik we właściwym zakresie konta."
+      ]
+    },
+    {
+      "kind": "http",
+      "label": "Materializacja operacji z poznaną epoką",
+      "endpoint": "push",
+      "account": "00000000-0000-4000-8000-000000000001",
+      "session_generation": 1,
+      "request": {
+        "protocol_version": 1,
+        "sync_epoch": "00000000-0000-4000-8000-000000000064",
+        "checkpoint": "checkpoint-demo-A-E100",
+        "operations": [
+          {
+            "operation_id": "00000000-0000-4000-8000-000000000136",
+            "entity_type": "weight",
+            "entity_id": "00000000-0000-4000-8000-0000000000c8",
+            "action": "upsert",
+            "base_revision": null,
+            "sync_epoch": "00000000-0000-4000-8000-000000000064",
+            "payload": {
+              "weight_kg": "80",
+              "occurred_at": "2026-06-01T06:00:00Z",
+              "time_zone": "Europe/Warsaw",
+              "local_date": "2026-06-01"
+            }
+          }
+        ]
+      },
+      "expected_status": 200,
+      "response": {
+        "sync_epoch": "00000000-0000-4000-8000-000000000064",
+        "server_time": "2026-10-09T12:00:00Z",
+        "results": [
+          {
+            "operation_id": "00000000-0000-4000-8000-000000000136",
+            "entity_id": "00000000-0000-4000-8000-0000000000c8",
+            "status": "accepted",
+            "revision": 1,
+            "recovery_mapping": null
+          }
+        ]
+      },
+      "delivery": "received",
+      "expected_behavior": [
+        "Zachowaj lokalne dane i zastosuj wyłącznie potwierdzony wynik we właściwym zakresie konta."
+      ]
+    }
+  ],
+  "expected_future_behavior": [
+    "Nie wolno później przypisać tego samego zbioru do B.",
+    "Zachowaj UUID i pierwotne daty; usuń oryginały dopiero po potwierdzeniu.",
+    "Historia starsza niż30 dni sama w sobie nie blokuje pierwszego importu."
+  ]
+}

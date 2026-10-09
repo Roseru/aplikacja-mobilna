@@ -1,0 +1,14 @@
+{
+  "method": "mifflin_pal_v1",
+  "input": {
+    "age_years": 30,
+    "height_cm": "180",
+    "weight_kg": "80",
+    "equation_variant": "plus_5",
+    "activity_class": "line"
+  },
+  "resting_kcal": "1780",
+  "pal": "1.8",
+  "maintenance_kcal": "3204",
+  "estimated_at": "2026-10-09T10:00:00Z"
+}
