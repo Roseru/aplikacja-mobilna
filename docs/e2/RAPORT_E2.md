@@ -1,5 +1,10 @@
 # Raport wykonania E2 - osoba 2
 
+**Część O2 gotowa; integracja O1 oczekuje.** Pełna regresja 327 PASS bez skip,
+niezależna recenzja 9,4/10 bez istotnych usterek oraz zielone rzeczywiste CI
+implementacji, obejmujące PostgreSQL i eksport/import w zbudowanym obrazie.
+Wiążące kontrole każdego kolejnego head wskazuje [PR #4](https://github.com/Roseru/aplikacja-mobilna/pull/4/checks).
+
 Zakres: backend, dane i integracje O2. Start z aktualnego zdalnego `main`
 `a79b0732df71955ebf893391cc767805be674ed0` po scalonym E1; gałąź
 `codex/e2-katalog-offline`. Zastane nieśledzone master prompty E1/E2 zachowano
@@ -110,7 +115,7 @@ backendu. Lokalnie PostgreSQL 17.11, Python 3.13.9, uv 0.9.5; role z bootstrapu 
 | Ruff / zasoby / OpenAPI | Check/format 45 plików PASS; zasoby identyczne z normatywnymi schematami, OpenAPI zgodne z bieżącą fabryką API |
 | sdist i wheel | Rzeczywista budowa offline PASS; końcowy wheel zainstalowany w czystym env z zależnościami uv.lock |
 | Runtime poza repo | PASS: Python -I, systemowy katalog tymczasowy poza checkoutem, import zasobów, walidacja bez DB, rzeczywisty eksport PostgreSQL i import/repeat SQLite bez DATABASE_URL |
-| Obraz | Lokalnie brak Docker; wymagane rzeczywiste build/smoke i PostgreSQL → eksport/import w obrazie wykonuje CI, wynik wiążący dla bieżącego head |
+| Obraz | **PASS w CI**: rzeczywiste build/smoke, migracja PostgreSQL, seed/repeat, eksport/repeat i zgodność gzip z repo, publikacja demo, importer/readback oraz API rolą wykonawczą; lokalnie brak Docker |
 
 Pierwsza pełna próba zatrzymała się na opcjonalnym FormatChecker dat. Poprawka
 zapewnia kontrolę kalendarza/URI w zainstalowanym backendzie bez dodatkowych
@@ -139,10 +144,19 @@ aktywacja release 2 była monotoniczna. Sprawdził też trailing gzip, niepopraw
 kalendarz/IPv6 URI i exact Decimal 3466.00000145. Pierwszy probe wymagał
 poprawienia zamykania uchwytów w skrypcie recenzenta; nie była to usterka produkcji.
 
-Odbiór lokalny O2 spełnia próg. Gałąź E2 i PR do main są publikowane po tym
-odbiorze; końcowy odbiór O2 wymaga jeszcze wszystkich czterech zielonych zadań
-CI dla aktualnego head, w tym rzeczywistego obrazu. Wiążące head/CI wskazuje
-PR i końcowy raport czatu. Scalenie pozostaje osobnym poleceniem użytkownika.
+Gałąź E2 wypchnięto po odbiorze. [PR #4](https://github.com/Roseru/aplikacja-mobilna/pull/4)
+jest otwarty do main i dołączony do zadania, bez scalenia. Pierwszy commit
+implementacji `229a2b8bcd10948fec7a6aac58c5b8a9b1b3a49c`; poprawka CI
+`5183c7a9048faf8c7bee8a0e6dbb2b8915c94930`. Dla tego drugiego SHA
+[CI 37995920748](https://github.com/Roseru/aplikacja-mobilna/actions/runs/37995920748)
+zakończyło wszystkie cztery zadania (`contracts`, `quality`, `postgres`,
+`ci-required`) sukcesem. Logi potwierdzają 174 unit i 153 integration bez skip,
+build/smoke obrazu i całą rzeczywistą ścieżkę pakietu, z hashem demo identycznym
+jak w repo. Python runnera/obrazu 3.13.16; pakiet powstał lokalnie na 3.13.9.
+
+Ten CI stanowi dowód kodu implementacji i poprawki obrazu. Każdy późniejszy
+commit raportu również musi przejść wszystkie zadania; wiążące aktualne head/CI
+wskazuje PR oraz końcowy raport czatu. Scalenie pozostaje osobnym poleceniem.
 
 Pierwszy przebieg commita `229a2b8` i jego ponowienie zakończyły się na timeoutach
 auth.docker.io/504 oraz limicie pull Docker Hub, przed uruchomieniem bazy/obrazu.
