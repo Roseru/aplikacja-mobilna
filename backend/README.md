@@ -70,6 +70,8 @@ Generowany OpenAPI obejmuje health oraz cztery publiczne odczyty E2. Projekt `co
 
 Obraz `docker build -t calorie-backend:local backend` działa jako użytkownik bez praw roota. Migrację uruchamia się osobnym poleceniem z rolą migratora. Obraz zawiera moduł katalogu, wspólne wygenerowane zasoby schematów i jawny seed demo; nie potrzebuje `../contracts` ani `tools`. CI sprawdza rzeczywisty eksport PostgreSQL → gzip/manifest → referencyjny SQLite w zbudowanym obrazie, powtórzenie importu/eksportu oraz API z rolą wykonawczą. Osobna kontrola instaluje wheel i uruchamia go poza checkoutem.
 
+CI pobiera przypięte digesty oficjalnych obrazów Python/PostgreSQL z ECR Public po timeoutach i limicie Docker Hub; wszystkie kontrole obrazu/bazy pozostają wymagane. Dockerfile udostępnia `--build-arg PYTHON_IMAGE=...`, domyślnie nadal Python 3.13-slim. [AWS opisuje publikację Docker Official Images w ECR Public](https://aws.amazon.com/blogs/containers/docker-official-images-now-available-on-amazon-elastic-container-registry-public/); odczyt tagów i tych samych manifestów po digest potwierdzono bez logowania przed zmianą CI. Nie tworzymy konta AWS ani płatnej usługi.
+
 ## E2: kontrolowany import, eksport i publikacja
 
 Operator pracuje z rolą `calorie_app_migrator` w kontrolowanym środowisku. API nie otrzymuje credentiala operatora i nie ma mutujących endpointów katalogu. Walidacja wejścia działa bez `DATABASE_URL`:

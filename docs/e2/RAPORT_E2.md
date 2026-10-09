@@ -143,3 +143,17 @@ Odbiór lokalny O2 spełnia próg. Gałąź E2 i PR do main są publikowane po t
 odbiorze; końcowy odbiór O2 wymaga jeszcze wszystkich czterech zielonych zadań
 CI dla aktualnego head, w tym rzeczywistego obrazu. Wiążące head/CI wskazuje
 PR i końcowy raport czatu. Scalenie pozostaje osobnym poleceniem użytkownika.
+
+Pierwszy przebieg commita `229a2b8` i jego ponowienie zakończyły się na timeoutach
+auth.docker.io/504 oraz limicie pull Docker Hub, przed uruchomieniem bazy/obrazu.
+Kontrakty, 174 unit, wheel i jego instalacja przechodziły; to nie był odbiór CI.
+Poprawka CI używa oficjalnego wydawcy Docker w ECR Public, z manifestami odczytanymi
+także po dokładnych digestach: Python `70729b46…5678c2f`, PostgreSQL
+`2d2b8998…dbdf9e3`. [Źródło publikacji mirroru](https://aws.amazon.com/blogs/containers/docker-official-images-now-available-on-amazon-elastic-container-registry-public/).
+Kontrole nadal budują i uruchamiają rzeczywisty obraz oraz PostgreSQL; nie ma
+zamiany na mock, pomijania testów ani zmiany danych. Zmienił się magazyn obrazów
+w CI, a Dockerfile dostał jawny build arg bazowego Pythona.
+
+Recenzent niezależnie odebrał także tę poprawkę CI: YAML, wszystkie 17 skryptów
+Bash, porównanie trzech odwołań do obrazów i zachowanie wszystkich bramek PASS.
+Ocena pozostaje 9,4/10, bez istotnych findingów; backend i 327 testów są niezmienione.
