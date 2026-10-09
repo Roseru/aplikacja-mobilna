@@ -2,6 +2,8 @@
 
 Data: 9 października 2026 r. Gałąź: `codex/e1-fundament`, utworzona z `main` po scaleniu PR E0 nr 2 (merge `534f5ae`).
 
+**Wynik: E1 zaimplementowane i sprawdzone lokalnie oraz w GitHub Actions; PR nr 3 gotowy do przeglądu i scalenia.**
+
 ## Wykonane
 
 - Backend Python 3.13/FastAPI/Pydantic 2, SQLAlchemy 2, psycopg 3, Alembic i uv.lock.
@@ -21,7 +23,9 @@ Wykonano także SQL `infra/local/init-db.sh` w izolowanym lokalnym klastrze: rol
 
 Budowa sdist i wheel: PASS. Ponowna pełna walidacja E0: PASS. Niezależna recenzja: **9,1/10**, bez nierozwiązanych usterek blokujących. Poprawiono zbyt szerokie domyślne granty na historii migracji: API i worker mają SELECT bez INSERT/UPDATE/DELETE, co recenzent potwierdził własnym odczytem PostgreSQL. Wzmocniono także wskazaną przez niego fixture regresji grantów.
 
-PR E1: [nr 3](https://github.com/Roseru/aplikacja-mobilna/pull/3). Pierwszy przebieg CI potwierdził kontrakty, testy PostgreSQL, jakość kodu i budowę obrazu. Smoke test początkowo odczytał port podczas startu kontenera i dostał reset połączenia; dodano ograniczone oczekiwanie do 30 s oraz logi kontenera. Wynik końcowego przebiegu zostanie odnotowany po zakończeniu. Nie deklarujemy zielonego CI na podstawie samego pliku workflow.
+PR E1: [nr 3](https://github.com/Roseru/aplikacja-mobilna/pull/3). [CI dla kodu 69a22c1](https://github.com/Roseru/aplikacja-mobilna/actions/runs/37976867259) zakończyło się sukcesem: `contracts`, `quality`, `postgres` i `ci-required`. Potwierdzono również budowę sdist/wheel, obrazu Docker i jego rzeczywisty start bez praw roota: live 200 oraz ready 503 przy niedostępnej bazie. Przebieg PostgreSQL utworzył oddzielne bazy/role z tego samego skryptu i wykonał integrację na PostgreSQL 17.
+
+Pierwszy przebieg smoke odczytał port podczas startu kontenera i dostał reset połączenia; poprawka dodała ograniczone oczekiwanie do 30 s oraz logi kontenera. Wszystkie kontrole pozostały wymagane, bez pomijania testów.
 
 ## Dalsze etapy
 
