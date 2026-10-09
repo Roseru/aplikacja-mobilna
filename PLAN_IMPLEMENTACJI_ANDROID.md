@@ -2,7 +2,9 @@
 
 Data: 9 października 2026 r.
 
-Podstawa: `WYMAGANIA_PROJEKTOWE.md` oraz zaakceptowane makiety w `propozycje-ui/`. Użytkownik jest osobą 1 w trzyosobowym zespole. Ten dokument wyznacza kolejność implementacji, a nie opisuje ukończonego kodu. W bieżącym katalogu projektu nie ma jeszcze kodu aplikacji Android.
+Podstawa: `WYMAGANIA_PROJEKTOWE.md` oraz zaakceptowane makiety. Użytkownik jest osobą 1 w trzyosobowym zespole. Ten dokument wyznacza kolejność implementacji; bieżący zakres kodu jest opisany w [android/README.md](android/README.md).
+
+**Postęp:** A-01–05 są zaimplementowane i sprawdzone w wersji 0.1.0. Wersja 0.2.0 dodaje lokalne zestawy demonstracyjne, wybór zjedzonych składników racji, edycję/usuwanie części i migrację Room 1 → 2. Pozostałe elementy etapu 2 i integracja z kontraktem osoby 2 pozostają do wykonania. Docelowy pakiet katalogu i reguły integracji opisuje [architektura zespołu](docs/ARCHITEKTURA.md).
 
 ## 1. Od czego zaczynamy
 
@@ -166,7 +168,7 @@ Nie potrzebujemy na start kompletnego backendu ani działającej analizy AI. Do 
 
 ## 8. Pierwsze zadanie do wykonania w kodzie
 
-**A-01 + A-02: utworzyć projekt Androida, uruchomić go i zbudować wspólny szkielet dziennika oraz wyboru posiłku z jasnym i ciemnym motywem.** Następnie A-03–05 zamieniają podgląd w działającą funkcję z Room. Nie zaczynamy kolejnych ekranów, dopóki pierwszy przepływ nie zapisuje danych i nie przejdzie odbioru.
+Pierwsze zadanie A-01–05 jest wykonane. Po odbiorze racji kolejne zadania osoby 1 to ręczny produkt, lokalny profil i pomiary wagi oraz oznaczanie kompletnych dni. Docelowy importer katalogu i obliczenia Decimal/BigDecimal wymagają formalnych przykładów osoby 2; obecny lokalny format jest prototypem, nie kontraktem API.
 
 ## Dokumentacja techniczna
 

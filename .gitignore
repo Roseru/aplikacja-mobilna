@@ -1,0 +1,13 @@
+.build-ui/
+.tooling/
+.gradle-home/
+**/.gradle/
+**/build/
+**/local.properties
+**/.idea/
+*.iml
+*.jks
+*.keystore
+*.hprof
+android/captures/
+output-apk/
