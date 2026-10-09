@@ -2,7 +2,7 @@
 
 Data: 9 października 2026 r. Gałąź: `codex/e1-fundament`, utworzona z `main` po scaleniu PR E0 nr 2 (merge `534f5ae`).
 
-**Wynik poprawki: zamknięto lukę NaN w bazie; 109 testów backendu przeszło na PostgreSQL 17.11. Końcowa niezależna recenzja i CI bieżącego commita są w toku.** Dawne wyniki CI i recenzji nie stanowią odbioru tej poprawki.
+**Wynik poprawki: E1 poprawione i odebrane — 109 testów backendu PASS na PostgreSQL 17.11, niezależna recenzja 9,5/10 bez istotnych nierozwiązanych usterek oraz zielone CI kodu poprawki.** Kontrole aktualnego head i stan scalenia wskazuje PR. Dawne wyniki CI i recenzji nie stanowią odbioru tej poprawki.
 
 ## Wykonane
 
@@ -44,17 +44,25 @@ Python **3.13.9**, uv **0.9.5**, PostgreSQL **17.11**. Utworzono własny izolowa
 | `tools/contracts/validate.ps1` | Pełna walidacja E0 PASS: 5 schematów, 16 endpointów, 124 przykłady HTTP, 64 poprawne/20 błędnych, 18 scenariuszy, 16 wektorów Decimal |
 | `git diff --check` | PASS |
 
-Nowa regresja: [test_finite_nutrition.py](../../backend/tests/integration/test_finite_nutrition.py). Istniejące testy E1 zostały zachowane; rozszerzono regresję uprawnień obu ról. TestClient zgłasza jedno nieblokujące ostrzeżenie Starlette dotyczące httpx; nie wyciszano go ani nie pomijano testów. Lokalnie brak Dockera; obowiązkową budowę i smoke test obrazu zweryfikuje zadanie `quality` w CI bieżącego commita.
+Nowa regresja: [test_finite_nutrition.py](../../backend/tests/integration/test_finite_nutrition.py). Istniejące testy E1 zostały zachowane; rozszerzono regresję uprawnień obu ról. TestClient zgłasza jedno nieblokujące ostrzeżenie Starlette dotyczące httpx; nie wyciszano go ani nie pomijano testów. Lokalnie brak Dockera; obowiązkową budowę i smoke test obrazu potwierdziło zadanie `quality` w CI commita poprawki.
 
 ## Niezależny odbiór poprawki
 
-Recenzja niezależnego subagenta jest w toku. Warunek odbioru: minimum **9/10**, samodzielnie wykonane kontrole i brak istotnych nierozwiązanych usterek. Wynik zostanie uzupełniony po zakończeniu recenzji.
+Niezależny subagent `review_e1_nan` nie napisał ani nie zmieniał poprawki. Ocenił kod i testy z commita `a8556a9` na **9,5/10**, bez istotnych nierozwiązanych usterek. Próg minimum 9/10 został spełniony na podstawie własnych kontroli recenzenta:
+
+- `python -m pytest backend/tests -x`: **109 PASS**, bez skip, 4,41 s; wszystkie cztery próby rollback przy NaN przeszły.
+- Ruff check/format, pełna walidacja E0, budowa sdist/wheel offline i `git diff --check`: **PASS**.
+- Potwierdzono niezmieniony blob `0001_foundation`, poprawną zależność `0002`, rzeczywiste role API/worker, CHECK i SQLSTATE, zachowanie NULL/zera/maksimum i danych, readiness oraz prawa do historii i izolację Keycloak.
+
+Recenzent nie wskazał usterek wymagających poprawy. Ostrzeżenie Starlette/httpx jest nieblokujące. Opcjonalna dodatkowa próba Alembica poza fixture czekała na zatwierdzenie polecenia narzędzia i została przerwana; nie zaliczamy jej do wykonanych kontroli. Wymagane testy rollback recenzent wykonał w pełnym zestawie. CI i smoke obrazu są osobnym, rzeczywiście potwierdzonym dowodem prowadzącego.
 
 ## Publikacja i scalenie
 
 Kontynuowana gałąź `codex/e1-fundament` i [PR nr 3](https://github.com/Roseru/aplikacja-mobilna/pull/3). Stan wejściowy: `112ff5f007b404a0692bd5c2f840ceec95264cd3`. Zastany, nieśledzony `docs/MASTER_PROMPT_POPRAWKA_E1.md` jest instrukcją wejściową; zachowano go bez zmian, poza commitem poprawki. Runtime, hasła testowe, baza, cache i buildy pozostają ignorowane.
 
-Poprzednie [CI dla 112ff5f](https://github.com/Roseru/aplikacja-mobilna/actions/runs/37977189519) jest wyłącznie historycznym dowodem. Przed merge wymagane są zielone `contracts`, `quality`, `postgres` i `ci-required` dla aktualnego head oraz potwierdzenie budowy/smoke obrazu. Wynik aktualnego CI i stan scalenia zostaną dopisane po rzeczywistym wykonaniu kontroli; nie zmieniano reguł ochrony ani wymaganych recenzji.
+Commit poprawki: **`a8556a94228fa06ef8be5f4eda64d10313577d8b`**. [CI poprawki](https://github.com/Roseru/aplikacja-mobilna/actions/runs/37982344173) zakończyło się sukcesem `contracts`, `quality`, `postgres` i `ci-required`. Metadane przebiegu potwierdzają ten dokładny head SHA. Logi potwierdzają **99 PASS** PostgreSQL i **10 PASS** unit, budowę sdist/wheel oraz obrazu i pomyślny smoke test: live 200, ready 503 przy niedostępnej bazie. [CI dla 112ff5f](https://github.com/Roseru/aplikacja-mobilna/actions/runs/37977189519) pozostaje wyłącznie historycznym dowodem.
+
+Uzupełnienie tego raportu nie zmienia kodu ani testów. Każdy nowy commit dokumentacji również musi przejść wszystkie cztery zadania i build/smoke przed merge; [kontrole aktualnego head](https://github.com/Roseru/aplikacja-mobilna/pull/3/checks) są wiążące. Stan scalenia i końcowe SHA są dostępne w PR. GitHub wykazał `main.protected=false` i pustą listę rulesetów; nie przedstawiamy gałęzi jako technicznie chronionej i nie zmieniano jej ustawień. Konto Git ma prawo push/merge bez prawa administracji. Stosujemy zwykły merge z expected head SHA, bez force-push i bez bypassu; wymagane recenzje i nierozwiązane uwagi są ponownie sprawdzane przed scaleniem.
 
 ## Dalsze etapy
 
