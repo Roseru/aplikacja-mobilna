@@ -21,7 +21,7 @@ Wykonano także SQL `infra/local/init-db.sh` w izolowanym lokalnym klastrze: rol
 
 Budowa sdist i wheel: PASS. Ponowna pełna walidacja E0: PASS. Niezależna recenzja: **9,1/10**, bez nierozwiązanych usterek blokujących. Poprawiono zbyt szerokie domyślne granty na historii migracji: API i worker mają SELECT bez INSERT/UPDATE/DELETE, co recenzent potwierdził własnym odczytem PostgreSQL. Wzmocniono także wskazaną przez niego fixture regresji grantów.
 
-Wynik CI zostanie uzupełniony po publikacji PR. Nie deklarujemy zielonego CI na podstawie samego pliku workflow.
+PR E1: [nr 3](https://github.com/Roseru/aplikacja-mobilna/pull/3). Pierwszy przebieg CI potwierdził kontrakty, testy PostgreSQL, jakość kodu i budowę obrazu. Smoke test początkowo odczytał port podczas startu kontenera i dostał reset połączenia; dodano ograniczone oczekiwanie do 30 s oraz logi kontenera. Wynik końcowego przebiegu zostanie odnotowany po zakończeniu. Nie deklarujemy zielonego CI na podstawie samego pliku workflow.
 
 ## Dalsze etapy
 
