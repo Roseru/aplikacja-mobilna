@@ -13,6 +13,9 @@ import androidx.compose.runtime.*
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.testTag
+import androidx.compose.ui.semantics.contentDescription
+import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
@@ -65,6 +68,20 @@ import kotlin.math.roundToInt
             }
         }
         item { NutritionCard(day.totals, day.goal) }
+        item {
+            Card(colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface), shape = RoundedCornerShape(16.dp)) {
+                Row(Modifier.fillMaxWidth().padding(16.dp), verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(12.dp)) {
+                    Column(Modifier.weight(1f)) {
+                        Text(if (day.complete) "Dzień kompletny" else "Dziennik niekompletny", style = MaterialTheme.typography.titleSmall)
+                        Text(if (day.meals.isEmpty() || day.totals.kcal <= 0) "Dodaj posiłki, aby potwierdzić kompletność." else "Potwierdź, gdy zapisałeś wszystkie posiłki.",
+                            style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                    }
+                    Switch(checked = day.status?.declaredComplete == true, onCheckedChange = model::setDayComplete,
+                        enabled = !busy && day.date <= LocalDate.now() && (day.status?.declaredComplete == true || day.totals.kcal > 0),
+                        modifier = Modifier.semantics { contentDescription = "Deklaracja kompletności dnia" }.testTag("day-complete"))
+                }
+            }
+        }
         item {
             Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
                 SectionTitle("Twoje posiłki", Modifier.weight(1f))

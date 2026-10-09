@@ -21,7 +21,7 @@ import pl.roseru.kalorie.data.ThemeMode
     val theme by model.theme.collectAsStateWithLifecycle()
     val goal by model.todayGoal.collectAsStateWithLifecycle()
     val busy by model.busy.collectAsStateWithLifecycle()
-    Column(Modifier.fillMaxSize().verticalScroll(rememberScrollState()).padding(20.dp), verticalArrangement = Arrangement.spacedBy(18.dp)) {
+    Column(Modifier.fillMaxSize().imePadding().verticalScroll(rememberScrollState()).padding(20.dp), verticalArrangement = Arrangement.spacedBy(18.dp)) {
         Text("Ustawienia", style = MaterialTheme.typography.headlineLarge, fontWeight = FontWeight.Bold)
         SectionTitle("Wygląd aplikacji")
         ThemeMode.entries.forEach { option ->

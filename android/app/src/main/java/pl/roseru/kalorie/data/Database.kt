@@ -10,7 +10,8 @@ import pl.roseru.kalorie.core.Nutrients
 data class ProductEntity(
     @PrimaryKey val id: String, val name: String, val searchName: String,
     val kcal: Double, val protein: Double?, val fat: Double?, val carbs: Double?,
-    val defaultGrams: Double, val category: String, val source: String, val catalogVersion: Int
+    val defaultGrams: Double, val category: String, val source: String, val catalogVersion: Int,
+    val ownerScope: String? = null
 ) { fun nutrients() = Nutrients(kcal, protein, fat, carbs) }
 
 @Entity(tableName = "meals", indices = [Index(value = ["ownerScope", "localDate", "deleted"])])
@@ -56,10 +57,23 @@ data class OutboxEntity(@PrimaryKey val operationId: String, val ownerScope: Str
     val entityId: String, val action: String, val baseRevision: Int?, val payload: String,
     val createdAt: String, val status: String = "pending")
 
+@Entity(tableName = "profiles", indices = [Index(value = ["ownerScope"], unique = true)])
+data class ProfileEntity(@PrimaryKey val id: String, val ownerScope: String, val nickname: String,
+    val heightCm: Double, val activityClass: String, val dietAim: String, val zoneId: String, val localRevision: Int)
+
+@Entity(tableName = "weights", indices = [Index(value = ["ownerScope", "localDate", "deleted"])])
+data class WeightEntity(@PrimaryKey val id: String, val ownerScope: String, val localDate: String,
+    val occurredAt: String, val zoneId: String, val kg: Double, val deleted: Boolean = false, val localRevision: Int = 1)
+
+@Entity(tableName = "diary_days", indices = [Index(value = ["ownerScope", "localDate"], unique = true)])
+data class DiaryDayEntity(@PrimaryKey val id: String, val ownerScope: String, val localDate: String,
+    val declaredComplete: Boolean, val localRevision: Int)
+
 @Dao
 interface CalorieDao {
-    @Query("SELECT * FROM products ORDER BY name") fun products(): Flow<List<ProductEntity>>
-    @Query("SELECT * FROM products WHERE id = :id") suspend fun product(id: String): ProductEntity?
+    @Query("SELECT * FROM products WHERE ownerScope IS NULL OR ownerScope = :owner ORDER BY name") fun products(owner: String = "guest"): Flow<List<ProductEntity>>
+    @Query("SELECT * FROM products WHERE id = :id AND (ownerScope IS NULL OR ownerScope = :owner)") suspend fun product(id: String, owner: String = "guest"): ProductEntity?
+    @Insert suspend fun insertProduct(product: ProductEntity)
     @Insert(onConflict = OnConflictStrategy.IGNORE) suspend fun seedProducts(products: List<ProductEntity>)
     @Insert(onConflict = OnConflictStrategy.IGNORE) suspend fun seedRations(rations: List<RationEntity>)
     @Insert(onConflict = OnConflictStrategy.IGNORE) suspend fun seedComponents(components: List<RationComponentEntity>)
@@ -83,10 +97,19 @@ interface CalorieDao {
     @Query("SELECT COUNT(*) FROM outbox WHERE ownerScope = :owner") suspend fun operationCount(owner: String): Int
     @Query("SELECT DISTINCT productId FROM meal_items JOIN meals ON meals.id = meal_items.mealId WHERE meals.ownerScope = :owner AND meals.deleted = 0 ORDER BY meals.occurredAt DESC LIMIT 12")
     fun recent(owner: String): Flow<List<String>>
+    @Query("SELECT * FROM profiles WHERE ownerScope = :owner LIMIT 1") fun profile(owner: String): Flow<ProfileEntity?>
+    @Query("SELECT * FROM profiles WHERE ownerScope = :owner LIMIT 1") suspend fun currentProfile(owner: String): ProfileEntity?
+    @Upsert suspend fun saveProfile(profile: ProfileEntity)
+    @Query("SELECT * FROM weights WHERE ownerScope = :owner AND deleted = 0 ORDER BY localDate DESC, occurredAt DESC, id DESC") fun weights(owner: String): Flow<List<WeightEntity>>
+    @Query("SELECT * FROM weights WHERE id = :id AND ownerScope = :owner") suspend fun weight(id: String, owner: String): WeightEntity?
+    @Upsert suspend fun saveWeight(weight: WeightEntity)
+    @Query("SELECT * FROM diary_days WHERE ownerScope = :owner AND localDate = :date LIMIT 1") fun diaryDay(owner: String, date: String): Flow<DiaryDayEntity?>
+    @Query("SELECT * FROM diary_days WHERE ownerScope = :owner AND localDate = :date LIMIT 1") suspend fun currentDiaryDay(owner: String, date: String): DiaryDayEntity?
+    @Upsert suspend fun saveDiaryDay(day: DiaryDayEntity)
 }
 
 @Database(entities = [ProductEntity::class, MealEntity::class, MealItemEntity::class, GoalEntity::class, OutboxEntity::class,
-    RationEntity::class, RationComponentEntity::class], version = 2, exportSchema = true)
+    RationEntity::class, RationComponentEntity::class, ProfileEntity::class, WeightEntity::class, DiaryDayEntity::class], version = 3, exportSchema = true)
 abstract class CalorieDatabase : RoomDatabase() { abstract fun dao(): CalorieDao }
 
 val MIGRATION_1_2 = object : Migration(1, 2) {
@@ -98,5 +121,17 @@ val MIGRATION_1_2 = object : Migration(1, 2) {
         db.execSQL("CREATE TABLE IF NOT EXISTS ration_components (id TEXT NOT NULL, rationId TEXT NOT NULL, productId TEXT NOT NULL, packageGrams REAL NOT NULL, position INTEGER NOT NULL, PRIMARY KEY(id), FOREIGN KEY(rationId) REFERENCES rations(id) ON UPDATE NO ACTION ON DELETE RESTRICT, FOREIGN KEY(productId) REFERENCES products(id) ON UPDATE NO ACTION ON DELETE RESTRICT)")
         db.execSQL("CREATE INDEX IF NOT EXISTS index_ration_components_rationId ON ration_components(rationId)")
         db.execSQL("CREATE INDEX IF NOT EXISTS index_ration_components_productId ON ration_components(productId)")
+    }
+}
+
+val MIGRATION_2_3 = object : Migration(2, 3) {
+    override fun migrate(db: SupportSQLiteDatabase) {
+        db.execSQL("ALTER TABLE products ADD COLUMN ownerScope TEXT")
+        db.execSQL("CREATE TABLE IF NOT EXISTS profiles (id TEXT NOT NULL, ownerScope TEXT NOT NULL, nickname TEXT NOT NULL, heightCm REAL NOT NULL, activityClass TEXT NOT NULL, dietAim TEXT NOT NULL, zoneId TEXT NOT NULL, localRevision INTEGER NOT NULL, PRIMARY KEY(id))")
+        db.execSQL("CREATE UNIQUE INDEX IF NOT EXISTS index_profiles_ownerScope ON profiles(ownerScope)")
+        db.execSQL("CREATE TABLE IF NOT EXISTS weights (id TEXT NOT NULL, ownerScope TEXT NOT NULL, localDate TEXT NOT NULL, occurredAt TEXT NOT NULL, zoneId TEXT NOT NULL, kg REAL NOT NULL, deleted INTEGER NOT NULL, localRevision INTEGER NOT NULL, PRIMARY KEY(id))")
+        db.execSQL("CREATE INDEX IF NOT EXISTS index_weights_ownerScope_localDate_deleted ON weights(ownerScope, localDate, deleted)")
+        db.execSQL("CREATE TABLE IF NOT EXISTS diary_days (id TEXT NOT NULL, ownerScope TEXT NOT NULL, localDate TEXT NOT NULL, declaredComplete INTEGER NOT NULL, localRevision INTEGER NOT NULL, PRIMARY KEY(id))")
+        db.execSQL("CREATE UNIQUE INDEX IF NOT EXISTS index_diary_days_ownerScope_localDate ON diary_days(ownerScope, localDate)")
     }
 }

@@ -9,6 +9,7 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.navigation.compose.*
@@ -24,7 +25,7 @@ import pl.roseru.kalorie.DiaryViewModel
     val route = backStack?.destination?.route
     LaunchedEffect(model) {
         model.events.collect { event -> when (event) {
-            DiaryEvent.MealSaved -> if (nav.currentDestination?.route in listOf("food", "rations")) nav.popBackStack("diary", false)
+            DiaryEvent.MealSaved -> if (nav.currentDestination?.route in listOf("food", "rations", "custom")) nav.popBackStack("diary", false)
             is DiaryEvent.Message -> snackbar.showSnackbar(event.text)
         } }
     }
@@ -40,20 +41,24 @@ import pl.roseru.kalorie.DiaryViewModel
     Scaffold(
         snackbarHost = { SnackbarHost(snackbar) },
         bottomBar = {
-            if (route !in listOf("food", "rations")) NavigationBar(containerColor = MaterialTheme.colorScheme.surface) {
+            if (route !in listOf("food", "rations", "custom")) NavigationBar(containerColor = MaterialTheme.colorScheme.surface) {
                 NavigationBarItem(selected = route == "diary", onClick = { nav.navigate("diary") { popUpTo("diary"); launchSingleTop = true } },
                     icon = { Icon(Icons.AutoMirrored.Outlined.Assignment, contentDescription = null) }, label = { Text("Dziennik") })
                 NavigationBarItem(selected = route == "settings", onClick = { nav.navigate("settings") { launchSingleTop = true } },
                     icon = { Icon(Icons.Outlined.Tune, contentDescription = null) }, label = { Text("Ustawienia") })
+                NavigationBarItem(selected = route == "profile", onClick = { nav.navigate("profile") { launchSingleTop = true } },
+                    icon = { Icon(Icons.Outlined.PersonOutline, contentDescription = null) }, label = { Text("Profil") }, modifier = Modifier.testTag("open-profile"))
             }
         }
     ) { padding ->
         NavHost(nav, startDestination = "diary", modifier = Modifier.padding(padding).consumeWindowInsets(padding)) {
             composable("diary") { DiaryScreen(model, onAdd = { nav.navigate("food") }, onSettings = { nav.navigate("settings") { launchSingleTop = true } }) }
-            composable("food") { FoodScreen(model, onBack = { nav.popBackStack() }, onRations = { nav.navigate("rations") }) }
+            composable("food") { FoodScreen(model, onBack = { nav.popBackStack() }, onRations = { nav.navigate("rations") }, onCustom = { nav.navigate("custom") }) }
             composable("rations") { RationScreen(model, onBack = { nav.popBackStack() }) }
+            composable("custom") { CustomFoodScreen(model, onBack = { nav.popBackStack() }) }
             composable("settings") { SettingsScreen(model) }
+            composable("profile") { ProfileScreen(model) }
         }
     }
-    if (route == "settings") BackHandler { nav.popBackStack() }
+    if (route in listOf("settings", "profile")) BackHandler { nav.popBackStack() }
 }

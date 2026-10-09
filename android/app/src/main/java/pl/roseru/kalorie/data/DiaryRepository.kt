@@ -4,11 +4,10 @@ import android.content.Context
 import androidx.room.withTransaction
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
+import kotlinx.coroutines.flow.first
 import org.json.JSONArray
 import org.json.JSONObject
-import pl.roseru.kalorie.core.MealType
-import pl.roseru.kalorie.core.Nutrients
-import pl.roseru.kalorie.core.normalizeSearch
+import pl.roseru.kalorie.core.*
 import java.time.*
 import java.util.UUID
 
@@ -134,6 +133,79 @@ class DiaryRepository(private val db: CalorieDatabase, private val context: Cont
             .put("protein", protein ?: JSONObject.NULL).put("fat", fat ?: JSONObject.NULL).put("carbs", carbs ?: JSONObject.NULL)
         dao.enqueue(OutboxEntity(UUID.randomUUID().toString(), GUEST, "goal", goal.id,
             if (existing == null) "create" else "update", null, payload.toString(), Instant.now().toString()))
+    }
+
+    suspend fun addCustomProduct(draft: CustomProductDraft, grams: Double, type: MealType, date: LocalDate,
+        mealId: String = UUID.randomUUID().toString(), productId: String = UUID.randomUUID().toString()) = db.withTransaction {
+        if (dao.meal(mealId, GUEST) != null) return@withTransaction
+        draft.validate()
+        require(grams.isFinite() && grams > 0 && grams <= Nutrients.MAX_GRAMS)
+        val product = ProductEntity(productId, draft.name.trim(), normalizeSearch(draft.name), draft.kcal, draft.protein,
+            draft.fat, draft.carbs, grams, "Własny produkt", draft.source.trim(), 0, GUEST)
+        dao.insertProduct(product)
+        enqueueLocal("product_draft", productId, "create", JSONObject().put("id", productId).put("name", product.name)
+            .put("basis", "100 g").put("kcal", product.kcal).put("protein", product.protein ?: JSONObject.NULL)
+            .put("fat", product.fat ?: JSONObject.NULL).put("carbs", product.carbs ?: JSONObject.NULL).put("source", product.source))
+        add(productId, grams, type, date, mealId)
+    }
+
+    suspend fun setProfile(nickname: String, heightCm: Double, activity: ActivityClass, aim: DietAim) = db.withTransaction {
+        require(nickname.trim().length in 2..40 && heightCm.isFinite() && heightCm in 80.0..250.0)
+        val old = dao.currentProfile(GUEST)
+        val profile = ProfileEntity(old?.id ?: UUID.randomUUID().toString(), GUEST, nickname.trim(), heightCm,
+            activity.name, aim.name, old?.zoneId ?: ZoneId.systemDefault().id, (old?.localRevision ?: 0) + 1)
+        dao.saveProfile(profile)
+        enqueueLocal("profile", profile.id, if (old == null) "create" else "update", JSONObject().put("id", profile.id)
+            .put("nickname", profile.nickname).put("height_cm", heightCm).put("activity_class", activity.name)
+            .put("diet_aim", aim.name).put("zone_id", profile.zoneId).put("local_revision", profile.localRevision))
+    }
+
+    suspend fun addWeight(kg: Double, date: LocalDate, id: String = UUID.randomUUID().toString()) = db.withTransaction {
+        require(kg.isFinite() && kg in 20.0..400.0 && date <= LocalDate.now())
+        if (dao.weight(id, GUEST) != null) return@withTransaction
+        val zone = ZoneId.systemDefault()
+        val point = WeightEntity(id, GUEST, date.toString(), date.atTime(LocalTime.now()).atZone(zone).toInstant().toString(), zone.id, kg)
+        dao.saveWeight(point)
+        enqueueWeight(point, "create")
+    }
+
+    suspend fun editWeight(id: String, kg: Double) = db.withTransaction {
+        require(kg.isFinite() && kg in 20.0..400.0)
+        val old = requireNotNull(dao.weight(id, GUEST))
+        require(!old.deleted)
+        val point = old.copy(kg = kg, localRevision = old.localRevision + 1)
+        dao.saveWeight(point)
+        enqueueWeight(point, "update")
+    }
+
+    suspend fun deleteWeight(id: String) = db.withTransaction {
+        val old = requireNotNull(dao.weight(id, GUEST))
+        if (old.deleted) return@withTransaction
+        val point = old.copy(deleted = true, localRevision = old.localRevision + 1)
+        dao.saveWeight(point)
+        enqueueWeight(point, "delete")
+    }
+
+    private suspend fun enqueueWeight(point: WeightEntity, action: String) = enqueueLocal("weight", point.id, action,
+        JSONObject().put("id", point.id).put("kg", point.kg).put("local_date", point.localDate).put("occurred_at", point.occurredAt)
+            .put("zone_id", point.zoneId).put("deleted", point.deleted).put("local_revision", point.localRevision))
+
+    suspend fun setDayComplete(date: LocalDate, declared: Boolean) = db.withTransaction {
+        require(date <= LocalDate.now())
+        if (declared) {
+            val meals = dao.day(GUEST, date.toString()).first()
+            require(meals.isNotEmpty() && meals.flatMap { it.items }.sumOf { it.consumed().kcal } > 0)
+        }
+        val old = dao.currentDiaryDay(GUEST, date.toString())
+        if (old?.declaredComplete == declared || (old == null && !declared)) return@withTransaction
+        val status = DiaryDayEntity(old?.id ?: UUID.randomUUID().toString(), GUEST, date.toString(), declared, (old?.localRevision ?: 0) + 1)
+        dao.saveDiaryDay(status)
+        enqueueLocal("diary_day", status.id, if (old == null) "create" else "update", JSONObject().put("id", status.id)
+            .put("local_date", status.localDate).put("declared_complete", declared).put("local_revision", status.localRevision))
+    }
+
+    private suspend fun enqueueLocal(type: String, id: String, action: String, payload: JSONObject) {
+        dao.enqueue(OutboxEntity(UUID.randomUUID().toString(), GUEST, type, id, action, null, payload.toString(), Instant.now().toString()))
     }
 
     private suspend fun enqueue(meal: MealEntity, items: List<MealItemEntity>, action: String) {

@@ -4,7 +4,7 @@ Data: 9 października 2026 r.
 
 Podstawa: `WYMAGANIA_PROJEKTOWE.md` oraz zaakceptowane makiety. Użytkownik jest osobą 1 w trzyosobowym zespole. Ten dokument wyznacza kolejność implementacji; bieżący zakres kodu jest opisany w [android/README.md](android/README.md).
 
-**Postęp:** A-01–05 są zaimplementowane i sprawdzone w wersji 0.1.0. Wersja 0.2.0 dodaje lokalne zestawy demonstracyjne, wybór zjedzonych składników racji, edycję/usuwanie części i migrację Room 1 → 2. Pozostałe elementy etapu 2 i integracja z kontraktem osoby 2 pozostają do wykonania. Docelowy pakiet katalogu i reguły integracji opisuje [architektura zespołu](docs/ARCHITEKTURA.md).
+**Postęp:** A-01–05 są zaimplementowane i sprawdzone w wersji 0.1.0. Wersja 0.2.0 dodaje lokalne racje DEMO i migrację Room 1 → 2. Wersja 0.3.0 dodaje prywatny produkt, profil, pomiary wagi i kompletność dnia oraz Room 3. Integracja pakietu i synchronizacji pozostaje do wykonania. Osoba 2 dostarczyła już [kontrakty E0](docs/e0/KONTRAKTY_I_INTEGRACJA.md) i fundament E1; [instrukcja Androida](android/README.md) opisuje zakres lokalny i ograniczenia.
 
 ## 1. Od czego zaczynamy
 
@@ -168,7 +168,7 @@ Nie potrzebujemy na start kompletnego backendu ani działającej analizy AI. Do 
 
 ## 8. Pierwsze zadanie do wykonania w kodzie
 
-Pierwsze zadanie A-01–05 jest wykonane. Po odbiorze racji kolejne zadania osoby 1 to ręczny produkt, lokalny profil i pomiary wagi oraz oznaczanie kompletnych dni. Docelowy importer katalogu i obliczenia Decimal/BigDecimal wymagają formalnych przykładów osoby 2; obecny lokalny format jest prototypem, nie kontraktem API.
+Lokalny rdzeń A-01–05 oraz formularze profilu, wagi, prywatnego produktu i kompletności dnia są zaimplementowane. Następny spójny etap to importer gotowego pakietu demo z `contracts/examples/valid/`, przejście na obliczenia BigDecimal według `contracts/test-vectors/nutrition-v1.json` i zachowanie dotychczasowych snapshotów/outbox. Potem lokalna analityka 7/30/90 dni. Konta i faktyczny sync wymagają wdrożonych endpointów kolejnych etapów backendu.
 
 ## Dokumentacja techniczna
 

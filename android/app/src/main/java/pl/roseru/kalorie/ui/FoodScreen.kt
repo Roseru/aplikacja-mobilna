@@ -28,7 +28,7 @@ import pl.roseru.kalorie.data.ProductEntity
 import kotlin.math.roundToInt
 
 @OptIn(ExperimentalMaterial3Api::class)
-@Composable fun FoodScreen(model: DiaryViewModel, onBack: () -> Unit, onRations: () -> Unit) {
+@Composable fun FoodScreen(model: DiaryViewModel, onBack: () -> Unit, onRations: () -> Unit, onCustom: () -> Unit) {
     val products by model.products.collectAsStateWithLifecycle()
     val recent by model.recent.collectAsStateWithLifecycle()
     val day by model.day.collectAsStateWithLifecycle()
@@ -64,6 +64,9 @@ import kotlin.math.roundToInt
                 FilterChip(selected = recentOnly, onClick = { recentOnly = true }, label = { Text("Ostatnie") })
                 FilterChip(selected = false, onClick = { keyboard?.hide(); onRations() }, label = { Text("Racje") }, modifier = Modifier.testTag("open-rations"))
             }
+            TextButton(onClick = { keyboard?.hide(); onCustom() }, modifier = Modifier.testTag("open-custom-food")) {
+                Icon(Icons.Outlined.EditNote, null); Spacer(Modifier.width(8.dp)); Text("Dodaj własny produkt")
+            }
             Row(horizontalArrangement = Arrangement.spacedBy(8.dp), verticalAlignment = Alignment.CenterVertically) {
                 Icon(Icons.Outlined.Storage, null, tint = MaterialTheme.colorScheme.primary)
                 Text("Baza lokalna dostępna offline", style = MaterialTheme.typography.bodySmall)
@@ -95,6 +98,7 @@ import kotlin.math.roundToInt
             Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(4.dp)) {
                 Text(product.name, fontWeight = FontWeight.Medium)
                 Text("${product.kcal.roundToInt()} kcal / 100 g", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                if (product.ownerScope != null) Text("Wpis własny · prywatny", style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.primary)
             }
             Icon(if (selected) Icons.Outlined.CheckCircle else Icons.Outlined.AddCircleOutline,
                 contentDescription = if (selected) "Wybrano ${product.name}" else "Wybierz ${product.name}", tint = MaterialTheme.colorScheme.primary)

@@ -1,6 +1,6 @@
 # Android — Racje i kalorie
 
-Wersja `0.2.0` realizuje lokalny przepływ osoby 1: dziennik → produkt lub racja ze składnikami → zapis w Room → aktualizacja bilansu. Aplikacja działa bez konta i bez internetu.
+Wersja `0.3.0` realizuje lokalny przepływ osoby 1: dziennik → produkt, własny wpis lub racja → zapis w Room → aktualizacja bilansu. Profil, pomiary wagi i deklaracja kompletności dnia również działają bez konta i internetu.
 
 ## Co zawiera
 
@@ -10,19 +10,23 @@ Wersja `0.2.0` realizuje lokalny przepływ osoby 1: dziennik → produkt lub rac
 - Dwa zestawy demonstracyjne dostępne w „Dodaj posiłek → Racje”. Zaznaczanie tylko zjedzonych składników, gramatura części opakowania, skróty ¼/½/całość oraz wspólny bilans zaznaczenia. Początkowo nic nie jest zaznaczone.
 - Racja jest jednym wpisem z wieloma składnikami. Można poprawić lub usunąć jeden składnik albo usunąć całą rację; usunięcie ostatniego składnika usuwa wpis z dziennika.
 - Wybór grupy posiłku, gramatury, podgląd kcal, zapis, edycja i usunięcie wpisu.
+- Własny produkt z nazwą, źródłem i wartościami na 100 g, opcjonalnymi makrami oraz gramaturą spożycia. Produkt jest prywatny i dostępny do ponownego wyboru; zapis szkicu i pierwszego posiłku jest transakcją.
+- Lokalny profil: pseudonim, wzrost, klasa Garnizon/Linia/Komandos i cel redukcja/utrzymanie/nadwyżka. Kcal/B/T/W ustawia się oddzielnie; zapis profilu ich nie zmienia.
+- Pomiary wagi z datą, historią, korektą i usunięciem. Kilka pomiarów jednego dnia jest dozwolone. Po poprawnym zapisie pole masy jest czyszczone, aby ponowny przypadkowy klik nie zapisał kolejnego pomiaru.
+- Deklaracja kompletności dnia. Efektywna kompletność wymaga deklaracji, nieusuniętego posiłku i dodatniej sumy kcal. Brak makr pozostaje brakiem danych. Usunięcie ostatniego posiłku cofa efektywną kompletność; deklarację można wyłączyć.
 - Cele kcal/B/T/W obowiązujące od dnia zmiany; brak makr nie jest traktowany jak zero.
 - Room z wersjonowanym schematem, identyfikatorami UUID, odżywczymi wartościami zapisanymi przy spożyciu i transakcyjną kolejką zmian.
 - Zapis lokalnej daty, strefy czasowej i czasu UTC. Ponowienie lokalnego zapisu z tym samym ID nie tworzy drugiego posiłku.
 
 Katalog, oba zestawy i początkowy cel 2800 kcal są **danymi demonstracyjnymi**, nie zweryfikowaną bazą żywieniową ani wyliczonym zapotrzebowaniem użytkownika. Zestawy A/B nie odwzorowują specyfikacji S-R/S-RG ani żadnego producenta. Napoje są rozliczane w gramach, bez założenia, że 1 ml = 1 g.
 
-Schemat Room 2 zawiera migrację 1 → 2 zachowującą dotychczasowe posiłki, cele i kolejkę. Nowy katalog jest importowany bez duplikowania danych. W kolejce wpis racji zawiera `ration_id`, nazwę oraz identyfikatory składników; wartości odżywcze nadal są zapisane w historii jako niezmienny snapshot.
+Schemat Room 3 zawiera migracje 1 → 2 → 3 zachowujące dotychczasowe posiłki, racje, cele i kolejkę. Prywatne produkty, profil, pomiary i deklaracje dni mają zakres właściciela. Nowy katalog jest importowany bez duplikowania danych. W kolejce wpis racji zawiera `ration_id`, nazwę oraz identyfikatory składników; wartości odżywcze nadal są zapisane w historii jako niezmienny snapshot. Nowe typy kolejki: `product_draft`, `profile`, `weight`, `diary_day`.
 
-Katalog w zasobach i payload kolejki są roboczym formatem tej lokalnej wersji. Integracja z [architekturą osoby 2](../docs/ARCHITEKTURA.md) wymaga adaptera pakietu JSON gzip z manifestem, UUID i rewizjami produktów, generacji katalogu oraz wspólnych wektorów Decimal/BigDecimal. Bieżące obliczenia używają `Double` i nie stanowią uzgodnionego kontraktu obliczeń z API. Nie wysyłamy roboczych identyfikatorów demo na serwer.
+Katalog w zasobach i payload kolejki są roboczym formatem tej lokalnej wersji. Integracja z [kontraktami E0 osoby 2](../docs/e0/KONTRAKTY_I_INTEGRACJA.md) jest następnym etapem: adapter pakietu JSON gzip/manifest, UUID i rewizje produktów, generacje katalogu oraz wspólne wektory Decimal/BigDecimal. Bieżące obliczenia używają `Double` i nie stanowią kontraktu obliczeń z API. Nie wysyłamy roboczych identyfikatorów demo na serwer. Formularze v0.3 mają lokalne limity opisane przy polach; adapter kontraktu będzie odpowiadał za jego kanoniczne liczby i jednostki.
 
 ## Co pozostaje na następne etapy
 
-Zweryfikowane pakiety rzeczywistych racji wojskowych, ręczny produkt, profil wzrost/waga, pomiary wagi i wykresy, oznaczanie kompletnych dni, konto, rzeczywista synchronizacja z API, zdjęcia/Gemini, produkty społeczności, ranking i Nemesis. Istnieje lokalna kolejka, ale ta wersja **nie wysyła danych na serwer**. Jej format jest propozycją do uzgodnienia z osobą 2. Usuwanie posiłku tworzy znacznik usunięcia zamiast kasować historię operacji.
+Docelowy importer i zweryfikowane pakiety rzeczywistych racji, obliczenia kontraktowe, historia/wykresy 7/30/90 dni, kalkulator zapotrzebowania, konto, rzeczywista synchronizacja z API, zdjęcia/Gemini, produkty społeczności, ranking i Nemesis. Istnieje lokalna kolejka, ale ta wersja **nie wysyła danych na serwer**. Usuwanie posiłku lub pomiaru tworzy znacznik usunięcia zamiast kasować historię operacji. Prywatne produkty nie są publikowane w katalogu społeczności.
 
 ## Uruchomienie w Android Studio
 
@@ -58,8 +62,14 @@ APK debug: `app/build/outputs/apk/debug/app-debug.apk`. Raporty: `app/build/repo
 8. Przed zapisem obróć ekran lub odtwórz aktywność: wybór i gramatura pozostają. Pusta lista zaznaczeń i ilość ponad masę opakowania blokują zapis.
 9. Edytuj jeden składnik zapisanej racji. Pozostałe nie zmieniają się. Usuń składnik i sprawdź bilans; usuń całą rację po potwierdzeniu.
 10. Zainstaluj aktualizację na wersji 0.1.0: stare posiłki, cele i kolejka pozostają.
+11. Własny produkt: podaj 100 kcal/100 g, źródło i 150,5 g spożycia, pozostaw makra puste. Dziennik zwiększa sumę o 150,5 kcal, pokazuje brak makr i zachowuje produkt do ponownego wyboru.
+12. Zapisz profil, a potem dwa pomiary z tą samą datą. Wpisy pozostają osobne, korekta zachowuje datę, a usunięcie jednego nie usuwa drugiego ani nie zmienia celu kalorii.
+13. Oznacz niepusty dzień jako kompletny, zamknij aplikację i otwórz ponownie. Następnie usuń wszystkie jego posiłki: pusty dzień nie jest kompletny mimo wcześniejszej deklaracji.
+14. Zainstaluj aktualizację na wersji 0.2.0: składniki racji i wartości historyczne pozostają.
 
-Testy jednostkowe obejmują obliczenia, sumowanie bez przedwczesnego zaokrąglania, niepełne makra, walidację i wyszukiwanie. Testy na urządzeniu obejmują trwałość Room, idempotencję lokalnego dodania, znaczniki usunięcia, izolację właścicieli, wersjonowanie celu, oba przepływy dodania przez UI, odtworzenie wyboru części racji, wycofanie całego zapisu po błędzie kolejki oraz migrację rzeczywistego schematu 1 z zachowaniem danych.
+Walidacja 0.3.0: zbudowano APK debug, przeszło 6 testów jednostkowych i 17 przypadków na API 35. Pełny przebieg urządzenia zaliczył 16 przypadków; test profilu/wagi zaliczono w osobnym powtórzeniu po poprawieniu obsługi klawiatury w teście. Ręczny zapis pomiaru z otwartą klawiaturą również sprawdzono. Lint: 0 błędów, 25 ostrzeżeń o wersjach zależności i regułach kopii urządzenia.
+
+Testy obejmują obliczenia i brak makr, trwałość Room, izolację właścicieli, transakcyjność i rollback, idempotencję, znaczniki usunięcia, cele, prywatne produkty, profil/wagę i kompletność dnia. Sprawdzono migracje 1 → 3 i 2 → 3 oraz cztery przepływy UI z odtworzeniem aktywności: zwykły posiłek, częściową rację, własny produkt i profil/pomiar.
 
 ## Architektura
 
