@@ -52,8 +52,11 @@ class ProductVersion(Base):
         CheckConstraint("revision >= 1", name="positive_revision"),
         CheckConstraint("basis_unit IN ('g', 'ml')", name="basis_unit"),
         CheckConstraint(
-            "energy_kcal >= 0 AND protein_g >= 0 AND fat_g >= 0 AND carbs_g >= 0",
-            name="nonnegative_nutrition",
+            "(energy_kcal IS NULL OR (energy_kcal >= 0 AND energy_kcal <= 999999.999999)) "
+            "AND (protein_g IS NULL OR (protein_g >= 0 AND protein_g <= 999999.999999)) "
+            "AND (fat_g IS NULL OR (fat_g >= 0 AND fat_g <= 999999.999999)) "
+            "AND (carbs_g IS NULL OR (carbs_g >= 0 AND carbs_g <= 999999.999999))",
+            name="finite_nutrition",
         ),
     )
     product_id: Mapped[UUID] = mapped_column(ForeignKey("app.products.id"), primary_key=True)

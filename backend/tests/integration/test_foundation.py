@@ -9,6 +9,7 @@ from sqlalchemy.orm import Session
 
 from calorie_app.core.config import Settings
 from calorie_app.db.models import Product, ProductSource, ProductVersion, UserAccount
+from calorie_app.health import EXPECTED_REVISION
 from calorie_app.main import create_app
 
 pytestmark = pytest.mark.integration
@@ -30,7 +31,10 @@ def test_migration_and_database_readiness(database):
             connection.execute(text("UPDATE app.alembic_version SET version_num='wrong_revision'"))
         assert client.get("/health/ready").status_code == 503
         with engine.begin() as connection:
-            connection.execute(text("UPDATE app.alembic_version SET version_num='0001_foundation'"))
+            connection.execute(
+                text("UPDATE app.alembic_version SET version_num=:revision"),
+                {"revision": EXPECTED_REVISION},
+            )
 
 
 def test_identity_unique_and_transaction_rollback(database):

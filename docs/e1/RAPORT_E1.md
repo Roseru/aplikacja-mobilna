@@ -2,7 +2,7 @@
 
 Data: 9 października 2026 r. Gałąź: `codex/e1-fundament`, utworzona z `main` po scaleniu PR E0 nr 2 (merge `534f5ae`).
 
-**Wynik: E1 zaimplementowane i sprawdzone lokalnie oraz w GitHub Actions; PR nr 3 gotowy do przeglądu i scalenia.**
+**Wynik poprawki: zamknięto lukę NaN w bazie; 109 testów backendu przeszło na PostgreSQL 17.11. Końcowa niezależna recenzja i CI bieżącego commita są w toku.** Dawne wyniki CI i recenzji nie stanowią odbioru tej poprawki.
 
 ## Wykonane
 
@@ -13,20 +13,49 @@ Data: 9 października 2026 r. Gałąź: `codex/e1-fundament`, utworzona z `main`
 - Lokalny Compose, oddzielne bazy i konta techniczne, role wykonawcze bez DDL. Dockerfile z użytkownikiem bez praw roota.
 - Workflow PR/main: kontrakty E0, Ruff, testy jednostkowe, PostgreSQL 17, inicjalizacja ról, budowa pakietu i obrazu; zbiorcze ci-required.
 
-## Kontrole lokalne
+## Luka wykryta po pierwszym odbiorze
 
-Ruff check/format: PASS. Testy backendu: **17 PASS**, na Pythonie 3.13.9 i rzeczywistym PostgreSQL 17.11. Wykonano migrację pustej bazy rolą migratora, sprawdzenie zgodności modeli/migracji, rollback, NUMERIC/null, FK/unikalności/nieprawidłowych jednostek oraz downgrade/upgrade wyłącznie dedykowanej bazy `calorie_test`. Testy nie są pomijane przy braku bazy. Fixture odtwarza domyślne granty bootstrapu; usunięcie odebrania DML na `alembic_version` powoduje błąd testu.
+Pierwszy odbiór E1 dał 9,1/10, jednak ponowna recenzja wykryła nieobjętą testami lukę i obniżyła ocenę do **8,8/10**. `nonnegative_nutrition` sprawdzało wyłącznie `>= 0`, co w PostgreSQL przepuszcza NaN w `energy_kcal`, `protein_g`, `fat_g` i `carbs_g`. Kontrakt E0 dopuszcza wyłącznie skończone wartości `0..999999.999999` albo brak danych. Dawna ocena 9,1/10 dotyczyła wcześniejszego stanu i nie jest oceną poprawki.
 
-Wykonano także SQL `infra/local/init-db.sh` w izolowanym lokalnym klastrze: role i bazy powstały, migracja przez migratora działała, rola API otrzymała readiness 200 bez praw DDL i bez CONNECT do Keycloak. Liveness przy awarii bazy i readiness 503 oraz bezpieczne błędy sprawdzono testami HTTP.
+[PostgreSQL 17](https://www.postgresql.org/docs/17/datatype-numeric.html) traktuje NaN jako większe od pozostałych wartości; Infinity przekracza precyzję `NUMERIC(12,6)`. To rozróżnienie potwierdzają rzeczywiste wyjątki i SQLSTATE w nowych testach.
 
-Środowisko nie miało Dockera: oficjalny pakiet PostgreSQL/EDB uruchomiono tymczasowo na `127.0.0.1:65432`. Runtime i dane są w ignorowanym `.tools`; nie trafiają do Git. Sandbox blokował lokalne gniazda, dlatego testy wykonano z prawem lokalnego połączenia. TestClient zgłasza nieblokujące ostrzeżenie przejścia Starlette z httpx na httpx2; testy są wykonane, nie wyciszane.
+## Wykonana poprawka
 
-Budowa sdist i wheel: PASS. Ponowna pełna walidacja E0: PASS. Niezależna recenzja: **9,1/10**, bez nierozwiązanych usterek blokujących. Poprawiono zbyt szerokie domyślne granty na historii migracji: API i worker mają SELECT bez INSERT/UPDATE/DELETE, co recenzent potwierdził własnym odczytem PostgreSQL. Wzmocniono także wskazaną przez niego fixture regresji grantów.
+- Model `ProductVersion` ma dla każdej kolumny warunek `IS NULL OR (wartość >= 0 AND wartość <= 999999.999999)`.
+- Nowa migracja **`0002_finite_nutrition`**, zależna od `0001_foundation`, dodaje zwalidowany `ck_product_versions_finite_nutrition`, następnie usuwa stary CHECK. `op.f` zachowuje pojedynczy prefiks nazwy. Opublikowana migracja `0001_foundation` pozostała niezmieniona.
+- Migracja nie zmienia danych ani tabel. Przy zastanym NaN walidacja odmawia upgrade; transakcja zachowuje dane, stary CHECK i rewizję. Instrukcja diagnozy wskazująca konkretne rekordy i kolumny jest w [backend/README.md](../../backend/README.md). Korekta wymaga ustalenia poprawnej wartości z właścicielem danych; nie ma automatycznej zamiany na zero/NULL ani kasowania.
+- Readiness oczekuje `0002_finite_nutrition`: na starej rewizji 503, po upgrade 200. Liveness pozostaje niezależne od bazy i rewizji.
+- Zachowano uprawnienia API i workera: SELECT historii migracji, bez INSERT/UPDATE/DELETE, DDL i CONNECT do Keycloak. Nie zmieniano `migrations/env.py`, bootstrapu ról ani CI.
 
-PR E1: [nr 3](https://github.com/Roseru/aplikacja-mobilna/pull/3). [CI dla kodu 69a22c1](https://github.com/Roseru/aplikacja-mobilna/actions/runs/37976867259) zakończyło się sukcesem: `contracts`, `quality`, `postgres` i `ci-required`. Potwierdzono również budowę sdist/wheel, obrazu Docker i jego rzeczywisty start bez praw roota: live 200 oraz ready 503 przy niedostępnej bazie. Przebieg PostgreSQL utworzył oddzielne bazy/role z tego samego skryptu i wykonał integrację na PostgreSQL 17.
+## Kontrole lokalne poprawki
 
-Pierwszy przebieg smoke odczytał port podczas startu kontenera i dostał reset połączenia; poprawka dodała ograniczone oczekiwanie do 30 s oraz logi kontenera. Wszystkie kontrole pozostały wymagane, bez pomijania testów.
+Python **3.13.9**, uv **0.9.5**, PostgreSQL **17.11**. Utworzono własny izolowany klaster w ignorowanym `.tools/e1-fix-pg-data` na `127.0.0.1:65433`. Role i bazy utworzono SQL wyodrębnionym bez zmian z `infra/local/init-db.sh`. Testy dotyczyły wyłącznie dedykowanej bazy `calorie_test`; fixture wykonuje migracje rolą migratora i odtwarza domyślne granty bootstrapu. Sandbox blokował TCP i kończył serwer, więc testy wykonano z uprawnieniem do lokalnego połączenia. Pierwszą próbę bez działającego serwera przerwano; nie zaliczono jej do sukcesów.
+
+| Kontrola | Wynik i dowód |
+|---|---|
+| `python -m pytest backend/tests -x` | **109 PASS**, w tym **99 integracyjnych i 10 jednostkowych**, bez skip; 4,23 s |
+| Każda kolumna przez role API i worker | `NULL`, zero, sześć miejsc i maksimum zachowane; NaN/ujemne: `CheckViolation`, SQLSTATE `23514`, dokładna nazwa CHECK; ponad zakres i oba Infinity: `NumericValueOutOfRange`, `22003`, bez nazwy CHECK |
+| Pusta baza i istniejące poprawne dane | Upgrade do head; cztery próby upgrade z `0001_foundation` zachowują identyfikatory, wartości, referencje i NULL; porównanie pełnych danych czterech tabel przed/po |
+| Stara baza z NaN | Cztery niezależne próby, po jednej na kolumnę: upgrade odrzucony, dane/CHECK/rewizja niezmienione, readiness 503, live 200; sprzątnięto tylko rekordy testu |
+| Rzeczywisty CHECK | Odczyt z PostgreSQL: nazwa z pojedynczym prefiksem i `convalidated=true`; porównano działanie modelu i CHECK na skończonych i specjalnych liczbach, także bez ograniczenia precyzji |
+| Readiness i uprawnienia | Stara rewizja 503, head 200, HTTP 200 przez obie role; realne próby DDL i DML historii odrzucone z `InsufficientPrivilege`, `42501`; brak CONNECT do Keycloak dla obu ról |
+| Ruff check i format | PASS; 21 plików sformatowanych zgodnie z Ruff |
+| `uv build backend --offline` | PASS: sdist i wheel zbudowane z lokalnego cache |
+| `tools/contracts/validate.ps1` | Pełna walidacja E0 PASS: 5 schematów, 16 endpointów, 124 przykłady HTTP, 64 poprawne/20 błędnych, 18 scenariuszy, 16 wektorów Decimal |
+| `git diff --check` | PASS |
+
+Nowa regresja: [test_finite_nutrition.py](../../backend/tests/integration/test_finite_nutrition.py). Istniejące testy E1 zostały zachowane; rozszerzono regresję uprawnień obu ról. TestClient zgłasza jedno nieblokujące ostrzeżenie Starlette dotyczące httpx; nie wyciszano go ani nie pomijano testów. Lokalnie brak Dockera; obowiązkową budowę i smoke test obrazu zweryfikuje zadanie `quality` w CI bieżącego commita.
+
+## Niezależny odbiór poprawki
+
+Recenzja niezależnego subagenta jest w toku. Warunek odbioru: minimum **9/10**, samodzielnie wykonane kontrole i brak istotnych nierozwiązanych usterek. Wynik zostanie uzupełniony po zakończeniu recenzji.
+
+## Publikacja i scalenie
+
+Kontynuowana gałąź `codex/e1-fundament` i [PR nr 3](https://github.com/Roseru/aplikacja-mobilna/pull/3). Stan wejściowy: `112ff5f007b404a0692bd5c2f840ceec95264cd3`. Zastany, nieśledzony `docs/MASTER_PROMPT_POPRAWKA_E1.md` jest instrukcją wejściową; zachowano go bez zmian, poza commitem poprawki. Runtime, hasła testowe, baza, cache i buildy pozostają ignorowane.
+
+Poprzednie [CI dla 112ff5f](https://github.com/Roseru/aplikacja-mobilna/actions/runs/37977189519) jest wyłącznie historycznym dowodem. Przed merge wymagane są zielone `contracts`, `quality`, `postgres` i `ci-required` dla aktualnego head oraz potwierdzenie budowy/smoke obrazu. Wynik aktualnego CI i stan scalenia zostaną dopisane po rzeczywistym wykonaniu kontroli; nie zmieniano reguł ochrony ani wymaganych recenzji.
 
 ## Dalsze etapy
 
-E2: kompletny model katalogu/racji i eksporter pakietu. E3: OIDC, profil/cel i autoryzacja właścicieli. E4: działający sync. O3 dostarcza rzeczywistą infrastrukturę, hosty/sekrety i ochronę gałęzi. W E1 nie wykonywano wdrożenia produkcyjnego ani Gemini. Instrukcje nowego checkoutu: [backend](../../backend/README.md), [bazy lokalne](../../infra/local/README.md).
+**Zakończenie tej pracy dotyczy wyłącznie poprawki i odbioru E1; E2 nie rozpoczęto.** O3 dostarcza rzeczywistą infrastrukturę, hosty/sekrety i ochronę gałęzi. W E1 nie wykonywano wdrożenia produkcyjnego ani Gemini. Instrukcje nowego checkoutu: [backend](../../backend/README.md), [bazy lokalne](../../infra/local/README.md).
