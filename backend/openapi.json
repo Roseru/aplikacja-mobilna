@@ -56,6 +56,312 @@
           }
         }
       }
+    },
+    "/api/v1/rations": {
+      "get": {
+        "tags": [
+          "catalog"
+        ],
+        "summary": "List Rations",
+        "description": "Publiczne racje opublikowanego pakietu official v1. Token strony przypina package_id, release i limit na 60 minut bez przedłużania TTL. Nowe tokeny są podpisane i nie zapisują rekordu; stare UUID zachowują ważność i błąd page_expired po sprzątaniu. Nie jest to checkpoint synchronizacji.",
+        "operationId": "list_rations",
+        "parameters": [
+          {
+            "name": "limit",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "maximum": 500,
+              "minimum": 1,
+              "default": 100,
+              "title": "Limit"
+            }
+          },
+          {
+            "name": "page_token",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string",
+                  "minLength": 1,
+                  "maxLength": 4096
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Page Token"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RationPage"
+                }
+              }
+            }
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            },
+            "description": "Not Found"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            },
+            "description": "Unprocessable Content"
+          },
+          "503": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            },
+            "description": "Service Unavailable"
+          },
+          "410": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            },
+            "description": "Gone"
+          }
+        },
+        "security": []
+      }
+    },
+    "/api/v1/rations/{id}": {
+      "get": {
+        "tags": [
+          "catalog"
+        ],
+        "summary": "Read Ration",
+        "description": "Bez revision: najnowsza wersja w aktywnym official release. Z revision: dokładna wersja należąca do opublikowanego wydania tego samego pakietu v1.",
+        "operationId": "read_ration",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Id"
+            }
+          },
+          {
+            "name": "revision",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "integer",
+                  "maximum": 2147483647,
+                  "minimum": 1
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Revision"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RationDTO"
+                }
+              }
+            }
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            },
+            "description": "Not Found"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            },
+            "description": "Unprocessable Content"
+          },
+          "503": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            },
+            "description": "Service Unavailable"
+          }
+        },
+        "security": []
+      }
+    },
+    "/api/v1/offline-package/manifest": {
+      "get": {
+        "tags": [
+          "catalog"
+        ],
+        "summary": "Read Manifest",
+        "description": "Aktywny opublikowany official package_id v1. Brak takiego wydania daje 404; demo jest przekazywane jako lokalny plik.",
+        "operationId": "read_manifest",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ManifestDTO"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Not Found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Unprocessable Content",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "Service Unavailable",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          }
+        },
+        "security": []
+      }
+    },
+    "/api/v1/offline-package/{filename}": {
+      "get": {
+        "tags": [
+          "catalog"
+        ],
+        "summary": "Download Package",
+        "description": "Niezmienne pliki opublikowanych wydań tego samego official pakietu v1; także starsze release. Pliki demo, draft i dowolne ścieżki są niedostępne.",
+        "operationId": "download_package",
+        "parameters": [
+          {
+            "name": "filename",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "pattern": "^base-pl\\.[1-9][0-9]*\\.json\\.gz$",
+              "title": "Filename"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Dokładne zarejestrowane bajty gzip. Bez Content-Encoding.",
+            "content": {
+              "application/gzip": {
+                "schema": {
+                  "type": "string",
+                  "format": "binary"
+                }
+              }
+            },
+            "headers": {
+              "Content-Length": {
+                "schema": {
+                  "type": "integer",
+                  "minimum": 1,
+                  "maximum": 10485760
+                }
+              }
+            }
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            },
+            "description": "Not Found"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            },
+            "description": "Unprocessable Content"
+          },
+          "503": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            },
+            "description": "Service Unavailable"
+          }
+        },
+        "security": []
+      }
     }
   },
   "components": {
@@ -68,18 +374,25 @@
           },
           "message": {
             "type": "string",
+            "maxLength": 1000,
+            "minLength": 1,
             "title": "Message"
           },
           "details": {
-            "additionalProperties": true,
-            "type": "object",
+            "items": {
+              "$ref": "#/components/schemas/ErrorDetail"
+            },
+            "type": "array",
+            "maxItems": 100,
             "title": "Details"
           },
           "request_id": {
             "type": "string",
+            "pattern": "^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$",
             "title": "Request Id"
           }
         },
+        "additionalProperties": false,
         "type": "object",
         "required": [
           "code",
@@ -88,6 +401,183 @@
           "request_id"
         ],
         "title": "ApiError"
+      },
+      "ComponentDTO": {
+        "properties": {
+          "position": {
+            "type": "integer",
+            "maximum": 100000.0,
+            "minimum": 1.0,
+            "title": "Position"
+          },
+          "group": {
+            "type": "string",
+            "maxLength": 2000,
+            "minLength": 1,
+            "title": "Group"
+          },
+          "product": {
+            "$ref": "#/components/schemas/ProductRefDTO"
+          },
+          "quantity": {
+            "$ref": "#/components/schemas/QuantityDTO"
+          },
+          "optional": {
+            "type": "boolean",
+            "title": "Optional"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "position",
+          "group",
+          "product",
+          "quantity",
+          "optional"
+        ],
+        "title": "ComponentDTO"
+      },
+      "CountsDTO": {
+        "properties": {
+          "products": {
+            "type": "integer",
+            "maximum": 10000.0,
+            "minimum": 0.0,
+            "title": "Products"
+          },
+          "rations": {
+            "type": "integer",
+            "maximum": 1000.0,
+            "minimum": 0.0,
+            "title": "Rations"
+          },
+          "components": {
+            "type": "integer",
+            "maximum": 100000.0,
+            "minimum": 0.0,
+            "title": "Components"
+          },
+          "sources": {
+            "type": "integer",
+            "maximum": 10000.0,
+            "minimum": 0.0,
+            "title": "Sources"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "products",
+          "rations",
+          "components",
+          "sources"
+        ],
+        "title": "CountsDTO"
+      },
+      "ErrorDetail": {
+        "properties": {
+          "field": {
+            "type": "string",
+            "maxLength": 200,
+            "minLength": 1,
+            "title": "Field"
+          },
+          "reason": {
+            "type": "string",
+            "maxLength": 500,
+            "minLength": 1,
+            "title": "Reason"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "field",
+          "reason"
+        ],
+        "title": "ErrorDetail"
+      },
+      "ExcludedItemDTO": {
+        "properties": {
+          "source_locator": {
+            "type": "string",
+            "maxLength": 2000,
+            "minLength": 1,
+            "title": "Source Locator"
+          },
+          "name": {
+            "type": "string",
+            "maxLength": 2000,
+            "minLength": 1,
+            "title": "Name"
+          },
+          "classification": {
+            "type": "string",
+            "enum": [
+              "food",
+              "seasoning",
+              "equipment"
+            ],
+            "title": "Classification"
+          },
+          "source_amount": {
+            "anyOf": [
+              {
+                "allOf": [
+                  {
+                    "type": "string",
+                    "pattern": "^(0|[1-9][0-9]{0,5})(\\.[0-9]{0,5}[1-9])?$"
+                  },
+                  {
+                    "not": {
+                      "const": "0"
+                    }
+                  }
+                ]
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Source Amount"
+          },
+          "source_unit": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 2000,
+                "minLength": 1
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Source Unit"
+          },
+          "reasons": {
+            "items": {
+              "type": "string",
+              "maxLength": 2000,
+              "minLength": 1
+            },
+            "type": "array",
+            "maxItems": 20,
+            "minItems": 1,
+            "title": "Reasons"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "source_locator",
+          "name",
+          "classification",
+          "source_amount",
+          "source_unit",
+          "reasons"
+        ],
+        "title": "ExcludedItemDTO"
       },
       "Health": {
         "properties": {
@@ -99,6 +589,279 @@
         },
         "type": "object",
         "title": "Health"
+      },
+      "ManifestDTO": {
+        "properties": {
+          "package_id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Package Id"
+          },
+          "release": {
+            "type": "integer",
+            "maximum": 2147483647.0,
+            "minimum": 1.0,
+            "title": "Release"
+          },
+          "schema_version": {
+            "type": "integer",
+            "const": 1,
+            "title": "Schema Version"
+          },
+          "min_reader_version": {
+            "type": "integer",
+            "const": 1,
+            "title": "Min Reader Version"
+          },
+          "published_at": {
+            "type": "string",
+            "pattern": "^\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}(\\.[0-9]{1,6})?Z$",
+            "format": "date-time",
+            "title": "Published At"
+          },
+          "kind": {
+            "type": "string",
+            "enum": [
+              "demo",
+              "official"
+            ],
+            "title": "Kind"
+          },
+          "counts": {
+            "$ref": "#/components/schemas/CountsDTO"
+          },
+          "path": {
+            "type": "string",
+            "title": "Path"
+          },
+          "compressed_bytes": {
+            "type": "integer",
+            "maximum": 10485760.0,
+            "minimum": 1.0,
+            "title": "Compressed Bytes"
+          },
+          "uncompressed_bytes": {
+            "type": "integer",
+            "maximum": 52428800.0,
+            "minimum": 1.0,
+            "title": "Uncompressed Bytes"
+          },
+          "sha256": {
+            "type": "string",
+            "pattern": "^[0-9a-f]{64}$",
+            "title": "Sha256"
+          },
+          "source_ids": {
+            "items": {
+              "type": "string",
+              "format": "uuid"
+            },
+            "type": "array",
+            "maxItems": 10000,
+            "minItems": 1,
+            "title": "Source Ids"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "package_id",
+          "release",
+          "schema_version",
+          "min_reader_version",
+          "published_at",
+          "kind",
+          "counts",
+          "path",
+          "compressed_bytes",
+          "uncompressed_bytes",
+          "sha256",
+          "source_ids"
+        ],
+        "title": "ManifestDTO"
+      },
+      "ProductRefDTO": {
+        "properties": {
+          "product_id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Product Id"
+          },
+          "revision": {
+            "type": "integer",
+            "maximum": 2147483647.0,
+            "minimum": 1.0,
+            "title": "Revision"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "product_id",
+          "revision"
+        ],
+        "title": "ProductRefDTO"
+      },
+      "QuantityDTO": {
+        "properties": {
+          "amount": {
+            "allOf": [
+              {
+                "type": "string",
+                "pattern": "^(0|[1-9][0-9]{0,5})(\\.[0-9]{0,5}[1-9])?$"
+              },
+              {
+                "not": {
+                  "const": "0"
+                }
+              }
+            ],
+            "title": "Amount"
+          },
+          "unit": {
+            "type": "string",
+            "enum": [
+              "g",
+              "ml"
+            ],
+            "title": "Unit"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "amount",
+          "unit"
+        ],
+        "title": "QuantityDTO"
+      },
+      "RationDTO": {
+        "properties": {
+          "ration_id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Ration Id"
+          },
+          "revision": {
+            "type": "integer",
+            "maximum": 2147483647.0,
+            "minimum": 1.0,
+            "title": "Revision"
+          },
+          "name": {
+            "type": "string",
+            "maxLength": 2000,
+            "minLength": 1,
+            "title": "Name"
+          },
+          "manufacturer": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 2000,
+                "minLength": 1
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Manufacturer"
+          },
+          "variant": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 2000,
+                "minLength": 1
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Variant"
+          },
+          "status": {
+            "type": "string",
+            "enum": [
+              "unverified",
+              "verified"
+            ],
+            "title": "Status"
+          },
+          "source_id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Source Id"
+          },
+          "complete": {
+            "type": "boolean",
+            "title": "Complete"
+          },
+          "components": {
+            "items": {
+              "$ref": "#/components/schemas/ComponentDTO"
+            },
+            "type": "array",
+            "maxItems": 100000,
+            "minItems": 1,
+            "title": "Components"
+          },
+          "excluded_items": {
+            "items": {
+              "$ref": "#/components/schemas/ExcludedItemDTO"
+            },
+            "type": "array",
+            "maxItems": 1000,
+            "title": "Excluded Items"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "ration_id",
+          "revision",
+          "name",
+          "manufacturer",
+          "variant",
+          "status",
+          "source_id",
+          "complete",
+          "components",
+          "excluded_items"
+        ],
+        "title": "RationDTO"
+      },
+      "RationPage": {
+        "properties": {
+          "items": {
+            "items": {
+              "$ref": "#/components/schemas/RationDTO"
+            },
+            "type": "array",
+            "maxItems": 500,
+            "title": "Items"
+          },
+          "next_page_token": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 4096,
+                "minLength": 1
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Next Page Token"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "items",
+          "next_page_token"
+        ],
+        "title": "RationPage"
       }
     }
   }

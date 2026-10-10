@@ -1,15 +1,24 @@
 from fastapi import FastAPI, Request
 from fastapi.exceptions import RequestValidationError
 from fastapi.responses import JSONResponse
-from pydantic import BaseModel
+from pydantic import BaseModel, ConfigDict, Field
 from starlette.exceptions import HTTPException
 
 
+class ErrorDetail(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+    field: str = Field(min_length=1, max_length=200)
+    reason: str = Field(min_length=1, max_length=500)
+
+
 class ApiError(BaseModel):
+    model_config = ConfigDict(extra="forbid")
     code: str
-    message: str
-    details: dict
-    request_id: str
+    message: str = Field(min_length=1, max_length=1000)
+    details: list[ErrorDetail] = Field(max_length=100)
+    request_id: str = Field(
+        pattern=r"^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$"
+    )
 
 
 def error_response(
@@ -19,7 +28,7 @@ def error_response(
         status_code=status,
         headers=headers,
         content=ApiError(
-            code=code, message=message, details={}, request_id=request.state.request_id
+            code=code, message=message, details=[], request_id=request.state.request_id
         ).model_dump(),
     )
 
@@ -31,8 +40,8 @@ def install_error_handlers(app: FastAPI) -> None:
             401: "unauthorized",
             403: "forbidden",
             404: "not_found",
-            409: "conflict",
-            410: "gone",
+            409: "version_conflict",
+            410: "page_expired",
             413: "request_too_large",
             422: "invalid_request",
             429: "rate_limited",
