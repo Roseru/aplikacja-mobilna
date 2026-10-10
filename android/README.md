@@ -1,6 +1,6 @@
 # Android — Racje i kalorie
 
-Wersja `0.5.0` dodaje do lokalnego dziennika ekran Postępy: analitykę i historię 7/30/90 dni bez konta i internetu. Import E2, BigDecimal, profil i pomiary wagi pozostają dostępne. Room pozostaje w wersji 4; nie ma nowej migracji ani przepisywania danych.
+Wersja `0.6.0` przygotowuje pamięć lokalną do kont: trwały rejestr gościa i tożsamości `(issuer, sub)`, dane i kolejka przypisane do właściciela oraz odrzucanie zapisu z nieaktualnej sesji lokalnej. Ekrany nadal działają jako gość bez konta i internetu, z Postępami 7/30/90 dni. Room 5 migruje wcześniejszą bazę bez przepisywania danych.
 
 ## Co zawiera
 
@@ -21,7 +21,17 @@ Wersja `0.5.0` dodaje do lokalnego dziennika ekran Postępy: analitykę i histor
 
 Katalog i początkowy cel 2800 kcal są **danymi demonstracyjnymi**, nie zweryfikowaną bazą żywieniową ani wyliczonym zapotrzebowaniem użytkownika. Dawne zestawy A/B nie odwzorowują specyfikacji S-R/S-RG ani żadnego producenta. Nowy pakiet E2 dodaje osobną niezweryfikowaną, niepełną rację S-RG-1 z 18 policzalnymi komponentami i informacją o pozycjach poza obliczeniami. Nie łączymy zestawów po nazwie lub kalorii. Dawne napoje pozostają w gramach; nowy katalog obsługuje g/ml, bez założenia, że 1 ml = 1 g.
 
-Schemat Room 4 zawiera migracje 1 → 2 → 3 → 4 zachowujące posiłki, racje, cele, prywatne produkty, profil, pomiary, deklaracje dni i całą kolejkę. Nowe pola są dodawane bez przepisywania dawnych kolumn REAL ani payloadów outbox. Prywatne dane mają zakres właściciela. Usuwanie pozostawia znacznik i operację kolejki.
+Schemat Room 5 zawiera migracje 1 → 2 → 3 → 4 → 5 zachowujące posiłki, racje, cele, prywatne produkty, profil, pomiary, deklaracje dni i całą kolejkę. Nowe pola/tabele są dodawane bez przepisywania dawnych kolumn REAL ani payloadów outbox. Prywatne dane mają zakres właściciela. Usuwanie pozostawia znacznik i operację kolejki.
+
+## Fundament kont i izolacji
+
+`LocalOwnerStore` utrwala UUID gościa, rejestruje dokładną parę wystawcy i podmiotu oraz przechowuje aktywny zakres wraz z generacją. Rejestracja metadanych nie zmienia aktywnego właściciela. Każdy wybór, także ponowny wybór tego samego konta, unieważnia stare `OwnerLease`.
+
+`DiaryRepository` wiąże się z jednym właścicielem. Wszystkie jego mutacje sprawdzają zakres i generację wewnątrz tej samej transakcji co zapis danych oraz outbox. ViewModel przekazuje zakres repozytorium także do odczytów i analityki. Katalog pozostaje wspólny; prywatne produkty, spożycia, profile, cele, waga, kompletność i operacje pozostają osobne. Obce ID nie pozwala nadpisać pomiaru wagi ani zmienić cudzego posiłku. Kolizje istniejących globalnych ID kończą się błędem bez przeniesienia rekordu.
+
+Stare rekordy i payloady nadal mają `ownerScope=guest`; nowy UUID gościa jest związany z tym aliasem w rejestrze. Nie zmieniamy identyfikatorów ani treści zaległych operacji. Konto ma zakres równy swojemu lokalnemu UUID, odrębny od `sub` i serwerowego identyfikatora użytkownika. Żadne przełączenie nie przypisuje ani nie wysyła danych gościa.
+
+To wewnętrzny fundament, bez logowania lub wyboru konta w UI. Rejestr metadanych nie uwierzytelnia użytkownika. Przy integracji trzeba utworzyć go z potwierdzonej sesji OIDC, odtworzyć ViewModel i wyczyścić pamięć ekranów po zmianie konta oraz dodać analogiczne kontrole przed wysyłką i zapisem odpowiedzi HTTP. Aktualne klucze tabel pozostają globalnymi UUID; docelowe klucze z właścicielem, jawne przypisanie gościa i adapter E0 wymagają kolejnego etapu. [Raport 0.6.0](RAPORT_0_6.md) podaje odbiór oraz te granice.
 
 ## Import katalogu i dokładność
 
@@ -93,10 +103,10 @@ APK debug: `app/build/outputs/apk/debug/app-debug.apk`. Raporty: `app/build/repo
 
 Szczegółowy wynik walidacji 0.4.0, zakres prób awarii i ograniczenia odbioru E2: [raport Androida](RAPORT_0_4.md). Testy urządzenia obejmują migracje 1/2/3 → 4, zachowanie historii/kolejki, generacje, niezmienność wersji, rzeczywisty SQLITE_FULL oraz przepływy UI z odtworzeniem aktywności. Pełny odbiór zespołowy KO-30 wymaga również środowiska i dostawy O2/O3; raport lokalny go nie zastępuje.
 
-Wynik etapu analityki i zasady zależnego PR: [raport 0.5.0](RAPORT_0_5.md).
+Wynik etapu analityki i zasady zależnego PR: [raport 0.5.0](RAPORT_0_5.md). Bieżąca migracja i izolacja: [raport 0.6.0](RAPORT_0_6.md); testy obejmują ścieżki 1/2/3/4 → 5.
 
 ## Architektura
 
-`MainActivity` tworzy ViewModel i uruchamia Compose. `DiaryViewModel` udostępnia obserwowalny stan. `DiaryRepository` realizuje transakcyjne operacje zapisu. `CalorieDao` jest lokalnym źródłem ekranów. `core/NutritionV1.kt` zawiera dokładne obliczenia, `core/catalog/` walidację pakietu, `data/CatalogStore.kt` staging i aktywację. `ui/` zawiera wspólne motywy i ekrany.
+`MainActivity` tworzy ViewModel i uruchamia Compose. `DiaryViewModel` udostępnia obserwowalny stan. `DiaryRepository` realizuje transakcyjne operacje zapisu, `data/LocalOwners.kt` utrwala właścicieli i chroni zapis przed zmianą aktywnego zakresu. `CalorieDao` jest lokalnym źródłem ekranów. `core/NutritionV1.kt` zawiera dokładne obliczenia, `core/catalog/` walidację pakietu, `data/CatalogStore.kt` staging i aktywację. `ui/` zawiera wspólne motywy i ekrany.
 
 Nie ma uprawnienia INTERNET, kluczy API ani danych konta w APK pierwszej wersji. Dodamy warstwę sieciową wraz z etapem synchronizacji.

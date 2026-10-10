@@ -4,7 +4,7 @@ Data: 9 października 2026 r.
 
 Podstawa: `WYMAGANIA_PROJEKTOWE.md` oraz zaakceptowane makiety. Użytkownik jest osobą 1 w trzyosobowym zespole. Ten dokument wyznacza kolejność implementacji; bieżący zakres kodu jest opisany w [android/README.md](android/README.md).
 
-**Postęp:** A-01–05 są zaimplementowane i sprawdzone w wersji 0.1.0. Wersja 0.2.0 dodaje lokalne racje DEMO i migrację Room 1 → 2. Wersja 0.3.0 dodaje prywatny produkt, profil, pomiary wagi i kompletność dnia oraz Room 3. Wersja 0.4.0 dodaje importer pakietu E2, BigDecimal, generacje i pełne snapshoty nowych spożyć, z migracją Room 3 → 4. Wersja 0.5.0 dodaje lokalną analitykę 7/30/90 dni i historię z datowanymi celami, wagą oraz jawnymi brakami; Room nadal 4. Rzeczywista synchronizacja i pełny adapter dawnych danych do API pozostają do wykonania; [instrukcja Androida](android/README.md), [raport 0.4](android/RAPORT_0_4.md) i [raport 0.5](android/RAPORT_0_5.md) opisują zakres i ograniczenia.
+**Postęp:** A-01–05 są zaimplementowane i sprawdzone w wersji 0.1.0. Wersja 0.2.0 dodaje lokalne racje DEMO i migrację Room 1 → 2. Wersja 0.3.0 dodaje prywatny produkt, profil, pomiary wagi i kompletność dnia oraz Room 3. Wersja 0.4.0 dodaje importer E2, BigDecimal, generacje i pełne snapshoty, z migracją Room 3 → 4. Wersja 0.5.0 dodaje lokalną analitykę 7/30/90 dni z datowanymi celami i jawnymi brakami. Wersja 0.6.0 dodaje rejestr właścicieli, prywatny zakres repozytorium i ochronę przed nieaktualnym zapisem, z migracją Room 4 → 5. Logowanie, przełączanie kont w UI, przypisanie gościa, rzeczywista synchronizacja i adapter dawnych danych do API pozostają do wykonania. [Instrukcja Androida](android/README.md) i raporty [0.4](android/RAPORT_0_4.md), [0.5](android/RAPORT_0_5.md), [0.6](android/RAPORT_0_6.md) opisują zakres oraz ograniczenia.
 
 ## 1. Od czego zaczynamy
 
@@ -168,7 +168,9 @@ Nie potrzebujemy na start kompletnego backendu ani działającej analizy AI. Do 
 
 ## 8. Pierwsze zadanie do wykonania w kodzie
 
-Lokalny rdzeń A-01–05, formularze profilu/wagi/prywatnego produktu/kompletności, importer E2, BigDecimal i lokalna analityka 7/30/90 dni są zaimplementowane. Następny etap integracyjny to konta i adapter synchronizacji: wymaga wdrożonych endpointów kolejnych etapów backendu, izolacji właścicieli i jawnej konwersji roboczej kolejki do kontraktu. Do czasu dostawy API można przygotować adaptery oraz scenariusze offline bez udawania rzeczywistego sync. Import materiałów MRE 2026 jest osobnym zadaniem katalogu: nie sumujemy alternatyw ani zbiorczego pakietu dodatków ze składnikami.
+Lokalny rdzeń A-01–05, formularze profilu/wagi/prywatnego produktu/kompletności, importer E2, BigDecimal i analityka 7/30/90 dni są zaimplementowane. Fundament 0.6 utrwala UUID gościa/tożsamości, rozdziela zakres repozytoriów/kolejek i chroni lokalne transakcje generacją. Nie dodaje autoryzacji ani przełączania kont w UI; zachowuje dawny alias gościa i globalne klucze encji.
+
+Następny etap: powiązanie rejestru z potwierdzoną sesją, odtwarzanie ViewModel i czyszczenie stanu po zmianie konta, docelowe klucze z właścicielem oraz adapter E0 i scenariusze synchronizacji. Wymaga endpointów E3/E4 O2 i konfiguracji środowiska O3. Przed wysyłką oraz zapisem odpowiedzi trzeba sprawdzać właściciela/generację zadania; import gościa wymaga jawnej zgody i trwałego potwierdzenia. Roboczy outbox nie jest gotowym payloadem HTTP. Do dostawy API można przygotować adaptery i scenariusze offline bez udawania rzeczywistego sync. MRE 2026 pozostaje osobnym importem katalogu: nie sumujemy alternatyw ani zbiorczego pakietu dodatków ze składnikami.
 
 ## Dokumentacja techniczna
 
