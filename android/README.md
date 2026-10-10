@@ -90,6 +90,14 @@ Na Linuxie: `./gradlew` z tymi samymi zadaniami. Druga komenda wymaga uruchomion
 
 APK debug: `app/build/outputs/apk/debug/app-debug.apk`. Raporty: `app/build/reports/`. Schemat Room: `app/schemas/` (należy wersjonować, nie stosować migracji kasujących dane).
 
+## GitHub Actions i pobieranie APK
+
+Workflow [Project CI](../.github/workflows/backend.yml) uruchamia na każdym PR do `main` i zmianie `main` dwa zadania Androida. `android-build` buduje debug APK, wykonuje wszystkie testy JVM i lint; `android-device` wykonuje wszystkie testy instalacji validation na emulatorze API 35 / Google APIs / x86_64, z trybem samolotowym oraz wyłączonym Wi-Fi i transmisją danych przed testami. Oba wyniki są wymagane przez `ci-required`, razem z backendem i kontraktami. Brak raportów, pominięte testy, błąd albo anulowanie obowiązkowego zadania nie dają zaliczenia. Ostrzeżenia lint pozostają w raporcie; błędy blokują odbiór.
+
+Po zakończeniu przebiegu otwórz jego stronę w GitHub **Actions → Project CI → Artifacts**. Artefakt `android-debug-<commit>` zawiera `Racje-i-kalorie-<wersja>-debug.apk`, `manifest.json` oraz `SHA256SUMS`. Manifest podaje rzeczywisty applicationId, versionName/versionCode sprawdzone także wewnątrz APK, wariant debug, dokładny commit checkoutu i SHA-256 samego APK. Dla PR commit oznacza testowaną integrację z bazą (`refs/pull/.../merge`); commit źródłowej gałęzi znajdziesz na stronie PR. Artefakt powstaje po zaliczeniu JVM/lint; dopiero zielone całe `ci-required` potwierdza również odbiór urządzenia i backendu.
+
+Raporty są w osobnych artefaktach `android-jvm-lint-<commit>` i `android-api35-<commit>`; upload jest podejmowany także po nieudanym teście. APK i raporty mają retencję 14 dni i pozostają poza Git. To dostawa debug do testowania, nie podpisane wydanie produkcyjne ani wdrożenie API. APK nie pojawi się, jeśli jego budowa lub wcześniejsze kontrole nie powiodły się. Pobranie artefaktów może wymagać zalogowania do GitHuba.
+
 ## Kontrole odbioru
 
 1. W trybie samolotowym dodaj produkt z ilością `120,5 g`. Sprawdź kcal i pozycję w wybranej grupie.
