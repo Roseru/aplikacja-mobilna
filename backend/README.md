@@ -1,12 +1,16 @@
-# Backend E1/E2 - osoba 2
+# Backend E1 E2 E3 - osoba 2
 
-FastAPI na Pythonie 3.13, PostgreSQL 17, SQLAlchemy 2 i Alembic. E2 rozszerza fundament E1 o katalog, racje, kontrolowany import, eksport i publiczne odczyty wyłącznie opublikowanego official. Dane demo przekazujemy jako plik. Logowanie OIDC i chronione trasy produktów należą do E3, sync do E4; ich granice określają [kontrakty E0](../contracts/README.md).
+FastAPI na Pythonie 3.13, PostgreSQL 17, SQLAlchemy 2 i Alembic. E2 rozszerza fundament E1 o katalog, racje, kontrolowany import, eksport i publiczne odczyty wyłącznie opublikowanego official. Dane demo przekazujemy jako plik. E3 dostarcza OIDC, bootstrap, profil/cele/zgody, kalkulator, modele prywatne i chronione produkty; sync należy do E4; ich granice określają [kontrakty E0](../contracts/README.md).
+
+Instrukcje E3: [raport](../docs/e3/RAPORT_E3.md), [integracja O1](../docs/e3/INTEGRACJA_O1.md), [konfiguracja O3](../docs/e3/KONFIGURACJA_O3.md), [rzeczywisty Keycloak/PKCE](../infra/local/keycloak/README.md).
 
 ## Struktura
 
 - `src/calorie_app/main.py`: fabryka aplikacji, lifespan i kontekst żądania.
 - `core/`: konfiguracja ze środowiska, bezpieczne błędy i logi JSON.
 - `db/`: modele PostgreSQL oraz sesje; transakcję zatwierdza usługa wywołująca.
+- `integrations/keycloak/`: ograniczony JWKS i RS256 access-token verifier.
+- `modules/identity/`, `modules/profiles/`, `modules/diary/`: konto/bootstrap, profile/cele/zgody i prywatne agregaty; caller zatwierdza transakcję.
 - `modules/catalog/`: modele, DTO/walidacja, repozytorium, usługi, eksport, router i CLI; także importer referencyjny bez DB/sieci.
 - `data/demo/`: jawny seed wejściowy i osobny eksport z PostgreSQL dla O1.
 - `health.py`: liveness procesu i readiness bazy/migracji.
@@ -28,7 +32,7 @@ Potrzebne: Git, Python 3.13, uv 0.9.5. Do standardowego lokalnego PostgreSQL pot
 
 `GET /health/live` daje 200 także podczas awarii bazy. `GET /health/ready` daje 200 dopiero dla PostgreSQL 17 z dokładną oczekiwaną migracją i konfiguracją sekretu paginacji, w przeciwnym razie 503 z bezpiecznym błędem i identyfikatorem żądania. API nie tworzy tabel przy starcie. Żądania mają `X-Request-ID`, błędy pola `code`, `message`, `details`, `request_id`. Nie logujemy query, body, tokenów ani tekstu wyjątków mogącego zawierać sekrety.
 
-Aktualny head to `0005_ration_cursors`, po nowych `0004_catalog_timestamp` i niezmienionych `0001–0003`. Stara rewizja daje readiness 503; po upgrade i ustawieniu trwałego `CATALOG_PAGE_TOKEN_SECRET` bieżąca daje 200. CHECK `ck_product_versions_finite_nutrition` nadal dopuszcza w każdej z czterech kolumn wartości odżywczych `NULL` albo zakres `0..999999.999999`. `NULL` oznacza brak danych, zero pozostaje znanym zerem. NaN i wartości ujemne naruszają CHECK; przekroczenie precyzji oraz Infinity odrzuca typ `NUMERIC(12,6)`.
+Aktualny head to `0008_diary_delete`, po `0007_e3_diary` i `0006_e3_identity` oraz zachowanych migracjach E1/E2 `0001–0005`. Stara rewizja daje readiness 503; po upgrade i ustawieniu trwałego `CATALOG_PAGE_TOKEN_SECRET` bieżąca daje 200. CHECK `ck_product_versions_finite_nutrition` nadal dopuszcza w każdej z czterech kolumn wartości odżywczych `NULL` albo zakres `0..999999.999999`. `NULL` oznacza brak danych, zero pozostaje znanym zerem. NaN i wartości ujemne naruszają CHECK; przekroczenie precyzji oraz Infinity odrzuca typ `NUMERIC(12,6)`.
 
 Migracja `0002` waliduje istniejące dane i zastępuje wyłącznie CHECK, bez przepisywania tabeli lub wartości. NaN pozostawione w starej bazie powoduje odmowę i rollback całej migracji, z zachowaniem danych, poprzedniego CHECK i rewizji. Przed upgrade rolą migratora sprawdź zakres wadliwych rekordów:
 
@@ -62,7 +66,7 @@ uv run --project backend --locked python backend/export_openapi.py
 uv build backend
 ```
 
-Generowany OpenAPI obejmuje health oraz cztery publiczne odczyty E2. Projekt `contracts/openapi/design-v1.yaml` obejmuje niewdrożone operacje E3–E4 i nie dubluje przejętych operacji. Test porównuje wygenerowany dokument z wersjonowanym artefaktem. Zachowano regresję E1: migracje pustej bazy i poprawnych danych, rollback przy NaN w każdej kolumnie, rzeczywiste CHECK/SQLSTATE, NULL/zero/maksimum, prawa ról, readiness i izolację Keycloak. Testy E2 dodają upgrade z `0002`, niezmienność, atomowy import, publikację przy awarii i wyścigu, HTTP/snapshot, limity importera i pełny roundtrip PostgreSQL. SQLite służy wyłącznie importerowi referencyjnemu.
+Generowane OpenAPI obejmuje health, cztery publiczne odczyty E2 i siedem operacji E3. Projekt `contracts/openapi/design-v1.yaml` obejmuje niewdrożone operacje E4/E5 i nie dubluje przejętych operacji. Test porównuje wygenerowany dokument z wersjonowanym artefaktem. Zachowano regresję E1: migracje pustej bazy i poprawnych danych, rollback przy NaN w każdej kolumnie, rzeczywiste CHECK/SQLSTATE, NULL/zero/maksimum, prawa ról, readiness i izolację Keycloak. Testy E2 dodają upgrade z `0002`, niezmienność, atomowy import, publikację przy awarii i wyścigu, HTTP/snapshot, limity importera i pełny roundtrip PostgreSQL. SQLite służy wyłącznie importerowi referencyjnemu.
 
 ## CI i obraz
 
@@ -94,7 +98,7 @@ Eksport odczytuje spójny snapshot PostgreSQL w repeatable read. Sortuje UUID/re
 
 `publish` zapisuje kompletny plik przez fsync i atomowy hard link bez nadpisania, potem zatwierdza stan i monotoniczny active_release pod blokadą kanału PostgreSQL. Potrzebny jest jeden trwały lokalny filesystem obsługujący hard link, widoczny dla operatora i API. Magazyn rozdziela `demo/<package_id>/base-pl.<release>.json.gz` i `official/<package_id>/...`. `CATALOG_ARTIFACT_ROOT` wskazuje jego katalog główny: operator ma zapis, API odczyt. Nie wystawiać tego katalogu jako publicznego statycznego mountu. Błąd pliku/commit pozostawia poprzednie wydanie; osierocony plik nie trafia do API. E2 nie usuwa opublikowanych wersji.
 
-Publiczne adresy `/api/v1/rations`, `/rations/{id}`, `/offline-package/manifest` i `/offline-package/{filename}` są na stałe związane z **official package_id `c12631e2-1a02-547c-a7f9-ebf87bb42e55`** (UUIDv5 z przestrzeni E0 i nazwy `official-base-pl-api-v1`). To tożsamość kontraktu, nie zmienna środowiska. Inny official package_id z tym samym release nie zmienia tych URL; nowa tożsamość wymaga osobnego kanału/kontraktu. Przy samym demo lista racji jest pusta, szczegół/manifest/plik daje 404. `include_demo=true` nie otwiera dostępu. Products HTTP pozostają E3 z prawdziwym OIDC; wewnętrzna usługa odczytu/wyszukiwania i DTO są gotowe.
+Publiczne adresy `/api/v1/rations`, `/rations/{id}`, `/offline-package/manifest` i `/offline-package/{filename}` są na stałe związane z **official package_id `c12631e2-1a02-547c-a7f9-ebf87bb42e55`** (UUIDv5 z przestrzeni E0 i nazwy `official-base-pl-api-v1`). To tożsamość kontraktu, nie zmienna środowiska. Inny official package_id z tym samym release nie zmienia tych URL; nowa tożsamość wymaga osobnego kanału/kontraktu. Przy samym demo lista racji jest pusta, szczegół/manifest/plik daje 404. `include_demo=true` nie otwiera dostępu. Produkty HTTP E3 wymagają prawdziwego OIDC, roli user i bootstrapu; odczytują tylko opublikowany official.
 
 Lista wybiera najnowszą rewizję racji w przypiętym release, porządek UUID; limit 1..500 (domyślnie 100). Token `rp1` zawiera podpis HMAC-SHA256 wiążący package_id, release, limit, pozycję i pierwotny termin wygaśnięcia z dokładnością do mikrosekundy. Odczyt nie tworzy rekordu DB. Kolejne strony zachowują ten sam termin 60 minut; nowa publikacja nie zmienia snapshotu. Zmieniony podpis/token lub limit daje 422, poprawny wygasły token 410 `page_expired`, również po restarcie i sprzątaniu. Klient przechowuje token jako nieprzezroczysty tekst i nie interpretuje formatu. To token katalogu, nie checkpoint sync. Bez revision szczegół wybiera aktywny release; z revision dokładne członkostwo dowolnego opublikowanego wydania tego samego pakietu. Starsze pliki pozostają dostępne. Gzip jest treścią `application/gzip`, Content-Length jest rozmiarem gzip, bez Content-Encoding. Reverse proxy nie może automatycznie rozpakowywać tych odpowiedzi.
 
@@ -132,4 +136,8 @@ Referencyjny importer lokalny (bez DB/sieci):
 uv run --project backend --locked python -m calorie_app.modules.catalog.offline_import --database backend/var/catalog.sqlite --manifest backend/data/demo/export/manifest.json --package backend/data/demo/export/base-pl.1.json.gz --expected-package-id 47bdff67-e58b-5437-919b-ec00159afbc5 --expected-kind demo
 ```
 
-Katalog `backend/var` utwórz przed pierwszym użyciem; jest ignorowany. [Opis importera](../tools/offline_catalog/README.md) podaje API staging/activation, a [integracja O1](../docs/e2/INTEGRACJA_O1.md) wymagane adaptacje Room/APK. Schematy edytuje się wyłącznie w `contracts/schemas`; `python backend/sync_catalog_schemas.py` generuje zasoby, `--check` weryfikuje ich zgodność. Testy i [raport E2](../docs/e2/RAPORT_E2.md) rozróżniają gotowość O2 od odbioru Androida. Brak oficjalnych etykiet pozostaje bramką E5. E3 nie jest rozpoczęte.
+Katalog `backend/var` utwórz przed pierwszym użyciem; jest ignorowany. [Opis importera](../tools/offline_catalog/README.md) podaje API staging/activation, a [integracja O1](../docs/e2/INTEGRACJA_O1.md) wymagane adaptacje Room/APK. Schematy edytuje się wyłącznie w `contracts/schemas`; `python backend/sync_catalog_schemas.py` generuje zasoby, `--check` weryfikuje ich zgodność. Testy i [raport E2](../docs/e2/RAPORT_E2.md) rozróżniają gotowość O2 od odbioru Androida. Brak oficjalnych etykiet pozostaje bramką E5. E3 jest zaimplementowane; wyniki odbioru określa raport E3.
+
+## Poprawka uprawnień DELETE E3
+
+Migracja 0008 odbiera API/workerowi fizyczny DELETE rodziców dziennika i chroni DELETE składników aktywnością konta oraz blokadą do commit. Usługi nadal zapisują tombstones; atomowa wymiana składników pozostaje dozwolona. Downgrade zachowuje zabezpieczenie i wypisuje jawny komunikat, zamiast przywracać wadliwe granty. Szczegóły i świeże dowody są w [raporcie E3](../docs/e3/RAPORT_E3.md) i [instrukcji O3](../docs/e3/KONFIGURACJA_O3.md).

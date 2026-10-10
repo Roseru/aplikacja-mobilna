@@ -1,0 +1,100 @@
+{
+  "realm": "calorie-dev",
+  "enabled": true,
+  "sslRequired": "none",
+  "registrationAllowed": false,
+  "resetPasswordAllowed": false,
+  "accessTokenLifespan": 300,
+  "accessTokenLifespanForImplicitFlow": 300,
+  "ssoSessionIdleTimeout": 1800,
+  "ssoSessionMaxLifespan": 3600,
+  "roles": {"client": {"calorie-api": [{"name": "user"}, {"name": "catalog_moderator"}, {"name": "admin"}]}},
+  "clients": [
+    {
+      "clientId": "calorie-api",
+      "enabled": true,
+      "bearerOnly": true,
+      "publicClient": false,
+      "standardFlowEnabled": false,
+      "directAccessGrantsEnabled": false,
+      "protocol": "openid-connect"
+    },
+    {
+      "clientId": "calorie-android",
+      "enabled": true,
+      "publicClient": true,
+      "standardFlowEnabled": true,
+      "implicitFlowEnabled": false,
+      "directAccessGrantsEnabled": false,
+      "serviceAccountsEnabled": false,
+      "protocol": "openid-connect",
+      "redirectUris": [
+        "pl.roseru.kalorie:/oauth2redirect",
+        "pl.roseru.kalorie.validation:/oauth2redirect"
+      ],
+      "webOrigins": [],
+      "attributes": {"pkce.code.challenge.method": "S256", "access.token.lifespan": "300"},
+      "defaultClientScopes": ["basic", "roles"],
+      "protocolMappers": [
+        {
+          "name": "calorie-api-audience",
+          "protocol": "openid-connect",
+          "protocolMapper": "oidc-audience-mapper",
+          "consentRequired": false,
+          "config": {
+            "included.client.audience": "calorie-api",
+            "access.token.claim": "true",
+            "id.token.claim": "false",
+            "introspection.token.claim": "true"
+          }
+        }
+      ]
+    },
+    {
+      "clientId": "calorie-pkce-harness",
+      "enabled": true,
+      "publicClient": true,
+      "standardFlowEnabled": true,
+      "implicitFlowEnabled": false,
+      "directAccessGrantsEnabled": false,
+      "serviceAccountsEnabled": false,
+      "protocol": "openid-connect",
+      "redirectUris": ["http://127.0.0.1:8765/callback"],
+      "webOrigins": [],
+      "attributes": {"pkce.code.challenge.method": "S256", "access.token.lifespan": "300"},
+      "defaultClientScopes": ["basic", "roles"],
+      "protocolMappers": [
+        {
+          "name": "calorie-api-audience",
+          "protocol": "openid-connect",
+          "protocolMapper": "oidc-audience-mapper",
+          "consentRequired": false,
+          "config": {"included.client.audience": "calorie-api", "access.token.claim": "true", "id.token.claim": "false"}
+        }
+      ]
+    },
+    {
+      "clientId": "calorie-pkce-android-only",
+      "enabled": true,
+      "publicClient": true,
+      "standardFlowEnabled": true,
+      "implicitFlowEnabled": false,
+      "directAccessGrantsEnabled": false,
+      "serviceAccountsEnabled": false,
+      "protocol": "openid-connect",
+      "redirectUris": ["http://127.0.0.1:8765/callback"],
+      "webOrigins": [],
+      "attributes": {"pkce.code.challenge.method": "S256", "access.token.lifespan": "300"},
+      "defaultClientScopes": ["basic"],
+      "protocolMappers": [
+        {
+          "name": "android-only-audience",
+          "protocol": "openid-connect",
+          "protocolMapper": "oidc-audience-mapper",
+          "consentRequired": false,
+          "config": {"included.client.audience": "calorie-android", "access.token.claim": "true", "id.token.claim": "false"}
+        }
+      ]
+    }
+  ]
+}

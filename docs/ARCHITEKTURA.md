@@ -190,3 +190,7 @@ Wybór konkretnych podziałów i limitów jest decyzją projektu. Oficjalne doku
 - [DataStore](https://developer.android.com/topic/libraries/architecture/datastore) — proste ustawienia; [Android Keystore](https://developer.android.com/privacy-and-security/keystore) — ochrona kluczy kryptograficznych.
 - [Keycloak: konfiguracja bazy](https://www.keycloak.org/server/db) — baza zarządzana przez dostawcę logowania.
 - [PostgreSQL: schematy i uprawnienia](https://www.postgresql.org/docs/17/ddl-schemas.html) — organizacja i prawa wewnątrz bazy.
+
+## Wdrożenie E3
+
+E3 zachowuje modularny monolit i caller-owned transakcje. Adapter Keycloak kończy fetch JWKS przed połączeniem z DB; moduł identity ustala principal i blokuje konto na czas mutacji/replayu. Profile, niezmienna oś celów i zgody są w profiles, agregaty posiłków/wagi/dnia/szkicu w diary. Migracje 0006/0007 rozszerzają E2. Trwała epoka pochodzi z installation_state, a prywatne tokeny stron wiążą konto/generację/epokę i niezmienny snapshot bez zapisów per-page. Zakres wykonania i dowody zawiera [raport E3](e3/RAPORT_E3.md).

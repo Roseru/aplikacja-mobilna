@@ -362,6 +362,737 @@
         },
         "security": []
       }
+    },
+    "/api/v1/me/bootstrap": {
+      "post": {
+        "tags": [
+          "identity"
+        ],
+        "summary": "Bootstrap Account",
+        "description": "Wymaga Idempotency-Key UUID; body zabronione. Replay zachowuje pierwotny czas i sprawdza aktywność, generację oraz epokę.",
+        "operationId": "bootstrap",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "Idempotency-Key",
+            "in": "header",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Idempotency-Key"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Bootstrap"
+                }
+              }
+            }
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            },
+            "description": "Unauthorized"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            },
+            "description": "Forbidden"
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            },
+            "description": "Conflict"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            },
+            "description": "Unprocessable Content"
+          },
+          "503": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            },
+            "description": "Service Unavailable"
+          }
+        }
+      }
+    },
+    "/api/v1/me": {
+      "get": {
+        "tags": [
+          "profiles"
+        ],
+        "summary": "Me",
+        "operationId": "read_me",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProfileRead"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Forbidden",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Conflict",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Unprocessable Content",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "Service Unavailable",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ]
+      }
+    },
+    "/api/v1/me/goals": {
+      "get": {
+        "tags": [
+          "profiles"
+        ],
+        "summary": "Goals",
+        "description": "Niezmienne wersje w porządku UUID. Podpisany token przypina właściciela, generację, epokę, limit i rewizję osi na 60 minut.",
+        "operationId": "list_goals",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "limit",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "maximum": 500,
+              "minimum": 1,
+              "default": 100,
+              "title": "Limit"
+            }
+          },
+          {
+            "name": "page_token",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string",
+                  "minLength": 1,
+                  "maxLength": 4096
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Page Token"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/GoalPage"
+                }
+              }
+            }
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            },
+            "description": "Unauthorized"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            },
+            "description": "Forbidden"
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            },
+            "description": "Conflict"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            },
+            "description": "Unprocessable Content"
+          },
+          "503": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            },
+            "description": "Service Unavailable"
+          },
+          "410": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            },
+            "description": "Gone"
+          }
+        }
+      }
+    },
+    "/api/v1/energy-estimates": {
+      "post": {
+        "tags": [
+          "profiles"
+        ],
+        "summary": "Energy Estimate",
+        "description": "Szacunek utrzymania, bez zapisu lub ustawiania celu.",
+        "operationId": "estimate_energy",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/EstimateInput"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Estimate"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Forbidden",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Conflict",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Unprocessable Content",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "Service Unavailable",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ]
+      }
+    },
+    "/api/v1/me/consents": {
+      "put": {
+        "tags": [
+          "profiles"
+        ],
+        "summary": "Consents",
+        "description": "Pełne booleany, UUID Idempotency-Key i cytowana revision If-Match. Identyczny replay poprzedza sprawdzenie bieżącej revision. Pełny wynik minimum 60 dni; po sprzątaniu 409 idempotency_result_expired bez mutacji.",
+        "operationId": "update_consents",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "Idempotency-Key",
+            "in": "header",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Idempotency-Key"
+            }
+          },
+          {
+            "name": "If-Match",
+            "in": "header",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "If-Match"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ConsentInput"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Consent"
+                }
+              }
+            }
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            },
+            "description": "Unauthorized"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            },
+            "description": "Forbidden"
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            },
+            "description": "Conflict"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            },
+            "description": "Unprocessable Content"
+          },
+          "503": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            },
+            "description": "Service Unavailable"
+          }
+        }
+      }
+    },
+    "/api/v1/products": {
+      "get": {
+        "tags": [
+          "catalog"
+        ],
+        "summary": "List Products",
+        "description": "Chroniony katalog official po bootstrapie. Strony przypinają niezmienny release, konto, generację, epokę i parametry przez 60 minut bez przedłużania. Brak official daje pustą listę.",
+        "operationId": "list_products",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "query",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string",
+                  "minLength": 1,
+                  "maxLength": 100
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Query"
+            }
+          },
+          {
+            "name": "limit",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "maximum": 500,
+              "minimum": 1,
+              "default": 100,
+              "title": "Limit"
+            }
+          },
+          {
+            "name": "page_token",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string",
+                  "minLength": 1,
+                  "maxLength": 4096
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Page Token"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProductPage"
+                }
+              }
+            }
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            },
+            "description": "Unauthorized"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            },
+            "description": "Forbidden"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            },
+            "description": "Not Found"
+          },
+          "410": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            },
+            "description": "Gone"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            },
+            "description": "Unprocessable Content"
+          },
+          "503": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            },
+            "description": "Service Unavailable"
+          }
+        }
+      }
+    },
+    "/api/v1/products/{id}": {
+      "get": {
+        "tags": [
+          "catalog"
+        ],
+        "summary": "Read Product",
+        "description": "Chroniony odczyt po bootstrapie. Bez revision najnowsza aktywna wersja official. Z revision dokładna wersja opublikowanego release official. Niedostępna wersja daje 404.",
+        "operationId": "read_product",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Id"
+            }
+          },
+          {
+            "name": "revision",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "integer",
+                  "maximum": 2147483647,
+                  "minimum": 1
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Revision"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProductDTO"
+                }
+              }
+            }
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            },
+            "description": "Unauthorized"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            },
+            "description": "Forbidden"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            },
+            "description": "Not Found"
+          },
+          "410": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            },
+            "description": "Gone"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            },
+            "description": "Unprocessable Content"
+          },
+          "503": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            },
+            "description": "Service Unavailable"
+          }
+        }
+      }
     }
   },
   "components": {
@@ -402,6 +1133,41 @@
         ],
         "title": "ApiError"
       },
+      "Bootstrap": {
+        "properties": {
+          "account_id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Account Id"
+          },
+          "sync_epoch": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Sync Epoch"
+          },
+          "account_generation": {
+            "type": "integer",
+            "maximum": 2147483647.0,
+            "minimum": 1.0,
+            "title": "Account Generation"
+          },
+          "server_time": {
+            "type": "string",
+            "pattern": "^\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}(\\.[0-9]{1,6})?Z$",
+            "format": "date-time",
+            "title": "Server Time"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "account_id",
+          "sync_epoch",
+          "account_generation",
+          "server_time"
+        ],
+        "title": "Bootstrap"
+      },
       "ComponentDTO": {
         "properties": {
           "position": {
@@ -437,6 +1203,58 @@
           "optional"
         ],
         "title": "ComponentDTO"
+      },
+      "Consent": {
+        "properties": {
+          "ranking": {
+            "type": "boolean",
+            "title": "Ranking"
+          },
+          "automatic_energy_adjustment": {
+            "type": "boolean",
+            "title": "Automatic Energy Adjustment"
+          },
+          "revision": {
+            "type": "integer",
+            "maximum": 2147483647.0,
+            "minimum": 1.0,
+            "title": "Revision"
+          },
+          "updated_at": {
+            "type": "string",
+            "pattern": "^\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}(\\.[0-9]{1,6})?Z$",
+            "format": "date-time",
+            "title": "Updated At"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "ranking",
+          "automatic_energy_adjustment",
+          "revision",
+          "updated_at"
+        ],
+        "title": "Consent"
+      },
+      "ConsentInput": {
+        "properties": {
+          "ranking": {
+            "type": "boolean",
+            "title": "Ranking"
+          },
+          "automatic_energy_adjustment": {
+            "type": "boolean",
+            "title": "Automatic Energy Adjustment"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "ranking",
+          "automatic_energy_adjustment"
+        ],
+        "title": "ConsentInput"
       },
       "CountsDTO": {
         "properties": {
@@ -475,6 +1293,36 @@
         ],
         "title": "CountsDTO"
       },
+      "DensityDTO": {
+        "properties": {
+          "amount": {
+            "allOf": [
+              {
+                "type": "string",
+                "pattern": "^(0|[1-9][0-9]{0,5})(\\.[0-9]{0,5}[1-9])?$"
+              },
+              {
+                "not": {
+                  "const": "0"
+                }
+              }
+            ],
+            "title": "Amount"
+          },
+          "source_id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Source Id"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "amount",
+          "source_id"
+        ],
+        "title": "DensityDTO"
+      },
       "ErrorDetail": {
         "properties": {
           "field": {
@@ -497,6 +1345,119 @@
           "reason"
         ],
         "title": "ErrorDetail"
+      },
+      "Estimate": {
+        "properties": {
+          "method": {
+            "type": "string",
+            "const": "mifflin_pal_v1",
+            "title": "Method"
+          },
+          "input": {
+            "$ref": "#/components/schemas/EstimateInput"
+          },
+          "resting_kcal": {
+            "type": "string",
+            "pattern": "^(0|[1-9][0-9]{0,5})(\\.[0-9]{0,11}[1-9])?$",
+            "title": "Resting Kcal"
+          },
+          "pal": {
+            "type": "string",
+            "enum": [
+              "1.5",
+              "1.8",
+              "2.2"
+            ],
+            "title": "Pal"
+          },
+          "maintenance_kcal": {
+            "type": "string",
+            "pattern": "^(0|[1-9][0-9]{0,5})(\\.[0-9]{0,11}[1-9])?$",
+            "title": "Maintenance Kcal"
+          },
+          "estimated_at": {
+            "type": "string",
+            "pattern": "^\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}(\\.[0-9]{1,6})?Z$",
+            "format": "date-time",
+            "title": "Estimated At"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "method",
+          "input",
+          "resting_kcal",
+          "pal",
+          "maintenance_kcal",
+          "estimated_at"
+        ],
+        "title": "Estimate"
+      },
+      "EstimateInput": {
+        "properties": {
+          "age_years": {
+            "type": "integer",
+            "maximum": 120.0,
+            "minimum": 18.0,
+            "title": "Age Years"
+          },
+          "height_cm": {
+            "allOf": [
+              {
+                "type": "string",
+                "pattern": "^(0|[1-9][0-9]{0,5})(\\.[0-9]{0,5}[1-9])?$"
+              },
+              {
+                "not": {
+                  "const": "0"
+                }
+              }
+            ],
+            "title": "Height Cm"
+          },
+          "weight_kg": {
+            "allOf": [
+              {
+                "type": "string",
+                "pattern": "^(0|[1-9][0-9]{0,5})(\\.[0-9]{0,5}[1-9])?$"
+              },
+              {
+                "not": {
+                  "const": "0"
+                }
+              }
+            ],
+            "title": "Weight Kg"
+          },
+          "equation_variant": {
+            "type": "string",
+            "enum": [
+              "plus_5",
+              "minus_161"
+            ],
+            "title": "Equation Variant"
+          },
+          "activity_class": {
+            "type": "string",
+            "enum": [
+              "stationary",
+              "line",
+              "commando"
+            ],
+            "title": "Activity Class"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "age_years",
+          "height_cm",
+          "weight_kg",
+          "equation_variant",
+          "activity_class"
+        ],
+        "title": "EstimateInput"
       },
       "ExcludedItemDTO": {
         "properties": {
@@ -578,6 +1539,213 @@
           "reasons"
         ],
         "title": "ExcludedItemDTO"
+      },
+      "GoalPage": {
+        "properties": {
+          "items": {
+            "items": {
+              "$ref": "#/components/schemas/GoalRecord"
+            },
+            "type": "array",
+            "maxItems": 500,
+            "title": "Items"
+          },
+          "next_page_token": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 4096,
+                "minLength": 1
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Next Page Token"
+          },
+          "sync_epoch": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Sync Epoch"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "items",
+          "next_page_token",
+          "sync_epoch"
+        ],
+        "title": "GoalPage"
+      },
+      "GoalPayload": {
+        "properties": {
+          "effective_from": {
+            "type": "string",
+            "format": "date",
+            "title": "Effective From"
+          },
+          "decided_at": {
+            "type": "string",
+            "pattern": "^\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}(\\.[0-9]{1,6})?Z$",
+            "format": "date-time",
+            "title": "Decided At"
+          },
+          "time_zone": {
+            "type": "string",
+            "maxLength": 100,
+            "format": "iana-time-zone",
+            "title": "Time Zone"
+          },
+          "goal_type": {
+            "type": "string",
+            "enum": [
+              "reduce",
+              "maintain",
+              "gain"
+            ],
+            "title": "Goal Type"
+          },
+          "energy_kcal": {
+            "allOf": [
+              {
+                "type": "string",
+                "pattern": "^(0|[1-9][0-9]{0,5})(\\.[0-9]{0,5}[1-9])?$"
+              },
+              {
+                "not": {
+                  "const": "0"
+                }
+              }
+            ],
+            "title": "Energy Kcal"
+          },
+          "protein_g": {
+            "anyOf": [
+              {
+                "type": "string",
+                "pattern": "^(0|[1-9][0-9]{0,5})(\\.[0-9]{0,5}[1-9])?$"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Protein G"
+          },
+          "fat_g": {
+            "anyOf": [
+              {
+                "type": "string",
+                "pattern": "^(0|[1-9][0-9]{0,5})(\\.[0-9]{0,5}[1-9])?$"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Fat G"
+          },
+          "carbs_g": {
+            "anyOf": [
+              {
+                "type": "string",
+                "pattern": "^(0|[1-9][0-9]{0,5})(\\.[0-9]{0,5}[1-9])?$"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Carbs G"
+          },
+          "activity_class": {
+            "type": "string",
+            "enum": [
+              "stationary",
+              "line",
+              "commando"
+            ],
+            "title": "Activity Class"
+          },
+          "estimate": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/Estimate"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "timeline_base_revision": {
+            "type": "integer",
+            "maximum": 2147483647.0,
+            "minimum": 0.0,
+            "title": "Timeline Base Revision"
+          },
+          "reason": {
+            "type": "string",
+            "enum": [
+              "user_decision",
+              "history_correction"
+            ],
+            "title": "Reason"
+          },
+          "correction_of": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Correction Of"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "effective_from",
+          "decided_at",
+          "time_zone",
+          "goal_type",
+          "energy_kcal",
+          "protein_g",
+          "fat_g",
+          "carbs_g",
+          "activity_class",
+          "estimate",
+          "timeline_base_revision",
+          "reason",
+          "correction_of"
+        ],
+        "title": "GoalPayload"
+      },
+      "GoalRecord": {
+        "properties": {
+          "entity_id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Entity Id"
+          },
+          "revision": {
+            "type": "integer",
+            "maximum": 2147483647.0,
+            "minimum": 1.0,
+            "title": "Revision"
+          },
+          "payload": {
+            "$ref": "#/components/schemas/GoalPayload"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "entity_id",
+          "revision",
+          "payload"
+        ],
+        "title": "GoalRecord"
       },
       "Health": {
         "properties": {
@@ -680,6 +1848,231 @@
         ],
         "title": "ManifestDTO"
       },
+      "NutritionDTO": {
+        "properties": {
+          "energy_kcal": {
+            "anyOf": [
+              {
+                "type": "string",
+                "pattern": "^(0|[1-9][0-9]{0,5})(\\.[0-9]{0,5}[1-9])?$"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Energy Kcal"
+          },
+          "protein_g": {
+            "anyOf": [
+              {
+                "type": "string",
+                "pattern": "^(0|[1-9][0-9]{0,5})(\\.[0-9]{0,5}[1-9])?$"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Protein G"
+          },
+          "fat_g": {
+            "anyOf": [
+              {
+                "type": "string",
+                "pattern": "^(0|[1-9][0-9]{0,5})(\\.[0-9]{0,5}[1-9])?$"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Fat G"
+          },
+          "carbs_g": {
+            "anyOf": [
+              {
+                "type": "string",
+                "pattern": "^(0|[1-9][0-9]{0,5})(\\.[0-9]{0,5}[1-9])?$"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Carbs G"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "energy_kcal",
+          "protein_g",
+          "fat_g",
+          "carbs_g"
+        ],
+        "title": "NutritionDTO"
+      },
+      "ProductDTO": {
+        "properties": {
+          "product_id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Product Id"
+          },
+          "revision": {
+            "type": "integer",
+            "maximum": 2147483647.0,
+            "minimum": 1.0,
+            "title": "Revision"
+          },
+          "name": {
+            "type": "string",
+            "maxLength": 2000,
+            "minLength": 1,
+            "title": "Name"
+          },
+          "aliases": {
+            "items": {
+              "type": "string",
+              "maxLength": 2000,
+              "minLength": 1
+            },
+            "type": "array",
+            "maxItems": 100,
+            "title": "Aliases"
+          },
+          "brand": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 2000,
+                "minLength": 1
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Brand"
+          },
+          "variant": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 2000,
+                "minLength": 1
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Variant"
+          },
+          "basis_unit": {
+            "type": "string",
+            "enum": [
+              "g",
+              "ml"
+            ],
+            "title": "Basis Unit"
+          },
+          "nutrition_per_100": {
+            "$ref": "#/components/schemas/NutritionDTO"
+          },
+          "package_quantity": {
+            "$ref": "#/components/schemas/QuantityDTO"
+          },
+          "density_g_per_ml": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/DensityDTO"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "source_id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Source Id"
+          },
+          "source_locator": {
+            "type": "string",
+            "maxLength": 2000,
+            "minLength": 1,
+            "title": "Source Locator"
+          },
+          "status": {
+            "type": "string",
+            "enum": [
+              "unverified",
+              "verified"
+            ],
+            "title": "Status"
+          },
+          "preparation": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 2000,
+                "minLength": 1
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Preparation"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "product_id",
+          "revision",
+          "name",
+          "aliases",
+          "brand",
+          "variant",
+          "basis_unit",
+          "nutrition_per_100",
+          "package_quantity",
+          "density_g_per_ml",
+          "source_id",
+          "source_locator",
+          "status",
+          "preparation"
+        ],
+        "title": "ProductDTO"
+      },
+      "ProductPage": {
+        "properties": {
+          "items": {
+            "items": {
+              "$ref": "#/components/schemas/ProductDTO"
+            },
+            "type": "array",
+            "maxItems": 500,
+            "title": "Items"
+          },
+          "next_page_token": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 4096,
+                "minLength": 1
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Next Page Token"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "items",
+          "next_page_token"
+        ],
+        "title": "ProductPage"
+      },
       "ProductRefDTO": {
         "properties": {
           "product_id": {
@@ -701,6 +2094,130 @@
           "revision"
         ],
         "title": "ProductRefDTO"
+      },
+      "ProfilePayload": {
+        "properties": {
+          "pseudonym": {
+            "type": "string",
+            "maxLength": 80,
+            "minLength": 1,
+            "title": "Pseudonym"
+          },
+          "height_cm": {
+            "anyOf": [
+              {
+                "allOf": [
+                  {
+                    "type": "string",
+                    "pattern": "^(0|[1-9][0-9]{0,5})(\\.[0-9]{0,5}[1-9])?$"
+                  },
+                  {
+                    "not": {
+                      "const": "0"
+                    }
+                  }
+                ]
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Height Cm"
+          },
+          "activity_class": {
+            "type": "string",
+            "enum": [
+              "stationary",
+              "line",
+              "commando"
+            ],
+            "title": "Activity Class"
+          },
+          "time_zone": {
+            "type": "string",
+            "maxLength": 100,
+            "format": "iana-time-zone",
+            "title": "Time Zone"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "pseudonym",
+          "height_cm",
+          "activity_class",
+          "time_zone"
+        ],
+        "title": "ProfilePayload"
+      },
+      "ProfileRead": {
+        "properties": {
+          "account_id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Account Id"
+          },
+          "sync_epoch": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Sync Epoch"
+          },
+          "profile": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/ProfileRecord"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "consents": {
+            "$ref": "#/components/schemas/Consent"
+          },
+          "goal_timeline_revision": {
+            "type": "integer",
+            "maximum": 2147483647.0,
+            "minimum": 0.0,
+            "title": "Goal Timeline Revision"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "account_id",
+          "sync_epoch",
+          "profile",
+          "consents",
+          "goal_timeline_revision"
+        ],
+        "title": "ProfileRead"
+      },
+      "ProfileRecord": {
+        "properties": {
+          "entity_id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Entity Id"
+          },
+          "revision": {
+            "type": "integer",
+            "maximum": 2147483647.0,
+            "minimum": 1.0,
+            "title": "Revision"
+          },
+          "payload": {
+            "$ref": "#/components/schemas/ProfilePayload"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "entity_id",
+          "revision",
+          "payload"
+        ],
+        "title": "ProfileRecord"
       },
       "QuantityDTO": {
         "properties": {
@@ -862,6 +2379,12 @@
           "next_page_token"
         ],
         "title": "RationPage"
+      }
+    },
+    "securitySchemes": {
+      "bearerAuth": {
+        "type": "http",
+        "scheme": "bearer"
       }
     }
   }

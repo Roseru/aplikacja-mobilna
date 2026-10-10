@@ -34,6 +34,17 @@ def test_migration_and_database_readiness(database):
         "ration_page_tokens",
         "ration_page_token_tombstones",
         "catalog_timestamp_recoveries",
+        "installation_state",
+        "online_receipts",
+        "user_profiles",
+        "user_consents",
+        "goal_timelines",
+        "goal_versions",
+        "diary_days",
+        "meals",
+        "meal_items",
+        "weights",
+        "product_drafts",
     }
     migrate("check")
     with TestClient(create_app(Settings(database_url=url), engine=engine)) as client:

@@ -1,4 +1,4 @@
-name: Backend E2
+name: Backend E3
 on:
   pull_request:
     branches: [main]
@@ -45,6 +45,7 @@ jobs:
           seed="$GITHUB_WORKSPACE/backend/data/demo/seed.json"
           cd "$RUNNER_TEMP"
           e2-wheel/bin/python -I -m calorie_app.modules.catalog.cli validate --input "$seed"
+          e2-wheel/bin/python -I "$GITHUB_WORKSPACE/backend/smoke_installed.py"
           e2-wheel/bin/python -I -m calorie_app.modules.catalog.offline_import \
             --database e2-wheel.sqlite \
             --manifest "$GITHUB_WORKSPACE/backend/data/demo/export/manifest.json" \
@@ -53,6 +54,8 @@ jobs:
       - run: docker build --build-arg PYTHON_IMAGE=public.ecr.aws/docker/library/python:3.13-slim@sha256:70729b46c69b4f1e97c4822c1af3df53a1476cf5ddc6c087c0c10bc3a5678c2f -t calorie-backend:test backend
       - name: Smoke test built API image
         run: |
+          docker run --rm -v "$GITHUB_WORKSPACE/backend/smoke_installed.py:/tmp/e3-smoke.py:ro" \
+            calorie-backend:test .venv/bin/python -I /tmp/e3-smoke.py
           docker run -d --name e1-backend-test -p 127.0.0.1:8000:8000 \
             -e DATABASE_URL=postgresql+psycopg://unused@127.0.0.1:1/unused calorie-backend:test
           trap 'docker logs e1-backend-test; docker rm -f e1-backend-test' EXIT
@@ -160,9 +163,56 @@ jobs:
           curl -fsS http://127.0.0.1:8000/api/v1/rations | jq -e '.items == [] and .next_page_token == null'
           test "$(curl -s -o "$storage/no-official.json" -w '%{http_code}' http://127.0.0.1:8000/api/v1/offline-package/manifest)" = 404
           jq -e '.code == "not_found" and .details == []' "$storage/no-official.json"
+  keycloak-pkce:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    services:
+      postgres:
+        image: public.ecr.aws/docker/library/postgres:17@sha256:2d2b8998d31037bf721cfdf764d76ba74171b4fab3431b7f72c27c56ddbdf9e3
+        env:
+          POSTGRES_PASSWORD: ci-test-only
+          POSTGRES_DB: postgres
+        ports: ['5432:5432']
+        options: >-
+          --health-cmd "pg_isready -U postgres"
+          --health-interval 5s --health-timeout 3s --health-retries 12
+    env:
+      TEST_DATABASE_URL: postgresql+psycopg://postgres:ci-test-only@127.0.0.1:5432/calorie_test
+    steps:
+      - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5
+      - uses: actions/setup-python@ece7cb06caefa5fff74198d8649806c4678c61a1 # v6
+        with:
+          python-version: '3.13'
+      - uses: actions/setup-java@b6effb05e454b25005698d916606bdc6ffcbf961 # v5
+        with:
+          distribution: temurin
+          java-version: '25'
+      - uses: astral-sh/setup-uv@94527f2e458b27549849d47d273a16bec83a01e9 # v7
+        with:
+          version: '0.9.5'
+      - run: uv sync --project backend --locked
+      - name: Provision separate databases and application runtime roles
+        env:
+          POSTGRES_USER: postgres
+          PGHOST: 127.0.0.1
+          PGPASSWORD: ci-test-only
+          APP_MIGRATOR_PASSWORD: ci-migrator-only
+          APP_API_PASSWORD: ci-api-only
+          APP_WORKER_PASSWORD: ci-worker-only
+          KEYCLOAK_DB_PASSWORD: ci-keycloak-only
+        run: bash infra/local/init-db.sh
+      - name: Fetch and verify official pinned Keycloak distribution
+        run: |
+          uv run --project backend --locked python infra/local/keycloak/harness.py download \
+            --home "$RUNNER_TEMP/e3-keycloak-dist"
+      - name: Real Authorization Code PKCE and PostgreSQL identity acceptance
+        run: |
+          uv run --project backend --locked python infra/local/keycloak/harness.py test \
+            --home "$RUNNER_TEMP/e3-keycloak-dist/keycloak-26.8.0" \
+            --java-home "$JAVA_HOME" --state "$RUNNER_TEMP/e3-keycloak"
   ci-required:
     if: always()
-    needs: [contracts, quality, postgres]
+    needs: [contracts, quality, postgres, keycloak-pkce]
     runs-on: ubuntu-latest
     steps:
       - name: Require actual successful checks

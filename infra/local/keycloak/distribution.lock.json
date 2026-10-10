@@ -1,0 +1,7 @@
+{
+  "version": "26.8.0",
+  "url": "https://github.com/keycloak/keycloak/releases/download/26.8.0/keycloak-26.8.0.zip",
+  "sha256": "7ed1de3fda2598369262613bf682aab7e233d80a38c405e91588f7a7454370a1",
+  "java_major": 25,
+  "verified_source": "https://github.com/keycloak/keycloak/releases/download/26.8.0/keycloak-26.8.0.zip.sha256"
+}

@@ -162,11 +162,40 @@ def verify_generated_catalog(api, design, validate, api_path):
                         value = read(filename)
                     Draft202012Validator(generated_expanded(schema, api), format_checker=FORMATS).validate(value)
                     examples += 1
-    for route in ('/products', '/products/{id}'):
-        operation = design['paths'][route]['get']
-        assert operation['x-implementation-stage'] == 'E3', route
+    e3 = {
+        '/me/bootstrap': ('post', 'bootstrap', 'bootstrap.json', 'Bootstrap'),
+        '/me': ('get', 'read_me', 'profile-read.json', 'ProfileRead'),
+        '/me/goals': ('get', 'list_goals', 'goal-page.json', 'GoalPage'),
+        '/me/consents': ('put', 'update_consents', 'consent.json', 'Consent'),
+        '/energy-estimates': ('post', 'estimate_energy', 'estimate.json', 'Estimate'),
+        '/products': ('get', 'list_products', 'product-page.json', 'ProductPage'),
+        '/products/{id}': ('get', 'read_product', 'product.json', 'Product'),
+    }
+    for route, (method, operation_id, fixture, definition) in e3.items():
+        assert route not in design['paths'], f'Duplicate active E3 operation: {route}'
+        operation = api['paths']['/api/v1' + route][method]
+        assert operation['operationId'] == operation_id, route
         assert operation['security'] == [{'bearerAuth': []}], route
-        assert '/api/v1' + route not in api['paths'], 'Products must await real E3 auth'
+        ids.append(operation_id)
+        value = read(CONTRACTS / 'examples/valid' / fixture)
+        response = operation['responses']['200']['content']['application/json']['schema']
+        Draft202012Validator(generated_expanded(response, api), format_checker=FORMATS).validate(value)
+        normative = ('catalog' if definition == 'Product' else 'domain') + '.schema.json'
+        assert not validate(value, '../schemas/' + normative + '#/$defs/' + definition, api_path)
+        examples += 1
+        for status in ('401', '403', '422', '503'):
+            response = operation['responses'][status]['content']['application/json']['schema']
+            value = read(CONTRACTS / f'examples/valid/error-{status}.json')
+            Draft202012Validator(generated_expanded(response, api)).validate(value)
+            assert not validate(value, '../schemas/domain.schema.json#/$defs/Error', api_path)
+            examples += 1
+        if route == '/me/bootstrap':
+            assert 'requestBody' not in operation
+        if route in ('/me/bootstrap', '/me/consents'):
+            required = {p['name'] for p in operation.get('parameters', []) if p.get('required')}
+            assert 'Idempotency-Key' in required
+            if route == '/me/consents':
+                assert 'If-Match' in required
     download = api['paths']['/api/v1/offline-package/{filename}']['get']
     filename = next(p for p in download['parameters'] if p['name'] == 'filename')
     assert filename['in'] == 'path' and filename['required']
