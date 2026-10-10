@@ -269,7 +269,19 @@ logging Alembica był niewidoczny; po poprawce print_stdout sam potwierdził
 widoczny komunikat. **Ocena korekty: 9,5/10, bez istotnych nierozwiązanych
 usterek.** Nie przypisujemy recenzentowi pełnej regresji E1/E2 ani PKCE/CI.
 
-Poprawka jest publikowana do istniejącego PR #11; bieżący CI/head i dowód
-obrazu zostaną potwierdzone po pushu, również po końcowym commicie raportu.
+Commit poprawki: `a7520bf1e7b297aa097fb86411444e466b92a8c9`,
+`agent 2: zabezpiecz DELETE dziennika po odbiorze E3`. Istniejący
+[PR #11](https://github.com/Roseru/aplikacja-mobilna/pull/11) pozostaje otwarty.
+[CI 38081956260](https://github.com/Roseru/aplikacja-mobilna/actions/runs/38081956260)
+ma completed/success dla exact head a7520bf: contracts, quality, postgres,
+keycloak-pkce i ci-required. Root odczytał metadane i logi czterech jobów:
+checkout ccd12b0 = a7520bf + main 0ff4b4c, Python 3.13.16 / PostgreSQL 17.11,
+357 unit (9.26 s), 343 PostgreSQL (30.01 s), 7 real PKCE (4.67 s), bez skipów.
+Wheel/sdist, installed-I smoke i oba build/smoke obrazu są zaliczone;
+obraz wykonał także rzeczywisty eksport/import SQLite, bajty E2 i cleanup.
+Końcowy commit tego raportu przechodzi ponownie wszystkie wymagane kontrole;
+bieżący head/CI są w Checks PR #11 i w odpowiedzi końcowej autora.
 Historyczne logi poprzednich head w sekcjach wyżej pozostają opisane jako
 poprzednie wykonania. E3 pozostaje do osobnego odbioru, bez merge/E4.
+
+Własne procesy Keycloak i izolowanego PostgreSQL poprawki zatrzymano po testach. Istniejących baz i źródeł nie używano ani nie usuwano.
