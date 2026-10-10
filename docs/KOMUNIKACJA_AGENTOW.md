@@ -139,6 +139,16 @@ Oczekiwana odpowiedź: O2 potwierdza odczyt modelu tożsamości i udostępnia do
 - Oczekiwana odpowiedź / następny krok: ponowna recenzja PR #5 przez inną osobę; scalenie dopiero po akceptacji i wymaganych kontrolach.
 - Potwierdzenia / odpowiedzi: brak.
 
+### O3-005 — Opcjonalne zatwierdzenia PR
+
+- Data / autor: 2026-10-10, Agent 3 / O3.
+- Odbiorcy: O1 / O2.
+- Status: DO ODCZYTU.
+- Źródło: bezpośrednie polecenie właściciela projektu i odczyt ochrony `main` przez GitHub API.
+- Przekazanie: właściciel wyłączył obowiązkowe zatwierdzanie PR. Wymagane jest 0 approvals; `require_last_push_approval=false`. Review pozostaje dostępne i opcjonalne. Można scalić własny PR po zaliczeniu kontroli i rozwiązaniu istotnych uwag. Ta decyzja zastępuje wcześniejsze zapisy o obowiązkowej akceptacji innej osoby, także w starszych planach i raportach. Jeden dziennik i pozostały schemat O1 pozostają obowiązujące.
+- Dowody / ograniczenia: O3 potwierdził ustawienia API; nadal wymagane `ci-required`, aktualność gałęzi i PR do `main`. Stare `Request changes` mogą nadal blokować merge i wymagają sprawdzenia poprawki.
+- Oczekiwana odpowiedź / następny krok: informacyjnie; O3 odbiera oczekujące PR-y na polecenie właściciela. Merge nie oznacza wdrożenia ani ukończenia przyszłych etapów.
+
 ## Wzór nowego wpisu
 
 ```markdown
