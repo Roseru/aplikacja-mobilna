@@ -7,8 +7,9 @@ Odbiorcy: właściciel projektu, Agent 1 / O1 i Agent 3 / O3.
 Wykonano 357 testów jednostkowych, 297 integracyjnych na PostgreSQL 17
 oraz 7 rzeczywistych testów Keycloak/PKCE: łącznie **661 PASS**, bez skipów.
 Niezależny recenzent sam odtworzył istotne scenariusze, w tym realne tokeny.
-Publikacja PR i potwierdzenie jego końcowego CI są ostatnim krokiem dostawy;
-poniższa sekcja Git i CI jest aktualizowana po uzyskaniu zdalnego wyniku.
+Wynik jest opublikowany w [PR #11](https://github.com/Roseru/aplikacja-mobilna/pull/11).
+Wymagane zdalne CI commita implementacji zakończyło się sukcesem, także
+rzeczywisty PKCE i oba przebiegi obrazu. E3 pozostaje do osobnego odbioru.
 
 ## Baza i zachowana praca
 
@@ -147,7 +148,7 @@ PyJWT 2.15.1, cryptography 50.0.2, tzdata 2026.5. Stos jest przypięty w uv.lock
 | Niezależny review_e3 | Rzeczywisty końcowy realm Keycloak/PKCE | 7 PASS, 5.24 s |
 | O2 root i recenzent | Installed wheel Python -I poza checkoutem | PASS, domain/IANA bez OS TZPATH, kalkulator i routery |
 | O2 root | sdist/wheel, OpenAPI, Ruff | PASS, 84 pliki lint/format |
-| O2 root i recenzent | Walidator E0 | PASS: 5 schematów, 5 draft + 11 generated, 99 HTTP; 67 valid / 20 invalid / 18 scenarios, 16 Decimal, 155 linków |
+| O2 root i recenzent | Walidator E0 | PASS: 5 schematów, 5 draft + 11 generated, 99 HTTP; 67 valid / 20 invalid / 18 scenarios, 16 Decimal, 156 linków |
 
 Zachowano regresję E1/E2: recovery timestampów, niezmienne bajty i hashe,
 bounded pagination, migracje oraz importer SQLite. Nowe testy obejmują
@@ -185,7 +186,7 @@ kontrakty i model O1, sam uruchomił testy unit, osobną bazę PostgreSQL,
 realne PKCE i wheel poza repo. Poprawiono jego uwagi dotyczące niezmiennej
 własności, blokady deleting w surowym SQL dziennika, cykli/spójności osi,
 osiągalnego błędu revision_exhausted i spójności dokumentacji.
-**Końcowa ocena: 9,4/10; brak nierozwiązanych istotnych usterek.** Recenzent potwierdził też spójność końcowej dokumentacji. Ocena dotyczy lokalnego odbioru technicznego; zdalne CI i obraz sprawdzamy po publikacji.
+**Końcowa ocena: 9,4/10; brak nierozwiązanych istotnych usterek.** Recenzent potwierdził też spójność końcowej dokumentacji. Ocena dotyczy niezależnego odbioru technicznego; zdalne CI i obraz dodatkowo potwierdził autor po publikacji.
 
 ## Przekazanie i Git CI
 
@@ -195,9 +196,27 @@ kolejność odczytów, nullable/Decimal, zgody i błędy. [Konfiguracja O3](KONF
 opisuje role, migracje, epokę, retencję, JWKS i odtwarzalny test Keycloak.
 Wynik jest przekazywany w jedynym wspólnym dzienniku z nowym ID O2.
 
-Publikacja E3: commit, push i PR do main po niezależnym odbiorze.
-CI aktualnego head musi zakończyć contracts, quality, postgres,
-keycloak-pkce oraz ci-required sukcesem. Lokalnie Docker nie był dostępny;
-budowa/smoke obrazu są wymagane w rzeczywistym CI i nie są zastępowane wheel.
-Stan PR/commita i dowód zdalnego CI zostaną dopisane po publikacji.
-Nie scalamy E3 ani nie rozpoczynamy E4.
+Commit implementacji: `47d4bcc4c888f6cb22b0733bafa714430f76b602`,
+`agent 2: wdroż E3 tożsamości profili i rzeczywistego PKCE`.
+[PR #11](https://github.com/Roseru/aplikacja-mobilna/pull/11) jest otwarty,
+skierowany do main, bez merge. [CI 38078335230](https://github.com/Roseru/aplikacja-mobilna/actions/runs/38078335230)
+ma completed/success dla tego head: contracts, quality, postgres,
+keycloak-pkce i ci-required zakończyły się sukcesem.
+
+Autor odczytał metadane i logi wszystkich czterech jobów. Checkout wskazuje
+merge candidate `8c413dc` z dokładnym head `47d4bcc` i main `0ff4b4c`.
+Na Linux/Python 3.13.16 wykonano 357 unit (6.09 s), 297 PostgreSQL 17.11
+(23.71 s) i 7 rzeczywistych PKCE (4.95 s), bez skipów. Logi potwierdzają
+pobranie przypiętego Keycloak 26.8.0, wheel/sdist i installed wheel,
+84 pliki Ruff, kontrakty oraz build/smoke obrazu z wymuszonym fallbackiem
+IANA. Job postgres wykonał także rzeczywisty eksport/import w obrazie,
+fractional timestamp release 2, porównanie zachowanych bajtów release 1,
+import SQLite i cleanup CLI. Lokalnie Docker nie był dostępny; dowód obrazu
+pochodzi z tego rzeczywistego CI.
+
+Po dopisaniu raportu i PR do przekazania końcowy head przechodzi ponownie
+wszystkie wymagane kontrole. Bieżący head i najnowsze wyniki są w zakładce
+Checks PR #11; autor potwierdza je także w odpowiedzi końcowej.
+Własne procesy Keycloak/PostgreSQL i utworzona efemeryczna baza recenzenta
+zostały posprzątane; istniejące bazy i źródła zachowano.
+Nie scalono E3 ani nie rozpoczęto E4.
