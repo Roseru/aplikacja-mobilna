@@ -16,16 +16,14 @@ data class AnalyticsWeight(val id: String, val date: LocalDate, val at: Instant,
 data class AnalyticsInput(val meals: List<AnalyticsMeal>, val goals: List<AnalyticsGoal>,
     val declarations: Set<LocalDate>, val weights: List<AnalyticsWeight>)
 
-fun completeDiary(declared: Boolean, itemCount: Int, total: Nutrients): Boolean =
-    declared && itemCount > 0 && total.asExact().energy.let { it.complete && it.knownSum > BigDecimal.ZERO }
-
 enum class AnalyticsDayStatus(val label: String) { NO_DATA("Brak wpisów"), INCOMPLETE("Niekompletny"), COMPLETE("Kompletny") }
 data class AnalyticsDay(val date: LocalDate, val total: Nutrients?, val goal: BigDecimal?, val status: AnalyticsDayStatus,
-    val inGoal: Boolean?, val weight: AnalyticsWeight?, val weightCount: Int)
+    val inGoal: Boolean?, val weight: AnalyticsWeight?, val weightCount: Int,
+    val closed: Boolean, val preliminaryInGoal: Boolean?)
 data class AnalyticsAverage(val value: BigDecimal?, val dayCount: Int)
 data class AnalyticsResult(val window: AnalyticsWindow, val days: List<AnalyticsDay>, val averages: List<AnalyticsAverage>,
     val weightCount: Int, val weightChange: BigDecimal?) {
-    val completeDays get() = days.count { it.status == AnalyticsDayStatus.COMPLETE }
+    val completeDays get() = days.count { it.closed && it.status == AnalyticsDayStatus.COMPLETE }
     val daysWithEntries get() = days.count { it.total != null }
     val daysInGoal get() = days.count { it.inGoal == true }
     val daysWithGoal get() = days.count { it.inGoal != null }
@@ -34,7 +32,7 @@ data class AnalyticsResult(val window: AnalyticsWindow, val days: List<Analytics
 object Analytics {
     const val GOAL_RULE = "goal_band_v1"
     val TOLERANCE = BigDecimal("0.10")
-    fun build(window: AnalyticsWindow, input: AnalyticsInput): AnalyticsResult {
+    fun build(window: AnalyticsWindow, input: AnalyticsInput, today: LocalDate = LocalDate.now()): AnalyticsResult {
         val meals = input.meals.filter { window.contains(it.date) }.groupBy { it.date }
         val weights = input.weights.filter { window.contains(it.date) }.groupBy { it.date }
         val days = (0 until window.period.days).map { offset ->
@@ -43,17 +41,19 @@ object Analytics {
             val total = items.takeIf { it.isNotEmpty() }?.total()
             val complete = total != null && completeDiary(date in input.declarations, items.size, total)
             val goal = input.goals.filter { it.from <= date }.maxByOrNull { it.from }?.kcal?.takeIf { it > BigDecimal.ZERO }
-            val inGoal = if (complete && goal != null) {
+            val closed = date < today
+            val targetMatch = if (complete && goal != null) {
                 val energy = total!!.asExact().energy.knownSum
                 energy >= goal.multiply(BigDecimal.ONE - TOLERANCE) && energy <= goal.multiply(BigDecimal.ONE + TOLERANCE)
             } else null
             val points = weights[date].orEmpty()
             val latest = points.maxWithOrNull(compareBy<AnalyticsWeight> { it.at }.thenBy { it.id })
             AnalyticsDay(date, total, goal, if (total == null) AnalyticsDayStatus.NO_DATA
-                else if (complete) AnalyticsDayStatus.COMPLETE else AnalyticsDayStatus.INCOMPLETE, inGoal, latest, points.size)
+                else if (complete) AnalyticsDayStatus.COMPLETE else AnalyticsDayStatus.INCOMPLETE,
+                targetMatch.takeIf { closed }, latest, points.size, closed, targetMatch.takeIf { date == today })
         }
         val averages = (0..3).map { index ->
-            val values = days.filter { it.status == AnalyticsDayStatus.COMPLETE }
+            val values = days.filter { it.closed && it.status == AnalyticsDayStatus.COMPLETE }
                 .mapNotNull { it.total?.asExact()?.fields()?.get(index)?.takeIf { field -> field.complete }?.knownSum }
             AnalyticsAverage(if (values.isEmpty()) null else values.fold(BigDecimal.ZERO, BigDecimal::add)
                 .divide(BigDecimal(values.size), 12, RoundingMode.HALF_UP), values.size)

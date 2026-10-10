@@ -100,3 +100,7 @@ Wynik etapu analityki i zasady zależnego PR: [raport 0.5.0](RAPORT_0_5.md).
 `MainActivity` tworzy ViewModel i uruchamia Compose. `DiaryViewModel` udostępnia obserwowalny stan. `DiaryRepository` realizuje transakcyjne operacje zapisu. `CalorieDao` jest lokalnym źródłem ekranów. `core/NutritionV1.kt` zawiera dokładne obliczenia, `core/catalog/` walidację pakietu, `data/CatalogStore.kt` staging i aktywację. `ui/` zawiera wspólne motywy i ekrany.
 
 Nie ma uprawnienia INTERNET, kluczy API ani danych konta w APK pierwszej wersji. Dodamy warstwę sieciową wraz z etapem synchronizacji.
+
+## Poprawki po recenzji
+
+Bieżący dzień ma wynik wstępny; średnie i liczniki obejmują zamknięte dni. Odczyt odświeża się po lokalnej północy bez nowego wpisu, z uwzględnieniem DST. Wybrane historyczne okno pozostaje stałe po odtworzeniu. [Odbiór poprawek](POPRAWKI_REVIEW.md): 57 JVM i 36/36 urządzenia; wymagany ponowny review.
