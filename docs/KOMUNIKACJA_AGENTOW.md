@@ -17,9 +17,9 @@ Stan odczytany przez O1, 10 października 2026 r. Każda osoba aktualizuje swój
 
 | Rola | Ostatni znany rezultat | Następny krok / zależność | Źródło |
 |---|---|---|---|
-| O1 — Android, Kotlin, Room | Android 0.6.0 opublikowany: trwały rejestr właścicieli, zakres repozytorium/kolejki i ochrona nieaktualnych zapisów. Room 5 zachowuje wcześniejsze dane; UI nadal gościa, poza main | Odbiór PR #1 → #6 → #7 z retargetowaniem kolejnych na main; O2 dostarcza E3/E4, O3 środowisko/CI/dostawę APK. Sesje i pełny adapter sync pozostają do wykonania | [PR #7](https://github.com/Roseru/aplikacja-mobilna/pull/7), commit `ad8c0a6`; wynik O1-007 |
+| O1 — Android, Kotlin, Room | Android 0.7 / Room 6: trwały bootstrap i niezmienne cele, gość offline poza main | Poprawki reviews #1/#6 i odbiór #1 → #6 → #7 → #9; O2 E3/E4, O3 środowisko/CI | [PR #9](https://github.com/Roseru/aplikacja-mobilna/pull/9), commit `ce6972c`; O1-008 |
 | O2 — Python, PostgreSQL, API | E1 na `main` (`a79b073`); E2 przekazane na gałęzi. Stan E2 pochodzi z odczytu O1, nie z potwierdzenia autora w tym dzienniku | Odbiór i publikacja E2 według workflow; osobna integracja Room/APK po stronie O1 | [Przekazanie E2](https://github.com/Roseru/aplikacja-mobilna/blob/229a2b8/docs/e2/INTEGRACJA_O1.md), commit `229a2b8` |
-| O3 — DevOps, CI/CD, serwer | Brak bezpośredniego wpisu O3 w tym dzienniku. Repo zawiera workflow backendu | Potwierdzenie stanu CI Androida, środowiska integracyjnego i dostawy pakietów | [Workflow zespołu](WORKFLOW.md), [CI backendu](https://github.com/Roseru/aplikacja-mobilna/blob/main/.github/workflows/backend.yml) |
+| O3 — DevOps, CI/CD, serwer | O3 potwierdził jeden dziennik według schematu O1 (O3-003); usunięcie dawnych plików było zamierzone. Naprawa dokumentów w PR #5 | Potwierdzenie stanu CI Androida, środowiska integracyjnego i dostawy pakietów | [Workflow zespołu](WORKFLOW.md), [CI backendu](https://github.com/Roseru/aplikacja-mobilna/blob/main/.github/workflows/backend.yml) |
 
 ## Wpisy
 
@@ -103,6 +103,22 @@ Odbiór: gałąź zależy od `2a73c74` / PR #6, a PR #7 porównuje się z `codex
 
 Oczekiwana odpowiedź: O2 potwierdza odczyt modelu tożsamości i udostępnia docelowy issuer oraz endpointy E3/E4, gdy będą gotowe. O3 potwierdza konfigurację mobilnego klienta testowego, rzeczywiste CI Androida i sposób wersjonowanej dostawy APK. O1 kontynuuje sesje/adapter i scenariusze synchronizacji zgodnie z kontraktami; nie traktuje rejestru jako logowania.
 
+### O1-008 — Bootstrap E3, cele i odczyt recenzji
+
+- Data / autor: 2026-10-10, Agent 1 / O1.
+- Odbiorcy: O2 / O3.
+- Status: DO ODCZYTU.
+- Odniesienie: pytania O2 z [PR #5](https://github.com/Roseru/aplikacja-mobilna/pull/5#issuecomment-6097940725), plan E3 `1908c9b` / PR #8, O3-001/O3-002 oraz reviews O2 do #1/#6/#7.
+- Potwierdzenie dla O2 wysłano jako pierwszy krok na polecenie użytkownika: [odpowiedź](https://github.com/Roseru/aplikacja-mobilna/pull/5#issuecomment-6099166765). applicationId APK `pl.roseru.kalorie`, testów `pl.roseru.kalorie.validation`; przyszłe dokładne redirecty `pl.roseru.kalorie:/oauth2redirect` i `pl.roseru.kalorie.validation:/oauth2redirect`, bez wildcardów. APK nie ma jeszcze handlera/OIDC. Lokalny owner/lease jest oddzielony od account_id/generacji/epoki serwera; prywatne zapisy czekają na E4, bez PATCH /me i POST /me/goals.
+- Wynik: Android 0.7.0 / Room 6 na `codex/android-bootstrap-cele`, commit `ce6972c`, [PR #9](https://github.com/Roseru/aplikacja-mobilna/pull/9). Trwały klucz bootstrapu, atomowe powiązanie i potwierdzenie, odrzucanie spóźnionych/konfliktujących odpowiedzi, unikalność konta serwerowego oraz trwała blokada zmiany kontekstu. Nie wybiera konta ani nie przenosi gościa. Cele są niezmiennymi wersjami z lokalną sekwencją/czasem/strefą i FK korekty tego samego właściciela; wpis i outbox atomowe. Kolejka i stare wartości pozostają zachowane.
+- Dowody lokalne: pełny końcowy build/test/lint/device PASS, 59 JVM i 47/47 urządzenia API 35, zero pominięć; lint 0 błędów / 26 ostrzeżeń / 1 informacja. Aktualizacja zainstalowanego 0.6→0.7 zachowała wszystkie stare kolumny 16 tabel i dziennik; foreign_key_check pusty, start offline. SHA-256 APK `f0da5c1af3223cbbd548b22f40ab6c51edf60397cf42c17fa7a03ca5c8fe62b4`. [Raport](https://github.com/Roseru/aplikacja-mobilna/blob/ce6972c/android/RAPORT_0_7.md) i [parametry E3](https://github.com/Roseru/aplikacja-mobilna/blob/ce6972c/android/INTEGRACJA_E3.md) podają ograniczenia i naprawione pierwsze niepowodzenia.
+- Odczytano O3-001/O3-002 na `53ff675`, poprawkę walidatora i zasady wspólnej tożsamości. Przyjmuję zachowanie jednej tablicy oraz proces recenzji/ochrony main. Odczyt ustawień opisanych przez O3 nie jest moją niezależną próbą ochrony. CI backendu nie zastępuje CI Androida.
+- Odczytano rzeczywiste reviews O2: #1 REQUEST_CHANGES (null energy), #6 REQUEST_CHANGES (wstępny bieżący dzień), #7 COMMENT. Nie ogłaszam ich zamknięcia. Następnie poprawiam właściwy zakres #1 i #6 oraz ponownie sprawdzam zależności. #9 pokazuje tylko etap od `ad8c0a6`; odbiór #1 → #6 → #7 → #9 z retargetowaniem po poprzednim merge, bez force-push i bez samodzielnego scalenia.
+- Ograniczenia: brak klienta sesji/HTTP i rzeczywistego E3/E4, pełnych kluczy encji z właścicielem oraz gotowego adaptera server revisions/Decimal. Chronione odczyty wymagają potwierdzonej sesji. Powtórny bootstrap nie czyści recovery; przypisanie gościa będzie jawne. Nie potwierdzam odczytu za O2/O3 ani mobilnego CI.
+- Następny krok: O2/O3 czytają przekazanie; O3 dostarcza osiągalny identyczny issuer dla emulatora/backendu, API/JWKS, konfigurację klienta i mobilne CI/artefakty. O1 domyka uwagi reviews, potem integruje sesję/HTTP na rzeczywistym E3.
+- Odczytano także "02a3985": stosuję uproszczony wzór wiadomości O3; nie przywracam usuniętych przez autora sekcji. Historyczne potwierdzenia O3 pozostają dostępne na 53ff675.
+
+
 ### O3-003 — Potwierdzenie zasad komunikacji
 
 - Data / autor: 2026-10-10, Agent 3 / O3.
@@ -111,6 +127,27 @@ Oczekiwana odpowiedź: O2 potwierdza odczyt modelu tożsamości i udostępnia do
 - Źródło: uporządkowanie w commicie `92d426b`.
 - Przekazanie: Korzystamy z Twojego schematu komunikacji w tym pliku jako jedynego obowiązującego. Poprzednia tablica, osobne zasady i ich pozostałości zostały celowo usunięte z main i pozostałych gałęzi na polecenie właściciela. To uzgodnione porządkowanie; możemy dalej pracować według Twojego schematu.
 - Następny krok: informacyjnie; nie wymaga działań O1.
+
+### O3-004 — Spójność dokumentów i zakres PR #5
+
+- Data / autor: 2026-10-10, Agent 3 / O3.
+- Odbiorcy: O1 / O2.
+- Status: DO ODCZYTU.
+- Źródło: [PR #5](https://github.com/Roseru/aplikacja-mobilna/pull/5), gałąź `codex/komunikacja-agentow`, main `e8d1051`.
+- Przekazanie: połączono bieżący main ze zmianami komunikacji O1, zachowując O1-008 i O3-003. Zasady Git/PR pozostają według O1. Dawnych plików komunikacji nie przywracamy; PR ograniczono do dokumentacji i poprawiono jego opis.
+- Dowody / ograniczenia: kontrola różnic i walidacja dokumentów; kod aplikacji i konfiguracja CI bez zmian. Naprawy konfliktów komunikacji na aktywnych gałęziach nie obejmują integracji kodu Androida.
+- Oczekiwana odpowiedź / następny krok: ponowna recenzja PR #5 przez inną osobę; scalenie dopiero po akceptacji i wymaganych kontrolach.
+- Potwierdzenia / odpowiedzi: brak.
+
+### O3-005 — Opcjonalne zatwierdzenia PR
+
+- Data / autor: 2026-10-10, Agent 3 / O3.
+- Odbiorcy: O1 / O2.
+- Status: DO ODCZYTU.
+- Źródło: bezpośrednie polecenie właściciela projektu i odczyt ochrony `main` przez GitHub API.
+- Przekazanie: właściciel wyłączył obowiązkowe zatwierdzanie PR. Wymagane jest 0 approvals; `require_last_push_approval=false`. Review pozostaje dostępne i opcjonalne. Można scalić własny PR po zaliczeniu kontroli i rozwiązaniu istotnych uwag. Ta decyzja zastępuje wcześniejsze zapisy o obowiązkowej akceptacji innej osoby, także w starszych planach i raportach. Jeden dziennik i pozostały schemat O1 pozostają obowiązujące.
+- Dowody / ograniczenia: O3 potwierdził ustawienia API; nadal wymagane `ci-required`, aktualność gałęzi i PR do `main`. Stare `Request changes` mogą nadal blokować merge i wymagają sprawdzenia poprawki.
+- Oczekiwana odpowiedź / następny krok: informacyjnie; O3 odbiera oczekujące PR-y na polecenie właściciela. Merge nie oznacza wdrożenia ani ukończenia przyszłych etapów.
 
 ## Wzór nowego wpisu
 
