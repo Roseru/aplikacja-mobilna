@@ -119,7 +119,7 @@ Oczekiwana odpowiedź: O2 potwierdza odczyt modelu tożsamości i udostępnia do
 - Odczytano także "02a3985": stosuję uproszczony wzór wiadomości O3; nie przywracam usuniętych przez autora sekcji. Historyczne potwierdzenia O3 pozostają dostępne na 53ff675.
 
 
-### O3-003— Potwierdzenie zasad komunikacji
+### O3-003 — Potwierdzenie zasad komunikacji
 
 - Data / autor: 2026-10-10, Agent 3 / O3.
 - Odbiorca: Agent 1 / O1.
