@@ -73,9 +73,15 @@ data class RationComponentEntity(@PrimaryKey val id: String, val rationId: Strin
 data class RationWithComponents(@Embedded val ration: RationEntity,
     @Relation(parentColumn = "id", entityColumn = "rationId") val components: List<RationComponentEntity>)
 
-@Entity(tableName = "goals", indices = [Index(value = ["ownerScope", "validFrom"], unique = true)])
+@Entity(tableName = "goals", foreignKeys = [ForeignKey(entity = GoalEntity::class,
+    parentColumns = ["ownerScope", "id"], childColumns = ["ownerScope", "correctionOf"], onDelete = ForeignKey.RESTRICT)],
+    indices = [Index(value = ["ownerScope", "validFrom", "localSequence"]),
+        Index(value = ["ownerScope", "id"], unique = true), Index(value = ["ownerScope", "correctionOf"])])
 data class GoalEntity(@PrimaryKey val id: String, val ownerScope: String, val validFrom: String,
-    val kcal: Double, val protein: Double?, val fat: Double?, val carbs: Double?)
+    val kcal: Double, val protein: Double?, val fat: Double?, val carbs: Double?,
+    @ColumnInfo(defaultValue = "0") val localSequence: Int = 0,
+    val decidedAt: String? = null, val zoneId: String? = null,
+    @ColumnInfo(defaultValue = "'legacy'") val reason: String = "legacy", val correctionOf: String? = null)
 
 @Entity(tableName = "outbox", indices = [Index("ownerScope"), Index("entityId")])
 data class OutboxEntity(@PrimaryKey val operationId: String, val ownerScope: String, val entityType: String,
@@ -98,7 +104,7 @@ data class DiaryDayEntity(@PrimaryKey val id: String, val ownerScope: String, va
 interface CalorieDao {
     @Transaction @Query("SELECT * FROM meals WHERE ownerScope = :owner AND localDate BETWEEN :start AND :end AND deleted = 0 ORDER BY localDate, occurredAt, id")
     fun mealsBetween(owner: String, start: String, end: String): Flow<List<MealWithItems>>
-    @Query("SELECT * FROM goals WHERE ownerScope = :owner AND validFrom <= :end ORDER BY validFrom")
+    @Query("SELECT * FROM goals WHERE ownerScope = :owner AND validFrom <= :end ORDER BY validFrom, localSequence, id")
     fun goalsThrough(owner: String, end: String): Flow<List<GoalEntity>>
     @Query("SELECT * FROM diary_days WHERE ownerScope = :owner AND localDate BETWEEN :start AND :end ORDER BY localDate")
     fun daysBetween(owner: String, start: String, end: String): Flow<List<DiaryDayEntity>>
@@ -120,11 +126,13 @@ interface CalorieDao {
     @Insert suspend fun insertItem(item: MealItemEntity)
     @Update suspend fun updateItem(item: MealItemEntity)
     @Delete suspend fun removeItem(item: MealItemEntity)
-    @Query("SELECT * FROM goals WHERE ownerScope = :owner AND validFrom <= :date ORDER BY validFrom DESC LIMIT 1")
+    @Query("SELECT * FROM goals WHERE ownerScope = :owner AND validFrom <= :date ORDER BY validFrom DESC, localSequence DESC, id DESC LIMIT 1")
     fun goal(owner: String, date: String): Flow<GoalEntity?>
-    @Query("SELECT * FROM goals WHERE ownerScope = :owner AND validFrom = :date LIMIT 1") suspend fun goalOn(owner: String, date: String): GoalEntity?
+    @Query("SELECT * FROM goals WHERE ownerScope = :owner AND validFrom = :date ORDER BY localSequence DESC, id DESC LIMIT 1") suspend fun goalOn(owner: String, date: String): GoalEntity?
+    @Query("SELECT * FROM goals WHERE ownerScope = :owner AND id = :id") suspend fun goalById(owner: String, id: String): GoalEntity?
+    @Query("SELECT COALESCE(MAX(localSequence), 0) FROM goals WHERE ownerScope = :owner") suspend fun goalSequence(owner: String): Int
     @Insert(onConflict = OnConflictStrategy.IGNORE) suspend fun seedGoal(goal: GoalEntity)
-    @Upsert suspend fun saveGoal(goal: GoalEntity)
+    @Insert suspend fun saveGoal(goal: GoalEntity)
     @Insert suspend fun enqueue(operation: OutboxEntity)
     @Query("SELECT COUNT(*) FROM outbox WHERE ownerScope = :owner AND status = 'pending'") fun pending(owner: String): Flow<Int>
     @Query("SELECT COUNT(*) FROM outbox WHERE ownerScope = :owner") suspend fun operationCount(owner: String): Int
@@ -145,11 +153,13 @@ interface CalorieDao {
 @Database(entities = [ProductEntity::class, MealEntity::class, MealItemEntity::class, GoalEntity::class, OutboxEntity::class,
     RationEntity::class, RationComponentEntity::class, ProfileEntity::class, WeightEntity::class, DiaryDayEntity::class,
     CatalogGenerationEntity::class, CatalogRecordEntity::class, CatalogMemberEntity::class, CatalogActiveEntity::class,
-    LocalOwnerEntity::class, LocalActiveOwnerEntity::class], version = 5, exportSchema = true)
+    LocalOwnerEntity::class, LocalActiveOwnerEntity::class, AccountBindingEntity::class,
+    BootstrapAttemptEntity::class], version = 6, exportSchema = true)
 abstract class CalorieDatabase : RoomDatabase() {
     abstract fun dao(): CalorieDao
     abstract fun catalogDao(): CatalogDao
     abstract fun ownerDao(): LocalOwnerDao
+    abstract fun bootstrapDao(): AccountBootstrapDao
 }
 
 val MIGRATION_1_2 = object : Migration(1, 2) {

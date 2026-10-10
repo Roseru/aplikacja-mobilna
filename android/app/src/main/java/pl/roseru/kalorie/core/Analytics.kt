@@ -11,7 +11,7 @@ data class AnalyticsWindow(val end: LocalDate, val period: AnalyticsPeriod) {
     fun contains(date: LocalDate) = date >= start && date <= end
 }
 data class AnalyticsMeal(val date: LocalDate, val items: List<Nutrients>)
-data class AnalyticsGoal(val from: LocalDate, val kcal: BigDecimal)
+data class AnalyticsGoal(val from: LocalDate, val kcal: BigDecimal, val localSequence: Int = 0, val id: String = "")
 data class AnalyticsWeight(val id: String, val date: LocalDate, val at: Instant, val kg: BigDecimal)
 data class AnalyticsInput(val meals: List<AnalyticsMeal>, val goals: List<AnalyticsGoal>,
     val declarations: Set<LocalDate>, val weights: List<AnalyticsWeight>)
@@ -40,7 +40,8 @@ object Analytics {
             val items = meals[date].orEmpty().flatMap { it.items }
             val total = items.takeIf { it.isNotEmpty() }?.total()
             val complete = total != null && completeDiary(date in input.declarations, items.size, total)
-            val goal = input.goals.filter { it.from <= date }.maxByOrNull { it.from }?.kcal?.takeIf { it > BigDecimal.ZERO }
+            val goal = input.goals.filter { it.from <= date }.maxWithOrNull(
+                compareBy<AnalyticsGoal> { it.from }.thenBy { it.localSequence }.thenBy { it.id })?.kcal?.takeIf { it > BigDecimal.ZERO }
             val closed = date < today
             val targetMatch = if (complete && goal != null) {
                 val energy = total!!.asExact().energy.knownSum

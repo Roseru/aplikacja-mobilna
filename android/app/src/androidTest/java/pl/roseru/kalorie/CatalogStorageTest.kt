@@ -63,18 +63,18 @@ class CatalogStorageTest {
 
     @Test fun stagingIsInvisibleAndActivationPersistsAcrossRestartWithoutDuplicates() = runBlocking {
         val name = "catalog-stage-${UUID.randomUUID()}.db"
-        var db = Room.databaseBuilder(context, CalorieDatabase::class.java, name).build()
+        var db = Room.databaseBuilder(context, CalorieDatabase::class.java, name).addCallback(DATABASE_GUARDS).build()
         try {
             val id = CatalogStore(db).stage(demo())
             assertTrue(db.dao().products().first().isEmpty()); assertTrue(db.dao().rations().first().isEmpty())
             assertNull(db.catalogDao().active(CatalogPackageReader.DEMO_ID))
-            db.close(); db = Room.databaseBuilder(context, CalorieDatabase::class.java, name).build()
+            db.close(); db = Room.databaseBuilder(context, CalorieDatabase::class.java, name).addCallback(DATABASE_GUARDS).build()
             assertEquals(id, CatalogStore(db).stage(demo()))
             assertTrue(CatalogStore(db).activate(id)); assertFalse(CatalogStore(db).import(demo()))
             assertEquals(18, db.dao().products().first().size)
             assertEquals(18, db.dao().rations().first().single().components.size)
             assertEquals(0, db.dao().operationCount(DiaryRepository.GUEST))
-            db.close(); db = Room.databaseBuilder(context, CalorieDatabase::class.java, name).build()
+            db.close(); db = Room.databaseBuilder(context, CalorieDatabase::class.java, name).addCallback(DATABASE_GUARDS).build()
             assertEquals(id, db.catalogDao().active(CatalogPackageReader.DEMO_ID)!!.generationId)
             assertEquals(18, db.dao().products().first().size)
         } finally { db.close(); context.deleteDatabase(name) }
@@ -82,7 +82,7 @@ class CatalogStorageTest {
 
     @Test fun partialRationKeepsExactSnapshotsAndQueueThroughCatalogUpdateAndEditing() = runBlocking {
         val name = "catalog-history-${UUID.randomUUID()}.db"
-        var db = Room.databaseBuilder(context, CalorieDatabase::class.java, name).build()
+        var db = Room.databaseBuilder(context, CalorieDatabase::class.java, name).addCallback(DATABASE_GUARDS).build()
         try {
             var repo = DiaryRepository(db, context); repo.initialize()
             assertEquals(33, db.dao().products().first().size); assertEquals(3, db.dao().rations().first().size)
@@ -111,7 +111,7 @@ class CatalogStorageTest {
             val edited = db.dao().meal("partial", DiaryRepository.GUEST)!!.items.single { it.id == item.id }
             assertEquals("12.123456789123", edited.amountText)
             assertEquals("10.54740740653701", edited.consumed().asExact().energy.canonical)
-            db.close(); db = Room.databaseBuilder(context, CalorieDatabase::class.java, name).build()
+            db.close(); db = Room.databaseBuilder(context, CalorieDatabase::class.java, name).addCallback(DATABASE_GUARDS).build()
             repo = DiaryRepository(db, context); repo.initialize()
             assertEquals(2, db.catalogDao().active(CatalogPackageReader.DEMO_ID)!!.release)
             assertEquals(edited, db.dao().meal("partial", DiaryRepository.GUEST)!!.items.single { it.id == item.id })
@@ -121,7 +121,7 @@ class CatalogStorageTest {
     }
 
     @Test fun staleActivationAndImmutableVersionConflictsCannotReplaceActiveCatalog() = runBlocking {
-        val db = Room.inMemoryDatabaseBuilder(context, CalorieDatabase::class.java).build()
+        val db = Room.inMemoryDatabaseBuilder(context, CalorieDatabase::class.java).addCallback(DATABASE_GUARDS).build()
         try {
             val store = CatalogStore(db); store.import(demo())
             val second = store.stage(newer(2)); val third = store.stage(newer(3))
@@ -137,7 +137,7 @@ class CatalogStorageTest {
     }
 
     @Test fun interruptionBeforeStageOrActivateCommitRollsBackAndRetryRecovers() = runBlocking {
-        val db = Room.inMemoryDatabaseBuilder(context, CalorieDatabase::class.java).build()
+        val db = Room.inMemoryDatabaseBuilder(context, CalorieDatabase::class.java).addCallback(DATABASE_GUARDS).build()
         try {
             val store = CatalogStore(db); store.import(demo())
             try { CatalogStore(db, beforeStageCommit = { throw IllegalStateException("interrupted") }).stage(newer(2)); fail() }
@@ -154,7 +154,7 @@ class CatalogStorageTest {
 
     @Test fun actualSqliteFullDuringStagePreservesPreviousCatalogDiaryAndOutbox() = runBlocking {
         val name = "catalog-full-${UUID.randomUUID()}.db"
-        val db = Room.databaseBuilder(context, CalorieDatabase::class.java, name).build()
+        val db = Room.databaseBuilder(context, CalorieDatabase::class.java, name).addCallback(DATABASE_GUARDS).build()
         try {
             val repo = DiaryRepository(db, context); repo.initialize()
             repo.add("basic-banana", 120.0, MealType.LUNCH, date, "preserve-meal")
@@ -191,7 +191,7 @@ class CatalogStorageTest {
     }
 
     @Test fun millilitresUnknownEnergyAndKnownZeroSurviveRoomSnapshot() = runBlocking {
-        val db = Room.inMemoryDatabaseBuilder(context, CalorieDatabase::class.java).build()
+        val db = Room.inMemoryDatabaseBuilder(context, CalorieDatabase::class.java).addCallback(DATABASE_GUARDS).build()
         try {
             val value = release(1) { payload ->
                 val product = payload.getJSONArray("products").getJSONObject(0)
@@ -218,7 +218,7 @@ class CatalogStorageTest {
     }
 
     @Test fun inconsistentProjectionOrExcessRationQuantityRollsBackMealAndQueue() = runBlocking {
-        val db = Room.inMemoryDatabaseBuilder(context, CalorieDatabase::class.java).build()
+        val db = Room.inMemoryDatabaseBuilder(context, CalorieDatabase::class.java).addCallback(DATABASE_GUARDS).build()
         try {
             val repo = DiaryRepository(db, context); repo.initialize()
             val ration = db.dao().rations().first().single { it.ration.catalogJson != null }
@@ -268,7 +268,7 @@ class CatalogStorageTest {
             } }
             old.version = 3
         }
-        val db = Room.databaseBuilder(context, CalorieDatabase::class.java, name).addMigrations(MIGRATION_3_4, MIGRATION_4_5).build()
+        val db = Room.databaseBuilder(context, CalorieDatabase::class.java, name).addMigrations(MIGRATION_3_4, MIGRATION_4_5, MIGRATION_5_6).addCallback(DATABASE_GUARDS).build()
         try {
             val sql = db.openHelper.readableDatabase
             queries.forEach { (table, query) -> assertEquals(table, expected.getValue(table), sql.query(query).use { cursor ->

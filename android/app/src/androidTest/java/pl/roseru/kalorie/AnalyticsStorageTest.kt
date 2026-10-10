@@ -24,7 +24,7 @@ class AnalyticsStorageTest {
     private val window = AnalyticsWindow(end, AnalyticsPeriod.WEEK)
 
     @Test fun rangeReadsExcludeOtherOwnersTombstonesAndFutureAndKeepHistoricalGoals() = runBlocking {
-        val db = Room.inMemoryDatabaseBuilder(context, CalorieDatabase::class.java).build()
+        val db = Room.inMemoryDatabaseBuilder(context, CalorieDatabase::class.java).addCallback(DATABASE_GUARDS).build()
         try {
             val dao = db.dao()
             suspend fun meal(id: String, date: LocalDate, owner: String, kcal: Double, deleted: Boolean = false) {
@@ -56,7 +56,7 @@ class AnalyticsStorageTest {
 
     @Test fun changesInvalidateAnalyticsAndRestartRetainsDeletionsAndQueue() = runBlocking {
         val name = "analytics-${UUID.randomUUID()}.db"
-        var db = Room.databaseBuilder(context, CalorieDatabase::class.java, name).build()
+        var db = Room.databaseBuilder(context, CalorieDatabase::class.java, name).addCallback(DATABASE_GUARDS).build()
         try {
             val repository = DiaryRepository(db, context)
             repository.initialize()
@@ -90,7 +90,7 @@ class AnalyticsStorageTest {
             val after = db.dao().operationCount("guest")
             assertEquals(queue + 7, after)
             db.close()
-            db = Room.databaseBuilder(context, CalorieDatabase::class.java, name).build()
+            db = Room.databaseBuilder(context, CalorieDatabase::class.java, name).addCallback(DATABASE_GUARDS).build()
             val result = AnalyticsRepository(db.dao()).observe("guest", window).first()
             assertEquals(0, result.completeDays); assertEquals(0, result.daysWithEntries); assertEquals(0, result.weightCount)
             assertEquals(after, db.dao().operationCount("guest"))
@@ -100,7 +100,7 @@ class AnalyticsStorageTest {
     }
 
     @Test fun missingEnergyInvalidatesPriorDeclarationAndCannotBeConfirmedAgain() = runBlocking {
-        val db = Room.inMemoryDatabaseBuilder(context, CalorieDatabase::class.java).build()
+        val db = Room.inMemoryDatabaseBuilder(context, CalorieDatabase::class.java).addCallback(DATABASE_GUARDS).build()
         try {
             val repository = DiaryRepository(db, context)
             repository.initialize()

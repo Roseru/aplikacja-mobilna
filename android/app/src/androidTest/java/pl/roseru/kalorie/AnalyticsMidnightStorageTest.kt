@@ -26,7 +26,7 @@ class AnalyticsMidnightStorageTest {
     private fun clock() = LocalDayClock({ now.get() }, { ZoneId.of("Europe/Warsaw") }, { withContext(Dispatchers.Default) { delay(250) } })
     @Test fun readRefreshesAfterMidnightAndRestartWithoutWritingOutbox() = runBlocking {
         val name = "midnight-${UUID.randomUUID()}.db"
-        fun open() = Room.databaseBuilder(context, CalorieDatabase::class.java, name).build()
+        fun open() = Room.databaseBuilder(context, CalorieDatabase::class.java, name).addCallback(DATABASE_GUARDS).build()
         var db = open()
         try {
             val repo = DiaryRepository(db, context); repo.initialize()
@@ -52,7 +52,7 @@ class AnalyticsMidnightStorageTest {
         } finally { db.close(); context.deleteDatabase(name) }
     }
     @Test fun viewModelFollowsTodayAndRestoresExplicitHistoricalWindow(): Unit = runBlocking {
-        val db = Room.inMemoryDatabaseBuilder(context, CalorieDatabase::class.java).build()
+        val db = Room.inMemoryDatabaseBuilder(context, CalorieDatabase::class.java).addCallback(DATABASE_GUARDS).build()
         val saved = SavedStateHandle()
         lateinit var model: DiaryViewModel
         fun create() = InstrumentationRegistry.getInstrumentation().runOnMainSync {

@@ -24,7 +24,7 @@ class AnalyticsMidnightFlowTest {
         val zone = ZoneId.of("Europe/Warsaw")
         val now = AtomicReference(date.atTime(23, 59, 59).atZone(zone).toInstant())
         val clock = LocalDayClock({ now.get() }, { zone }, { withContext(Dispatchers.Default) { delay(250) } })
-        val db = Room.inMemoryDatabaseBuilder(compose.activity, CalorieDatabase::class.java).build()
+        val db = Room.inMemoryDatabaseBuilder(compose.activity, CalorieDatabase::class.java).addCallback(DATABASE_GUARDS).build()
         val repo = DiaryRepository(db, compose.activity)
         lateinit var model: DiaryViewModel
         var created = false

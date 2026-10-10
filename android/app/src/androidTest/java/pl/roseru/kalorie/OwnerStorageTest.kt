@@ -23,7 +23,7 @@ import java.util.UUID
 class OwnerStorageTest {
     private val context = ApplicationProvider.getApplicationContext<Context>()
     private val today = LocalDate.now()
-    private fun memory() = Room.inMemoryDatabaseBuilder(context, CalorieDatabase::class.java).build()
+    private fun memory() = Room.inMemoryDatabaseBuilder(context, CalorieDatabase::class.java).addCallback(DATABASE_GUARDS).build()
     private suspend fun rejects(action: suspend () -> Unit) {
         val error = try { action(); null } catch (error: Exception) { error }
         assertNotNull("Expected rejected operation", error)
@@ -218,7 +218,7 @@ class OwnerStorageTest {
 
     @Test fun activeOwnerGenerationAndGuestLogsSurviveDatabaseReopening() = runBlocking {
         val name = "owners-${UUID.randomUUID()}.db"
-        var db = Room.databaseBuilder(context, CalorieDatabase::class.java, name).build()
+        var db = Room.databaseBuilder(context, CalorieDatabase::class.java, name).addCallback(DATABASE_GUARDS).build()
         try {
             var owners = LocalOwnerStore(db)
             val guest = owners.ensureGuest()
@@ -229,7 +229,7 @@ class OwnerStorageTest {
             val lease = owners.select(account.id)
             DiaryRepository(db, context, lease).addWeight(80.0, today, "account-persist")
             db.close()
-            db = Room.databaseBuilder(context, CalorieDatabase::class.java, name).build()
+            db = Room.databaseBuilder(context, CalorieDatabase::class.java, name).addCallback(DATABASE_GUARDS).build()
             owners = LocalOwnerStore(db)
             assertEquals(guest, owners.ensureGuest())
             assertEquals(account, owners.registerIdentity("https://identity.example", "A"))
@@ -297,7 +297,7 @@ class OwnerStorageTest {
                 old.version = 4
             }
         } finally { fixture.close() }
-        val db = Room.databaseBuilder(context, CalorieDatabase::class.java, name).addMigrations(MIGRATION_4_5).build()
+        val db = Room.databaseBuilder(context, CalorieDatabase::class.java, name).addMigrations(MIGRATION_4_5, MIGRATION_5_6).addCallback(DATABASE_GUARDS).build()
         try {
             val sql = db.openHelper.readableDatabase
             queries.forEach { (table, query) -> assertEquals(table, expected.getValue(table), sql.query(query).use(::rows)) }
@@ -308,7 +308,7 @@ class OwnerStorageTest {
             assertNotNull(db.dao().meal("exact-meal", "guest")!!.items.single().snapshotJson)
             assertTrue(db.dao().meal("tombstone", "guest")!!.meal.deleted)
             assertTrue(db.dao().weight("deleted-weight", "guest")!!.deleted)
-            assertEquals(5, sql.version)
+            assertEquals(6, sql.version)
             assertFalse(sql.query("PRAGMA foreign_key_check").use { it.moveToFirst() })
             DiaryRepository(db, context).initialize()
             assertEquals(expected.getValue("outbox"), sql.query(queries.getValue("outbox")).use(::rows))

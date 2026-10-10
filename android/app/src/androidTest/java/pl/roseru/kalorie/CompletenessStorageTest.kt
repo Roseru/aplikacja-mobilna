@@ -17,7 +17,7 @@ class CompletenessStorageTest {
     @Test fun missingEnergyInvalidatesDeclarationAndSurvivesDatabaseRestart() = runBlocking {
         val context = ApplicationProvider.getApplicationContext<Context>()
         val name = "completeness-${UUID.randomUUID()}.db"
-        fun open() = Room.databaseBuilder(context, CalorieDatabase::class.java, name).build()
+        fun open() = Room.databaseBuilder(context, CalorieDatabase::class.java, name).addCallback(DATABASE_GUARDS).build()
         var db = open()
         val date = LocalDate.now()
         try {

@@ -1,6 +1,6 @@
 # Android — Racje i kalorie
 
-Wersja `0.6.0` przygotowuje pamięć lokalną do kont: trwały rejestr gościa i tożsamości `(issuer, sub)`, dane i kolejka przypisane do właściciela oraz odrzucanie zapisu z nieaktualnej sesji lokalnej. Ekrany nadal działają jako gość bez konta i internetu, z Postępami 7/30/90 dni. Room 5 migruje wcześniejszą bazę bez przepisywania danych.
+Wersja `0.7.1` dodaje przygotowanie bootstrapu E3 oraz niezmienne wersje lokalnych celów. Rejestr właścicieli i ochrona zapisu pozostają z 0.6; Room 6 zachowuje dotychczasowe wartości i kolejkę. Ekrany nadal działają jako gość bez konta i internetu, z Postępami 7/30/90 dni. Logowanie i HTTP nie są jeszcze podłączone.
 
 ## Co zawiera
 
@@ -15,13 +15,21 @@ Wersja `0.6.0` przygotowuje pamięć lokalną do kont: trwały rejestr gościa i
 - Pomiary wagi z datą, historią, korektą i usunięciem. Kilka pomiarów jednego dnia jest dozwolone. Po poprawnym zapisie pole masy jest czyszczone, aby ponowny przypadkowy klik nie zapisał kolejnego pomiaru.
 - Deklaracja kompletności dnia. Efektywna kompletność wymaga deklaracji, nieusuniętych składników, dodatniej sumy kcal i znanej energii wszystkich pozycji. Brak makr pozostaje brakiem danych. Usunięcie ostatniego posiłku lub dodanie pozycji bez kcal cofa efektywną kompletność; wcześniejsza deklaracja pozostaje w historii i można ją wyłączyć.
 - Postępy dla 7/30/90 dni: wykresy kcal/B/T/W i rzeczywistych pomiarów wagi, średnie, kompletność oraz realizacja celu obowiązującego każdego dnia. Historia pozwala otworzyć dziennik wybranej daty, także pustego dnia.
-- Cele kcal/B/T/W obowiązujące od dnia zmiany; brak makr nie jest traktowany jak zero.
+- Cele kcal/B/T/W obowiązujące od dnia zmiany; każda decyzja zachowuje wcześniejszą wersję, także przy kolejnej zmianie tego samego dnia. Korekta wskazuje poprzedni cel tego właściciela. Brak makr nie jest traktowany jak zero.
 - Room z wersjonowanym schematem, identyfikatorami UUID, odżywczymi wartościami zapisanymi przy spożyciu i transakcyjną kolejką zmian.
 - Zapis lokalnej daty, strefy czasowej i czasu UTC. Ponowienie lokalnego zapisu z tym samym ID nie tworzy drugiego posiłku.
 
 Katalog i początkowy cel 2800 kcal są **danymi demonstracyjnymi**, nie zweryfikowaną bazą żywieniową ani wyliczonym zapotrzebowaniem użytkownika. Dawne zestawy A/B nie odwzorowują specyfikacji S-R/S-RG ani żadnego producenta. Nowy pakiet E2 dodaje osobną niezweryfikowaną, niepełną rację S-RG-1 z 18 policzalnymi komponentami i informacją o pozycjach poza obliczeniami. Nie łączymy zestawów po nazwie lub kalorii. Dawne napoje pozostają w gramach; nowy katalog obsługuje g/ml, bez założenia, że 1 ml = 1 g.
 
-Schemat Room 5 zawiera migracje 1 → 2 → 3 → 4 → 5 zachowujące posiłki, racje, cele, prywatne produkty, profil, pomiary, deklaracje dni i całą kolejkę. Nowe pola/tabele są dodawane bez przepisywania dawnych kolumn REAL ani payloadów outbox. Prywatne dane mają zakres właściciela. Usuwanie pozostawia znacznik i operację kolejki.
+Schemat Room 6 zawiera migracje 1 → 2 → 3 → 4 → 5 → 6 zachowujące posiłki, racje, cele, prywatne produkty, profil, pomiary, deklaracje dni, właścicieli i całą kolejkę. Ostatnia migracja przebudowuje tabelę celów z zachowaniem wszystkich wcześniejszych kolumn i ID, dodaje metadane wersji/złożony FK korekty oraz dwie tabele bootstrapu. Nie zmienia wartości REAL ani dawnych payloadów outbox. Prywatne dane mają zakres właściciela. Usuwanie spożycia pozostawia znacznik i operację kolejki; wersje celów są niezmienne.
+
+## Przygotowanie E3 i niezmienne cele
+
+`AccountBootstrapStore` utrwala klucz niezakończonego żądania, powiązanie lokalnego właściciela z `account_id` oraz niezależne `account_generation`/`sync_epoch`. Sprawdza właściciela, generację lease i żądanie przy przyjmowaniu odpowiedzi; powiązanie i potwierdzenie zapisują się atomowo. Restart nie zmienia klucza ponowienia. Zmiana kontekstu serwera ustawia trwałą blokadę wymagającą uzgodnienia E4; nie resetuje dziennika lub kolejki. Nie ma jeszcze wywołania sieciowego ani klienta sesji.
+
+Zmiana celu tworzy nowy UUID zamiast nadpisania poprzedniego wiersza. Wersja ma lokalną sekwencję, czas/strefę decyzji i referencję korekty z własnością wymuszoną w SQLite. Odczyty dziennika i analityki wybierają najnowszą wersję dla daty. Callback `DATABASE_GUARDS` chroni treść przed UPDATE/DELETE oraz zmieniającym INSERT OR REPLACE, także po ponownym otwarciu bazy; przy tworzeniu bazy poza aplikacją należy go dołączyć. Lokalne sekwencje i kolejka wymagają osobnego adaptera serwerowej osi/Decimal.
+
+[Przekazanie E3 dla O2/O3](INTEGRACJA_E3.md) podaje dokładne przyszłe callbacki APK, reguły bootstrapu, granice i kolejne kroki. [Raport 0.7.0](RAPORT_0_7.md) opisuje pierwszy odbiór; [raport 0.7.1](RAPORT_0_7_1.md) dokumentuje końcowe 65 JVM / 52 urządzenia i połączone poprawki recenzji.
 
 ## Fundament kont i izolacji
 
@@ -48,11 +56,11 @@ Stare dane REAL są odczytywane przez `BigDecimal.valueOf` bez nadpisania orygin
 
 ## Postępy i historia
 
-Dolna zakładka **Postępy** pokazuje ostatnie 7, 30 lub 90 dat kalendarzowych włącznie z dzisiaj. Strzałki przesuwają okno o wybrany okres; „Do dzisiaj” przywraca bieżący zakres. Okres i wybrany wykres pozostają po odtworzeniu aktywności.
+Dolna zakładka **Postępy** pokazuje ostatnie 7, 30 lub 90 dat kalendarzowych włącznie z dzisiaj. Dzisiejszy wynik jest wstępny; średnie i liczniki oceny obejmują zamknięte dni. Odczyt odświeża się po lokalnej północy bez nowego wpisu, z uwzględnieniem DST. Domyślne okno podąża za dzisiaj; wybrane historyczne okno pozostaje stałe po odtworzeniu. Strzałki przesuwają okno o wybrany okres; „Do dzisiaj” przywraca bieżący zakres. Okres i wybrany wykres pozostają po odtworzeniu aktywności.
 
 - Cel pobieramy z ostatniej wersji obowiązującej w danym dniu, również sprzed początku okna. Przyszłe cele nie wpływają na wcześniejsze dni. `goal_band_v1` stosuje granice ±10% włącznie, przed zaokrągleniem wyświetlania. Do oceny potrzebny jest kompletny dzień i dodatni cel; brak celu oznacza brak oceny.
 - Dni bez wpisów pozostają bez danych. Dni niepotwierdzone lub z nieznaną energią pozostają niekompletne. Ich znane wartości są widoczne w historii i na wykresie jako niepełne, ale nie sugerujemy deficytu ani nie dodajemy ich do średniej.
-- Średnia każdego pola obejmuje kompletne dni ze znaną wartością tego pola; obok wyniku pokazujemy własny mianownik. Dzień z brakującym białkiem może mieć znane kcal, a białko nie trafia do jego średniej. Znane zero pozostaje zerem. Sumy są dokładne; średnia jest dzielona w skali 12 HALF_UP i zaokrąglana dopiero do prezentacji.
+- Średnia każdego pola obejmuje zamknięte, kompletne dni ze znaną wartością tego pola; obok wyniku pokazujemy własny mianownik. Dzień z brakującym białkiem może mieć znane kcal, a białko nie trafia do jego średniej. Znane zero pozostaje zerem. Sumy są dokładne; średnia jest dzielona w skali 12 HALF_UP i zaokrąglana dopiero do prezentacji.
 - Wykres wagi i zmiana masy używają ostatniego rzeczywistego pomiaru każdej daty w oknie; czas UTC i ID rozstrzygają kolejność. Licznik obejmuje wszystkie nieusunięte pomiary. Do zmiany masy potrzebne są co najmniej dwie daty z pomiarem. Nie interpolujemy ani nie przenosimy pomiarów z innych dni lub spoza okna.
 - Odczyty Room są ograniczone do właściciela i zakresu; pomijają znaczniki usunięcia. Edycje, usunięcia, nowe cele, pomiary i deklaracje aktualizują obserwowany wynik. Analityka nie zapisuje operacji outbox ani nie modyfikuje dziennika. Aktualność dotyczy wyłącznie danych na urządzeniu; synchronizacja nadal nie jest podłączona.
 
@@ -110,7 +118,3 @@ Wynik etapu analityki i zasady zależnego PR: [raport 0.5.0](RAPORT_0_5.md). Bie
 `MainActivity` tworzy ViewModel i uruchamia Compose. `DiaryViewModel` udostępnia obserwowalny stan. `DiaryRepository` realizuje transakcyjne operacje zapisu, `data/LocalOwners.kt` utrwala właścicieli i chroni zapis przed zmianą aktywnego zakresu. `CalorieDao` jest lokalnym źródłem ekranów. `core/NutritionV1.kt` zawiera dokładne obliczenia, `core/catalog/` walidację pakietu, `data/CatalogStore.kt` staging i aktywację. `ui/` zawiera wspólne motywy i ekrany.
 
 Nie ma uprawnienia INTERNET, kluczy API ani danych konta w APK pierwszej wersji. Dodamy warstwę sieciową wraz z etapem synchronizacji.
-
-## Poprawki po recenzji
-
-Bieżący dzień ma wynik wstępny; średnie i liczniki obejmują zamknięte dni. Odczyt odświeża się po lokalnej północy bez nowego wpisu, z uwzględnieniem DST. Wybrane historyczne okno pozostaje stałe po odtworzeniu. [Odbiór poprawek](POPRAWKI_REVIEW.md): 57 JVM i 36/36 urządzenia; wymagany ponowny review.

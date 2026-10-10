@@ -9,6 +9,14 @@ import java.time.Instant
 import java.time.LocalDate
 
 class AnalyticsTest {
+    @Test fun sameDateUsesLatestLocalVersionIndependentlyOfInputOrder() {
+        val date = LocalDate.of(2026, 10, 10)
+        val versions = listOf(AnalyticsGoal(date, BigDecimal("3000"), 2, "second"),
+            AnalyticsGoal(date, BigDecimal("2800"), 1, "first"))
+        val range = AnalyticsWindow(date, AnalyticsPeriod.WEEK)
+        assertEquals(BigDecimal("3000"), Analytics.build(range, AnalyticsInput(emptyList(), versions, emptySet(), emptyList())).days.last().goal)
+        assertEquals(BigDecimal("3000"), Analytics.build(range, AnalyticsInput(emptyList(), versions.reversed(), emptySet(), emptyList())).days.last().goal)
+    }
     private val end = LocalDate.of(2026, 3, 2)
     private val window = AnalyticsWindow(end, AnalyticsPeriod.WEEK)
     private fun goal(from: LocalDate, kcal: String) = AnalyticsGoal(from, BigDecimal(kcal))

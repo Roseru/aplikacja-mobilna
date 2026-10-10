@@ -1,5 +1,21 @@
 # Kontekst współpracy
 
+## Kontynuacja O1 — poprawki recenzji i 0.7.1, 10 października 2026
+
+- Najpierw wysłano potwierdzenie O2 w PR #5: https://github.com/Roseru/aplikacja-mobilna/pull/5#issuecomment-6099166765. Dalej przygotowano bootstrap/niezmienne cele w PR #9, a po odczycie reviews domknięto właściwe zakresy kodu #1 i #6.
+- Poprawka #1: completeDiary wymaga znanej energii każdego składnika, 40 JVM / 28 urządzenia. Poprawka #6: wynik wstępny, zamknięte dni i kalendarzowa północ/DST, 57 JVM / 36 urządzenia. Integracja #7 zachowuje scope właściciela, 57 JVM / 44 urządzenia. Raport android/POPRAWKI_REVIEW.md opisuje cały odbiór i wcześniejsze niepowodzenia.
+- Końcowa wersja Android 0.7.1 / versionCode 8 / Room 6 na codex/android-bootstrap-cele: pełny build/test/lint/device PASS, 65 JVM i 52/52 urządzenia API 35, zero pominięć. Lint 0 błędów / 26 ostrzeżeń / 1 informacja. Raport android/RAPORT_0_7_1.md. Nie ma OIDC/HTTP/sync; bootstrap jest lokalnym stanem protokołu, a callback parametrem przyszłej integracji.
+- Aktualizacja 0.7→0.7.1 zachowała wszystkie kolumny 18 tabel i kolejkę; APK uruchomione offline. Artefakt poza Git: output-apk/Racje-i-kalorie-0.7.1-debug.apk, SHA-256 2e46bd29affce2973bdc5e0c092969b409638b0e39a9127d8d7f0f2f8d4486ff.
+- Wczytano bieżący main e8d1051, O3-003/O3-004 na 941b73d i porządkowanie planu E3 46046c1. Zachowano uproszczony wspólny dziennik oraz równoległe zmiany autora przez merge, bez force-push. Nie przywracamy celowo usuniętych przez O3 sekcji komunikacji.
+- PR-y pozostają do review. Odbiór #1 → #6 → #7 → #9 z retargetowaniem po poprzednim merge; brak samodzielnego scalenia i deklaracji mobilnego CI. Następny etap O1: sesja i ViewModel, rzeczywiste E3/HTTP, później adapter E4; wymagane środowisko/API O2/O3.
+
+## Kontynuacja O1 — bootstrap E3 i cele, 10 października 2026
+
+- Najpierw wysłano potwierdzenie O2: https://github.com/Roseru/aplikacja-mobilna/pull/5#issuecomment-6099166765. Odczytano PR #8 / 1908c9b i pytania integracyjne. Ustalono przyszłe callbacki APK oraz oddzielono local lease od account_id/generacji/epoki.
+- Android 0.7 / Room 6 na codex/android-bootstrap-cele, od ad8c0a6 / PR #7. Trwały klucz bootstrapu, atomowe mapowanie, blokada zmiany kontekstu oraz niezmienne cele. Brak sesji/HTTP/sync.
+- Końcowy pełny zestaw: 59 JVM i 47/47 urządzenia API 35; lint 0 błędów, 26 ostrzeżeń, 1 informacja. Aktualizacja 0.6→0.7 zachowała stare kolumny 16 tabel. APK SHA-256 f0da5c1af3223cbbd548b22f40ab6c51edf60397cf42c17fa7a03ca5c8fe62b4. Dowody w android/RAPORT_0_7.md; parametry w android/INTEGRACJA_E3.md.
+- Odczytano nowe O3-001/O3-002 na 53ff675 oraz reviews O2: #1 REQUEST_CHANGES (energia null), #6 REQUEST_CHANGES (bieżący dzień), #7 COMMENT. Następne osobne poprawki we właściwych PR-ach; nie uznawać ich za odebrane. Zachować nowe wpisy O3 i poprawkę walidatora komunikacji.
+
 ## Kontynuacja O1 — izolacja właścicieli, 10 października 2026
 
 - Odczyt GitHuba przed pracą i publikacją: main `151885d`, E2 `52f3547`, komunikacja `b8fbf9d`; brak nowych wiadomości O2/O3. Wczytano architekturę tożsamości i kolejki O2. Endpointy kont są E3, synchronizacja E4; E2 dostarcza katalog.
@@ -9,6 +25,7 @@
 - Lokalny wynik: 51 testów JVM, pełny końcowy przebieg 39/39 urządzenia (wcześniejszy 38/38 również zaliczony), lint 0 błędów / 26 ostrzeżeń / 1 informacja. Osiem nowych przypadków obejmuje gościa+dwa konta, dokładną tożsamość, kolizje i obce ID, wspólną rację z prywatnym spożyciem, spóźniony zapis po przełączeniu/powrocie, rollback kolejki, restart i rzeczywistą migrację schematu 4. Dotychczasowe migracje 1/2/3 także dochodzą do 5.
 - Aktualizacja zwykłego APK 0.5→0.6 bez kasowania danych zachowała wszystkie stare kolumny 14 tabel. Uruchomiono dziennik offline, potwierdzono versionCode 6. APK poza Git: `output-apk/Racje-i-kalorie-0.6.0-debug.apk`, SHA-256 `5853d41c005119f9efe75c754b7760bc5eeae50b802138c1a452fdd47cc98809`. [Raport](android/RAPORT_0_6.md) podaje dowody i granice.
 - Rejestr to metadane, nie logowanie. UI nadal jest gościem. Sesje OIDC, czyszczenie/odtwarzanie ViewModel, klucze encji z właścicielem, przypisanie gościa i adapter E0/HTTP pozostają do wykonania. Obecne globalne ID odrzucają kolizję, ale nie realizują pełnego importu rekordów wielu kont. Nie potwierdzono zdalnego CI ani prawdziwego sync.
+- Publikacja po odbiorze lokalnym: commit `ad8c0a6` autora `agent 1`, [PR #7](https://github.com/Roseru/aplikacja-mobilna/pull/7), baza `codex/android-analityka`. Przekazanie O1-007 opublikowano osobno jako `aed79c7` w [PR #5](https://github.com/Roseru/aplikacja-mobilna/pull/5). Checkout publikacyjny pozostawiono czysty na `codex/android-izolacja-kont`; PR-y oczekują recenzji, main nadal `151885d`. Ten ostatni zapis kontekstu utrwalono lokalnie po publikacji; źródłem stanu na GitHubie jest O1-007.
 
 ## Kontynuacja O1 — analityka, 10 października 2026
 

@@ -23,7 +23,7 @@ class LocalFeaturesTest {
     private val date = LocalDate.now().minusDays(3)
 
     @Test fun privateProductIsReusableIsolatedAndAtomic() = runBlocking {
-        val db = Room.inMemoryDatabaseBuilder(context, CalorieDatabase::class.java).build()
+        val db = Room.inMemoryDatabaseBuilder(context, CalorieDatabase::class.java).addCallback(DATABASE_GUARDS).build()
         try {
             val repo = DiaryRepository(db, context)
             repo.initialize()
@@ -49,7 +49,7 @@ class LocalFeaturesTest {
 
     @Test fun profileAndMultipleWeightsPersistWithoutChangingGoal() = runBlocking {
         val name = "local-${UUID.randomUUID()}.db"
-        var db = Room.databaseBuilder(context, CalorieDatabase::class.java, name).build()
+        var db = Room.databaseBuilder(context, CalorieDatabase::class.java, name).addCallback(DATABASE_GUARDS).build()
         try {
             var repo = DiaryRepository(db, context)
             repo.initialize()
@@ -58,7 +58,7 @@ class LocalFeaturesTest {
             repo.addWeight(82.1, date, "weight-two")
             repo.addWeight(82.1, date, "weight-two")
             db.close()
-            db = Room.databaseBuilder(context, CalorieDatabase::class.java, name).build()
+            db = Room.databaseBuilder(context, CalorieDatabase::class.java, name).addCallback(DATABASE_GUARDS).build()
             repo = DiaryRepository(db, context)
             assertEquals("Poligon", db.dao().profile(DiaryRepository.GUEST).first()!!.nickname)
             assertEquals(2, db.dao().weights(DiaryRepository.GUEST).first().size)
@@ -76,7 +76,7 @@ class LocalFeaturesTest {
     }
 
     @Test fun completenessNeedsPositiveDiaryAndStopsAfterLastMealRemoved() = runBlocking {
-        val db = Room.inMemoryDatabaseBuilder(context, CalorieDatabase::class.java).build()
+        val db = Room.inMemoryDatabaseBuilder(context, CalorieDatabase::class.java).addCallback(DATABASE_GUARDS).build()
         try {
             val repo = DiaryRepository(db, context)
             repo.initialize()
@@ -121,7 +121,7 @@ class LocalFeaturesTest {
             old.execSQL("INSERT INTO meal_items (id,mealId,productId,productName,grams,kcalPer100,proteinPer100,fatPer100,carbsPer100,rationComponentId) VALUES ('old-ration-item','old-ration-meal','demo-ration-meat','Konserwa',50,273,16,22,2.7,'demo-a-meat')")
             old.version = 2
         }
-        val db = Room.databaseBuilder(context, CalorieDatabase::class.java, name).addMigrations(MIGRATION_2_3, MIGRATION_3_4, MIGRATION_4_5).build()
+        val db = Room.databaseBuilder(context, CalorieDatabase::class.java, name).addMigrations(MIGRATION_2_3, MIGRATION_3_4, MIGRATION_4_5, MIGRATION_5_6).addCallback(DATABASE_GUARDS).build()
         try {
             val repo = DiaryRepository(db, context)
             repo.initialize()
