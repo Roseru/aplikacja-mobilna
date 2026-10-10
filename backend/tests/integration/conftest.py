@@ -8,6 +8,12 @@ from sqlalchemy import create_engine, text
 from sqlalchemy.engine import make_url
 
 
+@pytest.fixture(autouse=True)
+def cursor_secret(monkeypatch):
+    # Synthetic test-only secret; deployment must supply its own persistent secret.
+    monkeypatch.setenv("CATALOG_PAGE_TOKEN_SECRET", "e2" * 32)
+
+
 @pytest.fixture(scope="session")
 def database():
     url = os.environ.get("TEST_DATABASE_URL")

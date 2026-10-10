@@ -2,6 +2,8 @@
 
 Data: 9 października 2026 r. Plan dotyczy implementacji [wymagań](../WYMAGANIA_PROJEKTOWE.md) według [architektury](ARCHITEKTURA.md). Repozytorium zawiera [odebrane E0](e0/ODBIOR.md) i fundament backendu E1; wyniki jego odbioru określa [raport E1](e1/RAPORT_E1.md). Nie podajemy terminu końcowego bez pomiaru czasu pierwszych zadań i dostępności trzech osób.
 
+Uzupełnienie E2: wykonanie części O2 i dowody określa [raport E2](e2/RAPORT_E2.md), a [przekazanie O1](e2/INTEGRACJA_O1.md) osobny odbiór Room/APK. E2 dostarcza wewnętrzną usługę produktów/DTO, lecz chronione `/products` i `/products/{id}` zostają podłączone dopiero z prawdziwym OIDC w E3. Publiczne E2 obejmuje wyłącznie opublikowane racje/manifest/gzip official; demo jest lokalnym plikiem. Brak dowodów O1 nie pozwala uznać pełnego zespołowego E2/KO-30 za odebrane.
+
 ## 1. Etapy i warunki zakończenia
 
 Każdy etap kończy się działającym, sprawdzalnym rezultatem. Kryteria KO odnoszą się do rozdziału 10 wymagań. „Właściciel: O2” oznacza nas; O1 odpowiada za Androida, O3 za infrastrukturę i GitHub.

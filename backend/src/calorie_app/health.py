@@ -5,7 +5,7 @@ from sqlalchemy.exc import SQLAlchemyError
 
 from calorie_app.core.errors import ApiError, error_response
 
-EXPECTED_REVISION = "0002_finite_nutrition"
+EXPECTED_REVISION = "0005_ration_cursors"
 router = APIRouter(tags=["health"])
 
 
@@ -28,4 +28,8 @@ def ready(request: Request):
                 return error_response(request, 503, "service_unavailable", "Baza nie jest gotowa.")
     except (SQLAlchemyError, OSError):
         return error_response(request, 503, "service_unavailable", "Baza nie jest gotowa.")
+    if request.app.state.catalog_page_token_secret is None:
+        return error_response(
+            request, 503, "service_unavailable", "Konfiguracja usługi nie jest gotowa."
+        )
     return Health()
