@@ -13,7 +13,7 @@ import java.util.UUID
 
 data class DayState(val date: LocalDate = LocalDate.now(), val meals: List<MealWithItems> = emptyList(), val goal: GoalEntity? = null, val status: DiaryDayEntity? = null) {
     val totals: Nutrients get() = meals.flatMap { it.items }.map { it.consumed() }.total()
-    val complete: Boolean get() = status?.declaredComplete == true && meals.isNotEmpty() && totals.kcal > 0
+    val complete: Boolean get() = completeDiary(status?.declaredComplete == true, meals.sumOf { it.items.size }, totals)
 }
 sealed interface DiaryEvent {
     data object MealSaved : DiaryEvent

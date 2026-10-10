@@ -208,7 +208,7 @@ class DiaryRepository(private val db: CalorieDatabase, private val context: Cont
         require(date <= LocalDate.now())
         if (declared) {
             val meals = dao.day(GUEST, date.toString()).first()
-            require(meals.isNotEmpty() && meals.flatMap { it.items }.sumOf { it.consumed().kcal } > 0)
+            require(completeDiary(true, meals.sumOf { it.items.size }, meals.flatMap { it.items }.map { it.consumed() }.total()))
         }
         val old = dao.currentDiaryDay(GUEST, date.toString())
         if (old?.declaredComplete == declared || (old == null && !declared)) return@withTransaction
