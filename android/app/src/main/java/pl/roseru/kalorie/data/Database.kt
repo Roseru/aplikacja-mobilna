@@ -135,6 +135,7 @@ interface CalorieDao {
     @Upsert suspend fun saveProfile(profile: ProfileEntity)
     @Query("SELECT * FROM weights WHERE ownerScope = :owner AND deleted = 0 ORDER BY localDate DESC, occurredAt DESC, id DESC") fun weights(owner: String): Flow<List<WeightEntity>>
     @Query("SELECT * FROM weights WHERE id = :id AND ownerScope = :owner") suspend fun weight(id: String, owner: String): WeightEntity?
+    @Query("SELECT ownerScope FROM weights WHERE id = :id") suspend fun weightOwner(id: String): String?
     @Upsert suspend fun saveWeight(weight: WeightEntity)
     @Query("SELECT * FROM diary_days WHERE ownerScope = :owner AND localDate = :date LIMIT 1") fun diaryDay(owner: String, date: String): Flow<DiaryDayEntity?>
     @Query("SELECT * FROM diary_days WHERE ownerScope = :owner AND localDate = :date LIMIT 1") suspend fun currentDiaryDay(owner: String, date: String): DiaryDayEntity?
@@ -143,8 +144,13 @@ interface CalorieDao {
 
 @Database(entities = [ProductEntity::class, MealEntity::class, MealItemEntity::class, GoalEntity::class, OutboxEntity::class,
     RationEntity::class, RationComponentEntity::class, ProfileEntity::class, WeightEntity::class, DiaryDayEntity::class,
-    CatalogGenerationEntity::class, CatalogRecordEntity::class, CatalogMemberEntity::class, CatalogActiveEntity::class], version = 4, exportSchema = true)
-abstract class CalorieDatabase : RoomDatabase() { abstract fun dao(): CalorieDao; abstract fun catalogDao(): CatalogDao }
+    CatalogGenerationEntity::class, CatalogRecordEntity::class, CatalogMemberEntity::class, CatalogActiveEntity::class,
+    LocalOwnerEntity::class, LocalActiveOwnerEntity::class], version = 5, exportSchema = true)
+abstract class CalorieDatabase : RoomDatabase() {
+    abstract fun dao(): CalorieDao
+    abstract fun catalogDao(): CatalogDao
+    abstract fun ownerDao(): LocalOwnerDao
+}
 
 val MIGRATION_1_2 = object : Migration(1, 2) {
     override fun migrate(db: SupportSQLiteDatabase) {

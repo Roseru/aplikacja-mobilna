@@ -20,3 +20,6 @@ Końcowy pełny build/test/lint/device PASS: 57 JVM i 36/36 urządzenia API 35, 
 Pierwsze próby wykryły błędną sygnaturę JUnit i zbyt częsty testowy zegar powodujący brak bezczynności UI, potem brak wspólnej semantyki etykiety/liczby. Poprawiono testy i dostępność; ponowiono cały zestaw. W pierwszej próbie był także timeout starego testu dodawania posiłku; dwa kolejne pełne przebiegi zaliczyły ten przypadek. Powyższy wynik jest ostatnim pełnym przebiegiem 36/36, nie sumą selektywnych powtórzeń.
 
 Wersja nadal 0.5 / Room 4, bez migracji. Wymagany ponowny review O2 i CI Androida O3; brak deklaracji APPROVE. Po odbiorze/scaleniu #1 należy retargetować #6 na main i wykonać odbiór integracyjny; nie wykonano samodzielnego merge do main.
+## PR #7 — ponowny odbiór zależności
+
+Połączono poprawki #1 i #6 z izolacją kont, zachowując odczyty ViewModel według właściciela. Cały build/test/lint/device PASS: 57 JVM i 44/44 urządzenia API 35, zero błędów/pominięć; lint 0 błędów / 26 ostrzeżeń / 1 informacja. Wynik obejmuje także osiem prób właścicieli i migrację rzeczywistego Room 4→5. Room nadal 5 / Android 0.6; nie włączono bootstrapu ani logowania. To odbiór autora po zmianie zależności, przed wymaganym review i przyszłym retargetowaniem na main.

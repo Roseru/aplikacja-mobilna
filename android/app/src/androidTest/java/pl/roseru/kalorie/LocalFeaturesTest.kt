@@ -121,7 +121,7 @@ class LocalFeaturesTest {
             old.execSQL("INSERT INTO meal_items (id,mealId,productId,productName,grams,kcalPer100,proteinPer100,fatPer100,carbsPer100,rationComponentId) VALUES ('old-ration-item','old-ration-meal','demo-ration-meat','Konserwa',50,273,16,22,2.7,'demo-a-meat')")
             old.version = 2
         }
-        val db = Room.databaseBuilder(context, CalorieDatabase::class.java, name).addMigrations(MIGRATION_2_3, MIGRATION_3_4).build()
+        val db = Room.databaseBuilder(context, CalorieDatabase::class.java, name).addMigrations(MIGRATION_2_3, MIGRATION_3_4, MIGRATION_4_5).build()
         try {
             val repo = DiaryRepository(db, context)
             repo.initialize()

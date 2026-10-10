@@ -40,19 +40,19 @@ class DiaryViewModel(private val repository: DiaryRepository, private val prefer
         AnalyticsWindow(if (follow) today else LocalDate.parse(end).coerceAtMost(today), AnalyticsPeriod.entries.first { it.days == days })
     }.stateIn(viewModelScope, policy, AnalyticsWindow(clock.today(), AnalyticsPeriod.WEEK))
     val analytics = analyticsWindow.flatMapLatest { window ->
-        AnalyticsRepository(repository.dao, clock).observe(DiaryRepository.GUEST, window).map<AnalyticsResult, AnalyticsResult?> { it }.onStart { emit(null) }
+        AnalyticsRepository(repository.dao, clock).observe(repository.owner, window).map<AnalyticsResult, AnalyticsResult?> { it }.onStart { emit(null) }
     }.stateIn(viewModelScope, policy, null)
     val theme = preferences.theme.stateIn(viewModelScope, policy, ThemeMode.SYSTEM)
-    val products = repository.dao.products(DiaryRepository.GUEST).stateIn(viewModelScope, policy, emptyList())
+    val products = repository.dao.products(repository.owner).stateIn(viewModelScope, policy, emptyList())
     val rations = repository.dao.rations().stateIn(viewModelScope, policy, emptyList())
-    val profile = repository.dao.profile(DiaryRepository.GUEST).stateIn(viewModelScope, policy, null)
-    val weights = repository.dao.weights(DiaryRepository.GUEST).stateIn(viewModelScope, policy, emptyList())
-    val recent = repository.dao.recent(DiaryRepository.GUEST).stateIn(viewModelScope, policy, emptyList())
-    val pending = repository.dao.pending(DiaryRepository.GUEST).stateIn(viewModelScope, policy, 0)
-    val todayGoal = currentDay.flatMapLatest { repository.dao.goal(DiaryRepository.GUEST, it.toString()) }.stateIn(viewModelScope, policy, null)
+    val profile = repository.dao.profile(repository.owner).stateIn(viewModelScope, policy, null)
+    val weights = repository.dao.weights(repository.owner).stateIn(viewModelScope, policy, emptyList())
+    val recent = repository.dao.recent(repository.owner).stateIn(viewModelScope, policy, emptyList())
+    val pending = repository.dao.pending(repository.owner).stateIn(viewModelScope, policy, 0)
+    val todayGoal = currentDay.flatMapLatest { repository.dao.goal(repository.owner, it.toString()) }.stateIn(viewModelScope, policy, null)
     val day = dateText.flatMapLatest { text ->
-        combine(repository.dao.day(DiaryRepository.GUEST, text), repository.dao.goal(DiaryRepository.GUEST, text),
-            repository.dao.diaryDay(DiaryRepository.GUEST, text)) { meals, goal, status -> DayState(LocalDate.parse(text), meals, goal, status) }
+        combine(repository.dao.day(repository.owner, text), repository.dao.goal(repository.owner, text),
+            repository.dao.diaryDay(repository.owner, text)) { meals, goal, status -> DayState(LocalDate.parse(text), meals, goal, status) }
     }.stateIn(viewModelScope, policy, DayState())
 
     init { initialize() }

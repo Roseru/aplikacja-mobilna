@@ -1,5 +1,15 @@
 # Kontekst współpracy
 
+## Kontynuacja O1 — izolacja właścicieli, 10 października 2026
+
+- Odczyt GitHuba przed pracą i publikacją: main `151885d`, E2 `52f3547`, komunikacja `b8fbf9d`; brak nowych wiadomości O2/O3. Wczytano architekturę tożsamości i kolejki O2. Endpointy kont są E3, synchronizacja E4; E2 dostarcza katalog.
+- Android 0.6.0 na `codex/android-izolacja-kont`, od `2a73c74` / PR #6, z bazą PR `codex/android-analityka`. Odbiór w kolejności PR #1 → #6 → izolacja, następnie retargetowanie kolejnego na main i kontrola integracji bez force-push. Nie scalono własnych PR-ów.
+- Room 5: trwały UUID gościa i rejestr dokładnych `(issuer, sub)`, aktywny zakres/generacja, wszystkie mutacje repozytorium kontrolowane w transakcji encji+outbox. Odczyty ViewModel i analityki korzystają z zakresu repozytorium. Konta nie dziedziczą celu demo. Kolizja ID wagi nie nadpisuje cudzego rekordu.
+- UUID gościa jest powiązany z dawnym `guest`; migracja nie przepisuje żadnej wcześniejszej kolumny, ID ani payloadu. Konto używa lokalnego UUID, nie `sub`. Katalog jest wspólny, spożycia i dane prywatne pozostają oddzielne. Nie przypisano gościa do żadnego konta.
+- Lokalny wynik: 51 testów JVM, pełny końcowy przebieg 39/39 urządzenia (wcześniejszy 38/38 również zaliczony), lint 0 błędów / 26 ostrzeżeń / 1 informacja. Osiem nowych przypadków obejmuje gościa+dwa konta, dokładną tożsamość, kolizje i obce ID, wspólną rację z prywatnym spożyciem, spóźniony zapis po przełączeniu/powrocie, rollback kolejki, restart i rzeczywistą migrację schematu 4. Dotychczasowe migracje 1/2/3 także dochodzą do 5.
+- Aktualizacja zwykłego APK 0.5→0.6 bez kasowania danych zachowała wszystkie stare kolumny 14 tabel. Uruchomiono dziennik offline, potwierdzono versionCode 6. APK poza Git: `output-apk/Racje-i-kalorie-0.6.0-debug.apk`, SHA-256 `5853d41c005119f9efe75c754b7760bc5eeae50b802138c1a452fdd47cc98809`. [Raport](android/RAPORT_0_6.md) podaje dowody i granice.
+- Rejestr to metadane, nie logowanie. UI nadal jest gościem. Sesje OIDC, czyszczenie/odtwarzanie ViewModel, klucze encji z właścicielem, przypisanie gościa i adapter E0/HTTP pozostają do wykonania. Obecne globalne ID odrzucają kolizję, ale nie realizują pełnego importu rekordów wielu kont. Nie potwierdzono zdalnego CI ani prawdziwego sync.
+
 ## Kontynuacja O1 — analityka, 10 października 2026
 
 - Ponowny odczyt GitHuba: main `151885d`, E2 `52f3547`, komunikacja `c390234`; brak nowych wiadomości O2/O3 od poprzedniego odczytu. PR #1 (Android 0.4, `20f474e`) oraz PR #5 pozostają otwarte.
@@ -14,7 +24,7 @@
 - Użytkownik jest osobą 1 w zespole: odpowiada za aplikację Android (Kotlin, Android Studio), interfejs, pamięć lokalną i mobilną część synchronizacji.
 - Podział pracy i wymagania: `WYMAGANIA_PROJEKTOWE.md`.
 - Użytkownik zaakceptował oba warianty makiet: A (ciemny) i B (jasny). Aplikacja ma oferować oba jako motywy tego samego interfejsu.
-- Obecny etap: Android 0.5.0 w `android/`: lokalny dziennik, importer E2 i BigDecimal oraz Postępy 7/30/90 dni z historycznymi celami, wykresami kcal/B/T/W i wagą. Room nadal 4; katalog 33 produkty / 3 racje DEMO. Kolejka i analityka są lokalne; rzeczywista synchronizacja pozostaje do wykonania.
+- Obecny etap: Android 0.6.0 w `android/`: dziennik, importer E2/BigDecimal, Postępy 7/30/90 oraz fundament właścicieli i ochrony zapisu. Room 5; katalog 33 produkty / 3 racje DEMO. UI jest gościem; logowanie, prawdziwa synchronizacja i pełne klucze izolacji pozostają do wykonania.
 - Plan implementacji wysłano na GitHub jako commit `74d3d1c` z autorem `agent 1`. Użytkownik poprosił o takie oznaczenie commita.
 - Szczegółowa kolejność prac: `PLAN_IMPLEMENTACJI_ANDROID.md`.
 - Repozytorium projektu: https://github.com/Roseru/aplikacja-mobilna
@@ -25,7 +35,7 @@
 - Wersja 0.3.0 ma Room 3 i migracje 1 → 2 → 3, bez kasowania dziennika, racji, celów ani kolejki. Prywatny produkt zapisuje szkic i pierwsze spożycie w jednej transakcji. Pomiary mają korekty i znaczniki usunięcia; profil nie zmienia celu kcal. Efektywna kompletność dnia wymaga deklaracji i dodatniego, niepustego dziennika.
 - Walidacja 0.3.0: APK debug i lint (0 błędów, 25 ostrzeżeń), 6 testów jednostkowych i 17 przypadków urządzenia API 35. W pełnym przebiegu przeszło 16 przypadków; profil/wagę zaliczono osobno po naprawieniu obsługi klawiatury w teście. Testy mają osobny applicationId, więc ich sprzątanie nie usuwa zwykłego dziennika. APK użytkowy: `output-apk/Racje-i-kalorie-0.3.0-debug.apk`.
 - Kod 0.3.0 i dokumentację opublikowano w tym samym PR #1 jako commit `a7bcda8` autora `agent 1`; gałąź zawiera też merge aktualnego main `5cbcf67`. PR pozostaje do recenzji i scalenia przez zespół. Łącznik Code Review nie udostępnił kontroli CI bez połączenia konta; nie potwierdzono wyniku zdalnego CI, dowody lokalne są w opisie PR.
-- Następna praca osoby 1: konta i adapter synchronizacji po dostawie endpointów O2/O3. Lokalna analityka 7/30/90 jest zaimplementowana; importer katalogu i lokalna kolejka nie zastępują rzeczywistego sync.
+- Następna praca osoby 1: sesje kont, odtwarzanie stanu ekranów, docelowe klucze właścicieli i adapter synchronizacji przy dostawie endpointów O2/O3. Lokalna analityka oraz kontrola mutacji są zaimplementowane; importer, rejestr i kolejka nie zastępują prawdziwego logowania/sync.
 
 ## Wczytane nowości GitHub — E2, 9 października 2026
 
