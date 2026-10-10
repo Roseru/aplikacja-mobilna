@@ -89,6 +89,105 @@ def nested_errors(errors):
         yield from nested_errors(error.context)
 
 
+def generated_expanded(value, document, stack=()):
+    """Resolve only in-document FastAPI references, independently of E0 paths."""
+    if isinstance(value, dict):
+        if '$ref' in value:
+            ref = value['$ref']
+            assert ref.startswith('#/'), f'Non-local generated $ref: {ref}'
+            assert ref not in stack, f'Unexpected recursive generated schema: {ref}'
+            data = document
+            for part in ref[2:].split('/'):
+                data = data[part.replace('~1', '/').replace('~0', '~')]
+            return {**generated_expanded(data, document, (*stack, ref)),
+                    **{key: generated_expanded(item, document, stack)
+                       for key, item in value.items() if key != '$ref'}}
+        return {key: generated_expanded(item, document, stack) for key, item in value.items()}
+    if isinstance(value, list):
+        return [generated_expanded(item, document, stack) for item in value]
+    return value
+
+
+def verify_generated_catalog(api, design, validate, api_path):
+    """Keep E0 shapes covered after their HTTP operations move to FastAPI."""
+    assert api['openapi'] == '3.1.0', 'Unexpected FastAPI OpenAPI version'
+    validate_openapi(api)
+    generated_expanded(api, api)  # Includes every component/reference, even unused ones.
+    moved = {
+        '/rations': ('list_rations', 'ration-page.json', 'domain.schema.json#/$defs/RationPage'),
+        '/rations/{id}': ('read_ration', 'ration.json', 'catalog.schema.json#/$defs/Ration'),
+        '/offline-package/manifest': ('read_manifest', 'catalog-manifest.json',
+                                      'catalog.schema.json#/$defs/Manifest'),
+        '/offline-package/{filename}': ('download_package', None, None),
+    }
+    ids, examples = [], 0
+    for route, (operation_id, fixture, normative) in moved.items():
+        assert route not in design['paths'], f'Duplicate active operation: {route}'
+        operation = api['paths']['/api/v1' + route]['get']
+        assert operation['operationId'] == operation_id, route
+        assert operation.get('security') == [], f'Public catalog requires public security: {route}'
+        assert operation.get('description'), route
+        ids.append(operation_id)
+        if fixture is not None:
+            value = read(CONTRACTS / 'examples/valid' / fixture)
+            response = operation['responses']['200']['content']['application/json']['schema']
+            schema = generated_expanded(response, api)
+            Draft202012Validator.check_schema(schema)
+            Draft202012Validator(schema, format_checker=FORMATS).validate(value)
+            assert not validate(value, '../schemas/' + normative, api_path), fixture
+            examples += 1
+        # Retained E0 examples describe payload shapes, not an official publication.
+        # 429 is a prospective infrastructure response; validate its error shape too.
+        for status in ('404', '410', '422', '429', '503'):
+            if status == '410' and route != '/rations':
+                continue
+            response_status = '404' if status == '429' else status
+            assert response_status in operation['responses'], (route, response_status)
+            response = operation['responses'][response_status]['content']['application/json']['schema']
+            value = read(CONTRACTS / f'examples/valid/error-{status}.json')
+            Draft202012Validator(generated_expanded(response, api), format_checker=FORMATS).validate(value)
+            assert not validate(value, '../schemas/domain.schema.json#/$defs/Error', api_path)
+            examples += 1
+        for container in [operation.get('requestBody', {}), *operation['responses'].values()]:
+            for media in container.get('content', {}).values():
+                schema = media.get('schema')
+                if schema:
+                    Draft202012Validator.check_schema(generated_expanded(schema, api))
+                for example in media.get('examples', {}).values():
+                    if 'value' in example:
+                        value = example['value']
+                    else:
+                        filename = (ROOT / 'backend' / example['externalValue']).resolve()
+                        assert filename.is_relative_to(CONTRACTS / 'examples')
+                        value = read(filename)
+                    Draft202012Validator(generated_expanded(schema, api), format_checker=FORMATS).validate(value)
+                    examples += 1
+    for route in ('/products', '/products/{id}'):
+        operation = design['paths'][route]['get']
+        assert operation['x-implementation-stage'] == 'E3', route
+        assert operation['security'] == [{'bearerAuth': []}], route
+        assert '/api/v1' + route not in api['paths'], 'Products must await real E3 auth'
+    download = api['paths']['/api/v1/offline-package/{filename}']['get']
+    filename = next(p for p in download['parameters'] if p['name'] == 'filename')
+    assert filename['in'] == 'path' and filename['required']
+    name_schema = generated_expanded(filename['schema'], api)
+    checker = Draft202012Validator(name_schema, format_checker=FORMATS)
+    assert checker.is_valid('base-pl.1.json.gz')
+    for invalid in ('../base-pl.1.json.gz', 'base-pl.0.json.gz', 'base-pl.1.json', 'demo.json.gz'):
+        assert not checker.is_valid(invalid), invalid
+    success = download['responses']['200']
+    assert set(success['content']) == {'application/gzip'}
+    assert success['content']['application/gzip']['schema'] == {'type': 'string', 'format': 'binary'}
+    headers = {name.lower(): header for name, header in success['headers'].items()}
+    assert 'content-encoding' not in headers
+    size_schema = generated_expanded(headers['content-length']['schema'], api)
+    assert size_schema == {'type': 'integer', 'minimum': 1, 'maximum': 10485760}
+    manifest = read(CONTRACTS / 'examples/valid/catalog-manifest.json')
+    assert checker.is_valid(manifest['path'])
+    assert Draft202012Validator(size_schema).is_valid(manifest['compressed_bytes'])
+    return ids, examples
+
+
 def main():
     schemas = sorted((CONTRACTS / 'schemas').glob('*.json'))
     registry = Registry()
@@ -146,6 +245,11 @@ def main():
     assert len(ids) == len(set(ids)), 'Duplicate operationId'
     assert '/me' not in api['paths'] or 'patch' not in api['paths']['/me']
     assert 'post' not in api['paths'].get('/me/goals', {})
+
+    generated = read(ROOT / 'backend/openapi.json')
+    generated_ids, generated_examples = verify_generated_catalog(generated, api, validate, api_path)
+    assert not set(ids).intersection(generated_ids), 'Duplicate active operationId across documents'
+    api_example_count += generated_examples
 
     index_path = CONTRACTS / 'examples/index.json'
     index = read(index_path)
@@ -210,10 +314,14 @@ def main():
     assert not validate(read(vectors_path), '../schemas/fixtures.schema.json#/$defs/NutritionVectors', vectors_path), 'Invalid nutrition vector structure'
     vector_count, day_count = verify_vectors(vectors_path)
     local_links = 0
-    docs = [ROOT/'README.md', ROOT/'WYMAGANIA_PROJEKTOWE.md', *sorted((ROOT/'docs').glob('*.md')), *sorted((ROOT/'docs/e0').glob('*.md')), CONTRACTS/'README.md']
+    docs = [*sorted(ROOT.glob('*.md')), *sorted((ROOT/'docs').rglob('*.md')),
+            *sorted((ROOT/'backend').glob('*.md')), CONTRACTS/'README.md',
+            *sorted((ROOT/'backend/data').rglob('*.md')),
+            *sorted((ROOT/'tools/offline_catalog').rglob('*.md'))]
     for path in docs:
         contents = path.read_text(encoding='utf-8')
-        if path.parent == ROOT/'docs/e0' or path == CONTRACTS/'README.md':
+        if (path.parent in {ROOT/'docs/e0', ROOT/'docs/e1', ROOT/'docs/e2',
+                            ROOT/'tools/offline_catalog'} or path == CONTRACTS/'README.md'):
             assert contents.splitlines()[0].endswith('- osoba 2'), path
         for link in re.findall(r'(?<!!)\[[^\]]+\]\(([^)]+)\)', contents):
             link = link.strip('<>')
@@ -224,10 +332,10 @@ def main():
             local_links += 1
     result = subprocess.run(['git','diff','--check'], cwd=ROOT, capture_output=True, text=True)
     assert result.returncode == 0, result.stdout + result.stderr
-    print(f'PASS E0 | Python {sys.version.split()[0]} | schemas={len(schemas)} | endpoints={len(ids)} | HTTP examples={api_example_count}')
+    print(f'PASS E0 | Python {sys.version.split()[0]} | schemas={len(schemas)} | draft endpoints={len(ids)} | generated catalog endpoints={len(generated_ids)} | HTTP examples={api_example_count}')
     print(f'PASS examples valid={valid_count} invalid={invalid_count} scenarios={scenario_count}; refs/formats/orphans/source/gzip/manifest')
     print(f'PASS Decimal vectors={vector_count}; day completeness={day_count}; source normalizations={normalization_count}; local links={local_links}; git diff --check')
-    print('NOT EXECUTED: server transactions, PostgreSQL, Room, Kotlin, OIDC, deployment (E1-E5).')
+    print('NOT EXECUTED BY THIS VALIDATOR: server transactions, PostgreSQL, Room, Kotlin, OIDC, deployment (E1-E5).')
 
 
 if __name__ == '__main__':

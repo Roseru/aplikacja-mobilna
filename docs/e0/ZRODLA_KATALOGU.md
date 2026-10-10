@@ -2,6 +2,8 @@
 
 Stan: 9 października 2026. Sprawdzono lokalny [materiał użytkownika](../materialy/racja_wojskowa_S-RG-1.source.json), bez zmiany oryginału. Jest to orientacyjna, niezweryfikowana próbka S-RG-1; nie dowodzi składu ARPOL WZ 1 ani WZ 4 WEGE. Data `checked_on` oznacza rzeczywisty odczyt tego dokumentu, nie potwierdzenie etykiety. Nie przypisano produktu do producenta na podstawie samej nazwy.
 
+Uzupełnienie E2: [seed i eksport PostgreSQL](../../backend/data/demo/README.md) zachowują tę samą próbkę i proweniencję. Eksport/importer są działającymi mechanizmami opisanymi w [raporcie E2](../e2/RAPORT_E2.md); nie pozyskano nowych etykiet ani rekordów FDC i żaden oczekujący wpis nie otrzymał statusu verified. Poniższe braki nadal są bramką oficjalnego seeda E5.
+
 ## Rejestr źródeł i braki
 
 | Materiał / produkt | Producent i wariant | Podstawa i identyfikator | Sprawdzenie i status | Do uzupełnienia |

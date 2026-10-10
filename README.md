@@ -1,6 +1,7 @@
-# Wojskowy licznik kalorii - osoba 2
+# Wojskowy licznik kalorii
 
-- [Uruchomienie i weryfikacja backendu E1](backend/README.md)
+- [Uruchomienie i weryfikacja backendu E1/E2](backend/README.md)
+- [Raport E2 i przekazanie offline O1](docs/e2/RAPORT_E2.md)
 
 Projekt aplikacji Android z backendem Python i PostgreSQL, działającej również offline.
 
@@ -13,11 +14,11 @@ Projekt aplikacji Android z backendem Python i PostgreSQL, działającej równie
 - [Kontrakty E0 i komenda walidacji](contracts/README.md)
 - [Raport odbioru E0](docs/e0/ODBIOR.md)
 
-W tym obszarze pracy realizujemy zadania **Osoby 2: backend, baza, API i integracje**. Przyjęty stos to FastAPI, SQLAlchemy, Alembic i PostgreSQL; logowanie przez Keycloak. Maksymalny wspierany okres synchronizacji przyrostowej po pracy offline wynosi **30 dni**. Dłuższa przerwa wymaga pełnego uzgodnienia stanu z zachowaniem lokalnych danych.
+Wspólne repozytorium zespołu: **Osoba 1 — Android i Room; Osoba 2 — backend, baza i API; Osoba 3 — GitHub, CI/CD i wdrożenie**. Przyjęty stos backendu to FastAPI, SQLAlchemy, Alembic i PostgreSQL; logowanie przez Keycloak. Maksymalny wspierany okres synchronizacji przyrostowej po pracy offline wynosi **30 dni**. Dłuższa przerwa wymaga pełnego uzgodnienia stanu z zachowaniem lokalnych danych.
 
 Przechowywanie: PostgreSQL z oddzielnymi bazami `keycloak` i `calorie_app`; produkty, racje i profile aplikacyjne w `calorie_app`. Na telefonie Room/SQLite. Katalog startowy i aktualizacje są dostarczane jako JSON gzip i importowane do Room; JSON nie zastępuje roboczej bazy dziennika.
 
-Aktualny stan repozytorium: artefakty E0 oraz fundament backendu E1 — health API, konfiguracja, pierwsza migracja i testy PostgreSQL. Wyniki kontroli lokalnych i workflow GitHub Actions opisuje [raport E1](docs/e1/RAPORT_E1.md). Katalog, OIDC i synchronizacja będą wdrażane w kolejnych etapach.
+Aktualny stan repozytorium: odebrane E0/E1 oraz implementacja części O2 etapu E2 — katalog, racje, kontrolowany import, eksport PostgreSQL do gzip/manifest, publiczne odczyty official i importer referencyjny. Wyniki testów, recenzji i CI opisuje raport E2. Adaptacja i odbiór Room/APK wymagają osobnej pracy O1. Demo nie jest oficjalnym katalogiem; etykiety official są bramką E5. OIDC i chronione produkty należą do E3, synchronizacja do E4; E3 nie rozpoczęto.
 
 Gemini: wyłącznie darmowe API (Free Tier), bez aktywnego billing; CI korzysta z mocka. Darmowe limity są wspólne dla projektu. Ograniczenie udostępniania funkcji Gemini użytkownikom w Polsce/EOG opisuje rozdział 11.6 wymagań; nie blokuje ono prac E0.
 

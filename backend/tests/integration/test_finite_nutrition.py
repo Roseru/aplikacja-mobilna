@@ -99,6 +99,11 @@ def test_actual_nutrition_check_matches_model(database):
         CHECK_NAME,
         "ck_product_versions_basis_unit",
         "ck_product_versions_positive_revision",
+        "ck_product_versions_finite_package_amount",
+        "ck_product_versions_package_quantity",
+        "ck_product_versions_finite_density",
+        "ck_product_versions_status",
+        "ck_product_versions_sealed_metadata",
     }
     model_check = next(
         item
@@ -141,11 +146,28 @@ def test_actual_nutrition_check_matches_model(database):
 def data_snapshot(connection):
     # Decimal NaN does not equal itself in Python. Text keeps it comparable and
     # checks that even the invalid legacy value is preserved after a failed DDL.
+    # Select the E1 columns explicitly: E2 adds nullable metadata, while these
+    # regressions deliberately read the genuine 0001/0002 schema before upgrade.
+    legacy_columns = {
+        UserAccount: ("id", "issuer", "subject", "state", "generation", "created_at"),
+        ProductSource: ("id", "description", "status"),
+        Product: ("id",),
+        ProductVersion: (
+            "product_id",
+            "revision",
+            "source_id",
+            "name",
+            "basis_unit",
+            *NUTRITION_COLUMNS,
+        ),
+    }
     return {
         model.__tablename__: [
             tuple(str(value) if isinstance(value, Decimal) else value for value in row)
             for row in connection.execute(
-                select(model.__table__).order_by(*model.__table__.primary_key)
+                select(*(model.__table__.c[name] for name in legacy_columns[model])).order_by(
+                    *model.__table__.primary_key
+                )
             )
         ]
         for model in (UserAccount, ProductSource, Product, ProductVersion)
