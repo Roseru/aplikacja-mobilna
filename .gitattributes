@@ -1,8 +1,19 @@
 * text=auto
+gradlew text eol=lf
+*.bat text eol=crlf
+*.jar binary
+*.png binary
+*.pptx binary
 
 # Preserve exact bytes used by the source audit and the gzip fixture.
 /docs/materialy/racja_wojskowa_S-RG-1.source.json -text
 /contracts/examples/valid/catalog-demo.json -text whitespace=blank-at-eol,blank-at-eof,space-before-tab,cr-at-eol
 /backend/data/demo/seed.json -text whitespace=blank-at-eol,blank-at-eof,space-before-tab,cr-at-eol
 *.gz binary
+*.bin binary
 *.sh text eol=lf
+
+# E2 schemas, manifest and normative vectors copied verbatim from the pinned source.
+/android/app/src/main/assets/catalog/e2/*.json -text whitespace=blank-at-eol,blank-at-eof,space-before-tab,cr-at-eol
+/android/app/src/test/resources/catalog/*.json -text whitespace=blank-at-eol,blank-at-eof,space-before-tab,cr-at-eol
+/android/app/src/test/resources/contracts/*.json -text whitespace=blank-at-eol,blank-at-eof,space-before-tab,cr-at-eol

@@ -1,0 +1,23 @@
+{
+  "version": 1,
+  "source": "DEMO: zestawy i wartości przykładowe do testów. Nie są specyfikacją wojskowej racji ani konkretnego producenta.",
+  "products": [
+    {"id":"demo-ration-meat","name":"Konserwa mięsna — DEMO","kcal":273,"protein":16,"fat":22,"carbs":2.7,"defaultGrams":100,"category":"Składnik racji"},
+    {"id":"demo-ration-crackers","name":"Suchary — DEMO","kcal":380,"protein":10,"fat":4,"carbs":76,"defaultGrams":45,"category":"Składnik racji"},
+    {"id":"demo-ration-jam","name":"Dżem — DEMO","kcal":250,"protein":0.3,"fat":0.1,"carbs":60,"defaultGrams":25,"category":"Składnik racji"}
+  ],
+  "rations": [
+    {"id":"demo-ration-a","name":"Zestaw poligonowy A — DEMO","description":"Przykładowy zestaw do przetestowania wyboru składników. Dane demonstracyjne.","components":[
+      {"id":"demo-a-meat","productId":"demo-ration-meat","packageGrams":100},
+      {"id":"demo-a-crackers","productId":"demo-ration-crackers","packageGrams":90},
+      {"id":"demo-a-jam","productId":"demo-ration-jam","packageGrams":25},
+      {"id":"demo-a-bar","productId":"basic-oat-bar","packageGrams":40}
+    ]},
+    {"id":"demo-ration-b","name":"Zestaw poligonowy B — DEMO","description":"Przykładowy zestaw obiadowy, także ze składnikiem bez znanych makr. Dane demonstracyjne.","components":[
+      {"id":"demo-b-rice","productId":"basic-rice-cooked","packageGrams":200},
+      {"id":"demo-b-chicken","productId":"basic-chicken-cooked","packageGrams":150},
+      {"id":"demo-b-soup","productId":"basic-soup-estimate","packageGrams":300},
+      {"id":"demo-b-bar","productId":"basic-oat-bar","packageGrams":40}
+    ]}
+  ]
+}

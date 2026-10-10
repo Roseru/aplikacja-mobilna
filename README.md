@@ -21,3 +21,13 @@ Przechowywanie: PostgreSQL z oddzielnymi bazami `keycloak` i `calorie_app`; prod
 Aktualny stan repozytorium: odebrane E0/E1 oraz implementacja części O2 etapu E2 — katalog, racje, kontrolowany import, eksport PostgreSQL do gzip/manifest, publiczne odczyty official i importer referencyjny. Wyniki testów, recenzji i CI opisuje raport E2. Adaptacja i odbiór Room/APK wymagają osobnej pracy O1. Demo nie jest oficjalnym katalogiem; etykiety official są bramką E5. OIDC i chronione produkty należą do E3, synchronizacja do E4; E3 nie rozpoczęto.
 
 Gemini: wyłącznie darmowe API (Free Tier), bez aktywnego billing; CI korzysta z mocka. Darmowe limity są wspólne dla projektu. Ograniczenie udostępniania funkcji Gemini użytkownikom w Polsce/EOG opisuje rozdział 11.6 wymagań; nie blokuje ono prac E0.
+
+## Android — osoba 1
+
+[Kod i instrukcja uruchomienia](android/README.md) · [Plan implementacji](PLAN_IMPLEMENTACJI_ANDROID.md)
+
+Otwórz `android/` w Android Studio. Wersja 0.4.0 działa bez konta i internetu: dziennik i cel kcal/B/T/W, produkty i prywatne wpisy, racje ze zjedzonymi składnikami, profil, pomiary wagi, kompletność dnia, edycja/usuwanie i oba motywy. Room 4 zachowuje dotychczasowe dane przez migracje 1 → 2 → 3 → 4.
+
+Importer E2 sprawdza pakiet przed aktywacją; nowe spożycia mają pełny snapshot i dokładne obliczenia BigDecimal z jawnymi brakami danych. Katalog zawiera łącznie 33 produkty i 3 racje DEMO. Lokalna kolejka nie wysyła jeszcze danych. [Raport 0.4.0](android/RAPORT_0_4.md) dokumentuje 39 testów JVM, 26 różnych zaliczonych testów urządzenia (25 w pełnym przebiegu i jeden w osobnym powtórzeniu) oraz lint: 0 błędów / 26 ostrzeżeń. Następny etap O1 to analityka 7/30/90 dni.
+
+Budowanie i testy jednostkowe: `./gradlew :app:assembleDebug :app:testDebugUnitTest :app:lintDebug` z katalogu `android/`. Testy urządzenia: `./gradlew :app:connectedValidationAndroidTest`; osobna instalacja testowa zachowuje zwykły dziennik.

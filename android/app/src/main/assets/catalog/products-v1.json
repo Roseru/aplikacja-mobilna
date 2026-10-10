@@ -1,0 +1,18 @@
+{
+  "version": 1,
+  "source": "Dane demonstracyjne do testowania interfejsu. Wartości wymagają weryfikacji przed wydaniem użytkowym.",
+  "products": [
+    {"id":"basic-banana","name":"Banan","kcal":89,"protein":1.1,"fat":0.3,"carbs":22.8,"defaultGrams":120,"category":"Owoc"},
+    {"id":"basic-rice-cooked","name":"Ryż ugotowany","kcal":130,"protein":2.7,"fat":0.3,"carbs":28,"defaultGrams":200,"category":"Produkt"},
+    {"id":"basic-chicken-cooked","name":"Pierś z kurczaka","kcal":165,"protein":31,"fat":3.6,"carbs":0,"defaultGrams":150,"category":"Produkt"},
+    {"id":"basic-oat-bar","name":"Baton owsiany","kcal":410,"protein":7,"fat":14,"carbs":64,"defaultGrams":40,"category":"Przekąska"},
+    {"id":"basic-apple","name":"Jabłko","kcal":52,"protein":0.3,"fat":0.2,"carbs":13.8,"defaultGrams":180,"category":"Owoc"},
+    {"id":"basic-oats","name":"Płatki owsiane","kcal":370,"protein":13,"fat":7,"carbs":60,"defaultGrams":60,"category":"Produkt"},
+    {"id":"basic-bread","name":"Chleb pełnoziarnisty","kcal":240,"protein":8,"fat":3,"carbs":43,"defaultGrams":70,"category":"Produkt"},
+    {"id":"basic-egg","name":"Jajko gotowane","kcal":155,"protein":13,"fat":11,"carbs":1.1,"defaultGrams":55,"category":"Produkt"},
+    {"id":"basic-yogurt","name":"Jogurt naturalny","kcal":60,"protein":4,"fat":2,"carbs":6,"defaultGrams":180,"category":"Produkt"},
+    {"id":"basic-coca-cola","name":"Coca-Cola","kcal":42,"protein":0,"fat":0,"carbs":10.6,"defaultGrams":330,"category":"Napój — masa w g"},
+    {"id":"basic-tomato","name":"Pomidor","kcal":18,"protein":0.9,"fat":0.2,"carbs":3.9,"defaultGrams":150,"category":"Warzywo"},
+    {"id":"basic-soup-estimate","name":"Rosół — własny szacunek","kcal":45,"protein":null,"fat":null,"carbs":null,"defaultGrams":300,"category":"Potrawa"}
+  ]
+}
