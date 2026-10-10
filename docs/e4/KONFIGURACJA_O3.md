@@ -11,6 +11,39 @@ operatora dostaje wyłącznie tę rolę, bez migratora/API/worker. Szczegóły A
 Keycloak i CLI są w [procedurze usunięcia](USUNIECIE_KONTA.md). Nie umieszczaj
 service-secretów lub credentiali DB w APK/repo/logach.
 
+## Operator w istniejącej instalacji E3
+
+Nie uruchamiaj ponownie nieidempotentnego `init-db.sh` na używanej bazie.
+Przed upgrade do 0011 administrator instancji (z prawem zarządzania rolami,
+odrębny od migratora/runtime) wykonuje poniższy krok w docelowej `calorie_app`.
+PUBLIC CONNECT musi być odebrany, jak w provisioningu E3. Połączenie admina
+pochodzi z chronionego PG* środowiska/pgpass; nie wpisuj sekretu w argumenty.
+`DELETION_OPERATOR_LOGIN` i `DELETION_OPERATOR_PASSWORD` dostarcza menedżer
+sekretów poza repozytorium. Login jest osobny, niesuperuserski, członek wyłącznie
+roli operatora. Skrypt konfiguruje SCRAM i bezpiecznie ponawia te same kroki.
+
+```text
+psql -X -w --dbname calorie_app --file infra/local/provision-deletion-operator.sql
+alembic -c backend/alembic.ini upgrade head
+psql -X -w --dbname calorie_app --file infra/local/provision-deletion-operator.sql
+```
+
+Pierwsze/ostatnie polecenie wykonuje administrator; środkowe migrator ze swoim
+DATABASE_URL. Przed 0011 skrypt tworzy brakującą NOLOGIN rolę i odrębny login,
+daje CONNECT; po upgrade dodatkowo sprawdza USAGE, SELECT job i EXECUTE trzech
+operatorowych funkcji. Nie nadaje nowych praw tabel, CREATE/TEMP/TRUNCATE,
+migratora ani członkostwa API/worker. Przy nieoczekiwanych efektywnych prawach
+kończy się błędem i rollbackiem. Hasło jest celowo ustawiane/rotowane przy każdym
+uruchomieniu; nie są zmieniane dane aplikacji ani epoka.
+
+DELETION_DATABASE_URL wskazuje ten rzeczywisty login, nie administracyjne
+połączenie z SET ROLE. Odbiór obejmuje jego actual CONNECT, begin/status/resume,
+odmowy private DML/DDL/TRUNCATE i brak operatora dla API/worker. Dodatkowy dowód
+SCRAM oraz E3 bez wymaganej roli zachował prywatny graf i epokę. Migracje
+0001–0011 pozostają niezmienne; nowa migracja nie jest potrzebna dla tego
+provisioningu instancji. Nowy pusty klaster nadal korzysta z init-db.sh,
+który uwzględnia CONNECT roli operatora.
+
 API używa dotychczasowych DATABASE_URL/OIDC_ISSUER/OIDC_JWKS_URL i trwałego
 CATALOG_PAGE_TOKEN_SECRET (32 losowe bajty jako hex). Sekret musi być zgodny
 na replikach i po restartach przez okres wsparcia. Tokeny używają osobnego

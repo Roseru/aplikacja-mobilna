@@ -5,7 +5,7 @@ from urllib.parse import urlsplit
 import httpx
 
 from .store import ClientError
-from .wire import dumps, loads
+from .wire import encode_json, loads
 
 
 class SyncHTTP:
@@ -55,7 +55,7 @@ class SyncHTTP:
             context,
             "POST",
             "/api/v1/sync/push",
-            content=dumps(request).encode("utf-8"),
+            content=encode_json(request),
             reconciliation=recovery_only,
         )
         if after_response:

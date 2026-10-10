@@ -60,14 +60,24 @@
         "document_id": {
           "type": "string",
           "minLength": 1,
-          "maxLength": 2000
+          "maxLength": 2000,
+          "allOf": [
+            {
+              "$ref": "common.schema.json#/$defs/UnicodeText"
+            }
+          ]
         },
         "url": {
           "anyOf": [
             {
               "type": "string",
               "format": "uri",
-              "pattern": "^https://"
+              "pattern": "^https://",
+              "allOf": [
+                {
+                  "$ref": "common.schema.json#/$defs/UnicodeText"
+                }
+              ]
             },
             {
               "type": "null"
@@ -82,7 +92,12 @@
             {
               "type": "string",
               "minLength": 1,
-              "maxLength": 2000
+              "maxLength": 2000,
+              "allOf": [
+                {
+                  "$ref": "common.schema.json#/$defs/UnicodeText"
+                }
+              ]
             },
             {
               "type": "null"
@@ -94,7 +109,12 @@
             {
               "type": "string",
               "minLength": 1,
-              "maxLength": 2000
+              "maxLength": 2000,
+              "allOf": [
+                {
+                  "$ref": "common.schema.json#/$defs/UnicodeText"
+                }
+              ]
             },
             {
               "type": "null"
@@ -106,7 +126,12 @@
             {
               "type": "string",
               "minLength": 1,
-              "maxLength": 2000
+              "maxLength": 2000,
+              "allOf": [
+                {
+                  "$ref": "common.schema.json#/$defs/UnicodeText"
+                }
+              ]
             },
             {
               "type": "null"
@@ -133,7 +158,12 @@
           "items": {
             "type": "string",
             "minLength": 1,
-            "maxLength": 2000
+            "maxLength": 2000,
+            "allOf": [
+              {
+                "$ref": "common.schema.json#/$defs/UnicodeText"
+              }
+            ]
           },
           "minItems": 0,
           "maxItems": 100
@@ -143,7 +173,12 @@
           "items": {
             "type": "string",
             "minLength": 1,
-            "maxLength": 2000
+            "maxLength": 2000,
+            "allOf": [
+              {
+                "$ref": "common.schema.json#/$defs/UnicodeText"
+              }
+            ]
           },
           "minItems": 0,
           "maxItems": 100
@@ -192,14 +227,24 @@
         "name": {
           "type": "string",
           "minLength": 1,
-          "maxLength": 2000
+          "maxLength": 2000,
+          "allOf": [
+            {
+              "$ref": "common.schema.json#/$defs/UnicodeText"
+            }
+          ]
         },
         "aliases": {
           "type": "array",
           "items": {
             "type": "string",
             "minLength": 1,
-            "maxLength": 2000
+            "maxLength": 2000,
+            "allOf": [
+              {
+                "$ref": "common.schema.json#/$defs/UnicodeText"
+              }
+            ]
           },
           "minItems": 0,
           "maxItems": 100
@@ -209,7 +254,12 @@
             {
               "type": "string",
               "minLength": 1,
-              "maxLength": 2000
+              "maxLength": 2000,
+              "allOf": [
+                {
+                  "$ref": "common.schema.json#/$defs/UnicodeText"
+                }
+              ]
             },
             {
               "type": "null"
@@ -221,7 +271,12 @@
             {
               "type": "string",
               "minLength": 1,
-              "maxLength": 2000
+              "maxLength": 2000,
+              "allOf": [
+                {
+                  "$ref": "common.schema.json#/$defs/UnicodeText"
+                }
+              ]
             },
             {
               "type": "null"
@@ -256,7 +311,12 @@
         "source_locator": {
           "type": "string",
           "minLength": 1,
-          "maxLength": 2000
+          "maxLength": 2000,
+          "allOf": [
+            {
+              "$ref": "common.schema.json#/$defs/UnicodeText"
+            }
+          ]
         },
         "status": {
           "enum": [
@@ -269,7 +329,12 @@
             {
               "type": "string",
               "minLength": 1,
-              "maxLength": 2000
+              "maxLength": 2000,
+              "allOf": [
+                {
+                  "$ref": "common.schema.json#/$defs/UnicodeText"
+                }
+              ]
             },
             {
               "type": "null"
@@ -306,7 +371,12 @@
         "group": {
           "type": "string",
           "minLength": 1,
-          "maxLength": 2000
+          "maxLength": 2000,
+          "allOf": [
+            {
+              "$ref": "common.schema.json#/$defs/UnicodeText"
+            }
+          ]
         },
         "product": {
           "$ref": "#/$defs/ProductRef"
@@ -333,12 +403,22 @@
         "source_locator": {
           "type": "string",
           "minLength": 1,
-          "maxLength": 2000
+          "maxLength": 2000,
+          "allOf": [
+            {
+              "$ref": "common.schema.json#/$defs/UnicodeText"
+            }
+          ]
         },
         "name": {
           "type": "string",
           "minLength": 1,
-          "maxLength": 2000
+          "maxLength": 2000,
+          "allOf": [
+            {
+              "$ref": "common.schema.json#/$defs/UnicodeText"
+            }
+          ]
         },
         "classification": {
           "enum": [
@@ -362,7 +442,12 @@
             {
               "type": "string",
               "minLength": 1,
-              "maxLength": 2000
+              "maxLength": 2000,
+              "allOf": [
+                {
+                  "$ref": "common.schema.json#/$defs/UnicodeText"
+                }
+              ]
             },
             {
               "type": "null"
@@ -374,7 +459,12 @@
           "items": {
             "type": "string",
             "minLength": 1,
-            "maxLength": 2000
+            "maxLength": 2000,
+            "allOf": [
+              {
+                "$ref": "common.schema.json#/$defs/UnicodeText"
+              }
+            ]
           },
           "minItems": 1,
           "maxItems": 20
@@ -402,14 +492,24 @@
         "name": {
           "type": "string",
           "minLength": 1,
-          "maxLength": 2000
+          "maxLength": 2000,
+          "allOf": [
+            {
+              "$ref": "common.schema.json#/$defs/UnicodeText"
+            }
+          ]
         },
         "manufacturer": {
           "anyOf": [
             {
               "type": "string",
               "minLength": 1,
-              "maxLength": 2000
+              "maxLength": 2000,
+              "allOf": [
+                {
+                  "$ref": "common.schema.json#/$defs/UnicodeText"
+                }
+              ]
             },
             {
               "type": "null"
@@ -421,7 +521,12 @@
             {
               "type": "string",
               "minLength": 1,
-              "maxLength": 2000
+              "maxLength": 2000,
+              "allOf": [
+                {
+                  "$ref": "common.schema.json#/$defs/UnicodeText"
+                }
+              ]
             },
             {
               "type": "null"
@@ -570,7 +675,12 @@
         },
         "path": {
           "type": "string",
-          "pattern": "^base-pl\\.[1-9][0-9]*\\.json\\.gz$"
+          "pattern": "^base-pl\\.[1-9][0-9]*\\.json\\.gz$",
+          "allOf": [
+            {
+              "$ref": "common.schema.json#/$defs/UnicodeText"
+            }
+          ]
         },
         "compressed_bytes": {
           "type": "integer",
@@ -584,7 +694,12 @@
         },
         "sha256": {
           "type": "string",
-          "pattern": "^[0-9a-f]{64}$"
+          "pattern": "^[0-9a-f]{64}$",
+          "allOf": [
+            {
+              "$ref": "common.schema.json#/$defs/UnicodeText"
+            }
+          ]
         },
         "source_ids": {
           "type": "array",

@@ -4,6 +4,17 @@ Wersja decyzji: 1, 10 października 2026. Obowiązuje sześć typów i DTO
 z generowanego [OpenAPI](../../backend/openapi.json) oraz
 [schematu v1](../../contracts/schemas/sync.schema.json).
 
+Errata wykonania 11 października: nie zmienia protokołu v1 ani immutable
+operacji. Decimal jest sprawdzany do końca stringa, bez finalnego LF/CRLF lub
+normalizacji; DTO i schematy czytają jeden normatywny wzorzec. Tekst musi być
+poprawnym Unicode bez NUL/samotnych surrogate, z zachowaniem emoji. Konwersja
+strefy poza lata 0001–9999 daje kontrolowaną walidację. Limity oryginalnych
+bajtów pozostają pierwsze; zła druga operacja ma 422 i zero DML całej paczki.
+Klient dobiera kopertę według faktycznych bajtów wspólnego serializera.
+Istniejący potwierdzony Goal recovery zachowuje oryginalny payload/axis-base;
+sprawdzona bieżąca mapping provenance odróżnia go od nowej decyzji osi.
+Operator wymaga CONNECT i własnego idempotentnego kroku przed/po upgrade E3.
+
 Pełny preflight obejmuje rzeczywiste bajty ASGI, ścisły UTF-8/JSON, strukturę
 całej paczki, rolę, active/bootstrap, epoki i podpisany checkpoint. Jego odmowa
 nie zapisuje encji, receipts ani zmian. Payload liczymy jako oryginalny fragment

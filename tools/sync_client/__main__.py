@@ -5,7 +5,7 @@ import json
 import os
 from pathlib import Path
 
-from . import SyncHTTP, SyncStore
+from . import ClientError, SyncHTTP, SyncStore
 from .wire import AdaptationRequired, loads
 
 
@@ -89,7 +89,13 @@ def main():
             )
             try:
                 if args.command == "push":
-                    http.push(store, context)
+                    while True:
+                        try:
+                            http.push(store, context)
+                        except ClientError as error:
+                            if str(error) != "no_operations":
+                                raise
+                            break
                 elif args.command == "pull":
                     print(http.pull(store, context, full=args.full, limit=args.limit))
                 else:

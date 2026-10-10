@@ -17,6 +17,8 @@ from calorie_app.modules.profiles.schemas import GoalPayload, ProfilePayload
 
 SCHEMAS = Path(__file__).resolve().parents[2] / "contracts" / "schemas"
 BASE = "https://calorie.invalid/schemas/"
+MAX_PUSH_BYTES = 1048576
+MAX_PUSH_OPERATIONS = 100
 DEFINITIONS = {
     "profile": "Profile",
     "goal": "Goal",
@@ -37,6 +39,11 @@ def dumps(value):
     )
 
 
+def encode_json(value):
+    """The actual HTTP representation, also used to measure the whole envelope."""
+    return dumps(value).encode("utf-8", errors="strict")
+
+
 def loads(raw):
     def pairs(rows):
         result = {}
@@ -53,7 +60,7 @@ def loads(raw):
 
 
 def digest(value):
-    return hashlib.sha256(dumps(value).encode("utf-8")).hexdigest()
+    return hashlib.sha256(encode_json(value)).hexdigest()
 
 
 @cache

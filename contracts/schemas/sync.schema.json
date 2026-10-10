@@ -6,7 +6,12 @@
       "type": "string",
       "minLength": 1,
       "maxLength": 4096,
-      "description": "Opaque account/protocol/epoch-bound token; client must not parse or generate it."
+      "description": "Opaque account/protocol/epoch-bound token; client must not parse or generate it.",
+      "allOf": [
+        {
+          "$ref": "common.schema.json#/$defs/UnicodeText"
+        }
+      ]
     },
     "EntityType": {
       "enum": [
@@ -1067,7 +1072,12 @@
             },
             "message": {
               "type": "string",
-              "minLength": 1
+              "minLength": 1,
+              "allOf": [
+                {
+                  "$ref": "common.schema.json#/$defs/UnicodeText"
+                }
+              ]
             },
             "current": {
               "anyOf": [
@@ -1130,7 +1140,12 @@
             },
             "message": {
               "type": "string",
-              "minLength": 1
+              "minLength": 1,
+              "allOf": [
+                {
+                  "$ref": "common.schema.json#/$defs/UnicodeText"
+                }
+              ]
             },
             "current": {
               "anyOf": [
@@ -1493,7 +1508,12 @@
         },
         "message": {
           "type": "string",
-          "minLength": 1
+          "minLength": 1,
+          "allOf": [
+            {
+              "$ref": "common.schema.json#/$defs/UnicodeText"
+            }
+          ]
         },
         "details": {
           "$ref": "#/$defs/SyncErrorDetails"
@@ -1574,7 +1594,12 @@
             },
             "label": {
               "type": "string",
-              "minLength": 1
+              "minLength": 1,
+              "allOf": [
+                {
+                  "$ref": "common.schema.json#/$defs/UnicodeText"
+                }
+              ]
             },
             "endpoint": {
               "const": "push"
@@ -1605,7 +1630,12 @@
               "type": "array",
               "items": {
                 "type": "string",
-                "minLength": 1
+                "minLength": 1,
+                "allOf": [
+                  {
+                    "$ref": "common.schema.json#/$defs/UnicodeText"
+                  }
+                ]
               },
               "minItems": 1
             }
@@ -1632,7 +1662,12 @@
             },
             "label": {
               "type": "string",
-              "minLength": 1
+              "minLength": 1,
+              "allOf": [
+                {
+                  "$ref": "common.schema.json#/$defs/UnicodeText"
+                }
+              ]
             },
             "endpoint": {
               "const": "push"
@@ -1673,7 +1708,12 @@
               "type": "array",
               "items": {
                 "type": "string",
-                "minLength": 1
+                "minLength": 1,
+                "allOf": [
+                  {
+                    "$ref": "common.schema.json#/$defs/UnicodeText"
+                  }
+                ]
               },
               "minItems": 1
             }
@@ -1700,7 +1740,12 @@
             },
             "label": {
               "type": "string",
-              "minLength": 1
+              "minLength": 1,
+              "allOf": [
+                {
+                  "$ref": "common.schema.json#/$defs/UnicodeText"
+                }
+              ]
             },
             "endpoint": {
               "const": "pull"
@@ -1731,7 +1776,12 @@
               "type": "array",
               "items": {
                 "type": "string",
-                "minLength": 1
+                "minLength": 1,
+                "allOf": [
+                  {
+                    "$ref": "common.schema.json#/$defs/UnicodeText"
+                  }
+                ]
               },
               "minItems": 1
             }
@@ -1758,7 +1808,12 @@
             },
             "label": {
               "type": "string",
-              "minLength": 1
+              "minLength": 1,
+              "allOf": [
+                {
+                  "$ref": "common.schema.json#/$defs/UnicodeText"
+                }
+              ]
             },
             "endpoint": {
               "const": "pull"
@@ -1799,7 +1854,12 @@
               "type": "array",
               "items": {
                 "type": "string",
-                "minLength": 1
+                "minLength": 1,
+                "allOf": [
+                  {
+                    "$ref": "common.schema.json#/$defs/UnicodeText"
+                  }
+                ]
               },
               "minItems": 1
             }
@@ -1828,7 +1888,12 @@
         },
         "label": {
           "type": "string",
-          "minLength": 1
+          "minLength": 1,
+          "allOf": [
+            {
+              "$ref": "common.schema.json#/$defs/UnicodeText"
+            }
+          ]
         },
         "action": {
           "enum": [
@@ -1858,7 +1923,12 @@
           "type": "array",
           "items": {
             "type": "string",
-            "minLength": 1
+            "minLength": 1,
+            "allOf": [
+              {
+                "$ref": "common.schema.json#/$defs/UnicodeText"
+              }
+            ]
           },
           "minItems": 1
         }
@@ -1878,11 +1948,21 @@
       "properties": {
         "scenario_id": {
           "type": "string",
-          "pattern": "^[a-z][a-z0-9_]+$"
+          "pattern": "^[a-z][a-z0-9_]+$",
+          "allOf": [
+            {
+              "$ref": "common.schema.json#/$defs/UnicodeText"
+            }
+          ]
         },
         "purpose": {
           "type": "string",
-          "minLength": 1
+          "minLength": 1,
+          "allOf": [
+            {
+              "$ref": "common.schema.json#/$defs/UnicodeText"
+            }
+          ]
         },
         "test_stage": {
           "const": "E4"
@@ -1922,7 +2002,12 @@
               "type": "array",
               "items": {
                 "type": "string",
-                "minLength": 1
+                "minLength": 1,
+                "allOf": [
+                  {
+                    "$ref": "common.schema.json#/$defs/UnicodeText"
+                  }
+                ]
               },
               "minItems": 1
             }
@@ -1953,7 +2038,12 @@
           "type": "array",
           "items": {
             "type": "string",
-            "minLength": 1
+            "minLength": 1,
+            "allOf": [
+              {
+                "$ref": "common.schema.json#/$defs/UnicodeText"
+              }
+            ]
           },
           "minItems": 1
         }
@@ -2002,7 +2092,12 @@
           "anyOf": [
             {
               "type": "string",
-              "minLength": 1
+              "minLength": 1,
+              "allOf": [
+                {
+                  "$ref": "common.schema.json#/$defs/UnicodeText"
+                }
+              ]
             },
             {
               "type": "null"
@@ -2045,7 +2140,12 @@
             },
             "code": {
               "type": "string",
-              "minLength": 1
+              "minLength": 1,
+              "allOf": [
+                {
+                  "$ref": "common.schema.json#/$defs/UnicodeText"
+                }
+              ]
             }
           }
         }

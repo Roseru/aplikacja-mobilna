@@ -7,7 +7,17 @@ from dataclasses import asdict, dataclass
 from pathlib import Path
 from uuid import uuid4
 
-from .wire import AdaptationRequired, adapt_source, digest, dumps, loads, validate
+from .wire import (
+    MAX_PUSH_BYTES,
+    MAX_PUSH_OPERATIONS,
+    AdaptationRequired,
+    adapt_source,
+    digest,
+    dumps,
+    encode_json,
+    loads,
+    validate,
+)
 
 
 class ClientError(ValueError):
@@ -74,6 +84,11 @@ CREATE TABLE IF NOT EXISTS staged_entities(session_id TEXT NOT NULL,entity_type 
 CREATE TABLE IF NOT EXISTS mappings(scope TEXT NOT NULL,source_epoch TEXT NOT NULL,
  source_entity_id TEXT NOT NULL,mapping_json TEXT NOT NULL,
  PRIMARY KEY(scope,source_epoch,source_entity_id));
+CREATE TABLE IF NOT EXISTS mapping_contexts(scope TEXT NOT NULL,source_epoch TEXT NOT NULL,
+ source_entity_id TEXT NOT NULL,context_json TEXT NOT NULL,
+ PRIMARY KEY(scope,source_epoch,source_entity_id),
+ FOREIGN KEY(scope,source_epoch,source_entity_id)
+ REFERENCES mappings(scope,source_epoch,source_entity_id));
 CREATE TABLE IF NOT EXISTS receipts(scope TEXT NOT NULL,operation_id TEXT NOT NULL,
  receipt_json TEXT NOT NULL,PRIMARY KEY(scope,operation_id));
 CREATE TABLE IF NOT EXISTS conflicts(id INTEGER PRIMARY KEY,scope TEXT NOT NULL,
@@ -353,10 +368,14 @@ class SyncStore:
             if source["action"] in ("update", "delete") and base is None and not recovery:
                 raise ClientError("server_revision_required")
             if recovery:
+                validate(recovery, "RecoverySource")
                 if not confirmed or recovery["source_epoch"] == context.sync_epoch:
                     raise ClientError("explicit_epoch_recovery_required")
                 if recovery["source_entity_id"] != source["entity_id"]:
                     raise ClientError("recovery_source_mismatch")
+                if action != "upsert":
+                    raise ClientError("recovery_upsert_required")
+                self._check_recovery_source(db, context, source, recovery)
                 if recovery["decision"] == "recreate_missing":
                     if entity_id == source["entity_id"] or base is not None or action != "upsert":
                         raise ClientError("new_uuid_required")
@@ -395,7 +414,10 @@ class SyncStore:
             if len(dumps(payload).encode("utf-8")) > 262144:
                 raise ClientError("payload_too_large")
             if payload and source["entity_type"] == "goal":
-                if payload["timeline_base_revision"] != binding["timeline"]:
+                mapped_replay = recovery and self._mapped_goal_recovery(
+                    db, context, recovery, payload
+                )
+                if payload["timeline_base_revision"] != binding["timeline"] and not mapped_replay:
                     raise ClientError("timeline_review_required")
             if payload and source["entity_type"] == "meal" and payload["goal_id"]:
                 goal = db.execute(
@@ -454,15 +476,93 @@ class SyncStore:
         with self.transaction() as db:
             db.execute("UPDATE drafts SET review=? WHERE id=?", (reason, source_id))
 
+    def _check_recovery_source(self, db, context, source, recovery):
+        """Known local/server evidence must agree; absence is left for the server."""
+        operation_id = recovery["source_operation_id"]
+        if operation_id is None:
+            return
+        wire = db.execute("SELECT * FROM wire_ops WHERE operation_id=?", (operation_id,)).fetchone()
+        if wire and (
+            wire["scope"] != context.scope
+            or wire["entity_type"] != source["entity_type"]
+            or wire["entity_id"] != source["entity_id"]
+            or wire["epoch"] != recovery["source_epoch"]
+            or loads(wire["wire_json"])["action"] != "upsert"
+        ):
+            raise ClientError("recovery_source_mismatch")
+        if wire and wire["result_json"]:
+            result = loads(wire["result_json"])
+            if result["status"] not in ("accepted", "already_applied") or (
+                recovery["source_revision"] is not None
+                and result["revision"] != recovery["source_revision"]
+            ):
+                raise ClientError("recovery_source_mismatch")
+        receipt = db.execute(
+            "SELECT receipt_json FROM receipts WHERE scope=? AND operation_id=?",
+            (context.scope, operation_id),
+        ).fetchone()
+        if receipt:
+            record = loads(receipt[0])
+            if (
+                record["source_epoch"] != recovery["source_epoch"]
+                or record["entity_id"] != source["entity_id"]
+                or record["status"] != "accepted"
+                or (
+                    recovery["source_revision"] is not None
+                    and record["revision"] != recovery["source_revision"]
+                )
+            ):
+                raise ClientError("recovery_source_mismatch")
+
+    def _mapped_goal_recovery(self, db, context, recovery, payload):
+        """Only a confirmed mapping and identical canonical target bypass the new-decision axis."""
+        row = db.execute(
+            "SELECT m.mapping_json,c.context_json FROM mappings m "
+            "LEFT JOIN mapping_contexts c USING(scope,source_epoch,source_entity_id) "
+            "WHERE m.scope=? AND m.source_epoch=? AND m.source_entity_id=?",
+            (context.scope, recovery["source_epoch"], recovery["source_entity_id"]),
+        ).fetchone()
+        if row is None:
+            return False
+        if row["context_json"] != dumps(asdict(context)):
+            raise ClientError("recovery_mapping_context_required")
+        mapping = loads(row["mapping_json"])
+        targets = db.execute(
+            "SELECT entity_type,entity_json FROM shadow WHERE scope=? AND epoch=? AND entity_id=?",
+            (context.scope, context.sync_epoch, mapping["target_entity_id"]),
+        ).fetchall()
+        if len(targets) != 1 or targets[0]["entity_type"] != "goal":
+            raise ClientError("recovery_target_conflict")
+        target = loads(targets[0]["entity_json"])
+        if (
+            target["entity_type"] != "goal"
+            or target["entity_id"] != mapping["target_entity_id"]
+            or target["deleted"]
+            or target["revision"] != mapping["target_revision"]
+        ):
+            raise ClientError("recovery_target_conflict")
+        if dumps(target["payload"]) != dumps(payload):
+            raise ClientError("recovery_content_conflict")
+        return True
+
     def prepare_push(self, context, *, recovery_only=False, limit=100):
+        if type(limit) is not int or limit < 1:
+            raise ClientError("invalid_limit")
         with self.transaction() as db:
             binding = self._check(context, reconciliation=recovery_only)
             rows = db.execute(
                 "SELECT * FROM wire_ops WHERE scope=? AND epoch=? AND state "
                 "IN ('queued','sent') ORDER BY rowid",
                 (context.scope, context.sync_epoch),
-            ).fetchall()
+            )
             operations = []
+            body = {
+                "protocol_version": 1,
+                "sync_epoch": context.sync_epoch,
+                "checkpoint": binding["checkpoint"],
+                "operations": operations,
+            }
+            size = len(encode_json(body))
             seen = set()
             for row in rows:
                 operation = loads(row["wire_json"])
@@ -470,21 +570,23 @@ class SyncStore:
                     continue
                 key = row["entity_type"], row["entity_id"]
                 if key in seen:
-                    continue
+                    # Keep a contiguous eligible prefix: later operations may depend
+                    # on this entity's second edit, which belongs in the next batch.
+                    break
+                addition = len(encode_json(operation)) + int(bool(operations))
+                if size + addition > MAX_PUSH_BYTES:
+                    if not operations:
+                        raise ClientError("operation_too_large")
+                    break
                 seen.add(key)
                 operations.append(operation)
-                if len(operations) >= min(limit, 100):
+                size += addition
+                if len(operations) >= min(limit, MAX_PUSH_OPERATIONS):
                     break
             if not operations:
                 raise ClientError("no_operations")
-            body = {
-                "protocol_version": 1,
-                "sync_epoch": context.sync_epoch,
-                "checkpoint": binding["checkpoint"],
-                "operations": operations,
-            }
             validate(body, "PushRequest")
-            if len(dumps(body).encode("utf-8")) > 1048576:
+            if len(encode_json(body)) > MAX_PUSH_BYTES:
                 raise ClientError("batch_too_large")
             for operation in operations:
                 db.execute(
@@ -532,7 +634,7 @@ class SyncStore:
                 )
                 mapping = result["recovery_mapping"]
                 if mapping:
-                    self._mapping(db, context.scope, mapping)
+                    self._mapping(db, context.scope, mapping, context=context)
                 if result["status"] in ("conflict", "rejected"):
                     db.execute(
                         "INSERT INTO conflicts(scope,entity_type,entity_id,reason,"
@@ -588,7 +690,7 @@ class SyncStore:
             raise ClientError("session_complete")
         return loads(session["request_json"])
 
-    def _mapping(self, db, scope, mapping):
+    def _mapping(self, db, scope, mapping, *, context=None):
         key = (scope, mapping["source_epoch"], mapping["source_entity_id"])
         old = db.execute(
             "SELECT mapping_json FROM mappings WHERE scope=? AND source_epoch=? "
@@ -606,6 +708,12 @@ class SyncStore:
             "INSERT INTO aliases VALUES(?,?,?,?) ON CONFLICT DO NOTHING",
             (*key, mapping["target_entity_id"]),
         )
+        if context is not None:
+            db.execute(
+                "INSERT INTO mapping_contexts VALUES(?,?,?,?) ON CONFLICT DO UPDATE "
+                "SET context_json=excluded.context_json",
+                (*key, dumps(asdict(context))),
+            )
 
     def apply_pull(self, context, session_id, request, response):
         validate(response, "PullResponse")
@@ -719,7 +827,7 @@ class SyncStore:
         ):
             page = loads(row[0])
             for mapping in page["recovery_mappings"]:
-                self._mapping(db, context.scope, mapping)
+                self._mapping(db, context.scope, mapping, context=context)
             for receipt in page["operation_receipts"]:
                 db.execute(
                     "INSERT INTO receipts VALUES(?,?,?) ON CONFLICT DO UPDATE "

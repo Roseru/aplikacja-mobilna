@@ -34,6 +34,13 @@ def test_request_actual_bytes_boundary():
     assert caught.value.status == 413
 
 
+def test_original_payload_limit_precedes_semantic_unicode_validation():
+    raw = b'{"operations":[{"payload":"' + b"a" * PAYLOAD_BYTES + b'\\u0000"}]}'
+    with pytest.raises(SyncFailure) as caught:
+        parse_push(raw)
+    assert caught.value.status == 413
+
+
 @pytest.mark.parametrize("piece", [b" ", b"\\u0061", "ą".encode()])
 def test_payload_original_span(piece):
     start, end = b'{"operations":[{"payload":"', b'"}]}'

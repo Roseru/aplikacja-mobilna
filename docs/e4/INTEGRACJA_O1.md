@@ -6,6 +6,23 @@ DiaryRepository, format outbox i [przekazanie E3](../../android/INTEGRACJA_E3.md
 Kod Androida nie jest częścią tej dostawy. Normatywne [DTO](../../backend/openapi.json),
 [decyzja v1](DECYZJE_V1.md), [klient referencyjny](../../tools/sync_client/README.md).
 
+Poprawka odbioru 11 października: preflight odrzuca niekanoniczne Decimal,
+także finalny LF/CRLF, NUL/samotne surrogates i nieprzedstawialne konwersje
+strefy na granicach 0001/9999. Zła druga operacja daje 422 przed każdą mutacją,
+bez naprawiania danych. Poprawne Unicode/emoji, znane zero i null działają.
+Stare niepoprawne wire zachowuj do świadomego uzgodnienia, bez poprawiania
+w miejscu lub pod już wysłanym ID.
+
+Paczki: 100 operacji i 1 048 576B całej koperty UTF-8 z checkpointem; pomiar tym
+samym serializerem co HTTP. Regrouping dotyczy koperty, nie operacji. O2
+demonstruje8 dużych Meals i kontynuację po lostACK/restart.
+Nie podstawiaj nowej osi do payloadu Goal recovery potwierdzonego już w
+mapowaniu: zmiana treści daje recovery_content_conflict. Pierwotny payload
+jest dopuszczony tylko z mapping bieżącego pełnego kontekstu, zgodnym
+źródłem/typem i identycznym żywym targetem. Nowa decyzja wymaga aktualnej osi.
+O2 pokazuje `mapping_contexts`; odpowiednik i transakcyjne requireReady
+w Room pozostają pracą O1.
+
 1. Potwierdzona sesja/PKCE → bootstrap → pełny pull → push → pull. Bootstrap
    nie importuje gościa. Zbiór gościa wymaga trwałej jawnej decyzji przypisania
    do jednego konta, również dla historii starszej niż 30 dni.

@@ -6,6 +6,23 @@ backendu Python 3.13. Nie zastępuje Room, APK, WorkManager ani integracji OIDC 
 Nie zapisuje access tokenów w bazie lub outbox. Token dostarcza sesja wywołująca,
 związana z przechwyconą dokładną tożsamością. HTTPS jest obowiązkowy poza loopback.
 
+Po poprawce E4 domyślny `SyncHTTP.push` dobiera jedną porcję do 100 operacji
+i 1 048 576 rzeczywistych UTF-8 bajtów CAŁEJ koperty, wliczając checkpoint,
+pola i separatory. Pomiar i transport używają `encode_json`:sort_keys,
+ensure_ascii=False, kompaktowe separatory, strict UTF-8. Kolejne wywołania
+kontynuują kolejkę; CLI `push` wysyła do `no_operations`. Niewybrane pozostają
+queued, wybrane przechodzą na sent atomowo. Regrouping nie zmienia operacji,
+ID, epoki, base_revision lub hashów. Pojedynczy oversized wire daje
+`operation_too_large` z zachowaniem danych. Nie ma osobnego ID paczki.
+
+Goal recovery drugiego urządzenia zachowuje oryginalny timeline_base_revision.
+Wyjątek od osi nowej decyzji wymaga potwierdzonego mapping tego samego scope,
+account/generation/epoch/lease/contextRevision i identycznego żywego Goal targetu
+z właściwą revision. Inna treść/typ/źródło/target oznacza odmowę. Globalna
+kontrola osi pozostaje. Addytywna SQLite `mapping_contexts` nie przepisuje
+starych danych; stare mapping bez dowodu bieżącego kontekstu wymagają
+nowego ukończonego pull. Tylko nowe zależne Meal używają target aliasu.
+
 Uruchamiaj polecenia z katalogu repozytorium po `uv sync --project backend --locked`:
 
 ```text

@@ -8,6 +8,7 @@ from jsonschema import Draft202012Validator
 from pydantic import RootModel, model_validator
 from referencing import Registry, Resource
 
+from calorie_app.core.wire import validate_json_strings
 from calorie_app.modules.catalog.validation import FORMATS
 from calorie_app.modules.diary.validation import validate_payload
 from calorie_app.modules.profiles.schemas import GoalPayload, ProfilePayload
@@ -46,6 +47,8 @@ def validator(definition):
 
 
 def validate_wire(value, definition):
+    validate_json_strings(value)
+
     def exact(part):
         if isinstance(part, float):
             raise ValueError("fractional_wire_number")

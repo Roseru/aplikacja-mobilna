@@ -16,6 +16,11 @@ Konfiguracja `DELETION_DATABASE_URL` wskazuje osobny login operatora z
 uprawnieniami roli `calorie_app_deletion_operator`. `KEYCLOAK_ADMIN_CONFIG`
 wskazuje chroniony lokalny plik JSON z listą dokładnych mapowań:
 
+Operator musi mieć również rzeczywisty CONNECT do `calorie_app`, po odebraniu
+PUBLIC CONNECT. Dla istniejącego E3 użyj idempotentnego kroku
+[provisioningu O3](KONFIGURACJA_O3.md), przed upgrade tworząc brakującą rolę,
+a po nim sprawdzając efektywne uprawnienia. Nie ponawiaj całego init-db.sh.
+
 ```json
 [{"issuer":"https://identity.example/realms/calorie",
   "admin_base_url":"https://identity.example","realm":"calorie",

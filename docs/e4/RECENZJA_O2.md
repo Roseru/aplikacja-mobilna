@@ -1,5 +1,37 @@
 # Niezależny odbiór E4 - osoba 2
 
+## Ponowny odbiór poprawki 11 października 2026
+
+Aktualna ocena runtime: **9,5/10**, brak istotnych nierozwiązanych usterek.
+Recenzent `e4_fix_review` nie jest autorem ocenianych plików. Sam wyeksportował
+stary `2cdf513` i odtworzył wszystkie cztery usterki na osobnej PostgreSQL17.11,
+dwóch SQLite i rzeczywistym HTTP. Decimal/Unicode zostawiały prefix, daty500;
+duża kolejka nie wysyłała nic, drugi Goal był blokowany, real LOGIN nie miał
+CONNECT. Dawne 885 PASS / 9,2 nie potwierdzały poprawności tych granic.
+
+Po poprawce sam: **569 unit + 468 PostgreSQL + 9 real Keycloak = 1046 PASS**,
+zero skip/fail. Własne 26 real HTTP paczek z dobrym prefixem i złą drugą operacją:
+422 oraz identyczny hash wszystkich tabel. Poprawne Unicode/emoji, zero/null
+działają. 8 Meal payload145893B:porcje 7/1, lostACK/restart/replay, identyczne
+wire/ID/hash/originals;1 MiB/+1 oraz różne checkpointy UTF-8 sprawdzone.
+Dwa urządzenia Goal:A ACK→B snapshot/restart→istniejący target/oś 1; odmowy
+innej treści/typu/usuniętego targetu i nowej decyzji starej osi sprawdzone.
+
+Real operator-only LOGIN bez PUBLIC CONNECT: idempotentny provisioning,
+begin/status/resume/retry, privateSELECT/I/U/D/TRUNCATE/schemaDDL/TEMP odmawiają;
+API/worker bez operatora. Własny cały CLI z Keycloak/PKCE: confirmation/purge A,
+odmowa refresh/staregoJWT, B/katalog identyczne. Autor osobno odtworzył E3 bez
+roli operatora oraz SCRAM poprawnym/błędnym zewnętrznym sekretem.
+Ruff/format 128, E0/OpenAPI/resources, finalny wheel/sdist i Python -I poza
+checkoutem: PASS. Własne dodatkowe Decimal/time/limit probes po ostatniej
+zmianie kolejności kontroli transportu: PASS. Końcowe dokumenty i CI są osobno
+odczytywane; Room/APK/produkcja pozostają odbiorem O1/O3.
+
+## Historyczny odbiór przed osobną recenzją
+
+Poniższa 9,2 nie obejmowała wykrytych później czterech usterek. Dla poprawki
+obowiązuje powyższa 9,5 z własnym wykonaniem, nie samą oceną liczbową.
+
 Ocena końcowej implementacji: **9,2/10**, brak istotnych nierozwiązanych
 usterek. Recenzent e4_review nie jest autorem ocenianych modułów. Używał
 osobnej bazy PostgreSQL17.11, oddzielnych SQLite i własnego efemerycznego
@@ -39,7 +71,7 @@ odmowę refresh/login i starego JWT oraz niezmienny B/katalog.
 Po publikacji niezależnie wykonano jeszcze cały zestaw sześciu live HTTP
 (6 PASS/9,87s), w tym nowy fizyczny restore PostgreSQL z dwoma trwałymi
 SQLite, restartem i równoczesnym recovery do jednego targetu. Oryginały
-oraz immutable wire zachowane. Runtime pozostał bez zmian; ocena9,2 aktualna.
+oraz immutable wire zachowane. Ówczesny runtime pozostał bez zmian; ówczesna ocena 9,2 dotyczy tamtego odbioru.
 
 Ocena dotyczy backendu/klienta O2. Końcowy zdalny CI odczytuje autor po push;
 Room/APK/WorkManager/KO-31 i produkcyjny restore obu baz z zewnętrznym

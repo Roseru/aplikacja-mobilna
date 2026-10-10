@@ -2,6 +2,7 @@
 
 import json
 
+from calorie_app.core.wire import validate_json_strings
 from calorie_app.modules.sync.errors import SyncFailure
 
 REQUEST_BYTES = 1_048_576
@@ -95,6 +96,7 @@ def parse_push(raw: bytes) -> dict:
             return decoder.raw_decode(source, start)[1]
 
         walk(0, ())
+        validate_json_strings(result)
         return result
     except (ValueError, IndexError, RecursionError, UnicodeError):
         raise SyncFailure(422, "invalid_request") from None

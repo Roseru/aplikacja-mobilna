@@ -1,7 +1,7 @@
 """Required full E0 payloads; canonical numbers and semantic civil time."""
 
 import re
-from datetime import date, datetime
+from datetime import date
 from decimal import Decimal, localcontext
 from typing import Annotated, Literal, Self
 from zoneinfo import ZoneInfo, ZoneInfoNotFoundError
@@ -17,6 +17,7 @@ from pydantic import (
     model_validator,
 )
 
+from calorie_app.core.wire import common_pattern, local_day, validate_json_strings
 from calorie_app.modules.catalog.schemas import (
     DecimalValue,
     PositiveDecimal,
@@ -53,7 +54,7 @@ TimeZone = Annotated[
 LocalDate = Annotated[date, BeforeValidator(local_date)]
 ActivityClass = Literal["stationary", "line", "commando"]
 TimelineRevision = Annotated[StrictInt, Field(ge=0, le=2147483647)]
-COMPUTED_PATTERN = r"^(0|[1-9][0-9]{0,5})(\.[0-9]{0,11}[1-9])?$"
+COMPUTED_PATTERN = common_pattern("ComputedDecimal")
 
 
 def computed(value):
@@ -71,6 +72,12 @@ ComputedDecimal = Annotated[
 
 class DTO(BaseModel):
     model_config = ConfigDict(extra="forbid", from_attributes=True)
+
+    @model_validator(mode="before")
+    @classmethod
+    def safe_text(cls, value):
+        validate_json_strings(value)
+        return value
 
 
 class ProfilePayload(DTO):
@@ -134,7 +141,7 @@ class GoalPayload(DTO):
 
     @model_validator(mode="after")
     def decision_audit(self) -> Self:
-        day = datetime.fromisoformat(self.decided_at).astimezone(ZoneInfo(self.time_zone)).date()
+        day = local_day(self.decided_at, self.time_zone)
         if self.reason == "user_decision":
             if self.correction_of is not None or self.effective_from < day:
                 raise ValueError("New decision must apply today or later and not correct a version")

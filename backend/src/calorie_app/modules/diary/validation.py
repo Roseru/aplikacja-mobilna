@@ -1,7 +1,6 @@
 """Validate normative E0 payloads from wheel resources, including time semantics."""
 
 import json
-from datetime import datetime
 from decimal import Decimal
 from functools import cache
 from importlib.resources import files
@@ -10,6 +9,7 @@ from zoneinfo import ZoneInfo, ZoneInfoNotFoundError
 from jsonschema import Draft202012Validator
 from referencing import Registry, Resource
 
+from calorie_app.core.wire import local_day, validate_json_strings
 from calorie_app.modules.catalog.nutrition import calculate
 from calorie_app.modules.catalog.validation import FORMATS, CatalogValidationError
 
@@ -46,19 +46,26 @@ def validate_payload(payload: dict, definition: str) -> None:
                 exact_types(part)
 
     exact_types(payload)
+    try:
+        validate_json_strings(payload)
+    except ValueError as error:
+        raise DiaryValidationError("invalid_unicode_text") from error
     if next(_validator(definition).iter_errors(payload), None) is not None:
         raise DiaryValidationError("invalid_payload")
     if "time_zone" in payload:
         try:
-            zone = ZoneInfo(payload["time_zone"])
+            ZoneInfo(payload["time_zone"])
         except (ValueError, ZoneInfoNotFoundError) as error:
             raise DiaryValidationError("invalid_time_zone") from error
         if "occurred_at" in payload:
-            local_date = datetime.fromisoformat(payload["occurred_at"]).astimezone(zone).date()
+            try:
+                local_date = local_day(payload["occurred_at"], payload["time_zone"])
+            except ValueError as error:
+                raise DiaryValidationError("local_time_out_of_range") from error
             if local_date.isoformat() != payload["local_date"]:
                 raise DiaryValidationError("local_date_mismatch")
     items = payload["items"] if definition == "Meal" else []
-    if definition == "Weight" and Decimal(payload["weight_kg"]) > 1000:
+    if definition == "Weight" and not 0 < Decimal(payload["weight_kg"]) <= 1000:
         raise DiaryValidationError("weight_range")
     if len({item["item_id"] for item in items}) != len(items):
         raise DiaryValidationError("duplicate_meal_item")

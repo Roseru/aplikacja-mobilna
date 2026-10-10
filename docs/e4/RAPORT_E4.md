@@ -1,5 +1,44 @@
 # Raport synchronizacji E4 - osoba 2
 
+**Aktualny wynik: poprawka czterech uwag osobnego odbioru z 11 października 2026.**
+Kontynuujemy `codex/backend-e4-synchronizacja` / [PR #12](https://github.com/Roseru/aplikacja-mobilna/pull/12),
+bez merge i bez E5. Oceniony head `2cdf513` oraz 885 PASS nie obejmowały
+[potwierdzonych usterek](https://github.com/Roseru/aplikacja-mobilna/pull/12#issuecomment-6102583876).
+Poprawka ma własną regresję autora i niezależnego recenzenta:
+**569 unit + 468 PostgreSQL17.11 + 9 real Keycloak = 1046 PASS**, bez skipów.
+Aktualna niezależna ocena runtime: **9,5/10**, bez istotnych nierozwiązanych uwag.
+Końcowy head/CI poprawki wskazujemy po publikacji i odczycie wszystkich kontroli.
+
+## Poprawka po odbiorze
+
+| Przyczyna | Wynik i dowód |
+|---|---|
+| Decimal z `$` przepuszczał finalny LF; Unicode i strefy nie były w pełni sprawdzone przed pierwszym commit | Normatywny wzorzec sprawdza cały string; DTO pobierają ten sam zasób. NUL/samotne surrogates i overflow 0001/9999 są odrzucane. 26 real HTTP paczek: 422 i identyczny stan wszystkich tabel przed/po; polskie Unicode/emoji, zero/null zachowane |
+| Klient wybierał najpierw 100 operacji, potem sprawdzał bajty | Prefix według dokładnych UTF-8 bajtów całej koperty, wspólnym serializerem pomiaru/HTTP. Domyślny HTTP/CLI wysyła 8 Meal × 100 składników po lostACK/restart; niewybrane pozostają queued, wire/ID/hash/originals niezmienne |
+| Goal recovery zawsze sprawdzało nową oś | Wyjątek tylko dla świadomego recovery z potwierdzonym mapping bieżącego pełnego Context i identycznym żywym Goal targetem. A ACK → B pull/restart → already_applied/ten sam target/oś 1, bez zmiany oryginalnego payloadu |
+| Operator-only LOGIN nie miał CONNECT | Fresh init daje CONNECT; osobny idempotentny psql krok przed upgrade E3 tworzy rolę/login, po upgrade sprawdza ACL. Real LOGIN/CLI działa bez członkostwa API/worker/migratora; DML/DDL/TRUNCATE nadal zabronione |
+
+Migracje **0001–0011 są niezmienione**. Uprawnienie CONNECT jest provisioningiem
+administratora instancji; 0012 nie jest potrzebna. SQLite `mapping_contexts`
+jest addytywna i nie dopisuje fikcyjnego potwierdzenia starym mapowaniom:
+wymagają nowego ukończonego pull. Schematy źródłowe, zasoby wheel, DTO/OpenAPI,
+walidator E0 i przykłady są zgodne. Opublikowane bajty/hash katalogu, Android
+i materiały źródłowe pozostają niezmienne.
+
+Autor i nie-autor najpierw odtworzyli usterki. Recenzent sam wyeksportował
+stary commit, wykonał wszystkie cztery probes, następnie całe 1046 PASS oraz
+dodatkowy realny operator CLI → PKCE → Keycloak confirmation/purge →
+odmowa refresh/staregoJWT A; B/katalog identyczne. [Odbiór poprawki](RECENZJA_O2.md).
+E0: 68 valid/26 invalid/18 scenarios, 16 Decimal/5 completeness; Ruff/format 128,
+OpenAPI/resources, sdist/wheel i installed wheel Python -I poza checkoutem: PASS.
+Prawdziwa późna awaria DB nadal może zachować prefix. Obraz i końcowy head
+wymagają nowego CI; Room/APK/WorkManager i produkcyjny restore pozostają O1/O3.
+
+## Historyczna dostawa z 10 października
+
+Poniższe wyniki opisują wcześniejsze wykonanie i nie są dowodem poprawki
+czterech uwag. Zastępuje je powyższy odbiór poprawionego runtime.
+
 Data: 10 października 2026. Agent 2 / O2. Gałąź:
 `codex/backend-e4-synchronizacja`; baza `fa5684b` po dozwolonym merge
 odebranego PR #11 (head7669f2a, wszystkie pięć jobów finalnego CI success,

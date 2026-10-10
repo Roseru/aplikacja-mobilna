@@ -8,7 +8,12 @@
         "pseudonym": {
           "type": "string",
           "minLength": 1,
-          "maxLength": 80
+          "maxLength": 80,
+          "allOf": [
+            {
+              "$ref": "common.schema.json#/$defs/UnicodeText"
+            }
+          ]
         },
         "height_cm": {
           "anyOf": [
@@ -245,7 +250,12 @@
         "name": {
           "type": "string",
           "minLength": 1,
-          "maxLength": 200
+          "maxLength": 200,
+          "allOf": [
+            {
+              "$ref": "common.schema.json#/$defs/UnicodeText"
+            }
+          ]
         },
         "product": {
           "anyOf": [
@@ -284,7 +294,12 @@
             {
               "type": "string",
               "minLength": 1,
-              "maxLength": 500
+              "maxLength": 500,
+              "allOf": [
+                {
+                  "$ref": "common.schema.json#/$defs/UnicodeText"
+                }
+              ]
             },
             {
               "type": "null"
@@ -335,7 +350,12 @@
         "title": {
           "type": "string",
           "minLength": 1,
-          "maxLength": 200
+          "maxLength": 200,
+          "allOf": [
+            {
+              "$ref": "common.schema.json#/$defs/UnicodeText"
+            }
+          ]
         },
         "occurred_at": {
           "$ref": "common.schema.json#/$defs/Timestamp"
@@ -385,7 +405,12 @@
                 "name": {
                   "type": "string",
                   "minLength": 1,
-                  "maxLength": 200
+                  "maxLength": 200,
+                  "allOf": [
+                    {
+                      "$ref": "common.schema.json#/$defs/UnicodeText"
+                    }
+                  ]
                 }
               },
               "required": [
@@ -471,14 +496,24 @@
         "name": {
           "type": "string",
           "minLength": 1,
-          "maxLength": 200
+          "maxLength": 200,
+          "allOf": [
+            {
+              "$ref": "common.schema.json#/$defs/UnicodeText"
+            }
+          ]
         },
         "brand": {
           "anyOf": [
             {
               "type": "string",
               "minLength": 1,
-              "maxLength": 200
+              "maxLength": 200,
+              "allOf": [
+                {
+                  "$ref": "common.schema.json#/$defs/UnicodeText"
+                }
+              ]
             },
             {
               "type": "null"
@@ -490,7 +525,12 @@
             {
               "type": "string",
               "minLength": 1,
-              "maxLength": 200
+              "maxLength": 200,
+              "allOf": [
+                {
+                  "$ref": "common.schema.json#/$defs/UnicodeText"
+                }
+              ]
             },
             {
               "type": "null"
@@ -531,7 +571,12 @@
             {
               "type": "string",
               "minLength": 1,
-              "maxLength": 500
+              "maxLength": 500,
+              "allOf": [
+                {
+                  "$ref": "common.schema.json#/$defs/UnicodeText"
+                }
+              ]
             },
             {
               "type": "null"
@@ -541,7 +586,12 @@
         "source_description": {
           "type": "string",
           "minLength": 1,
-          "maxLength": 2000
+          "maxLength": 2000,
+          "allOf": [
+            {
+              "$ref": "common.schema.json#/$defs/UnicodeText"
+            }
+          ]
         }
       },
       "required": [
@@ -702,7 +752,12 @@
         "message": {
           "type": "string",
           "minLength": 1,
-          "maxLength": 1000
+          "maxLength": 1000,
+          "allOf": [
+            {
+              "$ref": "common.schema.json#/$defs/UnicodeText"
+            }
+          ]
         },
         "details": {
           "type": "array",
@@ -712,12 +767,22 @@
               "field": {
                 "type": "string",
                 "minLength": 1,
-                "maxLength": 200
+                "maxLength": 200,
+                "allOf": [
+                  {
+                    "$ref": "common.schema.json#/$defs/UnicodeText"
+                  }
+                ]
               },
               "reason": {
                 "type": "string",
                 "minLength": 1,
-                "maxLength": 500
+                "maxLength": 500,
+                "allOf": [
+                  {
+                    "$ref": "common.schema.json#/$defs/UnicodeText"
+                  }
+                ]
               }
             },
             "required": [
