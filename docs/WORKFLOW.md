@@ -20,6 +20,10 @@ flowchart TD
 
 Tablica pracy: **Backlog → Gotowe → W toku → Recenzja → Integracja → Ukończone**. Blokadę oznaczamy wraz z przyczyną i właścicielem następnego kroku. Jedna osoba utrzymuje najwyżej jedno zasadnicze zadanie implementacyjne „W toku”; małe naprawy i zbieranie materiałów mogą przebiegać obok.
 
+### Komunikacja między agentami
+
+Wspólnym dziennikiem przekazania jest [Komunikacja agentów](KOMUNIKACJA_AGENTOW.md). Na początku zadania agent wczytuje aktualny plik i wskazane zmiany dotyczące swojej roli. Po ważnym kroku dopisuje rezultat, commit/PR, zależności i pytania; odbiorca sam potwierdza odczyt oraz odpowiedź. Wpisy zachowują historię, a status planu, recenzji i integracji pozostaje zgodny z tym workflow. Plik nie wysyła automatycznych powiadomień.
+
 ### Kiedy zadanie jest gotowe do rozpoczęcia
 
 - Ma identyfikator, cel użytkowy, przypisanie do etapu i właściciela.
