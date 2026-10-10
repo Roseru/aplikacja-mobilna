@@ -1,10 +1,11 @@
 # Kontrakty E0 i walidacja - osoba 2
 
-Status: **design draft**, lokalny rezultat E0 dla O1/O3. Nie jest działającym API ani oficjalnym katalogiem żywności. [Decyzje i przekazanie](../docs/e0/KONTRAKTY_I_INTEGRACJA.md), [sync](../docs/e0/SYNCHRONIZACJA.md), [źródła](../docs/e0/ZRODLA_KATALOGU.md), [raport odbioru](../docs/e0/ODBIOR.md).
+Status: schematy i przykłady E0 oraz **design draft przyszłych operacji**. Wdrożone operacje health i publiczny katalog E2 opisuje wyłącznie [OpenAPI backendu](../backend/openapi.json), generowane z FastAPI. Przykłady demo opisują kształt payloadów i lokalną integrację; nie stanowią oficjalnego katalogu żywności ani publikacji kanału official. [Decyzje i przekazanie](../docs/e0/KONTRAKTY_I_INTEGRACJA.md), [sync](../docs/e0/SYNCHRONIZACJA.md), [źródła](../docs/e0/ZRODLA_KATALOGU.md), [raport odbioru E0](../docs/e0/ODBIOR.md).
 
 | Ścieżka | Zawartość i status |
 |---|---|
-| [openapi/design-v1.yaml](openapi/design-v1.yaml) | HTTP OpenAPI3.1.1; definicje przez lokalne `$ref`, przykłady i błędy. Od E1 wdrożone operacje przechodzą do artefaktu generowanego z FastAPI |
+| [openapi/design-v1.yaml](openapi/design-v1.yaml) | Przyszłe HTTP OpenAPI3.1.1; definicje przez lokalne `$ref`, przykłady i błędy. Chronione `/products` i `/products/{id}` zostaną podłączone z rzeczywistym OIDC w E3; usługa katalogu jest przygotowana w E2 |
+| [backend/openapi.json](../backend/openapi.json) | Generowane OpenAPI3.1.0 FastAPI: health oraz publiczne `/api/v1/rations`, `/rations/{id}`, `/offline-package/manifest`, `/offline-package/{filename}`. Te operacje zostały usunięte z aktywnego design draft |
 | [schemas/common.schema.json](schemas/common.schema.json) | UUID, daty, IANA, kanoniczne Decimal, ilości i nullable Nutrition |
 | [schemas/domain.schema.json](schemas/domain.schema.json) | Prywatne payloady, snapshot posiłku, cele, kalkulator, zgody i odczyty |
 | [schemas/catalog.schema.json](schemas/catalog.schema.json) | Product/Ration/Source, pełny Package i Manifest; format offline ma własne wersjonowanie |
@@ -36,6 +37,8 @@ uv sync --project tools/contracts --locked --python 3.13 --cache-dir .uv-cache
 
 `uv.lock` przypina także zależności przechodnie. Bez uv lub bibliotek kontrola kończy się błędem; nie pomija testów. Narzędzie technicznie dopuszcza Python3.12–3.13, backend nadal wymaga3.13. W tej sesji wykonano na3.13.9, z uv0.9.5 zainstalowanym lokalnie w ignorowanym `.tools/`; `.venv` i cache nie są artefaktami do wersjonowania. Nie trzeba Docker/PostgreSQL/Keycloak/Gemini.
 
-Kontrola obejmuje OpenAPI i jego przykłady, dialekty, wszystkie lokalne `$ref`, UUID/daty/IANA, oczekiwane odrzucenia, brak osieroconych przykładów, semantykę domeny/katalogu, gzip/hash/manifest, wektory Decimal, struktury scenariuszy sync, linki lokalne i `git diff --check`. Nie wykonuje transakcji serwera, migracji ani kodu Kotlin. Szczegółowy dowód oraz zakres przyszłych testów zawiera raport odbioru.
+Kontrola obejmuje przyszłe OpenAPI3.1.1 i generowane OpenAPI3.1.0, brak podwójnych aktywnych operacji, zachowanie auth produktów w E3 oraz wszystkie przykłady kształtu przeniesionego katalogu. Sprawdza je równolegle względem wygenerowanych response schemas i normatywnych JSON Schema2020-12. Przykład błędu429 pozostaje kontrolą wspólnego formatu błędów przyszłej warstwy limitowania; nie deklaruje wdrożenia tej odpowiedzi w E2. Pobranie wymaga `application/gzip`, właściwego `Content-Length`, ograniczonej nazwy pliku i braku `Content-Encoding`.
+
+Pozostałe kontrole obejmują wszystkie lokalne `$ref`, UUID/daty/IANA, oczekiwane odrzucenia, brak osieroconych przykładów, semantykę domeny/katalogu, gzip/hash/manifest, wektory Decimal, struktury scenariuszy sync, linki lokalne (także backend, E1/E2 i importer referencyjny) oraz `git diff --check`. Ten walidator nie wykonuje transakcji serwera, migracji ani kodu Kotlin; dowody backendu E2 są osobnym wynikiem testów. Szczegółowy dowód E0 oraz zakres przyszłych testów zawiera raport odbioru E0.
 
 Materiał użytkownika pozostaje w [oryginalnym pliku źródłowym](../docs/materialy/racja_wojskowa_S-RG-1.source.json); jego hash kontroluje indeks. Znormalizowany katalog jest oddzielnym przykładem. Zmiana bajtów demo wymaga ponownego przygotowania gzip i manifestu; walidator **nie naprawia** plików w trakcie testu.
