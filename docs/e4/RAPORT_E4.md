@@ -38,7 +38,8 @@ regresje rzeczywistego logu oraz 30 poprzednich testów operatora PASS.
 Root: **600 unit + 501 PostgreSQL 17.11 = 1101 PASS**, bez skip/fail. Ruff/format,
 kontrakty/E0/OpenAPI/resources, wheel/sdist i installed wheel Python -I poza
 checkoutem PASS. Pierwszy lokalny unit miał błędy wspólnego katalogu TEMP;
-powtórzono go z własnym unikalnym basetemp, bez zmian testów/uprawnień systemu.
+powtórzono go z własnym unikalnym basetemp, bez osłabiania testów ani
+poszerzania uprawnień systemu.
 Pierwszy pełny PG miał 499 PASS / 2 FAIL izolacji baz: prywatny skrypt root
 omyłkowo nadał API/worker CONNECT do testowego Keycloak. Poprawiono wyłącznie
 ACL własnego klastra i ponowiono cały zestaw: 501 PASS; testy/provisioning
@@ -50,9 +51,19 @@ lokalność biblioteki, fail-closed przed weryfikatorem, rotacja, Unicode,
 rollback po ALTER, ACL, identyczne wszystkie tabele aplikacji przed/po
 provisioningu E3/0011. **9,5/10, bez nierozwiązanych P1/P2 lub istotnych uwag**.
 [Szczegóły odbioru](RECENZJA_O2.md). W tej poprawce root nie ponawiał lokalnego
-Keycloak ani buildów obrazu; ich dowód musi pochodzić z nowego CI tego head.
-Nie zaliczamy poprzedniego CI jako dowodu nowej poprawki.
-Końcowy commit/CI po publikacji, także po ostatnim raporcie, wskazujemy w PR.
+Keycloak ani buildów obrazu; ich nowy dowód pochodzi z CI poniżej, oddzielnie
+od lokalnego wykonania. Nie zaliczamy poprzedniego CI jako dowodu poprawki.
+
+Poprawka wypchnięta: **`73a2be9ac26132056eeb8b7cef86aea7a6bebc3c`**.
+Odczytano [CI 38095748566](https://github.com/Roseru/aplikacja-mobilna/actions/runs/38095748566):
+**completed/success, wszystkie pięć jobów**. Rzeczywiste logi merge
+`ac4bfbb62ecdb2cfc679ddf1fb16270cd739a006` = head `73a2be9` + main
+`fa5684b3dd0bb420d969104999f85dee247f8184` potwierdzają **600 unit + 501
+PostgreSQL 17.11 + 9 real Keycloak/PKCE/sync/deletion = 1110 PASS**, bez skipów.
+Nowa regresja logu/SCRAM wykonała się na osobnym przypiętym PG17 Docker.
+Ruff/format 134, kontrakty, wheel/sdist, installed wheel -I i oba buildy/smoke
+obrazu PASS. Ostatni commit tego raportu/przekazania ma własny ponowny CI;
+dokładny końcowy head i wynik wskazujemy w PR oraz odpowiedzi po odczycie.
 
 Migracje **0001–0011**, dane, epoka i API są niezmienione. Nowy helper zastępuje
 bezpośrednie psql; idempotencja/rotacja, CONNECT, pre/post upgrade E3 i odmowy
@@ -66,6 +77,8 @@ admina, systemowe środowisko/pamięć, pg_authid/backupy, dodatkowy audyt/proxy
 trace i produkcyjny TLS. Ochrona obejmuje sprawdzone wbudowane kanały PG17;
 nie obiecujemy ukrycia weryfikatora przed administratorem bazy lub systemu.
 Room/APK/WorkManager i produkcyjny restore pozostają odrębną integracją O1/O3.
+Własne procesy testowe zatrzymano; dane, prywatne dowody i zastane materiały
+pozostają zachowane. PR otwarty, niescalony; E5 nie rozpoczęto.
 
 ## Historia odbioru czterech wcześniejszych usterek
 

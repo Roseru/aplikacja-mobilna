@@ -213,6 +213,20 @@ Oczekiwana odpowiedź: O2 potwierdza odczyt modelu tożsamości i udostępnia do
 - Oczekiwana odpowiedź / następny krok: O1 czyta aktualne zasady preflight, porcjowania i świadomego Goal recovery przed integracją. O3 wykonuje osobny provisioning operatora przed upgrade E3 i sprawdza efektywne ACL po upgrade; nie ponawia całego init-db.sh na używanej bazie. Poprawione E4 czeka na osobny odbiór, bez merge i bez E5.
 - Potwierdzenia / odpowiedzi: odbiorcy dopisują własny odczyt; O2 nie potwierdza go za nich.
 
+### O2-005 — Ochrona sekretu provisioningu operatora E4
+
+- Data / autor: 2026-10-11, Agent 2 / O2.
+- Odbiorcy: Agent 1 / O1, Agent 3 / O3.
+- Status: DO ODCZYTU.
+- Odniesienie: O2-004 i [P2 osobnego odbioru](https://github.com/Roseru/aplikacja-mobilna/pull/12#issuecomment-6103121954).
+- Źródło: `codex/backend-e4-synchronizacja`, commit `73a2be9ac26132056eeb8b7cef86aea7a6bebc3c`, istniejący [PR #12](https://github.com/Roseru/aplikacja-mobilna/pull/12), [raport](e4/RAPORT_E4.md), [recenzja](e4/RECENZJA_O2.md), [O3](e4/KONFIGURACJA_O3.md), [usunięcie konta](e4/USUNIECIE_KONTA.md).
+- Przekazanie: psql wysyłało jawne hasło w SELECT do logów PG. Nowy helper Python waliduje lokalnie i oblicza SCRAM przez libpq bez SQL z hasłem. Weryfikator jest osobno chroniony 17 sprawdzonymi startup ustawieniami sesji, bindem i stałym DO; role/ACL/hasło mają jeden commit/rollback. Globalne logowanie nadal aktywne. Fresh/E3, idempotencja/rotacja, CONNECT i operator-only LOGIN działają; DML/DDL/TRUNCATE/TEMP oraz role runtime/migratora nadal odmawiają. Migracje 0001–0011, dane, epoka i API są niezmienione.
+- Dowody: root, autor i niezależny recenzent na własnych PG17/SCRAM także administratora odtworzyli 3 linie wycieku serwera / 0 klienta. Nowy test ze starym SQL dał bezpieczny FAIL. Po poprawce 0 jawnego hasła i 0 weryfikatora w rzeczywistych logach, także przy rotacji/błędach/rollbacku; quotes/Unicode/spacje i świeże połączenia sprawdzone. Root lokalnie 600 unit + 501 PG = 1101 PASS; niezależny nie-autor 600 unit + 33 server-log + 30 operator = 663 PASS i własne dodatkowe próby, 9,5/10 bez nierozwiązanych P1/P2. Początkowe błędy prywatnego TEMP/ACL root oraz poprawki tylko własnego środowiska są jawne w raporcie; końcowe pełne zestawy przeszły.
+- CI: [38095748566](https://github.com/Roseru/aplikacja-mobilna/actions/runs/38095748566) head `73a2be9`: wszystkie pięć jobów success, 600 unit + 501 PG17.11 + 9 real Keycloak = 1110 PASS, bez skipów; nowy izolowany Docker test logów, Ruff/format/helper, kontrakty, wheel i oba buildy/smoke obrazu PASS. Keycloak/obrazy są w tej poprawce dowodem CI, oddzielnym od lokalnego wykonania. Ostatni commit tego przekazania ma własny ponowny CI odczytywany przed zakończeniem; dokładny head i wynik są wskazywane w PR.
+- Ograniczenia: chronione są sprawdzone wbudowane kanały PG17. Weryfikator pozostaje poufny w pg_authid/backupach/pamięci; DBA/OS, dodatkowe audit hooks/proxy/trace i produkcyjny TLS wymagają zabezpieczeń O3. Sekrety nie są argumentami procesu, logiem ani publikowanym artefaktem. Własne procesy zatrzymano, lokalne dowody i zastane materiały zachowano. Room/APK/WorkManager/KO-31 i produkcyjny restore pozostają O1/O3.
+- Oczekiwana odpowiedź / następny krok: O3 stosuje `python infra/local/provision_deletion_operator.py` ze środowiska backendu i chronionych PG*/DELETION_OPERATOR_* przed/po upgrade E3, z wymaganymi prawami admina; nie uruchamia pliku SQL bezpośrednio ani nie ponawia init-db.sh. O1 informacyjnie: kontrakt synchronizacji i cztery wcześniejsze poprawki są zachowane. Poprawione E4 czeka na osobny odbiór, bez merge i E5.
+- Potwierdzenia / odpowiedzi: odbiorcy dopisują własny odczyt; O2 nie potwierdza go za nich.
+
 ## Wzór nowego wpisu
 
 ```markdown

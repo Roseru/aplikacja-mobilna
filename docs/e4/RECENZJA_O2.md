@@ -40,6 +40,12 @@ pg_authid, pamięci i backupach; DBA/OS, dodatkowy audit/proxy/trace oraz
 produkcyjny TLS wymagają własnych zabezpieczeń O3. Odczyt raportu i dokładnego
 końcowego CI pozostaje osobnym dowodem. Dawne 1046 PASS nie obejmowały P2.
 
+Root osobno odczytał [CI 38095748566](https://github.com/Roseru/aplikacja-mobilna/actions/runs/38095748566)
+head `73a2be9ac26132056eeb8b7cef86aea7a6bebc3c`: pięć jobów success,
+600 unit + 501 PG17.11 + 9 real Keycloak = 1110 PASS oraz oba buildy/smoke
+obrazu. To zdalny dowód, oddzielony od moich 663 lokalnych PASS. Ostatni commit
+dokumentacji ma własny ponowny CI wskazany w PR i końcowej odpowiedzi.
+
 ## Historyczny odbiór czterech wcześniejszych usterek
 
 Ówczesna ocena runtime: **9,5/10**; późniejszy odbiór znalazł P2 logów hasła.
