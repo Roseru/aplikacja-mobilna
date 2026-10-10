@@ -8,7 +8,6 @@ the separate Keycloak suite supplies real-provider evidence.
 import json
 import os
 import secrets
-import shutil
 import subprocess
 import sys
 import threading
@@ -26,7 +25,7 @@ from sqlalchemy.exc import DBAPIError, OperationalError
 
 pytestmark = pytest.mark.integration
 ROOT = Path(__file__).resolve().parents[3]
-PROVISION = ROOT / "infra/local/provision-deletion-operator.sql"
+PROVISION = ROOT / "infra/local/provision_deletion_operator.py"
 
 
 def utility(connection, statement, *arguments):
@@ -36,43 +35,29 @@ def utility(connection, statement, *arguments):
 
 
 def provision(url, login, password, *, expect_success=True):
-    executable = os.environ.get("PSQL") or shutil.which("psql")
-    if executable is None:
-        local = ROOT / ".tools/postgresql-17/pgsql/bin/psql.exe"
-        executable = str(local) if local.exists() else None
-    assert executable, "Operator provisioning regression requires PostgreSQL 17 psql"
     parsed = make_url(url)
     environment = os.environ | {
+        "PGHOST": parsed.host or "localhost",
+        "PGPORT": str(parsed.port or 5432),
+        "PGUSER": parsed.username,
+        "PGDATABASE": parsed.database,
         "PGPASSWORD": parsed.password or "",
         "PGCLIENTENCODING": "UTF8",
         "DELETION_OPERATOR_LOGIN": login,
         "DELETION_OPERATOR_PASSWORD": password,
     }
     result = subprocess.run(
-        [
-            executable,
-            "-X",
-            "-w",
-            "--host",
-            parsed.host or "localhost",
-            "--port",
-            str(parsed.port or 5432),
-            "--username",
-            parsed.username,
-            "--dbname",
-            parsed.database,
-            "--file",
-            str(PROVISION),
-        ],
+        [sys.executable, str(PROVISION)],
         env=environment,
         capture_output=True,
         encoding="utf-8",
         errors="replace",
         timeout=30,
     )
-    assert password not in result.stdout + result.stderr
+    client_secret_leaked = bool(password and password in result.stdout + result.stderr)
+    assert not client_secret_leaked, "Provisioner client output leaked a secret"
     if expect_success:
-        assert result.returncode == 0, result.stdout + result.stderr
+        assert result.returncode == 0, "Operator provisioning failed (output withheld)"
     else:
         assert result.returncode != 0
     return result
@@ -161,23 +146,15 @@ def operator_installation(request):
                     {"id": uuid4(), "owner": owner},
                 )
                 before = snapshot(connection)
-        # First reproduce the actual failure with a real LOGIN, never SET ROLE.
+        # A real authenticated LOGIN must still be denied without CONNECT.
+        # Use the protected helper to create the password, then remove the ACL.
+        provision(url, login, password)
         with engine.begin() as connection:
             utility(
                 connection,
-                "CREATE ROLE {} LOGIN NOSUPERUSER NOCREATEDB NOCREATEROLE",
-                sql.Identifier(login),
+                "REVOKE CONNECT ON DATABASE {} FROM calorie_app_deletion_operator",
+                sql.Identifier(database_name),
             )
-            connection.exec_driver_sql("SET LOCAL password_encryption='scram-sha-256'")
-            # Authenticate successfully before probing the missing CONNECT ACL,
-            # including CI clusters whose host rule requires SCRAM.
-            with connection.connection.driver_connection.cursor() as cursor:
-                cursor.execute(
-                    sql.SQL("ALTER ROLE {} PASSWORD {}").format(
-                        sql.Identifier(login), sql.Literal(password)
-                    )
-                )
-            utility(connection, "GRANT calorie_app_deletion_operator TO {}", sql.Identifier(login))
             assert not connection.scalar(
                 text("SELECT has_database_privilege(:login,current_database(),'CONNECT')"),
                 {"login": login},
@@ -305,7 +282,7 @@ def test_provisioning_creates_new_login_and_rejects_overprivileged_login(operato
         with engine.begin() as connection:
             utility(connection, "GRANT calorie_app_api TO {}", sql.Identifier(login))
         denied = provision(url, login, password, expect_success=False)
-        assert "unexpected privileges or memberships" in denied.stderr
+        assert denied.stderr.strip() == "provisioning_failed"
     finally:
         with engine.begin() as connection:
             utility(connection, "DROP ROLE IF EXISTS {}", sql.Identifier(login))

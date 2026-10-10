@@ -18,23 +18,67 @@ Przed upgrade do 0011 administrator instancji (z prawem zarządzania rolami,
 odrębny od migratora/runtime) wykonuje poniższy krok w docelowej `calorie_app`.
 PUBLIC CONNECT musi być odebrany, jak w provisioningu E3. Połączenie admina
 pochodzi z chronionego PG* środowiska/pgpass; nie wpisuj sekretu w argumenty.
+Helper wymaga Python 3.13 i psycopg ze środowiska backendu według uv.lock,
+serwera PostgreSQL 17 z kodowaniem UTF8 oraz uprawnień admina do zarządzania
+rolami/prawami bazy i ustawienia ochronnych parametrów sesji. Runtime i migrator
+nie otrzymują tych uprawnień. Bez wymaganych narzędzi lub ochrony jest błąd.
 `DELETION_OPERATOR_LOGIN` i `DELETION_OPERATOR_PASSWORD` dostarcza menedżer
 sekretów poza repozytorium. Login jest osobny, niesuperuserski, członek wyłącznie
-roli operatora. Skrypt konfiguruje SCRAM i bezpiecznie ponawia te same kroki.
+roli operatora. Nazwa ma 1–63 bajty UTF-8, a hasło musi być niepuste; helper
+sprawdza je lokalnie, nie przycina i nie normalizuje. NUL/niekodowalny Unicode
+jest odrzucany. SASLprep i jego fallback wykonuje libpq, zgodnie z PostgreSQL.
+Używaj nowego helpera, nie uruchamiaj pliku SQL bezpośrednio przez psql.
 
 ```text
-psql -X -w --dbname calorie_app --file infra/local/provision-deletion-operator.sql
+python infra/local/provision_deletion_operator.py
 alembic -c backend/alembic.ini upgrade head
-psql -X -w --dbname calorie_app --file infra/local/provision-deletion-operator.sql
+python infra/local/provision_deletion_operator.py
 ```
 
 Pierwsze/ostatnie polecenie wykonuje administrator; środkowe migrator ze swoim
-DATABASE_URL. Przed 0011 skrypt tworzy brakującą NOLOGIN rolę i odrębny login,
+DATABASE_URL. Python pochodzi ze środowiska backendu; admin dostarcza standardowe
+PGHOST/PGPORT/PGDATABASE/PGUSER i chroniony PGPASSFILE/PGSERVICE lub PGPASSWORD.
+PGDATABASE wskazuje docelową calorie_app. Helper nie przyjmuje sekretów/DSN
+w argumentach. Przed 0011 skrypt tworzy brakującą NOLOGIN rolę i odrębny login,
 daje CONNECT; po upgrade dodatkowo sprawdza USAGE, SELECT job i EXECUTE trzech
 operatorowych funkcji. Nie nadaje nowych praw tabel, CREATE/TEMP/TRUNCATE,
 migratora ani członkostwa API/worker. Przy nieoczekiwanych efektywnych prawach
 kończy się błędem i rollbackiem. Hasło jest celowo ustawiane/rotowane przy każdym
 uruchomieniu; nie są zmieniane dane aplikacji ani epoka.
+
+## Ochrona hasła i weryfikatora operatora
+
+Poprzednie SELECT length/format wysyłały jawne hasło do serwera. ECHO/QUIET
+psql i password_encryption nie chroniły logów SQL; odtworzono trzy linie wycieku
+przy log_statement=all i log_min_duration_statement=0, mimo czystego wyjścia
+klienta. Helper używa [PQencryptPasswordConn](https://www.postgresql.org/docs/17/libpq-misc.html)
+przez psycopg z jawnym algorytmem scram-sha-256. Weryfikator powstaje lokalnie;
+jawne hasło nie trafia do żadnego SQL, również walidacji przed transakcją.
+
+Od zestawienia połączenia helper narzuca i sprawdza ochronne startup options:
+log_statement=none, log_duration=off, oba limity duration=-1, obie częstotliwości
+sampling=0, log_min_error_statement=panic, oba limity parametrów=0,
+log_min_messages=panic, log_error_verbosity=terse, statystyki SQL i
+track_activities=off oraz search_path=pg_catalog,pg_temp. Wszystkie 17 ustawień
+są sprawdzane; brak zgodności kończy pracę przed przekazaniem weryfikatora.
+PGOPTIONS/opcje service nie mogą przywrócić logowania tej sesji. Globalne
+ustawienia instancji i innych połączeń pozostają bez zmian. Komunikat klienta
+jest stały, bez surowych wyjątków, parametrów, DSN lub treści SQL.
+
+Weryfikator również jest poufny. Jest przekazywany jako parametr do lokalnego
+ustawienia transakcji; stały DO ustawia hasło po kontroli ACL, przed wspólnym
+commit. Parametryzacja sama nie chroni logów — konieczne są sprawdzone opcje
+tej sesji. Regresja czyta rzeczywisty log serwera z włączonym logowaniem,
+sprawdza osobno jawny sekret i zapisany weryfikator, także rotację i rollback.
+Zwykłe połączenie kontrolne nadal zapisuje zapytania do tego samego logu.
+
+Ochrona obejmuje sprawdzone wbudowane kanały [PostgreSQL 17](https://www.postgresql.org/docs/17/runtime-config-logging.html).
+Nie daje gwarancji wobec niezależnych hooków/rozszerzeń audytu, proxy lub trace
+libpq. O3 musi zweryfikować te elementy przed uruchomieniem. Weryfikator
+pozostaje w pg_authid, pamięci procesów i chronionych kopiach bazy; administrator
+bazy ma do niego dostęp. Sekrety środowiska/pamięci procesu także wymagają
+ochrony systemowej. Połączenie poza loopback wymaga zaufanego TLS z verify-full
+i właściwym certyfikatem CA. Testy loopback nie dowodzą produkcyjnego TLS.
 
 DELETION_DATABASE_URL wskazuje ten rzeczywisty login, nie administracyjne
 połączenie z SET ROLE. Odbiór obejmuje jego actual CONNECT, begin/status/resume,

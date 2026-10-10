@@ -20,6 +20,13 @@ Operator musi mieć również rzeczywisty CONNECT do `calorie_app`, po odebraniu
 PUBLIC CONNECT. Dla istniejącego E3 użyj idempotentnego kroku
 [provisioningu O3](KONFIGURACJA_O3.md), przed upgrade tworząc brakującą rolę,
 a po nim sprawdzając efektywne uprawnienia. Nie ponawiaj całego init-db.sh.
+Uruchamiaj `python infra/local/provision_deletion_operator.py` ze środowiska
+backendu i chronionych PG*/DELETION_OPERATOR_*; plik SQL nie jest samodzielnym
+interfejsem. Helper oblicza SCRAM lokalnie przez libpq i chroni sesję przed
+wbudowanym logowaniem SQL/parametrów. Jawne hasło oraz weryfikator nie mogą
+być argumentami procesu ani wpisem w logu. Weryfikator w pg_authid/backupie
+pozostaje poufny; dodatkowy audyt/proxy/trace oraz produkcyjny TLS weryfikuje
+O3 według powyższej instrukcji.
 
 ```json
 [{"issuer":"https://identity.example/realms/calorie",

@@ -1,12 +1,81 @@
 # Raport synchronizacji E4 - osoba 2
 
-**Aktualny wynik: poprawka czterech uwag osobnego odbioru z 11 października 2026.**
+## Poprawka bezpieczeństwa provisioningu operatora
+
+Data: 11 października 2026. Kontynuacja `codex/backend-e4-synchronizacja` /
+[PR #12](https://github.com/Roseru/aplikacja-mobilna/pull/12), bez merge i E5.
+[Osobny odbiór](https://github.com/Roseru/aplikacja-mobilna/pull/12#issuecomment-6103121954)
+head `c9bdac066bb5220abb013edae1228f77fa80e2dd` potwierdził poprzednie cztery
+poprawki i znalazł P2: jawne hasło operatora w logu SQL. Dawne 1046 PASS nie
+obejmowały tej regresji. Poniższy odbiór bezpieczeństwa zastępuje tamtą ocenę
+w zakresie provisioningu; wcześniejsze wyniki zachowano jako historię.
+
+Root, autor i niezależny recenzent odtworzyli stary SQL na osobnych PostgreSQL
+17.11 z SCRAM dla wszystkich połączeń, również administratora. Provisioning
+działał, klient nie ujawniał sekretu, ale jawne testowe hasło wystąpiło w
+**3 liniach logu serwera**. Nowa regresja uruchomiona ze starą prywatną kopią
+SQL dała bezpieczny FAIL wykrywający log serwera, bez sekretu w komunikacie.
+
+Nowy `infra/local/provision_deletion_operator.py` waliduje konfigurację lokalnie
+bez trim/normalizacji i oblicza SCRAM przez rzeczywiste libpq
+PQencryptPasswordConn z jawnym algorytmem. Własne kontrolne połączenie z aktywnym
+logowaniem wykazało **0 nowych SQL podczas tego wywołania**. SQL nie otrzymuje
+jawnego hasła nawet przed BEGIN. Role/ACL w dotychczasowym pliku SQL oraz
+ustawienie weryfikatora należą do jednej transakcji. Weryfikator jest poufnym
+parametrem lokalnego GUC, a stały DO ustawia go po sprawdzeniu ACL.
+
+Ochronę 17 ustawień sesji narzucono przy zestawieniu połączenia i sprawdzono
+przed przekazaniem weryfikatora: statement/duration/sampling/error/parameter
+logging, diagnostyka/statystyki, track_activities i bezpieczny search_path.
+Nie wyłączono logowania instancji ani testu: zwykła kontrolna sesja nadal
+logowała do tego samego pliku. Po poprawce **0 jawnego hasła i 0 weryfikatora
+w logu serwera oraz klienta**, także dla powtórzeń, rotacji, błędów i rollbacku
+po rzeczywistym ALTER. Komunikaty błędów nie zawierają surowych wyjątków/DSN.
+
+Autor: 31 nowych unit PASS, własne realne logi/SCRAM/Unicode/quotes/spaces,
+rotacja, odmowa starego/błędnego hasła i rollback PASS. Autor testów: 33 nowe
+regresje rzeczywistego logu oraz 30 poprzednich testów operatora PASS.
+Root: **600 unit + 501 PostgreSQL 17.11 = 1101 PASS**, bez skip/fail. Ruff/format,
+kontrakty/E0/OpenAPI/resources, wheel/sdist i installed wheel Python -I poza
+checkoutem PASS. Pierwszy lokalny unit miał błędy wspólnego katalogu TEMP;
+powtórzono go z własnym unikalnym basetemp, bez zmian testów/uprawnień systemu.
+Pierwszy pełny PG miał 499 PASS / 2 FAIL izolacji baz: prywatny skrypt root
+omyłkowo nadał API/worker CONNECT do testowego Keycloak. Poprawiono wyłącznie
+ACL własnego klastra i ponowiono cały zestaw: 501 PASS; testy/provisioning
+aplikacji pozostają niezmienione. Nie zaliczamy pierwszych nieudanych prób jako PASS.
+
+Niezależny nie-autor: **600 unit + 33 server-log + 30 operator LOGIN/CLI/ACL
+= 663 PASS**, plus własne powtórzone próby na osobnym SCRAM klastrze:
+lokalność biblioteki, fail-closed przed weryfikatorem, rotacja, Unicode,
+rollback po ALTER, ACL, identyczne wszystkie tabele aplikacji przed/po
+provisioningu E3/0011. **9,5/10, bez nierozwiązanych P1/P2 lub istotnych uwag**.
+[Szczegóły odbioru](RECENZJA_O2.md). W tej poprawce root nie ponawiał lokalnego
+Keycloak ani buildów obrazu; ich dowód musi pochodzić z nowego CI tego head.
+Nie zaliczamy poprzedniego CI jako dowodu nowej poprawki.
+Końcowy commit/CI po publikacji, także po ostatnim raporcie, wskazujemy w PR.
+
+Migracje **0001–0011**, dane, epoka i API są niezmienione. Nowy helper zastępuje
+bezpośrednie psql; idempotencja/rotacja, CONNECT, pre/post upgrade E3 i odmowy
+DML/DDL/TRUNCATE są zachowane. Test logów wykonuje się w pełnym CI integration,
+na własnym PG17 z logging_collector i SCRAM również administratora; brak narzędzia
+jest FAIL. Linux używa przypiętego obrazu PG17, Windows własnych binariów i
+unikalnych danych/portów. Żadne sekretne logi/verifiery nie są publikowane.
+
+O3 stosuje [nowe przetestowane polecenia](KONFIGURACJA_O3.md), weryfikuje prawa
+admina, systemowe środowisko/pamięć, pg_authid/backupy, dodatkowy audyt/proxy/
+trace i produkcyjny TLS. Ochrona obejmuje sprawdzone wbudowane kanały PG17;
+nie obiecujemy ukrycia weryfikatora przed administratorem bazy lub systemu.
+Room/APK/WorkManager i produkcyjny restore pozostają odrębną integracją O1/O3.
+
+## Historia odbioru czterech wcześniejszych usterek
+
+**Wynik poprzedniej poprawki czterech uwag z 11 października 2026.**
 Kontynuujemy `codex/backend-e4-synchronizacja` / [PR #12](https://github.com/Roseru/aplikacja-mobilna/pull/12),
 bez merge i bez E5. Oceniony head `2cdf513` oraz 885 PASS nie obejmowały
 [potwierdzonych usterek](https://github.com/Roseru/aplikacja-mobilna/pull/12#issuecomment-6102583876).
 Poprawka ma własną regresję autora i niezależnego recenzenta:
 **569 unit + 468 PostgreSQL17.11 + 9 real Keycloak = 1046 PASS**, bez skipów.
-Aktualna niezależna ocena runtime: **9,5/10**, bez istotnych nierozwiązanych uwag.
+Ówczesna ocena runtime: **9,5/10**; nie obejmowała później wykrytej P2 logów.
 Commit runtime poprawki: `080ef076f7affd4e0a08e45515eb5128c179abe9`;
 poprawiona fixture: `10232289b039256dec3db1796cb72ac01d1f1d93`.
 Odczytano [CI 38092517302](https://github.com/Roseru/aplikacja-mobilna/actions/runs/38092517302)

@@ -1,43 +1,17 @@
--- Run with psql -X -w -d calorie_app -f this-file as a database/role administrator.
--- Run before upgrading an existing E3 installation to 0011, then again after
--- upgrade to verify effective function/table privileges. No schema/data changes.
--- Supply DELETION_OPERATOR_LOGIN and DELETION_OPERATOR_PASSWORD externally.
--- Password rotation is intentional on each run; never pass secrets with -v.
-\set ON_ERROR_STOP on
-\set ECHO none
-\set QUIET on
-\getenv operator_login DELETION_OPERATOR_LOGIN
-\getenv operator_password DELETION_OPERATOR_PASSWORD
-\if :{?operator_login}
-\else
-  \echo DELETION_OPERATOR_LOGIN must be supplied externally
-  \quit 3
-\endif
-\if :{?operator_password}
-\else
-  \echo DELETION_OPERATOR_PASSWORD must be supplied externally
-  \quit 3
-\endif
-SELECT octet_length(:'operator_login') BETWEEN 1 AND 63
-       AND length(:'operator_password') > 0 AS configuration_present \gset
-\if :configuration_present
-\else
-  \echo Operator login/password configuration is empty or invalid
-  \quit 3
-\endif
-
-BEGIN;
-SET LOCAL password_encryption='scram-sha-256';
+-- Executed by provision_deletion_operator.py, never directly by psql.
+-- This file contains role/ACL provisioning only, with no password or verifier.
+-- The helper supplies the validated login as a transaction-local setting,
+-- runs these checks, then sets a locally generated SCRAM verifier and commits
+-- everything together. Run before E3 upgrade to 0011 and again afterwards.
 SELECT pg_advisory_xact_lock(hashtextextended('calorie-app-deletion-provision', 0));
-SELECT set_config('calorie.operator_login', :'operator_login', true);
-SELECT 'CREATE ROLE calorie_app_deletion_operator NOLOGIN NOSUPERUSER '
-       'NOCREATEDB NOCREATEROLE NOINHERIT NOREPLICATION NOBYPASSRLS'
-WHERE NOT EXISTS (SELECT 1 FROM pg_roles WHERE rolname='calorie_app_deletion_operator')
-\gexec
 
 DO $$
 DECLARE login_name text := current_setting('calorie.operator_login');
 BEGIN
+  IF NOT EXISTS (SELECT 1 FROM pg_roles WHERE rolname='calorie_app_deletion_operator') THEN
+    CREATE ROLE calorie_app_deletion_operator NOLOGIN NOSUPERUSER
+      NOCREATEDB NOCREATEROLE NOINHERIT NOREPLICATION NOBYPASSRLS;
+  END IF;
   IF login_name IN ('calorie_app_deletion_operator', 'calorie_app_api',
                     'calorie_app_worker', 'calorie_app_migrator', 'keycloak')
      OR login_name ~ '^pg_' THEN
@@ -64,21 +38,15 @@ BEGIN
                AND a.privilege_type='CONNECT') THEN
     RAISE EXCEPTION 'Revoke PUBLIC CONNECT on the target database before provisioning';
   END IF;
+  IF NOT EXISTS (SELECT 1 FROM pg_roles WHERE rolname=login_name) THEN
+    EXECUTE format('CREATE ROLE %I LOGIN INHERIT NOSUPERUSER NOCREATEDB '
+                   'NOCREATEROLE NOREPLICATION NOBYPASSRLS', login_name);
+  END IF;
+  EXECUTE format('GRANT calorie_app_deletion_operator TO %I '
+                 'WITH INHERIT TRUE, SET TRUE, ADMIN FALSE', login_name);
+  EXECUTE format('GRANT CONNECT ON DATABASE %I TO calorie_app_deletion_operator',
+                 current_database());
 END $$;
-
-SELECT format('CREATE ROLE %I LOGIN INHERIT NOSUPERUSER NOCREATEDB '
-              'NOCREATEROLE NOREPLICATION NOBYPASSRLS', :'operator_login')
-WHERE NOT EXISTS (SELECT 1 FROM pg_roles WHERE rolname=:'operator_login')
-\gexec
-SELECT format('ALTER ROLE %I LOGIN INHERIT PASSWORD %L',
-              :'operator_login', :'operator_password')
-\gexec
-SELECT format('GRANT calorie_app_deletion_operator TO %I '
-              'WITH INHERIT TRUE, SET TRUE, ADMIN FALSE', :'operator_login')
-\gexec
-SELECT format('GRANT CONNECT ON DATABASE %I TO calorie_app_deletion_operator',
-              current_database())
-\gexec
 
 DO $$
 DECLARE login_name text := current_setting('calorie.operator_login');
@@ -121,8 +89,3 @@ BEGIN
     RAISE EXCEPTION 'API/worker must not be operator members';
   END IF;
 END $$;
-COMMIT;
-SELECT current_database() AS database_name, :'operator_login' AS operator_login,
-       true AS connect_verified,
-       to_regprocedure('app.begin_account_deletion(uuid,uuid,integer)') IS NOT NULL
-         AS deletion_functions_verified;

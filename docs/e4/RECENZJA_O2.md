@@ -1,8 +1,48 @@
 # Niezależny odbiór E4 - osoba 2
 
-## Ponowny odbiór poprawki 11 października 2026
+## Odbiór poprawki bezpieczeństwa provisioningu 11 października 2026
 
-Aktualna ocena runtime: **9,5/10**, brak istotnych nierozwiązanych usterek.
+Recenzent `e4_fix_review` nie jest autorem helpera, SQL, testów ani dokumentów.
+Sam zachował stary SQL z `c9bdac0` i odtworzył **3 linie jawnego sekretu w logu
+serwera, 0 w kliencie** na osobnym PG17.11 z SCRAM również dla admina.
+Statement/duration/sampling/transaction/error/parameter logging było aktywne.
+
+Sam przeanalizował i wykonał poprawkę po ostatnim hardeningu 17 startup GUC:
+lokalna walidacja bez normalizacji, rzeczywiste PQencryptPasswordConn z jawnym
+SCRAM, bind weryfikatora i stały DO, wspólna transakcja role/ACL/hasło.
+Na niechronionej kontrolnej sesji samo wyliczenie SCRAM dawało **0 SQL**;
+algorithm=None był dodatnią kontrolą SQL. PQtrace na użytym Windows binary
+nie było obsługiwane, więc dowód stanowi rzeczywisty log serwera.
+
+Własne powtórzenia/rotacja i nowe niepoolowane połączenia przyjmowały nowe
+hasło, odrzucały stare/błędne. Apostrofy, quotes, Unicode, spacje na początku/końcu
+i quoted Unicode LOGIN działały. Na E3 oraz po upgrade do 0011 wszystkie
+tabele i epoka były identyczne przed/po uruchomieniu helpera. Rollback przy
+błędzie ACL oraz własna
+prywatna kopia z awarią po ALTER przed commit przywracały poprzedni weryfikator
+i logowanie. W kodzie produkcyjnym nie ma testowego przełącznika awarii.
+Rzeczywisty operator-only LOGIN/CLI działał; private SELECT/DML, DDL/TEMP,
+TRUNCATE i SET ROLE API/worker/migratora odmawiały. Brak prawa SET admina
+kończył się przed przekazaniem weryfikatora lub zmianą roli.
+
+**0 trafień nowego jawnego hasła i 0 weryfikatora w serwerze/kliencie**, także
+startupu, błędu i rollbacku; globalne logi nadal aktywne, kontrolne sesje piszą
+do tego samego logu. Własna nowa regresja recenzenta: **600 unit + 33 real
+PG server-log + 30 poprzednich real LOGIN/CLI/ACL = 663 PASS**, bez skip/fail.
+Nie jest to deklaracja wykonania przez recenzenta całych 501 testów PG.
+Ruff/format/helper i diff check PASS; instrukcje O3/usunięcia są zgodne.
+
+**9,5/10, brak nierozwiązanych P1/P2 lub istotnych uwag.** Uzasadnienie:
+odtworzona przyczyna, brak jawnego hasła w SQL, sprawdzona biblioteka,
+osobno wykazana ochrona weryfikatora i zachowana rotacja/transakcja/ACL/dane.
+Ochrona dotyczy wbudowanych kanałów PG17. Weryfikator pozostaje poufny w
+pg_authid, pamięci i backupach; DBA/OS, dodatkowy audit/proxy/trace oraz
+produkcyjny TLS wymagają własnych zabezpieczeń O3. Odczyt raportu i dokładnego
+końcowego CI pozostaje osobnym dowodem. Dawne 1046 PASS nie obejmowały P2.
+
+## Historyczny odbiór czterech wcześniejszych usterek
+
+Ówczesna ocena runtime: **9,5/10**; późniejszy odbiór znalazł P2 logów hasła.
 Recenzent `e4_fix_review` nie jest autorem ocenianych plików. Sam wyeksportował
 stary `2cdf513` i odtworzył wszystkie cztery usterki na osobnej PostgreSQL17.11,
 dwóch SQLite i rzeczywistym HTTP. Decimal/Unicode zostawiały prefix, daty500;
