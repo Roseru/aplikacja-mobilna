@@ -31,7 +31,7 @@ Stan odczytany przez O1, 10 października 2026 r. Każda osoba aktualizuje swój
 
 | Rola | Ostatni znany rezultat | Następny krok / zależność | Źródło |
 |---|---|---|---|
-| O1 — Android, Kotlin, Room | Android 0.3.0; lokalny dziennik, racje DEMO, prywatne produkty, profil, waga i kompletność dnia; Room 3. Kod w PR, jeszcze poza `main` | Android 0.4 w walidacji: importer E2, BigDecimal i Room 4; 39 testów jednostkowych i 25/26 urządzenia w ostatnim przebiegu. Następnie analityka 7/30/90 dni | [PR #1](https://github.com/Roseru/aplikacja-mobilna/pull/1), commit `a7bcda8` |
+| O1 — Android, Kotlin, Room | Android 0.4.0 opublikowany: importer E2, BigDecimal, pełne snapshoty i Room 4; zachowany lokalny dziennik, profil, waga oraz outbox. Kod w PR, jeszcze poza `main` | Recenzja i odbiór; O3 podłącza Android do CI i ustala dostawę APK. Następnie analityka 7/30/90 dni | [PR #1](https://github.com/Roseru/aplikacja-mobilna/pull/1), commit `20f474e`; wynik O1-005 |
 | O2 — Python, PostgreSQL, API | E1 na `main` (`a79b073`); E2 przekazane na gałęzi. Stan E2 pochodzi z odczytu O1, nie z potwierdzenia autora w tym dzienniku | Odbiór i publikacja E2 według workflow; osobna integracja Room/APK po stronie O1 | [Przekazanie E2](https://github.com/Roseru/aplikacja-mobilna/blob/229a2b8/docs/e2/INTEGRACJA_O1.md), commit `229a2b8` |
 | O3 — DevOps, CI/CD, serwer | Przeniesiono trzy wpisy Agenta 3 z main 151885d: wspólna tablica, materiały MRE 2026 i synchronizacja stanowiska. Wpisy nie potwierdzają jeszcze CI Androida | Potwierdzenie stanu CI Androida, środowiska integracyjnego i dostawy pakietów | [Workflow zespołu](WORKFLOW.md), [CI backendu](../.github/workflows/backend.yml) |
 
@@ -89,6 +89,18 @@ Na polecenie właściciela przenoszę komunikację do tego pliku, zachowując ws
 Dowody w chwili wpisu: 39 testów jednostkowych zaliczonych, w tym 16 wspólnych wektorów nutrition_v1. Ostatni pełny przebieg emulatora API 35 w trybie samolotowym zaliczył 25 z 26 przypadków; trwa poprawka próby rzeczywistego SQLITE_FULL. Przeszły migracje 1/2/3 → 4, aktualizacja katalogu bez zmiany historii, restart, konflikty rewizji, spóźniona aktywacja i pięć przepływów UI. Android MergeAssets rozpakowywał `.gz`; fizyczny asset `.gz.bin` zachowuje dokładnie 3099 B i SHA-256 `65f4aae8002fd5522d0edb4689e05682103b80fbe3e6dbc68f4bf02c645b2bef` wewnątrz APK, a manifest zachowuje logiczny path `.gz`.
 
 Wczytano też aktualizację E2 `52f3547` z 10 października: nie normalizujemy bajtów przed hashem, daty z 1–6 cyframi ułamka sekund przechodzą testy. To informacja o pracy w toku; pełny wynik, commit i APK zostaną przekazane po walidacji. Brak kont, HTTP i rzeczywistego sync; outbox pozostaje formatem lokalnym. Do O3 pozostaje podłączenie komend Androida z instrukcji do CI; dotychczasowe wpisy O3 nie potwierdzają wykonania tego kroku.
+
+### 2026-10-10 — Agent 1 — WYKONANE — O1-005
+
+**Agent 1:** Do: Agent 2 / O2, Agent 3 / O3. Status: **DO ODCZYTU**. Odniesienie: O1-001, O1-002 i O1-004. Android 0.4.0 opublikowany na `codex/android-offline-racje`, commit [`20f474e146463a543df20e5c10baadaf6585cc4e`](https://github.com/Roseru/aplikacja-mobilna/commit/20f474e146463a543df20e5c10baadaf6585cc4e), [PR #1](https://github.com/Roseru/aplikacja-mobilna/pull/1). Źródłem zakresu, komend i ograniczeń są [instrukcja](https://github.com/Roseru/aplikacja-mobilna/blob/20f474e/android/README.md) oraz [raport 0.4](https://github.com/Roseru/aplikacja-mobilna/blob/20f474e/android/RAPORT_0_4.md).
+
+Wynik: pakiet E2 z `229a2b8` jest sprawdzany i importowany z APK bez konta/sieci; staging i aktywacja są oddzielne, ponowienia idempotentne. Nowe spożycia utrwalają pełny snapshot i dokładne ilości/obliczenia BigDecimal z jawnymi brakami. Room 1/2/3 → 4 zachowuje dotychczasowe dane, tombstones i kolejkę. Wczytano także przekazanie E2 `52f3547`; MRE 2026 pozostaje materiałem źródłowym do osobnego pakietu.
+
+Dowody: build, 39 testów JVM i lint 0 błędów / 26 ostrzeżeń. Zaliczono 26 różnych przypadków urządzenia API 35: 25 w pełnym przebiegu oraz ostatni test rzeczywistego SQLiteFullException w osobnym powtórzeniu po poprawieniu konfiguracji próby. Testowa instalacja jest oddzielna; tryb samolotowy przed pierwszym startem. Zainstalowano APK 0.4 jako aktualizację i ręcznie potwierdzono ekran dziennika. SHA-256 APK: `d068c190ed068b7d2e91607d7e770e3a7a18f82b4c0e49ea8379b8ffbf5d12e2`; lokalny artefakt `output-apk/Racje-i-kalorie-0.4.0-debug.apk` pozostaje poza Git.
+
+Ograniczenia: nie testowano zabicia procesu w otwartej transakcji ani pobierania official przez HTTPS; pełny KO-30 wymaga dalszych prób. Brak kont, Gemini i rzeczywistego sync. Outbox pozostaje lokalny; adapter ilości E0 ma obsłużyć limit 6 miejsc przy lokalnych porcjach do 12. Stare REAL, prywatne produkty, profil i masa zachowują wcześniejszy format. Nie potwierdzono zdalnego CI ani recenzji/scalenia.
+
+Oczekiwana odpowiedź: O2 aktualizuje bazę odniesienia przekazania do Androida 0.4 / Room 4 i potwierdza odczyt modelu; O3 potwierdza podłączenie komend Gradle oraz sposób dostawy APK z wersją/commitem/SHA. O1 dalej przygotowuje analitykę 7/30/90 dni. Zasady gałęzi `codex/<obszar>-<krótki-temat>`, commitów `agent N: ...` i pracy przez PR są w `AGENTS.md`, opublikowane w [PR #5](https://github.com/Roseru/aplikacja-mobilna/pull/5), commit `dd47961`; przed użyciem odczytajcie je z tej gałęzi, dopóki PR nie zostanie scalony.
 
 ## Wzór nowego wpisu
 
