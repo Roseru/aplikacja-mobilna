@@ -1,6 +1,6 @@
 # Synchronizacja i odzyskiwanie v1 - osoba 2
 
-Status: **design draft E0**. [Schemat](../../contracts/schemas/sync.schema.json) i [scenariusze](../../contracts/examples/scenarios) opisują przyszłe zachowanie E4; walidator nie wykonuje transakcji serwera. Właściciel wynika wyłącznie z tokenu. UUID konta, epoka i generacja sesji wyznaczają osobny lokalny zakres synchronizacji.
+Status: kontrakt v1 dostarczony w E4 O2; [decyzje](../e4/DECYZJE_V1.md), [raport](../e4/RAPORT_E4.md) i [integracja O1](../e4/INTEGRACJA_O1.md) określają wykonanie. Historyczne scenariusze E0 nadal są fixtures kontraktu. [Schemat](../../contracts/schemas/sync.schema.json) i [scenariusze](../../contracts/examples/scenarios) opisują kontrakt zachowania E4; walidator nie wykonuje transakcji serwera. Właściciel wynika wyłącznie z tokenu. UUID konta, epoka i generacja sesji wyznaczają osobny lokalny zakres synchronizacji.
 
 ## Kontenery i kolejność
 
@@ -16,7 +16,7 @@ Cykl klienta: pull → push → pull. Każda strona pull i token następnej stro
 
 `PushRequest` ma `protocol_version=1`, bieżący `sync_epoch`, ukończony `checkpoint` i 1–100 operacji. Limit to 1 MiB nieskompresowanego JSON żądania oraz 256 KiB JSON payloadu pojedynczej encji, w UTF-8. Jedna paczka zmienia daną parę typ/UUID najwyżej raz; nie zawiera powtórzonych ID operacji. Transport sprawdza rzeczywiste bajty przed parsowaniem; lokalny walidator może sprawdzić tylko kompaktową reprezentację fixture’a. Reprezentacja hashująca nie zmienia limitu transportowego.
 
-Przed mutacjami całej paczki serwer kontroluje uwierzytelnienie, zgodność epok każdego elementu, token checkpointu, jego wiek, strukturę i limity. Kolejność po autoryzacji: epoka przed wiekiem checkpointu. 401 wymaga zalogowania, 409 `sync_epoch_changed` odzyskiwania po restore, 409 `sync_reconciliation_required` pełnego snapshotu w tej samej epoce, 413 limitu bajtów, 422 struktury/tokenów. Żaden z tych błędów nie wykonuje zapisu encji. Poprawna paczka daje HTTP 200, nawet jeśli wszystkie operacje zakończą się konfliktem.
+Przed mutacjami całej paczki serwer kontroluje uwierzytelnienie, zgodność epok każdego elementu, token checkpointu, jego wiek, strukturę i limity. Kolejność po autoryzacji: epoka przed wiekiem checkpointu. 401 wymaga zalogowania, 409 `sync_epoch_changed` odzyskiwania po restore, 409 `sync_reconciliation_required` pełnego snapshotu w tej samej epoce, 413 limitu bajtów, 422 struktury/tokenów. Żaden z tych błędów pełnego preflight nie wykonuje zapisu encji, receipt ani ChangeLog. Późny błąd po zatwierdzeniu wcześniejszej operacji pozostawia prefix; brak HTTP200 nie daje nowych ACK, klient zachowuje całą kolejkę. Identyczny retry po uzgodnieniu na active i bieżącej epoce rozpoznaje receipts. Po zmianie epoki stare operacje pozostają odrzucane, po deleting dostęp jest zamknięty. Poprawna paczka daje HTTP 200, nawet jeśli wszystkie operacje zakończą się konfliktem.
 
 Operacje są przetwarzane w kolejności tablicy; każda ma własną transakcję. Wyniki występują w identycznej kolejności, jeden na operację:
 

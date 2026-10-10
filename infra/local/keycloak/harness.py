@@ -52,7 +52,7 @@ def prepare(home, state):
     realm = json.loads((HERE / "realm.json").read_text())
     users = []
     credentials = {}
-    for name in ("a", "b"):
+    for name in ("a", "b", "delete_a"):
         username, password = f"e3-{name}", secrets.token_urlsafe(32)
         credentials[name] = {"username": username, "password": password}
         users.append(
@@ -68,6 +68,36 @@ def prepare(home, state):
                 "clientRoles": {"calorie-api": ["user"]},
             }
         )
+    admin_secret = secrets.token_urlsafe(48)
+    denied_secret = secrets.token_urlsafe(48)
+    for client_id, secret in (
+        ("calorie-deletion-operator", admin_secret),
+        ("calorie-deletion-denied", denied_secret),
+    ):
+        realm["clients"].append(
+            {
+                "clientId": client_id,
+                "secret": secret,
+                "enabled": True,
+                "publicClient": False,
+                "standardFlowEnabled": False,
+                "implicitFlowEnabled": False,
+                "directAccessGrantsEnabled": False,
+                "serviceAccountsEnabled": True,
+                "protocol": "openid-connect",
+                "defaultClientScopes": ["basic", "roles"],
+            }
+        )
+        users.append(
+            {
+                "username": "service-account-" + client_id,
+                "enabled": True,
+                "serviceAccountClientId": client_id,
+                "clientRoles": {"realm-management": ["manage-users"]}
+                if client_id == "calorie-deletion-operator"
+                else {},
+            }
+        )
     realm["users"] = users
     imports = runtime / "data" / "import"
     imports.mkdir(parents=True, exist_ok=True)
@@ -77,6 +107,18 @@ def prepare(home, state):
     credentials_path = state / "credentials.json"
     credentials_path.write_text(json.dumps(credentials), encoding="utf-8")
     credentials_path.chmod(0o600)
+    # These secrets are local harness state, never realm.json or test output.
+    admin_path = state / "admin-secrets.json"
+    admin_path.write_text(
+        json.dumps(
+            {
+                "calorie-deletion-operator": admin_secret,
+                "calorie-deletion-denied": denied_secret,
+            }
+        ),
+        encoding="utf-8",
+    )
+    admin_path.chmod(0o600)
     return runtime, credentials_path
 
 
@@ -90,6 +132,7 @@ def start(home, state, java_home, port):
         "start-dev",
         "--http-host=127.0.0.1",
         f"--http-port={port}",
+        f"--http-management-port={port + 1000}",
         f"--hostname=http://127.0.0.1:{port}",
         "--import-realm",
         "--health-enabled=true",

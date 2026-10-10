@@ -88,6 +88,9 @@ def check_scenario(value):
         "invalid_sync_token": 422, "invalid_request": 422,
         "request_too_large": 413, "rate_limited": 429,
         "service_unavailable": 503,
+        "account_bootstrap_required": 403, "account_deleting": 403,
+        "account_generation_changed": 409, "identity_provider_unavailable": 503,
+        "sync_counter_exhausted": 503, "sync_resources_exhausted": 503,
     }
     for step in value["steps"]:
         if step["kind"] != "http":

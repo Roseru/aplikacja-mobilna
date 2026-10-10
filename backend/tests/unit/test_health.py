@@ -107,6 +107,8 @@ def test_generated_api_only_claims_implemented_operations(client):
         "/api/v1/me/bootstrap",
         "/api/v1/me",
         "/api/v1/me/goals",
+        "/api/v1/sync/push",
+        "/api/v1/sync/pull",
         "/api/v1/me/consents",
         "/api/v1/energy-estimates",
     }

@@ -8,6 +8,7 @@ psql --username "$POSTGRES_USER" --dbname postgres --set ON_ERROR_STOP=1 <<'SQL'
 CREATE ROLE calorie_app_migrator LOGIN PASSWORD :'migrator_password';
 CREATE ROLE calorie_app_api LOGIN PASSWORD :'api_password';
 CREATE ROLE calorie_app_worker LOGIN PASSWORD :'worker_password';
+CREATE ROLE calorie_app_deletion_operator NOLOGIN NOSUPERUSER NOCREATEDB NOCREATEROLE NOINHERIT;
 CREATE ROLE keycloak LOGIN PASSWORD :'keycloak_password';
 CREATE DATABASE calorie_app OWNER calorie_app_migrator;
 CREATE DATABASE calorie_test OWNER calorie_app_migrator;

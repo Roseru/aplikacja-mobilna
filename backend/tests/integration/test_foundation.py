@@ -45,6 +45,16 @@ def test_migration_and_database_readiness(database):
         "meal_items",
         "weights",
         "product_drafts",
+        "sync_counters",
+        "sync_receipts",
+        "sync_changes",
+        "sync_reservations",
+        "sync_recovery_mappings",
+        "sync_sessions",
+        "sync_session_items",
+        "account_deletion_jobs",
+        "deleted_subjects",
+        "_deletion_context",
     }
     migrate("check")
     with TestClient(create_app(Settings(database_url=url), engine=engine)) as client:
@@ -129,7 +139,9 @@ def test_runtime_role_has_no_ddl_and_can_read_health(database):
 
 def test_initial_downgrade_then_upgrade(database):
     engine, migrate, url = database
-    migrate("downgrade", "base")
+    # E4 retains durable evidence and supports a compatible E3 image rollback;
+    # dropping the foundation underneath those FKs is no longer a valid rollback.
+    migrate("downgrade", "0008_diary_delete")
     with TestClient(create_app(Settings(database_url=url), engine=engine)) as client:
         assert client.get("/health/ready").status_code == 503
     migrate("upgrade", "head")

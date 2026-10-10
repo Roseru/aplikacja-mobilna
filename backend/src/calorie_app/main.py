@@ -16,6 +16,7 @@ from calorie_app.modules.catalog.protected_router import router as protected_cat
 from calorie_app.modules.catalog.router import router as catalog_router
 from calorie_app.modules.identity.router import router as identity_router
 from calorie_app.modules.profiles.router import router as profile_router
+from calorie_app.modules.sync.router import router as sync_router
 
 
 def create_app(settings: Settings | None = None, *, engine=None) -> FastAPI:
@@ -70,4 +71,5 @@ def create_app(settings: Settings | None = None, *, engine=None) -> FastAPI:
     app.include_router(identity_router)
     app.include_router(profile_router)
     app.include_router(protected_catalog_router)
+    app.include_router(sync_router)
     return app

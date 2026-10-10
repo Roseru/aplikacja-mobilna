@@ -118,3 +118,8 @@ Decyzja Free Tier: prace E0–E6 mogą postępować. E7/E9 rozwijamy na mocku i 
 ## Dalsze zadanie E4 dotyczące usunięcia konta
 
 E3 dostarcza wewnętrzną atomową blokadę active/deleting i zmianę generacji; nie dodaje HTTP usuwania ani pełnego protokołu. Przed odbiorem reguły 11.3 i wydaniem O2/O3 wykonają osobne zadanie E4: skoordynowane usunięcie tożsamości Keycloak, danych aplikacji, minimalnych receipts i znaczników z bezpiecznymi ponowieniami. KO-31 nie zastępuje tego protokołu. E4 nie rozpoczęto.
+
+
+## Dostawa E4 O2 do osobnego odbioru
+
+Implementacja backendu, trwałego klienta i deletion znajduje się na codex/backend-e4-synchronizacja z aktualnego main po odebranym E3/0008. [Raport E4](e4/RAPORT_E4.md) wskazuje rzeczywiste testy, niezależny odbiór i CI końcowego head. Room/APK/KO-31 oraz produkcyjny restore są odrębne; E4 nie jest scalane w tym zadaniu i E5 nie rozpoczęto. Starszy zapis „E4 nie rozpoczęto” dotyczy historii przygotowania E3.

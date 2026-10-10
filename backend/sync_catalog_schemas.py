@@ -11,7 +11,12 @@ def main():
     backend = Path(__file__).resolve().parent
     source = backend.parent / "contracts" / "schemas"
     destination = backend / "src/calorie_app/modules/catalog/resources"
-    for name in ("common.schema.json", "catalog.schema.json", "domain.schema.json"):
+    for name in (
+        "common.schema.json",
+        "catalog.schema.json",
+        "domain.schema.json",
+        "sync.schema.json",
+    ):
         data = (source / name).read_bytes()
         target = destination / name
         if args.check:

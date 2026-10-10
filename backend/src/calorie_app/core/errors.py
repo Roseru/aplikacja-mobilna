@@ -39,6 +39,17 @@ def error_response(
     headers: dict | None = None,
     details: list[dict] | None = None,
 ) -> JSONResponse:
+    if request.url.path.startswith("/api/v1/sync/"):
+        return JSONResponse(
+            status_code=status,
+            headers=headers,
+            content={
+                "code": code,
+                "message": message,
+                "details": details if isinstance(details, dict) else {},
+                "request_id": request.state.request_id,
+            },
+        )
     return JSONResponse(
         status_code=status,
         headers=headers,
@@ -49,6 +60,22 @@ def error_response(
 
 
 def install_error_handlers(app: FastAPI) -> None:
+    from calorie_app.modules.sync.errors import SyncFailure
+
+    @app.exception_handler(SyncFailure)
+    async def sync_error(request: Request, error: SyncFailure) -> JSONResponse:
+        headers = {"Retry-After": "5"} if error.status in {429, 503} else None
+        if error.status == 401:
+            headers = {"WWW-Authenticate": "Bearer"}
+        return error_response(
+            request,
+            error.status,
+            error.code,
+            "Nie można wykonać synchronizacji.",
+            headers,
+            error.details,
+        )
+
     @app.exception_handler(DomainError)
     async def domain_error(request: Request, error: DomainError) -> JSONResponse:
         headers = {"Retry-After": "5"} if error.status == 503 else None

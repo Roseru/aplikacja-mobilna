@@ -1,4 +1,4 @@
-name: Backend E3
+name: Backend E4
 on:
   pull_request:
     branches: [main]
@@ -31,8 +31,8 @@ jobs:
         with:
           version: '0.9.5'
       - run: uv sync --project backend --locked
-      - run: uv run --project backend --locked ruff check --config backend/pyproject.toml backend tools/offline_catalog
-      - run: uv run --project backend --locked ruff format --check --config backend/pyproject.toml backend tools/offline_catalog
+      - run: uv run --project backend --locked ruff check --config backend/pyproject.toml backend tools/offline_catalog tools/sync_client
+      - run: uv run --project backend --locked ruff format --check --config backend/pyproject.toml backend tools/offline_catalog tools/sync_client
       - run: uv run --project backend --locked python -m pytest backend/tests/unit
       - run: uv build backend
       - name: Verify the installed wheel outside the checkout
