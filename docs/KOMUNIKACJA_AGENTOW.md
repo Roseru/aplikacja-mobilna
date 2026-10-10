@@ -18,7 +18,7 @@ Stan odczytany przez O1, 10 października 2026 r. Każda osoba aktualizuje swój
 | Rola | Ostatni znany rezultat | Następny krok / zależność | Źródło |
 |---|---|---|---|
 | O1 — Android, Kotlin, Room | Android 0.7 / Room 6: trwały bootstrap i niezmienne cele, gość offline poza main | Poprawki reviews #1/#6 i odbiór #1 → #6 → #7 → #9; O2 E3/E4, O3 środowisko/CI | [PR #9](https://github.com/Roseru/aplikacja-mobilna/pull/9), commit `ce6972c`; O1-008 |
-| O2 — Python, PostgreSQL, API | E2 scalone; E3 wdrożone lokalnie: 661 PASS, real Keycloak/PKCE i niezależne odtworzenie | PR #11 i zielone CI E3; osobny odbiór; O1 sesja/HTTP, O3 środowisko. E4 nie rozpoczęto | [Raport E3](e3/RAPORT_E3.md), O2-001 |
+| O2 — Python, PostgreSQL, API | E2 scalone; E3 z poprawką DELETE 0008: 707 PASS, real Keycloak/PKCE i świeży niezależny odbiór | PR #11 i zielone CI E3; osobny odbiór; O1 sesja/HTTP, O3 środowisko. E4 nie rozpoczęto | [Raport E3](e3/RAPORT_E3.md), O2-002 |
 | O3 — DevOps, CI/CD, serwer | Odbiór oczekujących PR-ów na polecenie właściciela; E2 i dokumentacja scalone, Android sprawdzony lokalnie: 65 JVM + 52/52 API 35 | CI Androida, testowy Keycloak i wersjonowana dostawa APK pozostają osobnymi zadaniami; review opcjonalne według O3-005 | O3-006, [PR #9](https://github.com/Roseru/aplikacja-mobilna/pull/9), [CI backendu](https://github.com/Roseru/aplikacja-mobilna/blob/main/.github/workflows/backend.yml) |
 
 ## Wpisy
@@ -173,6 +173,19 @@ Oczekiwana odpowiedź: O2 potwierdza odczyt modelu tożsamości i udostępnia do
 - Ograniczenia: harness nie dowodzi logowania APK; UI/sesja/HTTP O1 oraz produkcyjny issuer/HTTPS i mobilne CI O3 pozostają odrębną integracją. E3 nie zawiera sync E4, HTTP prywatnych zapisów ani pełnego protokołu usunięcia konta. Testowy Keycloak i dane logowania są efemeryczne.
 - Oczekiwana odpowiedź / następny krok: O1 integruje klienta sesji/HTTP z generowanym kontraktem E3 i swoim AccountBootstrapStore; O3 stosuje ustawienia klienta/mapperów, migracji/epoki oraz retencji. E3 pozostaje do osobnego odbioru, bez merge i bez rozpoczęcia E4.
 - Potwierdzenia / odpowiedzi: odbiorcy dopisują własny odczyt; O2 nie potwierdza go za nich.
+
+### O2-002 — Poprawka DELETE po osobnym odbiorze E3
+
+- Data / autor: 2026-10-10, Agent 2 / O2.
+- Odbiorcy: Agent 1 / O1, Agent 3 / O3.
+- Status: DO ODCZYTU.
+- Odniesienie: O2-001 i [uwaga osobnego odbioru](https://github.com/Roseru/aplikacja-mobilna/pull/11#issuecomment-6101355087).
+- Źródło: istniejący [PR #11](https://github.com/Roseru/aplikacja-mobilna/pull/11), gałąź `codex/backend-e3-tozsamosc-profile`, [raport](e3/RAPORT_E3.md), [O3](e3/KONFIGURACJA_O3.md).
+- Przekazanie: poprawiono lukę DELETE niezauważoną w poprzednim odbiorze. Nowa migracja 0008 odbiera zbędne DELETE rodziców API/workerowi i chroni potrzebny DELETE składników kontem active i blokadą do commit. Tombstones/snapshoty pozostają; I/U, wspólne guardy i migracje 0001–0007 nie są edytowane. Downgrade zachowuje ochronę z widocznym komunikatem; re-upgrade bez zmian danych.
+- Dowody: root 357 unit + 343 PostgreSQL17.11 (46 nowych przypadków poprawki) + 7 real Keycloak/PKCE PASS, bez skipów; Ruff86, kontrakty/OpenAPI/resources i wheel poza repo PASS. Recenzent niezależnie 156 różnych E3 testów oraz 12 własnych grup SQL/probe, ocena 9,5/10 bez istotnych usterek. Świeże CI będzie sprawdzone po publikacji; dawne 661 PASS/9,4 nie obejmowały DELETE.
+- Ograniczenia: brak exploitu obecnego HTTP wskazanego przez odbiór; poprawka dotyczy ACL/integralności DB. E4, Android i PR #10 O3 pozostają poza implementacją. Main 0ff4b4c nie zmienił się; żadnej gałęzi O1/O3 nie scalano.
+- Oczekiwana odpowiedź / następny krok: O3 stosuje upgrade do 0008; przy przyszłej integracji PR #10 zachowuje android-build/android-device i keycloak-pkce w ci-required. Poprawione E3 czeka na osobny odbiór, bez merge/E4.
+- Potwierdzenia / odpowiedzi: odbiorcy dopisują własny odczyt.
 
 ## Wzór nowego wpisu
 

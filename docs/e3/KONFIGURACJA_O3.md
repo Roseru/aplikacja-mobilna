@@ -34,9 +34,9 @@ odświeżeniu daje 401. jku/x5u i adresy z tokenów nie są fetchowane.
 ## Migracje i epoka
 
 Uruchom `alembic -c backend/alembic.ini upgrade head` jako migrator przed
-wdrożeniem nowego API. Nowe migracje 0006_e3_identity i 0007_e3_diary
+wdrożeniem nowego API. Migracje 0006_e3_identity, 0007_e3_diary i poprawka 0008_diary_delete
 rozszerzają 0005_ration_cursors; istniejące migracje i opublikowane bajty E2
-pozostają niezmienione. Nowy readiness wymaga 0007_e3_diary.
+pozostają niezmienione. Bieżący readiness wymaga 0008_diary_delete.
 
 0006 tworzy singleton app.installation_state z UUID sync_epoch jednokrotnie.
 API i worker mają wyłącznie SELECT do tego zasobu; startup nie losuje epoki.
@@ -96,3 +96,44 @@ Samo zastąpienie issuer przez 10.0.2.2 zmienia tożsamość i jest błędne.
 Produkcyjna domena, HTTPS, SMTP, mobilny klient HTTP/OIDC i CI Androida
 pozostają po stronie O1/O3. Backendowy test PKCE nie dowodzi wdrożenia
 produkcji ani logowania APK. [Raport E3](RAPORT_E3.md) podaje wykonane dowody.
+
+## Ochrona fizycznego DELETE od 0008
+
+Osobny odbiór head 479b6ce wykazał, że grant DELETE rodziców pozwalał
+rolom runtime usunąć Weight po deleting i usunąć tombstone, a następnie
+odtworzyć ten sam UUID jako revision 1. Nie wskazano exploitu obecnego HTTP.
+Wykonaj upgrade do 0008 przed uruchomieniem poprawionego API.
+
+| Tabele | API i worker |
+|---|---|
+| diary_days, meals, weights, product_drafts | SELECT/INSERT/UPDATE pozostają; fizyczny DELETE zabroniony |
+| meal_items | DELETE pozostaje potrzebny do wymiany agregatu; guard wymaga active i żywego rodzica |
+
+Nowa funkcja działa jako invoker, korzysta z OLD i zwraca OLD. Trigger
+`diary_delete_account` poprzedza alfabetycznie `diary_item_lock`:
+blokuje konto FOR UPDATE, sprawdza active, blokuje posiłek i sprawdza jego
+stan. Blokady są utrzymywane do końca transakcji, współpracując z
+begin_deleting. I/U i wspólna funkcja private_account_guard nie są zmienione.
+SQLSTATE 42501 oznacza odmowę prawa rodziców, 23514 odmowę guarda składników;
+po błędzie wykonaj rollback/savepoint przed dalszym sprawdzaniem.
+
+PostgreSQL blokuje również tuple składnika podczas DELETE, przed guardem.
+Próby swobodnego mieszania surowego DML z usługami mogą kończyć się deadlockiem
+i rollbackiem; poprawka nie obiecuje globalnego braku deadlocków. Aplikacja
+nadal zaczyna od blokady konta. Dla obu kolejności DELETE kontra begin_deleting
+wykonano dowód rzeczywistego oczekiwania przez pg_stat_activity/pg_blocking_pids,
+a NOWAIT rodzica sprawdził poprawną kolejność triggerów.
+
+Downgrade do 0007 **zachowuje cofnięte DELETE i guard**, zmieniając wyłącznie
+marker migracji; wypisuje widoczny komunikat WARNING przez Alembic stdout.
+Nie jest ścieżką przywrócenia starych grantów. Poprzedni kompatybilny obraz
+nadal może używać tombstones i wymiany składników. Re-upgrade jest bezpieczny:
+CREATE OR REPLACE funkcji oraz odtworzenie triggera nie przepisują wierszy.
+Przy usuwaniu pustego schematu starszymi migracjami trigger znika z tabelą;
+helper może pozostać do ponownego upgrade, bez rozszerzenia runtime ACL.
+
+Pełne usuwanie konta/retencja E4 nadal wymagają osobnej kontrolowanej ścieżki;
+worker nie ma wyjątku od ochrony. PR #10 O3 pozostaje osobnym zadaniem.
+Gdy jego CI Androida zostanie scalone do main, przy integracji zachowaj
+android-build/android-device oraz keycloak-pkce w ci-required i sprawdź
+rzeczywiste wyniki wszystkich właściwych jobów.

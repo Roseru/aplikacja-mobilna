@@ -32,7 +32,7 @@ Potrzebne: Git, Python 3.13, uv 0.9.5. Do standardowego lokalnego PostgreSQL pot
 
 `GET /health/live` daje 200 także podczas awarii bazy. `GET /health/ready` daje 200 dopiero dla PostgreSQL 17 z dokładną oczekiwaną migracją i konfiguracją sekretu paginacji, w przeciwnym razie 503 z bezpiecznym błędem i identyfikatorem żądania. API nie tworzy tabel przy starcie. Żądania mają `X-Request-ID`, błędy pola `code`, `message`, `details`, `request_id`. Nie logujemy query, body, tokenów ani tekstu wyjątków mogącego zawierać sekrety.
 
-Aktualny head to `0007_e3_diary`, po `0006_e3_identity` oraz zachowanych migracjach E1/E2 `0001–0005`. Stara rewizja daje readiness 503; po upgrade i ustawieniu trwałego `CATALOG_PAGE_TOKEN_SECRET` bieżąca daje 200. CHECK `ck_product_versions_finite_nutrition` nadal dopuszcza w każdej z czterech kolumn wartości odżywczych `NULL` albo zakres `0..999999.999999`. `NULL` oznacza brak danych, zero pozostaje znanym zerem. NaN i wartości ujemne naruszają CHECK; przekroczenie precyzji oraz Infinity odrzuca typ `NUMERIC(12,6)`.
+Aktualny head to `0008_diary_delete`, po `0007_e3_diary` i `0006_e3_identity` oraz zachowanych migracjach E1/E2 `0001–0005`. Stara rewizja daje readiness 503; po upgrade i ustawieniu trwałego `CATALOG_PAGE_TOKEN_SECRET` bieżąca daje 200. CHECK `ck_product_versions_finite_nutrition` nadal dopuszcza w każdej z czterech kolumn wartości odżywczych `NULL` albo zakres `0..999999.999999`. `NULL` oznacza brak danych, zero pozostaje znanym zerem. NaN i wartości ujemne naruszają CHECK; przekroczenie precyzji oraz Infinity odrzuca typ `NUMERIC(12,6)`.
 
 Migracja `0002` waliduje istniejące dane i zastępuje wyłącznie CHECK, bez przepisywania tabeli lub wartości. NaN pozostawione w starej bazie powoduje odmowę i rollback całej migracji, z zachowaniem danych, poprzedniego CHECK i rewizji. Przed upgrade rolą migratora sprawdź zakres wadliwych rekordów:
 
@@ -137,3 +137,7 @@ uv run --project backend --locked python -m calorie_app.modules.catalog.offline_
 ```
 
 Katalog `backend/var` utwórz przed pierwszym użyciem; jest ignorowany. [Opis importera](../tools/offline_catalog/README.md) podaje API staging/activation, a [integracja O1](../docs/e2/INTEGRACJA_O1.md) wymagane adaptacje Room/APK. Schematy edytuje się wyłącznie w `contracts/schemas`; `python backend/sync_catalog_schemas.py` generuje zasoby, `--check` weryfikuje ich zgodność. Testy i [raport E2](../docs/e2/RAPORT_E2.md) rozróżniają gotowość O2 od odbioru Androida. Brak oficjalnych etykiet pozostaje bramką E5. E3 jest zaimplementowane; wyniki odbioru określa raport E3.
+
+## Poprawka uprawnień DELETE E3
+
+Migracja 0008 odbiera API/workerowi fizyczny DELETE rodziców dziennika i chroni DELETE składników aktywnością konta oraz blokadą do commit. Usługi nadal zapisują tombstones; atomowa wymiana składników pozostaje dozwolona. Downgrade zachowuje zabezpieczenie i wypisuje jawny komunikat, zamiast przywracać wadliwe granty. Szczegóły i świeże dowody są w [raporcie E3](../docs/e3/RAPORT_E3.md) i [instrukcji O3](../docs/e3/KONFIGURACJA_O3.md).
