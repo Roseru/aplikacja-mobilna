@@ -21,8 +21,9 @@ sealed interface DiaryEvent {
 }
 
 @OptIn(ExperimentalCoroutinesApi::class)
-class DiaryViewModel(private val repository: DiaryRepository, private val preferences: Preferences, saved: SavedStateHandle) : ViewModel() {
-    private val dateText = saved.getStateFlow("date", LocalDate.now().toString())
+class DiaryViewModel(private val repository: DiaryRepository, private val preferences: Preferences, saved: SavedStateHandle,
+    private val clock: LocalDayClock = LocalDayClock()) : ViewModel() {
+    private val dateText = saved.getStateFlow("date", clock.today().toString())
     private val savedState = saved
     val ready = MutableStateFlow(false)
     val startupError = MutableStateFlow<String?>(null)
@@ -31,13 +32,15 @@ class DiaryViewModel(private val repository: DiaryRepository, private val prefer
     private val channel = Channel<DiaryEvent>(Channel.BUFFERED)
     val events = channel.receiveAsFlow()
     private val policy = SharingStarted.WhileSubscribed(5000)
+    val currentDay = clock.dates().stateIn(viewModelScope, policy, clock.today())
     private val analyticsDays = saved.getStateFlow("analytics-days", 7)
-    private val analyticsEnd = saved.getStateFlow("analytics-end", LocalDate.now().toString())
-    val analyticsWindow = combine(analyticsDays, analyticsEnd) { days, end ->
-        AnalyticsWindow(LocalDate.parse(end).coerceAtMost(LocalDate.now()), AnalyticsPeriod.entries.first { it.days == days })
-    }.stateIn(viewModelScope, policy, AnalyticsWindow(LocalDate.now(), AnalyticsPeriod.WEEK))
+    private val followsToday = saved.getStateFlow("analytics-follows-today", saved.get<String>("analytics-end") == null)
+    private val analyticsEnd = saved.getStateFlow("analytics-end", clock.today().toString())
+    val analyticsWindow = combine(analyticsDays, analyticsEnd, followsToday, currentDay) { days, end, follow, today ->
+        AnalyticsWindow(if (follow) today else LocalDate.parse(end).coerceAtMost(today), AnalyticsPeriod.entries.first { it.days == days })
+    }.stateIn(viewModelScope, policy, AnalyticsWindow(clock.today(), AnalyticsPeriod.WEEK))
     val analytics = analyticsWindow.flatMapLatest { window ->
-        AnalyticsRepository(repository.dao).observe(repository.owner, window).map<AnalyticsResult, AnalyticsResult?> { it }.onStart { emit(null) }
+        AnalyticsRepository(repository.dao, clock).observe(repository.owner, window).map<AnalyticsResult, AnalyticsResult?> { it }.onStart { emit(null) }
     }.stateIn(viewModelScope, policy, null)
     val theme = preferences.theme.stateIn(viewModelScope, policy, ThemeMode.SYSTEM)
     val products = repository.dao.products(repository.owner).stateIn(viewModelScope, policy, emptyList())
@@ -46,7 +49,7 @@ class DiaryViewModel(private val repository: DiaryRepository, private val prefer
     val weights = repository.dao.weights(repository.owner).stateIn(viewModelScope, policy, emptyList())
     val recent = repository.dao.recent(repository.owner).stateIn(viewModelScope, policy, emptyList())
     val pending = repository.dao.pending(repository.owner).stateIn(viewModelScope, policy, 0)
-    val todayGoal = repository.dao.goal(repository.owner, LocalDate.now().toString()).stateIn(viewModelScope, policy, null)
+    val todayGoal = currentDay.flatMapLatest { repository.dao.goal(repository.owner, it.toString()) }.stateIn(viewModelScope, policy, null)
     val day = dateText.flatMapLatest { text ->
         combine(repository.dao.day(repository.owner, text), repository.dao.goal(repository.owner, text),
             repository.dao.diaryDay(repository.owner, text)) { meals, goal, status -> DayState(LocalDate.parse(text), meals, goal, status) }
@@ -62,16 +65,22 @@ class DiaryViewModel(private val repository: DiaryRepository, private val prefer
         }
     }
     fun changeDay(days: Long) { savedState["date"] = LocalDate.parse(dateText.value).plusDays(days).toString() }
-    fun today() { savedState["date"] = LocalDate.now().toString() }
+    fun today() { savedState["date"] = clock.today().toString() }
     fun selectDate(date: LocalDate) { savedState["date"] = date.toString() }
     fun setAnalyticsPeriod(period: AnalyticsPeriod) { savedState["analytics-days"] = period.days }
     fun moveAnalyticsWindow(direction: Int) {
         require(direction in -1..1)
         val period = AnalyticsPeriod.entries.first { it.days == analyticsDays.value }
-        val end = LocalDate.parse(analyticsEnd.value).coerceAtMost(LocalDate.now())
-        savedState["analytics-end"] = end.plusDays(direction.toLong() * period.days).coerceAtMost(LocalDate.now()).toString()
+        val today = clock.today()
+        val end = if (followsToday.value) today else LocalDate.parse(analyticsEnd.value).coerceAtMost(today)
+        val next = end.plusDays(direction.toLong() * period.days).coerceAtMost(today)
+        savedState["analytics-end"] = next.toString()
+        savedState["analytics-follows-today"] = next == today
     }
-    fun analyticsToday() { savedState["analytics-end"] = LocalDate.now().toString() }
+    fun analyticsToday() {
+        savedState["analytics-end"] = clock.today().toString()
+        savedState["analytics-follows-today"] = true
+    }
     fun setTheme(theme: ThemeMode) { viewModelScope.launch { preferences.setTheme(theme) } }
     fun add(productId: String, grams: Double, type: MealType, amountText: String? = null) {
         val date = LocalDate.parse(dateText.value)

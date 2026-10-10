@@ -43,6 +43,7 @@ private fun FieldAggregate.label(unit: String) = (if (complete) "" else "≥ ") 
 
 @Composable fun AnalyticsScreen(model: DiaryViewModel, onDay: (LocalDate) -> Unit) {
     val window by model.analyticsWindow.collectAsStateWithLifecycle()
+    val today by model.currentDay.collectAsStateWithLifecycle()
     val result by model.analytics.collectAsStateWithLifecycle()
     var metric by rememberSaveable { mutableIntStateOf(0) }
     val current = result?.takeIf { it.window == window }
@@ -65,11 +66,11 @@ private fun FieldAggregate.label(unit: String) = (if (complete) "" else "≥ ") 
                 }
                 Text("${window.start.format(fullDate)} – ${window.end.format(fullDate)}", style = MaterialTheme.typography.labelLarge,
                     modifier = Modifier.testTag("analytics-range"))
-                IconButton(onClick = { model.moveAnalyticsWindow(1) }, enabled = window.end < LocalDate.now()) {
+                IconButton(onClick = { model.moveAnalyticsWindow(1) }, enabled = window.end < today) {
                     Icon(Icons.AutoMirrored.Outlined.KeyboardArrowRight, "Następny okres")
                 }
             }
-            if (window.end < LocalDate.now()) TextButton(onClick = model::analyticsToday) { Text("Do dzisiaj") }
+            if (window.end < today) TextButton(onClick = model::analyticsToday) { Text("Do dzisiaj") }
         }
         item {
             Surface(color = MaterialTheme.colorScheme.surfaceVariant, shape = RoundedCornerShape(14.dp)) {
@@ -111,11 +112,13 @@ private fun FieldAggregate.label(unit: String) = (if (complete) "" else "≥ ") 
                 style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
             Text("Dzień w celu: kompletny dziennik i ±10% celu obowiązującego tego dnia. Bez celu nie oceniamy wyniku.",
                 style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+            Text("Średnie i liczniki obejmują zamknięte dni. Dzisiejszy wynik jest wstępny.",
+                style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
         }
     }
 }
 @Composable private fun SummaryValue(label: String, value: String, modifier: Modifier = Modifier) {
-    Column(modifier) {
+    Column(modifier.semantics(mergeDescendants = true) {}) {
         Text(label, style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
         Text(value, style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.SemiBold)
     }
@@ -230,11 +233,12 @@ private fun FieldAggregate.label(unit: String) = (if (complete) "" else "≥ ") 
         Column(Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(6.dp)) {
             Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
                 Text(day.date.format(fullDate), fontWeight = FontWeight.SemiBold)
-                Text(day.status.label, style = MaterialTheme.typography.labelMedium)
+                Text(if (day.closed) day.status.label else "Wynik wstępny", style = MaterialTheme.typography.labelMedium)
             }
             Text(day.total?.energyText()?.let { "$it kcal" } ?: "Brak danych o spożyciu")
             Text("Cel: ${day.goal?.let { it.display(0) + " kcal" } ?: "nie ustawiono"}" +
-                when (day.inGoal) { true -> " · W celu"; false -> " · Poza celem"; null -> " · Bez oceny" },
+                if (day.closed) when (day.inGoal) { true -> " · W celu"; false -> " · Poza celem"; null -> " · Bez oceny" }
+                else when (day.preliminaryInGoal) { true -> " · Wstępnie w celu"; false -> " · Wstępnie poza celem"; null -> " · Bez oceny · wynik wstępny" },
                 style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
             if (day.total != null) {
                 val fields = day.total.asExact().fields()
