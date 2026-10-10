@@ -22,3 +22,8 @@ output-apk/
 **/.ruff_cache/
 **/dist/
 **/*.egg-info/
+backend/var/
+var/
+**/*.sqlite
+**/*.sqlite-wal
+**/*.sqlite-shm

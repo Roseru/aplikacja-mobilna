@@ -2,8 +2,9 @@ from alembic import context
 
 from calorie_app.core.config import Settings
 from calorie_app.db.base import Base
-from calorie_app.db.models import Product, ProductSource, ProductVersion, UserAccount  # noqa: F401
+from calorie_app.db.models import UserAccount  # noqa: F401
 from calorie_app.db.session import make_engine
+from calorie_app.modules.catalog import models as catalog_models  # noqa: F401
 
 target_metadata = Base.metadata
 
