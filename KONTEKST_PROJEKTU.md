@@ -1,5 +1,14 @@
 # Kontekst współpracy
 
+## Kontynuacja O1 — poprawki recenzji i 0.7.1, 10 października 2026
+
+- Najpierw wysłano potwierdzenie O2 w PR #5: https://github.com/Roseru/aplikacja-mobilna/pull/5#issuecomment-6099166765. Dalej przygotowano bootstrap/niezmienne cele w PR #9, a po odczycie reviews domknięto właściwe zakresy kodu #1 i #6.
+- Poprawka #1: completeDiary wymaga znanej energii każdego składnika, 40 JVM / 28 urządzenia. Poprawka #6: wynik wstępny, zamknięte dni i kalendarzowa północ/DST, 57 JVM / 36 urządzenia. Integracja #7 zachowuje scope właściciela, 57 JVM / 44 urządzenia. Raport android/POPRAWKI_REVIEW.md opisuje cały odbiór i wcześniejsze niepowodzenia.
+- Końcowa wersja Android 0.7.1 / versionCode 8 / Room 6 na codex/android-bootstrap-cele: pełny build/test/lint/device PASS, 65 JVM i 52/52 urządzenia API 35, zero pominięć. Lint 0 błędów / 26 ostrzeżeń / 1 informacja. Raport android/RAPORT_0_7_1.md. Nie ma OIDC/HTTP/sync; bootstrap jest lokalnym stanem protokołu, a callback parametrem przyszłej integracji.
+- Aktualizacja 0.7→0.7.1 zachowała wszystkie kolumny 18 tabel i kolejkę; APK uruchomione offline. Artefakt poza Git: output-apk/Racje-i-kalorie-0.7.1-debug.apk, SHA-256 2e46bd29affce2973bdc5e0c092969b409638b0e39a9127d8d7f0f2f8d4486ff.
+- Wczytano bieżący main e8d1051, O3-003/O3-004 na 941b73d i porządkowanie planu E3 46046c1. Zachowano uproszczony wspólny dziennik oraz równoległe zmiany autora przez merge, bez force-push. Nie przywracamy celowo usuniętych przez O3 sekcji komunikacji.
+- PR-y pozostają do review. Odbiór #1 → #6 → #7 → #9 z retargetowaniem po poprzednim merge; brak samodzielnego scalenia i deklaracji mobilnego CI. Następny etap O1: sesja i ViewModel, rzeczywiste E3/HTTP, później adapter E4; wymagane środowisko/API O2/O3.
+
 ## Kontynuacja O1 — bootstrap E3 i cele, 10 października 2026
 
 - Najpierw wysłano potwierdzenie O2: https://github.com/Roseru/aplikacja-mobilna/pull/5#issuecomment-6099166765. Odczytano PR #8 / 1908c9b i pytania integracyjne. Ustalono przyszłe callbacki APK oraz oddzielono local lease od account_id/generacji/epoki.

@@ -22,3 +22,5 @@ output-apk/
 **/.ruff_cache/
 **/dist/
 **/*.egg-info/
+
+**/.kotlin/

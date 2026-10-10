@@ -1,6 +1,6 @@
 # Android — Racje i kalorie
 
-Wersja `0.7.0` dodaje przygotowanie bootstrapu E3 oraz niezmienne wersje lokalnych celów. Rejestr właścicieli i ochrona zapisu pozostają z 0.6; Room 6 zachowuje dotychczasowe wartości i kolejkę. Ekrany nadal działają jako gość bez konta i internetu, z Postępami 7/30/90 dni. Logowanie i HTTP nie są jeszcze podłączone.
+Wersja `0.7.1` dodaje przygotowanie bootstrapu E3 oraz niezmienne wersje lokalnych celów. Rejestr właścicieli i ochrona zapisu pozostają z 0.6; Room 6 zachowuje dotychczasowe wartości i kolejkę. Ekrany nadal działają jako gość bez konta i internetu, z Postępami 7/30/90 dni. Logowanie i HTTP nie są jeszcze podłączone.
 
 ## Co zawiera
 
@@ -29,7 +29,7 @@ Schemat Room 6 zawiera migracje 1 → 2 → 3 → 4 → 5 → 6 zachowujące pos
 
 Zmiana celu tworzy nowy UUID zamiast nadpisania poprzedniego wiersza. Wersja ma lokalną sekwencję, czas/strefę decyzji i referencję korekty z własnością wymuszoną w SQLite. Odczyty dziennika i analityki wybierają najnowszą wersję dla daty. Callback `DATABASE_GUARDS` chroni treść przed UPDATE/DELETE oraz zmieniającym INSERT OR REPLACE, także po ponownym otwarciu bazy; przy tworzeniu bazy poza aplikacją należy go dołączyć. Lokalne sekwencje i kolejka wymagają osobnego adaptera serwerowej osi/Decimal.
 
-[Przekazanie E3 dla O2/O3](INTEGRACJA_E3.md) podaje dokładne przyszłe callbacki APK, reguły bootstrapu, granice i kolejne kroki. [Raport 0.7.0](RAPORT_0_7.md) opisuje walidację.
+[Przekazanie E3 dla O2/O3](INTEGRACJA_E3.md) podaje dokładne przyszłe callbacki APK, reguły bootstrapu, granice i kolejne kroki. [Raport 0.7.0](RAPORT_0_7.md) opisuje pierwszy odbiór; [raport 0.7.1](RAPORT_0_7_1.md) dokumentuje końcowe 65 JVM / 52 urządzenia i połączone poprawki recenzji.
 
 ## Fundament kont i izolacji
 
@@ -56,11 +56,11 @@ Stare dane REAL są odczytywane przez `BigDecimal.valueOf` bez nadpisania orygin
 
 ## Postępy i historia
 
-Dolna zakładka **Postępy** pokazuje ostatnie 7, 30 lub 90 dat kalendarzowych włącznie z dzisiaj. Strzałki przesuwają okno o wybrany okres; „Do dzisiaj” przywraca bieżący zakres. Okres i wybrany wykres pozostają po odtworzeniu aktywności.
+Dolna zakładka **Postępy** pokazuje ostatnie 7, 30 lub 90 dat kalendarzowych włącznie z dzisiaj. Dzisiejszy wynik jest wstępny; średnie i liczniki oceny obejmują zamknięte dni. Odczyt odświeża się po lokalnej północy bez nowego wpisu, z uwzględnieniem DST. Domyślne okno podąża za dzisiaj; wybrane historyczne okno pozostaje stałe po odtworzeniu. Strzałki przesuwają okno o wybrany okres; „Do dzisiaj” przywraca bieżący zakres. Okres i wybrany wykres pozostają po odtworzeniu aktywności.
 
 - Cel pobieramy z ostatniej wersji obowiązującej w danym dniu, również sprzed początku okna. Przyszłe cele nie wpływają na wcześniejsze dni. `goal_band_v1` stosuje granice ±10% włącznie, przed zaokrągleniem wyświetlania. Do oceny potrzebny jest kompletny dzień i dodatni cel; brak celu oznacza brak oceny.
 - Dni bez wpisów pozostają bez danych. Dni niepotwierdzone lub z nieznaną energią pozostają niekompletne. Ich znane wartości są widoczne w historii i na wykresie jako niepełne, ale nie sugerujemy deficytu ani nie dodajemy ich do średniej.
-- Średnia każdego pola obejmuje kompletne dni ze znaną wartością tego pola; obok wyniku pokazujemy własny mianownik. Dzień z brakującym białkiem może mieć znane kcal, a białko nie trafia do jego średniej. Znane zero pozostaje zerem. Sumy są dokładne; średnia jest dzielona w skali 12 HALF_UP i zaokrąglana dopiero do prezentacji.
+- Średnia każdego pola obejmuje zamknięte, kompletne dni ze znaną wartością tego pola; obok wyniku pokazujemy własny mianownik. Dzień z brakującym białkiem może mieć znane kcal, a białko nie trafia do jego średniej. Znane zero pozostaje zerem. Sumy są dokładne; średnia jest dzielona w skali 12 HALF_UP i zaokrąglana dopiero do prezentacji.
 - Wykres wagi i zmiana masy używają ostatniego rzeczywistego pomiaru każdej daty w oknie; czas UTC i ID rozstrzygają kolejność. Licznik obejmuje wszystkie nieusunięte pomiary. Do zmiany masy potrzebne są co najmniej dwie daty z pomiarem. Nie interpolujemy ani nie przenosimy pomiarów z innych dni lub spoza okna.
 - Odczyty Room są ograniczone do właściciela i zakresu; pomijają znaczniki usunięcia. Edycje, usunięcia, nowe cele, pomiary i deklaracje aktualizują obserwowany wynik. Analityka nie zapisuje operacji outbox ani nie modyfikuje dziennika. Aktualność dotyczy wyłącznie danych na urządzeniu; synchronizacja nadal nie jest podłączona.
 
