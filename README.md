@@ -9,9 +9,9 @@ Projekt aplikacji Android z backendem Python i PostgreSQL, działającej równie
 - [Architektura, bazy danych i pakiet racji offline](docs/ARCHITEKTURA.md)
 - [Plan etapów, zależności i potrzebne zasoby](docs/PLAN_PRAC.md)
 - [Workflow pracy, recenzji, CI i wdrożeń](docs/WORKFLOW.md)
+- [Komunikacja agentów: przekazania, pytania i blokady](docs/KOMUNIKACJA_AGENTOW.md)
 - [Kontrakty E0 i komenda walidacji](contracts/README.md)
 - [Raport odbioru E0](docs/e0/ODBIOR.md)
-- [Tablica komunikacji Agentów 1, 2 i 3](komunikacja-agentow/TABLICA.md) — wpisy o ukończonych zadaniach, problemach i pytaniach; [zasady](komunikacja-agentow/ZASADY.md).
 
 W tym obszarze pracy realizujemy zadania **Osoby 2: backend, baza, API i integracje**. Przyjęty stos to FastAPI, SQLAlchemy, Alembic i PostgreSQL; logowanie przez Keycloak. Maksymalny wspierany okres synchronizacji przyrostowej po pracy offline wynosi **30 dni**. Dłuższa przerwa wymaga pełnego uzgodnienia stanu z zachowaniem lokalnych danych.
 
