@@ -1,3 +1,6 @@
+import re
+from pathlib import Path
+
 from pydantic import SecretStr, field_validator
 from pydantic_settings import BaseSettings, SettingsConfigDict
 from sqlalchemy.engine import make_url
@@ -11,6 +14,17 @@ class Settings(BaseSettings):
     db_statement_timeout_ms: int = 2000
     db_pool_size: int = 5
     db_max_overflow: int = 5
+    catalog_artifact_root: Path = Path("var/catalog")
+    catalog_page_token_secret: SecretStr | None = None
+
+    @field_validator("catalog_page_token_secret")
+    @classmethod
+    def cursor_secret(cls, value: SecretStr | None) -> SecretStr | None:
+        if value is not None and re.fullmatch(r"[0-9a-f]{64}", value.get_secret_value()) is None:
+            raise ValueError(
+                "CATALOG_PAGE_TOKEN_SECRET must be 32 random bytes as 64 lowercase hex digits"
+            )
+        return value
 
     @field_validator("database_url")
     @classmethod
