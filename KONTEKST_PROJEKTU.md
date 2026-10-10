@@ -1,9 +1,20 @@
 # Kontekst współpracy
 
+## Kontynuacja O1 — analityka, 10 października 2026
+
+- Ponowny odczyt GitHuba: main `151885d`, E2 `52f3547`, komunikacja `c390234`; brak nowych wiadomości O2/O3 od poprzedniego odczytu. PR #1 (Android 0.4, `20f474e`) oraz PR #5 pozostają otwarte.
+- Nowy etap wydzielono na `codex/android-analityka`, z jawną zależnością od niescalonego Androida 0.4. PR porównuje się z `codex/android-offline-racje`, aby nie powielać zmian. Najpierw odbiór PR #1, potem zmiana bazy PR analityki na main i sprawdzenie integracji bez przepisywania opublikowanej historii.
+- Android 0.5.0: Postępy 7/30/90 dni, historia z otwarciem dziennika, wykresy kcal/B/T/W i rzeczywistych wag, cele dnia ±10% `goal_band_v1`, osobne mianowniki średnich. Niepełne i puste dni nie oznaczają deficytu. Zmiana masy korzysta z ostatnich faktycznych pomiarów dat. Room nadal 4.
+- Kompletność dziennika/analityki korzysta ze wspólnej reguły i wyklucza nieznane kcal; sprawdzono pięć normatywnych wektorów dni E0.
+- Dowody lokalne: 51 testów JVM, pełny końcowy przebieg 31/31 urządzenia bez pominięć, lint 0 błędów / 26 ostrzeżeń. Wcześniejszy 30/31 poprawiono przez oczekiwanie UI na odczyt danych i powtórzono cały zestaw. Ręczny odbiór obu motywów, tekstu 130% i aktualizacji APK zachowującej dziennik; tryb samolotowy.
+- APK poza Git: `output-apk/Racje-i-kalorie-0.5.0-debug.apk`, SHA-256 `be5937edc1344fc7dec1d3cbd678288d11fd13bdc0691df2138ed2cea7f6c3a6`. [Raport](android/RAPORT_0_5.md) opisuje zakres i ograniczenia. Nie potwierdzono zdalnego CI ani integracji API/sync.
+
+## Dotychczasowe ustalenia i historia
+
 - Użytkownik jest osobą 1 w zespole: odpowiada za aplikację Android (Kotlin, Android Studio), interfejs, pamięć lokalną i mobilną część synchronizacji.
 - Podział pracy i wymagania: `WYMAGANIA_PROJEKTOWE.md`.
 - Użytkownik zaakceptował oba warianty makiet: A (ciemny) i B (jasny). Aplikacja ma oferować oba jako motywy tego samego interfejsu.
-- Obecny etap: Android 0.4.0 w `android/`: dotychczasowy lokalny dziennik oraz importer E2, BigDecimal, generacje i pełne snapshoty nowych spożyć, Room 4. Katalog łącznie zawiera 33 produkty i 3 racje DEMO. Kolejka zmian jest lokalna; rzeczywista synchronizacja pozostaje do wykonania.
+- Obecny etap: Android 0.5.0 w `android/`: lokalny dziennik, importer E2 i BigDecimal oraz Postępy 7/30/90 dni z historycznymi celami, wykresami kcal/B/T/W i wagą. Room nadal 4; katalog 33 produkty / 3 racje DEMO. Kolejka i analityka są lokalne; rzeczywista synchronizacja pozostaje do wykonania.
 - Plan implementacji wysłano na GitHub jako commit `74d3d1c` z autorem `agent 1`. Użytkownik poprosił o takie oznaczenie commita.
 - Szczegółowa kolejność prac: `PLAN_IMPLEMENTACJI_ANDROID.md`.
 - Repozytorium projektu: https://github.com/Roseru/aplikacja-mobilna
@@ -14,7 +25,7 @@
 - Wersja 0.3.0 ma Room 3 i migracje 1 → 2 → 3, bez kasowania dziennika, racji, celów ani kolejki. Prywatny produkt zapisuje szkic i pierwsze spożycie w jednej transakcji. Pomiary mają korekty i znaczniki usunięcia; profil nie zmienia celu kcal. Efektywna kompletność dnia wymaga deklaracji i dodatniego, niepustego dziennika.
 - Walidacja 0.3.0: APK debug i lint (0 błędów, 25 ostrzeżeń), 6 testów jednostkowych i 17 przypadków urządzenia API 35. W pełnym przebiegu przeszło 16 przypadków; profil/wagę zaliczono osobno po naprawieniu obsługi klawiatury w teście. Testy mają osobny applicationId, więc ich sprzątanie nie usuwa zwykłego dziennika. APK użytkowy: `output-apk/Racje-i-kalorie-0.3.0-debug.apk`.
 - Kod 0.3.0 i dokumentację opublikowano w tym samym PR #1 jako commit `a7bcda8` autora `agent 1`; gałąź zawiera też merge aktualnego main `5cbcf67`. PR pozostaje do recenzji i scalenia przez zespół. Łącznik Code Review nie udostępnił kontroli CI bez połączenia konta; nie potwierdzono wyniku zdalnego CI, dowody lokalne są w opisie PR.
-- Następna praca osoby 1: lokalna analityka 7/30/90 dni z jawnymi brakami i datowanymi celami. Konta i rzeczywisty sync wymagają gotowych endpointów oraz pełnego adaptera roboczej kolejki; importer katalogu nie zastępuje tej integracji.
+- Następna praca osoby 1: konta i adapter synchronizacji po dostawie endpointów O2/O3. Lokalna analityka 7/30/90 jest zaimplementowana; importer katalogu i lokalna kolejka nie zastępują rzeczywistego sync.
 
 ## Wczytane nowości GitHub — E2, 9 października 2026
 

@@ -1,6 +1,6 @@
 # Android — Racje i kalorie
 
-Wersja `0.4.0` realizuje lokalny przepływ osoby 1: dziennik → produkt, własny wpis lub racja → zapis w Room → aktualizacja bilansu. Importuje pakiet E2 z APK, używa BigDecimal w obliczeniach i zachowuje dane poprzednich wersji. Profil, pomiary wagi i deklaracja kompletności dnia również działają bez konta i internetu.
+Wersja `0.5.0` dodaje do lokalnego dziennika ekran Postępy: analitykę i historię 7/30/90 dni bez konta i internetu. Import E2, BigDecimal, profil i pomiary wagi pozostają dostępne. Room pozostaje w wersji 4; nie ma nowej migracji ani przepisywania danych.
 
 ## Co zawiera
 
@@ -13,7 +13,8 @@ Wersja `0.4.0` realizuje lokalny przepływ osoby 1: dziennik → produkt, własn
 - Własny produkt z nazwą, źródłem i wartościami na 100 g, opcjonalnymi makrami oraz gramaturą spożycia. Produkt jest prywatny i dostępny do ponownego wyboru; zapis szkicu i pierwszego posiłku jest transakcją.
 - Lokalny profil: pseudonim, wzrost, klasa Garnizon/Linia/Komandos i cel redukcja/utrzymanie/nadwyżka. Kcal/B/T/W ustawia się oddzielnie; zapis profilu ich nie zmienia.
 - Pomiary wagi z datą, historią, korektą i usunięciem. Kilka pomiarów jednego dnia jest dozwolone. Po poprawnym zapisie pole masy jest czyszczone, aby ponowny przypadkowy klik nie zapisał kolejnego pomiaru.
-- Deklaracja kompletności dnia. Efektywna kompletność wymaga deklaracji, nieusuniętego posiłku i dodatniej sumy kcal. Brak makr pozostaje brakiem danych. Usunięcie ostatniego posiłku cofa efektywną kompletność; deklarację można wyłączyć.
+- Deklaracja kompletności dnia. Efektywna kompletność wymaga deklaracji, nieusuniętych składników, dodatniej sumy kcal i znanej energii wszystkich pozycji. Brak makr pozostaje brakiem danych. Usunięcie ostatniego posiłku lub dodanie pozycji bez kcal cofa efektywną kompletność; wcześniejsza deklaracja pozostaje w historii i można ją wyłączyć.
+- Postępy dla 7/30/90 dni: wykresy kcal/B/T/W i rzeczywistych pomiarów wagi, średnie, kompletność oraz realizacja celu obowiązującego każdego dnia. Historia pozwala otworzyć dziennik wybranej daty, także pustego dnia.
 - Cele kcal/B/T/W obowiązujące od dnia zmiany; brak makr nie jest traktowany jak zero.
 - Room z wersjonowanym schematem, identyfikatorami UUID, odżywczymi wartościami zapisanymi przy spożyciu i transakcyjną kolejką zmian.
 - Zapis lokalnej daty, strefy czasowej i czasu UTC. Ponowienie lokalnego zapisu z tym samym ID nie tworzy drugiego posiłku.
@@ -35,9 +36,19 @@ Pakiet E2 pochodzi z rzeczywistego eksportu PostgreSQL osoby 2, commit [`229a2b8
 
 Stare dane REAL są odczytywane przez `BigDecimal.valueOf` bez nadpisania oryginału i bez twierdzenia, że odzyskano utraconą dokładność. Prywatne produkty, cele, profil i pomiary nadal mają dawną reprezentację zapisu. Ich pełny adapter Decimal do API pozostaje do wykonania. Formy porcji dopuszczają lokalnie do 12 miejsc, aby nie obcinać wyliczonych ułamków opakowania; przyszły adapter synchronizacji musi jawnie obsłużyć ograniczenie Quantity E0 do 6 miejsc. Nie obcinamy kolejki w miejscu ani nie wysyłamy jej w obecnym formacie.
 
+## Postępy i historia
+
+Dolna zakładka **Postępy** pokazuje ostatnie 7, 30 lub 90 dat kalendarzowych włącznie z dzisiaj. Strzałki przesuwają okno o wybrany okres; „Do dzisiaj” przywraca bieżący zakres. Okres i wybrany wykres pozostają po odtworzeniu aktywności.
+
+- Cel pobieramy z ostatniej wersji obowiązującej w danym dniu, również sprzed początku okna. Przyszłe cele nie wpływają na wcześniejsze dni. `goal_band_v1` stosuje granice ±10% włącznie, przed zaokrągleniem wyświetlania. Do oceny potrzebny jest kompletny dzień i dodatni cel; brak celu oznacza brak oceny.
+- Dni bez wpisów pozostają bez danych. Dni niepotwierdzone lub z nieznaną energią pozostają niekompletne. Ich znane wartości są widoczne w historii i na wykresie jako niepełne, ale nie sugerujemy deficytu ani nie dodajemy ich do średniej.
+- Średnia każdego pola obejmuje kompletne dni ze znaną wartością tego pola; obok wyniku pokazujemy własny mianownik. Dzień z brakującym białkiem może mieć znane kcal, a białko nie trafia do jego średniej. Znane zero pozostaje zerem. Sumy są dokładne; średnia jest dzielona w skali 12 HALF_UP i zaokrąglana dopiero do prezentacji.
+- Wykres wagi i zmiana masy używają ostatniego rzeczywistego pomiaru każdej daty w oknie; czas UTC i ID rozstrzygają kolejność. Licznik obejmuje wszystkie nieusunięte pomiary. Do zmiany masy potrzebne są co najmniej dwie daty z pomiarem. Nie interpolujemy ani nie przenosimy pomiarów z innych dni lub spoza okna.
+- Odczyty Room są ograniczone do właściciela i zakresu; pomijają znaczniki usunięcia. Edycje, usunięcia, nowe cele, pomiary i deklaracje aktualizują obserwowany wynik. Analityka nie zapisuje operacji outbox ani nie modyfikuje dziennika. Aktualność dotyczy wyłącznie danych na urządzeniu; synchronizacja nadal nie jest podłączona.
+
 ## Co pozostaje na następne etapy
 
-Zweryfikowane pakiety rzeczywistych racji i osobny import materiałów MRE 2026, historia/wykresy 7/30/90 dni, kalkulator zapotrzebowania, konto, rzeczywista synchronizacja z API, zdjęcia/Gemini, produkty społeczności, ranking i Nemesis. Istnieje lokalna kolejka, ale ta wersja **nie wysyła danych na serwer**. Prywatne produkty nie są publikowane w katalogu społeczności. API katalogu E2 udostępnia wyłącznie official; demo jest lokalne w APK i nie powoduje oczekiwania na konto/API.
+Zweryfikowane pakiety rzeczywistych racji i osobny import materiałów MRE 2026, kalkulator zapotrzebowania, konto, rzeczywista synchronizacja z API, zdjęcia/Gemini, produkty społeczności, ranking i Nemesis. Istnieje lokalna kolejka, ale ta wersja **nie wysyła danych na serwer**. Prywatne produkty nie są publikowane w katalogu społeczności. API katalogu E2 udostępnia wyłącznie official; demo jest lokalne w APK i nie powoduje oczekiwania na konto/API.
 
 ## Uruchomienie w Android Studio
 
@@ -77,8 +88,12 @@ APK debug: `app/build/outputs/apk/debug/app-debug.apk`. Raporty: `app/build/repo
 12. Zapisz profil, a potem dwa pomiary z tą samą datą. Wpisy pozostają osobne, korekta zachowuje datę, a usunięcie jednego nie usuwa drugiego ani nie zmienia celu kalorii.
 13. Oznacz niepusty dzień jako kompletny, zamknij aplikację i otwórz ponownie. Następnie usuń wszystkie jego posiłki: pusty dzień nie jest kompletny mimo wcześniejszej deklaracji.
 14. Zainstaluj aktualizację na wersji 0.2.0: składniki racji i wartości historyczne pozostają.
+15. W Postępach przełącz 7/30/90 dni i kcal/B/T/W, sprawdź mianowniki średnich, wcześniejsze cele oraz niepełne/puste dni. Otwórz dzień z historii i popraw wpis: wynik po powrocie się aktualizuje.
+16. Zapisz kilka pomiarów tej samej daty, popraw lub usuń ostatni. Wykres używa ostatniego dostępnego pomiaru i zachowuje przerwy. Przesuń okres strzałkami i odtwórz aktywność.
 
 Szczegółowy wynik walidacji 0.4.0, zakres prób awarii i ograniczenia odbioru E2: [raport Androida](RAPORT_0_4.md). Testy urządzenia obejmują migracje 1/2/3 → 4, zachowanie historii/kolejki, generacje, niezmienność wersji, rzeczywisty SQLITE_FULL oraz przepływy UI z odtworzeniem aktywności. Pełny odbiór zespołowy KO-30 wymaga również środowiska i dostawy O2/O3; raport lokalny go nie zastępuje.
+
+Wynik etapu analityki i zasady zależnego PR: [raport 0.5.0](RAPORT_0_5.md).
 
 ## Architektura
 

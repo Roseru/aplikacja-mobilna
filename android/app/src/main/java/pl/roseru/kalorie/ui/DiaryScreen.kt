@@ -72,11 +72,11 @@ import java.util.Locale
                 Row(Modifier.fillMaxWidth().padding(16.dp), verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(12.dp)) {
                     Column(Modifier.weight(1f)) {
                         Text(if (day.complete) "Dzień kompletny" else "Dziennik niekompletny", style = MaterialTheme.typography.titleSmall)
-                        Text(if (day.meals.isEmpty() || day.totals.kcal <= 0) "Dodaj posiłki, aby potwierdzić kompletność." else "Potwierdź, gdy zapisałeś wszystkie posiłki.",
+                        Text(if (!day.totals.asExact().energy.complete) "Uzupełnij brakujące kcal przed potwierdzeniem dnia." else if (day.meals.isEmpty() || day.totals.kcal <= 0) "Dodaj posiłki, aby potwierdzić kompletność." else "Potwierdź, gdy zapisałeś wszystkie posiłki.",
                             style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
                     }
                     Switch(checked = day.status?.declaredComplete == true, onCheckedChange = model::setDayComplete,
-                        enabled = !busy && day.date <= LocalDate.now() && (day.status?.declaredComplete == true || day.totals.kcal > 0),
+                        enabled = !busy && day.date <= LocalDate.now() && (day.status?.declaredComplete == true || completeDiary(true, day.meals.sumOf { it.items.size }, day.totals)),
                         modifier = Modifier.semantics { contentDescription = "Deklaracja kompletności dnia" }.testTag("day-complete"))
                 }
             }

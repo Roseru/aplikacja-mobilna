@@ -4,7 +4,7 @@ Data: 9 października 2026 r.
 
 Podstawa: `WYMAGANIA_PROJEKTOWE.md` oraz zaakceptowane makiety. Użytkownik jest osobą 1 w trzyosobowym zespole. Ten dokument wyznacza kolejność implementacji; bieżący zakres kodu jest opisany w [android/README.md](android/README.md).
 
-**Postęp:** A-01–05 są zaimplementowane i sprawdzone w wersji 0.1.0. Wersja 0.2.0 dodaje lokalne racje DEMO i migrację Room 1 → 2. Wersja 0.3.0 dodaje prywatny produkt, profil, pomiary wagi i kompletność dnia oraz Room 3. Wersja 0.4.0 dodaje importer pakietu E2, BigDecimal, generacje i pełne snapshoty nowych spożyć, z migracją Room 3 → 4. Rzeczywista synchronizacja i pełny adapter dawnych danych do API pozostają do wykonania; [instrukcja Androida](android/README.md) i [raport 0.4](android/RAPORT_0_4.md) opisują zakres i ograniczenia.
+**Postęp:** A-01–05 są zaimplementowane i sprawdzone w wersji 0.1.0. Wersja 0.2.0 dodaje lokalne racje DEMO i migrację Room 1 → 2. Wersja 0.3.0 dodaje prywatny produkt, profil, pomiary wagi i kompletność dnia oraz Room 3. Wersja 0.4.0 dodaje importer pakietu E2, BigDecimal, generacje i pełne snapshoty nowych spożyć, z migracją Room 3 → 4. Wersja 0.5.0 dodaje lokalną analitykę 7/30/90 dni i historię z datowanymi celami, wagą oraz jawnymi brakami; Room nadal 4. Rzeczywista synchronizacja i pełny adapter dawnych danych do API pozostają do wykonania; [instrukcja Androida](android/README.md), [raport 0.4](android/RAPORT_0_4.md) i [raport 0.5](android/RAPORT_0_5.md) opisują zakres i ograniczenia.
 
 ## 1. Od czego zaczynamy
 
@@ -168,7 +168,7 @@ Nie potrzebujemy na start kompletnego backendu ani działającej analizy AI. Do 
 
 ## 8. Pierwsze zadanie do wykonania w kodzie
 
-Lokalny rdzeń A-01–05, formularze profilu/wagi/prywatnego produktu/kompletności oraz importer eksportu E2 i obliczenia BigDecimal są zaimplementowane. Następny spójny etap to lokalna analityka 7/30/90 dni: historia spożycia, realizacja datowanych celów i masa z jawnymi brakami oraz kompletnością dnia. Konta i faktyczny sync wymagają wdrożonych endpointów kolejnych etapów backendu i jawnej konwersji roboczej kolejki do kontraktu. Import materiałów MRE 2026 jest osobnym zadaniem katalogu: nie sumujemy alternatyw ani zbiorczego pakietu dodatków ze składnikami.
+Lokalny rdzeń A-01–05, formularze profilu/wagi/prywatnego produktu/kompletności, importer E2, BigDecimal i lokalna analityka 7/30/90 dni są zaimplementowane. Następny etap integracyjny to konta i adapter synchronizacji: wymaga wdrożonych endpointów kolejnych etapów backendu, izolacji właścicieli i jawnej konwersji roboczej kolejki do kontraktu. Do czasu dostawy API można przygotować adaptery oraz scenariusze offline bez udawania rzeczywistego sync. Import materiałów MRE 2026 jest osobnym zadaniem katalogu: nie sumujemy alternatyw ani zbiorczego pakietu dodatków ze składnikami.
 
 ## Dokumentacja techniczna
 

@@ -96,6 +96,14 @@ data class DiaryDayEntity(@PrimaryKey val id: String, val ownerScope: String, va
 
 @Dao
 interface CalorieDao {
+    @Transaction @Query("SELECT * FROM meals WHERE ownerScope = :owner AND localDate BETWEEN :start AND :end AND deleted = 0 ORDER BY localDate, occurredAt, id")
+    fun mealsBetween(owner: String, start: String, end: String): Flow<List<MealWithItems>>
+    @Query("SELECT * FROM goals WHERE ownerScope = :owner AND validFrom <= :end ORDER BY validFrom")
+    fun goalsThrough(owner: String, end: String): Flow<List<GoalEntity>>
+    @Query("SELECT * FROM diary_days WHERE ownerScope = :owner AND localDate BETWEEN :start AND :end ORDER BY localDate")
+    fun daysBetween(owner: String, start: String, end: String): Flow<List<DiaryDayEntity>>
+    @Query("SELECT * FROM weights WHERE ownerScope = :owner AND localDate BETWEEN :start AND :end AND deleted = 0 ORDER BY localDate, occurredAt, id")
+    fun weightsBetween(owner: String, start: String, end: String): Flow<List<WeightEntity>>
     @Query("SELECT * FROM products WHERE (ownerScope IS NULL OR ownerScope = :owner) AND (catalogJson IS NULL OR id IN (SELECT recordId FROM catalog_members JOIN catalog_active ON catalog_members.generationId = catalog_active.generationId)) ORDER BY name") fun products(owner: String = "guest"): Flow<List<ProductEntity>>
     @Query("SELECT * FROM products WHERE id = :id AND (ownerScope IS NULL OR ownerScope = :owner)") suspend fun product(id: String, owner: String = "guest"): ProductEntity?
     @Insert suspend fun insertProduct(product: ProductEntity)

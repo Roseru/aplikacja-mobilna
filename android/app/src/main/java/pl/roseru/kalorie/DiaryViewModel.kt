@@ -13,7 +13,7 @@ import java.util.UUID
 
 data class DayState(val date: LocalDate = LocalDate.now(), val meals: List<MealWithItems> = emptyList(), val goal: GoalEntity? = null, val status: DiaryDayEntity? = null) {
     val totals: Nutrients get() = meals.flatMap { it.items }.map { it.consumed() }.total()
-    val complete: Boolean get() = status?.declaredComplete == true && meals.isNotEmpty() && totals.kcal > 0
+    val complete: Boolean get() = completeDiary(status?.declaredComplete == true, meals.sumOf { it.items.size }, totals)
 }
 sealed interface DiaryEvent {
     data object MealSaved : DiaryEvent
@@ -31,6 +31,14 @@ class DiaryViewModel(private val repository: DiaryRepository, private val prefer
     private val channel = Channel<DiaryEvent>(Channel.BUFFERED)
     val events = channel.receiveAsFlow()
     private val policy = SharingStarted.WhileSubscribed(5000)
+    private val analyticsDays = saved.getStateFlow("analytics-days", 7)
+    private val analyticsEnd = saved.getStateFlow("analytics-end", LocalDate.now().toString())
+    val analyticsWindow = combine(analyticsDays, analyticsEnd) { days, end ->
+        AnalyticsWindow(LocalDate.parse(end).coerceAtMost(LocalDate.now()), AnalyticsPeriod.entries.first { it.days == days })
+    }.stateIn(viewModelScope, policy, AnalyticsWindow(LocalDate.now(), AnalyticsPeriod.WEEK))
+    val analytics = analyticsWindow.flatMapLatest { window ->
+        AnalyticsRepository(repository.dao).observe(DiaryRepository.GUEST, window).map<AnalyticsResult, AnalyticsResult?> { it }.onStart { emit(null) }
+    }.stateIn(viewModelScope, policy, null)
     val theme = preferences.theme.stateIn(viewModelScope, policy, ThemeMode.SYSTEM)
     val products = repository.dao.products().stateIn(viewModelScope, policy, emptyList())
     val rations = repository.dao.rations().stateIn(viewModelScope, policy, emptyList())
@@ -56,6 +64,14 @@ class DiaryViewModel(private val repository: DiaryRepository, private val prefer
     fun changeDay(days: Long) { savedState["date"] = LocalDate.parse(dateText.value).plusDays(days).toString() }
     fun today() { savedState["date"] = LocalDate.now().toString() }
     fun selectDate(date: LocalDate) { savedState["date"] = date.toString() }
+    fun setAnalyticsPeriod(period: AnalyticsPeriod) { savedState["analytics-days"] = period.days }
+    fun moveAnalyticsWindow(direction: Int) {
+        require(direction in -1..1)
+        val period = AnalyticsPeriod.entries.first { it.days == analyticsDays.value }
+        val end = LocalDate.parse(analyticsEnd.value).coerceAtMost(LocalDate.now())
+        savedState["analytics-end"] = end.plusDays(direction.toLong() * period.days).coerceAtMost(LocalDate.now()).toString()
+    }
+    fun analyticsToday() { savedState["analytics-end"] = LocalDate.now().toString() }
     fun setTheme(theme: ThemeMode) { viewModelScope.launch { preferences.setTheme(theme) } }
     fun add(productId: String, grams: Double, type: MealType, amountText: String? = null) {
         val date = LocalDate.parse(dateText.value)
