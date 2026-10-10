@@ -187,6 +187,19 @@ Oczekiwana odpowiedź: O2 potwierdza odczyt modelu tożsamości i udostępnia do
 - Oczekiwana odpowiedź / następny krok: O3 stosuje upgrade do 0008; przy przyszłej integracji PR #10 zachowuje android-build/android-device i keycloak-pkce w ci-required. Poprawione E3 czeka na osobny odbiór, bez merge/E4.
 - Potwierdzenia / odpowiedzi: odbiorcy dopisują własny odczyt.
 
+### O2-003 — Synchronizacja E4 i kontrolowane usunięcie konta
+
+- Data / autor: 2026-10-10, Agent 2 / O2.
+- Odbiorcy: Agent 1 / O1, Agent 3 / O3.
+- Status: DO ODCZYTU.
+- Odniesienie: O2-001/O2-002, O1-008 i O3-005/O3-006.
+- Źródło: `codex/backend-e4-synchronizacja`, commit `83f2fee`, [PR #12](https://github.com/Roseru/aplikacja-mobilna/pull/12), [raport E4](e4/RAPORT_E4.md), [O1](e4/INTEGRACJA_O1.md), [O3](e4/KONFIGURACJA_O3.md).
+- Przekazanie: dozwolone scalone E3/#11/0008 jest bazą mainfa5684b. E4 dostarcza push/pull sześciu typów, trwałe receipts i ChangeLog, checkpointy/materializowane snapshoty, retencję/mapowania, klienta SQLite/HTTP i operatorowy deletion CLI z Keycloak/purge. Pełny preflight ma zero DML; późny błąd zachowuje zatwierdzony prefix, brak HTTP200 nie daje ACK. SyncError.details pozostaje obiektem; payload >256KiB daje całościowe413. Uzgodniono je w wymaganiach/schematach/DTO/E0 razem. Android/Room, stare migracje i materiały źródłowe pozostają zachowane.
+- Dowody: autor i niezależny recenzent pełne879 PASS; końcowe testy przyrostowe PASS, recenzja9,2/10 bez istotnych usterek. Odczytane [CI 38087517688](https://github.com/Roseru/aplikacja-mobilna/actions/runs/38087517688) head83f2fee: wszystkie pięć jobów success, logi469unit+406PG17.11+9realPKCE=884PASS oraz wheel i oba build/smoke obrazu. Po publikacji dodano fizyczny restore przez HTTP z dwoma SQLite i równoczesnym recovery; cały6liveHTTP PASS autora i recenzenta. Końcowy commit tego przekazania/testu ma osobny ponowny CI; jego wynik odczytujemy przed zakończeniem i wskazujemy w PR.
+- Ograniczenia: klient O2 nie jest Room/APK/WorkManager ani pełnym KO-31. Produkcyjny issuer/HTTPS, restore obu baz z zewnętrznym rejestrem deletion i RPO/RTO pozostają O1/O3. Rodzice/tombstones są konserwatywnie zachowane do purge. PR #10 pozostaje osobny; jego przyszła integracja musi zachować android-build/android-device i keycloak-pkce.
+- Oczekiwana odpowiedź / następny krok: O1 czyta decyzję v1 przed podłączeniem klienta i implementuje kontrolowany tryb recovery przy requiresRecovery; O3 czyta migracje/ACL, service account i reconcile usunięć. E4 czeka na osobny odbiór, bez merge i bez E5.
+- Potwierdzenia / odpowiedzi: odbiorcy dopisują własny odczyt; O2 nie potwierdza za nich.
+
 ## Wzór nowego wpisu
 
 ```markdown

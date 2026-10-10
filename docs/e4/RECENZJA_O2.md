@@ -36,6 +36,11 @@ syntetycznego usuwanego A i niezależnego B. Potwierdzono PKCE, odmowę
 nieuprzywilejowanego service account, DELETE/authorized absence/crash retry,
 odmowę refresh/login i starego JWT oraz niezmienny B/katalog.
 
+Po publikacji niezależnie wykonano jeszcze cały zestaw sześciu live HTTP
+(6 PASS/9,87s), w tym nowy fizyczny restore PostgreSQL z dwoma trwałymi
+SQLite, restartem i równoczesnym recovery do jednego targetu. Oryginały
+oraz immutable wire zachowane. Runtime pozostał bez zmian; ocena9,2 aktualna.
+
 Ocena dotyczy backendu/klienta O2. Końcowy zdalny CI odczytuje autor po push;
 Room/APK/WorkManager/KO-31 i produkcyjny restore obu baz z zewnętrznym
 rejestrem usunięć pozostają odbiorem O1/O3. Nie wykonywano merge E4/E5.

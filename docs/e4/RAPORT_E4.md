@@ -42,11 +42,24 @@ oraz historyczne snapshoty nie są przepisywane.
 Autor: pełne **469 unit + 401 PostgreSQL17.11 + 9 real Keycloak/PKCE =
 879 PASS**, bez skipów. Po ostatniej zmianie ponowiono cały push/live HTTP
 oraz niezależne regresje: **38 PASS**, w tym pięć nowych przypadków.
-Łącznie wykonano 406 różnych przypadków PostgreSQL, lecz końcowy pełny
-zdalny przebieg wszystkich 406 zostanie odczytany z CI. Ruff122/format,
+Łącznie wykonano 406 różnych przypadków PostgreSQL przed publikacją.
+Po publikacji dodano bezpośredni fizyczny restore przez HTTP z dwoma SQLite,
+restartem i równoczesnym recovery do jednego targetu: cały zestaw 6 live HTTP
+przeszedł u autora i niezależnego recenzenta. Końcowy zestaw ma 407 testów PG.
+Ruff122/format,
 schematy/resources, E0 (67 valid/20 invalid/18 scenarios/82 HTTP, 16 Decimal,
 200 linków), OpenAPI, sdist/wheel i installed wheel Python -I poza checkoutem:
 PASS. Obrazu nie budowano lokalnie; właściwy build/smoke wykonuje CI head.
+
+Implementacja: commit `83f2feeb86eb9d7fe53ee684ab9069f1f51af353`,
+[PR #12](https://github.com/Roseru/aplikacja-mobilna/pull/12).
+Odczytano [CI 38087517688](https://github.com/Roseru/aplikacja-mobilna/actions/runs/38087517688)
+completed/success, wszystkie pięć jobów. Rzeczywiste logi integracji
+`6a6c33d` (head83f2fee + mainfa5684b): **884 PASS** — 469 unit, 406
+PostgreSQL17.11 i 9 real PKCE/sync/deletion, bez skipów. Python3.13.16;
+sdist/wheel, installed wheel -I oraz oba build/smoke obrazu success.
+Końcowy commit raportu/przekazania i dodatkowego testu ma własny ponowny CI;
+jego exact head i wynik podajemy w PR i końcowej odpowiedzi po odczycie.
 
 Recenzent sam: pełne 879 PASS, końcowy push/live29 PASS, własne probes,
 opakowanie i dokładność 66 plików wheel. **9,2/10 bez istotnych nierozwiązanych
