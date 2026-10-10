@@ -2,6 +2,8 @@
 
 Status: decyzje do implementacji, 9 października 2026 r. Zakres naszej pracy: **Osoba 2 — backend, dane i integracje**. Reguły funkcjonalne i limity obowiązują zgodnie z [wymaganiami](../WYMAGANIA_PROJEKTOWE.md); ten dokument ustala ich realizację techniczną. [Plan etapów](PLAN_PRAC.md) określa kolejność, a [workflow](WORKFLOW.md) sposób dostarczania zmian.
 
+Implementację katalogu/dostawy O2 opisuje [raport E2](e2/RAPORT_E2.md). Publiczne v1 na stałe identyfikuje official package_id `c12631e2-1a02-547c-a7f9-ebf87bb42e55`; magazyn rozdziela kind/package_id, zapis kompletnych bajtów poprzedza publikację DB, a active_release jest monotoniczny. Inny package_id nie jest przełącznikiem konfiguracji tych URL. [Instrukcja integracji O1](e2/INTEGRACJA_O1.md) oddziela działający importer referencyjny SQLite od wymaganych adaptacji i dowodów Room/APK. Chronione produkty HTTP pozostają E3, mimo gotowej usługi E2.
+
 ## 1. Decyzja o bazach i JSON
 
 **Serwer: PostgreSQL. Telefon: Room/SQLite. JSON: format wymiany i pakiet katalogu.** Wszystkie trzy mają odrębne zadanie.
