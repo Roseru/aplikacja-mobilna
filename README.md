@@ -1,4 +1,4 @@
-# Wojskowy licznik kalorii - osoba 2
+# Wojskowy licznik kalorii
 
 - [Uruchomienie i weryfikacja backendu E1/E2](backend/README.md)
 - [Raport E2 i przekazanie offline O1](docs/e2/RAPORT_E2.md)
@@ -14,7 +14,7 @@ Projekt aplikacji Android z backendem Python i PostgreSQL, działającej równie
 - [Kontrakty E0 i komenda walidacji](contracts/README.md)
 - [Raport odbioru E0](docs/e0/ODBIOR.md)
 
-W tym obszarze pracy realizujemy zadania **Osoby 2: backend, baza, API i integracje**. Przyjęty stos to FastAPI, SQLAlchemy, Alembic i PostgreSQL; logowanie przez Keycloak. Maksymalny wspierany okres synchronizacji przyrostowej po pracy offline wynosi **30 dni**. Dłuższa przerwa wymaga pełnego uzgodnienia stanu z zachowaniem lokalnych danych.
+Wspólne repozytorium zespołu: **Osoba 1 — Android i Room; Osoba 2 — backend, baza i API; Osoba 3 — GitHub, CI/CD i wdrożenie**. Przyjęty stos backendu to FastAPI, SQLAlchemy, Alembic i PostgreSQL; logowanie przez Keycloak. Maksymalny wspierany okres synchronizacji przyrostowej po pracy offline wynosi **30 dni**. Dłuższa przerwa wymaga pełnego uzgodnienia stanu z zachowaniem lokalnych danych.
 
 Przechowywanie: PostgreSQL z oddzielnymi bazami `keycloak` i `calorie_app`; produkty, racje i profile aplikacyjne w `calorie_app`. Na telefonie Room/SQLite. Katalog startowy i aktualizacje są dostarczane jako JSON gzip i importowane do Room; JSON nie zastępuje roboczej bazy dziennika.
 

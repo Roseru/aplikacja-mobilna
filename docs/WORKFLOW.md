@@ -13,7 +13,7 @@ flowchart TD
     Tests --> PR[Pull request z dowodem działania]
     PR --> CI[Kontrole CI i recenzja]
     CI -->|uwagi| Code
-    CI -->|zielone kontrole i akceptacja| Merge[Merge do main]
+    CI -->|zielone kontrole i rozwiązane uwagi| Merge[Merge do main]
     Merge --> Integration[Środowisko integracyjne i odbiór z Androidem]
     Integration --> Done[Zadanie ukończone]
 ```
@@ -40,7 +40,7 @@ Przykład: „B-005: wygenerować pakiet demo ze stałymi UUID; manifest i zawar
 3. Commity opisują konkretną zmianę. Pliki migracji już użyte przez zespół pozostają niezmienne; poprawka dostaje nową migrację.
 4. PR zawiera: problem i wynik, zakres API/danych, migrację/kompatybilność, wykonane testy oraz potrzebne działania O1/O3. Dla zmiany backendu przykładowe żądanie/odpowiedź jest lepszym dowodem niż sam zrzut terminala.
 5. Subagent może przeprowadzić dodatkową recenzję techniczną. Jego ocena nie zastępuje testów ani akceptacji członka zespołu na GitHubie. Dla większej zmiany projektowej „bardzo dobra” oznacza co najmniej 9/10 i brak istotnych usterek, z konkretnymi argumentami.
-6. O3 ustawia ochronę `main`: wymagany PR, co najmniej jedna akceptacja innej osoby, zielone wymagane sprawdzenia, rozwiązane uwagi i brak bezpośredniego force-push. Po istotnej poprawce wymagamy ponownego sprawdzenia zmienionego zakresu.
+6. O3 ustawia ochronę `main`: wymagany PR, zielone wymagane sprawdzenia, rozwiązane uwagi i brak bezpośredniego force-push. Decyzją właściciela z 10 października 2026 review jest opcjonalne: wymagane jest 0 zatwierdzeń, a `require_last_push_approval` jest wyłączone. Można scalić własny PR po zaliczeniu kontroli i rozwiązaniu istotnych uwag. Po istotnej poprawce wymagamy ponownego sprawdzenia zmienionego zakresu. Stare review `Request changes` nadal może blokować merge; zamykamy je po potwierdzeniu poprawki, nie przez wyłączenie testów.
 7. Po scaleniu O3 wdraża do środowiska integracyjnego. O1/O2 wykonują właściwy scenariusz na zgodnych wersjach APK i API. Sam merge nie zamyka zadania, jeśli integracja była częścią kryterium.
 
 Wymagane kontrole są zależne od dostępności funkcji GitHuba dla danego repozytorium; O3 potwierdza faktyczne ustawienia. Do tego czasu zespół stosuje ten sam proces ręcznie i nie opisuje `main` jako technicznie chronionego.
