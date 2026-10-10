@@ -44,6 +44,8 @@ import pl.roseru.kalorie.DiaryViewModel
             if (route !in listOf("food", "rations", "custom")) NavigationBar(containerColor = MaterialTheme.colorScheme.surface) {
                 NavigationBarItem(selected = route == "diary", onClick = { nav.navigate("diary") { popUpTo("diary"); launchSingleTop = true } },
                     icon = { Icon(Icons.AutoMirrored.Outlined.Assignment, contentDescription = null) }, label = { Text("Dziennik") })
+                NavigationBarItem(selected = route == "analytics", onClick = { nav.navigate("analytics") { launchSingleTop = true } },
+                    icon = { Icon(Icons.Outlined.BarChart, contentDescription = null) }, label = { Text("Postępy") }, modifier = Modifier.testTag("open-analytics"))
                 NavigationBarItem(selected = route == "settings", onClick = { nav.navigate("settings") { launchSingleTop = true } },
                     icon = { Icon(Icons.Outlined.Tune, contentDescription = null) }, label = { Text("Ustawienia") })
                 NavigationBarItem(selected = route == "profile", onClick = { nav.navigate("profile") { launchSingleTop = true } },
@@ -58,7 +60,11 @@ import pl.roseru.kalorie.DiaryViewModel
             composable("custom") { CustomFoodScreen(model, onBack = { nav.popBackStack() }) }
             composable("settings") { SettingsScreen(model) }
             composable("profile") { ProfileScreen(model) }
+            composable("analytics") { AnalyticsScreen(model, onDay = { date ->
+                model.selectDate(date)
+                nav.navigate("diary") { popUpTo("diary"); launchSingleTop = true }
+            }) }
         }
     }
-    if (route in listOf("settings", "profile")) BackHandler { nav.popBackStack() }
+    if (route in listOf("settings", "profile", "analytics")) BackHandler { nav.popBackStack() }
 }

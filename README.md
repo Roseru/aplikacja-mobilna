@@ -26,8 +26,8 @@ Gemini: wyłącznie darmowe API (Free Tier), bez aktywnego billing; CI korzysta 
 
 [Kod i instrukcja uruchomienia](android/README.md) · [Plan implementacji](PLAN_IMPLEMENTACJI_ANDROID.md)
 
-Otwórz `android/` w Android Studio. Wersja 0.4.0 działa bez konta i internetu: dziennik i cel kcal/B/T/W, produkty i prywatne wpisy, racje ze zjedzonymi składnikami, profil, pomiary wagi, kompletność dnia, edycja/usuwanie i oba motywy. Room 4 zachowuje dotychczasowe dane przez migracje 1 → 2 → 3 → 4.
+Otwórz `android/` w Android Studio. Wersja 0.5.0 działa bez konta i internetu: dziennik, cele kcal/B/T/W, produkty prywatne, racje ze zjedzonymi składnikami, profil i waga. Postępy pokazują historię i wykresy 7/30/90 dni, średnie z jawną liczbą kompletnych dni oraz realizację historycznych celów. Braki pozostają brakami, pomiary wagi nie są interpolowane. Room nadal 4, bez nowej migracji.
 
-Importer E2 sprawdza pakiet przed aktywacją; nowe spożycia mają pełny snapshot i dokładne obliczenia BigDecimal z jawnymi brakami danych. Katalog zawiera łącznie 33 produkty i 3 racje DEMO. Lokalna kolejka nie wysyła jeszcze danych. [Raport 0.4.0](android/RAPORT_0_4.md) dokumentuje 39 testów JVM, 26 różnych zaliczonych testów urządzenia (25 w pełnym przebiegu i jeden w osobnym powtórzeniu) oraz lint: 0 błędów / 26 ostrzeżeń. Następny etap O1 to analityka 7/30/90 dni.
+Importer E2, BigDecimal i pełne snapshoty zachowują wcześniejsze spożycia. Katalog ma 33 produkty / 3 racje DEMO. Kolejka i analityka są lokalne; synchronizacja pozostaje do wykonania. [Raport 0.5.0](android/RAPORT_0_5.md) opisuje reguły, rzeczywistą walidację i zależność nowej gałęzi od PR #1.
 
 Budowanie i testy jednostkowe: `./gradlew :app:assembleDebug :app:testDebugUnitTest :app:lintDebug` z katalogu `android/`. Testy urządzenia: `./gradlew :app:connectedValidationAndroidTest`; osobna instalacja testowa zachowuje zwykły dziennik.
