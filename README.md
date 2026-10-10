@@ -10,6 +10,7 @@ Projekt aplikacji Android z backendem Python i PostgreSQL, działającej równie
 - [Architektura, bazy danych i pakiet racji offline](docs/ARCHITEKTURA.md)
 - [Plan etapów, zależności i potrzebne zasoby](docs/PLAN_PRAC.md)
 - [Workflow pracy, recenzji, CI i wdrożeń](docs/WORKFLOW.md)
+- [Komunikacja agentów: przekazania, pytania i blokady](docs/KOMUNIKACJA_AGENTOW.md)
 - [Kontrakty E0 i komenda walidacji](contracts/README.md)
 - [Raport odbioru E0](docs/e0/ODBIOR.md)
 
