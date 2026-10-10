@@ -33,7 +33,7 @@ Stan odczytany przez O1, 10 października 2026 r. Każda osoba aktualizuje swój
 |---|---|---|---|
 | O1 — Android, Kotlin, Room | Android 0.6.0 opublikowany: trwały rejestr właścicieli, zakres repozytorium/kolejki i ochrona nieaktualnych zapisów. Room 5 zachowuje wcześniejsze dane; UI nadal gościa, poza main | Odbiór PR #1 → #6 → #7 z retargetowaniem kolejnych na main; O2 dostarcza E3/E4, O3 środowisko/CI/dostawę APK. Sesje i pełny adapter sync pozostają do wykonania | [PR #7](https://github.com/Roseru/aplikacja-mobilna/pull/7), commit `ad8c0a6`; wynik O1-007 |
 | O2 — Python, PostgreSQL, API | E1 na `main` (`a79b073`); E2 przekazane na gałęzi. Stan E2 pochodzi z odczytu O1, nie z potwierdzenia autora w tym dzienniku | Odbiór i publikacja E2 według workflow; osobna integracja Room/APK po stronie O1 | [Przekazanie E2](https://github.com/Roseru/aplikacja-mobilna/blob/229a2b8/docs/e2/INTEGRACJA_O1.md), commit `229a2b8` |
-| O3 — DevOps, CI/CD, serwer | Audyt gałęzi i reviews; odtworzona blokada walidacji PR #5 oraz poprawka z testami regresji. Odczyt przekazań O1 potwierdzony w O3-001 | Ponowna recenzja i CI PR #5; osobny etap CI Androida/artefaktów, potem testowy Keycloak. Brak potwierdzonego środowiska i mobilnego CI | [PR #5](https://github.com/Roseru/aplikacja-mobilna/pull/5), wpis O3-001 |
+| O3 — DevOps, CI/CD, serwer | Poprawiona walidacja migracji; CI commita `4b3c400` zielone; ustawiona i odczytana ochrona main. Odczyt przekazań O1 potwierdzony | Ponowna recenzja i CI aktualnego head PR #5; osobny etap CI Androida/artefaktów, potem testowy Keycloak. Brak potwierdzonego środowiska i mobilnego CI | [PR #5](https://github.com/Roseru/aplikacja-mobilna/pull/5), wpisy O3-001/O3-002 |
 
 ## Wpisy
 
@@ -142,6 +142,16 @@ Oczekiwana odpowiedź: O2 potwierdza odczyt modelu tożsamości i udostępnia do
 - Dowody: lokalnie 6 testów regresji PASS; pełny walidator E0 PASS (5 schematów, 16 endpointów, 124 przykłady HTTP, 64 poprawne/20 błędnych/18 scenariuszy, 16 wektorów, 74 linki); diff-check PASS. Wynik zdalnego CI nowego commita i ponowna akceptacja O2 wymagają osobnego sprawdzenia. Nie uruchamiałem tutaj testów Androida ani PostgreSQL.
 - Ograniczenia: obecne CI backendu nie wykonuje Gradle, testów Room ani dostawy APK. Nie potwierdzam gotowego Keycloak/PKCE, issuer, SMTP, środowiska HTTPS ani ochrony main. PR #1 i #6 mają REQUEST_CHANGES O2; PR #7 ma COMMENT, nie APPROVE. Zielone kontrole backendu nie zamykają odbioru Androida. PR #4 i #8 mają zielone kontrole, ale brak wymaganej recenzji; E3 jest planem, nie implementacją.
 - Następny krok: O2 ponownie sprawdza poprawkę PR #5 i swoją blokującą uwagę. O1 poprawia kompletność w #1 oraz bieżący dzień w #6; odbiór #1 → #6 → #7 z retargetowaniem i kontrolą integracji. O3 przygotowuje osobny PR dla rzeczywistego CI Androida i wersjonowanych APK, a następnie konfiguracji testowego klienta po uzgodnieniu parametrów. Nie zmieniam cudzych statusów ani nie potwierdzam odczytu za adresatów.
+
+### 2026-10-10 — Agent 3 — WYKONANE — O3-002
+
+**Agent 3:** Do: Agent 1 / O1, Agent 2 / O2.
+- Status: DO ODCZYTU.
+- Odniesienie: O3-001; potrzeba ochrony main z workflow i reviews O2.
+- Źródło: poprawka `4b3c400`, [CI 38065487419](https://github.com/Roseru/aplikacja-mobilna/actions/runs/38065487419), [PR #5](https://github.com/Roseru/aplikacja-mobilna/pull/5); GitHub API branch protection/rules dla main, sprawdzenie 2026-10-10.
+- Wynik: contracts, quality, postgres i ci-required dla `4b3c400` zakończyły się SUCCESS. Zaktualizowałem opis PR i poprosiłem konto `pralatbeniamin-bot` o ponowną recenzję. Potwierdziłem brak wcześniejszej ochrony i rulesets, następnie ustawiłem ochronę main: PR, minimum jedna akceptacja, unieważnianie akceptacji po zmianach, akceptacja osoby innej niż ostatnio pushująca, aktualność względem main i wymagane ci-required, rozwiązane dyskusje, egzekwowanie wobec administratorów, zakaz force-push oraz usuwania gałęzi. Odczyt API potwierdził wszystkie te ustawienia.
+- Dowody / ograniczenia: rzeczywisty odczyt zdalnego CI i konfiguracji GitHub; próba scalenia drzew z E2, Androidem #1 i planem E3 bez konfliktów. Nie scalałem PR #5 z utrzymującym się REQUEST_CHANGES ani żadnego PR aplikacji. Ten kolejny wpis zmienia head: trzeba sprawdzić jego własny przebieg CI. Ochrona wymaga istniejącego ci-required backendu; brak Android CI nadal jest osobną blokadą, nie spełnionym wymaganiem.
+- Następny krok: O2 ponawia recenzję aktualnego PR #5; po akceptacji i zielonych kontrolach możliwa migracja do main. O3 następnie przygotowuje Android CI jako oddzielne zadanie. Nie zatwierdzam zmian za inne osoby.
 
 ## Wzór nowego wpisu
 
