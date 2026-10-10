@@ -6,15 +6,6 @@
 - Przy projektowaniu bazy i importu korzystaj z tych materiałów, ale weryfikuj ich ograniczenia. Brak danych nie oznacza zera; alternatywnych wariantów produktu nie należy sumować.
 - `Random Data/MRE/` zawiera zestaw menu amerykańskich MRE 2026 i wartości odżywcze. Zacznij od jego `README.md`; dane do przetwarzania są w `mre_2026.json`.
 
-## Komunikacja Agentów 1, 2 i 3
-
-- Jedynym wspólnym dziennikiem jest [docs/KOMUNIKACJA_AGENTOW.md](docs/KOMUNIKACJA_AGENTOW.md). Na polecenie właściciela z 10 października 2026 r. przeniesiono tam wpisy i zasady z dawnego folderu `komunikacja-agentow`; nie odtwarzaj drugiej tablicy.
-- Na początku zadania i przed publikacją pobierz aktualny GitHub, przeczytaj nowe wpisy oraz wskazane zmiany dotyczące swojej roli. Wpis z gałęzi czytaj na podanym commicie; nie zakładaj, że został scalony do main.
-- Agent 1 / O1 odpowiada za Android Kotlin, UI i Room; Agent 2 / O2 za Python, PostgreSQL i API; Agent 3 / O3 za GitHub, CI/CD i wdrożenie. Do Androida adresuj wpis `Do: Agent 1 / O1`; Agent 1 odczytuje go i odpowiada w tym samym pliku.
-- Dopisuj nową wiadomość na końcu sekcji Wpisy, przed wzorem i archiwum. Podaj datę, swój numer, typ, ID, adresata, commit/PR, wykonane testy, ograniczenia i oczekiwany następny krok. Odpowiedź odnosi się do ID pytania. Nie zmieniaj cudzych wpisów ani nie potwierdzaj odczytu za inną osobę.
-- Zachowaj historię wszystkich autorów przy konflikcie, pobierz nowe wpisy przed pushem i nie używaj force-push do rozwiązania konfliktu. Ważne decyzje utrwal także w dokumentacji lub kodzie. Publikuj zgodnie z `docs/WORKFLOW.md` przez własną gałąź i PR.
-- Ustal swój numer z lokalnego pliku tożsamości poza repozytorium na podstawie ustalenia z właścicielem; nie publikuj go. Wspólne instrukcje nie przypisują numeru żadnej konkretnej rozmowie ani urządzeniu.
-- Plik komunikacji nie wysyła powiadomień ani nie uruchamia rozmów. Bezpośrednie wysyłanie wiadomości innym osobom lub rozmowom wymaga upoważnienia użytkownika. Nie zapisuj sekretów, tokenów, prywatnego dziennika ani długich logów.
 
 ## Wspólny sposób pracy z GitHubem
 
@@ -29,3 +20,9 @@
 - Publikuj po ważnym, zweryfikowanym kroku. Przed commitem przejrzyj diff, uruchom `git diff --check` i kontrole właściwe dla zmiany. PR opisuje końcowy problem/wynik, migracje i zgodność, faktycznie wykonane testy, ograniczenia oraz potrzebne działania O1/O2/O3. Aktualizuj opis PR, gdy zmienia się jego końcowy zakres. Sam push ani test lokalny nie potwierdza zielonego zdalnego CI.
 - Do GitHuba trafiają źródła i potrzebna dokumentacja. Nie publikuj sekretów, tokenów, plików tożsamości, lokalnych ścieżek SDK, buildów/cache ani prywatnego dziennika. APK dostarczaj jako uzgodniony artefakt z wersją, commitem i SHA-256, zgodnie z zasadami O3.
 - Przed końcowym pushem pobierz nowe wpisy komunikacji; po publikacji dopisz w `docs/KOMUNIKACJA_AGENTOW.md` swój wynik, branch, commit/PR, testy i następny krok. W odpowiedzi użytkownikowi podaj aktualną gałąź i link do PR oraz rozróżnij stan lokalny, wypchnięty, w recenzji i scalony.
+
+## Komunikacja między agentami
+
+- Jedynym wspólnym dziennikiem jest [docs/KOMUNIKACJA_AGENTOW.md](docs/KOMUNIKACJA_AGENTOW.md), według schematu zaproponowanego przez Agenta 1.
+- Przed pracą przeczytaj aktualne wpisy. Po zadaniu stosuj zasady i wzór wiadomości z tego dokumentu; nie twórz drugiej tablicy ani osobnego pliku zasad.
+- Numer agenta wynika z ustalenia z właścicielem i lokalnej tożsamości poza repozytorium; wspólny dokument nie przypisuje numeru konkretnej rozmowie.
