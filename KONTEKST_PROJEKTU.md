@@ -30,7 +30,6 @@
 ## Wspólny plik komunikacji agentów
 
 - Na polecenie użytkownika dodano `docs/KOMUNIKACJA_AGENTOW.md`, link w README i regułę odczytu/dopisywania w workflow. Dokument zawiera statusy trzech osób, wzór wpisu oraz O1-001 (Android 0.3) i O1-002 (odczyt E2, aktualny Room 3).
-- Opublikowano osobno z `main`: gałąź `codex/komunikacja-agentow`, commit `71cbd83` autora `agent 1`, PR https://github.com/Roseru/aplikacja-mobilna/pull/5. W treści commita wyjaśniono cel: jedno miejsce przekazań zmian, pytań, blokad i potwierdzeń odczytu między Androidem/backendem/DevOps. PR pozostaje do recenzji; nie scalano go w tym zadaniu.
 - Na początku następnej pracy wczytać aktualny wspólny dziennik i wpisy dotyczące O1; po ważnym kroku dopisać rezultat, commit/PR i zależności. Nie potwierdzać odczytu za O2/O3. Plik sam nie powiadamia ani nie uruchamia innych rozmów.
 - Checkout publikacyjny przywrócono do czystej gałęzi `codex/android-offline-racje` na `a7bcda8`. Dokument komunikacji jest dostępny w osobnej gałęzi/PR; przy kolejnej aktualizacji pobrać stan `main` i zachować cudze wpisy.
 
@@ -41,5 +40,8 @@
 - Wersja 0.4 implementuje walidację manifestu/gzip/UTF-8/JSON/schematu/grafu, staging i atomową aktywację tylko nowszej generacji, niezmienność UUID+revision, g/ml i pochodzenie. Nowy snapshot spożycia utrwala produkt, ilość/jednostkę, źródła/gęstość i nutrition_v1 w TEXT. Aktualizacja katalogu nie zmienia historii ani operacji kolejki.
 - Migracja Room 3 → 4 dodaje pola/tabele bez zmiany dawnych kolumn REAL. Zachowuje prywatne produkty, profil, wagę, kompletność, cele, tombstones i outbox. Stare wartości nie mają deklarowanej odzyskanej precyzji; pełny adapter dawnych typów i kolejki do API pozostaje do wykonania.
 - Zaliczono 39 testów JVM, w tym wszystkie 16 wspólnych wektorów, i 26 różnych przypadków urządzenia API 35: 25 w pełnym przebiegu, rzeczywisty SQLITE_FULL osobno po poprawce próby. Pakiet w APK ma zgodny hash 65f4aae8…; fizyczne rozszerzenie .gz.bin zapobiega rozpakowaniu przez MergeAssets. Szczegóły i ograniczenia twardego przerwania procesu/KO-30 w `android/RAPORT_0_4.md`.
-- Na wyraźne polecenie użytkownika komunikację Agenta 3 przeniesiono do `docs/KOMUNIKACJA_AGENTOW.md`, z zachowaniem wszystkich trzech wiadomości i pełnego archiwum zasad. Usunięcie folderu `komunikacja-agentow` oraz wspólne zasady branch/commit/PR są opublikowane w PR #5 jako `dd47961`, autor agent 1. Zmiany nie są jeszcze scalone do main.
 - `AGENTS.md` wskazuje wspólny plik i format nowych gałęzi `codex/<obszar>-<temat>` dla android/backend/devops/docs. Istniejące Android i komunikacja pozostają na swoich nazwach oraz osobnych PR #1/#5. Tożsamość jest lokalna poza publikacją; nie potwierdzamy odczytu za innych autorów.
+
+## Aktualne miejsce komunikacji
+
+Komunikacja odbywa się wyłącznie w `docs/KOMUNIKACJA_AGENTOW.md`, według schematu Agenta 1.
