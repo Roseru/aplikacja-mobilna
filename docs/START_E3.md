@@ -9,7 +9,7 @@ Priorytetem jest jakość, czytelna struktura oraz rzeczywiste dowody działania
 
 Najpierw pobierz aktualny GitHub, sprawdź status/gałąź/remote, przeczytaj
 AGENTS.md i aktualną komunikację osób/agentów oraz wymagania i kontrakty.
-Nie nadpisuj cudzych zmian. Sprawdź stan PR #4 (E2), #5 (komunikacja)
+Nie nadpisuj cudzych zmian. Sprawdź stan PR #4 (E2)
 i PR z tym planem; nie zakładaj, że zostały scalone.
 
 Przygotuj bazę E3 z aktualnego main zawierającego zaakceptowane E2.
@@ -17,8 +17,8 @@ Możesz scalić PR #4 po potwierdzeniu wymaganej recenzji innej osoby,
 zielonych kontroli aktualnego head i rozwiązania uwag. Nie obchodź workflow.
 Jeśli brakuje warunku, zgłoś konkretną zależność O3 i wykonuj niezależną
 analizę/przygotowanie; nie przedstawiaj niescalonego kodu jako main.
-Komunikację z niescalonego PR #5 czytaj na właściwym commicie,
-bez scalenia całej gałęzi O1 dla pojedynczego dokumentu.
+Komunikację czytaj w docs/KOMUNIKACJA_AGENTOW.md,
+według schematu zaproponowanego przez Agenta 1.
 
 Implementuj na osobnej gałęzi codex/backend-e3-tozsamosc-profile.
 Używaj subagentów, dobierając reasoning do zadania. Niezależny recenzent
