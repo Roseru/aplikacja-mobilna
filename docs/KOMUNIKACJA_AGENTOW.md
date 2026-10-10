@@ -19,7 +19,7 @@ Stan odczytany przez O1, 10 października 2026 r. Każda osoba aktualizuje swój
 |---|---|---|---|
 | O1 — Android, Kotlin, Room | Android 0.7 / Room 6: trwały bootstrap i niezmienne cele, gość offline poza main | Poprawki reviews #1/#6 i odbiór #1 → #6 → #7 → #9; O2 E3/E4, O3 środowisko/CI | [PR #9](https://github.com/Roseru/aplikacja-mobilna/pull/9), commit `ce6972c`; O1-008 |
 | O2 — Python, PostgreSQL, API | E1 na `main` (`a79b073`); E2 przekazane na gałęzi. Stan E2 pochodzi z odczytu O1, nie z potwierdzenia autora w tym dzienniku | Odbiór i publikacja E2 według workflow; osobna integracja Room/APK po stronie O1 | [Przekazanie E2](https://github.com/Roseru/aplikacja-mobilna/blob/229a2b8/docs/e2/INTEGRACJA_O1.md), commit `229a2b8` |
-| O3 — DevOps, CI/CD, serwer | O3 potwierdził jeden dziennik według schematu O1 (O3-003); usunięcie dawnych plików było zamierzone. Naprawa dokumentów w PR #5 | Potwierdzenie stanu CI Androida, środowiska integracyjnego i dostawy pakietów | [Workflow zespołu](WORKFLOW.md), [CI backendu](https://github.com/Roseru/aplikacja-mobilna/blob/main/.github/workflows/backend.yml) |
+| O3 — DevOps, CI/CD, serwer | Odbiór oczekujących PR-ów na polecenie właściciela; E2 i dokumentacja scalone, Android sprawdzony lokalnie: 65 JVM + 52/52 API 35 | CI Androida, testowy Keycloak i wersjonowana dostawa APK pozostają osobnymi zadaniami; review opcjonalne według O3-005 | O3-006, [PR #9](https://github.com/Roseru/aplikacja-mobilna/pull/9), [CI backendu](https://github.com/Roseru/aplikacja-mobilna/blob/main/.github/workflows/backend.yml) |
 
 ## Wpisy
 
@@ -148,6 +148,18 @@ Oczekiwana odpowiedź: O2 potwierdza odczyt modelu tożsamości i udostępnia do
 - Przekazanie: właściciel wyłączył obowiązkowe zatwierdzanie PR. Wymagane jest 0 approvals; `require_last_push_approval=false`. Review pozostaje dostępne i opcjonalne. Można scalić własny PR po zaliczeniu kontroli i rozwiązaniu istotnych uwag. Ta decyzja zastępuje wcześniejsze zapisy o obowiązkowej akceptacji innej osoby, także w starszych planach i raportach. Jeden dziennik i pozostały schemat O1 pozostają obowiązujące.
 - Dowody / ograniczenia: O3 potwierdził ustawienia API; nadal wymagane `ci-required`, aktualność gałęzi i PR do `main`. Stare `Request changes` mogą nadal blokować merge i wymagają sprawdzenia poprawki.
 - Oczekiwana odpowiedź / następny krok: informacyjnie; O3 odbiera oczekujące PR-y na polecenie właściciela. Merge nie oznacza wdrożenia ani ukończenia przyszłych etapów.
+
+### O3-006 — Odbiór oczekujących PR-ów i baza dalszej pracy
+
+- Data / autor: 2026-10-10, Agent 3 / O3.
+- Odbiorcy: O1 / O2.
+- Status: DO ODCZYTU.
+- Źródło: polecenie właściciela; PR #4, #5, #8 oraz sekwencja Androida #1 → #6 → #7 → [#9](https://github.com/Roseru/aplikacja-mobilna/pull/9).
+- Przekazanie: E2, dokumentacja komunikacji, plan E3 i etapy Androida do #7 są scalone. #9 odbierany na main po retargetowaniu i zaliczeniu CI; ten wpis trafia do main wraz z #9. Kolejne zadania zaczynajcie od aktualnego main, bez ponownego scalania starych gałęzi. Własne istniejące niezatwierdzone zmiany zachowajcie.
+- Dowody: pełny własny test E2 `c5330ad` na PostgreSQL 17.11: 396 PASS, bez pominięć. Android `ff01adc`: własne build, 65 JVM, lint 0 błędów / 26 ostrzeżeń / 1 informacja oraz 52/52 testy urządzenia API 35 offline, bez błędów i pominięć. Osobno sprawdzono build/test/lint #1 (40 JVM) i #6 (57 JVM). Weryfikacja objęła null kcal/kompletność, wstępny dzień i północ/DST, migracje, izolację właścicieli, rollback, bootstrap i ochronę celów.
+- Integracja: po każdym merge kolejny PR skierowano na main i sprawdzono wymagane CI aktualnego head. Kod Androida po aktualizacji bazy porównano z przetestowanym — identyczny. Konflikt `.gitignore` rozwiązano sumą reguł cache Kotlina i plików DB, bez zmian aplikacji. Stare `Request changes` do #1/#5/#6 zamknięto po sprawdzeniu usuniętych przyczyn. Bez force-push ani wyłączenia wymaganych testów.
+- Ograniczenia: lokalny emulator nie jest CI Androida; workflow nadal sprawdza backend/kontrakty. Android 0.7.1 / Room 6 działa offline i przygotowuje model E3; brak OIDC/HTTP/sync pozostaje jawny. Nie wdrożono produkcji, Keycloak ani dalszego E3/E4. Opcjonalne review określa O3-005.
+- Oczekiwana odpowiedź / następny krok: informacyjnie; O1/O2 sprawdzają aktualny main i status #9 przed następnym zadaniem. CI Androida, środowisko Keycloak i dostawa APK wymagają odrębnego zlecenia/uzgodnienia zakresu.
 
 ## Wzór nowego wpisu
 
