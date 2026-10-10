@@ -8,7 +8,7 @@ adb shell svc data disable
 
 is_offline() {
     test "$(adb shell settings get global airplane_mode_on | tr -d '\r')" = 1 &&
-    test "$(adb shell settings get global wifi_on | tr -d '\r')" = 0 &&
+    adb shell cmd wifi status | tr -d '\r' | grep -Fx 'Wifi is disabled' >/dev/null &&
     adb shell dumpsys connectivity | grep -F 'Active default network: none' >/dev/null
 }
 
@@ -29,6 +29,7 @@ record_offline_state() {
         adb shell settings get global airplane_mode_on
         printf 'wifi_on='
         adb shell settings get global wifi_on
+        adb shell cmd wifi status | sed -n '1p'
         adb shell dumpsys connectivity | grep -F 'Active default network:'
     } | tee "app/build/ci/offline-$1.txt"
 }
@@ -37,5 +38,5 @@ record_offline_state before
 ./gradlew --no-daemon --max-workers=2 --stacktrace :app:connectedValidationAndroidTest
 
 # Neither the tests nor a late emulator callback may silently restore a network.
-is_offline
 record_offline_state after
+is_offline
