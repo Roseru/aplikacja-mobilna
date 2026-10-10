@@ -13,6 +13,8 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import pl.roseru.kalorie.core.Nutrients
 import pl.roseru.kalorie.core.decimal
+import pl.roseru.kalorie.core.energyText
+import pl.roseru.kalorie.core.FieldAggregate
 import pl.roseru.kalorie.data.GoalEntity
 import kotlin.math.roundToInt
 
@@ -24,9 +26,9 @@ import kotlin.math.roundToInt
             Row(verticalAlignment = Alignment.CenterVertically) {
                 Column(Modifier.weight(1f)) {
                     Text("Dzienne spożycie", color = MaterialTheme.colorScheme.onSurfaceVariant, style = MaterialTheme.typography.bodyMedium)
-                    Text(total.kcal.roundToInt().toString(), modifier = Modifier.testTag("daily-kcal"), fontSize = 40.sp, fontWeight = FontWeight.Bold)
+                    Text(total.energyText(), modifier = Modifier.testTag("daily-kcal"), fontSize = 40.sp, fontWeight = FontWeight.Bold)
                     Text("kcal z ${limit.roundToInt()}", style = MaterialTheme.typography.bodyLarge)
-                    Text(if (total.kcal <= limit) "Pozostało ${(limit - total.kcal).roundToInt()} kcal" else "Ponad cel ${(total.kcal - limit).roundToInt()} kcal",
+                    Text(if (!total.asExact().energy.complete) "Brak kcal dla ${total.asExact().energy.missingCount} pozycji — pokazano znaną część." else if (total.kcal <= limit) "Pozostało ${(limit - total.kcal).roundToInt()} kcal" else "Ponad cel ${(total.kcal - limit).roundToInt()} kcal",
                         modifier = Modifier.padding(top = 8.dp), color = MaterialTheme.colorScheme.onSurfaceVariant)
                 }
                 Box(Modifier.size(102.dp), contentAlignment = Alignment.Center) {
@@ -37,20 +39,20 @@ import kotlin.math.roundToInt
             }
             HorizontalDivider(color = MaterialTheme.colorScheme.outline.copy(alpha = .2f))
             Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
-                Macro("Białko", total.protein, goal?.protein, MaterialTheme.colorScheme.primary, Modifier.weight(1f))
-                Macro("Tłuszcze", total.fat, goal?.fat, Color(0xFFD0A83D), Modifier.weight(1f))
-                Macro("Węglowodany", total.carbs, goal?.carbs, Color(0xFF76A5CD), Modifier.weight(1f))
+                Macro("Białko", total.protein, goal?.protein, MaterialTheme.colorScheme.primary, Modifier.weight(1f), total.asExact().protein)
+                Macro("Tłuszcze", total.fat, goal?.fat, Color(0xFFD0A83D), Modifier.weight(1f), total.asExact().fat)
+                Macro("Węglowodany", total.carbs, goal?.carbs, Color(0xFF76A5CD), Modifier.weight(1f), total.asExact().carbs)
             }
         }
     }
 }
 
-@Composable private fun Macro(label: String, amount: Double?, goal: Double?, color: Color, modifier: Modifier) {
+@Composable private fun Macro(label: String, amount: Double?, goal: Double?, color: Color, modifier: Modifier, aggregate: FieldAggregate) {
     Column(modifier, verticalArrangement = Arrangement.spacedBy(8.dp)) {
         Text(label, fontSize = 12.sp, fontWeight = FontWeight.Medium)
         LinearProgressIndicator(progress = { if (amount != null && goal != null && goal > 0) (amount / goal).toFloat().coerceIn(0f, 1f) else 0f },
             color = color, trackColor = MaterialTheme.colorScheme.surfaceVariant, modifier = Modifier.fillMaxWidth())
-        Text(if (amount == null) "Brak danych" else "${decimal(amount)}${goal?.let { " / ${decimal(it)}" } ?: ""} g", fontSize = 12.sp)
+        Text(if (!aggregate.complete) "≥ ${aggregate.display.replace('.', ',')} g · ${aggregate.missingCount} brak danych" else "${aggregate.display.replace('.', ',')}${goal?.let { " / ${decimal(it)}" } ?: ""} g", fontSize = 12.sp)
     }
 }
 

@@ -5,14 +5,24 @@ import androidx.room.migration.Migration
 import androidx.sqlite.db.SupportSQLiteDatabase
 import kotlinx.coroutines.flow.Flow
 import pl.roseru.kalorie.core.Nutrients
+import pl.roseru.kalorie.core.catalog.exactProductNutrients
+import org.json.JSONObject
+import pl.roseru.kalorie.core.ContractDecimal
+import pl.roseru.kalorie.core.NutritionError
+import pl.roseru.kalorie.core.catalog.StrictJson
 
 @Entity(tableName = "products")
 data class ProductEntity(
     @PrimaryKey val id: String, val name: String, val searchName: String,
     val kcal: Double, val protein: Double?, val fat: Double?, val carbs: Double?,
     val defaultGrams: Double, val category: String, val source: String, val catalogVersion: Int,
-    val ownerScope: String? = null
-) { fun nutrients() = Nutrients(kcal, protein, fat, carbs) }
+    val ownerScope: String? = null, val catalogJson: String? = null
+) {
+    val unit: String get() = catalogJson?.let { JSONObject(it).getString("basis_unit") } ?: "g"
+    fun nutrients() = catalogJson?.let { exactProductNutrients(it, "100", unit) } ?: Nutrients(kcal, protein, fat, carbs)
+    fun portion(amount: String, quantityUnit: String = unit) = catalogJson?.let { exactProductNutrients(it, amount, quantityUnit) }
+        ?: nutrients().portion(amount.toDouble())
+}
 
 @Entity(tableName = "meals", indices = [Index(value = ["ownerScope", "localDate", "deleted"])])
 data class MealEntity(
@@ -29,21 +39,36 @@ data class MealItemEntity(
     @PrimaryKey val id: String, val mealId: String, val productId: String,
     val productName: String, val grams: Double, val kcalPer100: Double,
     val proteinPer100: Double?, val fatPer100: Double?, val carbsPer100: Double?,
-    val rationComponentId: String? = null
-) { fun consumed() = Nutrients(kcalPer100, proteinPer100, fatPer100, carbsPer100).portion(grams) }
+    val rationComponentId: String? = null, val snapshotJson: String? = null
+) {
+    val unit: String get() = snapshotJson?.let { JSONObject(it).getJSONObject("quantity").getString("unit") } ?: "g"
+    val amountText: String get() = snapshotJson?.let { JSONObject(it).getJSONObject("quantity").getString("amount") } ?: grams.toBigDecimal().stripTrailingZeros().toPlainString()
+    fun withAmount(text: String): MealItemEntity {
+        val amount = ContractDecimal.userQuantity(text, 12) ?: throw NutritionError("quantity_range")
+        val snapshot = snapshotJson?.let { JSONObject(it).apply {
+            getJSONObject("quantity").put("amount", ContractDecimal.canonical(amount))
+        }.let(StrictJson::canonical) }
+        return copy(grams = amount.toDouble(), snapshotJson = snapshot)
+    }
+    fun consumed(): Nutrients = snapshotJson?.let {
+        val snapshot = JSONObject(it); val quantity = snapshot.getJSONObject("quantity")
+        exactProductNutrients(snapshot.getJSONObject("product").toString(), quantity.getString("amount"), quantity.getString("unit"))
+    } ?: Nutrients(kcalPer100, proteinPer100, fatPer100, carbsPer100).portion(grams)
+}
 
 data class MealWithItems(@Embedded val meal: MealEntity, @Relation(parentColumn = "id", entityColumn = "mealId") val items: List<MealItemEntity>)
 
 @Entity(tableName = "rations")
 data class RationEntity(@PrimaryKey val id: String, val name: String, val description: String,
-    val source: String, val catalogVersion: Int)
+    val source: String, val catalogVersion: Int, val catalogJson: String? = null)
 
 @Entity(tableName = "ration_components", foreignKeys = [
     ForeignKey(entity = RationEntity::class, parentColumns = ["id"], childColumns = ["rationId"], onDelete = ForeignKey.RESTRICT),
     ForeignKey(entity = ProductEntity::class, parentColumns = ["id"], childColumns = ["productId"], onDelete = ForeignKey.RESTRICT)
 ], indices = [Index("rationId"), Index("productId")])
 data class RationComponentEntity(@PrimaryKey val id: String, val rationId: String, val productId: String,
-    val packageGrams: Double, val position: Int)
+    val packageGrams: Double, val position: Int, val quantityText: String? = null,
+    @ColumnInfo(defaultValue = "'g'") val quantityUnit: String = "g")
 
 data class RationWithComponents(@Embedded val ration: RationEntity,
     @Relation(parentColumn = "id", entityColumn = "rationId") val components: List<RationComponentEntity>)
@@ -71,13 +96,13 @@ data class DiaryDayEntity(@PrimaryKey val id: String, val ownerScope: String, va
 
 @Dao
 interface CalorieDao {
-    @Query("SELECT * FROM products WHERE ownerScope IS NULL OR ownerScope = :owner ORDER BY name") fun products(owner: String = "guest"): Flow<List<ProductEntity>>
+    @Query("SELECT * FROM products WHERE (ownerScope IS NULL OR ownerScope = :owner) AND (catalogJson IS NULL OR id IN (SELECT recordId FROM catalog_members JOIN catalog_active ON catalog_members.generationId = catalog_active.generationId)) ORDER BY name") fun products(owner: String = "guest"): Flow<List<ProductEntity>>
     @Query("SELECT * FROM products WHERE id = :id AND (ownerScope IS NULL OR ownerScope = :owner)") suspend fun product(id: String, owner: String = "guest"): ProductEntity?
     @Insert suspend fun insertProduct(product: ProductEntity)
     @Insert(onConflict = OnConflictStrategy.IGNORE) suspend fun seedProducts(products: List<ProductEntity>)
     @Insert(onConflict = OnConflictStrategy.IGNORE) suspend fun seedRations(rations: List<RationEntity>)
     @Insert(onConflict = OnConflictStrategy.IGNORE) suspend fun seedComponents(components: List<RationComponentEntity>)
-    @Transaction @Query("SELECT * FROM rations ORDER BY name") fun rations(): Flow<List<RationWithComponents>>
+    @Transaction @Query("SELECT * FROM rations WHERE catalogJson IS NULL OR id IN (SELECT recordId FROM catalog_members JOIN catalog_active ON catalog_members.generationId = catalog_active.generationId) ORDER BY name") fun rations(): Flow<List<RationWithComponents>>
     @Transaction @Query("SELECT * FROM rations WHERE id = :id") suspend fun ration(id: String): RationWithComponents?
     @Transaction @Query("SELECT * FROM meals WHERE ownerScope = :owner AND localDate = :date AND deleted = 0 ORDER BY occurredAt, id")
     fun day(owner: String, date: String): Flow<List<MealWithItems>>
@@ -109,8 +134,9 @@ interface CalorieDao {
 }
 
 @Database(entities = [ProductEntity::class, MealEntity::class, MealItemEntity::class, GoalEntity::class, OutboxEntity::class,
-    RationEntity::class, RationComponentEntity::class, ProfileEntity::class, WeightEntity::class, DiaryDayEntity::class], version = 3, exportSchema = true)
-abstract class CalorieDatabase : RoomDatabase() { abstract fun dao(): CalorieDao }
+    RationEntity::class, RationComponentEntity::class, ProfileEntity::class, WeightEntity::class, DiaryDayEntity::class,
+    CatalogGenerationEntity::class, CatalogRecordEntity::class, CatalogMemberEntity::class, CatalogActiveEntity::class], version = 4, exportSchema = true)
+abstract class CalorieDatabase : RoomDatabase() { abstract fun dao(): CalorieDao; abstract fun catalogDao(): CatalogDao }
 
 val MIGRATION_1_2 = object : Migration(1, 2) {
     override fun migrate(db: SupportSQLiteDatabase) {

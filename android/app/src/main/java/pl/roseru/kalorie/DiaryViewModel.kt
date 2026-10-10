@@ -57,18 +57,18 @@ class DiaryViewModel(private val repository: DiaryRepository, private val prefer
     fun today() { savedState["date"] = LocalDate.now().toString() }
     fun selectDate(date: LocalDate) { savedState["date"] = date.toString() }
     fun setTheme(theme: ThemeMode) { viewModelScope.launch { preferences.setTheme(theme) } }
-    fun add(productId: String, grams: Double, type: MealType) {
+    fun add(productId: String, grams: Double, type: MealType, amountText: String? = null) {
         val date = LocalDate.parse(dateText.value)
         val id = UUID.randomUUID().toString()
-        mutate { repository.add(productId, grams, type, date, id); channel.send(DiaryEvent.MealSaved) }
+        mutate { repository.add(productId, grams, type, date, id, amountText); channel.send(DiaryEvent.MealSaved) }
     }
     fun edit(id: String, grams: Double) = mutate { repository.edit(id, grams) }
-    fun addRation(rationId: String, quantities: Map<String, Double>, type: MealType) {
+    fun addRation(rationId: String, quantities: Map<String, Double>, type: MealType, exactQuantities: Map<String, String> = emptyMap()) {
         val date = LocalDate.parse(dateText.value)
         val id = UUID.randomUUID().toString()
-        mutate { repository.addRation(rationId, quantities, type, date, id); channel.send(DiaryEvent.MealSaved) }
+        mutate { repository.addRation(rationId, quantities, type, date, id, exactQuantities); channel.send(DiaryEvent.MealSaved) }
     }
-    fun editItem(mealId: String, itemId: String, grams: Double) = mutate { repository.editItem(mealId, itemId, grams) }
+    fun editItem(mealId: String, itemId: String, grams: Double, amountText: String? = null) = mutate { repository.editItem(mealId, itemId, grams, amountText) }
     fun removeItem(mealId: String, itemId: String) = mutate { repository.removeItem(mealId, itemId) }
     fun addCustom(draft: CustomProductDraft, grams: Double, type: MealType) {
         val date = LocalDate.parse(dateText.value)

@@ -25,8 +25,8 @@ Gemini: wyłącznie darmowe API (Free Tier), bez aktywnego billing; CI korzysta 
 
 [Kod i instrukcja uruchomienia](android/README.md) · [Plan implementacji](PLAN_IMPLEMENTACJI_ANDROID.md)
 
-Otwórz `android/` w Android Studio. Wersja 0.3.0 działa bez konta i internetu: dziennik i cel kcal/B/T/W, produkty i prywatne wpisy, racje ze zjedzonymi składnikami, profil, pomiary wagi, kompletność dnia, edycja/usuwanie i oba motywy. Room 3 zachowuje dotychczasowe dane przez migracje 1 → 2 → 3.
+Otwórz `android/` w Android Studio. Wersja 0.4.0 działa bez konta i internetu: dziennik i cel kcal/B/T/W, produkty i prywatne wpisy, racje ze zjedzonymi składnikami, profil, pomiary wagi, kompletność dnia, edycja/usuwanie i oba motywy. Room 4 zachowuje dotychczasowe dane przez migracje 1 → 2 → 3 → 4.
 
-Katalog zawiera 15 produktów i dwa zestawy DEMO. Lokalna kolejka nie wysyła jeszcze danych. Następny etap O1 to importer pakietu i BigDecimal według dostarczonych kontraktów E0; szczegóły w instrukcji Androida.
+Importer E2 sprawdza pakiet przed aktywacją; nowe spożycia mają pełny snapshot i dokładne obliczenia BigDecimal z jawnymi brakami danych. Katalog zawiera łącznie 33 produkty i 3 racje DEMO. Lokalna kolejka nie wysyła jeszcze danych. [Raport 0.4.0](android/RAPORT_0_4.md) dokumentuje 39 testów JVM, 26 różnych zaliczonych testów urządzenia (25 w pełnym przebiegu i jeden w osobnym powtórzeniu) oraz lint: 0 błędów / 26 ostrzeżeń. Następny etap O1 to analityka 7/30/90 dni.
 
 Budowanie i testy jednostkowe: `./gradlew :app:assembleDebug :app:testDebugUnitTest :app:lintDebug` z katalogu `android/`. Testy urządzenia: `./gradlew :app:connectedValidationAndroidTest`; osobna instalacja testowa zachowuje zwykły dziennik.

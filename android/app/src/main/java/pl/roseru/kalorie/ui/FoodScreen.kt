@@ -25,7 +25,7 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import pl.roseru.kalorie.DiaryViewModel
 import pl.roseru.kalorie.core.*
 import pl.roseru.kalorie.data.ProductEntity
-import kotlin.math.roundToInt
+import java.math.BigDecimal
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable fun FoodScreen(model: DiaryViewModel, onBack: () -> Unit, onRations: () -> Unit, onCustom: () -> Unit) {
@@ -50,7 +50,7 @@ import kotlin.math.roundToInt
         bottomBar = {
             selected?.let { product ->
                 key(product.id) {
-                    PortionEditor(product, type, busy, onAdd = { grams -> keyboard?.hide(); model.add(product.id, grams, type) })
+                    PortionEditor(product, type, busy, onAdd = { grams, text -> keyboard?.hide(); model.add(product.id, grams, type, text) })
                 }
             }
         }
@@ -97,7 +97,8 @@ import kotlin.math.roundToInt
                 contentDescription = null, tint = MaterialTheme.colorScheme.primary, modifier = Modifier.size(28.dp))
             Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(4.dp)) {
                 Text(product.name, fontWeight = FontWeight.Medium)
-                Text("${product.kcal.roundToInt()} kcal / 100 g", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                Text("${product.nutrients().energyText()} kcal / 100 ${product.unit}", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                if (product.catalogJson != null) Text(product.category, style = MaterialTheme.typography.labelSmall)
                 if (product.ownerScope != null) Text("Wpis własny · prywatny", style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.primary)
             }
             Icon(if (selected) Icons.Outlined.CheckCircle else Icons.Outlined.AddCircleOutline,
@@ -106,23 +107,24 @@ import kotlin.math.roundToInt
     }
 }
 
-@Composable private fun PortionEditor(product: ProductEntity, type: MealType, busy: Boolean, onAdd: (Double) -> Unit) {
+@Composable private fun PortionEditor(product: ProductEntity, type: MealType, busy: Boolean, onAdd: (Double, String) -> Unit) {
     var grams by rememberSaveable(product.id) { mutableStateOf(decimal(product.defaultGrams)) }
-    val amount = parseAmount(grams)
+    val exactAmount = ContractDecimal.userQuantity(grams, 12)
+    val amount = exactAmount?.toDouble()
     Surface(color = MaterialTheme.colorScheme.surface, shadowElevation = 8.dp, shape = RoundedCornerShape(topStart = 22.dp, topEnd = 22.dp)) {
         Column(Modifier.fillMaxWidth().navigationBarsPadding().imePadding().padding(20.dp), verticalArrangement = Arrangement.spacedBy(10.dp)) {
             Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
                 Text(product.name, Modifier.weight(1f), style = MaterialTheme.typography.titleMedium)
-                Text(amount?.let { "${product.nutrients().portion(it).kcal.roundToInt()} kcal" } ?: "— kcal", fontWeight = FontWeight.SemiBold)
+                Text(exactAmount?.let { "${product.portion(ContractDecimal.canonical(it)).energyText()} kcal" } ?: "— kcal", fontWeight = FontWeight.SemiBold)
             }
             Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(10.dp)) {
-                OutlinedIconButton(onClick = { grams = decimal(((amount ?: product.defaultGrams) - 10).coerceAtLeast(1.0)) }, enabled = !busy) { Icon(Icons.Outlined.Remove, "Zmniejsz o 10 g") }
-                OutlinedTextField(grams, onValueChange = { grams = it }, modifier = Modifier.weight(1f).testTag("portion-grams"), label = { Text("Gramatura") }, suffix = { Text("g") },
+                OutlinedIconButton(onClick = { grams = ContractDecimal.canonical(((exactAmount ?: BigDecimal.valueOf(product.defaultGrams)) - BigDecimal.TEN).max(BigDecimal.ONE)) }, enabled = !busy) { Icon(Icons.Outlined.Remove, "Zmniejsz o 10 ${product.unit}") }
+                OutlinedTextField(grams, onValueChange = { grams = it }, modifier = Modifier.weight(1f).testTag("portion-grams"), label = { Text("Zjedzona ilość") }, suffix = { Text(product.unit) },
                     keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal), singleLine = true, isError = amount == null, enabled = !busy)
-                OutlinedIconButton(onClick = { grams = decimal(((amount ?: product.defaultGrams) + 10).coerceAtMost(Nutrients.MAX_GRAMS)) }, enabled = !busy) { Icon(Icons.Outlined.Add, "Zwiększ o 10 g") }
+                OutlinedIconButton(onClick = { grams = ContractDecimal.canonical(((exactAmount ?: BigDecimal.valueOf(product.defaultGrams)) + BigDecimal.TEN).min(BigDecimal("10000"))) }, enabled = !busy) { Icon(Icons.Outlined.Add, "Zwiększ o 10 ${product.unit}") }
             }
-            if (amount == null) Text("Podaj dodatnią ilość, najwyżej 10 000 g.", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.error)
-            Button(onClick = { amount?.let(onAdd) }, enabled = amount != null && !busy, modifier = Modifier.fillMaxWidth().heightIn(min = 54.dp).testTag("confirm-food"), shape = RoundedCornerShape(14.dp)) {
+            if (amount == null) Text("Podaj dodatnią ilość, najwyżej 10 000 ${product.unit}.", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.error)
+            Button(onClick = { exactAmount?.let { onAdd(it.toDouble(), ContractDecimal.canonical(it)) } }, enabled = amount != null && !busy, modifier = Modifier.fillMaxWidth().heightIn(min = 54.dp).testTag("confirm-food"), shape = RoundedCornerShape(14.dp)) {
                 Text(if (busy) "Zapisuję…" else "Dodaj · ${type.label}", style = MaterialTheme.typography.titleMedium)
             }
         }

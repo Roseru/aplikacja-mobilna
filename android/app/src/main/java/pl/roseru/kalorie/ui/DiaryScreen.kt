@@ -27,7 +27,6 @@ import pl.roseru.kalorie.data.MealItemEntity
 import java.time.*
 import java.time.format.DateTimeFormatter
 import java.util.Locale
-import kotlin.math.roundToInt
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable fun DiaryScreen(model: DiaryViewModel, onAdd: () -> Unit, onSettings: () -> Unit) {
@@ -40,7 +39,7 @@ import kotlin.math.roundToInt
     var datePicker by rememberSaveable { mutableStateOf(false) }
     val formatter = remember { DateTimeFormatter.ofPattern("d MMMM", Locale.forLanguageTag("pl-PL")) }
     Column(Modifier.fillMaxSize()) {
-    LazyColumn(Modifier.weight(1f), contentPadding = PaddingValues(20.dp), verticalArrangement = Arrangement.spacedBy(16.dp)) {
+    LazyColumn(Modifier.weight(1f).testTag("diary-content"), contentPadding = PaddingValues(20.dp), verticalArrangement = Arrangement.spacedBy(16.dp)) {
         item {
             Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.fillMaxWidth()) {
                 Text("Dziennik", modifier = Modifier.weight(1f), style = MaterialTheme.typography.headlineLarge, fontWeight = FontWeight.Bold)
@@ -106,7 +105,7 @@ import kotlin.math.roundToInt
                     Column(Modifier.fillMaxWidth().padding(16.dp), verticalArrangement = Arrangement.spacedBy(6.dp)) {
                         Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
                             Text(type.label, Modifier.weight(1f), fontWeight = FontWeight.SemiBold)
-                            Text("${meals.flatMap { it.items }.sumOf { it.consumed().kcal }.roundToInt()} kcal", fontWeight = FontWeight.SemiBold)
+                            Text("${meals.flatMap { it.items }.map { it.consumed() }.total().energyText()} kcal", fontWeight = FontWeight.SemiBold)
                         }
                         meals.forEach { meal ->
                             meal.meal.rationName?.let { name ->
@@ -114,7 +113,7 @@ import kotlin.math.roundToInt
                                 Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
                                     Column(Modifier.weight(1f)) {
                                         Text(name, style = MaterialTheme.typography.titleSmall)
-                                        Text("${meal.items.size} zjedzone składniki · ${meal.items.sumOf { it.consumed().kcal }.roundToInt()} kcal", style = MaterialTheme.typography.bodySmall)
+                                        Text("${meal.items.size} zjedzone składniki · ${meal.items.map { it.consumed() }.total().energyText()} kcal", style = MaterialTheme.typography.bodySmall)
                                     }
                                     IconButton(onClick = { deletingRation = meal }, enabled = !busy) { Icon(Icons.Outlined.DeleteOutline, "Usuń rację") }
                                 }
@@ -123,7 +122,7 @@ import kotlin.math.roundToInt
                             TextButton(onClick = { editing = EditingItem(meal, product) }, enabled = !busy, contentPadding = PaddingValues(vertical = 8.dp, horizontal = 0.dp)) {
                                 Column(Modifier.weight(1f), horizontalAlignment = Alignment.Start) {
                                     Text(product.productName, color = MaterialTheme.colorScheme.onSurface)
-                                    Text("${decimal(product.grams)} g · ${product.consumed().kcal.roundToInt()} kcal", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                                    Text("${quantityText(product.amountText)} ${product.unit} · ${product.consumed().energyText()} kcal", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
                                 }
                                 Icon(Icons.Outlined.Edit, "Popraw ${product.productName}", modifier = Modifier.size(18.dp))
                             }
@@ -140,7 +139,7 @@ import kotlin.math.roundToInt
     }
     }
     editing?.let { target ->
-        EditMealDialog(target.item, busy, onDismiss = { editing = null }, onSave = { grams -> model.editItem(target.meal.meal.id, target.item.id, grams); editing = null },
+        EditMealDialog(target.item, busy, onDismiss = { editing = null }, onSave = { grams, text -> model.editItem(target.meal.meal.id, target.item.id, grams, text); editing = null },
             onDelete = { editing = null; deleting = target })
     }
     deleting?.let { target ->
@@ -167,15 +166,15 @@ import kotlin.math.roundToInt
 
 private data class EditingItem(val meal: MealWithItems, val item: MealItemEntity)
 
-@Composable private fun EditMealDialog(item: MealItemEntity, busy: Boolean, onDismiss: () -> Unit, onSave: (Double) -> Unit, onDelete: () -> Unit) {
-    var grams by rememberSaveable(item.id) { mutableStateOf(decimal(item.grams)) }
-    val amount = parseAmount(grams)
+@Composable private fun EditMealDialog(item: MealItemEntity, busy: Boolean, onDismiss: () -> Unit, onSave: (Double, String) -> Unit, onDelete: () -> Unit) {
+    var grams by rememberSaveable(item.id) { mutableStateOf(quantityText(item.amountText)) }
+    val amount = ContractDecimal.userQuantity(grams, 12)
     AlertDialog(onDismissRequest = onDismiss, title = { Text(item.productName) }, text = {
         Column(verticalArrangement = Arrangement.spacedBy(14.dp)) {
-            OutlinedTextField(grams, onValueChange = { grams = it }, label = { Text("Zjedzona ilość") }, suffix = { Text("g") }, singleLine = true,
-                isError = amount == null, keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal))
-            Text(amount?.let { "${item.copy(grams = it).consumed().kcal.roundToInt()} kcal" } ?: "Podaj ilość od 0 do 10 000 g (większą od zera)")
+            OutlinedTextField(grams, onValueChange = { grams = it }, label = { Text("Zjedzona ilość") }, suffix = { Text(item.unit) }, singleLine = true,
+                modifier = Modifier.testTag("edit-amount"), isError = amount == null, keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal))
+            Text(amount?.let { "${item.withAmount(ContractDecimal.canonical(it)).consumed().energyText()} kcal" } ?: "Podaj dodatnią ilość, najwyżej 10 000 ${item.unit}.")
         }
-    }, confirmButton = { TextButton(onClick = { amount?.let(onSave) }, enabled = amount != null && !busy) { Text("Zapisz") } },
+    }, confirmButton = { TextButton(onClick = { amount?.let { onSave(it.toDouble(), ContractDecimal.canonical(it)) } }, enabled = amount != null && !busy) { Text("Zapisz") } },
         dismissButton = { Row { TextButton(onClick = onDelete, enabled = !busy) { Text("Usuń") }; TextButton(onClick = onDismiss) { Text("Anuluj") } } })
 }

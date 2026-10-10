@@ -8,6 +8,8 @@ import kotlinx.coroutines.flow.first
 import org.json.JSONArray
 import org.json.JSONObject
 import pl.roseru.kalorie.core.*
+import pl.roseru.kalorie.core.catalog.*
+import java.math.BigDecimal
 import java.time.*
 import java.util.UUID
 
@@ -38,6 +40,11 @@ class DiaryRepository(private val db: CalorieDatabase, private val context: Cont
             dao.seedComponents(components)
             dao.seedGoal(GoalEntity("guest-initial-goal", GUEST, "1970-01-01", 2800.0, 160.0, 90.0, 330.0))
         }
+        val schema = CatalogSchema(readCatalog("e2/common.schema.json"), readCatalog("e2/catalog.schema.json"))
+        val reader = CatalogPackageReader(schema, CatalogPackageReader.DEMO_ID, "demo")
+        // MergeAssets auto-inflates .gz assets; .bin preserves the signed APK's original gzip bytes.
+        val packageValue = reader.read(context.assets.open("catalog/e2/manifest.json"), context.assets.open("catalog/e2/base-pl.1.json.gz.bin"))
+        CatalogStore(db).import(packageValue)
     }
 
     private fun readCatalog(file: String) = JSONObject(context.assets.open("catalog/$file").bufferedReader().use { it.readText() })
@@ -52,15 +59,17 @@ class DiaryRepository(private val db: CalorieDatabase, private val context: Cont
         }
     }
 
-    suspend fun add(productId: String, grams: Double, type: MealType, date: LocalDate, id: String = UUID.randomUUID().toString()) = db.withTransaction {
+    suspend fun add(productId: String, grams: Double, type: MealType, date: LocalDate, id: String = UUID.randomUUID().toString(), amountText: String? = null) = db.withTransaction {
         require(grams.isFinite() && grams > 0 && grams <= Nutrients.MAX_GRAMS)
         if (dao.meal(id, GUEST) != null) return@withTransaction
         val product = requireNotNull(dao.product(productId))
+        val exactAmount = checkedAmount(grams, amountText)
         val zone = ZoneId.systemDefault()
         val time = date.atTime(LocalTime.now()).atZone(zone).toInstant().toString()
         val meal = MealEntity(id, GUEST, date.toString(), time, zone.id, type.name)
         val item = MealItemEntity(UUID.randomUUID().toString(), id, product.id, product.name, grams,
-            product.kcal, product.protein, product.fat, product.carbs)
+            product.kcal, product.protein, product.fat, product.carbs,
+            snapshotJson = snapshot(product, exactAmount, product.unit))
         dao.insertMeal(meal)
         dao.insertItem(item)
         enqueue(meal, listOf(item), "create")
@@ -73,31 +82,36 @@ class DiaryRepository(private val db: CalorieDatabase, private val context: Cont
     }
 
     suspend fun addRation(rationId: String, quantities: Map<String, Double>, type: MealType, date: LocalDate,
-        id: String = UUID.randomUUID().toString()) = db.withTransaction {
+        id: String = UUID.randomUUID().toString(), exactQuantities: Map<String, String> = emptyMap()) = db.withTransaction {
         if (dao.meal(id, GUEST) != null) return@withTransaction
         val ration = requireNotNull(dao.ration(rationId))
         require(quantities.isNotEmpty() && quantities.keys.all { key -> ration.components.any { it.id == key } })
+        require(exactQuantities.keys.all { it in quantities })
         val zone = ZoneId.systemDefault()
         val meal = MealEntity(id, GUEST, date.toString(), date.atTime(LocalTime.now()).atZone(zone).toInstant().toString(),
             zone.id, type.name, rationId = ration.ration.id, rationName = ration.ration.name)
         val items = ration.components.sortedBy { it.position }.mapNotNull { component ->
             val grams = quantities[component.id] ?: return@mapNotNull null
             require(grams.isFinite() && grams > 0 && grams <= Nutrients.MAX_GRAMS && grams <= component.packageGrams)
+            val amountText = checkedAmount(grams, exactQuantities[component.id])
+            require(BigDecimal(amountText) <= BigDecimal(component.quantityText ?: ContractDecimal.canonical(BigDecimal.valueOf(component.packageGrams))))
             val product = requireNotNull(dao.product(component.productId))
             MealItemEntity(UUID.randomUUID().toString(), id, product.id, product.name, grams,
-                product.kcal, product.protein, product.fat, product.carbs, component.id)
+                product.kcal, product.protein, product.fat, product.carbs, component.id,
+                snapshot(product, amountText, component.quantityUnit))
         }
         dao.insertMeal(meal)
         items.forEach { dao.insertItem(it) }
         enqueue(meal, items, "create")
     }
 
-    suspend fun editItem(id: String, itemId: String, grams: Double) = db.withTransaction {
+    suspend fun editItem(id: String, itemId: String, grams: Double, amountText: String? = null) = db.withTransaction {
         require(grams.isFinite() && grams > 0 && grams <= Nutrients.MAX_GRAMS)
         val current = requireNotNull(dao.meal(id, GUEST))
         require(!current.meal.deleted)
         val meal = current.meal.copy(localRevision = current.meal.localRevision + 1)
-        val item = current.items.single { it.id == itemId }.copy(grams = grams)
+        val oldItem = current.items.single { it.id == itemId }
+        val item = oldItem.withAmount(checkedAmount(grams, amountText))
         dao.updateMeal(meal)
         dao.updateItem(item)
         enqueue(meal, current.items.map { if (it.id == itemId) item else it }, "update")
@@ -208,6 +222,29 @@ class DiaryRepository(private val db: CalorieDatabase, private val context: Cont
         dao.enqueue(OutboxEntity(UUID.randomUUID().toString(), GUEST, type, id, action, null, payload.toString(), Instant.now().toString()))
     }
 
+    private fun checkedAmount(projection: Double, text: String?): String {
+        val amount = ContractDecimal.userQuantity(text ?: ContractDecimal.canonical(BigDecimal.valueOf(projection)), 12)
+            ?: throw NutritionError("quantity_range")
+        require(amount.toDouble() == projection) { "Quantity projection mismatch" }
+        return ContractDecimal.canonical(amount)
+    }
+
+    private suspend fun snapshot(product: ProductEntity, amountText: String, unit: String): String? {
+        val json = product.catalogJson ?: return null
+        val amount = ContractDecimal.userQuantity(amountText, 12) ?: throw NutritionError("quantity_range")
+        product.portion(ContractDecimal.canonical(amount), unit)
+        val original = JSONObject(json)
+        val sources = JSONArray()
+        val sourceIds = mutableSetOf(original.getString("source_id"))
+        original.optJSONObject("density_g_per_ml")?.let { sourceIds += it.getString("source_id") }
+        sourceIds.sorted().forEach { id ->
+            val source = requireNotNull(db.catalogDao().record(CatalogStore.recordId("source", id, 0)))
+            sources.put(JSONObject(source.payloadJson))
+        }
+        return StrictJson.canonical(JSONObject().put("formula_version", NutritionV1.FORMULA).put("product", original)
+            .put("quantity", JSONObject().put("amount", ContractDecimal.canonical(amount)).put("unit", unit)).put("sources", sources))
+    }
+
     private suspend fun enqueue(meal: MealEntity, items: List<MealItemEntity>, action: String) {
         val payload = JSONObject().put("id", meal.id).put("local_date", meal.localDate).put("occurred_at", meal.occurredAt)
             .put("zone_id", meal.zoneId).put("meal_type", meal.mealType).put("local_revision", meal.localRevision).put("deleted", meal.deleted)
@@ -217,6 +254,7 @@ class DiaryRepository(private val db: CalorieDatabase, private val context: Cont
             rows.put(JSONObject().put("id", item.id).put("product_id", item.productId).put("product_name", item.productName)
                 .put("grams", item.grams).put("kcal_per_100", item.kcalPer100)
                 .put("ration_component_id", item.rationComponentId ?: JSONObject.NULL)
+                .put("exact_snapshot", item.snapshotJson?.let(::JSONObject) ?: JSONObject.NULL)
                 .put("protein_per_100", item.proteinPer100 ?: JSONObject.NULL)
                 .put("fat_per_100", item.fatPer100 ?: JSONObject.NULL).put("carbs_per_100", item.carbsPer100 ?: JSONObject.NULL))
         }

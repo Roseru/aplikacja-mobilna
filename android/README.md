@@ -1,12 +1,12 @@
 # Android — Racje i kalorie
 
-Wersja `0.3.0` realizuje lokalny przepływ osoby 1: dziennik → produkt, własny wpis lub racja → zapis w Room → aktualizacja bilansu. Profil, pomiary wagi i deklaracja kompletności dnia również działają bez konta i internetu.
+Wersja `0.4.0` realizuje lokalny przepływ osoby 1: dziennik → produkt, własny wpis lub racja → zapis w Room → aktualizacja bilansu. Importuje pakiet E2 z APK, używa BigDecimal w obliczeniach i zachowuje dane poprzednich wersji. Profil, pomiary wagi i deklaracja kompletności dnia również działają bez konta i internetu.
 
 ## Co zawiera
 
 - Jasny i ciemny motyw oraz wybór zgodny z systemem, zapisany w DataStore.
 - Dziennik według dni, wybór daty, suma kcal i B/T/W oraz realizacja celu.
-- Wbudowany katalog 15 produktów demonstracyjnych, wyszukiwanie także bez polskich znaków i ostatnio używane produkty.
+- Wbudowany katalog: 15 dawnych produktów oraz 18 produktów pakietu E2; wyszukiwanie także bez polskich znaków, aliasy E2 i ostatnio używane produkty.
 - Dwa zestawy demonstracyjne dostępne w „Dodaj posiłek → Racje”. Zaznaczanie tylko zjedzonych składników, gramatura części opakowania, skróty ¼/½/całość oraz wspólny bilans zaznaczenia. Początkowo nic nie jest zaznaczone.
 - Racja jest jednym wpisem z wieloma składnikami. Można poprawić lub usunąć jeden składnik albo usunąć całą rację; usunięcie ostatniego składnika usuwa wpis z dziennika.
 - Wybór grupy posiłku, gramatury, podgląd kcal, zapis, edycja i usunięcie wpisu.
@@ -18,15 +18,26 @@ Wersja `0.3.0` realizuje lokalny przepływ osoby 1: dziennik → produkt, własn
 - Room z wersjonowanym schematem, identyfikatorami UUID, odżywczymi wartościami zapisanymi przy spożyciu i transakcyjną kolejką zmian.
 - Zapis lokalnej daty, strefy czasowej i czasu UTC. Ponowienie lokalnego zapisu z tym samym ID nie tworzy drugiego posiłku.
 
-Katalog, oba zestawy i początkowy cel 2800 kcal są **danymi demonstracyjnymi**, nie zweryfikowaną bazą żywieniową ani wyliczonym zapotrzebowaniem użytkownika. Zestawy A/B nie odwzorowują specyfikacji S-R/S-RG ani żadnego producenta. Napoje są rozliczane w gramach, bez założenia, że 1 ml = 1 g.
+Katalog i początkowy cel 2800 kcal są **danymi demonstracyjnymi**, nie zweryfikowaną bazą żywieniową ani wyliczonym zapotrzebowaniem użytkownika. Dawne zestawy A/B nie odwzorowują specyfikacji S-R/S-RG ani żadnego producenta. Nowy pakiet E2 dodaje osobną niezweryfikowaną, niepełną rację S-RG-1 z 18 policzalnymi komponentami i informacją o pozycjach poza obliczeniami. Nie łączymy zestawów po nazwie lub kalorii. Dawne napoje pozostają w gramach; nowy katalog obsługuje g/ml, bez założenia, że 1 ml = 1 g.
 
-Schemat Room 3 zawiera migracje 1 → 2 → 3 zachowujące dotychczasowe posiłki, racje, cele i kolejkę. Prywatne produkty, profil, pomiary i deklaracje dni mają zakres właściciela. Nowy katalog jest importowany bez duplikowania danych. W kolejce wpis racji zawiera `ration_id`, nazwę oraz identyfikatory składników; wartości odżywcze nadal są zapisane w historii jako niezmienny snapshot. Nowe typy kolejki: `product_draft`, `profile`, `weight`, `diary_day`.
+Schemat Room 4 zawiera migracje 1 → 2 → 3 → 4 zachowujące posiłki, racje, cele, prywatne produkty, profil, pomiary, deklaracje dni i całą kolejkę. Nowe pola są dodawane bez przepisywania dawnych kolumn REAL ani payloadów outbox. Prywatne dane mają zakres właściciela. Usuwanie pozostawia znacznik i operację kolejki.
 
-Katalog w zasobach i payload kolejki są roboczym formatem tej lokalnej wersji. Integracja z [kontraktami E0 osoby 2](../docs/e0/KONTRAKTY_I_INTEGRACJA.md) jest następnym etapem: adapter pakietu JSON gzip/manifest, UUID i rewizje produktów, generacje katalogu oraz wspólne wektory Decimal/BigDecimal. Bieżące obliczenia używają `Double` i nie stanowią kontraktu obliczeń z API. Nie wysyłamy roboczych identyfikatorów demo na serwer. Formularze v0.3 mają lokalne limity opisane przy polach; adapter kontraktu będzie odpowiadał za jego kanoniczne liczby i jednostki.
+## Import katalogu i dokładność
+
+Pakiet E2 pochodzi z rzeczywistego eksportu PostgreSQL osoby 2, commit [`229a2b8`](https://github.com/Roseru/aplikacja-mobilna/tree/229a2b8/backend/data/demo/export). Artefakty i normatywne schematy E0 są osadzone w `app/src/main/assets/catalog/e2/`; wektory w zasobach testowych. SHA-256 gzip: `65f4aae8002fd5522d0edb4689e05682103b80fbe3e6dbc68f4bf02c645b2bef`; gzip 3099 B, JSON 15691 B. To eksport E2, a nie starszy fixture E0. Fizyczny asset APK ma nazwę `base-pl.1.json.gz.bin`, ponieważ etap MergeAssets automatycznie rozpakowywał rozszerzenie `.gz`. Sufiks `.bin` zachowuje oryginalne skompresowane bajty; manifest nadal ma kontraktowy logiczny path `base-pl.1.json.gz`.
+
+- `CatalogPackageReader` sprawdza zaufaną tożsamość demo `47bdff67-e58b-5437-919b-ec00159afbc5`, kind/release/schema/reader, dokładne bajty i rozmiary, CRC i pojedynczy strumień gzip, ścisły UTF-8/JSON, schemat oraz graf referencji. Limity: manifest 1 MiB, gzip 10 MiB, JSON 50 MiB. Czytnik schematów obsługuje słowa kluczowe użyte w przypiętych dwóch schematach; nie jest ogólnym silnikiem JSON Schema.
+- Hash jest liczony przed rozpakowaniem. Daty `published_at` z 1–6 cyframi ułamka sekund pozostają w oryginalnej pisowni zgodnie z poprawką E2 z 10 października. SHA nie uwierzytelnia pakietu; obecny kanał dostawy to APK, a pobieranie przez HTTPS będzie osobnym etapem.
+- `CatalogStore.stage()` zapisuje nieaktywną generację w transakcji; `activate()` przełącza ją krótką transakcją tylko na nowszy kompletny release. Ponowienie jest no-op; inna treść pod tym samym release albo UUID+revision jest błędem. Ekrany czytają aktywne członkostwo, a stare wersje pozostają dla historii. Sprzątanie generacji nie jest zaimplementowane.
+- Dokładne wartości, metadane produktów/racji/źródeł i ilości komponentów są przechowywane jako TEXT. Wewnętrzne klucze zawierają typ, dokładny UUID i rewizję; pozycje składników E2 wynoszą 1..N. Kolumny REAL pozostają projekcjami dla zgodności wcześniejszych ekranów, nie źródłem nowych obliczeń.
+- Nowe spożycie z E2 zapisuje pełny produkt z rewizją, jednostkę i tekst ilości, źródła/gęstość oraz `nutrition_v1` w snapshot i lokalnej kolejce. Edycja zmienia ilość snapshotu, zachowując jego produkt; aktualizacja katalogu nie przelicza historii.
+- `NutritionV1` liczy przez BigDecimal: per100 × ilość / 100; dzielenie przy g→ml ma skalę 12 HALF_UP, konwersja wymaga udokumentowanej gęstości. Sumowanie następuje przed zaokrągleniem wyświetlania (0 miejsc kcal / 1 miejsce makr HALF_UP); energia nie jest wyliczana z 4/4/9. Każde pole ma known_sum, missing_count i complete. Niepełne sumy pokazują `≥` oraz liczbę braków.
+
+Stare dane REAL są odczytywane przez `BigDecimal.valueOf` bez nadpisania oryginału i bez twierdzenia, że odzyskano utraconą dokładność. Prywatne produkty, cele, profil i pomiary nadal mają dawną reprezentację zapisu. Ich pełny adapter Decimal do API pozostaje do wykonania. Formy porcji dopuszczają lokalnie do 12 miejsc, aby nie obcinać wyliczonych ułamków opakowania; przyszły adapter synchronizacji musi jawnie obsłużyć ograniczenie Quantity E0 do 6 miejsc. Nie obcinamy kolejki w miejscu ani nie wysyłamy jej w obecnym formacie.
 
 ## Co pozostaje na następne etapy
 
-Docelowy importer i zweryfikowane pakiety rzeczywistych racji, obliczenia kontraktowe, historia/wykresy 7/30/90 dni, kalkulator zapotrzebowania, konto, rzeczywista synchronizacja z API, zdjęcia/Gemini, produkty społeczności, ranking i Nemesis. Istnieje lokalna kolejka, ale ta wersja **nie wysyła danych na serwer**. Usuwanie posiłku lub pomiaru tworzy znacznik usunięcia zamiast kasować historię operacji. Prywatne produkty nie są publikowane w katalogu społeczności.
+Zweryfikowane pakiety rzeczywistych racji i osobny import materiałów MRE 2026, historia/wykresy 7/30/90 dni, kalkulator zapotrzebowania, konto, rzeczywista synchronizacja z API, zdjęcia/Gemini, produkty społeczności, ranking i Nemesis. Istnieje lokalna kolejka, ale ta wersja **nie wysyła danych na serwer**. Prywatne produkty nie są publikowane w katalogu społeczności. API katalogu E2 udostępnia wyłącznie official; demo jest lokalne w APK i nie powoduje oczekiwania na konto/API.
 
 ## Uruchomienie w Android Studio
 
@@ -67,12 +78,10 @@ APK debug: `app/build/outputs/apk/debug/app-debug.apk`. Raporty: `app/build/repo
 13. Oznacz niepusty dzień jako kompletny, zamknij aplikację i otwórz ponownie. Następnie usuń wszystkie jego posiłki: pusty dzień nie jest kompletny mimo wcześniejszej deklaracji.
 14. Zainstaluj aktualizację na wersji 0.2.0: składniki racji i wartości historyczne pozostają.
 
-Walidacja 0.3.0: zbudowano APK debug, przeszło 6 testów jednostkowych i 17 przypadków na API 35. Pełny przebieg urządzenia zaliczył 16 przypadków; test profilu/wagi zaliczono w osobnym powtórzeniu po poprawieniu obsługi klawiatury w teście. Ręczny zapis pomiaru z otwartą klawiaturą również sprawdzono. Lint: 0 błędów, 25 ostrzeżeń o wersjach zależności i regułach kopii urządzenia.
-
-Testy obejmują obliczenia i brak makr, trwałość Room, izolację właścicieli, transakcyjność i rollback, idempotencję, znaczniki usunięcia, cele, prywatne produkty, profil/wagę i kompletność dnia. Sprawdzono migracje 1 → 3 i 2 → 3 oraz cztery przepływy UI z odtworzeniem aktywności: zwykły posiłek, częściową rację, własny produkt i profil/pomiar.
+Szczegółowy wynik walidacji 0.4.0, zakres prób awarii i ograniczenia odbioru E2: [raport Androida](RAPORT_0_4.md). Testy urządzenia obejmują migracje 1/2/3 → 4, zachowanie historii/kolejki, generacje, niezmienność wersji, rzeczywisty SQLITE_FULL oraz przepływy UI z odtworzeniem aktywności. Pełny odbiór zespołowy KO-30 wymaga również środowiska i dostawy O2/O3; raport lokalny go nie zastępuje.
 
 ## Architektura
 
-`MainActivity` tworzy ViewModel i uruchamia Compose. `DiaryViewModel` udostępnia obserwowalny stan. `DiaryRepository` realizuje transakcyjne operacje zapisu. `CalorieDao` jest lokalnym źródłem danych ekranów. `core/Nutrition.kt` zawiera obliczenia niezależne od Androida. `ui/` zawiera wspólne motywy i ekrany.
+`MainActivity` tworzy ViewModel i uruchamia Compose. `DiaryViewModel` udostępnia obserwowalny stan. `DiaryRepository` realizuje transakcyjne operacje zapisu. `CalorieDao` jest lokalnym źródłem ekranów. `core/NutritionV1.kt` zawiera dokładne obliczenia, `core/catalog/` walidację pakietu, `data/CatalogStore.kt` staging i aktywację. `ui/` zawiera wspólne motywy i ekrany.
 
 Nie ma uprawnienia INTERNET, kluczy API ani danych konta w APK pierwszej wersji. Dodamy warstwę sieciową wraz z etapem synchronizacji.

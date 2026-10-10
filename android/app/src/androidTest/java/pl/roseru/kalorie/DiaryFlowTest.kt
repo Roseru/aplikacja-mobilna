@@ -5,6 +5,7 @@ import androidx.core.view.ViewCompat
 import androidx.core.view.WindowInsetsCompat
 import androidx.compose.ui.test.*
 import androidx.compose.ui.test.junit4.createAndroidComposeRule
+import androidx.compose.ui.semantics.SemanticsActions
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.runBlocking
@@ -13,6 +14,7 @@ import org.junit.Test
 import org.junit.Assert.*
 import org.junit.runner.RunWith
 import pl.roseru.kalorie.data.DiaryRepository
+import pl.roseru.kalorie.core.*
 import java.time.LocalDate
 import kotlin.math.roundToInt
 
@@ -119,7 +121,9 @@ class DiaryFlowTest {
         compose.waitUntil(5_000) {
             ViewCompat.getRootWindowInsets(compose.activity.window.decorView)?.isVisible(WindowInsetsCompat.Type.ime()) != true
         }
-        compose.onNodeWithTag("confirm-weight").performScrollTo().assertIsDisplayed().assertIsEnabled().performClick()
+        // Exercise the accessible click action; IME/lazy-list movement can shift touch coordinates.
+        compose.onNodeWithTag("confirm-weight").performScrollTo().assertIsDisplayed().assertIsEnabled()
+            .performSemanticsAction(SemanticsActions.OnClick) { action -> assertTrue(action()) }
         compose.waitUntil(10_000) { runBlocking { app.database.dao().weights(DiaryRepository.GUEST).first().any { it.id !in previousWeightIds && it.kg == 82.4 } } }
         compose.onNodeWithTag("confirm-weight").assertIsNotEnabled()
         compose.activityRule.scenario.recreate()
@@ -130,5 +134,37 @@ class DiaryFlowTest {
             assertEquals(goal, app.database.dao().goal(DiaryRepository.GUEST, LocalDate.now().toString()).first()!!.kcal, .0)
             assertTrue(app.database.dao().weights(DiaryRepository.GUEST).first().any { it.id !in previousWeightIds && it.kg == 82.4 })
         }
+    }
+
+    @Test fun importedE2RationPreservesExactQuantityAcrossRecreationAndEdit() {
+        compose.waitUntil(15_000) { compose.onAllNodesWithTag("daily-kcal").fetchSemanticsNodes().isNotEmpty() }
+        val app = compose.activity.application as CalorieApplication
+        val ration = runBlocking { app.database.dao().rations().first().single { it.ration.catalogJson != null } }
+        val part = ration.components.minBy { it.position }
+        val product = runBlocking { app.database.dao().product(part.productId)!! }
+        val previousIds = runBlocking { app.database.dao().day(DiaryRepository.GUEST, LocalDate.now().toString()).first().map { it.meal.id }.toSet() }
+        compose.onNodeWithText("Dodaj posiłek").performClick()
+        compose.onNodeWithTag("open-rations").performClick()
+        compose.onNodeWithTag("ration-${ration.ration.id}").performScrollTo().performClick()
+        compose.onNodeWithTag("confirm-ration").assertIsNotEnabled()
+        compose.onNodeWithTag("ration-content").performScrollToNode(hasTestTag("ration-check-${part.id}"))
+        compose.onNodeWithTag("ration-check-${part.id}").assertIsOff().performClick()
+        compose.onNodeWithTag("ration-grams-${part.id}").performTextReplacement("12,123456789123")
+        compose.activityRule.scenario.recreate()
+        compose.waitUntil(10_000) { compose.onAllNodesWithTag("ration-grams-${part.id}").fetchSemanticsNodes().isNotEmpty() }
+        compose.onNodeWithTag("ration-grams-${part.id}").assertTextContains("12,123456789123")
+        compose.onNodeWithTag("confirm-ration").assertIsEnabled().performClick()
+        compose.waitUntil(10_000) { runBlocking { app.database.dao().day(DiaryRepository.GUEST, LocalDate.now().toString()).first().any { it.meal.id !in previousIds } } }
+        val meal = runBlocking { app.database.dao().day(DiaryRepository.GUEST, LocalDate.now().toString()).first().single { it.meal.id !in previousIds } }
+        assertEquals(1, meal.items.size); assertEquals("12.123456789123", meal.items.single().amountText)
+        compose.onNodeWithTag("diary-content").performScrollToNode(hasContentDescription("Popraw ${product.name}"))
+        compose.onNodeWithContentDescription("Popraw ${product.name}").performClick()
+        compose.onNodeWithTag("edit-amount").assertTextContains("12,123456789123").performTextReplacement("150")
+        compose.onNodeWithText("131 kcal").assertIsDisplayed()
+        compose.onNodeWithText("Zapisz").performClick()
+        compose.waitUntil(10_000) { runBlocking { app.database.dao().meal(meal.meal.id, DiaryRepository.GUEST)!!.items.single().amountText == "150" } }
+        compose.activityRule.scenario.recreate()
+        compose.waitUntil(10_000) { compose.onAllNodesWithTag("daily-kcal").fetchSemanticsNodes().isNotEmpty() }
+        assertEquals("130.5", runBlocking { app.database.dao().meal(meal.meal.id, DiaryRepository.GUEST)!!.items.single().consumed().asExact().energy.canonical })
     }
 }

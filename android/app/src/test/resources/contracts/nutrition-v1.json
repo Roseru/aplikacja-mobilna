@@ -1,0 +1,700 @@
+{
+  "formula_version": "nutrition_v1",
+  "expected_results_source": "Wartości oczekiwane wpisane z powyższych rachunków, niezależnie od nutrition_checks.calculate; dane syntetyczne poza wskazanymi pozycjami próbki.",
+  "cases": [
+    {
+      "id": "half-component",
+      "derivation": "Źródłowe A/1: 261 kcal,33/9.9/8.7 g dla 300 g; połowa to 130.5 i 16.5/4.95/4.35.",
+      "items": [
+        {
+          "amount": "150",
+          "unit": "g",
+          "basis_unit": "g",
+          "nutrition_per_100": {
+            "energy_kcal": "87",
+            "protein_g": "11",
+            "fat_g": "3.3",
+            "carbs_g": "2.9"
+          },
+          "density_g_per_ml": null
+        }
+      ],
+      "expected": {
+        "energy_kcal": {
+          "known_sum": "130.5",
+          "display": "131",
+          "missing_count": 0,
+          "complete": true
+        },
+        "protein_g": {
+          "known_sum": "16.5",
+          "display": "16.5",
+          "missing_count": 0,
+          "complete": true
+        },
+        "fat_g": {
+          "known_sum": "4.95",
+          "display": "5.0",
+          "missing_count": 0,
+          "complete": true
+        },
+        "carbs_g": {
+          "known_sum": "4.35",
+          "display": "4.4",
+          "missing_count": 0,
+          "complete": true
+        }
+      }
+    },
+    {
+      "id": "parts-of-ration",
+      "derivation": "Połowa A/1 plus 25 g A/3: 130.5+82.5=213; 16.5+2=18.5;4.95+.55=5.5;4.35+16.35=20.7. Pozostałe niezaznaczone.",
+      "items": [
+        {
+          "amount": "150",
+          "unit": "g",
+          "basis_unit": "g",
+          "nutrition_per_100": {
+            "energy_kcal": "87",
+            "protein_g": "11",
+            "fat_g": "3.3",
+            "carbs_g": "2.9"
+          },
+          "density_g_per_ml": null
+        },
+        {
+          "amount": "25",
+          "unit": "g",
+          "basis_unit": "g",
+          "nutrition_per_100": {
+            "energy_kcal": "330",
+            "protein_g": "8",
+            "fat_g": "2.2",
+            "carbs_g": "65.4"
+          },
+          "density_g_per_ml": null
+        }
+      ],
+      "expected": {
+        "energy_kcal": {
+          "known_sum": "213",
+          "display": "213",
+          "missing_count": 0,
+          "complete": true
+        },
+        "protein_g": {
+          "known_sum": "18.5",
+          "display": "18.5",
+          "missing_count": 0,
+          "complete": true
+        },
+        "fat_g": {
+          "known_sum": "5.5",
+          "display": "5.5",
+          "missing_count": 0,
+          "complete": true
+        },
+        "carbs_g": {
+          "known_sum": "20.7",
+          "display": "20.7",
+          "missing_count": 0,
+          "complete": true
+        }
+      }
+    },
+    {
+      "id": "sum-before-rounding",
+      "derivation": "Trzy pozycje po 0.4 kcal i 0.04 g: razem 1.2 kcal i .12 g, nie 0.",
+      "items": [
+        {
+          "amount": "100",
+          "unit": "g",
+          "basis_unit": "g",
+          "nutrition_per_100": {
+            "energy_kcal": "0.4",
+            "protein_g": "0.04",
+            "fat_g": "0.04",
+            "carbs_g": "0.04"
+          },
+          "density_g_per_ml": null
+        },
+        {
+          "amount": "100",
+          "unit": "g",
+          "basis_unit": "g",
+          "nutrition_per_100": {
+            "energy_kcal": "0.4",
+            "protein_g": "0.04",
+            "fat_g": "0.04",
+            "carbs_g": "0.04"
+          },
+          "density_g_per_ml": null
+        },
+        {
+          "amount": "100",
+          "unit": "g",
+          "basis_unit": "g",
+          "nutrition_per_100": {
+            "energy_kcal": "0.4",
+            "protein_g": "0.04",
+            "fat_g": "0.04",
+            "carbs_g": "0.04"
+          },
+          "density_g_per_ml": null
+        }
+      ],
+      "expected": {
+        "energy_kcal": {
+          "known_sum": "1.2",
+          "display": "1",
+          "missing_count": 0,
+          "complete": true
+        },
+        "protein_g": {
+          "known_sum": "0.12",
+          "display": "0.1",
+          "missing_count": 0,
+          "complete": true
+        },
+        "fat_g": {
+          "known_sum": "0.12",
+          "display": "0.1",
+          "missing_count": 0,
+          "complete": true
+        },
+        "carbs_g": {
+          "known_sum": "0.12",
+          "display": "0.1",
+          "missing_count": 0,
+          "complete": true
+        }
+      }
+    },
+    {
+      "id": "millilitres-no-density",
+      "derivation": "250/100*42=105; makra nieznane. Syntetyczny wektor, nie etykieta Coca-Cola.",
+      "items": [
+        {
+          "amount": "250",
+          "unit": "ml",
+          "basis_unit": "ml",
+          "nutrition_per_100": {
+            "energy_kcal": "42",
+            "protein_g": null,
+            "fat_g": null,
+            "carbs_g": null
+          },
+          "density_g_per_ml": null
+        }
+      ],
+      "expected": {
+        "energy_kcal": {
+          "known_sum": "105",
+          "display": "105",
+          "missing_count": 0,
+          "complete": true
+        },
+        "protein_g": {
+          "known_sum": "0",
+          "display": "0.0",
+          "missing_count": 1,
+          "complete": false
+        },
+        "fat_g": {
+          "known_sum": "0",
+          "display": "0.0",
+          "missing_count": 1,
+          "complete": false
+        },
+        "carbs_g": {
+          "known_sum": "0",
+          "display": "0.0",
+          "missing_count": 1,
+          "complete": false
+        }
+      }
+    },
+    {
+      "id": "half-up-boundaries",
+      "derivation": "Dokładna połowa: 0.5→1 kcal, 0.05→0.1; 1.25→1.3;2.35→2.4.",
+      "items": [
+        {
+          "amount": "100",
+          "unit": "g",
+          "basis_unit": "g",
+          "nutrition_per_100": {
+            "energy_kcal": "0.5",
+            "protein_g": "0.05",
+            "fat_g": "1.25",
+            "carbs_g": "2.35"
+          },
+          "density_g_per_ml": null
+        }
+      ],
+      "expected": {
+        "energy_kcal": {
+          "known_sum": "0.5",
+          "display": "1",
+          "missing_count": 0,
+          "complete": true
+        },
+        "protein_g": {
+          "known_sum": "0.05",
+          "display": "0.1",
+          "missing_count": 0,
+          "complete": true
+        },
+        "fat_g": {
+          "known_sum": "1.25",
+          "display": "1.3",
+          "missing_count": 0,
+          "complete": true
+        },
+        "carbs_g": {
+          "known_sum": "2.35",
+          "display": "2.4",
+          "missing_count": 0,
+          "complete": true
+        }
+      }
+    },
+    {
+      "id": "below-half",
+      "derivation": "Wartości o 0.000001 poniżej progu HALF_UP.",
+      "items": [
+        {
+          "amount": "100",
+          "unit": "g",
+          "basis_unit": "g",
+          "nutrition_per_100": {
+            "energy_kcal": "0.499999",
+            "protein_g": "0.049999",
+            "fat_g": "1.249999",
+            "carbs_g": "2.349999"
+          },
+          "density_g_per_ml": null
+        }
+      ],
+      "expected": {
+        "energy_kcal": {
+          "known_sum": "0.499999",
+          "display": "0",
+          "missing_count": 0,
+          "complete": true
+        },
+        "protein_g": {
+          "known_sum": "0.049999",
+          "display": "0.0",
+          "missing_count": 0,
+          "complete": true
+        },
+        "fat_g": {
+          "known_sum": "1.249999",
+          "display": "1.2",
+          "missing_count": 0,
+          "complete": true
+        },
+        "carbs_g": {
+          "known_sum": "2.349999",
+          "display": "2.3",
+          "missing_count": 0,
+          "complete": true
+        }
+      }
+    },
+    {
+      "id": "unknown-energy-known-sum",
+      "derivation": "Znane 10 kcal + null daje znaną sumę10 i 1 brak, nie pełne10; 2+3 białka pozostaje pełne5.",
+      "items": [
+        {
+          "amount": "100",
+          "unit": "g",
+          "basis_unit": "g",
+          "nutrition_per_100": {
+            "energy_kcal": "10",
+            "protein_g": "2",
+            "fat_g": null,
+            "carbs_g": "0"
+          },
+          "density_g_per_ml": null
+        },
+        {
+          "amount": "100",
+          "unit": "g",
+          "basis_unit": "g",
+          "nutrition_per_100": {
+            "energy_kcal": null,
+            "protein_g": "3",
+            "fat_g": "1",
+            "carbs_g": null
+          },
+          "density_g_per_ml": null
+        }
+      ],
+      "expected": {
+        "energy_kcal": {
+          "known_sum": "10",
+          "display": "10",
+          "missing_count": 1,
+          "complete": false
+        },
+        "protein_g": {
+          "known_sum": "5",
+          "display": "5.0",
+          "missing_count": 0,
+          "complete": true
+        },
+        "fat_g": {
+          "known_sum": "1",
+          "display": "1.0",
+          "missing_count": 1,
+          "complete": false
+        },
+        "carbs_g": {
+          "known_sum": "0",
+          "display": "0.0",
+          "missing_count": 1,
+          "complete": false
+        }
+      }
+    },
+    {
+      "id": "zero-nutrients",
+      "derivation": "Znane zera są pełnymi wartościami, ilość100 jest dodatnia.",
+      "items": [
+        {
+          "amount": "100",
+          "unit": "g",
+          "basis_unit": "g",
+          "nutrition_per_100": {
+            "energy_kcal": "0",
+            "protein_g": "0",
+            "fat_g": "0",
+            "carbs_g": "0"
+          },
+          "density_g_per_ml": null
+        }
+      ],
+      "expected": {
+        "energy_kcal": {
+          "known_sum": "0",
+          "display": "0",
+          "missing_count": 0,
+          "complete": true
+        },
+        "protein_g": {
+          "known_sum": "0",
+          "display": "0.0",
+          "missing_count": 0,
+          "complete": true
+        },
+        "fat_g": {
+          "known_sum": "0",
+          "display": "0.0",
+          "missing_count": 0,
+          "complete": true
+        },
+        "carbs_g": {
+          "known_sum": "0",
+          "display": "0.0",
+          "missing_count": 0,
+          "complete": true
+        }
+      }
+    },
+    {
+      "id": "zero-amount-invalid",
+      "derivation": "Ilość spożyta musi być >0.",
+      "items": [
+        {
+          "amount": "0",
+          "unit": "g",
+          "basis_unit": "g",
+          "nutrition_per_100": {
+            "energy_kcal": "1",
+            "protein_g": "1",
+            "fat_g": "1",
+            "carbs_g": "1"
+          },
+          "density_g_per_ml": null
+        }
+      ],
+      "expected_error": "quantity_range"
+    },
+    {
+      "id": "negative-amount-invalid",
+      "derivation": "Ujemna ilość niedozwolona.",
+      "items": [
+        {
+          "amount": "-1",
+          "unit": "g",
+          "basis_unit": "g",
+          "nutrition_per_100": {
+            "energy_kcal": "1",
+            "protein_g": "1",
+            "fat_g": "1",
+            "carbs_g": "1"
+          },
+          "density_g_per_ml": null
+        }
+      ],
+      "expected_error": "quantity_range"
+    },
+    {
+      "id": "too-large-amount",
+      "derivation": "Techniczna granica ilości10000 włącznie.",
+      "items": [
+        {
+          "amount": "10000.000001",
+          "unit": "g",
+          "basis_unit": "g",
+          "nutrition_per_100": {
+            "energy_kcal": "1",
+            "protein_g": "1",
+            "fat_g": "1",
+            "carbs_g": "1"
+          },
+          "density_g_per_ml": null
+        }
+      ],
+      "expected_error": "quantity_range"
+    },
+    {
+      "id": "maximum-amount",
+      "derivation": "10000/100=100 porcji podstawy;100*1=100.",
+      "items": [
+        {
+          "amount": "10000",
+          "unit": "g",
+          "basis_unit": "g",
+          "nutrition_per_100": {
+            "energy_kcal": "1",
+            "protein_g": "1",
+            "fat_g": "1",
+            "carbs_g": "1"
+          },
+          "density_g_per_ml": null
+        }
+      ],
+      "expected": {
+        "energy_kcal": {
+          "known_sum": "100",
+          "display": "100",
+          "missing_count": 0,
+          "complete": true
+        },
+        "protein_g": {
+          "known_sum": "100",
+          "display": "100.0",
+          "missing_count": 0,
+          "complete": true
+        },
+        "fat_g": {
+          "known_sum": "100",
+          "display": "100.0",
+          "missing_count": 0,
+          "complete": true
+        },
+        "carbs_g": {
+          "known_sum": "100",
+          "display": "100.0",
+          "missing_count": 0,
+          "complete": true
+        }
+      }
+    },
+    {
+      "id": "conversion-requires-density",
+      "derivation": "ml do g nie ma domyślnej gęstości.",
+      "items": [
+        {
+          "amount": "250",
+          "unit": "ml",
+          "basis_unit": "g",
+          "nutrition_per_100": {
+            "energy_kcal": "1",
+            "protein_g": "1",
+            "fat_g": "1",
+            "carbs_g": "1"
+          },
+          "density_g_per_ml": null
+        }
+      ],
+      "expected_error": "density_required"
+    },
+    {
+      "id": "density-multiplication",
+      "derivation": "Test syntetyczny:250 ml*1.2=300g; 300/100*1=3.",
+      "items": [
+        {
+          "amount": "250",
+          "unit": "ml",
+          "basis_unit": "g",
+          "nutrition_per_100": {
+            "energy_kcal": "1",
+            "protein_g": "1",
+            "fat_g": "1",
+            "carbs_g": "1"
+          },
+          "density_g_per_ml": "1.2"
+        }
+      ],
+      "expected": {
+        "energy_kcal": {
+          "known_sum": "3",
+          "display": "3",
+          "missing_count": 0,
+          "complete": true
+        },
+        "protein_g": {
+          "known_sum": "3",
+          "display": "3.0",
+          "missing_count": 0,
+          "complete": true
+        },
+        "fat_g": {
+          "known_sum": "3",
+          "display": "3.0",
+          "missing_count": 0,
+          "complete": true
+        },
+        "carbs_g": {
+          "known_sum": "3",
+          "display": "3.0",
+          "missing_count": 0,
+          "complete": true
+        }
+      }
+    },
+    {
+      "id": "nonterminating-density-division",
+      "derivation": "Test syntetyczny:1g/(3g/ml)=.333333333333ml (12 miejsc HALF_UP); /100 daje .00333333333333 dla wartości1.",
+      "items": [
+        {
+          "amount": "1",
+          "unit": "g",
+          "basis_unit": "ml",
+          "nutrition_per_100": {
+            "energy_kcal": "1",
+            "protein_g": "1",
+            "fat_g": "1",
+            "carbs_g": "1"
+          },
+          "density_g_per_ml": "3"
+        }
+      ],
+      "expected": {
+        "energy_kcal": {
+          "known_sum": "0.00333333333333",
+          "display": "0",
+          "missing_count": 0,
+          "complete": true
+        },
+        "protein_g": {
+          "known_sum": "0.00333333333333",
+          "display": "0.0",
+          "missing_count": 0,
+          "complete": true
+        },
+        "fat_g": {
+          "known_sum": "0.00333333333333",
+          "display": "0.0",
+          "missing_count": 0,
+          "complete": true
+        },
+        "carbs_g": {
+          "known_sum": "0.00333333333333",
+          "display": "0.0",
+          "missing_count": 0,
+          "complete": true
+        }
+      }
+    },
+    {
+      "id": "sample-crackers-normalization",
+      "derivation": "B/2:347/90*100→385.555556 kcal/100g (6 miejsc). 90g odtwarza347.0000004; różnica normalizacji jawna.7.2/90*100=8;6.1/90*100→6.777778;64.9/90*100→72.111111.",
+      "items": [
+        {
+          "amount": "90",
+          "unit": "g",
+          "basis_unit": "g",
+          "nutrition_per_100": {
+            "energy_kcal": "385.555556",
+            "protein_g": "8",
+            "fat_g": "6.777778",
+            "carbs_g": "72.111111"
+          },
+          "density_g_per_ml": null
+        }
+      ],
+      "expected": {
+        "energy_kcal": {
+          "known_sum": "347.0000004",
+          "display": "347",
+          "missing_count": 0,
+          "complete": true
+        },
+        "protein_g": {
+          "known_sum": "7.2",
+          "display": "7.2",
+          "missing_count": 0,
+          "complete": true
+        },
+        "fat_g": {
+          "known_sum": "6.1000002",
+          "display": "6.1",
+          "missing_count": 0,
+          "complete": true
+        },
+        "carbs_g": {
+          "known_sum": "64.8999999",
+          "display": "64.9",
+          "missing_count": 0,
+          "complete": true
+        }
+      }
+    }
+  ],
+  "day_cases": [
+    {
+      "id": "empty",
+      "declared_complete": true,
+      "meal_count": 0,
+      "missing_energy_count": 0,
+      "known_energy": "0",
+      "expected_complete": false
+    },
+    {
+      "id": "only-zero",
+      "declared_complete": true,
+      "meal_count": 1,
+      "missing_energy_count": 0,
+      "known_energy": "0",
+      "expected_complete": false
+    },
+    {
+      "id": "missing-energy",
+      "declared_complete": true,
+      "meal_count": 2,
+      "missing_energy_count": 1,
+      "known_energy": "10",
+      "expected_complete": false
+    },
+    {
+      "id": "undeclared",
+      "declared_complete": false,
+      "meal_count": 1,
+      "missing_energy_count": 0,
+      "known_energy": "10",
+      "expected_complete": false
+    },
+    {
+      "id": "complete",
+      "declared_complete": true,
+      "meal_count": 1,
+      "missing_energy_count": 0,
+      "known_energy": "10",
+      "expected_complete": true
+    }
+  ]
+}
