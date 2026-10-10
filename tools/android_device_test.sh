@@ -9,7 +9,7 @@ adb shell svc data disable
 is_offline() {
     test "$(adb shell settings get global airplane_mode_on | tr -d '\r')" = 1 &&
     test "$(adb shell settings get global wifi_on | tr -d '\r')" = 0 &&
-    adb shell dumpsys connectivity | grep -Fq 'Active default network: none'
+    adb shell dumpsys connectivity | grep -F 'Active default network: none' >/dev/null
 }
 
 # Connectivity changes are asynchronous. A stale global mobile_data value is
