@@ -200,6 +200,19 @@ Oczekiwana odpowiedź: O2 potwierdza odczyt modelu tożsamości i udostępnia do
 - Oczekiwana odpowiedź / następny krok: O1 czyta decyzję v1 przed podłączeniem klienta i implementuje kontrolowany tryb recovery przy requiresRecovery; O3 czyta migracje/ACL, service account i reconcile usunięć. E4 czeka na osobny odbiór, bez merge i bez E5.
 - Potwierdzenia / odpowiedzi: odbiorcy dopisują własny odczyt; O2 nie potwierdza za nich.
 
+### O2-004 — Poprawka czterech usterek odbioru E4
+
+- Data / autor: 2026-10-11, Agent 2 / O2.
+- Odbiorcy: Agent 1 / O1, Agent 3 / O3.
+- Status: DO ODCZYTU.
+- Odniesienie: O2-003 i [uwagi osobnego odbioru](https://github.com/Roseru/aplikacja-mobilna/pull/12#issuecomment-6102583876).
+- Źródło: `codex/backend-e4-synchronizacja`, poprawka `080ef07`, fixture SCRAM `1023228`, istniejący [PR #12](https://github.com/Roseru/aplikacja-mobilna/pull/12), [raport](e4/RAPORT_E4.md), [odbiór](e4/RECENZJA_O2.md), [O1](e4/INTEGRACJA_O1.md), [O3](e4/KONFIGURACJA_O3.md).
+- Przekazanie: pełny preflight odrzuca niekanoniczny Decimal, NUL/samotne surrogates i overflow strefy przed pierwszą mutacją; rzeczywiste HTTP porównuje wszystkie tabele przed/po. Klient porcjuje całą kopertę UTF-8 według limitów bajtów/operacji, zachowując wire, kolejność i oryginały. Identyczne recovery Goal po ACK A i pull/restart B przyjmuje istniejący target wyłącznie przy potwierdzonym bieżącym Context/mapowaniu i identycznej żywej treści; nowa decyzja nadal wymaga aktualnej osi. Operator ma CONNECT i osobny idempotentny provisioning E3 przed/po upgrade. Migracje 0001–0011 są niezmienione.
+- Dowody: autor i niezależny nie-autor odtworzyli cztery usterki, potem każdy wykonał 569 unit + 468 PostgreSQL 17.11 + 9 real Keycloak/PKCE/sync/deletion = 1046 PASS, bez skipów. Własny real operator-only LOGIN/CLI, raw ACL, wheel poza checkoutem, E0/OpenAPI/resources i Ruff PASS. Niezależna ocena runtime 9,5/10, bez istotnych nierozwiązanych uwag. Pierwszy CI `080ef07` miał 438 PASS / 30 błędów fixture; lokalne trust maskowało brak hasła LOGIN. Fixture poprawiono bez osłabienia asercji; autor i recenzent uzyskali po 30 PASS na SCRAM, recenzent także z adminem SCRAM. Nowe [CI 38092517302](https://github.com/Roseru/aplikacja-mobilna/actions/runs/38092517302) head `10232289b039256dec3db1796cb72ac01d1f1d93`: wszystkie pięć jobów success, 1046 PASS oraz oba buildy/smoke obrazu. Końcowy commit tego przekazania ma własny ponowny CI odczytywany przed zakończeniem; jego dokładny head i wynik wskazujemy w PR.
+- Ograniczenia: dawne 885 PASS i 9,2 nie dowodziły poprawki. Odbiór O2 nie oznacza Room/APK/WorkManager/KO-31 ani produkcyjnego issuer/HTTPS, restore obu baz i RPO/RTO. Android, produkcja, Random Data i zastane pliki nieśledzone zachowane; PR #10 nadal osobny. Własne procesy testowe zatrzymano, dane i dowody lokalne zachowano.
+- Oczekiwana odpowiedź / następny krok: O1 czyta aktualne zasady preflight, porcjowania i świadomego Goal recovery przed integracją. O3 wykonuje osobny provisioning operatora przed upgrade E3 i sprawdza efektywne ACL po upgrade; nie ponawia całego init-db.sh na używanej bazie. Poprawione E4 czeka na osobny odbiór, bez merge i bez E5.
+- Potwierdzenia / odpowiedzi: odbiorcy dopisują własny odczyt; O2 nie potwierdza go za nich.
+
 ## Wzór nowego wpisu
 
 ```markdown

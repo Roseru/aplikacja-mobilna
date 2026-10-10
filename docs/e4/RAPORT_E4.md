@@ -7,7 +7,17 @@ bez merge i bez E5. Oceniony head `2cdf513` oraz 885 PASS nie obejmowały
 Poprawka ma własną regresję autora i niezależnego recenzenta:
 **569 unit + 468 PostgreSQL17.11 + 9 real Keycloak = 1046 PASS**, bez skipów.
 Aktualna niezależna ocena runtime: **9,5/10**, bez istotnych nierozwiązanych uwag.
-Końcowy head/CI poprawki wskazujemy po publikacji i odczycie wszystkich kontroli.
+Commit runtime poprawki: `080ef076f7affd4e0a08e45515eb5128c179abe9`;
+poprawiona fixture: `10232289b039256dec3db1796cb72ac01d1f1d93`.
+Odczytano [CI 38092517302](https://github.com/Roseru/aplikacja-mobilna/actions/runs/38092517302)
+tego head: **completed/success, wszystkie pięć jobów**. Logi potwierdzają
+merge `7edc46ebe6f410f88492a9598478f73aa834bf3e` = head `1023228` + main
+`fa5684b3dd0bb420d969104999f85dee247f8184`: **569 unit + 468 PostgreSQL
+17.11 + 9 real Keycloak/PKCE/sync/deletion = 1046 PASS**, bez skipów;
+Ruff/format, kontrakty, wheel/sdist, installed wheel Python -I oraz oba
+buildy/smoke obrazu PASS. Końcowy commit tego raportu i przekazania wymaga
+osobnego ponownego CI; dokładny końcowy head i jego wynik wskazujemy w PR
+i odpowiedzi po odczycie, bez utożsamiania go z wcześniejszym przebiegiem.
 
 Pierwsze nowe [CI 38091981536](https://github.com/Roseru/aplikacja-mobilna/actions/runs/38091981536)
 commita `080ef076f7affd4e0a08e45515eb5128c179abe9` zakończyło się failure:
@@ -42,8 +52,9 @@ dodatkowy realny operator CLI → PKCE → Keycloak confirmation/purge →
 odmowa refresh/staregoJWT A; B/katalog identyczne. [Odbiór poprawki](RECENZJA_O2.md).
 E0: 68 valid/26 invalid/18 scenarios, 16 Decimal/5 completeness; Ruff/format 128,
 OpenAPI/resources, sdist/wheel i installed wheel Python -I poza checkoutem: PASS.
-Prawdziwa późna awaria DB nadal może zachować prefix. Obraz i końcowy head
-wymagają nowego CI; Room/APK/WorkManager i produkcyjny restore pozostają O1/O3.
+Prawdziwa późna awaria DB nadal może zachować prefix. CI poprawki potwierdziło
+obraz; końcowy commit dokumentacji ma własne ponowne CI. Room/APK/WorkManager
+i produkcyjny restore pozostają O1/O3.
 
 ## Historyczna dostawa z 10 października
 

@@ -36,6 +36,12 @@ rozróżniły błędny sekret (odmowa uwierzytelnienia) od poprawnego (odmowa
 CONNECT przed provisioningiem, połączenie po dwukrotnym provisioningu).
 Asercje, ACL i runtime nie są osłabione; ocena runtime 9,5 pozostaje aktualna.
 
+Root osobno odczytał [CI 38092517302](https://github.com/Roseru/aplikacja-mobilna/actions/runs/38092517302)
+head `10232289b039256dec3db1796cb72ac01d1f1d93`: pięć jobów success,
+1046 PASS i oba buildy/smoke obrazu. To dowód zdalnego CI, oddzielony od
+powyższego własnego wykonania recenzenta. Końcowy commit dokumentacji
+wymaga osobnego odczytu jego CI wskazanego w PR i końcowej odpowiedzi.
+
 ## Historyczny odbiór przed osobną recenzją
 
 Poniższa 9,2 nie obejmowała wykrytych później czterech usterek. Dla poprawki
