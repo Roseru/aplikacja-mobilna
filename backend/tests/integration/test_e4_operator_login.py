@@ -168,6 +168,15 @@ def operator_installation(request):
                 "CREATE ROLE {} LOGIN NOSUPERUSER NOCREATEDB NOCREATEROLE",
                 sql.Identifier(login),
             )
+            connection.exec_driver_sql("SET LOCAL password_encryption='scram-sha-256'")
+            # Authenticate successfully before probing the missing CONNECT ACL,
+            # including CI clusters whose host rule requires SCRAM.
+            with connection.connection.driver_connection.cursor() as cursor:
+                cursor.execute(
+                    sql.SQL("ALTER ROLE {} PASSWORD {}").format(
+                        sql.Identifier(login), sql.Literal(password)
+                    )
+                )
             utility(connection, "GRANT calorie_app_deletion_operator TO {}", sql.Identifier(login))
             assert not connection.scalar(
                 text("SELECT has_database_privilege(:login,current_database(),'CONNECT')"),

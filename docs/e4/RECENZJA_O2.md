@@ -27,6 +27,15 @@ checkoutem: PASS. Własne dodatkowe Decimal/time/limit probes po ostatniej
 zmianie kolejności kontroli transportu: PASS. Końcowe dokumenty i CI są osobno
 odczytywane; Room/APK/produkcja pozostają odbiorem O1/O3.
 
+Po pierwszym CI poprawki recenzent sam odtworzył błąd fixture operatora
+z `080ef07` na nowym klastrze ze SCRAM dla wszystkich połączeń, także admina:
+brak hasła LOGIN powodował odmowę uwierzytelnienia przed bramką CONNECT.
+Przeczytał minimalną poprawkę ustawiającą hasło przed próbą i ponowił cały
+moduł: **30 PASS / 16,07 s**, fresh oraz upgrade E3. Własne dodatkowe próby
+rozróżniły błędny sekret (odmowa uwierzytelnienia) od poprawnego (odmowa
+CONNECT przed provisioningiem, połączenie po dwukrotnym provisioningu).
+Asercje, ACL i runtime nie są osłabione; ocena runtime 9,5 pozostaje aktualna.
+
 ## Historyczny odbiór przed osobną recenzją
 
 Poniższa 9,2 nie obejmowała wykrytych później czterech usterek. Dla poprawki

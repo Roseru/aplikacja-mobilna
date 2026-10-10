@@ -9,6 +9,17 @@ Poprawka ma własną regresję autora i niezależnego recenzenta:
 Aktualna niezależna ocena runtime: **9,5/10**, bez istotnych nierozwiązanych uwag.
 Końcowy head/CI poprawki wskazujemy po publikacji i odczycie wszystkich kontroli.
 
+Pierwsze nowe [CI 38091981536](https://github.com/Roseru/aplikacja-mobilna/actions/runs/38091981536)
+commita `080ef076f7affd4e0a08e45515eb5128c179abe9` zakończyło się failure:
+569 unit i 9 real Keycloak przeszły, PostgreSQL miał 438 PASS i 30 błędów
+setupu fixture operatora. Fixture tworzyła login bez hasła przed próbą
+brakującego CONNECT; lokalne trust maskowało błąd uwierzytelnienia SCRAM.
+Poprawiono wyłącznie fixture: hasło SCRAM jest ustawiane przed próbą,
+asercja odmowy CONNECT i rzeczywiste ACL pozostają niezmienne. Autor ponowił
+całe 30 testów na SCRAM (30 PASS); niezależny recenzent odtworzył starą awarię
+i uzyskał 30 PASS na własnym klastrze ze SCRAM dla wszystkich połączeń,
+także administratora. Ten nieudany CI nie jest dowodem gotowości poprawki.
+
 ## Poprawka po odbiorze
 
 | Przyczyna | Wynik i dowód |
