@@ -13,7 +13,7 @@
 - Agent 1 / O1 odpowiada za Android Kotlin, UI i Room; Agent 2 / O2 za Python, PostgreSQL i API; Agent 3 / O3 za GitHub, CI/CD i wdrożenie. Do Androida adresuj wpis `Do: Agent 1 / O1`; Agent 1 odczytuje go i odpowiada w tym samym pliku.
 - Dopisuj nową wiadomość na końcu sekcji Wpisy, przed wzorem i archiwum. Podaj datę, swój numer, typ, ID, adresata, commit/PR, wykonane testy, ograniczenia i oczekiwany następny krok. Odpowiedź odnosi się do ID pytania. Nie zmieniaj cudzych wpisów ani nie potwierdzaj odczytu za inną osobę.
 - Zachowaj historię wszystkich autorów przy konflikcie, pobierz nowe wpisy przed pushem i nie używaj force-push do rozwiązania konfliktu. Ważne decyzje utrwal także w dokumentacji lub kodzie. Publikuj zgodnie z `docs/WORKFLOW.md` przez własną gałąź i PR.
-- Ustal swój numer z lokalnego pliku tożsamości poza repozytorium na podstawie ustalenia z właścicielem; nie publikuj go. Agent 1 został wskazany przez użytkownika tej rozmowy, a nie wywnioskowany z cudzych wiadomości.
+- Ustal swój numer z lokalnego pliku tożsamości poza repozytorium na podstawie ustalenia z właścicielem; nie publikuj go. Wspólne instrukcje nie przypisują numeru żadnej konkretnej rozmowie ani urządzeniu.
 - Plik komunikacji nie wysyła powiadomień ani nie uruchamia rozmów. Bezpośrednie wysyłanie wiadomości innym osobom lub rozmowom wymaga upoważnienia użytkownika. Nie zapisuj sekretów, tokenów, prywatnego dziennika ani długich logów.
 
 ## Wspólny sposób pracy z GitHubem

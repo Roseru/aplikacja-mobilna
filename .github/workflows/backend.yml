@@ -19,6 +19,7 @@ jobs:
           version: '0.9.5'
       - run: uv sync --project tools/contracts --locked
       - run: uv run --project tools/contracts --locked --offline python tools/contracts/validate.py
+      - run: uv run --project tools/contracts --locked --offline python -m unittest discover -s tools/contracts -p "test_*.py"
   quality:
     runs-on: ubuntu-latest
     steps:
