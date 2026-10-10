@@ -2,6 +2,7 @@
 import gzip
 import hashlib
 import json
+import re
 import subprocess
 import sys
 from pathlib import Path
@@ -15,7 +16,6 @@ from referencing import Registry, Resource
 
 from catalog_checks import check_catalog
 from domain_checks import check_domain
-from markdown_checks import check_local_links
 from nutrition_checks import verify_vectors
 from source_checks import verify_source
 from sync_checks import check_sync, check_scenario
@@ -215,7 +215,13 @@ def main():
         contents = path.read_text(encoding='utf-8')
         if path.parent == ROOT/'docs/e0' or path == CONTRACTS/'README.md':
             assert contents.splitlines()[0].endswith('- osoba 2'), path
-        local_links += check_local_links(path)
+        for link in re.findall(r'(?<!!)\[[^\]]+\]\(([^)]+)\)', contents):
+            link = link.strip('<>')
+            if urlsplit(link).scheme or link.startswith('#'):
+                continue
+            dest = unquote(link.partition('#')[0])
+            assert (path.parent / dest).exists(), f'Broken local link: {path}: {link}'
+            local_links += 1
     result = subprocess.run(['git','diff','--check'], cwd=ROOT, capture_output=True, text=True)
     assert result.returncode == 0, result.stdout + result.stderr
     print(f'PASS E0 | Python {sys.version.split()[0]} | schemas={len(schemas)} | endpoints={len(ids)} | HTTP examples={api_example_count}')
