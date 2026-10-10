@@ -31,6 +31,7 @@ from calorie_app.modules.catalog.repository import (
     read_package,
     source_data,
 )
+from calorie_app.modules.catalog.timestamps import normalize_timestamp
 from calorie_app.modules.catalog.validation import (
     CatalogValidationError,
     canonical_json,
@@ -71,7 +72,7 @@ def _same(existing, value, adapter) -> None:
 def import_catalog(engine, value: dict) -> ImportResult:
     """Validate first, then import dependencies and seal in one DB transaction."""
     validate_package(value)
-    value = ordered_package(value)
+    value = normalize_timestamp(ordered_package(value))
     package_id, release = UUID(value["package_id"]), value["release"]
     if package_id == OFFICIAL_PACKAGE_ID and value["kind"] != "official":
         raise CatalogValidationError("catalog_channel")
@@ -86,9 +87,10 @@ def import_catalog(engine, value: dict) -> ImportResult:
             raise CatalogValidationError("catalog_channel")
         existing = session.get(OfflinePackage, (package_id, release))
         if existing is not None:
+            stored_value = read_package(session, package_id, release)
             if (
-                existing.content_hash != content_hash(value)
-                or read_package(session, package_id, release) != value
+                existing.content_hash != content_hash(stored_value)
+                or normalize_timestamp(stored_value) != value
             ):
                 raise CatalogValidationError("catalog_release_conflict")
             return ImportResult(package_id, release, False)
@@ -243,6 +245,80 @@ def import_catalog(engine, value: dict) -> ImportResult:
         session.flush()
         package.sealed = True
         session.flush()
+    return ImportResult(package_id, release, True)
+
+
+def recover_timestamp(engine, original: dict) -> ImportResult:
+    """Restore only the proven original spelling of a sealed, unpublished draft.
+
+    The relational graph, original package hash and membership stay immutable.
+    Every child snapshot must also have a valid hash. The canonical original
+    evidence and authenticated DB operator are recorded atomically in the audit.
+    """
+    validate_package(original)
+    original = ordered_package(original)
+    package_id, release = UUID(original["package_id"]), original["release"]
+    with Session(engine) as session, session.begin():
+        session.execute(text("SELECT pg_advisory_xact_lock(:key)"), {"key": IMPORT_LOCK})
+        row = session.get(OfflinePackage, (package_id, release), with_for_update=True)
+        if row is None or not row.sealed or row.state != "draft":
+            raise CatalogValidationError("catalog_recovery_requires_draft")
+        if row.content_hash != content_hash(original):
+            raise CatalogValidationError("catalog_recovery_input_conflict")
+        restored = read_package(session, package_id, release) | {
+            "published_at": original["published_at"]
+        }
+        if (
+            normalize_timestamp(restored) != normalize_timestamp(original)
+            or content_hash(restored) != row.content_hash
+            or normalize_timestamp(original)["published_at"]
+            != normalize_timestamp({"published_at": row.published_at.isoformat()})["published_at"]
+        ):
+            raise CatalogValidationError("catalog_recovery_graph_conflict")
+        for source in original["sources"]:
+            _same(session.get(ProductSource, UUID(source["source_id"])), source, source_data)
+        for product in original["products"]:
+            _same(
+                session.get(ProductVersion, (UUID(product["product_id"]), product["revision"])),
+                product,
+                product_data,
+            )
+        for ration in original["rations"]:
+            _same(
+                session.get(RationVersion, (UUID(ration["ration_id"]), ration["revision"])),
+                ration,
+                lambda item: ration_data(
+                    item, components_for(session, item.ration_id, item.revision)
+                ),
+            )
+        existing = session.scalar(
+            text(
+                "SELECT original_input FROM app.catalog_timestamp_recoveries "
+                "WHERE package_id=:package_id AND release=:release"
+            ),
+            {"package_id": package_id, "release": release},
+        )
+        evidence = canonical_json(original).decode("utf-8")
+        if existing is not None:
+            if existing != evidence:
+                raise CatalogValidationError("catalog_recovery_input_conflict")
+            return ImportResult(package_id, release, False)
+        if restored == read_package(session, package_id, release):
+            raise CatalogValidationError("catalog_recovery_not_required")
+        session.execute(
+            text(
+                "INSERT INTO app.catalog_timestamp_recoveries "
+                "(package_id,release,published_at_text,original_content_hash,original_input) "
+                "VALUES (:package_id,:release,:timestamp,:content_hash,:evidence)"
+            ),
+            {
+                "package_id": package_id,
+                "release": release,
+                "timestamp": original["published_at"],
+                "content_hash": row.content_hash,
+                "evidence": evidence,
+            },
+        )
     return ImportResult(package_id, release, True)
 
 

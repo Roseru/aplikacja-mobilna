@@ -123,9 +123,37 @@ jobs:
             --package /artifacts/export/base-pl.1.json.gz \
             --expected-package-id 47bdff67-e58b-5437-919b-ec00159afbc5 --expected-kind demo
           "${image[@]}" .venv/bin/python -c 'from calorie_app.modules.catalog.offline_import import OfflineCatalog; p=OfflineCatalog("/artifacts/catalog.sqlite", "47bdff67-e58b-5437-919b-ec00159afbc5", "demo").read_active_package(); assert p["counts"] == {"products":18,"rations":1,"components":18,"sources":1}; assert p["rations"][0]["complete"] is False'
+          jq '.release = 2 | .published_at = "2026-10-09T12:00:00.1Z"' \
+            backend/data/demo/seed.json > "$storage/fractional-input.json"
+          "${image[@]}" .venv/bin/python -m calorie_app.modules.catalog.cli import \
+            --input /artifacts/fractional-input.json > "$storage/fractional-first.json"
+          jq -e '.created == true' "$storage/fractional-first.json"
+          "${image[@]}" .venv/bin/python -m calorie_app.modules.catalog.cli import \
+            --input /artifacts/fractional-input.json > "$storage/fractional-repeat.json"
+          jq -e '.created == false' "$storage/fractional-repeat.json"
+          "${image[@]}" .venv/bin/python -m calorie_app.modules.catalog.cli export \
+            --package-id 47bdff67-e58b-5437-919b-ec00159afbc5 --release 2 \
+            --output /artifacts/fractional-export
+          jq -e '.published_at == "2026-10-09T12:00:00.100000Z"' \
+            "$storage/fractional-export/manifest.json"
+          "${image[@]}" .venv/bin/python -m calorie_app.modules.catalog.cli publish \
+            --package-id 47bdff67-e58b-5437-919b-ec00159afbc5 --release 2
+          "${image[@]}" .venv/bin/python -m calorie_app.modules.catalog.offline_import \
+            --database /artifacts/catalog.sqlite \
+            --manifest /artifacts/fractional-export/manifest.json \
+            --package /artifacts/fractional-export/base-pl.2.json.gz \
+            --expected-package-id 47bdff67-e58b-5437-919b-ec00159afbc5 --expected-kind demo
+          "${image[@]}" .venv/bin/python -c 'from calorie_app.modules.catalog.offline_import import OfflineCatalog; p=OfflineCatalog("/artifacts/catalog.sqlite", "47bdff67-e58b-5437-919b-ec00159afbc5", "demo").read_active_package(); assert p["release"] == 2; assert p["published_at"] == "2026-10-09T12:00:00.100000Z"'
+          cmp "$storage/storage/demo/47bdff67-e58b-5437-919b-ec00159afbc5/base-pl.1.json.gz" \
+            backend/data/demo/export/base-pl.1.json.gz
+          "${image[@]}" .venv/bin/python -m calorie_app.modules.catalog.cli prune-page-tokens \
+            > "$storage/cleanup.json"
+          jq -e '.removed == 0 and .batch_limit == 1000' "$storage/cleanup.json"
           docker run -d --name e2-built-api --network host -v "$storage:/artifacts:ro" \
             -e DATABASE_URL=postgresql+psycopg://calorie_app_api:ci-api-only@127.0.0.1:5432/calorie_app \
-            -e CATALOG_ARTIFACT_ROOT=/artifacts/storage calorie-backend:e2
+            -e CATALOG_ARTIFACT_ROOT=/artifacts/storage \
+            -e CATALOG_PAGE_TOKEN_SECRET=e2e2e2e2e2e2e2e2e2e2e2e2e2e2e2e2e2e2e2e2e2e2e2e2e2e2e2e2e2e2e2e2 \
+            calorie-backend:e2
           trap 'docker logs e2-built-api; docker rm -f e2-built-api' EXIT
           curl --retry 10 --retry-all-errors --retry-delay 1 --retry-max-time 30 --max-time 5 \
             -f http://127.0.0.1:8000/health/ready

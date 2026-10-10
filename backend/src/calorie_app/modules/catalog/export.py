@@ -52,7 +52,7 @@ def export_package(engine, package_id: UUID, release: int) -> ExportArtifact:
             compressed = output.getvalue()
             if len(compressed) > MAX_COMPRESSED_BYTES:
                 raise CatalogValidationError("catalog_size")
-            manifest = package_header(row, value["kind"]) | {
+            manifest = package_header(row, value["kind"], value["published_at"]) | {
                 "path": f"base-pl.{release}.json.gz",
                 "compressed_bytes": len(compressed),
                 "uncompressed_bytes": len(raw),

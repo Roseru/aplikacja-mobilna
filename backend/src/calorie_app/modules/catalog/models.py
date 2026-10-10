@@ -11,8 +11,11 @@ from sqlalchemy import (
     DateTime,
     ForeignKey,
     ForeignKeyConstraint,
+    Index,
     Numeric,
     String,
+    Text,
+    text,
 )
 from sqlalchemy.dialects.postgresql import JSONB
 from sqlalchemy.orm import Mapped, mapped_column
@@ -293,6 +296,7 @@ class RationPageToken(Base):
         ),
         CheckConstraint('"limit" BETWEEN 1 AND 500', name="page_limit"),
         CheckConstraint("after_revision >= 1", name="after_revision"),
+        Index("ix_ration_page_tokens_expires_at", "expires_at"),
     )
     id: Mapped[UUID] = mapped_column(primary_key=True)
     package_id: Mapped[UUID] = mapped_column()
@@ -301,3 +305,39 @@ class RationPageToken(Base):
     after_revision: Mapped[int] = mapped_column()
     limit: Mapped[int] = mapped_column()
     expires_at: Mapped[datetime] = mapped_column(DateTime(timezone=True))
+
+
+class RationPageTokenTombstone(Base):
+    __tablename__ = "ration_page_token_tombstones"
+    __table_args__ = (CheckConstraint('"limit" BETWEEN 1 AND 500', name="page_limit"),)
+    id: Mapped[UUID] = mapped_column(primary_key=True)
+    package_id: Mapped[UUID] = mapped_column(ForeignKey("app.offline_channels.package_id"))
+    limit: Mapped[int] = mapped_column()
+
+
+class CatalogTimestampRecovery(Base):
+    __tablename__ = "catalog_timestamp_recoveries"
+    __table_args__ = (
+        ForeignKeyConstraint(
+            ["package_id", "release"],
+            ["app.offline_packages.package_id", "app.offline_packages.release"],
+        ),
+        CheckConstraint("original_content_hash ~ '^[0-9a-f]{64}$'", name="content_hash"),
+        CheckConstraint(
+            "published_at_text ~ '^[0-9]{4}-[0-9]{2}-[0-9]{2}T[0-9]{2}:[0-9]{2}:[0-9]{2}"
+            "([.][0-9]{1,6})?Z$'",
+            name="timestamp_text",
+        ),
+        CheckConstraint(
+            "octet_length(original_input) BETWEEN 1 AND 52428800", name="evidence_size"
+        ),
+    )
+    package_id: Mapped[UUID] = mapped_column(primary_key=True)
+    release: Mapped[int] = mapped_column(primary_key=True)
+    published_at_text: Mapped[str] = mapped_column(String(27))
+    original_content_hash: Mapped[str] = mapped_column(String(64))
+    original_input: Mapped[str] = mapped_column(Text)
+    recovered_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), server_default=text("clock_timestamp()")
+    )
+    recovered_by: Mapped[str] = mapped_column(Text, server_default=text("current_user"))

@@ -1,12 +1,11 @@
 """Public official-channel reads. Products remain protected E3 design operations."""
 
-from datetime import UTC, timedelta
 from typing import Annotated
-from uuid import UUID, uuid4
+from uuid import UUID
 
 from fastapi import APIRouter, HTTPException, Path, Query, Request, Response
 from pydantic import BaseModel, ConfigDict, Field
-from sqlalchemy import and_, func, select
+from sqlalchemy import and_, select
 from sqlalchemy.exc import SQLAlchemyError
 from sqlalchemy.orm import Session
 
@@ -18,7 +17,18 @@ from calorie_app.modules.catalog.models import (
     OfflinePackage,
     OfflinePackageRation,
     RationPageToken,
+    RationPageTokenTombstone,
     RationVersion,
+)
+from calorie_app.modules.catalog.pagination import (
+    PAGE_TTL,
+    CursorNotConfigured,
+    InvalidPageToken,
+    PageCursor,
+    database_now,
+    decode_cursor,
+    encode_cursor,
+    prune_legacy_tokens,
 )
 from calorie_app.modules.catalog.repository import (
     active_package,
@@ -62,28 +72,49 @@ def _latest(rations: list[dict]) -> list[dict]:
     operation_id="list_rations",
     responses=ERRORS | {410: {"model": ApiError}},
     description="Publiczne racje opublikowanego pakietu official v1. Token strony "
-    "przypina release i limit na 60 minut; nie jest checkpointem synchronizacji.",
+    "przypina package_id, release i limit na 60 minut bez przedłużania TTL. "
+    "Nowe tokeny są podpisane i nie zapisują rekordu; stare UUID zachowują ważność "
+    "i błąd page_expired po sprzątaniu. Nie jest to checkpoint synchronizacji.",
     openapi_extra={"security": []},
 )
 def list_rations(request: Request, query: Annotated[RationListQuery, Query()]):
     try:
         with Session(request.app.state.engine) as session, session.begin():
-            now = session.scalar(select(func.clock_timestamp())).astimezone(UTC)
+            prune_legacy_tokens(session)
+            now = database_now(session)
             after = None
             if query.page_token is None:
                 package = active_package(session, OFFICIAL_PACKAGE_ID)
                 if package is None:
                     return {"items": [], "next_page_token": None}
                 release = package.release
-                expires_at = now + timedelta(minutes=60)
+                expires_at = now + PAGE_TTL
             else:
-                try:
-                    token_id = UUID(query.page_token)
-                    if str(token_id) != query.page_token:
-                        raise ValueError
-                except ValueError:
-                    raise HTTPException(422) from None
-                token = session.get(RationPageToken, token_id)
+                if query.page_token.startswith("rp1."):
+                    try:
+                        token = decode_cursor(
+                            query.page_token, request.app.state.catalog_page_token_secret
+                        )
+                    except InvalidPageToken:
+                        raise HTTPException(422) from None
+                else:
+                    try:
+                        token_id = UUID(query.page_token)
+                        if str(token_id) != query.page_token:
+                            raise ValueError
+                    except ValueError:
+                        raise HTTPException(422) from None
+                    token = session.get(RationPageToken, token_id)
+                    if token is None:
+                        expired = session.get(RationPageTokenTombstone, token_id)
+                        if (
+                            expired is not None
+                            and expired.package_id == OFFICIAL_PACKAGE_ID
+                            and expired.limit == query.limit
+                        ):
+                            return error_response(
+                                request, 410, "page_expired", "Token strony wygasł."
+                            )
                 if (
                     token is None
                     or token.package_id != OFFICIAL_PACKAGE_ID
@@ -104,23 +135,22 @@ def list_rations(request: Request, query: Annotated[RationListQuery, Query()]):
             next_token = None
             if len(rations) > query.limit:
                 last = page[-1]
-                next_token = uuid4()
-                session.add(
-                    RationPageToken(
-                        id=next_token,
+                next_token = encode_cursor(
+                    PageCursor(
                         package_id=OFFICIAL_PACKAGE_ID,
                         release=release,
                         after_id=UUID(last["ration_id"]),
                         after_revision=last["revision"],
                         limit=query.limit,
                         expires_at=expires_at,
-                    )
+                    ),
+                    request.app.state.catalog_page_token_secret,
                 )
             return {
                 "items": page,
-                "next_page_token": None if next_token is None else str(next_token),
+                "next_page_token": next_token,
             }
-    except (SQLAlchemyError, OSError, CatalogValidationError):
+    except (SQLAlchemyError, OSError, CatalogValidationError, CursorNotConfigured):
         raise _unavailable() from None
 
 

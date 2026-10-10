@@ -18,6 +18,7 @@ from pydantic import (
     model_validator,
 )
 
+from calorie_app.modules.catalog.timestamps import utc_text
 from calorie_app.modules.catalog.validation import (
     DECIMAL_PATTERN,
     canonical,
@@ -66,20 +67,16 @@ def _timestamp(value):
     if isinstance(value, str):
         if re.fullmatch(TIMESTAMP_PATTERN, value) is None:
             raise ValueError("Timestamp must use UTC Z")
-        value = datetime.fromisoformat(value)
+        datetime.fromisoformat(value)  # Reject invalid calendar/time, retain valid wire spelling.
+        return value
     if not isinstance(value, datetime) or value.tzinfo is None or value.utcoffset() != timedelta(0):
         raise ValueError("Timestamp must be timezone-aware UTC")
-    return value
-
-
-def _utc_z(value: datetime) -> str:
-    return value.isoformat().replace("+00:00", "Z")
+    return utc_text(value)
 
 
 Timestamp = Annotated[
-    datetime,
+    str,
     BeforeValidator(_timestamp),
-    PlainSerializer(_utc_z, return_type=str, when_used="json"),
     WithJsonSchema({"type": "string", "format": "date-time", "pattern": TIMESTAMP_PATTERN}),
 ]
 

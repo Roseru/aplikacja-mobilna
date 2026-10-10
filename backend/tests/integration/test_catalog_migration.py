@@ -9,6 +9,7 @@ from sqlalchemy import delete, insert, inspect, select, text, update
 from sqlalchemy.exc import DataError, IntegrityError, ProgrammingError
 
 from calorie_app.db.models import Product, ProductSource, ProductVersion, UserAccount
+from calorie_app.health import EXPECTED_REVISION
 from calorie_app.modules.catalog.models import (
     OfflineChannel,
     OfflinePackage,
@@ -99,7 +100,7 @@ def test_upgrade_0002_preserves_legacy_and_finite_nutrition(database):
             assert stored.status is None
             assert stored.content_hash is None
             assert connection.scalar(text("SELECT version_num FROM app.alembic_version")) == (
-                "0003_catalog_offline"
+                EXPECTED_REVISION
             )
         checks = {
             item["name"]
@@ -497,11 +498,8 @@ def test_runtime_permissions_preserve_e1_and_protect_catalog(catalog_graph, role
         limit=50,
         expires_at=datetime.now(UTC) + timedelta(hours=1),
     )
-    if role == "calorie_app_api":
-        connection.execute(token)
-        rejected(connection, delete(RationPageToken), ProgrammingError)
-    else:
-        rejected(connection, token, ProgrammingError)
+    rejected(connection, token, ProgrammingError)
+    rejected(connection, delete(RationPageToken), ProgrammingError)
 
 
 def test_token_rejects_unpublished_snapshot(catalog_graph):

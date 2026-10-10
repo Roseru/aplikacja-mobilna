@@ -63,7 +63,7 @@
           "catalog"
         ],
         "summary": "List Rations",
-        "description": "Publiczne racje opublikowanego pakietu official v1. Token strony przypina release i limit na 60 minut; nie jest checkpointem synchronizacji.",
+        "description": "Publiczne racje opublikowanego pakietu official v1. Token strony przypina package_id, release i limit na 60 minut bez przedłużania TTL. Nowe tokeny są podpisane i nie zapisują rekordu; stare UUID zachowują ważność i błąd page_expired po sprzątaniu. Nie jest to checkpoint synchronizacji.",
         "operationId": "list_rations",
         "parameters": [
           {

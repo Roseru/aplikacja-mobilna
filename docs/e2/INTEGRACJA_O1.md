@@ -4,6 +4,10 @@ Dokument przekazania O1/O3, 9 października 2026. Opisuje kontrakt dostawy O2 i 
 
 Normatywny format: [schemat katalogu](../../contracts/schemas/catalog.schema.json), [typy wspólne](../../contracts/schemas/common.schema.json), [reguły E0](../e0/KONTRAKTY_I_INTEGRACJA.md), [wektory nutrition_v1](../../contracts/test-vectors/nutrition-v1.json). Pochodzenie i ograniczenia próbki: [audyt źródeł](../e0/ZRODLA_KATALOGU.md).
 
+Uzupełnienie poprawki O2 z 10 października: nowy import normalizuje poprawne E0 `published_at` przed hashem, ale stare poprawne publikacje i demo zachowują bajty/hash. Recovery starszego draftu przywraca udowodnioną oryginalną pisownię, np. `.1Z`; manifest/package mają ten sam tekst. Room ma przyjmować wszystkie E0 daty z 1–6 cyframi i porównywać zgodny nagłówek. **SHA-256 sprawdzaj na pobranych bajtach gzip przed rozpakowaniem; nie normalizuj pliku przed hashem.** Normatywny schema/reader/release/UUID i format Decimal nie zmieniły się.
+
+Tokeny listy racji nadal są nieprzezroczystym tekstem: nowy `rp1` zachowuje package_id/release/limit, pierwotne 60 minut i snapshot także po nowszej publikacji. Stare UUID pozostają obsługiwane do końca ważności i dają 410 `page_expired` również po sprzątaniu; błędny/zmieniony token lub limit daje 422. Klient nie wymaga rozpoznawania ani generowania formatu tokenu. Wdrożenie/migracje/sekret są zadaniem O3 według [backend README](../../backend/README.md). Nie zmieniano Androida; wcześniejszy odczyt jego gałęzi poniżej jest historyczną inspekcją, a aktualny dowód Room/APK nadal wymaga O1.
+
 ## 1. Dostawa demo dla O1
 
 Źródłem katalogu jest PostgreSQL. Pakiet gzip jest eksportem danych z tej bazy, a po imporcie źródłem ekranów telefonu jest Room. O1 osadza pakiet oraz manifest w assets APK; pierwszy start nie potrzebuje konta, API ani sieci. Aktualizacja sieciowa jest opcjonalnym późniejszym przepływem tego samego formatu.

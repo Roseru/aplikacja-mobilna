@@ -12,7 +12,7 @@ from uuid import UUID, uuid4
 
 import pytest
 from fastapi.testclient import TestClient
-from sqlalchemy import create_engine, event, func, select, text, update
+from sqlalchemy import create_engine, event, func, select, text
 from sqlalchemy.orm import Session
 
 from calorie_app.core.config import Settings
@@ -29,7 +29,6 @@ from calorie_app.modules.catalog.models import (
     OfflineChannel,
     OfflinePackage,
     ProductVersion,
-    RationPageToken,
 )
 from calorie_app.modules.catalog.offline_import import OfflineCatalog
 from calorie_app.modules.catalog.repository import read_package
@@ -58,7 +57,17 @@ def catalog_db(database):
         connection.exec_driver_sql(
             "TRUNCATE app.product_sources, app.products, app.rations, app.offline_channels CASCADE"
         )
-    yield engine, migrate, url
+    try:
+        yield engine, migrate, url
+    finally:
+        # Recovery/expiry evidence must remain immutable in production. This
+        # disposable test graph is removed explicitly before older E1 downgrade
+        # scenarios, rather than weakening either migration's downgrade guard.
+        with engine.begin() as connection:
+            connection.exec_driver_sql(
+                "TRUNCATE app.product_sources, app.products, app.rations, "
+                "app.offline_channels CASCADE"
+            )
 
 
 def synthetic_official(*, package_id=OFFICIAL_PACKAGE_ID, release=1, count=2):
@@ -454,7 +463,7 @@ def test_channel_and_package_identity_isolate_public_urls(catalog_db, tmp_path):
         assert (tmp_path / "demo" / str(demo_id) / "base-pl.1.json.gz").read_bytes() != body
 
 
-def test_official_http_bytes_pagination_and_versions(catalog_db, tmp_path):
+def test_official_http_bytes_pagination_and_versions(catalog_db, tmp_path, monkeypatch):
     engine, _, url = catalog_db
     first = synthetic_official(count=3)
     import_catalog(engine, first)
@@ -520,12 +529,10 @@ def test_official_http_bytes_pagination_and_versions(catalog_db, tmp_path):
                 ).status_code
                 == 422
             )
-            with engine.begin() as connection:
-                connection.execute(
-                    update(RationPageToken).values(
-                        expires_at=datetime.now(UTC) - timedelta(seconds=1)
-                    )
-                )
+            monkeypatch.setattr(
+                "calorie_app.modules.catalog.router.database_now",
+                lambda session: datetime.now(UTC) + timedelta(hours=2),
+            )
             expired = client.get(
                 "/api/v1/rations", params={"limit": 1, "page_token": page["next_page_token"]}
             )

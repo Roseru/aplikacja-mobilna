@@ -8,7 +8,8 @@ from uuid import UUID
 from sqlalchemy.exc import SQLAlchemyError
 
 from calorie_app.modules.catalog.export import export_package, publish_package, write_immutable
-from calorie_app.modules.catalog.service import import_catalog
+from calorie_app.modules.catalog.pagination import prune_legacy_tokens
+from calorie_app.modules.catalog.service import import_catalog, recover_timestamp
 from calorie_app.modules.catalog.validation import (
     MAX_UNCOMPRESSED_BYTES,
     CatalogValidationError,
@@ -29,7 +30,8 @@ def read_input(path: Path) -> dict:
 def main(argv=None):
     parser = argparse.ArgumentParser(description=__doc__)
     sub = parser.add_subparsers(dest="command", required=True)
-    for name in ("validate", "import"):
+    sub.add_parser("prune-page-tokens")
+    for name in ("validate", "import", "recover-timestamp"):
         sub.add_parser(name).add_argument("--input", type=Path, required=True)
     for name in ("export", "publish"):
         command = sub.add_parser(name)
@@ -40,7 +42,7 @@ def main(argv=None):
     args = parser.parse_args(argv)
     engine = None
     try:
-        if args.command in {"validate", "import"}:
+        if args.command in {"validate", "import", "recover-timestamp"}:
             value = read_input(args.input)
             if args.command == "validate":
                 print(json.dumps({"status": "valid", "counts": value["counts"]}))
@@ -52,8 +54,9 @@ def main(argv=None):
 
         settings = Settings()
         engine = make_engine(settings)
-        if args.command == "import":
-            result = import_catalog(engine, value)
+        if args.command in {"import", "recover-timestamp"}:
+            operation = import_catalog if args.command == "import" else recover_timestamp
+            result = operation(engine, value)
             print(
                 json.dumps(
                     {
@@ -68,6 +71,12 @@ def main(argv=None):
             write_immutable(args.output / artifact.manifest["path"], artifact.compressed)
             write_immutable(args.output / "manifest.json", canonical_json(artifact.manifest))
             print(json.dumps(artifact.manifest))
+        elif args.command == "prune-page-tokens":
+            from sqlalchemy.orm import Session
+
+            with Session(engine) as session, session.begin():
+                removed = prune_legacy_tokens(session)
+            print(json.dumps({"removed": removed, "batch_limit": 1000}))
         else:
             print(
                 json.dumps(

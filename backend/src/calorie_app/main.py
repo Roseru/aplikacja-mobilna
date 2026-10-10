@@ -30,6 +30,7 @@ def create_app(settings: Settings | None = None, *, engine=None) -> FastAPI:
     app.state.engine = db_engine
     app.state.session_factory = session_factory(db_engine)
     app.state.catalog_artifact_root = settings.catalog_artifact_root
+    app.state.catalog_page_token_secret = settings.catalog_page_token_secret
 
     @app.middleware("http")
     async def request_context(request: Request, call_next):

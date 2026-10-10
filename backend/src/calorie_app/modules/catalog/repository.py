@@ -1,9 +1,8 @@
 """SQL reads and wire adapters. The caller owns every transaction."""
 
-from datetime import UTC
 from uuid import UUID
 
-from sqlalchemy import and_, select
+from sqlalchemy import and_, select, text
 from sqlalchemy.orm import Session
 
 from calorie_app.modules.catalog.models import (
@@ -17,13 +16,21 @@ from calorie_app.modules.catalog.models import (
     RationComponent,
     RationVersion,
 )
+from calorie_app.modules.catalog.timestamps import utc_text
 from calorie_app.modules.catalog.validation import CatalogValidationError, canonical
 
 NUTRITION_FIELDS = ("energy_kcal", "protein_g", "fat_g", "carbs_g")
 
 
-def utc_text(value):
-    return value.astimezone(UTC).isoformat().replace("+00:00", "Z")
+def recovered_timestamp(session: Session, row: OfflinePackage) -> str | None:
+    return session.scalar(
+        text(
+            "SELECT published_at_text FROM app.catalog_timestamp_recoveries "
+            "WHERE package_id=:package_id AND release=:release "
+            "AND original_content_hash=:content_hash"
+        ),
+        {"package_id": row.package_id, "release": row.release, "content_hash": row.content_hash},
+    )
 
 
 def source_data(row: ProductSource) -> dict:
@@ -109,13 +116,13 @@ def components_for(session: Session, ration_id: UUID, revision: int):
     )
 
 
-def package_header(row: OfflinePackage, kind: str) -> dict:
+def package_header(row: OfflinePackage, kind: str, published_at_text: str | None = None) -> dict:
     return {
         "package_id": str(row.package_id),
         "release": row.release,
         "schema_version": row.schema_version,
         "min_reader_version": row.min_reader_version,
-        "published_at": utc_text(row.published_at),
+        "published_at": published_at_text or utc_text(row.published_at),
         "kind": kind,
         "counts": {
             "products": row.product_count,
@@ -191,7 +198,7 @@ def read_package(session: Session, package_id: UUID, release: int) -> dict:
     grouped = {}
     for component in components:
         grouped.setdefault((component.ration_id, component.ration_revision), []).append(component)
-    return package_header(row, channel.kind) | {
+    return package_header(row, channel.kind, recovered_timestamp(session, row)) | {
         "sources": [source_data(s) for s in sources],
         "products": [product_data(p) for p in products],
         "rations": [ration_data(r, grouped.get((r.ration_id, r.revision), [])) for r in rations],
@@ -217,7 +224,7 @@ def active_package(session: Session, package_id: UUID) -> OfflinePackage | None:
 
 
 def manifest_data(session: Session, row: OfflinePackage, kind: str) -> dict:
-    return package_header(row, kind) | {
+    return package_header(row, kind, recovered_timestamp(session, row)) | {
         "path": f"base-pl.{row.release}.json.gz",
         "compressed_bytes": row.compressed_bytes,
         "uncompressed_bytes": row.uncompressed_bytes,
