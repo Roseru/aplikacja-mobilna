@@ -49,6 +49,8 @@ Wymagane kontrole są zależne od dostępności funkcji GitHuba dla danego repoz
 
 Uruchomienia: PR do `main` oraz zmiana `main`. Każdy PR otrzymuje stabilne sprawdzenie zbiorcze `ci-required`. O3 może ograniczać kosztowne zadania do właściwych ścieżek, ale sprawdzenie wymagane nie może zostać pominięte ani oznaczać sukcesu, gdy wymagany test nie wykonał się.
 
+W bieżącym [workflow Project CI](../.github/workflows/backend.yml) wymagane joby to `contracts`, `quality`, `postgres`, `android-build` i `android-device`. Android ma build/lint/JVM oraz pełną instalację validation na API 35 offline. Agregator `ci-required` zalicza wyłącznie sukces każdego z pięciu jobów. Obecna konfiguracja wykonuje je także dla PR dokumentacji; ograniczenie przez ścieżki jest przyszłą optymalizacją, nie działającym pomijaniem. Artefakty APK z wersją/commitem/SHA-256 oraz raporty mają 14 dni retencji; sposób pobrania i granice dostawy opisuje [instrukcja Androida](../android/README.md#github-actions-i-pobieranie-apk). Poniższa tabela przedstawia zakresy sprawdzeń, które mogą być wykonane wewnątrz tych jobów; nie każdy zakres ma osobny job.
+
 | Sprawdzenie | Co rzeczywiście wykonuje | Warunek sukcesu / właściciel zawartości |
 |---|---|---|
 | `docs-contract` | Linki lokalne, poprawność wersjonowanych JSON/JSON Schema, generowanie OpenAPI i porównanie z artefaktem | Zmiana kontraktu jawna i poprawna; O2 |
@@ -60,7 +62,7 @@ Uruchomienia: PR do `main` oraz zmiana `main`. Każdy PR otrzymuje stabilne spra
 | `build` | Budowa obrazu backendu i artefaktu APK z identyfikatora commitu | Budowa nie wymaga sekretów produkcyjnych; O2/O1, opakowanie pipeline O3 |
 | `ci-required` | Zbiera wyniki kontroli wymaganych dla danego zakresu | Błąd, anulowanie lub brak obowiązkowego wyniku blokuje PR; O3 |
 
-W E1 uruchamiamy kontrole istniejącego kodu, migracji i jakości. Kolejne kontrole stają się wymagane razem z funkcją z danego etapu. Brak kodu lub zbioru testów nie jest dowodem działania; PR nie dodaje „zielonego” pustego zadania w miejsce przyszłego sprawdzenia. Zmiana tylko dokumentacji wymaga odpowiednich kontroli dokumentacji, nie pełnego zestawu emulatorów.
+W E1 uruchamiamy kontrole istniejącego kodu, migracji i jakości. Kolejne kontrole stają się wymagane razem z funkcją z danego etapu. Brak kodu lub zbioru testów nie jest dowodem działania; PR nie dodaje „zielonego” pustego zadania w miejsce przyszłego sprawdzenia. Docelowa optymalizacja zmian samej dokumentacji może ograniczyć emulatory po jawnym uzgodnieniu zasad agregatora; obecnie wszystkie pięć jobów pozostaje wymaganych.
 
 Testy PR nie korzystają z produkcyjnych danych, hasła administratora Keycloak ani rzeczywistego Gemini. Gemini jest mockowane, a tokeny testowe i efemeryczna baza powstają na potrzeby testu. Kontrola kryptografii obejmuje rzeczywiście podpisane tokeny i testowe JWKS; e2e z prawdziwym Keycloak następuje na środowisku integracyjnym przed E4 i przy zmianach logowania.
 

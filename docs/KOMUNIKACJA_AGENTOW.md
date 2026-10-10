@@ -19,7 +19,7 @@ Stan odczytany przez O1, 10 października 2026 r. Każda osoba aktualizuje swój
 |---|---|---|---|
 | O1 — Android, Kotlin, Room | Android 0.7 / Room 6: trwały bootstrap i niezmienne cele, gość offline poza main | Poprawki reviews #1/#6 i odbiór #1 → #6 → #7 → #9; O2 E3/E4, O3 środowisko/CI | [PR #9](https://github.com/Roseru/aplikacja-mobilna/pull/9), commit `ce6972c`; O1-008 |
 | O2 — Python, PostgreSQL, API | E1 na `main` (`a79b073`); E2 przekazane na gałęzi. Stan E2 pochodzi z odczytu O1, nie z potwierdzenia autora w tym dzienniku | Odbiór i publikacja E2 według workflow; osobna integracja Room/APK po stronie O1 | [Przekazanie E2](https://github.com/Roseru/aplikacja-mobilna/blob/229a2b8/docs/e2/INTEGRACJA_O1.md), commit `229a2b8` |
-| O3 — DevOps, CI/CD, serwer | Odbiór oczekujących PR-ów na polecenie właściciela; E2 i dokumentacja scalone, Android sprawdzony lokalnie: 65 JVM + 52/52 API 35 | CI Androida, testowy Keycloak i wersjonowana dostawa APK pozostają osobnymi zadaniami; review opcjonalne według O3-005 | O3-006, [PR #9](https://github.com/Roseru/aplikacja-mobilna/pull/9), [CI backendu](https://github.com/Roseru/aplikacja-mobilna/blob/main/.github/workflows/backend.yml) |
+| O3 — DevOps, CI/CD, serwer | Przygotowano CI Androida i dostawę debug APK na codex/devops-android-ci, bez zmian zachowania aplikacji | Odbiór zdalnego Project CI i PR przed merge; następnie lokalne API / Keycloak do E3. Review opcjonalne według O3-005 | O3-007; [workflow gałęzi](https://github.com/Roseru/aplikacja-mobilna/blob/codex/devops-android-ci/.github/workflows/backend.yml) |
 
 ## Wpisy
 
@@ -160,6 +160,19 @@ Oczekiwana odpowiedź: O2 potwierdza odczyt modelu tożsamości i udostępnia do
 - Integracja: po każdym merge kolejny PR skierowano na main i sprawdzono wymagane CI aktualnego head. Kod Androida po aktualizacji bazy porównano z przetestowanym — identyczny. Konflikt `.gitignore` rozwiązano sumą reguł cache Kotlina i plików DB, bez zmian aplikacji. Stare `Request changes` do #1/#5/#6 zamknięto po sprawdzeniu usuniętych przyczyn. Bez force-push ani wyłączenia wymaganych testów.
 - Ograniczenia: lokalny emulator nie jest CI Androida; workflow nadal sprawdza backend/kontrakty. Android 0.7.1 / Room 6 działa offline i przygotowuje model E3; brak OIDC/HTTP/sync pozostaje jawny. Nie wdrożono produkcji, Keycloak ani dalszego E3/E4. Opcjonalne review określa O3-005.
 - Oczekiwana odpowiedź / następny krok: informacyjnie; O1/O2 sprawdzają aktualny main i status #9 przed następnym zadaniem. CI Androida, środowisko Keycloak i dostawa APK wymagają odrębnego zlecenia/uzgodnienia zakresu.
+
+### O3-007 — CI Androida i dostawa debug APK
+
+- Data / autor: 2026-10-10, Agent 3 / O3.
+- Odbiorcy: O1 / O2.
+- Status: DO ODCZYTU.
+- Źródło: osobne zlecenie właściciela; gałąź `codex/devops-android-ci`, [PR #10](https://github.com/Roseru/aplikacja-mobilna/pull/10) do aktualnego main. Stan publikacji i zdalne wyniki sprawdzać na bieżącym head PR.
+- Przekazanie: dodano `android-build` (APK/lint/JVM) i `android-device` (pełny validation na API 35 Google APIs x86_64 offline) do istniejącego workflow. `ci-required` wymaga sukcesu obu oraz contracts/quality/postgres; failure/cancelled/skipped blokują wynik. Nie dodano filtrowania ścieżek: także PR dokumentacji wykonuje wszystkie wymagane kontrole.
+- Dostawa: APK debug, manifest z rzeczywistą wersją/applicationId/commitem i SHA-256 oraz osobne raporty JVM/lint/urządzenia, retencja 14 dni. Commit artefaktu to dokładny testowany checkout, w PR integracja z bazą. Instrukcja pobrania jest w [android/README.md](../android/README.md#github-actions-i-pobieranie-apk).
+- Dowody lokalne: actionlint PASS, Ruff PASS, testy kontroli raportów i wersji APK PASS; agregator odrzuca failure/cancelled/skipped. Walidator E0 PASS, 130 lokalnych linków. Stan pełnego builda i zdalnego przebiegu będzie podany w PR; sam ten wpis nie potwierdza sukcesu zdalnego CI.
+- Profil i obserwacja do O1: CI używa Pixel 6 / API 35 (1080 × 2400 / density 420), zgodnie z wcześniejszym pełnym lokalnym odbiorem 52/52 O3. Próba Pixel 2 na `81402fa` wykonała 52 testy bez skipów; nie przeszły `DiaryFlowTest.createPrivateProductAndDeclareDayComplete` (brak node `day-complete`) i `importedE2RationPreservesExactQuantityAcrossRecreationAndEdit` (timeout UI). O1 powinien zbadać i ustabilizować przepływy na mniejszym ekranie; O3 nie zmienia testów ani kodu aplikacji i nie traktuje wyniku Pixel 6 jako odbioru wszystkich ekranów. Raport nieudanej próby: [CI 38076029720](https://github.com/Roseru/aplikacja-mobilna/actions/runs/38076029720).
+- Ograniczenia: aplikacja i wersja Room bez zmian. APK jest debug, nie wydaniem produkcyjnym. Brak OIDC/HTTP/sync, Keycloak, wdrożenia serwera i podpisywania release pozostaje jawny. Obecny PR nie zmienia ochrony main ani opcjonalnego review.
+- Oczekiwana odpowiedź / następny krok: O1 może po zaliczeniu całego CI pobrać artefakt i potwierdzić instrukcję dostawy; O2 zachowuje istniejące kontrole backendu. PR przygotowany do decyzji właściciela, bez automatycznego merge.
 
 ## Wzór nowego wpisu
 
