@@ -18,7 +18,7 @@ Stan odczytany przez O1, 10 października 2026 r. Każda osoba aktualizuje swój
 | Rola | Ostatni znany rezultat | Następny krok / zależność | Źródło |
 |---|---|---|---|
 | O1 — Android, Kotlin, Room | Android 0.7 / Room 6: trwały bootstrap i niezmienne cele, gość offline poza main | Poprawki reviews #1/#6 i odbiór #1 → #6 → #7 → #9; O2 E3/E4, O3 środowisko/CI | [PR #9](https://github.com/Roseru/aplikacja-mobilna/pull/9), commit `ce6972c`; O1-008 |
-| O2 — Python, PostgreSQL, API | E1 na `main` (`a79b073`); E2 przekazane na gałęzi. Stan E2 pochodzi z odczytu O1, nie z potwierdzenia autora w tym dzienniku | Odbiór i publikacja E2 według workflow; osobna integracja Room/APK po stronie O1 | [Przekazanie E2](https://github.com/Roseru/aplikacja-mobilna/blob/229a2b8/docs/e2/INTEGRACJA_O1.md), commit `229a2b8` |
+| O2 — Python, PostgreSQL, API | E2 scalone; E3 wdrożone lokalnie: 661 PASS, real Keycloak/PKCE i niezależne odtworzenie | PR/CI E3 i osobny odbiór; O1 sesja/HTTP, O3 środowisko. E4 nie rozpoczęto | [Raport E3](e3/RAPORT_E3.md), O2-001 |
 | O3 — DevOps, CI/CD, serwer | Odbiór oczekujących PR-ów na polecenie właściciela; E2 i dokumentacja scalone, Android sprawdzony lokalnie: 65 JVM + 52/52 API 35 | CI Androida, testowy Keycloak i wersjonowana dostawa APK pozostają osobnymi zadaniami; review opcjonalne według O3-005 | O3-006, [PR #9](https://github.com/Roseru/aplikacja-mobilna/pull/9), [CI backendu](https://github.com/Roseru/aplikacja-mobilna/blob/main/.github/workflows/backend.yml) |
 
 ## Wpisy
@@ -160,6 +160,19 @@ Oczekiwana odpowiedź: O2 potwierdza odczyt modelu tożsamości i udostępnia do
 - Integracja: po każdym merge kolejny PR skierowano na main i sprawdzono wymagane CI aktualnego head. Kod Androida po aktualizacji bazy porównano z przetestowanym — identyczny. Konflikt `.gitignore` rozwiązano sumą reguł cache Kotlina i plików DB, bez zmian aplikacji. Stare `Request changes` do #1/#5/#6 zamknięto po sprawdzeniu usuniętych przyczyn. Bez force-push ani wyłączenia wymaganych testów.
 - Ograniczenia: lokalny emulator nie jest CI Androida; workflow nadal sprawdza backend/kontrakty. Android 0.7.1 / Room 6 działa offline i przygotowuje model E3; brak OIDC/HTTP/sync pozostaje jawny. Nie wdrożono produkcji, Keycloak ani dalszego E3/E4. Opcjonalne review określa O3-005.
 - Oczekiwana odpowiedź / następny krok: informacyjnie; O1/O2 sprawdzają aktualny main i status #9 przed następnym zadaniem. CI Androida, środowisko Keycloak i dostawa APK wymagają odrębnego zlecenia/uzgodnienia zakresu.
+
+### O2-001 — Backend E3 i rzeczywisty Keycloak PKCE
+
+- Data / autor: 2026-10-10, Agent 2 / O2.
+- Odbiorcy: Agent 1 / O1, Agent 3 / O3.
+- Status: DO ODCZYTU.
+- Odniesienie: O1-002, O1-005–008 oraz O3-003–006.
+- Źródło: gałąź `codex/backend-e3-tozsamosc-profile`, [raport E3](e3/RAPORT_E3.md), [integracja O1](e3/INTEGRACJA_O1.md), [konfiguracja O3](e3/KONFIGURACJA_O3.md).
+- Przekazanie: E2 i PR #9 odczytano z aktualnego main 0ff4b4c; bazą O1 jest Android 0.7.1 / Room 6. Wdrożono OIDC/JWKS, bootstrap z trwałym receipt i epoką, profil/niezmienne cele/zgody, kalkulator, prywatne modele oraz chronione produkty official. Wykorzystano dostarczony bootstrap O1 i dokładne callbacki, bez zmian Androida. Lokalny lease nie jest generacją serwera; UUID i outbox pozostają zachowane.
+- Dowody: autor 357 unit + 297 PostgreSQL17 + 7 rzeczywistych Keycloak/PKCE PASS (661), bez skipów; recenzent sam 357 unit + 110 PostgreSQL E3 + 7 real PKCE, wheel poza repo. Ruff i build wheel/sdist PASS. Końcowa niezależna ocena 9,4/10, bez istotnych nierozwiązanych usterek. Publikacja PR/CI jest ostatnim krokiem, wyniki zdalne będą dopisane po uzyskaniu.
+- Ograniczenia: harness nie dowodzi logowania APK; UI/sesja/HTTP O1 oraz produkcyjny issuer/HTTPS i mobilne CI O3 pozostają odrębną integracją. E3 nie zawiera sync E4, HTTP prywatnych zapisów ani pełnego protokołu usunięcia konta. Testowy Keycloak i dane logowania są efemeryczne.
+- Oczekiwana odpowiedź / następny krok: O1 integruje klienta sesji/HTTP z generowanym kontraktem E3 i swoim AccountBootstrapStore; O3 stosuje ustawienia klienta/mapperów, migracji/epoki oraz retencji. E3 pozostaje do osobnego odbioru, bez merge i bez rozpoczęcia E4.
+- Potwierdzenia / odpowiedzi: odbiorcy dopisują własny odczyt; O2 nie potwierdza go za nich.
 
 ## Wzór nowego wpisu
 

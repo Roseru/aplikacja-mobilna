@@ -142,3 +142,7 @@ Migracja Room ma najpierw kopię/reprezentatywny test poprzedniego schematu, a p
 | Gemini później | O3 dostarcza klucz Free Tier bez billing w E7, O2 adapter i mock. Model/limity sprawdzane przed integracją; CI bez prawdziwych wywołań |
 
 Adresy, sekrety, URI Androida i Compose pozostają do dostarczenia przez O1/O3 w odpowiednim etapie. Nie blokują kontraktu E0. Pierwsze zadanie E1: B-001 — uruchamialny szkielet FastAPI na Python3.13 z health, konfiguracją, wspólnymi błędami i testami; potem B-002/B-003 z rzeczywistym PostgreSQL17. E1 nie został rozpoczęty.
+
+## Doprecyzowanie bootstrapu w E3
+
+Wdrożone E3 opisuje [integracja O1](../e3/INTEGRACJA_O1.md) i generowane OpenAPI. Każda chroniona operacja poza bootstrapem wymaga istniejącego konta, inaczej 403 account_bootstrap_required. Identyczny bootstrap zachowuje wynik i server_time, ale aktywność/generacja/epoka mają pierwszeństwo przed replayem. Po zmianie epoki stary klucz daje 409 sync_epoch_changed z details [{field:sync_epoch,reason:bieżący UUID}]; po zmianie generacji 409 account_generation_changed. Nowy klucz daje bieżący kontekst tego samego konta bez resetu zgód. deleting zawsze daje 403. nbf jest opcjonalny, obecny zawsze sprawdzany; access token Keycloak typ=Bearer i audience calorie-api odróżnia się od ID tokenu. Pełne uzgodnienie po restore jest E4.

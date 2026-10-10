@@ -92,15 +92,17 @@ def test_active_contracts_have_no_duplicate_operations_and_keep_real_auth_for_e3
         operation = generated["paths"]["/api/v1" + path]["get"]
         assert operation["operationId"] == operation_id
         assert operation["security"] == []
-    for path in ("/products", "/products/{id}"):
-        assert path in draft_paths and "/api/v1" + path not in generated["paths"]
-        block = re.search(
-            r"^  " + re.escape(path) + r":\n(.*?)(?=^  /|^components:)",
-            design,
-            re.MULTILINE | re.DOTALL,
-        ).group(1)
-        assert "x-implementation-stage: E3" in block
-        assert "security:\n      - bearerAuth: []" in block
+    for path, method in (
+        ("/products", "get"),
+        ("/products/{id}", "get"),
+        ("/me/bootstrap", "post"),
+        ("/me", "get"),
+        ("/me/goals", "get"),
+        ("/me/consents", "put"),
+        ("/energy-estimates", "post"),
+    ):
+        assert path not in draft_paths and "/api/v1" + path in generated["paths"]
+        assert generated["paths"]["/api/v1" + path][method]["security"] == [{"bearerAuth": []}]
     operation_ids = re.findall(r"^      operationId: (\S+)$", design, re.MULTILINE)
     operation_ids.extend(
         method["operationId"]
@@ -203,7 +205,7 @@ def test_public_error_schemas_accept_e0_error_examples(app, route):
         ("/api/v1/rations?include_demo=true", 422),
         ("/api/v1/rations/not-a-uuid", 422),
         ("/api/v1/offline-package/base-pl.0.json.gz", 422),
-        ("/api/v1/products", 404),
+        ("/api/v1/products", 401),
     ],
 )
 def test_public_errors_from_real_handlers_match_e0(app, url, status):

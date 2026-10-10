@@ -122,6 +122,11 @@ def test_upgrade_0002_preserves_legacy_and_finite_nutrition(database):
             )
             connection.execute(delete(Product).where(Product.id == product_id))
             connection.execute(delete(ProductSource).where(ProductSource.id == source_id))
+            # E3 upgrade backfills default consents for this synthetic E2 account.
+            # Remove only that disposable fixture before its parent account.
+            connection.execute(
+                text("DELETE FROM app.user_consents WHERE owner_id=:owner"), {"owner": account_id}
+            )
             connection.execute(delete(UserAccount).where(UserAccount.id == account_id))
 
 

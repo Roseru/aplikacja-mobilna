@@ -4,235 +4,39 @@ info:
   title: Wojskowy licznik kalorii — E0
   version: 0.1.0
   x-status: design draft
-  description: Projekt przyszłych operacji OSOBY2. Wdrożone health i publiczny katalog E2 opisuje backend/openapi.json generowane z FastAPI.
-    Przykłady katalogu są wyłącznie demo.
+  description: Projekt przyszłych operacji E4/E5. Wdrożone health, katalog E2 i tożsamość/odczyty E3 opisuje backend/openapi.json
+    generowane z FastAPI. Przykłady katalogu są wyłącznie demo.
 servers:
 - url: /api/v1
   description: Ścieżka względna; host HTTPS dostarcza O3.
 paths:
-  /me/bootstrap:
-    post:
-      operationId: bootstrap
-      summary: Zakłada techniczną tożsamość i zgody false
-      description: Zakłada techniczną tożsamość i zgody false. Body zabronione; konto wyłącznie z tokenu. Sprawdza deleting/generation.
-        Nie importuje gościa ani celu. Idempotencja utworzenia tożsamości zastępuje If-Match.
-      x-implementation-stage: E3
+  /me/meals:
+    get:
+      operationId: read_meals
+      summary: Własne żywe posiłki i snapshoty
+      description: Własne żywe posiłki i snapshoty. Sortowanie occurred_at,entity_id; stabilny snapshot stron. Daty
+        lokalne, usunięcia dostępne przez sync.
+      x-implementation-stage: E5
       security:
       - bearerAuth: []
       parameters:
-      - &id005
-        name: Idempotency-Key
-        in: header
+      - &id001
+        name: from
+        in: query
         required: true
         schema:
-          $ref: ../schemas/common.schema.json#/$defs/Uuid
-        example: a1111111-1111-4111-8111-111111111111
-        description: Właściciel+operacja; identyczna treść zwraca pierwotny wynik. Zmieniona409.
-      responses:
-        '200':
-          description: Poprawny wynik kontraktu; nie dowód działania serwera.
-          content:
-            application/json:
-              schema:
-                $ref: ../schemas/domain.schema.json#/$defs/Bootstrap
-              examples:
-                example:
-                  externalValue: ../examples/valid/bootstrap.json
-        '401':
-          description: Nieważna sesja; brak mutacji.
-          content:
-            application/json:
-              schema:
-                $ref: ../schemas/domain.schema.json#/$defs/Error
-              examples:
-                example:
-                  externalValue: ../examples/valid/error-401.json
-          headers:
-            WWW-Authenticate:
-              description: Wyzwanie bearer.
-              schema:
-                type: string
-              example: Bearer
-        '403':
-          description: Brak roli; brak mutacji.
-          content:
-            application/json:
-              schema:
-                $ref: ../schemas/domain.schema.json#/$defs/Error
-              examples:
-                example:
-                  externalValue: ../examples/valid/error-403.json
-        '404':
-          description: Brak zasobu lub cudzy zasób.
-          content:
-            application/json:
-              schema:
-                $ref: ../schemas/domain.schema.json#/$defs/Error
-              examples:
-                example:
-                  externalValue: ../examples/valid/error-404.json
-        '409':
-          description: Konflikt; dla błędu całego żądania brak mutacji.
-          content:
-            application/json:
-              schema:
-                $ref: ../schemas/domain.schema.json#/$defs/Error
-              examples:
-                example:
-                  externalValue: ../examples/valid/error-409.json
-        '422':
-          description: Niepoprawne dane/parametry.
-          content:
-            application/json:
-              schema:
-                $ref: ../schemas/domain.schema.json#/$defs/Error
-              examples:
-                example:
-                  externalValue: ../examples/valid/error-422.json
-        '429':
-          description: Limit żądań.
-          content:
-            application/json:
-              schema:
-                $ref: ../schemas/domain.schema.json#/$defs/Error
-              examples:
-                example:
-                  externalValue: ../examples/valid/error-429.json
-          headers:
-            Retry-After:
-              description: Sekundy przed ponowieniem.
-              schema:
-                type: integer
-                minimum: 1
-              example: 30
-        '503':
-          description: Usługa czasowo niedostępna.
-          content:
-            application/json:
-              schema:
-                $ref: ../schemas/domain.schema.json#/$defs/Error
-              examples:
-                example:
-                  externalValue: ../examples/valid/error-503.json
-          headers:
-            Retry-After:
-              description: Sekundy przed ponowieniem.
-              schema:
-                type: integer
-                minimum: 1
-              example: 30
-  /me:
-    get:
-      operationId: read_me
-      summary: Odczyt własnego profilu, zgód i rewizji osi celów
-      description: Odczyt własnego profilu, zgód i rewizji osi celów. Brak profilu zwraca null. Bez paginacji.
-      x-implementation-stage: E3
-      security:
-      - bearerAuth: []
-      parameters: []
-      responses:
-        '200':
-          description: Poprawny wynik kontraktu; nie dowód działania serwera.
-          content:
-            application/json:
-              schema:
-                $ref: ../schemas/domain.schema.json#/$defs/ProfileRead
-              examples:
-                example:
-                  externalValue: ../examples/valid/profile-read.json
-        '401':
-          description: Nieważna sesja; brak mutacji.
-          content:
-            application/json:
-              schema:
-                $ref: ../schemas/domain.schema.json#/$defs/Error
-              examples:
-                example:
-                  externalValue: ../examples/valid/error-401.json
-          headers:
-            WWW-Authenticate:
-              description: Wyzwanie bearer.
-              schema:
-                type: string
-              example: Bearer
-        '403':
-          description: Brak roli; brak mutacji.
-          content:
-            application/json:
-              schema:
-                $ref: ../schemas/domain.schema.json#/$defs/Error
-              examples:
-                example:
-                  externalValue: ../examples/valid/error-403.json
-        '404':
-          description: Brak zasobu lub cudzy zasób.
-          content:
-            application/json:
-              schema:
-                $ref: ../schemas/domain.schema.json#/$defs/Error
-              examples:
-                example:
-                  externalValue: ../examples/valid/error-404.json
-        '409':
-          description: Konflikt; dla błędu całego żądania brak mutacji.
-          content:
-            application/json:
-              schema:
-                $ref: ../schemas/domain.schema.json#/$defs/Error
-              examples:
-                example:
-                  externalValue: ../examples/valid/error-409.json
-        '422':
-          description: Niepoprawne dane/parametry.
-          content:
-            application/json:
-              schema:
-                $ref: ../schemas/domain.schema.json#/$defs/Error
-              examples:
-                example:
-                  externalValue: ../examples/valid/error-422.json
-        '429':
-          description: Limit żądań.
-          content:
-            application/json:
-              schema:
-                $ref: ../schemas/domain.schema.json#/$defs/Error
-              examples:
-                example:
-                  externalValue: ../examples/valid/error-429.json
-          headers:
-            Retry-After:
-              description: Sekundy przed ponowieniem.
-              schema:
-                type: integer
-                minimum: 1
-              example: 30
-        '503':
-          description: Usługa czasowo niedostępna.
-          content:
-            application/json:
-              schema:
-                $ref: ../schemas/domain.schema.json#/$defs/Error
-              examples:
-                example:
-                  externalValue: ../examples/valid/error-503.json
-          headers:
-            Retry-After:
-              description: Sekundy przed ponowieniem.
-              schema:
-                type: integer
-                minimum: 1
-              example: 30
-  /me/goals:
-    get:
-      operationId: read_goals
-      summary: Własne historyczne wersje celów w porządku UUID
-      description: Własne historyczne wersje celów w porządku UUID. Zapis wyłącznie przez sync; brak celu oznacza pustą listę.
-      x-implementation-stage: E3
-      security:
-      - bearerAuth: []
-      parameters: &id006
-      - &id001
+          $ref: ../schemas/common.schema.json#/$defs/Date
+        example: '2026-10-01'
+        description: Pierwsza data lokalna włącznie; zakres≤366dni.
+      - &id002
+        name: to
+        in: query
+        required: true
+        schema:
+          $ref: ../schemas/common.schema.json#/$defs/Date
+        example: '2026-10-09'
+        description: Ostatnia data lokalna włącznie; from≤to.
+      - &id003
         name: limit
         in: query
         required: false
@@ -243,7 +47,7 @@ paths:
           default: 100
         example: 100
         description: Liczba rekordów; porządek i snapshot opisuje kontrakt E0.
-      - &id002
+      - &id004
         name: page_token
         in: query
         required: false
@@ -251,136 +55,6 @@ paths:
           $ref: ../schemas/common.schema.json#/$defs/Token
         example: opaque-page-example
         description: Nieprzezroczysty token strony, TTL60min; te same filtry.
-      responses:
-        '200':
-          description: Poprawny wynik kontraktu; nie dowód działania serwera.
-          content:
-            application/json:
-              schema:
-                $ref: ../schemas/domain.schema.json#/$defs/GoalPage
-              examples:
-                example:
-                  externalValue: ../examples/valid/goal-page.json
-        '401':
-          description: Nieważna sesja; brak mutacji.
-          content:
-            application/json:
-              schema:
-                $ref: ../schemas/domain.schema.json#/$defs/Error
-              examples:
-                example:
-                  externalValue: ../examples/valid/error-401.json
-          headers:
-            WWW-Authenticate:
-              description: Wyzwanie bearer.
-              schema:
-                type: string
-              example: Bearer
-        '403':
-          description: Brak roli; brak mutacji.
-          content:
-            application/json:
-              schema:
-                $ref: ../schemas/domain.schema.json#/$defs/Error
-              examples:
-                example:
-                  externalValue: ../examples/valid/error-403.json
-        '404':
-          description: Brak zasobu lub cudzy zasób.
-          content:
-            application/json:
-              schema:
-                $ref: ../schemas/domain.schema.json#/$defs/Error
-              examples:
-                example:
-                  externalValue: ../examples/valid/error-404.json
-        '409':
-          description: Konflikt; dla błędu całego żądania brak mutacji.
-          content:
-            application/json:
-              schema:
-                $ref: ../schemas/domain.schema.json#/$defs/Error
-              examples:
-                example:
-                  externalValue: ../examples/valid/error-409.json
-        '410':
-          description: Wygasły token strony.
-          content:
-            application/json:
-              schema:
-                $ref: ../schemas/domain.schema.json#/$defs/Error
-              examples:
-                example:
-                  externalValue: ../examples/valid/error-410.json
-        '422':
-          description: Niepoprawne dane/parametry.
-          content:
-            application/json:
-              schema:
-                $ref: ../schemas/domain.schema.json#/$defs/Error
-              examples:
-                example:
-                  externalValue: ../examples/valid/error-422.json
-        '429':
-          description: Limit żądań.
-          content:
-            application/json:
-              schema:
-                $ref: ../schemas/domain.schema.json#/$defs/Error
-              examples:
-                example:
-                  externalValue: ../examples/valid/error-429.json
-          headers:
-            Retry-After:
-              description: Sekundy przed ponowieniem.
-              schema:
-                type: integer
-                minimum: 1
-              example: 30
-        '503':
-          description: Usługa czasowo niedostępna.
-          content:
-            application/json:
-              schema:
-                $ref: ../schemas/domain.schema.json#/$defs/Error
-              examples:
-                example:
-                  externalValue: ../examples/valid/error-503.json
-          headers:
-            Retry-After:
-              description: Sekundy przed ponowieniem.
-              schema:
-                type: integer
-                minimum: 1
-              example: 30
-  /me/meals:
-    get:
-      operationId: read_meals
-      summary: Własne żywe posiłki i snapshoty
-      description: Własne żywe posiłki i snapshoty. Sortowanie occurred_at,entity_id; stabilny snapshot stron. Daty lokalne,
-        usunięcia dostępne przez sync.
-      x-implementation-stage: E5
-      security:
-      - bearerAuth: []
-      parameters:
-      - &id003
-        name: from
-        in: query
-        required: true
-        schema:
-          $ref: ../schemas/common.schema.json#/$defs/Date
-        example: '2026-10-01'
-        description: Pierwsza data lokalna włącznie; zakres≤366dni.
-      - &id004
-        name: to
-        in: query
-        required: true
-        schema:
-          $ref: ../schemas/common.schema.json#/$defs/Date
-        example: '2026-10-09'
-        description: Ostatnia data lokalna włącznie; from≤to.
-      - *id001
-      - *id002
       responses:
         '200':
           description: Poprawny wynik kontraktu; nie dowód działania serwera.
@@ -487,16 +161,16 @@ paths:
     get:
       operationId: read_weights
       summary: Własne pomiary bez interpolacji braków
-      description: Własne pomiary bez interpolacji braków. Sortowanie occurred_at,entity_id; daty lokalne i stabilny snapshot
-        stron.
+      description: Własne pomiary bez interpolacji braków. Sortowanie occurred_at,entity_id; daty lokalne i stabilny
+        snapshot stron.
       x-implementation-stage: E5
       security:
       - bearerAuth: []
       parameters:
-      - *id003
-      - *id004
       - *id001
       - *id002
+      - *id003
+      - *id004
       responses:
         '200':
           description: Poprawny wynik kontraktu; nie dowód działania serwera.
@@ -603,16 +277,16 @@ paths:
     get:
       operationId: read_diary_days
       summary: Własne deklaracje kompletności dnia
-      description: Własne deklaracje kompletności dnia. Efektywna kompletność jest wyliczana z posiłków, nie przyjmowana z
-        flagi. Sortowanie UUID; stabilne strony.
+      description: Własne deklaracje kompletności dnia. Efektywna kompletność jest wyliczana z posiłków, nie przyjmowana
+        z flagi. Sortowanie UUID; stabilne strony.
       x-implementation-stage: E5
       security:
       - bearerAuth: []
       parameters:
-      - *id003
-      - *id004
       - *id001
       - *id002
+      - *id003
+      - *id004
       responses:
         '200':
           description: Poprawny wynik kontraktu; nie dowód działania serwera.
@@ -715,492 +389,13 @@ paths:
                 type: integer
                 minimum: 1
               example: 30
-  /energy-estimates:
-    post:
-      operationId: calculate_energy
-      summary: Oszacowanie mifflin_pal_v1 bez zapisu celu; metoda, dane wejściowe i wynik
-      description: Oszacowanie mifflin_pal_v1 bez zapisu celu; metoda, dane wejściowe i wynik. Bez paginacji; nie jest mutacją
-        i nie wymaga Idempotency-Key.
-      x-implementation-stage: E3
-      security:
-      - bearerAuth: []
-      parameters: []
-      responses:
-        '200':
-          description: Poprawny wynik kontraktu; nie dowód działania serwera.
-          content:
-            application/json:
-              schema:
-                $ref: ../schemas/domain.schema.json#/$defs/Estimate
-              examples:
-                example:
-                  externalValue: ../examples/valid/estimate.json
-        '401':
-          description: Nieważna sesja; brak mutacji.
-          content:
-            application/json:
-              schema:
-                $ref: ../schemas/domain.schema.json#/$defs/Error
-              examples:
-                example:
-                  externalValue: ../examples/valid/error-401.json
-          headers:
-            WWW-Authenticate:
-              description: Wyzwanie bearer.
-              schema:
-                type: string
-              example: Bearer
-        '403':
-          description: Brak roli; brak mutacji.
-          content:
-            application/json:
-              schema:
-                $ref: ../schemas/domain.schema.json#/$defs/Error
-              examples:
-                example:
-                  externalValue: ../examples/valid/error-403.json
-        '404':
-          description: Brak zasobu lub cudzy zasób.
-          content:
-            application/json:
-              schema:
-                $ref: ../schemas/domain.schema.json#/$defs/Error
-              examples:
-                example:
-                  externalValue: ../examples/valid/error-404.json
-        '409':
-          description: Konflikt; dla błędu całego żądania brak mutacji.
-          content:
-            application/json:
-              schema:
-                $ref: ../schemas/domain.schema.json#/$defs/Error
-              examples:
-                example:
-                  externalValue: ../examples/valid/error-409.json
-        '422':
-          description: Niepoprawne dane/parametry.
-          content:
-            application/json:
-              schema:
-                $ref: ../schemas/domain.schema.json#/$defs/Error
-              examples:
-                example:
-                  externalValue: ../examples/valid/error-422.json
-        '429':
-          description: Limit żądań.
-          content:
-            application/json:
-              schema:
-                $ref: ../schemas/domain.schema.json#/$defs/Error
-              examples:
-                example:
-                  externalValue: ../examples/valid/error-429.json
-          headers:
-            Retry-After:
-              description: Sekundy przed ponowieniem.
-              schema:
-                type: integer
-                minimum: 1
-              example: 30
-        '503':
-          description: Usługa czasowo niedostępna.
-          content:
-            application/json:
-              schema:
-                $ref: ../schemas/domain.schema.json#/$defs/Error
-              examples:
-                example:
-                  externalValue: ../examples/valid/error-503.json
-          headers:
-            Retry-After:
-              description: Sekundy przed ponowieniem.
-              schema:
-                type: integer
-                minimum: 1
-              example: 30
-      requestBody:
-        required: true
-        content:
-          application/json:
-            schema:
-              $ref: ../schemas/domain.schema.json#/$defs/EstimateInput
-            examples:
-              example:
-                externalValue: ../examples/valid/estimate-input.json
-  /me/consents:
-    put:
-      operationId: replace_consents
-      summary: Zastępuje tylko zgody online
-      description: Zastępuje tylko zgody online. Idempotency-Key i If-Match obowiązkowe; sprawdzenie powtórzenia przed rewizją.
-        Offline Profile nie zawiera zgód.
-      x-implementation-stage: E3
-      security:
-      - bearerAuth: []
-      parameters:
-      - *id005
-      - name: If-Match
-        in: header
-        required: true
-        schema:
-          type: string
-          pattern: ^"[1-9][0-9]{0,9}"$
-        example: '"1"'
-        description: Oczekiwana revision zgód, liczba w cudzysłowie, zakres1..2147483647; konflikt409.
-      responses:
-        '200':
-          description: Poprawny wynik kontraktu; nie dowód działania serwera.
-          content:
-            application/json:
-              schema:
-                $ref: ../schemas/domain.schema.json#/$defs/Consent
-              examples:
-                example:
-                  externalValue: ../examples/valid/consent.json
-          headers:
-            ETag:
-              description: Cytowana revision.
-              schema:
-                type: string
-              example: '"1"'
-        '401':
-          description: Nieważna sesja; brak mutacji.
-          content:
-            application/json:
-              schema:
-                $ref: ../schemas/domain.schema.json#/$defs/Error
-              examples:
-                example:
-                  externalValue: ../examples/valid/error-401.json
-          headers:
-            WWW-Authenticate:
-              description: Wyzwanie bearer.
-              schema:
-                type: string
-              example: Bearer
-        '403':
-          description: Brak roli; brak mutacji.
-          content:
-            application/json:
-              schema:
-                $ref: ../schemas/domain.schema.json#/$defs/Error
-              examples:
-                example:
-                  externalValue: ../examples/valid/error-403.json
-        '404':
-          description: Brak zasobu lub cudzy zasób.
-          content:
-            application/json:
-              schema:
-                $ref: ../schemas/domain.schema.json#/$defs/Error
-              examples:
-                example:
-                  externalValue: ../examples/valid/error-404.json
-        '409':
-          description: Konflikt; dla błędu całego żądania brak mutacji.
-          content:
-            application/json:
-              schema:
-                $ref: ../schemas/domain.schema.json#/$defs/Error
-              examples:
-                example:
-                  externalValue: ../examples/valid/error-409.json
-        '422':
-          description: Niepoprawne dane/parametry.
-          content:
-            application/json:
-              schema:
-                $ref: ../schemas/domain.schema.json#/$defs/Error
-              examples:
-                example:
-                  externalValue: ../examples/valid/error-422.json
-        '429':
-          description: Limit żądań.
-          content:
-            application/json:
-              schema:
-                $ref: ../schemas/domain.schema.json#/$defs/Error
-              examples:
-                example:
-                  externalValue: ../examples/valid/error-429.json
-          headers:
-            Retry-After:
-              description: Sekundy przed ponowieniem.
-              schema:
-                type: integer
-                minimum: 1
-              example: 30
-        '503':
-          description: Usługa czasowo niedostępna.
-          content:
-            application/json:
-              schema:
-                $ref: ../schemas/domain.schema.json#/$defs/Error
-              examples:
-                example:
-                  externalValue: ../examples/valid/error-503.json
-          headers:
-            Retry-After:
-              description: Sekundy przed ponowieniem.
-              schema:
-                type: integer
-                minimum: 1
-              example: 30
-      requestBody:
-        required: true
-        content:
-          application/json:
-            schema:
-              $ref: ../schemas/domain.schema.json#/$defs/ConsentInput
-            examples:
-              example:
-                externalValue: ../examples/valid/consent-input.json
-  /products:
-    get:
-      operationId: list_products
-      summary: Wyszukiwanie dostępnego katalogu
-      description: Wyszukiwanie dostępnego katalogu. Wymaga konta; gość korzysta z pakietu Room. Stabilny porządek UUID i
-        snapshot stron.
-      x-implementation-stage: E3
-      security:
-      - bearerAuth: []
-      parameters:
-      - name: query
-        in: query
-        required: false
-        schema:
-          type: string
-          minLength: 1
-          maxLength: 100
-        example: gulasz
-        description: query
-      - *id001
-      - *id002
-      responses:
-        '200':
-          description: Poprawny wynik kontraktu; nie dowód działania serwera.
-          content:
-            application/json:
-              schema:
-                $ref: ../schemas/domain.schema.json#/$defs/ProductPage
-              examples:
-                example:
-                  externalValue: ../examples/valid/product-page.json
-        '401':
-          description: Nieważna sesja; brak mutacji.
-          content:
-            application/json:
-              schema:
-                $ref: ../schemas/domain.schema.json#/$defs/Error
-              examples:
-                example:
-                  externalValue: ../examples/valid/error-401.json
-          headers:
-            WWW-Authenticate:
-              description: Wyzwanie bearer.
-              schema:
-                type: string
-              example: Bearer
-        '403':
-          description: Brak roli; brak mutacji.
-          content:
-            application/json:
-              schema:
-                $ref: ../schemas/domain.schema.json#/$defs/Error
-              examples:
-                example:
-                  externalValue: ../examples/valid/error-403.json
-        '404':
-          description: Brak zasobu lub cudzy zasób.
-          content:
-            application/json:
-              schema:
-                $ref: ../schemas/domain.schema.json#/$defs/Error
-              examples:
-                example:
-                  externalValue: ../examples/valid/error-404.json
-        '409':
-          description: Konflikt; dla błędu całego żądania brak mutacji.
-          content:
-            application/json:
-              schema:
-                $ref: ../schemas/domain.schema.json#/$defs/Error
-              examples:
-                example:
-                  externalValue: ../examples/valid/error-409.json
-        '410':
-          description: Wygasły token strony.
-          content:
-            application/json:
-              schema:
-                $ref: ../schemas/domain.schema.json#/$defs/Error
-              examples:
-                example:
-                  externalValue: ../examples/valid/error-410.json
-        '422':
-          description: Niepoprawne dane/parametry.
-          content:
-            application/json:
-              schema:
-                $ref: ../schemas/domain.schema.json#/$defs/Error
-              examples:
-                example:
-                  externalValue: ../examples/valid/error-422.json
-        '429':
-          description: Limit żądań.
-          content:
-            application/json:
-              schema:
-                $ref: ../schemas/domain.schema.json#/$defs/Error
-              examples:
-                example:
-                  externalValue: ../examples/valid/error-429.json
-          headers:
-            Retry-After:
-              description: Sekundy przed ponowieniem.
-              schema:
-                type: integer
-                minimum: 1
-              example: 30
-        '503':
-          description: Usługa czasowo niedostępna.
-          content:
-            application/json:
-              schema:
-                $ref: ../schemas/domain.schema.json#/$defs/Error
-              examples:
-                example:
-                  externalValue: ../examples/valid/error-503.json
-          headers:
-            Retry-After:
-              description: Sekundy przed ponowieniem.
-              schema:
-                type: integer
-                minimum: 1
-              example: 30
-  /products/{id}:
-    get:
-      operationId: read_product
-      summary: Dokładna wersja przy parametrze revision; bez niego najnowsza dostępna wersja
-      description: Dokładna wersja przy parametrze revision; bez niego najnowsza dostępna wersja. Brak/ukrycie404. Bez paginacji.
-        Racje publiczne tylko official; przykład E0 jest demo.
-      x-implementation-stage: E3
-      security:
-      - bearerAuth: []
-      parameters:
-      - name: id
-        in: path
-        required: true
-        schema:
-          $ref: ../schemas/common.schema.json#/$defs/Uuid
-        example: a1111111-1111-4111-8111-111111111111
-        description: id
-      - name: revision
-        in: query
-        required: false
-        schema:
-          $ref: ../schemas/common.schema.json#/$defs/Revision
-        example: 1
-        description: revision
-      responses:
-        '200':
-          description: Poprawny wynik kontraktu; nie dowód działania serwera.
-          content:
-            application/json:
-              schema:
-                $ref: ../schemas/catalog.schema.json#/$defs/Product
-              examples:
-                example:
-                  externalValue: ../examples/valid/product.json
-        '401':
-          description: Nieważna sesja; brak mutacji.
-          content:
-            application/json:
-              schema:
-                $ref: ../schemas/domain.schema.json#/$defs/Error
-              examples:
-                example:
-                  externalValue: ../examples/valid/error-401.json
-          headers:
-            WWW-Authenticate:
-              description: Wyzwanie bearer.
-              schema:
-                type: string
-              example: Bearer
-        '403':
-          description: Brak roli; brak mutacji.
-          content:
-            application/json:
-              schema:
-                $ref: ../schemas/domain.schema.json#/$defs/Error
-              examples:
-                example:
-                  externalValue: ../examples/valid/error-403.json
-        '404':
-          description: Brak zasobu lub cudzy zasób.
-          content:
-            application/json:
-              schema:
-                $ref: ../schemas/domain.schema.json#/$defs/Error
-              examples:
-                example:
-                  externalValue: ../examples/valid/error-404.json
-        '409':
-          description: Konflikt; dla błędu całego żądania brak mutacji.
-          content:
-            application/json:
-              schema:
-                $ref: ../schemas/domain.schema.json#/$defs/Error
-              examples:
-                example:
-                  externalValue: ../examples/valid/error-409.json
-        '422':
-          description: Niepoprawne dane/parametry.
-          content:
-            application/json:
-              schema:
-                $ref: ../schemas/domain.schema.json#/$defs/Error
-              examples:
-                example:
-                  externalValue: ../examples/valid/error-422.json
-        '429':
-          description: Limit żądań.
-          content:
-            application/json:
-              schema:
-                $ref: ../schemas/domain.schema.json#/$defs/Error
-              examples:
-                example:
-                  externalValue: ../examples/valid/error-429.json
-          headers:
-            Retry-After:
-              description: Sekundy przed ponowieniem.
-              schema:
-                type: integer
-                minimum: 1
-              example: 30
-        '503':
-          description: Usługa czasowo niedostępna.
-          content:
-            application/json:
-              schema:
-                $ref: ../schemas/domain.schema.json#/$defs/Error
-              examples:
-                example:
-                  externalValue: ../examples/valid/error-503.json
-          headers:
-            Retry-After:
-              description: Sekundy przed ponowieniem.
-              schema:
-                type: integer
-                minimum: 1
-              example: 30
   /sync/push:
     post:
       operationId: push
       summary: Paczka≤100 operacji, JSON UTF-8≤1MiB, encja≤256KiB
-      description: Paczka≤100 operacji, JSON UTF-8≤1MiB, encja≤256KiB. Auth→epoka→checkpoint→limity przed mutacją.200 po dopuszczeniu,
-        cztery wyniki per operacja, transakcja per operacja. Jedna zmiana encji/paczka; zmiana zależna w następnej paczce.
-        operation_id zapewnia idempotencję zamiast nagłówka.
+      description: Paczka≤100 operacji, JSON UTF-8≤1MiB, encja≤256KiB. Auth→epoka→checkpoint→limity przed mutacją.200
+        po dopuszczeniu, cztery wyniki per operacja, transakcja per operacja. Jedna zmiana encji/paczka; zmiana
+        zależna w następnej paczce. operation_id zapewnia idempotencję zamiast nagłówka.
       x-implementation-stage: E4
       security:
       - bearerAuth: []
@@ -1312,8 +507,8 @@ paths:
       operationId: pull
       summary: Pull→push→pull
       description: Pull→push→pull. Bez parametrów snapshot; kontynuacja snapshot_token+page_token+sync_epoch; incremental
-        checkpoint+sync_epoch, opcjonalnie page_token. Te tryby wykluczają się. Pełne dane/strony nie nadpisują outbox. Tokeny
-        są nieprzezroczyste, kolejność wynika z commit. Epoka ma pierwszeństwo przed wiekiem checkpointu.
+        checkpoint+sync_epoch, opcjonalnie page_token. Te tryby wykluczają się. Pełne dane/strony nie nadpisują
+        outbox. Tokeny są nieprzezroczyste, kolejność wynika z commit. Epoka ma pierwszeństwo przed wiekiem checkpointu.
       x-implementation-stage: E4
       security:
       - bearerAuth: []
@@ -1469,5 +664,5 @@ components:
       type: http
       scheme: bearer
       bearerFormat: JWT
-      description: Keycloak access token RS256, zaufany issuer, aud calorie-api, role user/catalog_moderator/admin. Owner
-        tylko z tokenu; max300s, skew60s.
+      description: Keycloak access token RS256, zaufany issuer, aud calorie-api, role user/catalog_moderator/admin.
+        Owner tylko z tokenu; max300s, skew60s.

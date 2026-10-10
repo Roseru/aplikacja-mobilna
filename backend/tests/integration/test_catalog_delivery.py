@@ -415,7 +415,7 @@ def test_official_rejects_demo_and_public_does_not_leak(catalog_db, tmp_path):
             "/api/v1/products/" + demo["products"][0]["product_id"],
         ):
             response = client.get(path, headers={"Authorization": "Bearer anything"})
-            assert response.status_code == 404
+            assert response.status_code == (401 if path.startswith("/api/v1/products") else 404)
             assert response.json()["request_id"] == response.headers["x-request-id"]
         assert client.get("/api/v1/rations?include_demo=true").status_code == 422
 

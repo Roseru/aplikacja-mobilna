@@ -5,6 +5,8 @@ from calorie_app.db.base import Base
 from calorie_app.db.models import UserAccount  # noqa: F401
 from calorie_app.db.session import make_engine
 from calorie_app.modules.catalog import models as catalog_models  # noqa: F401
+from calorie_app.modules.diary import models as diary_models  # noqa: F401
+from calorie_app.modules.profiles import models as profile_models  # noqa: F401
 
 target_metadata = Base.metadata
 

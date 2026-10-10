@@ -5,6 +5,16 @@ from pydantic import BaseModel, ConfigDict, Field
 from starlette.exceptions import HTTPException
 
 
+class DomainError(Exception):
+    """Safe domain rejection. Details contain only controlled protocol metadata."""
+
+    def __init__(self, status: int, code: str, details: list[dict] | None = None):
+        self.status = status
+        self.code = code
+        self.details = details or []
+        super().__init__(code)
+
+
 class ErrorDetail(BaseModel):
     model_config = ConfigDict(extra="forbid")
     field: str = Field(min_length=1, max_length=200)
@@ -22,18 +32,32 @@ class ApiError(BaseModel):
 
 
 def error_response(
-    request: Request, status: int, code: str, message: str, headers: dict | None = None
+    request: Request,
+    status: int,
+    code: str,
+    message: str,
+    headers: dict | None = None,
+    details: list[dict] | None = None,
 ) -> JSONResponse:
     return JSONResponse(
         status_code=status,
         headers=headers,
         content=ApiError(
-            code=code, message=message, details=[], request_id=request.state.request_id
+            code=code, message=message, details=details or [], request_id=request.state.request_id
         ).model_dump(),
     )
 
 
 def install_error_handlers(app: FastAPI) -> None:
+    @app.exception_handler(DomainError)
+    async def domain_error(request: Request, error: DomainError) -> JSONResponse:
+        headers = {"Retry-After": "5"} if error.status == 503 else None
+        if error.status == 401:
+            headers = {"WWW-Authenticate": "Bearer"}
+        return error_response(
+            request, error.status, error.code, "Nie można wykonać żądania.", headers, error.details
+        )
+
     @app.exception_handler(HTTPException)
     async def http_error(request: Request, error: HTTPException) -> JSONResponse:
         codes = {

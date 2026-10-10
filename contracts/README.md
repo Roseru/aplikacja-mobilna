@@ -1,11 +1,11 @@
 # Kontrakty E0 i walidacja - osoba 2
 
-Status: schematy i przykłady E0 oraz **design draft przyszłych operacji**. Wdrożone operacje health i publiczny katalog E2 opisuje wyłącznie [OpenAPI backendu](../backend/openapi.json), generowane z FastAPI. Przykłady demo opisują kształt payloadów i lokalną integrację; nie stanowią oficjalnego katalogu żywności ani publikacji kanału official. [Decyzje i przekazanie](../docs/e0/KONTRAKTY_I_INTEGRACJA.md), [sync](../docs/e0/SYNCHRONIZACJA.md), [źródła](../docs/e0/ZRODLA_KATALOGU.md), [raport odbioru E0](../docs/e0/ODBIOR.md).
+Status: schematy i przykłady E0 oraz **design draft przyszłych operacji**. Wdrożone operacje health, katalog E2 i tożsamość/odczyty E3 opisuje wyłącznie [OpenAPI backendu](../backend/openapi.json), generowane z FastAPI. Przykłady demo opisują kształt payloadów i lokalną integrację; nie stanowią oficjalnego katalogu żywności ani publikacji kanału official. [Decyzje i przekazanie](../docs/e0/KONTRAKTY_I_INTEGRACJA.md), [sync](../docs/e0/SYNCHRONIZACJA.md), [źródła](../docs/e0/ZRODLA_KATALOGU.md), [raport odbioru E0](../docs/e0/ODBIOR.md).
 
 | Ścieżka | Zawartość i status |
 |---|---|
-| [openapi/design-v1.yaml](openapi/design-v1.yaml) | Przyszłe HTTP OpenAPI3.1.1; definicje przez lokalne `$ref`, przykłady i błędy. Chronione `/products` i `/products/{id}` zostaną podłączone z rzeczywistym OIDC w E3; usługa katalogu jest przygotowana w E2 |
-| [backend/openapi.json](../backend/openapi.json) | Generowane OpenAPI3.1.0 FastAPI: health oraz publiczne `/api/v1/rations`, `/rations/{id}`, `/offline-package/manifest`, `/offline-package/{filename}`. Te operacje zostały usunięte z aktywnego design draft |
+| [openapi/design-v1.yaml](openapi/design-v1.yaml) | Przyszłe HTTP OpenAPI3.1.1; definicje przez lokalne `$ref`, przykłady i błędy. Zawiera przyszłe operacje E4/E5; siedem wdrożonych operacji E3 usunięto z aktywnego draftu |
+| [backend/openapi.json](../backend/openapi.json) | Generowane OpenAPI3.1.0 FastAPI: health oraz publiczne `/api/v1/rations`, `/rations/{id}`, `/offline-package/manifest`, `/offline-package/{filename}`. Obejmuje także bootstrap/me/goals/consents/energy-estimates/products E3 z bearerAuth. Wdrożone operacje usunięto z aktywnego design draft |
 | [schemas/common.schema.json](schemas/common.schema.json) | UUID, daty, IANA, kanoniczne Decimal, ilości i nullable Nutrition |
 | [schemas/domain.schema.json](schemas/domain.schema.json) | Prywatne payloady, snapshot posiłku, cele, kalkulator, zgody i odczyty |
 | [schemas/catalog.schema.json](schemas/catalog.schema.json) | Product/Ration/Source, pełny Package i Manifest; format offline ma własne wersjonowanie |
@@ -42,3 +42,7 @@ Kontrola obejmuje przyszłe OpenAPI3.1.1 i generowane OpenAPI3.1.0, brak podwój
 Pozostałe kontrole obejmują wszystkie lokalne `$ref`, UUID/daty/IANA, oczekiwane odrzucenia, brak osieroconych przykładów, semantykę domeny/katalogu, gzip/hash/manifest, wektory Decimal, struktury scenariuszy sync, linki lokalne (także backend, E1/E2 i importer referencyjny) oraz `git diff --check`. Ten walidator nie wykonuje transakcji serwera, migracji ani kodu Kotlin; dowody backendu E2 są osobnym wynikiem testów. Szczegółowy dowód E0 oraz zakres przyszłych testów zawiera raport odbioru E0.
 
 Materiał użytkownika pozostaje w [oryginalnym pliku źródłowym](../docs/materialy/racja_wojskowa_S-RG-1.source.json); jego hash kontroluje indeks. Znormalizowany katalog jest oddzielnym przykładem. Zmiana bajtów demo wymaga ponownego przygotowania gzip i manifestu; walidator **nie naprawia** plików w trakcie testu.
+
+## Tożsamość i odczyty E3
+
+Bootstrap/me/goals/consents/energy-estimates/products przejęto do generowanego OpenAPI, usuwając z aktywnego draftu. Kontrakt błędów obejmuje account_bootstrap_required, account_deleting oraz zmianę epoki/generacji bootstrapu w kontrolowanym details. [Integracja O1](../docs/e3/INTEGRACJA_O1.md) opisuje kolejność bootstrapu, receipts, Decimal i tokeny stron. nbf jest opcjonalny; obecny podlega kontroli czasu. JWKS/role oraz rzeczywisty PKCE opisuje [konfiguracja O3](../docs/e3/KONFIGURACJA_O3.md).

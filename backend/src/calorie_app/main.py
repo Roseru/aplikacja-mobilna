@@ -11,7 +11,11 @@ from calorie_app.core.errors import error_response, install_error_handlers
 from calorie_app.core.logging import configure_logging
 from calorie_app.db.session import make_engine, session_factory
 from calorie_app.health import router
+from calorie_app.integrations.keycloak import OIDCVerifier
+from calorie_app.modules.catalog.protected_router import router as protected_catalog_router
 from calorie_app.modules.catalog.router import router as catalog_router
+from calorie_app.modules.identity.router import router as identity_router
+from calorie_app.modules.profiles.router import router as profile_router
 
 
 def create_app(settings: Settings | None = None, *, engine=None) -> FastAPI:
@@ -23,6 +27,7 @@ def create_app(settings: Settings | None = None, *, engine=None) -> FastAPI:
         configure_logging()
         # No network or DDL at startup: liveness still works during a DB outage.
         yield
+        await app.state.oidc_verifier.close()
         if engine is None:
             db_engine.dispose()
 
@@ -31,6 +36,7 @@ def create_app(settings: Settings | None = None, *, engine=None) -> FastAPI:
     app.state.session_factory = session_factory(db_engine)
     app.state.catalog_artifact_root = settings.catalog_artifact_root
     app.state.catalog_page_token_secret = settings.catalog_page_token_secret
+    app.state.oidc_verifier = OIDCVerifier(settings)
 
     @app.middleware("http")
     async def request_context(request: Request, call_next):
@@ -61,4 +67,7 @@ def create_app(settings: Settings | None = None, *, engine=None) -> FastAPI:
     install_error_handlers(app)
     app.include_router(router)
     app.include_router(catalog_router)
+    app.include_router(identity_router)
+    app.include_router(profile_router)
+    app.include_router(protected_catalog_router)
     return app

@@ -102,8 +102,15 @@ def test_generated_api_only_claims_implemented_operations(client):
         "/api/v1/rations/{id}",
         "/api/v1/offline-package/manifest",
         "/api/v1/offline-package/{filename}",
+        "/api/v1/products",
+        "/api/v1/products/{id}",
+        "/api/v1/me/bootstrap",
+        "/api/v1/me",
+        "/api/v1/me/goals",
+        "/api/v1/me/consents",
+        "/api/v1/energy-estimates",
     }
-    assert "/api/v1/products" not in schema["paths"]
+    assert schema["paths"]["/api/v1/products"]["get"]["security"] == [{"bearerAuth": []}]
     assert "503" in schema["paths"]["/health/ready"]["get"]["responses"]
     # The committed artifact must equal the generated contract.
     from pathlib import Path

@@ -1300,6 +1300,51 @@
         "expected_result": "Opisane w steps: stara operacja409, snapshot200, świadome odzyskanie nowego UUID accepted; bez drugiego profilu właściciela."
       },
       "detection_layer": "schema_and_scenario_contract"
+    },
+    {
+      "id": "error-bootstrap-required",
+      "purpose": "Przykład błędu bootstrapu E3 i kontrolowanych metadanych",
+      "path": "valid/error-bootstrap-required.json",
+      "schema": "../schemas/domain.schema.json#/$defs/Error",
+      "local": {
+        "result": "valid"
+      },
+      "server": {
+        "result": "not_executed",
+        "stage": "E3",
+        "expected_result": "Fixture kontraktu; rzeczywiste scenariusze są wykonywane w backend/tests/integration/test_e3_identity.py."
+      },
+      "detection_layer": "schema_and_fixture_semantics"
+    },
+    {
+      "id": "error-bootstrap-epoch",
+      "purpose": "Przykład błędu bootstrapu E3 i kontrolowanych metadanych",
+      "path": "valid/error-bootstrap-epoch.json",
+      "schema": "../schemas/domain.schema.json#/$defs/Error",
+      "local": {
+        "result": "valid"
+      },
+      "server": {
+        "result": "not_executed",
+        "stage": "E3",
+        "expected_result": "Fixture kontraktu; rzeczywiste scenariusze są wykonywane w backend/tests/integration/test_e3_identity.py."
+      },
+      "detection_layer": "schema_and_fixture_semantics"
+    },
+    {
+      "id": "error-bootstrap-generation",
+      "purpose": "Przykład błędu bootstrapu E3 i kontrolowanych metadanych",
+      "path": "valid/error-bootstrap-generation.json",
+      "schema": "../schemas/domain.schema.json#/$defs/Error",
+      "local": {
+        "result": "valid"
+      },
+      "server": {
+        "result": "not_executed",
+        "stage": "E3",
+        "expected_result": "Fixture kontraktu; rzeczywiste scenariusze są wykonywane w backend/tests/integration/test_e3_identity.py."
+      },
+      "detection_layer": "schema_and_fixture_semantics"
     }
   ],
   "source_material": {
