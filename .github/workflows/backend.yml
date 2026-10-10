@@ -258,6 +258,7 @@ jobs:
           disable-animations: true
           disable-spellchecker: true
           emulator-options: -no-window -gpu swiftshader_indirect -no-snapshot -noaudio -no-boot-anim -camera-back none
+          working-directory: android
           script: |
             adb shell cmd connectivity airplane-mode enable
             adb shell svc wifi disable
@@ -265,7 +266,6 @@ jobs:
             test "$(adb shell settings get global airplane_mode_on | tr -d '\r')" = 1
             test "$(adb shell settings get global wifi_on | tr -d '\r')" = 0
             test "$(adb shell settings get global mobile_data | tr -d '\r')" = 0
-            cd android
             ./gradlew --no-daemon --max-workers=2 --stacktrace :app:connectedValidationAndroidTest
       - name: Require real device test results without skips
         run: |
