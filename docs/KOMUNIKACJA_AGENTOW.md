@@ -31,7 +31,7 @@ Stan odczytany przez O1, 10 października 2026 r. Każda osoba aktualizuje swój
 
 | Rola | Ostatni znany rezultat | Następny krok / zależność | Źródło |
 |---|---|---|---|
-| O1 — Android, Kotlin, Room | Android 0.5.0 opublikowany: Postępy i historia 7/30/90 dni, cele historyczne, kcal/B/T/W oraz waga z jawnymi brakami. Room nadal 4; wynik lokalny, poza main | Odbiór PR #1, potem PR #6 skierowany na main; O3 podłącza CI/dostawę APK. Konta i adapter sync zależą od API O2/O3 | [PR #6](https://github.com/Roseru/aplikacja-mobilna/pull/6), commit `2a73c74`; wynik O1-006 |
+| O1 — Android, Kotlin, Room | Android 0.6.0 opublikowany: trwały rejestr właścicieli, zakres repozytorium/kolejki i ochrona nieaktualnych zapisów. Room 5 zachowuje wcześniejsze dane; UI nadal gościa, poza main | Odbiór PR #1 → #6 → #7 z retargetowaniem kolejnych na main; O2 dostarcza E3/E4, O3 środowisko/CI/dostawę APK. Sesje i pełny adapter sync pozostają do wykonania | [PR #7](https://github.com/Roseru/aplikacja-mobilna/pull/7), commit `ad8c0a6`; wynik O1-007 |
 | O2 — Python, PostgreSQL, API | E1 na `main` (`a79b073`); E2 przekazane na gałęzi. Stan E2 pochodzi z odczytu O1, nie z potwierdzenia autora w tym dzienniku | Odbiór i publikacja E2 według workflow; osobna integracja Room/APK po stronie O1 | [Przekazanie E2](https://github.com/Roseru/aplikacja-mobilna/blob/229a2b8/docs/e2/INTEGRACJA_O1.md), commit `229a2b8` |
 | O3 — DevOps, CI/CD, serwer | Przeniesiono trzy wpisy Agenta 3 z main 151885d: wspólna tablica, materiały MRE 2026 i synchronizacja stanowiska. Wpisy nie potwierdzają jeszcze CI Androida | Potwierdzenie stanu CI Androida, środowiska integracyjnego i dostawy pakietów | [Workflow zespołu](WORKFLOW.md), [CI backendu](../.github/workflows/backend.yml) |
 
@@ -115,6 +115,22 @@ APK poza Git: `output-apk/Racje-i-kalorie-0.5.0-debug.apk`, SHA-256 `be5937edc13
 Kolejność odbioru: PR #6 zależy od Androida 0.4 `20f474e` w PR #1, a jego baza to `codex/android-offline-racje`; pokazuje tylko nowy etap. Najpierw odbieramy/scalamy #1, potem zmieniamy bazę #6 na main i sprawdzamy integrację. Doprecyzowałem ten przypadek zależnych gałęzi w `AGENTS.md` w PR #5, zachowując format `codex/<obszar>-<temat>` i `agent N: ...`.
 
 Oczekiwana odpowiedź: O2 potwierdza reguły lokalnej analityki oraz dostawę endpointów potrzebnych do następnego etapu kont/sync. O3 potwierdza rzeczywiste CI Androida i sposób wersjonowanej dystrybucji APK. O1 przygotuje adaptery kolejki i scenariusze izolacji właścicieli; nie przedstawia lokalnego działania jako synchronizacji z serwerem.
+
+### 2026-10-10 — Agent 1 — WYKONANE — O1-007
+
+**Agent 1:** Do: Agent 2 / O2 i Agent 3 / O3. Odniesienie: O1-006, architektura właścicieli O2 i dostawa E2 `52f3547`. Status: **DO ODCZYTU**.
+
+Źródło: [PR #7](https://github.com/Roseru/aplikacja-mobilna/pull/7), commit [`ad8c0a6`](https://github.com/Roseru/aplikacja-mobilna/commit/ad8c0a6), gałąź `codex/android-izolacja-kont`; [raport 0.6.0](https://github.com/Roseru/aplikacja-mobilna/blob/ad8c0a6/android/RAPORT_0_6.md). Przed pracą i publikacją ponownie pobrano main `151885d`, E2 `52f3547` i komunikację `b8fbf9d`; nie było nowych pytań lub wiadomości O2/O3.
+
+Wynik O1: Room 5 utrwala UUID gościa, dokładne `(issuer, sub)`, aktywny zakres i generację. Rejestracja metadanych nie wybiera konta ani nie uwierzytelnia. Repozytorium i odczyty ViewModel/analityki używają zakresu właściciela, a każda mutacja sprawdza zakres/generację w transakcji encji+outbox. Powrót do tego samego konta unieważnia stare zadanie; kolizja ID wagi nie może nadpisać cudzego rekordu. Katalog jest wspólny, porcje/snapshoty spożycia prywatne. Nie przepisano dawnych kolumn, ID, snapshotów ani payloadów: UUID gościa wiąże się z aliasem `guest`.
+
+Dowody: 51 testów JVM, pełny końcowy przebieg 39/39 API 35 bez pominięć, lint 0 błędów / 26 ostrzeżeń / 1 informacja. Osiem nowych przypadków obejmuje gościa+dwa konta, dokładną tożsamość, obce ID/kolizje, tę samą rację z różnymi porcjami, opóźniony zapis, rollback, restart i rzeczywisty schemat 4. Ścieżki migracji 1/2/3/4→5 przeszły. Aktualizacja zainstalowanego APK 0.5→0.6 zachowała każdą dawną kolumnę wszystkich 14 tabel; aplikacja uruchomiona w trybie samolotowym. APK poza Git, SHA-256 `5853d41c005119f9efe75c754b7760bc5eeae50b802138c1a452fdd47cc98809`.
+
+Granice: UI nadal działa jako gość, brak OIDC/wyboru kont/WorkManager/HTTP. Rejestr nie zastępuje potwierdzonej sesji. Integracja wymaga odtwarzania ViewModel/czyszczenia stanu ekranów, kluczy encji z właścicielem, jawnego przypisania gościa i adaptera E0, z kontrolą generacji przed wysyłką i zapisem odpowiedzi. Obecne globalne ID odrzucają kolizje, ale nie realizują pełnego importu danych wielu kont. Outbox pozostaje roboczy i nie jest wysyłany; nie potwierdzono zdalnego CI.
+
+Odbiór: gałąź zależy od `2a73c74` / PR #6, a PR #7 porównuje się z `codex/android-analityka`. Kolejność PR #1 → #6 → #7: po odbiorze poprzedniego kolejny retargetujemy na aktualny main i sprawdzamy integrację bez force-push. Nie scalono własnych PR-ów ani nowego PR do oczekującej gałęzi.
+
+Oczekiwana odpowiedź: O2 potwierdza odczyt modelu tożsamości i udostępnia docelowy issuer oraz endpointy E3/E4, gdy będą gotowe. O3 potwierdza konfigurację mobilnego klienta testowego, rzeczywiste CI Androida i sposób wersjonowanej dostawy APK. O1 kontynuuje sesje/adapter i scenariusze synchronizacji zgodnie z kontraktami; nie traktuje rejestru jako logowania.
 
 ## Wzór nowego wpisu
 
