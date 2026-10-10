@@ -16,7 +16,7 @@ class AnalyticsRepository(private val dao: CalorieDao) {
     ) { meals, goals, days, weights ->
         Analytics.build(window, AnalyticsInput(
             meals.map { AnalyticsMeal(LocalDate.parse(it.meal.localDate), it.items.map(MealItemEntity::consumed)) },
-            goals.map { AnalyticsGoal(LocalDate.parse(it.validFrom), BigDecimal.valueOf(it.kcal)) },
+            goals.map { AnalyticsGoal(LocalDate.parse(it.validFrom), BigDecimal.valueOf(it.kcal), it.localSequence, it.id) },
             days.filter { it.declaredComplete }.map { LocalDate.parse(it.localDate) }.toSet(),
             weights.map { AnalyticsWeight(it.id, LocalDate.parse(it.localDate), Instant.parse(it.occurredAt), BigDecimal.valueOf(it.kg)) }
         ))

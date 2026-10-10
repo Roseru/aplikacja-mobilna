@@ -20,7 +20,7 @@ class DiaryStorageTest {
 
     @Test fun restartPreservesSnapshotAndOutbox() = runBlocking {
         val name = "test-${UUID.randomUUID()}.db"
-        var db = Room.databaseBuilder(context, CalorieDatabase::class.java, name).build()
+        var db = Room.databaseBuilder(context, CalorieDatabase::class.java, name).addCallback(DATABASE_GUARDS).build()
         try {
             var repo = DiaryRepository(db, context)
             repo.initialize()
@@ -29,7 +29,7 @@ class DiaryStorageTest {
             repo.add("basic-banana", 120.0, MealType.LUNCH, date, "meal-test")
             assertEquals(1, db.dao().operationCount(DiaryRepository.GUEST))
             db.close()
-            db = Room.databaseBuilder(context, CalorieDatabase::class.java, name).build()
+            db = Room.databaseBuilder(context, CalorieDatabase::class.java, name).addCallback(DATABASE_GUARDS).build()
             repo = DiaryRepository(db, context)
             repo.initialize()
             assertEquals(33, db.dao().products().first().size)
@@ -46,7 +46,7 @@ class DiaryStorageTest {
     }
 
     @Test fun changingGoalDoesNotRewriteYesterday() = runBlocking {
-        val db = Room.inMemoryDatabaseBuilder(context, CalorieDatabase::class.java).build()
+        val db = Room.inMemoryDatabaseBuilder(context, CalorieDatabase::class.java).addCallback(DATABASE_GUARDS).build()
         try {
             val repo = DiaryRepository(db, context)
             repo.initialize()
@@ -59,7 +59,7 @@ class DiaryStorageTest {
     }
 
     @Test fun productCorrectionDoesNotChangeRecordedNutrition() = runBlocking {
-        val db = Room.inMemoryDatabaseBuilder(context, CalorieDatabase::class.java).build()
+        val db = Room.inMemoryDatabaseBuilder(context, CalorieDatabase::class.java).addCallback(DATABASE_GUARDS).build()
         try {
             val repo = DiaryRepository(db, context)
             repo.initialize()
@@ -71,7 +71,7 @@ class DiaryStorageTest {
     }
 
     @Test fun failedQueueWriteRollsBackMealAndItsItems() = runBlocking {
-        val db = Room.inMemoryDatabaseBuilder(context, CalorieDatabase::class.java).build()
+        val db = Room.inMemoryDatabaseBuilder(context, CalorieDatabase::class.java).addCallback(DATABASE_GUARDS).build()
         try {
             val repo = DiaryRepository(db, context)
             repo.initialize()

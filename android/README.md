@@ -1,6 +1,6 @@
 # Android — Racje i kalorie
 
-Wersja `0.6.0` przygotowuje pamięć lokalną do kont: trwały rejestr gościa i tożsamości `(issuer, sub)`, dane i kolejka przypisane do właściciela oraz odrzucanie zapisu z nieaktualnej sesji lokalnej. Ekrany nadal działają jako gość bez konta i internetu, z Postępami 7/30/90 dni. Room 5 migruje wcześniejszą bazę bez przepisywania danych.
+Wersja `0.7.0` dodaje przygotowanie bootstrapu E3 oraz niezmienne wersje lokalnych celów. Rejestr właścicieli i ochrona zapisu pozostają z 0.6; Room 6 zachowuje dotychczasowe wartości i kolejkę. Ekrany nadal działają jako gość bez konta i internetu, z Postępami 7/30/90 dni. Logowanie i HTTP nie są jeszcze podłączone.
 
 ## Co zawiera
 
@@ -15,13 +15,21 @@ Wersja `0.6.0` przygotowuje pamięć lokalną do kont: trwały rejestr gościa i
 - Pomiary wagi z datą, historią, korektą i usunięciem. Kilka pomiarów jednego dnia jest dozwolone. Po poprawnym zapisie pole masy jest czyszczone, aby ponowny przypadkowy klik nie zapisał kolejnego pomiaru.
 - Deklaracja kompletności dnia. Efektywna kompletność wymaga deklaracji, nieusuniętych składników, dodatniej sumy kcal i znanej energii wszystkich pozycji. Brak makr pozostaje brakiem danych. Usunięcie ostatniego posiłku lub dodanie pozycji bez kcal cofa efektywną kompletność; wcześniejsza deklaracja pozostaje w historii i można ją wyłączyć.
 - Postępy dla 7/30/90 dni: wykresy kcal/B/T/W i rzeczywistych pomiarów wagi, średnie, kompletność oraz realizacja celu obowiązującego każdego dnia. Historia pozwala otworzyć dziennik wybranej daty, także pustego dnia.
-- Cele kcal/B/T/W obowiązujące od dnia zmiany; brak makr nie jest traktowany jak zero.
+- Cele kcal/B/T/W obowiązujące od dnia zmiany; każda decyzja zachowuje wcześniejszą wersję, także przy kolejnej zmianie tego samego dnia. Korekta wskazuje poprzedni cel tego właściciela. Brak makr nie jest traktowany jak zero.
 - Room z wersjonowanym schematem, identyfikatorami UUID, odżywczymi wartościami zapisanymi przy spożyciu i transakcyjną kolejką zmian.
 - Zapis lokalnej daty, strefy czasowej i czasu UTC. Ponowienie lokalnego zapisu z tym samym ID nie tworzy drugiego posiłku.
 
 Katalog i początkowy cel 2800 kcal są **danymi demonstracyjnymi**, nie zweryfikowaną bazą żywieniową ani wyliczonym zapotrzebowaniem użytkownika. Dawne zestawy A/B nie odwzorowują specyfikacji S-R/S-RG ani żadnego producenta. Nowy pakiet E2 dodaje osobną niezweryfikowaną, niepełną rację S-RG-1 z 18 policzalnymi komponentami i informacją o pozycjach poza obliczeniami. Nie łączymy zestawów po nazwie lub kalorii. Dawne napoje pozostają w gramach; nowy katalog obsługuje g/ml, bez założenia, że 1 ml = 1 g.
 
-Schemat Room 5 zawiera migracje 1 → 2 → 3 → 4 → 5 zachowujące posiłki, racje, cele, prywatne produkty, profil, pomiary, deklaracje dni i całą kolejkę. Nowe pola/tabele są dodawane bez przepisywania dawnych kolumn REAL ani payloadów outbox. Prywatne dane mają zakres właściciela. Usuwanie pozostawia znacznik i operację kolejki.
+Schemat Room 6 zawiera migracje 1 → 2 → 3 → 4 → 5 → 6 zachowujące posiłki, racje, cele, prywatne produkty, profil, pomiary, deklaracje dni, właścicieli i całą kolejkę. Ostatnia migracja przebudowuje tabelę celów z zachowaniem wszystkich wcześniejszych kolumn i ID, dodaje metadane wersji/złożony FK korekty oraz dwie tabele bootstrapu. Nie zmienia wartości REAL ani dawnych payloadów outbox. Prywatne dane mają zakres właściciela. Usuwanie spożycia pozostawia znacznik i operację kolejki; wersje celów są niezmienne.
+
+## Przygotowanie E3 i niezmienne cele
+
+`AccountBootstrapStore` utrwala klucz niezakończonego żądania, powiązanie lokalnego właściciela z `account_id` oraz niezależne `account_generation`/`sync_epoch`. Sprawdza właściciela, generację lease i żądanie przy przyjmowaniu odpowiedzi; powiązanie i potwierdzenie zapisują się atomowo. Restart nie zmienia klucza ponowienia. Zmiana kontekstu serwera ustawia trwałą blokadę wymagającą uzgodnienia E4; nie resetuje dziennika lub kolejki. Nie ma jeszcze wywołania sieciowego ani klienta sesji.
+
+Zmiana celu tworzy nowy UUID zamiast nadpisania poprzedniego wiersza. Wersja ma lokalną sekwencję, czas/strefę decyzji i referencję korekty z własnością wymuszoną w SQLite. Odczyty dziennika i analityki wybierają najnowszą wersję dla daty. Callback `DATABASE_GUARDS` chroni treść przed UPDATE/DELETE oraz zmieniającym INSERT OR REPLACE, także po ponownym otwarciu bazy; przy tworzeniu bazy poza aplikacją należy go dołączyć. Lokalne sekwencje i kolejka wymagają osobnego adaptera serwerowej osi/Decimal.
+
+[Przekazanie E3 dla O2/O3](INTEGRACJA_E3.md) podaje dokładne przyszłe callbacki APK, reguły bootstrapu, granice i kolejne kroki. [Raport 0.7.0](RAPORT_0_7.md) opisuje walidację.
 
 ## Fundament kont i izolacji
 

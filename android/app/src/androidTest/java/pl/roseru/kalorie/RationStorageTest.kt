@@ -23,7 +23,7 @@ class RationStorageTest {
 
     @Test fun partialRationSurvivesRestartAndItemChangesKeepOtherItems() = runBlocking {
         val name = "rations-${UUID.randomUUID()}.db"
-        var db = Room.databaseBuilder(context, CalorieDatabase::class.java, name).build()
+        var db = Room.databaseBuilder(context, CalorieDatabase::class.java, name).addCallback(DATABASE_GUARDS).build()
         try {
             var repo = DiaryRepository(db, context)
             repo.initialize()
@@ -32,7 +32,7 @@ class RationStorageTest {
             repo.addRation("demo-ration-a", selection, MealType.DINNER, date, "partial")
             assertEquals(1, db.dao().operationCount(DiaryRepository.GUEST))
             db.close()
-            db = Room.databaseBuilder(context, CalorieDatabase::class.java, name).build()
+            db = Room.databaseBuilder(context, CalorieDatabase::class.java, name).addCallback(DATABASE_GUARDS).build()
             repo = DiaryRepository(db, context)
             repo.initialize()
             assertEquals(3, db.dao().rations().first().size)
@@ -57,7 +57,7 @@ class RationStorageTest {
     }
 
     @Test fun invalidOrEmptySelectionDoesNotCreateAnyMeal() = runBlocking {
-        val db = Room.inMemoryDatabaseBuilder(context, CalorieDatabase::class.java).build()
+        val db = Room.inMemoryDatabaseBuilder(context, CalorieDatabase::class.java).addCallback(DATABASE_GUARDS).build()
         try {
             val repo = DiaryRepository(db, context)
             repo.initialize()
@@ -74,7 +74,7 @@ class RationStorageTest {
     }
 
     @Test fun failedOutboxWriteRollsBackAllRationComponents() = runBlocking {
-        val db = Room.inMemoryDatabaseBuilder(context, CalorieDatabase::class.java).build()
+        val db = Room.inMemoryDatabaseBuilder(context, CalorieDatabase::class.java).addCallback(DATABASE_GUARDS).build()
         try {
             val repo = DiaryRepository(db, context)
             repo.initialize()
@@ -91,7 +91,7 @@ class RationStorageTest {
     }
 
     @Test fun unknownMacrosAndOriginalDateRemainInQueue() = runBlocking {
-        val db = Room.inMemoryDatabaseBuilder(context, CalorieDatabase::class.java).build()
+        val db = Room.inMemoryDatabaseBuilder(context, CalorieDatabase::class.java).addCallback(DATABASE_GUARDS).build()
         try {
             val repo = DiaryRepository(db, context)
             repo.initialize()
@@ -136,7 +136,7 @@ class RationStorageTest {
             old.execSQL("INSERT INTO outbox VALUES ('old-operation', 'guest', 'meal', 'old-meal', 'create', NULL, '{}', '2026-10-01T10:00:00Z', 'pending')")
             old.version = 1
         }
-        val db = Room.databaseBuilder(context, CalorieDatabase::class.java, name).addMigrations(MIGRATION_1_2, MIGRATION_2_3, MIGRATION_3_4, MIGRATION_4_5).build()
+        val db = Room.databaseBuilder(context, CalorieDatabase::class.java, name).addMigrations(MIGRATION_1_2, MIGRATION_2_3, MIGRATION_3_4, MIGRATION_4_5, MIGRATION_5_6).addCallback(DATABASE_GUARDS).build()
         try {
             val repo = DiaryRepository(db, context)
             repo.initialize()

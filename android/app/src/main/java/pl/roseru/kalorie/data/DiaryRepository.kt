@@ -49,7 +49,8 @@ class DiaryRepository(private val db: CalorieDatabase, private val context: Cont
             dao.seedProducts(entries)
             dao.seedRations(rations)
             dao.seedComponents(components)
-            if (owner == GUEST) dao.seedGoal(GoalEntity("guest-initial-goal", owner, "1970-01-01", 2800.0, 160.0, 90.0, 330.0))
+            if (owner == GUEST && dao.goalById(owner, "guest-initial-goal") == null)
+                dao.seedGoal(GoalEntity("guest-initial-goal", owner, "1970-01-01", 2800.0, 160.0, 90.0, 330.0))
         }
         val schema = CatalogSchema(readCatalog("e2/common.schema.json"), readCatalog("e2/catalog.schema.json"))
         val reader = CatalogPackageReader(schema, CatalogPackageReader.DEMO_ID, "demo")
@@ -147,17 +148,25 @@ class DiaryRepository(private val db: CalorieDatabase, private val context: Cont
         enqueue(meal, current.items, "delete")
     }
 
-    suspend fun setGoal(kcal: Double, protein: Double?, fat: Double?, carbs: Double?) = ownerTransaction {
+    suspend fun setGoal(kcal: Double, protein: Double?, fat: Double?, carbs: Double?, id: String = UUID.randomUUID().toString()) = ownerTransaction {
         require(kcal.isFinite() && kcal > 0 && kcal <= 20_000)
         listOfNotNull(protein, fat, carbs).forEach { require(it.isFinite() && it >= 0 && it <= 5000) }
         val today = LocalDate.now().toString()
+        dao.goalById(owner, id)?.let { saved ->
+            require(saved.validFrom == today && saved.kcal == kcal && saved.protein == protein && saved.fat == fat && saved.carbs == carbs)
+            return@ownerTransaction
+        }
         val existing = dao.goalOn(owner, today)
-        val goal = GoalEntity(existing?.id ?: UUID.randomUUID().toString(), owner, today, kcal, protein, fat, carbs)
+        val sequence = Math.addExact(dao.goalSequence(owner), 1)
+        val goal = GoalEntity(id, owner, today, kcal, protein, fat, carbs, sequence, Instant.now().toString(), ZoneId.systemDefault().id,
+            if (existing == null) "user_decision" else "history_correction", existing?.id)
         dao.saveGoal(goal)
         val payload = JSONObject().put("id", goal.id).put("valid_from", today).put("kcal", kcal)
             .put("protein", protein ?: JSONObject.NULL).put("fat", fat ?: JSONObject.NULL).put("carbs", carbs ?: JSONObject.NULL)
+            .put("decided_at", goal.decidedAt).put("zone_id", goal.zoneId).put("reason", goal.reason)
+            .put("correction_of", goal.correctionOf ?: JSONObject.NULL).put("local_timeline_base", sequence - 1)
         dao.enqueue(OutboxEntity(UUID.randomUUID().toString(), owner, "goal", goal.id,
-            if (existing == null) "create" else "update", null, payload.toString(), Instant.now().toString()))
+            "create", null, payload.toString(), Instant.now().toString()))
     }
 
     suspend fun addCustomProduct(draft: CustomProductDraft, grams: Double, type: MealType, date: LocalDate,

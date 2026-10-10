@@ -25,8 +25,8 @@ Gemini: wyłącznie darmowe API (Free Tier), bez aktywnego billing; CI korzysta 
 
 [Kod i instrukcja uruchomienia](android/README.md) · [Plan implementacji](PLAN_IMPLEMENTACJI_ANDROID.md)
 
-Otwórz `android/` w Android Studio. Wersja 0.6.0 działa jako gość bez konta i internetu: dziennik, cele kcal/B/T/W, produkty prywatne, racje ze zjedzonymi składnikami, profil, waga i Postępy 7/30/90 dni z jawnymi brakami danych.
+Otwórz `android/` w Android Studio. Wersja 0.7.0 działa jako gość bez konta i internetu: dziennik, cele kcal/B/T/W, prywatne produkty, racje ze zjedzonymi składnikami, profil, waga i Postępy 7/30/90 dni.
 
-Room 5 dodaje trwały rejestr właścicieli, zakres repozytoriów/kolejek i odrzucanie nieaktualnych zapisów po zmianie aktywnego właściciela. Migracja zachowuje stare ID, kolumny, snapshoty oraz payloady. Jest to fundament kont bez logowania, wyboru kont w UI czy rzeczywistej synchronizacji. Importer E2 i BigDecimal zachowują historyczne spożycia; katalog ma 33 produkty / 3 racje DEMO. [Raport 0.6.0](android/RAPORT_0_6.md) dokumentuje 51 testów JVM, pełny przebieg 39/39 testów urządzenia, migrację zainstalowanego APK i ograniczenia kolejnego etapu.
+Room 6 przygotowuje trwałe mapowanie bootstrapu E3 i niezmienne wersje celów. Zmiana celu zachowuje poprzednią decyzję; spóźniona odpowiedź bootstrapu i kolizja kont są odrzucane. Migracje zachowują wcześniejsze wartości, właścicieli i kolejkę. Logowanie i HTTP pozostają kolejnym etapem. [Przekazanie E3](android/INTEGRACJA_E3.md) opisuje parametry klienta, [raport 0.7.0](android/RAPORT_0_7.md) — testy i granice.
 
 Budowanie i testy jednostkowe: `./gradlew :app:assembleDebug :app:testDebugUnitTest :app:lintDebug` z katalogu `android/`. Testy urządzenia: `./gradlew :app:connectedValidationAndroidTest`; osobna instalacja testowa zachowuje zwykły dziennik.
