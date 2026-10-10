@@ -1,6 +1,6 @@
 # Raport wykonania E2 - osoba 2
 
-**Poprawka O2 odebrana lokalnie: 9,5/10; CI aktualnego head oczekuje.
+**Część O2 gotowa: niezależny odbiór 9,5/10 i zielone CI poprawki.
 Integracja O1 oczekuje.** Bieżąca
 pełna regresja: **396 PASS**, bez skip, na rzeczywistym PostgreSQL 17 i SQLite
 importera. Ponowny przegląd head `962d0cc66e14ab0f85d2e1a34b7766d92c01a76b`
@@ -13,7 +13,7 @@ Zakres: backend, dane i integracje O2. Start z aktualnego zdalnego `main`
 `codex/e2-katalog-offline`. Zastane nieśledzone master prompty E1/E2 zachowano
 bez zmiany; nie są częścią implementacji. Nie zmieniano Androida, nie scalano
 gałęzi O1 i nie rozpoczęto E3. Room/APK pozostają osobnym odbiorem O1; końcowy
-odbiór O2 wymaga również niezależnej recenzji i zielonego CI aktualnego head.
+każdy późniejszy head raportu również wymaga zielonego CI i weryfikacji jego SHA.
 
 ## Dostarczone zachowanie
 
@@ -105,14 +105,15 @@ Sekret nie może zmienić się przy restarcie; E2 nie wdraża automatycznej rota
 | Ruff/zasoby/OpenAPI | Check i format 52 plików PASS, wygenerowane zasoby zgodne, OpenAPI aktualne i porównane przez test |
 | Pakiet | sdist/wheel offline PASS; aktualny wheel zainstalowany w izolowanym env, Python -I poza repo: walidacja bez DB, rzeczywisty eksport PostgreSQL, SQLite import/repeat PASS |
 | Publikacja demo | PostgreSQL → gzip/manifest → SQLite PASS; 3099 B gzip z hashem nadal 65f4aae8…45b2bef, committed seed/source/export nietknięte |
+| CI poprawki 0c5d1f2 | contracts, quality, postgres, ci-required SUCCESS; 209 unit + 187 integration, PostgreSQL 17.11, oba rzeczywiste build/smoke i ścieżka fractional release 2 PASS |
 
 Niezależny recenzent `review_e2_fixes` nie napisał żadnego ocenianego pliku
 produkcji ani testów regresji. Samodzielnie wykonał końcowe **396 PASS**, bez
 skip, **28,13 s**, Ruff/check i format 52 plików, diff-check oraz smoke
 zainstalowanego wheel przez Python -I poza checkoutem. SHA-256 wszystkich
 plików runtime Python w wheel są identyczne z ocenianym src. Ocena:
-**9,5/10, brak istotnych nierozwiązanych usterek**; dowód obrazu wymaga jeszcze
-zielonego CI nowego commita.
+**9,5/10, brak istotnych nierozwiązanych usterek**; po push recenzent niezależnie
+potwierdził również metadane i logi zielonego CI poprawki.
 
 Jego osobne **3 próby PostgreSQL PASS, 2,77 s** ładowały rzeczywiste pliki
 service/repository/export/router przez `git show 962d0cc…`, zamiast symulować
@@ -125,11 +126,25 @@ aktywnego UUID oraz 410 wygasłego po sprzątaniu i 422 przy innym limicie.
 Pełna regresja obejmuje także restart, nowszy release i podpisane tokeny
 innego package_id, aktywne oraz wygasłe.
 
-Lokalnie nie ma Docker; dowód obrazu będzie pochodził z wymaganych aktualnych
-zadań quality/postgres. CI zachowuje dotychczasowe realne build/smoke i dodaje
-w obrazie fractional input `.1Z`, identyczny repeat, eksport/publikację/import
-release 2 oraz porównanie zachowanych bajtów release 1 i realne CLI sprzątania.
+Lokalnie nie ma Docker; dowód obrazu pochodzi z wykonanych zadań quality/postgres.
+CI wykonało dotychczasowe realne build/smoke oraz w obrazie fractional input
+`.1Z`, identyczny repeat, eksport/publikację/import release 2 i porównanie
+zachowanych bajtów release 1 oraz realne CLI sprzątania.
 Starszego sukcesu CI nie uznajemy za odbiór tej poprawki.
+
+Poprawkę zapisano w commicie **`0c5d1f291eb56b3f731a5b6b8b76edd4cbc035fc`**
+i wypchnięto do istniejącego PR #4. [CI 38042714427](https://github.com/Roseru/aplikacja-mobilna/actions/runs/38042714427)
+zakończyło wszystkie cztery wymagane zadania sukcesem. Logi checkoutu wskazują
+merge candidate `84cb1d1…` tego dokładnego head z aktualnym main
+`151885d3f728c47240a7087ff862ba5f61ea7403`. Nowe commity danych MRE i dokumentacji
+na main zachowano; nie zmieniono ich ani nie cofnięto. Testy CI: 209 unit
+(4,71 s), 187 integration (14,88 s), PostgreSQL 17.11, Python 3.13.16.
+Obraz aktywował release 2 z datą `.100000Z` i hashem `772e2245…24d66`; historyczny
+release 1 nadal ma 3099 B i hash `65f4aae8…45b2bef`. Sprawdzono cmp bajtów,
+CLI cleanup, readiness 200 i publiczną izolację demo. Recenzent niezależnie
+potwierdził dokładny SHA i te wykonane operacje; ocena pozostała 9,5/10.
+Każdy późniejszy commit dokumentacyjny również przechodzi pełne wymagane CI;
+aktualny head i jego wynik wskazują PR checks oraz końcowy raport czatu.
 
 Pełny run wykrył kolizję nazw nowych modułów testowych i pozostały audyt fixture'a
 przed dawnym downgrade E1; poprawiono nazwę i izolację dedykowanego grafu
