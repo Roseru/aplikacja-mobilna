@@ -1,0 +1,1428 @@
+{
+  "schema_version": "research-1",
+  "checked_on": "2026-10-11",
+  "status": "research_sources_not_official_catalog",
+  "decimal_representation": "strings; inequalities preserved in source_values",
+  "rations": [
+    {
+      "id": "wz1",
+      "name": "ARPOL WZ 1 — lazania",
+      "assembler": "P.H.U. ARPOL Sp. z o.o.",
+      "market": "PL",
+      "military_supply_contract_confirmed": false,
+      "checked_on": "2026-10-11",
+      "source_id": "racja-wz-1",
+      "version": null,
+      "lot": null,
+      "declared_total_energy_kcal": "1517",
+      "total_macros": null,
+      "components": [
+        {
+          "name_in_ration_source": "lazania",
+          "quantity": "300",
+          "quantity_unit": "g",
+          "net_mass_g": "300",
+          "unit_mass_g": null,
+          "manufacturer": null,
+          "variant": null,
+          "occurrence_status": "confirmed_generic_component",
+          "occurrence_source_id": "racja-wz-1",
+          "occurrence_locator": "Opis > Skład racji żywnościowej / Akcesoria dodatkowe",
+          "candidate_card_ids": [
+            "lazania"
+          ],
+          "exact_product_binding": "unconfirmed",
+          "nutrition_for_ration_component": null,
+          "missing": [
+            "manufacturer",
+            "exact_variant",
+            "exact_card_binding"
+          ]
+        },
+        {
+          "name_in_ration_source": "mleko zagęszczone w tubie",
+          "quantity": "150",
+          "quantity_unit": "g",
+          "net_mass_g": "150",
+          "unit_mass_g": null,
+          "manufacturer": null,
+          "variant": null,
+          "occurrence_status": "confirmed_generic_component",
+          "occurrence_source_id": "racja-wz-1",
+          "occurrence_locator": "Opis > Skład racji żywnościowej / Akcesoria dodatkowe",
+          "candidate_card_ids": [
+            "mleko"
+          ],
+          "exact_product_binding": "unconfirmed",
+          "nutrition_for_ration_component": null,
+          "missing": [
+            "manufacturer",
+            "exact_variant",
+            "exact_card_binding"
+          ]
+        },
+        {
+          "name_in_ration_source": "kisiel owocowy",
+          "quantity": "30",
+          "quantity_unit": "g",
+          "net_mass_g": "30",
+          "unit_mass_g": null,
+          "manufacturer": null,
+          "variant": null,
+          "occurrence_status": "confirmed_generic_component",
+          "occurrence_source_id": "racja-wz-1",
+          "occurrence_locator": "Opis > Skład racji żywnościowej / Akcesoria dodatkowe",
+          "candidate_card_ids": [
+            "kisiel"
+          ],
+          "exact_product_binding": "unconfirmed",
+          "nutrition_for_ration_component": null,
+          "missing": [
+            "manufacturer",
+            "exact_variant",
+            "exact_card_binding"
+          ]
+        },
+        {
+          "name_in_ration_source": "suchary specjalne",
+          "quantity": "45",
+          "quantity_unit": "g",
+          "net_mass_g": "45",
+          "unit_mass_g": null,
+          "manufacturer": null,
+          "variant": null,
+          "occurrence_status": "confirmed_generic_component",
+          "occurrence_source_id": "racja-wz-1",
+          "occurrence_locator": "Opis > Skład racji żywnościowej / Akcesoria dodatkowe",
+          "candidate_card_ids": [
+            "suchary-html",
+            "suchary-pdf"
+          ],
+          "exact_product_binding": "unconfirmed",
+          "nutrition_for_ration_component": null,
+          "missing": [
+            "manufacturer",
+            "exact_variant",
+            "exact_card_binding"
+          ]
+        },
+        {
+          "name_in_ration_source": "czekolada do picia",
+          "quantity": "25",
+          "quantity_unit": "g",
+          "net_mass_g": "25",
+          "unit_mass_g": null,
+          "manufacturer": null,
+          "variant": null,
+          "occurrence_status": "confirmed_generic_component",
+          "occurrence_source_id": "racja-wz-1",
+          "occurrence_locator": "Opis > Skład racji żywnościowej / Akcesoria dodatkowe",
+          "candidate_card_ids": [
+            "czekolada-wanilia",
+            "czekolada-wisnia"
+          ],
+          "exact_product_binding": "unconfirmed",
+          "nutrition_for_ration_component": null,
+          "missing": [
+            "manufacturer",
+            "exact_variant",
+            "exact_card_binding"
+          ]
+        },
+        {
+          "name_in_ration_source": "baton owocowo-zbożowy",
+          "quantity": "35",
+          "quantity_unit": "g",
+          "net_mass_g": "35",
+          "unit_mass_g": null,
+          "manufacturer": null,
+          "variant": null,
+          "occurrence_status": "confirmed_generic_component",
+          "occurrence_source_id": "racja-wz-1",
+          "occurrence_locator": "Opis > Skład racji żywnościowej / Akcesoria dodatkowe",
+          "candidate_card_ids": [
+            "baton-10",
+            "baton-11",
+            "baton-12",
+            "baton-13",
+            "baton-14",
+            "baton-15"
+          ],
+          "exact_product_binding": "unconfirmed",
+          "nutrition_for_ration_component": null,
+          "missing": [
+            "manufacturer",
+            "exact_variant",
+            "exact_card_binding"
+          ]
+        },
+        {
+          "name_in_ration_source": "napój izotoniczny",
+          "quantity": "5",
+          "quantity_unit": "g",
+          "net_mass_g": "5",
+          "unit_mass_g": null,
+          "manufacturer": null,
+          "variant": null,
+          "occurrence_status": "confirmed_generic_component",
+          "occurrence_source_id": "racja-wz-1",
+          "occurrence_locator": "Opis > Skład racji żywnościowej / Akcesoria dodatkowe",
+          "candidate_card_ids": [
+            "izotonik-jablkowy",
+            "izotonik-malinowy",
+            "izotonik-pomaranczowy"
+          ],
+          "exact_product_binding": "unconfirmed",
+          "nutrition_for_ration_component": null,
+          "missing": [
+            "manufacturer",
+            "exact_variant",
+            "exact_card_binding"
+          ]
+        },
+        {
+          "name_in_ration_source": "napój herbaciany owocowy instant",
+          "quantity": "15",
+          "quantity_unit": "g",
+          "net_mass_g": "15",
+          "unit_mass_g": null,
+          "manufacturer": null,
+          "variant": null,
+          "occurrence_status": "confirmed_generic_component",
+          "occurrence_source_id": "racja-wz-1",
+          "occurrence_locator": "Opis > Skład racji żywnościowej / Akcesoria dodatkowe",
+          "candidate_card_ids": [
+            "herbata-pdf"
+          ],
+          "exact_product_binding": "unconfirmed",
+          "nutrition_for_ration_component": null,
+          "missing": [
+            "manufacturer",
+            "exact_variant",
+            "exact_card_binding"
+          ]
+        },
+        {
+          "name_in_ration_source": "kawa naturalna",
+          "quantity": "1",
+          "quantity_unit": "piece",
+          "net_mass_g": null,
+          "unit_mass_g": null,
+          "manufacturer": null,
+          "variant": null,
+          "occurrence_status": "confirmed_generic_component",
+          "occurrence_source_id": "racja-wz-1",
+          "occurrence_locator": "Opis > Skład racji żywnościowej / Akcesoria dodatkowe",
+          "candidate_card_ids": [],
+          "exact_product_binding": "unconfirmed",
+          "nutrition_for_ration_component": null,
+          "missing": [
+            "manufacturer",
+            "exact_variant",
+            "exact_card_binding",
+            "nutrition",
+            "unit_mass_g",
+            "primary_product_card"
+          ]
+        },
+        {
+          "name_in_ration_source": "cukier",
+          "quantity": "2",
+          "quantity_unit": "piece",
+          "net_mass_g": null,
+          "unit_mass_g": null,
+          "manufacturer": null,
+          "variant": null,
+          "occurrence_status": "confirmed_generic_component",
+          "occurrence_source_id": "racja-wz-1",
+          "occurrence_locator": "Opis > Skład racji żywnościowej / Akcesoria dodatkowe",
+          "candidate_card_ids": [],
+          "exact_product_binding": "unconfirmed",
+          "nutrition_for_ration_component": null,
+          "missing": [
+            "manufacturer",
+            "exact_variant",
+            "exact_card_binding",
+            "nutrition",
+            "unit_mass_g",
+            "primary_product_card"
+          ]
+        },
+        {
+          "name_in_ration_source": "cukierek z witaminą C",
+          "quantity": "2",
+          "quantity_unit": "piece",
+          "net_mass_g": null,
+          "unit_mass_g": null,
+          "manufacturer": null,
+          "variant": null,
+          "occurrence_status": "confirmed_generic_component",
+          "occurrence_source_id": "racja-wz-1",
+          "occurrence_locator": "Opis > Skład racji żywnościowej / Akcesoria dodatkowe",
+          "candidate_card_ids": [],
+          "exact_product_binding": "unconfirmed",
+          "nutrition_for_ration_component": null,
+          "missing": [
+            "manufacturer",
+            "exact_variant",
+            "exact_card_binding",
+            "nutrition",
+            "unit_mass_g",
+            "primary_product_card"
+          ]
+        },
+        {
+          "name_in_ration_source": "guma do żucia",
+          "quantity": "1",
+          "quantity_unit": "piece",
+          "net_mass_g": null,
+          "unit_mass_g": null,
+          "manufacturer": null,
+          "variant": null,
+          "occurrence_status": "confirmed_generic_component",
+          "occurrence_source_id": "racja-wz-1",
+          "occurrence_locator": "Opis > Skład racji żywnościowej / Akcesoria dodatkowe",
+          "candidate_card_ids": [],
+          "exact_product_binding": "unconfirmed",
+          "nutrition_for_ration_component": null,
+          "missing": [
+            "manufacturer",
+            "exact_variant",
+            "exact_card_binding",
+            "nutrition",
+            "unit_mass_g",
+            "primary_product_card"
+          ]
+        },
+        {
+          "name_in_ration_source": "cukierek z kawą",
+          "quantity": "1",
+          "quantity_unit": "piece",
+          "net_mass_g": null,
+          "unit_mass_g": null,
+          "manufacturer": null,
+          "variant": null,
+          "occurrence_status": "confirmed_generic_component",
+          "occurrence_source_id": "racja-wz-1",
+          "occurrence_locator": "Opis > Skład racji żywnościowej / Akcesoria dodatkowe",
+          "candidate_card_ids": [],
+          "exact_product_binding": "unconfirmed",
+          "nutrition_for_ration_component": null,
+          "missing": [
+            "manufacturer",
+            "exact_variant",
+            "exact_card_binding",
+            "nutrition",
+            "unit_mass_g",
+            "primary_product_card"
+          ]
+        },
+        {
+          "name_in_ration_source": "sól",
+          "quantity": "1",
+          "quantity_unit": "piece",
+          "net_mass_g": null,
+          "unit_mass_g": null,
+          "manufacturer": null,
+          "variant": null,
+          "occurrence_status": "confirmed_generic_component",
+          "occurrence_source_id": "racja-wz-1",
+          "occurrence_locator": "Opis > Skład racji żywnościowej / Akcesoria dodatkowe",
+          "candidate_card_ids": [],
+          "exact_product_binding": "unconfirmed",
+          "nutrition_for_ration_component": null,
+          "missing": [
+            "manufacturer",
+            "exact_variant",
+            "exact_card_binding",
+            "nutrition",
+            "unit_mass_g",
+            "primary_product_card"
+          ]
+        },
+        {
+          "name_in_ration_source": "pieprz",
+          "quantity": "1",
+          "quantity_unit": "piece",
+          "net_mass_g": null,
+          "unit_mass_g": null,
+          "manufacturer": null,
+          "variant": null,
+          "occurrence_status": "confirmed_generic_component",
+          "occurrence_source_id": "racja-wz-1",
+          "occurrence_locator": "Opis > Skład racji żywnościowej / Akcesoria dodatkowe",
+          "candidate_card_ids": [],
+          "exact_product_binding": "unconfirmed",
+          "nutrition_for_ration_component": null,
+          "missing": [
+            "manufacturer",
+            "exact_variant",
+            "exact_card_binding",
+            "nutrition",
+            "unit_mass_g",
+            "primary_product_card"
+          ]
+        }
+      ],
+      "complete": false,
+      "notes": [
+        "Oferta producenta typu wojskowego; nie dowodzi składu konkretnej partii dostarczanej Siłom Zbrojnym.",
+        "Całkowita energia jest deklaracją racji, nie sumą kart kandydatów.",
+        "Woda aktywacji podgrzewacza nie jest napojem."
+      ]
+    },
+    {
+      "id": "wz4",
+      "name": "ARPOL WZ 4 WEGE — risotto pomidorowe",
+      "assembler": "P.H.U. ARPOL Sp. z o.o.",
+      "market": "PL",
+      "military_supply_contract_confirmed": false,
+      "checked_on": "2026-10-11",
+      "source_id": "racja-wz-4-wege",
+      "version": null,
+      "lot": null,
+      "declared_total_energy_kcal": "1433",
+      "total_macros": null,
+      "components": [
+        {
+          "name_in_ration_source": "risotto pomidorowe (danie bezmięsne)",
+          "quantity": "300",
+          "quantity_unit": "g",
+          "net_mass_g": "300",
+          "unit_mass_g": null,
+          "manufacturer": null,
+          "variant": null,
+          "occurrence_status": "confirmed_generic_component",
+          "occurrence_source_id": "racja-wz-4-wege",
+          "occurrence_locator": "Opis > Skład racji żywnościowej / Akcesoria dodatkowe",
+          "candidate_card_ids": [
+            "risotto"
+          ],
+          "exact_product_binding": "unconfirmed",
+          "nutrition_for_ration_component": null,
+          "missing": [
+            "manufacturer",
+            "exact_variant",
+            "exact_card_binding"
+          ]
+        },
+        {
+          "name_in_ration_source": "orzeszki ziemne",
+          "quantity": "50",
+          "quantity_unit": "g",
+          "net_mass_g": "50",
+          "unit_mass_g": null,
+          "manufacturer": null,
+          "variant": null,
+          "occurrence_status": "confirmed_generic_component",
+          "occurrence_source_id": "racja-wz-4-wege",
+          "occurrence_locator": "Opis > Skład racji żywnościowej / Akcesoria dodatkowe",
+          "candidate_card_ids": [
+            "orzechy"
+          ],
+          "exact_product_binding": "unconfirmed",
+          "nutrition_for_ration_component": null,
+          "missing": [
+            "manufacturer",
+            "exact_variant",
+            "exact_card_binding"
+          ]
+        },
+        {
+          "name_in_ration_source": "smoothie owocowe",
+          "quantity": "50",
+          "quantity_unit": "g",
+          "net_mass_g": "50",
+          "unit_mass_g": null,
+          "manufacturer": null,
+          "variant": null,
+          "occurrence_status": "confirmed_generic_component",
+          "occurrence_source_id": "racja-wz-4-wege",
+          "occurrence_locator": "Opis > Skład racji żywnościowej / Akcesoria dodatkowe",
+          "candidate_card_ids": [
+            "smoothie"
+          ],
+          "exact_product_binding": "unconfirmed",
+          "nutrition_for_ration_component": null,
+          "missing": [
+            "manufacturer",
+            "exact_variant",
+            "exact_card_binding"
+          ]
+        },
+        {
+          "name_in_ration_source": "suchary specjalne",
+          "quantity": "45",
+          "quantity_unit": "g",
+          "net_mass_g": "45",
+          "unit_mass_g": null,
+          "manufacturer": null,
+          "variant": null,
+          "occurrence_status": "confirmed_generic_component",
+          "occurrence_source_id": "racja-wz-4-wege",
+          "occurrence_locator": "Opis > Skład racji żywnościowej / Akcesoria dodatkowe",
+          "candidate_card_ids": [
+            "suchary-html",
+            "suchary-pdf"
+          ],
+          "exact_product_binding": "unconfirmed",
+          "nutrition_for_ration_component": null,
+          "missing": [
+            "manufacturer",
+            "exact_variant",
+            "exact_card_binding"
+          ]
+        },
+        {
+          "name_in_ration_source": "czekolada do picia",
+          "quantity": "25",
+          "quantity_unit": "g",
+          "net_mass_g": "25",
+          "unit_mass_g": null,
+          "manufacturer": null,
+          "variant": null,
+          "occurrence_status": "confirmed_generic_component",
+          "occurrence_source_id": "racja-wz-4-wege",
+          "occurrence_locator": "Opis > Skład racji żywnościowej / Akcesoria dodatkowe",
+          "candidate_card_ids": [
+            "czekolada-wanilia",
+            "czekolada-wisnia"
+          ],
+          "exact_product_binding": "unconfirmed",
+          "nutrition_for_ration_component": null,
+          "missing": [
+            "manufacturer",
+            "exact_variant",
+            "exact_card_binding"
+          ]
+        },
+        {
+          "name_in_ration_source": "baton owocowo-zbożowy",
+          "quantity": "35",
+          "quantity_unit": "g",
+          "net_mass_g": "35",
+          "unit_mass_g": null,
+          "manufacturer": null,
+          "variant": null,
+          "occurrence_status": "confirmed_generic_component",
+          "occurrence_source_id": "racja-wz-4-wege",
+          "occurrence_locator": "Opis > Skład racji żywnościowej / Akcesoria dodatkowe",
+          "candidate_card_ids": [
+            "baton-10",
+            "baton-11",
+            "baton-12",
+            "baton-13",
+            "baton-14",
+            "baton-15"
+          ],
+          "exact_product_binding": "unconfirmed",
+          "nutrition_for_ration_component": null,
+          "missing": [
+            "manufacturer",
+            "exact_variant",
+            "exact_card_binding"
+          ]
+        },
+        {
+          "name_in_ration_source": "napój izotoniczny",
+          "quantity": "5",
+          "quantity_unit": "g",
+          "net_mass_g": "5",
+          "unit_mass_g": null,
+          "manufacturer": null,
+          "variant": null,
+          "occurrence_status": "confirmed_generic_component",
+          "occurrence_source_id": "racja-wz-4-wege",
+          "occurrence_locator": "Opis > Skład racji żywnościowej / Akcesoria dodatkowe",
+          "candidate_card_ids": [
+            "izotonik-jablkowy",
+            "izotonik-malinowy",
+            "izotonik-pomaranczowy"
+          ],
+          "exact_product_binding": "unconfirmed",
+          "nutrition_for_ration_component": null,
+          "missing": [
+            "manufacturer",
+            "exact_variant",
+            "exact_card_binding"
+          ]
+        },
+        {
+          "name_in_ration_source": "napój herbaciany owocowy instant",
+          "quantity": "15",
+          "quantity_unit": "g",
+          "net_mass_g": "15",
+          "unit_mass_g": null,
+          "manufacturer": null,
+          "variant": null,
+          "occurrence_status": "confirmed_generic_component",
+          "occurrence_source_id": "racja-wz-4-wege",
+          "occurrence_locator": "Opis > Skład racji żywnościowej / Akcesoria dodatkowe",
+          "candidate_card_ids": [
+            "herbata-pdf"
+          ],
+          "exact_product_binding": "unconfirmed",
+          "nutrition_for_ration_component": null,
+          "missing": [
+            "manufacturer",
+            "exact_variant",
+            "exact_card_binding"
+          ]
+        },
+        {
+          "name_in_ration_source": "kawa naturalna",
+          "quantity": "1",
+          "quantity_unit": "piece",
+          "net_mass_g": null,
+          "unit_mass_g": null,
+          "manufacturer": null,
+          "variant": null,
+          "occurrence_status": "confirmed_generic_component",
+          "occurrence_source_id": "racja-wz-4-wege",
+          "occurrence_locator": "Opis > Skład racji żywnościowej / Akcesoria dodatkowe",
+          "candidate_card_ids": [],
+          "exact_product_binding": "unconfirmed",
+          "nutrition_for_ration_component": null,
+          "missing": [
+            "manufacturer",
+            "exact_variant",
+            "exact_card_binding",
+            "nutrition",
+            "unit_mass_g",
+            "primary_product_card"
+          ]
+        },
+        {
+          "name_in_ration_source": "cukier",
+          "quantity": "2",
+          "quantity_unit": "piece",
+          "net_mass_g": null,
+          "unit_mass_g": null,
+          "manufacturer": null,
+          "variant": null,
+          "occurrence_status": "confirmed_generic_component",
+          "occurrence_source_id": "racja-wz-4-wege",
+          "occurrence_locator": "Opis > Skład racji żywnościowej / Akcesoria dodatkowe",
+          "candidate_card_ids": [],
+          "exact_product_binding": "unconfirmed",
+          "nutrition_for_ration_component": null,
+          "missing": [
+            "manufacturer",
+            "exact_variant",
+            "exact_card_binding",
+            "nutrition",
+            "unit_mass_g",
+            "primary_product_card"
+          ]
+        },
+        {
+          "name_in_ration_source": "cukierek z witaminą C",
+          "quantity": "2",
+          "quantity_unit": "piece",
+          "net_mass_g": null,
+          "unit_mass_g": null,
+          "manufacturer": null,
+          "variant": null,
+          "occurrence_status": "confirmed_generic_component",
+          "occurrence_source_id": "racja-wz-4-wege",
+          "occurrence_locator": "Opis > Skład racji żywnościowej / Akcesoria dodatkowe",
+          "candidate_card_ids": [],
+          "exact_product_binding": "unconfirmed",
+          "nutrition_for_ration_component": null,
+          "missing": [
+            "manufacturer",
+            "exact_variant",
+            "exact_card_binding",
+            "nutrition",
+            "unit_mass_g",
+            "primary_product_card"
+          ]
+        },
+        {
+          "name_in_ration_source": "guma do żucia",
+          "quantity": "1",
+          "quantity_unit": "piece",
+          "net_mass_g": null,
+          "unit_mass_g": null,
+          "manufacturer": null,
+          "variant": null,
+          "occurrence_status": "confirmed_generic_component",
+          "occurrence_source_id": "racja-wz-4-wege",
+          "occurrence_locator": "Opis > Skład racji żywnościowej / Akcesoria dodatkowe",
+          "candidate_card_ids": [],
+          "exact_product_binding": "unconfirmed",
+          "nutrition_for_ration_component": null,
+          "missing": [
+            "manufacturer",
+            "exact_variant",
+            "exact_card_binding",
+            "nutrition",
+            "unit_mass_g",
+            "primary_product_card"
+          ]
+        },
+        {
+          "name_in_ration_source": "cukierek z kawą",
+          "quantity": "1",
+          "quantity_unit": "piece",
+          "net_mass_g": null,
+          "unit_mass_g": null,
+          "manufacturer": null,
+          "variant": null,
+          "occurrence_status": "confirmed_generic_component",
+          "occurrence_source_id": "racja-wz-4-wege",
+          "occurrence_locator": "Opis > Skład racji żywnościowej / Akcesoria dodatkowe",
+          "candidate_card_ids": [],
+          "exact_product_binding": "unconfirmed",
+          "nutrition_for_ration_component": null,
+          "missing": [
+            "manufacturer",
+            "exact_variant",
+            "exact_card_binding",
+            "nutrition",
+            "unit_mass_g",
+            "primary_product_card"
+          ]
+        },
+        {
+          "name_in_ration_source": "sól",
+          "quantity": "1",
+          "quantity_unit": "piece",
+          "net_mass_g": null,
+          "unit_mass_g": null,
+          "manufacturer": null,
+          "variant": null,
+          "occurrence_status": "confirmed_generic_component",
+          "occurrence_source_id": "racja-wz-4-wege",
+          "occurrence_locator": "Opis > Skład racji żywnościowej / Akcesoria dodatkowe",
+          "candidate_card_ids": [],
+          "exact_product_binding": "unconfirmed",
+          "nutrition_for_ration_component": null,
+          "missing": [
+            "manufacturer",
+            "exact_variant",
+            "exact_card_binding",
+            "nutrition",
+            "unit_mass_g",
+            "primary_product_card"
+          ]
+        },
+        {
+          "name_in_ration_source": "pieprz",
+          "quantity": "1",
+          "quantity_unit": "piece",
+          "net_mass_g": null,
+          "unit_mass_g": null,
+          "manufacturer": null,
+          "variant": null,
+          "occurrence_status": "confirmed_generic_component",
+          "occurrence_source_id": "racja-wz-4-wege",
+          "occurrence_locator": "Opis > Skład racji żywnościowej / Akcesoria dodatkowe",
+          "candidate_card_ids": [],
+          "exact_product_binding": "unconfirmed",
+          "nutrition_for_ration_component": null,
+          "missing": [
+            "manufacturer",
+            "exact_variant",
+            "exact_card_binding",
+            "nutrition",
+            "unit_mass_g",
+            "primary_product_card"
+          ]
+        }
+      ],
+      "complete": false,
+      "notes": [
+        "Oferta producenta typu wojskowego; nie dowodzi składu konkretnej partii dostarczanej Siłom Zbrojnym.",
+        "Całkowita energia jest deklaracją racji, nie sumą kart kandydatów.",
+        "Woda aktywacji podgrzewacza nie jest napojem."
+      ]
+    }
+  ],
+  "product_cards": [
+    {
+      "id": "lazania",
+      "name": "Lazania 300 g (TACKA)",
+      "variant": "sterylizowany makaron z mięsem mielonym w sosie",
+      "supplier": "ARPOL",
+      "manufacturer": null,
+      "manufacturer_status": "not_identified_in_source",
+      "brand_claim": null,
+      "net_mass_g": "300",
+      "package_count": "1",
+      "basis_amount": "100",
+      "basis_unit": "g",
+      "nutrition_state": "as_sold",
+      "source_values": {
+        "energy_kcal": "109",
+        "protein_g": "6.8",
+        "fat_g": "4.0",
+        "carbohydrate_g": "11"
+      },
+      "source_energy_kj": "459",
+      "nutrition_status": "source_read",
+      "source_id": "lazania-300-g-tacka",
+      "source_locator": "Opis > wartość odżywcza, masa netto",
+      "ration_binding": "candidate_only",
+      "complete_for_ration_import": false,
+      "issues": [],
+      "preparation": {
+        "status": "not_applicable"
+      }
+    },
+    {
+      "id": "risotto",
+      "name": "Risotto pomidorowe wege 300 g (TACKA)",
+      "variant": "ryż z warzywami, danie bezmięsne",
+      "supplier": "ARPOL",
+      "manufacturer": null,
+      "manufacturer_status": "not_identified_in_source",
+      "brand_claim": null,
+      "net_mass_g": "300",
+      "package_count": "1",
+      "basis_amount": "100",
+      "basis_unit": "g",
+      "nutrition_state": "as_sold",
+      "source_values": {
+        "energy_kcal": "114",
+        "protein_g": "2.6",
+        "fat_g": "2.1",
+        "carbohydrate_g": "20"
+      },
+      "source_energy_kj": "480",
+      "nutrition_status": "source_read",
+      "source_id": "risotto-pomidorowe-wege-300-g-tacka",
+      "source_locator": "Opis > wartość odżywcza, masa netto",
+      "ration_binding": "candidate_only",
+      "complete_for_ration_import": false,
+      "issues": [],
+      "preparation": {
+        "status": "not_applicable"
+      }
+    },
+    {
+      "id": "suchary-html",
+      "name": "Suchary specjalne SU-1 45 g",
+      "variant": "karta HTML, olej palmowy i syrop glukozowy",
+      "supplier": "ARPOL",
+      "manufacturer": null,
+      "manufacturer_status": "not_identified_in_source",
+      "brand_claim": null,
+      "net_mass_g": "45",
+      "package_count": "1",
+      "basis_amount": "100",
+      "basis_unit": "g",
+      "nutrition_state": "as_sold",
+      "source_values": {
+        "energy_kcal": "386",
+        "protein_g": "8.0",
+        "fat_g": "6.8",
+        "carbohydrate_g": "72.1"
+      },
+      "source_energy_kj": "1616",
+      "nutrition_status": "source_read",
+      "source_id": "suchary-specjalne-su-1-45-g",
+      "source_locator": "Opis > wartość odżywcza, masa netto",
+      "ration_binding": "candidate_only",
+      "complete_for_ration_import": false,
+      "issues": [
+        "Wersja składu różni się od PDF: nie scalać automatycznie."
+      ],
+      "preparation": {
+        "status": "not_applicable"
+      }
+    },
+    {
+      "id": "suchary-pdf",
+      "name": "Suchary specjalne SU-1",
+      "variant": "PDF, olej rzepakowy",
+      "supplier": "ARPOL",
+      "manufacturer": null,
+      "manufacturer_status": "not_identified_in_source",
+      "brand_claim": null,
+      "net_mass_g": "45",
+      "package_count": "1",
+      "basis_amount": "100",
+      "basis_unit": "g",
+      "nutrition_state": "as_sold",
+      "source_values": {
+        "energy_kcal": "386",
+        "protein_g": "8.0",
+        "fat_g": "6.8",
+        "carbohydrate_g": "72.1"
+      },
+      "source_energy_kj": "1616",
+      "nutrition_status": "source_read",
+      "source_id": "Suchary_45g",
+      "source_locator": "PDF, strona 1",
+      "ration_binding": "candidate_only",
+      "complete_for_ration_import": false,
+      "issues": [
+        "PDF i HTML mają różne składy przy takich samych makrach; brak wersji/partii.",
+        "Logotypy na zdjęciu w PDF nie ustalają producenta konkretnej paczki WZ."
+      ],
+      "preparation": {
+        "status": "not_applicable"
+      }
+    },
+    {
+      "id": "mleko",
+      "name": "Mleko zagęszczone słodzone",
+      "variant": "150 g",
+      "supplier": "ARPOL",
+      "manufacturer": null,
+      "manufacturer_status": "not_identified_in_source",
+      "brand_claim": null,
+      "net_mass_g": "150",
+      "package_count": "1",
+      "basis_amount": "100",
+      "basis_unit": "g",
+      "nutrition_state": "as_sold",
+      "source_values": {
+        "energy_kcal": "328",
+        "protein_g": "7",
+        "fat_g": "8",
+        "carbohydrate_g": "57"
+      },
+      "source_energy_kj": "1384",
+      "nutrition_status": "source_read",
+      "source_id": "mleko-zageszczone-150-g",
+      "source_locator": "Opis > wartość odżywcza, masa netto",
+      "ration_binding": "candidate_only",
+      "complete_for_ration_import": false,
+      "issues": [],
+      "preparation": {
+        "status": "not_applicable"
+      }
+    },
+    {
+      "id": "orzechy",
+      "name": "Orzechy ziemne solone",
+      "variant": "50 g, karta solonych, nie pozostałe warianty orzeszków",
+      "supplier": "ARPOL",
+      "manufacturer": null,
+      "manufacturer_status": "not_identified_in_source",
+      "brand_claim": null,
+      "net_mass_g": "50",
+      "package_count": "1",
+      "basis_amount": "100",
+      "basis_unit": "g",
+      "nutrition_state": "as_sold",
+      "source_values": {
+        "energy_kcal": "625",
+        "protein_g": "24.6",
+        "fat_g": "51.4",
+        "carbohydrate_g": "12.6"
+      },
+      "source_energy_kj": "2587",
+      "nutrition_status": "source_read",
+      "source_id": "orzechy-ziemne-solone-50-g",
+      "source_locator": "Opis > wartość odżywcza, masa netto",
+      "ration_binding": "candidate_only",
+      "complete_for_ration_import": false,
+      "issues": [],
+      "preparation": {
+        "status": "not_applicable"
+      }
+    },
+    {
+      "id": "smoothie",
+      "name": "Smoothie owocowe",
+      "variant": "banan, truskawka i pomarańcza",
+      "supplier": "ARPOL",
+      "manufacturer": null,
+      "manufacturer_status": "not_identified_in_source",
+      "brand_claim": null,
+      "net_mass_g": "50",
+      "package_count": "1",
+      "basis_amount": "100",
+      "basis_unit": "g",
+      "nutrition_state": "dry_before_preparation",
+      "source_values": {
+        "energy_kcal": "368",
+        "protein_g": "2.3",
+        "fat_g": "1.0",
+        "carbohydrate_g": "85"
+      },
+      "source_energy_kj": "1561",
+      "nutrition_status": "source_read",
+      "source_id": "smoothie-owocowe-o-smaku-banana-truskawki-i-pom",
+      "source_locator": "Opis > wartość odżywcza, masa netto",
+      "ration_binding": "candidate_only",
+      "complete_for_ration_import": false,
+      "issues": [],
+      "preparation": {
+        "status": "source_read",
+        "dry_product_g": "50",
+        "added_water_ml": "150",
+        "water_temperature": "cold",
+        "instruction_pl": "Otworzyć worek i rozłożyć dno. Dodać 150 ml zimnej wody do 50 g proszku, zamknąć strunę i wstrząsać 1–2 minuty.",
+        "source_id": "smoothie-owocowe-o-smaku-banana-truskawki-i-pom"
+      }
+    },
+    {
+      "id": "izotonik-jablkowy",
+      "name": "Napój izotoniczny w proszku",
+      "variant": "jabłkowy",
+      "supplier": "ARPOL",
+      "manufacturer": null,
+      "manufacturer_status": "not_identified_in_source",
+      "brand_claim": null,
+      "net_mass_g": "5",
+      "package_count": "1",
+      "basis_amount": "100",
+      "basis_unit": "g",
+      "nutrition_state": "dry_before_preparation",
+      "source_values": {
+        "energy_kcal": "238",
+        "protein_g": "0",
+        "fat_g": "0",
+        "carbohydrate_g": "44.0"
+      },
+      "source_energy_kj": "996",
+      "nutrition_status": "source_read",
+      "source_id": "napoj-izotoniczny-jablkowy-5-g",
+      "source_locator": "Opis > wartość odżywcza, masa netto",
+      "ration_binding": "candidate_only",
+      "complete_for_ration_import": false,
+      "issues": [
+        "238 kcal nie odpowiada prostemu 4×44 g węglowodanów przy B/T=0; potrzebne wyjaśnienie źródła, nie korekta własna."
+      ],
+      "preparation": {
+        "status": "source_read",
+        "dry_product_g": "5",
+        "added_water_ml": "500",
+        "water_temperature": null,
+        "instruction_pl": "Wsypać 5 g produktu do kubka, dodać 500 ml wody i dokładnie wymieszać.",
+        "source_id": "napoj-izotoniczny-jablkowy-5-g"
+      }
+    },
+    {
+      "id": "izotonik-malinowy",
+      "name": "Napój izotoniczny w proszku",
+      "variant": "malinowy",
+      "supplier": "ARPOL",
+      "manufacturer": null,
+      "manufacturer_status": "not_identified_in_source",
+      "brand_claim": null,
+      "net_mass_g": "5",
+      "package_count": "1",
+      "basis_amount": "100",
+      "basis_unit": "g",
+      "nutrition_state": "dry_before_preparation",
+      "source_values": {
+        "energy_kcal": "238",
+        "protein_g": "0",
+        "fat_g": "0",
+        "carbohydrate_g": "44.0"
+      },
+      "source_energy_kj": "996",
+      "nutrition_status": "source_read",
+      "source_id": "napoj-izotoniczny-malinowy-5-g",
+      "source_locator": "Opis > wartość odżywcza, masa netto",
+      "ration_binding": "candidate_only",
+      "complete_for_ration_import": false,
+      "issues": [
+        "238 kcal nie odpowiada prostemu 4×44 g węglowodanów przy B/T=0; potrzebne wyjaśnienie źródła, nie korekta własna."
+      ],
+      "preparation": {
+        "status": "source_read",
+        "dry_product_g": "5",
+        "added_water_ml": "500",
+        "water_temperature": null,
+        "instruction_pl": "Wsypać 5 g produktu do kubka, dodać 500 ml wody i dokładnie wymieszać.",
+        "source_id": "napoj-izotoniczny-malinowy-5-g"
+      }
+    },
+    {
+      "id": "izotonik-pomaranczowy",
+      "name": "Napój izotoniczny w proszku",
+      "variant": "pomarańczowy",
+      "supplier": "ARPOL",
+      "manufacturer": null,
+      "manufacturer_status": "not_identified_in_source",
+      "brand_claim": null,
+      "net_mass_g": "5",
+      "package_count": "1",
+      "basis_amount": "100",
+      "basis_unit": "g",
+      "nutrition_state": "dry_before_preparation",
+      "source_values": {
+        "energy_kcal": "238",
+        "protein_g": "0",
+        "fat_g": "0",
+        "carbohydrate_g": "44.0"
+      },
+      "source_energy_kj": "996",
+      "nutrition_status": "source_read",
+      "source_id": "napoj-izotoniczny-pomaranczowy-5-g",
+      "source_locator": "Opis > wartość odżywcza, masa netto",
+      "ration_binding": "candidate_only",
+      "complete_for_ration_import": false,
+      "issues": [
+        "238 kcal nie odpowiada prostemu 4×44 g węglowodanów przy B/T=0; potrzebne wyjaśnienie źródła, nie korekta własna."
+      ],
+      "preparation": {
+        "status": "source_read",
+        "dry_product_g": "5",
+        "added_water_ml": "500",
+        "water_temperature": null,
+        "instruction_pl": "Wsypać 5 g produktu do kubka, dodać 500 ml wody i dokładnie wymieszać.",
+        "source_id": "napoj-izotoniczny-pomaranczowy-5-g"
+      }
+    },
+    {
+      "id": "baton-10",
+      "name": "Baton owocowo-zbożowy 35 g",
+      "variant": "żurawinowy",
+      "supplier": "ARPOL",
+      "manufacturer": null,
+      "manufacturer_status": "not_identified_in_source",
+      "brand_claim": null,
+      "net_mass_g": "35",
+      "package_count": "1",
+      "basis_amount": "100",
+      "basis_unit": "g",
+      "nutrition_state": "as_sold",
+      "source_values": {
+        "energy_kcal": "384",
+        "protein_g": "5.54",
+        "fat_g": "9.1",
+        "carbohydrate_g": "66.4"
+      },
+      "source_energy_kj": "1610",
+      "nutrition_status": "source_read",
+      "source_id": "baton-owocowo-zbozowy-35-g",
+      "source_locator": "Opis > wariant żurawinowy > wartość odżywcza",
+      "ration_binding": "candidate_only",
+      "complete_for_ration_import": false,
+      "issues": [
+        "Racja nie określa smaku. Alternatywa, nie dodatkowa sztuka."
+      ],
+      "preparation": {
+        "status": "not_applicable"
+      }
+    },
+    {
+      "id": "baton-11",
+      "name": "Baton owocowo-zbożowy 35 g",
+      "variant": "wiśniowy",
+      "supplier": "ARPOL",
+      "manufacturer": null,
+      "manufacturer_status": "not_identified_in_source",
+      "brand_claim": null,
+      "net_mass_g": "35",
+      "package_count": "1",
+      "basis_amount": "100",
+      "basis_unit": "g",
+      "nutrition_state": "as_sold",
+      "source_values": {
+        "energy_kcal": "374",
+        "protein_g": "5.26",
+        "fat_g": "9.4",
+        "carbohydrate_g": "62.5"
+      },
+      "source_energy_kj": "1570",
+      "nutrition_status": "source_read",
+      "source_id": "baton-owocowo-zbozowy-35-g",
+      "source_locator": "Opis > wariant wiśniowy > wartość odżywcza",
+      "ration_binding": "candidate_only",
+      "complete_for_ration_import": false,
+      "issues": [
+        "Racja nie określa smaku. Alternatywa, nie dodatkowa sztuka."
+      ],
+      "preparation": {
+        "status": "not_applicable"
+      }
+    },
+    {
+      "id": "baton-12",
+      "name": "Baton owocowo-zbożowy 35 g",
+      "variant": "limonkowy",
+      "supplier": "ARPOL",
+      "manufacturer": null,
+      "manufacturer_status": "not_identified_in_source",
+      "brand_claim": null,
+      "net_mass_g": "35",
+      "package_count": "1",
+      "basis_amount": "100",
+      "basis_unit": "g",
+      "nutrition_state": "as_sold",
+      "source_values": {
+        "energy_kcal": "387",
+        "protein_g": "5.53",
+        "fat_g": "9.8",
+        "carbohydrate_g": "66.3"
+      },
+      "source_energy_kj": "1620",
+      "nutrition_status": "source_read",
+      "source_id": "baton-owocowo-zbozowy-35-g",
+      "source_locator": "Opis > wariant limonkowy > wartość odżywcza",
+      "ration_binding": "candidate_only",
+      "complete_for_ration_import": false,
+      "issues": [
+        "Racja nie określa smaku. Alternatywa, nie dodatkowa sztuka."
+      ],
+      "preparation": {
+        "status": "not_applicable"
+      }
+    },
+    {
+      "id": "baton-13",
+      "name": "Baton owocowo-zbożowy 35 g",
+      "variant": "gruszkowy",
+      "supplier": "ARPOL",
+      "manufacturer": null,
+      "manufacturer_status": "not_identified_in_source",
+      "brand_claim": null,
+      "net_mass_g": "35",
+      "package_count": "1",
+      "basis_amount": "100",
+      "basis_unit": "g",
+      "nutrition_state": "as_sold",
+      "source_values": {
+        "energy_kcal": "373",
+        "protein_g": "5.25",
+        "fat_g": "8.5",
+        "carbohydrate_g": "64.0"
+      },
+      "source_energy_kj": "1516",
+      "nutrition_status": "source_read",
+      "source_id": "baton-owocowo-zbozowy-35-g",
+      "source_locator": "Opis > wariant gruszkowy > wartość odżywcza",
+      "ration_binding": "candidate_only",
+      "complete_for_ration_import": false,
+      "issues": [
+        "Racja nie określa smaku. Alternatywa, nie dodatkowa sztuka.",
+        "1516 kJ / 373 kcal jest niespójne; zachowano obie liczby."
+      ],
+      "preparation": {
+        "status": "not_applicable"
+      }
+    },
+    {
+      "id": "baton-14",
+      "name": "Baton owocowo-zbożowy 35 g",
+      "variant": "figowy",
+      "supplier": "ARPOL",
+      "manufacturer": null,
+      "manufacturer_status": "not_identified_in_source",
+      "brand_claim": null,
+      "net_mass_g": "35",
+      "package_count": "1",
+      "basis_amount": "100",
+      "basis_unit": "g",
+      "nutrition_state": "as_sold",
+      "source_values": {
+        "energy_kcal": "367",
+        "protein_g": "5.54",
+        "fat_g": "13.3",
+        "carbohydrate_g": "56.3"
+      },
+      "source_energy_kj": "1540",
+      "nutrition_status": "source_read",
+      "source_id": "baton-owocowo-zbozowy-35-g",
+      "source_locator": "Opis > wariant figowy > wartość odżywcza",
+      "ration_binding": "candidate_only",
+      "complete_for_ration_import": false,
+      "issues": [
+        "Racja nie określa smaku. Alternatywa, nie dodatkowa sztuka."
+      ],
+      "preparation": {
+        "status": "not_applicable"
+      }
+    },
+    {
+      "id": "baton-15",
+      "name": "Baton owocowo-zbożowy 35 g",
+      "variant": "morelowy",
+      "supplier": "ARPOL",
+      "manufacturer": null,
+      "manufacturer_status": "not_identified_in_source",
+      "brand_claim": null,
+      "net_mass_g": "35",
+      "package_count": "1",
+      "basis_amount": "100",
+      "basis_unit": "g",
+      "nutrition_state": "as_sold",
+      "source_values": {
+        "energy_kcal": "369",
+        "protein_g": "5.53",
+        "fat_g": "8.8",
+        "carbohydrate_g": "62.8"
+      },
+      "source_energy_kj": "1540",
+      "nutrition_status": "source_read",
+      "source_id": "baton-owocowo-zbozowy-35-g",
+      "source_locator": "Opis > wariant morelowy > wartość odżywcza",
+      "ration_binding": "candidate_only",
+      "complete_for_ration_import": false,
+      "issues": [
+        "Racja nie określa smaku. Alternatywa, nie dodatkowa sztuka."
+      ],
+      "preparation": {
+        "status": "not_applicable"
+      }
+    },
+    {
+      "id": "kisiel",
+      "name": "Kisiel",
+      "variant": "jabłko i mango",
+      "supplier": "ARPOL",
+      "manufacturer": null,
+      "manufacturer_status": "not_identified_in_source",
+      "brand_claim": null,
+      "net_mass_g": "30",
+      "package_count": "1",
+      "basis_amount": "100",
+      "basis_unit": "g",
+      "nutrition_state": "dry_before_preparation",
+      "source_values": {
+        "energy_kcal": "493",
+        "protein_g": "<0.4",
+        "fat_g": "<0.2",
+        "carbohydrate_g": "97"
+      },
+      "source_energy_kj": "1644",
+      "nutrition_status": "requires_source_correction",
+      "source_id": "kisiel-jablko-i-mango-30-g",
+      "source_locator": "Opis > wartość odżywcza, masa netto",
+      "ration_binding": "candidate_only",
+      "complete_for_ration_import": false,
+      "issues": [
+        "1644 kJ / 493 kcal jest niespójne; energia wymaga potwierdzenia.",
+        "B<0,4 g i T<0,2 g oznaczają granice, nie dokładne wartości ani zero."
+      ],
+      "preparation": {
+        "status": "source_read",
+        "dry_product_g": "30",
+        "added_water_ml": "150",
+        "water_temperature": "cold",
+        "instruction_pl": "Do 30 g proszku dodać 150 ml zimnej wody w rozłożonym opakowaniu, zamknąć strunę, wstrząsać 1–2 minuty.",
+        "source_id": "kisiel-jablko-i-mango-30-g"
+      }
+    },
+    {
+      "id": "herbata-pdf",
+      "name": "Koncentrat napoju herbacianego instant",
+      "variant": "PDF: skład z sokiem cytrynowym; smak nienazwany w nagłówku",
+      "supplier": "ARPOL",
+      "manufacturer": null,
+      "manufacturer_status": "not_identified_in_source",
+      "brand_claim": null,
+      "net_mass_g": "15",
+      "package_count": "1",
+      "basis_amount": "100",
+      "basis_unit": "g",
+      "nutrition_state": "dry_before_preparation",
+      "source_values": {
+        "energy_kcal": "389",
+        "protein_g": "0",
+        "fat_g": "0",
+        "carbohydrate_g": "96"
+      },
+      "source_energy_kj": "1627",
+      "nutrition_status": "source_read",
+      "source_id": "Napoj_herbaciany_instant_15g",
+      "source_locator": "PDF, strona 1",
+      "ration_binding": "candidate_only",
+      "complete_for_ration_import": false,
+      "issues": [
+        "PDF zastrzega różnice składu i wartości zależnie od smaku.",
+        "Nie przypisywać tej tabeli wszystkim herbatom owocowym 15 g."
+      ],
+      "preparation": {
+        "status": "source_read",
+        "dry_product_g": "15",
+        "added_water_ml": "250",
+        "water_temperature": "cold",
+        "instruction_pl": "Rozmieszać zawartość saszetki 15 g w 250 ml zimnej wody i spożyć bezpośrednio po przygotowaniu.",
+        "source_id": "Napoj_herbaciany_instant_15g"
+      }
+    },
+    {
+      "id": "czekolada-wanilia",
+      "name": "Czekolada do picia classic",
+      "variant": "waniliowa, dane Ceneo",
+      "supplier": null,
+      "manufacturer": null,
+      "manufacturer_status": "not_identified_in_source",
+      "brand_claim": "ARPOL",
+      "net_mass_g": "25",
+      "package_count": "1",
+      "basis_amount": "100",
+      "basis_unit": "g",
+      "nutrition_state": "dry_before_preparation",
+      "source_values": {
+        "energy_kcal": "399",
+        "protein_g": "10.4",
+        "fat_g": "9.1",
+        "carbohydrate_g": "62.9"
+      },
+      "source_energy_kj": "1668",
+      "nutrition_status": "secondary_source_only",
+      "source_id": "czekolada-waniliowa-ceneo",
+      "source_locator": "Opis produktu",
+      "ration_binding": "candidate_only",
+      "complete_for_ration_import": false,
+      "issues": [
+        "Źródło handlowe podaje markę, nie dowodzi producenta ani wariantu w racji."
+      ],
+      "preparation": {
+        "status": "source_read",
+        "dry_product_g": "25",
+        "added_water_ml": "150",
+        "water_temperature": "hot_not_boiling",
+        "instruction_pl": "Rozmieszać saszetkę w około 150 ml gorącej, niewrzącej wody.",
+        "source_id": "czekolada-waniliowa-ceneo",
+        "water_amount_qualifier": "approximately"
+      }
+    },
+    {
+      "id": "czekolada-wisnia",
+      "name": "Czekolada do picia",
+      "variant": "wiśniowa wg tytułu oferty Allegro",
+      "supplier": null,
+      "manufacturer": null,
+      "manufacturer_status": "not_identified_in_source",
+      "brand_claim": "ARPOL",
+      "net_mass_g": "25",
+      "package_count": "1",
+      "basis_amount": "100",
+      "basis_unit": "g",
+      "nutrition_state": "dry_before_preparation",
+      "source_values": {
+        "energy_kcal": "407",
+        "protein_g": "13",
+        "fat_g": "11",
+        "carbohydrate_g": "56"
+      },
+      "source_energy_kj": "1686",
+      "nutrition_status": "secondary_source_only",
+      "source_id": "czekolada-wisniowa-allegro",
+      "source_locator": "Opis produktu",
+      "ration_binding": "candidate_only",
+      "complete_for_ration_import": false,
+      "issues": [
+        "Tytuł wiśniowy, tekst zawiera też nazwę waniliową; oferta niespójna.",
+        "EAN 5906852508914 to deklaracja oferty; nie identyfikator racji.",
+        "Źródło handlowe podaje markę, nie dowodzi producenta ani wariantu w racji."
+      ],
+      "preparation": {
+        "status": "source_read",
+        "dry_product_g": "25",
+        "added_water_ml": "150",
+        "water_temperature": "hot_not_boiling",
+        "instruction_pl": "Rozmieszać saszetkę w około 150 ml gorącej, niewrzącej wody.",
+        "source_id": "czekolada-wisniowa-allegro",
+        "water_amount_qualifier": "approximately"
+      }
+    }
+  ],
+  "limitations": [
+    "Nie ma pełnego potwierdzenia producentów komponentów i powiązań wariantów.",
+    "null oznacza brak danych, nie zero; dane kart nie są automatycznie danymi racji.",
+    "Nie sumować alternatywnych smaków ani wersji HTML/PDF sucharów.",
+    "Nie wyliczano stężenia na 100 ml gotowego napoju: dodana woda nie dowodzi końcowej objętości."
+  ]
+}
