@@ -140,6 +140,25 @@ def env_file(state, name, values):
     private_write(state / name, "".join(f"{key}={value}\n" for key, value in values.items()))
 
 
+def prepare_worker(state):
+    """Upgrade existing private state without rotating any database password or other secret."""
+    target = state / "worker.env"
+    if target.exists():
+        return
+    values = dict(line.split("=", 1) for line in (state / "postgres.env").read_text().splitlines())
+    password = values["APP_WORKER_PASSWORD"]
+    if not re.fullmatch(r"[0-9a-f]{64}", password):
+        raise ValueError("Unexpected existing worker credential format; preserve state")
+    env_file(
+        state,
+        "worker.env",
+        {
+            "DATABASE_URL": f"postgresql+psycopg://calorie_app_worker:{password}@postgres/calorie_app",
+            "ENVIRONMENT": "development",
+        },
+    )
+
+
 def safe_compose_error(state, message):
     """Allow CI diagnostics without publishing generated credentials or token-shaped strings."""
     values = []
@@ -292,6 +311,7 @@ class Stack:
         self.origin = self.config["origin"]
 
     def compose(self, *arguments, input_text=None):
+        prepare_worker(self.state)
         command = [
             "docker",
             "compose",
@@ -369,7 +389,9 @@ class Stack:
 
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument("action", choices=("init", "up", "verify", "status", "down", "renew-tls"))
+    parser.add_argument(
+        "action", choices=("init", "up", "verify", "status", "down", "renew-tls", "worker-status")
+    )
     parser.add_argument("--state", type=Path, default=DEFAULT_STATE)
     parser.add_argument("--host", help="Local IPv4; use the host LAN address for emulator access")
     parser.add_argument("--port", type=int)
@@ -416,6 +438,17 @@ def main():
             stack.compose("down")  # Never --volumes: data survive down/up.
         elif args.action == "status":
             print(stack.compose("ps"))
+        elif args.action == "worker-status":
+            print(
+                stack.compose(
+                    "exec",
+                    "-T",
+                    "retention",
+                    ".venv/bin/python",
+                    "/opt/retention/worker.py",
+                    "status",
+                )
+            )
         elif args.action == "verify":
             from verify import verify
 
