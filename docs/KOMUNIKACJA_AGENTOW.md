@@ -17,7 +17,7 @@ Stan odczytany przez O1, 10 października 2026 r. Każda osoba aktualizuje swój
 
 | Rola | Ostatni znany rezultat | Następny krok / zależność | Źródło |
 |---|---|---|---|
-| O1 — Android, Kotlin, Room | Android 0.7 / Room 6: trwały bootstrap i niezmienne cele, gość offline poza main | Poprawki reviews #1/#6 i odbiór #1 → #6 → #7 → #9; O2 E3/E4, O3 środowisko/CI | [PR #9](https://github.com/Roseru/aplikacja-mobilna/pull/9), commit `ce6972c`; O1-008 |
+| O1 — Android, Kotlin, Room | Android 0.7.2 / Room 6 na gałęzi; 65 JVM i 53/53 na każdym z dwóch rozmiarów, update bez utraty danych | Odbiór manualny i CI aktualnego PR; następnie sesja/HTTP E3, trwały sync E4 i zgodność E5 | O1-011, [raport](../android/RAPORT_0_7_2.md), kod `03f8678` |
 | O2 — Python, PostgreSQL, API | E6-O2 odebrane/scalone na492811f, niezależne9,3/9,2 i main CI1643 PASS/osiem success | Publikacja/odbiór mastera E7 i jeden ręcznie zlecony czat GPT6.1/xhigh; E7-R, pełny E5-C oraz O1/O3 nadal otwarte | [PR #20](https://github.com/Roseru/aplikacja-mobilna/pull/20), O2-018/019, [master E7](MASTER_PROMPT_E7.md) |
 | O3 — DevOps, CI/CD, serwer | CI Androida/APK w PR #10, połączone z kontrolami E3–E5/Keycloak; scalenie po końcowym zielonym CI na polecenie właściciela | O1: OIDC/HTTP/Room/WorkManager/KO-31; O2: katalog i bramka pełnego E5; O3: uzgodnienie HTTPS/restore | O3-008, [PR #10](https://github.com/Roseru/aplikacja-mobilna/pull/10) |
 
@@ -441,6 +441,19 @@ Uzupełnienie O2-017: pierwsze pełne [CI38139065117](https://github.com/Roseru/
 
 Ponowny nieautor dla `ffc06966eb4df51255a6b204ffe0a32939cac20d`:6PG obu całych modułów PASS,9,3/10, zero otwartych istotnychP1/P2. Manifest213(211bez zmian, dwa testy) `365816932596db0476442e357bba423eb3e98c439a7554d8846dde27ff880e88`; pełne porównania historii/ACL/migracji zachowane. Końcowy commit dokumentacji otrzyma własny CI; exact head/base i rzeczywiste logi będą w PR20 i odpowiedzi tego czatu. Wykonawca nie scala PR.
 
+### O1-011 — Android 0.7.2, mniejsze ekrany i testy manualne
+
+- Data / autor: 2026-10-11, Agent 1 / O1.
+- Odbiorcy: właściciel, O2 / koordynator, O3; odniesienie O1-010 z PR #22, O3-007/008 i O2-017.
+- Status: DO ODCZYTU.
+- Źródło: `codex/android-male-ekrany`, kod `03f8678`, integracja `b81c8dc` z main `492811f`; [raport 0.7.2](../android/RAPORT_0_7_2.md). Opublikowany [PR #23](https://github.com/Roseru/aplikacja-mobilna/pull/23) do main, kod/raport na d0d1a0b po kontroli diff/E0. Aktualny stan CI odczytywany oddzielnie, bez deklaracji merge.
+- Przekazanie: jedna przewijana lista obejmuje nagłówek i wyniki produktów, również z edytorem. IME Done zamyka klawiaturę bez zapisania. Testy przewijają kontener przed szukaniem lazy node, sprawdzają ilości przed/po recreation i odczytują podsumowanie po przewinięciu odtworzonej listy. Nowy test zmienia produkt bez dodania posiłku; wszystkie wcześniejsze asercje danych zachowane, bez retry lub zwiększenia timeoutów.
+- Dowody autora: pełne assemble/JVM/lint/device na 1080×1920 i oddzielne pełne device na 1080×2400, density 420 / font 1.0 / API 35 offline; 65 JVM i osobno 53/53 + 53/53 urządzenia, zero failures/errors/skips. Lint 0 błędów/26 ostrzeżeń/1 informacja. Te same 53 scenariusze na dwóch rozmiarach jednego AVD; nie są to 106 różnych testów. Pierwsze próby i rzeczywisty finalny timeout nagłówka po odtworzeniu scrolla opisane w raporcie; test pojedynczy nie zastępuje pełnego odbioru.
+- Artefakt: Android 0.7.2 / versionCode 9 / Room 6, APK poza Git, hash 398bcee85dd2658fae3c73bb9093e257762d9a01880d0fbdbaa50c50e7f5ae6d. Rzeczywista aktualizacja 0.7.1→0.7.2 zachowała wszystkie kolumny 18 tabel, dziennik/właścicieli/outbox; foreign_key_check pusty. Właściciel zlecił otwarcie widocznego emulatora po etapie. Zdalny CI nowego head wymaga własnego odczytu.
+- Odczyt zespołu: main 492811f zawiera scalony E6/#20 i poprawki O2-017: CRLF, unieważnianie mq1 po canonical correction oraz indexed NFKC/casefold official/alias. Przeczytano aktualne INTEGRACJA_O1; nie uznaję siebie za recenzenta backendu ani wykonawcę jego testów. O3-010 czytany z d6405ed/PR #21; retencja nie jest backupem lub operatorem deletion. Merge E6 zachował wszystkie zmiany autorów i nie zmienił testowanego Androida.
+- Ograniczenia / następny krok: odbiór manualny właściciela i wymagane CI, potem własna sesja PKCE/callback/izolacja oraz HTTP/bootstrap E3. Adapter E4/WorkManager i zgodność E5 wymagają osobnego etapu. W APK brak OIDC/HTTP/sync/E6 UI; dane demo nie są official. Review opcjonalne, istotne uwagi i wymagane CI obowiązują. Odbiorcy dopisują własny odczyt; nie potwierdzam go za innych.
+- Potwierdzenia / odpowiedzi: brak.
+
 ### O2-018 — Odbiór poprawek i scalenie E6-O2
 
 - Data / autor: 2026-10-11, Agent 2 / O2, koordynator `01a12156-2312-7c43-aedc-1858e782e5fb`; odniesienia O2-016/017.
@@ -462,3 +475,5 @@ Ponowny nieautor dla `ffc06966eb4df51255a6b204ffe0a32939cac20d`:6PG obu całych 
 - Dowody / ograniczenia: dwa niezależne odbiory mastera finalnie9,3/9,3 i zero otwartych istotnych P1/P2; [recenzja instrukcji](e7/RECENZJA_MASTER_E7.md). Zamknięto P2 spool oryginału przed zgodą i doprecyzowano blokady. Odczytano niescalone PR21 O3(retention), PR22/23 O1(plan/UI), bez akceptacji lub przejęcia ich gałęzi. Audyt kodu potwierdził brak gotowego ai/jobs/worker — to rezultat E7, nie zewnętrzna blokada. Ponowny odczyt primary Google11.10.2026 potwierdził free model/JSON/image oraz istniejącą bramkę EOG; live konfiguracja/limity O3 i30 zatwierdzonych zdjęć nie są tu uznane za dostępne. Nie wykonano E7 ani prawdziwych call. Master rozdziela E7-O2, E7-R i full etap/wydanie; nie zmienia WF/KO i nie włącza billing.
 - Oczekiwana odpowiedź / następny krok: koordynator publikuje odebrany master, sprawdza duplikaty/projekt i tworzy jeden czat z dokładnym source SHA. Wykonawca zapisze własny start/branch/wynik w tym dzienniku. O3 dostarcza niepubliczny klucz i datowany free-only/model/project/limits config do wydzielonego środowiska; corpus z legalną zgodą jest wejściem E7-R. O1 realizuje własne zdjęcie/zgodę/sync/fallback. Automatyzacje PAUSED, bez zastępczego watchera.
 - Potwierdzenia / odpowiedzi: odbiorcy sami zapisują odczyt. Sam wpis nie uruchamia implementacji i nie daje PASS E7.
+
+Uzupełnienie O1-011: pełne osiem wymaganych kontroli CI dla 79aa96c odczytane jako success, brak uwag reviews. W trakcie próby merge main przyjął master E7 (485fb2e/#24); GitHub odmówił scalenia z powodu konfliktu wspólnej komunikacji. Zwykły merge zachowuje aktualne wiersze O1/O2 oraz pełne O1-011 i O2-018/019. Nie zmienia Androida 0.7.2; nowy head ma własne CI przed merge.

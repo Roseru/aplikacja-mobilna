@@ -1,6 +1,8 @@
 # Android — Racje i kalorie
 
-Wersja `0.7.1` dodaje przygotowanie bootstrapu E3 oraz niezmienne wersje lokalnych celów. Rejestr właścicieli i ochrona zapisu pozostają z 0.6; Room 6 zachowuje dotychczasowe wartości i kolejkę. Ekrany nadal działają jako gość bez konta i internetu, z Postępami 7/30/90 dni. Logowanie i HTTP nie są jeszcze podłączone.
+Wersja `0.7.2` usprawnia przewijanie wyboru produktów na mniejszym ekranie i dodaje akcję klawiatury „Gotowe” bez niejawnego zapisu. Przygotowanie bootstrapu E3 i niezmienne wersje lokalnych celów pozostają z 0.7.1. Rejestr właścicieli i ochrona zapisu pozostają z 0.6; Room 6 zachowuje dotychczasowe wartości i kolejkę. Ekrany nadal działają jako gość bez konta i internetu, z Postępami 7/30/90 dni. Logowanie i HTTP nie są jeszcze podłączone.
+
+[Raport 0.7.2 i scenariusze manualne](RAPORT_0_7_2.md) opisują dokładny zakres i odbiór.
 
 ## Co zawiera
 

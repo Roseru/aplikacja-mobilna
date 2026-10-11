@@ -31,8 +31,11 @@ class DiaryFlowTest {
         }
         compose.onNodeWithText("Dodaj posiłek").performClick()
         compose.onNodeWithTag("product-search").performTextInput("banan")
+        compose.onNodeWithTag("food-content").performScrollToNode(hasTestTag("product-basic-banana"))
         compose.onNodeWithTag("product-basic-banana").performClick()
         compose.onNodeWithTag("portion-grams").performTextReplacement("120,5")
+        finishQuantityInput("portion-grams", "confirm-food")
+        compose.onNodeWithTag("confirm-food").assertIsDisplayed()
         compose.onNodeWithTag("confirm-food").performClick()
         val expected = (baseline + 89 * 1.205).roundToInt().toString()
         compose.waitUntil(10_000) { compose.onAllNodes(hasTestTag("daily-kcal") and hasText(expected)).fetchSemanticsNodes().isNotEmpty() }
@@ -59,9 +62,12 @@ class DiaryFlowTest {
         compose.onNodeWithTag("ration-content").performScrollToNode(hasTestTag("ration-check-demo-a-crackers"))
         compose.onNodeWithTag("ration-check-demo-a-crackers").performClick()
         compose.onNodeWithTag("ration-grams-demo-a-crackers").performTextReplacement("22,5")
+        compose.onNodeWithTag("ration-grams-demo-a-crackers").assertTextContains("22,5")
+        compose.waitForIdle()
         compose.activityRule.scenario.recreate()
         compose.waitUntil(10_000) { compose.onAllNodesWithTag("ration-grams-demo-a-crackers").fetchSemanticsNodes().isNotEmpty() }
         compose.onNodeWithTag("ration-grams-demo-a-crackers").assertTextContains("22,5")
+        finishQuantityInput("ration-grams-demo-a-crackers", "confirm-ration")
         compose.onNodeWithTag("confirm-ration").assertIsEnabled().performClick()
         val expected = (baseline + 222.0).roundToInt().toString()
         compose.waitUntil(10_000) { compose.onAllNodes(hasTestTag("daily-kcal") and hasText(expected)).fetchSemanticsNodes().isNotEmpty() }
@@ -84,10 +90,12 @@ class DiaryFlowTest {
         compose.onNodeWithTag("custom-source").performScrollTo().performTextInput("Etykieta opakowania")
         compose.onNodeWithTag("custom-kcal").performScrollTo().performTextInput("100")
         compose.onNodeWithTag("custom-grams").performScrollTo().performTextReplacement("150,5")
+        finishQuantityInput("custom-grams", "confirm-custom-food")
         compose.onNodeWithTag("confirm-custom-food").assertIsEnabled().performClick()
         val expected = (baseline + 150.5).roundToInt().toString()
         compose.waitUntil(10_000) { compose.onAllNodes(hasTestTag("daily-kcal") and hasText(expected)).fetchSemanticsNodes().isNotEmpty() }
-        compose.onNodeWithTag("day-complete").performScrollTo()
+        compose.onNodeWithTag("diary-content").performScrollToNode(hasTestTag("day-complete"))
+        compose.onNodeWithTag("day-complete").assertIsDisplayed().assertIsEnabled()
         compose.onNodeWithTag("day-complete").performClick()
         compose.waitUntil(10_000) { compose.onAllNodesWithText("Dzień kompletny").fetchSemanticsNodes().isNotEmpty() }
         compose.activityRule.scenario.recreate()
@@ -145,14 +153,18 @@ class DiaryFlowTest {
         val previousIds = runBlocking { app.database.dao().day(DiaryRepository.GUEST, LocalDate.now().toString()).first().map { it.meal.id }.toSet() }
         compose.onNodeWithText("Dodaj posiłek").performClick()
         compose.onNodeWithTag("open-rations").performClick()
-        compose.onNodeWithTag("ration-${ration.ration.id}").performScrollTo().performClick()
+        compose.onNodeWithTag("ration-content").performScrollToNode(hasTestTag("ration-${ration.ration.id}"))
+        compose.onNodeWithTag("ration-${ration.ration.id}").assertIsDisplayed().performClick()
         compose.onNodeWithTag("confirm-ration").assertIsNotEnabled()
         compose.onNodeWithTag("ration-content").performScrollToNode(hasTestTag("ration-check-${part.id}"))
         compose.onNodeWithTag("ration-check-${part.id}").assertIsOff().performClick()
         compose.onNodeWithTag("ration-grams-${part.id}").performTextReplacement("12,123456789123")
+        compose.onNodeWithTag("ration-grams-${part.id}").assertTextContains("12,123456789123")
+        compose.waitForIdle()
         compose.activityRule.scenario.recreate()
         compose.waitUntil(10_000) { compose.onAllNodesWithTag("ration-grams-${part.id}").fetchSemanticsNodes().isNotEmpty() }
         compose.onNodeWithTag("ration-grams-${part.id}").assertTextContains("12,123456789123")
+        finishQuantityInput("ration-grams-${part.id}", "confirm-ration")
         compose.onNodeWithTag("confirm-ration").assertIsEnabled().performClick()
         compose.waitUntil(10_000) { runBlocking { app.database.dao().day(DiaryRepository.GUEST, LocalDate.now().toString()).first().any { it.meal.id !in previousIds } } }
         val meal = runBlocking { app.database.dao().day(DiaryRepository.GUEST, LocalDate.now().toString()).first().single { it.meal.id !in previousIds } }
@@ -160,11 +172,45 @@ class DiaryFlowTest {
         compose.onNodeWithTag("diary-content").performScrollToNode(hasContentDescription("Popraw ${product.name}"))
         compose.onNodeWithContentDescription("Popraw ${product.name}").performClick()
         compose.onNodeWithTag("edit-amount").assertTextContains("12,123456789123").performTextReplacement("150")
+        finishQuantityInput("edit-amount", "confirm-edit-item")
         compose.onNodeWithText("131 kcal").assertIsDisplayed()
-        compose.onNodeWithText("Zapisz").performClick()
+        compose.onNodeWithTag("confirm-edit-item").performClick()
+        compose.onNodeWithTag("edit-amount").assertDoesNotExist()
         compose.waitUntil(10_000) { runBlocking { app.database.dao().meal(meal.meal.id, DiaryRepository.GUEST)!!.items.single().amountText == "150" } }
         compose.activityRule.scenario.recreate()
-        compose.waitUntil(10_000) { compose.onAllNodesWithTag("daily-kcal").fetchSemanticsNodes().isNotEmpty() }
+        compose.waitUntil(10_000) { compose.onAllNodesWithTag("diary-content").fetchSemanticsNodes().isNotEmpty() }
+        compose.onNodeWithTag("diary-content").performScrollToNode(hasTestTag("daily-kcal"))
+        compose.onNodeWithTag("daily-kcal").assertIsDisplayed()
         assertEquals("130.5", runBlocking { app.database.dao().meal(meal.meal.id, DiaryRepository.GUEST)!!.items.single().consumed().asExact().energy.canonical })
+    }
+
+    @Test fun switchProductWhileEditingPortionWithoutSaving() {
+        compose.waitUntil(15_000) { compose.onAllNodesWithTag("daily-kcal").fetchSemanticsNodes().isNotEmpty() }
+        val app = compose.activity.application as CalorieApplication
+        val previousIds = runBlocking { app.database.dao().day(DiaryRepository.GUEST, LocalDate.now().toString()).first().map { it.meal.id }.toSet() }
+        compose.onNodeWithText("Dodaj posiłek").performClick()
+        compose.onNodeWithTag("food-content").performScrollToNode(hasTestTag("product-basic-banana"))
+        compose.onNodeWithTag("product-basic-banana").assertIsDisplayed().performClick()
+        compose.onNodeWithTag("portion-grams").performTextReplacement("120,5")
+        // The list, including its header, must remain scrollable with the editor and IME.
+        compose.onNodeWithTag("food-content").performScrollToNode(hasTestTag("product-basic-apple"))
+        compose.onNodeWithTag("product-basic-apple").assertIsDisplayed().performClick()
+        compose.onNodeWithTag("portion-grams").assertTextContains("180")
+        compose.onNodeWithTag("portion-grams").performTextReplacement("80,125")
+        finishQuantityInput("portion-grams", "confirm-food")
+        compose.onNodeWithTag("portion-grams").assertTextContains("80,125")
+        compose.onNodeWithTag("confirm-food").assertIsDisplayed().assertIsEnabled()
+        // Done closes the keyboard; it must never silently add a meal.
+        assertEquals(previousIds, runBlocking { app.database.dao().day(DiaryRepository.GUEST, LocalDate.now().toString()).first().map { it.meal.id }.toSet() })
+    }
+
+    private fun finishQuantityInput(tag: String, buttonTag: String) {
+        compose.onNodeWithTag(tag).performClick().performImeAction()
+        compose.onNodeWithTag(tag).assertIsNotFocused()
+        compose.waitUntil(5_000) {
+            ViewCompat.getRootWindowInsets(compose.activity.window.decorView)?.isVisible(WindowInsetsCompat.Type.ime()) != true
+        }
+        compose.waitForIdle()
+        compose.onNodeWithTag(buttonTag).assertIsDisplayed().assertIsEnabled()
     }
 }
