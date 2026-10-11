@@ -2,6 +2,12 @@
 
 Wersja V1, 11 października 2026 r. Instrukcja wykonawcza koordynatora O2. Pełny tekst przekazania zachowano poniżej; stan startowy i wskazane SHA są punktami historycznymi. Bieżące wyniki, zlecenia i warunki wznowienia zapisujemy wyłącznie w [komunikacji agentów](KOMUNIKACJA_AGENTOW.md), raportach etapów oraz powiązanych PR/czatach. Ta instrukcja nie stanowi dowodu odbioru E4 lub następnego etapu.
 
+## Zatwierdzony podział E8 — 11 października 2026 r.
+
+Bieżące ludzkie potwierdzenie „okej przyjmij taki podział e8” zatwierdza [plan trzech czatów wykonawczych](PLAN_PRAC.md#podetapy-e8-i-czaty-wykonawcze): E8.1+E8.2 razem, E8.3 osobno, E8.4 osobno. E8.5 odbiera się w tym istniejącym czacie koordynatora; poprawki trafiają do właściwych wykonawców. Każda grupa ma własny master/branch/PR i niezależny odbiór przed zależną pracą. Pozostaje jedna implementacja O2 naraz; start E8 po odbiorze/scaleniu E7-O2, bez uzależniania niezależnej motywacji od E7-R/live. Nie uruchamiaj niekompletnego Nemesis przed odbiorem projekcji/finalizacji. Wszystkie WF/KO oraz bramki zespołu zachowane.
+
+To zapis planu, nie bieżące zlecenie tworzenia czatów E8. Automatyzacje nadal PAUSED. Szczegółowe mastery i ich bramki koordynator przygotuje z aktualnego main przy przekazaniu danego zakresu.
+
 ## Tryb ręczny i E7 — aktualne polecenie z 11 października 2026 r.
 
 Użytkownik później wydał w źródłowym czacie polecenie **„wyłącz automatyzacje”**. Oba harmonogramy są PAUSED; starsze zdania o ACTIVE/wznowieniu są historyczne i nie upoważniają do ich włączenia. Bieżące bezpośrednie zlecenie w czacie koordynatora: **„scal do main, napisz master prompt 7 i w nowym czacie niech się on wykona na gpt 6.1 xhigh”**. Jest upoważnieniem do merge odebranego PR20, publikacji/odbioru mastera E7 i jednego nowego wykonawcy, bez ponownego uruchamiania automatyzacji.
