@@ -31,8 +31,8 @@ jobs:
         with:
           version: '0.9.5'
       - run: uv sync --project backend --locked
-      - run: uv run --project backend --locked ruff check --config backend/pyproject.toml backend tools/offline_catalog tools/sync_client infra/local infra/integration tools/android_ci.py tools/tests/test_android_ci.py
-      - run: uv run --project backend --locked ruff format --check --config backend/pyproject.toml backend tools/offline_catalog tools/sync_client infra/local infra/integration tools/android_ci.py tools/tests/test_android_ci.py
+      - run: uv run --project backend --locked ruff check --config backend/pyproject.toml backend tools/ai_reference tools/offline_catalog tools/sync_client infra/local infra/integration tools/android_ci.py tools/tests/test_android_ci.py
+      - run: uv run --project backend --locked ruff format --check --config backend/pyproject.toml backend tools/ai_reference tools/offline_catalog tools/sync_client infra/local infra/integration tools/android_ci.py tools/tests/test_android_ci.py
       - run: uv run --project backend --locked python -m pytest backend/tests/unit
       - run: uv run --project backend --locked python -m pytest infra/integration/tests --tb=short
       - run: uv build backend

@@ -125,6 +125,11 @@ def test_generated_api_only_claims_implemented_operations(client):
         "/api/v1/moderation/reports/{id}",
         "/api/v1/moderation/products/{id}",
         "/api/v1/moderation/products/{id}/merge",
+        "/api/v1/ai/capabilities",
+        "/api/v1/ai/food-analyses",
+        "/api/v1/ai/food-analyses/{analysis_id}",
+        "/api/v1/ai/food-analyses/{analysis_id}/confirm",
+        "/api/v1/ai/food-analyses/{analysis_id}/cancel",
     }
     assert schema["paths"]["/api/v1/products"]["get"]["security"] == [{"bearerAuth": []}]
     assert "503" in schema["paths"]["/health/ready"]["get"]["responses"]
