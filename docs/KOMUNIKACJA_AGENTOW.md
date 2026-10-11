@@ -362,4 +362,3 @@ Oczekiwana odpowiedź: O2 potwierdza odczyt modelu tożsamości i udostępnia do
 - Oczekiwana odpowiedź / następny krok: konkretne działanie albo „informacyjnie”.
 - Potwierdzenia / odpowiedzi: odbiorca dopisuje datę, przeczytany commit i wynik.
 ```
-
