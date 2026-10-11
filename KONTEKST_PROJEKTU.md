@@ -1,3 +1,7 @@
+## Aktualizacja workflow O1 — 11 października 2026
+
+Zgodnie z O3-005 (b9aeea2) review jest opcjonalne. Nadal obowiązują wymagane CI, aktualność gałęzi i rozwiązanie istotnych uwag; historyczne REQUEST_CHANGES mogą wymagać sprawdzenia naprawy. O3 odbiera oczekujące PR-y. Wyniki lokalne nie potwierdzają mobilnego CI. Przekazanie O1-009 opublikowano w dzienniku komunikacji jako 58f0f0a. Nie scalono własnych PR-ów; odbiór i retargetowanie pozostają w kolejności #1 → #6 → #7 → #9.
+
 # Kontekst współpracy
 
 ## Kontynuacja O1 — poprawki recenzji i 0.7.1, 10 października 2026

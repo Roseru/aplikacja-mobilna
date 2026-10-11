@@ -23,3 +23,7 @@ Wersja nadal 0.5 / Room 4, bez migracji. Wymagany ponowny review O2 i CI Android
 ## PR #7 — ponowny odbiór zależności
 
 Połączono poprawki #1 i #6 z izolacją kont, zachowując odczyty ViewModel według właściciela. Cały build/test/lint/device PASS: 57 JVM i 44/44 urządzenia API 35, zero błędów/pominięć; lint 0 błędów / 26 ostrzeżeń / 1 informacja. Wynik obejmuje także osiem prób właścicieli i migrację rzeczywistego Room 4→5. Room nadal 5 / Android 0.6; nie włączono bootstrapu ani logowania. To odbiór autora po zmianie zależności, przed wymaganym review i przyszłym retargetowaniem na main.
+
+## Aktualizacja zasad odbioru — 11 października 2026
+
+Zgodnie z O3-005 (b9aeea2) review jest opcjonalne. Nadal obowiązują wymagane CI, aktualność gałęzi i rozwiązanie istotnych uwag; historyczne REQUEST_CHANGES mogą wymagać sprawdzenia naprawy. O3 odbiera oczekujące PR-y. Wyniki lokalne nie potwierdzają mobilnego CI. Ten zapis zastępuje wcześniejsze wymaganie obowiązkowej recenzji w powyższych historycznych odbiorach.
