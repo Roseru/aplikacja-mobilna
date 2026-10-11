@@ -1,5 +1,29 @@
 # Raport backendu analizy zdjęć E7 - osoba 2
 
+## Integracja odebranego E7 z Androidem 0.8.1 na main
+
+11 października 2026. Po [odbiorze koordynatora](https://github.com/Roseru/aplikacja-mobilna/pull/28#issuecomment-6113608316)
+head `4a3b8fefbc835c277bc945a75b47de17ec95f4bb` / base `75c4414` main przyjął
+O1 / PR26 jako `c59e6d68d18bbafd157a9d1383aae8d36fa1b893`. Istniejący PR28
+zintegrowano zwykłym merge, bez force-push i bez zmiany zaakceptowanego parsera.
+
+Jedynym konfliktem był dziennik: dwa fragmenty zachowują aktualny wiersz O2,
+wiersz O1 z main i pełne O1-013/O1-014 oraz O2-020–023. Kontrola porównała
+każdy dotychczasowy wpis obu rodziców i potwierdziła identyczną treść.
+Uzupełnienie jest odpowiedzią do O2-023, bez nowego numeru wpisu.
+
+`git diff 4a3b8fe -- backend contracts infra tools .github` jest pusty: runtime,
+migracje, kontrakty, testy i pipeline backendu pozostają identyczne z odebranym
+źródłem. Cały Android oraz wspólne README/kontekst/plan są identyczne z nowym
+main. Nie przejęto niescalonego PR31 lub PR30; zachowano pracę O1/O2/O3.
+
+Wcześniejsze [CI38172577236](https://github.com/Roseru/aplikacja-mobilna/actions/runs/38172577236)
+miało osiem success na4a/base75c:1258 unit,949 PG,28 Keycloak,21 infra,67 JVM,
+56 device PASS. To dowód wcześniejszej bazy. Integracja otrzymuje własne osiem
+CI na nowym exact head/base; aktualny wynik i logi są publikowane w opisie
+[PR28](https://github.com/Roseru/aplikacja-mobilna/pull/28). Wykonawca nie scala PR
+i nie rozpoczyna E8/E9; E7-R oraz pełne zewnętrzne odbiory pozostają osobne.
+
 ## Ponowny odbiór — poprawka P2 metadanych REST
 
 11 października 2026. Koordynator na `9b2fb7e` / base `75c4414` odtworzył jeden

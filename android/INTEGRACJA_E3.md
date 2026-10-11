@@ -1,5 +1,7 @@
 # Przekazanie mobilne E3 — Agent 1 / O1
 
+Aktualizacja 0.8.1: klient sesji, odbudowa ekranów i trwały bootstrap HTTP są zaimplementowane na `codex/android-sesja`; [przekazanie HTTP](BOOTSTRAP_HTTP.md), [sesja](SESJA_OIDC.md) i [raport](RAPORT_0_8_1.md) podają konfigurację, próby i ograniczenia. Domyślne APK pozostaje bez skonfigurowanego issuer/adresu API. Prawdziwy odbiór APK/HTTPS/Keycloak pozostaje otwarty; bootstrap nie wysyła dziennika ani nie importuje gościa. Poniższy punkt odniesienia opisuje wcześniejszy fundament lokalnego protokołu; jego reguły danych pozostają.
+
 Punkt odniesienia: Android 0.7.0 / Room 6, gałąź `codex/android-bootstrap-cele`, zależna od `ad8c0a6` / [PR #7](https://github.com/Roseru/aplikacja-mobilna/pull/7). Przeczytano [plan O2, PR #8](https://github.com/Roseru/aplikacja-mobilna/pull/8), commit `1908c9b`; potwierdzenie i parametry wysłano [w PR #5](https://github.com/Roseru/aplikacja-mobilna/pull/5#issuecomment-6099166765) na polecenie użytkownika. Ten etap przygotowuje lokalny protokół, nie wdraża OIDC/HTTP.
 
 ## Parametry klienta

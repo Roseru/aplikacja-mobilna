@@ -6,6 +6,8 @@ import androidx.core.view.WindowInsetsCompat
 import androidx.compose.ui.test.*
 import androidx.compose.ui.test.junit4.createAndroidComposeRule
 import androidx.compose.ui.semantics.SemanticsActions
+import androidx.compose.ui.semantics.SemanticsProperties
+import androidx.compose.ui.text.AnnotatedString
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.runBlocking
@@ -21,6 +23,40 @@ import kotlin.math.roundToInt
 @RunWith(AndroidJUnit4::class)
 class DiaryFlowTest {
     @get:Rule val compose = createAndroidComposeRule<MainActivity>()
+
+    @Test fun accountScreenKeepsGuestOfflineAndRestoresNavigation() {
+        compose.waitUntil(15_000) { compose.onAllNodesWithTag("daily-kcal").fetchSemanticsNodes().isNotEmpty() }
+        compose.onNodeWithTag("open-profile").performClick()
+        compose.onNodeWithTag("open-account").performClick()
+        compose.onNodeWithTag("session-owner").assertTextEquals("Gość poligonowy")
+        compose.onNodeWithTag("session-login").assertIsNotEnabled()
+        compose.activityRule.scenario.recreate()
+        compose.waitUntil(10_000) { compose.onAllNodesWithTag("session-owner").fetchSemanticsNodes().isNotEmpty() }
+        compose.onNodeWithTag("session-owner").assertTextEquals("Gość poligonowy")
+        compose.onNodeWithText("Wróć do profilu").performClick()
+        compose.onNodeWithTag("profile-content").assertIsDisplayed()
+    }
+
+    @Test fun changingLeaseDiscardsPrivateEditorAndPreservesDiary() {
+        compose.waitUntil(15_000) { compose.onAllNodesWithTag("daily-kcal").fetchSemanticsNodes().isNotEmpty() }
+        val app = compose.activity.application as CalorieApplication
+        val before = runBlocking { app.database.dao().day(DiaryRepository.GUEST, LocalDate.now().toString()).first() }
+        val oldLease = app.sessions.view.value.binding!!.lease
+        compose.onNodeWithText("Dodaj posiłek").performClick()
+        compose.onNodeWithTag("open-custom-food").performClick()
+        compose.onNodeWithTag("custom-name").performScrollTo().performTextInput("Niezapisany prywatny formularz")
+        runBlocking { app.sessions.logout() }
+        compose.waitUntil(10_000) { compose.onAllNodesWithTag("daily-kcal").fetchSemanticsNodes().isNotEmpty() }
+        assertNotEquals(oldLease, app.sessions.view.value.binding!!.lease)
+        compose.onAllNodesWithText("Niezapisany prywatny formularz").assertCountEquals(0)
+        compose.onNodeWithText("Dodaj posiłek").performClick()
+        compose.onNodeWithTag("open-custom-food").performClick()
+        compose.onNodeWithTag("custom-name").performScrollTo().assert(SemanticsMatcher.expectValue(SemanticsProperties.EditableText, AnnotatedString("")))
+        compose.activityRule.scenario.recreate()
+        compose.waitUntil(10_000) { compose.onAllNodesWithTag("custom-name").fetchSemanticsNodes().isNotEmpty() }
+        compose.onNodeWithTag("custom-name").performScrollTo().assert(SemanticsMatcher.expectValue(SemanticsProperties.EditableText, AnnotatedString("")))
+        assertEquals(before, runBlocking { app.database.dao().day(DiaryRepository.GUEST, LocalDate.now().toString()).first() })
+    }
 
     @Test fun addFoodThroughUiAndRecreateActivity() {
         compose.waitUntil(15_000) { compose.onAllNodesWithTag("daily-kcal").fetchSemanticsNodes().isNotEmpty() }

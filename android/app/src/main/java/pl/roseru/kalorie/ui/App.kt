@@ -15,8 +15,9 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.navigation.compose.*
 import pl.roseru.kalorie.DiaryEvent
 import pl.roseru.kalorie.DiaryViewModel
+import pl.roseru.kalorie.session.*
 
-@Composable fun CalorieApp(model: DiaryViewModel) {
+@Composable fun CalorieApp(model: DiaryViewModel, session: SessionView, actions: SessionActions) {
     val ready by model.ready.collectAsStateWithLifecycle()
     val error by model.startupError.collectAsStateWithLifecycle()
     val nav = rememberNavController()
@@ -59,12 +60,13 @@ import pl.roseru.kalorie.DiaryViewModel
             composable("rations") { RationScreen(model, onBack = { nav.popBackStack() }) }
             composable("custom") { CustomFoodScreen(model, onBack = { nav.popBackStack() }) }
             composable("settings") { SettingsScreen(model) }
-            composable("profile") { ProfileScreen(model) }
+            composable("profile") { ProfileScreen(model, onAccount = { nav.navigate("account") { launchSingleTop = true } }) }
+            composable("account") { SessionScreen(session, actions) { nav.popBackStack() } }
             composable("analytics") { AnalyticsScreen(model, onDay = { date ->
                 model.selectDate(date)
                 nav.navigate("diary") { popUpTo("diary"); launchSingleTop = true }
             }) }
         }
     }
-    if (route in listOf("settings", "profile", "analytics")) BackHandler { nav.popBackStack() }
+    if (route in listOf("settings", "profile", "analytics", "account")) BackHandler { nav.popBackStack() }
 }
