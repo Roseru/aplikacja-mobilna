@@ -1,4 +1,4 @@
-"""Walidacja artefaktĂłw E0 bez sieci i bez uruchamiania aplikacji."""
+"""Walidacja artefaktów E0 bez sieci i bez uruchamiania aplikacji."""
 import gzip
 import hashlib
 import json

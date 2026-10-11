@@ -18,6 +18,7 @@ from sqlalchemy import event, text
 from sqlalchemy.exc import IntegrityError, ProgrammingError
 from sqlalchemy.orm import Session
 from test_catalog_delivery import catalog_db, synthetic_official  # noqa: F401
+from test_e5_upgrade import _discard_e8_upgrade_placeholders
 
 from calorie_app.core.errors import DomainError
 from calorie_app.integrations.keycloak import Principal
@@ -463,6 +464,11 @@ def test_upgrade_0007_preserves_entire_graph_published_bytes_and_secure_downgrad
         with engine.connect() as connection:
             for role in ROLES:
                 assert_runtime_acl(connection, role)
+        # This historical E3 roundtrip has not processed or affirmed E8. Discard
+        # only verified untouched upgrade placeholders; all prior source rows,
+        # retained E4 evidence and published bytes remain part of the comparison.
+        with engine.begin() as connection:
+            _discard_e8_upgrade_placeholders(connection)
         migrate("downgrade", "0007_e3_diary")
         assert {k: v for k, v in database_snapshot(engine).items() if k in before} == before
         # Downgrade changes the marker but intentionally retains the security fix.

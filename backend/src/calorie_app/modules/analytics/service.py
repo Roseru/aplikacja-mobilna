@@ -69,7 +69,12 @@ def build_statistics(
                 if as_of is None or day not in day_facts:
                     raise DomainError(503, "service_unavailable")
                 fact = day_facts[day]
-                closed = fact["matures_at"] is not None and as_of >= fact["matures_at"]
+                if fact["matures_at"] is not None:
+                    closed = as_of >= fact["matures_at"]
+                else:
+                    # Empty calendar rows retain E5 display semantics. A known
+                    # DiaryDay without representable maturity stays preliminary.
+                    closed = day < today and day not in (day_time_zones or {})
                 complete, match = fact["effective_complete"], fact["in_goal"]
             else:
                 zone = (day_time_zones or {}).get(day)
@@ -202,6 +207,7 @@ def statistics(session, owner_id, days, *, expected_generation=None):
             weights,
             goals,
             as_of=as_of,
+            day_time_zones=declarations.time_zones,
             day_facts=day_facts,
         ),
     }

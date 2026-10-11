@@ -81,6 +81,12 @@ def test_migration_and_database_readiness(database):
         "ai_attempts",
         "ai_transport_permits",
         "ai_cleanup_intents",
+        "motivation_accounts",
+        "motivation_days",
+        "motivation_badges",
+        "ranking_affirmations",
+        "ranking_sessions",
+        "ranking_cursors",
     }
     migrate("check")
     with TestClient(create_app(Settings(database_url=url), engine=engine)) as client:

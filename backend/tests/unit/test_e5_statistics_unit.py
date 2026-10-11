@@ -270,6 +270,7 @@ def test_runtime_shared_facts_closure_uses_same_source_boundary(matures_at, clos
         {},
         {},
         as_of=datetime(2026, 10, 11, tzinfo=UTC),
+        day_time_zones={day: "UTC"},
         day_facts={day: {"matures_at": matures_at, "effective_complete": False, "in_goal": None}},
     )
     assert result["daily"][0]["closed"] is closed
@@ -282,3 +283,56 @@ def test_runtime_missing_fact_is_error_not_silent_partial_snapshot():
             day, day, {}, {}, {}, {}, as_of=datetime(2026, 10, 11, tzinfo=UTC), day_facts={}
         )
     assert error.value.status == 503
+
+
+def test_missing_diary_calendar_rows_keep_past_closed_without_inventing_data(monkeypatch):
+    import calorie_app.modules.analytics.service as service
+
+    today = date(2026, 10, 11)
+    days = [date.fromordinal(today.toordinal() - offset) for offset in range(6, -1, -1)]
+
+    def forbidden(*args):
+        raise AssertionError("calendar metadata must not recompute SQL eligibility")
+
+    monkeypatch.setattr(service, "evaluate_day", forbidden)
+    result = build_statistics(
+        days[0],
+        today,
+        {},
+        {},
+        {},
+        {},
+        as_of=datetime(2026, 10, 11, 10, tzinfo=UTC),
+        day_time_zones={},
+        day_facts={
+            day: {"matures_at": None, "effective_complete": False, "in_goal": None} for day in days
+        },
+    )
+    assert [row["closed"] for row in result["daily"]] == [True] * 6 + [False]
+    assert result["complete_day_count"] == result["in_goal_day_count"] == 0
+    for row in result["daily"]:
+        assert row["status"] == "no_data" and not row["effective_complete"]
+        assert row["in_goal"] is None and row["preliminary_in_goal"] is None
+        assert all(field["known_sum"] is None for field in row["totals"].values())
+    assert all(
+        average == {"value": None, "day_count": 0} for average in result["averages"].values()
+    )
+
+
+def test_known_diary_without_representable_maturity_does_not_use_calendar_fallback():
+    day = date(2026, 10, 10)
+    result = build_statistics(
+        day,
+        date(2026, 10, 11),
+        {day: False},
+        {},
+        {},
+        {},
+        as_of=datetime(2026, 10, 11, 10, tzinfo=UTC),
+        day_time_zones={day: "UTC"},
+        day_facts={
+            date(2026, 10, 10): {"matures_at": None, "effective_complete": False, "in_goal": None},
+            date(2026, 10, 11): {"matures_at": None, "effective_complete": False, "in_goal": None},
+        },
+    )
+    assert not result["daily"][0]["closed"]
