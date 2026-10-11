@@ -17,7 +17,7 @@ Stan odczytany przez O1, 10 października 2026 r. Każda osoba aktualizuje swój
 
 | Rola | Ostatni znany rezultat | Następny krok / zależność | Źródło |
 |---|---|---|---|
-| O1 — Android, Kotlin, Room | Android 0.7 / Room 6: trwały bootstrap i niezmienne cele, gość offline poza main | Poprawki reviews #1/#6 i odbiór #1 → #6 → #7 → #9; O2 E3/E4, O3 środowisko/CI | [PR #9](https://github.com/Roseru/aplikacja-mobilna/pull/9), commit `ce6972c`; O1-008 |
+| O1 — Android, Kotlin, Room | Android 0.7.1 / Room 6: bootstrap, niezmienne cele i naprawy kompletności/północy; APK offline zachowuje dane | CI/istotne uwagi i odbiór #1 → #6 → #7 → #9; review opcjonalne według O3-005. Potem sesja/E3/E4 i CI O3 | [PR #9](https://github.com/Roseru/aplikacja-mobilna/pull/9), head ff01adc; O1-009 |
 | O2 — Python, PostgreSQL, API | E1 na `main` (`a79b073`); E2 przekazane na gałęzi. Stan E2 pochodzi z odczytu O1, nie z potwierdzenia autora w tym dzienniku | Odbiór i publikacja E2 według workflow; osobna integracja Room/APK po stronie O1 | [Przekazanie E2](https://github.com/Roseru/aplikacja-mobilna/blob/229a2b8/docs/e2/INTEGRACJA_O1.md), commit `229a2b8` |
 | O3 — DevOps, CI/CD, serwer | O3 potwierdził jeden dziennik według schematu O1 (O3-003); usunięcie dawnych plików było zamierzone. Naprawa dokumentów w PR #5 | Potwierdzenie stanu CI Androida, środowiska integracyjnego i dostawy pakietów | [Workflow zespołu](WORKFLOW.md), [CI backendu](https://github.com/Roseru/aplikacja-mobilna/blob/main/.github/workflows/backend.yml) |
 
@@ -148,6 +148,21 @@ Oczekiwana odpowiedź: O2 potwierdza odczyt modelu tożsamości i udostępnia do
 - Przekazanie: właściciel wyłączył obowiązkowe zatwierdzanie PR. Wymagane jest 0 approvals; `require_last_push_approval=false`. Review pozostaje dostępne i opcjonalne. Można scalić własny PR po zaliczeniu kontroli i rozwiązaniu istotnych uwag. Ta decyzja zastępuje wcześniejsze zapisy o obowiązkowej akceptacji innej osoby, także w starszych planach i raportach. Jeden dziennik i pozostały schemat O1 pozostają obowiązujące.
 - Dowody / ograniczenia: O3 potwierdził ustawienia API; nadal wymagane `ci-required`, aktualność gałęzi i PR do `main`. Stare `Request changes` mogą nadal blokować merge i wymagają sprawdzenia poprawki.
 - Oczekiwana odpowiedź / następny krok: informacyjnie; O3 odbiera oczekujące PR-y na polecenie właściciela. Merge nie oznacza wdrożenia ani ukończenia przyszłych etapów.
+
+### O1-009 — Poprawki review i końcowy Android 0.7.1
+
+- Data / autor: 2026-10-11, Agent 1 / O1.
+- Odbiorcy: O2 / O3.
+- Status: DO ODCZYTU.
+- Odniesienie: O1-008, reviews O2 do #1/#6/#7, O3-003/O3-004/O3-005.
+- Potwierdzenie: odpowiedź O2 wysłano najpierw [w PR #5](https://github.com/Roseru/aplikacja-mobilna/pull/5#issuecomment-6099166765); parametry callbacku i granice pozostają aktualne. Przeczytano O3-003/004 na 941b73d i O3-005 na b9aeea2: jeden uproszczony dziennik, zamierzone usunięcie dawnych sekcji, review opcjonalne. Nie przywracam dawnych plików. Odczyt komunikatu O3 o ochronie main nie jest moją niezależną próbą ustawień API.
+- Przekazanie: poprawka #1 jest w jego własnym zakresie — completeDiary wymaga znanej energii każdego składnika. #6 oddziela wynik wstępny dzisiaj od średnich/liczników zamkniętych dni i odświeża odczyt po lokalnej północy/DST bez nowej operacji outbox. Domyślne okno podąża za dzisiaj; wybrane historyczne okno odtwarza się. #7 zachowuje zakresy właścicieli po integracji. #9 łączy to z trwałym bootstrapem oraz niezmiennymi wersjami celów; nadal bez OIDC/HTTP/sync i bez automatycznego przypisania gościa.
+- Źródła: poprawka #1 72a7989, head aa42f0f / [PR #1](https://github.com/Roseru/aplikacja-mobilna/pull/1); poprawka #6 0af142a, wyrównany head 03fbcfe / [PR #6](https://github.com/Roseru/aplikacja-mobilna/pull/6); integracja #7 087bba7, head 49e1bc3 / [PR #7](https://github.com/Roseru/aplikacja-mobilna/pull/7); końcowy kod 0.7.1 830053c, head ff01adc / [PR #9](https://github.com/Roseru/aplikacja-mobilna/pull/9), gałąź codex/android-bootstrap-cele. Bazy wyrównano przez merge, bez force-push; samo wyrównanie nie zmieniło przetestowanego kodu. Opisy PR zaktualizowane.
+- Dowody lokalne: osobne pełne build/test/lint/device — #1 40 JVM / 28 urządzenia, #6 57 / 36, #7 57 / 44, końcowy #9 **65 JVM / 52 urządzenia API 35**, zero failures/errors/skips. Lint końcowy 0 błędów / 26 ostrzeżeń / 1 informacja. Zegar/strefa, północ, DST 23/25 h, ponowne otwarcie bazy, odtworzenie ViewModel/okna i UI, scope właścicieli, migracje 1/2/3/4/5→6 oraz niezmieniony outbox sprawdzone. [Raport końcowy](https://github.com/Roseru/aplikacja-mobilna/blob/830053c/android/RAPORT_0_7_1.md) i [raport napraw](https://github.com/Roseru/aplikacja-mobilna/blob/830053c/android/POPRAWKI_REVIEW.md) opisują także pierwsze niepowodzenia i pełne ponowienia.
+- Artefakt: Android 0.7.1, versionCode 8, Room 6; APK lokalnie poza Git, SHA-256 2e46bd29affce2973bdc5e0c092969b409638b0e39a9127d8d7f0f2f8d4486ff. Aktualizacja 0.7→0.7.1 zachowała wszystkie kolumny 18 tabel oraz dziennik/kolejkę; foreign_key_check pusty, start offline. Poprzednia aktualizacja 0.6→0.7 zachowała stare kolumny 16 tabel.
+- Ograniczenia: to wyniki autora, bez deklaracji mobilnego CI lub rzeczywistego E3/E4. Brak sesji, docelowego adaptera server revisions/Decimal, pełnych kluczy encji z właścicielem i WorkManager. Obecny outbox nie jest wysyłany. Bootstrap nie uwierzytelnia; callback nie ma jeszcze handlera APK.
+- Następny krok: O3 odbiera oczekujące PR-y zgodnie z O3-005, po kontroli CI i istotnych uwag. Review jest opcjonalne; historyczne REQUEST_CHANGES mogą wymagać sprawdzenia naprawy. Kolejność #1 → #6 → #7 → #9; po poprzednim merge retargetowanie następnego na main i ponowny odbiór integracji. O1 sam nie scalał PR-ów. O2 dostarcza E3/E4; O3 środowisko/issuer/API/JWKS, mobilne CI i artefakty; O1 następnie integruje sesję/HTTP. Nie potwierdzam odczytu za adresatów.
+- Potwierdzenia / odpowiedzi: brak.
 
 ## Wzór nowego wpisu
 
