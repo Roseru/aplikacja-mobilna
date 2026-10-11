@@ -20,6 +20,7 @@ import androidx.compose.ui.platform.LocalSoftwareKeyboardController
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardType
+import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import pl.roseru.kalorie.DiaryViewModel
@@ -55,35 +56,46 @@ import java.math.BigDecimal
             }
         }
     ) { padding ->
-        Column(Modifier.fillMaxSize().padding(padding).padding(horizontal = 20.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
-            OutlinedTextField(query, onValueChange = { query = it }, placeholder = { Text("Szukaj produktu lub potrawy") },
+        LazyColumn(Modifier.fillMaxSize().padding(padding).consumeWindowInsets(padding).testTag("food-content"),
+            contentPadding = PaddingValues(horizontal = 20.dp, vertical = 12.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
+            item(key = "search") {
+                OutlinedTextField(query, onValueChange = { query = it }, placeholder = { Text("Szukaj produktu lub potrawy") },
                 leadingIcon = { Icon(Icons.Outlined.Search, null) }, trailingIcon = { if (query.isNotEmpty()) IconButton(onClick = { query = "" }) { Icon(Icons.Outlined.Close, "Wyczyść wyszukiwanie") } },
                 singleLine = true, modifier = Modifier.fillMaxWidth().testTag("product-search"), shape = RoundedCornerShape(14.dp))
-            Row(Modifier.horizontalScroll(rememberScrollState()), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                FilterChip(selected = !recentOnly, onClick = { recentOnly = false }, label = { Text("Produkty") })
-                FilterChip(selected = recentOnly, onClick = { recentOnly = true }, label = { Text("Ostatnie") })
-                FilterChip(selected = false, onClick = { keyboard?.hide(); onRations() }, label = { Text("Racje") }, modifier = Modifier.testTag("open-rations"))
             }
-            TextButton(onClick = { keyboard?.hide(); onCustom() }, modifier = Modifier.testTag("open-custom-food")) {
-                Icon(Icons.Outlined.EditNote, null); Spacer(Modifier.width(8.dp)); Text("Dodaj własny produkt")
-            }
-            Row(horizontalArrangement = Arrangement.spacedBy(8.dp), verticalAlignment = Alignment.CenterVertically) {
-                Icon(Icons.Outlined.Storage, null, tint = MaterialTheme.colorScheme.primary)
-                Text("Baza lokalna dostępna offline", style = MaterialTheme.typography.bodySmall)
-            }
-            Row(Modifier.horizontalScroll(rememberScrollState()), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                MealType.entries.forEach { option ->
-                    FilterChip(selected = type == option, onClick = { mealTypeName = option.name }, label = { Text(option.label) })
+            item(key = "catalog-tabs") {
+                Row(Modifier.horizontalScroll(rememberScrollState()), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                    FilterChip(selected = !recentOnly, onClick = { recentOnly = false }, label = { Text("Produkty") })
+                    FilterChip(selected = recentOnly, onClick = { recentOnly = true }, label = { Text("Ostatnie") })
+                    FilterChip(selected = false, onClick = { keyboard?.hide(); onRations() }, label = { Text("Racje") }, modifier = Modifier.testTag("open-rations"))
                 }
             }
-            SectionTitle(if (recentOnly) "Ostatnio używane" else "Wybierz produkt")
+            item(key = "custom-food") {
+                TextButton(onClick = { keyboard?.hide(); onCustom() }, modifier = Modifier.testTag("open-custom-food")) {
+                    Icon(Icons.Outlined.EditNote, null); Spacer(Modifier.width(8.dp)); Text("Dodaj własny produkt")
+                }
+            }
+            item(key = "offline") {
+                Row(horizontalArrangement = Arrangement.spacedBy(8.dp), verticalAlignment = Alignment.CenterVertically) {
+                    Icon(Icons.Outlined.Storage, null, tint = MaterialTheme.colorScheme.primary)
+                    Text("Baza lokalna dostępna offline", style = MaterialTheme.typography.bodySmall)
+                }
+            }
+            item(key = "meal-types") {
+                Row(Modifier.horizontalScroll(rememberScrollState()), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                    MealType.entries.forEach { option ->
+                        FilterChip(selected = type == option, onClick = { mealTypeName = option.name }, label = { Text(option.label) })
+                    }
+                }
+            }
+            item(key = "results-title") { SectionTitle(if (recentOnly) "Ostatnio używane" else "Wybierz produkt") }
             if (results.isEmpty()) {
-                Text(if (recentOnly && query.isBlank()) "Dodane produkty pojawią się tutaj." else "Brak wyników. Spróbuj innej nazwy.", color = MaterialTheme.colorScheme.onSurfaceVariant)
-            }
-            LazyColumn(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(8.dp), contentPadding = PaddingValues(bottom = 16.dp)) {
-                items(results, key = { it.id }) { product ->
-                    ProductRow(product, selectedId == product.id, enabled = !busy, onSelect = { selectedId = product.id; keyboard?.hide() })
+                item(key = "empty") {
+                    Text(if (recentOnly && query.isBlank()) "Dodane produkty pojawią się tutaj." else "Brak wyników. Spróbuj innej nazwy.", color = MaterialTheme.colorScheme.onSurfaceVariant)
                 }
+            }
+            items(results, key = { "product:${it.id}" }) { product ->
+                ProductRow(product, selectedId == product.id, enabled = !busy, onSelect = { selectedId = product.id; keyboard?.hide() })
             }
         }
     }
@@ -120,7 +132,8 @@ import java.math.BigDecimal
             Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(10.dp)) {
                 OutlinedIconButton(onClick = { grams = ContractDecimal.canonical(((exactAmount ?: BigDecimal.valueOf(product.defaultGrams)) - BigDecimal.TEN).max(BigDecimal.ONE)) }, enabled = !busy) { Icon(Icons.Outlined.Remove, "Zmniejsz o 10 ${product.unit}") }
                 OutlinedTextField(grams, onValueChange = { grams = it }, modifier = Modifier.weight(1f).testTag("portion-grams"), label = { Text("Zjedzona ilość") }, suffix = { Text(product.unit) },
-                    keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal), singleLine = true, isError = amount == null, enabled = !busy)
+                    keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal, imeAction = ImeAction.Done),
+                    keyboardActions = doneKeyboardActions(), singleLine = true, isError = amount == null, enabled = !busy)
                 OutlinedIconButton(onClick = { grams = ContractDecimal.canonical(((exactAmount ?: BigDecimal.valueOf(product.defaultGrams)) + BigDecimal.TEN).min(BigDecimal("10000"))) }, enabled = !busy) { Icon(Icons.Outlined.Add, "Zwiększ o 10 ${product.unit}") }
             }
             if (amount == null) Text("Podaj dodatnią ilość, najwyżej 10 000 ${product.unit}.", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.error)
