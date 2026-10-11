@@ -337,6 +337,17 @@ Oczekiwana odpowiedź: O2 potwierdza odczyt modelu tożsamości i udostępnia do
 - Koordynacja: istniejący heartbeat `koordynacja-e4-do-e10` został wznowiony w czacie źródłowym z korektą bramki; stary watcher E5 pozostaje PAUSED. Jeden koordynator i jeden główny wykonawca O2, bez równoległego zlecenia C. Pauza dopiero przy konkretnej blokadzie następnego niezależnego potrzebnego rezultatu; pełny E5 WAITING_EXTERNAL sam jej nie uzasadnia. Bez zmian starej procedury ochrony Git/review/testów/final-head CI ani bramek wydania.
 - Potwierdzenia / odpowiedzi: koordynator odczytał źródło upoważnienia i aktualny main/komunikację. O1/O3 sami dopisują odczyt/wyniki; E6 nie zlecono przez sam plik.
 
+### O2-014 — Źródła składników ARPOL WZ 1 i WZ 4 WEGE
+
+- Data / autor: 2026-10-11, Agent 2 / O2; numer potwierdzony przez właściciela w tym czacie.
+- Odbiorcy: właściciel, O2 katalog, informacyjnie O1/O3.
+- Status: DO ODCZYTU; materiały opublikowane w PR, CI oczekuje, bez merge i bez uruchomienia C.
+- Źródło: bezpośrednie polecenie właściciela zebrania sprawdzalnych informacji; [PR #18](https://github.com/Roseru/aplikacja-mobilna/pull/18), `codex/docs-racje-zrodla`, commit danych `3d94e3cae11b2969fd1a69076c3be3231d81cfa4`; [zbiór WZ](../Random%20Data/ARPOL_WZ_2026-10-11/README.md), [prompt](../Random%20Data/ARPOL_WZ_2026-10-11/PROMPT_BADAWCZY.md), [kontrola](../Random%20Data/ARPOL_WZ_2026-10-11/VALIDATION.md).
+- Przekazanie: 2 racje, wszystkie 30 wystąpień produktów jadalnych/przypraw i 20 kart wariantów. Nowe publiczne wejście względem E5: smoothie50g, PDF herbaty15g, malinowy/pomarańczowy izotonik5g, pobrany PDF SU-1; czekolady25g są wyłącznie tropami wtórnych kart handlowych. JSON rozdziela skład racji od kandydatów dokładnych produktów. Powiązania smaków/producentów pozostają niepotwierdzone; braki drobnych dodatków null. Zachowano wszystkie istniejące zbiory, główny checkout E4 i wcześniejsze niezatwierdzone pliki.
+- Dowody / ograniczenia: 13 kart HTML i 2 PDF-y HTTP200, 4 nieudane adresy HTTP404 oraz 2 wtórne odczyty web. Własna kontrola JSON/UTF-8/referencji/jednostek/hashów PASS, 42 linki/kotwice PASS, 2 strony PDF obejrzane. E0 PASS:69valid/26invalid/18scenarios,16Decimal/5kompletności/72normalizacje/284linki przed tym wpisem; diff-check PASS. Nie zmieniono wartości niespójnych kJ/kcal/granic kisielu i gruszki; dodano flagę rozbieżności makr/energii izotoników. Zdalne CI finalnego head wymaga osobnego odczytu; nie jest potwierdzone przez lokalne testy.
+- Oczekiwana odpowiedź / następny krok: O2 odczytuje nowe karty i nadal pozyskuje dokument kompletora/etykiety potwierdzające dokładnych producentów, smaki i masy sztuk oraz wyjaśnienia rozbieżności. Potem osobna weryfikacja i official eksport/import. O1/O3 informacyjnie; brak nowego APK/deploy z tego PR. Nie kontaktowano dostawców ani nie zlecano kolejnego etapu/czatu.
+- Potwierdzenia / odpowiedzi: odbiorcy dopisują własny odczyt.
+
 ## Wzór nowego wpisu
 
 ```markdown
@@ -351,3 +362,4 @@ Oczekiwana odpowiedź: O2 potwierdza odczyt modelu tożsamości i udostępnia do
 - Oczekiwana odpowiedź / następny krok: konkretne działanie albo „informacyjnie”.
 - Potwierdzenia / odpowiedzi: odbiorca dopisuje datę, przeczytany commit i wynik.
 ```
+
