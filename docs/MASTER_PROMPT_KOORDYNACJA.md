@@ -1,5 +1,9 @@
 # Master prompt koordynacji etapów E4–E10 - osoba 2
 
+## Bieżące zlecenie całego E8 — 11 października 2026 r.
+
+Właściciel bezpośrednio polecił zrealizować całe E8 według podetapów, tworzyć nowe czaty/mastery, odbierać wyniki, poprawiać błędy i publikować/scalać sprawdzone rezultaty. Dopuścił równoległość, jeśli zależności i właściciele plików na to pozwalają. Obowiązuje [doprecyzowany master koordynacji E8](MASTER_PROMPT_KOORDYNACJA_E8.md); zastępuje wcześniejsze „tylko plan” i jedną implementację tam, gdzie nowsze ludzkie zlecenie pozwala na kontrolowaną równoległość. Trzy grupy/czaty E8.1+2, E8.3, E8.4 i odbiór E8.5 tutaj pozostają. Automatyzacje PAUSED; brak autoryzacji E9/produkcji.
+
 Wersja V1, 11 października 2026 r. Instrukcja wykonawcza koordynatora O2. Pełny tekst przekazania zachowano poniżej; stan startowy i wskazane SHA są punktami historycznymi. Bieżące wyniki, zlecenia i warunki wznowienia zapisujemy wyłącznie w [komunikacji agentów](KOMUNIKACJA_AGENTOW.md), raportach etapów oraz powiązanych PR/czatach. Ta instrukcja nie stanowi dowodu odbioru E4 lub następnego etapu.
 
 ## Zatwierdzony podział E8 — 11 października 2026 r.
