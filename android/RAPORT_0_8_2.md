@@ -30,3 +30,5 @@ Na komputerze O1 nie odnaleziono Docker/uv/lokalnego stanu integration. Rzeczywi
 6. Zmiana epoki: brak podglądu, trwała informacja o potrzebie uzgodnienia, brak wyczyszczenia danych lub kolejki. 503/429: respektowany Retry-After także po restarcie.
 
 Punkty 2–6 opisują wymagany odbiór rzeczywistego APK/API; nie stanowią twierdzenia, że został wykonany.
+
+CI PR31 nie uruchamia się automatycznie przy bazie codex/android-sesja: Project CI ma pull_request.branches=[main] i push.branches=[main]. W API check-runs dla 8f285a3 brak kontroli. Po odbiorze/merge PR26 i retarget PR31 na main trzeba uruchomić oraz odczytać wymagane kontrole nowego head. Nie zmieniano workflow O3 ani bazy PR dla obejścia zależności.
