@@ -203,3 +203,51 @@ def test_header_presence_epoch_or_body_changed_key_conflict(ranking_state):
         assert rejected.status_code == 409
         assert rejected.json()["code"] == "idempotency_key_reused"
     assert state(engine, owners["a"], epoch)["effective"] is True
+
+
+def test_fresh_current_affirmation_before_restore_backfill_is_preserved(ranking_state):
+    engine, _, owners, current_epoch, client = ranking_state
+    participant(engine, current_epoch, "Old", 0, owners["a"], fresh=False)
+    with engine.begin() as connection:
+        connection.execute(
+            text("UPDATE app.motivation_accounts SET sync_epoch=:old WHERE owner_id=:owner"),
+            {"old": uuid4(), "owner": owners["a"]},
+        )
+    key = uuid4()
+    accepted = put(client, key=key, epoch=current_epoch)
+    assert accepted.status_code == 200, accepted.text
+    assert state(engine, owners["a"], current_epoch)["pending_consent_refresh"] is False
+    with engine.begin() as connection:
+        result = connection.scalar(
+            text("SELECT app.e8_process(:owner,256)"), {"owner": owners["a"]}
+        )
+    assert result["backfill_state"] == "ready"
+    assert state(engine, owners["a"], current_epoch)["effective"] is True
+    assert state(engine, owners["a"], current_epoch)["pending_consent_refresh"] is False
+    assert put(client, key=key, epoch=current_epoch).json() == accepted.json()
+    assert state(engine, owners["a"], current_epoch)["effective"] is True
+
+
+def test_duplicate_epoch_headers_are_rejected_atomically(ranking_state):
+    engine, _, owners, epoch, client = ranking_state
+    response = client.put(
+        "/api/v1/me/consents",
+        headers=[
+            ("Authorization", "Bearer a"),
+            ("If-Match", '"1"'),
+            ("Idempotency-Key", str(uuid4())),
+            ("X-Ranking-Consent-Epoch", str(epoch)),
+            ("X-Ranking-Consent-Epoch", str(epoch)),
+        ],
+        json={"ranking": True, "automatic_energy_adjustment": False},
+    )
+    assert response.status_code == 422 and response.headers["cache-control"] == "no-store"
+    with engine.connect() as connection:
+        assert (
+            connection.scalar(
+                text("SELECT revision FROM app.user_consents WHERE owner_id=:owner"),
+                {"owner": owners["a"]},
+            )
+            == 1
+        )
+        assert connection.scalar(text("SELECT count(*) FROM app.ranking_affirmations")) == 0
