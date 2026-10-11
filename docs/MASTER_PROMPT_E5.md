@@ -148,7 +148,7 @@ Commit/push/PR tego zakresu są autoryzowane. Używaj lokalnej tożsamości Agen
 
 PR opisuje końcowy wynik R, zgodność, migracje, faktycznie wykonane testy, bramki C/O1/O3 i następny krok. Załącz PR do czata. Aktualizuj opis po zmianach zakresu. Raport oraz kolejny wpis jedynego docs/KOMUNIKACJA_AGENTOW.md podają wykonawcę/ID czata, branch/head/PR, testy, źródła i konkretne zależności. Nie twórz drugiego dziennika ani potwierdzeń za O1/O3. Nagłówki nowych dokumentów O2 mają końcówkę „- osoba 2”.
 
-Po ostatnim commicie odczytaj wymagane CI i rzeczywiste logi dokładnego final head oraz aktualnej bazy. Jeśli potem dopiszesz commit, sprawdź jego CI ponownie. Powiadom koordynatora o gotowości z jednoznacznym znacznikiem E5_R_READY_FROM_<SHA>_TO_01a12156-2312-7c43-aedc-1858e782e5fb. Przed wiadomością odtwórz stan, aby nie zlecić tego samego wyniku drugi raz.
+Po ostatnim commicie odczytaj wymagane CI i rzeczywiste logi dokładnego final head oraz aktualnej bazy. Jeśli potem dopiszesz commit, sprawdź jego CI ponownie. Powiadom koordynatora o gotowości z jednoznacznym znacznikiem `E5_R_READY_FROM_<SHA>_TO_01a12156-2312-7c43-aedc-1858e782e5fb`. Przed wiadomością odtwórz stan, aby nie zlecić tego samego wyniku drugi raz.
 
 Źródło bezpośredniej autoryzacji człowieka: ostatnia wiadomość w czacie 01a12836-2aed-72f3-83ad-b737ef30377e, local; samodzielnie ją odczytaj przed komunikacją. Koordynator: 01a12156-2312-7c43-aedc-1858e782e5fb. Wykonawca E5: istniejący czat 01a12833-ba8d-7671-9f6a-33db1e532dc2.
 
