@@ -251,7 +251,7 @@ def test_report_resolution_states(status):
 
 
 def test_shared_publish_example_matches_runtime():
-    example = json.loads((ROOT / "contracts/examples/e6-publish.json").read_text("utf-8"))
+    example = json.loads((ROOT / "contracts/examples/e6/e6-publish.json").read_text("utf-8"))
     assert PublishProductRequest.model_validate(example).model_dump(mode="json") == example
 
 
