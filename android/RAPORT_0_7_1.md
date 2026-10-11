@@ -33,3 +33,5 @@ Zachowano równoległe zmiany dokumentacji O3 i aktualny main `e8d1051`, bez for
 Zgodnie z O3-005 (b9aeea2) review jest opcjonalne. Nadal obowiązują wymagane CI, aktualność gałęzi i rozwiązanie istotnych uwag; historyczne REQUEST_CHANGES mogą wymagać sprawdzenia naprawy. O3 odbiera oczekujące PR-y. Wyniki lokalne nie potwierdzają mobilnego CI. Nie scalono własnych PR-ów. Odbiór #1 → #6 → #7 → #9; po scaleniu wcześniejszego retargetujemy kolejny na main i sprawdzamy integrację. Testy powyżej dotyczą gałęzi zależnych przed tym przyszłym odbiorem.
 
 Następny etap O1: potwierdzona sesja i odtwarzanie ViewModel, HTTP/bootstrap oraz chronione odczyty na wdrożonym E3, następnie adapter E4/Decimal/revisions, pełne klucze encji z właścicielem i WorkManager. O2 dostarcza E3/E4; O3 konfigurację środowiska, mobilne CI i artefakty. Obecny outbox nadal nie jest wysyłany. Import gościa wymaga jawnej zgody i trwałego potwierdzenia; nie wykonano go automatycznie.
+
+Aktualizacja odczytu 11 października: #1/#6/#7/#9 zostały scalone przez O3; dalsze kroki i nowe środowisko opisuje [bieżący plan](PLAN_INTEGRACJI.md). Powyższy odbiór autora pozostaje historycznym dowodem 0.7.1.

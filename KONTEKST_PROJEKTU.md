@@ -1,8 +1,12 @@
-## Aktualizacja workflow O1 — 11 października 2026
+# Kontekst współpracy
+
+## Aktualny odczyt O1 — main 73860fa
+
+PR-y #1/#6/#7/#9 są już scalone przez O3. Dostępne są E3/E4/E5-R, CI Androida (#10) i lokalne HTTPS/API/Keycloak (#19). Przeczytano przekazania i opisy otwartych #20/#21. Potwierdzenie O2: https://github.com/Roseru/aplikacja-mobilna/pull/20#issuecomment-6108744684. Bieżąca gałąź dokumentacji: codex/docs-android-integracja-e5; [plan O1](android/PLAN_INTEGRACJI.md). Starsze zapisy o oczekującym retargetowaniu i dostawie środowiska są historyczne. Nowy APK OIDC/HTTP/sync pozostaje do wykonania; obecne testy 65/52 dotyczą 0.7.1. Przekazanie O1-010 w jednym dzienniku.
+
+## Historyczny zapis przekazania O1-009 — zastąpiony stanem powyżej
 
 Zgodnie z O3-005 (b9aeea2) review jest opcjonalne. Nadal obowiązują wymagane CI, aktualność gałęzi i rozwiązanie istotnych uwag; historyczne REQUEST_CHANGES mogą wymagać sprawdzenia naprawy. O3 odbiera oczekujące PR-y. Wyniki lokalne nie potwierdzają mobilnego CI. Przekazanie O1-009 opublikowano w dzienniku komunikacji jako 58f0f0a. Nie scalono własnych PR-ów; odbiór i retargetowanie pozostają w kolejności #1 → #6 → #7 → #9.
-
-# Kontekst współpracy
 
 ## Kontynuacja O1 — poprawki recenzji i 0.7.1, 10 października 2026
 

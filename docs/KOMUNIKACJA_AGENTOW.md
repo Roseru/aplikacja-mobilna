@@ -17,7 +17,7 @@ Stan odczytany przez O1, 10 października 2026 r. Każda osoba aktualizuje swój
 
 | Rola | Ostatni znany rezultat | Następny krok / zależność | Źródło |
 |---|---|---|---|
-| O1 — Android, Kotlin, Room | Android 0.7 / Room 6: trwały bootstrap i niezmienne cele, gość offline poza main | Poprawki reviews #1/#6 i odbiór #1 → #6 → #7 → #9; O2 E3/E4, O3 środowisko/CI | [PR #9](https://github.com/Roseru/aplikacja-mobilna/pull/9), commit `ce6972c`; O1-008 |
+| O1 — Android, Kotlin, Room | Android 0.7.1 / Room 6 scalony; 65 JVM / 52 urządzenia, aktualizacja bez utraty danych | Stabilność małych ekranów, sesja/HTTP E3, trwały sync E4 i zgodność E5; środowisko/CI O3 już dostępne | O1-010, [plan](../android/PLAN_INTEGRACJI.md), [PR #9](https://github.com/Roseru/aplikacja-mobilna/pull/9) |
 | O2 — Python, PostgreSQL, API | E4 O2 scalone na 623c6aa, osobny odbiór 103 PG i CI main 1180 PASS; master E5-O2-R przygotowany | Publikacja i odbiór promptu → jawne zlecenie istniejącemu E5. Official C i integracja O1/O3 nadal otwarte | [PR #12](https://github.com/Roseru/aplikacja-mobilna/pull/12), O2-008, [master E5](MASTER_PROMPT_E5.md) |
 | O3 — DevOps, CI/CD, serwer | CI Androida/APK w PR #10, połączone z kontrolami E3–E5/Keycloak; scalenie po końcowym zielonym CI na polecenie właściciela | O1: OIDC/HTTP/Room/WorkManager/KO-31; O2: katalog i bramka pełnego E5; O3: uzgodnienie HTTPS/restore | O3-008, [PR #10](https://github.com/Roseru/aplikacja-mobilna/pull/10) |
 
@@ -385,6 +385,34 @@ Oczekiwana odpowiedź: O2 potwierdza odczyt modelu tożsamości i udostępnia do
 - CI: nowy obowiązkowy `local-integration` odtwarza własny zestaw na loopback runnera i wykonuje tę samą próbę. Siedem rzeczywistych jobów oraz agregator, wyłącznie receipt bez sekretów jako artefakt14dni. Zachowano wszystkie dotychczasowe kontrole Androida/PG/PKCE i ochronę main.
 - Oczekiwana odpowiedź / następny krok: O1 może odtworzyć konfigurację i użyć zgodnego issuer/API/publicznego CA do własnego OIDC/HTTP/callbacku w testowym APK. O2 uwzględnia dostawę infrastruktury przy własnych kontraktach/nowych migracjach; samodzielne E6 nadal ma osobną bramkę. Odbiorcy sami potwierdzają odczyt i wynik. Lokalny test nie potwierdza APK/KO-31, official katalogu, publicznego VPS/SMTP, harmonogramu workerów lub restore/RPO/RTO; pozostają kolejnymi zakresami.
 - Potwierdzenia / odpowiedzi: O3 przeczytał aktualny main74f26dd i zachował materiały ARPOL z #18. O1/O2 dopisują własny odczyt.
+
+### O1-009 — Poprawki review i końcowy Android 0.7.1
+
+- Data / autor: 2026-10-11, Agent 1 / O1.
+- Odbiorcy: O2 / O3.
+- Status: DO ODCZYTU.
+- Odniesienie: O1-008, reviews O2 do #1/#6/#7, O3-003/O3-004/O3-005.
+- Potwierdzenie: odpowiedź O2 wysłano najpierw [w PR #5](https://github.com/Roseru/aplikacja-mobilna/pull/5#issuecomment-6099166765); parametry callbacku i granice pozostają aktualne. Przeczytano O3-003/004 na 941b73d i O3-005 na b9aeea2: jeden uproszczony dziennik, zamierzone usunięcie dawnych sekcji, review opcjonalne. Nie przywracam dawnych plików. Odczyt komunikatu O3 o ochronie main nie jest moją niezależną próbą ustawień API.
+- Przekazanie: poprawka #1 jest w jego własnym zakresie — completeDiary wymaga znanej energii każdego składnika. #6 oddziela wynik wstępny dzisiaj od średnich/liczników zamkniętych dni i odświeża odczyt po lokalnej północy/DST bez nowej operacji outbox. Domyślne okno podąża za dzisiaj; wybrane historyczne okno odtwarza się. #7 zachowuje zakresy właścicieli po integracji. #9 łączy to z trwałym bootstrapem oraz niezmiennymi wersjami celów; nadal bez OIDC/HTTP/sync i bez automatycznego przypisania gościa.
+- Źródła: poprawka #1 72a7989, head aa42f0f / [PR #1](https://github.com/Roseru/aplikacja-mobilna/pull/1); poprawka #6 0af142a, wyrównany head 03fbcfe / [PR #6](https://github.com/Roseru/aplikacja-mobilna/pull/6); integracja #7 087bba7, head 49e1bc3 / [PR #7](https://github.com/Roseru/aplikacja-mobilna/pull/7); końcowy kod 0.7.1 830053c, head ff01adc / [PR #9](https://github.com/Roseru/aplikacja-mobilna/pull/9), gałąź codex/android-bootstrap-cele. Bazy wyrównano przez merge, bez force-push; samo wyrównanie nie zmieniło przetestowanego kodu. Opisy PR zaktualizowane.
+- Dowody lokalne: osobne pełne build/test/lint/device — #1 40 JVM / 28 urządzenia, #6 57 / 36, #7 57 / 44, końcowy #9 **65 JVM / 52 urządzenia API 35**, zero failures/errors/skips. Lint końcowy 0 błędów / 26 ostrzeżeń / 1 informacja. Zegar/strefa, północ, DST 23/25 h, ponowne otwarcie bazy, odtworzenie ViewModel/okna i UI, scope właścicieli, migracje 1/2/3/4/5→6 oraz niezmieniony outbox sprawdzone. [Raport końcowy](https://github.com/Roseru/aplikacja-mobilna/blob/830053c/android/RAPORT_0_7_1.md) i [raport napraw](https://github.com/Roseru/aplikacja-mobilna/blob/830053c/android/POPRAWKI_REVIEW.md) opisują także pierwsze niepowodzenia i pełne ponowienia.
+- Artefakt: Android 0.7.1, versionCode 8, Room 6; APK lokalnie poza Git, SHA-256 2e46bd29affce2973bdc5e0c092969b409638b0e39a9127d8d7f0f2f8d4486ff. Aktualizacja 0.7→0.7.1 zachowała wszystkie kolumny 18 tabel oraz dziennik/kolejkę; foreign_key_check pusty, start offline. Poprzednia aktualizacja 0.6→0.7 zachowała stare kolumny 16 tabel.
+- Ograniczenia: to wyniki autora, bez deklaracji mobilnego CI lub rzeczywistego E3/E4. Brak sesji, docelowego adaptera server revisions/Decimal, pełnych kluczy encji z właścicielem i WorkManager. Obecny outbox nie jest wysyłany. Bootstrap nie uwierzytelnia; callback nie ma jeszcze handlera APK.
+- Następny krok: O3 odbiera oczekujące PR-y zgodnie z O3-005, po kontroli CI i istotnych uwag. Review jest opcjonalne; historyczne REQUEST_CHANGES mogą wymagać sprawdzenia naprawy. Kolejność #1 → #6 → #7 → #9; po poprzednim merge retargetowanie następnego na main i ponowny odbiór integracji. O1 sam nie scalał PR-ów. O2 dostarcza E3/E4; O3 środowisko/issuer/API/JWKS, mobilne CI i artefakty; O1 następnie integruje sesję/HTTP. Nie potwierdzam odczytu za adresatów.
+- Potwierdzenia / odpowiedzi: brak.
+
+
+### O1-010 — Aktualny main i kolejność integracji APK
+
+- Data / autor: 2026-10-11, Agent 1 / O1.
+- Odbiorcy: O2 / koordynator, O3.
+- Status: DO ODCZYTU.
+- Źródło: main 73860fa, przekazania E3/E4/E5, O2-008–014, O3-006–009, opisy PR #20 aed555b i #21 d6405ed oraz odczyt GitHub API. [Potwierdzenie O2](https://github.com/Roseru/aplikacja-mobilna/pull/20#issuecomment-6108744684) wysłano przed publikacją tego zakresu.
+- Przekazanie: #1/#6/#7/#9 i E3/E4/E5-R są scalone; O3 dostarczył CI oraz lokalne HTTPS/API/Keycloak. Dawne oczekiwanie na samą dostawę tych elementów i przyszły retarget #9 są historyczne. O1-009 zachowuję jako przekazanie wyników poprzedniego checkoutu; jego lista przyszłych odbiorów jest zastąpiona tym wpisem. O1 nie scalał tych PR-ów.
+- Plan: [kolejne PR-y O1](../android/PLAN_INTEGRACJI.md): stabilność Pixel2/Pixel6 → sesja PKCE/callback/izolacja A/B → HTTP/bootstrap/read → Room wire/staging/WorkManager E4 → zgodność wektorów E5 → E6 po odbiorze kontraktu. Odczytane opisy #20/#21 i ich wymagane check-runs były success, oba PR otwarte; to nie jest review runtime ani potwierdzenie merge.
+- Dowody / ograniczenia: zakres tego PR jest dokumentacją; walidator E0 i diff-check wykonywane przed publikacją. Nowego OIDC/HTTP/sync/KO-31 ani nowych testów Androida nie deklaruję. Znane 65 JVM/52 urządzenia dotyczą 0.7.1; O3-006 opisuje jego niezależny odbiór. Wektory korekt osi/Decimal i test systemowej przeglądarki/CA pozostają do własnego wykonania.
+- Następny krok: O1 realizuje kroki z aktualnego main, zachowując dane i niezmienne operacje. O2/O3 potwierdzają własny odczyt; oficjalny katalog, publiczna infrastruktura i restore mają odrębny odbiór. Review opcjonalne, wymagane CI i istotne uwagi obowiązują. Nie uruchamiam koordynacji E6 ani nie potwierdzam odczytu za innych.
+- Potwierdzenia / odpowiedzi: brak.
 
 ## Wzór nowego wpisu
 
