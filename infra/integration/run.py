@@ -140,6 +140,25 @@ def env_file(state, name, values):
     private_write(state / name, "".join(f"{key}={value}\n" for key, value in values.items()))
 
 
+def safe_compose_error(state, message):
+    """Allow CI diagnostics without publishing generated credentials or token-shaped strings."""
+    values = []
+    for path in state.glob("*.env"):
+        for line in path.read_text().splitlines():
+            key, _, value = line.partition("=")
+            if value and any(word in key for word in ("PASSWORD", "SECRET", "DATABASE_URL")):
+                values.append(value)
+    for path in state.glob("*credentials*.json"):
+        for credential in json.loads(path.read_text()).values():
+            values.append(credential["password"])
+    for value in sorted(values, key=len, reverse=True):
+        message = message.replace(value, "[redacted]")
+    message = re.sub(
+        r"eyJ[A-Za-z0-9_-]+\.[A-Za-z0-9_-]+\.[A-Za-z0-9_-]+", "[redacted-jwt]", message
+    )
+    return message[-4000:]
+
+
 def initialize(state, host="127.0.0.1", port=18443, project="calorie-integration"):
     host = host_address(host)
     if not 1024 <= port <= 65535 or not re.fullmatch(r"[a-z][a-z0-9-]{0,50}", project):
@@ -296,6 +315,8 @@ class Stack:
         with (self.state / "compose.log").open("a", encoding="utf-8") as output:
             output.write(result.stdout + result.stderr)
         if result.returncode:
+            if os.environ.get("CI") == "true":
+                print(safe_compose_error(self.state, result.stderr), file=sys.stderr)
             raise RuntimeError("Compose failed; inspect private state/compose.log")
         return result.stdout
 

@@ -14,7 +14,13 @@ from jwt.algorithms import RSAAlgorithm
 
 from calorie_app.core.config import Settings
 from calorie_app.integrations.keycloak import AuthFailure, OIDCVerifier
-from infra.integration.run import certificates, host_address, initialize, renew_certificate
+from infra.integration.run import (
+    certificates,
+    host_address,
+    initialize,
+    renew_certificate,
+    safe_compose_error,
+)
 
 
 @pytest.fixture
@@ -115,6 +121,27 @@ def test_leaf_renewal_preserves_ca_issuer_and_secrets(tmp_path):
     renew_certificate(state / "tls", "127.0.0.1")
     assert [path.read_bytes() for path in files] == before
     assert (state / "tls/server.pem").read_bytes() != old_leaf
+
+
+def test_ci_diagnostic_masks_credentials_dsn_and_jwt(tmp_path):
+    state = tmp_path / "state"
+    initialize(state)
+    pairs = dict(line.split("=", 1) for line in (state / "api.env").read_text().splitlines())
+    credential = json.loads((state / "credentials.json").read_text())["admin"]["password"]
+    jwt_text = "eyJhbGciOiJSUzI1NiJ9.eyJzdWIiOiJhIn0.signature"
+    text = "\n".join(
+        [
+            pairs["DATABASE_URL"],
+            pairs["CATALOG_PAGE_TOKEN_SECRET"],
+            credential,
+            jwt_text,
+            "image pull failed: 429",
+        ]
+    )
+    sanitized = safe_compose_error(state, text)
+    for secret in (pairs["DATABASE_URL"], pairs["CATALOG_PAGE_TOKEN_SECRET"], credential, jwt_text):
+        assert secret not in sanitized
+    assert "image pull failed: 429" in sanitized
 
 
 @pytest.mark.parametrize("host", ["0.0.0.0", "8.8.8.8", "example.com", "::1"])
