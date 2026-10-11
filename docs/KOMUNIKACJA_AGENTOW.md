@@ -17,7 +17,7 @@ Stan odczytany przez O1, 10 października 2026 r. Każda osoba aktualizuje swój
 
 | Rola | Ostatni znany rezultat | Następny krok / zależność | Źródło |
 |---|---|---|---|
-| O1 — Android, Kotlin, Room | Android 0.7.2 / Room 6 na gałęzi; 65 JVM i 53/53 na każdym z dwóch rozmiarów, update bez utraty danych | Odbiór manualny i CI aktualnego PR; następnie sesja/HTTP E3, trwały sync E4 i zgodność E5 | O1-011, [raport](../android/RAPORT_0_7_2.md), kod `03f8678` |
+| O1 — Android, Kotlin, Room | Android 0.7.3 / Room 6: ikony i cel zależny od klasy; 67 JVM i 56/56 API35, aktualizacja bez utraty danych | Odbiór manualny i wymagane CI; następnie sesja/HTTP E3, trwały sync E4 i zgodność E5 | O1-012, [raport](../android/RAPORT_0_7_3.md), kod `1af9091` |
 | O2 — Python, PostgreSQL, API | E6-O2 odebrane/scalone na492811f, niezależne9,3/9,2 i main CI1643 PASS/osiem success | Publikacja/odbiór mastera E7 i jeden ręcznie zlecony czat GPT6.1/xhigh; E7-R, pełny E5-C oraz O1/O3 nadal otwarte | [PR #20](https://github.com/Roseru/aplikacja-mobilna/pull/20), O2-018/019, [master E7](MASTER_PROMPT_E7.md) |
 | O3 — DevOps, CI/CD, serwer | CI Androida/APK w PR #10, połączone z kontrolami E3–E5/Keycloak; scalenie po końcowym zielonym CI na polecenie właściciela | O1: OIDC/HTTP/Room/WorkManager/KO-31; O2: katalog i bramka pełnego E5; O3: uzgodnienie HTTPS/restore | O3-008, [PR #10](https://github.com/Roseru/aplikacja-mobilna/pull/10) |
 
@@ -477,3 +477,15 @@ Ponowny nieautor dla `ffc06966eb4df51255a6b204ffe0a32939cac20d`:6PG obu całych 
 - Potwierdzenia / odpowiedzi: odbiorcy sami zapisują odczyt. Sam wpis nie uruchamia implementacji i nie daje PASS E7.
 
 Uzupełnienie O1-011: pełne osiem wymaganych kontroli CI dla 79aa96c odczytane jako success, brak uwag reviews. W trakcie próby merge main przyjął master E7 (485fb2e/#24); GitHub odmówił scalenia z powodu konfliktu wspólnej komunikacji. Zwykły merge zachowuje aktualne wiersze O1/O2 oraz pełne O1-011 i O2-018/019. Nie zmienia Androida 0.7.2; nowy head ma własne CI przed merge.
+
+### O1-012 — Etat biurowo-kawowy, ikony i cel z trybu
+
+- Data / autor: 2026-10-11, Agent 1 / O1.
+- Odbiorcy: właściciel, O2, O3.
+- Status: DO ODCZYTU.
+- Źródło: `codex/android-tryby-aktywnosci`, kod `1af9091`, [raport 0.7.3](../android/RAPORT_0_7_3.md), WF-02 w wymaganiach. Opublikowany [PR #25](https://github.com/Roseru/aplikacja-mobilna/pull/25) do main; kod i raport na `9513832`, zdalne CI odczytywane osobno. PR #23 / 0.7.2 scalony na main `446ac0c` po ośmiu success dla `27480a0`.
+- Przekazanie: nazwa Etat biurowo-kawowy i trzy dekoracyjne żołnierskie sylwetki. `activity_goal_v1` to względna reguła celu: 1 / 1,25 / 1,5; nowy cel = bieżące kcal × nowy/stary mnożnik, HALF_UP do 1 kcal. UI pokazuje wynik przed zapisem. Zapis profilu wraz z nową wersją celu i outbox jest atomowy; bez zmiany klasy kcal nie przeliczają się. Ręczny cel, B/T/W i wczorajsze wersje zachowane. Nie jest to kalkulator zapotrzebowania mifflin_pal_v1; backendowe identyfikatory GARRISON/LINE/COMMANDO oraz schemat Room 6 bez zmian.
+- Dowody autora: assemble/JVM/lint oraz końcowe pełne 56/56 urządzenia na 1080×2400/density420/font1/API35 offline. 67 JVM; lint 0 błędów/26 ostrzeżeń/1 informacja. Nowe testy odrzucania wartości, historii/ręcznego celu, rollback obu operacji i trzech rzeczywistych kliknięć/podglądów z recreation. Początkowe błędy testu (pełny tekst, komunikat zasłaniający następny szybki tap) opisane w raporcie; bez retry zapisu, bez zamiany kliknięcia na akcję semantyczną. APK poza Git; hash 86029e183c5dbf27e379be78acd38aefc7ac07e6cb1e90bf80135227bbca4547.
+- Dane / odczyt: aktualizacja 0.7.2→0.7.3 zachowała wszystkie kolumny 18 tabel oraz 2 istniejące posiłki, profile, cele i outbox; foreign_key_check pusty. Odczytałem O2-018/019 i związany z O1 zakres mastera E7. Confirm AI nie zapisuje dziennika/szkicu; Room i outbox pozostają ścieżką zapisu. Nie deklaruję odbioru E7 ani wykonania testów O2. Zwykły merge zachował oba aktualne wiersze i pełne przekazania O1/O2, bez przepisywania historii.
+- Następny krok / ograniczenia: widoczny emulator 0.7.3 do testów właściciela i nowe wymagane CI; później sesja/HTTP/bootstrap i E4/E5. W tym APK nie ma OIDC/HTTP/sync/AI. O2 informacyjnie: przy przyszłym adapterze klasy aktywności zachować jawną decyzję celu i rozdział od oszacowanego zapotrzebowania; nie przeliczać istniejących celów przy samym odczycie profilu. O3: bez migracji/pipeline changes.
+- Potwierdzenia / odpowiedzi: odbiorcy dopisują własny odczyt.

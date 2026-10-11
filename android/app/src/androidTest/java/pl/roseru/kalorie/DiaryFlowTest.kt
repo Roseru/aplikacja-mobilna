@@ -108,6 +108,40 @@ class DiaryFlowTest {
         }
     }
 
+    @Test fun selectActivityPreviewAndSaveDailyCalorieGoal() {
+        compose.waitUntil(15_000) { compose.onAllNodesWithTag("daily-kcal").fetchSemanticsNodes().isNotEmpty() }
+        val app = compose.activity.application as CalorieApplication
+        runBlocking {
+            app.repository.setProfile("Tryby test", 180.0, ActivityClass.GARRISON, DietAim.MAINTAIN)
+            app.repository.setGoal(2800.0, 160.0, 90.0, 330.0)
+        }
+        compose.onNodeWithTag("open-profile").performClick()
+        val modes = listOf(ActivityClass.LINE to 3500.0, ActivityClass.COMMANDO to 4200.0, ActivityClass.GARRISON to 2800.0)
+        var savedGoal = 2800.0
+        for ((mode, kcal) in modes) {
+            compose.onNodeWithTag("profile-content").performScrollToNode(hasTestTag("activity-${mode.name}"))
+            compose.onNodeWithTag("activity-${mode.name}").assertIsDisplayed().performClick()
+            compose.onNodeWithTag("profile-content").performScrollToNode(hasTestTag("activity-goal-preview"))
+            compose.onNodeWithTag("activity-goal-preview").assertTextEquals("Cel po zapisaniu: ${kcal.roundToInt()} kcal")
+            runBlocking { assertEquals(savedGoal, app.database.dao().goal("guest", LocalDate.now().toString()).first()!!.kcal, 0.0) }
+            compose.onNodeWithTag("profile-content").performScrollToNode(hasTestTag("confirm-profile"))
+            compose.onNodeWithTag("confirm-profile").assertIsEnabled().performClick()
+            compose.waitUntil(10_000) { runBlocking {
+                app.database.dao().currentProfile("guest")?.activityClass == mode.name &&
+                    app.database.dao().goal("guest", LocalDate.now().toString()).first()?.kcal == kcal
+            } }
+            // The save feedback overlays the bottom of the list. Finish that interaction before the next tap.
+            compose.waitUntil(5_000) { compose.onAllNodesWithText("Profil i cel zapisane na urządzeniu.").fetchSemanticsNodes().isNotEmpty() }
+            compose.waitUntil(10_000) { compose.onAllNodesWithText("Profil i cel zapisane na urządzeniu.").fetchSemanticsNodes().isEmpty() }
+            compose.waitForIdle()
+            savedGoal = kcal
+        }
+        compose.activityRule.scenario.recreate()
+        compose.waitUntil(10_000) { compose.onAllNodesWithTag("profile-content").fetchSemanticsNodes().isNotEmpty() }
+        compose.onNodeWithTag("profile-content").performScrollToNode(hasTestTag("activity-GARRISON"))
+        compose.onNodeWithTag("activity-GARRISON").assertIsSelected().assertTextContains(ActivityClass.GARRISON.label)
+    }
+
     @Test fun saveLocalProfileAndWeightWithoutResettingCalorieGoal() {
         compose.waitUntil(15_000) { compose.onAllNodesWithTag("daily-kcal").fetchSemanticsNodes().isNotEmpty() }
         val app = compose.activity.application as CalorieApplication
