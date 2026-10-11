@@ -54,7 +54,10 @@ BEGIN
  IF receipt.response IS NULL OR receipt.response_expires_at<=t THEN
  RETURN app.e8n_error(409,'idempotency_result_expired');
  ELSE response:=receipt.response;
- IF c.id IS NOT NULL AND (c.revision<>receipt.accepted_revision OR c.status='cancelled') THEN response:=app.e8n_metadata(c,a.id,t); END IF;
+ -- Effective expiry/end may advance without a persisted revision or worker.
+ IF c.id IS NOT NULL THEN
+   response := app.e8n_metadata(c, a.id, t);
+ END IF;
  END IF;
  RETURN jsonb_build_object('ok',receipt.http_status<400,'http_status',receipt.http_status,'code',receipt.code,'response',response,'replayed',true);
  END IF;
@@ -108,6 +111,13 @@ BEGIN
  ELSE
  terms:=p_payload->'terms';
  IF a.id<>c.invitee_id OR c.status<>'invited' THEN failure:='nemesis_accept_unavailable';http:=409;
+ ELSIF NOT isfinite(t)
+       OR (t AT TIME ZONE 'UTC')::date
+            NOT BETWEEN DATE '0001-01-01' AND DATE '9999-12-31'
+       OR (t AT TIME ZONE (c.terms->>'time_zone'))::date
+            NOT BETWEEN DATE '0001-01-01' AND DATE '9999-12-31' THEN
+   failure := 'period_calendar_date_unavailable';
+   http := 409;
  ELSIF c.expires_at<=t THEN UPDATE app.nemesis_challenges SET status='cancelled',cancel_reason='expired',revision=revision+1 WHERE id=c.id RETURNING * INTO c;failure:='nemesis_accept_unavailable';http:=409;
  ELSIF terms IS DISTINCT FROM c.terms OR NOT app.e8n_terms_valid(terms) THEN failure:='nemesis_terms_changed';http:=409;
  ELSE
@@ -120,7 +130,24 @@ BEGIN
  start_time:=app.e8n_boundary(start_day,terms->>'time_zone');start_day:=(start_time AT TIME ZONE(terms->>'time_zone'))::date;
  end_day:=start_day+(terms->>'duration_days')::integer;
  end_time:=app.e8n_boundary(end_day,terms->>'time_zone');deadline:=end_time+interval '720 hours';
- IF start_day<DATE '0001-01-01' OR end_day>DATE '9999-12-31' OR start_time<TIMESTAMPTZ '0001-01-01 00:00:00+00' OR deadline>TIMESTAMPTZ '9999-12-31 23:59:59.999999+00' OR start_time<=t THEN failure:='period_calendar_date_unavailable';http:=409; END IF;
+ -- Both UTC instants and every accepted-zone civil representation must
+ -- fit the supported wire/Python calendar, including the accepted clock.
+ IF start_day IS NULL OR end_day IS NULL
+    OR NOT isfinite(start_day) OR NOT isfinite(end_day)
+    OR start_day NOT BETWEEN DATE '0001-01-01' AND DATE '9999-12-31'
+    OR end_day NOT BETWEEN DATE '0001-01-01' AND DATE '9999-12-31'
+    OR start_time <= t OR EXISTS (
+      SELECT 1
+      FROM unnest(ARRAY[t, start_time, end_time, deadline]) AS clocks(instant)
+      WHERE instant IS NULL OR NOT isfinite(instant)
+         OR (instant AT TIME ZONE 'UTC')::date
+              NOT BETWEEN DATE '0001-01-01' AND DATE '9999-12-31'
+         OR (instant AT TIME ZONE (terms->>'time_zone'))::date
+              NOT BETWEEN DATE '0001-01-01' AND DATE '9999-12-31'
+    ) THEN
+   failure := 'period_calendar_date_unavailable';
+   http := 409;
+ END IF;
  FOR day IN SELECT generate_series(start_day::timestamp,(end_day-1)::timestamp,interval '1 day')::date LOOP
  IF (app.e8n_boundary(day,terms->>'time_zone') AT TIME ZONE(terms->>'time_zone'))::date<>day THEN failure:='period_calendar_date_unavailable';http:=409; END IF;
  END LOOP;

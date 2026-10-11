@@ -43,7 +43,7 @@ BEGIN
 END $$;
 CREATE FUNCTION app.e8n_maintain(p_batch integer DEFAULT 100) RETURNS jsonb
 LANGUAGE plpgsql SECURITY DEFINER SET search_path=pg_catalog,pg_temp AS $$
-DECLARE ids uuid[]; t timestamptz; transitioned integer; cleaned integer;
+DECLARE ids uuid[]; t timestamptz; transitioned integer; cleaned integer; admissions_pruned integer;
 BEGIN
  IF p_batch IS NULL OR p_batch NOT BETWEEN 1 AND 1000 THEN RAISE EXCEPTION 'invalid Nemesis batch' USING ERRCODE='22023'; END IF;
  SELECT array_agg(id ORDER BY id) INTO ids FROM(SELECT id FROM app.nemesis_challenges WHERE status IN('invited','active') AND (expires_at<=app.e8n_clock() OR end_at<=app.e8n_clock()) ORDER BY id LIMIT p_batch) q;
@@ -57,7 +57,23 @@ BEGIN
  DELETE FROM app.nemesis_cursors WHERE token IN(SELECT token FROM app.nemesis_cursors WHERE expires_at<=t ORDER BY expires_at,token LIMIT p_batch);
  -- Expired digest rows contain no replay authority; minimal receipts are never removed.
  DELETE FROM app.nemesis_share_codes WHERE owner_id IN(SELECT owner_id FROM app.nemesis_share_codes WHERE expires_at<=t ORDER BY expires_at,owner_id LIMIT p_batch);
- RETURN jsonb_build_object('transitioned',transitioned,'responses_pruned',cleaned);
+ -- Every admission window is at most 24 hours. Pruning the closed boundary
+ -- cannot refund a live quota; minimal receipts still fence the old keys.
+ WITH old_admissions AS (
+   SELECT owner_id, kind, key
+   FROM app.nemesis_admissions
+   WHERE admitted_at <= t - interval '24 hours'
+   ORDER BY admitted_at, owner_id, kind, key
+   LIMIT p_batch
+ )
+ DELETE FROM app.nemesis_admissions AS admission
+ USING old_admissions AS old
+ WHERE (admission.owner_id, admission.kind, admission.key) =
+       (old.owner_id, old.kind, old.key);
+ GET DIAGNOSTICS admissions_pruned = ROW_COUNT;
+ RETURN jsonb_build_object('transitioned', transitioned,
+                           'responses_pruned', cleaned,
+                           'admissions_pruned', admissions_pruned);
 END $$;
 CREATE FUNCTION app.e8n_restore_cancel(p_batch integer DEFAULT 100) RETURNS integer
 LANGUAGE plpgsql SECURITY DEFINER SET search_path=pg_catalog,pg_temp AS $$

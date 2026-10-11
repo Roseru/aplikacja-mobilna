@@ -141,3 +141,19 @@ def test_rate_limited_has_retry_after(transport, monkeypatch):
     assert response.status_code == 429
     assert int(response.headers["retry-after"]) > 0
     assert response.headers["cache-control"] == "no-store"
+
+
+@pytest.mark.parametrize(
+    "method,path,expected",
+    [
+        ("GET", "/api/v1/nemesis/unknown/unrecognized", 404),
+        ("PATCH", "/api/v1/nemesis", 405),
+    ],
+)
+def test_private_factory_unknown_routes_are_safe_no_store(transport, method, path, expected):
+    client, tokens, calls = transport
+    response = client.request(method, path, headers=headers(tokens))
+    assert response.status_code == expected
+    assert response.headers["cache-control"] == "no-store"
+    assert response.json()["request_id"] == response.headers["x-request-id"]
+    assert not calls

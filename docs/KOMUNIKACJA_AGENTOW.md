@@ -18,7 +18,7 @@ Stan odczytany przez O1, 10 października 2026 r. Każda osoba aktualizuje swój
 | Rola | Ostatni znany rezultat | Następny krok / zależność | Źródło |
 |---|---|---|---|
 | O1 — Android, Kotlin, Room | Podgląd profilu API 0.8.2 / Room6; 87JVM/86device PASS, aktualizacja zachowała dane; PR26 exact42763f8 ma 8success | PR31 zależy od PR26; realny bootstrap/GET z O3, następnie cele/E4; draft nie oznacza pełnego E3 | O1-015, [raport](../android/RAPORT_0_8_2.md), [PR31](https://github.com/Roseru/aplikacja-mobilna/pull/31), kod 0522824 |
-| O2 — Python, PostgreSQL, API | E7-O2 odebrane/scalone w PR28 na ba9704a; master koordynacji i E8.1+2 przygotowane, niezależne9,3/9,5/9,3 bez P1/P2 | Odbiór push CI main E7 i publikacja/CI/main instrukcji; następnie pierwszy czat E8.1+E8.2 | O2-023/024, [PR #28](https://github.com/Roseru/aplikacja-mobilna/pull/28), [koordynacja E8](MASTER_PROMPT_KOORDYNACJA_E8.md), [master motywacji](MASTER_PROMPT_E8_1_2.md) |
+| O2 — Python, PostgreSQL, API | E7-O2 i instrukcje E8 scalone; E8.1+2 implementowane na osobnej gałęzi,1368 unit/31 ranking PG/21 source-worker PG/59 E4-E5 PG PASS | Freeze wspólnych interfejsów do oceny koordynatora; pełny PG, nieautor i8CI pozostają do ukończenia | O2-025, codex/backend-e8-motywacja-ranking, [raport](e8/RAPORT_MOTYWACJA.md) |
 | O3 — DevOps, CI/CD, serwer | CI/HTTPS/retencja scalone; realny login APK O1/0.8.0 przez Chrome, A/B/gość, restart/expiry/refresh odebrane lokalnie; źródła narzędzi w PR27 | O1: HTTP/bootstrap/sync/KO-31; O3: VPS/SMTP/restore; stan końcowego CI/merge narzędzi w PR27 | O3-011, [PR #27](https://github.com/Roseru/aplikacja-mobilna/pull/27), [odbiór APK](../infra/integration/ANDROID_PKCE.md), kod O1 `3b081c4` |
 
 ## Wpisy

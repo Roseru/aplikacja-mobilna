@@ -487,6 +487,19 @@ def test_minimal_receipt_retention_replay_no_mutation(pg):
                 ),
                 {"id": a[0]},
             )
+            == 0
+        )
+
+        # Admission is no longer inside any quota window. The permanent receipt
+        # remains the authority preventing the old operation from being rerun.
+        assert (
+            conn.scalar(
+                text(
+                    "SELECT count(*) FROM app.nemesis_receipts "
+                    "WHERE owner_id=:id AND operation='create' AND key=:key"
+                ),
+                {"id": a[0], "key": key},
+            )
             == 1
         )
 
@@ -621,4 +634,338 @@ def test_raw_invalid_scope_shapes_fail_closed_without_exception(pg):
                 {"id": b[0]},
             )
             is None
+        )
+
+
+@pytest.mark.parametrize("operation", ["create", "accept"])
+def test_replay_uses_effective_status_without_worker_or_new_mutation(pg, operation):
+    a, b = account(pg), account(pg)
+    issued = execute(pg, b, "issue")["response"]["destination_code"]
+    create_payload = {
+        "destination_digest": hashlib.sha256(issued.encode()).hexdigest(),
+        "terms": TERMS,
+    }
+    key = uuid4()
+    created = execute(pg, a, "create", create_payload, key)["response"]
+    if operation == "create":
+        caller, payload, original = a, create_payload, created
+        boundary, expected, persisted = original["expires_at"], "cancelled", "invited"
+    else:
+        key = uuid4()
+        payload = {"challenge_id": created["id"], "revision": 1, "terms": TERMS}
+        caller = b
+        original = execute(pg, b, "accept", payload, key)["response"]
+        boundary, expected, persisted = original["end_at"], "finished", "active"
+    clock(pg, boundary)
+    result = execute(pg, caller, operation, payload, key)
+    with pg[1].begin() as conn:
+        read = conn.scalar(
+            text("SELECT app.e8n_read('e8-test',:sub,:epoch,:id)"),
+            {"sub": caller[1], "epoch": pg[2], "id": original["id"]},
+        )
+    assert result["replayed"] and result["response"] == read["response"]
+    assert result["response"]["status"] == expected
+    with pg[0].begin() as conn:
+        status, revision = conn.execute(
+            text("SELECT status,revision FROM app.nemesis_challenges WHERE id=:id"),
+            {"id": original["id"]},
+        ).one()
+        assert (status, revision) == (persisted, original["revision"])
+        assert (
+            conn.scalar(
+                text(
+                    "SELECT count(*) FROM app.nemesis_receipts "
+                    "WHERE owner_id=:id AND operation=:op AND key=:key"
+                ),
+                {"id": caller[0], "op": operation, "key": key},
+            )
+            == 1
+        )
+
+
+def test_maintenance_prunes_only_expired_admissions_in_bounded_batches(pg):
+    a = account(pg)
+    with pg[0].begin() as conn:
+        # Drain unrelated old fixture rows before checking this exact batch.
+        while conn.scalar(
+            text(
+                "SELECT count(*) FROM app.nemesis_admissions "
+                "WHERE admitted_at<=app.e8n_clock()-interval '24 hours'"
+            )
+        ):
+            conn.execute(text("SELECT app.e8n_maintain(1000)"))
+        for _ in range(5):
+            conn.execute(
+                text(
+                    "INSERT INTO app.nemesis_admissions VALUES "
+                    "(:id,'attempt',:key,app.e8n_clock()-interval '24 hours')"
+                ),
+                {"id": a[0], "key": uuid4()},
+            )
+        for _ in range(20):
+            conn.execute(
+                text(
+                    "INSERT INTO app.nemesis_admissions VALUES "
+                    "(:id,'attempt',:key,app.e8n_clock()-interval '1 minute')"
+                ),
+                {"id": a[0], "key": uuid4()},
+            )
+        first = conn.scalar(text("SELECT app.e8n_maintain(2)"))
+        assert first["admissions_pruned"] == 2
+        assert (
+            conn.scalar(
+                text("SELECT count(*) FROM app.nemesis_admissions WHERE owner_id=:id"), {"id": a[0]}
+            )
+            == 23
+        )
+        for expected in (2, 1, 0):
+            assert conn.scalar(text("SELECT app.e8n_maintain(2)"))["admissions_pruned"] == expected
+    key = uuid4()
+    payload = {"destination_digest": "f" * 64, "terms": TERMS}
+    assert execute(pg, a, "create", payload, key)["http_status"] == 429
+    with pg[0].begin() as conn:
+        assert conn.scalar(text("SELECT app.e8n_maintain(1000)"))["admissions_pruned"] == 0
+    assert execute(pg, a, "create", payload, key)["replayed"]
+    with pg[0].begin() as conn:
+        assert (
+            conn.scalar(
+                text("SELECT count(*) FROM app.nemesis_admissions WHERE owner_id=:id"), {"id": a[0]}
+            )
+            == 21
+        )
+
+
+@pytest.fixture
+def role_audit_pg():
+    """Poison only a separately provisioned, explicitly owned second cluster."""
+    import os
+
+    from sqlalchemy.engine import make_url
+
+    private_path = os.environ.get("E8_3_ROLE_AUDIT_CREDENTIALS")
+    if not private_path:
+        pytest.fail("Role audit requires E8_3_ROLE_AUDIT_CREDENTIALS for a second private cluster")
+    values = json.loads(Path(private_path).read_text())
+    private = PrivatePostgres(**values)
+    ordinary = PrivatePostgres.from_environment()
+    isolated_url, ordinary_url = make_url(private.admin_url), make_url(ordinary.admin_url)
+    assert (isolated_url.host, isolated_url.port) != (ordinary_url.host, ordinary_url.port)
+    assert isolated_url.host in {"127.0.0.1", "::1"}
+    assert isolated_url.database.endswith("_test")
+    engine = private.engine()
+    with engine.begin() as conn:
+        conn.execute(text("DROP SCHEMA IF EXISTS app CASCADE"))
+        conn.execute(text("CREATE SCHEMA app AUTHORIZATION calorie_app_migrator"))
+        conn.execute(text("GRANT USAGE ON SCHEMA app TO calorie_app_api,calorie_app_worker"))
+    private.migrate("0016_e8_motivation")
+    yield private
+    engine.dispose()
+
+
+ROLE_POISON_CASES = [
+    (
+        "GRANT calorie_app_migrator TO calorie_app_nemesis_worker",
+        "REVOKE calorie_app_migrator FROM calorie_app_nemesis_worker",
+    ),
+    *[
+        (
+            f"GRANT calorie_app_nemesis_worker TO {role}",
+            f"REVOKE calorie_app_nemesis_worker FROM {role}",
+        )
+        for role in (
+            "calorie_app_api",
+            "calorie_app_worker",
+            "calorie_app_migrator",
+            "calorie_app_deletion_operator",
+            "calorie_app_ai_worker",
+            "calorie_app_motivation_worker",
+            "keycloak",
+        )
+    ],
+    (
+        "GRANT SELECT ON app.user_profiles TO calorie_app_nemesis_worker",
+        "REVOKE SELECT ON app.user_profiles FROM calorie_app_nemesis_worker",
+    ),
+    (
+        "GRANT SELECT(pseudonym) ON app.user_profiles TO calorie_app_nemesis_worker",
+        "REVOKE SELECT(pseudonym) ON app.user_profiles FROM calorie_app_nemesis_worker",
+    ),
+    (
+        "GRANT UPDATE(pseudonym) ON app.user_profiles TO calorie_app_nemesis_worker",
+        "REVOKE UPDATE(pseudonym) ON app.user_profiles FROM calorie_app_nemesis_worker",
+    ),
+    (
+        "GRANT CREATE ON SCHEMA app TO calorie_app_nemesis_worker",
+        "REVOKE CREATE ON SCHEMA app FROM calorie_app_nemesis_worker",
+    ),
+    (
+        "GRANT EXECUTE ON FUNCTION app.e8_refresh(uuid,date[],integer) "
+        "TO calorie_app_nemesis_worker",
+        "REVOKE EXECUTE ON FUNCTION app.e8_refresh(uuid,date[],integer) "
+        "FROM calorie_app_nemesis_worker",
+    ),
+    (
+        "GRANT calorie_app_migrator TO e8_3_nemesis_worker_login",
+        "REVOKE calorie_app_migrator FROM e8_3_nemesis_worker_login",
+    ),
+]
+
+
+@pytest.mark.parametrize("grant,revoke", ROLE_POISON_CASES)
+def test_migration_rejects_poisoned_role_or_effective_acl_before_ddl(role_audit_pg, grant, revoke):
+    admin, migrator = role_audit_pg.engine("admin"), role_audit_pg.engine()
+    try:
+        with admin.begin() as conn:
+            conn.execute(text(grant))
+        with pytest.raises(DBAPIError) as caught:
+            role_audit_pg.migrate("0017_e8_nemesis_lifecycle")
+        assert caught.value.orig.sqlstate == "23514"
+        with migrator.begin() as conn:
+            assert conn.scalar(text("SELECT version_num FROM app.alembic_version")) == (
+                "0016_e8_motivation"
+            )
+            assert conn.scalar(text("SELECT to_regclass('app.nemesis_control')")) is None
+            assert conn.scalar(text("SELECT to_regclass('app.nemesis_receipts')")) is None
+    finally:
+        with admin.begin() as conn:
+            conn.execute(text(revoke))
+        admin.dispose()
+        migrator.dispose()
+
+
+def test_minimal_dedicated_login_allowed_and_all_runtime_privileges_narrow(role_audit_pg):
+    role_audit_pg.migrate("0017_e8_nemesis_lifecycle")
+    worker = role_audit_pg.engine("worker")
+    try:
+        with worker.begin() as conn:
+            assert conn.scalar(text("SELECT current_user")) == "e8_3_nemesis_worker_login"
+            maintenance = conn.scalar(text("SELECT app.e8n_maintain(1)"))
+            assert maintenance == {"transitioned": 0, "responses_pruned": 0, "admissions_pruned": 0}
+            for table in (
+                "nemesis_control",
+                "nemesis_releases",
+                "nemesis_challenges",
+                "nemesis_receipts",
+                "nemesis_admissions",
+                "nemesis_slots",
+                "nemesis_share_codes",
+                "nemesis_cursors",
+                "user_profiles",
+                "meals",
+            ):
+                for privilege in ("SELECT", "INSERT", "UPDATE", "REFERENCES"):
+                    assert not conn.scalar(
+                        text("SELECT has_any_column_privilege(current_user,:table,:privilege)"),
+                        {"table": "app." + table, "privilege": privilege},
+                    )
+                assert not conn.scalar(
+                    text(
+                        "SELECT has_table_privilege(current_user,:table,"
+                        "'DELETE,TRUNCATE,TRIGGER,MAINTAIN')"
+                    ),
+                    {"table": "app." + table},
+                )
+        with pytest.raises(DBAPIError), worker.begin() as conn:
+            conn.execute(text("SET LOCAL ROLE calorie_app_migrator"))
+        with pytest.raises(DBAPIError), worker.begin() as conn:
+            conn.execute(text("INSERT INTO app.nemesis_releases VALUES('bad','bad')"))
+        with pytest.raises(DBAPIError), worker.begin() as conn:
+            conn.execute(text("UPDATE app.nemesis_control SET enabled=true"))
+        with pytest.raises(DBAPIError), worker.begin() as conn:
+            conn.execute(text("SELECT app.e8n_restore_cancel(1)"))
+        api = role_audit_pg.engine("api")
+        try:
+            with api.begin() as conn:
+                assert conn.scalar(text("SELECT current_user")) == "calorie_app_api"
+                for table in (
+                    "nemesis_control",
+                    "nemesis_releases",
+                    "nemesis_challenges",
+                    "nemesis_receipts",
+                    "nemesis_admissions",
+                    "nemesis_slots",
+                    "nemesis_share_codes",
+                    "nemesis_cursors",
+                ):
+                    assert not conn.scalar(
+                        text(
+                            "SELECT has_any_column_privilege(current_user,:table,"
+                            "'SELECT,INSERT,UPDATE,REFERENCES')"
+                        ),
+                        {"table": "app." + table},
+                    )
+                    assert not conn.scalar(
+                        text(
+                            "SELECT has_table_privilege(current_user,:table,"
+                            "'DELETE,TRUNCATE,TRIGGER,MAINTAIN')"
+                        ),
+                        {"table": "app." + table},
+                    )
+        finally:
+            api.dispose()
+    finally:
+        worker.dispose()
+
+
+@pytest.mark.parametrize(
+    "instant,zone",
+    [
+        ("9999-11-23 12:00:00+00", "Pacific/Kiritimati"),
+        ("0001-01-01 01:00:00+00", "Pacific/Honolulu"),
+    ],
+)
+def test_accept_rejects_unrepresentable_civil_clock_or_deadline(pg, instant, zone):
+    # Hard-coded independent boundaries: Kiritimati deadline crosses to local
+    # year10000; Honolulu accepted instant still represents the preceding BC day.
+    clock(pg, instant)
+    a, b = account(pg, zone), account(pg, zone)
+    metadata = invite(pg, a, b, {**TERMS, "time_zone": zone})
+    key = uuid4()
+    result = accept(pg, b, metadata, key)
+    assert result["http_status"] == 409
+    assert result["code"] == "period_calendar_date_unavailable"
+    with pg[0].begin() as conn:
+        assert conn.execute(
+            text(
+                "SELECT status,revision,accepted_at,start_at,end_at,deadline_at "
+                "FROM app.nemesis_challenges WHERE id=:id"
+            ),
+            {"id": metadata["id"]},
+        ).one() == ("invited", 1, None, None, None, None)
+        assert (
+            conn.scalar(
+                text("SELECT count(*) FROM app.nemesis_slots WHERE challenge_id=:id"),
+                {"id": metadata["id"]},
+            )
+            == 0
+        )
+        receipt = conn.execute(
+            text(
+                "SELECT http_status,code,response FROM app.nemesis_receipts "
+                "WHERE owner_id=:owner AND operation='accept' AND key=:key"
+            ),
+            {"owner": b[0], "key": key},
+        ).one()
+        assert receipt == (409, "period_calendar_date_unavailable", None)
+
+
+@pytest.mark.parametrize("instant", ["infinity", "-infinity"])
+def test_accept_rejects_nonfinite_clock_without_expiring_or_activating(pg, instant):
+    a, b = account(pg), account(pg)
+    metadata = invite(pg, a, b)
+    clock(pg, instant)
+    result = accept(pg, b, metadata)
+    assert result["http_status"] == 409
+    assert result["code"] == "period_calendar_date_unavailable"
+    with pg[0].begin() as conn:
+        assert conn.execute(
+            text("SELECT status,revision,accepted_at FROM app.nemesis_challenges WHERE id=:id"),
+            {"id": metadata["id"]},
+        ).one() == ("invited", 1, None)
+        assert (
+            conn.scalar(
+                text("SELECT count(*) FROM app.nemesis_slots WHERE challenge_id=:id"),
+                {"id": metadata["id"]},
+            )
+            == 0
         )

@@ -8,10 +8,13 @@ from datetime import UTC, datetime, timedelta
 from pathlib import Path
 from uuid import uuid4
 
+import pytest
 from sqlalchemy import text
 
 from tests.integration.test_e8_3_http import TERMS, account, headers
 from tests.integration.test_e8_3_http import runtime as runtime
+
+pytestmark = pytest.mark.integration
 
 
 def test_two_api_processes_share_durable_code_quota(runtime):
