@@ -1,5 +1,7 @@
 # Sesja Androida 0.8.0 — przekazanie O1/O3
 
+Aktualizacja 0.8.1 łączy ten klient z [bootstrapem HTTP](BOOTSTRAP_HTTP.md). Poniższy opis dokumentuje etap 0.8.0; jego brak HTTP był ówczesnym stanem. Nowy [raport O3](../infra/integration/ANDROID_PKCE.md) potwierdza rzeczywiste próby sesji APK 0.8.0/3b081c4 oraz udostępnia zewnętrzny overlay ograniczonego CA. Odczytano go na main75c4414; nie zastępuje odbioru nowego HTTP 0.8.1. Synchronizacja oraz import gościa nie są wykonywane przez bootstrap.
+
 Implementacja klienta: AppAuth 0.11.1, systemowa przeglądarka, Authorization Code + PKCE S256, publiczny `calorie-android`, zakres `openid profile` i jawne `prompt=login`. Nie ma sekretu klienta ani formularza haseł w aplikacji. [Raport lokalny](RAPORT_0_8_0.md) rozdziela testy transportu zastępczego od przyszłego odbioru prawdziwego APK/Keycloak.
 
 ## Konfiguracja publicznego środowiska

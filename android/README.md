@@ -1,6 +1,6 @@
 # Android — Racje i kalorie
 
-Wersja `0.8.0` dodaje klienta sesji AppAuth/PKCE, szyfrowaną pamięć, ekran Konto i logowanie oraz odtwarzanie repozytorium/ekranów po zmianie konta. [Raport](RAPORT_0_8_0.md) i [konfiguracja OIDC](SESJA_OIDC.md) rozdzielają testy lokalne od pozostającego odbioru prawdziwej przeglądarki/Keycloak. Domyślne APK działa bez issuer jako gość offline. Bootstrap HTTP i synchronizacja nie są jeszcze podłączone. Room 6 zachowuje dotychczasowe wartości i kolejkę.
+Wersja `0.8.1` dodaje połączenie konta z API przez trwały bootstrap HTTP, odnowienie sesji przed żądaniem i bezpieczne ponawianie bez utraty klucza. [Raport](RAPORT_0_8_1.md), [konfiguracja HTTP](BOOTSTRAP_HTTP.md) i [sesja OIDC](SESJA_OIDC.md) rozdzielają testy lokalne od pozostającego odbioru prawdziwego APK/HTTPS/Keycloak. Domyślne APK bez issuer i adresu API działa jako gość offline. Bootstrap nie wysyła dziennika ani nie importuje gościa; synchronizacja pozostaje kolejnym etapem. Room 6 zachowuje dotychczasowe wartości i kolejkę.
 
 [Raport 0.7.2 i scenariusze manualne](RAPORT_0_7_2.md) opisują odbiór poprzedniego etapu. Tryby 0.7.3: etat biurowo-kawowy ×1,00, Linia ×1,25, Komandos ×1,50; zmiana przelicza bieżący cel przez stosunek mnożników. Podgląd poprzedza zapis. Ręczne kcal, B/T/W i wcześniejsze dni pozostają zachowane; to przelicznik celu, osobny od kalkulatora zapotrzebowania backendu.
 

@@ -9,7 +9,8 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.unit.dp
 
-data class SessionActions(val login: () -> Unit, val logout: () -> Unit, val refresh: () -> Unit, val cancel: () -> Unit)
+data class SessionActions(val login: () -> Unit, val logout: () -> Unit, val refresh: () -> Unit, val cancel: () -> Unit,
+    val bootstrap: () -> Unit)
 
 @Composable fun SessionScreen(view: SessionView, actions: SessionActions, back: () -> Unit) {
     val account = view.binding?.owner?.kind == "account"
@@ -33,6 +34,24 @@ data class SessionActions(val login: () -> Unit, val logout: () -> Unit, val ref
             modifier = Modifier.fillMaxWidth().testTag("session-login")) { Text(if (account) "Zaloguj się ponownie / zmień konto" else "Zaloguj się w przeglądarce") }
         if (view.pendingLogin || view.busy) OutlinedButton(onClick = actions.cancel, modifier = Modifier.fillMaxWidth()) { Text("Anuluj logowanie") }
         if (account) {
+            Card(Modifier.fillMaxWidth()) {
+                Column(Modifier.padding(20.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                    Text("Połączenie z serwerem", style = MaterialTheme.typography.titleMedium)
+                    Text(when {
+                        view.requiresRecovery -> "Stan serwera się zmienił. Dane wymagają uzgodnienia."
+                        view.serverLinked -> "Konto powiązane z serwerem."
+                        else -> "Konto nie jest jeszcze powiązane z serwerem."
+                    }, modifier = Modifier.testTag("bootstrap-status"))
+                    Text("Dziennik i oczekujące wpisy pozostają na urządzeniu. Połączenie konta nie wysyła posiłków ani wpisów gościa.")
+                    if (!view.apiConfigured) Text("Połączenie będzie dostępne po podłączeniu serwera aplikacji.")
+                    if (view.bootstrapBusy) { LinearProgressIndicator(Modifier.fillMaxWidth()); Text("Łączę konto z serwerem…") }
+                    OutlinedButton(onClick = actions.bootstrap,
+                        enabled = view.apiConfigured && !view.bootstrapBusy && !view.busy && !view.pendingLogin,
+                        modifier = Modifier.fillMaxWidth().testTag("session-bootstrap")) {
+                        Text(if (view.serverLinked) "Sprawdź połączenie" else "Połącz konto z serwerem")
+                    }
+                }
+            }
             OutlinedButton(onClick = actions.refresh, enabled = view.configured && !view.busy && !view.pendingLogin,
                 modifier = Modifier.fillMaxWidth().testTag("session-refresh")) { Text("Odnów sesję") }
             OutlinedButton(onClick = { confirmLogout = true }, modifier = Modifier.fillMaxWidth().testTag("session-logout")) { Text("Wyloguj i otwórz gościa") }

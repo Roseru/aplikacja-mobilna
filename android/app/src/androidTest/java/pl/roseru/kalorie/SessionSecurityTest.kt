@@ -71,8 +71,8 @@ class SessionSecurityTest {
         fun response(state: String? = request!!.state) = AuthorizationResponse.Builder(request!!)
             .setState(state).setAuthorizationCode("fixture-code").build().toIntent()
     }
-    private fun client(db: CalorieDatabase, vault: SessionVault, fixture: FixtureGateway) = SessionController(
-        db, vault, fixture, issuer, context.packageName) { fixture.time }
+    private fun client(db: CalorieDatabase, vault: SessionVault, fixture: FixtureGateway, api: BootstrapGateway? = null) = SessionController(
+        db, vault, fixture, issuer, context.packageName, now = { fixture.time }, bootstrapGateway = api)
     private suspend fun login(client: SessionController, fixture: FixtureGateway, subject: String) {
         fixture.subject = subject
         assertNotNull(client.beginLogin())
@@ -244,5 +244,228 @@ class SessionSecurityTest {
         val malicious = AuthorizationServiceConfiguration(AuthorizationServiceDiscovery(JSONObject(json.toString())
             .put("token_endpoint", "https://other.example/token")))
         assertThrows(IllegalArgumentException::class.java) { validateDiscovery(malicious, issuer) }
+    }
+
+    private val accountId = "a1111111-1111-4111-8111-111111111111"
+    private val epoch = "e1111111-1111-4111-8111-111111111111"
+    private val newEpoch = "f1111111-1111-4111-8111-111111111111"
+    private fun accepted(syncEpoch: String = epoch, generation: Int = 1, id: String = accountId) = BootstrapHttpResult(200,
+        BootstrapResponse(id, syncEpoch, generation, "2026-10-11T10:00:00Z").canonical().toByteArray())
+    private fun denied(status: Int, code: String, retry: String? = null) = BootstrapHttpResult(status,
+        JSONObject().put("code", code).put("message", "fixture text never displayed").put("details", JSONArray())
+            .put("request_id", "b1111111-1111-4111-8111-111111111111").toString().toByteArray(), retry)
+    private class ApiCall(val ticket: ApiSession, val key: String)
+    private inner class ApiFixture(var answer: suspend (Int) -> BootstrapHttpResult = { accepted() }) : BootstrapGateway {
+        val calls = mutableListOf<ApiCall>()
+        val started = CompletableDeferred<Unit>()
+        var hold: CompletableDeferred<Unit>? = null
+        override suspend fun post(session: ApiSession, operationId: String, beforeSend: suspend () -> Unit): BootstrapHttpResult {
+            beforeSend()
+            calls.add(ApiCall(session, operationId))
+            val index = calls.size
+            started.complete(Unit)
+            hold?.await()
+            return answer(index)
+        }
+    }
+    @Test fun bootstrapLostAckReusesDurableKeyAfterControllerRestartWithoutImportingGuest() = runBlocking<Unit> {
+        val db = memory(); val vault = SessionVault(context, name()); val fixture = FixtureGateway()
+        val api = ApiFixture { if (it == 1) throw java.io.IOException("fixture lost ACK") else accepted() }
+        try {
+            val first = client(db, vault, fixture, api); first.start()
+            val guest = DiaryRepository(db, context).apply { initialize() }
+            guest.add("basic-banana", 100.0, MealType.LUNCH, LocalDate.now(), "bootstrap-guest-preserved")
+            first.bootstrap(); assertTrue(api.calls.isEmpty())
+            login(first, fixture, "fixture-A")
+            val lease = first.view.value.binding!!.lease
+            first.bootstrap()
+            assertNull(db.bootstrapDao().binding(lease.storageScope))
+            val key = db.bootstrapDao().attempt(lease.storageScope)!!.operationId
+            assertEquals(key, api.calls.single().key)
+            val restarted = client(db, vault, fixture, api); restarted.start(); restarted.bootstrap()
+            assertEquals(listOf(key, key), api.calls.map { it.key })
+            assertTrue(restarted.view.value.serverLinked)
+            assertEquals(SessionIdentity(issuer, "fixture-A"), api.calls.last().ticket.identity)
+            assertEquals(lease, api.calls.last().ticket.lease)
+            assertEquals(accountId, db.bootstrapDao().binding(lease.storageScope)!!.accountId)
+            assertEquals(1, db.dao().operationCount("guest")); assertEquals(0, db.dao().operationCount(lease.storageScope))
+            assertNull(db.dao().currentProfile(lease.storageScope))
+            assertTrue(db.dao().goalsThrough(lease.storageScope, LocalDate.now().toString()).first().isEmpty())
+            assertTrue(db.dao().day(lease.storageScope, LocalDate.now().toString()).first().isEmpty())
+            assertEquals("bootstrap-guest-preserved", db.dao().day("guest", LocalDate.now().toString()).first().single().meal.id)
+        } finally { vault.clear(); db.close() }
+    }
+    @Test fun delayedBootstrapAndCapturedTicketCannotApplyAfterLogoutAToBToA() = runBlocking<Unit> {
+        val db = memory(); val vault = SessionVault(context, name()); val fixture = FixtureGateway()
+        val api = ApiFixture().apply { hold = CompletableDeferred() }
+        try {
+            val controller = client(db, vault, fixture, api); controller.start(); login(controller, fixture, "fixture-A")
+            val old = controller.view.value.binding!!
+            val ticket = controller.apiSession(old.lease)
+            val task = async { controller.bootstrap() }
+            withTimeout(10_000) { api.started.await() }
+            controller.bootstrap(); assertEquals(1, api.calls.size)
+            controller.logout(); login(controller, fixture, "fixture-B")
+            controller.logout(); login(controller, fixture, "fixture-A")
+            assertNotEquals(old.lease, controller.view.value.binding!!.lease)
+            api.hold!!.complete(Unit); task.await()
+            assertNull(db.bootstrapDao().binding(old.owner.storageScope))
+            assertFalse(controller.view.value.serverLinked)
+            assertThrows(StaleOwnerException::class.java) { runBlocking { controller.withApiSession(ticket) { fail("stale block ran") } } }
+            assertEquals("fixture-A", api.calls.single().ticket.identity.subject)
+        } finally { api.hold?.complete(Unit); vault.clear(); db.close() }
+    }
+    @Test fun unauthorizedRenewsOnceWithSameLeaseKeyAndNewToken() = runBlocking<Unit> {
+        val db = memory(); val vault = SessionVault(context, name()); val fixture = FixtureGateway()
+        val api = ApiFixture { if (it == 1) denied(401, "unauthorized") else accepted() }
+        try {
+            val controller = client(db, vault, fixture, api); controller.start(); login(controller, fixture, "fixture-A")
+            val lease = controller.view.value.binding!!.lease
+            controller.bootstrap()
+            assertEquals(2, api.calls.size); assertEquals(2, fixture.calls)
+            assertEquals(lease, api.calls[0].ticket.lease); assertEquals(lease, api.calls[1].ticket.lease)
+            assertEquals(api.calls[0].key, api.calls[1].key)
+            assertNotEquals(api.calls[0].ticket.accessToken, api.calls[1].ticket.accessToken)
+            assertTrue(controller.view.value.serverLinked)
+            assertThrows(Exception::class.java) { runBlocking { controller.withApiSession(api.calls[0].ticket) { fail("old token block ran") } } }
+            api.calls.clear(); api.answer = { denied(401, "unauthorized") }
+            controller.bootstrap()
+            assertEquals(2, api.calls.size); assertFalse(controller.view.value.bootstrapBusy)
+            assertTrue(controller.view.value.message!!.contains("logowania"))
+        } finally { vault.clear(); db.close() }
+    }
+    @Test fun epochAndGenerationRenewKeyOnceAndKeepRecoveryFlagAndOriginals() = runBlocking<Unit> {
+        val db = memory(); val vault = SessionVault(context, name()); val fixture = FixtureGateway(); val api = ApiFixture()
+        try {
+            val controller = client(db, vault, fixture, api); controller.start(); login(controller, fixture, "fixture-A")
+            val lease = controller.view.value.binding!!.lease
+            val repo = DiaryRepository(db, context, lease).apply { initialize() }
+            repo.add("basic-banana", 120.0, MealType.LUNCH, LocalDate.now(), "bootstrap-account-preserved")
+            controller.bootstrap()
+            api.answer = { if (it == 2) denied(409, "sync_epoch_changed") else accepted(newEpoch) }
+            controller.bootstrap()
+            assertEquals(3, api.calls.size); assertNotEquals(api.calls[1].key, api.calls[2].key)
+            val binding = db.bootstrapDao().binding(lease.storageScope)!!
+            assertEquals(newEpoch, binding.syncEpoch); assertEquals(2L, binding.contextRevision)
+            assertTrue(binding.requiresRecovery); assertTrue(controller.view.value.requiresRecovery)
+            controller.bootstrap(); assertTrue(db.bootstrapDao().binding(lease.storageScope)!!.requiresRecovery)
+            api.answer = { if (it == 5) denied(409, "account_generation_changed") else accepted(newEpoch, 2) }
+            controller.bootstrap()
+            assertNotEquals(api.calls[4].key, api.calls[5].key)
+            assertEquals(2, db.bootstrapDao().binding(lease.storageScope)!!.accountGeneration)
+            val preserved = db.bootstrapDao().binding(lease.storageScope)!!
+            api.answer = { accepted(newEpoch, 1) }; controller.bootstrap()
+            assertEquals(preserved, db.bootstrapDao().binding(lease.storageScope))
+            api.answer = { accepted(newEpoch, 2, "b1111111-1111-4111-8111-111111111111") }; controller.bootstrap()
+            assertEquals(preserved, db.bootstrapDao().binding(lease.storageScope))
+            assertEquals("bootstrap-account-preserved", db.dao().day(lease.storageScope, LocalDate.now().toString()).first().single().meal.id)
+            assertEquals(1, db.dao().operationCount(lease.storageScope))
+        } finally { vault.clear(); db.close() }
+    }
+    @Test fun unavailableRespectsRetryAfterAcrossRestartAndReusesKey() = runBlocking<Unit> {
+        val db = memory(); val vault = SessionVault(context, name()); val fixture = FixtureGateway()
+        val api = ApiFixture { if (it == 1) BootstrapHttpResult(503, "<html>fixture proxy</html>".toByteArray(), "60") else accepted() }
+        try {
+            val controller = client(db, vault, fixture, api); controller.start(); login(controller, fixture, "fixture-A")
+            controller.bootstrap(); assertEquals(1, api.calls.size)
+            val restarted = client(db, vault, fixture, api); restarted.start()
+            restarted.bootstrap(); assertEquals(1, api.calls.size)
+            fixture.time += 59_000; restarted.bootstrap(); assertEquals(1, api.calls.size)
+            fixture.time += 1000; restarted.bootstrap(); assertEquals(2, api.calls.size)
+            assertEquals(api.calls[0].key, api.calls[1].key); assertTrue(restarted.view.value.serverLinked)
+        } finally { vault.clear(); db.close() }
+    }
+    @Test fun malformedResponseForbiddenAndRepeatedEpochConflictNeverDiscardPendingKey() = runBlocking<Unit> {
+        val db = memory(); val vault = SessionVault(context, name()); val fixture = FixtureGateway()
+        val api = ApiFixture { BootstrapHttpResult(200, accepted().body + "x".toByteArray()) }
+        try {
+            val controller = client(db, vault, fixture, api); controller.start(); login(controller, fixture, "fixture-A")
+            val lease = controller.view.value.binding!!.lease
+            controller.bootstrap(); val key = api.calls.single().key
+            api.answer = { denied(403, "forbidden") }; controller.bootstrap()
+            assertEquals(key, api.calls.last().key); assertEquals(1, fixture.calls)
+            api.answer = { denied(409, "sync_epoch_changed") }; controller.bootstrap()
+            assertEquals(4, api.calls.size); assertEquals(key, api.calls[2].key); assertNotEquals(key, api.calls[3].key)
+            val renewed = db.bootstrapDao().attempt(lease.storageScope)!!.operationId
+            assertEquals(renewed, api.calls.last().key); assertNull(db.bootstrapDao().binding(lease.storageScope))
+            api.answer = { accepted() }; controller.bootstrap()
+            assertEquals(renewed, api.calls.last().key); assertTrue(controller.view.value.serverLinked)
+        } finally { vault.clear(); db.close() }
+    }
+    @Test fun expiryRenewsBeforeHttpAndLocalIdentityWithoutSessionNeverSends() = runBlocking<Unit> {
+        val db = memory(); val vault = SessionVault(context, name()); val fixture = FixtureGateway(); val api = ApiFixture()
+        try {
+            val controller = client(db, vault, fixture, api); controller.start(); login(controller, fixture, "fixture-A")
+            val lease = controller.view.value.binding!!.lease
+            fixture.time += 400_000; controller.bootstrap()
+            assertEquals(2, fixture.calls); assertEquals(lease, api.calls.single().ticket.lease)
+            assertTrue(controller.view.value.serverLinked)
+            controller.logout()
+            val owners = LocalOwnerStore(db)
+            val local = owners.registerIdentity(issuer, "fixture-only-local")
+            owners.select(local.id)
+            val noSession = client(db, vault, fixture, api); noSession.start(); noSession.bootstrap()
+            assertEquals(1, api.calls.size); assertFalse(noSession.view.value.serverLinked)
+        } finally { vault.clear(); db.close() }
+    }
+    @Test fun refreshWhileBootstrapWaitsInvalidatesItsResponseWithoutDeletingAttempt() = runBlocking<Unit> {
+        val db = memory(); val vault = SessionVault(context, name()); val fixture = FixtureGateway()
+        val api = ApiFixture().apply { hold = CompletableDeferred() }
+        try {
+            val controller = client(db, vault, fixture, api); controller.start(); login(controller, fixture, "fixture-A")
+            val lease = controller.view.value.binding!!.lease
+            val task = async { controller.bootstrap() }; withTimeout(10_000) { api.started.await() }
+            controller.refresh(); api.hold!!.complete(Unit); task.await()
+            assertNull(db.bootstrapDao().binding(lease.storageScope))
+            assertNull(db.bootstrapDao().attempt(lease.storageScope)!!.responseJson)
+            val key = api.calls.single().key
+            api.hold = null; controller.bootstrap()
+            assertEquals(key, api.calls.last().key); assertTrue(controller.view.value.serverLinked)
+        } finally { api.hold?.complete(Unit); vault.clear(); db.close() }
+    }
+    @Test fun cancelledBootstrapReleasesBusyStateAndKeepsKeyForRetry() = runBlocking<Unit> {
+        val db = memory(); val vault = SessionVault(context, name()); val fixture = FixtureGateway()
+        val api = ApiFixture().apply { hold = CompletableDeferred() }
+        try {
+            val controller = client(db, vault, fixture, api); controller.start(); login(controller, fixture, "fixture-A")
+            val lease = controller.view.value.binding!!.lease
+            val task = async { controller.bootstrap() }; withTimeout(10_000) { api.started.await() }
+            task.cancelAndJoin()
+            assertFalse(controller.view.value.bootstrapBusy)
+            assertNull(db.bootstrapDao().binding(lease.storageScope))
+            val key = db.bootstrapDao().attempt(lease.storageScope)!!.operationId
+            api.hold = null; controller.bootstrap()
+            assertEquals(listOf(key, key), api.calls.map { it.key }); assertTrue(controller.view.value.serverLinked)
+        } finally { api.hold?.complete(Unit); vault.clear(); db.close() }
+    }
+    @Test fun cancelledAutomaticRenewalReleasesSessionAndBootstrapForRetry() = runBlocking<Unit> {
+        val db = memory(); val vault = SessionVault(context, name()); val fixture = FixtureGateway(); val api = ApiFixture()
+        try {
+            val controller = client(db, vault, fixture, api); controller.start(); login(controller, fixture, "fixture-A")
+            val lease = controller.view.value.binding!!.lease
+            fixture.time += 400_000; fixture.hold = CompletableDeferred()
+            val task = async { controller.bootstrap() }; withTimeout(10_000) { fixture.refreshStarted.await() }
+            task.cancelAndJoin()
+            assertFalse(controller.view.value.busy); assertFalse(controller.view.value.bootstrapBusy)
+            assertEquals(lease, controller.view.value.binding!!.lease); assertTrue(api.calls.isEmpty())
+            fixture.hold = null; controller.bootstrap()
+            assertEquals(1, api.calls.size); assertTrue(controller.view.value.serverLinked)
+        } finally { fixture.hold?.complete(Unit); vault.clear(); db.close() }
+    }
+    @Test fun failedUnauthorizedRenewalNeverResendsTheUnconfirmedOrOldToken() = runBlocking<Unit> {
+        val db = memory(); val vault = SessionVault(context, name()); val fixture = FixtureGateway()
+        val api = ApiFixture { denied(401, "unauthorized") }
+        try {
+            val controller = client(db, vault, fixture, api); controller.start(); login(controller, fixture, "fixture-A")
+            val lease = controller.view.value.binding!!.lease
+            fixture.subject = "fixture-B" // Token renewal must not change the confirmed subject.
+            controller.bootstrap()
+            assertEquals(1, api.calls.size); assertEquals(2, fixture.calls)
+            assertEquals("fixture-A", api.calls.single().ticket.identity.subject)
+            assertEquals(lease, controller.view.value.binding!!.lease)
+            assertNull(db.bootstrapDao().binding(lease.storageScope))
+            assertFalse(controller.view.value.bootstrapBusy)
+            assertNull(db.ownerDao().byIdentity(issuer, "fixture-B"))
+        } finally { vault.clear(); db.close() }
     }
 }

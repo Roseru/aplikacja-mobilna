@@ -12,7 +12,11 @@ class CalorieApplication : Application() {
     val repository get() = DiaryRepository(database, this)
     val preferences by lazy { Preferences(this) }
     val sessionScope = CoroutineScope(SupervisorJob() + Dispatchers.Main.immediate)
-    val sessions by lazy { SessionController(database, SessionVault(this), AppAuthGateway(this), getString(R.string.oidc_issuer), packageName) }
+    val sessions by lazy { SessionController(database, SessionVault(this), AppAuthGateway(this), getString(R.string.oidc_issuer), packageName,
+        bootstrapGateway = getString(R.string.api_base_url).takeIf { it.isNotEmpty() }?.let {
+            // Invalid public configuration disables API access; it never blocks the offline diary.
+            try { HttpsBootstrapGateway(it) } catch (_: Exception) { null }
+        }) }
     override fun onCreate() {
         super.onCreate()
         sessionScope.launch { sessions.start() }

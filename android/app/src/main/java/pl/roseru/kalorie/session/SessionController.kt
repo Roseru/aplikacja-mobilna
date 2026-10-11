@@ -2,7 +2,9 @@ package pl.roseru.kalorie.session
 
 import android.content.Intent
 import android.net.Uri
+import androidx.room.withTransaction
 import kotlinx.coroutines.CancellationException
+import kotlinx.coroutines.NonCancellable
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.sync.Mutex
@@ -20,26 +22,34 @@ import java.util.UUID
 data class SessionBinding(val owner: LocalOwnerEntity, val lease: OwnerLease)
 data class SessionView(val binding: SessionBinding? = null, val busy: Boolean = false,
     val pendingLogin: Boolean = false, val configured: Boolean = false, val hasSession: Boolean = false,
-    val message: String? = null)
+    val message: String? = null, val apiConfigured: Boolean = false, val bootstrapBusy: Boolean = false,
+    val serverLinked: Boolean = false, val requiresRecovery: Boolean = false)
 
 /** Serializes durable decisions, not network waits. A callback/refresh is fenced by a captured
  * owner lease AND an operation ID, so logout and A→B→A cannot apply an old response.
  */
 class SessionController internal constructor(private val db: CalorieDatabase, private val vault: SessionVault,
     private val gateway: OidcGateway, private val issuer: String, private val applicationId: String,
-    private val now: () -> Long = System::currentTimeMillis) {
+    private val now: () -> Long = System::currentTimeMillis,
+    private val bootstrapGateway: BootstrapGateway? = null) {
     private val owners = LocalOwnerStore(db)
     private val mutex = Mutex()
     private var record = JSONObject()
     private var operation: String? = null
+    private var bootstrapOperation: String? = null
+    private var sessionRevision = 0L
+    private val bootstraps = AccountBootstrapStore(db)
     private val mutable = MutableStateFlow(SessionView(configured = issuer.isNotEmpty()))
     val view = mutable.asStateFlow()
     private fun copyRecord() = JSONObject(record.toString())
-    private suspend fun persist(value: JSONObject) { withContext(Dispatchers.IO) { vault.write(value) }; record = value }
+    private suspend fun persist(value: JSONObject) {
+        withContext(Dispatchers.IO) { vault.write(value) }; record = value; sessionRevision++
+    }
     private suspend fun forget() {
         // A failed Keystore/storage cleanup never re-enables a session or blocks the diary.
         withContext(Dispatchers.IO) { try { vault.clear() } catch (_: Exception) { } }
         record = JSONObject()
+        sessionRevision++
     }
     private suspend fun binding(): SessionBinding {
         val lease = owners.currentLease()
@@ -52,7 +62,10 @@ class SessionController internal constructor(private val db: CalorieDatabase, pr
         val current = binding()
         val session = sessionFor(current)
         val fresh = session?.let { AuthState.jsonDeserialize(it.getString("authState")).accessTokenExpirationTime?.let { expiry -> expiry > now() + 30_000 } } == true
-        mutable.value = SessionView(current, configured = issuer.isNotEmpty(), pendingLogin = record.has("pending"), hasSession = fresh, message = message)
+        val server = db.bootstrapDao().binding(current.lease.storageScope)
+        mutable.value = SessionView(current, configured = issuer.isNotEmpty(), pendingLogin = record.has("pending"), hasSession = fresh,
+            message = message, apiConfigured = bootstrapGateway != null, bootstrapBusy = bootstrapOperation != null,
+            serverLinked = server != null, requiresRecovery = server?.requiresRecovery == true)
     }
     suspend fun start() = mutex.withLock {
         if (mutable.value.binding != null) return@withLock
@@ -92,8 +105,9 @@ class SessionController internal constructor(private val db: CalorieDatabase, pr
             if (issuer.isEmpty() || mutable.value.busy || record.has("pending")) return null
             requireHttps(issuer)
             val lease = owners.currentLease()
+            bootstrapOperation = null
             operation = id
-            mutable.value = mutable.value.copy(busy = true, message = null)
+            mutable.value = mutable.value.copy(busy = true, bootstrapBusy = false, message = null)
             lease
         } } catch (error: CancellationException) { throw error }
         catch (_: Exception) { mutable.value = mutable.value.copy(message = "Logowanie jest niedostępne. Dziennik działa offline."); return null }
@@ -181,6 +195,7 @@ class SessionController internal constructor(private val db: CalorieDatabase, pr
         val guest = owners.ensureGuest()
         // Local logout removes all tokens and pending codes; it does not delete any diary.
         operation = null
+        bootstrapOperation = null
         forget()
         mutable.value = mutable.value.copy(binding = null)
         owners.selectIfCurrent(captured, guest.id)
@@ -193,11 +208,13 @@ class SessionController internal constructor(private val db: CalorieDatabase, pr
                 message = "Pamięć dziennika jest niedostępna. Spróbuj ponownie.") }
         } }
     }
-    suspend fun refresh() {
+    suspend fun refresh() { refreshFor(null) }
+    private suspend fun refreshFor(expected: OwnerLease?): Boolean {
         val id = UUID.randomUUID().toString()
         var registered = false
         try {
             val captured = mutex.withLock {
+                expected?.let { owners.requireCurrent(it) }
                 check(!mutable.value.busy && !record.has("pending"))
                 val current = binding()
                 val session = checkNotNull(sessionFor(current))
@@ -213,16 +230,19 @@ class SessionController internal constructor(private val db: CalorieDatabase, pr
             tokens.idToken?.let { SessionClaims.identity(it, issuer, null, now() / 1000, captured.third) }
             require(tokens.tokenType.equals("Bearer", ignoreCase = true) && !tokens.accessToken.isNullOrEmpty())
             require(checkNotNull(tokens.accessTokenExpirationTime) > now())
-            mutex.withLock {
-                if (operation != id) return@withLock
+            return mutex.withLock {
+                if (operation != id) return@withLock false
                 owners.requireCurrent(captured.first.lease)
                 captured.second.update(tokens, null)
                 val session = checkNotNull(sessionFor(captured.first))
                 persist(copyRecord().put("session", JSONObject(session.toString()).put("authState", captured.second.jsonSerializeString())))
                 operation = null
                 publish("Sesja odnowiona. Dziennik zachowany.")
+                true
             }
-        } catch (error: CancellationException) { fail(id, "Odnowienie przerwane. Dziennik działa offline."); throw error }
+        } catch (error: CancellationException) {
+            withContext(NonCancellable) { fail(id, "Odnowienie przerwane. Dziennik działa offline.") }; throw error
+        }
         catch (_: Exception) {
             mutex.withLock {
                 if (registered && operation != id) return@withLock
@@ -230,6 +250,131 @@ class SessionController internal constructor(private val db: CalorieDatabase, pr
                 if (operation == id) operation = null
                 publish("Sesji nie udało się odnowić. Dziennik działa offline; spróbuj zalogować się ponownie.")
             }
+            return false
+        }
+    }
+
+    /** Must be called under mutex. A refresh, pending login, logout or ABA invalidates the ticket. */
+    private suspend fun captureApi(lease: OwnerLease): ApiSession {
+        owners.requireCurrent(lease)
+        check(operation == null && !record.has("pending"))
+        val current = binding()
+        val session = checkNotNull(sessionFor(current))
+        val identity = SessionIdentity(session.getString("issuer"), session.getString("subject"))
+        require(identity.issuer == issuer && identity.issuer == current.owner.issuer && identity.subject == current.owner.subject)
+        val serialized = session.getString("authState")
+        val state = AuthState.jsonDeserialize(serialized)
+        require(checkNotNull(state.accessTokenExpirationTime) > now() + 30_000)
+        val token = checkNotNull(state.accessToken)
+        require(token.isNotBlank())
+        return ApiSession(identity, lease, token, serialized, sessionRevision)
+    }
+    private suspend fun requireApi(ticket: ApiSession) {
+        val current = captureApi(ticket.lease)
+        check(current.identity == ticket.identity && current.authState == ticket.authState && current.revision == ticket.revision)
+    }
+    internal suspend fun apiSession(lease: OwnerLease): ApiSession = mutex.withLock { captureApi(lease) }
+    internal suspend fun <T> withApiSession(ticket: ApiSession, block: suspend () -> T): T = mutex.withLock {
+        db.withTransaction { requireApi(ticket); block() }
+    }
+
+    /** Explicit E3 connection, never a diary sync or an implicit guest import. */
+    suspend fun bootstrap() {
+        val gateway = bootstrapGateway ?: return
+        val id = UUID.randomUUID().toString()
+        val lease = try { mutex.withLock {
+            if (bootstrapOperation != null || operation != null || record.has("pending")) return
+            val current = binding()
+            if (current.owner.kind != "account" || sessionFor(current) == null) {
+                publish("Zaloguj się, aby połączyć konto z serwerem. Dziennik działa offline."); return
+            }
+            val retryAt = sessionFor(current)!!.optLong("apiRetryAt")
+            if (retryAt > now()) {
+                publish("Serwer jest zajęty. Ponów za co najmniej ${(retryAt - now() + 999) / 1000} s. Dziennik działa offline."); return
+            }
+            bootstrapOperation = id
+            mutable.value = mutable.value.copy(bootstrapBusy = true, message = null)
+            current.lease
+        } } catch (error: CancellationException) { throw error }
+        catch (_: Exception) {
+            mutable.value = mutable.value.copy(bootstrapBusy = false, message = "Połączenie jest niedostępne. Dziennik pozostaje lokalny.")
+            return
+        }
+        try {
+            // Renew an expiring token only for the originally captured owner.
+            val fresh = mutex.withLock {
+                owners.requireCurrent(lease)
+                val state = AuthState.jsonDeserialize(checkNotNull(sessionFor(binding())).getString("authState"))
+                (state.accessTokenExpirationTime ?: 0) > now() + 30_000
+            }
+            if (!fresh) check(refreshFor(lease))
+            var ticket = apiSession(lease)
+            var request = withApiSession(ticket) { check(bootstrapOperation == id); bootstraps.begin(lease) }
+            var renewedKey = false
+            var refreshed = false
+            while (true) {
+                val captured = ticket
+                val result = gateway.post(captured, request.operationId) {
+                    withApiSession(captured) { check(bootstrapOperation == id) }
+                }
+                if (result.status == 200) {
+                    val response = BootstrapProtocol.parse(result.body)
+                    withApiSession(captured) {
+                        check(bootstrapOperation == id)
+                        val server = bootstraps.apply(request, response)
+                        bootstrapOperation = null
+                        publish(if (server.requiresRecovery) "Konto połączone. Zmiana stanu serwera wymaga uzgodnienia danych; lokalny dziennik zachowany."
+                            else "Konto połączone z serwerem. Posiłki i kolejka nadal pozostają lokalne.")
+                    }
+                    return
+                }
+                val code = if (result.status in setOf(429, 503)) "" else BootstrapHttpProtocol.errorCode(result.body)
+                withApiSession(captured) { check(bootstrapOperation == id) }
+                if (result.status == 401 && code == "unauthorized" && !refreshed) {
+                    refreshed = true
+                    check(refreshFor(lease))
+                    ticket = apiSession(lease)
+                    withApiSession(ticket) { check(bootstrapOperation == id) }
+                    continue // Same durable key, at most one renewal.
+                }
+                if (result.status == 409 && code in setOf("sync_epoch_changed", "account_generation_changed") && !renewedKey) {
+                    request = withApiSession(captured) { check(bootstrapOperation == id); bootstraps.renew(request) }
+                    renewedKey = true
+                    continue // At most one new key; old mapping and diary are preserved.
+                }
+                val message = when (result.status) {
+                    401 -> "Sesja wymaga ponownego logowania. Dziennik działa offline."
+                    403 -> "Serwer nie pozwala połączyć tego konta. Dziennik działa offline."
+                    409 -> "Serwer zwrócił konflikt połączenia. Zachowano lokalne dane i klucz próby."
+                    429, 503 -> {
+                        val seconds = BootstrapHttpProtocol.retrySeconds(result.retryAfter, now())
+                        val retryAt = Math.addExact(now(), Math.multiplyExact(seconds, 1000))
+                        withApiSession(captured) {
+                            check(bootstrapOperation == id)
+                            val session = checkNotNull(sessionFor(binding()))
+                            persist(copyRecord().put("session", JSONObject(session.toString()).put("apiRetryAt", retryAt)))
+                        }
+                        "Serwer jest zajęty. Ponów za co najmniej $seconds s. Dziennik działa offline."
+                    }
+                    else -> "Nie udało się połączyć konta. Dziennik działa offline."
+                }
+                mutex.withLock {
+                    if (bootstrapOperation == id) { owners.requireCurrent(lease); bootstrapOperation = null; publish(message) }
+                }
+                return
+            }
+        } catch (error: CancellationException) {
+            withContext(NonCancellable) { finishBootstrap(id, lease) }; throw error
+        } catch (_: Exception) { finishBootstrap(id, lease) }
+    }
+    private suspend fun finishBootstrap(id: String, lease: OwnerLease) = mutex.withLock {
+        if (bootstrapOperation != id) return@withLock
+        bootstrapOperation = null
+        try {
+            if (owners.currentLease() == lease) publish("Połączenie nie zostało potwierdzone. Dane i klucz próby zachowane; możesz ponowić.")
+            else publish()
+        } catch (_: Exception) {
+            mutable.value = mutable.value.copy(bootstrapBusy = false, message = "Połączenie nie zostało potwierdzone. Dziennik pozostaje lokalny.")
         }
     }
 }
