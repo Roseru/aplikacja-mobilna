@@ -17,9 +17,9 @@ Stan odczytany przez O1, 10 października 2026 r. Każda osoba aktualizuje swój
 
 | Rola | Ostatni znany rezultat | Następny krok / zależność | Źródło |
 |---|---|---|---|
-| O1 — Android, Kotlin, Room | Android 0.7 / Room 6: trwały bootstrap i niezmienne cele, gość offline poza main | Poprawki reviews #1/#6 i odbiór #1 → #6 → #7 → #9; O2 E3/E4, O3 środowisko/CI | [PR #9](https://github.com/Roseru/aplikacja-mobilna/pull/9), commit `ce6972c`; O1-008 |
+| O1 — Android, Kotlin, Room | Android 0.7.3 / Room 6: ikony i cel zależny od klasy; 67 JVM i 56/56 API35, aktualizacja bez utraty danych | Odbiór manualny i wymagane CI; następnie sesja/HTTP E3, trwały sync E4 i zgodność E5 | O1-012, [raport](../android/RAPORT_0_7_3.md), kod `1af9091` |
 | O2 — Python, PostgreSQL, API | E6-O2 odebrane/scalone na492811f, niezależne9,3/9,2 i main CI1643 PASS/osiem success | Publikacja/odbiór mastera E7 i jeden ręcznie zlecony czat GPT6.1/xhigh; E7-R, pełny E5-C oraz O1/O3 nadal otwarte | [PR #20](https://github.com/Roseru/aplikacja-mobilna/pull/20), O2-018/019, [master E7](MASTER_PROMPT_E7.md) |
-| O3 — DevOps, CI/CD, serwer | CI Androida/APK w PR #10, połączone z kontrolami E3–E5/Keycloak; scalenie po końcowym zielonym CI na polecenie właściciela | O1: OIDC/HTTP/Room/WorkManager/KO-31; O2: katalog i bramka pełnego E5; O3: uzgodnienie HTTPS/restore | O3-008, [PR #10](https://github.com/Roseru/aplikacja-mobilna/pull/10) |
+| O3 — DevOps, CI/CD, serwer | CI/HTTPS/retencja scalone; realny login APK O1/0.8.0 przez Chrome, A/B/gość, restart/expiry/refresh odebrane lokalnie; źródła narzędzi w PR27 | O1: HTTP/bootstrap/sync/KO-31; O3: VPS/SMTP/restore; stan końcowego CI/merge narzędzi w PR27 | O3-011, [PR #27](https://github.com/Roseru/aplikacja-mobilna/pull/27), [odbiór APK](../infra/integration/ANDROID_PKCE.md), kod O1 `3b081c4` |
 
 ## Wpisy
 
@@ -386,6 +386,34 @@ Oczekiwana odpowiedź: O2 potwierdza odczyt modelu tożsamości i udostępnia do
 - Oczekiwana odpowiedź / następny krok: O1 może odtworzyć konfigurację i użyć zgodnego issuer/API/publicznego CA do własnego OIDC/HTTP/callbacku w testowym APK. O2 uwzględnia dostawę infrastruktury przy własnych kontraktach/nowych migracjach; samodzielne E6 nadal ma osobną bramkę. Odbiorcy sami potwierdzają odczyt i wynik. Lokalny test nie potwierdza APK/KO-31, official katalogu, publicznego VPS/SMTP, harmonogramu workerów lub restore/RPO/RTO; pozostają kolejnymi zakresami.
 - Potwierdzenia / odpowiedzi: O3 przeczytał aktualny main74f26dd i zachował materiały ARPOL z #18. O1/O2 dopisują własny odczyt.
 
+### O3-010 — Okresowa retencja lokalnego środowiska
+
+- Data / autor: 2026-10-11, Agent 3 / O3.
+- Odbiorcy: O1, O2 / koordynator.
+- Status: DO ODCZYTU; lokalne testy wykonane, końcowe CI/merge i odbiór main zostaną potwierdzone w PR.
+- Źródło: jawne zlecenie właściciela po przygotowaniu zakresu; [gałąź codex/devops-local-retention](https://github.com/Roseru/aplikacja-mobilna/tree/codex/devops-local-retention) z main73860fabe8acfe25682a3022fba44f5aa40575de; [instrukcja](../infra/integration/README.md#okresowa-retencja-i-kontrola-pracy). Własny PR do main; ten wpis nie potwierdza zdalnego CI.
+- Przekazanie: osobny lokalny proces retention uruchamia istniejące prune O2 (sync/read na0012), ograniczone partie/konta/czas, trwały kursor i agregaty zdrowia. Jedna fizyczna sesja i blokada sesyjna zapobiegają nakładaniu przebiegów; utrata połączenia przerywa pracę bez reconnect. Osobny worker login/UID10001, bez DDL/operatora deletion/Keycloak DB/portu hosta. Pierwszy upgrade stanu dopisuje worker.env z istniejącym hasłem, bez rotacji sekretów/issuer/CA/epoki. Domyślnie przebieg co godzinę, kontynuacja/awaria po60s; limity są konfigurowalne.
+- Dowody lokalne:706 unit/TLS/stan PASS (693 backend+13 infra),7 rzeczywistych PG testów nowego procesu PASS: partie/fairness/restart, A/B bez HTTP, świeże/wygasłe kopie, minimalne receipts/epoka, busy, timeout konta, deleting race, actual DB disconnect, zły login/rola, zatrzymanie i kolejny rzeczywisty scheduled pass. Izolowany pełny HTTPS/API/PKCE/down-up zestaw z workerem PASS,10 grup. Ruff/actionlint/E0/diff-check PASS. Nie sumujemy powtórzeń. Final-head CI i main mają osobny odbiór w PR.
+- Ograniczenia: użyto istniejących reguł/ACL, nie zmieniono migracji, TTL, limitów, kontraktów, Androida ani źródeł. last_success to udany ograniczony przebieg, nie zerowy backlog. Status/log zawiera agregaty, prywatny kursor zostaje we własnym wolumenie. Nie jest to backup/restore, operator purge, publiczny monitoring albo przyszłe AI/Nemesis/punkty/zdjęcia.
+- Aktualizacja po wznowieniu 11.10: odczytano scalone E6 / O2-017–019 i Android0.7.2–0.7.3 / O1-011–012 oraz plan O1-010 z PR22. Dołączono main f551ecc zwykłym merge do PR21. Aktualny head0014: existing prune O2 obejmuje także community receipts; nowy ósmy realny test workera potwierdza minimalizację starego payloadu, zachowanie minimalnego wyniku/hash/epoki i świeżej odpowiedzi. Całe8PG PASS. Wcześniejszy CI38133567842 miał51/52device w próbie1 (recreation ilości:22,5→90), próba2 wszystkie8jobów success; nie stanowi dowodu nowej integracji. O1 dostarczył już własne poprawki małych ekranów; nie zmieniono Androida w PR21. Nowe końcowe CI i main będą potwierdzone w PR.
+- Następny krok: O3 odbiera końcowe CI, zachowuje kopię obu baz/katalogu przed lokalnym upgrade E6 i sprawdza main. O2 utrzymuje prune/migracje; O1 integruje APK/OIDC/HTTP/sync. Kolejne VPS/SMTP/restore pozostają osobnym zakresem.
+- Potwierdzenia / odpowiedzi: O3 odczytał najnowsze main/O3-009 i O2-015 z oczekującej gałęzi. O1/O2 sami potwierdzają odczyt i własne wyniki.
+
+### O3-011 — Rzeczywisty odbiór sesji APK 0.8.0 z HTTPS
+
+- Data / autor: 2026-10-11, Agent 3 / O3.
+- Odbiorcy: O1, informacyjnie O2 i właściciel.
+- Status: DO ODCZYTU; próby lokalne wykonane, stan final-head CI/merge w [PR #27](https://github.com/Roseru/aplikacja-mobilna/pull/27).
+- Źródło: jawne zlecenie właściciela z ochroną pracy O1; własny branch codex/devops-odbior-pkce z main2a56682, kod narzędzi9b37d9fe588deaec785a5e5662cd8efffc07b0a1 / [PR #27](https://github.com/Roseru/aplikacja-mobilna/pull/27), [odbiór/instrukcja](../infra/integration/ANDROID_PKCE.md). Testowany odłączony checkout O1 3b081c4a237c25183d6ec5d81317f9bd117160ea z [draft PR26](https://github.com/Roseru/aplikacja-mobilna/pull/26), bez zmian śledzonych plików i bez modyfikacji gałęzi/PR O1.
+- Odczyt: O1-013 z jego dokładnego commita, O2-017–019 i scalony O3-010/PR21. Nie potwierdzamy odczytu za O1/O2 i nie wysyłaliśmy wiadomości do innych czatów.
+- Przekazanie: zewnętrzny validation-only overlay publicznego CA dla dokładnego hosta, systemowe CA dla pozostałych, cleartext/user/debug-overrides wyłączone. Żadne Android źródło nie zostało zmienione. O3 naprawił jedyną stwierdzoną niezgodność: openid profile O1 było odrzucane przez lokalny Keycloak. Nowe instalacje mają opcjonalny istniejący profile wyłącznie dla calorie-android; jawny idempotentny helper aktualizuje istniejącą instalację bez reinit. Harness O2, PKCE S256, callbacki, role, konta, TTL, CA/issuer i migracje zachowane. HTTPS verifier sprawdza teraz dokładny zakres APK.
+- Dowody: nowy własny AVD API35/1080×2400/density420; rzeczywisty Chrome/HTTPS/login A i B/callback, śmierć procesu w przeglądarce i odbudowa, refresh B, logout do gościa, powrót do A bez importu gościa, anulowanie, naturalny expiry300, odnowienie bez sieci i po powrocie sieci. Debug z tym samym issuer/init odmówił nieznanego CA; zaufanie APK jest tylko w validation. Całe rowsets siedmiu tabel dla A/B/gościa i foreign_key_check potwierdziły zachowanie dzienników/outbox. Prywatne kopie DB+WAL/ekrany/APK pozostały poza Git.
+- Spóźniona odpowiedź: rzeczywisty refresh_token/HTTP200 Keycloak wstrzymany7,9s w pamięci prywatnego proxy TLS, tylko dla UID własnego validation AVD. Po logout przez UI odpowiedź zwolniona; gość/generacja7 i pełne rowsets A/B/gościa zachowane, konto nie reaktywowane. TLS/issuer zachowane, serwer/Chrome/O1 bez zmian; własne przekierowanie i proxy usunięte. Osobna próba starej karty nie potwierdziła late code exchange; nie przypisujemy mu wyniku refresh.
+- Kontrole lokalne: build validation/debug,73 JVM PASS, lint validation0błędów/40ostrzeżeń;21 testów infra PASS, Ruff lint/format PASS. Hash APK/version/source i dokładne ograniczenia w raporcie. Wymagane osiem zdalnych wyników własnego PR i main stanowi odrębny dowód; nie przypisujemy CI main/0.7.3 do niescalonego APK0.8.0.
+- Dodatkowa regresja O1/0.8.0: końcowe pełne65/65 API35/offline z overlay/pustym issuer PASS. Pierwszy pełny przebieg64/65 miał brak pola ration-grams-demo-a-crackers w DiaryFlowTest.choosePartialRationAndRestoreSelectionBeforeSaving:100; ten przypadek1/1 oraz kolejny pełny65/65 przeszły bez zmian testów/kodu. Raporty wszystkich prób zachowane prywatnie. O1 otrzymuje obserwację do stabilizacji; nie przypisujemy sobie poprawki ani nie dodajemy test retry. CI pierwszego kodu9b37d9f / 38155882041 miało osiem success,830+21+799+22 PASS,67 JVM/56device i10grup infra; dokumentacja tego wyniku ma własny nowy końcowy CI w PR27.
+- Następny krok: O1 sam odbiera swój PR26; może użyć instrukcji overlay/scope i następnie realizować przechwycony token+identity+lease oraz trwały HTTP bootstrap E3, potem E4. Nie dodano HTTP/read/sync/WorkManager i nie odebrano KO-31/pełnego E3/E5. VPS/SMTP/restore pozostają osobnymi zadaniami O3.
+- Potwierdzenia / odpowiedzi: odbiorcy sami dopisują odczyt i wynik.
+
 ## Wzór nowego wpisu
 
 ```markdown
@@ -441,6 +469,19 @@ Uzupełnienie O2-017: pierwsze pełne [CI38139065117](https://github.com/Roseru/
 
 Ponowny nieautor dla `ffc06966eb4df51255a6b204ffe0a32939cac20d`:6PG obu całych modułów PASS,9,3/10, zero otwartych istotnychP1/P2. Manifest213(211bez zmian, dwa testy) `365816932596db0476442e357bba423eb3e98c439a7554d8846dde27ff880e88`; pełne porównania historii/ACL/migracji zachowane. Końcowy commit dokumentacji otrzyma własny CI; exact head/base i rzeczywiste logi będą w PR20 i odpowiedzi tego czatu. Wykonawca nie scala PR.
 
+### O1-011 — Android 0.7.2, mniejsze ekrany i testy manualne
+
+- Data / autor: 2026-10-11, Agent 1 / O1.
+- Odbiorcy: właściciel, O2 / koordynator, O3; odniesienie O1-010 z PR #22, O3-007/008 i O2-017.
+- Status: DO ODCZYTU.
+- Źródło: `codex/android-male-ekrany`, kod `03f8678`, integracja `b81c8dc` z main `492811f`; [raport 0.7.2](../android/RAPORT_0_7_2.md). Opublikowany [PR #23](https://github.com/Roseru/aplikacja-mobilna/pull/23) do main, kod/raport na d0d1a0b po kontroli diff/E0. Aktualny stan CI odczytywany oddzielnie, bez deklaracji merge.
+- Przekazanie: jedna przewijana lista obejmuje nagłówek i wyniki produktów, również z edytorem. IME Done zamyka klawiaturę bez zapisania. Testy przewijają kontener przed szukaniem lazy node, sprawdzają ilości przed/po recreation i odczytują podsumowanie po przewinięciu odtworzonej listy. Nowy test zmienia produkt bez dodania posiłku; wszystkie wcześniejsze asercje danych zachowane, bez retry lub zwiększenia timeoutów.
+- Dowody autora: pełne assemble/JVM/lint/device na 1080×1920 i oddzielne pełne device na 1080×2400, density 420 / font 1.0 / API 35 offline; 65 JVM i osobno 53/53 + 53/53 urządzenia, zero failures/errors/skips. Lint 0 błędów/26 ostrzeżeń/1 informacja. Te same 53 scenariusze na dwóch rozmiarach jednego AVD; nie są to 106 różnych testów. Pierwsze próby i rzeczywisty finalny timeout nagłówka po odtworzeniu scrolla opisane w raporcie; test pojedynczy nie zastępuje pełnego odbioru.
+- Artefakt: Android 0.7.2 / versionCode 9 / Room 6, APK poza Git, hash 398bcee85dd2658fae3c73bb9093e257762d9a01880d0fbdbaa50c50e7f5ae6d. Rzeczywista aktualizacja 0.7.1→0.7.2 zachowała wszystkie kolumny 18 tabel, dziennik/właścicieli/outbox; foreign_key_check pusty. Właściciel zlecił otwarcie widocznego emulatora po etapie. Zdalny CI nowego head wymaga własnego odczytu.
+- Odczyt zespołu: main 492811f zawiera scalony E6/#20 i poprawki O2-017: CRLF, unieważnianie mq1 po canonical correction oraz indexed NFKC/casefold official/alias. Przeczytano aktualne INTEGRACJA_O1; nie uznaję siebie za recenzenta backendu ani wykonawcę jego testów. O3-010 czytany z d6405ed/PR #21; retencja nie jest backupem lub operatorem deletion. Merge E6 zachował wszystkie zmiany autorów i nie zmienił testowanego Androida.
+- Ograniczenia / następny krok: odbiór manualny właściciela i wymagane CI, potem własna sesja PKCE/callback/izolacja oraz HTTP/bootstrap E3. Adapter E4/WorkManager i zgodność E5 wymagają osobnego etapu. W APK brak OIDC/HTTP/sync/E6 UI; dane demo nie są official. Review opcjonalne, istotne uwagi i wymagane CI obowiązują. Odbiorcy dopisują własny odczyt; nie potwierdzam go za innych.
+- Potwierdzenia / odpowiedzi: brak.
+
 ### O2-018 — Odbiór poprawek i scalenie E6-O2
 
 - Data / autor: 2026-10-11, Agent 2 / O2, koordynator `01a12156-2312-7c43-aedc-1858e782e5fb`; odniesienia O2-016/017.
@@ -462,6 +503,20 @@ Ponowny nieautor dla `ffc06966eb4df51255a6b204ffe0a32939cac20d`:6PG obu całych 
 - Dowody / ograniczenia: dwa niezależne odbiory mastera finalnie9,3/9,3 i zero otwartych istotnych P1/P2; [recenzja instrukcji](e7/RECENZJA_MASTER_E7.md). Zamknięto P2 spool oryginału przed zgodą i doprecyzowano blokady. Odczytano niescalone PR21 O3(retention), PR22/23 O1(plan/UI), bez akceptacji lub przejęcia ich gałęzi. Audyt kodu potwierdził brak gotowego ai/jobs/worker — to rezultat E7, nie zewnętrzna blokada. Ponowny odczyt primary Google11.10.2026 potwierdził free model/JSON/image oraz istniejącą bramkę EOG; live konfiguracja/limity O3 i30 zatwierdzonych zdjęć nie są tu uznane za dostępne. Nie wykonano E7 ani prawdziwych call. Master rozdziela E7-O2, E7-R i full etap/wydanie; nie zmienia WF/KO i nie włącza billing.
 - Oczekiwana odpowiedź / następny krok: koordynator publikuje odebrany master, sprawdza duplikaty/projekt i tworzy jeden czat z dokładnym source SHA. Wykonawca zapisze własny start/branch/wynik w tym dzienniku. O3 dostarcza niepubliczny klucz i datowany free-only/model/project/limits config do wydzielonego środowiska; corpus z legalną zgodą jest wejściem E7-R. O1 realizuje własne zdjęcie/zgodę/sync/fallback. Automatyzacje PAUSED, bez zastępczego watchera.
 - Potwierdzenia / odpowiedzi: odbiorcy sami zapisują odczyt. Sam wpis nie uruchamia implementacji i nie daje PASS E7.
+
+Uzupełnienie O1-011: pełne osiem wymaganych kontroli CI dla 79aa96c odczytane jako success, brak uwag reviews. W trakcie próby merge main przyjął master E7 (485fb2e/#24); GitHub odmówił scalenia z powodu konfliktu wspólnej komunikacji. Zwykły merge zachowuje aktualne wiersze O1/O2 oraz pełne O1-011 i O2-018/019. Nie zmienia Androida 0.7.2; nowy head ma własne CI przed merge.
+
+### O1-012 — Etat biurowo-kawowy, ikony i cel z trybu
+
+- Data / autor: 2026-10-11, Agent 1 / O1.
+- Odbiorcy: właściciel, O2, O3.
+- Status: DO ODCZYTU.
+- Źródło: `codex/android-tryby-aktywnosci`, kod `1af9091`, [raport 0.7.3](../android/RAPORT_0_7_3.md), WF-02 w wymaganiach. Opublikowany [PR #25](https://github.com/Roseru/aplikacja-mobilna/pull/25) do main; kod i raport na `9513832`, zdalne CI odczytywane osobno. PR #23 / 0.7.2 scalony na main `446ac0c` po ośmiu success dla `27480a0`.
+- Przekazanie: nazwa Etat biurowo-kawowy i trzy dekoracyjne żołnierskie sylwetki. `activity_goal_v1` to względna reguła celu: 1 / 1,25 / 1,5; nowy cel = bieżące kcal × nowy/stary mnożnik, HALF_UP do 1 kcal. UI pokazuje wynik przed zapisem. Zapis profilu wraz z nową wersją celu i outbox jest atomowy; bez zmiany klasy kcal nie przeliczają się. Ręczny cel, B/T/W i wczorajsze wersje zachowane. Nie jest to kalkulator zapotrzebowania mifflin_pal_v1; backendowe identyfikatory GARRISON/LINE/COMMANDO oraz schemat Room 6 bez zmian.
+- Dowody autora: assemble/JVM/lint oraz końcowe pełne 56/56 urządzenia na 1080×2400/density420/font1/API35 offline. 67 JVM; lint 0 błędów/26 ostrzeżeń/1 informacja. Nowe testy odrzucania wartości, historii/ręcznego celu, rollback obu operacji i trzech rzeczywistych kliknięć/podglądów z recreation. Początkowe błędy testu (pełny tekst, komunikat zasłaniający następny szybki tap) opisane w raporcie; bez retry zapisu, bez zamiany kliknięcia na akcję semantyczną. APK poza Git; hash 86029e183c5dbf27e379be78acd38aefc7ac07e6cb1e90bf80135227bbca4547.
+- Dane / odczyt: aktualizacja 0.7.2→0.7.3 zachowała wszystkie kolumny 18 tabel oraz 2 istniejące posiłki, profile, cele i outbox; foreign_key_check pusty. Odczytałem O2-018/019 i związany z O1 zakres mastera E7. Confirm AI nie zapisuje dziennika/szkicu; Room i outbox pozostają ścieżką zapisu. Nie deklaruję odbioru E7 ani wykonania testów O2. Zwykły merge zachował oba aktualne wiersze i pełne przekazania O1/O2, bez przepisywania historii.
+- Następny krok / ograniczenia: widoczny emulator 0.7.3 do testów właściciela i nowe wymagane CI; później sesja/HTTP/bootstrap i E4/E5. W tym APK nie ma OIDC/HTTP/sync/AI. O2 informacyjnie: przy przyszłym adapterze klasy aktywności zachować jawną decyzję celu i rozdział od oszacowanego zapotrzebowania; nie przeliczać istniejących celów przy samym odczycie profilu. O3: bez migracji/pipeline changes.
+- Potwierdzenia / odpowiedzi: odbiorcy dopisują własny odczyt.
 
 ### O2-020 — Start izolowanego backendu E7-O2
 

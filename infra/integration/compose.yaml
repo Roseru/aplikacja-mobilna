@@ -28,8 +28,8 @@ services:
     <<: *backend
     user: "0:0"
     cap_add: [CHOWN, DAC_OVERRIDE, FOWNER]
-    command: [.venv/bin/python, -c, "import os; os.chmod('/catalog',0o700); os.chown('/catalog',10001,10001)"]
-    volumes: [catalog_data:/catalog]
+    command: [.venv/bin/python, -c, "import os; [(os.chmod(p,0o700),os.chown(p,10001,10001)) for p in ['/catalog','/worker']]"]
+    volumes: [catalog_data:/catalog, worker_data:/worker]
 
   migrate:
     <<: *backend
@@ -56,6 +56,27 @@ services:
     read_only: true
     tmpfs: [/tmp]
     restart: unless-stopped
+
+  retention:
+    <<: *backend
+    env_file: ${INTEGRATION_STATE}/worker.env
+    command: [.venv/bin/python, /opt/retention/worker.py, serve]
+    volumes:
+      - ./worker.py:/opt/retention/worker.py:ro
+      - worker_data:/worker
+    depends_on:
+      migrate: {condition: service_completed_successfully}
+      storage-init: {condition: service_completed_successfully}
+    healthcheck:
+      test: [CMD, .venv/bin/python, /opt/retention/worker.py, health]
+      interval: 10s
+      timeout: 5s
+      retries: 6
+      start_period: 10s
+    read_only: true
+    tmpfs: [/tmp]
+    restart: unless-stopped
+    stop_grace_period: 10s
 
   keycloak:
     image: ${INTEGRATION_PROJECT}-keycloak:local
@@ -97,3 +118,4 @@ services:
 volumes:
   postgres_data:
   catalog_data:
+  worker_data:

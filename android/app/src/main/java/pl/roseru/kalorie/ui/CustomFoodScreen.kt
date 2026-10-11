@@ -14,6 +14,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalSoftwareKeyboardController
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.text.input.KeyboardType
+import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import pl.roseru.kalorie.DiaryViewModel
@@ -79,5 +80,6 @@ import kotlin.math.roundToInt
 @Composable internal fun NumericField(label: String, unit: String, value: String, onChange: (String) -> Unit, error: Boolean,
     tag: String, busy: Boolean = false) {
     OutlinedTextField(value, onValueChange = onChange, label = { Text(label) }, suffix = { Text(unit) }, singleLine = true,
-        isError = error, enabled = !busy, keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal), modifier = Modifier.fillMaxWidth().testTag(tag))
+        isError = error, enabled = !busy, keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal, imeAction = ImeAction.Done),
+        keyboardActions = doneKeyboardActions(), modifier = Modifier.fillMaxWidth().testTag(tag))
 }

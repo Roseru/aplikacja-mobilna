@@ -22,6 +22,7 @@ import androidx.compose.ui.platform.LocalSoftwareKeyboardController
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardType
+import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import pl.roseru.kalorie.DiaryViewModel
@@ -153,7 +154,8 @@ private val QuantitySaver = mapSaver<Map<String, String>>(
             }
             if (text != null) {
                 OutlinedTextField(text, onValueChange = onAmount, label = { Text("Zjedzona ilość") }, suffix = { Text(part.quantityUnit) }, singleLine = true,
-                    keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal), enabled = !busy, isError = amount == null,
+                    keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal, imeAction = ImeAction.Done),
+                    keyboardActions = doneKeyboardActions(), enabled = !busy, isError = amount == null,
                     modifier = Modifier.fillMaxWidth().testTag("ration-grams-${part.id}"),
                     supportingText = { Text(amount?.let { "${product.portion(ContractDecimal.canonical(it), part.quantityUnit).energyText()} kcal · zjedzona część" }
                         ?: "Podaj ilość większą od 0, najwyżej ${quantityText(ContractDecimal.canonical(packageAmount.min(BigDecimal("10000"))))} ${part.quantityUnit}.") })
