@@ -17,6 +17,7 @@ def main():
         "domain.schema.json",
         "sync.schema.json",
         "community.schema.json",
+        "ai.schema.json",
     ):
         data = (source / name).read_bytes()
         target = destination / name

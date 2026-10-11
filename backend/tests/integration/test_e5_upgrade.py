@@ -45,6 +45,18 @@ NEW_TABLES |= {
     "community_receipts",
     "community_quotas",
     "product_search_metadata",
+    "ai_controls",
+    "ai_pools",
+    "ai_analyses",
+    "ai_jobs",
+    "ai_photo_consents",
+    "ai_decisions",
+    "ai_receipts",
+    "ai_admissions",
+    "ai_energy_admissions",
+    "ai_attempts",
+    "ai_transport_permits",
+    "ai_cleanup_intents",
 }
 
 

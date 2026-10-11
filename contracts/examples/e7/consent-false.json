@@ -1,0 +1,8 @@
+{
+  "consent": {
+    "accepted": false,
+    "notice_version": "food-photo-notice-v1",
+    "provider": "mock",
+    "scope": "this_photo"
+  }
+}

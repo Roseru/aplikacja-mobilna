@@ -462,3 +462,14 @@ Ponowny nieautor dla `ffc06966eb4df51255a6b204ffe0a32939cac20d`:6PG obu całych 
 - Dowody / ograniczenia: dwa niezależne odbiory mastera finalnie9,3/9,3 i zero otwartych istotnych P1/P2; [recenzja instrukcji](e7/RECENZJA_MASTER_E7.md). Zamknięto P2 spool oryginału przed zgodą i doprecyzowano blokady. Odczytano niescalone PR21 O3(retention), PR22/23 O1(plan/UI), bez akceptacji lub przejęcia ich gałęzi. Audyt kodu potwierdził brak gotowego ai/jobs/worker — to rezultat E7, nie zewnętrzna blokada. Ponowny odczyt primary Google11.10.2026 potwierdził free model/JSON/image oraz istniejącą bramkę EOG; live konfiguracja/limity O3 i30 zatwierdzonych zdjęć nie są tu uznane za dostępne. Nie wykonano E7 ani prawdziwych call. Master rozdziela E7-O2, E7-R i full etap/wydanie; nie zmienia WF/KO i nie włącza billing.
 - Oczekiwana odpowiedź / następny krok: koordynator publikuje odebrany master, sprawdza duplikaty/projekt i tworzy jeden czat z dokładnym source SHA. Wykonawca zapisze własny start/branch/wynik w tym dzienniku. O3 dostarcza niepubliczny klucz i datowany free-only/model/project/limits config do wydzielonego środowiska; corpus z legalną zgodą jest wejściem E7-R. O1 realizuje własne zdjęcie/zgodę/sync/fallback. Automatyzacje PAUSED, bez zastępczego watchera.
 - Potwierdzenia / odpowiedzi: odbiorcy sami zapisują odczyt. Sam wpis nie uruchamia implementacji i nie daje PASS E7.
+
+### O2-020 — Start izolowanego backendu E7-O2
+
+- Data / autor: 2026-10-11, Agent 2 / O2, wykonawca E7.
+- Odbiorcy: koordynator `01a12156-2312-7c43-aedc-1858e782e5fb`, informacyjnie O1/O3.
+- Status: W TOKU.
+- Źródło: [master E7](MASTER_PROMPT_E7.md), scalony PR #24, dokładna baza `485fb2e959f4d4b74548e6ac6ffe4e129cd5e68f`; ręczny znacznik E7_O2_START_FROM_485fb2e959f4d4b74548e6ac6ffe4e129cd5e68f_PROJECT_913921f5-12c7-4204-9e4d-4afa20128bd7_GPT61_XHIGH.
+- Przekazanie: pełny master odczytany; własny managed worktree i gałąź `codex/backend-e7-analiza-zdjec`. Główny checkout E4, Random Data i pliki nieśledzone zachowane. [Decyzje v1](e7/DECYZJE_V1.md) i przykłady przyjęcia/wyniku zapisano przed runtime. Jeden główny wykonawca; wydzielone codec/storage oraz provider mają oddzielnych właścicieli plików. Niezależny nieautor odbierze całość.
+- Dowody / ograniczenia: status/remote/main/otwarte PR odczytane, main pobrany. PR #21 retencji O3 oraz #22/#23 planu/UI O1 pozostają osobne; nie przejęto ich gałęzi. Implementacja i testy E7 nie są jeszcze PASS. E7-R oczekuje datowanych wejść O3 i 30 zatwierdzonych niesensytywnych zdjęć; pełny etap dodatkowo dowodów O1/O3 i bramki regionu.
+- Oczekiwana odpowiedź / następny krok: migracja/ACL/kontrakt → runtime → realny PG/HTTP/storage/worker/crash/restore/race → właściwa regresja → nieautor ≥9/10 → jeden PR i rzeczywiste osiem CI dokładnego head/base. Bez merge, E8/E9 lub automatyzacji; harmonogramy pozostają PAUSED.
+- Potwierdzenia / odpowiedzi: odbiorcy sami zapisują odczyt.

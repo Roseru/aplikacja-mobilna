@@ -1,0 +1,1766 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://calorie.invalid/schemas/ai.schema.json",
+  "description": "Generated structural E7 contracts; runtime also validates semantic, context, time and ownership constraints.",
+  "$defs": {
+    "AnalysisProfile": {
+      "properties": {
+        "provider": {
+          "type": "string",
+          "enum": [
+            "mock",
+            "gemini"
+          ],
+          "title": "Provider"
+        },
+        "model": {
+          "type": "string",
+          "maxLength": 100,
+          "minLength": 1,
+          "title": "Model"
+        },
+        "prompt_version": {
+          "type": "string",
+          "title": "Prompt Version"
+        },
+        "schema_version": {
+          "type": "string",
+          "title": "Schema Version"
+        },
+        "preparation_version": {
+          "type": "string",
+          "title": "Preparation Version"
+        },
+        "rest_profile_version": {
+          "type": "string",
+          "title": "Rest Profile Version"
+        },
+        "mock_scenario": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "title": "Mock Scenario"
+        }
+      },
+      "additionalProperties": false,
+      "type": "object",
+      "required": [
+        "provider",
+        "model",
+        "prompt_version",
+        "schema_version",
+        "preparation_version",
+        "rest_profile_version",
+        "mock_scenario"
+      ],
+      "title": "AnalysisProfile"
+    },
+    "AnalysisResponse": {
+      "properties": {
+        "analysis_id": {
+          "type": "string",
+          "format": "uuid",
+          "title": "Analysis Id"
+        },
+        "revision": {
+          "type": "integer",
+          "maximum": 2147483647.0,
+          "minimum": 1.0,
+          "title": "Revision"
+        },
+        "state": {
+          "type": "string",
+          "enum": [
+            "queued",
+            "running",
+            "succeeded",
+            "failed"
+          ],
+          "title": "State"
+        },
+        "decision_state": {
+          "type": "string",
+          "enum": [
+            "pending",
+            "confirmed",
+            "cancelled"
+          ],
+          "title": "Decision State"
+        },
+        "queue_deadline": {
+          "type": "string",
+          "pattern": "^\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}(\\.[0-9]{1,6})?Z$",
+          "format": "date-time",
+          "title": "Queue Deadline"
+        },
+        "photo_expires_at": {
+          "type": "string",
+          "pattern": "^\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}(\\.[0-9]{1,6})?Z$",
+          "format": "date-time",
+          "title": "Photo Expires At"
+        },
+        "profile": {
+          "$ref": "#/$defs/AnalysisProfile"
+        },
+        "proposal": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/Proposal"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "error_code": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "title": "Error Code"
+        }
+      },
+      "additionalProperties": false,
+      "type": "object",
+      "required": [
+        "analysis_id",
+        "revision",
+        "state",
+        "decision_state",
+        "queue_deadline",
+        "photo_expires_at",
+        "profile",
+        "proposal",
+        "error_code"
+      ],
+      "title": "AnalysisResponse"
+    },
+    "CancelRequest": {
+      "additionalProperties": false,
+      "properties": {
+        "expected_revision": {
+          "maximum": 2147483647,
+          "minimum": 1,
+          "title": "Expected Revision",
+          "type": "integer"
+        }
+      },
+      "required": [
+        "expected_revision"
+      ],
+      "title": "CancelRequest",
+      "type": "object"
+    },
+    "CancelResponse": {
+      "properties": {
+        "analysis_id": {
+          "type": "string",
+          "format": "uuid",
+          "title": "Analysis Id"
+        },
+        "revision": {
+          "type": "integer",
+          "maximum": 2147483647.0,
+          "minimum": 1.0,
+          "title": "Revision"
+        },
+        "state": {
+          "type": "string",
+          "const": "failed",
+          "title": "State"
+        },
+        "decision_state": {
+          "type": "string",
+          "const": "cancelled",
+          "title": "Decision State"
+        },
+        "error_code": {
+          "type": "string",
+          "const": "analysis_cancelled",
+          "title": "Error Code"
+        }
+      },
+      "additionalProperties": false,
+      "type": "object",
+      "required": [
+        "analysis_id",
+        "revision",
+        "state",
+        "decision_state",
+        "error_code"
+      ],
+      "title": "CancelResponse"
+    },
+    "Capabilities": {
+      "properties": {
+        "provider": {
+          "type": "string",
+          "enum": [
+            "mock",
+            "gemini"
+          ],
+          "title": "Provider"
+        },
+        "profile": {
+          "$ref": "#/$defs/AnalysisProfile"
+        },
+        "notice_version": {
+          "type": "string",
+          "const": "food-photo-notice-v1",
+          "title": "Notice Version"
+        },
+        "available": {
+          "type": "boolean",
+          "title": "Available"
+        },
+        "unavailable_reason": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "title": "Unavailable Reason"
+        },
+        "image_bytes": {
+          "type": "integer",
+          "title": "Image Bytes",
+          "default": 5242880
+        },
+        "body_bytes": {
+          "type": "integer",
+          "title": "Body Bytes",
+          "default": 6291456
+        },
+        "ingredients": {
+          "type": "integer",
+          "title": "Ingredients",
+          "default": 30
+        },
+        "daily_photos": {
+          "type": "integer",
+          "title": "Daily Photos",
+          "default": 10
+        },
+        "queue_seconds": {
+          "type": "integer",
+          "title": "Queue Seconds",
+          "default": 300
+        },
+        "attempt_seconds": {
+          "type": "integer",
+          "title": "Attempt Seconds",
+          "default": 45
+        },
+        "total_seconds": {
+          "type": "integer",
+          "title": "Total Seconds",
+          "default": 120
+        },
+        "max_generate_attempts": {
+          "type": "integer",
+          "title": "Max Generate Attempts",
+          "default": 2
+        },
+        "max_outbound_calls": {
+          "type": "integer",
+          "title": "Max Outbound Calls",
+          "default": 2
+        },
+        "active_jobs_per_account": {
+          "type": "integer",
+          "title": "Active Jobs Per Account",
+          "default": 1
+        },
+        "manual_entry_available": {
+          "type": "boolean",
+          "const": true,
+          "title": "Manual Entry Available",
+          "default": true
+        }
+      },
+      "additionalProperties": false,
+      "type": "object",
+      "required": [
+        "provider",
+        "profile",
+        "notice_version",
+        "available",
+        "unavailable_reason"
+      ],
+      "title": "Capabilities"
+    },
+    "CompositionDTO": {
+      "properties": {
+        "state": {
+          "type": "string",
+          "enum": [
+            "known",
+            "unknown"
+          ],
+          "title": "State"
+        },
+        "value": {
+          "anyOf": [
+            {
+              "type": "string",
+              "maxLength": 4000,
+              "minLength": 1
+            },
+            {
+              "items": {
+                "type": "string",
+                "maxLength": 2000,
+                "minLength": 1
+              },
+              "type": "array",
+              "maxItems": 100,
+              "minItems": 1
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "title": "Value"
+        }
+      },
+      "additionalProperties": false,
+      "type": "object",
+      "required": [
+        "state",
+        "value"
+      ],
+      "title": "CompositionDTO"
+    },
+    "ConfirmRequest": {
+      "additionalProperties": false,
+      "properties": {
+        "expected_revision": {
+          "maximum": 2147483647,
+          "minimum": 1,
+          "title": "Expected Revision",
+          "type": "integer"
+        },
+        "meal": {
+          "$ref": "#/$defs/MealTemplate"
+        },
+        "drafts": {
+          "items": {
+            "$ref": "#/$defs/DraftTemplate"
+          },
+          "maxItems": 30,
+          "title": "Drafts",
+          "type": "array"
+        }
+      },
+      "required": [
+        "expected_revision",
+        "meal"
+      ],
+      "title": "ConfirmRequest",
+      "type": "object"
+    },
+    "ConfirmResponse": {
+      "properties": {
+        "analysis_id": {
+          "type": "string",
+          "format": "uuid",
+          "title": "Analysis Id"
+        },
+        "meal": {
+          "$ref": "#/$defs/MealTemplate"
+        },
+        "drafts": {
+          "items": {
+            "$ref": "#/$defs/DraftTemplate"
+          },
+          "type": "array",
+          "maxItems": 30,
+          "title": "Drafts"
+        },
+        "provenance": {
+          "additionalProperties": true,
+          "type": "object",
+          "title": "Provenance"
+        }
+      },
+      "additionalProperties": false,
+      "type": "object",
+      "required": [
+        "analysis_id",
+        "meal",
+        "drafts",
+        "provenance"
+      ],
+      "title": "ConfirmResponse"
+    },
+    "CreateMetadata": {
+      "additionalProperties": false,
+      "properties": {
+        "consent": {
+          "$ref": "#/$defs/PhotoConsent"
+        }
+      },
+      "required": [
+        "consent"
+      ],
+      "title": "CreateMetadata",
+      "type": "object"
+    },
+    "CreateResponse": {
+      "properties": {
+        "analysis_id": {
+          "type": "string",
+          "format": "uuid",
+          "title": "Analysis Id"
+        },
+        "revision": {
+          "type": "integer",
+          "maximum": 2147483647.0,
+          "minimum": 1.0,
+          "title": "Revision"
+        },
+        "state": {
+          "type": "string",
+          "enum": [
+            "queued",
+            "running",
+            "succeeded",
+            "failed"
+          ],
+          "title": "State"
+        },
+        "queue_deadline": {
+          "type": "string",
+          "pattern": "^\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}(\\.[0-9]{1,6})?Z$",
+          "format": "date-time",
+          "title": "Queue Deadline"
+        },
+        "profile": {
+          "$ref": "#/$defs/AnalysisProfile"
+        }
+      },
+      "additionalProperties": false,
+      "type": "object",
+      "required": [
+        "analysis_id",
+        "revision",
+        "state",
+        "queue_deadline",
+        "profile"
+      ],
+      "title": "CreateResponse"
+    },
+    "DraftTemplate": {
+      "properties": {
+        "draft_id": {
+          "type": "string",
+          "format": "uuid",
+          "title": "Draft Id"
+        },
+        "payload": {
+          "properties": {
+            "name": {
+              "allOf": [
+                {
+                  "type": "string",
+                  "pattern": "^(?:[^\\u0000\\uD800-\\uDFFF]|[\\uD800-\\uDBFF][\\uDC00-\\uDFFF])*(?![\\s\\S])",
+                  "description": "Unicode bez NUL i samotnych surrogate; poprawne pary UTF-16/emoji są dozwolone."
+                }
+              ],
+              "type": "string",
+              "maxLength": 200,
+              "minLength": 1
+            },
+            "brand": {
+              "anyOf": [
+                {
+                  "allOf": [
+                    {
+                      "type": "string",
+                      "pattern": "^(?:[^\\u0000\\uD800-\\uDFFF]|[\\uD800-\\uDBFF][\\uDC00-\\uDFFF])*(?![\\s\\S])",
+                      "description": "Unicode bez NUL i samotnych surrogate; poprawne pary UTF-16/emoji są dozwolone."
+                    }
+                  ],
+                  "type": "string",
+                  "maxLength": 200,
+                  "minLength": 1
+                },
+                {
+                  "type": "null"
+                }
+              ]
+            },
+            "variant": {
+              "anyOf": [
+                {
+                  "allOf": [
+                    {
+                      "type": "string",
+                      "pattern": "^(?:[^\\u0000\\uD800-\\uDFFF]|[\\uD800-\\uDBFF][\\uDC00-\\uDFFF])*(?![\\s\\S])",
+                      "description": "Unicode bez NUL i samotnych surrogate; poprawne pary UTF-16/emoji są dozwolone."
+                    }
+                  ],
+                  "type": "string",
+                  "maxLength": 200,
+                  "minLength": 1
+                },
+                {
+                  "type": "null"
+                }
+              ]
+            },
+            "basis_unit": {
+              "enum": [
+                "g",
+                "ml"
+              ]
+            },
+            "nutrition_per_100": {
+              "properties": {
+                "energy_kcal": {
+                  "anyOf": [
+                    {
+                      "allOf": [
+                        {
+                          "type": "string",
+                          "pattern": "^(?:[^\\u0000\\uD800-\\uDFFF]|[\\uD800-\\uDBFF][\\uDC00-\\uDFFF])*(?![\\s\\S])",
+                          "description": "Unicode bez NUL i samotnych surrogate; poprawne pary UTF-16/emoji są dozwolone."
+                        }
+                      ],
+                      "type": "string",
+                      "pattern": "^(0|[1-9][0-9]{0,5})(\\.[0-9]{0,5}[1-9])?(?![\\s\\S])",
+                      "description": "Kanoniczne 0..999999.999999, maksymalnie 6 miejsc; bez znaku, wykładnika i końcowych zer."
+                    },
+                    {
+                      "type": "null"
+                    }
+                  ]
+                },
+                "protein_g": {
+                  "anyOf": [
+                    {
+                      "allOf": [
+                        {
+                          "type": "string",
+                          "pattern": "^(?:[^\\u0000\\uD800-\\uDFFF]|[\\uD800-\\uDBFF][\\uDC00-\\uDFFF])*(?![\\s\\S])",
+                          "description": "Unicode bez NUL i samotnych surrogate; poprawne pary UTF-16/emoji są dozwolone."
+                        }
+                      ],
+                      "type": "string",
+                      "pattern": "^(0|[1-9][0-9]{0,5})(\\.[0-9]{0,5}[1-9])?(?![\\s\\S])",
+                      "description": "Kanoniczne 0..999999.999999, maksymalnie 6 miejsc; bez znaku, wykładnika i końcowych zer."
+                    },
+                    {
+                      "type": "null"
+                    }
+                  ]
+                },
+                "fat_g": {
+                  "anyOf": [
+                    {
+                      "allOf": [
+                        {
+                          "type": "string",
+                          "pattern": "^(?:[^\\u0000\\uD800-\\uDFFF]|[\\uD800-\\uDBFF][\\uDC00-\\uDFFF])*(?![\\s\\S])",
+                          "description": "Unicode bez NUL i samotnych surrogate; poprawne pary UTF-16/emoji są dozwolone."
+                        }
+                      ],
+                      "type": "string",
+                      "pattern": "^(0|[1-9][0-9]{0,5})(\\.[0-9]{0,5}[1-9])?(?![\\s\\S])",
+                      "description": "Kanoniczne 0..999999.999999, maksymalnie 6 miejsc; bez znaku, wykładnika i końcowych zer."
+                    },
+                    {
+                      "type": "null"
+                    }
+                  ]
+                },
+                "carbs_g": {
+                  "anyOf": [
+                    {
+                      "allOf": [
+                        {
+                          "type": "string",
+                          "pattern": "^(?:[^\\u0000\\uD800-\\uDFFF]|[\\uD800-\\uDBFF][\\uDC00-\\uDFFF])*(?![\\s\\S])",
+                          "description": "Unicode bez NUL i samotnych surrogate; poprawne pary UTF-16/emoji są dozwolone."
+                        }
+                      ],
+                      "type": "string",
+                      "pattern": "^(0|[1-9][0-9]{0,5})(\\.[0-9]{0,5}[1-9])?(?![\\s\\S])",
+                      "description": "Kanoniczne 0..999999.999999, maksymalnie 6 miejsc; bez znaku, wykładnika i końcowych zer."
+                    },
+                    {
+                      "type": "null"
+                    }
+                  ]
+                }
+              },
+              "additionalProperties": false,
+              "type": "object",
+              "required": [
+                "energy_kcal",
+                "protein_g",
+                "fat_g",
+                "carbs_g"
+              ]
+            },
+            "package_quantity": {
+              "anyOf": [
+                {
+                  "properties": {
+                    "amount": {
+                      "allOf": [
+                        {
+                          "allOf": [
+                            {
+                              "type": "string",
+                              "pattern": "^(?:[^\\u0000\\uD800-\\uDFFF]|[\\uD800-\\uDBFF][\\uDC00-\\uDFFF])*(?![\\s\\S])",
+                              "description": "Unicode bez NUL i samotnych surrogate; poprawne pary UTF-16/emoji są dozwolone."
+                            }
+                          ],
+                          "type": "string",
+                          "pattern": "^(0|[1-9][0-9]{0,5})(\\.[0-9]{0,5}[1-9])?(?![\\s\\S])",
+                          "description": "Kanoniczne 0..999999.999999, maksymalnie 6 miejsc; bez znaku, wykładnika i końcowych zer."
+                        },
+                        {
+                          "not": {
+                            "const": "0"
+                          }
+                        }
+                      ]
+                    },
+                    "unit": {
+                      "enum": [
+                        "g",
+                        "ml"
+                      ]
+                    }
+                  },
+                  "additionalProperties": false,
+                  "type": "object",
+                  "required": [
+                    "amount",
+                    "unit"
+                  ]
+                },
+                {
+                  "type": "null"
+                }
+              ]
+            },
+            "density_g_per_ml": {
+              "anyOf": [
+                {
+                  "allOf": [
+                    {
+                      "allOf": [
+                        {
+                          "type": "string",
+                          "pattern": "^(?:[^\\u0000\\uD800-\\uDFFF]|[\\uD800-\\uDBFF][\\uDC00-\\uDFFF])*(?![\\s\\S])",
+                          "description": "Unicode bez NUL i samotnych surrogate; poprawne pary UTF-16/emoji są dozwolone."
+                        }
+                      ],
+                      "type": "string",
+                      "pattern": "^(0|[1-9][0-9]{0,5})(\\.[0-9]{0,5}[1-9])?(?![\\s\\S])",
+                      "description": "Kanoniczne 0..999999.999999, maksymalnie 6 miejsc; bez znaku, wykładnika i końcowych zer."
+                    },
+                    {
+                      "not": {
+                        "const": "0"
+                      }
+                    }
+                  ]
+                },
+                {
+                  "type": "null"
+                }
+              ]
+            },
+            "density_source": {
+              "anyOf": [
+                {
+                  "allOf": [
+                    {
+                      "type": "string",
+                      "pattern": "^(?:[^\\u0000\\uD800-\\uDFFF]|[\\uD800-\\uDBFF][\\uDC00-\\uDFFF])*(?![\\s\\S])",
+                      "description": "Unicode bez NUL i samotnych surrogate; poprawne pary UTF-16/emoji są dozwolone."
+                    }
+                  ],
+                  "type": "string",
+                  "maxLength": 500,
+                  "minLength": 1
+                },
+                {
+                  "type": "null"
+                }
+              ]
+            },
+            "source_description": {
+              "allOf": [
+                {
+                  "type": "string",
+                  "pattern": "^(?:[^\\u0000\\uD800-\\uDFFF]|[\\uD800-\\uDBFF][\\uDC00-\\uDFFF])*(?![\\s\\S])",
+                  "description": "Unicode bez NUL i samotnych surrogate; poprawne pary UTF-16/emoji są dozwolone."
+                }
+              ],
+              "type": "string",
+              "maxLength": 2000,
+              "minLength": 1
+            }
+          },
+          "additionalProperties": false,
+          "type": "object",
+          "required": [
+            "name",
+            "brand",
+            "variant",
+            "basis_unit",
+            "nutrition_per_100",
+            "package_quantity",
+            "density_g_per_ml",
+            "density_source",
+            "source_description"
+          ]
+        }
+      },
+      "additionalProperties": false,
+      "type": "object",
+      "required": [
+        "draft_id",
+        "payload"
+      ],
+      "title": "DraftTemplate"
+    },
+    "IdentityDTO": {
+      "properties": {
+        "brand": {
+          "$ref": "#/$defs/IdentityFieldDTO"
+        },
+        "variant": {
+          "$ref": "#/$defs/IdentityFieldDTO"
+        },
+        "composition": {
+          "$ref": "#/$defs/CompositionDTO"
+        }
+      },
+      "additionalProperties": false,
+      "type": "object",
+      "required": [
+        "brand",
+        "variant",
+        "composition"
+      ],
+      "title": "IdentityDTO"
+    },
+    "IdentityFieldDTO": {
+      "properties": {
+        "state": {
+          "type": "string",
+          "enum": [
+            "known",
+            "unknown",
+            "not_applicable"
+          ],
+          "title": "State"
+        },
+        "value": {
+          "anyOf": [
+            {
+              "type": "string",
+              "maxLength": 2000,
+              "minLength": 1
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "title": "Value"
+        }
+      },
+      "additionalProperties": false,
+      "type": "object",
+      "required": [
+        "state",
+        "value"
+      ],
+      "title": "IdentityFieldDTO"
+    },
+    "MatchCandidateDTO": {
+      "properties": {
+        "product": {
+          "$ref": "#/$defs/ProductRefDTO"
+        },
+        "provenance": {
+          "type": "string",
+          "enum": [
+            "official",
+            "community"
+          ],
+          "title": "Provenance"
+        },
+        "reasons": {
+          "items": {
+            "type": "string",
+            "maxLength": 2000,
+            "minLength": 1
+          },
+          "type": "array",
+          "maxItems": 20,
+          "minItems": 1,
+          "title": "Reasons"
+        },
+        "high_confidence": {
+          "type": "boolean",
+          "title": "High Confidence"
+        }
+      },
+      "additionalProperties": false,
+      "type": "object",
+      "required": [
+        "product",
+        "provenance",
+        "reasons",
+        "high_confidence"
+      ],
+      "title": "MatchCandidateDTO"
+    },
+    "MatchProductResponse": {
+      "properties": {
+        "decision": {
+          "type": "string",
+          "enum": [
+            "existing_variant",
+            "manual_candidates",
+            "new_product"
+          ],
+          "title": "Decision"
+        },
+        "existing_product": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/ProductRefDTO"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "candidates": {
+          "items": {
+            "$ref": "#/$defs/MatchCandidateDTO"
+          },
+          "type": "array",
+          "maxItems": 20,
+          "title": "Candidates"
+        },
+        "missing_identity_fields": {
+          "items": {
+            "type": "string",
+            "enum": [
+              "brand",
+              "variant",
+              "composition",
+              "energy_kcal"
+            ]
+          },
+          "type": "array",
+          "maxItems": 4,
+          "title": "Missing Identity Fields"
+        },
+        "truncated": {
+          "type": "boolean",
+          "title": "Truncated"
+        }
+      },
+      "additionalProperties": false,
+      "type": "object",
+      "required": [
+        "decision",
+        "existing_product",
+        "candidates",
+        "missing_identity_fields",
+        "truncated"
+      ],
+      "title": "MatchProductResponse"
+    },
+    "MealTemplate": {
+      "properties": {
+        "meal_id": {
+          "type": "string",
+          "format": "uuid",
+          "title": "Meal Id"
+        },
+        "payload": {
+          "properties": {
+            "title": {
+              "allOf": [
+                {
+                  "type": "string",
+                  "pattern": "^(?:[^\\u0000\\uD800-\\uDFFF]|[\\uD800-\\uDBFF][\\uDC00-\\uDFFF])*(?![\\s\\S])",
+                  "description": "Unicode bez NUL i samotnych surrogate; poprawne pary UTF-16/emoji są dozwolone."
+                }
+              ],
+              "type": "string",
+              "maxLength": 200,
+              "minLength": 1
+            },
+            "occurred_at": {
+              "allOf": [
+                {
+                  "type": "string",
+                  "pattern": "^(?:[^\\u0000\\uD800-\\uDFFF]|[\\uD800-\\uDBFF][\\uDC00-\\uDFFF])*(?![\\s\\S])",
+                  "description": "Unicode bez NUL i samotnych surrogate; poprawne pary UTF-16/emoji są dozwolone."
+                }
+              ],
+              "type": "string",
+              "pattern": "^\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}(\\.[0-9]{1,6})?Z$",
+              "format": "date-time"
+            },
+            "time_zone": {
+              "allOf": [
+                {
+                  "type": "string",
+                  "pattern": "^(?:[^\\u0000\\uD800-\\uDFFF]|[\\uD800-\\uDBFF][\\uDC00-\\uDFFF])*(?![\\s\\S])",
+                  "description": "Unicode bez NUL i samotnych surrogate; poprawne pary UTF-16/emoji są dozwolone."
+                }
+              ],
+              "type": "string",
+              "maxLength": 100,
+              "format": "iana-time-zone"
+            },
+            "local_date": {
+              "allOf": [
+                {
+                  "type": "string",
+                  "pattern": "^(?:[^\\u0000\\uD800-\\uDFFF]|[\\uD800-\\uDBFF][\\uDC00-\\uDFFF])*(?![\\s\\S])",
+                  "description": "Unicode bez NUL i samotnych surrogate; poprawne pary UTF-16/emoji są dozwolone."
+                }
+              ],
+              "type": "string",
+              "format": "date"
+            },
+            "meal_type": {
+              "anyOf": [
+                {
+                  "enum": [
+                    "breakfast",
+                    "lunch",
+                    "dinner",
+                    "snack"
+                  ]
+                },
+                {
+                  "type": "null"
+                }
+              ]
+            },
+            "goal_id": {
+              "anyOf": [
+                {
+                  "allOf": [
+                    {
+                      "type": "string",
+                      "pattern": "^(?:[^\\u0000\\uD800-\\uDFFF]|[\\uD800-\\uDBFF][\\uDC00-\\uDFFF])*(?![\\s\\S])",
+                      "description": "Unicode bez NUL i samotnych surrogate; poprawne pary UTF-16/emoji są dozwolone."
+                    }
+                  ],
+                  "type": "string",
+                  "pattern": "^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$",
+                  "format": "uuid"
+                },
+                {
+                  "type": "null"
+                }
+              ]
+            },
+            "ration": {
+              "anyOf": [
+                {
+                  "properties": {
+                    "ration_id": {
+                      "allOf": [
+                        {
+                          "type": "string",
+                          "pattern": "^(?:[^\\u0000\\uD800-\\uDFFF]|[\\uD800-\\uDBFF][\\uDC00-\\uDFFF])*(?![\\s\\S])",
+                          "description": "Unicode bez NUL i samotnych surrogate; poprawne pary UTF-16/emoji są dozwolone."
+                        }
+                      ],
+                      "type": "string",
+                      "pattern": "^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$",
+                      "format": "uuid"
+                    },
+                    "revision": {
+                      "type": "integer",
+                      "maximum": 2147483647.0,
+                      "minimum": 1.0
+                    },
+                    "name": {
+                      "allOf": [
+                        {
+                          "type": "string",
+                          "pattern": "^(?:[^\\u0000\\uD800-\\uDFFF]|[\\uD800-\\uDBFF][\\uDC00-\\uDFFF])*(?![\\s\\S])",
+                          "description": "Unicode bez NUL i samotnych surrogate; poprawne pary UTF-16/emoji są dozwolone."
+                        }
+                      ],
+                      "type": "string",
+                      "maxLength": 200,
+                      "minLength": 1
+                    }
+                  },
+                  "additionalProperties": false,
+                  "type": "object",
+                  "required": [
+                    "ration_id",
+                    "revision",
+                    "name"
+                  ]
+                },
+                {
+                  "type": "null"
+                }
+              ]
+            },
+            "items": {
+              "items": {
+                "properties": {
+                  "item_id": {
+                    "allOf": [
+                      {
+                        "type": "string",
+                        "pattern": "^(?:[^\\u0000\\uD800-\\uDFFF]|[\\uD800-\\uDBFF][\\uDC00-\\uDFFF])*(?![\\s\\S])",
+                        "description": "Unicode bez NUL i samotnych surrogate; poprawne pary UTF-16/emoji są dozwolone."
+                      }
+                    ],
+                    "type": "string",
+                    "pattern": "^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$",
+                    "format": "uuid"
+                  },
+                  "name": {
+                    "allOf": [
+                      {
+                        "type": "string",
+                        "pattern": "^(?:[^\\u0000\\uD800-\\uDFFF]|[\\uD800-\\uDBFF][\\uDC00-\\uDFFF])*(?![\\s\\S])",
+                        "description": "Unicode bez NUL i samotnych surrogate; poprawne pary UTF-16/emoji są dozwolone."
+                      }
+                    ],
+                    "type": "string",
+                    "maxLength": 200,
+                    "minLength": 1
+                  },
+                  "product": {
+                    "anyOf": [
+                      {
+                        "properties": {
+                          "product_id": {
+                            "allOf": [
+                              {
+                                "type": "string",
+                                "pattern": "^(?:[^\\u0000\\uD800-\\uDFFF]|[\\uD800-\\uDBFF][\\uDC00-\\uDFFF])*(?![\\s\\S])",
+                                "description": "Unicode bez NUL i samotnych surrogate; poprawne pary UTF-16/emoji są dozwolone."
+                              }
+                            ],
+                            "type": "string",
+                            "pattern": "^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$",
+                            "format": "uuid"
+                          },
+                          "revision": {
+                            "type": "integer",
+                            "maximum": 2147483647.0,
+                            "minimum": 1.0
+                          }
+                        },
+                        "additionalProperties": false,
+                        "type": "object",
+                        "required": [
+                          "product_id",
+                          "revision"
+                        ]
+                      },
+                      {
+                        "type": "null"
+                      }
+                    ]
+                  },
+                  "quantity": {
+                    "properties": {
+                      "amount": {
+                        "allOf": [
+                          {
+                            "allOf": [
+                              {
+                                "type": "string",
+                                "pattern": "^(?:[^\\u0000\\uD800-\\uDFFF]|[\\uD800-\\uDBFF][\\uDC00-\\uDFFF])*(?![\\s\\S])",
+                                "description": "Unicode bez NUL i samotnych surrogate; poprawne pary UTF-16/emoji są dozwolone."
+                              }
+                            ],
+                            "type": "string",
+                            "pattern": "^(0|[1-9][0-9]{0,5})(\\.[0-9]{0,5}[1-9])?(?![\\s\\S])",
+                            "description": "Kanoniczne 0..999999.999999, maksymalnie 6 miejsc; bez znaku, wykładnika i końcowych zer."
+                          },
+                          {
+                            "not": {
+                              "const": "0"
+                            }
+                          }
+                        ]
+                      },
+                      "unit": {
+                        "enum": [
+                          "g",
+                          "ml"
+                        ]
+                      }
+                    },
+                    "additionalProperties": false,
+                    "type": "object",
+                    "required": [
+                      "amount",
+                      "unit"
+                    ]
+                  },
+                  "basis_unit": {
+                    "enum": [
+                      "g",
+                      "ml"
+                    ]
+                  },
+                  "nutrition_per_100": {
+                    "properties": {
+                      "energy_kcal": {
+                        "anyOf": [
+                          {
+                            "allOf": [
+                              {
+                                "type": "string",
+                                "pattern": "^(?:[^\\u0000\\uD800-\\uDFFF]|[\\uD800-\\uDBFF][\\uDC00-\\uDFFF])*(?![\\s\\S])",
+                                "description": "Unicode bez NUL i samotnych surrogate; poprawne pary UTF-16/emoji są dozwolone."
+                              }
+                            ],
+                            "type": "string",
+                            "pattern": "^(0|[1-9][0-9]{0,5})(\\.[0-9]{0,5}[1-9])?(?![\\s\\S])",
+                            "description": "Kanoniczne 0..999999.999999, maksymalnie 6 miejsc; bez znaku, wykładnika i końcowych zer."
+                          },
+                          {
+                            "type": "null"
+                          }
+                        ]
+                      },
+                      "protein_g": {
+                        "anyOf": [
+                          {
+                            "allOf": [
+                              {
+                                "type": "string",
+                                "pattern": "^(?:[^\\u0000\\uD800-\\uDFFF]|[\\uD800-\\uDBFF][\\uDC00-\\uDFFF])*(?![\\s\\S])",
+                                "description": "Unicode bez NUL i samotnych surrogate; poprawne pary UTF-16/emoji są dozwolone."
+                              }
+                            ],
+                            "type": "string",
+                            "pattern": "^(0|[1-9][0-9]{0,5})(\\.[0-9]{0,5}[1-9])?(?![\\s\\S])",
+                            "description": "Kanoniczne 0..999999.999999, maksymalnie 6 miejsc; bez znaku, wykładnika i końcowych zer."
+                          },
+                          {
+                            "type": "null"
+                          }
+                        ]
+                      },
+                      "fat_g": {
+                        "anyOf": [
+                          {
+                            "allOf": [
+                              {
+                                "type": "string",
+                                "pattern": "^(?:[^\\u0000\\uD800-\\uDFFF]|[\\uD800-\\uDBFF][\\uDC00-\\uDFFF])*(?![\\s\\S])",
+                                "description": "Unicode bez NUL i samotnych surrogate; poprawne pary UTF-16/emoji są dozwolone."
+                              }
+                            ],
+                            "type": "string",
+                            "pattern": "^(0|[1-9][0-9]{0,5})(\\.[0-9]{0,5}[1-9])?(?![\\s\\S])",
+                            "description": "Kanoniczne 0..999999.999999, maksymalnie 6 miejsc; bez znaku, wykładnika i końcowych zer."
+                          },
+                          {
+                            "type": "null"
+                          }
+                        ]
+                      },
+                      "carbs_g": {
+                        "anyOf": [
+                          {
+                            "allOf": [
+                              {
+                                "type": "string",
+                                "pattern": "^(?:[^\\u0000\\uD800-\\uDFFF]|[\\uD800-\\uDBFF][\\uDC00-\\uDFFF])*(?![\\s\\S])",
+                                "description": "Unicode bez NUL i samotnych surrogate; poprawne pary UTF-16/emoji są dozwolone."
+                              }
+                            ],
+                            "type": "string",
+                            "pattern": "^(0|[1-9][0-9]{0,5})(\\.[0-9]{0,5}[1-9])?(?![\\s\\S])",
+                            "description": "Kanoniczne 0..999999.999999, maksymalnie 6 miejsc; bez znaku, wykładnika i końcowych zer."
+                          },
+                          {
+                            "type": "null"
+                          }
+                        ]
+                      }
+                    },
+                    "additionalProperties": false,
+                    "type": "object",
+                    "required": [
+                      "energy_kcal",
+                      "protein_g",
+                      "fat_g",
+                      "carbs_g"
+                    ]
+                  },
+                  "density_g_per_ml": {
+                    "anyOf": [
+                      {
+                        "allOf": [
+                          {
+                            "allOf": [
+                              {
+                                "type": "string",
+                                "pattern": "^(?:[^\\u0000\\uD800-\\uDFFF]|[\\uD800-\\uDBFF][\\uDC00-\\uDFFF])*(?![\\s\\S])",
+                                "description": "Unicode bez NUL i samotnych surrogate; poprawne pary UTF-16/emoji są dozwolone."
+                              }
+                            ],
+                            "type": "string",
+                            "pattern": "^(0|[1-9][0-9]{0,5})(\\.[0-9]{0,5}[1-9])?(?![\\s\\S])",
+                            "description": "Kanoniczne 0..999999.999999, maksymalnie 6 miejsc; bez znaku, wykładnika i końcowych zer."
+                          },
+                          {
+                            "not": {
+                              "const": "0"
+                            }
+                          }
+                        ]
+                      },
+                      {
+                        "type": "null"
+                      }
+                    ]
+                  },
+                  "density_source": {
+                    "anyOf": [
+                      {
+                        "allOf": [
+                          {
+                            "type": "string",
+                            "pattern": "^(?:[^\\u0000\\uD800-\\uDFFF]|[\\uD800-\\uDBFF][\\uDC00-\\uDFFF])*(?![\\s\\S])",
+                            "description": "Unicode bez NUL i samotnych surrogate; poprawne pary UTF-16/emoji są dozwolone."
+                          }
+                        ],
+                        "type": "string",
+                        "maxLength": 500,
+                        "minLength": 1
+                      },
+                      {
+                        "type": "null"
+                      }
+                    ]
+                  },
+                  "nutrition_origin": {
+                    "enum": [
+                      "catalog_snapshot",
+                      "manual",
+                      "ai_estimate"
+                    ]
+                  },
+                  "formula_version": {
+                    "const": "nutrition_v1"
+                  },
+                  "ration_component_position": {
+                    "anyOf": [
+                      {
+                        "type": "integer",
+                        "maximum": 100000.0,
+                        "minimum": 1.0
+                      },
+                      {
+                        "type": "null"
+                      }
+                    ]
+                  }
+                },
+                "additionalProperties": false,
+                "type": "object",
+                "required": [
+                  "item_id",
+                  "name",
+                  "product",
+                  "quantity",
+                  "basis_unit",
+                  "nutrition_per_100",
+                  "density_g_per_ml",
+                  "density_source",
+                  "nutrition_origin",
+                  "formula_version",
+                  "ration_component_position"
+                ]
+              },
+              "type": "array",
+              "maxItems": 30,
+              "minItems": 1
+            }
+          },
+          "additionalProperties": false,
+          "type": "object",
+          "required": [
+            "title",
+            "occurred_at",
+            "time_zone",
+            "local_date",
+            "meal_type",
+            "goal_id",
+            "ration",
+            "items"
+          ]
+        }
+      },
+      "additionalProperties": false,
+      "type": "object",
+      "required": [
+        "meal_id",
+        "payload"
+      ],
+      "title": "MealTemplate"
+    },
+    "NutritionDTO": {
+      "properties": {
+        "energy_kcal": {
+          "anyOf": [
+            {
+              "type": "string",
+              "pattern": "^(0|[1-9][0-9]{0,5})(\\.[0-9]{0,5}[1-9])?(?![\\s\\S])"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "title": "Energy Kcal"
+        },
+        "protein_g": {
+          "anyOf": [
+            {
+              "type": "string",
+              "pattern": "^(0|[1-9][0-9]{0,5})(\\.[0-9]{0,5}[1-9])?(?![\\s\\S])"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "title": "Protein G"
+        },
+        "fat_g": {
+          "anyOf": [
+            {
+              "type": "string",
+              "pattern": "^(0|[1-9][0-9]{0,5})(\\.[0-9]{0,5}[1-9])?(?![\\s\\S])"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "title": "Fat G"
+        },
+        "carbs_g": {
+          "anyOf": [
+            {
+              "type": "string",
+              "pattern": "^(0|[1-9][0-9]{0,5})(\\.[0-9]{0,5}[1-9])?(?![\\s\\S])"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "title": "Carbs G"
+        }
+      },
+      "additionalProperties": false,
+      "type": "object",
+      "required": [
+        "energy_kcal",
+        "protein_g",
+        "fat_g",
+        "carbs_g"
+      ],
+      "title": "NutritionDTO"
+    },
+    "NutritionTotal": {
+      "properties": {
+        "known_sum": {
+          "type": "string",
+          "pattern": "^(0|[1-9][0-9]{0,12})(\\.[0-9]{1,12})?$",
+          "title": "Known Sum"
+        },
+        "missing_count": {
+          "type": "integer",
+          "maximum": 30.0,
+          "minimum": 0.0,
+          "title": "Missing Count"
+        },
+        "complete": {
+          "type": "boolean",
+          "title": "Complete"
+        },
+        "display": {
+          "type": "string",
+          "pattern": "^(0|[1-9][0-9]{0,12})(\\.[0-9])?$",
+          "title": "Display"
+        }
+      },
+      "additionalProperties": false,
+      "type": "object",
+      "required": [
+        "known_sum",
+        "missing_count",
+        "complete",
+        "display"
+      ],
+      "title": "NutritionTotal"
+    },
+    "NutritionTotals": {
+      "properties": {
+        "energy_kcal": {
+          "$ref": "#/$defs/NutritionTotal"
+        },
+        "protein_g": {
+          "$ref": "#/$defs/NutritionTotal"
+        },
+        "fat_g": {
+          "$ref": "#/$defs/NutritionTotal"
+        },
+        "carbs_g": {
+          "$ref": "#/$defs/NutritionTotal"
+        }
+      },
+      "additionalProperties": false,
+      "type": "object",
+      "required": [
+        "energy_kcal",
+        "protein_g",
+        "fat_g",
+        "carbs_g"
+      ],
+      "title": "NutritionTotals"
+    },
+    "PhotoConsent": {
+      "additionalProperties": false,
+      "properties": {
+        "accepted": {
+          "const": true,
+          "title": "Accepted",
+          "type": "boolean"
+        },
+        "notice_version": {
+          "const": "food-photo-notice-v1",
+          "title": "Notice Version",
+          "type": "string"
+        },
+        "provider": {
+          "enum": [
+            "mock",
+            "gemini"
+          ],
+          "title": "Provider",
+          "type": "string"
+        },
+        "scope": {
+          "const": "this_photo",
+          "title": "Scope",
+          "type": "string"
+        }
+      },
+      "required": [
+        "accepted",
+        "notice_version",
+        "provider",
+        "scope"
+      ],
+      "title": "PhotoConsent",
+      "type": "object"
+    },
+    "ProductRefDTO": {
+      "properties": {
+        "product_id": {
+          "type": "string",
+          "format": "uuid",
+          "title": "Product Id"
+        },
+        "revision": {
+          "type": "integer",
+          "maximum": 2147483647.0,
+          "minimum": 1.0,
+          "title": "Revision"
+        }
+      },
+      "additionalProperties": false,
+      "type": "object",
+      "required": [
+        "product_id",
+        "revision"
+      ],
+      "title": "ProductRefDTO"
+    },
+    "Proposal": {
+      "properties": {
+        "items": {
+          "items": {
+            "$ref": "#/$defs/ProposalItem"
+          },
+          "type": "array",
+          "maxItems": 30,
+          "minItems": 1,
+          "title": "Items"
+        },
+        "notes": {
+          "items": {
+            "type": "string"
+          },
+          "type": "array",
+          "maxItems": 10,
+          "title": "Notes"
+        },
+        "totals": {
+          "$ref": "#/$defs/NutritionTotals"
+        },
+        "model_version": {
+          "anyOf": [
+            {
+              "type": "string",
+              "maxLength": 200
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "title": "Model Version"
+        },
+        "formula_version": {
+          "type": "string",
+          "const": "nutrition_v1",
+          "title": "Formula Version"
+        }
+      },
+      "additionalProperties": false,
+      "type": "object",
+      "required": [
+        "items",
+        "notes",
+        "totals",
+        "model_version",
+        "formula_version"
+      ],
+      "title": "Proposal"
+    },
+    "ProposalItem": {
+      "properties": {
+        "name": {
+          "type": "string",
+          "maxLength": 2000,
+          "minLength": 1,
+          "title": "Name"
+        },
+        "quantity": {
+          "$ref": "#/$defs/QuantityDTO"
+        },
+        "basis_unit": {
+          "type": "string",
+          "enum": [
+            "g",
+            "ml"
+          ],
+          "title": "Basis Unit"
+        },
+        "nutrition_per_100": {
+          "$ref": "#/$defs/NutritionDTO"
+        },
+        "identity": {
+          "$ref": "#/$defs/IdentityDTO"
+        },
+        "density": {
+          "type": "null",
+          "title": "Density"
+        },
+        "uncertainty": {
+          "type": "string",
+          "enum": [
+            "low",
+            "medium",
+            "high"
+          ],
+          "title": "Uncertainty"
+        },
+        "notes": {
+          "items": {
+            "type": "string",
+            "maxLength": 2000,
+            "minLength": 1
+          },
+          "type": "array",
+          "maxItems": 5,
+          "title": "Notes"
+        },
+        "component_id": {
+          "type": "string",
+          "format": "uuid",
+          "title": "Component Id"
+        },
+        "matches": {
+          "$ref": "#/$defs/MatchProductResponse"
+        }
+      },
+      "additionalProperties": false,
+      "type": "object",
+      "required": [
+        "name",
+        "quantity",
+        "basis_unit",
+        "nutrition_per_100",
+        "identity",
+        "uncertainty",
+        "notes",
+        "component_id",
+        "matches"
+      ],
+      "title": "ProposalItem"
+    },
+    "ProviderFoodItem": {
+      "additionalProperties": false,
+      "properties": {
+        "name": {
+          "maxLength": 2000,
+          "minLength": 1,
+          "title": "Name",
+          "type": "string"
+        },
+        "quantity": {
+          "$ref": "#/$defs/QuantityDTO"
+        },
+        "basis_unit": {
+          "enum": [
+            "g",
+            "ml"
+          ],
+          "title": "Basis Unit",
+          "type": "string"
+        },
+        "nutrition_per_100": {
+          "$ref": "#/$defs/NutritionDTO"
+        },
+        "identity": {
+          "$ref": "#/$defs/IdentityDTO"
+        },
+        "density": {
+          "default": null,
+          "title": "Density",
+          "type": "null"
+        },
+        "uncertainty": {
+          "enum": [
+            "low",
+            "medium",
+            "high"
+          ],
+          "title": "Uncertainty",
+          "type": "string"
+        },
+        "notes": {
+          "items": {
+            "maxLength": 2000,
+            "minLength": 1,
+            "type": "string"
+          },
+          "maxItems": 5,
+          "title": "Notes",
+          "type": "array"
+        }
+      },
+      "required": [
+        "name",
+        "quantity",
+        "basis_unit",
+        "nutrition_per_100",
+        "identity",
+        "uncertainty",
+        "notes"
+      ],
+      "title": "ProviderFoodItem",
+      "type": "object"
+    },
+    "ProviderFoodResult": {
+      "additionalProperties": false,
+      "properties": {
+        "items": {
+          "items": {
+            "$ref": "#/$defs/ProviderFoodItem"
+          },
+          "maxItems": 30,
+          "minItems": 1,
+          "title": "Items",
+          "type": "array"
+        },
+        "notes": {
+          "items": {
+            "maxLength": 2000,
+            "minLength": 1,
+            "type": "string"
+          },
+          "maxItems": 10,
+          "title": "Notes",
+          "type": "array"
+        }
+      },
+      "required": [
+        "items",
+        "notes"
+      ],
+      "title": "ProviderFoodResult",
+      "type": "object"
+    },
+    "QuantityDTO": {
+      "properties": {
+        "amount": {
+          "allOf": [
+            {
+              "type": "string",
+              "pattern": "^(0|[1-9][0-9]{0,5})(\\.[0-9]{0,5}[1-9])?(?![\\s\\S])"
+            },
+            {
+              "not": {
+                "const": "0"
+              }
+            }
+          ],
+          "title": "Amount"
+        },
+        "unit": {
+          "type": "string",
+          "enum": [
+            "g",
+            "ml"
+          ],
+          "title": "Unit"
+        }
+      },
+      "additionalProperties": false,
+      "type": "object",
+      "required": [
+        "amount",
+        "unit"
+      ],
+      "title": "QuantityDTO"
+    }
+  }
+}
