@@ -8,8 +8,20 @@
   "accessTokenLifespanForImplicitFlow": 300,
   "ssoSessionIdleTimeout": 1800,
   "ssoSessionMaxLifespan": 3600,
-  "roles": {"client": {"calorie-api": [{"name": "user"}, {"name": "catalog_moderator"}, {"name": "admin"}]}},
+  "roles": {"client": {
+    "calorie-api": [{"name": "user"}, {"name": "catalog_moderator"}, {"name": "admin"}],
+    "calorie-wrong-role-client": [{"name": "catalog_moderator"}, {"name": "admin"}]
+  }},
   "clients": [
+    {
+      "clientId": "calorie-wrong-role-client",
+      "enabled": true,
+      "bearerOnly": true,
+      "publicClient": false,
+      "standardFlowEnabled": false,
+      "directAccessGrantsEnabled": false,
+      "protocol": "openid-connect"
+    },
     {
       "clientId": "calorie-api",
       "enabled": true,

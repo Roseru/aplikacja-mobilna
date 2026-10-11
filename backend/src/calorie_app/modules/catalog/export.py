@@ -12,6 +12,7 @@ from uuid import UUID, uuid4
 from sqlalchemy import select
 from sqlalchemy.orm import Session
 
+from calorie_app.modules.catalog.locking import bump_catalog, catalog_lock
 from calorie_app.modules.catalog.models import OfflineChannel, OfflinePackage
 from calorie_app.modules.catalog.repository import package_header, read_package
 from calorie_app.modules.catalog.service import content_hash
@@ -143,6 +144,7 @@ def publish_package(
     if fault_hook is not None:
         fault_hook("after_write")
     with Session(engine) as session, session.begin():
+        catalog_lock(session)
         channel = session.scalar(
             select(OfflineChannel).where(OfflineChannel.package_id == package_id).with_for_update()
         )
@@ -165,7 +167,6 @@ def publish_package(
                 or row.artifact_path != relative
             ):
                 raise CatalogValidationError("catalog_release_conflict")
-            read_published_artifact(artifact_root, row, channel.kind)
             return artifact.manifest
         row.sha256 = artifact.manifest["sha256"]
         row.compressed_bytes = artifact.manifest["compressed_bytes"]
@@ -175,6 +176,7 @@ def publish_package(
         session.flush()
         if channel.active_release is None or channel.active_release < release:
             channel.active_release = release
+            bump_catalog(session)
         session.flush()
         if fault_hook is not None:
             fault_hook("before_commit")

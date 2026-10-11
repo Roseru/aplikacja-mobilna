@@ -115,6 +115,16 @@ def test_generated_api_only_claims_implemented_operations(client):
         "/api/v1/me/weights",
         "/api/v1/me/diary-days",
         "/api/v1/me/statistics",
+        "/api/v1/products/matches",
+        "/api/v1/community/products",
+        "/api/v1/community/products/{id}",
+        "/api/v1/products/{id}/feedback",
+        "/api/v1/products/{id}/vote",
+        "/api/v1/products/{id}/reports",
+        "/api/v1/moderation/reports",
+        "/api/v1/moderation/reports/{id}",
+        "/api/v1/moderation/products/{id}",
+        "/api/v1/moderation/products/{id}/merge",
     }
     assert schema["paths"]["/api/v1/products"]["get"]["security"] == [{"bearerAuth": []}]
     assert "503" in schema["paths"]["/health/ready"]["get"]["responses"]

@@ -1,0 +1,35 @@
+{
+  "draft_id": "9d788b90-3895-467a-9269-b27be46a2f9f",
+  "draft_revision": 1,
+  "source_kind": "recipe",
+  "source_description": "Syntetyczny przepis testowy, publikacja zatwierdzona przez użytkownika",
+  "identity": {
+    "brand": {
+      "state": "not_applicable",
+      "value": null
+    },
+    "variant": {
+      "state": "not_applicable",
+      "value": null
+    },
+    "composition": {
+      "state": "known",
+      "value": [
+        "woda",
+        "marchew",
+        "kurczak"
+      ]
+    }
+  },
+  "aliases": [
+    "Rosół domowy"
+  ],
+  "portion": {
+    "amount": "300",
+    "unit": "g"
+  },
+  "density": null,
+  "selected_product": null,
+  "confirm_new": false,
+  "owner_id": "aad0d3c9-a3e1-4db6-960a-7b18f7967c0d"
+}

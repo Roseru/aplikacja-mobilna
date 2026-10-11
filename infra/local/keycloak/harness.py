@@ -52,7 +52,21 @@ def prepare(home, state):
     realm = json.loads((HERE / "realm.json").read_text())
     users = []
     credentials = {}
-    for name in ("a", "b", "delete_a"):
+    user_roles = {
+        "a": {"calorie-api": ["user"]},
+        "b": {"calorie-api": ["user"]},
+        "delete_a": {"calorie-api": ["user"]},
+        "moderator": {"calorie-api": ["user", "catalog_moderator"]},
+        "admin": {"calorie-api": ["user", "admin"]},
+        "e6_context": {"calorie-api": ["user", "catalog_moderator"]},
+        "only_moderator": {"calorie-api": ["catalog_moderator"]},
+        "only_admin": {"calorie-api": ["admin"]},
+        "wrong_client": {
+            "calorie-api": ["user"],
+            "calorie-wrong-role-client": ["catalog_moderator", "admin"],
+        },
+    }
+    for name, roles in user_roles.items():
         username, password = f"e3-{name}", secrets.token_urlsafe(32)
         credentials[name] = {"username": username, "password": password}
         users.append(
@@ -65,7 +79,7 @@ def prepare(home, state):
                 "email": f"{username}@invalid.example",
                 "requiredActions": [],
                 "credentials": [{"type": "password", "value": password, "temporary": False}],
-                "clientRoles": {"calorie-api": ["user"]},
+                "clientRoles": roles,
             }
         )
     admin_secret = secrets.token_urlsafe(48)
@@ -198,7 +212,10 @@ def stop(state):
         ).stdout
     else:
         inspection = subprocess.run(
-            ["ps", "-p", str(pid), "-o", "args="], capture_output=True, text=True
+            ["ps", "-p", str(pid), "-o", "args="],
+            capture_output=True,
+            text=True,
+            check=False,
         ).stdout
     if runtime not in inspection:
         raise RuntimeError("Saved PID no longer identifies the owned Keycloak runtime")
@@ -239,6 +256,7 @@ def main():
             [sys.executable, "-m", "pytest", "backend/tests/keycloak", "-q"],
             cwd=ROOT,
             env=env,
+            check=False,
         )
         if result.returncode:
             raise SystemExit(result.returncode)

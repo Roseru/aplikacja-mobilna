@@ -1,0 +1,24 @@
+{
+  "decision": "existing_variant",
+  "existing_product": {
+    "product_id": "78058736-0f85-4a4b-82e1-c0976f16b741",
+    "revision": 1
+  },
+  "candidates": [
+    {
+      "product": {
+        "product_id": "78058736-0f85-4a4b-82e1-c0976f16b741",
+        "revision": 1
+      },
+      "provenance": "community",
+      "reasons": [
+        "shared_name",
+        "identity_equal",
+        "energy_within_10_percent"
+      ],
+      "high_confidence": true
+    }
+  ],
+  "missing_identity_fields": [],
+  "truncated": false
+}
