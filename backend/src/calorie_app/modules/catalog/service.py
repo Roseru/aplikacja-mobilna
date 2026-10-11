@@ -31,6 +31,7 @@ from calorie_app.modules.catalog.repository import (
     read_package,
     source_data,
 )
+from calorie_app.modules.catalog.search_metadata import add_search_metadata, metadata_installed
 from calorie_app.modules.catalog.timestamps import normalize_timestamp
 from calorie_app.modules.catalog.validation import (
     CatalogValidationError,
@@ -110,45 +111,50 @@ def import_catalog(engine, value: dict) -> ImportResult:
                 )
             )
         session.flush()
+        with_search_metadata = metadata_installed(session)
         for product in value["products"]:
             product_id = UUID(product["product_id"])
             stored = session.get(ProductVersion, (product_id, product["revision"]))
             if stored is not None:
                 _same(stored, product, product_data)
+                if with_search_metadata:
+                    add_search_metadata(session, stored)
                 continue
             if session.get(Product, product_id) is None:
                 session.add(Product(id=product_id))
                 session.flush()
             density = product["density_g_per_ml"]
-            session.add(
-                ProductVersion(
-                    product_id=product_id,
-                    revision=product["revision"],
-                    source_id=UUID(product["source_id"]),
-                    **{
-                        k: product[k]
-                        for k in (
-                            "name",
-                            "aliases",
-                            "brand",
-                            "variant",
-                            "basis_unit",
-                            "source_locator",
-                            "status",
-                            "preparation",
-                        )
-                    },
-                    **{
-                        k: None if v is None else Decimal(v)
-                        for k, v in product["nutrition_per_100"].items()
-                    },
-                    package_amount=Decimal(product["package_quantity"]["amount"]),
-                    package_unit=product["package_quantity"]["unit"],
-                    density_amount=None if density is None else Decimal(density["amount"]),
-                    density_source_id=None if density is None else UUID(density["source_id"]),
-                    content_hash=content_hash(product),
-                )
+            version = ProductVersion(
+                product_id=product_id,
+                revision=product["revision"],
+                source_id=UUID(product["source_id"]),
+                **{
+                    k: product[k]
+                    for k in (
+                        "name",
+                        "aliases",
+                        "brand",
+                        "variant",
+                        "basis_unit",
+                        "source_locator",
+                        "status",
+                        "preparation",
+                    )
+                },
+                **{
+                    k: None if v is None else Decimal(v)
+                    for k, v in product["nutrition_per_100"].items()
+                },
+                package_amount=Decimal(product["package_quantity"]["amount"]),
+                package_unit=product["package_quantity"]["unit"],
+                density_amount=None if density is None else Decimal(density["amount"]),
+                density_source_id=None if density is None else UUID(density["source_id"]),
+                content_hash=content_hash(product),
             )
+            session.add(version)
+            session.flush()
+            if with_search_metadata:
+                add_search_metadata(session, version)
         session.flush()
         for ration in value["rations"]:
             ration_id = UUID(ration["ration_id"])

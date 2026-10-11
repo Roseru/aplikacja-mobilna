@@ -3,7 +3,7 @@
 import hashlib
 from uuid import UUID, uuid4
 
-from sqlalchemy import Text, and_, case, cast, func, literal, or_, select
+from sqlalchemy import and_, case, func, literal, or_, select
 
 from calorie_app.core.errors import DomainError
 from calorie_app.modules.catalog.community.models import (
@@ -35,7 +35,7 @@ from calorie_app.modules.catalog.matching import (
     missing_identity_fields,
     normalize_text,
 )
-from calorie_app.modules.catalog.models import ProductVersion
+from calorie_app.modules.catalog.models import ProductSearchMetadata, ProductVersion
 from calorie_app.modules.catalog.pagination import PAGE_TTL, database_now
 from calorie_app.modules.catalog.product_pages import expiry_integer
 from calorie_app.modules.catalog.validation import canonical, canonical_json
@@ -129,26 +129,35 @@ def manual_candidates(session, identity):
     community = session.execute(
         community_statement().where(or_(*predicates)).order_by(ProductVersion.product_id).limit(21)
     ).all()
-    official_predicates = []
-    for name in identity.names:
-        if name:
-            needle = escaped_search(name)
-            official_predicates.extend(
-                (
-                    ProductVersion.name.ilike(needle, escape="\\"),
-                    cast(ProductVersion.aliases, Text).ilike(needle, escape="\\"),
-                )
-            )
-    official = (
-        session.execute(
-            official_statement()
-            .where(or_(*official_predicates))
-            .order_by(ProductVersion.product_id, ProductVersion.revision.desc())
-            .limit(21)
-        ).all()
-        if official_predicates
-        else []
+    official_predicates = [
+        and_(
+            ProductSearchMetadata.normalized_name_hashes.overlap(
+                [hashlib.sha256(name.encode("utf-8")).hexdigest() for name in identity.names]
+            ),
+            ProductSearchMetadata.normalized_names.overlap(list(identity.names)),
+        )
+    ]
+    official_predicates.extend(
+        ProductSearchMetadata.search_text.ilike(escaped_search(name), escape="\\")
+        for name in identity.names
+        if name
     )
+    official_predicates.extend(
+        ProductSearchMetadata.search_text.op("%")(name) for name in identity.names if name
+    )
+    official = session.execute(
+        official_statement()
+        .join(
+            ProductSearchMetadata,
+            and_(
+                ProductSearchMetadata.product_id == ProductVersion.product_id,
+                ProductSearchMetadata.revision == ProductVersion.revision,
+            ),
+        )
+        .where(or_(*official_predicates))
+        .order_by(ProductVersion.product_id, ProductVersion.revision.desc())
+        .limit(21)
+    ).all()
     candidates = {}
     for version, _, metadata in community:
         other = matching_from_snapshot(version, metadata.identity)

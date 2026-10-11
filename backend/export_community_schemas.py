@@ -68,7 +68,9 @@ def main():
     expected = generate(json.loads((backend / "openapi.json").read_text(encoding="utf-8")))
     target = backend.parent / "contracts/schemas/community.schema.json"
     if args.check:
-        if not target.exists() or target.read_bytes() != expected:
+        # Git may check text out as CRLF on Windows. Keep the generated text
+        # (including indentation/order/final newline) strict, allowing only EOL.
+        if not target.exists() or target.read_text(encoding="utf-8") != expected.decode("utf-8"):
             parser.error("Stale generated community schema")
     else:
         target.write_bytes(expected)

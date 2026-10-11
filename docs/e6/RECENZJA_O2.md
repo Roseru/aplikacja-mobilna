@@ -1,5 +1,9 @@
 # Niezależna recenzja E6-O2 - osoba 2
 
+## Zakres ponownego odbioru
+
+Koordynator odtworzył na `aed555b` trzy nowe P2: E0 po Windows CRLF, nieunieważniany `mq1` po korekcie canonical oraz brak official kandydatów dla wspólnej normalizacji Unicode. Wymagają osobnego odbioru poprawki w PR #20. Poprzednia ocena 9,3/10 i wszystkie jej rzeczywiście wykonane testy są zachowane poniżej jako wcześniejszy zakres; nie oznaczają odbioru nowych reprodukcji. Nowy nieautor odczytuje i testuje poprawiony commit we własnym czystym Windows checkout/PG, w tym `0014` backfill/ACL/downgrade, niezmienność official oraz direct/transitive queue/replay/rollback. Dokładny końcowy head i CI będą wskazane osobno w PR i odpowiedzi wykonawcy.
+
 Niezależny odbiór E6-O2 — recenzent nieautor
 Ocena: 9,3/10; zero otwartych istotnych P1/P2.
 

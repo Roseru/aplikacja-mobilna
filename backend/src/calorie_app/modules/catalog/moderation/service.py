@@ -171,7 +171,10 @@ def moderate_product(session, account, product_id, body, operation_id):
             "source_id": str(product_id),
         },
     )
-    bump_catalog(session)
+    # Reports keep their original exact ref but expose the current canonical
+    # revision. A correction therefore changes the queue DTO for this root and
+    # every merged source; invalidate mq1 under the same transaction/lock.
+    bump_catalog(session, queue=body.correction is not None)
     return {"product": new_ref, "canonical_ref": new_ref, "state_revision": state.state_revision}
 
 
