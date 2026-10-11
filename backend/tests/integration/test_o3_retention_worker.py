@@ -29,6 +29,10 @@ def fixture(database, tmp_path):
     worker_url = make_url(url).set(username="calorie_app_worker", password=password)
     settings = Settings(database_url=SecretStr(worker_url.render_as_string(hide_password=False)))
     a, b, c = [UUID(int=i) for i in (301, 302, 303)]
+    # The session-scoped database is shared with other integration fixtures.
+    # Its conftest refuses anything except an explicit dedicated *_test database.
+    with engine.begin() as connection:
+        connection.exec_driver_sql("TRUNCATE app.user_accounts CASCADE")
     with Session(engine) as session, session.begin():
         session.add_all(
             UserAccount(id=x, issuer="https://retention.test", subject=str(x)) for x in (a, b, c)
