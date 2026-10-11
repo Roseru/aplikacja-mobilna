@@ -111,10 +111,3 @@ LANGUAGE sql STABLE SECURITY DEFINER SET search_path=pg_catalog,pg_temp AS $$
  CASE WHEN complete AND goal_energy>0 THEN energy BETWEEN goal_energy*0.9 AND goal_energy*1.1 ELSE NULL END,
  goal_id,goal_revision,revisions,weight_end,ration_end FROM facts ORDER BY day
 $$;
-
-
-
-
-
-
-

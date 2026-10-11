@@ -198,8 +198,3 @@ BEGIN
  RETURN(SELECT jsonb_build_object('processed',n,'backfill_state',backfill_state,'total_points',total_points)
  FROM app.motivation_accounts WHERE owner_id=p_owner);
 END $$;
-
-
-
-
-

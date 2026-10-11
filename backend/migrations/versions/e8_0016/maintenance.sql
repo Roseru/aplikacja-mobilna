@@ -61,6 +61,3 @@ END $$;
 REVOKE ALL ON FUNCTION app.purge_deleted_account(uuid) FROM PUBLIC,calorie_app_api,calorie_app_worker,
  calorie_app_ai_worker,calorie_app_motivation_worker;
 GRANT EXECUTE ON FUNCTION app.purge_deleted_account(uuid) TO calorie_app_deletion_operator;
-
-
-

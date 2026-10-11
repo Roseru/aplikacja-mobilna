@@ -281,7 +281,7 @@ def test_ranking_more_than_10100_and_quota_never_caps_deep_continuation(ranking_
                 text("""
                 INSERT INTO app.user_accounts(id,issuer,subject)
                 SELECT md5('e8-ranking-'||g)::uuid,'https://large.test',g::text
-               
+
                 FROM generate_series(CAST(:lo AS integer),CAST(:hi AS integer)) g
             """),
                 bounds,
@@ -321,7 +321,7 @@ def test_ranking_more_than_10100_and_quota_never_caps_deep_continuation(ranking_
                 text("""
                 INSERT INTO app.motivation_accounts(owner_id,sync_epoch,backfill_state,total_points)
                 SELECT md5('e8-ranking-'||g)::uuid,:epoch,'ready',10
-               
+
                 FROM generate_series(CAST(:lo AS integer),CAST(:hi AS integer)) g
             """),
                 bounds,

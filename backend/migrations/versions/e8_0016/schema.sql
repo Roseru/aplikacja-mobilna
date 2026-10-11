@@ -57,4 +57,3 @@ ALTER TABLE app.motivation_days ADD COLUMN day_confirmed boolean NOT NULL DEFAUL
 ALTER TABLE app.motivation_days ADD COLUMN qualified_at timestamptz NOT NULL;
 ALTER TABLE app.motivation_days ADD CHECK(NOT day_confirmed OR matures_at IS NOT NULL);
 ALTER TABLE app.motivation_days ADD CHECK(materialized_points=0 OR day_confirmed);
-
