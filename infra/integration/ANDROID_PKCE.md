@@ -125,6 +125,14 @@ pozostaje objęty fixture O1, bez przypisywania mu wyniku próby refresh po logo
   `01f120ef25f091a6413a535dcaa5e333575a8d08a016503c47998333eef3a6f6`.
 - O3: build validation/debug PASS,73 JVM PASS; lint validation0błędów/40ostrzeżeń.
   To inny wariant niż debug lint28ostrzeżeń raportowany przez O1.
+- Dodatkowa pełna regresja API35 z overlay i pustym issuer, przy potwierdzonym braku
+  sieci: **końcowe65/65 PASS**, bez pominięć. Pierwszy pełny przebieg miał64/65:
+  `DiaryFlowTest.choosePartialRationAndRestoreSelectionBeforeSaving`, linia100,
+  nie znalazł `ration-grams-demo-a-crackers` po kliknięciu checkboxa.
+  Bez zmian źródeł/testów ten przypadek przeszedł osobno1/1, następnie pełny65/65.
+  Zachowano wszystkie trzy raporty; nie sumujemy ponowień ani nie ukrywamy odmowy.
+  O1 otrzymuje obserwację do stabilizacji. Testowa aplikacja regression nie ma
+  skonfigurowanego issuer; jej wynik nie zastępuje powyższej próby prawdziwego loginu.
 - Narzędzia O3:21 testów infrastruktury PASS; Ruff lint/format PASS.
   Końcowe zdalne CI własnego PR i main potwierdza się oddzielnie w PR.
 
