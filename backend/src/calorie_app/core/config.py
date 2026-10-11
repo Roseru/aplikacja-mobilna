@@ -22,6 +22,8 @@ class Settings(BaseSettings):
     oidc_issuer: str | None = None
     oidc_jwks_url: str | None = None
     oidc_allow_local_http: bool = False
+    # Explicit operator trust for private HTTPS providers; never disable TLS verification.
+    oidc_ca_bundle: Path | None = None
     oidc_jwks_cache_seconds: int = Field(default=900, ge=1, le=900)
     oidc_jwks_refresh_cooldown_seconds: int = Field(default=5, ge=1, le=60)
     oidc_jwks_timeout_seconds: float = Field(default=3, gt=0, le=10)

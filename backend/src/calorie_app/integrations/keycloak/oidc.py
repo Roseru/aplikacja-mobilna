@@ -3,6 +3,7 @@
 import asyncio
 import json
 import math
+import ssl
 import time
 from dataclasses import dataclass
 
@@ -47,6 +48,11 @@ class OIDCVerifier:
     def __init__(self, settings: Settings, *, client=None, monotonic=None, wall_clock=None):
         self.settings = settings
         self._client = client or httpx.AsyncClient(
+            verify=(
+                ssl.create_default_context(cafile=settings.oidc_ca_bundle)
+                if settings.oidc_ca_bundle is not None
+                else True
+            ),
             follow_redirects=False,
             trust_env=False,
             timeout=settings.oidc_jwks_timeout_seconds,
