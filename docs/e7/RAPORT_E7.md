@@ -2,8 +2,12 @@
 
 Zakres: E7-O2 z [mastera](../MASTER_PROMPT_E7.md), odczytanego w całości
 z `485fb2e959f4d4b74548e6ac6ffe4e129cd5e68f`. Gałąź
-`codex/backend-e7-analiza-zdjec`; własny managed worktree. Bieżący PR/head/base,
-końcowy nieautor i osiem rzeczywistych CI zostaną związane z odbiorem poniżej.
+`codex/backend-e7-analiza-zdjec`; własny managed worktree, [PR #28](https://github.com/Roseru/aplikacja-mobilna/pull/28).
+Odebrane źródło: `9a7edcc95ae254cf6d1b59ca78add4c1a188ce75`, base
+`75c4414a1aab22094c9425fa3dda890782e92370`; runtime identyczny z `b4d2780`.
+Końcowy commit po tym odbiorze zmienia wyłącznie dokumentację. Jego exact head/base
+i własne ostatnie osiem CI są zapisane w opisie PR oraz odpowiedzi wykonawcy.
+**E7-O2 gotowe do osobnego odbioru koordynatora; PR pozostaje otwarty, bez merge.**
 **E7-R: WAITING_EXTERNAL. Pełny E7 / APK / produkcja nie są zaliczone.**
 
 ## Dostarczony wynik
@@ -84,8 +88,8 @@ osobny Keycloak wskazany jawnie daje prawdziwe JWT/PKCE.
 | Migration: pełne wypełnione E4–E6 rowsets przez0014↔0015,4 durable guards i4 hostile MAINTAIN/SECURITY DEFINER ACL guards; wcześniejsza E6 DB regresja | 9 nowych +48 wcześniejszych PASS |
 | Maintenance: TTL/unlink/ACK/grace/lock/purge z żywym IO, quiet retention i rzeczywisty dump/restore | 11 PASS real PG/storage/process/PG17 tools |
 | Minimalny LOGIN provisioning, replay/rotation, szerokie role, raw ACL/column jobs/private/PUBLIC CONNECT, zachowany pool/unknown ledger | 11 PASS PG17/SCRAM;25 helper unit są już w1170 |
-| Pełna regresja PG E0–E7, maintenance/restore i LOGIN provision | trwa końcowy odbiór; nie zastępuj wcześniejszym partial PASS |
-| E0 contracts / Ruff / diff-check / package resources | 89valid/32invalid/18scenarios/363links PASS; Ruff244 PASS;127 exact source/wheel/sdist/installed files i38 locked runtime versions PASS |
+| Pełna author regresja PG E0–E7, maintenance/restore i LOGIN provision | run928 przypadków:926 PASS/2 harness FAIL; po uzupełnieniu pustej własnej calorie_app wszystkie13 provisioning PASS, w tym oba błędne IDs; nie sumujemy powtórek |
+| E0 contracts / Ruff / diff-check / package resources | 89valid/32invalid/18scenarios/376links PASS na source9a7; Ruff251 PASS;127 exact source/wheel/sdist/installed files i38 locked runtime versions PASS |
 
 Pierwszy pełny unit run miał190 fixture errors dostępu do systemowego pytest Temp;
 nie zmieniono jego ACL, powtórka we własnym katalogu dała1170 PASS. Stare izolowane
@@ -103,14 +107,35 @@ zostawiał PUBLIC CONNECT do calorie_test, więc minimalny helper prawidłowo od
 regression; nie osłabiono helpera. Poprawki37PG oraz dodatkowe31PG ACL/runtime PASS
 są właściwymi kontrolami, nie zamiennikiem następnego pełnego finalnego CI.
 
+Finalny author fullPG na b4d nie miał błędu kodu: dwa testy E1 wymagały pustej
+bazy o stałej nazwie calorie_app, której mój własny klaster nie miał. Uzupełniono
+wyłącznie ten własny bootstrap;13 provisioning PASS. Jednostkowe1170 ponowione
+na c091, a pełne single-run928 PG potwierdzają niezależny odbiór oraz CI źródła9a7.
+Nie oznaczamy author runu926/2 jako pojedynczego928 PASS.
+
 ## Nieautor i CI
 
-[RECENZJA_O2.md](RECENZJA_O2.md) wiąże finalną ocenę≥9/10 i własne testy z SHA.
-Wcześniejszy przegląd wykrył istotne cleanup/phase/ACL/pool relocation/watchdog/commit-ACK
-uwagi; zostały poprawione i wymagają własnej reprodukcji recenzenta, nie samego odczytu.
-Finalne osiem jobs: contracts, quality, postgres, keycloak-pkce, android-build,
-android-device, local-integration, ci-required. Nie pominięto kontroli Androida/O3.
-Push/local PASS nie oznacza CI PASS. PR pozostanie otwarty, bez merge/auto-merge.
+[RECENZJA_O2.md](RECENZJA_O2.md): **9,3/10, zero otwartych istotnych P1/P2**
+na source9a7/base75c. Własny nieautor: pełne1170unit na c091 i25 właściwe delta,
+pełne928 PG na b4d (identyczny backend9a7),28realOIDC na c091 (auth bez zmiany),
+21 własnych probes na9a7 oraz dokładny fresh bootstrap/realCLI. Powtórek nie
+sumuje; pierwszy błędny own harness jawnie opisany. Wcześniejsze P1/P2 zamknięte
+rzeczywistymi własnymi barierami/SQL/HTTP/process/restore probes.
+
+Manifest264 source plików:
+`699ad0c6e645562de12aa51c0ecad47d169cbc50ed3abe16fe9068ed644a4c36`.
+Prywatne probes: `3b214bfe30cae0bbf10a2054dca2c47f00fd087f307089802d83f912085f2941`.
+127 exact package files/38locked runtime na b4d:
+`8074bed77d00b474f3d517d7a2fbc8801257119aed3b4bc7c5f96281a8fdef70`.
+
+[CI38165581472](https://github.com/Roseru/aplikacja-mobilna/actions/runs/38165581472)
+na9a7/base75c odczytane z rzeczywistych logs/jobs: **osiem success**, zero skipped.
+1170unit,928PG,28Keycloak i21infra PASS; wheel/installed-I/Docker API smoke,
+real PG export/offline import oraz lokalne HTTPS/down-up PASS. Jobs:
+contracts, quality, postgres, keycloak-pkce, android-build, android-device,
+local-integration, ci-required. Nowy commit dokumentacji otrzyma własne pełne CI;
+ten wcześniejszy run potwierdza odebrany runtime, nie udaje kontroli przyszłego head.
+PR pozostanie otwarty, bez merge/auto-merge.
 
 ## Granice i przekazanie
 
@@ -132,7 +157,10 @@ accuracy ani EOG/produkcji. O3 mount/Windows ACL/backup exclusion/minutowy nadz�
 production restore/RPO/RTO oraz O1 APK są osobne. [Instrukcja O3](KONFIGURACJA_O3.md)
 i [O1](INTEGRACJA_O1.md). Klucz nie trafia do repo/APK/CI, żadnego billing/contact.
 
-Odczytano nowy main `d7ac450` i O1 plan z PR22; retencja O3/PKCE overlay i
+Odczytano main `d7ac450`, następnie `75c4414` i O1 plan z PR22; retencja O3/PKCE overlay i
 Android0.7.2/0.7.3 są zmianami zespołu. Główny E4 checkout oraz Random Data
 pozostają nietknięte. Nie rozpoczęto E8/E9, nie włączono automatyzacji i nie wysłano
-wiadomości koordynatorowi. Procesy/bazy odbioru są własne i zostaną zakończone po kontroli.
+wiadomości koordynatorowi. Oba zwykłe merge zachowały wpisy wszystkich autorów.
+Nowy plan E8 jest dokumentem zespołu, bez uruchomienia E8 przez wykonawcę E7.
+Własny Keycloak/PG autora oraz oba PG/Keycloak nieautora zostały zatrzymane;
+pozostają ignorowane prywatne dowody, bez publikacji logów, obrazów lub credentiali.
