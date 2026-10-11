@@ -55,6 +55,9 @@ def test_migration_and_database_readiness(database):
         "account_deletion_jobs",
         "deleted_subjects",
         "_deletion_context",
+        "read_admissions",
+        "read_sessions",
+        "read_session_items",
     }
     migrate("check")
     with TestClient(create_app(Settings(database_url=url), engine=engine)) as client:

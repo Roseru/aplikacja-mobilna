@@ -196,6 +196,50 @@ def verify_generated_catalog(api, design, validate, api_path):
             assert 'Idempotency-Key' in required
             if route == '/me/consents':
                 assert 'If-Match' in required
+    e5 = {
+        '/me/meals': ('read_meals', 'meal-page.json', 'MealPage'),
+        '/me/weights': ('read_weights', 'weight-page.json', 'WeightPage'),
+        '/me/diary-days': ('read_diary_days', 'diary-day-page.json', 'DiaryDayPage'),
+        '/me/statistics': ('read_statistics', 'statistics.json', 'Statistics'),
+    }
+    for route, (operation_id, fixture, definition) in e5.items():
+        assert route not in design['paths'], f'Duplicate active E5 operation: {route}'
+        operation = api['paths']['/api/v1' + route]['get']
+        assert operation['operationId'] == operation_id and operation['description'], route
+        assert operation['security'] == [{'bearerAuth': []}], route
+        ids.append(operation_id)
+        value = read(CONTRACTS / 'examples/valid' / fixture)
+        response = operation['responses']['200']['content']['application/json']['schema']
+        Draft202012Validator(generated_expanded(response, api), format_checker=FORMATS).validate(value)
+        assert not validate(value, '../schemas/domain.schema.json#/$defs/' + definition, api_path)
+        examples += 1
+        for status in ('401', '403', '409', '422', '503'):
+            response = operation['responses'][status]['content']['application/json']['schema']
+            value = read(CONTRACTS / f'examples/valid/error-{status}.json')
+            Draft202012Validator(generated_expanded(response, api)).validate(value)
+            assert not validate(value, '../schemas/domain.schema.json#/$defs/Error', api_path)
+            examples += 1
+        parameters = {p['name']: p for p in operation['parameters']}
+        if route != '/me/statistics':
+            assert parameters['from']['required'] and parameters['to']['required']
+            assert parameters['limit']['schema'] == {
+                'type': 'integer', 'minimum': 1, 'maximum': 500, 'default': 100}
+            response = operation['responses']['410']['content']['application/json']['schema']
+            value = read(CONTRACTS / 'examples/valid/error-410.json')
+            Draft202012Validator(generated_expanded(response, api)).validate(value)
+            examples += 1
+        else:
+            assert parameters['days']['schema']['enum'] == [7, 30, 90]
+    vectors = read(CONTRACTS / 'test-vectors/statistics-v1.json')
+    assert vectors['version'] == 'statistics_v1' and vectors['goal_rule'] == 'goal_band_v1'
+    assert len(vectors['cases']) >= 10
+    names = [case['name'] for case in vectors['cases']]
+    assert len(set(names)) == len(names)
+    for case in vectors['cases']:
+        assert case['days'] in (7, 30, 90) and case['expected']
+        assert valid_zone(case['time_zone']) and valid_zone(case['device_time_zone'])
+    # Actual vector arithmetic uses the production service in test_e5_statistics_unit.py,
+    # run by backend-quality; this separate validator checks structure/contracts.
     download = api['paths']['/api/v1/offline-package/{filename}']['get']
     filename = next(p for p in download['parameters'] if p['name'] == 'filename')
     assert filename['in'] == 'path' and filename['required']

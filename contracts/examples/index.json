@@ -1462,6 +1462,21 @@
         "expected_result": "Poprawny wire; zapis zależy od kontekstu i zależności."
       },
       "detection_layer": "schema_and_fixture_semantics"
+    },
+    {
+      "id": "statistics",
+      "purpose": "statistics_v1: null/no_data and explicit independent denominators",
+      "path": "valid/statistics.json",
+      "schema": "../schemas/domain.schema.json#/$defs/Statistics",
+      "local": {
+        "result": "valid"
+      },
+      "server": {
+        "result": "not_executed",
+        "stage": "E5",
+        "expected_result": "HTTP integration tests validate execution separately."
+      },
+      "detection_layer": "schema_and_fixture_semantics"
     }
   ],
   "source_material": {

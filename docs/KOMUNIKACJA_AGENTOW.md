@@ -270,6 +270,43 @@ Oczekiwana odpowiedź: O2 potwierdza odczyt modelu tożsamości i udostępnia do
 - Potwierdzenia / odpowiedzi: odbiorcy dopisują własny odczyt; nie potwierdzamy go za O1/O3.
 
 
+### O2-009 — Rozpoczęcie odczytów i statystyk E5-O2-R
+
+- Data / autor: 2026-10-11, Agent 2 / O2, wykonawca E5; czat `01a12833-ba8d-7671-9f6a-33db1e532dc2`.
+- Odbiorcy: koordynator `01a12156-2312-7c43-aedc-1858e782e5fb`, informacyjnie O1/O3.
+- Status: W TOKU.
+- Źródło: [master prompt E5](MASTER_PROMPT_E5.md), odebrany main `b27838b9aa1027aa00b342df1c922f2bdb38ef3a`, scalony [PR #14](https://github.com/Roseru/aplikacja-mobilna/pull/14), jawne zlecenie koordynatora `E5_R_START_FROM_b27838b9aa1027aa00b342df1c922f2bdb38ef3a_TO_01a12833-ba8d-7671-9f6a-33db1e532dc2`.
+- Przekazanie: odczytano bezpośrednią autoryzację człowieka w czacie `01a12836-2aed-72f3-83ad-b737ef30377e` i pełny prompt. Dedykowany checkout i gałąź `codex/backend-e5-odczyty-statystyki`; główny checkout E4 i pliki nieśledzone zachowane. R obejmuje prywatne read API, statistics_v1, kontrakty/instrukcje i rzeczywisty audyt źródeł.
+- Dowody / ograniczenia: baza oraz bramka startu potwierdzone w zleceniu/O2-008; odczytane otwarte PR-y nie zawierają R. Nowa implementacja i jej testy są w toku, bez deklarowania PASS. Official C, APK/KO-31 O1 i HTTPS O3 nadal otwarte. Watcher pliku pozostaje PAUSED; bez nowej automatyzacji, merge lub E6.
+- Oczekiwana odpowiedź / następny krok: wykonanie R, własne testy i niezależny odbiór ≥9/10, publikacja PR i odczyt CI finalnego head, następnie pojedyncze przekazanie koordynatorowi do osobnego odbioru.
+- Potwierdzenia / odpowiedzi: odbiorcy dopisują własny odczyt.
+
+### O2-010 — Dostawa E5-O2-R do osobnego odbioru
+
+- Data / autor: 2026-10-11, Agent 2 / O2, wykonawca E5; czat `01a12833-ba8d-7671-9f6a-33db1e532dc2`.
+- Odbiorcy: koordynator `01a12156-2312-7c43-aedc-1858e782e5fb`, informacyjnie O1/O3.
+- Status: DO ODCZYTU / odbiór koordynatora oczekuje.
+- Odniesienie: O2-009, jawny znacznik startu z main `b27838b9aa1027aa00b342df1c922f2bdb38ef3a`, [master E5](MASTER_PROMPT_E5.md).
+- Źródło: `codex/backend-e5-odczyty-statystyki`, implementacja `7968956607eaed13f48ca8f80a492f0d75ff7606`, [PR #15](https://github.com/Roseru/aplikacja-mobilna/pull/15), [raport](e5/RAPORT_E5.md), [recenzja](e5/RECENZJA_O2.md), [O1](e5/INTEGRACJA_O1.md), [O3](e5/KONFIGURACJA_O3.md), [obsługa sync](e5/ODCZYTY_I_SYNCHRONIZACJA.md).
+- Przekazanie: prywatne read API meals/weights/diary-days i statistics_v1 dla7/30/90. Frozen RR/as_of/H, aktualna własność/generation/epoch, no-store także błędów. Wspólny batch korekt celu, exact Decimal/null, własne mianowniki, dzisiaj preliminary i rzeczywista waga. Migracja0012 z wąskimi ACL, admission, retencją i purge; stare0001–0011 zachowane. Puste/single pierwsze odczyty nie zajmują trwałych slotów; paged retry pozostaje doTTL.
+- Dowody autora: root **693 unit +647 PostgreSQL17.11 +9 real Keycloak =1349 PASS**, bez skipów; nowy test zachował wszystkie stare rowsets grafu E4 przez up/down/re-up wraz z epoką/receipts/snapshotem/katalogiem/deletion. Kontrakty/OpenAPI/resources/Ruff/format/wheel/sdist i installed-I poza checkoutem PASS. Autorzy modułów osobno42PG+24unit read,33PG+49unit analytics i1PG graf; nie sumujemy powtórzeń do pełnej regresji. Początkowe635PASS/4FAIL (addytywne asercje i własny provisioning) naprawiono bez osłabienia testów; końcowy647PASS potwierdza całość.
+- Dowody nieautora: **93 E5 unit +75 E5 PG/HTTP +1 pełna migracja +12 własnych PG probes =181 PASS**, bez skipów, **9,4/10 bez otwartych P1/P2**. Odtworzył6 sesji zamiast4, potem własna kontrolowana bariera potwierdziła4 sukcesy/2 odmowy. Czterdzieści pustych/single odświeżeń i brak kopii, purge/ACL/timezone/null/granice/snapshot potwierdzone. Nie jest autorem runtime/testów; własny audyt źródeł jest od tej oceny jawnie oddzielony.
+- CI implementacji: [38103422136](https://github.com/Roseru/aplikacja-mobilna/actions/runs/38103422136) exact head `7968956` / base `b27838b`, wszystkie pięć success, logi **693+647+9=1349 PASS** oraz oba buildy/smoke i eksport/import obrazu. Końcowy commit raportu/tego wpisu wymaga własnego ponownego CI; jego exact head, logi i stan podamy w PR/pojedynczym przekazaniu, bez utożsamienia z tym wcześniejszym runem.
+- Źródła / ograniczenia: [trwały audyt](e0/ZRODLA_KATALOGU.md) pozyskał Coca-Cola PL i3 pełne rekordy USDA public SR Legacy, zachował skład/masy/energię racji ARPOL oraz6 alternatyw batonów i konkretne braki etykiet/powiązań. Nie opublikowano niepełnego official ani nie importowano MRE; Random Data i główny checkout E4 zachowane. Katalog C, APK/KO-31/Kotlin/Room O1 i produkcyjne HTTPS/issuer/restore/RPO/RTO O3 są otwarte; testy O2/CI nie są ich potwierdzeniem. PR#10 jest osobny; keycloak-pkce zachowany.
+- Oczekiwana odpowiedź / następny krok: koordynator odbiera finalny head PR#15 i CI, potem decyduje o merge oraz odrębnym C w tym samym czacie. Wykonawca wysyła jeden `E5_R_READY_FROM_<SHA>_TO_01a12156-2312-7c43-aedc-1858e782e5fb` po odczycie final CI. Bez własnego merge/E6, watcherPAUSED i bez nowej automatyzacji/rejestru. O1/O3 dopisują własny odczyt, nie potwierdzamy go za nich.
+- Potwierdzenia / odpowiedzi: brak.
+
+### O2-011 — Korekta instrukcji wspólnego klucza po odbiorze E5
+
+- Data / autor: 2026-10-11, Agent 2 / O2, wykonawca E5; czat `01a12833-ba8d-7671-9f6a-33db1e532dc2`.
+- Odbiorcy: koordynator O2, informacyjnie O1/O3.
+- Status: DO ODCZYTU / korekta do ponownego odbioru.
+- Źródło: [P2 PR #15](https://github.com/Roseru/aplikacja-mobilna/pull/15#issuecomment-6104572491), istniejący `codex/backend-e5-odczyty-statystyki` na `cc0e09e`, jawne `E5_R_FIX_ROTATION_FROM_cc0e09eca30e9ea8c4d55c1ceb8830cfc15c9c46_TO_01a12833-ba8d-7671-9f6a-33db1e532dc2`.
+- Przekazanie: usunięto błędną gwarancję ważności checkpointów po zmianie CATALOG_PAGE_TOKEN_SECRET. Podpisane/pochodne catalog/read/profiles oraz sync checkpoint/snapshot/page tracą ważny podpis starego klucza; encje/outbox/originals/receipts pozostają, a epoka/generacja same się nie zmieniają. [O3](e5/KONFIGURACJA_O3.md) opisuje spójną rotację replik i jawny nowy pełny pull bez starych tokenów, z finalnym checkpointem oraz niezmiennymi operacjami/lost ACK; [obsługa sync](e5/ODCZYTY_I_SYNCHRONIZACJA.md) odsyła do procedury. Obecny klient nie wykonuje automatycznego full pull po invalid_sync_token. Przejrzano pozostałe E5; historia O2-009/010 pozostaje.
+- Dowody / ograniczenia: korekta wyłącznie dokumentacji; runtime/protokół/migracje/sekrety bez zmian. Wykonawca sam odtworzył checkpoint A/A PASS i A/B 422 dla pull/push, nowy B/B PASS, stare snapshot/page/read odrzucone;23 istniejące unit tokenów PASS. Nieautor instrukcji:3 grupy rzeczywistych walidatorów oraz klienta SQLite/SyncHTTP z MockTransport PASS,9,4/10 bez istotnych uwag; odróżniono to od nowych PG/liveHTTP/APK.17 runtimehashów identyczne. Szczegóły w raporcie/recenzji, wcześniejszych181 nie dodajemy do tej korekty. Dawne 1349 PASS/9,4 nie oznaczały wykrycia tej P2. Finalny nowy head wymaga własnych logów CI. Testów koordynatora nie przypisujemy sobie; pełny E5/C/O1/O3 i merge pozostają odrębne.
+- Oczekiwana odpowiedź / następny krok: koordynator odczytuje końcowy SHA/CI tego czatu przez wait_threads i odbiera poprawkę. Bez kolejnego przekazania wiadomością do innych czatów, ponawiania odrzuconej wiadomości, merge/E6/C lub nowej automatyzacji.
+- Potwierdzenia / odpowiedzi: odbiorcy dopisują własny odczyt.
+
 ## Wzór nowego wpisu
 
 ```markdown

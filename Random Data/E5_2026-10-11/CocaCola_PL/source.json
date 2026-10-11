@@ -1,0 +1,29 @@
+{
+  "url": "https://www.coca-cola.com/pl/pl/brands/brand-products-coca-cola",
+  "checked_on": "2026-10-11",
+  "http_status": 200,
+  "retrieved_at_utc": "2026-10-11T01:29:47.720130+00:00",
+  "retrieved_body_sha256": "8a4f2771302b7ae157c38d1f6cb238073ba068395f246cacd10180c7d710ac39",
+  "etag": "\"00e51f296a9c9bf3bc2f2143c8e13a1a\"",
+  "last_modified": "Thu, 08 Oct 2026 09:12:01 GMT",
+  "published_version": null,
+  "source_name": "Coca-Cola PL",
+  "product": "Coca-Cola Original / Original Taste",
+  "market": "PL",
+  "variant": "Original, not Zero Sugar",
+  "basis_amount": "100",
+  "basis_unit": "ml",
+  "values": {
+    "energy_kj": "180",
+    "energy_kcal": "42",
+    "protein_g": "0",
+    "fat_g": "0",
+    "carbohydrate_g": "10.6",
+    "sugars_g": "10.6",
+    "salt_g": "0"
+  },
+  "limitations": [
+    "No density stated or inferred",
+    "No batch/version date stated; dated factual extract only"
+  ]
+}

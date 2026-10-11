@@ -1,21 +1,51 @@
 # Źródła katalogu i audyt próbki - osoba 2
 
-Stan: 9 października 2026. Sprawdzono lokalny [materiał użytkownika](../materialy/racja_wojskowa_S-RG-1.source.json), bez zmiany oryginału. Jest to orientacyjna, niezweryfikowana próbka S-RG-1; nie dowodzi składu ARPOL WZ 1 ani WZ 4 WEGE. Data `checked_on` oznacza rzeczywisty odczyt tego dokumentu, nie potwierdzenie etykiety. Nie przypisano produktu do producenta na podstawie samej nazwy.
+Stan bazowego audytu próbki: 9 października 2026. Aktualizacja źródeł E5-O2-R: 11 października 2026. Sprawdzono lokalny [materiał użytkownika](../materialy/racja_wojskowa_S-RG-1.source.json), bez zmiany oryginału. Jest to orientacyjna, niezweryfikowana próbka S-RG-1; nie dowodzi składu ARPOL WZ 1 ani WZ 4 WEGE. Data `checked_on` oznacza rzeczywisty odczyt tego dokumentu, nie potwierdzenie etykiety. Nie przypisano produktu do producenta na podstawie samej nazwy.
 
-Uzupełnienie E2: [seed i eksport PostgreSQL](../../backend/data/demo/README.md) zachowują tę samą próbkę i proweniencję. Eksport/importer są działającymi mechanizmami opisanymi w [raporcie E2](../e2/RAPORT_E2.md); nie pozyskano nowych etykiet ani rekordów FDC i żaden oczekujący wpis nie otrzymał statusu verified. Poniższe braki nadal są bramką oficjalnego seeda E5.
+Uzupełnienie E2: [seed i eksport PostgreSQL](../../backend/data/demo/README.md) zachowują tę samą próbkę i proweniencję. Eksport/importer są działającymi mechanizmami opisanymi w [raporcie E2](../e2/RAPORT_E2.md); w E2 nie pozyskano nowych etykiet ani rekordów FDC. E5-O2-R poniżej dostarcza rzeczywiste odczyty źródeł; nie zmienia demo w official. Niezamknięte braki nadal są bramką osobnego E5-O2-C.
 
 ## Rejestr źródeł i braki
 
 | Materiał / produkt | Producent i wariant | Podstawa i identyfikator | Sprawdzenie i status | Do uzupełnienia |
 |---|---|---|---|---|
 | Próbka użytkownika, 22 pozycje | Producent nieznany, oznaczenie S-RG-1 | Lokalny plik powyżej; każda pozycja ma JSON Pointer w `source_locator`; założona podstawa: wymieniona ilość | 2026-10-09, niezweryfikowany | Etykiety, rynek, producent, warianty, jawna podstawa, instrukcje proszków |
-| ARPOL WZ 1 | ARPOL, WZ 1 według wymagań | Adres karty zapisany w wymaganiach 11.4; etykiety składników niepozyskane | Nie sprawdzano zdalnie, oczekujące | Aktualny skład i kcal/B/T/W każdego składnika oraz data odczytu |
-| ARPOL WZ 4 WEGE | ARPOL, WZ 4 WEGE według wymagań | Adres karty zapisany w wymaganiach 11.4; etykiety niepozyskane | Nie sprawdzano zdalnie, oczekujące | Jak wyżej |
-| Banan, jabłko ze skórką, pomarańcza | Surowe części jadalne; konkretny rekord niewybrany | USDA FDC Foundation / SR Legacy, ID i wersja nieustalone | Nie sprawdzano, oczekujące | Trzy konkretne FDC ID, wersje, 100 g, data odczytu |
-| Baton owocowo-zbożowy 35 g wybranej racji | Producent i wariant nieustalone | Brak etykiety | Nie sprawdzano, oczekujące | Etykieta i powiązanie z wybraną racją; próbka nie wystarcza |
-| Coca-Cola Original Taste PL | Wariant wskazany w wymaganiach | 100 ml; adres karty w wymaganiach 11.4 | Nie sprawdzano zdalnie, oczekujące | Odczyt aktualnej polskiej karty/etykiety, kcal/B/T/W i data |
+| ARPOL WZ 1 | Dostawca/kompletor ARPOL; producenci/wersje składników nieustalone | [Karta racji](https://arpol.net.pl/produkt/racja-wz-1/), odczyt i lista w [materiale E5](../../Random%20Data/E5_2026-10-11/ARPOL/ration_cards.json) | 2026-10-11: skład/masy i 1517 kcal całej racji odczytane; profile składników niekompletne | Powiązanie wszystkich etykiet z wariantami konkretnie kompletowanej racji i komplet kcal/B/T/W |
+| ARPOL WZ 4 WEGE | Dostawca/kompletor ARPOL; producenci/wersje składników nieustalone | [Karta racji](https://arpol.net.pl/produkt/racja-wz-4-wege/), ten sam materiał E5 | 2026-10-11: skład/masy i 1433 kcal całej racji odczytane; profile składników niekompletne | Jak wyżej; smoothie50g, orzeszki i dodatki nadal wymagają konkretnego powiązania |
+| Banan surowy | USDA, Bananas, raw | SR Legacy April2018; FDC173944 / NDB9040; 100g części jadalnej | 2026-10-11, pełny rekord pozyskany: kcal89 / B1.09 / T0.33 / W22.8g | Zachować zakres nutrient1005 i proweniencję; osobny official eksport/import w C |
+| Jabłko surowe ze skórką | USDA, Apples, raw, with skin (Includes foods for USDA's Food Distribution Program) | SR Legacy April2018; FDC171688 / NDB9003; 100g części jadalnej | 2026-10-11, pełny rekord: kcal52 / B0.26 / T0.17 / W13.8g | Jak wyżej; nie zastąpić rekordem konkretnej odmiany jabłka |
+| Pomarańcza surowa | USDA, Oranges, raw, all commercial varieties | SR Legacy April2018; FDC169097 / NDB9200; 100g części jadalnej | 2026-10-11, pełny rekord: kcal47 / B0.94 / T0.12 / W11.8g | Jak wyżej; nie przyjmować masy owocu ze skórką za spożytą część |
+| Baton owocowo-zbożowy35g wybranej racji | ARPOL jako dostawca; producent i smak racji nieustalone | [Karta 6 wariantów](https://arpol.net.pl/produkt/baton-owocowo-zbozowy-35-g/) na100g, netto35g | 2026-10-11, wartości wariantów odczytane; powiązanie niepotwierdzone | Konkretna etykieta producenta/smaku występującego w WZ1/WZ4; dostępność sklepu nie dowodzi zawartości racji |
+| Coca-Cola Original Taste PL | Coca-Cola, Original; polski rynek | [Polska karta](https://www.coca-cola.com/pl/pl/brands/brand-products-coca-cola),100ml | 2026-10-11: 180kJ/42kcal, B0/T0/W10.6g odczytane | Oficjalny eksport/import dopiero C; brak gęstości nie oznacza1g/ml |
 
-Wiersze oczekujące opisują pracę do wykonania, nie certyfikują źródeł ani wartości. Nie dodano fikcyjnych FDC ID, etykiet, dat sprawdzenia lub kalorii. E2 może korzystać z demo; oficjalny katalog jest bramką E5. Brak etykiet nie blokuje E0. Pełna lista pozycji docelowych jest w [wymaganiach 11.4](../../WYMAGANIA_PROJEKTOWE.md#114-katalog-początkowy-i-jednostki).
+Materiały trwałe: [zbiór E5 i ograniczenia](../../Random%20Data/E5_2026-10-11/README.md), [USDA źródło/wersja](../../Random%20Data/E5_2026-10-11/USDA/source.json), [3 pełne rekordy](../../Random%20Data/E5_2026-10-11/USDA/sr_legacy_selected_records.json), [Coca-Cola faktograficznie](../../Random%20Data/E5_2026-10-11/CocaCola_PL/source.json). Publiczny [ZIP USDA](https://fdc.nal.usda.gov/fdc-datasets/FoodData_Central_sr_legacy_food_json_2018-04.zip) pobrano rzeczywiście bez klucza API; SHA-256 `0fe8ae486a2c8eb42cb96413f058deb51863a46c8fb8eeb4b1fb45006dd338ef`. Nazwy i ID odczytano z eksportu. `publicationDate=4/1/2019` FDC nie zmienia wersji SR Legacy April2018. Podstawa100g części jadalnej wynika z [dokumentacji SR Legacy, tabela6, strona12](https://www.ars.usda.gov/ARSUserFiles/80400525/Data/SR-Legacy/SR-Legacy_Doc.pdf). W oznacza tu źródłowy `Carbohydrate, by difference` (nutrient1005), nie domyślnie węglowodany przyswajalne z etykiety UE. Eksport JSON ma W22.8/13.8, więc nie uzupełniono dalszych cyfr innym źródłem. Żaden materiał nie został opublikowany jako kompletny official.
+
+## Audyt komponentów ARPOL i dokładna bramka C - osoba 2
+
+[Indywidualne karty kandydatów](../../Random%20Data/E5_2026-10-11/ARPOL/component_candidates.json) sprawdzono11.10.2026. Poniżej są wartości100g **konkretnych kart**, nie potwierdzone profile składników WZ1/WZ4. Nazwa/gramatura podobna do racji jest wskazówką do sprawdzenia, nie dowodem producenta/wersji; fotografie opisano jako poglądowe.
+
+| Karta indywidualna / wariant | kcal / B / T / W g na100g | Co nadal wymaga dowodu |
+|---|---|---|
+| [Lazania300g TACKA](https://arpol.net.pl/produkt/lazania-300-g-tacka/) | 109 /6.8 /4 /11 | Racja mówi lazania300g, nie potwierdza tego opakowania/producenta |
+| [Risotto pomidorowe WEGE300g TACKA](https://arpol.net.pl/produkt/risotto-pomidorowe-wege-300-g-tacka/) | 114 /2.6 /2.1 /20 | Jak wyżej dla WZ4 |
+| [Suchary specjalne SU-1 45g](https://arpol.net.pl/produkt/suchary-specjalne-su-1-45-g/) | 386 /8 /6.8 /72.1 | Racje nie podają SU-1; osobna specyfikacja Suchary45g ma olej rzepakowy, karta sklepowa palmowy — potrzebna wersja etykiety |
+| [Mleko zagęszczone słodzone150g](https://arpol.net.pl/produkt/mleko-zageszczone-150-g/) | 328 /7 /8 /57 | Powiązanie z tubą WZ1; PDF100g nie zastępuje identyfikacji150g |
+| [Orzechy ziemne solone50g](https://arpol.net.pl/produkt/orzechy-ziemne-solone-50-g/) | 625 /24.6 /51.4 /12.6 | WZ4 nie podaje prażenia/solenia/producenta; w sklepie jest kilka50g wariantów |
+| [Izotonik jabłkowy5g](https://arpol.net.pl/produkt/napoj-izotoniczny-jablkowy-5-g/) | 238 /0 /0 /44 | WZ1/4 nie podają smaku; karta5g mówi500ml wody, nie przypisać innym wariantom |
+| Baton żurawinowy / wiśniowy / limonkowy | 384/5.54/9.1/66.4; 374/5.26/9.4/62.5; 387/5.53/9.8/66.3 | Smak i producent racji niepotwierdzone; nie sumować alternatyw |
+| Baton gruszkowy / figowy / morelowy | 373/5.25/8.5/64; 367/5.54/13.3/56.3; 369/5.53/8.8/62.8 | Jak wyżej; karta gruszki1516kJ/373kcal jest wewnętrznie niespójna |
+| [Kisiel jabłko/mango30g](https://arpol.net.pl/produkt/kisiel-jablko-i-mango-30-g/) | źródło1644kJ/**493kcal**, B<0.4, T<0.2, W97 | Korekta źródła/etykieta: kJ/kcal niespójne; nierówności B/T nie są dokładnym zerem ani granicą. Nie zmieniać samemu493 na393. Powiązanie smaku z WZ1 niepotwierdzone |
+
+Karta kisielu podaje30g suchego produktu +150ml zimnej wody. Zachowujemy tę instrukcję wyłącznie dla odczytanego wariantu. Woda nie dodaje energii; nie zapisujemy150ml jako masy suchego kisielu. Zebrane daty najlepiej spożyć przed z kart nie są identyfikatorami faktycznie zakupionej partii racji.
+
+Dokładne pozostałe braki E5-O2-C:
+
+1. Dla WZ1: producent/wersja i dowód powiązania lazanii300g, sucharów45g, czekolady do picia25g, mleka w tubie150g, batonu35g, kisielu30g, izotonika5g. Dla czekolady nie pozyskano karty właściwego25g proszku. Dla kisielu dodatkowo poprawna energia oraz sposób reprezentacji wartości poniżej progu wymagają jawnego rozstrzygnięcia na podstawie etykiety.
+2. Dla WZ4: jak wyżej dla risotta300g, sucharów45g, czekolady25g, orzeszków50g, smoothie50g, batonu35g i izotonika5g. Nie pozyskano właściwego profilu smoothie50g; profile podobnych owoców lub MRE nie zastępują go.
+3. W obu racjach akcesoria **jadalne**: napój herbaciany owocowy instant15g, kawa naturalna1szt., cukier2szt., cukierki wit.C2szt., guma1szt., cukierek kawowy1szt., sól1szt. i pieprz1szt. — brak konkretnego producenta/wersji, kcal/B/T/W i (dla sztuk) masy jednostkowej. Nie zamieniać na0 ani pomijać pod nazwą akcesoria. Brak instrukcji herbaty/proszków pozostaje jawny.
+4. Powiązania wymagają konkretnej partii/etykiet lub jednoznacznej dokumentacji dostawcy. O2 zbiera i mapuje źródła; materiał niepubliczny/zdjęcia właściwych opakowań może dostarczyć właściciel albo ARPOL po osobnym upoważnieniu do kontaktu. Sam audyt nie wysyła wiadomości do dostawcy.
+5. Po pozyskaniu kompletu: osobno zwolnione C tworzy official seed z proweniencją/stabilnymi ID, eksport/import, manifest/hash i dowody KO-01–02/KO-30. O1 wykonuje własną instalację/Room/APK/KO-31, O3 potwierdza HTTPS/konfigurację/artefakty; R ani plik źródeł ich nie poświadcza.
+
+Nie rozdzielamy1517/1433kcal na składniki ani nie dopasowujemy sum. [Specyfikacja SU-1](https://specyfikacje.arpol.net.pl/Suchary_45g.pdf) odczytana w audycie wyszukiwania ujawniła różnicę składów; potrzebne jest potwierdzenie właściwej wersji, nie arbitralny wybór. [MRE2026 README](../../Random%20Data/MRE/README.md) przeczytano; materiały zachowano bez importu. Porcje MRE, alternatywy i dodatki nie zmieniają listy ARPOL.
 
 ## Audyt i założenie normalizacji
 

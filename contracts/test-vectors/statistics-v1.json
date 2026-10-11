@@ -1,0 +1,650 @@
+{
+  "version": "statistics_v1",
+  "goal_rule": "goal_band_v1",
+  "decimal_rule": "Exact nutrition_v1 totals; averages HALF_UP 12 fractional places, canonical strings",
+  "format": "Date maps contain arrays of meals (each an item array); null is missing; goals include immutable correction graph. Expected keys are dot paths in the full response.",
+  "cases": [
+    {
+      "name": "no_data_is_null",
+      "as_of": "2026-10-11T10:00:00Z",
+      "time_zone": "Europe/Warsaw",
+      "device_time_zone": "Europe/Warsaw",
+      "days": 7,
+      "declarations": [],
+      "meals": {},
+      "weights": {},
+      "goals": [],
+      "expected": {
+        "daily.0.status": "no_data",
+        "daily.0.totals.energy_kcal.known_sum": null,
+        "daily.0.totals.energy_kcal.complete": false,
+        "averages.energy_kcal.value": null,
+        "averages.energy_kcal.day_count": 0,
+        "weight.change_kg": null
+      }
+    },
+    {
+      "name": "today_preliminary_excluded",
+      "as_of": "2026-10-11T10:00:00Z",
+      "time_zone": "Europe/Warsaw",
+      "device_time_zone": "Europe/Warsaw",
+      "days": 7,
+      "declarations": [
+        "2026-10-11"
+      ],
+      "meals": {
+        "2026-10-11": [
+          [
+            {
+              "quantity": {
+                "amount": "100",
+                "unit": "g"
+              },
+              "basis_unit": "g",
+              "density_g_per_ml": null,
+              "nutrition_per_100": {
+                "energy_kcal": "100",
+                "protein_g": "10",
+                "fat_g": "0",
+                "carbs_g": "20"
+              }
+            }
+          ]
+        ]
+      },
+      "weights": {},
+      "goals": [
+        {
+          "entity_id": "00000000-0000-4000-8000-000000000001",
+          "timeline_revision": 1,
+          "effective_from": "2026-10-01",
+          "energy_kcal": "100",
+          "correction_of": null
+        }
+      ],
+      "expected": {
+        "daily.6.status": "complete",
+        "daily.6.in_goal": null,
+        "daily.6.preliminary_in_goal": true,
+        "complete_day_count": 0,
+        "goal_eligible_day_count": 0,
+        "averages.energy_kcal.value": null
+      }
+    },
+    {
+      "name": "macro_denominators_and_partial_sum",
+      "as_of": "2026-10-11T10:00:00Z",
+      "time_zone": "Europe/Warsaw",
+      "device_time_zone": "Europe/Warsaw",
+      "days": 7,
+      "declarations": [
+        "2026-10-09",
+        "2026-10-10"
+      ],
+      "meals": {
+        "2026-10-09": [
+          [
+            {
+              "quantity": {
+                "amount": "100",
+                "unit": "g"
+              },
+              "basis_unit": "g",
+              "density_g_per_ml": null,
+              "nutrition_per_100": {
+                "energy_kcal": "100",
+                "protein_g": null,
+                "fat_g": "0",
+                "carbs_g": "20"
+              }
+            },
+            {
+              "quantity": {
+                "amount": "100",
+                "unit": "g"
+              },
+              "basis_unit": "g",
+              "density_g_per_ml": null,
+              "nutrition_per_100": {
+                "energy_kcal": "50",
+                "protein_g": "4",
+                "fat_g": "0",
+                "carbs_g": "20"
+              }
+            }
+          ]
+        ],
+        "2026-10-10": [
+          [
+            {
+              "quantity": {
+                "amount": "100",
+                "unit": "g"
+              },
+              "basis_unit": "g",
+              "density_g_per_ml": null,
+              "nutrition_per_100": {
+                "energy_kcal": "90",
+                "protein_g": "0",
+                "fat_g": "0",
+                "carbs_g": "20"
+              }
+            }
+          ]
+        ]
+      },
+      "weights": {},
+      "goals": [],
+      "expected": {
+        "daily.4.totals.protein_g.known_sum": "4",
+        "daily.4.totals.protein_g.complete": false,
+        "averages.energy_kcal.value": "120",
+        "averages.energy_kcal.day_count": 2,
+        "averages.protein_g.value": "0",
+        "averages.protein_g.day_count": 1,
+        "averages.fat_g.value": "0",
+        "averages.fat_g.day_count": 2
+      }
+    },
+    {
+      "name": "missing_energy_excludes_all_averages",
+      "as_of": "2026-10-11T10:00:00Z",
+      "time_zone": "Europe/Warsaw",
+      "device_time_zone": "Europe/Warsaw",
+      "days": 7,
+      "declarations": [
+        "2026-10-09"
+      ],
+      "meals": {
+        "2026-10-09": [
+          [
+            {
+              "quantity": {
+                "amount": "100",
+                "unit": "g"
+              },
+              "basis_unit": "g",
+              "density_g_per_ml": null,
+              "nutrition_per_100": {
+                "energy_kcal": null,
+                "protein_g": "10",
+                "fat_g": "0",
+                "carbs_g": "20"
+              }
+            },
+            {
+              "quantity": {
+                "amount": "100",
+                "unit": "g"
+              },
+              "basis_unit": "g",
+              "density_g_per_ml": null,
+              "nutrition_per_100": {
+                "energy_kcal": "100",
+                "protein_g": "10",
+                "fat_g": "0",
+                "carbs_g": "20"
+              }
+            }
+          ]
+        ]
+      },
+      "weights": {},
+      "goals": [],
+      "expected": {
+        "daily.4.status": "incomplete",
+        "daily.4.totals.energy_kcal.known_sum": "100",
+        "daily.4.totals.energy_kcal.complete": false,
+        "averages.protein_g.day_count": 0
+      }
+    },
+    {
+      "name": "zero_energy_declared_still_incomplete",
+      "as_of": "2026-10-11T10:00:00Z",
+      "time_zone": "Europe/Warsaw",
+      "device_time_zone": "Europe/Warsaw",
+      "days": 7,
+      "declarations": [
+        "2026-10-09",
+        "2026-10-10"
+      ],
+      "meals": {
+        "2026-10-09": [
+          [
+            {
+              "quantity": {
+                "amount": "100",
+                "unit": "g"
+              },
+              "basis_unit": "g",
+              "density_g_per_ml": null,
+              "nutrition_per_100": {
+                "energy_kcal": "0",
+                "protein_g": "10",
+                "fat_g": "0",
+                "carbs_g": "20"
+              }
+            }
+          ]
+        ]
+      },
+      "weights": {},
+      "goals": [],
+      "expected": {
+        "daily.4.totals.energy_kcal.known_sum": "0",
+        "daily.4.status": "incomplete",
+        "daily.5.status": "no_data",
+        "daily.5.effective_complete": false
+      }
+    },
+    {
+      "name": "inclusive_goal_bounds_exact",
+      "as_of": "2026-10-11T10:00:00Z",
+      "time_zone": "Europe/Warsaw",
+      "device_time_zone": "Europe/Warsaw",
+      "days": 7,
+      "declarations": [
+        "2026-10-08",
+        "2026-10-09",
+        "2026-10-10"
+      ],
+      "meals": {
+        "2026-10-08": [
+          [
+            {
+              "quantity": {
+                "amount": "100",
+                "unit": "g"
+              },
+              "basis_unit": "g",
+              "density_g_per_ml": null,
+              "nutrition_per_100": {
+                "energy_kcal": "90",
+                "protein_g": "10",
+                "fat_g": "0",
+                "carbs_g": "20"
+              }
+            }
+          ]
+        ],
+        "2026-10-09": [
+          [
+            {
+              "quantity": {
+                "amount": "100",
+                "unit": "g"
+              },
+              "basis_unit": "g",
+              "density_g_per_ml": null,
+              "nutrition_per_100": {
+                "energy_kcal": "110",
+                "protein_g": "10",
+                "fat_g": "0",
+                "carbs_g": "20"
+              }
+            }
+          ]
+        ],
+        "2026-10-10": [
+          [
+            {
+              "quantity": {
+                "amount": "100",
+                "unit": "g"
+              },
+              "basis_unit": "g",
+              "density_g_per_ml": null,
+              "nutrition_per_100": {
+                "energy_kcal": "89.999999",
+                "protein_g": "10",
+                "fat_g": "0",
+                "carbs_g": "20"
+              }
+            }
+          ]
+        ]
+      },
+      "weights": {},
+      "goals": [
+        {
+          "entity_id": "00000000-0000-4000-8000-000000000001",
+          "timeline_revision": 1,
+          "effective_from": "2026-10-01",
+          "energy_kcal": "100",
+          "correction_of": null
+        }
+      ],
+      "expected": {
+        "daily.3.in_goal": true,
+        "daily.4.in_goal": true,
+        "daily.5.in_goal": false,
+        "goal_eligible_day_count": 3,
+        "in_goal_day_count": 2
+      }
+    },
+    {
+      "name": "weight_uuid_tie_signed_change",
+      "as_of": "2026-10-11T10:00:00Z",
+      "time_zone": "Europe/Warsaw",
+      "device_time_zone": "Europe/Warsaw",
+      "days": 7,
+      "declarations": [],
+      "meals": {},
+      "weights": {
+        "2026-10-09": [
+          {
+            "entity_id": "00000000-0000-4000-8000-000000000001",
+            "occurred_at": "2026-10-09T10:00:00Z",
+            "weight_kg": "80"
+          },
+          {
+            "entity_id": "00000000-0000-4000-8000-000000000002",
+            "occurred_at": "2026-10-09T10:00:00Z",
+            "weight_kg": "79.5"
+          }
+        ],
+        "2026-10-10": [
+          {
+            "entity_id": "00000000-0000-4000-8000-000000000003",
+            "occurred_at": "2026-10-10T10:00:00Z",
+            "weight_kg": "78"
+          }
+        ]
+      },
+      "goals": [],
+      "expected": {
+        "daily.4.latest_weight.weight_kg": "79.5",
+        "daily.4.weight_count": 2,
+        "weight.observation_count": 3,
+        "weight.day_count": 2,
+        "weight.change_kg": "-1.5",
+        "weight.first_date": "2026-10-09",
+        "weight.last_date": "2026-10-10"
+      }
+    },
+    {
+      "name": "density_conversion_saved_snapshot",
+      "as_of": "2026-10-11T10:00:00Z",
+      "time_zone": "Europe/Warsaw",
+      "device_time_zone": "Europe/Warsaw",
+      "days": 7,
+      "declarations": [
+        "2026-10-09"
+      ],
+      "meals": {
+        "2026-10-09": [
+          [
+            {
+              "quantity": {
+                "amount": "50",
+                "unit": "ml"
+              },
+              "basis_unit": "g",
+              "density_g_per_ml": "1.2",
+              "nutrition_per_100": {
+                "energy_kcal": "200",
+                "protein_g": "10",
+                "fat_g": "0",
+                "carbs_g": "20"
+              }
+            },
+            {
+              "quantity": {
+                "amount": "100",
+                "unit": "ml"
+              },
+              "basis_unit": "ml",
+              "density_g_per_ml": null,
+              "nutrition_per_100": {
+                "energy_kcal": "42",
+                "protein_g": "10",
+                "fat_g": "0",
+                "carbs_g": "20"
+              }
+            }
+          ]
+        ]
+      },
+      "weights": {},
+      "goals": [],
+      "expected": {
+        "daily.4.totals.energy_kcal.known_sum": "162",
+        "averages.energy_kcal.value": "162"
+      }
+    },
+    {
+      "name": "half_up_12_places",
+      "as_of": "2026-10-11T10:00:00Z",
+      "time_zone": "Europe/Warsaw",
+      "device_time_zone": "Europe/Warsaw",
+      "days": 7,
+      "declarations": [
+        "2026-10-08",
+        "2026-10-09",
+        "2026-10-10"
+      ],
+      "meals": {
+        "2026-10-08": [
+          [
+            {
+              "quantity": {
+                "amount": "100",
+                "unit": "g"
+              },
+              "basis_unit": "g",
+              "density_g_per_ml": null,
+              "nutrition_per_100": {
+                "energy_kcal": "1",
+                "protein_g": "10",
+                "fat_g": "0",
+                "carbs_g": "20"
+              }
+            }
+          ]
+        ],
+        "2026-10-09": [
+          [
+            {
+              "quantity": {
+                "amount": "100",
+                "unit": "g"
+              },
+              "basis_unit": "g",
+              "density_g_per_ml": null,
+              "nutrition_per_100": {
+                "energy_kcal": "1",
+                "protein_g": "10",
+                "fat_g": "0",
+                "carbs_g": "20"
+              }
+            }
+          ]
+        ],
+        "2026-10-10": [
+          [
+            {
+              "quantity": {
+                "amount": "100",
+                "unit": "g"
+              },
+              "basis_unit": "g",
+              "density_g_per_ml": null,
+              "nutrition_per_100": {
+                "energy_kcal": "2",
+                "protein_g": "10",
+                "fat_g": "0",
+                "carbs_g": "20"
+              }
+            }
+          ]
+        ]
+      },
+      "weights": {},
+      "goals": [],
+      "expected": {
+        "averages.energy_kcal.value": "1.333333333333",
+        "averages.energy_kcal.day_count": 3
+      }
+    },
+    {
+      "name": "exact_sum_exceeds_input_six_places",
+      "as_of": "2026-10-11T10:00:00Z",
+      "time_zone": "Europe/Warsaw",
+      "device_time_zone": "Europe/Warsaw",
+      "days": 7,
+      "declarations": [
+        "2026-10-10"
+      ],
+      "meals": {
+        "2026-10-10": [
+          [
+            {
+              "quantity": {
+                "amount": "0.000001",
+                "unit": "g"
+              },
+              "basis_unit": "g",
+              "density_g_per_ml": null,
+              "nutrition_per_100": {
+                "energy_kcal": "0.000001",
+                "protein_g": "10",
+                "fat_g": "0",
+                "carbs_g": "20"
+              }
+            }
+          ]
+        ]
+      },
+      "weights": {},
+      "goals": [],
+      "expected": {
+        "daily.5.totals.energy_kcal.known_sum": "0.00000000000001",
+        "daily.5.effective_complete": true,
+        "averages.energy_kcal.value": "0"
+      }
+    },
+    {
+      "name": "profile_clock_differs_from_device",
+      "as_of": "2026-10-11T00:30:00Z",
+      "time_zone": "America/Los_Angeles",
+      "device_time_zone": "Europe/Warsaw",
+      "days": 7,
+      "declarations": [],
+      "meals": {},
+      "weights": {},
+      "goals": [],
+      "expected": {
+        "from": "2026-10-04",
+        "to": "2026-10-10"
+      }
+    },
+    {
+      "name": "dst_profile_clock",
+      "as_of": "2026-10-25T01:30:00Z",
+      "time_zone": "Europe/Warsaw",
+      "device_time_zone": "Europe/Warsaw",
+      "days": 30,
+      "declarations": [],
+      "meals": {},
+      "weights": {},
+      "goals": [],
+      "expected": {
+        "from": "2026-09-26",
+        "to": "2026-10-25",
+        "daily.29.closed": false
+      }
+    },
+    {
+      "name": "correction_moves_date_branches_latest_head",
+      "as_of": "2026-10-11T10:00:00Z",
+      "time_zone": "Europe/Warsaw",
+      "device_time_zone": "Europe/Warsaw",
+      "days": 7,
+      "declarations": [],
+      "meals": {},
+      "weights": {},
+      "goals": [
+        {
+          "entity_id": "00000000-0000-4000-8000-000000000001",
+          "timeline_revision": 1,
+          "effective_from": "2026-09-01",
+          "energy_kcal": "100",
+          "correction_of": null
+        },
+        {
+          "entity_id": "00000000-0000-4000-8000-000000000002",
+          "timeline_revision": 2,
+          "effective_from": "2026-10-09",
+          "energy_kcal": "200",
+          "correction_of": "00000000-0000-4000-8000-000000000001"
+        },
+        {
+          "entity_id": "00000000-0000-4000-8000-000000000003",
+          "timeline_revision": 3,
+          "effective_from": "2026-10-10",
+          "energy_kcal": "300",
+          "correction_of": "00000000-0000-4000-8000-000000000001"
+        },
+        {
+          "entity_id": "00000000-0000-4000-8000-000000000004",
+          "timeline_revision": 4,
+          "effective_from": "2026-10-08",
+          "energy_kcal": "400",
+          "correction_of": "00000000-0000-4000-8000-000000000002"
+        }
+      ],
+      "expected": {
+        "daily.2.goal": null,
+        "daily.3.goal.energy_kcal": "400",
+        "daily.3.goal.timeline_revision": 4,
+        "daily.5.goal.energy_kcal": "400"
+      }
+    },
+    {
+      "name": "same_day_latest_goal_revision",
+      "as_of": "2026-10-11T10:00:00Z",
+      "time_zone": "Europe/Warsaw",
+      "device_time_zone": "Europe/Warsaw",
+      "days": 7,
+      "declarations": [],
+      "meals": {},
+      "weights": {},
+      "goals": [
+        {
+          "entity_id": "00000000-0000-4000-8000-000000000001",
+          "timeline_revision": 1,
+          "effective_from": "2026-10-08",
+          "energy_kcal": "100",
+          "correction_of": null
+        },
+        {
+          "entity_id": "00000000-0000-4000-8000-000000000002",
+          "timeline_revision": 2,
+          "effective_from": "2026-10-08",
+          "energy_kcal": "200",
+          "correction_of": null
+        }
+      ],
+      "expected": {
+        "daily.3.goal.energy_kcal": "200"
+      }
+    },
+    {
+      "name": "ninety_day_calendar_window",
+      "as_of": "2026-10-11T10:00:00Z",
+      "time_zone": "Europe/Warsaw",
+      "device_time_zone": "Europe/Warsaw",
+      "days": 90,
+      "declarations": [],
+      "meals": {},
+      "weights": {},
+      "goals": [],
+      "expected": {
+        "from": "2026-07-14",
+        "to": "2026-10-11",
+        "daily.89.local_date": "2026-10-11",
+        "daily.0.local_date": "2026-07-14"
+      }
+    }
+  ]
+}

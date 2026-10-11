@@ -1,11 +1,11 @@
 """Private domain operations; each caller owns its encompassing transaction."""
 
 import hashlib
-from datetime import UTC, datetime
+from datetime import UTC, date, datetime
 from decimal import Decimal, localcontext
 from uuid import UUID
 
-from sqlalchemy import func, select, text
+from sqlalchemy import select, text
 
 from calorie_app.core.errors import DomainError
 from calorie_app.modules.catalog.pagination import database_now
@@ -259,47 +259,58 @@ def create_goal(
     return goal
 
 
-def goal_for_date(session, owner_id: UUID, day, snapshot_revision: int | None = None):
+def resolve_goal_dates(versions, days):
+    """Resolve immutable decisions once, then sweep dates; shared by every reader.
+
+    Accepted revision determines the surviving head of each original decision,
+    including branched corrections. Apply the surviving head's effective date
+    only afterwards: moving a correction later must not revive its original.
+    """
+    roots, heads = {}, {}
+    for version in sorted(versions, key=lambda value: value.timeline_revision):
+        if version.correction_of is None:
+            root = version.id
+        else:
+            root = roots.get(version.correction_of)
+            if root is None:
+                raise DomainError(503, "service_unavailable")
+        roots[version.id] = root
+        heads[root] = version
+    ordered = sorted(
+        heads.values(), key=lambda value: (value.effective_from, value.timeline_revision)
+    )
+    result, index, current = {}, 0, None
+    for day in sorted(set(days)):
+        while index < len(ordered) and ordered[index].effective_from <= day:
+            current = ordered[index]
+            index += 1
+        result[day] = current
+    return result
+
+
+def goal_for_dates(
+    session, owner_id: UUID, days, snapshot_revision: int | None = None, *, max_versions=10000
+):
+    """One owner-constrained bounded graph query, independent of window length.
+
+    Caller owns the transaction (repeatable read for multi-entity statistics).
+    Historical correction ancestors are intentionally included beyond the date
+    window. A resource error prevents partial or misleading historical results.
+    """
     lock_account(session, owner_id)
-    # Every correction remains immutable. Select the latest accepted version of
-    # each original decision before applying its (possibly corrected) date. This
-    # also resolves two audited correction branches without reviving an old head.
     bound = snapshot_revision if snapshot_revision is not None else MAX_REVISION
-    roots = (
-        select(GoalVersion.id.label("id"), GoalVersion.id.label("root"))
-        .where(
-            GoalVersion.owner_id == owner_id,
-            GoalVersion.correction_of.is_(None),
-            GoalVersion.timeline_revision <= bound,
-        )
-        .cte("goal_roots", recursive=True)
-    )
-    roots = roots.union_all(
-        select(GoalVersion.id, roots.c.root)
-        .join(roots, GoalVersion.correction_of == roots.c.id)
-        .where(GoalVersion.owner_id == owner_id, GoalVersion.timeline_revision <= bound)
-    )
-    heads = (
-        select(
-            GoalVersion.id,
-            func.row_number()
-            .over(partition_by=roots.c.root, order_by=GoalVersion.timeline_revision.desc())
-            .label("position"),
-        )
-        .join(roots, roots.c.id == GoalVersion.id)
-        .subquery()
-    )
-    query = (
-        select(GoalVersion)
-        .join(heads, heads.c.id == GoalVersion.id)
-        .where(
-            heads.c.position == 1,
-            GoalVersion.owner_id == owner_id,
-            GoalVersion.effective_from <= day,
+    versions = list(
+        session.scalars(
+            select(GoalVersion)
+            .where(GoalVersion.owner_id == owner_id, GoalVersion.timeline_revision <= bound)
+            .order_by(GoalVersion.timeline_revision)
+            .limit(max_versions + 1)
         )
     )
-    return session.scalar(
-        query.order_by(
-            GoalVersion.effective_from.desc(), GoalVersion.timeline_revision.desc()
-        ).limit(1)
-    )
+    if len(versions) > max_versions:
+        raise DomainError(422, "statistics_resource_limit")
+    return resolve_goal_dates(versions, days)
+
+
+def goal_for_date(session, owner_id: UUID, day: date, snapshot_revision: int | None = None):
+    return goal_for_dates(session, owner_id, [day], snapshot_revision)[day]

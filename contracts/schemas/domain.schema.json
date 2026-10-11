@@ -879,36 +879,562 @@
       "additionalProperties": false
     },
     "MealPage": {
-      "type": "object",
+      "additionalProperties": false,
       "properties": {
-        "items": {
-          "type": "array",
-          "items": {
-            "$ref": "domain.schema.json#/$defs/MealRecord"
-          },
-          "minItems": 0,
-          "maxItems": 500
+        "account_id": {
+          "format": "uuid",
+          "title": "Account Id",
+          "type": "string"
         },
-        "next_page_token": {
+        "account_generation": {
+          "maximum": 2147483647,
+          "minimum": 1,
+          "title": "Account Generation",
+          "type": "integer"
+        },
+        "sync_epoch": {
+          "format": "uuid",
+          "title": "Sync Epoch",
+          "type": "string"
+        },
+        "as_of": {
+          "format": "date-time",
+          "pattern": "^\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}(\\.[0-9]{1,6})?Z$",
+          "title": "As Of",
+          "type": "string"
+        },
+        "time_zone": {
           "anyOf": [
             {
-              "$ref": "common.schema.json#/$defs/Token"
+              "format": "iana-time-zone",
+              "maxLength": 100,
+              "type": "string"
             },
             {
               "type": "null"
             }
-          ]
+          ],
+          "title": "Time Zone"
         },
-        "sync_epoch": {
-          "$ref": "common.schema.json#/$defs/Uuid"
+        "profile_revision": {
+          "anyOf": [
+            {
+              "maximum": 2147483647,
+              "minimum": 1,
+              "type": "integer"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "title": "Profile Revision"
+        },
+        "goal_timeline_revision": {
+          "maximum": 2147483647,
+          "minimum": 0,
+          "title": "Goal Timeline Revision",
+          "type": "integer"
+        },
+        "server_position": {
+          "maximum": 9223372036854775807,
+          "minimum": 0,
+          "title": "Server Position",
+          "type": "integer"
+        },
+        "from": {
+          "format": "date",
+          "title": "From",
+          "type": "string"
+        },
+        "to": {
+          "format": "date",
+          "title": "To",
+          "type": "string"
+        },
+        "next_page_token": {
+          "anyOf": [
+            {
+              "maxLength": 4096,
+              "minLength": 1,
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "title": "Next Page Token"
+        },
+        "items": {
+          "items": {
+            "additionalProperties": false,
+            "properties": {
+              "entity_id": {
+                "format": "uuid",
+                "title": "Entity Id",
+                "type": "string"
+              },
+              "revision": {
+                "maximum": 2147483647,
+                "minimum": 1,
+                "title": "Revision",
+                "type": "integer"
+              },
+              "payload": {
+                "additionalProperties": false,
+                "properties": {
+                  "title": {
+                    "allOf": [
+                      {
+                        "description": "Unicode bez NUL i samotnych surrogate; poprawne pary UTF-16/emoji są dozwolone.",
+                        "pattern": "^(?:[^\\u0000\\uD800-\\uDFFF]|[\\uD800-\\uDBFF][\\uDC00-\\uDFFF])*(?![\\s\\S])",
+                        "type": "string"
+                      }
+                    ],
+                    "maxLength": 200,
+                    "minLength": 1,
+                    "type": "string"
+                  },
+                  "occurred_at": {
+                    "allOf": [
+                      {
+                        "description": "Unicode bez NUL i samotnych surrogate; poprawne pary UTF-16/emoji są dozwolone.",
+                        "pattern": "^(?:[^\\u0000\\uD800-\\uDFFF]|[\\uD800-\\uDBFF][\\uDC00-\\uDFFF])*(?![\\s\\S])",
+                        "type": "string"
+                      }
+                    ],
+                    "format": "date-time",
+                    "pattern": "^\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}(\\.[0-9]{1,6})?Z$",
+                    "type": "string"
+                  },
+                  "time_zone": {
+                    "allOf": [
+                      {
+                        "description": "Unicode bez NUL i samotnych surrogate; poprawne pary UTF-16/emoji są dozwolone.",
+                        "pattern": "^(?:[^\\u0000\\uD800-\\uDFFF]|[\\uD800-\\uDBFF][\\uDC00-\\uDFFF])*(?![\\s\\S])",
+                        "type": "string"
+                      }
+                    ],
+                    "format": "iana-time-zone",
+                    "maxLength": 100,
+                    "type": "string"
+                  },
+                  "local_date": {
+                    "allOf": [
+                      {
+                        "description": "Unicode bez NUL i samotnych surrogate; poprawne pary UTF-16/emoji są dozwolone.",
+                        "pattern": "^(?:[^\\u0000\\uD800-\\uDFFF]|[\\uD800-\\uDBFF][\\uDC00-\\uDFFF])*(?![\\s\\S])",
+                        "type": "string"
+                      }
+                    ],
+                    "format": "date",
+                    "type": "string"
+                  },
+                  "meal_type": {
+                    "anyOf": [
+                      {
+                        "enum": [
+                          "breakfast",
+                          "lunch",
+                          "dinner",
+                          "snack"
+                        ]
+                      },
+                      {
+                        "type": "null"
+                      }
+                    ]
+                  },
+                  "goal_id": {
+                    "anyOf": [
+                      {
+                        "allOf": [
+                          {
+                            "description": "Unicode bez NUL i samotnych surrogate; poprawne pary UTF-16/emoji są dozwolone.",
+                            "pattern": "^(?:[^\\u0000\\uD800-\\uDFFF]|[\\uD800-\\uDBFF][\\uDC00-\\uDFFF])*(?![\\s\\S])",
+                            "type": "string"
+                          }
+                        ],
+                        "format": "uuid",
+                        "pattern": "^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$",
+                        "type": "string"
+                      },
+                      {
+                        "type": "null"
+                      }
+                    ]
+                  },
+                  "ration": {
+                    "anyOf": [
+                      {
+                        "additionalProperties": false,
+                        "properties": {
+                          "ration_id": {
+                            "allOf": [
+                              {
+                                "description": "Unicode bez NUL i samotnych surrogate; poprawne pary UTF-16/emoji są dozwolone.",
+                                "pattern": "^(?:[^\\u0000\\uD800-\\uDFFF]|[\\uD800-\\uDBFF][\\uDC00-\\uDFFF])*(?![\\s\\S])",
+                                "type": "string"
+                              }
+                            ],
+                            "format": "uuid",
+                            "pattern": "^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$",
+                            "type": "string"
+                          },
+                          "revision": {
+                            "maximum": 2147483647,
+                            "minimum": 1,
+                            "type": "integer"
+                          },
+                          "name": {
+                            "allOf": [
+                              {
+                                "description": "Unicode bez NUL i samotnych surrogate; poprawne pary UTF-16/emoji są dozwolone.",
+                                "pattern": "^(?:[^\\u0000\\uD800-\\uDFFF]|[\\uD800-\\uDBFF][\\uDC00-\\uDFFF])*(?![\\s\\S])",
+                                "type": "string"
+                              }
+                            ],
+                            "maxLength": 200,
+                            "minLength": 1,
+                            "type": "string"
+                          }
+                        },
+                        "required": [
+                          "ration_id",
+                          "revision",
+                          "name"
+                        ],
+                        "type": "object"
+                      },
+                      {
+                        "type": "null"
+                      }
+                    ]
+                  },
+                  "items": {
+                    "items": {
+                      "additionalProperties": false,
+                      "properties": {
+                        "item_id": {
+                          "allOf": [
+                            {
+                              "description": "Unicode bez NUL i samotnych surrogate; poprawne pary UTF-16/emoji są dozwolone.",
+                              "pattern": "^(?:[^\\u0000\\uD800-\\uDFFF]|[\\uD800-\\uDBFF][\\uDC00-\\uDFFF])*(?![\\s\\S])",
+                              "type": "string"
+                            }
+                          ],
+                          "format": "uuid",
+                          "pattern": "^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$",
+                          "type": "string"
+                        },
+                        "name": {
+                          "allOf": [
+                            {
+                              "description": "Unicode bez NUL i samotnych surrogate; poprawne pary UTF-16/emoji są dozwolone.",
+                              "pattern": "^(?:[^\\u0000\\uD800-\\uDFFF]|[\\uD800-\\uDBFF][\\uDC00-\\uDFFF])*(?![\\s\\S])",
+                              "type": "string"
+                            }
+                          ],
+                          "maxLength": 200,
+                          "minLength": 1,
+                          "type": "string"
+                        },
+                        "product": {
+                          "anyOf": [
+                            {
+                              "additionalProperties": false,
+                              "properties": {
+                                "product_id": {
+                                  "allOf": [
+                                    {
+                                      "description": "Unicode bez NUL i samotnych surrogate; poprawne pary UTF-16/emoji są dozwolone.",
+                                      "pattern": "^(?:[^\\u0000\\uD800-\\uDFFF]|[\\uD800-\\uDBFF][\\uDC00-\\uDFFF])*(?![\\s\\S])",
+                                      "type": "string"
+                                    }
+                                  ],
+                                  "format": "uuid",
+                                  "pattern": "^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$",
+                                  "type": "string"
+                                },
+                                "revision": {
+                                  "maximum": 2147483647,
+                                  "minimum": 1,
+                                  "type": "integer"
+                                }
+                              },
+                              "required": [
+                                "product_id",
+                                "revision"
+                              ],
+                              "type": "object"
+                            },
+                            {
+                              "type": "null"
+                            }
+                          ]
+                        },
+                        "quantity": {
+                          "additionalProperties": false,
+                          "properties": {
+                            "amount": {
+                              "allOf": [
+                                {
+                                  "allOf": [
+                                    {
+                                      "description": "Unicode bez NUL i samotnych surrogate; poprawne pary UTF-16/emoji są dozwolone.",
+                                      "pattern": "^(?:[^\\u0000\\uD800-\\uDFFF]|[\\uD800-\\uDBFF][\\uDC00-\\uDFFF])*(?![\\s\\S])",
+                                      "type": "string"
+                                    }
+                                  ],
+                                  "description": "Kanoniczne 0..999999.999999, maksymalnie 6 miejsc; bez znaku, wykładnika i końcowych zer.",
+                                  "pattern": "^(0|[1-9][0-9]{0,5})(\\.[0-9]{0,5}[1-9])?(?![\\s\\S])",
+                                  "type": "string"
+                                },
+                                {
+                                  "not": {
+                                    "const": "0"
+                                  }
+                                }
+                              ]
+                            },
+                            "unit": {
+                              "enum": [
+                                "g",
+                                "ml"
+                              ]
+                            }
+                          },
+                          "required": [
+                            "amount",
+                            "unit"
+                          ],
+                          "type": "object"
+                        },
+                        "basis_unit": {
+                          "enum": [
+                            "g",
+                            "ml"
+                          ]
+                        },
+                        "nutrition_per_100": {
+                          "additionalProperties": false,
+                          "properties": {
+                            "energy_kcal": {
+                              "anyOf": [
+                                {
+                                  "allOf": [
+                                    {
+                                      "description": "Unicode bez NUL i samotnych surrogate; poprawne pary UTF-16/emoji są dozwolone.",
+                                      "pattern": "^(?:[^\\u0000\\uD800-\\uDFFF]|[\\uD800-\\uDBFF][\\uDC00-\\uDFFF])*(?![\\s\\S])",
+                                      "type": "string"
+                                    }
+                                  ],
+                                  "description": "Kanoniczne 0..999999.999999, maksymalnie 6 miejsc; bez znaku, wykładnika i końcowych zer.",
+                                  "pattern": "^(0|[1-9][0-9]{0,5})(\\.[0-9]{0,5}[1-9])?(?![\\s\\S])",
+                                  "type": "string"
+                                },
+                                {
+                                  "type": "null"
+                                }
+                              ]
+                            },
+                            "protein_g": {
+                              "anyOf": [
+                                {
+                                  "allOf": [
+                                    {
+                                      "description": "Unicode bez NUL i samotnych surrogate; poprawne pary UTF-16/emoji są dozwolone.",
+                                      "pattern": "^(?:[^\\u0000\\uD800-\\uDFFF]|[\\uD800-\\uDBFF][\\uDC00-\\uDFFF])*(?![\\s\\S])",
+                                      "type": "string"
+                                    }
+                                  ],
+                                  "description": "Kanoniczne 0..999999.999999, maksymalnie 6 miejsc; bez znaku, wykładnika i końcowych zer.",
+                                  "pattern": "^(0|[1-9][0-9]{0,5})(\\.[0-9]{0,5}[1-9])?(?![\\s\\S])",
+                                  "type": "string"
+                                },
+                                {
+                                  "type": "null"
+                                }
+                              ]
+                            },
+                            "fat_g": {
+                              "anyOf": [
+                                {
+                                  "allOf": [
+                                    {
+                                      "description": "Unicode bez NUL i samotnych surrogate; poprawne pary UTF-16/emoji są dozwolone.",
+                                      "pattern": "^(?:[^\\u0000\\uD800-\\uDFFF]|[\\uD800-\\uDBFF][\\uDC00-\\uDFFF])*(?![\\s\\S])",
+                                      "type": "string"
+                                    }
+                                  ],
+                                  "description": "Kanoniczne 0..999999.999999, maksymalnie 6 miejsc; bez znaku, wykładnika i końcowych zer.",
+                                  "pattern": "^(0|[1-9][0-9]{0,5})(\\.[0-9]{0,5}[1-9])?(?![\\s\\S])",
+                                  "type": "string"
+                                },
+                                {
+                                  "type": "null"
+                                }
+                              ]
+                            },
+                            "carbs_g": {
+                              "anyOf": [
+                                {
+                                  "allOf": [
+                                    {
+                                      "description": "Unicode bez NUL i samotnych surrogate; poprawne pary UTF-16/emoji są dozwolone.",
+                                      "pattern": "^(?:[^\\u0000\\uD800-\\uDFFF]|[\\uD800-\\uDBFF][\\uDC00-\\uDFFF])*(?![\\s\\S])",
+                                      "type": "string"
+                                    }
+                                  ],
+                                  "description": "Kanoniczne 0..999999.999999, maksymalnie 6 miejsc; bez znaku, wykładnika i końcowych zer.",
+                                  "pattern": "^(0|[1-9][0-9]{0,5})(\\.[0-9]{0,5}[1-9])?(?![\\s\\S])",
+                                  "type": "string"
+                                },
+                                {
+                                  "type": "null"
+                                }
+                              ]
+                            }
+                          },
+                          "required": [
+                            "energy_kcal",
+                            "protein_g",
+                            "fat_g",
+                            "carbs_g"
+                          ],
+                          "type": "object"
+                        },
+                        "density_g_per_ml": {
+                          "anyOf": [
+                            {
+                              "allOf": [
+                                {
+                                  "allOf": [
+                                    {
+                                      "description": "Unicode bez NUL i samotnych surrogate; poprawne pary UTF-16/emoji są dozwolone.",
+                                      "pattern": "^(?:[^\\u0000\\uD800-\\uDFFF]|[\\uD800-\\uDBFF][\\uDC00-\\uDFFF])*(?![\\s\\S])",
+                                      "type": "string"
+                                    }
+                                  ],
+                                  "description": "Kanoniczne 0..999999.999999, maksymalnie 6 miejsc; bez znaku, wykładnika i końcowych zer.",
+                                  "pattern": "^(0|[1-9][0-9]{0,5})(\\.[0-9]{0,5}[1-9])?(?![\\s\\S])",
+                                  "type": "string"
+                                },
+                                {
+                                  "not": {
+                                    "const": "0"
+                                  }
+                                }
+                              ]
+                            },
+                            {
+                              "type": "null"
+                            }
+                          ]
+                        },
+                        "density_source": {
+                          "anyOf": [
+                            {
+                              "allOf": [
+                                {
+                                  "description": "Unicode bez NUL i samotnych surrogate; poprawne pary UTF-16/emoji są dozwolone.",
+                                  "pattern": "^(?:[^\\u0000\\uD800-\\uDFFF]|[\\uD800-\\uDBFF][\\uDC00-\\uDFFF])*(?![\\s\\S])",
+                                  "type": "string"
+                                }
+                              ],
+                              "maxLength": 500,
+                              "minLength": 1,
+                              "type": "string"
+                            },
+                            {
+                              "type": "null"
+                            }
+                          ]
+                        },
+                        "nutrition_origin": {
+                          "enum": [
+                            "catalog_snapshot",
+                            "manual",
+                            "ai_estimate"
+                          ]
+                        },
+                        "formula_version": {
+                          "const": "nutrition_v1"
+                        },
+                        "ration_component_position": {
+                          "anyOf": [
+                            {
+                              "maximum": 100000,
+                              "minimum": 1,
+                              "type": "integer"
+                            },
+                            {
+                              "type": "null"
+                            }
+                          ]
+                        }
+                      },
+                      "required": [
+                        "item_id",
+                        "name",
+                        "product",
+                        "quantity",
+                        "basis_unit",
+                        "nutrition_per_100",
+                        "density_g_per_ml",
+                        "density_source",
+                        "nutrition_origin",
+                        "formula_version",
+                        "ration_component_position"
+                      ],
+                      "type": "object"
+                    },
+                    "maxItems": 100,
+                    "minItems": 1,
+                    "type": "array"
+                  }
+                },
+                "required": [
+                  "title",
+                  "occurred_at",
+                  "time_zone",
+                  "local_date",
+                  "meal_type",
+                  "goal_id",
+                  "ration",
+                  "items"
+                ],
+                "type": "object"
+              }
+            },
+            "required": [
+              "entity_id",
+              "revision",
+              "payload"
+            ],
+            "title": "MealRecord",
+            "type": "object"
+          },
+          "maxItems": 500,
+          "title": "Items",
+          "type": "array"
         }
       },
       "required": [
-        "items",
+        "account_id",
+        "account_generation",
+        "sync_epoch",
+        "as_of",
+        "time_zone",
+        "profile_revision",
+        "goal_timeline_revision",
+        "server_position",
+        "from",
+        "to",
         "next_page_token",
-        "sync_epoch"
+        "items"
       ],
-      "additionalProperties": false
+      "title": "MealPage",
+      "type": "object"
     },
     "WeightRecord": {
       "type": "object",
@@ -931,36 +1457,204 @@
       "additionalProperties": false
     },
     "WeightPage": {
-      "type": "object",
+      "additionalProperties": false,
       "properties": {
-        "items": {
-          "type": "array",
-          "items": {
-            "$ref": "domain.schema.json#/$defs/WeightRecord"
-          },
-          "minItems": 0,
-          "maxItems": 500
+        "account_id": {
+          "format": "uuid",
+          "title": "Account Id",
+          "type": "string"
         },
-        "next_page_token": {
+        "account_generation": {
+          "maximum": 2147483647,
+          "minimum": 1,
+          "title": "Account Generation",
+          "type": "integer"
+        },
+        "sync_epoch": {
+          "format": "uuid",
+          "title": "Sync Epoch",
+          "type": "string"
+        },
+        "as_of": {
+          "format": "date-time",
+          "pattern": "^\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}(\\.[0-9]{1,6})?Z$",
+          "title": "As Of",
+          "type": "string"
+        },
+        "time_zone": {
           "anyOf": [
             {
-              "$ref": "common.schema.json#/$defs/Token"
+              "format": "iana-time-zone",
+              "maxLength": 100,
+              "type": "string"
             },
             {
               "type": "null"
             }
-          ]
+          ],
+          "title": "Time Zone"
         },
-        "sync_epoch": {
-          "$ref": "common.schema.json#/$defs/Uuid"
+        "profile_revision": {
+          "anyOf": [
+            {
+              "maximum": 2147483647,
+              "minimum": 1,
+              "type": "integer"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "title": "Profile Revision"
+        },
+        "goal_timeline_revision": {
+          "maximum": 2147483647,
+          "minimum": 0,
+          "title": "Goal Timeline Revision",
+          "type": "integer"
+        },
+        "server_position": {
+          "maximum": 9223372036854775807,
+          "minimum": 0,
+          "title": "Server Position",
+          "type": "integer"
+        },
+        "from": {
+          "format": "date",
+          "title": "From",
+          "type": "string"
+        },
+        "to": {
+          "format": "date",
+          "title": "To",
+          "type": "string"
+        },
+        "next_page_token": {
+          "anyOf": [
+            {
+              "maxLength": 4096,
+              "minLength": 1,
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "title": "Next Page Token"
+        },
+        "items": {
+          "items": {
+            "additionalProperties": false,
+            "properties": {
+              "entity_id": {
+                "format": "uuid",
+                "title": "Entity Id",
+                "type": "string"
+              },
+              "revision": {
+                "maximum": 2147483647,
+                "minimum": 1,
+                "title": "Revision",
+                "type": "integer"
+              },
+              "payload": {
+                "additionalProperties": false,
+                "properties": {
+                  "weight_kg": {
+                    "allOf": [
+                      {
+                        "allOf": [
+                          {
+                            "description": "Unicode bez NUL i samotnych surrogate; poprawne pary UTF-16/emoji są dozwolone.",
+                            "pattern": "^(?:[^\\u0000\\uD800-\\uDFFF]|[\\uD800-\\uDBFF][\\uDC00-\\uDFFF])*(?![\\s\\S])",
+                            "type": "string"
+                          }
+                        ],
+                        "description": "Kanoniczne 0..999999.999999, maksymalnie 6 miejsc; bez znaku, wykładnika i końcowych zer.",
+                        "pattern": "^(0|[1-9][0-9]{0,5})(\\.[0-9]{0,5}[1-9])?(?![\\s\\S])",
+                        "type": "string"
+                      },
+                      {
+                        "not": {
+                          "const": "0"
+                        }
+                      }
+                    ]
+                  },
+                  "occurred_at": {
+                    "allOf": [
+                      {
+                        "description": "Unicode bez NUL i samotnych surrogate; poprawne pary UTF-16/emoji są dozwolone.",
+                        "pattern": "^(?:[^\\u0000\\uD800-\\uDFFF]|[\\uD800-\\uDBFF][\\uDC00-\\uDFFF])*(?![\\s\\S])",
+                        "type": "string"
+                      }
+                    ],
+                    "format": "date-time",
+                    "pattern": "^\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}(\\.[0-9]{1,6})?Z$",
+                    "type": "string"
+                  },
+                  "time_zone": {
+                    "allOf": [
+                      {
+                        "description": "Unicode bez NUL i samotnych surrogate; poprawne pary UTF-16/emoji są dozwolone.",
+                        "pattern": "^(?:[^\\u0000\\uD800-\\uDFFF]|[\\uD800-\\uDBFF][\\uDC00-\\uDFFF])*(?![\\s\\S])",
+                        "type": "string"
+                      }
+                    ],
+                    "format": "iana-time-zone",
+                    "maxLength": 100,
+                    "type": "string"
+                  },
+                  "local_date": {
+                    "allOf": [
+                      {
+                        "description": "Unicode bez NUL i samotnych surrogate; poprawne pary UTF-16/emoji są dozwolone.",
+                        "pattern": "^(?:[^\\u0000\\uD800-\\uDFFF]|[\\uD800-\\uDBFF][\\uDC00-\\uDFFF])*(?![\\s\\S])",
+                        "type": "string"
+                      }
+                    ],
+                    "format": "date",
+                    "type": "string"
+                  }
+                },
+                "required": [
+                  "weight_kg",
+                  "occurred_at",
+                  "time_zone",
+                  "local_date"
+                ],
+                "type": "object"
+              }
+            },
+            "required": [
+              "entity_id",
+              "revision",
+              "payload"
+            ],
+            "title": "WeightRecord",
+            "type": "object"
+          },
+          "maxItems": 500,
+          "title": "Items",
+          "type": "array"
         }
       },
       "required": [
-        "items",
+        "account_id",
+        "account_generation",
+        "sync_epoch",
+        "as_of",
+        "time_zone",
+        "profile_revision",
+        "goal_timeline_revision",
+        "server_position",
+        "from",
+        "to",
         "next_page_token",
-        "sync_epoch"
+        "items"
       ],
-      "additionalProperties": false
+      "title": "WeightPage",
+      "type": "object"
     },
     "DiaryDayRecord": {
       "type": "object",
@@ -983,36 +1677,178 @@
       "additionalProperties": false
     },
     "DiaryDayPage": {
-      "type": "object",
+      "additionalProperties": false,
       "properties": {
-        "items": {
-          "type": "array",
-          "items": {
-            "$ref": "domain.schema.json#/$defs/DiaryDayRecord"
-          },
-          "minItems": 0,
-          "maxItems": 500
+        "account_id": {
+          "format": "uuid",
+          "title": "Account Id",
+          "type": "string"
         },
-        "next_page_token": {
+        "account_generation": {
+          "maximum": 2147483647,
+          "minimum": 1,
+          "title": "Account Generation",
+          "type": "integer"
+        },
+        "sync_epoch": {
+          "format": "uuid",
+          "title": "Sync Epoch",
+          "type": "string"
+        },
+        "as_of": {
+          "format": "date-time",
+          "pattern": "^\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}(\\.[0-9]{1,6})?Z$",
+          "title": "As Of",
+          "type": "string"
+        },
+        "time_zone": {
           "anyOf": [
             {
-              "$ref": "common.schema.json#/$defs/Token"
+              "format": "iana-time-zone",
+              "maxLength": 100,
+              "type": "string"
             },
             {
               "type": "null"
             }
-          ]
+          ],
+          "title": "Time Zone"
         },
-        "sync_epoch": {
-          "$ref": "common.schema.json#/$defs/Uuid"
+        "profile_revision": {
+          "anyOf": [
+            {
+              "maximum": 2147483647,
+              "minimum": 1,
+              "type": "integer"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "title": "Profile Revision"
+        },
+        "goal_timeline_revision": {
+          "maximum": 2147483647,
+          "minimum": 0,
+          "title": "Goal Timeline Revision",
+          "type": "integer"
+        },
+        "server_position": {
+          "maximum": 9223372036854775807,
+          "minimum": 0,
+          "title": "Server Position",
+          "type": "integer"
+        },
+        "from": {
+          "format": "date",
+          "title": "From",
+          "type": "string"
+        },
+        "to": {
+          "format": "date",
+          "title": "To",
+          "type": "string"
+        },
+        "next_page_token": {
+          "anyOf": [
+            {
+              "maxLength": 4096,
+              "minLength": 1,
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "title": "Next Page Token"
+        },
+        "items": {
+          "items": {
+            "additionalProperties": false,
+            "properties": {
+              "entity_id": {
+                "format": "uuid",
+                "title": "Entity Id",
+                "type": "string"
+              },
+              "revision": {
+                "maximum": 2147483647,
+                "minimum": 1,
+                "title": "Revision",
+                "type": "integer"
+              },
+              "payload": {
+                "additionalProperties": false,
+                "properties": {
+                  "local_date": {
+                    "allOf": [
+                      {
+                        "description": "Unicode bez NUL i samotnych surrogate; poprawne pary UTF-16/emoji są dozwolone.",
+                        "pattern": "^(?:[^\\u0000\\uD800-\\uDFFF]|[\\uD800-\\uDBFF][\\uDC00-\\uDFFF])*(?![\\s\\S])",
+                        "type": "string"
+                      }
+                    ],
+                    "format": "date",
+                    "type": "string"
+                  },
+                  "time_zone": {
+                    "allOf": [
+                      {
+                        "description": "Unicode bez NUL i samotnych surrogate; poprawne pary UTF-16/emoji są dozwolone.",
+                        "pattern": "^(?:[^\\u0000\\uD800-\\uDFFF]|[\\uD800-\\uDBFF][\\uDC00-\\uDFFF])*(?![\\s\\S])",
+                        "type": "string"
+                      }
+                    ],
+                    "format": "iana-time-zone",
+                    "maxLength": 100,
+                    "type": "string"
+                  },
+                  "declared_complete": {
+                    "type": "boolean"
+                  }
+                },
+                "required": [
+                  "local_date",
+                  "time_zone",
+                  "declared_complete"
+                ],
+                "type": "object"
+              },
+              "effective_complete": {
+                "title": "Effective Complete",
+                "type": "boolean"
+              }
+            },
+            "required": [
+              "entity_id",
+              "revision",
+              "payload",
+              "effective_complete"
+            ],
+            "title": "DiaryDayRecord",
+            "type": "object"
+          },
+          "maxItems": 500,
+          "title": "Items",
+          "type": "array"
         }
       },
       "required": [
-        "items",
+        "account_id",
+        "account_generation",
+        "sync_epoch",
+        "as_of",
+        "time_zone",
+        "profile_revision",
+        "goal_timeline_revision",
+        "server_position",
+        "from",
+        "to",
         "next_page_token",
-        "sync_epoch"
+        "items"
       ],
-      "additionalProperties": false
+      "title": "DiaryDayPage",
+      "type": "object"
     },
     "ProductPage": {
       "type": "object",
@@ -1069,6 +1905,655 @@
         "next_page_token"
       ],
       "additionalProperties": false
+    },
+    "Statistics": {
+      "additionalProperties": false,
+      "properties": {
+        "account_id": {
+          "format": "uuid",
+          "title": "Account Id",
+          "type": "string"
+        },
+        "account_generation": {
+          "maximum": 2147483647,
+          "minimum": 1,
+          "title": "Account Generation",
+          "type": "integer"
+        },
+        "sync_epoch": {
+          "format": "uuid",
+          "title": "Sync Epoch",
+          "type": "string"
+        },
+        "as_of": {
+          "format": "date-time",
+          "pattern": "^\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}(\\.[0-9]{1,6})?Z$",
+          "title": "As Of",
+          "type": "string"
+        },
+        "time_zone": {
+          "format": "iana-time-zone",
+          "maxLength": 100,
+          "title": "Time Zone",
+          "type": "string"
+        },
+        "profile_revision": {
+          "maximum": 2147483647,
+          "minimum": 1,
+          "title": "Profile Revision",
+          "type": "integer"
+        },
+        "goal_timeline_revision": {
+          "maximum": 2147483647,
+          "minimum": 0,
+          "title": "Goal Timeline Revision",
+          "type": "integer"
+        },
+        "server_position": {
+          "minimum": 0,
+          "title": "Server Position",
+          "type": "integer"
+        },
+        "from": {
+          "format": "date",
+          "title": "From",
+          "type": "string"
+        },
+        "to": {
+          "format": "date",
+          "title": "To",
+          "type": "string"
+        },
+        "days": {
+          "enum": [
+            7,
+            30,
+            90
+          ],
+          "title": "Days",
+          "type": "integer"
+        },
+        "statistics_version": {
+          "const": "statistics_v1",
+          "title": "Statistics Version",
+          "type": "string"
+        },
+        "goal_rule": {
+          "const": "goal_band_v1",
+          "title": "Goal Rule",
+          "type": "string"
+        },
+        "daily": {
+          "items": {
+            "additionalProperties": false,
+            "properties": {
+              "local_date": {
+                "format": "date",
+                "title": "Local Date",
+                "type": "string"
+              },
+              "closed": {
+                "title": "Closed",
+                "type": "boolean"
+              },
+              "declared_complete": {
+                "title": "Declared Complete",
+                "type": "boolean"
+              },
+              "effective_complete": {
+                "title": "Effective Complete",
+                "type": "boolean"
+              },
+              "status": {
+                "enum": [
+                  "no_data",
+                  "incomplete",
+                  "complete"
+                ],
+                "title": "Status",
+                "type": "string"
+              },
+              "meal_count": {
+                "minimum": 0,
+                "title": "Meal Count",
+                "type": "integer"
+              },
+              "totals": {
+                "additionalProperties": false,
+                "properties": {
+                  "energy_kcal": {
+                    "additionalProperties": false,
+                    "properties": {
+                      "known_sum": {
+                        "anyOf": [
+                          {
+                            "maxLength": 128,
+                            "pattern": "^(0|[1-9][0-9]*)(\\.[0-9]*[1-9])?$",
+                            "type": "string"
+                          },
+                          {
+                            "type": "null"
+                          }
+                        ],
+                        "title": "Known Sum"
+                      },
+                      "complete": {
+                        "title": "Complete",
+                        "type": "boolean"
+                      },
+                      "known_count": {
+                        "minimum": 0,
+                        "title": "Known Count",
+                        "type": "integer"
+                      },
+                      "missing_count": {
+                        "minimum": 0,
+                        "title": "Missing Count",
+                        "type": "integer"
+                      }
+                    },
+                    "required": [
+                      "known_sum",
+                      "complete",
+                      "known_count",
+                      "missing_count"
+                    ],
+                    "title": "FieldTotal",
+                    "type": "object"
+                  },
+                  "protein_g": {
+                    "additionalProperties": false,
+                    "properties": {
+                      "known_sum": {
+                        "anyOf": [
+                          {
+                            "maxLength": 128,
+                            "pattern": "^(0|[1-9][0-9]*)(\\.[0-9]*[1-9])?$",
+                            "type": "string"
+                          },
+                          {
+                            "type": "null"
+                          }
+                        ],
+                        "title": "Known Sum"
+                      },
+                      "complete": {
+                        "title": "Complete",
+                        "type": "boolean"
+                      },
+                      "known_count": {
+                        "minimum": 0,
+                        "title": "Known Count",
+                        "type": "integer"
+                      },
+                      "missing_count": {
+                        "minimum": 0,
+                        "title": "Missing Count",
+                        "type": "integer"
+                      }
+                    },
+                    "required": [
+                      "known_sum",
+                      "complete",
+                      "known_count",
+                      "missing_count"
+                    ],
+                    "title": "FieldTotal",
+                    "type": "object"
+                  },
+                  "fat_g": {
+                    "additionalProperties": false,
+                    "properties": {
+                      "known_sum": {
+                        "anyOf": [
+                          {
+                            "maxLength": 128,
+                            "pattern": "^(0|[1-9][0-9]*)(\\.[0-9]*[1-9])?$",
+                            "type": "string"
+                          },
+                          {
+                            "type": "null"
+                          }
+                        ],
+                        "title": "Known Sum"
+                      },
+                      "complete": {
+                        "title": "Complete",
+                        "type": "boolean"
+                      },
+                      "known_count": {
+                        "minimum": 0,
+                        "title": "Known Count",
+                        "type": "integer"
+                      },
+                      "missing_count": {
+                        "minimum": 0,
+                        "title": "Missing Count",
+                        "type": "integer"
+                      }
+                    },
+                    "required": [
+                      "known_sum",
+                      "complete",
+                      "known_count",
+                      "missing_count"
+                    ],
+                    "title": "FieldTotal",
+                    "type": "object"
+                  },
+                  "carbs_g": {
+                    "additionalProperties": false,
+                    "properties": {
+                      "known_sum": {
+                        "anyOf": [
+                          {
+                            "maxLength": 128,
+                            "pattern": "^(0|[1-9][0-9]*)(\\.[0-9]*[1-9])?$",
+                            "type": "string"
+                          },
+                          {
+                            "type": "null"
+                          }
+                        ],
+                        "title": "Known Sum"
+                      },
+                      "complete": {
+                        "title": "Complete",
+                        "type": "boolean"
+                      },
+                      "known_count": {
+                        "minimum": 0,
+                        "title": "Known Count",
+                        "type": "integer"
+                      },
+                      "missing_count": {
+                        "minimum": 0,
+                        "title": "Missing Count",
+                        "type": "integer"
+                      }
+                    },
+                    "required": [
+                      "known_sum",
+                      "complete",
+                      "known_count",
+                      "missing_count"
+                    ],
+                    "title": "FieldTotal",
+                    "type": "object"
+                  }
+                },
+                "required": [
+                  "energy_kcal",
+                  "protein_g",
+                  "fat_g",
+                  "carbs_g"
+                ],
+                "title": "NutrientTotals",
+                "type": "object"
+              },
+              "goal": {
+                "anyOf": [
+                  {
+                    "additionalProperties": false,
+                    "properties": {
+                      "entity_id": {
+                        "format": "uuid",
+                        "title": "Entity Id",
+                        "type": "string"
+                      },
+                      "timeline_revision": {
+                        "maximum": 2147483647,
+                        "minimum": 1,
+                        "title": "Timeline Revision",
+                        "type": "integer"
+                      },
+                      "effective_from": {
+                        "format": "date",
+                        "title": "Effective From",
+                        "type": "string"
+                      },
+                      "energy_kcal": {
+                        "maxLength": 128,
+                        "pattern": "^(0|[1-9][0-9]*)(\\.[0-9]*[1-9])?$",
+                        "title": "Energy Kcal",
+                        "type": "string"
+                      }
+                    },
+                    "required": [
+                      "entity_id",
+                      "timeline_revision",
+                      "effective_from",
+                      "energy_kcal"
+                    ],
+                    "title": "HistoricalGoal",
+                    "type": "object"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ]
+              },
+              "in_goal": {
+                "anyOf": [
+                  {
+                    "type": "boolean"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ],
+                "title": "In Goal"
+              },
+              "preliminary_in_goal": {
+                "anyOf": [
+                  {
+                    "type": "boolean"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ],
+                "title": "Preliminary In Goal"
+              },
+              "latest_weight": {
+                "anyOf": [
+                  {
+                    "additionalProperties": false,
+                    "properties": {
+                      "entity_id": {
+                        "format": "uuid",
+                        "title": "Entity Id",
+                        "type": "string"
+                      },
+                      "occurred_at": {
+                        "format": "date-time",
+                        "pattern": "^\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}(\\.[0-9]{1,6})?Z$",
+                        "title": "Occurred At",
+                        "type": "string"
+                      },
+                      "weight_kg": {
+                        "maxLength": 128,
+                        "pattern": "^(0|[1-9][0-9]*)(\\.[0-9]*[1-9])?$",
+                        "title": "Weight Kg",
+                        "type": "string"
+                      }
+                    },
+                    "required": [
+                      "entity_id",
+                      "occurred_at",
+                      "weight_kg"
+                    ],
+                    "title": "DailyWeight",
+                    "type": "object"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ]
+              },
+              "weight_count": {
+                "minimum": 0,
+                "title": "Weight Count",
+                "type": "integer"
+              }
+            },
+            "required": [
+              "local_date",
+              "closed",
+              "declared_complete",
+              "effective_complete",
+              "status",
+              "meal_count",
+              "totals",
+              "goal",
+              "in_goal",
+              "preliminary_in_goal",
+              "latest_weight",
+              "weight_count"
+            ],
+            "title": "StatisticsDay",
+            "type": "object"
+          },
+          "maxItems": 90,
+          "minItems": 7,
+          "title": "Daily",
+          "type": "array"
+        },
+        "averages": {
+          "additionalProperties": false,
+          "properties": {
+            "energy_kcal": {
+              "additionalProperties": false,
+              "properties": {
+                "value": {
+                  "anyOf": [
+                    {
+                      "maxLength": 128,
+                      "pattern": "^(0|[1-9][0-9]*)(\\.[0-9]*[1-9])?$",
+                      "type": "string"
+                    },
+                    {
+                      "type": "null"
+                    }
+                  ],
+                  "title": "Value"
+                },
+                "day_count": {
+                  "minimum": 0,
+                  "title": "Day Count",
+                  "type": "integer"
+                }
+              },
+              "required": [
+                "value",
+                "day_count"
+              ],
+              "title": "Average",
+              "type": "object"
+            },
+            "protein_g": {
+              "additionalProperties": false,
+              "properties": {
+                "value": {
+                  "anyOf": [
+                    {
+                      "maxLength": 128,
+                      "pattern": "^(0|[1-9][0-9]*)(\\.[0-9]*[1-9])?$",
+                      "type": "string"
+                    },
+                    {
+                      "type": "null"
+                    }
+                  ],
+                  "title": "Value"
+                },
+                "day_count": {
+                  "minimum": 0,
+                  "title": "Day Count",
+                  "type": "integer"
+                }
+              },
+              "required": [
+                "value",
+                "day_count"
+              ],
+              "title": "Average",
+              "type": "object"
+            },
+            "fat_g": {
+              "additionalProperties": false,
+              "properties": {
+                "value": {
+                  "anyOf": [
+                    {
+                      "maxLength": 128,
+                      "pattern": "^(0|[1-9][0-9]*)(\\.[0-9]*[1-9])?$",
+                      "type": "string"
+                    },
+                    {
+                      "type": "null"
+                    }
+                  ],
+                  "title": "Value"
+                },
+                "day_count": {
+                  "minimum": 0,
+                  "title": "Day Count",
+                  "type": "integer"
+                }
+              },
+              "required": [
+                "value",
+                "day_count"
+              ],
+              "title": "Average",
+              "type": "object"
+            },
+            "carbs_g": {
+              "additionalProperties": false,
+              "properties": {
+                "value": {
+                  "anyOf": [
+                    {
+                      "maxLength": 128,
+                      "pattern": "^(0|[1-9][0-9]*)(\\.[0-9]*[1-9])?$",
+                      "type": "string"
+                    },
+                    {
+                      "type": "null"
+                    }
+                  ],
+                  "title": "Value"
+                },
+                "day_count": {
+                  "minimum": 0,
+                  "title": "Day Count",
+                  "type": "integer"
+                }
+              },
+              "required": [
+                "value",
+                "day_count"
+              ],
+              "title": "Average",
+              "type": "object"
+            }
+          },
+          "required": [
+            "energy_kcal",
+            "protein_g",
+            "fat_g",
+            "carbs_g"
+          ],
+          "title": "NutrientAverages",
+          "type": "object"
+        },
+        "complete_day_count": {
+          "minimum": 0,
+          "title": "Complete Day Count",
+          "type": "integer"
+        },
+        "days_with_meals": {
+          "minimum": 0,
+          "title": "Days With Meals",
+          "type": "integer"
+        },
+        "goal_eligible_day_count": {
+          "minimum": 0,
+          "title": "Goal Eligible Day Count",
+          "type": "integer"
+        },
+        "in_goal_day_count": {
+          "minimum": 0,
+          "title": "In Goal Day Count",
+          "type": "integer"
+        },
+        "weight": {
+          "additionalProperties": false,
+          "properties": {
+            "observation_count": {
+              "minimum": 0,
+              "title": "Observation Count",
+              "type": "integer"
+            },
+            "day_count": {
+              "minimum": 0,
+              "title": "Day Count",
+              "type": "integer"
+            },
+            "first_date": {
+              "anyOf": [
+                {
+                  "format": "date",
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "First Date"
+            },
+            "last_date": {
+              "anyOf": [
+                {
+                  "format": "date",
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Last Date"
+            },
+            "change_kg": {
+              "anyOf": [
+                {
+                  "maxLength": 128,
+                  "pattern": "^-?(0|[1-9][0-9]*)(\\.[0-9]*[1-9])?$",
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Change Kg"
+            }
+          },
+          "required": [
+            "observation_count",
+            "day_count",
+            "first_date",
+            "last_date",
+            "change_kg"
+          ],
+          "title": "WeightSummary",
+          "type": "object"
+        }
+      },
+      "required": [
+        "account_id",
+        "account_generation",
+        "sync_epoch",
+        "as_of",
+        "time_zone",
+        "profile_revision",
+        "goal_timeline_revision",
+        "server_position",
+        "from",
+        "to",
+        "days",
+        "statistics_version",
+        "goal_rule",
+        "daily",
+        "averages",
+        "complete_day_count",
+        "days_with_meals",
+        "goal_eligible_day_count",
+        "in_goal_day_count",
+        "weight"
+      ],
+      "title": "Statistics",
+      "type": "object"
     }
   }
 }

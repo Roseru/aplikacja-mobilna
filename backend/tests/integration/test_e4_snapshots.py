@@ -316,7 +316,14 @@ def test_retention_minimizes_receipts_preserves_mapping_and_active_incremental(o
     with Session(engine) as session, session.begin():
         session.execute(text("SET LOCAL ROLE calorie_app_worker"))
         result = prune(session, a, 1)
-        assert result == {"changes": 0, "receipts": 1, "items": 0, "sessions": 0}
+        assert result == {
+            "changes": 0,
+            "receipts": 1,
+            "items": 0,
+            "sessions": 0,
+            "read_items": 0,
+            "read_sessions": 0,
+        }
     with Session(engine) as session:
         receipt = session.get(SyncReceipt, (a, opid))
         assert (
