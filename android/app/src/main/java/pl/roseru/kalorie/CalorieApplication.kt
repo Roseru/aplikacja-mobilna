@@ -3,9 +3,18 @@ package pl.roseru.kalorie
 import android.app.Application
 import androidx.room.Room
 import pl.roseru.kalorie.data.*
+import kotlinx.coroutines.*
+import pl.roseru.kalorie.session.*
 
 class CalorieApplication : Application() {
     val database by lazy { Room.databaseBuilder(this, CalorieDatabase::class.java, "calorie-diary.db").addMigrations(MIGRATION_1_2, MIGRATION_2_3, MIGRATION_3_4, MIGRATION_4_5, MIGRATION_5_6).addCallback(DATABASE_GUARDS).build() }
-    val repository by lazy { DiaryRepository(database, this) }
+    // Legacy guest setup API. UI repositories always use the active, captured lease.
+    val repository get() = DiaryRepository(database, this)
     val preferences by lazy { Preferences(this) }
+    val sessionScope = CoroutineScope(SupervisorJob() + Dispatchers.Main.immediate)
+    val sessions by lazy { SessionController(database, SessionVault(this), AppAuthGateway(this), getString(R.string.oidc_issuer), packageName) }
+    override fun onCreate() {
+        super.onCreate()
+        sessionScope.launch { sessions.start() }
+    }
 }

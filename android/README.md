@@ -1,6 +1,6 @@
 # Android — Racje i kalorie
 
-Wersja `0.7.3` dodaje tryby aktywności z ikonami żołnierzy i przeliczanie celu kcal po zapisaniu zmiany trybu. Wersja `0.7.2` usprawnia przewijanie wyboru produktów na mniejszym ekranie i dodaje akcję klawiatury „Gotowe” bez niejawnego zapisu. Przygotowanie bootstrapu E3 i niezmienne wersje lokalnych celów pozostają z 0.7.1. Rejestr właścicieli i ochrona zapisu pozostają z 0.6; Room 6 zachowuje dotychczasowe wartości i kolejkę. Ekrany nadal działają jako gość bez konta i internetu, z Postępami 7/30/90 dni. Logowanie i HTTP nie są jeszcze podłączone.
+Wersja `0.8.0` dodaje klienta sesji AppAuth/PKCE, szyfrowaną pamięć, ekran Konto i logowanie oraz odtwarzanie repozytorium/ekranów po zmianie konta. [Raport](RAPORT_0_8_0.md) i [konfiguracja OIDC](SESJA_OIDC.md) rozdzielają testy lokalne od pozostającego odbioru prawdziwej przeglądarki/Keycloak. Domyślne APK działa bez issuer jako gość offline. Bootstrap HTTP i synchronizacja nie są jeszcze podłączone. Room 6 zachowuje dotychczasowe wartości i kolejkę.
 
 [Raport 0.7.2 i scenariusze manualne](RAPORT_0_7_2.md) opisują odbiór poprzedniego etapu. Tryby 0.7.3: etat biurowo-kawowy ×1,00, Linia ×1,25, Komandos ×1,50; zmiana przelicza bieżący cel przez stosunek mnożników. Podgląd poprzedza zapis. Ręczne kcal, B/T/W i wcześniejsze dni pozostają zachowane; to przelicznik celu, osobny od kalkulatora zapotrzebowania backendu.
 
@@ -13,7 +13,7 @@ Wersja `0.7.3` dodaje tryby aktywności z ikonami żołnierzy i przeliczanie cel
 - Racja jest jednym wpisem z wieloma składnikami. Można poprawić lub usunąć jeden składnik albo usunąć całą rację; usunięcie ostatniego składnika usuwa wpis z dziennika.
 - Wybór grupy posiłku, gramatury, podgląd kcal, zapis, edycja i usunięcie wpisu.
 - Własny produkt z nazwą, źródłem i wartościami na 100 g, opcjonalnymi makrami oraz gramaturą spożycia. Produkt jest prywatny i dostępny do ponownego wyboru; zapis szkicu i pierwszego posiłku jest transakcją.
-- Lokalny profil: pseudonim, wzrost, klasa Garnizon/Linia/Komandos i cel redukcja/utrzymanie/nadwyżka. Kcal/B/T/W ustawia się oddzielnie; zapis profilu ich nie zmienia.
+- Lokalny profil: pseudonim, wzrost, Etat biurowo-kawowy/Linia/Komandos i cel redukcja/utrzymanie/nadwyżka. Zmiana klasy przelicza bieżący cel kcal po podglądzie i zapisaniu; B/T/W i wcześniejsze dni pozostają. Ręczne cele są dostępne w ustawieniach.
 - Pomiary wagi z datą, historią, korektą i usunięciem. Kilka pomiarów jednego dnia jest dozwolone. Po poprawnym zapisie pole masy jest czyszczone, aby ponowny przypadkowy klik nie zapisał kolejnego pomiaru.
 - Deklaracja kompletności dnia. Efektywna kompletność wymaga deklaracji, nieusuniętych składników, dodatniej sumy kcal i znanej energii wszystkich pozycji. Brak makr pozostaje brakiem danych. Usunięcie ostatniego posiłku lub dodanie pozycji bez kcal cofa efektywną kompletność; wcześniejsza deklaracja pozostaje w historii i można ją wyłączyć.
 - Postępy dla 7/30/90 dni: wykresy kcal/B/T/W i rzeczywistych pomiarów wagi, średnie, kompletność oraz realizacja celu obowiązującego każdego dnia. Historia pozwala otworzyć dziennik wybranej daty, także pustego dnia.
@@ -68,7 +68,7 @@ Dolna zakładka **Postępy** pokazuje ostatnie 7, 30 lub 90 dat kalendarzowych w
 
 ## Co pozostaje na następne etapy
 
-Zweryfikowane pakiety rzeczywistych racji i osobny import materiałów MRE 2026, kalkulator zapotrzebowania, konto, rzeczywista synchronizacja z API, zdjęcia/Gemini, produkty społeczności, ranking i Nemesis. Istnieje lokalna kolejka, ale ta wersja **nie wysyła danych na serwer**. Prywatne produkty nie są publikowane w katalogu społeczności. API katalogu E2 udostępnia wyłącznie official; demo jest lokalne w APK i nie powoduje oczekiwania na konto/API.
+Zweryfikowane pakiety rzeczywistych racji i osobny import materiałów MRE 2026, kalkulator zapotrzebowania, odbiór rzeczywistej sesji z O3, bootstrap i synchronizacja API, zdjęcia/Gemini, produkty społeczności, ranking i Nemesis. Istnieje lokalna kolejka, ale ta wersja **nie wysyła dziennika na serwer**. HTTP tej wersji dotyczy tylko OIDC w skonfigurowanym wariancie. Prywatne produkty nie są publikowane w katalogu społeczności. API katalogu E2 udostępnia wyłącznie official; demo jest lokalne w APK i nie powoduje oczekiwania na konto/API.
 
 ## Uruchomienie w Android Studio
 
