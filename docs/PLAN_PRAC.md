@@ -42,6 +42,25 @@ Kryteria obejmujące kilka funkcji odbieramy częściami; wcześniejszy etap nie
 
 KO-31 jest bramką integracji kont w E4. Każde dodane później kryterium otrzymuje przypisanie do etapu przed rozpoczęciem zależnego kodu.
 
+### Podetapy E8 i czaty wykonawcze
+
+Właściciel zatwierdził ten podział 11 października 2026 r. Rozdzielamy pracę według złożoności i ryzyka; prostsze, powiązane rezultaty pozostają w jednym czacie. Powstają **trzy czaty wykonawcze**, uruchamiane kolejno:
+
+| Podetap | Zakres O2 | Miejsce wykonania |
+|---|---|---|
+| E8.1 + E8.2 | Punkty, rangi, osiągnięcia i ranking z opt-in/prywatnością; dojrzewanie punktów po lokalnej północy, nadrabianie po restarcie i cofanie odznak po korektach | Jeden czat i wspólny master dla spójnej funkcji motywacji |
+| E8.3 | Nemesis: zaproszenia, zgody, zakres udostępniania, reguły rozpoczęcia/anulowania i izolacja uczestników | Drugi czat z osobnym masterem, po odbiorze potrzebnej podstawy |
+| E8.4 | Projekcje wyników, korekty, kwalifikacja synchronizacji i finalizacja po terminie; wyścigi oraz spóźniony worker | Trzeci czat z osobnym masterem, po odebraniu E8.1–E8.3 |
+| E8.5 | Integracja, pełna regresja i odbiór całości E8 z dowodami O2 oraz wymaganymi działaniami O1/O3 | Istniejący czat koordynatora „Podepnij folder do repozytorium”; poprawki wracają do właściwych wykonawców |
+
+Każda z trzech grup implementacyjnych ma własny opublikowany i odebrany master, gałąź/PR, testy oraz niezależną recenzję. Kolejna grupa rozpoczyna pracę po odbiorze i scaleniu wymaganych zależności oraz sprawdzeniu integracji main. Nie mnożymy czatów dla samej numeracji ani zwykłych poprawek. Koordynator ustala konkretną granicę kontraktów przed każdym zleceniem; podział nie zastępuje mastera.
+
+Organizacyjny start E8 nastąpi po osobnym odbiorze i scaleniu **E7-O2**, z jedną zasadniczą implementacją O2 naraz. Brak E7-R/live zdjęć lub bramki wydania AI nie jest automatyczną blokadą niezależnych punktów/rankingu; techniczne wejście stanowią odebrane dziennik, cele, sync i statystyki E5. Pełne odbiory zespołu i wszystkie WF/KO pozostają wymagane.
+
+E8.3 nie może udostępnić działającej rywalizacji bez spójnych projekcji i finalizacji wymaganych w E8.4. Master E8.3 określi zamkniętą bramkę aktywacji do odbioru E8.4, zamiast przyjmować realne wyniki do późniejszego przeliczenia. W E8.4 zachowujemy punktację regularity_v1, 30 × 24 h dosynchronizowania oraz atomową kwalifikację z clock_timestamp bazy według 11.7. E8.5 nie daje pełnego PASS na podstawie samych testów backendu.
+
+Zatwierdzenie planu nie uruchamia teraz E8 ani nowych harmonogramów. E7 pozostaje bieżącym zadaniem; start każdej grupy wymaga jawnego przekazania koordynatora. Automatyzacje pozostają PAUSED.
+
 ## 2. Kolejność i zależności
 
 ```mermaid
