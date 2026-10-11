@@ -31,7 +31,16 @@ def write_json(path, value):
     temporary = path.with_suffix(".tmp")
     temporary.write_text(json.dumps(value, sort_keys=True) + "\n", encoding="utf-8")
     temporary.chmod(0o600)
-    temporary.replace(path)
+    deadline = time.monotonic() + 2
+    while True:
+        try:
+            temporary.replace(path)
+            return
+        except PermissionError:
+            # Windows readers briefly prevent replacing their open destination handle.
+            if os.name != "nt" or time.monotonic() >= deadline:
+                raise
+            time.sleep(0.02)
 
 
 def read_json(path):
