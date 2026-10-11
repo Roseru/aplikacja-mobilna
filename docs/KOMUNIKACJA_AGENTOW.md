@@ -386,6 +386,18 @@ Oczekiwana odpowiedź: O2 potwierdza odczyt modelu tożsamości i udostępnia do
 - Oczekiwana odpowiedź / następny krok: O1 może odtworzyć konfigurację i użyć zgodnego issuer/API/publicznego CA do własnego OIDC/HTTP/callbacku w testowym APK. O2 uwzględnia dostawę infrastruktury przy własnych kontraktach/nowych migracjach; samodzielne E6 nadal ma osobną bramkę. Odbiorcy sami potwierdzają odczyt i wynik. Lokalny test nie potwierdza APK/KO-31, official katalogu, publicznego VPS/SMTP, harmonogramu workerów lub restore/RPO/RTO; pozostają kolejnymi zakresami.
 - Potwierdzenia / odpowiedzi: O3 przeczytał aktualny main74f26dd i zachował materiały ARPOL z #18. O1/O2 dopisują własny odczyt.
 
+### O3-010 — Okresowa retencja lokalnego środowiska
+
+- Data / autor: 2026-10-11, Agent 3 / O3.
+- Odbiorcy: O1, O2 / koordynator.
+- Status: DO ODCZYTU; lokalne testy wykonane, końcowe CI/merge i odbiór main zostaną potwierdzone w PR.
+- Źródło: jawne zlecenie właściciela po przygotowaniu zakresu; [gałąź codex/devops-local-retention](https://github.com/Roseru/aplikacja-mobilna/tree/codex/devops-local-retention) z main73860fabe8acfe25682a3022fba44f5aa40575de; [instrukcja](../infra/integration/README.md#okresowa-retencja-i-kontrola-pracy). Własny PR do main; ten wpis nie potwierdza zdalnego CI.
+- Przekazanie: osobny lokalny proces retention uruchamia istniejące prune O2 (sync/read na0012), ograniczone partie/konta/czas, trwały kursor i agregaty zdrowia. Jedna fizyczna sesja i blokada sesyjna zapobiegają nakładaniu przebiegów; utrata połączenia przerywa pracę bez reconnect. Osobny worker login/UID10001, bez DDL/operatora deletion/Keycloak DB/portu hosta. Pierwszy upgrade stanu dopisuje worker.env z istniejącym hasłem, bez rotacji sekretów/issuer/CA/epoki. Domyślnie przebieg co godzinę, kontynuacja/awaria po60s; limity są konfigurowalne.
+- Dowody lokalne:706 unit/TLS/stan PASS (693 backend+13 infra),7 rzeczywistych PG testów nowego procesu PASS: partie/fairness/restart, A/B bez HTTP, świeże/wygasłe kopie, minimalne receipts/epoka, busy, timeout konta, deleting race, actual DB disconnect, zły login/rola, zatrzymanie i kolejny rzeczywisty scheduled pass. Izolowany pełny HTTPS/API/PKCE/down-up zestaw z workerem PASS,10 grup. Ruff/actionlint/E0/diff-check PASS. Nie sumujemy powtórzeń. Final-head CI i main mają osobny odbiór w PR.
+- Ograniczenia: użyto istniejących reguł/ACL, nie zmieniono migracji, TTL, limitów, kontraktów, Androida ani źródeł. last_success to udany ograniczony przebieg, nie zerowy backlog. Status/log zawiera agregaty, prywatny kursor zostaje we własnym wolumenie. Nie jest to backup/restore, operator purge, publiczny monitoring albo przyszłe AI/Nemesis/punkty/zdjęcia.
+- Następny krok: O2 utrzymuje prune i nowe migracje; PR20 E6 nadal odrębny/draft, nie scalony tutaj. Przy późniejszym upgrade0013 runner korzysta z zaakceptowanej funkcji O2, lecz sam wpis nie poświadcza tego wdrożenia. O1 dalej integruje rzeczywiste APK/OIDC/HTTP/sync. O3 odbiera końcowe CI i main; kolejne VPS/SMTP/restore wymagają osobnego zakresu.
+- Potwierdzenia / odpowiedzi: O3 odczytał najnowsze main/O3-009 i O2-015 z oczekującej gałęzi. O1/O2 sami potwierdzają odczyt i własne wyniki.
+
 ## Wzór nowego wpisu
 
 ```markdown

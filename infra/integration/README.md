@@ -55,6 +55,7 @@ stan; nie generuj nowych haseł do istniejących baz i nie usuwaj wolumenów jak
 | `migrate` | Jednorazowy Alembic upgrade head, `calorie_app_migrator`; poprzedza API |
 | API | UID 10001, `calorie_app_api`, bez DDL i dostępu do bazy Keycloak; filesystem read-only |
 | Keycloak | UID 1000, rola `keycloak` wyłącznie we własnej bazie; tryb `start --optimized` |
+| `retention` | UID 10001, wyłącznie `calorie_app_worker`; okresowe gotowe funkcje retencji O2 |
 | `storage-init` | Jednorazowo ustawia właściciela własnego wolumenu katalogu; bez dostępu DB |
 | Caddy | Jedyny opublikowany port; TLS, proxy API/OIDC/admin, bez access logów i cache |
 
@@ -101,6 +102,60 @@ Zmiana CA lub issuer wymaga osobnego planu migracji zaufania/tożsamości. Ponow
 nie jest odnowieniem certyfikatu ani rotacją sekretu sync.
 
 ## Trwałość i zatrzymywanie
+
+### Okresowa retencja i kontrola pracy
+
+Usługa `retention` startuje z zestawem i od razu wykonuje ograniczony przebieg.
+Następnie sprząta co godzinę, również dla kont bez ruchu HTTP. Używa istniejącego
+`calorie_app.modules.sync.retention.prune`, bez nowych reguł kasowania. Na dostarczonym
+head0012 obejmuje sync i prywatne sesje odczytu. Po zgodnym upgrade funkcję nadal
+utrzymuje O2; worker nie wywołuje samodzielnie przyszłych funkcji E6.
+
+```text
+uv run --project backend --locked python infra/integration/run.py worker-status
+```
+
+Status zawiera tylko agregaty: `last_attempt`, `last_success`, `last_full_sweep`,
+`elapsed_seconds`, `owners`, `skipped`, `errors`, `removed`, `pending` i stan.
+`last_success` oznacza udany **ograniczony przebieg**, nie pusty backlog;
+`last_full_sweep` oznacza dojście do końca listy aktywnych kont, nie usunięcie wszystkich
+zaległości. `pending` oznacza dalszą pracę albo osiągnięcie limitu; nie jest dokładnym
+pomiarem liczby zaległych rekordów. Po błędzie lub przekroczeniu wieku sukcesu
+healthcheck jest niezaliczony. Nie wystawiamy portu/HTTP monitoringu.
+
+W prywatnym `worker.env` można ustawić: `RETENTION_INTERVAL_SECONDS` (domyślnie3600,
+5–86400), `RETENTION_RETRY_SECONDS` (60,1–3600), `RETENTION_BATCH` (1000,1–1000),
+`RETENTION_MAX_OWNERS` (1000,1–10000), `RETENTION_PASS_SECONDS` (120,1–300).
+Zmiana konfiguracji wymaga odtworzenia tylko tej usługi z nowym env. Kolejne części
+przebiegu lub próby po awarii startują po retry; po całym przebiegu bez zaległości
+wraca interwał godzinny. SQL ma timeout2s, blokada wiersza1s; całkowity limit czasu
+sprawdzany jest pomiędzy partiami, więc kończąca się partia może go nieznacznie przekroczyć.
+
+Jedna partia i krótka transakcja na konto, maksymalnie100 identyfikatorów w stronie.
+Trwały prywatny kursor w `worker_data` zapewnia kolejność i kontynuację bez zagłodzenia
+kolejnych kont. Konto w usuwaniu jest pomijane; worker nie jest operatorem deletion.
+Stare pełne odpowiedzi mogą zostać zminimalizowane, lecz minimalne receipts, żywe encje,
+świeże sesje, mapowania i historia pozostają zgodnie z regułami O2.
+
+Przebiegi używają jednej fizycznej sesji i
+[blokady sesyjnej PostgreSQL](https://www.postgresql.org/docs/17/explicit-locking.html#ADVISORY-LOCKS).
+Druga kopia dostaje `busy`, nie sprząta i nie nadpisuje statusu właściciela blokady.
+Utrata połączenia przerywa przebieg; nie ma ponownego połączenia bez blokady w trakcie
+sprzątania. Zamknięcie sesji zwalnia blokadę; SIGTERM kończy bieżącą ograniczoną partię.
+Status `running` jest zdrowy tylko z niedawnym wcześniejszym sukcesem; `failed` lub
+`stopped` nie zalicza zdrowia, również gdy zachowano dawny czas sukcesu.
+
+Pierwszy `up` istniejącej instalacji dopisuje brakujący `worker.env` z **dotychczasowym**
+hasłem workera zapisanym w chronionym stanie. Nie nadpisuje istniejącego pliku ani nie
+rotuje haseł, CA, issuer, klucza sync lub epoki. Worker nie dostaje innych credentiali.
+Wolumen `worker_data` mieści prywatny kursor i agregaty, ma UID10001/0700, przetrwa down/up.
+Runtime nie ma DDL, członkostwa operatora usunięć lub dostępu do bazy Keycloak.
+
+Testy CI na rzeczywistym loginie workera sprawdzają wiele partii, konta A/B bez HTTP,
+zachowanie danych i epoki, świeże/wygasłe sesje, proces okresowy, restart kursora,
+konkurencyjną blokadę, timeout konta, przejście w deleting i utratę połączenia.
+Próba całego zestawu dodatkowo sprawdza zdrowie/UID/ACL workera po restarcie.
+To nie jest harmonogram AI/Nemesis/punktów/zdjęć, pełny monitoring ani backup/restore.
 
 ```text
 uv run --project backend --locked python infra/integration/run.py down

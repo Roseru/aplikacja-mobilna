@@ -414,7 +414,7 @@ END $$;
         ]
         if published and container["Service"] != "gateway":
             raise RuntimeError("A database/internal service publishes a host port")
-    for service, expected in (("api", "10001"), ("keycloak", "1000")):
+    for service, expected in (("api", "10001"), ("retention", "10001"), ("keycloak", "1000")):
         actual = stack.compose("exec", "-T", service, "id", "-u").strip()
         if actual != expected:
             raise RuntimeError("Unexpected runtime service UID")
@@ -505,6 +505,27 @@ else:
         "from pathlib import Path; Path('/catalog/integration-probe').unlink()",
     )
     passed("Down/up preserves both DBs, identities, epoch, receipts, signed checkpoint and catalog")
+
+    status = json.loads(
+        stack.compose(
+            "exec", "-T", "retention", ".venv/bin/python", "/opt/retention/worker.py", "status"
+        )
+    )
+    if status["state"] not in {"ok", "pending"} or not status["last_success"]:
+        raise RuntimeError("Retention worker did not finish a healthy bounded pass after restart")
+    worker_acl = stack.sql(
+        "calorie_app",
+        """
+SELECT has_schema_privilege('calorie_app_worker','app','CREATE')::text;
+SELECT has_database_privilege('calorie_app_worker','keycloak','CONNECT')::text;
+SELECT pg_has_role('calorie_app_worker','calorie_app_deletion_operator','MEMBER')::text;
+""",
+    )
+    if worker_acl.splitlines() != ["false", "false", "false"]:
+        raise RuntimeError("Worker privilege boundaries failed")
+    passed(
+        "Periodic retention worker healthy after restart; own role/UID, no DDL/deletion/identity DB"
+    )
 
     private_write(
         stack.state / "verification.json",
