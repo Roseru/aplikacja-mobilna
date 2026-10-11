@@ -258,7 +258,14 @@ class SessionSecurityTest {
             .put("server_time", "2026-10-11T10:00:00Z").put("entities", JSONArray()).put("goal_timeline_revision", 0)
             .put("recovery_mappings", JSONArray()).put("operation_receipts", JSONArray()).toString().toByteArray())
     private fun syncDenied(status: Int, code: String, retry: String? = null) = BootstrapHttpResult(status,
-        JSONObject().put("code", code).put("message", "fixture").put("details", JSONObject())
+        JSONObject().put("code", code).put("message", "fixture").put("details", JSONObject().apply {
+            if (code == "sync_epoch_changed") {
+                put("current_sync_epoch", newEpoch); put("requested_sync_epoch", epoch); put("recovery_required", "epoch_recovery")
+            }
+            if (code in setOf("sync_cursor_expired", "sync_reconciliation_required")) {
+                put("current_sync_epoch", epoch); put("recovery_required", "full_snapshot")
+            }
+        })
             .put("request_id", "b1111111-1111-4111-8111-111111111111").toString().toByteArray(), retry)
     private inner class SnapshotFixture(var answer: suspend (Int) -> BootstrapHttpResult = { snapshotAnswer() }) : SnapshotGateway {
         val calls = mutableListOf<Pair<ApiSession, String>>()

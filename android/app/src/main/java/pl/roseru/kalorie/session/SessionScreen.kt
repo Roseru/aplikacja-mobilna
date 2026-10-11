@@ -83,9 +83,9 @@ data class SessionActions(val login: () -> Unit, val logout: () -> Unit, val ref
                     val status = view.snapshot
                     if (status?.completedTime != null) {
                         Text("Ostatnia pełna kopia: ${status.completedTime}", Modifier.testTag("snapshot-complete"))
-                        Text("${status.completedItems} rekordów · ${status.completedPages} stron")
+                        Text("Rekordy: ${status.completedItems} · Strony: ${status.completedPages}")
                     } else Text("Pełna kopia nie została jeszcze pobrana.")
-                    if (status != null && status.pendingPages > 0) Text("Zapisany postęp: ${status.pendingItems} rekordów · ${status.pendingPages} stron", Modifier.testTag("snapshot-progress"))
+                    if (status != null && status.pendingPages > 0) Text("Zapisany postęp · Rekordy: ${status.pendingItems} · Strony: ${status.pendingPages}", Modifier.testTag("snapshot-progress"))
                     if (view.snapshotBusy) { LinearProgressIndicator(Modifier.fillMaxWidth()); Text("Pobieram kopię…") }
                     if (view.requiresRecovery) Text("Możesz pobrać kopię do uzgodnienia danych. Wysyłanie wpisów wymaga zakończenia uzgodnienia.")
                     if (status?.blocked == true) Text("Pobieranie zablokowane — konto jest usuwane.")

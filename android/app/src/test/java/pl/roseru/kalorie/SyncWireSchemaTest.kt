@@ -85,4 +85,14 @@ class SyncWireSchemaTest {
         for (value in listOf(ByteArray(0), ByteArray(4 * 1_048_576 + 1), byteArrayOf(0xC3.toByte(), 0x28), duplicate.toByteArray()))
             assertThrows(SyncWireException::class.java) { schema().validate(value, "PullResponse") }
     }
+    @Test fun epochErrorRequiresItsNormativeContextBeforeAnyRecoveryDecision() {
+        val error = JSONObject().put("code", "sync_epoch_changed").put("message", "fixture").put("details", JSONObject())
+            .put("request_id", "a1111111-1111-4111-8111-111111111111")
+        assertThrows(SyncWireException::class.java) { validate(error, "SyncError") }
+        error.put("details", JSONObject().put("current_sync_epoch", "b1111111-1111-4111-8111-111111111111")
+            .put("requested_sync_epoch", "e1111111-1111-4111-8111-111111111111").put("recovery_required", "epoch_recovery"))
+        validate(error, "SyncError")
+        error.getJSONObject("details").put("recovery_required", "full_snapshot")
+        assertThrows(SyncWireException::class.java) { validate(error, "SyncError") }
+    }
 }

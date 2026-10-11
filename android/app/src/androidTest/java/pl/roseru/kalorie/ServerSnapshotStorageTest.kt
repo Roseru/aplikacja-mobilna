@@ -180,7 +180,7 @@ class ServerSnapshotStorageTest {
                     val entity = entities.getJSONObject(i); val table = entity.getString("tableName")
                     fun resolve(sql: String) = sql.replace("\${TABLE_NAME}", table)
                     old.execSQL(resolve(entity.getString("createSql")))
-                    val indices = entity.getJSONArray("indices")
+                    val indices = entity.optJSONArray("indices") ?: JSONArray()
                     for (j in 0 until indices.length()) old.execSQL(resolve(indices.getJSONObject(j).getString("createSql")))
                     fixture.openHelper.readableDatabase.query("SELECT * FROM `$table`").use { cursor ->
                         while (cursor.moveToNext()) {

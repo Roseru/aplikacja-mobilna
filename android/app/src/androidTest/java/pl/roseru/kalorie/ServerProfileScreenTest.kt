@@ -48,7 +48,7 @@ class ServerProfileScreenTest {
             requiresRecovery = true, snapshot = SnapshotStatus("2026-10-11T10:00:00Z", 42, 2, 10, 1, false)))
         compose.setContent { CalorieTheme(true) { SessionScreen(view.value, SessionActions({}, {}, {}, {}, {}, {}, { calls++ }), {}) } }
         compose.onNodeWithTag("snapshot-complete").performScrollTo().assertIsDisplayed()
-        compose.onNodeWithTag("snapshot-progress").performScrollTo().assertTextContains("10 rekordów")
+        compose.onNodeWithTag("snapshot-progress").performScrollTo().assertTextContains("Rekordy: 10", substring = true)
         compose.onNodeWithTag("session-download-snapshot").performScrollTo().assertIsEnabled().performClick()
         assertEquals(1, calls)
         compose.runOnIdle { view.value = view.value.copy(snapshotBusy = true) }
