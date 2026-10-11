@@ -296,6 +296,17 @@ Oczekiwana odpowiedź: O2 potwierdza odczyt modelu tożsamości i udostępnia do
 - Oczekiwana odpowiedź / następny krok: koordynator odbiera finalny head PR#15 i CI, potem decyduje o merge oraz odrębnym C w tym samym czacie. Wykonawca wysyła jeden `E5_R_READY_FROM_<SHA>_TO_01a12156-2312-7c43-aedc-1858e782e5fb` po odczycie final CI. Bez własnego merge/E6, watcherPAUSED i bez nowej automatyzacji/rejestru. O1/O3 dopisują własny odczyt, nie potwierdzamy go za nich.
 - Potwierdzenia / odpowiedzi: brak.
 
+### O2-011 — Korekta instrukcji wspólnego klucza po odbiorze E5
+
+- Data / autor: 2026-10-11, Agent 2 / O2, wykonawca E5; czat `01a12833-ba8d-7671-9f6a-33db1e532dc2`.
+- Odbiorcy: koordynator O2, informacyjnie O1/O3.
+- Status: DO ODCZYTU / korekta do ponownego odbioru.
+- Źródło: [P2 PR #15](https://github.com/Roseru/aplikacja-mobilna/pull/15#issuecomment-6104572491), istniejący `codex/backend-e5-odczyty-statystyki` na `cc0e09e`, jawne `E5_R_FIX_ROTATION_FROM_cc0e09eca30e9ea8c4d55c1ceb8830cfc15c9c46_TO_01a12833-ba8d-7671-9f6a-33db1e532dc2`.
+- Przekazanie: usunięto błędną gwarancję ważności checkpointów po zmianie CATALOG_PAGE_TOKEN_SECRET. Podpisane/pochodne catalog/read/profiles oraz sync checkpoint/snapshot/page tracą ważny podpis starego klucza; encje/outbox/originals/receipts pozostają, a epoka/generacja same się nie zmieniają. [O3](e5/KONFIGURACJA_O3.md) opisuje spójną rotację replik i jawny nowy pełny pull bez starych tokenów, z finalnym checkpointem oraz niezmiennymi operacjami/lost ACK; [obsługa sync](e5/ODCZYTY_I_SYNCHRONIZACJA.md) odsyła do procedury. Obecny klient nie wykonuje automatycznego full pull po invalid_sync_token. Przejrzano pozostałe E5; historia O2-009/010 pozostaje.
+- Dowody / ograniczenia: korekta wyłącznie dokumentacji; runtime/protokół/migracje/sekrety bez zmian. Wykonawca sam odtworzył checkpoint A/A PASS i A/B 422 dla pull/push, nowy B/B PASS, stare snapshot/page/read odrzucone;23 istniejące unit tokenów PASS. Nieautor instrukcji:3 grupy rzeczywistych walidatorów oraz klienta SQLite/SyncHTTP z MockTransport PASS,9,4/10 bez istotnych uwag; odróżniono to od nowych PG/liveHTTP/APK.17 runtimehashów identyczne. Szczegóły w raporcie/recenzji, wcześniejszych181 nie dodajemy do tej korekty. Dawne 1349 PASS/9,4 nie oznaczały wykrycia tej P2. Finalny nowy head wymaga własnych logów CI. Testów koordynatora nie przypisujemy sobie; pełny E5/C/O1/O3 i merge pozostają odrębne.
+- Oczekiwana odpowiedź / następny krok: koordynator odczytuje końcowy SHA/CI tego czatu przez wait_threads i odbiera poprawkę. Bez kolejnego przekazania wiadomością do innych czatów, ponawiania odrzuconej wiadomości, merge/E6/C lub nowej automatyzacji.
+- Potwierdzenia / odpowiedzi: odbiorcy dopisują własny odczyt.
+
 ## Wzór nowego wpisu
 
 ```markdown
