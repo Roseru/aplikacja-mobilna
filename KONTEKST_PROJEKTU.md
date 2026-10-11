@@ -1,5 +1,17 @@
 # Kontekst współpracy
 
+## Integracja O1 — merge sesji / CI profilu, 11 października 2026
+
+Aktualizacja 11.10.2026/O1: PR26 scalony normalnym merge na main c59e6d68d18bbafd157a9d1383aae8d36fa1b893 po osmiu success dla42763f8 i zerze reviews/comments. Zgodnie z docs/WORKFLOW.md odbior rzeczywistego bootstrapu/GET pozostaje kolejnym etapem integracyjnym; merge nie zamyka E3/KO-31. PR31 skierowano na main, nastepnie dolaczono main zwyklym merge; zrodla android/app pozostaly identyczne z przetestowanym0522824. Wczesniejsze uwagi o bazie zależnej/nieuruchamianiu CI sa historyczne; nowy push uruchamia wymagane CI PR do main.
+
+## Kontynuacja O1 — odczyt profilu 0.8.2, 11 października 2026
+
+- Kod `0522824990a35c0b54bec9cceaa4d3a8e9c7b069` / `codex/android-odczyt-profilu` / [PR31](https://github.com/Roseru/aplikacja-mobilna/pull/31) draft, baza codex/android-sesja /42763f8/PR26. Zachować kolejność: odbiór i merge PR26, retarget nowego PR na main, ponowna integracja. Nie scalać zależnego PR do oczekującej sesji.
+- GET me po bootstrapie: ścisły ProfileRead, snapshot osobno w UI, brak zmiany lokalnego profilu/celu/outbox, lease+session+contextRevision, bounded GET/TLS, 401/Retry-After, trwałe requiresRecovery przy innej epoce. Brak odczytu celów, wysyłki sync/WorkManager/importu gościa. Room6 bez migracji.
+- 87JVM +86/86 API35/full/offline PASS, zero skips/errors; lint0error/4warning/1info bez suppressions. Aktualizacja oraz pierwszy launch zachowały wszystkie18tabel/2posiłki/outbox/FK. APK0.8.2/code13 SHA256 ffac4d261e6cab14a564db54b78deaa1c842e54314133ea5939ce0a199cb6128 poza Git, widoczny Dziennik w emulatorze.
+- O2-019/PR30 odczytano na4346964. PR26 po zwykłym merge main75c4414 ma clean/mergeable i osiem success dla dokładnego42763f8; opis poprawiony. To CI sesji, nie nowego PR31. Zachowano komunikację; O1-015 wskazuje status/pytanie O3.
+- Rzeczywiste bootstrap/GET/KO-31 nadal nieodebrane. Docker/uv/stan integration nieodnaleziony na komputerze O1; potrzebne istniejące środowisko O3 i validation-only publiczny CA. Nie reinit ani fikcyjne endpointy. O3-011 dowodzi realnego loginu0.8.0, nie HTTP0.8.2. Kolejne: realny odbiór HTTP, cele, adapter E4/Room/WorkManager, E5/E6. Raport android/RAPORT_0_8_2.md i opis android/ODCZYT_PROFILU.md.
+
 ## Kontynuacja O1 — bootstrap HTTP 0.8.1, 11 października 2026
 
 - codex/android-sesja / PR26, kod c6b7a2fd4df4bd26c5ea81e6b97026d8476445c6; zwykły merge main75c4414 zachowuje komunikację O1/O2/O3. PR nadal draft do rzeczywistego odbioru HTTP.
