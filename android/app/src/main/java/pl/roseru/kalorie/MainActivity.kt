@@ -75,7 +75,8 @@ class MainActivity : ComponentActivity() {
                 refresh = { app.sessionScope.launch { app.sessions.refresh() } },
                 cancel = { app.sessionScope.launch { app.sessions.cancelLogin() } },
                 bootstrap = { app.sessionScope.launch { app.sessions.bootstrap() } },
-                readProfile = { app.sessionScope.launch { app.sessions.readProfile() } })
+                readProfile = { app.sessionScope.launch { app.sessions.readProfile() } },
+                downloadSnapshot = { app.sessionScope.launch { app.sessions.downloadSnapshot() } })
             CalorieTheme(dark) { CalorieApp(model, session, actions) }
             }
         }

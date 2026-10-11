@@ -14,6 +14,7 @@ import org.junit.Assert.*
 import org.junit.Test
 import org.junit.runner.RunWith
 import pl.roseru.kalorie.core.*
+import pl.roseru.kalorie.core.sync.*
 import pl.roseru.kalorie.data.*
 import pl.roseru.kalorie.session.*
 import java.io.File
@@ -72,8 +73,9 @@ class SessionSecurityTest {
             .setState(state).setAuthorizationCode("fixture-code").build().toIntent()
     }
     private fun client(db: CalorieDatabase, vault: SessionVault, fixture: FixtureGateway, api: BootstrapGateway? = null,
-        profiles: ProfileGateway? = null) = SessionController(
-        db, vault, fixture, issuer, context.packageName, now = { fixture.time }, bootstrapGateway = api, profileGateway = profiles)
+        profiles: ProfileGateway? = null, snapshots: SnapshotGateway? = null) = SessionController(
+        db, vault, fixture, issuer, context.packageName, now = { fixture.time }, bootstrapGateway = api, profileGateway = profiles, snapshotGateway = snapshots,
+        snapshotProtocol = snapshots?.let { snapshotProtocol() })
     private suspend fun login(client: SessionController, fixture: FixtureGateway, subject: String) {
         fixture.subject = subject
         assertNotNull(client.beginLogin())
@@ -245,6 +247,135 @@ class SessionSecurityTest {
         val malicious = AuthorizationServiceConfiguration(AuthorizationServiceDiscovery(JSONObject(json.toString())
             .put("token_endpoint", "https://other.example/token")))
         assertThrows(IllegalArgumentException::class.java) { validateDiscovery(malicious, issuer) }
+    }
+
+    private fun snapshotProtocol() = SnapshotProtocol(SyncWireSchema(SyncWireSchema.FILES.associateWith { file ->
+        context.assets.open("sync/$file").use { it.readBytes() }
+    }))
+    private fun snapshotAnswer(next: String? = null) = BootstrapHttpResult(200,
+        JSONObject().put("sync_epoch", epoch).put("mode", "snapshot").put("snapshot_token", "fixture-snapshot")
+            .put("page_token", next ?: JSONObject.NULL).put("checkpoint", if (next == null) "fixture-checkpoint" else JSONObject.NULL)
+            .put("server_time", "2026-10-11T10:00:00Z").put("entities", JSONArray()).put("goal_timeline_revision", 0)
+            .put("recovery_mappings", JSONArray()).put("operation_receipts", JSONArray()).toString().toByteArray())
+    private fun syncDenied(status: Int, code: String, retry: String? = null) = BootstrapHttpResult(status,
+        JSONObject().put("code", code).put("message", "fixture").put("details", JSONObject())
+            .put("request_id", "b1111111-1111-4111-8111-111111111111").toString().toByteArray(), retry)
+    private inner class SnapshotFixture(var answer: suspend (Int) -> BootstrapHttpResult = { snapshotAnswer() }) : SnapshotGateway {
+        val calls = mutableListOf<Pair<ApiSession, String>>()
+        val started = CompletableDeferred<Unit>()
+        var hold: CompletableDeferred<Unit>? = null
+        override suspend fun get(session: ApiSession, query: SnapshotQuery, beforeSend: suspend () -> Unit): BootstrapHttpResult {
+            beforeSend(); calls.add(session to query.encoded()); val index = calls.size
+            started.complete(Unit); hold?.await(); return answer(index)
+        }
+    }
+    @Test fun snapshotNeedsConfirmedSessionAndBootstrapAndKeepsGuestAndLocalQueue() = runBlocking<Unit> {
+        val db = memory(); val vault = SessionVault(context, name()); val fixture = FixtureGateway(); val api = ApiFixture()
+        val copies = SnapshotFixture { if (it == 1) snapshotAnswer("fixture-next") else snapshotAnswer() }
+        try {
+            val controller = client(db, vault, fixture, api, snapshots = copies); controller.start()
+            val guest = DiaryRepository(db, context).apply { initialize(); add("basic-banana", 100.0, MealType.LUNCH, LocalDate.now(), "copy-guest") }
+            controller.downloadSnapshot(); assertTrue(copies.calls.isEmpty())
+            login(controller, fixture, "fixture-A"); controller.downloadSnapshot(); assertTrue(copies.calls.isEmpty())
+            val lease = controller.view.value.binding!!.lease
+            val repo = DiaryRepository(db, context, lease).apply { initialize(); add("basic-banana", 150.0, MealType.LUNCH, LocalDate.now(), "copy-account") }
+            controller.bootstrap(); controller.downloadSnapshot()
+            assertEquals(2, copies.calls.size); assertTrue(copies.calls[1].second.contains("page_token=fixture-next"))
+            assertEquals(2, controller.view.value.snapshot!!.completedPages); assertFalse(controller.view.value.snapshotBusy)
+            assertEquals(1, db.dao().operationCount(guest.owner)); assertEquals(1, db.dao().operationCount(repo.owner))
+            assertEquals("copy-account", db.dao().day(repo.owner, LocalDate.now().toString()).first().single().meal.id)
+        } finally { vault.clear(); db.close() }
+    }
+    @Test fun snapshotControllerRestartResumesSavedPageAfterNetworkLoss() = runBlocking<Unit> {
+        val db = memory(); val vault = SessionVault(context, name()); val fixture = FixtureGateway(); val api = ApiFixture()
+        val copies = SnapshotFixture { if (it == 1) snapshotAnswer("next") else error("fixture network loss") }
+        try {
+            val first = client(db, vault, fixture, api, snapshots = copies); first.start(); login(first, fixture, "fixture-A"); first.bootstrap()
+            first.downloadSnapshot(); assertEquals(1, first.view.value.snapshot!!.pendingPages)
+            assertNull(first.view.value.snapshot!!.completedTime); assertFalse(first.view.value.snapshotBusy)
+            val retryQuery = copies.calls[1].second
+            copies.answer = { snapshotAnswer() }
+            val restarted = client(db, vault, fixture, api, snapshots = copies); restarted.start()
+            assertEquals(1, restarted.view.value.snapshot!!.pendingPages)
+            restarted.downloadSnapshot(); assertEquals(retryQuery, copies.calls[2].second)
+            assertEquals(2, restarted.view.value.snapshot!!.completedPages)
+        } finally { vault.clear(); db.close() }
+    }
+    @Test fun snapshotLogoutAbaAndLateResponseCannotPublishIntoNewSession() = runBlocking<Unit> {
+        val db = memory(); val vault = SessionVault(context, name()); val fixture = FixtureGateway(); val api = ApiFixture()
+        val copies = SnapshotFixture().apply { hold = CompletableDeferred() }
+        try {
+            val controller = client(db, vault, fixture, api, snapshots = copies); controller.start(); login(controller, fixture, "fixture-A"); controller.bootstrap()
+            val lease = controller.view.value.binding!!.lease
+            val pending = async { controller.downloadSnapshot() }; withTimeout(10_000) { copies.started.await() }
+            controller.logout(); assertNull(controller.view.value.snapshot)
+            login(controller, fixture, "fixture-A"); assertNotEquals(lease, controller.view.value.binding!!.lease)
+            copies.hold!!.complete(Unit); pending.await()
+            assertNull(controller.view.value.snapshot!!.completedTime)
+            assertTrue(db.snapshotDao().runs(lease.storageScope).all { it.pageCount == 0 })
+            copies.hold = null; controller.downloadSnapshot()
+            assertEquals(2, db.snapshotDao().runs(lease.storageScope).size)
+            assertEquals(1, controller.view.value.snapshot!!.completedPages)
+        } finally { copies.hold?.complete(Unit); vault.clear(); db.close() }
+    }
+    @Test fun snapshotCancellationDoubleTapAndRefreshDoNotCommitStaleResponse() = runBlocking<Unit> {
+        val db = memory(); val vault = SessionVault(context, name()); val fixture = FixtureGateway(); val api = ApiFixture()
+        val copies = SnapshotFixture().apply { hold = CompletableDeferred() }
+        try {
+            val controller = client(db, vault, fixture, api, snapshots = copies); controller.start(); login(controller, fixture, "fixture-A"); controller.bootstrap()
+            val pending = async { controller.downloadSnapshot() }; withTimeout(10_000) { copies.started.await() }
+            controller.downloadSnapshot(); assertEquals(1, copies.calls.size)
+            pending.cancelAndJoin(); assertFalse(controller.view.value.snapshotBusy)
+            val old = async { controller.downloadSnapshot() }
+            withTimeout(10_000) { while (copies.calls.size < 2) yield() }
+            controller.refresh(); copies.hold!!.complete(Unit); old.await()
+            assertNull(controller.view.value.snapshot!!.completedTime)
+            copies.hold = null; controller.downloadSnapshot()
+            assertEquals(copies.calls[0].second, copies.calls[2].second)
+            assertEquals(1, controller.view.value.snapshot!!.completedPages)
+        } finally { copies.hold?.complete(Unit); vault.clear(); db.close() }
+    }
+    @Test fun snapshot401RefreshesOnceAnd503DelaySurvivesControllerRestart() = runBlocking<Unit> {
+        val db = memory(); val vault = SessionVault(context, name()); val fixture = FixtureGateway(); val api = ApiFixture()
+        val copies = SnapshotFixture { if (it == 1) syncDenied(401, "unauthorized") else syncDenied(503, "service_unavailable", "60") }
+        try {
+            val controller = client(db, vault, fixture, api, snapshots = copies); controller.start(); login(controller, fixture, "fixture-A"); controller.bootstrap()
+            controller.downloadSnapshot(); assertEquals(2, copies.calls.size); assertEquals(2, fixture.calls)
+            assertEquals(copies.calls[0].second, copies.calls[1].second)
+            assertNotEquals(copies.calls[0].first.accessToken, copies.calls[1].first.accessToken)
+            val restarted = client(db, vault, fixture, api, snapshots = copies); restarted.start(); restarted.downloadSnapshot()
+            assertEquals(2, copies.calls.size); fixture.time += 60_000
+            copies.answer = { snapshotAnswer() }; restarted.downloadSnapshot()
+            assertEquals(3, copies.calls.size); assertEquals(1, restarted.view.value.snapshot!!.completedPages)
+        } finally { vault.clear(); db.close() }
+    }
+    @Test fun snapshotExpiryAndEpochConflictKeepArchivesAndRecoveryFlag() = runBlocking<Unit> {
+        val db = memory(); val vault = SessionVault(context, name()); val fixture = FixtureGateway(); val api = ApiFixture()
+        val copies = SnapshotFixture { if (it == 1) snapshotAnswer("next") else syncDenied(410, "snapshot_expired") }
+        try {
+            val controller = client(db, vault, fixture, api, snapshots = copies); controller.start(); login(controller, fixture, "fixture-A"); controller.bootstrap()
+            val lease = controller.view.value.binding!!.lease
+            controller.downloadSnapshot(); assertEquals("expired", db.snapshotDao().runs(lease.storageScope).single().state)
+            copies.answer = { syncDenied(409, "sync_epoch_changed") }; controller.downloadSnapshot()
+            assertTrue(controller.view.value.requiresRecovery); assertNull(controller.view.value.snapshot!!.completedTime)
+            assertTrue(controller.view.value.snapshot!!.needsBootstrap)
+            val calls = copies.calls.size; controller.downloadSnapshot(); assertEquals(calls, copies.calls.size)
+            controller.bootstrap(); assertFalse(controller.view.value.snapshot!!.needsBootstrap)
+            copies.answer = { snapshotAnswer() }; controller.downloadSnapshot()
+            assertTrue(controller.view.value.requiresRecovery); assertEquals(1, controller.view.value.snapshot!!.completedPages)
+            assertEquals(3, db.snapshotDao().runs(lease.storageScope).size)
+            assertEquals(1, db.snapshotDao().pages(db.snapshotDao().runs(lease.storageScope).last().id).size)
+        } finally { vault.clear(); db.close() }
+    }
+    @Test fun snapshotAccountDeletingIsDurablyBlockedWithoutLosingLocalSession() = runBlocking<Unit> {
+        val db = memory(); val vault = SessionVault(context, name()); val fixture = FixtureGateway(); val api = ApiFixture()
+        val copies = SnapshotFixture { syncDenied(403, "account_deleting") }
+        try {
+            val controller = client(db, vault, fixture, api, snapshots = copies); controller.start(); login(controller, fixture, "fixture-A"); controller.bootstrap()
+            controller.downloadSnapshot(); assertTrue(controller.view.value.snapshot!!.blocked); assertTrue(controller.view.value.hasSession)
+            val restarted = client(db, vault, fixture, api, snapshots = copies); restarted.start(); restarted.downloadSnapshot()
+            assertEquals(1, copies.calls.size); assertTrue(restarted.view.value.snapshot!!.blocked)
+        } finally { vault.clear(); db.close() }
     }
 
     private val accountId = "a1111111-1111-4111-8111-111111111111"

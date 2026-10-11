@@ -6,6 +6,7 @@ import org.junit.Test
 import pl.roseru.kalorie.core.SessionIdentity
 import pl.roseru.kalorie.data.OwnerLease
 import pl.roseru.kalorie.session.*
+import pl.roseru.kalorie.core.sync.*
 import java.io.ByteArrayInputStream
 import java.net.URL
 import java.security.cert.Certificate
@@ -13,6 +14,27 @@ import javax.net.ssl.HttpsURLConnection
 
 /** Transport configuration fixtures, not proof of a real TLS handshake or backend deployment. */
 class BootstrapHttpTest {
+    private fun snapshotQuery() = SnapshotProtocol(SyncWireSchema(SyncWireSchema.FILES.associateWith { file ->
+        javaClass.getResourceAsStream("/sync/$file")!!.use { it.readBytes() }
+    })).query("e1111111-1111-4111-8111-111111111111", snapshot = "snapshot+/?=&", page = "next")
+    @Test fun snapshotGetEscapesTokensAndAcceptsBoundedLargerJsonWithoutExtraHeaders() = runBlocking {
+        var requested: URL? = null
+        val connection = Connection(URL("https://api.example"), payload = ByteArray(65_537) { ' '.code.toByte() })
+        val result = HttpsSnapshotGateway("https://api.example/api/v1") { requested = it; connection }.get(session(), snapshotQuery()) {}
+        assertEquals("/api/v1/sync/pull", requested!!.path)
+        assertTrue(requested!!.query.contains("snapshot_token=snapshot%2B%2F%3F%3D%26"))
+        assertEquals("GET", connection.requestMethod); assertNull(connection.getRequestProperty("Idempotency-Key"))
+        assertNull(connection.getRequestProperty("X-Sync-Epoch")); assertEquals(65_537, result.body.size)
+        assertTrue(connection.disconnected)
+    }
+    @Test fun snapshotPreflightAndResponseBoundsApplyAlsoToUnknownContentLength() {
+        val stopped = Connection(URL("https://api.example"))
+        assertThrows(Exception::class.java) { runBlocking { HttpsSnapshotGateway("https://api.example/api/v1") { stopped }.get(session(), snapshotQuery()) { error("stale") } } }
+        assertFalse(stopped.sent); assertTrue(stopped.disconnected)
+        val oversized = Connection(URL("https://api.example"), payload = ByteArray(SnapshotProtocol.MAX_BYTES + 1), declaredSize = -1)
+        assertThrows(Exception::class.java) { runBlocking { HttpsSnapshotGateway("https://api.example/api/v1") { oversized }.get(session(), snapshotQuery()) {} } }
+        assertTrue(oversized.disconnected)
+    }
     private val key = "a1111111-1111-4111-8111-111111111111"
     private fun session(token: String = "fixture-access") = ApiSession(SessionIdentity("https://id.example/realm", "A"),
         OwnerLease("fixture-A", 1), token, "fixture-state", 1)

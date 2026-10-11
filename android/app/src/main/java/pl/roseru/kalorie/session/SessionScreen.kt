@@ -10,7 +10,7 @@ import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.unit.dp
 
 data class SessionActions(val login: () -> Unit, val logout: () -> Unit, val refresh: () -> Unit, val cancel: () -> Unit,
-    val bootstrap: () -> Unit, val readProfile: () -> Unit)
+    val bootstrap: () -> Unit, val readProfile: () -> Unit, val downloadSnapshot: () -> Unit = {})
 
 @Composable fun SessionScreen(view: SessionView, actions: SessionActions, back: () -> Unit) {
     val account = view.binding?.owner?.kind == "account"
@@ -46,7 +46,7 @@ data class SessionActions(val login: () -> Unit, val logout: () -> Unit, val ref
                     if (!view.apiConfigured) Text("Połączenie będzie dostępne po podłączeniu serwera aplikacji.")
                     if (view.bootstrapBusy) { LinearProgressIndicator(Modifier.fillMaxWidth()); Text("Łączę konto z serwerem…") }
                     OutlinedButton(onClick = actions.bootstrap,
-                        enabled = view.apiConfigured && !view.bootstrapBusy && !view.profileBusy && !view.busy && !view.pendingLogin,
+                        enabled = view.apiConfigured && !view.bootstrapBusy && !view.profileBusy && !view.snapshotBusy && !view.busy && !view.pendingLogin,
                         modifier = Modifier.fillMaxWidth().testTag("session-bootstrap")) {
                         Text(if (view.serverLinked) "Sprawdź połączenie" else "Połącz konto z serwerem")
                     }
@@ -72,8 +72,30 @@ data class SessionActions(val login: () -> Unit, val logout: () -> Unit, val ref
                     }
                     OutlinedButton(onClick = actions.readProfile,
                         enabled = view.apiConfigured && view.serverLinked && !view.requiresRecovery && !view.busy &&
-                            !view.bootstrapBusy && !view.profileBusy && !view.pendingLogin,
+                            !view.bootstrapBusy && !view.profileBusy && !view.snapshotBusy && !view.pendingLogin,
                         modifier = Modifier.fillMaxWidth().testTag("session-read-profile")) { Text("Pobierz profil z serwera") }
+                }
+            }
+            Card(Modifier.fillMaxWidth()) {
+                Column(Modifier.padding(20.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                    Text("Kopia danych serwera", style = MaterialTheme.typography.titleMedium)
+                    Text("Pobierz dane konta na urządzenie. Posiłki zapisane lokalnie czekają na osobny etap synchronizacji.")
+                    val status = view.snapshot
+                    if (status?.completedTime != null) {
+                        Text("Ostatnia pełna kopia: ${status.completedTime}", Modifier.testTag("snapshot-complete"))
+                        Text("${status.completedItems} rekordów · ${status.completedPages} stron")
+                    } else Text("Pełna kopia nie została jeszcze pobrana.")
+                    if (status != null && status.pendingPages > 0) Text("Zapisany postęp: ${status.pendingItems} rekordów · ${status.pendingPages} stron", Modifier.testTag("snapshot-progress"))
+                    if (view.snapshotBusy) { LinearProgressIndicator(Modifier.fillMaxWidth()); Text("Pobieram kopię…") }
+                    if (view.requiresRecovery) Text("Możesz pobrać kopię do uzgodnienia danych. Wysyłanie wpisów wymaga zakończenia uzgodnienia.")
+                    if (status?.blocked == true) Text("Pobieranie zablokowane — konto jest usuwane.")
+                    if (status?.needsBootstrap == true) Text("Najpierw wybierz Sprawdź połączenie, aby ponownie potwierdzić stan konta.")
+                    OutlinedButton(onClick = actions.downloadSnapshot,
+                        enabled = view.apiConfigured && view.serverLinked && status?.blocked != true && status?.needsBootstrap != true && !view.busy &&
+                            !view.bootstrapBusy && !view.profileBusy && !view.snapshotBusy && !view.pendingLogin,
+                        modifier = Modifier.fillMaxWidth().testTag("session-download-snapshot")) {
+                        Text(if (status != null && status.pendingPages > 0) "Wznów pobieranie kopii" else "Pobierz kopię danych serwera")
+                    }
                 }
             }
             OutlinedButton(onClick = actions.refresh, enabled = view.configured && !view.busy && !view.pendingLogin,
