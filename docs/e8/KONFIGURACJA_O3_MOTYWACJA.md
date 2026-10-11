@@ -14,7 +14,7 @@ Worker otrzymuje EXECUTE e8_process/e8_candidates/e8_status/e8_prune_ranking_ses
 
 ## Proces i monitoring
 
-Odrębny DATABASE_URL LOGIN E8. Uruchom python -m calorie_app.motivation_worker --batch100 --date-batch256 jako oddzielną usługę. Użyj poprawnej składni ze spacjami: --batch 100 --date-batch 256. Startup natychmiast nadrabia pierwszą ograniczoną porcję; dalszy cykl co60s. --once wykonuje jeden bounded cykl, --status zwraca zagregowany backlog bez identyfikatorów kont. SIGINT/SIGTERM kończy bieżącą transakcję i zamyka engine. CLI odmawia niewłaściwej roli/schematu i nie drukuje credentiali ani źródeł.
+Odrębny DATABASE_URL LOGIN E8. Uruchom `python -m calorie_app.motivation_worker --batch 100 --date-batch 256` jako oddzielną usługę. Startup natychmiast nadrabia pierwszą ograniczoną porcję; dalszy cykl co60s. --once wykonuje jeden bounded cykl, --status zwraca zagregowany backlog bez identyfikatorów kont. SIGINT/SIGTERM kończy bieżącą transakcję i zamyka engine. CLI odmawia niewłaściwej roli/schematu i nie drukuje credentiali ani źródeł.
 
 Obserwuj pending_backfill, pending_materialization, oldest_matures_at, owners_handled, dates_processed, exitcode i motivation_worker_unavailable. Duży backlog wymaga kolejnych cykli, nie nowego klienta. Wiele instancji serializuje konto→counter i rewaliduje źródła/czas po lock; brak zewnętrznej kolejki/lease. Batch1..1000, date-batch1..1000, maksymalnie4×date-batch kandydatów keyset przed merge źródeł, brak limitu całkowitej historii lub pozycji rankingu. SQL pełnohistoryczne streak/agregacje mogą korzystać z work_mem/spill; dobierz monitoring czasu i dysku, nie obcinaj historii. Korekta osi celu atomowo przechodzi całą sparse historię w porcjach w jednej transakcji.
 
