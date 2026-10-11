@@ -4,6 +4,8 @@ Wersja 0.8.2 / versionCode 13 / Room 6. Zmiana: jawny odczyt profilu serwerowego
 
 Gałąź `codex/android-odczyt-profilu`, zależna od `42763f8` / PR26; osobny PR porównuje nowy etap z `codex/android-sesja`. Rzeczywisty bootstrap/API nie jest odebrany na podstawie zastępczych transportów.
 
+Kod `0522824990a35c0b54bec9cceaa4d3a8e9c7b069`, [PR31](https://github.com/Roseru/aplikacja-mobilna/pull/31). CI tej gałęzi jest odrębnym odbiorem od zielonego PR26.
+
 ## Weryfikacja lokalna
 
 - `assembleDebug`, `testDebugUnitTest`, `lintDebug`, `assembleValidationAndroidTest`: BUILD SUCCESSFUL, 4 min 15 s.
