@@ -18,6 +18,8 @@ Końcowy własny delivery: **107 PASS = 94 PG +13 unit**, bez skipów. PG to26 U
 
 Uzupełnienie po pierwszym pełnym CI poprawki: run38139065117 na29f4902 miał789PG PASS/2FAIL tylko na zamkniętych listach tabel w test_foundation i test_e5_upgrade; pozostałe sześć właściwych jobów success. Do obu jawnych list dodano nową product_search_metadata, zachowując całą kontrolę historycznych rowsets/hash/ACL/readiness/up/down/re-up. Root wykonał całe dwa moduły:6PG PASS. Nieautor odczytuje te dwie zmiany oraz wynik właściwego zakresu na nowym końcowym head; wcześniejszy manifest213 wymaga nowego powiązania dla tych dwóch testów, runtime/migracje pozostają identyczne. Końcowe pełne CI raportuje się osobno.
 
+Zamknięcie tej uwagi: nieautor wykonał niezależnie oba całe moduły na `ffc06966eb4df51255a6b204ffe0a32939cac20d`: **6 PG PASS**, bez skipów, pełne stare rowsets/ACL/up→down→re-up zachowane. **Ocena 9,3/10, zero otwartych istotnych P1/P2** pozostaje. Manifest **213 blobów**:211 identycznych, dwa nowe bloby test_foundation/test_e5_upgrade; SHA-256 `365816932596db0476442e357bba423eb3e98c439a7554d8846dde27ff880e88`. Własne procesy/fixtures zakończone. Ostatni report/rec/comm commit podlega tylko powiązaniu tych samych213 blobów; nowe pełne osiem CI potwierdza root osobno.
+
 Niezależny odbiór E6-O2 — recenzent nieautor
 Ocena: 9,3/10; zero otwartych istotnych P1/P2.
 
