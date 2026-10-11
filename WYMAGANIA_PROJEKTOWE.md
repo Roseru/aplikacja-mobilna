@@ -596,7 +596,9 @@ Priorytety implementacji Osoby 2 (szczegółowe etapy E0–E10 i warunki odbioru
 1. Szkielet backendu, OpenAPI, obliczenia dziesiętne i pierwsze migracje kont/katalogu (E0/E1).
 2. Katalog, racje i pakiet demo dla Androida (E2); od E0 równolegle zbieranie źródeł oficjalnych.
 3. OIDC, izolacja kont i prywatne modele (E3), następnie idempotencja, push/pull, snapshot, import gościa, testy 30 dni i zmiany epoki (E4).
-4. Zweryfikowany oficjalny katalog i statystyki (E5), następnie moderacja, Gemini, punkty i Nemesis (E6–E8); korekty zapotrzebowania po testach reguł (E9), pełny odbiór (E10).
+4. Zweryfikowany oficjalny katalog i statystyki (pełny E5), moderacja, Gemini, punkty i Nemesis (E6–E8); korekty zapotrzebowania po testach reguł (E9), pełny odbiór (E10).
+
+Korekta organizacji z 11 października 2026 r.: kolejność pełnych odbiorów nie blokuje samodzielnej implementacji backendu E6-O2 po odebranych technicznych zależnościach E2/E3/E4 i E5-O2-R. Koordynator potwierdza tę bramkę, publikuje master i osobno zleca wykonanie na izolowanym PG/Keycloak oraz jawnych danych testowych. Brak etykiet official, APK lub produkcyjnego HTTPS pozostaje wymaganym wejściem do odpowiedniego pełnego odbioru/wydania E5/E6, nie automatycznym zakazem niezależnego kodu. Nie zmienia to żadnego WF/KO, reguł danych, 30 dni offline ani obowiązku zebrania i weryfikacji źródeł przez O2.
 
 Testy integracyjne działają na PostgreSQL tej samej głównej wersji co wdrożenie. Wymagane są równoległe zapisy i utrata odpowiedzi, konta A/B, niepoprawne issuer/audience/podpisy, rotacja JWKS, stare kursory, snapshot w czasie zmian, ponowienia po sprzątaniu, brak makr, granice zaokrągleń, zmiana czasu, cofnięcie zgód oraz limity Free Tier przy równoległych zleceniach. Kontrolowane cofnięcie migracji albo odtworzenie kopii jest sprawdzane przed wydaniem. Dokumentacja nie zastępuje wyników tych testów.
 
