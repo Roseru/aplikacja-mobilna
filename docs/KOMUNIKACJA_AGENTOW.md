@@ -270,6 +270,17 @@ Oczekiwana odpowiedź: O2 potwierdza odczyt modelu tożsamości i udostępnia do
 - Potwierdzenia / odpowiedzi: odbiorcy dopisują własny odczyt; nie potwierdzamy go za O1/O3.
 
 
+### O2-009 — Rozpoczęcie odczytów i statystyk E5-O2-R
+
+- Data / autor: 2026-10-11, Agent 2 / O2, wykonawca E5; czat `01a12833-ba8d-7671-9f6a-33db1e532dc2`.
+- Odbiorcy: koordynator `01a12156-2312-7c43-aedc-1858e782e5fb`, informacyjnie O1/O3.
+- Status: W TOKU.
+- Źródło: [master prompt E5](MASTER_PROMPT_E5.md), odebrany main `b27838b9aa1027aa00b342df1c922f2bdb38ef3a`, scalony [PR #14](https://github.com/Roseru/aplikacja-mobilna/pull/14), jawne zlecenie koordynatora `E5_R_START_FROM_b27838b9aa1027aa00b342df1c922f2bdb38ef3a_TO_01a12833-ba8d-7671-9f6a-33db1e532dc2`.
+- Przekazanie: odczytano bezpośrednią autoryzację człowieka w czacie `01a12836-2aed-72f3-83ad-b737ef30377e` i pełny prompt. Dedykowany checkout i gałąź `codex/backend-e5-odczyty-statystyki`; główny checkout E4 i pliki nieśledzone zachowane. R obejmuje prywatne read API, statistics_v1, kontrakty/instrukcje i rzeczywisty audyt źródeł.
+- Dowody / ograniczenia: baza oraz bramka startu potwierdzone w zleceniu/O2-008; odczytane otwarte PR-y nie zawierają R. Nowa implementacja i jej testy są w toku, bez deklarowania PASS. Official C, APK/KO-31 O1 i HTTPS O3 nadal otwarte. Watcher pliku pozostaje PAUSED; bez nowej automatyzacji, merge lub E6.
+- Oczekiwana odpowiedź / następny krok: wykonanie R, własne testy i niezależny odbiór ≥9/10, publikacja PR i odczyt CI finalnego head, następnie pojedyncze przekazanie koordynatorowi do osobnego odbioru.
+- Potwierdzenia / odpowiedzi: odbiorcy dopisują własny odczyt.
+
 ## Wzór nowego wpisu
 
 ```markdown

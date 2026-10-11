@@ -6,6 +6,7 @@ from calorie_app.db.models import UserAccount  # noqa: F401
 from calorie_app.db.session import make_engine
 from calorie_app.modules.catalog import models as catalog_models  # noqa: F401
 from calorie_app.modules.diary import models as diary_models  # noqa: F401
+from calorie_app.modules.diary import read_models  # noqa: F401
 from calorie_app.modules.identity import deletion_models  # noqa: F401
 from calorie_app.modules.profiles import models as profile_models  # noqa: F401
 from calorie_app.modules.sync import models as sync_models  # noqa: F401

@@ -51,3 +51,7 @@ Bootstrap/me/goals/consents/energy-estimates/products przejęto do generowanego 
 ## Kontrakt wdrożony w E4
 
 Aktywne HTTP push/pull pochodzi z generowanego backend/openapi.json; draft design zachowuje jedynie przyszłe odczyty E5. sync.schema.json jest normatywnym v1 i zasobem runtime wheel. [Decyzja E4](../docs/e4/DECYZJE_V1.md) doprecyzowuje preflight/per-op prefix, błędy obiektowe i limity oryginalnych bajtów. Walidator scenariuszy sprawdza zgodność z rzeczywiście generowanym kontraktem.
+
+## Wdrożenie E5-O2-R
+
+Trzy odczyty dziennika i statistics_v1 są w generowanym backend/openapi.json; nie mają podwójnych aktywnych operacji w design draft. Walidator utrzymuje normatywne schematy/examples i wszystkie błędy/auth przeniesionych endpointów. [Wektory statistics_v1](test-vectors/statistics-v1.json) wykonuje rzeczywisty reducer i wspólny resolver w `backend/tests/unit/test_e5_statistics_unit.py`; sam walidator E0 sprawdza ich strukturę, bez twierdzenia o wykonaniu Kotlin/Room. [Integracja O1](../docs/e5/INTEGRACJA_O1.md) opisuje strefy, korekty osi, null/mianowniki i dokładny Decimal.

@@ -12,8 +12,10 @@ from calorie_app.core.logging import configure_logging
 from calorie_app.db.session import make_engine, session_factory
 from calorie_app.health import router
 from calorie_app.integrations.keycloak import OIDCVerifier
+from calorie_app.modules.analytics.router import router as analytics_router
 from calorie_app.modules.catalog.protected_router import router as protected_catalog_router
 from calorie_app.modules.catalog.router import router as catalog_router
+from calorie_app.modules.diary.read_router import router as diary_read_router
 from calorie_app.modules.identity.router import router as identity_router
 from calorie_app.modules.profiles.router import router as profile_router
 from calorie_app.modules.sync.router import router as sync_router
@@ -52,6 +54,14 @@ def create_app(settings: Settings | None = None, *, engine=None) -> FastAPI:
         except Exception:
             response = error_response(request, 500, "internal_error", "Wewnętrzny błąd serwera.")
         response.headers["X-Request-ID"] = request_id
+        # Include errors raised before the router, e.g. OIDC and validation.
+        if request.url.path.rstrip("/") in {
+            "/api/v1/me/meals",
+            "/api/v1/me/weights",
+            "/api/v1/me/diary-days",
+            "/api/v1/me/statistics",
+        }:
+            response.headers["Cache-Control"] = "no-store"
         logging.getLogger("calorie_app").info(
             "request_complete",
             extra={
@@ -72,4 +82,6 @@ def create_app(settings: Settings | None = None, *, engine=None) -> FastAPI:
     app.include_router(profile_router)
     app.include_router(protected_catalog_router)
     app.include_router(sync_router)
+    app.include_router(diary_read_router)
+    app.include_router(analytics_router)
     return app

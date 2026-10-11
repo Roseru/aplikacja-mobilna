@@ -1,0 +1,280 @@
+{
+  "checked_on": "2026-10-11",
+  "not_official": true,
+  "candidates": [
+    {
+      "url": "https://arpol.net.pl/produkt/lazania-300-g-tacka/",
+      "checked_on": "2026-10-11",
+      "http_status": 200,
+      "retrieved_at_utc": "2026-10-11T01:29:49.036792+00:00",
+      "retrieved_body_sha256": "981c11951177d97bb02416ce62559d119f4a9c6972c01730d08b3344cf644ef1",
+      "etag": null,
+      "last_modified": null,
+      "published_version": null,
+      "name": "Lazania 300 g TACKA",
+      "net_mass_g": "300",
+      "basis_amount": "100",
+      "basis_unit": "g",
+      "values": {
+        "energy_kcal": "109",
+        "protein_g": "6.8",
+        "fat_g": "4",
+        "carbohydrate_g": "11"
+      },
+      "supplier": "ARPOL",
+      "manufacturer": null,
+      "ration_binding": "unconfirmed",
+      "status": "card_read_binding_pending",
+      "limitations": [
+        "Matching generic name/mass is only a candidate; manufacturer and exact ration variant not proven"
+      ]
+    },
+    {
+      "url": "https://arpol.net.pl/produkt/risotto-pomidorowe-wege-300-g-tacka/",
+      "checked_on": "2026-10-11",
+      "status": "card_read_binding_pending",
+      "error": "HTTP Error 429: Too Many Requests",
+      "name": "Risotto pomidorowe WEGE 300 g TACKA",
+      "net_mass_g": "300",
+      "basis_amount": "100",
+      "basis_unit": "g",
+      "values": {
+        "energy_kcal": "114",
+        "protein_g": "2.6",
+        "fat_g": "2.1",
+        "carbohydrate_g": "20"
+      },
+      "supplier": "ARPOL",
+      "manufacturer": null,
+      "ration_binding": "unconfirmed",
+      "read_method": "Web source reader returned official card text; direct HTTP later returned429",
+      "published_version": null,
+      "limitations": [
+        "No body hash: direct HTTP failed; facts retained from official card read through web source reader",
+        "Matching generic name/mass is only a candidate; manufacturer and exact ration variant not proven"
+      ]
+    },
+    {
+      "url": "https://arpol.net.pl/produkt/suchary-specjalne-su-1-45-g/",
+      "checked_on": "2026-10-11",
+      "status": "card_read_binding_pending",
+      "error": "HTTP Error 429: Too Many Requests",
+      "name": "Suchary specjalne SU-1",
+      "net_mass_g": "45",
+      "basis_amount": "100",
+      "basis_unit": "g",
+      "values": {
+        "energy_kcal": "386",
+        "protein_g": "8",
+        "fat_g": "6.8",
+        "carbohydrate_g": "72.1"
+      },
+      "supplier": "ARPOL",
+      "manufacturer": null,
+      "ration_binding": "unconfirmed",
+      "read_method": "Web source reader returned official card text; direct HTTP later returned429",
+      "published_version": null,
+      "limitations": [
+        "No body hash: direct HTTP failed; facts retained from official card read through web source reader",
+        "Matching generic name/mass is only a candidate; manufacturer and exact ration variant not proven"
+      ]
+    },
+    {
+      "url": "https://arpol.net.pl/produkt/mleko-zageszczone-150-g/",
+      "checked_on": "2026-10-11",
+      "http_status": 200,
+      "retrieved_at_utc": "2026-10-11T01:29:49.610700+00:00",
+      "retrieved_body_sha256": "6e4b1e61fb8fbbfe2e3e9e2715e360e3de0f5d9aa67b5f3367cbfca7e7f88cd3",
+      "etag": null,
+      "last_modified": null,
+      "published_version": null,
+      "name": "Mleko zagęszczone słodzone",
+      "net_mass_g": "150",
+      "basis_amount": "100",
+      "basis_unit": "g",
+      "values": {
+        "energy_kcal": "328",
+        "protein_g": "7",
+        "fat_g": "8",
+        "carbohydrate_g": "57"
+      },
+      "supplier": "ARPOL",
+      "manufacturer": null,
+      "ration_binding": "unconfirmed",
+      "status": "card_read_binding_pending",
+      "limitations": [
+        "Matching generic name/mass is only a candidate; manufacturer and exact ration variant not proven"
+      ]
+    },
+    {
+      "url": "https://arpol.net.pl/produkt/orzechy-ziemne-solone-50-g/",
+      "checked_on": "2026-10-11",
+      "http_status": 200,
+      "retrieved_at_utc": "2026-10-11T01:29:49.880884+00:00",
+      "retrieved_body_sha256": "973ac4b405081c2b3c5715546f888d1e89f8a7bc2b601cf11f9a1adbe0c5f8d0",
+      "etag": null,
+      "last_modified": null,
+      "published_version": null,
+      "name": "Orzechy ziemne solone",
+      "net_mass_g": "50",
+      "basis_amount": "100",
+      "basis_unit": "g",
+      "values": {
+        "energy_kcal": "625",
+        "protein_g": "24.6",
+        "fat_g": "51.4",
+        "carbohydrate_g": "12.6"
+      },
+      "supplier": "ARPOL",
+      "manufacturer": null,
+      "ration_binding": "unconfirmed",
+      "status": "card_read_binding_pending",
+      "limitations": [
+        "Matching generic name/mass is only a candidate; manufacturer and exact ration variant not proven"
+      ]
+    },
+    {
+      "url": "https://arpol.net.pl/produkt/napoj-izotoniczny-jablkowy-5-g/",
+      "checked_on": "2026-10-11",
+      "http_status": 200,
+      "retrieved_at_utc": "2026-10-11T01:29:50.121172+00:00",
+      "retrieved_body_sha256": "f8d3d9b07f47766c8f86166ffbf3f07fdf936adcb2cdec31efb9ce9e99236371",
+      "etag": null,
+      "last_modified": null,
+      "published_version": null,
+      "name": "Napój izotoniczny jabłkowy",
+      "net_mass_g": "5",
+      "basis_amount": "100",
+      "basis_unit": "g",
+      "values": {
+        "energy_kcal": "238",
+        "protein_g": "0",
+        "fat_g": "0",
+        "carbohydrate_g": "44"
+      },
+      "supplier": "ARPOL",
+      "manufacturer": null,
+      "ration_binding": "unconfirmed",
+      "status": "card_read_binding_pending",
+      "limitations": [
+        "Matching generic name/mass is only a candidate; manufacturer and exact ration variant not proven"
+      ],
+      "preparation": {
+        "dry_product_g": "5",
+        "added_water_ml": "500",
+        "water_energy_added": false,
+        "locator": "Sposób przygotowania on source card"
+      }
+    },
+    {
+      "url": "https://arpol.net.pl/produkt/baton-owocowo-zbozowy-35-g/",
+      "checked_on": "2026-10-11",
+      "http_status": 200,
+      "retrieved_at_utc": "2026-10-11T01:29:50.397337+00:00",
+      "retrieved_body_sha256": "3c7d3a3221c1c6706d99d99e4044bea7abb2d058a8fa84e614db14324d1a280d",
+      "etag": null,
+      "last_modified": null,
+      "published_version": null,
+      "name": "Baton owocowo-zbożowy 35 g",
+      "supplier": "ARPOL",
+      "manufacturer": null,
+      "net_mass_g": "35",
+      "basis_amount": "100",
+      "basis_unit": "g",
+      "ration_binding": "unconfirmed",
+      "status": "variant_cards_read_binding_pending",
+      "variants": [
+        {
+          "taste": "żurawinowy",
+          "energy_kcal": "384",
+          "protein_g": "5.54",
+          "fat_g": "9.1",
+          "carbohydrate_g": "66.4"
+        },
+        {
+          "taste": "wiśniowy",
+          "energy_kcal": "374",
+          "protein_g": "5.26",
+          "fat_g": "9.4",
+          "carbohydrate_g": "62.5"
+        },
+        {
+          "taste": "limonkowy",
+          "energy_kcal": "387",
+          "protein_g": "5.53",
+          "fat_g": "9.8",
+          "carbohydrate_g": "66.3"
+        },
+        {
+          "taste": "gruszkowy",
+          "energy_kcal": "373",
+          "protein_g": "5.25",
+          "fat_g": "8.5",
+          "carbohydrate_g": "64"
+        },
+        {
+          "taste": "figowy",
+          "energy_kcal": "367",
+          "protein_g": "5.54",
+          "fat_g": "13.3",
+          "carbohydrate_g": "56.3"
+        },
+        {
+          "taste": "morelowy",
+          "energy_kcal": "369",
+          "protein_g": "5.53",
+          "fat_g": "8.8",
+          "carbohydrate_g": "62.8"
+        }
+      ],
+      "limitations": [
+        "Ration cards name generic baton35g without taste",
+        "Available taste on shop date does not prove delivered ration variant",
+        "Made in EU does not identify manufacturer",
+        "Net35g, not shop gross30g; alternatives are not summed",
+        "Pear variant source1516kJ/373kcal internally inconsistent; preserve and request label confirmation"
+      ]
+    },
+    {
+      "url": "https://arpol.net.pl/produkt/kisiel-jablko-i-mango-30-g/",
+      "checked_on": "2026-10-11",
+      "http_status": 200,
+      "retrieved_at_utc": "2026-10-11T01:29:50.603826+00:00",
+      "retrieved_body_sha256": "5f14354a1d241ee23b86127652e073f93396dc6fe234186e865ad8f20a7d9af7",
+      "etag": null,
+      "last_modified": null,
+      "published_version": null,
+      "name": "Kisiel jabłko i mango",
+      "net_mass_g": "30",
+      "basis_amount": "100",
+      "basis_unit": "g",
+      "nutrition_state": "dry before preparation",
+      "source_values": {
+        "energy_kj": "1644",
+        "energy_kcal": "493",
+        "protein_g": "<0.4",
+        "fat_g": "<0.2",
+        "carbohydrate_g": "97"
+      },
+      "exact_values": {
+        "energy_kcal": null,
+        "protein_g": null,
+        "fat_g": null,
+        "carbohydrate_g": "97"
+      },
+      "preparation": {
+        "dry_product_g": "30",
+        "added_water_ml": "150",
+        "water_energy_added": false
+      },
+      "manufacturer": null,
+      "ration_binding": "unconfirmed",
+      "status": "requires_source_correction",
+      "limitations": [
+        "1644kJ and493kcal are inconsistent; do not silently change to393",
+        "Less-than bounds are not exact zero or exact0.4/0.2",
+        "Generic ration kisiel owocowy does not prove apple/mango variant"
+      ]
+    }
+  ]
+}

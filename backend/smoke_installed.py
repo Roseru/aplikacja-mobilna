@@ -40,6 +40,8 @@ def main():
     assert "/api/v1/products" in app.openapi()["paths"]
     assert "/api/v1/sync/push" in app.openapi()["paths"]
     assert "/api/v1/sync/pull" in app.openapi()["paths"]
+    for route in ("meals", "weights", "diary-days", "statistics"):
+        assert "/api/v1/me/" + route in app.openapi()["paths"]
     app.state.engine.dispose()
     asyncio.run(app.state.oidc_verifier.close())
     print("PASS installed E4 runtime: bundled schemas, tzdata, calculator, OIDC and sync routes")

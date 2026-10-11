@@ -111,6 +111,10 @@ def test_generated_api_only_claims_implemented_operations(client):
         "/api/v1/sync/pull",
         "/api/v1/me/consents",
         "/api/v1/energy-estimates",
+        "/api/v1/me/meals",
+        "/api/v1/me/weights",
+        "/api/v1/me/diary-days",
+        "/api/v1/me/statistics",
     }
     assert schema["paths"]["/api/v1/products"]["get"]["security"] == [{"bearerAuth": []}]
     assert "503" in schema["paths"]["/health/ready"]["get"]["responses"]

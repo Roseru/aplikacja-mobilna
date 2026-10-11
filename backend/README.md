@@ -1,4 +1,4 @@
-# Backend E1 E2 E3 - osoba 2
+# Backend E1–E5-O2-R - osoba 2
 
 FastAPI na Pythonie 3.13, PostgreSQL 17, SQLAlchemy 2 i Alembic. E2 rozszerza fundament E1 o katalog, racje, kontrolowany import, eksport i publiczne odczyty wyłącznie opublikowanego official. Dane demo przekazujemy jako plik. E3 dostarcza OIDC, bootstrap, profil/cele/zgody, kalkulator, modele prywatne i chronione produkty; sync należy do E4; ich granice określają [kontrakty E0](../contracts/README.md).
 
@@ -32,7 +32,7 @@ Potrzebne: Git, Python 3.13, uv 0.9.5. Do standardowego lokalnego PostgreSQL pot
 
 `GET /health/live` daje 200 także podczas awarii bazy. `GET /health/ready` daje 200 dopiero dla PostgreSQL 17 z dokładną oczekiwaną migracją i konfiguracją sekretu paginacji, w przeciwnym razie 503 z bezpiecznym błędem i identyfikatorem żądania. API nie tworzy tabel przy starcie. Żądania mają `X-Request-ID`, błędy pola `code`, `message`, `details`, `request_id`. Nie logujemy query, body, tokenów ani tekstu wyjątków mogącego zawierać sekrety.
 
-Aktualny head to `0008_diary_delete`, po `0007_e3_diary` i `0006_e3_identity` oraz zachowanych migracjach E1/E2 `0001–0005`. Stara rewizja daje readiness 503; po upgrade i ustawieniu trwałego `CATALOG_PAGE_TOKEN_SECRET` bieżąca daje 200. CHECK `ck_product_versions_finite_nutrition` nadal dopuszcza w każdej z czterech kolumn wartości odżywczych `NULL` albo zakres `0..999999.999999`. `NULL` oznacza brak danych, zero pozostaje znanym zerem. NaN i wartości ujemne naruszają CHECK; przekroczenie precyzji oraz Infinity odrzuca typ `NUMERIC(12,6)`.
+Aktualny head to `0012_e5_reads`, po odebranym E4 `0011_e4_deletion` i E3 `0008_diary_delete`, po `0007_e3_diary` i `0006_e3_identity` oraz zachowanych migracjach E1/E2 `0001–0005`. Stara rewizja daje readiness 503; po upgrade i ustawieniu trwałego `CATALOG_PAGE_TOKEN_SECRET` bieżąca daje 200. CHECK `ck_product_versions_finite_nutrition` nadal dopuszcza w każdej z czterech kolumn wartości odżywczych `NULL` albo zakres `0..999999.999999`. `NULL` oznacza brak danych, zero pozostaje znanym zerem. NaN i wartości ujemne naruszają CHECK; przekroczenie precyzji oraz Infinity odrzuca typ `NUMERIC(12,6)`.
 
 Migracja `0002` waliduje istniejące dane i zastępuje wyłącznie CHECK, bez przepisywania tabeli lub wartości. NaN pozostawione w starej bazie powoduje odmowę i rollback całej migracji, z zachowaniem danych, poprzedniego CHECK i rewizji. Przed upgrade rolą migratora sprawdź zakres wadliwych rekordów:
 
@@ -146,3 +146,9 @@ Migracja 0008 odbiera API/workerowi fizyczny DELETE rodziców dziennika i chroni
 ## Synchronizacja E4
 
 POST /api/v1/sync/push i GET /api/v1/sync/pull mają pełny preflight i trwałe dowody PostgreSQL. Migracje dochodzą do 0011_e4_deletion. [Raport](../docs/e4/RAPORT_E4.md), [O1](../docs/e4/INTEGRACJA_O1.md), [O3](../docs/e4/KONFIGURACJA_O3.md), [klient SQLite/HTTP](../tools/sync_client/README.md) i [deletion CLI](../docs/e4/USUNIECIE_KONTA.md) podają komendy, testy i ograniczenia.
+
+## Odczyty i statystyki E5-O2-R
+
+Wdrożono GET `/api/v1/me/meals`, `/weights`, `/diary-days` z lokalnym from/to i niezmiennymi stronami oraz `/api/v1/me/statistics?days=7|30|90`. Odczyty wymagają aktualnego konta OIDC, nie zmieniają encji i nie zastępują sync. Wszystkie prywatne wyniki/błędy mają `Cache-Control: no-store`. Puste/jednostronicowe pierwsze wyniki nie zachowują niepotrzebnych kopii; limit czterech sesji dotyczy rzeczywistych utrwalonych stron.
+
+[Raport](../docs/e5/RAPORT_E5.md), [decyzje i limity](../docs/e5/DECYZJE_V1.md), [integracja O1](../docs/e5/INTEGRACJA_O1.md), [rollout/ACL/retencja O3](../docs/e5/KONFIGURACJA_O3.md) i [instrukcja sync](../docs/e5/ODCZYTY_I_SYNCHRONIZACJA.md) określają częściowy odbiór R. Official C, APK/KO-31 i HTTPS pozostają osobne. Nowe tabele są objęte purge; dotychczasowa komenda retencji zwraca również read_items/read_sessions.

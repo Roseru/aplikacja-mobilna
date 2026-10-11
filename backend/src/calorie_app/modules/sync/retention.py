@@ -9,9 +9,10 @@ from sqlalchemy import text
 
 def prune(session, owner_id: UUID, batch: int = 1000) -> dict:
     """Caller owns commit. The DB function verifies active owner and lock order."""
-    return session.scalar(
-        text("SELECT app.prune_sync(:owner,:batch)"), {"owner": owner_id, "batch": batch}
-    )
+    parameters = {"owner": owner_id, "batch": batch}
+    sync = session.scalar(text("SELECT app.prune_sync(:owner,:batch)"), parameters)
+    reads = session.scalar(text("SELECT app.prune_read_sessions(:owner,:batch)"), parameters)
+    return sync | reads
 
 
 def main():
