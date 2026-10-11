@@ -116,4 +116,30 @@ class BootstrapHttpTest {
             assertTrue(result.body.isEmpty()); assertFalse(connection.readBody); assertTrue(connection.disconnected)
         }
     }
+    @Test fun profileReadUsesExactBodylessGetWithoutMutationHeaders() = runBlocking<Unit> {
+        var requested: URL? = null
+        val connection = Connection(URL("https://api.example/api/v1/me"))
+        val result = HttpsProfileGateway("https://api.example/api/v1/") { requested = it; connection }.get(session()) {
+            assertFalse(connection.sent)
+        }
+        assertEquals("https://api.example/api/v1/me", requested.toString())
+        assertEquals("GET", connection.requestMethod)
+        assertEquals("Bearer fixture-access", connection.getRequestProperty("Authorization"))
+        assertNull(connection.getRequestProperty("Idempotency-Key"))
+        assertNull(connection.getRequestProperty("If-Match"))
+        assertNull(connection.getRequestProperty("X-Sync-Epoch"))
+        assertFalse(connection.doOutput); assertFalse(connection.instanceFollowRedirects); assertFalse(connection.useCaches)
+        assertEquals(200, result.status); assertTrue(connection.disconnected)
+    }
+    @Test fun profileGetCannotBypassPreflightResponseBoundsOrRedirectGuard() {
+        val stopped = Connection(URL("https://api.example"))
+        assertThrows(Exception::class.java) { runBlocking { HttpsProfileGateway("https://api.example/api/v1") { stopped }.get(session()) { error("stale") } } }
+        assertFalse(stopped.sent); assertTrue(stopped.disconnected)
+        for (connection in listOf(Connection(URL("https://api.example"), status = 307),
+            Connection(URL("https://api.example"), payload = ByteArray(65_537), declaredSize = -1),
+            Connection(URL("https://api.example"), type = "text/html"), Connection(URL("https://api.example"), encoding = "gzip"))) {
+            assertThrows(Exception::class.java) { runBlocking { HttpsProfileGateway("https://api.example/api/v1") { connection }.get(session()) {} } }
+            assertTrue(connection.disconnected)
+        }
+    }
 }

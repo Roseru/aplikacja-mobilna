@@ -16,6 +16,8 @@ class CalorieApplication : Application() {
         bootstrapGateway = getString(R.string.api_base_url).takeIf { it.isNotEmpty() }?.let {
             // Invalid public configuration disables API access; it never blocks the offline diary.
             try { HttpsBootstrapGateway(it) } catch (_: Exception) { null }
+        }, profileGateway = getString(R.string.api_base_url).takeIf { it.isNotEmpty() }?.let {
+            try { HttpsProfileGateway(it) } catch (_: Exception) { null }
         }) }
     override fun onCreate() {
         super.onCreate()

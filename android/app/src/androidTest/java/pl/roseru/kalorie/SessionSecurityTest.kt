@@ -71,8 +71,9 @@ class SessionSecurityTest {
         fun response(state: String? = request!!.state) = AuthorizationResponse.Builder(request!!)
             .setState(state).setAuthorizationCode("fixture-code").build().toIntent()
     }
-    private fun client(db: CalorieDatabase, vault: SessionVault, fixture: FixtureGateway, api: BootstrapGateway? = null) = SessionController(
-        db, vault, fixture, issuer, context.packageName, now = { fixture.time }, bootstrapGateway = api)
+    private fun client(db: CalorieDatabase, vault: SessionVault, fixture: FixtureGateway, api: BootstrapGateway? = null,
+        profiles: ProfileGateway? = null) = SessionController(
+        db, vault, fixture, issuer, context.packageName, now = { fixture.time }, bootstrapGateway = api, profileGateway = profiles)
     private suspend fun login(client: SessionController, fixture: FixtureGateway, subject: String) {
         fixture.subject = subject
         assertNotNull(client.beginLogin())
@@ -254,6 +255,160 @@ class SessionSecurityTest {
     private fun denied(status: Int, code: String, retry: String? = null) = BootstrapHttpResult(status,
         JSONObject().put("code", code).put("message", "fixture text never displayed").put("details", JSONArray())
             .put("request_id", "b1111111-1111-4111-8111-111111111111").toString().toByteArray(), retry)
+    private fun profileAnswer(change: (JSONObject) -> Unit = {}) = BootstrapHttpResult(200,
+        JSONObject(androidx.test.platform.app.InstrumentationRegistry.getInstrumentation().context.assets
+            .open("contracts/profile-read.json").bufferedReader().use { it.readText() })
+            .also(change).toString().toByteArray())
+    private inner class ProfileFixture(var answer: suspend (Int) -> BootstrapHttpResult = { profileAnswer() }) : ProfileGateway {
+        val calls = mutableListOf<ApiSession>()
+        val started = CompletableDeferred<Unit>()
+        var hold: CompletableDeferred<Unit>? = null
+        override suspend fun get(session: ApiSession, beforeSend: suspend () -> Unit): BootstrapHttpResult {
+            beforeSend(); calls.add(session)
+            val index = calls.size
+            started.complete(Unit); hold?.await()
+            return answer(index)
+        }
+    }
+    @Test fun profilePreviewRequiresBootstrapAndNeverChangesLocalProfileGoalOrQueue() = runBlocking<Unit> {
+        val db = memory(); val vault = SessionVault(context, name()); val fixture = FixtureGateway()
+        val api = ApiFixture(); val profiles = ProfileFixture()
+        try {
+            val controller = client(db, vault, fixture, api, profiles); controller.start()
+            controller.readProfile(); assertTrue(profiles.calls.isEmpty())
+            login(controller, fixture, "fixture-A")
+            controller.readProfile(); assertTrue(profiles.calls.isEmpty())
+            controller.bootstrap()
+            val lease = controller.view.value.binding!!.lease
+            val repo = DiaryRepository(db, context, lease).apply { initialize() }
+            repo.setProfile("Lokalny profil", 170.0, ActivityClass.GARRISON, DietAim.REDUCE)
+            repo.setGoal(2400.0, 140.0, 70.0, 250.0)
+            val local = db.dao().currentProfile(lease.storageScope)
+            val goals = db.dao().goalsThrough(lease.storageScope, LocalDate.now().toString()).first()
+            val queue = db.dao().operationCount(lease.storageScope)
+            controller.readProfile()
+            assertEquals("Użytkownik demo", controller.view.value.serverProfile!!.profile!!.pseudonym)
+            assertEquals(local, db.dao().currentProfile(lease.storageScope))
+            assertEquals(goals, db.dao().goalsThrough(lease.storageScope, LocalDate.now().toString()).first())
+            assertEquals(queue, db.dao().operationCount(lease.storageScope))
+            profiles.answer = { profileAnswer { it.put("profile", JSONObject.NULL) } }
+            controller.readProfile(); assertNotNull(controller.view.value.serverProfile)
+            assertNull(controller.view.value.serverProfile!!.profile)
+            val restarted = client(db, vault, fixture, api, profiles); restarted.start()
+            assertNull(restarted.view.value.serverProfile)
+            assertEquals(local, db.dao().currentProfile(lease.storageScope))
+        } finally { vault.clear(); db.close() }
+    }
+    @Test fun delayedProfileCannotLeakAcrossLogoutAToBToAAndDuplicateTapSendsOnce() = runBlocking<Unit> {
+        val db = memory(); val vault = SessionVault(context, name()); val fixture = FixtureGateway()
+        val api = ApiFixture(); val profiles = ProfileFixture().apply { hold = CompletableDeferred() }
+        try {
+            val controller = client(db, vault, fixture, api, profiles); controller.start(); login(controller, fixture, "fixture-A"); controller.bootstrap()
+            val original = controller.view.value.binding!!.lease
+            val request = async { controller.readProfile() }
+            withTimeout(10_000) { profiles.started.await() }
+            controller.readProfile(); controller.bootstrap(); assertEquals(1, profiles.calls.size); assertEquals(1, api.calls.size)
+            controller.logout(); login(controller, fixture, "fixture-B")
+            assertNull(controller.view.value.serverProfile); assertFalse(controller.view.value.profileBusy)
+            controller.logout(); login(controller, fixture, "fixture-A")
+            assertNotEquals(original, controller.view.value.binding!!.lease)
+            profiles.hold!!.complete(Unit); request.await()
+            assertNull(controller.view.value.serverProfile)
+            assertEquals(original, profiles.calls.single().lease)
+        } finally { profiles.hold?.complete(Unit); vault.clear(); db.close() }
+    }
+    @Test fun manualRefreshInvalidatesHeldProfileAndClearsDisplayedPreview() = runBlocking<Unit> {
+        val db = memory(); val vault = SessionVault(context, name()); val fixture = FixtureGateway()
+        val api = ApiFixture(); val profiles = ProfileFixture()
+        try {
+            val controller = client(db, vault, fixture, api, profiles); controller.start(); login(controller, fixture, "fixture-A"); controller.bootstrap()
+            controller.readProfile(); assertNotNull(controller.view.value.serverProfile)
+            profiles.hold = CompletableDeferred()
+            val request = async { controller.readProfile() }
+            withTimeout(10_000) { while (profiles.calls.size < 2) yield() }
+            controller.refresh(); assertNull(controller.view.value.serverProfile)
+            profiles.hold!!.complete(Unit); request.await()
+            assertNull(controller.view.value.serverProfile); assertFalse(controller.view.value.profileBusy)
+            profiles.hold = null; controller.readProfile(); assertNotNull(controller.view.value.serverProfile)
+        } finally { profiles.hold?.complete(Unit); vault.clear(); db.close() }
+    }
+    @Test fun profileUnauthorizedRenewsOnceAndFailedRenewalNeverResendsOldToken() = runBlocking<Unit> {
+        val db = memory(); val vault = SessionVault(context, name()); val fixture = FixtureGateway()
+        val api = ApiFixture(); val profiles = ProfileFixture { if (it == 1) denied(401, "unauthorized") else profileAnswer() }
+        try {
+            val controller = client(db, vault, fixture, api, profiles); controller.start(); login(controller, fixture, "fixture-A"); controller.bootstrap()
+            controller.readProfile()
+            assertEquals(2, profiles.calls.size); assertEquals(2, fixture.calls)
+            assertNotEquals(profiles.calls[0].accessToken, profiles.calls[1].accessToken)
+            assertEquals(profiles.calls[0].lease, profiles.calls[1].lease)
+            assertNotNull(controller.view.value.serverProfile)
+            profiles.calls.clear(); profiles.answer = { denied(401, "unauthorized") }
+            controller.readProfile(); assertEquals(2, profiles.calls.size); assertNull(controller.view.value.serverProfile)
+            profiles.calls.clear(); fixture.subject = "fixture-B"
+            controller.readProfile(); assertEquals(1, profiles.calls.size)
+            assertEquals("fixture-A", controller.view.value.binding!!.owner.subject)
+            assertNull(db.ownerDao().byIdentity(issuer, "fixture-B"))
+            assertFalse(controller.view.value.profileBusy)
+        } finally { vault.clear(); db.close() }
+    }
+    @Test fun expiringProfileSessionRefreshesButForbiddenAndInvalidResponseNeverBecomePreview() = runBlocking<Unit> {
+        val db = memory(); val vault = SessionVault(context, name()); val fixture = FixtureGateway()
+        val api = ApiFixture(); val profiles = ProfileFixture()
+        try {
+            val controller = client(db, vault, fixture, api, profiles); controller.start(); login(controller, fixture, "fixture-A"); controller.bootstrap()
+            fixture.time += 400_000
+            controller.readProfile(); assertEquals(2, fixture.calls); assertNotNull(controller.view.value.serverProfile)
+            val original = db.bootstrapDao().binding(controller.view.value.binding!!.lease.storageScope)
+            for (response in listOf(denied(403, "account_bootstrap_required"), BootstrapHttpResult(200, "{}".toByteArray()),
+                profileAnswer { it.put("account_id", "c1111111-1111-4111-8111-111111111111") })) {
+                profiles.answer = { response }; controller.readProfile()
+                assertNull(controller.view.value.serverProfile); assertFalse(controller.view.value.profileBusy)
+                assertEquals(2, fixture.calls)
+                assertEquals(original, db.bootstrapDao().binding(controller.view.value.binding!!.lease.storageScope))
+            }
+        } finally { vault.clear(); db.close() }
+    }
+    @Test fun profileRetryAfterPersistsAcrossRestartAndAlsoBlocksBootstrap() = runBlocking<Unit> {
+        val db = memory(); val vault = SessionVault(context, name()); val fixture = FixtureGateway()
+        val api = ApiFixture(); val profiles = ProfileFixture { denied(503, "service_unavailable", "60") }
+        try {
+            val controller = client(db, vault, fixture, api, profiles); controller.start(); login(controller, fixture, "fixture-A"); controller.bootstrap()
+            controller.readProfile(); assertEquals(1, profiles.calls.size)
+            val restarted = client(db, vault, fixture, api, profiles); restarted.start()
+            restarted.readProfile(); restarted.bootstrap()
+            assertEquals(1, profiles.calls.size); assertEquals(1, api.calls.size)
+            fixture.time += 59_000; restarted.readProfile(); assertEquals(1, profiles.calls.size)
+            fixture.time += 1000; profiles.answer = { profileAnswer() }; restarted.readProfile()
+            assertEquals(2, profiles.calls.size); assertNotNull(restarted.view.value.serverProfile)
+        } finally { vault.clear(); db.close() }
+    }
+    @Test fun changedProfileEpochMarksRecoveryWithoutReplacingMappingOrClearingOnRestart() = runBlocking<Unit> {
+        val db = memory(); val vault = SessionVault(context, name()); val fixture = FixtureGateway()
+        val api = ApiFixture(); val profiles = ProfileFixture { profileAnswer { it.put("sync_epoch", newEpoch) } }
+        try {
+            val controller = client(db, vault, fixture, api, profiles); controller.start(); login(controller, fixture, "fixture-A"); controller.bootstrap()
+            val lease = controller.view.value.binding!!.lease
+            val original = db.bootstrapDao().binding(lease.storageScope)!!
+            controller.readProfile(); assertNull(controller.view.value.serverProfile)
+            assertEquals(original.copy(requiresRecovery = true, contextRevision = original.contextRevision + 1), db.bootstrapDao().binding(lease.storageScope))
+            assertTrue(controller.view.value.requiresRecovery)
+            val restarted = client(db, vault, fixture, api, profiles); restarted.start(); restarted.readProfile()
+            assertEquals(1, profiles.calls.size); assertTrue(restarted.view.value.requiresRecovery)
+            restarted.bootstrap(); assertTrue(restarted.view.value.requiresRecovery)
+        } finally { vault.clear(); db.close() }
+    }
+    @Test fun cancelledProfileRequestReleasesBusyStateAndKeepsMappingForRetry() = runBlocking<Unit> {
+        val db = memory(); val vault = SessionVault(context, name()); val fixture = FixtureGateway()
+        val api = ApiFixture(); val profiles = ProfileFixture().apply { hold = CompletableDeferred() }
+        try {
+            val controller = client(db, vault, fixture, api, profiles); controller.start(); login(controller, fixture, "fixture-A"); controller.bootstrap()
+            val original = db.bootstrapDao().binding(controller.view.value.binding!!.lease.storageScope)
+            val task = async { controller.readProfile() }; withTimeout(10_000) { profiles.started.await() }
+            task.cancelAndJoin(); assertFalse(controller.view.value.profileBusy); assertNull(controller.view.value.serverProfile)
+            assertEquals(original, db.bootstrapDao().binding(controller.view.value.binding!!.lease.storageScope))
+            profiles.hold = null; controller.readProfile(); assertNotNull(controller.view.value.serverProfile)
+        } finally { profiles.hold?.complete(Unit); vault.clear(); db.close() }
+    }
     private class ApiCall(val ticket: ApiSession, val key: String)
     private inner class ApiFixture(var answer: suspend (Int) -> BootstrapHttpResult = { accepted() }) : BootstrapGateway {
         val calls = mutableListOf<ApiCall>()
