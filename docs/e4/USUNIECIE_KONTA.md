@@ -27,6 +27,11 @@ wbudowanym logowaniem SQL/parametrów. Jawne hasło oraz weryfikator nie mogą
 być argumentami procesu ani wpisem w logu. Weryfikator w pg_authid/backupie
 pozostaje poufny; dodatkowy audyt/proxy/trace oraz produkcyjny TLS weryfikuje
 O3 według powyższej instrukcji.
+Kontrola provisioningu obejmuje prawa tabel i kolumn, także PUBLIC oraz
+dziedziczenie roli operatora. Niepożądany grant kolumnowy kończy provisioning
+błędem i rollbackiem jego zmian; zastanego grantu nie usuwa. Administrator
+odbiera potwierdzony grant i ponawia helper zgodnie z instrukcją O3. Dozwolony
+SELECT account_deletion_jobs jest zachowany.
 
 ```json
 [{"issuer":"https://identity.example/realms/calorie",

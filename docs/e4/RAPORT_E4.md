@@ -1,6 +1,60 @@
 # Raport synchronizacji E4 - osoba 2
 
-## Poprawka bezpieczeństwa provisioningu operatora
+## Poprawka efektywnych praw kolumnowych operatora
+
+11 października 2026. Kontynuacja `codex/backend-e4-synchronizacja` /
+[PR #12](https://github.com/Roseru/aplikacja-mobilna/pull/12), bez merge E4 i E5.
+[Odbiór koordynatora](https://github.com/Roseru/aplikacja-mobilna/pull/12#issuecomment-6103576990)
+head `aa4d97c9fd91bcc4985d43f582087c2559af748b` potwierdził ochronę sekretu
+i znalazł P2: has_table_privilege pomija osobny grant kolumny. Dawne 1110 PASS
+nie obejmowały tej regresji. Prace wykonano w dedykowanym checkoutcie, bez
+zmiany gałęzi lub plików głównego katalogu oraz checkoutu koordynatora.
+
+Root sam: 3 przewidziane FAIL nowego testu na starym SQL, fresh × LOGIN/PUBLIC/
+operator-role, rzeczywisty odczyt prywatnej wagi. Autor testów: 36 przewidzianych
+FAIL (4 prawa × 3 źródła × fresh/E3 przed/E3 po 0011), 9 realnych odczytów
+SELECT także po exit=0 starego helpera. Niezależny recenzent: 6 własnych probes
+SELECT/UPDATE × 3 źródła oraz red nowej regresji. Table privilege=false,
+any-column privilege=true. UPDATE odmawia 42501 przez private_account_guard;
+nie zgłaszamy potwierdzonej mutacji. Dawna kontrola provisioningu akceptowała
+taki grant UPDATE.
+
+Minimalna zmiana SQL dodaje has_any_column_privilege dla INSERT/UPDATE/REFERENCES
+oraz SELECT w dotychczasowej gałęzi prywatnego odczytu. Uwzględnia efektywne
+granty LOGIN, PUBLIC i NOLOGIN operatora, nie tylko pg_attribute. Stare kontrole
+praw tabel pozostają; SELECT account_deletion_jobs jest dozwolony, jego I/U/
+REFERENCES są zabronione także kolumnowo. Odmowa wycofuje własne zmiany helpera,
+zachowuje stare hasło, memberships, ACL i wszystkie dane. Zastanego grantu nie
+usuwa: administrator świadomie REVOKE konkretne prawo, po czym ponawia helper.
+
+Lokalnie root: **600 unit + 571 PostgreSQL 17.11 = 1171 PASS**, bez skip/fail.
+70 nowych przypadków obejmuje 36 weights, 18 job I/U/REFERENCES, 6 job SELECT,
+6 rollback nowego LOGIN, 3 odmowy rzeczywistego UPDATE i globalne logi/SCRAM.
+Pełne wcześniejsze 33 server-log i 30 LOGIN/CLI/ACL pozostają zaliczone.
+Ruff/format 135, E0/kontrakty/OpenAPI/zasoby, wheel/sdist oraz zainstalowany
+wheel Python -I poza checkoutem: PASS.
+Root w tej poprawce nie deklaruje lokalnego Keycloak lub buildów obrazu;
+wymagamy nowego CI dokładnego końcowego head, także po ostatnich dokumentach.
+
+Niezależny nie-autor: **600 unit + 70 column + 33 server-log + 30 LOGIN/CLI/ACL
+= 733 PASS**, plus 36 własnych fixed probes. Sam sprawdził zachowane hasło/
+membership/ACL/dane po odmowie, nowe połączenia, REVOKE/retry, wyjątek job SELECT
+i globalne logi. **9,5/10, brak nierozwiązanych P1/P2 lub istotnych uwag**.
+Autor testów osobno 133 PG PASS; jego pierwszy 101 PASS/2 ERROR dotyczył
+systemowego TEMP, pełne 33 ponowił z własnym basetemp bez osłabienia testów.
+Recenzent także ponowił unit we własnym basetemp po błędach zastanego TEMP.
+
+SCRAM wymagany również dla administratora; globalne statement/duration/error/
+parameter logging aktywne. **0 hasła i 0 weryfikatora** w logach klienta/serwera.
+Ochrona 17 ustawień sesji, lokalne libpq i transakcja hasła/ACL są zachowane.
+Migracje 0001–0011, API, epoka, Android i źródła Random Data nie są zmienione.
+[O3](KONFIGURACJA_O3.md) opisuje dokładny REVOKE i brak automatycznej naprawy
+zastanego dostępu; pozostają dotychczasowe ograniczenia DBA/OS/audytu/proxy/TLS
+oraz odrębny odbiór Room/APK/WorkManager i produkcyjnego restore.
+
+## Historia poprawki sekretu provisioningu operatora
+
+Poniższy odbiór na aa4d97c nie obejmował znalezionych później praw kolumnowych.
 
 Data: 11 października 2026. Kontynuacja `codex/backend-e4-synchronizacja` /
 [PR #12](https://github.com/Roseru/aplikacja-mobilna/pull/12), bez merge i E5.

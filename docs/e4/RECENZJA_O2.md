@@ -1,6 +1,37 @@
 # Niezależny odbiór E4 - osoba 2
 
-## Odbiór poprawki bezpieczeństwa provisioningu 11 października 2026
+## Niezależny odbiór poprawki praw kolumnowych
+
+Recenzent `e4_column_review` nie jest autorem SQL, testów ani dokumentacji.
+Sam zachował baseline aa4d97c i odtworzył 6 przypadków SELECT/UPDATE × LOGIN/
+PUBLIC/operator-role na swoim PG17/SCRAM (również admin). Stary helper exit=0,
+table privilege=false, any-column=true. Trzy real LOGIN czytały prywatną wagę;
+UPDATE odmawiał 42501 i nie zmieniał danych. Osobno nowy test ze starym helperem
+dał oczekiwany FAIL, bez sekretu/DSN/raw logu w diagnostyce.
+
+Po minimalnej zmianie sam wykonał 36 fixed probes czterech praw, trzech źródeł
+i fresh/E3 przed/po 0011: odmowa zachowała hasło, membership, database/column
+ACL i hash wszystkich tabel; stary sekret działał, odrzucony nowy nie. Po
+administracyjnym REVOKE helper działał. Dozwolony job SELECT zachowany; jego
+kolumnowe I/U/REFERENCES nie otrzymały wyjątku.
+
+Własna regresja: **600 unit + 70 column + 33 real server-log/SCRAM + 30 real
+operator LOGIN/CLI/ACL = 733 PASS**, bez skip/fail. Nie jest to deklaracja
+wykonania całych 571 PG ani lokalnego Keycloak. Pierwsze błędy zastanego
+systemowego TEMP ponowił z własnym basetemp; bez zmiany źródeł/uprawnień TEMP.
+Ruff z jawnym backend config i diff check PASS. Własne procesy zatrzymane.
+
+Globalne intensywne logi aktywne; 0 sekretów/weryfikatorów. Sprawdzono minimalne
+has_any_column_privilege wraz z zachowaniem wcześniejszych kontroli tabel,
+PUBLIC/dziedziczenie, rollback własnych zmian i zachowanie zastanego grantu.
+O3/usunięcie konta zgodne z wykonaniem: administrator identyfikuje i świadomie
+odbiera konkretny grant, dopiero wtedy ponawia helper. **9,5/10, brak
+nierozwiązanych P1/P2 lub istotnych uwag**. Ocena wynika z własnych dowodów,
+nie z samego odczytu kodu. Końcowy raport i CI pozostają osobnym odczytem.
+
+## Historyczny odbiór ochrony sekretu
+
+Poniższe 9,5/1110 nie obejmowały późniejszego P2 uprawnień kolumnowych.
 
 Recenzent `e4_fix_review` nie jest autorem helpera, SQL, testów ani dokumentów.
 Sam zachował stary SQL z `c9bdac0` i odtworzył **3 linie jawnego sekretu w logu

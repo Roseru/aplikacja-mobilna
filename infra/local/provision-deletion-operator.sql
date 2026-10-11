@@ -64,8 +64,11 @@ BEGIN
                WHERE n.nspname='app' AND c.relkind IN ('r','p','v','m','f')
                  AND (has_table_privilege(login_name,c.oid,
                        'INSERT,UPDATE,DELETE,TRUNCATE,REFERENCES,TRIGGER,MAINTAIN')
+                      OR has_any_column_privilege(login_name,c.oid,
+                           'INSERT,UPDATE,REFERENCES')
                       OR (c.relname<>'account_deletion_jobs'
-                          AND has_table_privilege(login_name,c.oid,'SELECT')))) THEN
+                          AND (has_table_privilege(login_name,c.oid,'SELECT')
+                               OR has_any_column_privilege(login_name,c.oid,'SELECT'))))) THEN
       RAISE EXCEPTION 'Operator has unexpected effective table privileges';
     END IF;
     IF to_regprocedure('app.begin_account_deletion(uuid,uuid,integer)') IS NOT NULL THEN

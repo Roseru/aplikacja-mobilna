@@ -46,6 +46,29 @@ migratora ani członkostwa API/worker. Przy nieoczekiwanych efektywnych prawach
 kończy się błędem i rollbackiem. Hasło jest celowo ustawiane/rotowane przy każdym
 uruchomieniu; nie są zmieniane dane aplikacji ani epoka.
 
+Kontrola obejmuje również [efektywne prawa kolumnowe](https://www.postgresql.org/docs/17/functions-info.html#FUNCTIONS-INFO-ACCESS-TABLE)
+SELECT/INSERT/UPDATE/REFERENCES przez has_any_column_privilege, dla LOGIN,
+PUBLIC i odziedziczonych grantów NOLOGIN roli operatora. Sam has_table_privilege
+nie wykrywa oddzielnego grantu kolumny. Wyjątek SELECT account_deletion_jobs
+pozostaje; nie obejmuje jego kolumnowych INSERT/UPDATE/REFERENCES.
+
+Odmowa provisioningu cofa wyłącznie jego własne zmiany. Zastane ACL, stare
+hasło i dane pozostają takie jak przed próbą, więc błędny dostęp nie jest
+automatycznie naprawiany. Administrator najpierw identyfikuje efektywny grant,
+odbiera konkretną niepożądaną zgodę jej rzeczywistemu odbiorcy i ponawia helper.
+Przykłady przetestowanego REVOKE dla potwierdzonego grantu weight_kg — wybierz
+polecenie odpowiadające jego źródłu:
+
+```sql
+REVOKE SELECT (weight_kg) ON app.weights FROM PUBLIC;
+REVOKE SELECT (weight_kg) ON app.weights FROM calorie_app_deletion_operator;
+```
+
+Dla grantu bezpośredniego użyj poprawnie cytowanej, potwierdzonej nazwy LOGIN;
+dla INSERT/UPDATE/REFERENCES odbierz dokładnie stwierdzone prawo kolumny.
+Nie zastępuj diagnozy zbiorczym odbieraniem cudzych praw. Po REVOKE helper
+ponownie sprawdza efektywne ACL i rotuje hasło w tej samej transakcji.
+
 ## Ochrona hasła i weryfikatora operatora
 
 Poprzednie SELECT length/format wysyłały jawne hasło do serwera. ECHO/QUIET
