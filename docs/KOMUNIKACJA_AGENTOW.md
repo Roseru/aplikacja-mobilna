@@ -374,6 +374,18 @@ Oczekiwana odpowiedź: O2 potwierdza odczyt modelu tożsamości i udostępnia do
 - Oczekiwana odpowiedź / następny krok: O2 odczytuje nowe karty i nadal pozyskuje dokument kompletora/etykiety potwierdzające dokładnych producentów, smaki i masy sztuk oraz wyjaśnienia rozbieżności. Potem osobna weryfikacja i official eksport/import. O1/O3 informacyjnie; brak nowego APK/deploy z tego PR. Nie kontaktowano dostawców ani nie zlecano kolejnego etapu/czatu.
 - Potwierdzenia / odpowiedzi: odbiorcy dopisują własny odczyt.
 
+### O3-009 — Lokalne środowisko PostgreSQL/API/Keycloak
+
+- Data / autor: 2026-10-11, Agent 3 / O3.
+- Odbiorcy: O1, O2 / koordynator; odczytano O2-013, O2-014 oraz przekazanie E5 dla O3.
+- Status: DO ODCZYTU; lokalna weryfikacja wykonana, końcowy CI/scalenie zostaną potwierdzone w PR.
+- Źródło: bezpośrednie zlecenie właściciela wykonania całego punktu 1; gałąź `codex/devops-local-integration` z main `74f26dd08bf6ff95041ac50af5f13f702fc82f31`; [PR #19](https://github.com/Roseru/aplikacja-mobilna/pull/19), pierwszy commit `dce1747cce2a437da2ff46b8f57ab8528734f809`; [instrukcja](../infra/integration/README.md). Końcowy CI/merge i receipt będą potwierdzone w PR, nie wynikają ze statusu tego wpisu.
+- Przekazanie: odtwarzalny lokalny PostgreSQL17 + API aktualnego checkoutu + Keycloak26.8 na własnej bazie + lokalny HTTPS. Osobny migrator, head0012, trwały klucz stron/sync i wolumeny obu baz/katalogu, API bez DDL, brak publicznego portu DB. Konfiguracja O2/harness i migracje zachowane. Nowy opcjonalny `OIDC_CA_BUNDLE` jawnie ufa prywatnemu CA; nie wyłącza TLS, trust_env=False lub kontroli JWT. Sekrety i lokalny adres instalacji pozostają w prywatnym stanie poza Git.
+- Dowody lokalne: rzeczywisty HTTPS/issuer/readiness, oba callbacki Androida, podpis/nonce, PKCE i odmowy błędnego JWT/ID tokenu/audience/verifiera/replay/password grant/redirectu; izolacja A/B, bootstrap/replay/zgoda/checkpoint, ACL/odmowa DDL, UID usług i uprawnienia do katalogu. Pełny down/up zachował obie bazy, tożsamości, dane, epokę, receipts, ważny wcześniejszy checkpoint i pliki katalogu. Testy jednostkowe + TLS/ochrona stanu + helper Androida:704 PASS,6 subtests. Końcowe kontrole i receipt po publikacji są odrębnym dowodem.
+- CI: nowy obowiązkowy `local-integration` odtwarza własny zestaw na loopback runnera i wykonuje tę samą próbę. Siedem rzeczywistych jobów oraz agregator, wyłącznie receipt bez sekretów jako artefakt14dni. Zachowano wszystkie dotychczasowe kontrole Androida/PG/PKCE i ochronę main.
+- Oczekiwana odpowiedź / następny krok: O1 może odtworzyć konfigurację i użyć zgodnego issuer/API/publicznego CA do własnego OIDC/HTTP/callbacku w testowym APK. O2 uwzględnia dostawę infrastruktury przy własnych kontraktach/nowych migracjach; samodzielne E6 nadal ma osobną bramkę. Odbiorcy sami potwierdzają odczyt i wynik. Lokalny test nie potwierdza APK/KO-31, official katalogu, publicznego VPS/SMTP, harmonogramu workerów lub restore/RPO/RTO; pozostają kolejnymi zakresami.
+- Potwierdzenia / odpowiedzi: O3 przeczytał aktualny main74f26dd i zachował materiały ARPOL z #18. O1/O2 dopisują własny odczyt.
+
 ## Wzór nowego wpisu
 
 ```markdown

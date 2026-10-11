@@ -1,5 +1,8 @@
 # Backend E1–E5-O2-R - osoba 2
 
+Pełny lokalny zestaw API + PostgreSQL + Keycloak, osobny migrator i HTTPS:
+[instrukcja środowiska integracyjnego](../infra/integration/README.md).
+
 FastAPI na Pythonie 3.13, PostgreSQL 17, SQLAlchemy 2 i Alembic. E2 rozszerza fundament E1 o katalog, racje, kontrolowany import, eksport i publiczne odczyty wyłącznie opublikowanego official. Dane demo przekazujemy jako plik. E3 dostarcza OIDC, bootstrap, profil/cele/zgody, kalkulator, modele prywatne i chronione produkty; sync należy do E4; ich granice określają [kontrakty E0](../contracts/README.md).
 
 Instrukcje E3: [raport](../docs/e3/RAPORT_E3.md), [integracja O1](../docs/e3/INTEGRACJA_O1.md), [konfiguracja O3](../docs/e3/KONFIGURACJA_O3.md), [rzeczywisty Keycloak/PKCE](../infra/local/keycloak/README.md).

@@ -31,9 +31,10 @@ jobs:
         with:
           version: '0.9.5'
       - run: uv sync --project backend --locked
-      - run: uv run --project backend --locked ruff check --config backend/pyproject.toml backend tools/offline_catalog tools/sync_client infra/local tools/android_ci.py tools/tests/test_android_ci.py
-      - run: uv run --project backend --locked ruff format --check --config backend/pyproject.toml backend tools/offline_catalog tools/sync_client infra/local tools/android_ci.py tools/tests/test_android_ci.py
+      - run: uv run --project backend --locked ruff check --config backend/pyproject.toml backend tools/offline_catalog tools/sync_client infra/local infra/integration tools/android_ci.py tools/tests/test_android_ci.py
+      - run: uv run --project backend --locked ruff format --check --config backend/pyproject.toml backend tools/offline_catalog tools/sync_client infra/local infra/integration tools/android_ci.py tools/tests/test_android_ci.py
       - run: uv run --project backend --locked python -m pytest backend/tests/unit
+      - run: uv run --project backend --locked python -m pytest infra/integration/tests --tb=short
       - run: uv build backend
       - name: Verify the installed wheel outside the checkout
         run: |
@@ -333,9 +334,42 @@ jobs:
             android/app/build/ci/offline-*.txt
           if-no-files-found: error
           retention-days: 14
+  local-integration:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5
+      - uses: actions/setup-python@ece7cb06caefa5fff74198d8649806c4678c61a1 # v6
+        with:
+          python-version: '3.13'
+      - uses: astral-sh/setup-uv@94527f2e458b27549849d47d273a16bec83a01e9 # v7
+        with:
+          version: '0.9.5'
+      - run: uv sync --project backend --locked
+      - name: Start local integration stack on isolated loopback
+        run: >-
+          uv run --project backend --locked python infra/integration/run.py up
+          --state "${{ runner.temp }}/calorie-integration"
+          --host 127.0.0.1 --project calorie-integration-ci
+      - name: Verify real HTTPS PKCE, API, privileges and persistence across down/up
+        run: >-
+          uv run --project backend --locked python infra/integration/run.py verify
+          --state "${{ runner.temp }}/calorie-integration"
+      - name: Upload secret-free infrastructure receipt
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
+        with:
+          name: local-integration-receipt
+          path: ${{ runner.temp }}/calorie-integration/verification.json
+          if-no-files-found: error
+          retention-days: 14
+      - name: Stop only this stack, retain private runner state until job cleanup
+        if: always()
+        run: >-
+          uv run --project backend --locked python infra/integration/run.py down
+          --state "${{ runner.temp }}/calorie-integration"
   ci-required:
     if: always()
-    needs: [contracts, quality, postgres, keycloak-pkce, android-build, android-device]
+    needs: [contracts, quality, postgres, keycloak-pkce, android-build, android-device, local-integration]
     runs-on: ubuntu-latest
     steps:
       - name: Require actual successful checks
