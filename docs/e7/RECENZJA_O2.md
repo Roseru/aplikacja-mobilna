@@ -1,4 +1,5 @@
 # Niezależny odbiór backendu E7-O2 - osoba 2
+**Aktualizacja zakresu:** historyczna ocena 9,3/10 poniżej nie obejmowała poprawnych opcjonalnych metadanych REST i nie zamykała P2 zgłoszonego później przez koordynatora. Nowy, odrębny odbiór źródła 2646cf4 znajduje się na końcu dokumentu.
 
 11 października 2026 r. Recenzent: niezależny nieautor implementacji E7.
 Werdykt: **9,3/10; zero otwartych istotnych P1/P2. E7-O2 gotowe do osobnego odbioru koordynatora.**
@@ -108,3 +109,114 @@ własnego odbioru technicznego; exact head/base i zdalne kontrole potwierdza wyk
 oraz koordynator. Nie scalałem PR, nie rozpocząłem E8/E9 i nie uruchamiałem automatyzacji.
 Własne Keycloak, oba klastry PG i procesy prób zostały zatrzymane. Przed zapisem
 tego raportu tracked diff był pusty; jedyna zmiana recenzenta to ten dokument.
+
+## Nowy odbiór P2 otoczki REST — source 2646cf4
+
+11 października 2026 r. Nowa ocena niezależnego nieautora: **9,3/10; zero otwartych
+istotnych P1/P2 w odebranym backendzie E7-O2. Zgłoszony P2 parsera zamknięty.**
+Wynik wynika z poniższej nowej reprodukcji i testów, a nie z przeniesienia starej
+oceny. Odbiór koordynatora oraz kontrole zdalne końcowego head pozostają osobne.
+
+### Dokładne źródła i zakres zmiany
+
+Sprawdzony zamrożony commit: **2646cf440182e2bdca769f61ff3acbd2c04c2f5a**;
+baza **75c4414a1aab22094c9425fa3dda890782e92370**; ta sama gałąź
+codex/backend-e7-analiza-zdjec / [PR #28](https://github.com/Roseru/aplikacja-mobilna/pull/28).
+Własny checkout był detached na tym commicie. Odczytano raport koordynatora,
+aktualny profil REST, master i komunikację, również O1-014 z 42763f8 bez merge.
+
+Porównanie z poprzednim 9b2fb7e741c8c833f210a42de276c30364229076 obejmuje sześć
+plików: parser, dwa nowe pliki testów i trzy dokumenty. Jedyną zmianą runtime
+jest protocol.py. Migracje, SQL/ACL, transport, limity, food schema, HTTP API
+oraz autoryzacja pozostają bajtowo niezmienione. Historyczne pełne 928 PG,
+28 real OIDC i wcześniejsze probes są wcześniejszym dowodem tych zakresów;
+nie przedstawiam ich jako nowego pełnego uruchomienia na 2646cf4.
+
+Nowe próby wykonałem osobiście na własnym PG17/SCRAM, prywatnym storage,
+loopback REST i rzeczywistych procesach transportu. Nie używałem usług autora,
+Google ani obrazów użytkowników. Nie zmieniałem runtime lub testów autora.
+Własne niezależne oracles znajdują się poza Git; jedyną śledzoną zmianą recenzenta
+jest ten dokument.
+
+### Reprodukcja przed zmianą i wynik po zmianie
+
+Na dokładnym 9b2fb7e baseline z poprawnym food, STOP i usage zwracał ok.
+Dodanie samego thoughtSignature zwracało provider_parts_invalid; tokenCount,
+finishMessage, avgLogprobs oddzielnie oraz kombinacja zwracały
+provider_result_invalid. Własna realna próba PG/REST na tym źródle również
+odtworzyła failed analysis zamiast poprawnej propozycji: **1 FAIL, 12 deselected**
+w uruchomionym oracle akceptacji. Jest to dowód usterki przed poprawką, nie PASS.
+Hash starego parsera: d48e0faaeb0fcf035989ede858b33d561106ab928273af6741b4d7aca849cc80.
+
+Na nowym źródle wszystkie 16 kombinacji czterech opcjonalnych pól dały identyczny
+food i usage jak baseline. Pojedynczy countTokens i generateContent zostały
+zachowane, bez retry. Auxiliary tokenCount 0 lub 10240 nie zastąpił trusted
+usageMetadata 128 + 64 + 16 = 208. Bez usage i przy odmowie pozostała
+konserwatywna rezerwacja 10240; nie pojawił się zwrot limitu za te metadane.
+
+| Nowy zakres, dokładne 2646cf4 | Faktyczny wynik |
+|---|---|
+| Pełne unit backendu | 1258 PASS, 75,48 s |
+| Własne niezależne parser oracles | 116 PASS, 0,48 s |
+| Własne PG/storage/fake REST oracles | 13 PASS, 38,87 s |
+| Dostarczone nowe metadata PG i pełne runtime confirm | 21 + 11 = 32 PASS w jednym run, 89,11 s |
+| Jakość i kontrakty | Ruff PASS, format 253 plików PASS; E0 89 valid / 32 invalid / 18 scenarios / 384 lokalne linki; diff-check PASS |
+| Pakiet i instalacja | Wheel/sdist: 127 plików runtime identycznych ze źródłem; installed parser -I oraz installed smoke poza checkoutem PASS |
+
+Nowe wykonane zakresy mają zero skipów. Nie sumuję nakładających się testów
+ani nie zaliczam reprodukcji sprzed poprawki. Jedynym ostrzeżeniem pytest była
+istniejąca deprecacja Starlette/httpx. Przy końcowym skrypcie installed pierwsza
+próba zapisu miała błędny względny katalog; parser nie został wtedy uruchomiony.
+Po wskazaniu własnej bezwzględnej ścieżki właściwy isolated parser zakończył się PASS.
+
+### Adwersaria i brak wycieku
+
+Własne oracles obejmowały standard i URL base64, padding oraz brak paddingu,
+empty bytes, granicę 64 KiB encoded, złe pad bits, mieszane alfabety, format,
+typy oraz rozmiary. Sprawdzono tokenCount jako ścisły int 0..10240,
+finishMessage jako UTF-8 do 4096 bajtów oraz skończone avgLogprobs od
+-binary64max do 0. Bool, null, nieprawidłowe typy i przekroczenia zostały
+odrzucone; jawne thought=false przyjęte, thought=true lub inne typy odrzucone.
+
+Unknown fields nadal odmówione na poziomie response/candidate/content/part
+oraz wewnątrz food/item, także gdy mają nazwy nowych metadanych. Pozostały
+odmowy function/tool/image/file/code, split parts, safety, truncation,
+niepoprawnego food/usage, duplikatów JSON, głębokości i rozmiaru. Podpisy są
+opaque bytes: parser sprawdza wyłącznie kodowanie i limit, nie interpretuje
+ich treści i nie przenosi ich do własnego wyniku.
+
+Unikalne canaries podpisu i finishMessage nie wystąpiły w wyniku IPC, API,
+receipts, właściwych tabelach DB ani przechwyconych logach/stdout/stderr.
+W realnych próbach po zakończeniu nie pozostał plik zdjęcia ani physical permit.
+Replay create receipt zachował jeden job bez powtórnego codec/staging/provider.
+Confirm i standard sync w 32 dostarczonych testach zachowały poprzedni kontrakt;
+metadane nie tworzą Meal/ProductDraft przed standard sync.
+
+Weryfikacja opierała się na pierwotnej dokumentacji
+[GenerateContent/Part/Candidate](https://ai.google.dev/api/generate-content),
+[podpisów w częściach tekstowych](https://ai.google.dev/gemini-api/docs/generate-content/thought-signatures#signatures-in-non-functioncall-parts)
+i [kodowania bytes w ProtoJSON](https://protobuf.dev/programming-guides/json/).
+Obecne null pozostaje świadomie odrzucone przez udokumentowany ścisły profil E7;
+pola te nie rozszerzają schematu food ani nie stają się podstawą księgowania.
+
+### Manifest i zamknięcie usług
+
+Nowy manifest **266 śledzonych plików** obejmuje runtime, migracje, testy,
+pyproject/uv.lock, smoke/OpenAPI, kontrakty, lokalną infrastrukturę i narzędzie
+referencyjne. SHA-256: **e9848d7393cc349991e8f045cc614a24db32004291a76dd8fd078e7a05f19fc9**.
+Nowy parser SHA-256: **6ff61bd944655bb7fbf788c2b3c56668b885e2fca0b7590504ac3ccd8955135d**.
+Własne parser probes: **caf4f0860d58eb30c2fc2990d28c5e3d64c60e680cb3678d77ce18d8b949d33f**;
+własne PG probes: **7639c7bc8e8b5860b8ab8de42e521c7c4b4698e431d30fab7c4627794eac2734**.
+Manifest, logi, oracles, wcześniejsza recenzja/diff i poświadczenia pozostają prywatne.
+
+Własny PG15687 został zatrzymany przez pg_ctl po sprawdzeniu, że data directory
+leży wyłącznie w prywatnym katalogu recenzenta. Zweryfikowano zamknięcie własnych
+portów 15687/15787/18687/19687; wcześniejsze Keycloak i fresh-bootstrap PG nie
+były uruchamiane ponownie. Serwery REST i dzieci transportu zostały zamknięte
+przez teardown prób. Nie zatrzymywano cudzych procesów.
+
+Nowy wynik zamyka wskazane P2 otoczki REST w technicznym odbiorze nieautora.
+Nie stanowi potwierdzenia nowego zdalnego CI, publikacji, merge, jakości modelu
+ani pełnego E7-R. **E7-R pozostaje WAITING_EXTERNAL**; datowane wejścia O3,
+corpus co najmniej 30 zdjęć oraz osobne odbiory O1/O3/E5-C/KO-31 pozostają
+zgodnie z masterem. Historyczna granica WebP opisana wcześniej nie zmieniła się.

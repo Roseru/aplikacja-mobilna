@@ -19,13 +19,30 @@ Dowody autora tej poprawki:88 nowych unit parsera +85 wcześniejszych w właści
 module =173 PASS; pełne1258 unit PASS. Nowe21 actual loopback REST/subprocess/PG
 (7 dodatnich/14 odmów) PASS: count10240 i generation896 wyłącznie z usage,
 1 count+1 generate bez retry, brak metadanych w DB/API/receipts/logs, brak Meal/Draft
-przed explicit confirm→standard sync. Powtórek nie sumujemy. Dwa wcześniejsze
+przed explicit confirm→standard sync. Na utrwalonym `2646cf4` cała wcześniejsza
+właściwa regresja E7 ma129 PG PASS (runtime/quota/process/maintenance/migration/
+worker-login/acceptance),174,63s, bez skipów. Własny testowy PG zatrzymano.
+Powtórek nie sumujemy. Dwa wcześniejsze
 błędy own harnessu downstream (display oraz legalne matches.candidates) i długi
 pytest ID przekraczający Windows environment limit są poprawione; nie były PASS.
 
-Stan bieżący: naprawa przygotowana do nowego niezależnego odbioru oraz CI nowego
-head. Poprzednia ocena9,3 i wcześniejsze zielone CI nie zamykają tego P2. Wymagany
-jest ponowny odbiór koordynatora; historyczne dowody poniżej zachowano.
+Nowy [niezależny odbiór](RECENZJA_O2.md#nowy-odbiór-p2-otoczki-rest--source-2646cf4)
+na `2646cf440182e2bdca769f61ff3acbd2c04c2f5a` / base `75c4414a1aab22094c9425fa3dda890782e92370`:
+**9,3/10, zero otwartych istotnych P1/P2; zgłoszony P2 zamknięty**. Własne
+1258 unit,116 parser oracles,13 real PG/fake REST oraz32 dostarczone PG/runtime
+PASS bez skipów. Własny installed parser -I/smoke i127 exact package files PASS;
+manifest266 `e9848d7393cc349991e8f045cc614a24db32004291a76dd8fd078e7a05f19fc9`.
+Recenzent sam odtworzył przed/po także w realnym workerze, nie zmieniał kodu
+i zatrzymał własne usługi. Poprzednia identyczna ocena9,3 i stare zielone CI nie
+służą zamknięciu P2; zachowano je jako dowody historyczne.
+
+Poprawka trafia do tego samego PR28 bez merge. Końcowy commit dokumentacji
+nie zmienia executable tree odebranego źródła; aktualne final head/base oraz
+rzeczywiste osiem wyników nowego CI są odczytywane osobno i publikowane
+w opisie [PR28](https://github.com/Roseru/aplikacja-mobilna/pull/28). E7-O2 jest
+zgłoszone do ponownego odbioru koordynatora. E7-R WAITING_EXTERNAL i działania
+O1/O3 pozostają osobne; nie wykonano Google/key/corpus/billing/produkcji,
+E8/E9 ani automatyzacji.
 
 Zakres: E7-O2 z [mastera](../MASTER_PROMPT_E7.md), odczytanego w całości
 z `485fb2e959f4d4b74548e6ac6ffe4e129cd5e68f`. Gałąź
