@@ -2,8 +2,15 @@
 # Run from android/. The emulator action supplies ANDROID_SERIAL.
 set -euo pipefail
 
-adb shell cmd connectivity airplane-mode enable
+# Configure only the ephemeral test device. Android 15 otherwise permits Wi-Fi
+# overrides in airplane mode; a delayed system callback can restore a network.
+# Establish the policy before toggling airplane mode, including saved APM state.
+adb shell cmd connectivity airplane-mode disable
+adb shell settings put global airplane_mode_radios cell,bluetooth,wifi,nfc,wimax
+adb shell settings put global airplane_mode_toggleable_radios bluetooth
+adb shell settings put secure wifi_apm_state 0
 adb shell svc wifi disable
+adb shell cmd connectivity airplane-mode enable
 adb shell svc data disable
 
 is_offline() {
@@ -27,6 +34,10 @@ record_offline_state() {
     {
         printf 'airplane_mode_on='
         adb shell settings get global airplane_mode_on
+        printf 'airplane_mode_toggleable_radios='
+        adb shell settings get global airplane_mode_toggleable_radios
+        printf 'wifi_apm_state='
+        adb shell settings get secure wifi_apm_state
         printf 'wifi_on='
         adb shell settings get global wifi_on
         adb shell cmd wifi status | sed -n '1p'
