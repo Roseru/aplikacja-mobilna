@@ -1,5 +1,9 @@
 # Kontekst współpracy
 
+## Integracja O1 — merge sesji / CI profilu, 12 października 2026
+
+Aktualizacja 12.10.2026/O1: PR26 scalony normalnym merge na main c59e6d68d18bbafd157a9d1383aae8d36fa1b893 po osmiu success dla42763f8 i zerze reviews/comments. Zgodnie z docs/WORKFLOW.md odbior rzeczywistego bootstrapu/GET pozostaje kolejnym etapem integracyjnym; merge nie zamyka E3/KO-31. PR31 skierowano na main, nastepnie dolaczono main zwyklym merge; zrodla android/app pozostaly identyczne z przetestowanym0522824. Wczesniejsze uwagi o bazie zależnej/nieuruchamianiu CI sa historyczne; nowy push uruchamia wymagane CI PR do main.
+
 ## Kontynuacja O1 — odczyt profilu 0.8.2, 11 października 2026
 
 - Kod `0522824990a35c0b54bec9cceaa4d3a8e9c7b069` / `codex/android-odczyt-profilu` / [PR31](https://github.com/Roseru/aplikacja-mobilna/pull/31) draft, baza codex/android-sesja /42763f8/PR26. Zachować kolejność: odbiór i merge PR26, retarget nowego PR na main, ponowna integracja. Nie scalać zależnego PR do oczekującej sesji.

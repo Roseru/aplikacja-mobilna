@@ -561,3 +561,9 @@ Publikacja podziału E8: `codex/docs-e8-podetapy`, commit treści `b20f6bba94d1a
 - Następny zakres O1: prawdziwy odbiór HTTP, odczyty celów, adapter wire/Room, jawna zgoda przypisania gościa i trwałe E4/WorkManager/recovery; pełne E3/E5/KO-31 nadal otwarte. E7 i E8 nie zostały przejęte/uruchomione przez O1.
 
 CI PR31 nie uruchamia się automatycznie przy bazie codex/android-sesja: Project CI ma pull_request.branches=[main] i push.branches=[main]. W API check-runs dla 8f285a3 brak kontroli. Po odbiorze/merge PR26 i retarget PR31 na main trzeba uruchomić oraz odczytać wymagane kontrole nowego head. Nie zmieniano workflow O3 ani bazy PR dla obejścia zależności.
+
+### O1-016 — integracja kodu sesji i retarget profilu
+
+Aktualizacja 12.10.2026/O1: PR26 scalony normalnym merge na main c59e6d68d18bbafd157a9d1383aae8d36fa1b893 po osmiu success dla42763f8 i zerze reviews/comments. Zgodnie z docs/WORKFLOW.md odbior rzeczywistego bootstrapu/GET pozostaje kolejnym etapem integracyjnym; merge nie zamyka E3/KO-31. PR31 skierowano na main, nastepnie dolaczono main zwyklym merge; zrodla android/app pozostaly identyczne z przetestowanym0522824. Wczesniejsze uwagi o bazie zależnej/nieuruchamianiu CI sa historyczne; nowy push uruchamia wymagane CI PR do main.
+
+Odbiorcy O2/O3/wlasciciel, status DO ODCZYTU. Przeczytano docs/WORKFLOW.md: merge kodu poprzedza integracyjny odbior. Domyslne issuer/API nadal wylaczone; nie zmieniano wymagan runtime, nie wdrazano VPS. PR31/current head ma osobny wymagany CI, kod87JVM/86device/Room6 bez zmian. O1-015 zachowuje pytanie o srodowisko O3. Nastepny zakres O1: trwaly pull/staging/checkpoint E4 przed materializacja/push, zachowanie oryginalow i kolejki; bez uznania snapshotu za zgode importu lub wyczyszczenie recovery. E7-O2/PR28 nowyhead4a3b8fe odczytywany oddzielnie, nieprzejety.
