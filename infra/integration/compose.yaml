@@ -1,0 +1,99 @@
+name: calorie-integration
+
+x-backend: &backend
+  image: ${INTEGRATION_PROJECT}-backend:local
+  build:
+    context: ../../backend
+    args:
+      PYTHON_IMAGE: public.ecr.aws/docker/library/python:3.13-slim@sha256:70729b46c69b4f1e97c4822c1af3df53a1476cf5ddc6c087c0c10bc3a5678c2f
+  security_opt: [no-new-privileges:true]
+  cap_drop: [ALL]
+
+services:
+  postgres:
+    image: public.ecr.aws/docker/library/postgres:17@sha256:2d2b8998d31037bf721cfdf764d76ba74171b4fab3431b7f72c27c56ddbdf9e3
+    env_file: ${INTEGRATION_STATE}/postgres.env
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+      - ../local/init-db.sh:/docker-entrypoint-initdb.d/10-calorie.sh:ro
+    healthcheck:
+      test: [CMD-SHELL, "pg_isready -U postgres -d postgres"]
+      interval: 5s
+      timeout: 3s
+      retries: 30
+    restart: unless-stopped
+    security_opt: [no-new-privileges:true]
+
+  storage-init:
+    <<: *backend
+    user: "0:0"
+    cap_add: [CHOWN, DAC_OVERRIDE, FOWNER]
+    command: [.venv/bin/python, -c, "import os; os.chmod('/catalog',0o700); os.chown('/catalog',10001,10001)"]
+    volumes: [catalog_data:/catalog]
+
+  migrate:
+    <<: *backend
+    env_file: ${INTEGRATION_STATE}/migrate.env
+    command: [.venv/bin/alembic, upgrade, head]
+    depends_on:
+      postgres: {condition: service_healthy}
+    restart: "no"
+
+  api:
+    <<: *backend
+    env_file: ${INTEGRATION_STATE}/api.env
+    volumes:
+      - ${INTEGRATION_STATE}/tls/ca.pem:/run/trust/ca.pem:ro
+      - catalog_data:/catalog:ro
+    depends_on:
+      migrate: {condition: service_completed_successfully}
+      storage-init: {condition: service_completed_successfully}
+    healthcheck:
+      test: [CMD, .venv/bin/python, -c, "import urllib.request; urllib.request.urlopen('http://127.0.0.1:8000/health/ready',timeout=2)"]
+      interval: 5s
+      timeout: 3s
+      retries: 30
+    read_only: true
+    tmpfs: [/tmp]
+    restart: unless-stopped
+
+  keycloak:
+    image: ${INTEGRATION_PROJECT}-keycloak:local
+    build:
+      context: .
+      dockerfile: Keycloak.Dockerfile
+    env_file: ${INTEGRATION_STATE}/keycloak.env
+    command: [start, --optimized, --import-realm]
+    volumes:
+      - ${INTEGRATION_STATE}/realm:/opt/keycloak/data/import:ro
+    depends_on:
+      postgres: {condition: service_healthy}
+    healthcheck:
+      test: [CMD-SHELL, "bash -c 'exec 3<>/dev/tcp/127.0.0.1/9000; printf \"GET /health/ready HTTP/1.0\\r\\n\\r\\n\" >&3; head -1 <&3 | grep -q \" 200 \"'"]
+      interval: 5s
+      timeout: 3s
+      retries: 60
+      start_period: 30s
+    security_opt: [no-new-privileges:true]
+    cap_drop: [ALL]
+    restart: unless-stopped
+
+  gateway:
+    image: caddy:2.10.2@sha256:c3d7ee5d2b11f9dc54f947f68a734c84e9c9666c92c88a7f30b9cba5da182adb
+    ports:
+      - "${INTEGRATION_HOST}:${INTEGRATION_PORT}:8443"
+    volumes:
+      - ./Caddyfile:/etc/caddy/Caddyfile:ro
+      - ${INTEGRATION_STATE}/tls/server.pem:/run/tls/server.pem:ro
+      - ${INTEGRATION_STATE}/tls/server.key:/run/tls/server.key:ro
+    depends_on:
+      api: {condition: service_healthy}
+      keycloak: {condition: service_healthy}
+    read_only: true
+    tmpfs: [/tmp, /data, /config]
+    security_opt: [no-new-privileges:true]
+    restart: unless-stopped
+
+volumes:
+  postgres_data:
+  catalog_data:

@@ -1,5 +1,9 @@
 # Lokalne bazy E1 - osoba 2
 
+Kompletny lokalny zestaw PostgreSQL + API + Keycloak z HTTPS i testem restartu:
+[środowisko integracyjne O3](../integration/README.md). Poniższy Compose nadal służy
+do niezależnego uruchamiania samej bazy; nie przenosi ani nie zastępuje istniejących wolumenów.
+
 `compose.yaml` uruchamia PostgreSQL 17 z portem wyłącznie na localhost. `init-db.sh` zakłada oddzielne bazy `calorie_app`, `keycloak` i jednorazową bazę `calorie_test`, a także role migratora, API, workera i Keycloak. API/worker mają DML bez praw DDL; rola API nie ma dostępu do bazy tożsamości. Prawa domyślne ustawia właściciel schematu, więc obejmują przyszłe migracje uruchamiane tą samą rolą.
 
 Skopiuj `.env.example` do `.env` i ustal hasła. Następnie z katalogu repozytorium:
