@@ -23,7 +23,8 @@ data class SessionBinding(val owner: LocalOwnerEntity, val lease: OwnerLease)
 data class SessionView(val binding: SessionBinding? = null, val busy: Boolean = false,
     val pendingLogin: Boolean = false, val configured: Boolean = false, val hasSession: Boolean = false,
     val message: String? = null, val apiConfigured: Boolean = false, val bootstrapBusy: Boolean = false,
-    val serverLinked: Boolean = false, val requiresRecovery: Boolean = false)
+    val serverLinked: Boolean = false, val requiresRecovery: Boolean = false,
+    val profileBusy: Boolean = false, val serverProfile: ProfileRead? = null)
 
 /** Serializes durable decisions, not network waits. A callback/refresh is fenced by a captured
  * owner lease AND an operation ID, so logout and A→B→A cannot apply an old response.
@@ -31,12 +32,15 @@ data class SessionView(val binding: SessionBinding? = null, val busy: Boolean = 
 class SessionController internal constructor(private val db: CalorieDatabase, private val vault: SessionVault,
     private val gateway: OidcGateway, private val issuer: String, private val applicationId: String,
     private val now: () -> Long = System::currentTimeMillis,
-    private val bootstrapGateway: BootstrapGateway? = null) {
+    private val bootstrapGateway: BootstrapGateway? = null,
+    private val profileGateway: ProfileGateway? = null) {
     private val owners = LocalOwnerStore(db)
     private val mutex = Mutex()
     private var record = JSONObject()
     private var operation: String? = null
     private var bootstrapOperation: String? = null
+    private var profileOperation: String? = null
+    private var serverProfile: ProfileRead? = null
     private var sessionRevision = 0L
     private val bootstraps = AccountBootstrapStore(db)
     private val mutable = MutableStateFlow(SessionView(configured = issuer.isNotEmpty()))
@@ -65,7 +69,8 @@ class SessionController internal constructor(private val db: CalorieDatabase, pr
         val server = db.bootstrapDao().binding(current.lease.storageScope)
         mutable.value = SessionView(current, configured = issuer.isNotEmpty(), pendingLogin = record.has("pending"), hasSession = fresh,
             message = message, apiConfigured = bootstrapGateway != null, bootstrapBusy = bootstrapOperation != null,
-            serverLinked = server != null, requiresRecovery = server?.requiresRecovery == true)
+            serverLinked = server != null, requiresRecovery = server?.requiresRecovery == true,
+            profileBusy = profileOperation != null, serverProfile = serverProfile)
     }
     suspend fun start() = mutex.withLock {
         if (mutable.value.binding != null) return@withLock
@@ -106,8 +111,10 @@ class SessionController internal constructor(private val db: CalorieDatabase, pr
             requireHttps(issuer)
             val lease = owners.currentLease()
             bootstrapOperation = null
+            profileOperation = null
+            serverProfile = null
             operation = id
-            mutable.value = mutable.value.copy(busy = true, bootstrapBusy = false, message = null)
+            mutable.value = mutable.value.copy(busy = true, bootstrapBusy = false, profileBusy = false, serverProfile = null, message = null)
             lease
         } } catch (error: CancellationException) { throw error }
         catch (_: Exception) { mutable.value = mutable.value.copy(message = "Logowanie jest niedostępne. Dziennik działa offline."); return null }
@@ -196,6 +203,8 @@ class SessionController internal constructor(private val db: CalorieDatabase, pr
         // Local logout removes all tokens and pending codes; it does not delete any diary.
         operation = null
         bootstrapOperation = null
+        profileOperation = null
+        serverProfile = null
         forget()
         mutable.value = mutable.value.copy(binding = null)
         owners.selectIfCurrent(captured, guest.id)
@@ -223,7 +232,8 @@ class SessionController internal constructor(private val db: CalorieDatabase, pr
                 validateDiscovery(checkNotNull(state.authorizationServiceConfiguration), issuer)
                 operation = id
                 registered = true
-                mutable.value = mutable.value.copy(busy = true, message = null)
+                serverProfile = null
+                mutable.value = mutable.value.copy(busy = true, serverProfile = null, message = null)
                 Triple(current, state, SessionIdentity(session.getString("issuer"), session.getString("subject")))
             }
             val tokens = withTimeout(30_000) { gateway.tokens(captured.second.createTokenRefreshRequest()) }
@@ -284,6 +294,7 @@ class SessionController internal constructor(private val db: CalorieDatabase, pr
         val id = UUID.randomUUID().toString()
         val lease = try { mutex.withLock {
             if (bootstrapOperation != null || operation != null || record.has("pending")) return
+            if (profileOperation != null) return
             val current = binding()
             if (current.owner.kind != "account" || sessionFor(current) == null) {
                 publish("Zaloguj się, aby połączyć konto z serwerem. Dziennik działa offline."); return
@@ -293,7 +304,8 @@ class SessionController internal constructor(private val db: CalorieDatabase, pr
                 publish("Serwer jest zajęty. Ponów za co najmniej ${(retryAt - now() + 999) / 1000} s. Dziennik działa offline."); return
             }
             bootstrapOperation = id
-            mutable.value = mutable.value.copy(bootstrapBusy = true, message = null)
+            serverProfile = null
+            mutable.value = mutable.value.copy(bootstrapBusy = true, serverProfile = null, message = null)
             current.lease
         } } catch (error: CancellationException) { throw error }
         catch (_: Exception) {
@@ -375,6 +387,118 @@ class SessionController internal constructor(private val db: CalorieDatabase, pr
             else publish()
         } catch (_: Exception) {
             mutable.value = mutable.value.copy(bootstrapBusy = false, message = "Połączenie nie zostało potwierdzone. Dziennik pozostaje lokalny.")
+        }
+    }
+
+    /** Explicit online preview. Never upserts a local profile, recalculates goals or ACKs outbox. */
+    suspend fun readProfile() {
+        val gateway = profileGateway ?: return
+        val id = UUID.randomUUID().toString()
+        val capturedBinding = try { mutex.withLock {
+            if (profileOperation != null || bootstrapOperation != null || operation != null || record.has("pending")) return
+            val current = binding()
+            if (current.owner.kind != "account" || sessionFor(current) == null) {
+                publish("Zaloguj się, aby odczytać profil z serwera."); return
+            }
+            val server = db.bootstrapDao().binding(current.lease.storageScope)
+            if (server == null || server.requiresRecovery) {
+                publish("Najpierw połącz konto i uzgodnij stan serwera. Dziennik pozostaje lokalny."); return
+            }
+            val retryAt = sessionFor(current)!!.optLong("apiRetryAt")
+            if (retryAt > now()) {
+                publish("Serwer jest zajęty. Ponów za co najmniej ${(retryAt - now() + 999) / 1000} s."); return
+            }
+            profileOperation = id
+            serverProfile = null
+            mutable.value = mutable.value.copy(profileBusy = true, serverProfile = null, message = null)
+            current.lease to server
+        } } catch (error: CancellationException) { throw error }
+        catch (_: Exception) {
+            mutable.value = mutable.value.copy(message = "Odczyt jest niedostępny. Dziennik pozostaje lokalny.")
+            return
+        }
+        val lease = capturedBinding.first
+        val server = capturedBinding.second
+        try {
+            val fresh = mutex.withLock {
+                owners.requireCurrent(lease)
+                val state = AuthState.jsonDeserialize(checkNotNull(sessionFor(binding())).getString("authState"))
+                (state.accessTokenExpirationTime ?: 0) > now() + 30_000
+            }
+            if (!fresh) check(refreshFor(lease))
+            var ticket = apiSession(lease)
+            var refreshed = false
+            while (true) {
+                val captured = ticket
+                suspend fun ready() {
+                    check(profileOperation == id)
+                    bootstraps.requireReady(lease, server.contextRevision)
+                }
+                val result = gateway.get(captured) { withApiSession(captured) { ready() } }
+                if (result.status == 200) {
+                    val response = ProfileReadProtocol.parse(result.body)
+                    withApiSession(captured) {
+                        ready()
+                        // GET me has no account_generation; it cannot replace the bootstrap mapping.
+                        require(response.accountId == server.accountId)
+                        if (response.syncEpoch != server.syncEpoch) {
+                            db.bootstrapDao().update(server.copy(requiresRecovery = true,
+                                contextRevision = Math.addExact(server.contextRevision, 1)))
+                            profileOperation = null
+                            publish("Stan serwera się zmienił. Lokalny dziennik zachowany; wymagane uzgodnienie danych.")
+                        } else {
+                            serverProfile = response
+                            profileOperation = null
+                            publish("Odczytano profil serwerowy. Lokalny profil i cel kalorii zachowane.")
+                        }
+                    }
+                    return
+                }
+                val code = if (result.status in setOf(429, 503)) "" else BootstrapHttpProtocol.errorCode(result.body)
+                withApiSession(captured) { ready() }
+                if (result.status == 401 && code == "unauthorized" && !refreshed) {
+                    refreshed = true
+                    check(refreshFor(lease))
+                    ticket = apiSession(lease)
+                    withApiSession(ticket) { ready() }
+                    continue
+                }
+                val message = when (result.status) {
+                    401 -> "Sesja wymaga ponownego logowania. Dziennik działa offline."
+                    403 -> if (code == "account_bootstrap_required") "Serwer wymaga ponownego połączenia konta."
+                        else "Serwer nie pozwala odczytać profilu tego konta."
+                    409 -> "Stan serwera wymaga ponownego sprawdzenia połączenia. Dane lokalne zachowane."
+                    429, 503 -> {
+                        val seconds = BootstrapHttpProtocol.retrySeconds(result.retryAfter, now())
+                        val retryAt = Math.addExact(now(), Math.multiplyExact(seconds, 1000))
+                        withApiSession(captured) {
+                            ready()
+                            val session = checkNotNull(sessionFor(binding()))
+                            persist(copyRecord().put("session", JSONObject(session.toString()).put("apiRetryAt", retryAt)))
+                        }
+                        "Serwer jest zajęty. Ponów za co najmniej $seconds s. Dziennik działa offline."
+                    }
+                    else -> "Nie udało się odczytać profilu serwerowego. Dziennik działa offline."
+                }
+                mutex.withLock {
+                    if (profileOperation == id) { owners.requireCurrent(lease); profileOperation = null; publish(message) }
+                }
+                return
+            }
+        } catch (error: CancellationException) {
+            withContext(NonCancellable) { finishProfile(id, lease) }; throw error
+        } catch (_: Exception) { finishProfile(id, lease) }
+    }
+    private suspend fun finishProfile(id: String, lease: OwnerLease) = mutex.withLock {
+        if (profileOperation != id) return@withLock
+        profileOperation = null
+        serverProfile = null
+        try {
+            if (owners.currentLease() == lease) publish("Odczyt nie został potwierdzony. Możesz ponowić; dziennik zachowany.")
+            else publish()
+        } catch (_: Exception) {
+            mutable.value = mutable.value.copy(profileBusy = false, serverProfile = null,
+                message = "Odczyt nie został potwierdzony. Dziennik pozostaje lokalny.")
         }
     }
 }

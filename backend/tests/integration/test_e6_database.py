@@ -434,7 +434,8 @@ def test_empty_downgrade_reupgrade_preserves_existing_graph(database):
         old_tables = [
             n
             for n in inspect(connection).get_table_names(schema="app")
-            if not n.startswith("community_") and n != "alembic_version"
+            if not n.startswith(("community_", "ai_"))
+            and n not in {"alembic_version", "product_search_metadata"}
         ]
         before = {
             n: list(
@@ -491,7 +492,7 @@ def test_downgrade_atomic_refusal_detects_shared_orphan_artifact(database):
             assert sorted(inspect(connection).get_table_names(schema="app")) == schema
             assert (
                 connection.scalar(text("SELECT version_num FROM app.alembic_version"))
-                == "0014_catalog_search"
+                == "0015_e7_ai"
             )
     finally:
         # Privileged fixture cleanup removes only this synthetic orphan, retaining all old rows.
