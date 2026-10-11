@@ -1,0 +1,13 @@
+# Raport motywacji E8.1 + E8.2 - osoba 2
+
+12 października 2026. Status: implementacja i odbiór lokalny w toku; brak końcowego PASS nieautora/CI. Branch codex/backend-e8-motywacja-ranking, source/base af8df9af9bfd32aa8145eac6114fdfc7261a8477. PR jeszcze nieutworzony. Własny managed worktree, główny historyczny E4 i Random Data bez zmian.
+
+Dostarczane są regularity_v1/rangi/cztery odznaki, atomowy hook źródła, prywatne trwałe projekcje, bounded restartowalny backfill, osobny worker, ranking opt-in z epoch affirmation i opaque live keyset cursor, ACL/purge/restore. [Decyzje](DECYZJE_MOTYWACJA.md), [O1](INTEGRACJA_O1_MOTYWACJA.md), [O3](KONFIGURACJA_O3_MOTYWACJA.md) opisują kompatybilność i granice. Migracja0016 po0015, stare0001–0015 niezmienne; Consent/ProfileRead oraz6wire entities/ACK/snapshoty pozostają zgodne.
+
+Aktualne realne dowody autora: świeża0016 na własnym PG17.11 PASS;21 źródło/worker PG PASS (rollback/replay/przeniesienie/minimal witness/SQL-Decimal/time oraz2CLIprocess/restart/correction/multi-zone),31 ranking/consent PG/HTTP PASS w34,22s obejmujące10103uczestników102strony,1,1,3,opaque ownership/epoch/generation/TTL/quota/restore-provenance i bariery. Test dużego rankingu seeduje syntetyczne projekcje i knownUTCprofile administracyjnie; tylko powtarzaną dawną walidację strefy omija przy seed, wszystkie nowe E8constraints/FK/owner/revision pozostają. To osobny oracle query, nie dowód naliczania z10103dzienników.
+
+Pierwsze porażki fixture opisujemy jawnie: zgoda UPDATEbezrevision, metadata Alembic w rowsetcompare, ambiwalentne typy generate_series, helperE4 kasujący ration snapshot. Naprawiono harness, nie uznano przerwanych/powtarzanych przebiegów za dodatkowePASS. Z wykrytych runtime przypadków poprawiono Toronto1919midnightgap oraz precyzję dzielenia/iloczynu nutrition_v1. Pełne1368unit pierwszego przebiegu:1366PASS/2FAIL dotyczyły jeszcze niewygenerowanego OpenAPI i whitelistydwóch nowo wdrożonych ścieżek; artefakty/whitelistpoprawiono i wymagany nowy przebieg. Nie sumujemy nachodzących testów subagentów z testami autora.
+
+Nowy pełny przebieg w dokładnym uv.lock:1368 unit PASS/73,59s; poprawione OpenAPI/whitelist zaliczone. Osobno59 właściwych E4push/E5PG PASS/63,73s, Alembic metadata check PASS, E0 PASS(95valid/35invalid/18scenarios/427links), lint/format/diff PASS.
+
+Do ukończenia: pozostałe pełnePG/legacyregresje, actual provisionCLI, duża historia/actualrestore, installed-I/wheel/sdist/E0, niezależny nieautor≥9/10/zeroP1P2 i final exact-head/base8CI. Własne usługi aktualnie pracują wyłącznie na syntetycznych źródłach; zostaną zatrzymane przed final. Nie wykonujemy E8.3/4/E9, Google/billing/produkcji lub harmonogramów.

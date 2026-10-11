@@ -115,6 +115,8 @@ def test_generated_api_only_claims_implemented_operations(client):
         "/api/v1/me/weights",
         "/api/v1/me/diary-days",
         "/api/v1/me/statistics",
+        "/api/v1/me/motivation",
+        "/api/v1/ranking",
         "/api/v1/products/matches",
         "/api/v1/community/products",
         "/api/v1/community/products/{id}",
