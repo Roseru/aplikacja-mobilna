@@ -164,7 +164,7 @@ z analizą/provenance i operacje outbox w pierwotnym zakresie konta. Ponowna obs
 tej samej decyzji nie nadaje nowych UUID-ów ani kolejnych operacji. Następnie
 standardowy sync E4, z aktualnym checkpointem/epoką, wysyła upsert
 `product_draft` dla brakujących szkiców oraz `meal`, wykorzystując zwrócone ID
-i stare payloady. Nowe encje używają `base_revision=0` zgodnie z sync-v1.
+i stare payloady. Nowe encje używają `base_revision=null` zgodnie z sync-v1; aktualizacja istniejącej encji wymaga jej dodatniej serwerowej rewizji. Wewnętrzne `base_revision=0` wywołań domenowych backendu nie jest wartością wire operacji sync.
 Room/outbox i potwierdzenia standardowego sync pozostają źródłem stanu dziennika.
 
 Create, worker i confirm nie tworzą `Meal` ani `ProductDraft` na serwerze.
