@@ -19,7 +19,7 @@ Stan odczytany przez O1, 10 października 2026 r. Każda osoba aktualizuje swój
 |---|---|---|---|
 | O1 — Android, Kotlin, Room | Android 0.7 / Room 6: trwały bootstrap i niezmienne cele, gość offline poza main | Poprawki reviews #1/#6 i odbiór #1 → #6 → #7 → #9; O2 E3/E4, O3 środowisko/CI | [PR #9](https://github.com/Roseru/aplikacja-mobilna/pull/9), commit `ce6972c`; O1-008 |
 | O2 — Python, PostgreSQL, API | E4 O2 scalone na 623c6aa, osobny odbiór 103 PG i CI main 1180 PASS; master E5-O2-R przygotowany | Publikacja i odbiór promptu → jawne zlecenie istniejącemu E5. Official C i integracja O1/O3 nadal otwarte | [PR #12](https://github.com/Roseru/aplikacja-mobilna/pull/12), O2-008, [master E5](MASTER_PROMPT_E5.md) |
-| O3 — DevOps, CI/CD, serwer | Odbiór oczekujących PR-ów na polecenie właściciela; E2 i dokumentacja scalone, Android sprawdzony lokalnie: 65 JVM + 52/52 API 35 | CI Androida, testowy Keycloak i wersjonowana dostawa APK pozostają osobnymi zadaniami; review opcjonalne według O3-005 | O3-006, [PR #9](https://github.com/Roseru/aplikacja-mobilna/pull/9), [CI backendu](https://github.com/Roseru/aplikacja-mobilna/blob/main/.github/workflows/backend.yml) |
+| O3 — DevOps, CI/CD, serwer | CI Androida/APK w PR #10, połączone z kontrolami E3–E5/Keycloak; scalenie po końcowym zielonym CI na polecenie właściciela | O1: OIDC/HTTP/Room/WorkManager/KO-31; O2: katalog i bramka pełnego E5; O3: uzgodnienie HTTPS/restore | O3-008, [PR #10](https://github.com/Roseru/aplikacja-mobilna/pull/10) |
 
 ## Wpisy
 
@@ -336,6 +336,32 @@ Oczekiwana odpowiedź: O2 potwierdza odczyt modelu tożsamości i udostępnia do
 - Następny krok: recenzja mastera → docs PR/CI/merge → kontrola main → ponowne list_threads/list_projects i jeden nowy czat E6-O2. Przed create sprawdzamy etap + odebrany SHA + istniejącego wykonawcę; po nieznanym wyniku odtwarzamy stan. ID rzeczywistego czatu/znacznik/cursor zapisujemy po zwróceniu ich przez narzędzia, bez duplikatu. Wykonawca użyje własnego worktree, nie głównego E4.
 - Koordynacja: istniejący heartbeat `koordynacja-e4-do-e10` został wznowiony w czacie źródłowym z korektą bramki; stary watcher E5 pozostaje PAUSED. Jeden koordynator i jeden główny wykonawca O2, bez równoległego zlecenia C. Pauza dopiero przy konkretnej blokadzie następnego niezależnego potrzebnego rezultatu; pełny E5 WAITING_EXTERNAL sam jej nie uzasadnia. Bez zmian starej procedury ochrony Git/review/testów/final-head CI ani bramek wydania.
 - Potwierdzenia / odpowiedzi: koordynator odczytał źródło upoważnienia i aktualny main/komunikację. O1/O3 sami dopisują odczyt/wyniki; E6 nie zlecono przez sam plik.
+
+### O3-007 — CI Androida i dostawa debug APK
+
+- Data / autor: 2026-10-10, Agent 3 / O3.
+- Odbiorcy: O1 / O2.
+- Status: DO ODCZYTU.
+- Źródło: osobne zlecenie właściciela; gałąź `codex/devops-android-ci`, [PR #10](https://github.com/Roseru/aplikacja-mobilna/pull/10) do aktualnego main. Stan publikacji i zdalne wyniki sprawdzać na bieżącym head PR.
+- Przekazanie: dodano `android-build` (APK/lint/JVM) i `android-device` (pełny validation na API 35 Google APIs x86_64 offline) do istniejącego workflow. `ci-required` wymaga sukcesu obu oraz contracts/quality/postgres/keycloak-pkce; failure/cancelled/skipped blokują wynik. Nie dodano filtrowania ścieżek: także PR dokumentacji wykonuje wszystkie wymagane kontrole.
+- Dostawa: APK debug, manifest z rzeczywistą wersją/applicationId/commitem i SHA-256 oraz osobne raporty JVM/lint/urządzenia, retencja 14 dni. Commit artefaktu to dokładny testowany checkout, w PR integracja z bazą. Instrukcja pobrania jest w [android/README.md](../android/README.md#github-actions-i-pobieranie-apk).
+- Dowody lokalne: actionlint PASS, Ruff PASS, testy kontroli raportów i wersji APK PASS; agregator odrzuca failure/cancelled/skipped. Walidator E0 PASS, 130 lokalnych linków. Stan pełnego builda i zdalnego przebiegu będzie podany w PR; sam ten wpis nie potwierdza sukcesu zdalnego CI.
+- Profil i obserwacja do O1: CI używa Pixel 6 / API 35 (1080 × 2400 / density 420), zgodnie z wcześniejszym pełnym lokalnym odbiorem 52/52 O3. Próba Pixel 2 na `81402fa` wykonała 52 testy bez skipów; nie przeszły `DiaryFlowTest.createPrivateProductAndDeclareDayComplete` (brak node `day-complete`) i `importedE2RationPreservesExactQuantityAcrossRecreationAndEdit` (timeout UI). O1 powinien zbadać i ustabilizować przepływy na mniejszym ekranie; O3 nie zmienia testów ani kodu aplikacji i nie traktuje wyniku Pixel 6 jako odbioru wszystkich ekranów. Raport nieudanej próby: [CI 38076029720](https://github.com/Roseru/aplikacja-mobilna/actions/runs/38076029720).
+- Ograniczenia: aplikacja i wersja Room bez zmian. APK jest debug, nie wydaniem produkcyjnym. Brak OIDC/HTTP/sync w APK, wdrożenia serwera i podpisywania release pozostaje jawny. Testowy Keycloak/PKCE backendu dostarczył już O2; jego wymagany job zachowano. Obecny PR nie zmienia ochrony main ani opcjonalnego review.
+- Oczekiwana odpowiedź / następny krok: O1 może po zaliczeniu całego CI pobrać artefakt i potwierdzić instrukcję dostawy; O2 zachowuje istniejące kontrole backendu. Właściciel 11.10 zlecił domknięcie i scalenie PR po pełnym zielonym CI aktualnej integracji oraz przekazanie wyniku O1/O2.
+
+
+### O3-008 — Integracja CI Androida z backendem E3–E5 i przekazanie O1/O2
+
+- Data / autor: 2026-10-11, Agent 3 / O3.
+- Odbiorcy: O1, O2 / koordynator; odniesienie O2-012 i O3-007.
+- Status: DO ODCZYTU; scalenie zależy od końcowego CI i jest zlecone przez właściciela.
+- Źródło: [PR #10](https://github.com/Roseru/aplikacja-mobilna/pull/10), `codex/devops-android-ci`, baza main `a5da8307d5fdf8b53eb8f47015abb86f6dcf880a` (w tym scalony master E6-O2 / PR #17).
+- Przekazanie: połączono workflow i dziennik z E3/E4/E5-R bez zmian aplikacji, backendu lub migracji. Zachowano realny `keycloak-pkce`, nowe kontrole Ruff O2 i wszystkie wpisy dziennika. Jeden `ci-required` wymaga sześciu rzeczywistych wyników: contracts, quality, postgres, keycloak-pkce, android-build i android-device. APK debug, manifest commit/version/hash i raporty są artefaktami CI z retencją 14 dni.
+- Konfiguracja offline: na head9144a417 próba1 miała51/52 PASS (timeout DiaryFlowTest.kt:154), próba2 miała52/52 PASS, lecz Wi-Fi przywróciło aktywną sieć. Obie próby pozostały niezaliczone. Sama próba parametru `-feature -Wifi` nie blokowała lokalnego ponownego połączenia; zastąpiono ją polityką Android15: airplane_mode_radios obejmuje Wi-Fi, toggleable_radios zawiera tylko Bluetooth, wifi_apm_state=0, a Wi-Fi wyłączamy przed aktywacją trybu. Lokalna próba `svc wifi enable` pozostała z disabled Wi-Fi i bez aktywnej sieci. Zasada wynika z [WifiSettingsStore AOSP](https://android.googlesource.com/platform/packages/modules/Wifi/+/refs/heads/android15-release/service/java/com/android/server/wifi/WifiSettingsStore.java). Testy aplikacji i ścisły guard offline bez zmian. [Dowody prób](https://github.com/Roseru/aplikacja-mobilna/pull/10#issuecomment-6107172702); O1 otrzymuje również nową obserwację timeoutu na Pixel6.
+- Dowody / ograniczenia: końcowy head, przebieg CI, wyniki XML/raportów, hash APK i wynik po merge O3 potwierdzi w komentarzu PR po odczycie rzeczywistych wyników. Starszy zielony przebieg nie potwierdza tej integracji. APK nadal 0.7.1 / Room6 offline; Pixel6/API35 to profil bazowy, dwa problemy Pixel2 pozostają do O1. To domknięcie CI, nie odbiór całego E5/KO-31 ani środowiska HTTPS/restore O3.
+- Oczekiwana odpowiedź / następny krok: O1 pobiera aktualny main i APK, wdraża lub planuje własny zakres OIDC/HTTP/Room/WorkManager oraz wspólne wektory E3–E5 i KO-31 według [przekazania E5](e5/INTEGRACJA_O1.md); potwierdza odczyt i własny wynik. O2 / koordynator uwzględnia dostawę CI, zachowując WAITING_EXTERNAL pełnego E5: official katalog oraz APK/infrastruktura nadal wymagają odrębnych dowodów. Sam merge #10 nie jest odbiorem pełnego E5/E6. Samodzielny backend E6-O2 ma osobną bramkę/master/zlecenie koordynatora zgodnie z aktualnym O2-013 i PR #17; braki APK/official/HTTPS nie blokują samej tej implementacji. O3 nie potwierdza odbioru za O1/O2.
+- Potwierdzenia / odpowiedzi: O3 przeczytał O2-012 oraz korektę bramki O2-013 na maina5da830. O1/O2 dopisują własny odczyt; końcowy wynik dostawy zostanie potwierdzony w PR.
 
 ### O2-014 — Źródła składników ARPOL WZ 1 i WZ 4 WEGE
 
