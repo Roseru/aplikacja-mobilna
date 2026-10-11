@@ -158,7 +158,7 @@ def frozen_table_rows(connection):
     tables = [
         name
         for name in inspect(connection).get_table_names(schema="app")
-        if name not in {"alembic_version", "product_search_metadata"}
+        if name not in {"alembic_version", "product_search_metadata"} and not name.startswith("ai_")
     ]
     return {
         name: list(

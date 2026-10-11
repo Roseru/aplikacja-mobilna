@@ -105,3 +105,34 @@ def test_e7_durable_evidence_refuses_before_ddl_with_exact_rowsets(e7, database,
         migrate("downgrade", "0014_catalog_search")
     assert error.value.orig.sqlstate == "23514"
     assert graph(admin, names) == before
+
+
+@pytest.mark.parametrize("privilege", ["maintain", "definer_execute"])
+@pytest.mark.parametrize("grantee", ["calorie_app_ai_worker", "PUBLIC"])
+def test_hostile_effective_ai_acl_refuses_upgrade_atomically(e7, database, privilege, grantee):
+    admin, migrate, _ = database
+    migrate("downgrade", "0014_catalog_search")
+    target = (
+        "MAINTAIN ON TABLE app.meals"
+        if privilege == "maintain"
+        else ("EXECUTE ON FUNCTION app.begin_account_deletion(uuid,uuid,integer)")
+    )
+    try:
+        with admin.begin() as connection:
+            connection.exec_driver_sql("GRANT " + target + " TO " + grantee)
+        before = graph(admin)
+        with pytest.raises(DBAPIError) as error:
+            migrate("upgrade", "head")
+        assert error.value.orig.sqlstate == "23514"
+        assert graph(admin, list(before)) == before
+        with admin.connect() as connection:
+            assert connection.scalar(text("SELECT version_num FROM app.alembic_version")) == (
+                "0014_catalog_search"
+            )
+            assert not any(
+                name.startswith("ai_") for name in inspect(connection).get_table_names(schema="app")
+            )
+    finally:
+        with admin.begin() as connection:
+            connection.exec_driver_sql("REVOKE " + target + " FROM " + grantee)
+        migrate("upgrade", "head")

@@ -38,11 +38,14 @@ def upgrade():
     op.execute("""DO $$ BEGIN IF has_schema_privilege('calorie_app_ai_worker','app','CREATE')
       OR EXISTS(SELECT 1 FROM pg_tables t WHERE schemaname='app' AND
         (has_table_privilege('calorie_app_ai_worker',format('%I.%I',schemaname,tablename),
-          'INSERT,UPDATE,DELETE,TRUNCATE,REFERENCES,TRIGGER') OR
+          'INSERT,UPDATE,DELETE,TRUNCATE,REFERENCES,TRIGGER,MAINTAIN') OR
          has_any_column_privilege('calorie_app_ai_worker',format('%I.%I',schemaname,tablename),
           'INSERT,UPDATE,REFERENCES') OR
          (tablename NOT IN ('alembic_version','installation_state') AND
           has_any_column_privilege('calorie_app_ai_worker',format('%I.%I',schemaname,tablename),'SELECT'))))
+      OR EXISTS(SELECT 1 FROM pg_proc p JOIN pg_namespace n ON n.oid=p.pronamespace
+        WHERE n.nspname='app' AND p.prosecdef
+        AND has_function_privilege('calorie_app_ai_worker',p.oid,'EXECUTE'))
       THEN RAISE EXCEPTION 'AI worker has incompatible preexisting privileges'
       USING ERRCODE='23514'; END IF; END $$""")
     # Frozen versioned SQL resources belong to this migration, not mutable runtime.

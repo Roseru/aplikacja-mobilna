@@ -81,9 +81,9 @@ osobny Keycloak wskazany jawnie daje prawdziwe JWT/PKCE.
 | Quota/ACL: oba purpose, last-slot RPM/TPM/RPD races, UTC10/1000, rolling minute,336h, Pacific8dat/12DST, missing usage, raw DML denials, legacy isolation/token hash | 68 PASS real PG17/SCRAM |
 | Process/crash: claim races, third IO, expired lease/stale fence, pre/post count/generate marker, HTTP acceptance, reply-before-commit, autonomous child watchdog/fencing | 13 PASS real PG/storage/HTTP/processes |
 | Cały Keycloak/PKCE, w tym6 E7 actual access-token/ownership/no-user/ID-token cases | 28 PASS real Keycloak26.8/JDK25, własny H2 i PG17 |
-| Migration: pełne wypełnione E4–E6 rowsets przez0014↔0015 i4 atomic durable E7 guards; wcześniejsza E6 DB regresja | 5 nowych +48 wcześniejszych PASS |
+| Migration: pełne wypełnione E4–E6 rowsets przez0014↔0015,4 durable guards i4 hostile MAINTAIN/SECURITY DEFINER ACL guards; wcześniejsza E6 DB regresja | 9 nowych +48 wcześniejszych PASS |
 | Maintenance: TTL/unlink/ACK/grace/lock/purge z żywym IO, quiet retention i rzeczywisty dump/restore | 11 PASS real PG/storage/process/PG17 tools |
-| Minimalny LOGIN provisioning, replay/rotation, szerokie role, raw ACL/column jobs/private CONNECT, zachowany pool/unknown ledger | 10 PASS PG17/SCRAM;25 helper unit są już w1170 |
+| Minimalny LOGIN provisioning, replay/rotation, szerokie role, raw ACL/column jobs/private/PUBLIC CONNECT, zachowany pool/unknown ledger | 11 PASS PG17/SCRAM;25 helper unit są już w1170 |
 | Pełna regresja PG E0–E7, maintenance/restore i LOGIN provision | trwa końcowy odbiór; nie zastępuj wcześniejszym partial PASS |
 | E0 contracts / Ruff / diff-check / package resources | 89valid/32invalid/18scenarios/363links PASS; Ruff244 PASS;127 exact source/wheel/sdist/installed files i38 locked runtime versions PASS |
 
@@ -94,6 +94,14 @@ miał błędny LOGIN operatora zamiast NOLOGIN i został poprawiony wyłącznie 
 Nowa E6 publication assertion początkowo oczekiwała201 zamiast istniejącego200;
 poprawiono test. Test TTL wykrył JSON null zamiast SQL NULL w terminalnej ścieżce;
 runtime naprawiony, bez fałszywego przypisania unknown. Lokalny partial run nie jest PASS całości.
+
+Pierwszy zdalny run38163918429:6jobs success, postgres8failed/915PASS i ci-required failure.
+Stary Unicode rowset proof z granicy0013 porównywał nowe defaultAI tabele po head;
+poprawiono jego zakres, zachowując cały osobny E7 graph proof. Fresh bootstrap
+zostawiał PUBLIC CONNECT do calorie_test, więc minimalny helper prawidłowo odmówił
+7 dodatnich prób. Odebrano PUBLIC w bootstrapie i dodano realny atomic PUBLIC CONNECT
+regression; nie osłabiono helpera. Poprawki37PG oraz dodatkowe31PG ACL/runtime PASS
+są właściwymi kontrolami, nie zamiennikiem następnego pełnego finalnego CI.
 
 ## Nieautor i CI
 

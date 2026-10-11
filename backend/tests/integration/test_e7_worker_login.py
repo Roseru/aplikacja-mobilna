@@ -478,3 +478,35 @@ def test_connect_grants_only_owned_target_and_keeps_keycloak_inaccessible(instal
     else:
         forbidden.close()
     require(connect_denied, "Private identity DB did not deny actual CONNECT")
+
+
+def test_public_connect_to_another_owned_database_blocks_provision_atomically(installation):
+    data = installation
+    private = "e7_login_" + secrets.token_hex(7) + "_public_probe_test"
+    login, password = new_login(data), secrets.token_urlsafe(40)
+    with session(data, database="postgres") as connection:
+        utility(connection, "CREATE DATABASE {} OWNER calorie_app_migrator", private)
+        data["databases"].append(private)
+        utility(connection, "REVOKE ALL ON DATABASE {} FROM PUBLIC", private)
+        utility(connection, "GRANT CONNECT ON DATABASE {} TO PUBLIC", private)
+    try:
+        provision(data, login, password, success=False)
+        with session(data) as connection:
+            require(
+                connection.execute(
+                    "SELECT count(*) FROM pg_roles WHERE rolname=%s", (login,)
+                ).fetchone()
+                == (0,),
+                "PUBLIC CONNECT refusal created a login",
+            )
+    finally:
+        with session(data, database="postgres") as connection:
+            utility(connection, "REVOKE ALL ON DATABASE {} FROM PUBLIC", private)
+    provision(data, login, password)
+    with session(data) as connection:
+        require(
+            not connection.execute(
+                "SELECT has_database_privilege(%s,%s,'CONNECT')", (login, private)
+            ).fetchone()[0],
+            "Private target remained accessible after PUBLIC revoke",
+        )

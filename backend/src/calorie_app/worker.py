@@ -47,7 +47,7 @@ def main(argv=None):
                 text(
                     "SELECT EXISTS(SELECT 1 FROM pg_tables WHERE schemaname='app' AND "
                     "(has_table_privilege(current_user,format('%I.%I',schemaname,tablename),"
-                    "'INSERT,UPDATE,DELETE,TRUNCATE,REFERENCES,TRIGGER') OR "
+                    "'INSERT,UPDATE,DELETE,TRUNCATE,REFERENCES,TRIGGER,MAINTAIN') OR "
                     "has_any_column_privilege(current_user,format('%I.%I',schemaname,tablename),"
                     "'INSERT,UPDATE,REFERENCES'))) OR "
                     "has_schema_privilege(current_user,'app','CREATE')"

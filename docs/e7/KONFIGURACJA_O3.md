@@ -25,6 +25,11 @@ Na współdzielonym klastrze O3 musi utrzymać globalne ACL baz: PUBLIC CONNECT 
 technicznych baz PostgreSQL jest decyzją klastra; prywatna baza Keycloak nie może
 być dostępna workerowi. Nie zmieniaj cudzych haseł ani globalnej tożsamości Git.
 
+Fresh bootstrap odbiera PUBLIC także CONNECT/CREATE/TEMP do `calorie_test`,
+z explicit CONNECT dla API/starego workera/operatora. Inny PUBLIC app/test DB
+na istniejącym klastrze prawidłowo blokuje helper AI; O3 musi oddzielnie odebrać
+ACL własnych baz lub wdrożyć dedykowany klaster. Helper nie naprawia cudzych ACL.
+
 Downgrade pustego E7 jest wspierany. Jakikolwiek durable consent, analysis, job,
 decision, receipt, admission, reservation lub cleanup intent powoduje atomową odmowę.
 Zachowaj dane i przygotuj osobny plan zamiast usuwać dowody, aby wymusić downgrade.
