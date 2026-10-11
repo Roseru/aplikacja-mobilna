@@ -4,6 +4,18 @@
 
 Koordynator odtworzył na `aed555b` trzy nowe P2: E0 po Windows CRLF, nieunieważniany `mq1` po korekcie canonical oraz brak official kandydatów dla wspólnej normalizacji Unicode. Wymagają osobnego odbioru poprawki w PR #20. Poprzednia ocena 9,3/10 i wszystkie jej rzeczywiście wykonane testy są zachowane poniżej jako wcześniejszy zakres; nie oznaczają odbioru nowych reprodukcji. Nowy nieautor odczytuje i testuje poprawiony commit we własnym czystym Windows checkout/PG, w tym `0014` backfill/ACL/downgrade, niezmienność official oraz direct/transitive queue/replay/rollback. Dokładny końcowy head i CI będą wskazane osobno w PR i odpowiedzi wykonawcy.
 
+## Ponowny odbiór poprawki 83a1a6b
+
+Werdykt nieautora: **9,3/10, zero otwartych istotnych P1/P2** na `83a1a6ba0a8475e02c7c4dd8f6dd4a7c6a2fe40a`. Własny zamrożony checkout, oddzielna baza PostgreSQL17 z rzeczywistymi rolami i czysty Windows `core.autocrlf=true`; bez edycji runtime autora.
+
+Niezależne RED: exporter na clean `aed555b` miał 1329 CRLF, 31917 zamiast 30588 bajtów, normalized_equal=True; --check exit2 i właściwy E0 exit1. Po poprawce exporter/bundle/E0 PASS w rzeczywistym clean CRLF, tracked diff pusty. Na pierwszym lokalnym 784c711 recenzent znalazł i odtworzył dwa FAIL legalnego official100aliases: nowy import i backfill0013→0014 łamały names_limit51. Autor przed pierwszym pushem nowej migracji poprawił0014/ORM do101 nazw, zachowując stare limity official100 i community50. Własne dwa RED przechodzą GREEN na83a1a6b; trzy P2 koordynatora i dodatkowy P2 zgodności zamknięte.
+
+Końcowy własny delivery: **107 PASS = 94 PG +13 unit**, bez skipów. PG to26 Unicode/migration/ACL,4 queue,48 DB,4 official/history i12 SQL matching; unit13 toEOL i wspólna/frozen norma. Osobno **12 własnych PG PASS**: dwa official100aliases new/backfill, sześć Unicode pod API (ß, fullwidth, final sigma, ligatura, whitespace, alias), cztery direct/transitive queue commit/replay lub savepoint denial z historycznymi rowsets. Nie sumujemy powtórek wcześniejszych pełnych817/770 przebiegów; ponowny odbiór obejmuje przyczynowy zmieniony zakres. E0:84valid/28invalid/18scenarios/321linków. 0001–0013, źródła/DTO/exact refs, posiłki, membership/hash/gzip zachowane. Brak nowej własnej pełnej sesji Keycloak/Android/produkcji — potwierdza je odrębne właściwe CI lub zespół.
+
+Źródłowy manifest: **213 blobów**, SHA-256 `c8cc1261020da0f88bdb349173a7e1f6bafd8a4e3104c81aa48e6d9606694c1a`. Obejmuje także exporter/sync scripts i .gitattributes; wyklucza raport oraz recenzję, aby uniknąć samoodniesienia. SHA prywatnego pliku własnych probes: `38d69a962bde17c569b40db3124198a5dc32d6f8aac743ce605f09296753cbcc`; pliku i prywatnych logów nie publikuje się. Końcowy dodatkowy commit report/comm wymaga porównania tych213 blobów, bez nieuzasadnionego powtarzania identycznych testów. Własne runs/fixtures/procesy zakończone; root zatrzymuje tylko swój shared test PG po potwierdzeniu końca odbioru. Dokładne finalne CI/head/base podaje osobno wykonawca w PR i odpowiedzi. Pełne E5 i zespołowe E6, APK/KO-31 i produkcyjne HTTPS/restore pozostają otwarte; bez merge/E7/uruchamiania automatyzacji.
+
+## Historyczny odbiór wcześniejszej dostawy
+
 Niezależny odbiór E6-O2 — recenzent nieautor
 Ocena: 9,3/10; zero otwartych istotnych P1/P2.
 
