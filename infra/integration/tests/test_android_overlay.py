@@ -20,7 +20,7 @@ def state(tmp_path):
 
 def test_scoped_validation_only_public_certificate(tmp_path):
     source = state(tmp_path)
-    output = tmp_path / "overlay"
+    output = tmp_path / "o3-$scope'overlay"
     before = {p: p.read_bytes() for p in source.rglob("*") if p.is_file()}
     receipt = prepare(source, output)
     assert receipt["application_id"] == "pl.roseru.kalorie.validation"
@@ -33,6 +33,7 @@ def test_scoped_validation_only_public_certificate(tmp_path):
     }
     assert config.find("base-config").get("cleartextTrafficPermitted") == "false"
     assert 'maybeCreate("validation")' in (output / "init.gradle").read_text()
+    assert "o3-$scope\\'overlay'" in (output / "init.gradle").read_text()
     assert before == {p: p.read_bytes() for p in source.rglob("*") if p.is_file()}
     for path in output.rglob("*"):
         if path.is_file():

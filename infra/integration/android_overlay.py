@@ -62,8 +62,8 @@ def prepare(state: Path, output: Path):
         encoding="utf-8",
     )
     # Inject source locations before Android evaluates its variants. Only validation uses them.
-    # JSON strings also safely quote Windows paths for Groovy.
-    path = json.dumps(str(output.resolve()).replace("\\", "/"))
+    # Use a Groovy literal: a double-quoted GString would interpret $ in a path.
+    path = "'" + output.resolve().as_posix().replace("\\", "\\\\").replace("'", "\\'") + "'"
     (output / "init.gradle").write_text(
         "gradle.beforeProject { project ->\n"
         '  project.pluginManager.withPlugin("com.android.application") {\n'

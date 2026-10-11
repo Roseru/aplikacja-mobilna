@@ -134,6 +134,8 @@ pozostaje objęty fixture O1, bez przypisywania mu wyniku próby refresh po logo
   O1 otrzymuje obserwację do stabilizacji. Testowa aplikacja regression nie ma
   skonfigurowanego issuer; jej wynik nie zastępuje powyższej próby prawdziwego loginu.
 - Narzędzia O3:21 testów infrastruktury PASS; Ruff lint/format PASS.
+  Sprawdzono także konfigurację Gradle z katalogiem overlay zawierającym `$` i
+  apostrof: nazwa jest literałem ścieżki, bez interpolacji kodu Groovy.
   Końcowe zdalne CI własnego PR i main potwierdza się oddzielnie w PR.
 
 APK jest lokalnym artefaktem konkretnego niescalonego commita O1, z publicznym
