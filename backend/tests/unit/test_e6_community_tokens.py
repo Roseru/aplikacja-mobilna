@@ -69,13 +69,20 @@ def test_cursor_rejects_context_drift(field, changed):
     value = claims()
     with pytest.raises(DomainError) as failure:
         decode(value, **{field: changed})
-    assert failure.value.status == 422
+    expected = 409 if field in {"generation", "epoch"} else 422
+    assert failure.value.status == expected
+    if field in {"generation", "epoch"}:
+        assert failure.value.code == (
+            "sync_epoch_changed" if field == "epoch" else "account_generation_changed"
+        )
 
 
 @pytest.mark.parametrize(
     "alteration",
     [
         {"generation": True},
+        {"generation": 0},
+        {"epoch": "bad"},
         {"limit": True},
         {"version": True},
         {"version": 0},
@@ -106,6 +113,28 @@ def test_cursor_domain_and_key_rotation():
         decode(value, encode_page(value, SECRET, kind="reports"))
     with pytest.raises(DomainError):
         decode(value, secret=SecretStr("e7" * 32))
+
+
+@pytest.mark.parametrize("kind", ["community", "reports"])
+def test_owned_context_change_precedes_expiry_and_epoch_precedes_generation(kind):
+    value = claims()
+    token = encode_page(value, SECRET, kind=kind)
+    context = {
+        "owner": value["owner"],
+        "generation": 2,
+        "epoch": str(uuid4()),
+        "query": value["query"],
+        "limit": value["limit"],
+        "now": NOW + timedelta(hours=2),
+        "kind": kind,
+    }
+    with pytest.raises(DomainError) as failure:
+        decode_page(token, SECRET, **context)
+    assert (failure.value.status, failure.value.code) == (409, "sync_epoch_changed")
+    context["epoch"] = value["epoch"]
+    with pytest.raises(DomainError) as failure:
+        decode_page(token, SECRET, **context)
+    assert (failure.value.status, failure.value.code) == (409, "account_generation_changed")
     token = encode_page(value, SECRET, kind="reports")
     assert decode(value, token, kind="reports") == value
 

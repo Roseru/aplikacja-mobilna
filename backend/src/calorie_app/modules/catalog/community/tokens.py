@@ -63,11 +63,12 @@ def decode_page(
         if (
             value["owner"] != str(owner)
             or type(value["generation"]) is not int
-            or value["generation"] != generation
+            or not 1 <= value["generation"] <= 2147483647
         ):
             raise ValueError
         if (
-            value["epoch"] != str(epoch)
+            not isinstance(value["epoch"], str)
+            or str(UUID(value["epoch"])) != value["epoch"]
             or value["query"] != query
             or value["filter"] != filter
             or value["sort"] != sort
@@ -79,11 +80,24 @@ def decode_page(
             raise ValueError
         if type(value["expiry"]) is not int or not 0 < value["expiry"] < 253402300800000000:
             raise ValueError
-        if str(UUID(value["after"])) != value["after"]:
+        if not isinstance(value["after"], str) or str(UUID(value["after"])) != value["after"]:
             raise ValueError
         expiry = EPOCH + timedelta(microseconds=value["expiry"])
     except (ValueError, TypeError, KeyError, OverflowError, UnicodeError, InvalidPageToken):
         raise DomainError(422, "invalid_page_token") from None
+    # Only a well-shaped, signed token belonging to this current account can
+    # disclose reconciliation context. Restore takes precedence over expiry
+    # and catalog version, consistently with E4/E5 and online E6 writes.
+    if value["epoch"] != str(epoch):
+        raise DomainError(
+            409, "sync_epoch_changed", [{"field": "sync_epoch", "reason": str(epoch)}]
+        )
+    if value["generation"] != generation:
+        raise DomainError(
+            409,
+            "account_generation_changed",
+            [{"field": "account_generation", "reason": str(generation)}],
+        )
     if now >= expiry:
         raise DomainError(410, "page_expired")
     return value

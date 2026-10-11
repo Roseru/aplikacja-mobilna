@@ -27,3 +27,5 @@ Chronione odpowiedzi i błędy mają Cache-Control:no-store. Publiczne aktualne 
 Limity UTC/dobę/konto:20 nowych produktów,50 zgłoszeń,200 zaakceptowanych zmian głosu i1000 nowych receipts (także odmowy/moderacja). Replay nie zużywa ponownie puli.429 ma Retry-After; nie twórz kolejnych kluczy, aby obejść odmowę. Body≤1MiB, JSON depth≤20, aliases≤50; nazwa/marka/wariant/źródło/raport/powód≤2000. Strict extra=forbid odrzuca owner/role/status spoof.
 
 Przed odbiorem O1 należy wykonać realne formularze/caching/session switching i lost ACK na zgodnym APK oraz zachowanie Room/outbox. Python HTTP/PG i testowy Keycloak O2 nie potwierdzają tego odbioru. Pełne E5-O2-C i KO-01–02/30/31 pozostają otwarte.
+
+Poprawny podpisany cp1/mq1 własnego konta po zmianie epoki daje409/sync_epoch_changed, po zmianie generacji409/account_generation_changed. Walidacja podpisu, ścisłego kształtu, właściciela i parametrów poprzedza ten kontekst; epoka poprzedza generację, expiry i wersję katalogu. Cudzy/uszkodzony token lub niezgodne parametry nadal422; rotacja podpisu nadal422, zgodny wygasły410.
