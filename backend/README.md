@@ -9,6 +9,11 @@ Instrukcje E3: [raport](../docs/e3/RAPORT_E3.md), [integracja O1](../docs/e3/INT
 
 ## Struktura
 
+E7-O2 dodaje chronione analizy zdjęć, oddzielny minimalny AI worker i head0015.
+Aktualne [O3](../docs/e7/KONFIGURACJA_O3.md), [O1](../docs/e7/INTEGRACJA_O1.md),
+[decyzje](../docs/e7/DECYZJE_V1.md) i [raport](../docs/e7/RAPORT_E7.md) określają
+mount, CLI, fail-closed live i granice odbioru. E7-R oraz pełny APK pozostają osobne.
+
 - `src/calorie_app/main.py`: fabryka aplikacji, lifespan i kontekst żądania.
 - `core/`: konfiguracja ze środowiska, bezpieczne błędy i logi JSON.
 - `db/`: modele PostgreSQL oraz sesje; transakcję zatwierdza usługa wywołująca.
@@ -35,7 +40,7 @@ Potrzebne: Git, Python 3.13, uv 0.9.5. Do standardowego lokalnego PostgreSQL pot
 
 `GET /health/live` daje 200 także podczas awarii bazy. `GET /health/ready` daje 200 dopiero dla PostgreSQL 17 z dokładną oczekiwaną migracją i konfiguracją sekretu paginacji, w przeciwnym razie 503 z bezpiecznym błędem i identyfikatorem żądania. API nie tworzy tabel przy starcie. Żądania mają `X-Request-ID`, błędy pola `code`, `message`, `details`, `request_id`. Nie logujemy query, body, tokenów ani tekstu wyjątków mogącego zawierać sekrety.
 
-Aktualny head to `0012_e5_reads`, po odebranym E4 `0011_e4_deletion` i E3 `0008_diary_delete`, po `0007_e3_diary` i `0006_e3_identity` oraz zachowanych migracjach E1/E2 `0001–0005`. Stara rewizja daje readiness 503; po upgrade i ustawieniu trwałego `CATALOG_PAGE_TOKEN_SECRET` bieżąca daje 200. CHECK `ck_product_versions_finite_nutrition` nadal dopuszcza w każdej z czterech kolumn wartości odżywczych `NULL` albo zakres `0..999999.999999`. `NULL` oznacza brak danych, zero pozostaje znanym zerem. NaN i wartości ujemne naruszają CHECK; przekroczenie precyzji oraz Infinity odrzuca typ `NUMERIC(12,6)`.
+Aktualny head to `0015_e7_ai`, po E6 `0013_e6_community` / `0014_catalog_search`, E5 `0012_e5_reads` i zachowanych migracjach E1–E4 `0001–0011`. Stara rewizja daje readiness 503; po upgrade i ustawieniu trwałego `CATALOG_PAGE_TOKEN_SECRET` bieżąca daje 200. CHECK `ck_product_versions_finite_nutrition` nadal dopuszcza w każdej z czterech kolumn wartości odżywczych `NULL` albo zakres `0..999999.999999`. `NULL` oznacza brak danych, zero pozostaje znanym zerem. NaN i wartości ujemne naruszają CHECK; przekroczenie precyzji oraz Infinity odrzuca typ `NUMERIC(12,6)`.
 
 Migracja `0002` waliduje istniejące dane i zastępuje wyłącznie CHECK, bez przepisywania tabeli lub wartości. NaN pozostawione w starej bazie powoduje odmowę i rollback całej migracji, z zachowaniem danych, poprzedniego CHECK i rewizji. Przed upgrade rolą migratora sprawdź zakres wadliwych rekordów:
 
@@ -69,7 +74,7 @@ uv run --project backend --locked python backend/export_openapi.py
 uv build backend
 ```
 
-Generowane OpenAPI obejmuje health, cztery publiczne odczyty E2 i siedem operacji E3. Projekt `contracts/openapi/design-v1.yaml` obejmuje niewdrożone operacje E4/E5 i nie dubluje przejętych operacji. Test porównuje wygenerowany dokument z wersjonowanym artefaktem. Zachowano regresję E1: migracje pustej bazy i poprawnych danych, rollback przy NaN w każdej kolumnie, rzeczywiste CHECK/SQLSTATE, NULL/zero/maksimum, prawa ról, readiness i izolację Keycloak. Testy E2 dodają upgrade z `0002`, niezmienność, atomowy import, publikację przy awarii i wyścigu, HTTP/snapshot, limity importera i pełny roundtrip PostgreSQL. SQLite służy wyłącznie importerowi referencyjnemu.
+Generowane OpenAPI obejmuje wdrożone operacje E2–E7 i health. Projekt `contracts/openapi/design-v1.yaml` ma puste paths i zachowuje opis granic bez dublowania aktywnych endpointów. Test porównuje wygenerowany dokument z wersjonowanym artefaktem. Zachowano regresję E1: migracje pustej bazy i poprawnych danych, rollback przy NaN w każdej kolumnie, rzeczywiste CHECK/SQLSTATE, NULL/zero/maksimum, prawa ról, readiness i izolację Keycloak. Testy E2 dodają upgrade z `0002`, niezmienność, atomowy import, publikację przy awarii i wyścigu, HTTP/snapshot, limity importera i pełny roundtrip PostgreSQL. SQLite służy wyłącznie importerowi referencyjnemu.
 
 ## CI i obraz
 

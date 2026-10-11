@@ -32,6 +32,7 @@ from calorie_app.modules.catalog.matching import (
     high_match,
     match_reasons,
     matching_from_snapshot,
+    matching_response,
     missing_identity_fields,
     normalize_text,
 )
@@ -189,38 +190,22 @@ def match_draft(session, principal, request, epoch):
     _, identity = own_draft(session, account.id, request)
     high = high_candidates(session, identity)
     candidates, truncated = manual_candidates(session, identity)
-    # Exact high matches must remain visible even if similarity candidates filled the page.
-    for version, _, metadata in reversed(high):
-        key = exact_ref(version)
-        if not any(item["product"] == key for item in candidates):
-            candidates.insert(
-                0,
-                {
-                    "product": key,
-                    "provenance": "community",
-                    "reasons": match_reasons(
-                        identity, matching_from_snapshot(version, metadata.identity)
-                    ),
-                    "high_confidence": True,
-                },
-            )
-    truncated = truncated or len(candidates) > 20
-    candidates = candidates[:20]
-    missing = missing_identity_fields(identity)
-    decision = (
-        "existing_variant"
-        if len(high) == 1
-        else "manual_candidates"
-        if missing or candidates or len(high) > 1
-        else "new_product"
+    return matching_response(
+        identity,
+        [
+            {
+                "product": exact_ref(version),
+                "provenance": "community",
+                "reasons": match_reasons(
+                    identity, matching_from_snapshot(version, metadata.identity)
+                ),
+                "high_confidence": True,
+            }
+            for version, _, metadata in high
+        ],
+        candidates,
+        truncated,
     )
-    return {
-        "decision": decision,
-        "existing_product": exact_ref(high[0][0]) if len(high) == 1 else None,
-        "candidates": candidates,
-        "missing_identity_fields": missing,
-        "truncated": truncated,
-    }
 
 
 def publication_metadata(draft, request, identity):

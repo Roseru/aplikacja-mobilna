@@ -74,6 +74,30 @@ def missing_identity_fields(value: MatchingIdentity) -> list[str]:
     return result
 
 
+def matching_response(identity, high, candidates, truncated):
+    """One response rule for private drafts and validated transient photo items."""
+    candidates = list(candidates)
+    for item in reversed(high):
+        if not any(candidate["product"] == item["product"] for candidate in candidates):
+            candidates.insert(0, item)
+    truncated = truncated or len(candidates) > 20
+    missing = missing_identity_fields(identity)
+    decision = (
+        "existing_variant"
+        if len(high) == 1
+        else "manual_candidates"
+        if missing or candidates or len(high) > 1
+        else "new_product"
+    )
+    return {
+        "decision": decision,
+        "existing_product": high[0]["product"] if len(high) == 1 else None,
+        "candidates": candidates[:20],
+        "missing_identity_fields": missing,
+        "truncated": truncated,
+    }
+
+
 def energy_matches(
     left: Decimal,
     right: Decimal,

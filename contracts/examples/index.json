@@ -1736,6 +1736,149 @@
         "expected_result": "Nie jest to dowód wyniku serwera; zasób i semantyka mają osobne testy PG/HTTP."
       },
       "detection_layer": "schema"
+    },
+    {
+      "id": "e7-create-metadata",
+      "purpose": "E7 structural synthetic fixture; no real provider result",
+      "path": "e7/create-metadata.json",
+      "schema": "../schemas/ai.schema.json#/$defs/CreateMetadata",
+      "local": {
+        "result": "valid"
+      },
+      "server": {
+        "result": "not_executed",
+        "stage": "E7",
+        "expected_result": "Schema only; ownership, consent, state and epoch tested separately on PostgreSQL."
+      },
+      "detection_layer": "schema"
+    },
+    {
+      "id": "e7-provider-result",
+      "purpose": "E7 structural synthetic fixture; no real provider result",
+      "path": "e7/provider-result.json",
+      "schema": "../schemas/ai.schema.json#/$defs/ProviderFoodResult",
+      "local": {
+        "result": "valid"
+      },
+      "server": {
+        "result": "not_executed",
+        "stage": "E7",
+        "expected_result": "Schema only; ownership, consent, state and epoch tested separately on PostgreSQL."
+      },
+      "detection_layer": "schema"
+    },
+    {
+      "id": "e7-consent-false",
+      "purpose": "Synthetic E7 structural example, not provider acceptance",
+      "path": "e7/consent-false.json",
+      "schema": "../schemas/ai.schema.json#/$defs/CreateMetadata",
+      "local": {
+        "result": "invalid",
+        "layer": "schema",
+        "reason": "const"
+      },
+      "server": {
+        "result": "not_executed",
+        "stage": "E7",
+        "expected_result": "Structural fixture only; real state and authorization acceptance is separate."
+      },
+      "detection_layer": "schema"
+    },
+    {
+      "id": "e7-consent-scope",
+      "purpose": "Synthetic E7 structural example, not provider acceptance",
+      "path": "e7/consent-scope.json",
+      "schema": "../schemas/ai.schema.json#/$defs/CreateMetadata",
+      "local": {
+        "result": "invalid",
+        "layer": "schema",
+        "reason": "const"
+      },
+      "server": {
+        "result": "not_executed",
+        "stage": "E7",
+        "expected_result": "Structural fixture only; real state and authorization acceptance is separate."
+      },
+      "detection_layer": "schema"
+    },
+    {
+      "id": "e7-cancel",
+      "purpose": "Synthetic E7 structural example, not provider acceptance",
+      "path": "e7/cancel.json",
+      "schema": "../schemas/ai.schema.json#/$defs/CancelRequest",
+      "local": {
+        "result": "valid"
+      },
+      "server": {
+        "result": "not_executed",
+        "stage": "E7",
+        "expected_result": "Structural fixture only; real state and authorization acceptance is separate."
+      },
+      "detection_layer": "schema"
+    },
+    {
+      "id": "e7-cancel-zero",
+      "purpose": "Synthetic E7 structural example, not provider acceptance",
+      "path": "e7/cancel-zero.json",
+      "schema": "../schemas/ai.schema.json#/$defs/CancelRequest",
+      "local": {
+        "result": "invalid",
+        "layer": "schema",
+        "reason": "minimum"
+      },
+      "server": {
+        "result": "not_executed",
+        "stage": "E7",
+        "expected_result": "Structural fixture only; real state and authorization acceptance is separate."
+      },
+      "detection_layer": "schema"
+    },
+    {
+      "id": "e7-confirm",
+      "purpose": "Synthetic E7 structural example, not provider acceptance",
+      "path": "e7/confirm.json",
+      "schema": "../schemas/ai.schema.json#/$defs/ConfirmRequest",
+      "local": {
+        "result": "valid"
+      },
+      "server": {
+        "result": "not_executed",
+        "stage": "E7",
+        "expected_result": "Structural fixture only; real state and authorization acceptance is separate."
+      },
+      "detection_layer": "schema"
+    },
+    {
+      "id": "e7-confirm-31-items",
+      "purpose": "Synthetic E7 structural example, not provider acceptance",
+      "path": "e7/confirm-31-items.json",
+      "schema": "../schemas/ai.schema.json#/$defs/ConfirmRequest",
+      "local": {
+        "result": "invalid",
+        "layer": "schema",
+        "reason": "maxItems"
+      },
+      "server": {
+        "result": "not_executed",
+        "stage": "E7",
+        "expected_result": "Structural fixture only; real state and authorization acceptance is separate."
+      },
+      "detection_layer": "schema"
+    },
+    {
+      "id": "e7-create-accepted",
+      "purpose": "Synthetic E7 structural example, not provider acceptance",
+      "path": "e7/create-accepted.json",
+      "schema": "../schemas/ai.schema.json#/$defs/CreateResponse",
+      "local": {
+        "result": "valid"
+      },
+      "server": {
+        "result": "not_executed",
+        "stage": "E7",
+        "expected_result": "Structural fixture only; real state and authorization acceptance is separate."
+      },
+      "detection_layer": "schema"
     }
   ],
   "source_material": {

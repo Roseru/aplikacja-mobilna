@@ -69,6 +69,18 @@ def test_migration_and_database_readiness(database):
         "community_audit",
         "community_receipts",
         "community_quotas",
+        "ai_controls",
+        "ai_pools",
+        "ai_analyses",
+        "ai_jobs",
+        "ai_photo_consents",
+        "ai_decisions",
+        "ai_receipts",
+        "ai_admissions",
+        "ai_energy_admissions",
+        "ai_attempts",
+        "ai_transport_permits",
+        "ai_cleanup_intents",
     }
     migrate("check")
     with TestClient(create_app(Settings(database_url=url), engine=engine)) as client:

@@ -1,0 +1,15 @@
+{
+  "analysis_id": "c7777777-7777-4777-8777-777777777777",
+  "state": "queued",
+  "revision": 1,
+  "profile": {
+    "provider": "mock",
+    "model": "mock-food-v1",
+    "prompt_version": "food-photo-prompt-v1",
+    "schema_version": "food-photo-schema-v1",
+    "rest_profile_version": "gemini-rest-v1beta-2026-10-11",
+    "preparation_version": "food-photo-preparation-v1",
+    "mock_scenario": "valid"
+  },
+  "queue_deadline": "2026-10-11T17:00:00Z"
+}
