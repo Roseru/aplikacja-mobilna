@@ -1,4 +1,5 @@
 # Wojskowy licznik kalorii
+Android **0.8.3** dodaje [trwałe pobieranie kopii danych serwera](android/SYNCHRONIZACJA_PULL.md) i Room7. [Raport odbioru](android/RAPORT_0_8_3.md):103JVM i104/104 urządzenia PASS, aktualizacja zachowuje dotychczasowy dziennik. Kopia wire pozostaje osobno od lokalnej kolejki; pełny sync jest kolejnym etapem. [Aktualny plan O1](PLAN_IMPLEMENTACJI_ANDROID.md) uwzględnia NEMESIS, osiągnięcia i wygląd analityki.
 
 - [Uruchomienie i weryfikacja backendu E1/E2](backend/README.md)
 - [Raport E2 i przekazanie offline O1](docs/e2/RAPORT_E2.md)

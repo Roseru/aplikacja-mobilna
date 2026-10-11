@@ -1,4 +1,11 @@
 # Kontekst współpracy
+## Kontynuacja O1 — kopia serwera 0.8.3 i priorytety produktu
+
+- Agent1/O1 realizuje Androida; właściciel ponownie wskazał NEMESIS, osiągnięcia i dopracowaną analitykę. Bieżąca kolejność jest w PLAN_IMPLEMENTACJI_ANDROID.md; nowy wygląd analityki to kolejny lokalny etap. Potwierdzone wyniki i rywalizacja wymagają odebranych E8 O2 oraz dalszego E4.
+- `codex/android-sync-pull`, kod d782a2e546667f5ddf74f172bb6c980c3a8d591b: pełny bounded snapshot, trwałe strony/wznowienie, atomowy finał/checkpoint, osobne archiwum wire i Room7/6→7. Kontekst/lease/sesja/A→B→A/retry/expiry/recovery/deleting kontrolowane; kopiowanie nie wysyła kolejki ani nie nadpisuje lokalnego dziennika.
+- Finalne103JVM i104/104 API35/full/offline PASS; build/lint0error/4warning/1info. Pierwsze101/104 z trzema błędami nowych fixtures/asercji oraz ich poprawki opisane w android/RAPORT_0_8_3.md. Nie ma retry/skip lub osłabienia kontraktu. Aktualizacja i pierwszy launch zachowały wszystkie kolumny18wcześniejszych tabel i5posiłków/outbox/FK; APK0.8.3/code14/Room7 e892cf1ef65e4b4d808b99c6dfd124bce4e290e38838307f504ab181adf8b901 pozaGit, widoczny emulator.
+- E7/PR28 i instrukcje E8/PR33 odczytane oraz połączone zwykłym merge. Własny PR32 poprawia base_revision=null; main0ed58d6 zawiera tę zmianę po ośmiu success CI38176933888. Kod Androida identyczny z testowanym źródłem po normalizacji końców linii. Komunikacja tylko docs/KOMUNIKACJA_AGENTOW.md, nowy wpis O1-018.
+- Prawdziwy odbiór API/TLS/Keycloak0.8.3 wymaga istniejącego środowiska O3 (O1-015). Archiwum ma walidację struktury; semantyczne projekcje, materializacja/push/inkrementalny pull/import/recovery/WorkManager nadal są do implementacji. Nie deklarować pełnego E4 lub KO-31. Nie uruchomiono E8 backendu, jego master nie jest runtime.
 
 ## Integracja O1 — merge sesji / CI profilu, 11 października 2026
 
