@@ -1,0 +1,319 @@
+{
+  "account_id": "c1111111-1111-4111-8111-111111111111",
+  "account_generation": 1,
+  "as_of": "2026-10-11T10:00:00Z",
+  "time_zone": "Europe/Warsaw",
+  "profile_revision": 1,
+  "goal_timeline_revision": 0,
+  "server_position": 3,
+  "from": "2026-10-05",
+  "to": "2026-10-11",
+  "sync_epoch": "e1111111-1111-4111-8111-111111111111",
+  "days": 7,
+  "statistics_version": "statistics_v1",
+  "goal_rule": "goal_band_v1",
+  "daily": [
+    {
+      "local_date": "2026-10-05",
+      "closed": true,
+      "declared_complete": false,
+      "effective_complete": false,
+      "status": "no_data",
+      "meal_count": 0,
+      "totals": {
+        "energy_kcal": {
+          "known_sum": null,
+          "complete": false,
+          "known_count": 0,
+          "missing_count": 0
+        },
+        "protein_g": {
+          "known_sum": null,
+          "complete": false,
+          "known_count": 0,
+          "missing_count": 0
+        },
+        "fat_g": {
+          "known_sum": null,
+          "complete": false,
+          "known_count": 0,
+          "missing_count": 0
+        },
+        "carbs_g": {
+          "known_sum": null,
+          "complete": false,
+          "known_count": 0,
+          "missing_count": 0
+        }
+      },
+      "goal": null,
+      "in_goal": null,
+      "preliminary_in_goal": null,
+      "latest_weight": null,
+      "weight_count": 0
+    },
+    {
+      "local_date": "2026-10-06",
+      "closed": true,
+      "declared_complete": false,
+      "effective_complete": false,
+      "status": "no_data",
+      "meal_count": 0,
+      "totals": {
+        "energy_kcal": {
+          "known_sum": null,
+          "complete": false,
+          "known_count": 0,
+          "missing_count": 0
+        },
+        "protein_g": {
+          "known_sum": null,
+          "complete": false,
+          "known_count": 0,
+          "missing_count": 0
+        },
+        "fat_g": {
+          "known_sum": null,
+          "complete": false,
+          "known_count": 0,
+          "missing_count": 0
+        },
+        "carbs_g": {
+          "known_sum": null,
+          "complete": false,
+          "known_count": 0,
+          "missing_count": 0
+        }
+      },
+      "goal": null,
+      "in_goal": null,
+      "preliminary_in_goal": null,
+      "latest_weight": null,
+      "weight_count": 0
+    },
+    {
+      "local_date": "2026-10-07",
+      "closed": true,
+      "declared_complete": false,
+      "effective_complete": false,
+      "status": "no_data",
+      "meal_count": 0,
+      "totals": {
+        "energy_kcal": {
+          "known_sum": null,
+          "complete": false,
+          "known_count": 0,
+          "missing_count": 0
+        },
+        "protein_g": {
+          "known_sum": null,
+          "complete": false,
+          "known_count": 0,
+          "missing_count": 0
+        },
+        "fat_g": {
+          "known_sum": null,
+          "complete": false,
+          "known_count": 0,
+          "missing_count": 0
+        },
+        "carbs_g": {
+          "known_sum": null,
+          "complete": false,
+          "known_count": 0,
+          "missing_count": 0
+        }
+      },
+      "goal": null,
+      "in_goal": null,
+      "preliminary_in_goal": null,
+      "latest_weight": null,
+      "weight_count": 0
+    },
+    {
+      "local_date": "2026-10-08",
+      "closed": true,
+      "declared_complete": false,
+      "effective_complete": false,
+      "status": "no_data",
+      "meal_count": 0,
+      "totals": {
+        "energy_kcal": {
+          "known_sum": null,
+          "complete": false,
+          "known_count": 0,
+          "missing_count": 0
+        },
+        "protein_g": {
+          "known_sum": null,
+          "complete": false,
+          "known_count": 0,
+          "missing_count": 0
+        },
+        "fat_g": {
+          "known_sum": null,
+          "complete": false,
+          "known_count": 0,
+          "missing_count": 0
+        },
+        "carbs_g": {
+          "known_sum": null,
+          "complete": false,
+          "known_count": 0,
+          "missing_count": 0
+        }
+      },
+      "goal": null,
+      "in_goal": null,
+      "preliminary_in_goal": null,
+      "latest_weight": null,
+      "weight_count": 0
+    },
+    {
+      "local_date": "2026-10-09",
+      "closed": true,
+      "declared_complete": false,
+      "effective_complete": false,
+      "status": "no_data",
+      "meal_count": 0,
+      "totals": {
+        "energy_kcal": {
+          "known_sum": null,
+          "complete": false,
+          "known_count": 0,
+          "missing_count": 0
+        },
+        "protein_g": {
+          "known_sum": null,
+          "complete": false,
+          "known_count": 0,
+          "missing_count": 0
+        },
+        "fat_g": {
+          "known_sum": null,
+          "complete": false,
+          "known_count": 0,
+          "missing_count": 0
+        },
+        "carbs_g": {
+          "known_sum": null,
+          "complete": false,
+          "known_count": 0,
+          "missing_count": 0
+        }
+      },
+      "goal": null,
+      "in_goal": null,
+      "preliminary_in_goal": null,
+      "latest_weight": null,
+      "weight_count": 0
+    },
+    {
+      "local_date": "2026-10-10",
+      "closed": true,
+      "declared_complete": false,
+      "effective_complete": false,
+      "status": "no_data",
+      "meal_count": 0,
+      "totals": {
+        "energy_kcal": {
+          "known_sum": null,
+          "complete": false,
+          "known_count": 0,
+          "missing_count": 0
+        },
+        "protein_g": {
+          "known_sum": null,
+          "complete": false,
+          "known_count": 0,
+          "missing_count": 0
+        },
+        "fat_g": {
+          "known_sum": null,
+          "complete": false,
+          "known_count": 0,
+          "missing_count": 0
+        },
+        "carbs_g": {
+          "known_sum": null,
+          "complete": false,
+          "known_count": 0,
+          "missing_count": 0
+        }
+      },
+      "goal": null,
+      "in_goal": null,
+      "preliminary_in_goal": null,
+      "latest_weight": null,
+      "weight_count": 0
+    },
+    {
+      "local_date": "2026-10-11",
+      "closed": false,
+      "declared_complete": false,
+      "effective_complete": false,
+      "status": "no_data",
+      "meal_count": 0,
+      "totals": {
+        "energy_kcal": {
+          "known_sum": null,
+          "complete": false,
+          "known_count": 0,
+          "missing_count": 0
+        },
+        "protein_g": {
+          "known_sum": null,
+          "complete": false,
+          "known_count": 0,
+          "missing_count": 0
+        },
+        "fat_g": {
+          "known_sum": null,
+          "complete": false,
+          "known_count": 0,
+          "missing_count": 0
+        },
+        "carbs_g": {
+          "known_sum": null,
+          "complete": false,
+          "known_count": 0,
+          "missing_count": 0
+        }
+      },
+      "goal": null,
+      "in_goal": null,
+      "preliminary_in_goal": null,
+      "latest_weight": null,
+      "weight_count": 0
+    }
+  ],
+  "averages": {
+    "energy_kcal": {
+      "value": null,
+      "day_count": 0
+    },
+    "protein_g": {
+      "value": null,
+      "day_count": 0
+    },
+    "fat_g": {
+      "value": null,
+      "day_count": 0
+    },
+    "carbs_g": {
+      "value": null,
+      "day_count": 0
+    }
+  },
+  "complete_day_count": 0,
+  "days_with_meals": 0,
+  "goal_eligible_day_count": 0,
+  "in_goal_day_count": 0,
+  "weight": {
+    "observation_count": 0,
+    "day_count": 0,
+    "first_date": null,
+    "last_date": null,
+    "change_kg": null
+  }
+}

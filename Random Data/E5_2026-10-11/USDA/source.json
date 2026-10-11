@@ -1,0 +1,86 @@
+{
+  "source_name": "USDA FoodData Central SR Legacy April 2018",
+  "checked_on": "2026-10-11",
+  "download_url": "https://fdc.nal.usda.gov/fdc-datasets/FoodData_Central_sr_legacy_food_json_2018-04.zip",
+  "download_sha256": "0fe8ae486a2c8eb42cb96413f058deb51863a46c8fb8eeb4b1fb45006dd338ef",
+  "version": "SR Legacy 2018-04; FDC publicationDate 4/1/2019",
+  "documentation_url": "https://www.ars.usda.gov/ARSUserFiles/80400525/Data/SR-Legacy/SR-Legacy_Doc.pdf",
+  "documentation_locator": "Table 6, printed page 12 (PDF page index 12): Nutr_Val is amount in 100 g edible portion",
+  "subset_method": "Three complete records selected by fdcId after reading descriptions in full public export; reserialized JSON; zip not included",
+  "limitations": [
+    "Reference values, not a label for a particular PL batch",
+    "Carbohydrate by difference is source nutrient 1005; not silently equivalent to EU label available carbohydrate",
+    "No single-fruit weight or refuse percentage is imposed"
+  ],
+  "records": [
+    {
+      "fdc_id": 169097,
+      "ndb_number": 9200,
+      "description": "Oranges, raw, all commercial varieties",
+      "publication_date": "4/1/2019",
+      "data_type": "SR Legacy",
+      "basis_amount": "100",
+      "basis_unit": "g",
+      "edible_portion": true,
+      "values": {
+        "energy_kcal": "47",
+        "protein_g": "0.94",
+        "fat_g": "0.12",
+        "carbohydrate_by_difference_g": "11.8"
+      },
+      "nutrient_ids": {
+        "energy_kcal": 1008,
+        "protein_g": 1003,
+        "fat_g": 1004,
+        "carbohydrate_by_difference_g": 1005
+      },
+      "record_url": "https://fdc.nal.usda.gov/food-details/169097/nutrients"
+    },
+    {
+      "fdc_id": 171688,
+      "ndb_number": 9003,
+      "description": "Apples, raw, with skin (Includes foods for USDA's Food Distribution Program)",
+      "publication_date": "4/1/2019",
+      "data_type": "SR Legacy",
+      "basis_amount": "100",
+      "basis_unit": "g",
+      "edible_portion": true,
+      "values": {
+        "energy_kcal": "52",
+        "protein_g": "0.26",
+        "fat_g": "0.17",
+        "carbohydrate_by_difference_g": "13.8"
+      },
+      "nutrient_ids": {
+        "energy_kcal": 1008,
+        "protein_g": 1003,
+        "fat_g": 1004,
+        "carbohydrate_by_difference_g": 1005
+      },
+      "record_url": "https://fdc.nal.usda.gov/food-details/171688/nutrients"
+    },
+    {
+      "fdc_id": 173944,
+      "ndb_number": 9040,
+      "description": "Bananas, raw",
+      "publication_date": "4/1/2019",
+      "data_type": "SR Legacy",
+      "basis_amount": "100",
+      "basis_unit": "g",
+      "edible_portion": true,
+      "values": {
+        "energy_kcal": "89",
+        "protein_g": "1.09",
+        "fat_g": "0.33",
+        "carbohydrate_by_difference_g": "22.8"
+      },
+      "nutrient_ids": {
+        "energy_kcal": 1008,
+        "protein_g": 1003,
+        "fat_g": 1004,
+        "carbohydrate_by_difference_g": 1005
+      },
+      "record_url": "https://fdc.nal.usda.gov/food-details/173944/nutrients"
+    }
+  ]
+}

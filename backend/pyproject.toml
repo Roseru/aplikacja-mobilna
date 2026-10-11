@@ -12,6 +12,9 @@ dependencies = [
   "alembic>=1.15,<2",
   "jsonschema>=4.23,<5",
   "referencing>=0.36,<1",
+  "PyJWT[crypto]==2.15.1",
+  "httpx>=0.28,<1",
+  "tzdata==2026.5",
 ]
 
 [dependency-groups]

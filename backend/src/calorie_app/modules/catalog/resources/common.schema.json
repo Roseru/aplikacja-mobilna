@@ -5,7 +5,12 @@
     "Uuid": {
       "type": "string",
       "format": "uuid",
-      "pattern": "^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$"
+      "pattern": "^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$",
+      "allOf": [
+        {
+          "$ref": "common.schema.json#/$defs/UnicodeText"
+        }
+      ]
     },
     "Revision": {
       "type": "integer",
@@ -14,27 +19,52 @@
     },
     "Decimal": {
       "type": "string",
-      "pattern": "^(0|[1-9][0-9]{0,5})(\\.[0-9]{0,5}[1-9])?$",
-      "description": "Kanoniczne 0..999999.999999, maksymalnie 6 miejsc; bez znaku, wykładnika i końcowych zer."
+      "pattern": "^(0|[1-9][0-9]{0,5})(\\.[0-9]{0,5}[1-9])?(?![\\s\\S])",
+      "description": "Kanoniczne 0..999999.999999, maksymalnie 6 miejsc; bez znaku, wykładnika i końcowych zer.",
+      "allOf": [
+        {
+          "$ref": "common.schema.json#/$defs/UnicodeText"
+        }
+      ]
     },
     "Timestamp": {
       "type": "string",
       "format": "date-time",
-      "pattern": "^\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}(\\.[0-9]{1,6})?Z$"
+      "pattern": "^\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}(\\.[0-9]{1,6})?Z$",
+      "allOf": [
+        {
+          "$ref": "common.schema.json#/$defs/UnicodeText"
+        }
+      ]
     },
     "Date": {
       "type": "string",
-      "format": "date"
+      "format": "date",
+      "allOf": [
+        {
+          "$ref": "common.schema.json#/$defs/UnicodeText"
+        }
+      ]
     },
     "Timezone": {
       "type": "string",
       "format": "iana-time-zone",
-      "maxLength": 100
+      "maxLength": 100,
+      "allOf": [
+        {
+          "$ref": "common.schema.json#/$defs/UnicodeText"
+        }
+      ]
     },
     "Token": {
       "type": "string",
       "minLength": 1,
-      "maxLength": 4096
+      "maxLength": 4096,
+      "allOf": [
+        {
+          "$ref": "common.schema.json#/$defs/UnicodeText"
+        }
+      ]
     },
     "PositiveDecimal": {
       "allOf": [
@@ -124,7 +154,12 @@
       "properties": {
         "known_sum": {
           "type": "string",
-          "pattern": "^(0|[1-9][0-9]{0,17})(\\.[0-9]*[1-9])?$"
+          "pattern": "^(0|[1-9][0-9]{0,17})(\\.[0-9]*[1-9])?(?![\\s\\S])",
+          "allOf": [
+            {
+              "$ref": "common.schema.json#/$defs/UnicodeText"
+            }
+          ]
         },
         "missing_count": {
           "type": "integer",
@@ -143,8 +178,13 @@
     },
     "ComputedDecimal": {
       "type": "string",
-      "pattern": "^(0|[1-9][0-9]{0,5})(\\.[0-9]{0,11}[1-9])?$",
-      "description": "Dokładny wynik kalkulatora: do12 miejsc; kanonizacja jak Decimal, bez zaokrąglania do skali wejściowej6."
+      "pattern": "^(0|[1-9][0-9]{0,5})(\\.[0-9]{0,11}[1-9])?(?![\\s\\S])",
+      "description": "Dokładny wynik kalkulatora: do12 miejsc; kanonizacja jak Decimal, bez zaokrąglania do skali wejściowej6.",
+      "allOf": [
+        {
+          "$ref": "common.schema.json#/$defs/UnicodeText"
+        }
+      ]
     },
     "PositiveComputedDecimal": {
       "allOf": [
@@ -157,6 +197,11 @@
           }
         }
       ]
+    },
+    "UnicodeText": {
+      "type": "string",
+      "pattern": "^(?:[^\\u0000\\uD800-\\uDFFF]|[\\uD800-\\uDBFF][\\uDC00-\\uDFFF])*(?![\\s\\S])",
+      "description": "Unicode bez NUL i samotnych surrogate; poprawne pary UTF-16/emoji są dozwolone."
     }
   }
 }

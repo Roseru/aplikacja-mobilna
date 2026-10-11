@@ -1,0 +1,291 @@
+{
+  "checked_on": "2026-10-11",
+  "rations": [
+    {
+      "url": "https://arpol.net.pl/produkt/racja-wz-1/",
+      "checked_on": "2026-10-11",
+      "http_status": 200,
+      "retrieved_at_utc": "2026-10-11T01:29:48.019277+00:00",
+      "retrieved_body_sha256": "ebe21e866f9a164ba7b302d1b8a8c703ca59cee8814d8b6b2c27bb55bc44fa25",
+      "etag": null,
+      "last_modified": null,
+      "published_version": null,
+      "name": "WZ 1",
+      "supplier": "P.H.U. ARPOL Sp. z o.o.",
+      "component_manufacturers": null,
+      "declared_ration_energy_kcal": "1517",
+      "nutrition_basis": "whole ration; cannot allocate to components",
+      "components": [
+        {
+          "name": "lazania",
+          "amount": "300",
+          "unit": "g",
+          "nutrition": null,
+          "manufacturer": null,
+          "variant_binding": "unconfirmed"
+        },
+        {
+          "name": "suchary specjalne",
+          "amount": "45",
+          "unit": "g",
+          "nutrition": null,
+          "manufacturer": null,
+          "variant_binding": "unconfirmed"
+        },
+        {
+          "name": "czekolada do picia",
+          "amount": "25",
+          "unit": "g",
+          "nutrition": null,
+          "manufacturer": null,
+          "variant_binding": "unconfirmed"
+        },
+        {
+          "name": "mleko zagęszczone w tubie",
+          "amount": "150",
+          "unit": "g",
+          "nutrition": null,
+          "manufacturer": null,
+          "variant_binding": "unconfirmed"
+        },
+        {
+          "name": "baton owocowo-zbożowy",
+          "amount": "35",
+          "unit": "g",
+          "nutrition": null,
+          "manufacturer": null,
+          "variant_binding": "unconfirmed"
+        },
+        {
+          "name": "kisiel owocowy",
+          "amount": "30",
+          "unit": "g",
+          "nutrition": null,
+          "manufacturer": null,
+          "variant_binding": "unconfirmed"
+        },
+        {
+          "name": "napój izotoniczny",
+          "amount": "5",
+          "unit": "g",
+          "nutrition": null,
+          "manufacturer": null,
+          "variant_binding": "unconfirmed"
+        },
+        {
+          "name": "napój herbaciany owocowy instant",
+          "amount": "15",
+          "unit": "g",
+          "nutrition": null,
+          "manufacturer": null,
+          "variant_binding": "unconfirmed"
+        },
+        {
+          "name": "kawa naturalna",
+          "amount": "1",
+          "unit": "szt.",
+          "nutrition": null,
+          "manufacturer": null,
+          "variant_binding": "unconfirmed"
+        },
+        {
+          "name": "cukier",
+          "amount": "2",
+          "unit": "szt.",
+          "nutrition": null,
+          "manufacturer": null,
+          "variant_binding": "unconfirmed"
+        },
+        {
+          "name": "cukierek z witaminą C",
+          "amount": "2",
+          "unit": "szt.",
+          "nutrition": null,
+          "manufacturer": null,
+          "variant_binding": "unconfirmed"
+        },
+        {
+          "name": "guma do żucia",
+          "amount": "1",
+          "unit": "szt.",
+          "nutrition": null,
+          "manufacturer": null,
+          "variant_binding": "unconfirmed"
+        },
+        {
+          "name": "cukierek z kawą",
+          "amount": "1",
+          "unit": "szt.",
+          "nutrition": null,
+          "manufacturer": null,
+          "variant_binding": "unconfirmed"
+        },
+        {
+          "name": "sól",
+          "amount": "1",
+          "unit": "szt.",
+          "nutrition": null,
+          "manufacturer": null,
+          "variant_binding": "unconfirmed"
+        },
+        {
+          "name": "pieprz",
+          "amount": "1",
+          "unit": "szt.",
+          "nutrition": null,
+          "manufacturer": null,
+          "variant_binding": "unconfirmed"
+        }
+      ],
+      "limitations": [
+        "Illustrative image; no exact manufacturer/variant binding for each component",
+        "Rations completed after order; no published composition version or batch identifier",
+        "All edible accessories remain food with missing data; equipment excluded",
+        "Site gross/package weight is not edible mass"
+      ]
+    },
+    {
+      "url": "https://arpol.net.pl/produkt/racja-wz-4-wege/",
+      "checked_on": "2026-10-11",
+      "http_status": 200,
+      "retrieved_at_utc": "2026-10-11T01:29:48.253983+00:00",
+      "retrieved_body_sha256": "97ff60ebad13c55bdcb7a6e0ac40377eec4c47591121b595587d561d401eef1f",
+      "etag": null,
+      "last_modified": null,
+      "published_version": null,
+      "name": "WZ 4 WEGE",
+      "supplier": "P.H.U. ARPOL Sp. z o.o.",
+      "component_manufacturers": null,
+      "declared_ration_energy_kcal": "1433",
+      "nutrition_basis": "whole ration; cannot allocate to components",
+      "components": [
+        {
+          "name": "risotto pomidorowe (danie bezmięsne)",
+          "amount": "300",
+          "unit": "g",
+          "nutrition": null,
+          "manufacturer": null,
+          "variant_binding": "unconfirmed"
+        },
+        {
+          "name": "suchary specjalne",
+          "amount": "45",
+          "unit": "g",
+          "nutrition": null,
+          "manufacturer": null,
+          "variant_binding": "unconfirmed"
+        },
+        {
+          "name": "czekolada do picia",
+          "amount": "25",
+          "unit": "g",
+          "nutrition": null,
+          "manufacturer": null,
+          "variant_binding": "unconfirmed"
+        },
+        {
+          "name": "orzeszki ziemne",
+          "amount": "50",
+          "unit": "g",
+          "nutrition": null,
+          "manufacturer": null,
+          "variant_binding": "unconfirmed"
+        },
+        {
+          "name": "smoothie owocowe",
+          "amount": "50",
+          "unit": "g",
+          "nutrition": null,
+          "manufacturer": null,
+          "variant_binding": "unconfirmed"
+        },
+        {
+          "name": "baton owocowo-zbożowy",
+          "amount": "35",
+          "unit": "g",
+          "nutrition": null,
+          "manufacturer": null,
+          "variant_binding": "unconfirmed"
+        },
+        {
+          "name": "napój izotoniczny",
+          "amount": "5",
+          "unit": "g",
+          "nutrition": null,
+          "manufacturer": null,
+          "variant_binding": "unconfirmed"
+        },
+        {
+          "name": "napój herbaciany owocowy instant",
+          "amount": "15",
+          "unit": "g",
+          "nutrition": null,
+          "manufacturer": null,
+          "variant_binding": "unconfirmed"
+        },
+        {
+          "name": "kawa naturalna",
+          "amount": "1",
+          "unit": "szt.",
+          "nutrition": null,
+          "manufacturer": null,
+          "variant_binding": "unconfirmed"
+        },
+        {
+          "name": "cukier",
+          "amount": "2",
+          "unit": "szt.",
+          "nutrition": null,
+          "manufacturer": null,
+          "variant_binding": "unconfirmed"
+        },
+        {
+          "name": "cukierek z witaminą C",
+          "amount": "2",
+          "unit": "szt.",
+          "nutrition": null,
+          "manufacturer": null,
+          "variant_binding": "unconfirmed"
+        },
+        {
+          "name": "guma do żucia",
+          "amount": "1",
+          "unit": "szt.",
+          "nutrition": null,
+          "manufacturer": null,
+          "variant_binding": "unconfirmed"
+        },
+        {
+          "name": "cukierek z kawą",
+          "amount": "1",
+          "unit": "szt.",
+          "nutrition": null,
+          "manufacturer": null,
+          "variant_binding": "unconfirmed"
+        },
+        {
+          "name": "sól",
+          "amount": "1",
+          "unit": "szt.",
+          "nutrition": null,
+          "manufacturer": null,
+          "variant_binding": "unconfirmed"
+        },
+        {
+          "name": "pieprz",
+          "amount": "1",
+          "unit": "szt.",
+          "nutrition": null,
+          "manufacturer": null,
+          "variant_binding": "unconfirmed"
+        }
+      ],
+      "limitations": [
+        "Illustrative image; no exact manufacturer/variant binding for each component",
+        "Rations completed after order; no published composition version or batch identifier",
+        "All edible accessories remain food with missing data; equipment excluded",
+        "Site gross/package weight is not edible mass"
+      ]
+    }
+  ]
+}

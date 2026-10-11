@@ -1,12 +1,17 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
-  "title": "Sync v1 design draft — E0",
+  "title": "Sync v1 — E4",
   "$defs": {
     "OpaqueToken": {
       "type": "string",
       "minLength": 1,
       "maxLength": 4096,
-      "description": "Opaque account/protocol/epoch-bound token; client must not parse or generate it."
+      "description": "Opaque account/protocol/epoch-bound token; client must not parse or generate it.",
+      "allOf": [
+        {
+          "$ref": "common.schema.json#/$defs/UnicodeText"
+        }
+      ]
     },
     "EntityType": {
       "enum": [
@@ -1067,7 +1072,12 @@
             },
             "message": {
               "type": "string",
-              "minLength": 1
+              "minLength": 1,
+              "allOf": [
+                {
+                  "$ref": "common.schema.json#/$defs/UnicodeText"
+                }
+              ]
             },
             "current": {
               "anyOf": [
@@ -1124,13 +1134,18 @@
                 "goal_immutable",
                 "dependency_missing",
                 "invalid_payload",
-                "entity_too_large",
-                "recovery_source_invalid"
+                "recovery_source_invalid",
+                "revision_exhausted"
               ]
             },
             "message": {
               "type": "string",
-              "minLength": 1
+              "minLength": 1,
+              "allOf": [
+                {
+                  "$ref": "common.schema.json#/$defs/UnicodeText"
+                }
+              ]
             },
             "current": {
               "anyOf": [
@@ -1482,12 +1497,23 @@
             "invalid_request",
             "request_too_large",
             "rate_limited",
-            "service_unavailable"
+            "service_unavailable",
+            "account_bootstrap_required",
+            "account_deleting",
+            "account_generation_changed",
+            "identity_provider_unavailable",
+            "sync_counter_exhausted",
+            "sync_resources_exhausted"
           ]
         },
         "message": {
           "type": "string",
-          "minLength": 1
+          "minLength": 1,
+          "allOf": [
+            {
+              "$ref": "common.schema.json#/$defs/UnicodeText"
+            }
+          ]
         },
         "details": {
           "$ref": "#/$defs/SyncErrorDetails"
@@ -1568,7 +1594,12 @@
             },
             "label": {
               "type": "string",
-              "minLength": 1
+              "minLength": 1,
+              "allOf": [
+                {
+                  "$ref": "common.schema.json#/$defs/UnicodeText"
+                }
+              ]
             },
             "endpoint": {
               "const": "push"
@@ -1599,7 +1630,12 @@
               "type": "array",
               "items": {
                 "type": "string",
-                "minLength": 1
+                "minLength": 1,
+                "allOf": [
+                  {
+                    "$ref": "common.schema.json#/$defs/UnicodeText"
+                  }
+                ]
               },
               "minItems": 1
             }
@@ -1626,7 +1662,12 @@
             },
             "label": {
               "type": "string",
-              "minLength": 1
+              "minLength": 1,
+              "allOf": [
+                {
+                  "$ref": "common.schema.json#/$defs/UnicodeText"
+                }
+              ]
             },
             "endpoint": {
               "const": "push"
@@ -1667,7 +1708,12 @@
               "type": "array",
               "items": {
                 "type": "string",
-                "minLength": 1
+                "minLength": 1,
+                "allOf": [
+                  {
+                    "$ref": "common.schema.json#/$defs/UnicodeText"
+                  }
+                ]
               },
               "minItems": 1
             }
@@ -1694,7 +1740,12 @@
             },
             "label": {
               "type": "string",
-              "minLength": 1
+              "minLength": 1,
+              "allOf": [
+                {
+                  "$ref": "common.schema.json#/$defs/UnicodeText"
+                }
+              ]
             },
             "endpoint": {
               "const": "pull"
@@ -1725,7 +1776,12 @@
               "type": "array",
               "items": {
                 "type": "string",
-                "minLength": 1
+                "minLength": 1,
+                "allOf": [
+                  {
+                    "$ref": "common.schema.json#/$defs/UnicodeText"
+                  }
+                ]
               },
               "minItems": 1
             }
@@ -1752,7 +1808,12 @@
             },
             "label": {
               "type": "string",
-              "minLength": 1
+              "minLength": 1,
+              "allOf": [
+                {
+                  "$ref": "common.schema.json#/$defs/UnicodeText"
+                }
+              ]
             },
             "endpoint": {
               "const": "pull"
@@ -1793,7 +1854,12 @@
               "type": "array",
               "items": {
                 "type": "string",
-                "minLength": 1
+                "minLength": 1,
+                "allOf": [
+                  {
+                    "$ref": "common.schema.json#/$defs/UnicodeText"
+                  }
+                ]
               },
               "minItems": 1
             }
@@ -1822,7 +1888,12 @@
         },
         "label": {
           "type": "string",
-          "minLength": 1
+          "minLength": 1,
+          "allOf": [
+            {
+              "$ref": "common.schema.json#/$defs/UnicodeText"
+            }
+          ]
         },
         "action": {
           "enum": [
@@ -1852,7 +1923,12 @@
           "type": "array",
           "items": {
             "type": "string",
-            "minLength": 1
+            "minLength": 1,
+            "allOf": [
+              {
+                "$ref": "common.schema.json#/$defs/UnicodeText"
+              }
+            ]
           },
           "minItems": 1
         }
@@ -1872,11 +1948,21 @@
       "properties": {
         "scenario_id": {
           "type": "string",
-          "pattern": "^[a-z][a-z0-9_]+$"
+          "pattern": "^[a-z][a-z0-9_]+$",
+          "allOf": [
+            {
+              "$ref": "common.schema.json#/$defs/UnicodeText"
+            }
+          ]
         },
         "purpose": {
           "type": "string",
-          "minLength": 1
+          "minLength": 1,
+          "allOf": [
+            {
+              "$ref": "common.schema.json#/$defs/UnicodeText"
+            }
+          ]
         },
         "test_stage": {
           "const": "E4"
@@ -1916,7 +2002,12 @@
               "type": "array",
               "items": {
                 "type": "string",
-                "minLength": 1
+                "minLength": 1,
+                "allOf": [
+                  {
+                    "$ref": "common.schema.json#/$defs/UnicodeText"
+                  }
+                ]
               },
               "minItems": 1
             }
@@ -1947,7 +2038,12 @@
           "type": "array",
           "items": {
             "type": "string",
-            "minLength": 1
+            "minLength": 1,
+            "allOf": [
+              {
+                "$ref": "common.schema.json#/$defs/UnicodeText"
+              }
+            ]
           },
           "minItems": 1
         }
@@ -1996,7 +2092,12 @@
           "anyOf": [
             {
               "type": "string",
-              "minLength": 1
+              "minLength": 1,
+              "allOf": [
+                {
+                  "$ref": "common.schema.json#/$defs/UnicodeText"
+                }
+              ]
             },
             {
               "type": "null"
@@ -2039,7 +2140,12 @@
             },
             "code": {
               "type": "string",
-              "minLength": 1
+              "minLength": 1,
+              "allOf": [
+                {
+                  "$ref": "common.schema.json#/$defs/UnicodeText"
+                }
+              ]
             }
           }
         }

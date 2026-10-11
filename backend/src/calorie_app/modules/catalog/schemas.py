@@ -18,6 +18,7 @@ from pydantic import (
     model_validator,
 )
 
+from calorie_app.core.wire import validate_json_strings
 from calorie_app.modules.catalog.timestamps import utc_text
 from calorie_app.modules.catalog.validation import (
     DECIMAL_PATTERN,
@@ -83,6 +84,12 @@ Timestamp = Annotated[
 
 class CatalogDTO(BaseModel):
     model_config = ConfigDict(extra="forbid", from_attributes=True)
+
+    @model_validator(mode="before")
+    @classmethod
+    def safe_text(cls, value):
+        validate_json_strings(value)
+        return value
 
 
 class NutritionDTO(CatalogDTO):

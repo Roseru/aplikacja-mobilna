@@ -12,13 +12,15 @@ from urllib.parse import urlsplit
 from jsonschema import Draft202012Validator, FormatChecker
 from referencing import Registry, Resource
 
+from calorie_app.core.wire import common_pattern, validate_json_strings
+
 MAX_COMPRESSED_BYTES = 10 * 1024 * 1024
 MAX_UNCOMPRESSED_BYTES = 50 * 1024 * 1024
 MAX_PRODUCTS = 10000
 MAX_RATIONS = 1000
 MAX_COMPONENTS = 100000
 MAX_SOURCES = 10000
-DECIMAL_PATTERN = r"^(0|[1-9][0-9]{0,5})(\.[0-9]{0,5}[1-9])?$"
+DECIMAL_PATTERN = common_pattern("Decimal")
 _BASE = "https://calorie.invalid/schemas/"
 FORMATS = FormatChecker()
 
@@ -167,6 +169,10 @@ def _validator(definition: str) -> Draft202012Validator:
 
 def validate_definition(value: dict, definition: str) -> None:
     """Validate a standalone DTO against the same normative bundled schema."""
+    try:
+        validate_json_strings(value)
+    except ValueError as error:
+        raise CatalogValidationError("catalog_schema") from error
     error = next(_validator(definition).iter_errors(value), None)
     if error is not None:
         path = "/".join(str(part) for part in error.absolute_path)
