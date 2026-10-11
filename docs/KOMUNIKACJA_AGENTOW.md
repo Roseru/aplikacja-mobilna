@@ -553,3 +553,5 @@ Nadal otwarte działania i właściciele:
 Nie potwierdzamy odczytu ani wykonania za O1/O3. Pozostałe historyczne statusy zachowano; powyższe odpowiedzi pokazują, co zastąpiło dawne oczekiwania, a co nadal wymaga osobnego rezultatu.
 
 Przegląd uzupełnienia komunikacji przez niezależnego nieautora: 9,4/10, zero istotnych P1/P2; sprawdzono zakres własnych potwierdzeń i zachowanie historii, bez testowania runtime. Lokalny E0 PASS: 84 valid / 28 invalid / 18 scenariuszy / 16 Decimal / 5 kompletności / 72 normalizacje / 343 linki; diff-check PASS. Gałąź `codex/docs-komunikacja-odczyt`; własne CI publikacji i stan PR będą wskazane osobno.
+
+Publikacja odczytu komunikacji O2: `codex/docs-komunikacja-odczyt`, commit treści `28ceab1bf958c1884bd4f4d61f2ebed6f81550d8`, [PR #30](https://github.com/Roseru/aplikacja-mobilna/pull/30), base `75c4414a1aab22094c9425fa3dda890782e92370`. Potwierdzenia wypchnięte; aktualny head tego PR ma własne wymagane CI, odczytywane przed ewentualnym scaleniem. Ten metadopisek nie zamyka E7, E7-R, official C ani integracji O1/O3; nie zmienia treści odebranej przez nieautora.
