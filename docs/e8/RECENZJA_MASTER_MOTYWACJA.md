@@ -12,3 +12,5 @@ Zamknięte P2 w instrukcji:
 P3 doprecyzowano: absent header zachowuje dokładny stary hash bez dodatkowego null; nowe effective/pending pola tylko GETmotivation, nie strict stare DTO; source_revision jest provenance afirmacji, nie porównaniem do energy-only revision; legacy ration bez component position nie jest przepisywana i brak markeru nie odbiera normalnych punktów. W planie usunięto bezwarunkowe „jedno/kolejno” dla nowej ludzkiej zgody kontrolowanej równoległości.
 
 Instrukcja wymaga osobnego runtime PG/worker/HTTP/race/upgrade/restore/ACL i niezależnego odbioru ≥9/10 bez P1/P2. Aktualne ocenione mastery nie potwierdzają E8 implementacji, CI lub odbiorów zespołu. Automatyzacje PAUSED; E8.3/4 nie rozpoczęte. Dokładny commit instrukcji/PR/CI/main zostaną wskazane przy publikacji i dispatch.
+
+Końcowy nieautor integracji po naniesieniu P3 i zwykłym merge main: **9,4/10, zero P1/P2** na38485011e1adff1651222bf59fbc992a648b0b1f/baseba9704a. Diff sześciu dokumentów, cały dziennik main zachowany, runtime bez zmian. Metadopisek publikacji nie zmienia ocenionych instrukcji; finalne CI i main są osobnym dowodem.
