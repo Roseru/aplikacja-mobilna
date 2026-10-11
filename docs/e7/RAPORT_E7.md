@@ -1,5 +1,32 @@
 # Raport backendu analizy zdjęć E7 - osoba 2
 
+## Ponowny odbiór — poprawka P2 metadanych REST
+
+11 października 2026. Koordynator na `9b2fb7e` / base `75c4414` odtworzył jeden
+P2: poprawny food JSON/STOP/usage był odrzucany po dodaniu opcjonalnej
+thoughtSignature lub Candidate tokenCount/finishMessage/avgLogprobs. Własna
+reprodukcja przed zmianą: baseline ok, signature parts_invalid, pozostałe i combo
+result_invalid. Po ograniczonej naprawie wszystkie sześć wariantów ma ok i
+identyczną propozycję/usage. To syntetyczne próby, bez wywołania modelu Google.
+
+Naprawa waliduje tylko potrzebne metadane otoczki REST i pomija je, zanim wynik
+przejdzie przez process boundary. Strict food JSON i usageMetadata pozostają
+dotychczasową normą. Rozmiary/typy i datowane primary references są w
+[profilu REST](REFERENCJE_GEMINI.md). Sygnatury/opisy/raw response nie są zapisywane.
+Nie zmieniono modelu, SDK, migracji, API, sync, cleanup lub polityki rezerwacji.
+
+Dowody autora tej poprawki:88 nowych unit parsera +85 wcześniejszych w właściwym
+module =173 PASS; pełne1258 unit PASS. Nowe21 actual loopback REST/subprocess/PG
+(7 dodatnich/14 odmów) PASS: count10240 i generation896 wyłącznie z usage,
+1 count+1 generate bez retry, brak metadanych w DB/API/receipts/logs, brak Meal/Draft
+przed explicit confirm→standard sync. Powtórek nie sumujemy. Dwa wcześniejsze
+błędy own harnessu downstream (display oraz legalne matches.candidates) i długi
+pytest ID przekraczający Windows environment limit są poprawione; nie były PASS.
+
+Stan bieżący: naprawa przygotowana do nowego niezależnego odbioru oraz CI nowego
+head. Poprzednia ocena9,3 i wcześniejsze zielone CI nie zamykają tego P2. Wymagany
+jest ponowny odbiór koordynatora; historyczne dowody poniżej zachowano.
+
 Zakres: E7-O2 z [mastera](../MASTER_PROMPT_E7.md), odczytanego w całości
 z `485fb2e959f4d4b74548e6ac6ffe4e129cd5e68f`. Gałąź
 `codex/backend-e7-analiza-zdjec`; własny managed worktree, [PR #28](https://github.com/Roseru/aplikacja-mobilna/pull/28).

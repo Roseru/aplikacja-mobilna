@@ -49,6 +49,36 @@ live do czasu ich jawnej obsługi.
 
 ## Błędy, proces i sekrety
 
+### Opcjonalne metadane otoczki REST — poprawka po odbiorze koordynatora
+
+Ponowny odczyt 11 października 2026: [Part/Candidate](https://ai.google.dev/api/generate-content)
+definiuje `thoughtSignature` jako nieprzezroczyste bytes/base64 oraz `tokenCount`,
+`finishMessage`, `avgLogprobs` jako metadane kandydata. [Thought signatures](https://ai.google.dev/gemini-api/docs/generate-content/thought-signatures#signatures-in-non-functioncall-parts)
+mogą wystąpić przy końcowym tekście bez functionCall. Nie są treścią jedzenia ani
+zgodą na rozpoczęcie kolejnej tury. E7 nie zachowuje i nie odsyła tych danych.
+
+Lokalny profil odpowiedzi waliduje, a następnie pomija dokładnie te pola:
+
+| Pole | Typ i granica aplikacji |
+|---|---|
+| `Part.thoughtSignature` | String base64 do 65536 ASCII/wire bytes; standard lub URL-safe, z/bez poprawnego paddingu i z zerowymi niewykorzystanymi bitami. Bez mieszania alfabetów. Pusty string koduje empty bytes i jest pomijany; jawny null odrzucony. |
+| `Candidate.tokenCount` | JSON integer, bez bool/coercion, 0..10240. Granica profilu nie jest limitem Google; pole nie zastępuje usageMetadata i nie daje refundacji. |
+| `Candidate.finishMessage` | UTF-8 string do 4096 bytes, po dotychczasowej walidacji stringów/control characters. Nie jest przekazywany dalej. |
+| `Candidate.avgLogprobs` | Skończony JSON number, bez bool/coercion, od ujemnej granicy binary64 do0. Nie uczestniczy w obliczeniach ani rozliczeniu. |
+
+[ProtoJSON bytes](https://protobuf.dev/programming-guides/json/#representation-of-each-type)
+dopuszcza oba alfabety base64 oraz opcjonalny padding. Podane caps są jawnie
+lokalne, nie przypisujemy ich dokumentacji dostawcy. `thought=false` jako poprawny
+boolean przy jedynej końcowej części text jest pomijany; `thought=true` oraz
+inne typy nadal odrzucane. Function/tool/image/code parts, podział odpowiedzi,
+safety/MAX_TOKENS i nieznane pola nadal nie są dopuszczone. Strict food JSON,
+wersje modelu/prompt/schema oraz rozliczenie usageMetadata pozostają bez zmian.
+
+Walidacja odbywa się w child parserze. Do ProviderOutcome trafiają tylko food,
+dotychczasowe usage/modelVersion i kod; signature/opis/auxiliary counters/raw
+response nie trafiają do DB, receipt, API ani logów. Nie dodano SDK, multi-turn
+lub nowego modelu. Syntetyczny fake REST/PG jest dowodem E7-O2, nie E7-R.
+
 REST ma HTTPS do dokładnego `generativelanguage.googleapis.com`, TLS włączone,
 `trust_env=False`, `retries=0`, brak redirects oraz klucz wyłącznie w nagłówku.
 Request jest bounded do 8 MiB, przygotowany obraz do 5 MiB, odpowiedź do 1 MiB

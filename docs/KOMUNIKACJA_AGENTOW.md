@@ -18,7 +18,7 @@ Stan odczytany przez O1, 10 października 2026 r. Każda osoba aktualizuje swój
 | Rola | Ostatni znany rezultat | Następny krok / zależność | Źródło |
 |---|---|---|---|
 | O1 — Android, Kotlin, Room | Android 0.7.3 / Room 6: ikony i cel zależny od klasy; 67 JVM i 56/56 API35, aktualizacja bez utraty danych | Odbiór manualny i wymagane CI; następnie sesja/HTTP E3, trwały sync E4 i zgodność E5 | O1-012, [raport](../android/RAPORT_0_7_3.md), kod `1af9091` |
-| O2 — Python, PostgreSQL, API | E7-O2 w PR #28: source9a7, nieautor9,3/10 bez istotnych P1/P2; runtime CI1170unit/928PG/28OIDC i osiem success | Osobny odbiór koordynatora; E7-R WAITING_EXTERNAL, pełne E5-C i O1/O3 pozostają osobne | [PR #28](https://github.com/Roseru/aplikacja-mobilna/pull/28), O2-022, [raport E7](e7/RAPORT_E7.md) |
+| O2 — Python, PostgreSQL, API | E7-O2 / PR #28: poprawka P2 opcjonalnych metadanych REST; 1258 unit i 21 nowych real PG/REST PASS | Nowy niezależny odbiór i osiem CI dokładnego head/base; E7-R WAITING_EXTERNAL, pełne E5-C i O1/O3 osobne | [PR #28](https://github.com/Roseru/aplikacja-mobilna/pull/28), O2-023, [raport E7](e7/RAPORT_E7.md) |
 | O3 — DevOps, CI/CD, serwer | CI/HTTPS/retencja scalone; realny login APK O1/0.8.0 przez Chrome, A/B/gość, restart/expiry/refresh odebrane lokalnie; źródła narzędzi w PR27 | O1: HTTP/bootstrap/sync/KO-31; O3: VPS/SMTP/restore; stan końcowego CI/merge narzędzi w PR27 | O3-011, [PR #27](https://github.com/Roseru/aplikacja-mobilna/pull/27), [odbiór APK](../infra/integration/ANDROID_PKCE.md), kod O1 `3b081c4` |
 
 ## Wpisy
@@ -534,6 +534,18 @@ Publikacja podziału E8: `codex/docs-e8-podetapy`, commit treści `b20f6bba94d1a
 - Dowody / ograniczenia: status/remote/main/otwarte PR odczytane, main pobrany. PR #21 retencji O3 oraz #22/#23 planu/UI O1 pozostają osobne; nie przejęto ich gałęzi. Implementacja i testy E7 nie są jeszcze PASS. E7-R oczekuje datowanych wejść O3 i 30 zatwierdzonych niesensytywnych zdjęć; pełny etap dodatkowo dowodów O1/O3 i bramki regionu.
 - Oczekiwana odpowiedź / następny krok: migracja/ACL/kontrakt → runtime → realny PG/HTTP/storage/worker/crash/restore/race → właściwa regresja → nieautor ≥9/10 → jeden PR i rzeczywiste osiem CI dokładnego head/base. Bez merge, E8/E9 lub automatyzacji; harmonogramy pozostają PAUSED.
 - Potwierdzenia / odpowiedzi: odbiorcy sami zapisują odczyt.
+
+### O2-023 — Poprawka P2 po niezależnym odbiorze koordynatora E7
+
+- Data / autor: 11 października 2026, Agent 2 / O2, wykonawca E7; odniesienie O2-020–022 i ręczne zlecenie właściciela.
+- Odbiorcy: koordynator, informacyjnie O1/O3.
+- Status: W TOKU; kod poprawki lokalnie zweryfikowany, nowy niezależny odbiór i final-head CI jeszcze oczekują. Bez merge.
+- Źródło: ta sama gałąź `codex/backend-e7-analiza-zdjec` / [PR #28](https://github.com/Roseru/aplikacja-mobilna/pull/28), poprzedni head `9b2fb7e741c8c833f210a42de276c30364229076`, base `75c4414a1aab22094c9425fa3dda890782e92370`; [raport](e7/RAPORT_E7.md), [profil REST](e7/REFERENCJE_GEMINI.md).
+- Reprodukcja / przekazanie: baseline ok, podpis parts_invalid, pozostałe trzy metadane i combo result_invalid przed zmianą. Po zmianie wszystkie sześć ok z identycznym food/usage. Parser przyjmuje wyłącznie typowo i rozmiarowo ograniczone thoughtSignature/tokenCount/finishMessage/avgLogprobs, pomija je przed IPC, zachowuje strict food/usage oraz odmowy thought/function/tool/image/split/safety/truncation. Bez zmiany modelu, SDK, migracji, API lub refundacji limitów.
+- Dowody / ograniczenia: 88 nowych+85 wcześniejszych parser unit =173 PASS; pełne1258 unit PASS. Nowe21 real PG/SCRAM/REST/subprocess PASS: jedno count+generate, brak retry, usage rozliczane niezależnie od auxiliary counter, brak metadanych w DB/API/receipts/logs, confirm nie tworzy Meal/Draft przed standard sync. E0/Ruff253/diff-check PASS. Wcześniejsze błędy własnego harnessu opisane w raporcie. Stare9,3 i zielone CI nie zamykają nowego P2.
+- Odczyt zespołu: przeczytano aktualny main i nowe wpisy; odczyt PR30 komunikacji bez scalenia niescalonej gałęzi. Wpisy O1/O3 zachowane, stary checkout E4 i Random Data nietknięte.
+- Następny krok: nowy nieautor na utrwalonym source SHA, zero istotnych P1/P2 i ocena≥9/10, publikacja poprawki w PR28, osiem rzeczywistych CI exact head/base i ponowny odbiór koordynatora. E7-R WAITING_EXTERNAL; E5-C i O1/O3 nadal osobne. Bez Google/key/corpus/billing/produkcji, E8/E9, automatyzacji i wiadomości do innych czatów.
+- Potwierdzenia / odpowiedzi: odbiorcy sami zapisują odczyt; finalny source/head/base/testy i ograniczenia będą w raporcie oraz aktualnym opisie PR28.
 
 ### O2-021 — Publikacja backendu E7-O2 do niezależnego odbioru
 

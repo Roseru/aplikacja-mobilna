@@ -1,8 +1,10 @@
 """Small validated process envelope. No raw provider response crosses this boundary."""
 
+import base64
 import json
 import re
 from dataclasses import dataclass
+from sys import float_info
 from typing import Annotated, Literal
 
 from pydantic import Field, StrictBool, StrictInt, ValidationError
@@ -147,6 +149,57 @@ def _metadata(value: dict) -> dict:
 
 _SAFETY = {"SAFETY", "BLOCKLIST", "PROHIBITED_CONTENT", "SPII", "IMAGE_SAFETY"}
 
+# Local response-profile bounds, not provider limits or trusted usage counters.
+MAX_THOUGHT_SIGNATURE_BYTES = 64 * 1024  # UTF-8/base64 wire bytes, before decoding.
+MAX_FINISH_MESSAGE_BYTES = 4 * 1024
+
+
+def _validate_candidate_metadata(candidate: dict) -> None:
+    if "tokenCount" in candidate:
+        count = candidate["tokenCount"]
+        if type(count) is not int or not 0 <= count <= INPUT_TOKEN_LIMIT + OUTPUT_TOKEN_LIMIT:
+            raise ProviderResultError("provider_result_invalid")
+    if "finishMessage" in candidate:
+        message = candidate["finishMessage"]
+        if not isinstance(message, str) or len(message.encode("utf-8")) > MAX_FINISH_MESSAGE_BYTES:
+            raise ProviderResultError("provider_result_invalid")
+    if "avgLogprobs" in candidate:
+        average = candidate["avgLogprobs"]
+        # Comparisons also bound arbitrary JSON integers before float conversion.
+        if type(average) not in (int, float) or not -float_info.max <= average <= 0:
+            raise ProviderResultError("provider_result_invalid")
+
+
+def _validate_thought_signature(signature: object) -> None:
+    if not isinstance(signature, str) or len(signature) > MAX_THOUGHT_SIGNATURE_BYTES:
+        raise ProviderResultError("provider_parts_invalid")
+    match = re.fullmatch(r"([A-Za-z0-9+/_-]*)(={0,2})", signature)
+    if match is None:
+        raise ProviderResultError("provider_parts_invalid")
+    data, supplied_padding = match.groups()
+    if len(data) % 4 == 1 or (set(data) & set("+/") and set(data) & set("-_")):
+        raise ProviderResultError("provider_parts_invalid")
+    padding = -len(data) % 4
+    if len(supplied_padding) not in (0, padding):
+        raise ProviderResultError("provider_parts_invalid")
+    normalized = data.replace("-", "+").replace("_", "/")
+    decoded = base64.b64decode(normalized + "=" * padding, validate=True)
+    if base64.b64encode(decoded).decode("ascii").rstrip("=") != normalized:
+        raise ProviderResultError("provider_parts_invalid")
+    # Opaque bytes are validated and discarded, never copied to ProviderOutcome.
+
+
+def _final_text_part(part: object) -> str:
+    if not isinstance(part, dict) or set(part) - {"text", "thought", "thoughtSignature"}:
+        raise ProviderResultError("provider_parts_invalid")
+    if not isinstance(part.get("text"), str):
+        raise ProviderResultError("provider_parts_invalid")
+    if "thought" in part and part["thought"] is not False:
+        raise ProviderResultError("provider_parts_invalid")
+    if "thoughtSignature" in part:
+        _validate_thought_signature(part["thoughtSignature"])
+    return part["text"]
+
 
 def parse_generate_response(raw: bytes) -> ProviderOutcome:
     metadata = {}
@@ -180,6 +233,9 @@ def parse_generate_response(raw: bytes) -> ProviderOutcome:
             "finishReason",
             "index",
             "safetyRatings",
+            "tokenCount",
+            "finishMessage",
+            "avgLogprobs",
         }:
             raise ProviderResultError("provider_result_invalid")
         reason = candidate.get("finishReason")
@@ -189,6 +245,7 @@ def parse_generate_response(raw: bytes) -> ProviderOutcome:
             raise ProviderResultError("provider_safety_block")
         if reason != "STOP":
             raise ProviderResultError("provider_result_invalid")
+        _validate_candidate_metadata(candidate)
         ratings = candidate.get("safetyRatings", [])
         if not isinstance(ratings, list) or len(ratings) > 20:
             raise ProviderResultError("provider_result_invalid")
@@ -205,10 +262,7 @@ def parse_generate_response(raw: bytes) -> ProviderOutcome:
         parts = content.get("parts")
         if not isinstance(parts, list) or len(parts) != 1:
             raise ProviderResultError("provider_parts_invalid")
-        part = parts[0]
-        if not isinstance(part, dict) or set(part) != {"text"} or not isinstance(part["text"], str):
-            raise ProviderResultError("provider_parts_invalid")
-        result = parse_food_result(part["text"].encode("utf-8", errors="strict"))
+        result = parse_food_result(_final_text_part(parts[0]).encode("utf-8", errors="strict"))
         return ProviderOutcome("ok", result=result, **metadata)
     except ProviderResultError as error:
         return ProviderOutcome(error.code, **metadata)
