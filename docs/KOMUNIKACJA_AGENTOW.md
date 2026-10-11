@@ -18,7 +18,7 @@ Stan odczytany przez O1, 10 października 2026 r. Każda osoba aktualizuje swój
 | Rola | Ostatni znany rezultat | Następny krok / zależność | Źródło |
 |---|---|---|---|
 | O1 — Android, Kotlin, Room | Android 0.7 / Room 6: trwały bootstrap i niezmienne cele, gość offline poza main | Poprawki reviews #1/#6 i odbiór #1 → #6 → #7 → #9; O2 E3/E4, O3 środowisko/CI | [PR #9](https://github.com/Roseru/aplikacja-mobilna/pull/9), commit `ce6972c`; O1-008 |
-| O2 — Python, PostgreSQL, API | E3 scalone; wykonawca opublikował poprawkę kolumnowych ACL E4 #12, nowa regresja i CI 1180 PASS | Wynik wykonawcy do osobnego odbioru nowego head/CI przez koordynatora; E4 niescalone, E5 niezwolnione | [PR #12](https://github.com/Roseru/aplikacja-mobilna/pull/12), O2-006/O2-007, [koordynacja](MASTER_PROMPT_KOORDYNACJA.md) |
+| O2 — Python, PostgreSQL, API | E4 O2 scalone na 623c6aa, osobny odbiór 103 PG i CI main 1180 PASS; master E5-O2-R przygotowany | Publikacja i odbiór promptu → jawne zlecenie istniejącemu E5. Official C i integracja O1/O3 nadal otwarte | [PR #12](https://github.com/Roseru/aplikacja-mobilna/pull/12), O2-008, [master E5](MASTER_PROMPT_E5.md) |
 | O3 — DevOps, CI/CD, serwer | Odbiór oczekujących PR-ów na polecenie właściciela; E2 i dokumentacja scalone, Android sprawdzony lokalnie: 65 JVM + 52/52 API 35 | CI Androida, testowy Keycloak i wersjonowana dostawa APK pozostają osobnymi zadaniami; review opcjonalne według O3-005 | O3-006, [PR #9](https://github.com/Roseru/aplikacja-mobilna/pull/9), [CI backendu](https://github.com/Roseru/aplikacja-mobilna/blob/main/.github/workflows/backend.yml) |
 
 ## Wpisy
@@ -240,7 +240,7 @@ Oczekiwana odpowiedź: O2 potwierdza odczyt modelu tożsamości i udostępnia do
 - CI: [38098862007](https://github.com/Roseru/aplikacja-mobilna/actions/runs/38098862007) head `c7b7448` / baza `e392d1f`: wszystkie pięć jobów success, 600 unit + 571 PG17.11 + 9 real Keycloak = 1180 PASS, bez skipów, nowe isolated column/server-log, wheel i oba buildy/smoke obrazu PASS. Keycloak/obrazy są dowodem nowego CI, nie własnego lokalnego wykonania root. Ostatni commit raportu/tego przekazania ma osobny ponowny CI; dokładny head i wynik wskazujemy w PR oraz wiadomości do koordynatora.
 - Ograniczenia: migracje 0001–0011, API, epoka, Android i źródła bez zmian. Zachowana ochrona sekretu/transakcji oraz wąskie prawa; pozostają ograniczenia DBA/OS/pg_authid/backupów/pamięci/dodatkowego audytu/proxy/trace/TLS. Room/APK/WorkManager/KO-31 i produkcyjny restore wymagają O1/O3. Własne procesy testowe zatrzymane, prywatne dowody i zastane materiały zachowane.
 - Oczekiwana odpowiedź / następny krok: koordynator odbiera nowy dokładny head i aktualne CI, dopiero potem może rozważyć merge oraz bramkę E5. Wykonawca nie scala E4 i nie rozpoczyna E5. O3 stosuje kontrolny REVOKE po ustaleniu rzeczywistego źródła niepożądanego grantu.
-- Potwierdzenia / odpowiedzi: odbiorcy dopisują własny odczyt; wykonawca nie potwierdza go za koordynatora/O1/O3.
+- Potwierdzenia / odpowiedzi: koordynator O2, 2026-10-11: przeczytano końcowy 7ebf01a, własne 103 PG PASS i niezależny przegląd 9,4/10; PASS części O2, merge #12 i CI main 1180 PASS potwierdzone w O2-008. O1/O3 dopisują własny odczyt.
 
 ### O2-007 — Koordynacja etapów i odbiór E4 na aa4d97c
 
@@ -252,6 +252,20 @@ Oczekiwana odpowiedź: O2 potwierdza odczyt modelu tożsamości i udostępnia do
 - Dowody / ograniczenia: koordynator sam wykonał 600 unit + 33 real server-log/SCRAM PASS w osobnym checkoutcie. Logi końcowego [CI aa4d97c](https://github.com/Roseru/aplikacja-mobilna/actions/runs/38096204788) potwierdzają 1110 PASS, bez skipów. Stary wyciek sekretu zamknięty; 4 warianty fresh/E3 × login/PUBLIC odtworzyły prywatny odczyt przez kolumnowy SELECT mimo exit=0 helpera. Kolumnowy UPDATE przechodzi kontrolę, lecz jego wykonanie blokuje guard; nie potwierdzono mutacji. Niezależny recenzent wskazał P2, własne 31 unit/Ruff PASS, ocena odbioru 8/10. E4 nie ma PASS koordynatora, merge nie wykonano. Room/APK/WorkManager, oficjalne źródła i HTTPS pozostają odrębnymi bramkami.
 - Oczekiwana odpowiedź / następny krok: wykonawca E4 poprawia efektywne prawa kolumnowe z rollbackiem i regresją, publikuje nowy head/CI na istniejącym PR. Koordynator odbiera zmieniony zakres przed merge. Następnie ustala bramkę E5 i publikuje jego prompt; samo istnienie pliku nie rozpoczyna etapu. Jeden heartbeat `koordynacja-e4-do-e10` pozostaje ACTIVE; stary `czekaj-na-master-prompt-5` PAUSED. Aktualny cursor E4: `ae45b97d-134f-4a70-ad5f-59d22324cc89:2`. Jeśli najlepiej czekać na zewnętrzną zależność, koordynator zapisze WAITING_EXTERNAL i wstrzyma heartbeat zgodnie z poleceniem człowieka.
 - Kontrole dokumentacji: istniejący walidator E0 PASS (67 valid / 20 invalid / 18 scenarios, 16 Decimal, 5 kompletności, 72 normalizacje, 162 linki przed dopisaniem odnośnika do PR); diff i git diff --check PASS. Niezależny przegląd instrukcji i checkpointu 9,4/10 bez istotnych uwag. Wymagane CI własnego PR dokumentacji sprawdzamy osobno dla końcowego head przed merge; wynik i odbiór po integracji zostaną wskazane w PR.
+- Potwierdzenia / odpowiedzi: odbiorcy dopisują własny odczyt; nie potwierdzamy go za O1/O3.
+
+
+### O2-008 — E4 O2 scalone i przygotowanie E5-O2-R
+
+- Data / autor: 2026-10-11, Agent 2 / O2, koordynator.
+- Odbiorcy: wykonawca E5 O2, informacyjnie O1/O3.
+- Status: DO ODCZYTU.
+- Źródło: [PASS odbioru E4](https://github.com/Roseru/aplikacja-mobilna/pull/12#issuecomment-6103936407), scalony [PR #12](https://github.com/Roseru/aplikacja-mobilna/pull/12), head `7ebf01a04af2f6e811031d811c2ed7eaaa179520`, main `623c6aaea7e5bd4d71f7a001a0ff91f9760aecef`; [master E5](MASTER_PROMPT_E5.md), gałąź dokumentacji `codex/docs-e5`.
+- Przekazanie: koordynator sam wykonał 70 column ACL + 33 real server-log/SCRAM = 103 PASS na końcowym E4; niezależny przegląd zmienionego zakresu 9,4/10 bez P1/P2, własne 31 unit/collect70/Ruff PASS. Poprzednie P2 zamknięte. Brak zmian wcześniej odebranego runtime, migracji, kontraktów, Androida i źródeł. Merge E4 potwierdzony; drzewo main identyczne z odebranym head.
+- Dowody po integracji: rzeczywiste logi [CI main 38099912294](https://github.com/Roseru/aplikacja-mobilna/actions/runs/38099912294), dokładne main `623c6aa`, pięć success, **600 unit + 571 PostgreSQL17.11 + 9 real Keycloak = 1180 PASS**, bez skipów; kontrakty/Ruff/wheel i oba buildy/smoke obrazu PASS. Dowód oddzielny od lokalnych 103 koordynatora i testów wykonawcy O2-006.
+- Zakres następnego wyniku: E5-O2-R — prywatne read API, statistics_v1 7/30/90, instrukcja sync i realny audyt źródeł. Pełne official E5-O2-C oraz APK/KO-31/HTTPS/restore O1/O3 pozostają odrębnymi bramkami. E6 nie jest zwolnione po samym R. Odczytane karty ARPOL nie potwierdzają kompletu makr komponentów; Coca-Cola PL i FDC pozwalają kontynuować własną pracę źródłową O2 bez udawania kompletnego katalogu.
+- Wykonawca: istniejący czat E5 `01a12833-ba8d-7671-9f6a-33db1e532dc2`; stan PROMPT_PREPARED / NOT_DISPATCHED. Brak duplikatu, watcher pliku PAUSED. Jedyny koordynator `01a12156-2312-7c43-aedc-1858e782e5fb` zwolni R dopiero po recenzji/publikacji master promptu na main i kontroli jego końcowego head/CI, ze znacznikiem etapu + odebranego SHA + ID wykonawcy.
+- Oczekiwana odpowiedź / następny krok: odbiór promptu, docs PR → CI → merge → sprawdzenie main → jawne zlecenie R. O1 otrzyma potem DTO/wektory stref i korekt osi; O3 nowe migracje/retencję. Na konkretną zewnętrzną blokadę po wyczerpaniu niezależnej pracy zapisujemy WAITING_EXTERNAL i pauzujemy heartbeat; teraz R ma technicznie wykonalny zakres O2.
 - Potwierdzenia / odpowiedzi: odbiorcy dopisują własny odczyt; nie potwierdzamy go za O1/O3.
 
 
