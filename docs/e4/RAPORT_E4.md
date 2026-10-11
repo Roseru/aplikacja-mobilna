@@ -34,7 +34,21 @@ Pełne wcześniejsze 33 server-log i 30 LOGIN/CLI/ACL pozostają zaliczone.
 Ruff/format 135, E0/kontrakty/OpenAPI/zasoby, wheel/sdist oraz zainstalowany
 wheel Python -I poza checkoutem: PASS.
 Root w tej poprawce nie deklaruje lokalnego Keycloak lub buildów obrazu;
-wymagamy nowego CI dokładnego końcowego head, także po ostatnich dokumentach.
+ich dowód pochodzi z nowego CI, oddzielnie od lokalnego wykonania.
+
+Poprawka: `71c1e9b`; wypchnięty head po zwykłym merge aktualnego main:
+**`c7b74480af38ee1e8cd3f9bd210cb1c8b92e8ced`**. Zachowano O2-003–005,
+pełny O2-007 oraz master koordynacji. Merge wniósł wyłącznie dwa dokumenty;
+kod jest identyczny z lokalnie przetestowanym, walidacja dokumentacji PASS.
+Odczytano [CI 38098862007](https://github.com/Roseru/aplikacja-mobilna/actions/runs/38098862007):
+**completed/success, wszystkie pięć jobów**, testowany merge
+`7f7f5f7b326728f7f8da92d96d00f8ff3ad99201` = head `c7b7448` + baza
+`e392d1f2b22fd98528e2d0f4c33da848ac3becce`. Rzeczywiste logi:
+**600 unit + 571 PG17.11 + 9 real Keycloak/PKCE/sync/deletion = 1180 PASS**, bez
+skipów; nowe column/server-log na własnych PG Docker, Ruff/format 135,
+kontrakty, wheel/sdist, installed wheel -I i oba buildy/smoke obrazu PASS.
+Ostatni commit raportu/przekazania ma własny ponowny CI; dokładny końcowy
+head i wynik wskazujemy w PR i przekazaniu koordynatorowi po odczycie.
 
 Niezależny nie-autor: **600 unit + 70 column + 33 server-log + 30 LOGIN/CLI/ACL
 = 733 PASS**, plus 36 własnych fixed probes. Sam sprawdził zachowane hasło/
@@ -51,6 +65,9 @@ Migracje 0001–0011, API, epoka, Android i źródła Random Data nie są zmieni
 [O3](KONFIGURACJA_O3.md) opisuje dokładny REVOKE i brak automatycznej naprawy
 zastanego dostępu; pozostają dotychczasowe ograniczenia DBA/OS/audytu/proxy/TLS
 oraz odrębny odbiór Room/APK/WorkManager i produkcyjnego restore.
+Własne procesy testowe zatrzymano, dane i prywatne dowody zachowano. Wynik
+wykonawcy gotowy do osobnego odbioru koordynatora; PR E4 nie jest scalony,
+E5 nie rozpoczęto. Odczytu/PASS koordynatora nie potwierdzamy za niego.
 
 ## Historia poprawki sekretu provisioningu operatora
 

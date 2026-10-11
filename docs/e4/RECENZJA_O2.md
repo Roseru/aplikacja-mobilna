@@ -29,6 +29,13 @@ odbiera konkretny grant, dopiero wtedy ponawia helper. **9,5/10, brak
 nierozwiązanych P1/P2 lub istotnych uwag**. Ocena wynika z własnych dowodów,
 nie z samego odczytu kodu. Końcowy raport i CI pozostają osobnym odczytem.
 
+Root osobno odczytał [CI 38098862007](https://github.com/Roseru/aplikacja-mobilna/actions/runs/38098862007)
+head `c7b74480af38ee1e8cd3f9bd210cb1c8b92e8ced` / baza `e392d1f`: pięć jobów
+success, 600 unit + 571 PG17.11 + 9 real Keycloak = 1180 PASS i oba buildy/smoke
+obrazu. To zdalny dowód, oddzielony od moich 733. Sprawdzono również zachowanie
+wpisów O2-003–005/007 i mastera po zwykłym merge dokumentacyjnego main.
+Ostatni commit dokumentacji wymaga osobnego CI, którego exact head wskazuje PR.
+
 ## Historyczny odbiór ochrony sekretu
 
 Poniższe 9,5/1110 nie obejmowały późniejszego P2 uprawnień kolumnowych.
