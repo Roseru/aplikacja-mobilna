@@ -44,6 +44,7 @@ NEW_TABLES |= {
     "community_audit",
     "community_receipts",
     "community_quotas",
+    "product_search_metadata",
 }
 
 

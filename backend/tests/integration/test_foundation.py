@@ -23,6 +23,7 @@ def test_migration_and_database_readiness(database):
         "products",
         "product_sources",
         "product_versions",
+        "product_search_metadata",
         "rations",
         "ration_versions",
         "ration_components",
