@@ -1,5 +1,7 @@
 # Plan implementacji — osoba 1: Android i pamięć lokalna
 
+**Aktualizacja 0.8.2:** zaimplementowany podgląd GET me po bootstrapie, bez zmiany lokalnego profilu i celu. 87JVM/86device PASS; [raport](android/RAPORT_0_8_2.md), [kontrakt i granice](android/ODCZYT_PROFILU.md). PR31 zależy od PR26; rzeczywisty bootstrap/GET ze środowiskiem O3 pozostaje otwarty. Następnie odczyty celów i trwały adapter E4/Room/WorkManager, z jawnym przypisaniem gościa.
+
 Data: 9 października 2026 r.
 
 Podstawa: `WYMAGANIA_PROJEKTOWE.md` oraz zaakceptowane makiety. Użytkownik jest osobą 1 w trzyosobowym zespole. Ten dokument wyznacza kolejność implementacji; bieżący zakres kodu jest opisany w [android/README.md](android/README.md).

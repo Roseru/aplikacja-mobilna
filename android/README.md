@@ -1,5 +1,7 @@
 # Android — Racje i kalorie
 
+Wersja `0.8.2` dodaje [podgląd profilu na serwerze](ODCZYT_PROFILU.md) po bootstrapie: pseudonim, wzrost, klasa, strefa i zgody. Odczyt nie nadpisuje lokalnego profilu, celu kcal ani kolejki. [Raport 0.8.2](RAPORT_0_8_2.md) rozdziela testy zastępcze od wymaganego odbioru rzeczywistego API. Etap jest na gałęzi zależnej od PR26; pełny sync pozostaje kolejnym zadaniem.
+
 Wersja `0.8.1` dodaje połączenie konta z API przez trwały bootstrap HTTP, odnowienie sesji przed żądaniem i bezpieczne ponawianie bez utraty klucza. [Raport](RAPORT_0_8_1.md), [konfiguracja HTTP](BOOTSTRAP_HTTP.md) i [sesja OIDC](SESJA_OIDC.md) rozdzielają testy lokalne od pozostającego odbioru prawdziwego APK/HTTPS/Keycloak. Domyślne APK bez issuer i adresu API działa jako gość offline. Bootstrap nie wysyła dziennika ani nie importuje gościa; synchronizacja pozostaje kolejnym etapem. Room 6 zachowuje dotychczasowe wartości i kolejkę.
 
 [Raport 0.7.2 i scenariusze manualne](RAPORT_0_7_2.md) opisują odbiór poprzedniego etapu. Tryby 0.7.3: etat biurowo-kawowy ×1,00, Linia ×1,25, Komandos ×1,50; zmiana przelicza bieżący cel przez stosunek mnożników. Podgląd poprzedza zapis. Ręczne kcal, B/T/W i wcześniejsze dni pozostają zachowane; to przelicznik celu, osobny od kalkulatora zapotrzebowania backendu.

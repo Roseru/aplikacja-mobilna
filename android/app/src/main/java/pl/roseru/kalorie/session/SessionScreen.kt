@@ -10,7 +10,7 @@ import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.unit.dp
 
 data class SessionActions(val login: () -> Unit, val logout: () -> Unit, val refresh: () -> Unit, val cancel: () -> Unit,
-    val bootstrap: () -> Unit)
+    val bootstrap: () -> Unit, val readProfile: () -> Unit)
 
 @Composable fun SessionScreen(view: SessionView, actions: SessionActions, back: () -> Unit) {
     val account = view.binding?.owner?.kind == "account"
@@ -46,10 +46,34 @@ data class SessionActions(val login: () -> Unit, val logout: () -> Unit, val ref
                     if (!view.apiConfigured) Text("Połączenie będzie dostępne po podłączeniu serwera aplikacji.")
                     if (view.bootstrapBusy) { LinearProgressIndicator(Modifier.fillMaxWidth()); Text("Łączę konto z serwerem…") }
                     OutlinedButton(onClick = actions.bootstrap,
-                        enabled = view.apiConfigured && !view.bootstrapBusy && !view.busy && !view.pendingLogin,
+                        enabled = view.apiConfigured && !view.bootstrapBusy && !view.profileBusy && !view.busy && !view.pendingLogin,
                         modifier = Modifier.fillMaxWidth().testTag("session-bootstrap")) {
                         Text(if (view.serverLinked) "Sprawdź połączenie" else "Połącz konto z serwerem")
                     }
+                }
+            }
+            Card(Modifier.fillMaxWidth()) {
+                Column(Modifier.padding(20.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                    Text("Profil na serwerze", style = MaterialTheme.typography.titleMedium)
+                    Text("Odczyt pokazuje dane serwerowe osobno. Twój lokalny profil i cel kalorii pozostają bez zmian.")
+                    if (view.profileBusy) { LinearProgressIndicator(Modifier.fillMaxWidth()); Text("Pobieram profil…") }
+                    view.serverProfile?.let { result ->
+                        val profile = result.profile
+                        if (profile == null) Text("Na serwerze nie ma jeszcze profilu.", Modifier.testTag("server-profile-empty"))
+                        else {
+                            Text(profile.pseudonym, Modifier.testTag("server-profile-name"))
+                            Text("Wzrost: ${profile.heightCm?.let { "$it cm" } ?: "brak danych"}")
+                            Text(profile.activityClass.label)
+                            Text("Strefa czasu: ${profile.timeZone}")
+                        }
+                        Text("Ranking: ${if (result.consents.ranking) "zgoda udzielona" else "zgoda nieudzielona"}")
+                        Text("Automatyczna korekta zapotrzebowania: ${if (result.consents.automaticEnergyAdjustment) "zgoda udzielona" else "zgoda nieudzielona"}")
+                        Text("Podgląd z ostatniego odczytu w tej sesji. Odśwież, aby sprawdzić zmiany.")
+                    }
+                    OutlinedButton(onClick = actions.readProfile,
+                        enabled = view.apiConfigured && view.serverLinked && !view.requiresRecovery && !view.busy &&
+                            !view.bootstrapBusy && !view.profileBusy && !view.pendingLogin,
+                        modifier = Modifier.fillMaxWidth().testTag("session-read-profile")) { Text("Pobierz profil z serwera") }
                 }
             }
             OutlinedButton(onClick = actions.refresh, enabled = view.configured && !view.busy && !view.pendingLogin,

@@ -30,6 +30,10 @@ internal interface BootstrapGateway {
     suspend fun post(session: ApiSession, operationId: String, beforeSend: suspend () -> Unit): BootstrapHttpResult
 }
 
+internal interface ProfileGateway {
+    suspend fun get(session: ApiSession, beforeSend: suspend () -> Unit): BootstrapHttpResult
+}
+
 internal object BootstrapHttpProtocol {
     const val MAX_BYTES = 65_536
     fun endpoint(base: String): URL {
@@ -82,20 +86,35 @@ internal object BootstrapHttpProtocol {
 internal class HttpsBootstrapGateway(base: String,
     private val open: (URL) -> HttpsURLConnection = { it.openConnection() as HttpsURLConnection }) : BootstrapGateway {
     private val url = BootstrapHttpProtocol.endpoint(base)
-    override suspend fun post(session: ApiSession, operationId: String, beforeSend: suspend () -> Unit) = withContext(Dispatchers.IO) {
+    override suspend fun post(session: ApiSession, operationId: String, beforeSend: suspend () -> Unit): BootstrapHttpResult {
         require(BootstrapProtocol.uuid.matches(operationId))
+        return HttpsJsonTransport.request(url, "POST", session, operationId, open, beforeSend)
+    }
+}
+
+internal class HttpsProfileGateway(base: String,
+    private val open: (URL) -> HttpsURLConnection = { it.openConnection() as HttpsURLConnection }) : ProfileGateway {
+    private val url = URL(BootstrapHttpProtocol.endpoint(base).toString().removeSuffix("/bootstrap"))
+    override suspend fun get(session: ApiSession, beforeSend: suspend () -> Unit) =
+        HttpsJsonTransport.request(url, "GET", session, null, open, beforeSend)
+}
+
+/** Shared bounded transport; callers cannot supply an arbitrary URL or extra headers. */
+private object HttpsJsonTransport {
+    suspend fun request(url: URL, method: String, session: ApiSession, key: String?,
+        open: (URL) -> HttpsURLConnection, beforeSend: suspend () -> Unit) = withContext(Dispatchers.IO) {
         require(session.accessToken.isNotBlank() && session.accessToken.length <= 65_536 &&
             session.accessToken.none { it.isWhitespace() || it.isISOControl() })
         val connection = open(url)
         try {
-            connection.requestMethod = "POST"
+            connection.requestMethod = method
             connection.instanceFollowRedirects = false
             connection.useCaches = false
             connection.doOutput = false
             connection.connectTimeout = 15_000
             connection.readTimeout = 15_000
             connection.setRequestProperty("Authorization", "Bearer ${session.accessToken}")
-            connection.setRequestProperty("Idempotency-Key", operationId)
+            key?.let { connection.setRequestProperty("Idempotency-Key", it) }
             connection.setRequestProperty("Accept", "application/json")
             connection.setRequestProperty("Accept-Encoding", "identity")
             connection.setRequestProperty("Cache-Control", "no-store")
