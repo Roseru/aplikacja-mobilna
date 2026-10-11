@@ -1,11 +1,47 @@
 # Niezależna recenzja E6-O2 - osoba 2
 
-Status: niezależny nieautor prowadzi odbiór własnego snapshotu w managed worktree `backend-e6-recenzja`, osobnej bazie PostgreSQL17/SCRAM i własnym efemerycznym Keycloak. Nie jest autorem runtime/migracji/testów dostawy i nie mutuje checkoutu autora. Końcowy immutable head, manifest hash i ocena zostaną zapisane po finalnym odbiorze.
+Niezależny odbiór E6-O2 — recenzent nieautor
+Ocena: 9,3/10; zero otwartych istotnych P1/P2.
 
-Własny initialsnapshot:219 testów unit/E6 PostgreSQL PASS. Dodatkowe własne probes początkowo8PASS/1FAIL: korekta wartości usuwała markę/skład z search_text, przez co query znanego przepisu nie znajdowało wpisu. P2 przekazano autorowi z reprodukcją; correction teraz zachowuje pełne normalized searchable pola. Rozszerzona reprodukcja brand+recipe PASS.
+Odebrany snapshot: 9b4925d6b2fd16b0d981537afb4510677afb7161 plus jednoznaczna poprawka ścieżki w backend/tests/unit/test_e6_schemas.py (git blob 12c5b61fa5cdaebaa3a754e9a890498ddbd60903). Autor musi związać ostatnią poprawkę z końcowym head przed zdalnym CI. Własny managed checkout backend-e6-recenzja, oddzielna e6_reviewer_test, realny PostgreSQL 17/SCRAM z role/ACL init-db. Recenzent nie jest autorem runtime, migracji ani testów dostawy i nie zmieniał checkoutu autora.
 
-Po poprawce własne13 adversarial probes PASS: Fraction oracle147 kombinacji przy niskiej precyzji; auth/roleloss/owner spoof; restore staraepoka także nowyklucz bez receipt; transitive A→B→C autorstwo/samogłosy/purge/exact rowsets; merge replay po hide bez nowego efektu/audytu/quota; rzeczywiste vote/change/withdraw versus merge i opposing merges; savepoint rollback tylko denial receipt; efektywne column ACL/PUBLIC EXECUTE. Prywatne payloady/logi/DSN/JWT pozostają poza Git.
+Prywatny manifest efektywnego odczytanego/testowanego źródła: 204 śledzone pliki; SHA-256 7774df5d64c6d66f352615b316785b355cb4e2a4e97bfa8f42f58064ca3a0609. Manifest obejmuje kod, migracje, testy dostawy, OpenAPI, zasoby/schematy/wektory/przykłady i O1/O3/decyzje; wyklucza raport i tę recenzję, aby uniknąć samoodniesienia. SHA normalizuje CRLF do LF; zawiera też git blob dla każdego pliku. Własne probes pozostają prywatnie.
 
-Nieautor sam wykonał22 real Keycloak PASS(9 wcześniejszych+13E6) na własnym providerze i bazie, bez skipów; własny provider zatrzymany finally. Są to dowody osobne od22 autora, nie dodatkowe44 różne przypadki. Scope obejmuje rzeczywistą kryptografię/PKCE/role/issuer/audience/generację/deleting i brak dostępu moderatora do cudzej prywatnej wagi.
+Dowody niezależne:
+- Pełne unit po korekcie fixture: 817 PASS, bez skipów (36,67 s).
+- Pełne integration PG przed późniejszą poprawką walidatora kontekstu tokena: 770 PASS, bez skipów (757 testów dostawy + 13 prywatnych adversarial; 677,88 s). To rzeczywisty pełny przebieg, bez udawania, że obejmował późniejszy decoder.
+- Końcowy zmieniony zakres tokenów/read/queue: 84 PASS (26 unit + 28 publikacja/read PG + 11 feedback/moderacja PG + 19 prywatnych PG), następnie 4 nowe testy HTTP/PG autora PASS na dokładnym checkoutcie 9b. Powtórek nie dodajemy do fikcyjnej liczby przypadków.
+- Własny realny Keycloak: 22 PASS (9 wcześniejszych + 13 E6), bez skipów, oddzielny efemeryczny provider; własny proces zatrzymany finally. Sprawdzono PKCE/JWT, user/user+moderator/user+admin/role bez user/niewłaściwy klient, złe issuer/audience/signature, generację/deleting i brak odczytu obcej prywatnej wagi.
+- 17 przykładów E6 przeszło niezależny runtime DTO + Draft202012 JSON Schema; invalid owner i vote=0 poprawnie odrzucone. Bundled community schema identyczne ze schematem kontraktu.
+- Dostosowany stary zakres ACL/historical fixtures/NUMERIC/retention: 89 PASS; jest zawarty w pełnym PG, nie dodatkowe 89 przypadków.
 
-Pełna regresja autora, CI finalnego head/base oraz wynik koordynatora są oddzielne. Ocena nie zastępuje rzeczywistych testów lub otwartych bramek official/APK/HTTPS/restore. [Raport](RAPORT_E6.md) i [master](../MASTER_PROMPT_E6.md) określają wymagany końcowy odbiór ≥9/10 bez istotnychP1/P2.
+Własne 19 probes:
+1. Recipe i brand nadal wyszukiwane po korekcie moderatora.
+2. Transitive A→B→C: autorzy całej grupy mają is_mine; źródłowe głosy i target samogłosy wycofane; purge autora zachowuje exact rowsets/wersje/źródła i autorstwo pozostałych osób.
+3. Replay merge po hide zwraca tylko pierwotne refs/stany, bez ukrywalnego DTO, nowego efektu/audytu/quota.
+4. Restore: stara epoka z nowym kluczem nie tworzy receipt ani publikacji.
+5–7. Efektywne chronione column DML i PUBLIC EXECUTE pod API, worker, NOLOGIN operator.
+8. HTTP role loss przed replay oraz owner/verification spoof.
+9. Niezależny Fraction oracle: 147 kombinacji przy Decimal precision=2, g/ml i skrajnych gęstościach.
+10–11. Rzeczywiste race vote change/withdraw vs merge.
+12. Przeciwne merge różnych moderatorów: jeden 200, jeden 409, bez cyklu/deadlocku.
+13. Kontrolowany savepoint rollback: tylko denial receipt/receipts quota, bez głosu/audytu/vote quota.
+14–19. Własny podpisany cp1/mq1 pod rzeczywistą rolą API: epoch/generation/both+expired x community/reports. Epoch409 ma pierwszeństwo nad generation/expiry; aktualna utrata moderator role daje403 przed kontekstem; cudzy/domain token pozostaje422; Cache-Control:no-store.
+
+Znalezione i zamknięte:
+- P2 wyszukiwania po correction: search_text zawierało wyłącznie nazwy/aliasy. Początkowa reprodukcja 8 PASS/1 FAIL; autor odtworzył również brand/variant/composition według normalize_text. Własne brand+recipe probes PASS.
+- Niespójność kontekstu strony: poprawnie podpisany własny token po restore/generation dawał422 zamiast409 zgodnego z E4/E5/masterem. Naprawiona ścisła shape/owner/params walidacja, następnie epoch→generation→expiry/catalog; 84+4 oraz własne6 HTTP probes PASS.
+- Błąd dostawy fixture po przeniesieniu examples/e6: dokładny checkout 9b z czystymi śledzonymi plikami miał816 PASS/1 FAIL na starej ścieżce. Autor poprawił jedną ścieżkę; pełne817 PASS. Nie odtworzono zbędnego duplikatu.
+
+Przejrzany zakres: master/AGENTS/wymagania/architektura/plan/workflow/komunikacja; matching i DTO; community repository/service/idempotency/tokens/transport/router/feedback; moderation state/correction/report queue/merge; 0013 SQL functions, efetktywne ACL, append-only, purge, admission, bounded retention i downgrade; official activation; readiness, no-store/errors; generowany OpenAPI/bundled resources i przykłady; przekazanie O1/O3/decyzje. 0001–0012 pozostają niezmienione. Pełny stary graf i exact historie zachowane rzeczywistymi testami; mały/duży rosół i Decimal mają oracle oraz SQL/race dowody. Historyczne fixture pomijają wyłącznie funkcje E6 nieistniejące w dawnych schematach; durable bytes/guards i NUMERIC pozostają rzeczywistymi kontrolami PG. Zmiana main po bazie a5 nie zmieniła bazowego backendu; dodane narzędzia Android CI zachowane.
+
+Werdykt: backend E6-O2 gotowy do osobnego odbioru po związaniu poprawki fixture z finalnym commitem i rzeczywistym wymaganym CI finalnego head/base. Ocena wynika z przeglądu transakcji/ACL/retencji/kontraktów i własnych dowodów, nie z oceny mastera. Singleton katalogu jest uzgodnionym punktem serializacji; docelowy pomiar wydajności jest osobnym zadaniem O3.
+
+Zdalnego CI/merge nie potwierdza ta recenzja; wykonawca/koordynator raportuje je osobno. Pełne E5-O2-C/official/etykiety, APK/Room/WorkManager oraz HTTPS/issuer/restore/RPO/RTO pozostają otwarte. Brak PASS pełnego E5/zespołowego E6/wydania, brak Gemini/billing/produkcji/E7. Recenzent nie zatrzymał wspólnego klastra PG; własne provider/procesy zakończone, diagnostyka i syntetyczne sekrety prywatne.
+
+
+Powiązanie dostawy: poprawka fixture została opublikowana jako `689780c546100034659730217733b033447b55ba` w [PR #20](https://github.com/Roseru/aplikacja-mobilna/pull/20). Logi [CI38131194698](https://github.com/Roseru/aplikacja-mobilna/actions/runs/38131194698) potwierdzają exact candidate `8c750b418729aebe6dee4aca929aad49dafba58c`, czyli ten head do main `73860fabe8acfe25682a3022fba44f5aa40575de`: 817 unit, 761 PG i 22 real Keycloak PASS, osiem jobów success. To odrębny od nieautora dowód CI.
+
+Po tym przebiegu wykonawca zwykłym merge dołączył nowy main73860fa jako da70c52. Main dołożył opcjonalny OIDC_CA_BUNDLE i SSLContext dla prywatnego CA, obok nowego obowiązkowego local-integration. Domyślne sprawdzanie TLS, trust_env=False i walidacja JWT pozostają. Nieautor odczytuje te osiem linii konfiguracji/transportu i wykonuje właściwe unit/private-CA, a autor powtórzył 817 unit +10 TLS/helper +2 Android helper =829 PASS oraz22 real Keycloak na aktualnym kodzie. Nie utożsamiamy tego z produkcyjnym HTTPS/restore.
+
+Ostatni commit dokumentacji otrzyma własny wymagany CI. Jego actual head/base/candidate i odczyt logów wskażą końcowa odpowiedź i opis PR; wcześniejsze zielone CI nie potwierdza dowolnego późniejszego commita.
