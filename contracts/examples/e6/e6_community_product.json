@@ -1,0 +1,60 @@
+{
+  "product_id": "78058736-0f85-4a4b-82e1-c0976f16b741",
+  "revision": 1,
+  "canonical_ref": {
+    "product_id": "78058736-0f85-4a4b-82e1-c0976f16b741",
+    "revision": 1
+  },
+  "state_revision": 1,
+  "name": "Syntetyczny rosół",
+  "aliases": [
+    "Rosół domowy"
+  ],
+  "brand": null,
+  "variant": null,
+  "identity": {
+    "brand": {
+      "state": "not_applicable",
+      "value": null
+    },
+    "variant": {
+      "state": "not_applicable",
+      "value": null
+    },
+    "composition": {
+      "state": "known",
+      "value": [
+        "woda",
+        "marchew",
+        "kurczak"
+      ]
+    }
+  },
+  "basis_unit": "g",
+  "nutrition_per_100": {
+    "energy_kcal": "200",
+    "protein_g": "2",
+    "fat_g": "1",
+    "carbs_g": null
+  },
+  "portion": {
+    "amount": "300",
+    "unit": "g"
+  },
+  "density": null,
+  "source_id": "e871b94c-80df-4e03-9e5e-4ef06c0ffda0",
+  "source_kind": "recipe",
+  "source_description": "Syntetyczny przepis testowy, publikacja zatwierdzona przez użytkownika",
+  "provenance": "community",
+  "verification": "unverified",
+  "visibility": "visible",
+  "complete": false,
+  "missing_nutrition_fields": [
+    "carbs_g"
+  ],
+  "missing_identity_fields": [],
+  "positive_votes": 2,
+  "negative_votes": 1,
+  "voters": 3,
+  "is_mine": false
+}

@@ -1,0 +1,34 @@
+{
+  "draft_id": "936c8146-aabb-4f83-9616-a764924d56fb",
+  "draft_revision": 1,
+  "source_kind": "recipe",
+  "source_description": "Synthetic E6 recipe; approved public fields only",
+  "identity": {
+    "brand": {
+      "state": "not_applicable",
+      "value": null
+    },
+    "variant": {
+      "state": "not_applicable",
+      "value": null
+    },
+    "composition": {
+      "state": "known",
+      "value": [
+        "water",
+        "carrot",
+        "chicken"
+      ]
+    }
+  },
+  "aliases": [
+    "Rosół domowy"
+  ],
+  "portion": {
+    "amount": "250",
+    "unit": "ml"
+  },
+  "density": null,
+  "selected_product": null,
+  "confirm_new": false
+}

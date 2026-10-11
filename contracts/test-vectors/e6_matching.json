@@ -1,0 +1,16 @@
+{
+  "schema_version": 1,
+  "rule": "energy_distance_v1",
+  "vectors": [
+    {"id": "both-zero", "left": "0", "right": "0", "left_unit": "g", "right_unit": "g", "rho": null, "matches": true},
+    {"id": "zero-positive", "left": "0", "right": "1", "left_unit": "g", "right_unit": "g", "rho": null, "matches": false},
+    {"id": "exact-ten-percent", "left": "200", "right": "180", "left_unit": "g", "right_unit": "g", "rho": null, "matches": true},
+    {"id": "over-ten-percent", "left": "200", "right": "179", "left_unit": "g", "right_unit": "g", "rho": null, "matches": false},
+    {"id": "density-exact-ten-percent", "left": "240", "right": "180", "left_unit": "ml", "right_unit": "g", "rho": "1.2", "matches": true},
+    {"id": "density-over-ten-percent", "left": "240", "right": "179", "left_unit": "ml", "right_unit": "g", "rho": "1.2", "matches": false},
+    {"id": "reverse-density-boundary", "left": "180", "right": "240", "left_unit": "g", "right_unit": "ml", "rho": "1.2", "matches": true},
+    {"id": "density-rounding-would-match", "left": "0.000002", "right": "0.000006", "left_unit": "ml", "right_unit": "g", "rho": "0.3", "matches": true},
+    {"id": "cross-unit-undocumented", "left": "200", "right": "200", "left_unit": "ml", "right_unit": "g", "rho": null, "matches": false},
+    {"id": "ml-without-density", "left": "42", "right": "40", "left_unit": "ml", "right_unit": "ml", "rho": null, "matches": true}
+  ]
+}

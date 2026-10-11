@@ -3,9 +3,9 @@ from uuid import uuid4
 
 import pytest
 from fastapi.testclient import TestClient
-from psycopg.errors import CheckViolation, NumericValueOutOfRange
+from psycopg.errors import CheckViolation, InsufficientPrivilege, NumericValueOutOfRange
 from sqlalchemy import CheckConstraint, delete, insert, inspect, select, text
-from sqlalchemy.exc import DataError, IntegrityError
+from sqlalchemy.exc import DataError, IntegrityError, ProgrammingError
 
 from calorie_app.core.config import Settings
 from calorie_app.db.models import Product, ProductSource, ProductVersion, UserAccount
@@ -45,6 +45,29 @@ def runtime_connection(database, request):
             # Role names are fixed fixture parameters, never external input.
             connection.exec_driver_sql(f"SET LOCAL ROLE {request.param}")
             assert connection.scalar(text("SELECT current_user")) == request.param
+            # E6 deliberately removes legacy raw catalogue DML from runtime
+            # roles. Preserve every original NUMERIC case under the migrator
+            # while additionally proving the runtime cannot bypass that API.
+            product_id, source_id = uuid4(), uuid4()
+            statements = (
+                insert(Product).values(id=product_id),
+                insert(ProductSource).values(id=source_id, description="Numeric ACL probe"),
+                insert(ProductVersion).values(
+                    product_id=product_id,
+                    revision=1,
+                    source_id=source_id,
+                    name="Numeric ACL probe",
+                    basis_unit="g",
+                    **dict.fromkeys(NUTRITION_COLUMNS),
+                ),
+            )
+            for statement in statements:
+                with pytest.raises(ProgrammingError) as denied, connection.begin_nested():
+                    connection.execute(statement)
+                assert isinstance(denied.value.orig, InsufficientPrivilege)
+                assert denied.value.orig.sqlstate == "42501"
+            connection.exec_driver_sql("SET LOCAL ROLE calorie_app_migrator")
+            assert connection.scalar(text("SELECT current_user")) == "calorie_app_migrator"
             yield connection
         finally:
             transaction.rollback()
@@ -52,7 +75,7 @@ def runtime_connection(database, request):
 
 @pytest.mark.parametrize("column", NUTRITION_COLUMNS)
 @pytest.mark.parametrize("value", VALID_VALUES, ids=("null", "zero", "six_places", "maximum"))
-def test_runtime_accepts_valid_nutrition(runtime_connection, column, value):
+def test_runtime_denial_then_migrator_accepts_valid_nutrition(runtime_connection, column, value):
     row = nutrition_row(runtime_connection) | {column: value}
     runtime_connection.execute(insert(ProductVersion).values(**row))
     stored = runtime_connection.execute(
@@ -65,7 +88,7 @@ def test_runtime_accepts_valid_nutrition(runtime_connection, column, value):
 
 @pytest.mark.parametrize("column", NUTRITION_COLUMNS)
 @pytest.mark.parametrize("value", (Decimal("NaN"), Decimal("-0.000001")), ids=("nan", "negative"))
-def test_runtime_rejects_nutrition_by_check(runtime_connection, column, value):
+def test_runtime_denial_then_migrator_rejects_nutrition_by_check(runtime_connection, column, value):
     row = nutrition_row(runtime_connection) | {column: value}
     with pytest.raises(IntegrityError) as rejected:
         runtime_connection.execute(insert(ProductVersion).values(**row))
@@ -80,7 +103,9 @@ def test_runtime_rejects_nutrition_by_check(runtime_connection, column, value):
     (Decimal("1000000"), Decimal("Infinity"), Decimal("-Infinity")),
     ids=("overflow", "infinity", "negative_infinity"),
 )
-def test_runtime_rejects_nutrition_by_numeric_precision(runtime_connection, column, value):
+def test_runtime_denial_then_migrator_rejects_nutrition_by_numeric_precision(
+    runtime_connection, column, value
+):
     row = nutrition_row(runtime_connection) | {column: value}
     with pytest.raises(DataError) as rejected:
         runtime_connection.execute(insert(ProductVersion).values(**row))

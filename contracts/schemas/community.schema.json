@@ -1,0 +1,1329 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://calorie.invalid/schemas/community.schema.json",
+  "description": "Generated structural E6 contracts; runtime also enforces semantic validators.",
+  "$defs": {
+    "CommunityProductDTO": {
+      "properties": {
+        "product_id": {
+          "type": "string",
+          "format": "uuid",
+          "title": "Product Id"
+        },
+        "revision": {
+          "type": "integer",
+          "maximum": 2147483647.0,
+          "minimum": 1.0,
+          "title": "Revision"
+        },
+        "canonical_ref": {
+          "$ref": "#/$defs/ProductRefDTO"
+        },
+        "state_revision": {
+          "type": "integer",
+          "maximum": 2147483647.0,
+          "minimum": 1.0,
+          "title": "State Revision"
+        },
+        "name": {
+          "type": "string",
+          "maxLength": 2000,
+          "minLength": 1,
+          "title": "Name"
+        },
+        "aliases": {
+          "items": {
+            "type": "string",
+            "maxLength": 2000,
+            "minLength": 1
+          },
+          "type": "array",
+          "maxItems": 50,
+          "title": "Aliases"
+        },
+        "brand": {
+          "anyOf": [
+            {
+              "type": "string",
+              "maxLength": 2000,
+              "minLength": 1
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "title": "Brand"
+        },
+        "variant": {
+          "anyOf": [
+            {
+              "type": "string",
+              "maxLength": 2000,
+              "minLength": 1
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "title": "Variant"
+        },
+        "identity": {
+          "$ref": "#/$defs/IdentityDTO"
+        },
+        "basis_unit": {
+          "type": "string",
+          "enum": [
+            "g",
+            "ml"
+          ],
+          "title": "Basis Unit"
+        },
+        "nutrition_per_100": {
+          "$ref": "#/$defs/NutritionDTO"
+        },
+        "portion": {
+          "$ref": "#/$defs/QuantityDTO"
+        },
+        "density": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/PublicationDensityDTO"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "source_id": {
+          "type": "string",
+          "format": "uuid",
+          "title": "Source Id"
+        },
+        "source_kind": {
+          "type": "string",
+          "enum": [
+            "label",
+            "recipe",
+            "estimate",
+            "ai"
+          ],
+          "title": "Source Kind"
+        },
+        "source_description": {
+          "type": "string",
+          "maxLength": 2000,
+          "minLength": 1,
+          "title": "Source Description"
+        },
+        "provenance": {
+          "type": "string",
+          "const": "community",
+          "title": "Provenance"
+        },
+        "verification": {
+          "type": "string",
+          "enum": [
+            "unverified",
+            "verified"
+          ],
+          "title": "Verification"
+        },
+        "visibility": {
+          "type": "string",
+          "enum": [
+            "visible",
+            "hidden"
+          ],
+          "title": "Visibility"
+        },
+        "complete": {
+          "type": "boolean",
+          "title": "Complete"
+        },
+        "missing_nutrition_fields": {
+          "items": {
+            "type": "string",
+            "enum": [
+              "energy_kcal",
+              "protein_g",
+              "fat_g",
+              "carbs_g"
+            ]
+          },
+          "type": "array",
+          "maxItems": 4,
+          "title": "Missing Nutrition Fields"
+        },
+        "missing_identity_fields": {
+          "items": {
+            "type": "string",
+            "enum": [
+              "brand",
+              "variant",
+              "composition",
+              "energy_kcal"
+            ]
+          },
+          "type": "array",
+          "maxItems": 4,
+          "title": "Missing Identity Fields"
+        },
+        "positive_votes": {
+          "type": "integer",
+          "minimum": 0.0,
+          "title": "Positive Votes"
+        },
+        "negative_votes": {
+          "type": "integer",
+          "minimum": 0.0,
+          "title": "Negative Votes"
+        },
+        "voters": {
+          "type": "integer",
+          "minimum": 0.0,
+          "title": "Voters"
+        },
+        "is_mine": {
+          "type": "boolean",
+          "title": "Is Mine"
+        }
+      },
+      "additionalProperties": false,
+      "type": "object",
+      "required": [
+        "product_id",
+        "revision",
+        "canonical_ref",
+        "state_revision",
+        "name",
+        "aliases",
+        "brand",
+        "variant",
+        "identity",
+        "basis_unit",
+        "nutrition_per_100",
+        "portion",
+        "density",
+        "source_id",
+        "source_kind",
+        "source_description",
+        "provenance",
+        "verification",
+        "visibility",
+        "complete",
+        "missing_nutrition_fields",
+        "missing_identity_fields",
+        "positive_votes",
+        "negative_votes",
+        "voters",
+        "is_mine"
+      ],
+      "title": "CommunityProductDTO"
+    },
+    "CommunityProductPage": {
+      "properties": {
+        "items": {
+          "items": {
+            "$ref": "#/$defs/CommunityProductDTO"
+          },
+          "type": "array",
+          "maxItems": 500,
+          "title": "Items"
+        },
+        "next_page_token": {
+          "anyOf": [
+            {
+              "type": "string",
+              "maxLength": 4096,
+              "minLength": 1
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "title": "Next Page Token"
+        }
+      },
+      "additionalProperties": false,
+      "type": "object",
+      "required": [
+        "items",
+        "next_page_token"
+      ],
+      "title": "CommunityProductPage"
+    },
+    "CompositionDTO": {
+      "properties": {
+        "state": {
+          "type": "string",
+          "enum": [
+            "known",
+            "unknown"
+          ],
+          "title": "State"
+        },
+        "value": {
+          "anyOf": [
+            {
+              "type": "string",
+              "maxLength": 4000,
+              "minLength": 1
+            },
+            {
+              "items": {
+                "type": "string",
+                "maxLength": 2000,
+                "minLength": 1
+              },
+              "type": "array",
+              "maxItems": 100,
+              "minItems": 1
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "title": "Value"
+        }
+      },
+      "additionalProperties": false,
+      "type": "object",
+      "required": [
+        "state",
+        "value"
+      ],
+      "title": "CompositionDTO"
+    },
+    "FeedbackDTO": {
+      "properties": {
+        "product": {
+          "$ref": "#/$defs/ProductRefDTO"
+        },
+        "positive_votes": {
+          "type": "integer",
+          "minimum": 0.0,
+          "title": "Positive Votes"
+        },
+        "negative_votes": {
+          "type": "integer",
+          "minimum": 0.0,
+          "title": "Negative Votes"
+        },
+        "voters": {
+          "type": "integer",
+          "minimum": 0.0,
+          "title": "Voters"
+        },
+        "my_value": {
+          "anyOf": [
+            {
+              "type": "integer",
+              "enum": [
+                -1,
+                1
+              ],
+              "maximum": 1.0,
+              "minimum": -1.0
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "title": "My Value"
+        },
+        "my_revision": {
+          "type": "integer",
+          "minimum": 0.0,
+          "title": "My Revision"
+        },
+        "is_mine": {
+          "type": "boolean",
+          "title": "Is Mine"
+        }
+      },
+      "additionalProperties": false,
+      "type": "object",
+      "required": [
+        "product",
+        "positive_votes",
+        "negative_votes",
+        "voters",
+        "my_value",
+        "my_revision",
+        "is_mine"
+      ],
+      "title": "FeedbackDTO"
+    },
+    "IdentityDTO": {
+      "properties": {
+        "brand": {
+          "$ref": "#/$defs/IdentityFieldDTO"
+        },
+        "variant": {
+          "$ref": "#/$defs/IdentityFieldDTO"
+        },
+        "composition": {
+          "$ref": "#/$defs/CompositionDTO"
+        }
+      },
+      "additionalProperties": false,
+      "type": "object",
+      "required": [
+        "brand",
+        "variant",
+        "composition"
+      ],
+      "title": "IdentityDTO"
+    },
+    "IdentityFieldDTO": {
+      "properties": {
+        "state": {
+          "type": "string",
+          "enum": [
+            "known",
+            "unknown",
+            "not_applicable"
+          ],
+          "title": "State"
+        },
+        "value": {
+          "anyOf": [
+            {
+              "type": "string",
+              "maxLength": 2000,
+              "minLength": 1
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "title": "Value"
+        }
+      },
+      "additionalProperties": false,
+      "type": "object",
+      "required": [
+        "state",
+        "value"
+      ],
+      "title": "IdentityFieldDTO"
+    },
+    "MatchCandidateDTO": {
+      "properties": {
+        "product": {
+          "$ref": "#/$defs/ProductRefDTO"
+        },
+        "provenance": {
+          "type": "string",
+          "enum": [
+            "official",
+            "community"
+          ],
+          "title": "Provenance"
+        },
+        "reasons": {
+          "items": {
+            "type": "string",
+            "maxLength": 2000,
+            "minLength": 1
+          },
+          "type": "array",
+          "maxItems": 20,
+          "minItems": 1,
+          "title": "Reasons"
+        },
+        "high_confidence": {
+          "type": "boolean",
+          "title": "High Confidence"
+        }
+      },
+      "additionalProperties": false,
+      "type": "object",
+      "required": [
+        "product",
+        "provenance",
+        "reasons",
+        "high_confidence"
+      ],
+      "title": "MatchCandidateDTO"
+    },
+    "MatchProductRequest": {
+      "properties": {
+        "draft_id": {
+          "type": "string",
+          "format": "uuid",
+          "title": "Draft Id"
+        },
+        "draft_revision": {
+          "type": "integer",
+          "maximum": 2147483647.0,
+          "minimum": 1.0,
+          "title": "Draft Revision"
+        },
+        "source_kind": {
+          "type": "string",
+          "enum": [
+            "label",
+            "recipe",
+            "estimate",
+            "ai"
+          ],
+          "title": "Source Kind"
+        },
+        "source_description": {
+          "type": "string",
+          "maxLength": 2000,
+          "minLength": 1,
+          "title": "Source Description"
+        },
+        "identity": {
+          "$ref": "#/$defs/IdentityDTO"
+        },
+        "aliases": {
+          "items": {
+            "type": "string",
+            "maxLength": 2000,
+            "minLength": 1
+          },
+          "type": "array",
+          "maxItems": 50,
+          "title": "Aliases"
+        },
+        "portion": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/QuantityDTO"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "density": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/PublicationDensityDTO"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        }
+      },
+      "additionalProperties": false,
+      "type": "object",
+      "required": [
+        "draft_id",
+        "draft_revision",
+        "source_kind",
+        "source_description",
+        "identity"
+      ],
+      "title": "MatchProductRequest"
+    },
+    "MatchProductResponse": {
+      "properties": {
+        "decision": {
+          "type": "string",
+          "enum": [
+            "existing_variant",
+            "manual_candidates",
+            "new_product"
+          ],
+          "title": "Decision"
+        },
+        "existing_product": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/ProductRefDTO"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "candidates": {
+          "items": {
+            "$ref": "#/$defs/MatchCandidateDTO"
+          },
+          "type": "array",
+          "maxItems": 20,
+          "title": "Candidates"
+        },
+        "missing_identity_fields": {
+          "items": {
+            "type": "string",
+            "enum": [
+              "brand",
+              "variant",
+              "composition",
+              "energy_kcal"
+            ]
+          },
+          "type": "array",
+          "maxItems": 4,
+          "title": "Missing Identity Fields"
+        },
+        "truncated": {
+          "type": "boolean",
+          "title": "Truncated"
+        }
+      },
+      "additionalProperties": false,
+      "type": "object",
+      "required": [
+        "decision",
+        "existing_product",
+        "candidates",
+        "missing_identity_fields",
+        "truncated"
+      ],
+      "title": "MatchProductResponse"
+    },
+    "MergeProductRequest": {
+      "properties": {
+        "target": {
+          "$ref": "#/$defs/ProductRefDTO"
+        },
+        "expected_source_state_revision": {
+          "type": "integer",
+          "maximum": 2147483647.0,
+          "minimum": 1.0,
+          "title": "Expected Source State Revision"
+        },
+        "expected_target_state_revision": {
+          "type": "integer",
+          "maximum": 2147483647.0,
+          "minimum": 1.0,
+          "title": "Expected Target State Revision"
+        },
+        "identity_confirmed": {
+          "type": "boolean",
+          "title": "Identity Confirmed"
+        },
+        "reason": {
+          "type": "string",
+          "maxLength": 2000,
+          "minLength": 1,
+          "title": "Reason"
+        }
+      },
+      "additionalProperties": false,
+      "type": "object",
+      "required": [
+        "target",
+        "expected_source_state_revision",
+        "expected_target_state_revision",
+        "identity_confirmed",
+        "reason"
+      ],
+      "title": "MergeProductRequest"
+    },
+    "MergeProductResultDTO": {
+      "properties": {
+        "source": {
+          "$ref": "#/$defs/ProductRefDTO"
+        },
+        "target": {
+          "$ref": "#/$defs/ProductRefDTO"
+        },
+        "source_state_revision": {
+          "type": "integer",
+          "maximum": 2147483647.0,
+          "minimum": 1.0,
+          "title": "Source State Revision"
+        },
+        "target_state_revision": {
+          "type": "integer",
+          "maximum": 2147483647.0,
+          "minimum": 1.0,
+          "title": "Target State Revision"
+        }
+      },
+      "additionalProperties": false,
+      "type": "object",
+      "required": [
+        "source",
+        "target",
+        "source_state_revision",
+        "target_state_revision"
+      ],
+      "title": "MergeProductResultDTO"
+    },
+    "ModerateProductRequest": {
+      "properties": {
+        "expected_state_revision": {
+          "type": "integer",
+          "maximum": 2147483647.0,
+          "minimum": 1.0,
+          "title": "Expected State Revision"
+        },
+        "reason": {
+          "type": "string",
+          "maxLength": 2000,
+          "minLength": 1,
+          "title": "Reason"
+        },
+        "correction": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/ProductCorrectionDTO"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "verification": {
+          "anyOf": [
+            {
+              "type": "string",
+              "enum": [
+                "unverified",
+                "verified"
+              ]
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "title": "Verification"
+        },
+        "visibility": {
+          "anyOf": [
+            {
+              "type": "string",
+              "enum": [
+                "visible",
+                "hidden"
+              ]
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "title": "Visibility"
+        },
+        "source_confirmed": {
+          "type": "boolean",
+          "title": "Source Confirmed",
+          "default": false
+        }
+      },
+      "additionalProperties": false,
+      "type": "object",
+      "required": [
+        "expected_state_revision",
+        "reason"
+      ],
+      "title": "ModerateProductRequest"
+    },
+    "ModerationProductResultDTO": {
+      "properties": {
+        "product": {
+          "$ref": "#/$defs/ProductRefDTO"
+        },
+        "canonical_ref": {
+          "$ref": "#/$defs/ProductRefDTO"
+        },
+        "state_revision": {
+          "type": "integer",
+          "maximum": 2147483647.0,
+          "minimum": 1.0,
+          "title": "State Revision"
+        }
+      },
+      "additionalProperties": false,
+      "type": "object",
+      "required": [
+        "product",
+        "canonical_ref",
+        "state_revision"
+      ],
+      "title": "ModerationProductResultDTO"
+    },
+    "ModerationReportDTO": {
+      "properties": {
+        "report_id": {
+          "type": "string",
+          "format": "uuid",
+          "title": "Report Id"
+        },
+        "product": {
+          "$ref": "#/$defs/ProductRefDTO"
+        },
+        "canonical_ref": {
+          "$ref": "#/$defs/ProductRefDTO"
+        },
+        "revision": {
+          "type": "integer",
+          "maximum": 2147483647.0,
+          "minimum": 1.0,
+          "title": "Revision"
+        },
+        "status": {
+          "type": "string",
+          "enum": [
+            "open",
+            "resolved",
+            "dismissed",
+            "referred_to_admin"
+          ],
+          "title": "Status"
+        },
+        "reason": {
+          "type": "string",
+          "maxLength": 2000,
+          "minLength": 1,
+          "title": "Reason"
+        },
+        "description": {
+          "type": "string",
+          "maxLength": 2000,
+          "minLength": 1,
+          "title": "Description"
+        },
+        "resolution_reason": {
+          "anyOf": [
+            {
+              "type": "string",
+              "maxLength": 2000,
+              "minLength": 1
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "title": "Resolution Reason"
+        }
+      },
+      "additionalProperties": false,
+      "type": "object",
+      "required": [
+        "report_id",
+        "product",
+        "canonical_ref",
+        "revision",
+        "status",
+        "reason",
+        "description",
+        "resolution_reason"
+      ],
+      "title": "ModerationReportDTO"
+    },
+    "ModerationReportPage": {
+      "properties": {
+        "items": {
+          "items": {
+            "$ref": "#/$defs/ModerationReportDTO"
+          },
+          "type": "array",
+          "maxItems": 500,
+          "title": "Items"
+        },
+        "next_page_token": {
+          "anyOf": [
+            {
+              "type": "string",
+              "maxLength": 4096,
+              "minLength": 1
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "title": "Next Page Token"
+        }
+      },
+      "additionalProperties": false,
+      "type": "object",
+      "required": [
+        "items",
+        "next_page_token"
+      ],
+      "title": "ModerationReportPage"
+    },
+    "NutritionDTO": {
+      "properties": {
+        "energy_kcal": {
+          "anyOf": [
+            {
+              "type": "string",
+              "pattern": "^(0|[1-9][0-9]{0,5})(\\.[0-9]{0,5}[1-9])?(?![\\s\\S])"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "title": "Energy Kcal"
+        },
+        "protein_g": {
+          "anyOf": [
+            {
+              "type": "string",
+              "pattern": "^(0|[1-9][0-9]{0,5})(\\.[0-9]{0,5}[1-9])?(?![\\s\\S])"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "title": "Protein G"
+        },
+        "fat_g": {
+          "anyOf": [
+            {
+              "type": "string",
+              "pattern": "^(0|[1-9][0-9]{0,5})(\\.[0-9]{0,5}[1-9])?(?![\\s\\S])"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "title": "Fat G"
+        },
+        "carbs_g": {
+          "anyOf": [
+            {
+              "type": "string",
+              "pattern": "^(0|[1-9][0-9]{0,5})(\\.[0-9]{0,5}[1-9])?(?![\\s\\S])"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "title": "Carbs G"
+        }
+      },
+      "additionalProperties": false,
+      "type": "object",
+      "required": [
+        "energy_kcal",
+        "protein_g",
+        "fat_g",
+        "carbs_g"
+      ],
+      "title": "NutritionDTO"
+    },
+    "ProductCorrectionDTO": {
+      "properties": {
+        "name": {
+          "type": "string",
+          "maxLength": 2000,
+          "minLength": 1,
+          "title": "Name"
+        },
+        "aliases": {
+          "items": {
+            "type": "string",
+            "maxLength": 2000,
+            "minLength": 1
+          },
+          "type": "array",
+          "maxItems": 50,
+          "title": "Aliases"
+        },
+        "identity": {
+          "$ref": "#/$defs/IdentityDTO"
+        },
+        "basis_unit": {
+          "type": "string",
+          "enum": [
+            "g",
+            "ml"
+          ],
+          "title": "Basis Unit"
+        },
+        "nutrition_per_100": {
+          "$ref": "#/$defs/NutritionDTO"
+        },
+        "portion": {
+          "$ref": "#/$defs/QuantityDTO"
+        },
+        "density": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/PublicationDensityDTO"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "source_kind": {
+          "type": "string",
+          "enum": [
+            "label",
+            "recipe",
+            "estimate",
+            "ai"
+          ],
+          "title": "Source Kind"
+        },
+        "source_description": {
+          "type": "string",
+          "maxLength": 2000,
+          "minLength": 1,
+          "title": "Source Description"
+        }
+      },
+      "additionalProperties": false,
+      "type": "object",
+      "required": [
+        "name",
+        "aliases",
+        "identity",
+        "basis_unit",
+        "nutrition_per_100",
+        "portion",
+        "density",
+        "source_kind",
+        "source_description"
+      ],
+      "title": "ProductCorrectionDTO"
+    },
+    "ProductRefDTO": {
+      "properties": {
+        "product_id": {
+          "type": "string",
+          "format": "uuid",
+          "title": "Product Id"
+        },
+        "revision": {
+          "type": "integer",
+          "maximum": 2147483647.0,
+          "minimum": 1.0,
+          "title": "Revision"
+        }
+      },
+      "additionalProperties": false,
+      "type": "object",
+      "required": [
+        "product_id",
+        "revision"
+      ],
+      "title": "ProductRefDTO"
+    },
+    "PublicationDensityDTO": {
+      "properties": {
+        "amount": {
+          "allOf": [
+            {
+              "type": "string",
+              "pattern": "^(0|[1-9][0-9]{0,5})(\\.[0-9]{0,5}[1-9])?(?![\\s\\S])"
+            },
+            {
+              "not": {
+                "const": "0"
+              }
+            }
+          ],
+          "title": "Amount"
+        },
+        "source_description": {
+          "type": "string",
+          "maxLength": 2000,
+          "minLength": 1,
+          "title": "Source Description"
+        }
+      },
+      "additionalProperties": false,
+      "type": "object",
+      "required": [
+        "amount",
+        "source_description"
+      ],
+      "title": "PublicationDensityDTO"
+    },
+    "PublishProductRequest": {
+      "properties": {
+        "draft_id": {
+          "type": "string",
+          "format": "uuid",
+          "title": "Draft Id"
+        },
+        "draft_revision": {
+          "type": "integer",
+          "maximum": 2147483647.0,
+          "minimum": 1.0,
+          "title": "Draft Revision"
+        },
+        "source_kind": {
+          "type": "string",
+          "enum": [
+            "label",
+            "recipe",
+            "estimate",
+            "ai"
+          ],
+          "title": "Source Kind"
+        },
+        "source_description": {
+          "type": "string",
+          "maxLength": 2000,
+          "minLength": 1,
+          "title": "Source Description"
+        },
+        "identity": {
+          "$ref": "#/$defs/IdentityDTO"
+        },
+        "aliases": {
+          "items": {
+            "type": "string",
+            "maxLength": 2000,
+            "minLength": 1
+          },
+          "type": "array",
+          "maxItems": 50,
+          "title": "Aliases"
+        },
+        "portion": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/QuantityDTO"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "density": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/PublicationDensityDTO"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "selected_product": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/ProductRefDTO"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "confirm_new": {
+          "type": "boolean",
+          "title": "Confirm New",
+          "default": false
+        }
+      },
+      "additionalProperties": false,
+      "type": "object",
+      "required": [
+        "draft_id",
+        "draft_revision",
+        "source_kind",
+        "source_description",
+        "identity"
+      ],
+      "title": "PublishProductRequest"
+    },
+    "PublishProductResult": {
+      "properties": {
+        "decision": {
+          "type": "string",
+          "enum": [
+            "new_product",
+            "existing_variant",
+            "selected_existing"
+          ],
+          "title": "Decision"
+        },
+        "product": {
+          "$ref": "#/$defs/ProductRefDTO"
+        }
+      },
+      "additionalProperties": false,
+      "type": "object",
+      "required": [
+        "decision",
+        "product"
+      ],
+      "title": "PublishProductResult"
+    },
+    "QuantityDTO": {
+      "properties": {
+        "amount": {
+          "allOf": [
+            {
+              "type": "string",
+              "pattern": "^(0|[1-9][0-9]{0,5})(\\.[0-9]{0,5}[1-9])?(?![\\s\\S])"
+            },
+            {
+              "not": {
+                "const": "0"
+              }
+            }
+          ],
+          "title": "Amount"
+        },
+        "unit": {
+          "type": "string",
+          "enum": [
+            "g",
+            "ml"
+          ],
+          "title": "Unit"
+        }
+      },
+      "additionalProperties": false,
+      "type": "object",
+      "required": [
+        "amount",
+        "unit"
+      ],
+      "title": "QuantityDTO"
+    },
+    "ReportRequest": {
+      "properties": {
+        "product": {
+          "$ref": "#/$defs/ProductRefDTO"
+        },
+        "reason": {
+          "type": "string",
+          "maxLength": 2000,
+          "minLength": 1,
+          "title": "Reason"
+        },
+        "description": {
+          "type": "string",
+          "maxLength": 2000,
+          "minLength": 1,
+          "title": "Description"
+        }
+      },
+      "additionalProperties": false,
+      "type": "object",
+      "required": [
+        "product",
+        "reason",
+        "description"
+      ],
+      "title": "ReportRequest"
+    },
+    "ReportResolutionRequest": {
+      "properties": {
+        "expected_revision": {
+          "type": "integer",
+          "maximum": 2147483647.0,
+          "minimum": 1.0,
+          "title": "Expected Revision"
+        },
+        "status": {
+          "type": "string",
+          "enum": [
+            "resolved",
+            "dismissed",
+            "referred_to_admin"
+          ],
+          "title": "Status"
+        },
+        "reason": {
+          "type": "string",
+          "maxLength": 2000,
+          "minLength": 1,
+          "title": "Reason"
+        }
+      },
+      "additionalProperties": false,
+      "type": "object",
+      "required": [
+        "expected_revision",
+        "status",
+        "reason"
+      ],
+      "title": "ReportResolutionRequest"
+    },
+    "ReportResultDTO": {
+      "properties": {
+        "report_id": {
+          "type": "string",
+          "format": "uuid",
+          "title": "Report Id"
+        },
+        "revision": {
+          "type": "integer",
+          "maximum": 2147483647.0,
+          "minimum": 1.0,
+          "title": "Revision"
+        },
+        "status": {
+          "type": "string",
+          "enum": [
+            "open",
+            "resolved",
+            "dismissed",
+            "referred_to_admin"
+          ],
+          "title": "Status"
+        }
+      },
+      "additionalProperties": false,
+      "type": "object",
+      "required": [
+        "report_id",
+        "revision",
+        "status"
+      ],
+      "title": "ReportResultDTO"
+    },
+    "VoteRequest": {
+      "properties": {
+        "value": {
+          "type": "integer",
+          "enum": [
+            -1,
+            1
+          ],
+          "maximum": 1.0,
+          "minimum": -1.0,
+          "title": "Value"
+        }
+      },
+      "additionalProperties": false,
+      "type": "object",
+      "required": [
+        "value"
+      ],
+      "title": "VoteRequest"
+    },
+    "VoteResultDTO": {
+      "properties": {
+        "revision": {
+          "type": "integer",
+          "minimum": 0.0,
+          "title": "Revision"
+        },
+        "value": {
+          "anyOf": [
+            {
+              "type": "integer",
+              "enum": [
+                -1,
+                1
+              ],
+              "maximum": 1.0,
+              "minimum": -1.0
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "title": "Value"
+        }
+      },
+      "additionalProperties": false,
+      "type": "object",
+      "required": [
+        "revision",
+        "value"
+      ],
+      "title": "VoteResultDTO"
+    }
+  }
+}

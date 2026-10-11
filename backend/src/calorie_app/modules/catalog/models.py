@@ -17,7 +17,7 @@ from sqlalchemy import (
     Text,
     text,
 )
-from sqlalchemy.dialects.postgresql import JSONB
+from sqlalchemy.dialects.postgresql import ARRAY, JSONB
 from sqlalchemy.orm import Mapped, mapped_column
 
 from calorie_app.db.base import Base
@@ -341,3 +341,34 @@ class CatalogTimestampRecovery(Base):
         DateTime(timezone=True), server_default=text("clock_timestamp()")
     )
     recovered_by: Mapped[str] = mapped_column(Text, server_default=text("current_user"))
+
+
+class ProductSearchMetadata(Base):
+    """Immutable derived normalization of one exact catalogue version."""
+
+    __tablename__ = "product_search_metadata"
+    __table_args__ = (
+        ForeignKeyConstraint(
+            ["product_id", "revision"],
+            ["app.product_versions.product_id", "app.product_versions.revision"],
+            ondelete="CASCADE",
+        ),
+        CheckConstraint("revision>=1", name="revision"),
+        CheckConstraint("cardinality(normalized_names) BETWEEN 1 AND 101", name="names_limit"),
+        CheckConstraint(
+            "cardinality(normalized_names)=cardinality(normalized_name_hashes)",
+            name="hash_count",
+        ),
+        Index("ix_product_search_metadata_names", "normalized_name_hashes", postgresql_using="gin"),
+        Index(
+            "ix_product_search_metadata_trgm",
+            "search_text",
+            postgresql_using="gin",
+            postgresql_ops={"search_text": "public.gin_trgm_ops"},
+        ),
+    )
+    product_id: Mapped[UUID] = mapped_column(primary_key=True)
+    revision: Mapped[int] = mapped_column(primary_key=True)
+    normalized_names: Mapped[list[str]] = mapped_column(ARRAY(Text))
+    normalized_name_hashes: Mapped[list[str]] = mapped_column(ARRAY(String(64)))
+    search_text: Mapped[str] = mapped_column(Text)
