@@ -130,6 +130,10 @@ class DiaryFlowTest {
                 app.database.dao().currentProfile("guest")?.activityClass == mode.name &&
                     app.database.dao().goal("guest", LocalDate.now().toString()).first()?.kcal == kcal
             } }
+            // The save feedback overlays the bottom of the list. Finish that interaction before the next tap.
+            compose.waitUntil(5_000) { compose.onAllNodesWithText("Profil i cel zapisane na urządzeniu.").fetchSemanticsNodes().isNotEmpty() }
+            compose.waitUntil(10_000) { compose.onAllNodesWithText("Profil i cel zapisane na urządzeniu.").fetchSemanticsNodes().isEmpty() }
+            compose.waitForIdle()
             savedGoal = kcal
         }
         compose.activityRule.scenario.recreate()

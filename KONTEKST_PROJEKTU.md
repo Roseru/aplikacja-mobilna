@@ -1,5 +1,12 @@
 # Kontekst współpracy
 
+## Kontynuacja O1 — tryby 0.7.3, 11 października 2026
+
+- Gałąź codex/android-tryby-aktywnosci, kod 1af9091. PR #23 / 0.7.2 scalony na main 446ac0c po pełnych ośmiu success; konflikt wspólnej komunikacji rozwiązany z zachowaniem O1-011/O2-018/019 i obu aktualnych wierszy. E7 jest przekazaniem O2, nie implementacją O1.
+- 0.7.3 / versionCode 10 / Room 6: Etat biurowo-kawowy, trzy wektorowe ikony żołnierzy i activity_goal_v1 (1 / 1,25 / 1,5). Zmiana klasy przelicza bieżący cel od dzisiaj po jawnym zapisaniu profilu, atomowo z outbox, bez zmiany dawnych dni lub B/T/W. To osobna reguła od mifflin_pal_v1 backendu. Ręczne cele pozostają dostępne.
+- 67 JVM, końcowe pełne 56/56 urządzenia przy 1080×2400/API35 offline; lint 0 błędów/26 ostrzeżeń/1 informacja. Raport android/RAPORT_0_7_3.md opisuje wcześniejsze błędy nowego testu i regułę przeliczników. APK SHA-256 86029e183c5dbf27e379be78acd38aefc7ac07e6cb1e90bf80135227bbca4547, poza Git. Logowanie/HTTP/sync pozostają osobnym kolejnym zakresem.
+
+
 ## Kontynuacja O1 — stabilność ekranów 0.7.2, 11 października 2026
 
 - Bieżąca gałąź codex/android-male-ekrany; kod 03f8678, merge b81c8dc aktualnego main 492811f (scalony E6/#20). Merge nie zmienił kodu Androida. Starsze oczekiwanie na #20 i dawne PR-y Androida jest historyczne.
