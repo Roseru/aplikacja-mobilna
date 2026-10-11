@@ -3,6 +3,7 @@
 import json
 from datetime import datetime
 from pathlib import Path
+from unittest.mock import patch
 from uuid import UUID, uuid4
 
 import pytest
@@ -31,6 +32,19 @@ ROOT = Path(__file__).resolve().parents[3]
 SECRET = SecretStr("e5" * 32)
 E4_REVISION = "0011_e4_deletion"
 NEW_TABLES = {"read_admissions", "read_sessions", "read_session_items"}
+READ_TABLES = set(NEW_TABLES)
+NEW_TABLES |= {
+    "community_catalog_state",
+    "community_products",
+    "community_versions",
+    "community_authors",
+    "community_publication_bindings",
+    "community_votes",
+    "community_reports",
+    "community_audit",
+    "community_receipts",
+    "community_quotas",
+}
 
 
 def _tables(connection):
@@ -152,7 +166,14 @@ def _seed_e4(engine, artifact_root):
     assert frozen["snapshot_token"] and frozen["page_token"] and frozen["checkpoint"] is None
     package = json.loads((ROOT / "backend/data/demo/seed.json").read_text(encoding="utf-8"))
     imported = import_catalog(engine, package)
-    publish_package(engine, imported.package_id, imported.release, artifact_root)
+    # This fixture seeds the actual pre-E6 schema (0011). E6 catalogue
+    # serialization functions did not exist at that version; all original
+    # durable bytes, package locks, guards and publication logic still execute.
+    with (
+        patch("calorie_app.modules.catalog.export.catalog_lock"),
+        patch("calorie_app.modules.catalog.export.bump_catalog"),
+    ):
+        publish_package(engine, imported.package_id, imported.release, artifact_root)
     with Session(engine) as session, session.begin():
         other = Principal(who.issuer, str(uuid4()), frozenset({"user"}))
         other_id = UUID(bootstrap(session, other, uuid4())["account_id"])
@@ -196,7 +217,7 @@ def _assert_new_acl(connection):
         assert len(function.proconfig) == 1
         assert function.proconfig[0].replace(" ", "") == "search_path=pg_catalog,pg_temp"
     for role in roles:
-        for table in NEW_TABLES:
+        for table in READ_TABLES:
             for privilege in (
                 "SELECT",
                 "INSERT",
@@ -218,7 +239,7 @@ def _assert_new_acl(connection):
                     )
                     is expected
                 )
-    for table in NEW_TABLES:
+    for table in READ_TABLES:
         columns = list(
             connection.scalars(
                 text(

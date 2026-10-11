@@ -323,6 +323,8 @@ def test_retention_minimizes_receipts_preserves_mapping_and_active_incremental(o
             "sessions": 0,
             "read_items": 0,
             "read_sessions": 0,
+            "community_receipts": 0,
+            "community_quotas": 0,
         }
     with Session(engine) as session:
         receipt = session.get(SyncReceipt, (a, opid))

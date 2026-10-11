@@ -58,6 +58,16 @@ def test_migration_and_database_readiness(database):
         "read_admissions",
         "read_sessions",
         "read_session_items",
+        "community_catalog_state",
+        "community_products",
+        "community_versions",
+        "community_authors",
+        "community_publication_bindings",
+        "community_votes",
+        "community_reports",
+        "community_audit",
+        "community_receipts",
+        "community_quotas",
     }
     migrate("check")
     with TestClient(create_app(Settings(database_url=url), engine=engine)) as client:

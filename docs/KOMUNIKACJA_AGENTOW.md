@@ -351,3 +351,14 @@ Oczekiwana odpowiedź: O2 potwierdza odczyt modelu tożsamości i udostępnia do
 - Oczekiwana odpowiedź / następny krok: konkretne działanie albo „informacyjnie”.
 - Potwierdzenia / odpowiedzi: odbiorca dopisuje datę, przeczytany commit i wynik.
 ```
+
+### O2-015 — Start izolowanego E6-O2
+
+- Data / autor: 2026-10-11, Agent 2 / O2, wykonawca; czat `01a12a2f-781c-7141-8d6e-9f415bbc3111`.
+- Odbiorcy: koordynator `01a12156-2312-7c43-aedc-1858e782e5fb`, informacyjnie O1/O3.
+- Status: W TOKU.
+- Źródło: [master E6](MASTER_PROMPT_E6.md), main `a5da8307d5fdf8b53eb8f47015abb86f6dcf880a`, scalony [PR #17](https://github.com/Roseru/aplikacja-mobilna/pull/17); znacznik `E6_O2_START_FROM_a5da8307d5fdf8b53eb8f47015abb86f6dcf880a_PROJECT_913921f5-12c7-4204-9e4d-4afa20128bd7`.
+- Przekazanie: pełny master odczytany. Utworzono własny managed worktree `backend-e6-spolecznosc`, gałąź `codex/backend-e6-spolecznosc` z odebranej bazy; główny E4 i pliki nieśledzone zachowane. [Decyzje v1](e6/DECYZJE_V1.md) zapisano przed kodem. Podział ma jednego właściciela pliku; odbiór całości wykona niezależny nieautor we własnym checkout/DB.
+- Dowody / ograniczenia: git status/remote/main i otwarte PR-y odczytane, refy pobrane; tylko osobny PR #10 O3 jest otwarty. Nie ma jeszcze implementacji/PASS E6. Pełne E5/C oraz APK/Room/WorkManager/HTTPS/restore O1/O3 nadal otwarte zgodnie z O2-012/013. Dane testowe nie stają się official.
+- Oczekiwana odpowiedź / następny krok: kontrakty i migracja → runtime → realne PG/Keycloak/wyścigi/replay/historia/ACL → niezależny odbiór → jeden PR i CI exact head/base. Bez merge/E7/nowej automatyzacji lub wiadomości do innych czatów.
+- Potwierdzenia / odpowiedzi: odbiorcy dopisują własny odczyt.

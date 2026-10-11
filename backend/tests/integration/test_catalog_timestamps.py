@@ -4,6 +4,7 @@ import copy
 import gzip
 import hashlib
 import json
+from unittest.mock import patch as mock_patch
 
 import pytest
 import test_catalog_delivery as delivery
@@ -166,7 +167,13 @@ def test_upgrade_keeps_old_publication_bytes_and_hash(catalog_db, tmp_path, monk
         legacy_import(engine, original, monkeypatch)
         with monkeypatch.context() as patch:
             patch.setattr(repository, "recovered_timestamp", lambda *args: None)
-            manifest = publish_package(engine, OFFICIAL_PACKAGE_ID, 1, tmp_path)
+            # Seed the genuine 0003 schema: E6 serialization functions did
+            # not exist yet. Durable bytes and original package logic execute.
+            with (
+                mock_patch("calorie_app.modules.catalog.export.catalog_lock"),
+                mock_patch("calorie_app.modules.catalog.export.bump_catalog"),
+            ):
+                manifest = publish_package(engine, OFFICIAL_PACKAGE_ID, 1, tmp_path)
         before = package_record(engine)
         path = artifact_path(tmp_path, artifact_relative_path(OFFICIAL_PACKAGE_ID, "official", 1))
         stored_bytes = path.read_bytes()

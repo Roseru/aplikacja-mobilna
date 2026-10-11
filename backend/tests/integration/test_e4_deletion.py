@@ -3,6 +3,7 @@
 import json
 from datetime import UTC, datetime, timedelta
 from pathlib import Path
+from unittest.mock import patch
 from uuid import UUID, uuid4
 
 import pytest
@@ -468,7 +469,13 @@ def test_original_0008_upgrade_preserves_private_graph_epoch_and_catalog_bytes(d
         demo = json.loads((EXAMPLES.parents[2] / "backend/data/demo/seed.json").read_text())
         import_catalog(engine, demo)
         catalog = export_package(engine, UUID(demo["package_id"]), 1)
-        publish_package(engine, UUID(demo["package_id"]), 1, tmp_path)
+        # This seeds the real pre-E6 schema; only nonexistent E6 lock/bump
+        # functions are omitted. Original durable bytes and guards still run.
+        with (
+            patch("calorie_app.modules.catalog.export.catalog_lock"),
+            patch("calorie_app.modules.catalog.export.bump_catalog"),
+        ):
+            publish_package(engine, UUID(demo["package_id"]), 1, tmp_path)
         artifact = next(tmp_path.rglob("*.json.gz"))
         published = artifact.read_bytes()
         with Session(engine) as session, session.begin():

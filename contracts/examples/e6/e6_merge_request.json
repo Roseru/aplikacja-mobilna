@@ -1,0 +1,10 @@
+{
+  "target": {
+    "product_id": "78058736-0f85-4a4b-82e1-c0976f16b741",
+    "revision": 1
+  },
+  "expected_source_state_revision": 1,
+  "expected_target_state_revision": 1,
+  "identity_confirmed": true,
+  "reason": "Syntetyczne potwierdzenie zgodności składników i wariantu"
+}

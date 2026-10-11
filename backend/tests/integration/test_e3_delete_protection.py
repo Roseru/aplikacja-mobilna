@@ -8,6 +8,7 @@ from concurrent.futures import ThreadPoolExecutor
 from pathlib import Path
 from threading import Event
 from time import monotonic
+from unittest.mock import patch
 from uuid import UUID, uuid4
 
 import pytest
@@ -414,7 +415,13 @@ def test_upgrade_0007_preserves_entire_graph_published_bytes_and_secure_downgrad
     try:
         value = synthetic_official(count=2)
         import_catalog(engine, value)
-        manifest = publish_package(engine, OFFICIAL_PACKAGE_ID, 1, tmp_path)
+        # This seeds the real pre-E6 schema; only nonexistent E6 lock/bump
+        # functions are omitted. Original durable bytes and guards still run.
+        with (
+            patch("calorie_app.modules.catalog.export.catalog_lock"),
+            patch("calorie_app.modules.catalog.export.bump_catalog"),
+        ):
+            manifest = publish_package(engine, OFFICIAL_PACKAGE_ID, 1, tmp_path)
         artifact = export_package(engine, OFFICIAL_PACKAGE_ID, 1)
         path = artifact_path(tmp_path, f"official/{OFFICIAL_PACKAGE_ID}/base-pl.1.json.gz")
         compressed = path.read_bytes()

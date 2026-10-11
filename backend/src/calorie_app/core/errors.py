@@ -79,6 +79,8 @@ def install_error_handlers(app: FastAPI) -> None:
     @app.exception_handler(DomainError)
     async def domain_error(request: Request, error: DomainError) -> JSONResponse:
         headers = {"Retry-After": "5"} if error.status == 503 else None
+        if error.status == 429:
+            headers = {"Retry-After": "86400"}
         if error.status == 401:
             headers = {"WWW-Authenticate": "Bearer"}
         return error_response(
