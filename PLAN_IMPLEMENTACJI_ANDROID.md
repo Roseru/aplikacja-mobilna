@@ -1,5 +1,7 @@
 # Plan implementacji — osoba 1: Android i pamięć lokalna
 
+**Aktualizacja 0.8.2:** zaimplementowany podgląd GET me po bootstrapie, bez zmiany lokalnego profilu i celu. 87JVM/86device PASS; [raport](android/RAPORT_0_8_2.md), [kontrakt i granice](android/ODCZYT_PROFILU.md). PR31 zależy od PR26; rzeczywisty bootstrap/GET ze środowiskiem O3 pozostaje otwarty. Następnie odczyty celów i trwały adapter E4/Room/WorkManager, z jawnym przypisaniem gościa.
+
 Data: 9 października 2026 r.
 
 Podstawa: `WYMAGANIA_PROJEKTOWE.md` oraz zaakceptowane makiety. Użytkownik jest osobą 1 w trzyosobowym zespole. Ten dokument wyznacza kolejność implementacji; bieżący zakres kodu jest opisany w [android/README.md](android/README.md).
@@ -172,7 +174,7 @@ Nie potrzebujemy na start kompletnego backendu ani działającej analizy AI. Do 
 
 Lokalny rdzeń A-01–05, formularze profilu/wagi/prywatnego produktu/kompletności, importer E2, BigDecimal i analityka 7/30/90 dni są zaimplementowane. Fundament 0.6 utrwala UUID gościa/tożsamości, rozdziela zakres repozytoriów/kolejek i chroni lokalne transakcje generacją. Nie dodaje autoryzacji ani przełączania kont w UI; zachowuje dawny alias gościa i globalne klucze encji.
 
-W 0.7 przygotowano trwałe żądanie bootstrapu, atomowe mapowanie account_id/generacji/epoki i blokadę zmiany kontekstu oraz niezmienne cele. Parametry przyszłego klienta i granice są w [przekazaniu E3](android/INTEGRACJA_E3.md). Następny etap: powiązanie rejestru z potwierdzoną sesją, odtwarzanie ViewModel i czyszczenie stanu po zmianie konta, docelowe klucze z właścicielem oraz adapter E0 i scenariusze synchronizacji. Wymaga endpointów E3/E4 O2 i konfiguracji środowiska O3. Przed wysyłką oraz zapisem odpowiedzi trzeba sprawdzać właściciela/generację zadania; import gościa wymaga jawnej zgody i trwałego potwierdzenia. Roboczy outbox nie jest gotowym payloadem HTTP. Do dostawy API można przygotować adaptery i scenariusze offline bez udawania rzeczywistego sync. MRE 2026 pozostaje osobnym importem katalogu: nie sumujemy alternatyw ani zbiorczego pakietu dodatków ze składnikami.
+W 0.7 przygotowano trwałe żądanie bootstrapu, atomowe mapowanie account_id/generacji/epoki i blokadę zmiany kontekstu oraz niezmienne cele. Parametry przyszłego klienta i granice są w [przekazaniu E3](android/INTEGRACJA_E3.md). Android 0.8.1 łączy klienta sesji AppAuth/PKCE i odtwarzanie ViewModel/formularzy z trwałym bootstrapem HTTP, przechwyconym tokenem/tożsamością/lease i bezpiecznym ponawianiem. [Raport](android/RAPORT_0_8_1.md) opisuje lokalne testy i granice transportu zastępczego; [konfiguracja](android/BOOTSTRAP_HTTP.md) rozdziela połączenie konta od synchronizacji. Następny etap: rzeczywisty odbiór APK/HTTPS/Keycloak O3 z ograniczonym publicznym CA, odczyty API, docelowe klucze właściciela oraz adapter E0 i scenariusze synchronizacji. Wymaga endpointów E3/E4 O2 i konfiguracji środowiska O3. Przed wysyłką oraz zapisem odpowiedzi trzeba sprawdzać właściciela/generację zadania; import gościa wymaga jawnej zgody i trwałego potwierdzenia. Roboczy outbox nie jest gotowym payloadem HTTP. Do dostawy API można przygotować adaptery i scenariusze offline bez udawania rzeczywistego sync. MRE 2026 pozostaje osobnym importem katalogu: nie sumujemy alternatyw ani zbiorczego pakietu dodatków ze składnikami.
 
 ## Dokumentacja techniczna
 

@@ -1,5 +1,33 @@
 # Kontekst współpracy
 
+## Integracja O1 — merge sesji / CI profilu, 11 października 2026
+
+Aktualizacja 11.10.2026/O1: PR26 scalony normalnym merge na main c59e6d68d18bbafd157a9d1383aae8d36fa1b893 po osmiu success dla42763f8 i zerze reviews/comments. Zgodnie z docs/WORKFLOW.md odbior rzeczywistego bootstrapu/GET pozostaje kolejnym etapem integracyjnym; merge nie zamyka E3/KO-31. PR31 skierowano na main, nastepnie dolaczono main zwyklym merge; zrodla android/app pozostaly identyczne z przetestowanym0522824. Wczesniejsze uwagi o bazie zależnej/nieuruchamianiu CI sa historyczne; nowy push uruchamia wymagane CI PR do main.
+
+## Kontynuacja O1 — odczyt profilu 0.8.2, 11 października 2026
+
+- Kod `0522824990a35c0b54bec9cceaa4d3a8e9c7b069` / `codex/android-odczyt-profilu` / [PR31](https://github.com/Roseru/aplikacja-mobilna/pull/31) draft, baza codex/android-sesja /42763f8/PR26. Zachować kolejność: odbiór i merge PR26, retarget nowego PR na main, ponowna integracja. Nie scalać zależnego PR do oczekującej sesji.
+- GET me po bootstrapie: ścisły ProfileRead, snapshot osobno w UI, brak zmiany lokalnego profilu/celu/outbox, lease+session+contextRevision, bounded GET/TLS, 401/Retry-After, trwałe requiresRecovery przy innej epoce. Brak odczytu celów, wysyłki sync/WorkManager/importu gościa. Room6 bez migracji.
+- 87JVM +86/86 API35/full/offline PASS, zero skips/errors; lint0error/4warning/1info bez suppressions. Aktualizacja oraz pierwszy launch zachowały wszystkie18tabel/2posiłki/outbox/FK. APK0.8.2/code13 SHA256 ffac4d261e6cab14a564db54b78deaa1c842e54314133ea5939ce0a199cb6128 poza Git, widoczny Dziennik w emulatorze.
+- O2-019/PR30 odczytano na4346964. PR26 po zwykłym merge main75c4414 ma clean/mergeable i osiem success dla dokładnego42763f8; opis poprawiony. To CI sesji, nie nowego PR31. Zachowano komunikację; O1-015 wskazuje status/pytanie O3.
+- Rzeczywiste bootstrap/GET/KO-31 nadal nieodebrane. Docker/uv/stan integration nieodnaleziony na komputerze O1; potrzebne istniejące środowisko O3 i validation-only publiczny CA. Nie reinit ani fikcyjne endpointy. O3-011 dowodzi realnego loginu0.8.0, nie HTTP0.8.2. Kolejne: realny odbiór HTTP, cele, adapter E4/Room/WorkManager, E5/E6. Raport android/RAPORT_0_8_2.md i opis android/ODCZYT_PROFILU.md.
+
+## Kontynuacja O1 — bootstrap HTTP 0.8.1, 11 października 2026
+
+- codex/android-sesja / PR26, kod c6b7a2fd4df4bd26c5ea81e6b97026d8476445c6; zwykły merge main75c4414 zachowuje komunikację O1/O2/O3. PR nadal draft do rzeczywistego odbioru HTTP.
+- 0.8.1/code12/Room6: przechwycony token+identity+lease i rewizja sesji, trwały bodyless bootstrap HTTP, bounded retry/Retry-After, ochrona logout/ABA/refresh, zachowany requiresRecovery. Brak importu gościa, odczytów API, wysyłki outbox i WorkManager.
+- Finalny pełny build/lint/JVM/device PASS:81JVM i76/76 API35/offline, lint0error/28warning/1info. 10UI failures wcześniejszego run przy wygaszonym emulatorze są udokumentowane; po emulowanymAC/StayOn=true pełne76/76 bez zmian źródeł/testów. Raport android/RAPORT_0_8_1.md; config android/BOOTSTRAP_HTTP.md.
+- APK poza Git:0985e14e66ed62046d49d0793617ef6d2ce6cab36806327a41ed3b2fe035b78a. Aktualizacja i pierwsze uruchomienie zachowały całe18tabel/2posiłki/outbox/FK; widoczny Dziennik do testów manualnych.
+- Odczyt O3-011/PR27: rzeczywista sesja APK0.8.0/3b081c4 odebrana przez O3, zewnętrzny validation-only CA overlay/profile-scope helper już dostarczony. Nie zastępuje odbioru HTTP0.8.1. Użyć istniejącej instalacji, nie reinit/nowego CA; adres API ze stanu O3. Odczytano E8/PR29, E7/PR28 nie przejęty. CI nowego head odczytać osobno, stare8success3b081c4 nie są jego wynikiem.
+
+## Kontynuacja O1 — klient sesji 0.8.0, 11 października 2026
+
+- Gałąź codex/android-sesja z main f551ecc, kod ca69929147b6861a79fd77cd950fa232e78afdcd, draft PR #26: https://github.com/Roseru/aplikacja-mobilna/pull/26. PR #25 / 0.7.3 scalony po ośmiu success dla 4930cca i braku uwag. Review opcjonalne; kontrola exact head pozostaje.
+- 0.8.0 / versionCode 11 / Room 6: klient przeglądarkowy AppAuth/PKCE, AES/GCM + Keystore, dokładny callback, odnowienie, lokalny logout i odrębny ViewModel/stan formularzy dla lease. Gość i konta offline zachowują dzienniki. Brak automatycznego importu gościa i HTTP/bootstrap/sync.
+- Końcowy pełny build/JVM/lint/device PASS: 73 JVM, 65/65 API35 przy 1080×2400/density420/font1/offline, lint 0 błędów/28 ostrzeżeń. Próby sesji to transport zastępczy; nie potwierdzają przeglądarki/Keycloak/TLS APK lub zabicia procesu. Raport android/RAPORT_0_8_0.md, konfiguracja android/SESJA_OIDC.md.
+- APK SHA256 baadadc10afcf1057d70470fd1135703f4bd7b04f28570ab9b3005123ae7bf02 poza Git. Aktualizacja zachowała wszystkie kolumny 18 tabel, 2 posiłki i outbox. Widoczny emulator na ekranie Konto i logowanie. Domyślny issuer pusty, przycisk nieaktywny; Docker/uv nie były dostępne na komputerze O1.
+- Następne konkretne zadanie: uruchomione środowisko O3, ograniczony publiczny CA w wariancie testowym i prawdziwe APK/A/B/callback/restart, potem token+identity+lease i bootstrap E3; E4/WorkManager później. Nie uznawać zielonego harnessu O2/O3 lub fixture za pełny mobilny odbiór. Zdalny CI PR26 odczytywać osobno; draft pozostaje otwarty do integracji.
+
 ## Kontynuacja O1 — tryby 0.7.3, 11 października 2026
 
 - Gałąź codex/android-tryby-aktywnosci, kod 1af9091. PR #23 / 0.7.2 scalony na main 446ac0c po pełnych ośmiu success; konflikt wspólnej komunikacji rozwiązany z zachowaniem O1-011/O2-018/019 i obu aktualnych wierszy. E7 jest przekazaniem O2, nie implementacją O1.
