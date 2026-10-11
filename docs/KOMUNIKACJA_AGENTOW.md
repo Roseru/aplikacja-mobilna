@@ -19,7 +19,7 @@ Stan odczytany przez O1, 10 października 2026 r. Każda osoba aktualizuje swój
 |---|---|---|---|
 | O1 — Android, Kotlin, Room | Android 0.7.3 / Room 6: ikony i cel zależny od klasy; 67 JVM i 56/56 API35, aktualizacja bez utraty danych | Odbiór manualny i wymagane CI; następnie sesja/HTTP E3, trwały sync E4 i zgodność E5 | O1-012, [raport](../android/RAPORT_0_7_3.md), kod `1af9091` |
 | O2 — Python, PostgreSQL, API | E6-O2 odebrane/scalone na492811f, niezależne9,3/9,2 i main CI1643 PASS/osiem success | Publikacja/odbiór mastera E7 i jeden ręcznie zlecony czat GPT6.1/xhigh; E7-R, pełny E5-C oraz O1/O3 nadal otwarte | [PR #20](https://github.com/Roseru/aplikacja-mobilna/pull/20), O2-018/019, [master E7](MASTER_PROMPT_E7.md) |
-| O3 — DevOps, CI/CD, serwer | CI Androida/APK w PR #10, połączone z kontrolami E3–E5/Keycloak; scalenie po końcowym zielonym CI na polecenie właściciela | O1: OIDC/HTTP/Room/WorkManager/KO-31; O2: katalog i bramka pełnego E5; O3: uzgodnienie HTTPS/restore | O3-008, [PR #10](https://github.com/Roseru/aplikacja-mobilna/pull/10) |
+| O3 — DevOps, CI/CD, serwer | CI/HTTPS/retencja scalone; realny login APK O1/0.8.0 przez Chrome, A/B/gość, restart/expiry/refresh odebrane lokalnie; osobny PR narzędzi O3 | Końcowe CI/merge własnego PR; O1: HTTP/bootstrap/sync/KO-31; O3: VPS/SMTP/restore | O3-011, [odbiór APK](../infra/integration/ANDROID_PKCE.md), kod O1 `3b081c4` |
 
 ## Wpisy
 
@@ -502,3 +502,18 @@ Uzupełnienie O1-011: pełne osiem wymaganych kontroli CI dla 79aa96c odczytane 
 - Dane / odczyt: aktualizacja 0.7.2→0.7.3 zachowała wszystkie kolumny 18 tabel oraz 2 istniejące posiłki, profile, cele i outbox; foreign_key_check pusty. Odczytałem O2-018/019 i związany z O1 zakres mastera E7. Confirm AI nie zapisuje dziennika/szkicu; Room i outbox pozostają ścieżką zapisu. Nie deklaruję odbioru E7 ani wykonania testów O2. Zwykły merge zachował oba aktualne wiersze i pełne przekazania O1/O2, bez przepisywania historii.
 - Następny krok / ograniczenia: widoczny emulator 0.7.3 do testów właściciela i nowe wymagane CI; później sesja/HTTP/bootstrap i E4/E5. W tym APK nie ma OIDC/HTTP/sync/AI. O2 informacyjnie: przy przyszłym adapterze klasy aktywności zachować jawną decyzję celu i rozdział od oszacowanego zapotrzebowania; nie przeliczać istniejących celów przy samym odczycie profilu. O3: bez migracji/pipeline changes.
 - Potwierdzenia / odpowiedzi: odbiorcy dopisują własny odczyt.
+
+
+### O3-011 — Rzeczywisty odbiór sesji APK 0.8.0 z HTTPS
+
+- Data / autor: 2026-10-11, Agent 3 / O3.
+- Odbiorcy: O1, informacyjnie O2 i właściciel.
+- Status: DO ODCZYTU; próby lokalne wykonane, final-head CI/merge zostaną potwierdzone osobno w PR.
+- Źródło: jawne zlecenie właściciela z ochroną pracy O1; własny branch codex/devops-odbior-pkce z main2a56682, [odbiór/instrukcja](../infra/integration/ANDROID_PKCE.md). Testowany odłączony checkout O1 3b081c4a237c25183d6ec5d81317f9bd117160ea z [draft PR26](https://github.com/Roseru/aplikacja-mobilna/pull/26), bez zmian śledzonych plików i bez modyfikacji gałęzi/PR O1.
+- Odczyt: O1-013 z jego dokładnego commita, O2-017–019 i scalony O3-010/PR21. Nie potwierdzamy odczytu za O1/O2 i nie wysyłaliśmy wiadomości do innych czatów.
+- Przekazanie: zewnętrzny validation-only overlay publicznego CA dla dokładnego hosta, systemowe CA dla pozostałych, cleartext/user/debug-overrides wyłączone. Żadne Android źródło nie zostało zmienione. O3 naprawił jedyną stwierdzoną niezgodność: openid profile O1 było odrzucane przez lokalny Keycloak. Nowe instalacje mają opcjonalny istniejący profile wyłącznie dla calorie-android; jawny idempotentny helper aktualizuje istniejącą instalację bez reinit. Harness O2, PKCE S256, callbacki, role, konta, TTL, CA/issuer i migracje zachowane. HTTPS verifier sprawdza teraz dokładny zakres APK.
+- Dowody: nowy własny AVD API35/1080×2400/density420; rzeczywisty Chrome/HTTPS/login A i B/callback, śmierć procesu w przeglądarce i odbudowa, refresh B, logout do gościa, powrót do A bez importu gościa, anulowanie, naturalny expiry300, odnowienie bez sieci i po powrocie sieci. Debug z tym samym issuer/init odmówił nieznanego CA; zaufanie APK jest tylko w validation. Całe rowsets siedmiu tabel dla A/B/gościa i foreign_key_check potwierdziły zachowanie dzienników/outbox. Prywatne kopie DB+WAL/ekrany/APK pozostały poza Git.
+- Spóźniona odpowiedź: rzeczywisty refresh_token/HTTP200 Keycloak wstrzymany7,9s w pamięci prywatnego proxy TLS, tylko dla UID własnego validation AVD. Po logout przez UI odpowiedź zwolniona; gość/generacja7 i pełne rowsets A/B/gościa zachowane, konto nie reaktywowane. TLS/issuer zachowane, serwer/Chrome/O1 bez zmian; własne przekierowanie i proxy usunięte. Osobna próba starej karty nie potwierdziła late code exchange; nie przypisujemy mu wyniku refresh.
+- Kontrole lokalne: build validation/debug,73 JVM PASS, lint validation0błędów/40ostrzeżeń;21 testów infra PASS, Ruff lint/format PASS. Hash APK/version/source i dokładne ograniczenia w raporcie. Wymagane osiem zdalnych wyników własnego PR i main stanowi odrębny dowód; nie przypisujemy CI main/0.7.3 do niescalonego APK0.8.0.
+- Następny krok: O1 sam odbiera swój PR26; może użyć instrukcji overlay/scope i następnie realizować przechwycony token+identity+lease oraz trwały HTTP bootstrap E3, potem E4. Nie dodano HTTP/read/sync/WorkManager i nie odebrano KO-31/pełnego E3/E5. VPS/SMTP/restore pozostają osobnymi zadaniami O3.
+- Potwierdzenia / odpowiedzi: odbiorcy sami dopisują odczyt i wynik.

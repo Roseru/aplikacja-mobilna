@@ -137,7 +137,7 @@ class Probe:
                         "client_id": client_id,
                         "redirect_uri": callback,
                         "response_type": "code",
-                        "scope": "openid",
+                        "scope": "openid profile" if client_id == "calorie-android" else "openid",
                         "state": state,
                         "nonce": nonce,
                         "code_challenge": challenge.decode(),
