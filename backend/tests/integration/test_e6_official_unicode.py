@@ -34,6 +34,13 @@ CASES = [
     ("Different name", ["Ｆｕｌｌｗｉｄｔｈ"], "Fullwidth"),
     ("Straße\u00a0\u2003Suppe", [], "STRASSE SUPPE"),
     ("Straße Suppe", [], "Straße\u2009Suppe"),
+] + [
+    (
+        "Different name",
+        [f"Distinct alias {i}" for i in range(count - 1)] + ["Straße Suppe"],
+        "STRASSE SUPPE",
+    )
+    for count in (50, 51, 100)
 ]
 
 
@@ -52,6 +59,9 @@ def test_official_normalized_candidates_real_api_and_runtime_acl(
     value = package(name, aliases)
     imported = import_catalog(engine, value)
     assert not import_catalog(engine, value).created
+    with Session(engine) as session:
+        metadata = session.get(ProductSearchMetadata, (value["products"][0]["product_id"], 1))
+        assert len(metadata.normalized_names) == len(aliases) + 1
     publish_package(engine, imported.package_id, 1, tmp_path)
     entity, _ = draft(engine, owner, name=query)
     data = publication(entity, aliases=[])
@@ -167,7 +177,9 @@ def test_upgrade0013_backfill_down_reup_bytes_hash_history_readiness(request, tm
     _, migrate, url = request.getfixturevalue("database")
     migrate("downgrade", "0013_e6_community")
     try:
-        value = package("Straße\u00a0Suppe", ["Ｆｕｌｌｗｉｄｔｈ"])
+        value = package(
+            "Straße\u00a0Suppe", [f"Legacy alias {i}" for i in range(99)] + ["Ｆｕｌｌｗｉｄｔｈ"]
+        )
         base = value["products"][0]
         value["products"].extend(
             copy.deepcopy(base)
@@ -212,7 +224,10 @@ def test_upgrade0013_backfill_down_reup_bytes_hash_history_readiness(request, tm
                     ProductSearchMetadata.product_id == value["products"][0]["product_id"]
                 )
             ).one()
-            assert row.normalized_names == ["fullwidth", "strasse suppe"]
+            assert row.normalized_names == sorted(
+                ["fullwidth", "strasse suppe"] + [f"legacy alias {i}" for i in range(99)]
+            )
+            assert len(row.normalized_names) == 101
             assert row.normalized_name_hashes == [
                 hashlib.sha256(v.encode()).hexdigest() for v in row.normalized_names
             ]

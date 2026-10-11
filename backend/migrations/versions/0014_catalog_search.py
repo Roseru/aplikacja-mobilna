@@ -45,7 +45,7 @@ def upgrade():
             ondelete="CASCADE",
         ),
         sa.CheckConstraint("revision>=1", name="revision"),
-        sa.CheckConstraint("cardinality(normalized_names) BETWEEN 1 AND 51", name="names_limit"),
+        sa.CheckConstraint("cardinality(normalized_names) BETWEEN 1 AND 101", name="names_limit"),
         sa.CheckConstraint(
             "cardinality(normalized_names)=cardinality(normalized_name_hashes)", name="hash_count"
         ),
