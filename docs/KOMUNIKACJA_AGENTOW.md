@@ -18,7 +18,7 @@ Stan odczytany przez O1, 10 października 2026 r. Każda osoba aktualizuje swój
 | Rola | Ostatni znany rezultat | Następny krok / zależność | Źródło |
 |---|---|---|---|
 | O1 — Android, Kotlin, Room | Android 0.7.2 / Room 6 na gałęzi; 65 JVM i 53/53 na każdym z dwóch rozmiarów, update bez utraty danych | Odbiór manualny i CI aktualnego PR; następnie sesja/HTTP E3, trwały sync E4 i zgodność E5 | O1-011, [raport](../android/RAPORT_0_7_2.md), kod `03f8678` |
-| O2 — Python, PostgreSQL, API | E4 O2 scalone na 623c6aa, osobny odbiór 103 PG i CI main 1180 PASS; master E5-O2-R przygotowany | Publikacja i odbiór promptu → jawne zlecenie istniejącemu E5. Official C i integracja O1/O3 nadal otwarte | [PR #12](https://github.com/Roseru/aplikacja-mobilna/pull/12), O2-008, [master E5](MASTER_PROMPT_E5.md) |
+| O2 — Python, PostgreSQL, API | E6-O2 odebrane/scalone na492811f, niezależne9,3/9,2 i main CI1643 PASS/osiem success | Publikacja/odbiór mastera E7 i jeden ręcznie zlecony czat GPT6.1/xhigh; E7-R, pełny E5-C oraz O1/O3 nadal otwarte | [PR #20](https://github.com/Roseru/aplikacja-mobilna/pull/20), O2-018/019, [master E7](MASTER_PROMPT_E7.md) |
 | O3 — DevOps, CI/CD, serwer | CI Androida/APK w PR #10, połączone z kontrolami E3–E5/Keycloak; scalenie po końcowym zielonym CI na polecenie właściciela | O1: OIDC/HTTP/Room/WorkManager/KO-31; O2: katalog i bramka pełnego E5; O3: uzgodnienie HTTPS/restore | O3-008, [PR #10](https://github.com/Roseru/aplikacja-mobilna/pull/10) |
 
 ## Wpisy
@@ -453,3 +453,27 @@ Ponowny nieautor dla `ffc06966eb4df51255a6b204ffe0a32939cac20d`:6PG obu całych 
 - Odczyt zespołu: main 492811f zawiera scalony E6/#20 i poprawki O2-017: CRLF, unieważnianie mq1 po canonical correction oraz indexed NFKC/casefold official/alias. Przeczytano aktualne INTEGRACJA_O1; nie uznaję siebie za recenzenta backendu ani wykonawcę jego testów. O3-010 czytany z d6405ed/PR #21; retencja nie jest backupem lub operatorem deletion. Merge E6 zachował wszystkie zmiany autorów i nie zmienił testowanego Androida.
 - Ograniczenia / następny krok: odbiór manualny właściciela i wymagane CI, potem własna sesja PKCE/callback/izolacja oraz HTTP/bootstrap E3. Adapter E4/WorkManager i zgodność E5 wymagają osobnego etapu. W APK brak OIDC/HTTP/sync/E6 UI; dane demo nie są official. Review opcjonalne, istotne uwagi i wymagane CI obowiązują. Odbiorcy dopisują własny odczyt; nie potwierdzam go za innych.
 - Potwierdzenia / odpowiedzi: brak.
+
+### O2-018 — Odbiór poprawek i scalenie E6-O2
+
+- Data / autor: 2026-10-11, Agent 2 / O2, koordynator `01a12156-2312-7c43-aedc-1858e782e5fb`; odniesienia O2-016/017.
+- Odbiorcy: wykonawca E6, O1/O3 oraz właściciel.
+- Status: DO ODCZYTU; backend E6-O2 odebrany, scalony i zweryfikowany na main; pełne odbiory pozostają otwarte.
+- Źródło: `codex/backend-e6-spolecznosc`, odebrany head `db1b33e3ed852b235db61952c1b227fbc84bc075`, [PR #20](https://github.com/Roseru/aplikacja-mobilna/pull/20), main `492811f998efe9256673a7c84bd942bcc07a9c9d`, [odbiór koordynatora](https://github.com/Roseru/aplikacja-mobilna/pull/20#issuecomment-6109210544).
+- Przekazanie: trzy P2 zamknięte — czysty WindowsCRLF, mq1 po korekcie canonical/direct/transitive, Unicode official nazwy/aliasy; nowa0014 bez przepisania0001–0013. Historia/shared źródła/sealedbytes, standard sync oraz prawa zachowane.
+- Dowody: własne830unit i E0(84valid/28invalid/18scenarios/325linków) PASS. Niezależny katalog9,3:15 wcześniejszych+4nowe własne probes i73 dostawy PASS; security9,2:80PG i6własnych PASS. Scope i powtórki nie są sumowane. Final PR CI38139749442 rzeczywiste830+791+22=1643 PASS, osiem success; Android65JVM/52device. Osobny main [CI38141106156](https://github.com/Roseru/aplikacja-mobilna/actions/runs/38141106156) odczytany: te same1643 i osiem success, realny eksport/import i local HTTPS/down-up. Tree main identyczne z odebranym head. Wszystkie własne PG recenzentów zatrzymane; checkout E4 zachowany.
+- Ograniczenia / następny krok: full E5-C/official, APK/Room/WorkManager/KO-31 i produkcyjne HTTPS/restore O1/O3 nie są zamknięte. Właściciel bezpośrednio zlecił master/nowy czat E7 naGPT6.1/xhigh; automatyzacje pozostają PAUSED. O1/O3 wykonują własny odbiór przekazania E6, nie potwierdzamy go za nich.
+- Potwierdzenia / odpowiedzi: koordynator odebrał E6 i komunikację O2-017; odbiorcy sami dopisują wynik.
+
+### O2-019 — Master i bramka samodzielnego E7-O2
+
+- Data / autor: 2026-10-11, Agent 2 / O2, koordynator; odniesienie O2-018 i bezpośrednie ręczne zlecenie właściciela.
+- Odbiorcy: przyszły wykonawca E7, informacyjnie O1/O3.
+- Status: DO ODCZYTU; PROMPT_PUBLISHED_PENDING_CI, niezależny odbiór instrukcji PASS. Wykonawca uruchamiany dopiero po docs PR/CI/merge/main.
+- Źródło: `codex/docs-e7-master`, [master E7](MASTER_PROMPT_E7.md), treść opublikowana w `45e32af08ac4a00290dfe8c3e9bdc78eccec177d`, [PR #24](https://github.com/Roseru/aplikacja-mobilna/pull/24), base `492811f998efe9256673a7c84bd942bcc07a9c9d`. Nowy końcowy commit tego metadokumentu ma własne wymagane CI; dokładny head/base/logi oraz main będą potwierdzone w PR przed dispatch.
+- Przekazanie: jeden multipart, per-request zgoda, prywatny sanitized storage i cleanup intents, trwały fenced worker, wspólna pool E7/E9, REST/mock oraz strict wynik/transient matching/confirm. Confirm nie zapisuje dziennika/szkicu; Room+outbox i istniejący sync pozostają jedyną ścieżką. Model nowego głównego czatuGPT6.1/xhigh; subagenci mają reasoning dobrane do ryzyka.
+- Dowody / ograniczenia: dwa niezależne odbiory mastera finalnie9,3/9,3 i zero otwartych istotnych P1/P2; [recenzja instrukcji](e7/RECENZJA_MASTER_E7.md). Zamknięto P2 spool oryginału przed zgodą i doprecyzowano blokady. Odczytano niescalone PR21 O3(retention), PR22/23 O1(plan/UI), bez akceptacji lub przejęcia ich gałęzi. Audyt kodu potwierdził brak gotowego ai/jobs/worker — to rezultat E7, nie zewnętrzna blokada. Ponowny odczyt primary Google11.10.2026 potwierdził free model/JSON/image oraz istniejącą bramkę EOG; live konfiguracja/limity O3 i30 zatwierdzonych zdjęć nie są tu uznane za dostępne. Nie wykonano E7 ani prawdziwych call. Master rozdziela E7-O2, E7-R i full etap/wydanie; nie zmienia WF/KO i nie włącza billing.
+- Oczekiwana odpowiedź / następny krok: koordynator publikuje odebrany master, sprawdza duplikaty/projekt i tworzy jeden czat z dokładnym source SHA. Wykonawca zapisze własny start/branch/wynik w tym dzienniku. O3 dostarcza niepubliczny klucz i datowany free-only/model/project/limits config do wydzielonego środowiska; corpus z legalną zgodą jest wejściem E7-R. O1 realizuje własne zdjęcie/zgodę/sync/fallback. Automatyzacje PAUSED, bez zastępczego watchera.
+- Potwierdzenia / odpowiedzi: odbiorcy sami zapisują odczyt. Sam wpis nie uruchamia implementacji i nie daje PASS E7.
+
+Uzupełnienie O1-011: pełne osiem wymaganych kontroli CI dla 79aa96c odczytane jako success, brak uwag reviews. W trakcie próby merge main przyjął master E7 (485fb2e/#24); GitHub odmówił scalenia z powodu konfliktu wspólnej komunikacji. Zwykły merge zachowuje aktualne wiersze O1/O2 oraz pełne O1-011 i O2-018/019. Nie zmienia Androida 0.7.2; nowy head ma własne CI przed merge.
