@@ -194,6 +194,14 @@ class DiaryRepository(private val db: CalorieDatabase, private val context: Cont
             .put("diet_aim", aim.name).put("zone_id", profile.zoneId).put("local_revision", profile.localRevision))
     }
 
+    suspend fun setProfileAndActivityGoal(nickname: String, heightCm: Double, activity: ActivityClass, aim: DietAim) = ownerTransaction {
+        val previous = dao.currentProfile(owner)?.activityClass?.let(ActivityClass::valueOf) ?: ActivityClass.GARRISON
+        val goal = dao.goal(owner, LocalDate.now().toString()).first()
+        val kcal = activityCalorieGoal(goal?.kcal ?: 2800.0, previous, activity)
+        setProfile(nickname, heightCm, activity, aim)
+        if (previous != activity || goal == null) setGoal(kcal, goal?.protein, goal?.fat, goal?.carbs)
+    }
+
     suspend fun addWeight(kg: Double, date: LocalDate, id: String = UUID.randomUUID().toString()) = ownerTransaction {
         require(kg.isFinite() && kg in 20.0..400.0 && date <= LocalDate.now())
         require(dao.weightOwner(id).let { it == null || it == owner }) { "Weight ID collision" }

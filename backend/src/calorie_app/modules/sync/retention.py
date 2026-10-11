@@ -12,7 +12,10 @@ def prune(session, owner_id: UUID, batch: int = 1000) -> dict:
     parameters = {"owner": owner_id, "batch": batch}
     sync = session.scalar(text("SELECT app.prune_sync(:owner,:batch)"), parameters)
     reads = session.scalar(text("SELECT app.prune_read_sessions(:owner,:batch)"), parameters)
-    return sync | reads
+    community = session.scalar(
+        text("SELECT app.prune_community_receipts(:owner,:batch)"), parameters
+    )
+    return sync | reads | community
 
 
 def main():

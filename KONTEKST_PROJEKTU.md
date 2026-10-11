@@ -1,5 +1,18 @@
 # Kontekst współpracy
 
+## Kontynuacja O1 — tryby 0.7.3, 11 października 2026
+
+- Gałąź codex/android-tryby-aktywnosci, kod 1af9091. PR #23 / 0.7.2 scalony na main 446ac0c po pełnych ośmiu success; konflikt wspólnej komunikacji rozwiązany z zachowaniem O1-011/O2-018/019 i obu aktualnych wierszy. E7 jest przekazaniem O2, nie implementacją O1.
+- 0.7.3 / versionCode 10 / Room 6: Etat biurowo-kawowy, trzy wektorowe ikony żołnierzy i activity_goal_v1 (1 / 1,25 / 1,5). Zmiana klasy przelicza bieżący cel od dzisiaj po jawnym zapisaniu profilu, atomowo z outbox, bez zmiany dawnych dni lub B/T/W. To osobna reguła od mifflin_pal_v1 backendu. Ręczne cele pozostają dostępne.
+- 67 JVM, końcowe pełne 56/56 urządzenia przy 1080×2400/API35 offline; lint 0 błędów/26 ostrzeżeń/1 informacja. Raport android/RAPORT_0_7_3.md opisuje wcześniejsze błędy nowego testu i regułę przeliczników. APK SHA-256 86029e183c5dbf27e379be78acd38aefc7ac07e6cb1e90bf80135227bbca4547, poza Git. Logowanie/HTTP/sync pozostają osobnym kolejnym zakresem.
+
+
+## Kontynuacja O1 — stabilność ekranów 0.7.2, 11 października 2026
+
+- Bieżąca gałąź codex/android-male-ekrany; kod 03f8678, merge b81c8dc aktualnego main 492811f (scalony E6/#20). Merge nie zmienił kodu Androida. Starsze oczekiwanie na #20 i dawne PR-y Androida jest historyczne.
+- Android 0.7.2 / versionCode 9 / Room 6: przewijany cały ekran wyboru produktów, IME Done bez automatycznego zapisu i testy świadome lazy-list/odtworzenia scrolla. 65 JVM, osobno 53/53 API 35 przy 1080×1920 i 1080×2400, zero failure/error/skip; lint 0 błędów/26 ostrzeżeń/1 informacja. Raport android/RAPORT_0_7_2.md opisuje także nieudane wcześniejsze próby i dokładną przyczynę finalnego timeoutu.
+- Zainstalowana aktualizacja 0.7.1→0.7.2 zachowała wszystkie kolumny 18 tabel i całą kolejkę. APK poza Git: output-apk/Racje-i-kalorie-0.7.2-debug.apk, SHA-256 398bcee85dd2658fae3c73bb9093e257762d9a01880d0fbdbaa50c50e7f5ae6d. Widoczny emulator jest otwierany na polecenie użytkownika do testów manualnych.
+- Odczytano poprawki O2-017/INTEGRACJA_O1 E6 na main 492811f oraz O3-010 z gałęzi d6405ed, bez przypisywania sobie ich testów. PR #22 dokumentacji miał failure android-device na bazowym 0.7.1; zielony starszy build nie potwierdza napraw. Kolejny zakres O1: sesja/callback/izolacja, HTTP/bootstrap, następnie trwały E4 i E5. Obecny APK nadal gość offline, bez OIDC/HTTP/sync.
 ## Kontynuacja O1 — poprawki recenzji i 0.7.1, 10 października 2026
 
 - Najpierw wysłano potwierdzenie O2 w PR #5: https://github.com/Roseru/aplikacja-mobilna/pull/5#issuecomment-6099166765. Dalej przygotowano bootstrap/niezmienne cele w PR #9, a po odczycie reviews domknięto właściwe zakresy kodu #1 i #6.

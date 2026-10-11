@@ -18,6 +18,7 @@ import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardType
+import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import pl.roseru.kalorie.DiaryViewModel
@@ -172,9 +173,11 @@ private data class EditingItem(val meal: MealWithItems, val item: MealItemEntity
     AlertDialog(onDismissRequest = onDismiss, title = { Text(item.productName) }, text = {
         Column(verticalArrangement = Arrangement.spacedBy(14.dp)) {
             OutlinedTextField(grams, onValueChange = { grams = it }, label = { Text("Zjedzona ilość") }, suffix = { Text(item.unit) }, singleLine = true,
-                modifier = Modifier.testTag("edit-amount"), isError = amount == null, keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal))
+                modifier = Modifier.testTag("edit-amount"), isError = amount == null,
+                keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal, imeAction = ImeAction.Done), keyboardActions = doneKeyboardActions())
             Text(amount?.let { "${item.withAmount(ContractDecimal.canonical(it)).consumed().energyText()} kcal" } ?: "Podaj dodatnią ilość, najwyżej 10 000 ${item.unit}.")
         }
-    }, confirmButton = { TextButton(onClick = { amount?.let { onSave(it.toDouble(), ContractDecimal.canonical(it)) } }, enabled = amount != null && !busy) { Text("Zapisz") } },
+    }, confirmButton = { TextButton(onClick = { amount?.let { onSave(it.toDouble(), ContractDecimal.canonical(it)) } },
+        enabled = amount != null && !busy, modifier = Modifier.testTag("confirm-edit-item")) { Text("Zapisz") } },
         dismissButton = { Row { TextButton(onClick = onDelete, enabled = !busy) { Text("Usuń") }; TextButton(onClick = onDismiss) { Text("Anuluj") } } })
 }

@@ -456,7 +456,7 @@ def test_package_seal_rejects_missing_membership_and_legacy_snapshot(catalog_gra
 
 
 @pytest.mark.parametrize("role", ["calorie_app_api", "calorie_app_worker"])
-def test_runtime_permissions_preserve_e1_and_protect_catalog(catalog_graph, role):
+def test_runtime_permissions_preserve_legacy_reads_and_protect_catalog(catalog_graph, role):
     connection, _, _, ration_id, package_id = catalog_graph
     connection.execute(
         update(OfflinePackage).where(OfflinePackage.package_id == package_id).values(sealed=True)
@@ -472,8 +472,8 @@ def test_runtime_permissions_preserve_e1_and_protect_catalog(catalog_graph, role
             artifact_path="official/test/base-pl.1.json.gz",
         )
     )
-    connection.exec_driver_sql(f"SET LOCAL ROLE {role}")
-    assert connection.scalar(select(Ration.id).where(Ration.id == ration_id)) == ration_id
+    # The migrator can still preserve/import legacy E1 skeletons. E6 runtime
+    # writers must use the narrow community function instead of shared DML.
     legacy_source, legacy_product = uuid4(), uuid4()
     connection.execute(
         insert(ProductSource).values(
@@ -491,6 +491,32 @@ def test_runtime_permissions_preserve_e1_and_protect_catalog(catalog_graph, role
             energy_kcal=None,
         )
     )
+    connection.exec_driver_sql(f"SET LOCAL ROLE {role}")
+    assert connection.scalar(select(Ration.id).where(Ration.id == ration_id)) == ration_id
+    assert (
+        connection.scalar(
+            select(ProductVersion.name).where(ProductVersion.product_id == legacy_product)
+        )
+        == "E1 runtime"
+    )
+    for forbidden in (
+        insert(ProductSource).values(id=uuid4(), description="runtime", status="unverified"),
+        insert(Product).values(id=uuid4()),
+        insert(ProductVersion).values(
+            product_id=legacy_product,
+            revision=2,
+            source_id=legacy_source,
+            name="runtime",
+            basis_unit="g",
+        ),
+        update(ProductSource)
+        .where(ProductSource.id == legacy_source)
+        .values(description="changed"),
+        update(ProductVersion)
+        .where(ProductVersion.product_id == legacy_product)
+        .values(energy_kcal=1),
+    ):
+        rejected(connection, forbidden, ProgrammingError)
     rejected(connection, insert(Ration).values(id=uuid4()), ProgrammingError)
     rejected(
         connection,

@@ -27,6 +27,7 @@ import java.time.*
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable fun ProfileScreen(model: DiaryViewModel) {
     val profile by model.profile.collectAsStateWithLifecycle()
+    val todayGoal by model.todayGoal.collectAsStateWithLifecycle()
     val weights by model.weights.collectAsStateWithLifecycle()
     val busy by model.busy.collectAsStateWithLifecycle()
     val weightSaveVersion by model.weightSaveVersion.collectAsStateWithLifecycle()
@@ -55,7 +56,7 @@ import java.time.*
                 }
             }
         } }
-        item(key = "profile-editor") { key(profile?.id) { ProfileEditor(profile, busy, onSave = model::setProfile) } }
+        item(key = "profile-editor") { key(profile?.id) { ProfileEditor(profile, todayGoal?.kcal, busy, onSave = model::setProfile) } }
         item(key = "weight-form") {
             HorizontalDivider()
             SectionTitle("Dodaj pomiar wagi", Modifier.padding(top = 16.dp))
@@ -95,12 +96,15 @@ import java.time.*
         dismissButton = { TextButton(onClick = { deleting = null }) { Text("Anuluj") } }) }
 }
 
-@Composable private fun ProfileEditor(profile: ProfileEntity?, busy: Boolean, onSave: (String, Double, ActivityClass, DietAim) -> Unit) {
+@Composable private fun ProfileEditor(profile: ProfileEntity?, currentKcal: Double?, busy: Boolean, onSave: (String, Double, ActivityClass, DietAim) -> Unit) {
     var nickname by rememberSaveable { mutableStateOf(profile?.nickname ?: "") }
     var height by rememberSaveable { mutableStateOf(profile?.heightCm?.let(::decimal) ?: "") }
     var activityName by rememberSaveable { mutableStateOf(profile?.activityClass ?: ActivityClass.GARRISON.name) }
     var aimName by rememberSaveable { mutableStateOf(profile?.dietAim ?: DietAim.MAINTAIN.name) }
     val cm = parseNumber(height)?.takeIf { it in 80.0..250.0 }
+    val selectedActivity = ActivityClass.valueOf(activityName)
+    val previousActivity = profile?.activityClass?.let(ActivityClass::valueOf) ?: ActivityClass.GARRISON
+    val target = currentKcal?.let { runCatching { activityCalorieGoal(it, previousActivity, selectedActivity) }.getOrNull() }
     Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
         SectionTitle("Twój profil")
         OutlinedTextField(nickname, onValueChange = { nickname = it }, label = { Text("Pseudonim (2–40 znaków)") }, singleLine = true,
@@ -108,15 +112,20 @@ import java.time.*
         NumericField("Wzrost (80–250 cm)", "cm", height, { height = it }, height.isNotBlank() && cm == null, "profile-height", busy)
         Text("Klasa aktywności", style = MaterialTheme.typography.titleSmall)
         ActivityClass.entries.forEach { option -> FilterChip(selected = activityName == option.name, onClick = { activityName = option.name },
-            label = { Text(option.label) }, enabled = !busy, modifier = Modifier.fillMaxWidth()) }
+            leadingIcon = { SoldierIcon(option) }, label = { Text(option.label) }, enabled = !busy,
+            modifier = Modifier.fillMaxWidth().testTag("activity-${option.name}")) }
+        Text(if (target != null) "Cel po zapisaniu: ${decimal(target)} kcal" else "Nie można przeliczyć celu. Ustaw kcal w Ustawieniach.",
+            style = MaterialTheme.typography.titleSmall, modifier = Modifier.testTag("activity-goal-preview"))
+        Text("Zmiana trybu przelicza bieżący cel: etat ×1,00, Linia ×1,25, Komandos ×1,50. Cel możesz później poprawić w Ustawieniach.",
+            style = MaterialTheme.typography.bodySmall)
         Text("Cel użytkownika", style = MaterialTheme.typography.titleSmall)
         Row(Modifier.horizontalScroll(rememberScrollState()), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
             DietAim.entries.forEach { option -> FilterChip(selected = aimName == option.name, onClick = { aimName = option.name },
                 label = { Text(option.label) }, enabled = !busy) }
         }
-        Text("Dzienne kcal i B/T/W ustawisz oddzielnie w Ustawieniach.", style = MaterialTheme.typography.bodySmall)
+        Text("B/T/W ustawisz oddzielnie w Ustawieniach. Zmiana samego pseudonimu lub wzrostu zachowuje cel kcal.", style = MaterialTheme.typography.bodySmall)
         Button(onClick = { cm?.let { onSave(nickname, it, ActivityClass.valueOf(activityName), DietAim.valueOf(aimName)) } },
-            enabled = nickname.trim().length in 2..40 && cm != null && !busy, modifier = Modifier.fillMaxWidth().testTag("confirm-profile")) {
+            enabled = nickname.trim().length in 2..40 && cm != null && target != null && !busy, modifier = Modifier.fillMaxWidth().testTag("confirm-profile")) {
             Text(if (busy) "Zapisuję…" else "Zapisz profil")
         }
     }

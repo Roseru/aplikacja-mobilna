@@ -1,0 +1,9 @@
+{
+  "decision": "manual_candidates",
+  "existing_product": null,
+  "candidates": [],
+  "missing_identity_fields": [
+    "composition"
+  ],
+  "truncated": false
+}

@@ -4,7 +4,7 @@ info:
   title: Wojskowy licznik kalorii — E0
   version: 0.1.0
   x-status: design draft
-  description: Odczyty i statystyki E5 oraz synchronizacja E4 są wdrożone w backend/openapi.json. Funkcje E6–E9 pozostają opisane w planie prac; nie deklarujemy niewdrożonych operacji. Wdrożone health, katalog E2 i tożsamość/odczyty E3 opisuje backend/openapi.json
+  description: Odczyty i statystyki E5, synchronizacja E4 oraz społeczność i moderacja E6 są wdrożone w backend/openapi.json. Funkcje E7–E9 pozostają opisane w planie prac; nie deklarujemy niewdrożonych operacji. Wdrożone health, katalog E2 i tożsamość/odczyty E3 opisuje backend/openapi.json
     generowane z FastAPI. Przykłady katalogu są wyłącznie demo.
 servers:
 - url: /api/v1

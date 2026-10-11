@@ -2,6 +2,14 @@
 
 Wersja V1, 11 października 2026 r. Instrukcja wykonawcza koordynatora O2. Pełny tekst przekazania zachowano poniżej; stan startowy i wskazane SHA są punktami historycznymi. Bieżące wyniki, zlecenia i warunki wznowienia zapisujemy wyłącznie w [komunikacji agentów](KOMUNIKACJA_AGENTOW.md), raportach etapów oraz powiązanych PR/czatach. Ta instrukcja nie stanowi dowodu odbioru E4 lub następnego etapu.
 
+## Tryb ręczny i E7 — aktualne polecenie z 11 października 2026 r.
+
+Użytkownik później wydał w źródłowym czacie polecenie **„wyłącz automatyzacje”**. Oba harmonogramy są PAUSED; starsze zdania o ACTIVE/wznowieniu są historyczne i nie upoważniają do ich włączenia. Bieżące bezpośrednie zlecenie w czacie koordynatora: **„scal do main, napisz master prompt 7 i w nowym czacie niech się on wykona na gpt 6.1 xhigh”**. Jest upoważnieniem do merge odebranego PR20, publikacji/odbioru mastera E7 i jednego nowego wykonawcy, bez ponownego uruchamiania automatyzacji.
+
+E6-O2 scalono do `492811f998efe9256673a7c84bd942bcc07a9c9d`, własny main CI1643/osiem success. [Master E7](MASTER_PROMPT_E7.md) rozdziela samodzielny E7-O2 od rzeczywistych E7-R i pełnego wydania. Po niezależnej ocenie ≥9/10 i final-head CI opublikuj master przez docs PR/merge/main CI. Sprawdź duplikaty i projekt; create_thread z modelem `gpt-6.1-sol` i thinking `xhigh`, dokładnym SHA/promptem oraz własnym worktree wykonawcy. Jedna implementacja O2. Odbiór/poprawki PR wykonawcy należą do koordynatora; wykonawca nie scala i nie zwalnia E8/E9. Przed takim dalszym przekazaniem odczytaj rzeczywisty wynik, bez samoczynnego schedulera.
+
+Ta korekta ma pierwszeństwo przed historycznym trybem automatycznym poniżej. Wszystkie WF/KO, przepływ Git, ochrona historii, niezależne dowody i bramki zespołu pozostają.
+
 ## Korekta bramki E6-O2 — 11 października 2026 r.
 
 KOORDYNACJA_E6_O2_GATE_20261011 ma pierwszeństwo przed zbyt szerokim odczytaniem historycznej kolejności poniżej. Bezpośrednie polecenie człowieka w czacie `01a12836-2aed-72f3-83ad-b737ef30377e` obejmuje nowy master/czat E6 i dalsze etapy, z przerwą wtedy, gdy najlepiej czekać na rzeczywistą zależność. Ponownie odczytano oryginalną turę `01a1283a-c331-75f2-9515-e0886412e63b` oraz pytanie użytkownika o możliwość dalszej pracy po E5. Komunikat drugiego agenta był wskazaniem reewaluacji, nie nowym upoważnieniem.

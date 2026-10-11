@@ -68,13 +68,15 @@ Wygaśnięcie tokenu blokuje operacje serwerowe, ale nie blokuje zapisu do lokal
 
 | Klasa | Opis profilu według założeń użytkownika |
 |---|---|
-| Stacjonarno-biurowa | Aktywność odpowiadająca orientacyjnie mniej niż 10 tys. kroków dziennie |
+| Etat biurowo-kawowy | Aktywność odpowiadająca orientacyjnie mniej niż 10 tys. kroków dziennie |
 | Liniowa | Orientacyjnie 10–20 tys. kroków, średnia aktywność i sport |
 | Komandos | Bardzo duża aktywność; orientacyjnie 25 tys. kroków i liczne treningi |
 
 Są to deklarowane klasy aktywności, a nie uniwersalne limity kroków ani gotowe wartości kcal. Przy 20–25 tys. kroków użytkownik wybiera profil według całej aktywności, również treningów. Automatyczny odczyt kroków i integracja z zegarkiem pozostają poza podstawowym zakresem.
 
 Backend wyznacza początkowe oszacowanie metodą `mifflin_pal_v1` z 11.5. Użytkownik może zmienić klasę i cel. W aplikacji należy odróżnić **szacowane zapotrzebowanie do utrzymania masy** od **celu spożycia**. Kalkulator nie ustawia samoczynnie deficytu ani nadwyżki.
+
+Android offline stosuje jawny przelicznik celu `activity_goal_v1`: etat biurowo-kawowy ×1,00, Linia ×1,25, Komandos ×1,50. Zmiana klasy przelicza bieżący cel kcal przez stosunek nowego i poprzedniego mnożnika, z zaokrągleniem HALF_UP do 1 kcal. Przed zapisaniem użytkownik widzi wynik; cel obowiązuje od dzisiaj, wcześniejsze dni i B/T/W pozostają zachowane. Sam wybór opcji bez zapisu lub edycja profilu bez zmiany klasy nie zmienia celu. Ręczna zmiana kcal pozostaje dostępna; kolejna zmiana klasy przelicza tę ręcznie ustawioną wartość. To względne ustawienie celu spożycia, oddzielne od kalkulatora zapotrzebowania mifflin_pal_v1. Identyfikatory API GARRISON/LINE/COMMANDO pozostają zgodne.
 
 ### WF-03. Dziennik w trybie standardowym
 

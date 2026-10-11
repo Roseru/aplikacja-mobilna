@@ -1,6 +1,8 @@
 # Android — Racje i kalorie
 
-Wersja `0.7.1` dodaje przygotowanie bootstrapu E3 oraz niezmienne wersje lokalnych celów. Rejestr właścicieli i ochrona zapisu pozostają z 0.6; Room 6 zachowuje dotychczasowe wartości i kolejkę. Ekrany nadal działają jako gość bez konta i internetu, z Postępami 7/30/90 dni. Logowanie i HTTP nie są jeszcze podłączone.
+Wersja `0.7.3` dodaje tryby aktywności z ikonami żołnierzy i przeliczanie celu kcal po zapisaniu zmiany trybu. Wersja `0.7.2` usprawnia przewijanie wyboru produktów na mniejszym ekranie i dodaje akcję klawiatury „Gotowe” bez niejawnego zapisu. Przygotowanie bootstrapu E3 i niezmienne wersje lokalnych celów pozostają z 0.7.1. Rejestr właścicieli i ochrona zapisu pozostają z 0.6; Room 6 zachowuje dotychczasowe wartości i kolejkę. Ekrany nadal działają jako gość bez konta i internetu, z Postępami 7/30/90 dni. Logowanie i HTTP nie są jeszcze podłączone.
+
+[Raport 0.7.2 i scenariusze manualne](RAPORT_0_7_2.md) opisują odbiór poprzedniego etapu. Tryby 0.7.3: etat biurowo-kawowy ×1,00, Linia ×1,25, Komandos ×1,50; zmiana przelicza bieżący cel przez stosunek mnożników. Podgląd poprzedza zapis. Ręczne kcal, B/T/W i wcześniejsze dni pozostają zachowane; to przelicznik celu, osobny od kalkulatora zapotrzebowania backendu.
 
 ## Co zawiera
 
@@ -126,3 +128,5 @@ Wynik etapu analityki i zasady zależnego PR: [raport 0.5.0](RAPORT_0_5.md). Bie
 `MainActivity` tworzy ViewModel i uruchamia Compose. `DiaryViewModel` udostępnia obserwowalny stan. `DiaryRepository` realizuje transakcyjne operacje zapisu, `data/LocalOwners.kt` utrwala właścicieli i chroni zapis przed zmianą aktywnego zakresu. `CalorieDao` jest lokalnym źródłem ekranów. `core/NutritionV1.kt` zawiera dokładne obliczenia, `core/catalog/` walidację pakietu, `data/CatalogStore.kt` staging i aktywację. `ui/` zawiera wspólne motywy i ekrany.
 
 Nie ma uprawnienia INTERNET, kluczy API ani danych konta w APK pierwszej wersji. Dodamy warstwę sieciową wraz z etapem synchronizacji.
+
+[Raport 0.7.3 i testy trybów](RAPORT_0_7_3.md).

@@ -20,14 +20,14 @@ class CompletenessFlowTest {
         val known = "known-${UUID.randomUUID()}"; val unknown = "unknown-${UUID.randomUUID()}"
         try {
             runBlocking { repo.add("basic-banana", 100.0, MealType.LUNCH, date, known); repo.setDayComplete(date, true) }
-            compose.onNodeWithTag("day-complete").performScrollTo()
+            compose.onNodeWithTag("diary-content").performScrollToNode(hasTestTag("day-complete"))
             compose.waitUntil(10_000) { compose.onAllNodesWithText("Dzień kompletny").fetchSemanticsNodes().isNotEmpty() }
             runBlocking { insertUnknownEnergy(app.database, date, unknown) }
             compose.waitUntil(10_000) { compose.onAllNodesWithText("Dziennik niekompletny").fetchSemanticsNodes().isNotEmpty() }
             compose.onNodeWithText("Uzupełnij brakujące kcal przed potwierdzeniem dnia.").assertExists()
             compose.activityRule.scenario.recreate()
             compose.waitUntil(15_000) { compose.onAllNodesWithTag("daily-kcal").fetchSemanticsNodes().isNotEmpty() }
-            compose.onNodeWithTag("day-complete").performScrollTo()
+            compose.onNodeWithTag("diary-content").performScrollToNode(hasTestTag("day-complete"))
             compose.waitUntil(10_000) { compose.onAllNodesWithText("Dziennik niekompletny").fetchSemanticsNodes().isNotEmpty() }
         } finally { runBlocking { repo.delete(unknown); repo.delete(known); repo.setDayComplete(date, false) } }
     }

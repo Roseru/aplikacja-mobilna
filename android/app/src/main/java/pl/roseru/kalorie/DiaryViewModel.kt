@@ -102,7 +102,7 @@ class DiaryViewModel(private val repository: DiaryRepository, private val prefer
         mutate { repository.addCustomProduct(draft, grams, type, date, mealId, productId); channel.send(DiaryEvent.MealSaved) }
     }
     fun setProfile(nickname: String, height: Double, activity: ActivityClass, aim: DietAim) = mutate {
-        repository.setProfile(nickname, height, activity, aim); channel.send(DiaryEvent.Message("Profil zapisany na urządzeniu."))
+        repository.setProfileAndActivityGoal(nickname, height, activity, aim); channel.send(DiaryEvent.Message("Profil i cel zapisane na urządzeniu."))
     }
     fun addWeight(kg: Double, date: LocalDate) = mutate {
         repository.addWeight(kg, date)
