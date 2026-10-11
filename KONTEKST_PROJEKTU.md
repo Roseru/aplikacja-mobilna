@@ -1,5 +1,13 @@
 # Kontekst współpracy
 
+## Kontynuacja O1 — bootstrap HTTP 0.8.1, 11 października 2026
+
+- codex/android-sesja / PR26, kod c6b7a2fd4df4bd26c5ea81e6b97026d8476445c6; zwykły merge main75c4414 zachowuje komunikację O1/O2/O3. PR nadal draft do rzeczywistego odbioru HTTP.
+- 0.8.1/code12/Room6: przechwycony token+identity+lease i rewizja sesji, trwały bodyless bootstrap HTTP, bounded retry/Retry-After, ochrona logout/ABA/refresh, zachowany requiresRecovery. Brak importu gościa, odczytów API, wysyłki outbox i WorkManager.
+- Finalny pełny build/lint/JVM/device PASS:81JVM i76/76 API35/offline, lint0error/28warning/1info. 10UI failures wcześniejszego run przy wygaszonym emulatorze są udokumentowane; po emulowanymAC/StayOn=true pełne76/76 bez zmian źródeł/testów. Raport android/RAPORT_0_8_1.md; config android/BOOTSTRAP_HTTP.md.
+- APK poza Git:0985e14e66ed62046d49d0793617ef6d2ce6cab36806327a41ed3b2fe035b78a. Aktualizacja i pierwsze uruchomienie zachowały całe18tabel/2posiłki/outbox/FK; widoczny Dziennik do testów manualnych.
+- Odczyt O3-011/PR27: rzeczywista sesja APK0.8.0/3b081c4 odebrana przez O3, zewnętrzny validation-only CA overlay/profile-scope helper już dostarczony. Nie zastępuje odbioru HTTP0.8.1. Użyć istniejącej instalacji, nie reinit/nowego CA; adres API ze stanu O3. Odczytano E8/PR29, E7/PR28 nie przejęty. CI nowego head odczytać osobno, stare8success3b081c4 nie są jego wynikiem.
+
 ## Kontynuacja O1 — klient sesji 0.8.0, 11 października 2026
 
 - Gałąź codex/android-sesja z main f551ecc, kod ca69929147b6861a79fd77cd950fa232e78afdcd, draft PR #26: https://github.com/Roseru/aplikacja-mobilna/pull/26. PR #25 / 0.7.3 scalony po ośmiu success dla 4930cca i braku uwag. Review opcjonalne; kontrola exact head pozostaje.
