@@ -10,7 +10,7 @@ Dostarcz własne odczyty posiłków, pomiarów wagi i deklaracji dni oraz statys
 
 Baza merytoryczna: E4 head 7ebf01a04af2f6e811031d811c2ed7eaaa179520, scalone przez PR #12 do main 623c6aaea7e5bd4d71f7a001a0ff91f9760aecef. Odbiór koordynatora: 103 real PostgreSQL ACL/server-log PASS, niezależna recenzja 9,4/10 i końcowe CI 1180 PASS. Wiadomość startowa potwierdzi również odbiór po integracji oraz aktualny main zawierający ten prompt. Nie resetuj checkoutu do historycznego SHA.
 
-Wykonanie R jest częściowym wynikiem E5. Pełne E5 nadal wymaga E5-O2-C: kompletnego zweryfikowanego katalogu z 11.4, oficjalnego eksportu/importu i KO-01–02/KO-30, oraz zespołowych dowodów APK/synchronizacji O1 i HTTPS O3. Częściowe zaliczenie R nie zamyka tych bramek i nie zwalnia E6.
+Wykonanie R jest częściowym wynikiem E5. Pełne E5 nadal wymaga E5-O2-C: kompletnego zweryfikowanego katalogu z 11.4, oficjalnego eksportu/importu i KO-01–02/KO-30, oraz zespołowych dowodów APK/synchronizacji O1 i HTTPS O3. Częściowe zaliczenie R nie zamyka tych bramek i nie zwalnia automatycznie kolejnego wykonawcy. Korekta z 11 października 2026 r. rozdziela pełny odbiór od startu niezależnego backendu: koordynator może osobno zwolnić [E6-O2](MASTER_PROMPT_E6.md) po weryfikacji technicznych zależności i opublikowaniu jego mastera. Wykonawca E5 nie zaczyna E6 samodzielnie.
 
 Dla R brak gotowego APK, produkcyjnego HTTPS lub kompletu etykiet nie blokuje implementacji prywatnych odczytów na odebranych modelach E4. Nie publikuj niepełnego katalogu jako official. Zachowaj zakres E6–E9 dla kolejnych etapów: społeczność, moderacja, Gemini, punkty, Nemesis i korekty AI.
 

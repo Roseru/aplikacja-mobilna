@@ -2,6 +2,20 @@
 
 Wersja V1, 11 października 2026 r. Instrukcja wykonawcza koordynatora O2. Pełny tekst przekazania zachowano poniżej; stan startowy i wskazane SHA są punktami historycznymi. Bieżące wyniki, zlecenia i warunki wznowienia zapisujemy wyłącznie w [komunikacji agentów](KOMUNIKACJA_AGENTOW.md), raportach etapów oraz powiązanych PR/czatach. Ta instrukcja nie stanowi dowodu odbioru E4 lub następnego etapu.
 
+## Korekta bramki E6-O2 — 11 października 2026 r.
+
+KOORDYNACJA_E6_O2_GATE_20261011 ma pierwszeństwo przed zbyt szerokim odczytaniem historycznej kolejności poniżej. Bezpośrednie polecenie człowieka w czacie `01a12836-2aed-72f3-83ad-b737ef30377e` obejmuje nowy master/czat E6 i dalsze etapy, z przerwą wtedy, gdy najlepiej czekać na rzeczywistą zależność. Ponownie odczytano oryginalną turę `01a1283a-c331-75f2-9515-e0886412e63b` oraz pytanie użytkownika o możliwość dalszej pracy po E5. Komunikat drugiego agenta był wskazaniem reewaluacji, nie nowym upoważnieniem.
+
+E5-O2-R i checkpoint są odebrane/scalone w PR #15/#16; main `86121307b0a7ebe99f62775ec832097af19d613d`, wymagane CI 1349 PASS. Pełne E5/O2-C oraz APK/HTTPS/restore O1/O3 pozostają otwarte. Reewaluacja istniejących wersji katalogu E2, tożsamości/ról E3, prywatnych szkiców/sync E4 i E5 potwierdziła możliwość samodzielnego **E6-O2**. Brak etykiet official, APK lub produkcyjnego HTTPS sam nie blokuje tej implementacji na izolowanym PG/Keycloak i jawnych testowych danych.
+
+Koordynator przygotowuje i niezależnie weryfikuje [master E6-O2](MASTER_PROMPT_E6.md) wraz z korektą planu/komunikacji, publikuje przez osobny docs PR, sprawdza final-head CI, scala i potwierdza main. Dopiero wtedy list_threads/list_projects i jeden nowy czat „Wykonaj E6 — katalog społeczności”, z pełnym zleceniem E6-O2 i SHA źródła. Sprawdź duplikaty przed create; po nieznanym wyniku odtwórz stan. Model/thinking nowego czatu pomiń, local domyślnie; wykonawca używa własnego worktree i nie przełącza głównego E4. Koordynator odbiera/naprawia/scala O2 po dowodach ≥9/10 i wymaganym CI, jak dotychczas.
+
+PASS E6-O2 jest wynikiem backendu, nie pełnego zespołowego E6 ani brakującego pełnego E5. Zachowaj wszystkie WF/KO, źródła/etykiety, official eksport/import, APK/Room/WorkManager i produkcyjną integrację jako nadal wymagane odbiory. Nie promuj testowych danych w official i nie kontaktuj dostawcy bez osobnego upoważnienia. Następny zakres backendu ocenia się według jego rzeczywistych zależności, a pełne wydanie nadal wymaga dowodów całego zespołu.
+
+Automatyzacja została wznowiona w czacie źródłowym z tą korektą; stary watcher E5 pozostaje PAUSED. PAUSED stosuj dopiero, gdy konkretne brakujące wejście uniemożliwia następny potrzebny samodzielny rezultat bez zgadywania/reworku i nie ma sensownej niezależnej pracy O2. Zapisz właściciela, dowód wznowienia i ostatni bezpieczny stan. Samo WAITING_EXTERNAL pełnego E5 nie zatrzymuje zwolnionego E6-O2. Pozostałe reguły jednego wykonawcy, ochrony checkoutu, Git, review, CI, ciszy przy niezmienionym stanie i E10 bez fałszywego PASS obowiązują.
+
+## Historyczna instrukcja V1
+
 KOORDYNACJA_PROJEKTU_E4_E10_V1
 
 Jesteś OSOBĄ 2 / Agentem 2 i jedynym koordynatorem dalszej realizacji Roseru/aplikacja-mobilna w czacie „Podepnij folder do repozytorium”. Prowadź projekt etapami według aktualnych wymagań, do E10 albo rzeczywistej blokady. Priorytet: poprawność, zachowanie danych i rozsądne zużycie tokenów.
