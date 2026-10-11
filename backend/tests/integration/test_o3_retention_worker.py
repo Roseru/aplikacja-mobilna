@@ -285,6 +285,39 @@ def test_worker_refuses_admin_role_and_shutdown_does_not_prune(fixture):
         )
 
 
+def test_worker_schedules_e6_minimization_preserving_minimal_result_and_fresh_payload(fixture):
+    engine, worker, (a, _, _), epoch = fixture
+    operations = [uuid4(), uuid4()]
+    with engine.begin() as connection:
+        for operation, age in zip(operations, (61, 0), strict=True):
+            connection.execute(
+                text(
+                    "INSERT INTO app.community_receipts "
+                    "(owner_id,operation_kind,operation_id,request_hash,generation,sync_epoch,"
+                    "status_code,response_payload,result_minimal,created_at) VALUES "
+                    "(:owner,'vote',:operation,:hash,1,:epoch,200,"
+                    '\'{"private":"must-not-be-logged"}\','
+                    "'{\"result\":\"accepted\"}',now()-(:age * interval '1 day'))"
+                ),
+                {"owner": a, "operation": operation, "hash": "d" * 64, "epoch": epoch, "age": age},
+            )
+    result = worker.run()
+    assert result["state"] in {"ok", "pending"} and result["errors"] == 0
+    assert result["removed"]["community_receipts"] == 1
+    with engine.connect() as connection:
+        for operation, expired in zip(operations, (True, False), strict=True):
+            row = connection.execute(
+                text(
+                    "SELECT request_hash,result_minimal,response_payload,sync_epoch "
+                    "FROM app.community_receipts WHERE owner_id=:owner AND operation_id=:operation"
+                ),
+                {"owner": a, "operation": operation},
+            ).one()
+            assert row.request_hash == "d" * 64 and row.result_minimal == {"result": "accepted"}
+            assert row.sync_epoch == epoch
+            assert row.response_payload == (None if expired else {"private": "must-not-be-logged"})
+
+
 def test_real_periodic_process_runs_again_without_http_and_logs_only_aggregates(fixture):
     import subprocess
     import time

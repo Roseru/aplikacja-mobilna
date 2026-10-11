@@ -59,7 +59,7 @@ stan; nie generuj nowych haseł do istniejących baz i nie usuwaj wolumenów jak
 | `storage-init` | Jednorazowo ustawia właściciela własnego wolumenu katalogu; bez dostępu DB |
 | Caddy | Jedyny opublikowany port; TLS, proxy API/OIDC/admin, bez access logów i cache |
 
-W chwili dostawy oczekiwany head to `0012_e5_reads`. Test pobiera wymagany head z backendu,
+Aktualny oczekiwany head to `0014_catalog_search`. Test pobiera wymagany head z backendu,
 żeby późniejsza zgodna migracja O2 nie wymagała osobnego ręcznego przepisania liczby w teście.
 Przed takim rolloutem O3 nadal sprawdza zgodność migracji i obrazu. API nie wykonuje DDL przy
 starcie; role, ACL i wszystkie istniejące migracje O2 zachowano bez zmian.
@@ -108,8 +108,11 @@ nie jest odnowieniem certyfikatu ani rotacją sekretu sync.
 Usługa `retention` startuje z zestawem i od razu wykonuje ograniczony przebieg.
 Następnie sprząta co godzinę, również dla kont bez ruchu HTTP. Używa istniejącego
 `calorie_app.modules.sync.retention.prune`, bez nowych reguł kasowania. Na dostarczonym
-head0012 obejmuje sync i prywatne sesje odczytu. Po zgodnym upgrade funkcję nadal
-utrzymuje O2; worker nie wywołuje samodzielnie przyszłych funkcji E6.
+head0014 obejmuje sync, prywatne sesje odczytu i minimalizację receipts community E6.
+Funkcję i reguły retencji nadal utrzymuje O2; runner nie dodaje własnych reguł.
+Upgrade E6 wykonuj według [rolloutu O2](../../docs/e6/KONFIGURACJA_O3.md):
+zatrzymaj stare API/worker/publisher, wykonaj spójną kopię, następnie migrację i readiness.
+Nie uruchamiaj starego obrazu API lub workera równolegle z migracją.
 
 ```text
 uv run --project backend --locked python infra/integration/run.py worker-status
