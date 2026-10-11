@@ -377,7 +377,9 @@ def main():
                 raise RuntimeError(
                     "Docker unavailable or project volumes exist; preserve original state"
                 )
-            initialize(state, args.host or "127.0.0.1", args.port or 18443, project)
+            initialize(
+                state, args.host or "127.0.0.1", 18443 if args.port is None else args.port, project
+            )
         stack = Stack(state)
         if args.host is not None and host_address(args.host) != stack.config["host"]:
             raise ValueError(
