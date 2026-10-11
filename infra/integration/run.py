@@ -262,6 +262,11 @@ def initialize(state, host="127.0.0.1", port=18443, project="calorie-integration
     )
     realm = json.loads((ROOT / "infra/local/keycloak/realm.json").read_text(encoding="utf-8"))
     realm["sslRequired"] = "all"
+    # O1 requests openid profile. Keep the O2 harness template untouched and add only
+    # the optional standard scope to the actual Android client in local integration.
+    for client in realm["clients"]:
+        if client["clientId"] == "calorie-android":
+            client["optionalClientScopes"] = ["profile"]
     users = {
         name: {"username": f"integration-{name}", "password": secrets.token_hex(32)}
         for name in ("a", "b")

@@ -78,6 +78,7 @@ Realm `calorie-dev` korzysta z istniejącej konfiguracji O2, z `sslRequired=all`
 - publiczny `calorie-android`, Authorization Code, obowiązkowe PKCE S256;
 - dokładne callbacki `pl.roseru.kalorie:/oauth2redirect` i
   `pl.roseru.kalorie.validation:/oauth2redirect`, bez wildcardów;
+- istniejący opcjonalny zakres `profile` wyłącznie dla Androida, zgodny z `openid profile` O1;
 - audience API `calorie-api`, role `user`, `catalog_moderator`, `admin`, TTL 300 s;
 - pomocnicze publiczne klienty harnessu i negatywnego testu audience służą wyłącznie lokalnym
   testom, z dokładnym loopback callbackiem; nie są szablonem produkcji;
@@ -87,8 +88,11 @@ Hasła odczytuj wyłącznie lokalnie w `.tools/local-integration/credentials.jso
 Nie kopiuj tego pliku do dziennika, PR, logów ani APK. Do konfiguracji zwykłej przeglądarki
 można świadomie zaufać **wyłącznie publicznemu** `tls/ca.pem` w magazynie bieżącego użytkownika.
 Testy Python i API jawnie używają tego pliku; nie wymagają instalacji CA w systemie.
-O1 musi w testowej aplikacji skonfigurować ograniczone zaufanie do tego lokalnego CA i wykonać
-własny test systemowej przeglądarki/callbacku. Nie wyłączamy walidacji certyfikatów w APK.
+[Odbiór APK 0.8.0](ANDROID_PKCE.md) opisuje zewnętrzny overlay z ograniczonym CA wyłącznie
+dla wariantu validation oraz rzeczywiste próby Chrome/callbacku/A/B/gościa O3.
+Istniejący realm dostaje opcjonalny profile przez jawny `android_scope.py`, bez ponownej
+inicjalizacji; sam restart nie aktualizuje zaimportowanego klienta. O1 niezależnie odbiera
+własny PR i następne adaptery HTTP/sync. Nie wyłączamy walidacji certyfikatów w APK.
 
 CA jest ważny 730 dni, certyfikat serwera do 90 dni. Odnowienie certyfikatu serwera zachowuje
 CA, issuer, hasła i klucz checkpointów; zatrzymuje tylko gateway, odtwarza jego mounty i
@@ -207,9 +211,10 @@ pozostają obowiązkowe. Testy TLS obejmują prawdziwy lokalny serwer JWKS, nie 
 
 ## Granice odbioru
 
-To wynik punktu 1: działająca infrastruktura lokalna. Nie potwierdza podłączenia obecnego APK,
+To działająca infrastruktura lokalna. Jej `verify` nie potwierdza podłączenia obecnego APK,
 KO-31, kompletu official ARPOL, publicznego VPS/domeny/SMTP, harmonogramu workerów ani restore/RPO/RTO.
-O1 otrzymuje issuer/API, publiczny CA i konfigurację klienta; wykonuje własne podłączenie Androida.
+O1 otrzymuje issuer/API, publiczny CA i konfigurację klienta; osobne próby sesji konkretnego
+APK O1/0.8.0 i ich ograniczenia dokumentuje [odbiór O3](ANDROID_PKCE.md).
 O2 zachowuje kontrakty i kod logiki. Publiczny deployment oraz kopie/restore są kolejnymi etapami.
 
 Źródła konfiguracji: [Keycloak containers](https://www.keycloak.org/server/containers),
