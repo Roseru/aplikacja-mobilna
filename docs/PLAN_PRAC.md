@@ -22,7 +22,7 @@ Każdy etap kończy się działającym, sprawdzalnym rezultatem. Kryteria KO odn
 | E5. Pierwsza użyteczna wersja | Uzupełnienie zweryfikowanego katalogu; read API dziennika i statystyki 7/30/90 dni; dokumentacja obsługi synchronizacji | KO-01–02 na oficjalnym katalogu i KO-11; APK i API obsługują profil/cel, racje, posiłki, wagę i sync; pakiet ma pełne dane ze źródeł; działa lokalnie od pierwszego startu | E4 + zweryfikowane etykiety. O1 dostarcza APK, O3 środowisko HTTPS. To koniec rdzenia, nie całego projektu |
 | E6. Katalog społeczności | Publikacja szkiców, deduplikacja, głosy, zgłoszenia, moderacja i audyt | E6-O2: sprawdzony backend KO-09/13, wersje/history/sync/purge i uprawnienia; pełny E6 dodatkowo wymaga formularzy O1 i integracji, bez zamykania brakującego pełnego E5 | Start backendu: odebrane E2/E3/E4 + E5-O2-R oraz master/zlecenie koordynatora. Official C, APK i HTTPS są odrębnymi bramkami pełnego odbioru i wydania |
 | E7. Gemini i analiza posiłku | Trwałe zadania, prywatny magazyn plików, mock i adapter, walidacja, jedna pula E7/E9, analiza/confirm bez drugiego zapisu posiłku | E7-O2: backend KO-10/21/28 i ochrona KO-32 sprawdzone na PG/storage/mock; E7-R: rzeczywisty model i kryteria 30 zdjęć; pełny etap dodatkowo O1/O3 i bramka wydania | Odebrane/scalone E6-O2 oraz opublikowany master i zlecenie. Konfiguracja live O3, corpus referencyjny i wydanie EOG są osobnymi wejściami, nie zakazem niezależnego E7-O2 |
-| E8. Motywacja i Nemesis | Punkty, odznaki, ranking z opt-in, zaproszenia, zgody, projekcje i finalizacja; harmonogram zamknięcia dni | KO-14, KO-22, KO-26–27, KO-29; opóźnione dane i worker nie zmieniają zasad; cofnięcie zgody odcina odczyt | E5; technicznie niezależne od E7, ale dla jednej Osoby 2 realizowane kolejno, bez mnożenia rozpoczętych prac |
+| E8. Motywacja i Nemesis | Punkty, odznaki, ranking z opt-in, zaproszenia, zgody, projekcje i finalizacja; harmonogram zamknięcia dni | KO-14, KO-22, KO-26–27, KO-29; opóźnione dane i worker nie zmieniają zasad; cofnięcie zgody odcina odczyt | E5; start po odbiorze/scaleniu E7-O2 zgodnie z bieżącym zleceniem; kontrolowana równoległość E8 dopuszczona po zamrożeniu wspólnych interfejsów |
 | E9. Korekty zapotrzebowania | Deterministyczne reguły, agregaty, wyjaśnienie AI, zatwierdzanie i automat z limitami oraz audytem | KO-15 i KO-24; brak danych/zmiana rewizji/cofnięcie zgody blokują stary wynik; zmiana działa od następnego dnia i nie przestawia celu kcal | E7 + sprawdzone statystyki E5 |
 | E10. Odbiór i wydanie | Pełna regresja, migracja z poprzedniego wydania, kontrakt dla APK, dokumentacja API i znanych ograniczeń, pomoc przy odtworzeniu | Wszystkie KO-01–32 mają wynik i dowód; O3 potwierdza KO-16–17 oraz pełne KO-32 na odtworzonej kopii; O1 wydaje APK; wydanie opisuje wersje schematów i pakietu | Wszystkie wcześniejsze etapy; warunki wydania i rollback w workflow |
 
@@ -44,22 +44,22 @@ KO-31 jest bramką integracji kont w E4. Każde dodane później kryterium otrzy
 
 ### Podetapy E8 i czaty wykonawcze
 
-Właściciel zatwierdził ten podział 11 października 2026 r. Rozdzielamy pracę według złożoności i ryzyka; prostsze, powiązane rezultaty pozostają w jednym czacie. Powstają **trzy czaty wykonawcze**, uruchamiane kolejno:
+Właściciel zatwierdził ten podział 11 października 2026 r. Rozdzielamy pracę według złożoności i ryzyka; prostsze, powiązane rezultaty pozostają w jednym czacie. Powstają **trzy czaty wykonawcze**, uruchamiane według zależności; nowsza zgoda na równoległość wymaga zamrożenia wspólnych interfejsów:
 
 | Podetap | Zakres O2 | Miejsce wykonania |
 |---|---|---|
-| E8.1 + E8.2 | Punkty, rangi, osiągnięcia i ranking z opt-in/prywatnością; dojrzewanie punktów po lokalnej północy, nadrabianie po restarcie i cofanie odznak po korektach | Jeden czat i wspólny master dla spójnej funkcji motywacji |
+| E8.1 + E8.2 | Punkty, rangi, osiągnięcia i ranking z opt-in/prywatnością; dojrzewanie punktów po lokalnej północy, nadrabianie po restarcie i cofanie odznak po korektach | Jeden czat i [wspólny master](MASTER_PROMPT_E8_1_2.md) dla spójnej funkcji motywacji |
 | E8.3 | Nemesis: zaproszenia, zgody, zakres udostępniania, reguły rozpoczęcia/anulowania i izolacja uczestników | Drugi czat z osobnym masterem, po odbiorze potrzebnej podstawy |
 | E8.4 | Projekcje wyników, korekty, kwalifikacja synchronizacji i finalizacja po terminie; wyścigi oraz spóźniony worker | Trzeci czat z osobnym masterem, po odebraniu E8.1–E8.3 |
 | E8.5 | Integracja, pełna regresja i odbiór całości E8 z dowodami O2 oraz wymaganymi działaniami O1/O3 | Istniejący czat koordynatora „Podepnij folder do repozytorium”; poprawki wracają do właściwych wykonawców |
 
 Każda z trzech grup implementacyjnych ma własny opublikowany i odebrany master, gałąź/PR, testy oraz niezależną recenzję. Kolejna grupa rozpoczyna pracę po odbiorze i scaleniu wymaganych zależności oraz sprawdzeniu integracji main. Nie mnożymy czatów dla samej numeracji ani zwykłych poprawek. Koordynator ustala konkretną granicę kontraktów przed każdym zleceniem; podział nie zastępuje mastera.
 
-Organizacyjny start E8 nastąpi po osobnym odbiorze i scaleniu **E7-O2**, z jedną zasadniczą implementacją O2 naraz. Brak E7-R/live zdjęć lub bramki wydania AI nie jest automatyczną blokadą niezależnych punktów/rankingu; techniczne wejście stanowią odebrane dziennik, cele, sync i statystyki E5. Pełne odbiory zespołu i wszystkie WF/KO pozostają wymagane.
+Organizacyjny start E8 nastąpi po osobnym odbiorze i scaleniu **E7-O2**, z kontrolowaną równoległością dozwoloną nowszym zleceniem właściciela. Brak E7-R/live zdjęć lub bramki wydania AI nie jest automatyczną blokadą niezależnych punktów/rankingu; techniczne wejście stanowią odebrane dziennik, cele, sync i statystyki E5. Pełne odbiory zespołu i wszystkie WF/KO pozostają wymagane.
 
 E8.3 nie może udostępnić działającej rywalizacji bez spójnych projekcji i finalizacji wymaganych w E8.4. Master E8.3 określi zamkniętą bramkę aktywacji do odbioru E8.4, zamiast przyjmować realne wyniki do późniejszego przeliczenia. W E8.4 zachowujemy punktację regularity_v1, 30 × 24 h dosynchronizowania oraz atomową kwalifikację z clock_timestamp bazy według 11.7. E8.5 nie daje pełnego PASS na podstawie samych testów backendu.
 
-Zatwierdzenie planu nie uruchamia teraz E8 ani nowych harmonogramów. E7 pozostaje bieżącym zadaniem; start każdej grupy wymaga jawnego przekazania koordynatora. Automatyzacje pozostają PAUSED.
+Nowsze bezpośrednie zlecenie właściciela z 11 października 2026 r. uruchamia realizację całego E8 przez koordynatora według [mastera koordynacji E8](MASTER_PROMPT_KOORDYNACJA_E8.md). Trzy grupy i osobny odbiór E8.5 zachowano; start każdej grupy wymaga odebranych zależności, mastera i jawnego przekazania. Dopuszczono równoległe zakresy przy zamrożonych interfejsach, osobnych worktrees/migracjach i pojedynczym właścicielu wspólnego pliku; jeśli powodowałoby to rework, implementacje pozostają kolejne. Automatyzacje PAUSED.
 
 ## 2. Kolejność i zależności
 
@@ -88,7 +88,7 @@ flowchart LR
     E9 --> E10
 ```
 
-Diagram oddziela start backendu od pełnych odbiorów E5/E6. Dalszy samodzielny zakres O2 zwalnia koordynator po sprawdzeniu jego rzeczywistych zależności i mastera; strzałka nie jest zleceniem ani PASS. O2 ma jedno zasadnicze zadanie implementacyjne w toku; współpraca O1/O3 i zbieranie źródeł mogą trwać równolegle. Wszystkie bramki zespołowe nadal obowiązują przed E10/wydaniem.
+Diagram oddziela start backendu od pełnych odbiorów E5/E6. Dalszy samodzielny zakres O2 zwalnia koordynator po sprawdzeniu jego rzeczywistych zależności i mastera; strzałka nie jest zleceniem ani PASS. Dla E8 obowiązuje nowsze ludzkie zlecenie kontrolowanej równoległości z mastera koordynacji E8; poza tym wyjątkiem O2 ma jedno zasadnicze zadanie implementacyjne w toku. Współpraca O1/O3 i zbieranie źródeł mogą trwać równolegle. Wszystkie bramki zespołowe nadal obowiązują przed E10/wydaniem.
 
 ## 3. Pierwszy zestaw zadań do wykonania
 
