@@ -127,6 +127,9 @@ def test_upgrade_0002_preserves_legacy_and_finite_nutrition(database):
             connection.execute(
                 text("DELETE FROM app.user_consents WHERE owner_id=:owner"), {"owner": account_id}
             )
+            connection.execute(
+                text("DELETE FROM app.sync_counters WHERE owner_id=:owner"), {"owner": account_id}
+            )
             connection.execute(delete(UserAccount).where(UserAccount.id == account_id))
 
 

@@ -13,7 +13,10 @@ def check_domain(value, definition):
     if definition in {'GoalPage', 'MealPage', 'WeightPage', 'DiaryDayPage'}:
         return [e for row in value['items'] for e in check_domain(row, definition.removesuffix('Page') + 'Record')]
     if definition in {'Meal', 'Weight'}:
-        local = datetime.fromisoformat(value['occurred_at']).astimezone(ZoneInfo(value['time_zone'])).date()
+        try:
+            local = datetime.fromisoformat(value['occurred_at']).astimezone(ZoneInfo(value['time_zone'])).date()
+        except (ValueError, OverflowError):
+            return ['local_time_out_of_range']
         if local.isoformat() != value['local_date']:
             errors.append('local_date_mismatch')
     if definition == 'Meal':
@@ -53,8 +56,11 @@ def check_domain(value, definition):
                 errors.append('goal_range')
         if (value['reason'] == 'history_correction') != (value['correction_of'] is not None):
             errors.append('correction_reference')
-        if value['reason'] == 'user_decision':
+        try:
             decided = datetime.fromisoformat(value['decided_at']).astimezone(ZoneInfo(value['time_zone'])).date()
+        except (ValueError, OverflowError):
+            return ['local_time_out_of_range']
+        if value['reason'] == 'user_decision':
             if value['effective_from'] < decided.isoformat():
                 errors.append('goal_effective_date')
         if value['estimate'] is not None:

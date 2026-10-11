@@ -3,7 +3,7 @@
 import hashlib
 from uuid import UUID, uuid4
 
-from sqlalchemy import select
+from sqlalchemy import select, text
 from sqlalchemy.dialects.postgresql import insert
 
 from calorie_app.core.errors import DomainError
@@ -37,6 +37,7 @@ def lock_account(session, account_id: UUID, expected_generation: int | None = No
 
 
 def require_account(session, principal) -> UserAccount:
+    require_unblocked_subject(session, principal)
     account_id = session.scalar(
         select(UserAccount.id).where(
             UserAccount.issuer == principal.issuer, UserAccount.subject == principal.subject
@@ -45,6 +46,14 @@ def require_account(session, principal) -> UserAccount:
     if account_id is None:
         raise DomainError(403, "account_bootstrap_required")
     return lock_account(session, account_id)
+
+
+def require_unblocked_subject(session, principal):
+    if session.scalar(
+        text("SELECT app.subject_blocked(:issuer,:subject)"),
+        {"issuer": principal.issuer, "subject": principal.subject},
+    ):
+        raise DomainError(403, "account_deleting")
 
 
 def begin_deleting(session, account_id: UUID, expected_generation: int | None = None):
@@ -71,11 +80,23 @@ def check_receipt_context(receipt, account, epoch):
 
 
 def bootstrap(session, principal, key: UUID) -> dict:
-    session.execute(
-        insert(UserAccount)
-        .values(id=uuid4(), issuer=principal.issuer, subject=principal.subject)
-        .on_conflict_do_nothing(index_elements=[UserAccount.issuer, UserAccount.subject])
+    require_unblocked_subject(session, principal)
+    existing = session.scalar(
+        select(UserAccount.id).where(
+            UserAccount.issuer == principal.issuer, UserAccount.subject == principal.subject
+        )
     )
+    if existing is not None:
+        # Lock an existing account before an INSERT can wait on its removal.
+        # A bootstrap begun before deleting must never retry that INSERT after
+        # purge and recreate the old subject using its earlier statement view.
+        lock_account(session, existing)
+    else:
+        session.execute(
+            insert(UserAccount)
+            .values(id=uuid4(), issuer=principal.issuer, subject=principal.subject)
+            .on_conflict_do_nothing(index_elements=[UserAccount.issuer, UserAccount.subject])
+        )
     account = require_account(session, principal)
     # Initialising consents belongs to the account transaction, never to a read.
     session.execute(insert(UserConsent).values(owner_id=account.id).on_conflict_do_nothing())

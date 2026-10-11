@@ -312,12 +312,14 @@ def main():
                 if step['kind'] != 'http':
                     continue
                 method = 'post' if step['endpoint'] == 'push' else 'get'
-                operation = api['paths']['/sync/' + step['endpoint']][method]
-                response_schema = operation['responses'][str(step['expected_status'])]['content']['application/json']['schema']['$ref']
-                assert not validate(step['response'], response_schema, api_path), f'Scenario diverges from OpenAPI: {entry["id"]}'
+                operation = generated['paths']['/api/v1/sync/' + step['endpoint']][method]
+                response_schema = operation['responses'][str(step['expected_status'])]['content']['application/json']['schema']
+                if '$ref' in response_schema:
+                    response_schema = generated['components']['schemas'][response_schema['$ref'].split('/')[-1]]
+                assert not list(Draft202012Validator(response_schema, format_checker=FORMATS).iter_errors(step['response'])), f'Scenario diverges from OpenAPI: {entry["id"]}'
                 if method == 'post':
-                    request_schema = operation['requestBody']['content']['application/json']['schema']['$ref']
-                    assert not validate(step['request'], request_schema, api_path), f'Scenario request diverges from OpenAPI: {entry["id"]}'
+                    request_schema = operation['requestBody']['content']['application/json']['schema']
+                    assert not list(Draft202012Validator(request_schema, format_checker=FORMATS).iter_errors(step['request'])), f'Scenario request diverges from OpenAPI: {entry["id"]}'
     files = {p.resolve() for folder in ['valid','invalid','scenarios'] for p in (index_path.parent / folder).glob('*.json')}
     assert files == seen, f'Orphan/missing examples: {files ^ seen}'
     source = index['source_material']

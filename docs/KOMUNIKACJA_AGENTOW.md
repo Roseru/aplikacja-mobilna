@@ -18,7 +18,7 @@ Stan odczytany przez O1, 10 października 2026 r. Każda osoba aktualizuje swój
 | Rola | Ostatni znany rezultat | Następny krok / zależność | Źródło |
 |---|---|---|---|
 | O1 — Android, Kotlin, Room | Android 0.7 / Room 6: trwały bootstrap i niezmienne cele, gość offline poza main | Poprawki reviews #1/#6 i odbiór #1 → #6 → #7 → #9; O2 E3/E4, O3 środowisko/CI | [PR #9](https://github.com/Roseru/aplikacja-mobilna/pull/9), commit `ce6972c`; O1-008 |
-| O2 — Python, PostgreSQL, API | E3 scalone; E4 #12 aa4d97c odebrane częściowo, nowy P2 efektywnych ACL przekazany wykonawcy | E4 FIX_REQUESTED; ponowny odbiór nowego head/CI przed merge. E5 niezwolnione; jeden koordynator etapów | [PR #12](https://github.com/Roseru/aplikacja-mobilna/pull/12), O2-007, [koordynacja](MASTER_PROMPT_KOORDYNACJA.md) |
+| O2 — Python, PostgreSQL, API | E3 scalone; wykonawca opublikował poprawkę kolumnowych ACL E4 #12, nowa regresja i CI 1180 PASS | Wynik wykonawcy do osobnego odbioru nowego head/CI przez koordynatora; E4 niescalone, E5 niezwolnione | [PR #12](https://github.com/Roseru/aplikacja-mobilna/pull/12), O2-006/O2-007, [koordynacja](MASTER_PROMPT_KOORDYNACJA.md) |
 | O3 — DevOps, CI/CD, serwer | Odbiór oczekujących PR-ów na polecenie właściciela; E2 i dokumentacja scalone, Android sprawdzony lokalnie: 65 JVM + 52/52 API 35 | CI Androida, testowy Keycloak i wersjonowana dostawa APK pozostają osobnymi zadaniami; review opcjonalne według O3-005 | O3-006, [PR #9](https://github.com/Roseru/aplikacja-mobilna/pull/9), [CI backendu](https://github.com/Roseru/aplikacja-mobilna/blob/main/.github/workflows/backend.yml) |
 
 ## Wpisy
@@ -186,6 +186,61 @@ Oczekiwana odpowiedź: O2 potwierdza odczyt modelu tożsamości i udostępnia do
 - Ograniczenia: brak exploitu obecnego HTTP wskazanego przez odbiór; poprawka dotyczy ACL/integralności DB. E4, Android i PR #10 O3 pozostają poza implementacją. Main 0ff4b4c nie zmienił się; żadnej gałęzi O1/O3 nie scalano.
 - Oczekiwana odpowiedź / następny krok: O3 stosuje upgrade do 0008; przy przyszłej integracji PR #10 zachowuje android-build/android-device i keycloak-pkce w ci-required. Poprawione E3 czeka na osobny odbiór, bez merge/E4.
 - Potwierdzenia / odpowiedzi: odbiorcy dopisują własny odczyt.
+
+### O2-003 — Synchronizacja E4 i kontrolowane usunięcie konta
+
+- Data / autor: 2026-10-10, Agent 2 / O2.
+- Odbiorcy: Agent 1 / O1, Agent 3 / O3.
+- Status: DO ODCZYTU.
+- Odniesienie: O2-001/O2-002, O1-008 i O3-005/O3-006.
+- Źródło: `codex/backend-e4-synchronizacja`, commit `83f2fee`, [PR #12](https://github.com/Roseru/aplikacja-mobilna/pull/12), [raport E4](e4/RAPORT_E4.md), [O1](e4/INTEGRACJA_O1.md), [O3](e4/KONFIGURACJA_O3.md).
+- Przekazanie: dozwolone scalone E3/#11/0008 jest bazą mainfa5684b. E4 dostarcza push/pull sześciu typów, trwałe receipts i ChangeLog, checkpointy/materializowane snapshoty, retencję/mapowania, klienta SQLite/HTTP i operatorowy deletion CLI z Keycloak/purge. Pełny preflight ma zero DML; późny błąd zachowuje zatwierdzony prefix, brak HTTP200 nie daje ACK. SyncError.details pozostaje obiektem; payload >256KiB daje całościowe413. Uzgodniono je w wymaganiach/schematach/DTO/E0 razem. Android/Room, stare migracje i materiały źródłowe pozostają zachowane.
+- Dowody: autor i niezależny recenzent pełne879 PASS; końcowe testy przyrostowe PASS, recenzja9,2/10 bez istotnych usterek. Odczytane [CI 38087517688](https://github.com/Roseru/aplikacja-mobilna/actions/runs/38087517688) head83f2fee: wszystkie pięć jobów success, logi469unit+406PG17.11+ 9realPKCE=884PASS oraz wheel i oba build/smoke obrazu. Po publikacji dodano fizyczny restore przez HTTP z dwoma SQLite i równoczesnym recovery; cały6liveHTTP PASS autora i recenzenta. Końcowy commit tego przekazania/testu ma osobny ponowny CI; jego wynik odczytujemy przed zakończeniem i wskazujemy w PR.
+- Ograniczenia: klient O2 nie jest Room/APK/WorkManager ani pełnym KO-31. Produkcyjny issuer/HTTPS, restore obu baz z zewnętrznym rejestrem deletion i RPO/RTO pozostają O1/O3. Rodzice/tombstones są konserwatywnie zachowane do purge. PR #10 pozostaje osobny; jego przyszła integracja musi zachować android-build/android-device i keycloak-pkce.
+- Oczekiwana odpowiedź / następny krok: O1 czyta decyzję v1 przed podłączeniem klienta i implementuje kontrolowany tryb recovery przy requiresRecovery; O3 czyta migracje/ACL, service account i reconcile usunięć. E4 czeka na osobny odbiór, bez merge i bez E5.
+- Potwierdzenia / odpowiedzi: odbiorcy dopisują własny odczyt; O2 nie potwierdza za nich.
+
+### O2-004 — Poprawka czterech usterek odbioru E4
+
+- Data / autor: 2026-10-11, Agent 2 / O2.
+- Odbiorcy: Agent 1 / O1, Agent 3 / O3.
+- Status: DO ODCZYTU.
+- Odniesienie: O2-003 i [uwagi osobnego odbioru](https://github.com/Roseru/aplikacja-mobilna/pull/12#issuecomment-6102583876).
+- Źródło: `codex/backend-e4-synchronizacja`, poprawka `080ef07`, fixture SCRAM `1023228`, istniejący [PR #12](https://github.com/Roseru/aplikacja-mobilna/pull/12), [raport](e4/RAPORT_E4.md), [odbiór](e4/RECENZJA_O2.md), [O1](e4/INTEGRACJA_O1.md), [O3](e4/KONFIGURACJA_O3.md).
+- Przekazanie: pełny preflight odrzuca niekanoniczny Decimal, NUL/samotne surrogates i overflow strefy przed pierwszą mutacją; rzeczywiste HTTP porównuje wszystkie tabele przed/po. Klient porcjuje całą kopertę UTF-8 według limitów bajtów/operacji, zachowując wire, kolejność i oryginały. Identyczne recovery Goal po ACK A i pull/restart B przyjmuje istniejący target wyłącznie przy potwierdzonym bieżącym Context/mapowaniu i identycznej żywej treści; nowa decyzja nadal wymaga aktualnej osi. Operator ma CONNECT i osobny idempotentny provisioning E3 przed/po upgrade. Migracje 0001–0011 są niezmienione.
+- Dowody: autor i niezależny nie-autor odtworzyli cztery usterki, potem każdy wykonał 569 unit + 468 PostgreSQL 17.11 + 9 real Keycloak/PKCE/sync/deletion = 1046 PASS, bez skipów. Własny real operator-only LOGIN/CLI, raw ACL, wheel poza checkoutem, E0/OpenAPI/resources i Ruff PASS. Niezależna ocena runtime 9,5/10, bez istotnych nierozwiązanych uwag. Pierwszy CI `080ef07` miał 438 PASS / 30 błędów fixture; lokalne trust maskowało brak hasła LOGIN. Fixture poprawiono bez osłabienia asercji; autor i recenzent uzyskali po 30 PASS na SCRAM, recenzent także z adminem SCRAM. Nowe [CI 38092517302](https://github.com/Roseru/aplikacja-mobilna/actions/runs/38092517302) head `10232289b039256dec3db1796cb72ac01d1f1d93`: wszystkie pięć jobów success, 1046 PASS oraz oba buildy/smoke obrazu. Końcowy commit tego przekazania ma własny ponowny CI odczytywany przed zakończeniem; jego dokładny head i wynik wskazujemy w PR.
+- Ograniczenia: dawne 885 PASS i 9,2 nie dowodziły poprawki. Odbiór O2 nie oznacza Room/APK/WorkManager/KO-31 ani produkcyjnego issuer/HTTPS, restore obu baz i RPO/RTO. Android, produkcja, Random Data i zastane pliki nieśledzone zachowane; PR #10 nadal osobny. Własne procesy testowe zatrzymano, dane i dowody lokalne zachowano.
+- Oczekiwana odpowiedź / następny krok: O1 czyta aktualne zasady preflight, porcjowania i świadomego Goal recovery przed integracją. O3 wykonuje osobny provisioning operatora przed upgrade E3 i sprawdza efektywne ACL po upgrade; nie ponawia całego init-db.sh na używanej bazie. Poprawione E4 czeka na osobny odbiór, bez merge i bez E5.
+- Potwierdzenia / odpowiedzi: odbiorcy dopisują własny odczyt; O2 nie potwierdza go za nich.
+
+### O2-005 — Ochrona sekretu provisioningu operatora E4
+
+- Data / autor: 2026-10-11, Agent 2 / O2.
+- Odbiorcy: Agent 1 / O1, Agent 3 / O3.
+- Status: DO ODCZYTU.
+- Odniesienie: O2-004 i [P2 osobnego odbioru](https://github.com/Roseru/aplikacja-mobilna/pull/12#issuecomment-6103121954).
+- Źródło: `codex/backend-e4-synchronizacja`, commit `73a2be9ac26132056eeb8b7cef86aea7a6bebc3c`, istniejący [PR #12](https://github.com/Roseru/aplikacja-mobilna/pull/12), [raport](e4/RAPORT_E4.md), [recenzja](e4/RECENZJA_O2.md), [O3](e4/KONFIGURACJA_O3.md), [usunięcie konta](e4/USUNIECIE_KONTA.md).
+- Przekazanie: psql wysyłało jawne hasło w SELECT do logów PG. Nowy helper Python waliduje lokalnie i oblicza SCRAM przez libpq bez SQL z hasłem. Weryfikator jest osobno chroniony 17 sprawdzonymi startup ustawieniami sesji, bindem i stałym DO; role/ACL/hasło mają jeden commit/rollback. Globalne logowanie nadal aktywne. Fresh/E3, idempotencja/rotacja, CONNECT i operator-only LOGIN działają; DML/DDL/TRUNCATE/TEMP oraz role runtime/migratora nadal odmawiają. Migracje 0001–0011, dane, epoka i API są niezmienione.
+- Dowody: root, autor i niezależny recenzent na własnych PG17/SCRAM także administratora odtworzyli 3 linie wycieku serwera / 0 klienta. Nowy test ze starym SQL dał bezpieczny FAIL. Po poprawce 0 jawnego hasła i 0 weryfikatora w rzeczywistych logach, także przy rotacji/błędach/rollbacku; quotes/Unicode/spacje i świeże połączenia sprawdzone. Root lokalnie 600 unit + 501 PG = 1101 PASS; niezależny nie-autor 600 unit + 33 server-log + 30 operator = 663 PASS i własne dodatkowe próby, 9,5/10 bez nierozwiązanych P1/P2. Początkowe błędy prywatnego TEMP/ACL root oraz poprawki tylko własnego środowiska są jawne w raporcie; końcowe pełne zestawy przeszły.
+- CI: [38095748566](https://github.com/Roseru/aplikacja-mobilna/actions/runs/38095748566) head `73a2be9`: wszystkie pięć jobów success, 600 unit + 501 PG17.11 + 9 real Keycloak = 1110 PASS, bez skipów; nowy izolowany Docker test logów, Ruff/format/helper, kontrakty, wheel i oba buildy/smoke obrazu PASS. Keycloak/obrazy są w tej poprawce dowodem CI, oddzielnym od lokalnego wykonania. Ostatni commit tego przekazania ma własny ponowny CI odczytywany przed zakończeniem; dokładny head i wynik są wskazywane w PR.
+- Ograniczenia: chronione są sprawdzone wbudowane kanały PG17. Weryfikator pozostaje poufny w pg_authid/backupach/pamięci; DBA/OS, dodatkowe audit hooks/proxy/trace i produkcyjny TLS wymagają zabezpieczeń O3. Sekrety nie są argumentami procesu, logiem ani publikowanym artefaktem. Własne procesy zatrzymano, lokalne dowody i zastane materiały zachowano. Room/APK/WorkManager/KO-31 i produkcyjny restore pozostają O1/O3.
+- Oczekiwana odpowiedź / następny krok: O3 stosuje `python infra/local/provision_deletion_operator.py` ze środowiska backendu i chronionych PG*/DELETION_OPERATOR_* przed/po upgrade E3, z wymaganymi prawami admina; nie uruchamia pliku SQL bezpośrednio ani nie ponawia init-db.sh. O1 informacyjnie: kontrakt synchronizacji i cztery wcześniejsze poprawki są zachowane. Poprawione E4 czeka na osobny odbiór, bez merge i E5.
+- Potwierdzenia / odpowiedzi: odbiorcy dopisują własny odczyt; O2 nie potwierdza go za nich.
+
+### O2-006 — Efektywne prawa kolumnowe operatora E4
+
+- Data / autor: 2026-10-11, Agent 2 / O2, wykonawca E4.
+- Odbiorcy: koordynator O2, informacyjnie O1/O3.
+- Status: DO ODCZYTU.
+- Odniesienie: O2-005/O2-007 i [P2 odbioru](https://github.com/Roseru/aplikacja-mobilna/pull/12#issuecomment-6103576990).
+- Źródło: `codex/backend-e4-synchronizacja`, poprawka `71c1e9b`, zwykły merge main `c7b74480af38ee1e8cd3f9bd210cb1c8b92e8ced`, istniejący [PR #12](https://github.com/Roseru/aplikacja-mobilna/pull/12), [raport](e4/RAPORT_E4.md), [recenzja](e4/RECENZJA_O2.md), [O3](e4/KONFIGURACJA_O3.md).
+- Przekazanie: has_any_column_privilege sprawdza efektywne kolumnowe SELECT/I/U/REFERENCES, w tym LOGIN, PUBLIC i NOLOGIN operatora. Dotychczasowe kontrole tabel pozostają. SELECT account_deletion_jobs zachowany, jego kolumnowe I/U/REFERENCES zabronione. Odmowa cofa własne zmiany, zachowuje stare hasło/ACL/dane i nie usuwa zastanego grantu. Administrator świadomie odbiera konkretny grant i ponawia helper; obecny dostęp nie jest automatycznie naprawiany.
+- Dowody: root własne 3 expected FAIL i real SELECT przed poprawką; autor testów 36 expected FAIL/9 realnych odczytów po exit=0 starego helpera. Niezależny recenzent 6 baseline probes i red nowej regresji. UPDATE odmawia 42501 przez guard, nie potwierdzono mutacji. Root lokalnie 600 unit + 571 PG17.11 = 1171 PASS, bez skipów; E0/OpenAPI/resources/Ruff/format/wheel poza checkoutem PASS. Niezależny nie-autor 600 unit + 70 column + 33 real server-log + 30 real LOGIN/CLI/ACL = 733 PASS i 36 fixed probes, 9,5/10 bez nierozwiązanych P1/P2. Autor testów osobno 133 PG PASS; błędy zastanego TEMP i właściwe powtórzenia zapisane w raporcie. 0 hasła/weryfikatora w rzeczywistych logach, SCRAM także administratora i globalne logowanie nadal aktywne.
+- Integracja: dedykowany checkout bez zmiany gałęzi/plików głównego katalogu i checkoutu koordynatora. Dołączono main `e392d1f2b22fd98528e2d0f4c33da848ac3becce` zwykłym merge, zachowano O2-003–005, pełny O2-007 i master koordynacji. Po merge kod identyczny z lokalnie przetestowanym; kontrole dokumentów PASS. CI nowego head/base odczytywane osobno, także po ostatnim commicie dokumentacji.
+- CI: [38098862007](https://github.com/Roseru/aplikacja-mobilna/actions/runs/38098862007) head `c7b7448` / baza `e392d1f`: wszystkie pięć jobów success, 600 unit + 571 PG17.11 + 9 real Keycloak = 1180 PASS, bez skipów, nowe isolated column/server-log, wheel i oba buildy/smoke obrazu PASS. Keycloak/obrazy są dowodem nowego CI, nie własnego lokalnego wykonania root. Ostatni commit raportu/tego przekazania ma osobny ponowny CI; dokładny head i wynik wskazujemy w PR oraz wiadomości do koordynatora.
+- Ograniczenia: migracje 0001–0011, API, epoka, Android i źródła bez zmian. Zachowana ochrona sekretu/transakcji oraz wąskie prawa; pozostają ograniczenia DBA/OS/pg_authid/backupów/pamięci/dodatkowego audytu/proxy/trace/TLS. Room/APK/WorkManager/KO-31 i produkcyjny restore wymagają O1/O3. Własne procesy testowe zatrzymane, prywatne dowody i zastane materiały zachowane.
+- Oczekiwana odpowiedź / następny krok: koordynator odbiera nowy dokładny head i aktualne CI, dopiero potem może rozważyć merge oraz bramkę E5. Wykonawca nie scala E4 i nie rozpoczyna E5. O3 stosuje kontrolny REVOKE po ustaleniu rzeczywistego źródła niepożądanego grantu.
+- Potwierdzenia / odpowiedzi: odbiorcy dopisują własny odczyt; wykonawca nie potwierdza go za koordynatora/O1/O3.
 
 ### O2-007 — Koordynacja etapów i odbiór E4 na aa4d97c
 

@@ -1345,6 +1345,123 @@
         "expected_result": "Fixture kontraktu; rzeczywiste scenariusze są wykonywane w backend/tests/integration/test_e3_identity.py."
       },
       "detection_layer": "schema_and_fixture_semantics"
+    },
+    {
+      "id": "decimal-final-lf",
+      "purpose": "E4 poprawka: pełny preflight bez DML",
+      "path": "invalid/decimal-final-lf.json",
+      "schema": "../schemas/domain.schema.json#/$defs/Weight",
+      "local": {
+        "result": "invalid",
+        "layer": "schema",
+        "reason": "pattern"
+      },
+      "server": {
+        "result": "not_executed",
+        "stage": "E4",
+        "expected_result": "422 invalid_request przed każdą mutacją; dowody HTTP są w regresji backendu."
+      },
+      "detection_layer": "schema_and_fixture_semantics"
+    },
+    {
+      "id": "decimal-final-crlf",
+      "purpose": "E4 poprawka: pełny preflight bez DML",
+      "path": "invalid/decimal-final-crlf.json",
+      "schema": "../schemas/domain.schema.json#/$defs/Weight",
+      "local": {
+        "result": "invalid",
+        "layer": "schema",
+        "reason": "pattern"
+      },
+      "server": {
+        "result": "not_executed",
+        "stage": "E4",
+        "expected_result": "422 invalid_request przed każdą mutacją; dowody HTTP są w regresji backendu."
+      },
+      "detection_layer": "schema_and_fixture_semantics"
+    },
+    {
+      "id": "meal-nul",
+      "purpose": "E4 poprawka: pełny preflight bez DML",
+      "path": "invalid/meal-nul.json",
+      "schema": "../schemas/domain.schema.json#/$defs/Meal",
+      "local": {
+        "result": "invalid",
+        "layer": "schema",
+        "reason": "pattern"
+      },
+      "server": {
+        "result": "not_executed",
+        "stage": "E4",
+        "expected_result": "422 invalid_request przed każdą mutacją; dowody HTTP są w regresji backendu."
+      },
+      "detection_layer": "schema_and_fixture_semantics"
+    },
+    {
+      "id": "meal-unpaired-surrogate",
+      "purpose": "E4 poprawka: pełny preflight bez DML",
+      "path": "invalid/meal-unpaired-surrogate.json",
+      "schema": "../schemas/domain.schema.json#/$defs/Meal",
+      "local": {
+        "result": "invalid",
+        "layer": "schema",
+        "reason": "pattern"
+      },
+      "server": {
+        "result": "not_executed",
+        "stage": "E4",
+        "expected_result": "422 invalid_request przed każdą mutacją; dowody HTTP są w regresji backendu."
+      },
+      "detection_layer": "schema_and_fixture_semantics"
+    },
+    {
+      "id": "weight-year-overflow",
+      "purpose": "E4 poprawka: pełny preflight bez DML",
+      "path": "invalid/weight-year-overflow.json",
+      "schema": "../schemas/domain.schema.json#/$defs/Weight",
+      "local": {
+        "result": "invalid",
+        "layer": "semantic",
+        "reason": "local_time_out_of_range"
+      },
+      "server": {
+        "result": "not_executed",
+        "stage": "E4",
+        "expected_result": "422 invalid_request przed każdą mutacją; dowody HTTP są w regresji backendu."
+      },
+      "detection_layer": "schema_and_fixture_semantics"
+    },
+    {
+      "id": "goal-year-underflow",
+      "purpose": "E4 poprawka: pełny preflight bez DML",
+      "path": "invalid/goal-year-underflow.json",
+      "schema": "../schemas/domain.schema.json#/$defs/Goal",
+      "local": {
+        "result": "invalid",
+        "layer": "semantic",
+        "reason": "local_time_out_of_range"
+      },
+      "server": {
+        "result": "not_executed",
+        "stage": "E4",
+        "expected_result": "422 invalid_request przed każdą mutacją; dowody HTTP są w regresji backendu."
+      },
+      "detection_layer": "schema_and_fixture_semantics"
+    },
+    {
+      "id": "meal-unicode",
+      "purpose": "Poprawne Unicode i emoji są zachowane",
+      "path": "valid/meal-unicode.json",
+      "schema": "../schemas/domain.schema.json#/$defs/Meal",
+      "local": {
+        "result": "valid"
+      },
+      "server": {
+        "result": "not_executed",
+        "stage": "E4",
+        "expected_result": "Poprawny wire; zapis zależy od kontekstu i zależności."
+      },
+      "detection_layer": "schema_and_fixture_semantics"
     }
   ],
   "source_material": {

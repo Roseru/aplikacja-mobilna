@@ -1,4 +1,4 @@
-name: Backend E3
+name: Backend E4
 on:
   pull_request:
     branches: [main]
@@ -31,8 +31,8 @@ jobs:
         with:
           version: '0.9.5'
       - run: uv sync --project backend --locked
-      - run: uv run --project backend --locked ruff check --config backend/pyproject.toml backend tools/offline_catalog
-      - run: uv run --project backend --locked ruff format --check --config backend/pyproject.toml backend tools/offline_catalog
+      - run: uv run --project backend --locked ruff check --config backend/pyproject.toml backend tools/offline_catalog tools/sync_client infra/local
+      - run: uv run --project backend --locked ruff format --check --config backend/pyproject.toml backend tools/offline_catalog tools/sync_client infra/local
       - run: uv run --project backend --locked python -m pytest backend/tests/unit
       - run: uv build backend
       - name: Verify the installed wheel outside the checkout
@@ -95,7 +95,10 @@ jobs:
           APP_WORKER_PASSWORD: ci-worker-only
           KEYCLOAK_DB_PASSWORD: ci-keycloak-only
         run: bash infra/local/init-db.sh
-      - run: uv run --project backend --locked python -m pytest backend/tests/integration
+      - name: Verify tooling for the isolated PostgreSQL 17 server-log regression
+        run: docker info > /dev/null
+      - name: PostgreSQL integration and isolated SCRAM/server-log regression
+        run: uv run --project backend --locked python -m pytest backend/tests/integration --tb=short
       - run: docker build --build-arg PYTHON_IMAGE=public.ecr.aws/docker/library/python:3.13-slim@sha256:70729b46c69b4f1e97c4822c1af3df53a1476cf5ddc6c087c0c10bc3a5678c2f -t calorie-backend:e2 backend
       - name: Real PostgreSQL export and offline import in the built image
         run: |

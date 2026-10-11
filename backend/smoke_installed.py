@@ -17,6 +17,7 @@ def main():
     ZoneInfo.clear_cache()
     assert ZoneInfo("Europe/Warsaw").key == "Europe/Warsaw"
     assert files("calorie_app.modules.catalog.resources").joinpath("domain.schema.json").is_file()
+    assert files("calorie_app.modules.catalog.resources").joinpath("sync.schema.json").is_file()
     validate_payload(
         {
             "weight_kg": "80",
@@ -37,9 +38,11 @@ def main():
     app = create_app(Settings(database_url="postgresql+psycopg://unused@127.0.0.1:1/unused"))
     assert "/api/v1/me/bootstrap" in app.openapi()["paths"]
     assert "/api/v1/products" in app.openapi()["paths"]
+    assert "/api/v1/sync/push" in app.openapi()["paths"]
+    assert "/api/v1/sync/pull" in app.openapi()["paths"]
     app.state.engine.dispose()
     asyncio.run(app.state.oidc_verifier.close())
-    print("PASS installed E3 runtime: bundled domain, tzdata fallback, calculator, OIDC routes")
+    print("PASS installed E4 runtime: bundled schemas, tzdata, calculator, OIDC and sync routes")
 
 
 if __name__ == "__main__":

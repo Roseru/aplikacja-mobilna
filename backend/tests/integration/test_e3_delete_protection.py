@@ -450,14 +450,14 @@ def test_upgrade_0007_preserves_entire_graph_published_bytes_and_secure_downgrad
         assert len(before["online_receipts"]) == 2
         assert before["installation_state"] and before["offline_packages"]
         migrate("upgrade", "head")
-        assert database_snapshot(engine) == before
+        assert {k: v for k, v in database_snapshot(engine).items() if k in before} == before
         assert export_package(engine, OFFICIAL_PACKAGE_ID, 1) == artifact
         assert path.read_bytes() == compressed
         with engine.connect() as connection:
             for role in ROLES:
                 assert_runtime_acl(connection, role)
         migrate("downgrade", "0007_e3_diary")
-        assert database_snapshot(engine) == before
+        assert {k: v for k, v in database_snapshot(engine).items() if k in before} == before
         # Downgrade changes the marker but intentionally retains the security fix.
         with engine.connect() as connection:
             for role in ROLES:
@@ -471,9 +471,9 @@ def test_upgrade_0007_preserves_entire_graph_published_bytes_and_secure_downgrad
                         )
                     assert error.value.orig.sqlstate == "23514"
                     assert "active account" in str(error.value.orig)
-        assert database_snapshot(engine) == before
+        assert {k: v for k, v in database_snapshot(engine).items() if k in before} == before
         migrate("upgrade", "head")
-        assert database_snapshot(engine) == before
+        assert {k: v for k, v in database_snapshot(engine).items() if k in before} == before
         assert export_package(engine, OFFICIAL_PACKAGE_ID, 1) == artifact
         assert path.read_bytes() == compressed
     finally:

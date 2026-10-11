@@ -141,3 +141,8 @@ Katalog `backend/var` utwórz przed pierwszym użyciem; jest ignorowany. [Opis i
 ## Poprawka uprawnień DELETE E3
 
 Migracja 0008 odbiera API/workerowi fizyczny DELETE rodziców dziennika i chroni DELETE składników aktywnością konta oraz blokadą do commit. Usługi nadal zapisują tombstones; atomowa wymiana składników pozostaje dozwolona. Downgrade zachowuje zabezpieczenie i wypisuje jawny komunikat, zamiast przywracać wadliwe granty. Szczegóły i świeże dowody są w [raporcie E3](../docs/e3/RAPORT_E3.md) i [instrukcji O3](../docs/e3/KONFIGURACJA_O3.md).
+
+
+## Synchronizacja E4
+
+POST /api/v1/sync/push i GET /api/v1/sync/pull mają pełny preflight i trwałe dowody PostgreSQL. Migracje dochodzą do 0011_e4_deletion. [Raport](../docs/e4/RAPORT_E4.md), [O1](../docs/e4/INTEGRACJA_O1.md), [O3](../docs/e4/KONFIGURACJA_O3.md), [klient SQLite/HTTP](../tools/sync_client/README.md) i [deletion CLI](../docs/e4/USUNIECIE_KONTA.md) podają komendy, testy i ograniczenia.

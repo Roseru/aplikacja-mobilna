@@ -46,3 +46,8 @@ Materiał użytkownika pozostaje w [oryginalnym pliku źródłowym](../docs/mate
 ## Tożsamość i odczyty E3
 
 Bootstrap/me/goals/consents/energy-estimates/products przejęto do generowanego OpenAPI, usuwając z aktywnego draftu. Kontrakt błędów obejmuje account_bootstrap_required, account_deleting oraz zmianę epoki/generacji bootstrapu w kontrolowanym details. [Integracja O1](../docs/e3/INTEGRACJA_O1.md) opisuje kolejność bootstrapu, receipts, Decimal i tokeny stron. nbf jest opcjonalny; obecny podlega kontroli czasu. JWKS/role oraz rzeczywisty PKCE opisuje [konfiguracja O3](../docs/e3/KONFIGURACJA_O3.md).
+
+
+## Kontrakt wdrożony w E4
+
+Aktywne HTTP push/pull pochodzi z generowanego backend/openapi.json; draft design zachowuje jedynie przyszłe odczyty E5. sync.schema.json jest normatywnym v1 i zasobem runtime wheel. [Decyzja E4](../docs/e4/DECYZJE_V1.md) doprecyzowuje preflight/per-op prefix, błędy obiektowe i limity oryginalnych bajtów. Walidator scenariuszy sprawdza zgodność z rzeczywiście generowanym kontraktem.

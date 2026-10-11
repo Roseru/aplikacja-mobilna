@@ -194,3 +194,8 @@ Wybór konkretnych podziałów i limitów jest decyzją projektu. Oficjalne doku
 ## Wdrożenie E3
 
 E3 zachowuje modularny monolit i caller-owned transakcje. Adapter Keycloak kończy fetch JWKS przed połączeniem z DB; moduł identity ustala principal i blokuje konto na czas mutacji/replayu. Profile, niezmienna oś celów i zgody są w profiles, agregaty posiłków/wagi/dnia/szkicu w diary. Migracje 0006/0007 rozszerzają E2. Trwała epoka pochodzi z installation_state, a prywatne tokeny stron wiążą konto/generację/epokę i niezmienny snapshot bez zapisów per-page. Zakres wykonania i dowody zawiera [raport E3](e3/RAPORT_E3.md).
+
+
+## Wdrożenie E4 O2
+
+Sync rozszerza modularny monolit o service/repository, caller-owned per-operation commits, receipts, licznik, ChangeLog, RecoveryMapping i materializowane kopie PostgreSQL. Keycloak Admin REST działa poza transakcją DB; deletion ma trwałe job/fence i wąski purge. Klient referencyjny SQLite/HTTP pozostaje narzędziem O2. [Raport E4](e4/RAPORT_E4.md) i [decyzje v1](e4/DECYZJE_V1.md) opisują granice O1/O3.

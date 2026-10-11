@@ -96,6 +96,9 @@ def put_consents(
     expected_generation: int | None = None,
 ) -> dict:
     account = lock_account(session, owner_id, expected_generation)
+    from calorie_app.modules.sync.repository import append_change, lock_counter
+
+    counter = lock_counter(session, owner_id)
     epoch = current_epoch(session)
     fingerprint = hashlib.sha256(
         canonical_json({"body": data.model_dump(mode="json"), "if_match": base_revision})
@@ -123,6 +126,8 @@ def put_consents(
     consent.ranking = data.ranking
     consent.automatic_energy_adjustment = data.automatic_energy_adjustment
     consent.updated_at = database_now(session)
+    # Online state can advance H without pretending to be a seventh wire entity.
+    append_change(session, counter, None)
     result = consent_data(consent)
     session.add(
         OnlineReceipt(
@@ -134,6 +139,7 @@ def put_consents(
             sync_epoch=epoch,
             response=result,
             accepted_revision=consent.revision,
+            created_at=database_now(session),
         )
     )
     session.flush()

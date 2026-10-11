@@ -1,7 +1,7 @@
 """Private writes under the account lock; callers own commit/rollback and E4 receipts."""
 
 from copy import deepcopy
-from datetime import UTC, date, datetime
+from datetime import date, datetime
 from decimal import Decimal
 from uuid import UUID, uuid4
 
@@ -10,6 +10,7 @@ from sqlalchemy.orm import Session
 
 from calorie_app.core.errors import DomainError
 from calorie_app.modules.catalog.nutrition import FIELDS
+from calorie_app.modules.catalog.pagination import database_now
 from calorie_app.modules.catalog.timestamps import utc_text
 from calorie_app.modules.catalog.validation import canonical
 from calorie_app.modules.diary import repository
@@ -309,7 +310,7 @@ def delete_entity(
     revision = _revision(row, base_revision)
     if model is DiaryDay and repository.meals_for_date(session, owner_id, row.local_date):
         raise DomainError(409, "version_conflict")
-    row.revision, row.deleted_at = revision, datetime.now(UTC)
+    row.revision, row.deleted_at = revision, database_now(session)
     session.flush()
     return row
 
