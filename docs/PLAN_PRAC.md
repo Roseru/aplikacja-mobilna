@@ -4,6 +4,8 @@ Data: 9 października 2026 r. Plan dotyczy implementacji [wymagań](../WYMAGANIA
 
 Uzupełnienie E2: wykonanie części O2 i dowody określa [raport E2](e2/RAPORT_E2.md), a [przekazanie O1](e2/INTEGRACJA_O1.md) osobny odbiór Room/APK. E2 dostarcza wewnętrzną usługę produktów/DTO, lecz chronione `/products` i `/products/{id}` zostają podłączone dopiero z prawdziwym OIDC w E3. Publiczne E2 obejmuje wyłącznie opublikowane racje/manifest/gzip official; demo jest lokalnym plikiem. Brak dowodów O1 nie pozwala uznać pełnego zespołowego E2/KO-30 za odebrane.
 
+Aktualizacja bramki, 11 października 2026 r.: E5-O2-R i checkpoint są scalone w [PR #15](https://github.com/Roseru/aplikacja-mobilna/pull/15) / [PR #16](https://github.com/Roseru/aplikacja-mobilna/pull/16); main `86121307b0a7ebe99f62775ec832097af19d613d` ma CI 1349 PASS. Pełne E5/O2-C i integracja O1/O3 pozostają otwarte. Samodzielny backend E6-O2 może rozpocząć się po potwierdzeniu jego technicznych zależności E2/E3/E4/E5-O2-R, niezależnym odbiorze [mastera](MASTER_PROMPT_E6.md) i jawnym zleceniu koordynatora. Brak official/APK/produkcyjnego HTTPS sam nie zatrzymuje tej implementacji. Pełne WF/KO i zespołowy odbiór E5/E6 pozostają warunkami wydania.
+
 ## 1. Etapy i warunki zakończenia
 
 Każdy etap kończy się działającym, sprawdzalnym rezultatem. Kryteria KO odnoszą się do rozdziału 10 wymagań. „Właściciel: O2” oznacza nas; O1 odpowiada za Androida, O3 za infrastrukturę i GitHub.
@@ -16,7 +18,7 @@ Każdy etap kończy się działającym, sprawdzalnym rezultatem. Kryteria KO odn
 | E3. Tożsamość i prywatny model | Adapter tokenów, konto aplikacyjne/bootstrap, profil, cele i zgody; modele dziennika, wagi i kompletności; usługi i walidacja | Testy A/B oraz złego issuer/audience/podpisu przechodzą; baza wymusza własność i unikalność; scenariusz ręcznego celu nie wymaga Gemini | E2 na main; E3 dostarcza odtwarzalny test Keycloak/PKCE; O3: produkcyjna konfiguracja; O1: klient sesji/HTTP |
 | E4. Synchronizacja i integracja offline | Push/pull, idempotencja, konflikty, liczniki, snapshot, retencja, import gościa, uzgodnienie po 30 dniach i zmiana sync_epoch | KO-03, KO-05–08, KO-12, KO-18–20, KO-23, KO-31 oraz części KO-04/13/24/25/32 wyszczególnione poniżej; 30 dni offline i utrata odpowiedzi nie powodują duplikacji lub utraty zmian | E2 + E3. O1 wdraża outbox i rozwiązywanie konfliktów; O2 dostarcza referencyjne scenariusze |
 | E5. Pierwsza użyteczna wersja | Uzupełnienie zweryfikowanego katalogu; read API dziennika i statystyki 7/30/90 dni; dokumentacja obsługi synchronizacji | KO-01–02 na oficjalnym katalogu i KO-11; APK i API obsługują profil/cel, racje, posiłki, wagę i sync; pakiet ma pełne dane ze źródeł; działa lokalnie od pierwszego startu | E4 + zweryfikowane etykiety. O1 dostarcza APK, O3 środowisko HTTPS. To koniec rdzenia, nie całego projektu |
-| E6. Katalog społeczności | Publikacja szkiców, deduplikacja, głosy, zgłoszenia, moderacja i audyt | KO-09 i KO-13; jeden głos autora, brak głosu na własny produkt, scalanie zachowuje referencje i historię; uprawnienia moderatora sprawdzone | E5; O1: formularze i obsługa niekompletnych danych |
+| E6. Katalog społeczności | Publikacja szkiców, deduplikacja, głosy, zgłoszenia, moderacja i audyt | E6-O2: sprawdzony backend KO-09/13, wersje/history/sync/purge i uprawnienia; pełny E6 dodatkowo wymaga formularzy O1 i integracji, bez zamykania brakującego pełnego E5 | Start backendu: odebrane E2/E3/E4 + E5-O2-R oraz master/zlecenie koordynatora. Official C, APK i HTTPS są odrębnymi bramkami pełnego odbioru i wydania |
 | E7. Gemini i analiza posiłku | Trwałe zadania, prywatny magazyn plików, adapter z mockiem, walidacja JSON, limity Free Tier, analiza/confirm bez drugiej ścieżki zapisu posiłku | KO-10, KO-21, KO-28; błędy nie blokują ręcznego wpisu; testy referencyjne modelu spełniają kryteria wymagań; wywołania przechodzą przez jeden rejestr zużycia puli | E6 dla dopasowania/publikacji produktów. O3 przygotowuje darmowy projekt do testów deweloperskich; wydanie AI w EOG wymaga rozwiązania ograniczenia z 11.6 |
 | E8. Motywacja i Nemesis | Punkty, odznaki, ranking z opt-in, zaproszenia, zgody, projekcje i finalizacja; harmonogram zamknięcia dni | KO-14, KO-22, KO-26–27, KO-29; opóźnione dane i worker nie zmieniają zasad; cofnięcie zgody odcina odczyt | E5; technicznie niezależne od E7, ale dla jednej Osoby 2 realizowane kolejno, bez mnożenia rozpoczętych prac |
 | E9. Korekty zapotrzebowania | Deterministyczne reguły, agregaty, wyjaśnienie AI, zatwierdzanie i automat z limitami oraz audytem | KO-15 i KO-24; brak danych/zmiana rewizji/cofnięcie zgody blokują stary wynik; zmiana działa od następnego dnia i nie przestawia celu kcal | E7 + sprawdzone statystyki E5 |
@@ -48,17 +50,24 @@ flowchart LR
     E2 --> E4[Sync i integracja Androida]
     E3 --> E4
     E0 --> Sources[Zebranie i weryfikacja etykiet]
-    Sources --> E5[Pierwsza użyteczna wersja]
-    E4 --> E5
-    E5 --> E6[Katalog społeczności]
+    Sources --> E5C[Official E5-O2-C]
+    E2 --> E5C
+    E4 --> E5[Odczyty i statystyki E5-O2-R]
+    E5 --> E5Full[Pełny odbiór E5]
+    E5C --> E5Full
+    Team[APK i integracja O1/O3] --> E5Full
+    E5 --> E6[Backend katalogu E6-O2]
+    E6 --> E6Full[Pełny odbiór E6]
+    E5Full --> E6Full
     E6 --> E7[Gemini: posiłki]
     E5 --> E8[Punkty i Nemesis]
     E7 --> E9[Korekty zapotrzebowania]
-    E8 --> E10[Odbiór całości]
+    E6Full --> E10[Odbiór całości]
+    E8 --> E10
     E9 --> E10
 ```
 
-Diagram pokazuje zależności techniczne. O2 ma zasadniczo jedno zadanie implementacyjne w toku; prace równoległe oznaczają głównie współpracę O1/O3 lub zbieranie źródeł. Plan nie zakłada trzech pełnoetatowych programistów backendu. Po E1 mierzymy czas zadań i aktualizujemy estymację reszty zakresu.
+Diagram oddziela start backendu od pełnych odbiorów E5/E6. Dalszy samodzielny zakres O2 zwalnia koordynator po sprawdzeniu jego rzeczywistych zależności i mastera; strzałka nie jest zleceniem ani PASS. O2 ma jedno zasadnicze zadanie implementacyjne w toku; współpraca O1/O3 i zbieranie źródeł mogą trwać równolegle. Wszystkie bramki zespołowe nadal obowiązują przed E10/wydaniem.
 
 ## 3. Pierwszy zestaw zadań do wykonania
 
