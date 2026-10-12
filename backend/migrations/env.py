@@ -12,6 +12,7 @@ from calorie_app.modules.diary import models as diary_models  # noqa: F401
 from calorie_app.modules.diary import read_models  # noqa: F401
 from calorie_app.modules.identity import deletion_models  # noqa: F401
 from calorie_app.modules.jobs import models as job_models  # noqa: F401
+from calorie_app.modules.nemesis import models as nemesis_models  # noqa: F401
 from calorie_app.modules.profiles import models as profile_models  # noqa: F401
 from calorie_app.modules.sync import models as sync_models  # noqa: F401
 from calorie_app.modules.sync import snapshot_models  # noqa: F401
@@ -47,6 +48,13 @@ def apply_migrations(connection):
             connection.exec_driver_sql("GRANT USAGE ON SCHEMA app TO calorie_app_motivation_worker")
             connection.exec_driver_sql(
                 "GRANT SELECT ON app.alembic_version TO calorie_app_motivation_worker"
+            )
+        if connection.exec_driver_sql(
+            "SELECT EXISTS(SELECT 1 FROM pg_roles WHERE rolname='calorie_app_nemesis_worker')"
+        ).scalar():
+            connection.exec_driver_sql("GRANT USAGE ON SCHEMA app TO calorie_app_nemesis_worker")
+            connection.exec_driver_sql(
+                "GRANT SELECT ON app.alembic_version TO calorie_app_nemesis_worker"
             )
         connection.exec_driver_sql(
             "GRANT SELECT ON TABLE app.alembic_version TO calorie_app_api, calorie_app_worker"
