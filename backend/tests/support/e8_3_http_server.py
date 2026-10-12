@@ -8,12 +8,13 @@ import httpx
 import uvicorn
 from sqlalchemy import create_engine
 
-from calorie_app.core.config import Settings
-from calorie_app.integrations.keycloak import OIDCVerifier
+# Base Python used for actual Windows PID does not process the venv editable .pth.
+backend_root = Path(__file__).resolve().parents[2]
+sys.path.insert(0, str(backend_root))
+sys.path.insert(0, str(backend_root / "src"))
 
-# Standalone child scripts do not load pytest.ini pythonpath.
-sys.path.insert(0, str(Path(__file__).resolve().parents[2]))
-
+from calorie_app.core.config import Settings  # noqa: E402
+from calorie_app.integrations.keycloak import OIDCVerifier  # noqa: E402
 from tests.support.e8_3_app import component_app  # noqa: E402
 from tests.support.e8_3_jwt import ISSUER  # noqa: E402
 
