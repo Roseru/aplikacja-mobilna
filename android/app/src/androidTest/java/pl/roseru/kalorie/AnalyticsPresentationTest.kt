@@ -1,6 +1,7 @@
 package pl.roseru.kalorie
 
 import android.graphics.Bitmap
+import android.os.ParcelFileDescriptor
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxHeight
@@ -71,6 +72,14 @@ class AnalyticsPresentationTest {
         val directory = File(InstrumentationRegistry.getInstrumentation().targetContext.filesDir, "analytics-preview")
         directory.mkdirs()
         File(directory, "$name.png").outputStream().use { assertTrue(image.compress(Bitmap.CompressFormat.PNG, 100, it)) }
+        // Connected tests remove the validation package afterwards. Preserve only these synthetic
+        // previews in the emulator's shell-owned temporary directory, outside private app data.
+        val instrumentation = InstrumentationRegistry.getInstrumentation()
+        val packageName = instrumentation.targetContext.packageName
+        check(packageName == "pl.roseru.kalorie.validation")
+        check(name in setOf("light-summary", "light-chart", "dark-large-text", "dark-large-chart"))
+        val command = "run-as $packageName cat files/analytics-preview/$name.png > /data/local/tmp/calorie-v084-$name.png"
+        ParcelFileDescriptor.AutoCloseInputStream(instrumentation.uiAutomation.executeShellCommand(command)).use { it.readBytes() }
     }
     @Test fun closedDaySummaryAndRealWeightRemainSeparateFromPreliminaryAndMissingDays() {
         var selectedDay: LocalDate? = null
