@@ -1,5 +1,7 @@
 # Recenzja Nemesis lifecycle E8.3-C - osoba 2
 
+Aktualizacja odbioru koordynatora: **końcowy PASS poniżej jest wycofany**. Dwa niezależne rzeczywiste PG17/worker LOGIN ujawniły P2 starvation w wyborze maintenance na 0018. Własna naprawa ma nową migrację 0019 po niezmiennej 0018; oczekuje nowego niezależnego odbioru rzeczywistej linii. Historyczne dowody zachowano.
+
 12 października 2026 r. Niezależny nieautor. **Końcowy odbiór rzeczywistego E8.3-C: 9,3/10, zero otwartych P1/P2**, dla head `558e920166a2fee88c47567657a5d68aa6e7edc2`. Odbiór dotyczy izolowanego komponentu na rzeczywistej linii **0016→0017_e8_purge_commit→0018_e8_nemesis_lifecycle**. E8.3-I, osiem zdalnych kontroli CI, pełny odbiór upstream PR #35/main, realny Keycloak, O1/O3, APK, produkcja i E8.4 nie są tu zaliczone. Publiczne issuance/create/accept/statistics nadal są zamknięte do E8.4.
 
 ## Zamrożone źródło i zależność
