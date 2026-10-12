@@ -16,7 +16,7 @@ Repo: Roseru/aplikacja-mobilna; host local; projekt `913921f5-12c7-4204-9e4d-4af
 |---|---|---|
 | E8.1+E8.2 | Jeden nowy czat: regularity_v1, punkty/rangi/odznaki, ranking opt-in, prywatność; maturity po lokalnej północy, catch-up po restarcie, korekty/cofanie nagród | Master odebrany/opublikowany; kod, PG/migracja/ACL/sync/catch-up i niezależny odbiór ≥9/10, zero P1/P2; final-head CI i merge/main |
 | E8.3 | Drugi nowy czat: zaproszenia/zgody, strefa i okres, lifecycle, odmowy, izolacja uczestników | Zamrożona wspólna podstawa i zgodne migracje/hooki; własny master/PR/odbiór. Aktywacja realnej rywalizacji pozostaje zamknięta do E8.4 |
-| E8.4 | Trzeci nowy czat: atomowe projekcje, korekty, qualified_at/deadline, finalizer, dojrzałe wyniki, crash/restart i rzeczywiste wyścigi | Odebrane potrzebne E8.1–E8.3; pełne własne PG/HTTP/worker dowody WF12/11.7/KO22/26/27/29, master/PR/odbiór/CI/main |
+| E8.4 | Trzeci nowy czat z [masterem E8.4](MASTER_PROMPT_E8_4.md): atomowe projekcje, korekty, qualified_at/deadline, finalizer, dojrzałe wyniki, crash/restart i rzeczywiste wyścigi | Odebrane potrzebne E8.1–E8.3; pełne własne PG/HTTP/worker dowody WF12/11.7/KO22/26/27/29, master/PR/odbiór/CI/main |
 | E8.5 | Odbiór w tym czacie; naprawy wracają do właściwych wykonawców | Pełna zgodność backendu i historii E0–E7 oraz jasno opisane własne odbiory O1/O3; brak nowego czwartego czatu implementacyjnego |
 
 Przed implementacją E8 scal odebrany E7-O2 i odczytaj wymagane CI main. Nie używaj starych head/base jako wiecznego PASS. Jeśli main zmienił się po odbiorze, wykonawca E7 dołącza go zwykłym merge na swoim czystym checkoutcie i publikuje nowe exact-head CI; koordynator odbiera integrację. Brak klucza/corpus E7-R, official E5-C lub produkcyjnego APK sam nie blokuje motywacji, której wejścia to odebrane dziennik, cele, sync i statystyki.
@@ -61,3 +61,12 @@ E8.3 może niezależnie implementować i testować własny package, kontrakt ora
 Do odbioru/scalenia motywacji jej wykonawca posiada wspólne pliki sync, main/router registration, health/model imports, motivation worker, role/provision, purge oraz workflow. E8.3 nie nadpisuje tych plików; własna jawna testowa app factory i migracja w osobnej bazie nie oznaczają produkcyjnego podłączenia. Po przekazaniu integracji właściciel wspólnych zmian jest zapisany ponownie. Dokładnie jeden zbiorczy Nemesis SourceProjection będzie posiadał wszystkie blokady challenge, sortowane globalnie UUID ASC; żaden inny extension nie pobiera challenge locks. Zapobiega to pozornemu sortowaniu osobnych list jako 1,3,2.
 
 Publiczne create/accept Nemesis pozostają niedostępne do odebranego E8.4. Sama zmienna środowiskowa lub testowa atrapa projekcji nie otwiera bramki; wymagane są rzeczywiste projekcje, finalizer i odebrane guardy źródeł. Numer O2-026 rezerwujemy dla czatu E8.3, którego kolejne meldunki uzupełniają ten sam wpis. Koordynator nadal używa O2-024; wykonawca motywacji O2-025. Harmonogramy pozostają PAUSED.
+
+
+## Odebrana podstawa E8.4 — 12 października 2026 r.
+
+E8.1+E8.2/PR35 i E8.3-I/PR37 są scalone oraz odebrane na aktualnym main b68d645f6bea4c47a385c6aa1b39cd98bd94c814. PR37 head b3d/basec300 i osobny push main38236250411 mają osiem rzeczywistych success z odczytanymi logami. Odbiór O2 nie zastępuje zespołowego E8. Opublikowana linia migracji kończy się0020; wcześniejsze rezerwacje0017/0018 w historycznych dopiskach zostały wykorzystane i nie obowiązują jako numer następnego etapu.
+
+[Master E8.4](MASTER_PROMPT_E8_4.md) określa trzeci i ostatni główny czat implementacyjny E8. Wpis wykonawcy O2-027, własna gałąź codex/backend-e8-nemesis-wyniki, nowa migracja co najmniej0021. Dokładny start SHA koordynator podaje po publikacji i odbiorze mastera/main; zawiera on przyjęty kod b68 oraz instrukcję. Poprawki są w tym samym czacie/PR. E8.5 pozostaje odbiorem root, bez czwartego głównego implementera lub E9.
+
+Wymagania, testy krytyczne, nieautorski odbiór i wszystkie current-head/base CI pozostają obowiązkowe. Równoległe planowanie i wąskie przeglądy nie są nowym runtime PASS. Nie powtarzamy niezmienionych pełnych lokalnych zestawów po samych docs-only commits, chyba że nowe wyniki wskazują problem; wymagane CI nie są pomijane. Automatyzacje pozostają PAUSED.
