@@ -1,6 +1,6 @@
 # Recenzja motywacji E8.1 + E8.2 - osoba 2
 
-12 października 2026. **Niezależny nieautor: 9,3/10, zero otwartych P1/P2.** Werdykt: backend E8.1+E8.2 gotowy do odbioru koordynatora po ośmiu kontrolach finalnego head/base. Autor nie scala [PR35](https://github.com/Roseru/aplikacja-mobilna/pull/35). Odbiór O1 APK/Room i wdrożenie O3 pozostają osobne.
+12 października 2026. **Aktualny odbiór jest otwarty: potwierdzony P2 purge COMMIT na 5c36c9e.** Poprzednia ocena 9,3/10 i poniższe 44 przypadki są historycznymi dowodami wcześniejszego snapshotu; nie stanowią akceptacji nowej 0017. Dwaj dodatkowi nieautorzy koordynatora odtworzyli minimalny real SCRAM deletion LOGIN z żywym Meal/MealItems i 42501 dopiero przy COMMIT (także na 0015). Wcześniejszy zakres nie wykrył tej ścieżki. [Zapis blockera](https://github.com/Roseru/aplikacja-mobilna/pull/35#issuecomment-6115507635). Nowa niezależna ocena zostanie zapisana po wykonaniu nowych oracles na nowym frozen source. [PR35](https://github.com/Roseru/aplikacja-mobilna/pull/35) jest draftem; autor nie scala.
 
 Nieautor nie implementował tej dostawy ani testów autora. Wykonał własny managed checkout, własne zamrożone źródło, PG17, SCRAM LOGIN i procesy CLI; nie edytował runtime/testów autora ani nie publikował commitów/PR. Autor zapisał przekazany wynik w tym dokumencie. [Recenzja mastera](RECENZJA_MASTER_MOTYWACJA.md) i odbiór seam nie są tym odbiorem runtime.
 
@@ -12,7 +12,7 @@ Nieautor nie implementował tej dostawy ani testów autora. Wykonał własny man
 - Manifest własnych probes: 7 plików, SHA-256 `6b879990ffd40697a9d5eddf10504c15c3ce21a60468289e973ed965e0277ccd`.
 - Prywatny wynik `INDEPENDENT_REVIEW_RESULT.json`: SHA-256 `d6b26c5eae9f22e5cc04e722cf91ab4c2af7ca150488bd4a12c12477bb7b9f57`. Harness, syntetyczne dumpy, credentials, logi i prywatne ścieżki nie trafiają do Git.
 
-## Faktycznie wykonane kontrole
+## Historyczne faktycznie wykonane kontrole wcześniejszego nieautora
 
 Własne **1370 unit PASS** (77,42 s), **1041 pełne PG PASS** (1126,44 s) oraz **44 unikalne własne oracles PASS**, bez skips. Nie sumujemy powtórek ani zachodzących testów autora. E0: 8 schematów/95 valid/35 invalid/18 scenariuszy/426 linków; Ruff z root i backend cwd, format 251 plików, diff check PASS. Wheel/sdist: 139 dokładnych plików pakietu, 7 dokładnych zasobów migracji, 38 locked runtime dependencies i installed `python -I` PASS.
 
