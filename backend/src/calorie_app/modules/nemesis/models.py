@@ -86,6 +86,14 @@ Index(
 )
 
 
+Index(
+    "ix_nemesis_finalization_due",
+    NemesisChallenge.deadline_at,
+    NemesisChallenge.id,
+    postgresql_where=text("status IN ('active','finished') AND result_status='provisional'"),
+)
+
+
 class NemesisSlot(Base):
     __tablename__ = "nemesis_slots"
     __table_args__ = (

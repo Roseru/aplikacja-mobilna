@@ -71,6 +71,10 @@ NEW_TABLES |= {
     "nemesis_receipts",
     "nemesis_admissions",
     "nemesis_cursors",
+    "nemesis_projection_seeds",
+    "nemesis_day_projections",
+    "nemesis_final_results",
+    "nemesis_runtime_contract",
 }
 
 

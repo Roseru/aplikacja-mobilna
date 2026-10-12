@@ -122,18 +122,25 @@ def test_daily_signed_deficit_mean_uses_historical_E_and_is_not_ratio_of_sums(li
         "observed_days": 0,
     }
     # No source values, bindings or revision graphs may cross the partner wire.
-    wire = statistics(rt, metadata["id"], "b").text
-    for secret in (
-        "2502",
-        "2001.6",
-        "3001.5",
-        "5000",
-        "intake_kcal",
-        "maintenance_kcal",
-        "source_revisions",
-        str(rt["actors"]["a"]["owner"]),
-    ):
-        assert secret not in wire
+    partner = statistics(rt, metadata["id"], "b")
+    wire = partner.text
+    for field in ("intake_kcal", "maintenance_kcal", "source_revisions"):
+        assert field not in wire
+
+    def scalars(value):
+        if isinstance(value, dict):
+            for member in value.values():
+                yield from scalars(member)
+        elif isinstance(value, list):
+            for member in value:
+                yield from scalars(member)
+        else:
+            yield str(value)
+
+    # Digits occurring inside the shared random challenge UUID are public ID
+    # text. Compare complete scalar values, including numeric JSON values.
+    private_values = {"2502", "2001.6", "3001.5", "5000", str(rt["actors"]["a"]["owner"])}
+    assert private_values.isdisjoint(scalars(partner.json()))
 
 
 def test_zero_is_available_but_missing_E_and_empty_days_are_insufficient(live):
