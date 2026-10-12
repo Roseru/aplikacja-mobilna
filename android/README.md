@@ -1,5 +1,7 @@
 # Android — Racje i kalorie
 
+Wersja **0.8.6** pokazuje mniejsze podsumowanie i więcej lokalnych odznak, a pod nimi prywatny panel GET `/api/v1/me/motivation`: punkty, ranga, pending/final/revoked i data potwierdzenia. Pobranie na żądanie po zalogowaniu/bootstrapie, bez odnawiania zgody rankingu. [Raport i podglądy](RAPORT_0_8_6.md) rozdzielają pełny126JVM/129device od końcowych18UI; lint0error. Room8 bez migracji; install-r/launch zachował wszystkie kolumny22tabel/5posiłków. Domyślny APK nadal działa jako gość offline; rzeczywiste API czeka na własny odbiór.
+
 Wersja **0.8.5** dodaje „Profil → Osiągnięcia”: cztery lokalne warunki v1, postęp całej historii i daty spełnienia, wstępne dzisiaj, przeliczenie po korekcie oraz osobny stan niepobranego potwierdzenia serwera. [Raport i syntetyczne podglądy](RAPORT_0_8_5.md):115JVM/117device PASS, lint0błędów; Room7→8 zachował wszystkie stare kolumny22tabel/5posiłków. Wygląd Postępów0.8.4 został zaakceptowany i pozostaje zachowany. GET motywacji, ranking i Nemesis mają osobną integrację.
 
 Wersja **0.8.4** odświeża analitykę7/30/90 i układ na wąskich ekranach/powiększonej czcionce, bez zmiany obliczeń lub Room7. [Raport, podglądy i próba manualna](RAPORT_0_8_4.md):103JVM/107device oraz końcowe3UI PASS, lint0błędów; aktualizacja zachowała22tabele/5posiłków. Backend osiągnięć/rankingu E8.1+2 jest scalony, jego połączenie z Androidem pozostaje kolejnym etapem.

@@ -1,4 +1,7 @@
 # Wojskowy licznik kalorii
+
+Android **0.8.6** zmniejsza podsumowanie osiągnięć i pokazuje odznaki przed panelem serwera. Dodaje prywatne, ręczne pobranie potwierdzenia własnych punktów/rangi/odznak po logowaniu i bootstrapie. [Raport i podglądy](android/RAPORT_0_8_6.md): pełny126JVM/129device dla odczytu/sesji oraz końcowe18UI po feedbacku; Room8 bez migracji, wszystkie dane22tabel/5posiłków zachowane. Postępy bez zmian; zgody rankingu, E4 i Nemesis mają dalsze etapy.
+
 Android **0.8.5** dodaje cztery lokalne osiągnięcia w „Profil → Osiągnięcia”, z najlepszym postępem całej historii, datami spełnienia i osobnym stanem potwierdzenia serwerowego. Zachowuje zaakceptowany wygląd Postępów7/30/90. [Raport i podglądy](android/RAPORT_0_8_5.md):115JVM/117device PASS, Room8; aktualizacja zachowała wszystkie dotychczasowe kolumny22tabel/5posiłków. [Aktualny plan O1](PLAN_IMPLEMENTACJI_ANDROID.md) obejmuje potwierdzenie serwerowe, NEMESIS i dalszą synchronizację.
 
 - [Uruchomienie i weryfikacja backendu E1/E2](backend/README.md)
