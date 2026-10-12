@@ -21,11 +21,13 @@ class CalorieApplication : Application() {
             try { HttpsProfileGateway(it) } catch (_: Exception) { null }
         }, snapshotGateway = getString(R.string.api_base_url).takeIf { it.isNotEmpty() }?.let {
             try { HttpsSnapshotGateway(it) } catch (_: Exception) { null }
+        }, motivationGateway = getString(R.string.api_base_url).takeIf { it.isNotEmpty() }?.let {
+            try { HttpsMotivationGateway(it) } catch (_: Exception) { null }
         }, snapshotProtocol = SnapshotProtocol(SyncWireSchema(SyncWireSchema.FILES.associateWith { file ->
             assets.open("sync/$file").use { it.readBytes() }
         }))) }
     override fun onCreate() {
         super.onCreate()
-        sessionScope.launch { sessions.start() }
+        sessionScope.launch { sessions.start(); sessions.observeMotivationContext() }
     }
 }

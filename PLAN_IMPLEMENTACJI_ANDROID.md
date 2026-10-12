@@ -1,5 +1,12 @@
 # Plan implementacji — osoba 1: Android i pamięć lokalna
 
+## Aktualizacja O1 — potwierdzenie osiągnięć0.8.6, 12 października2026
+
+- Feedback właściciela: „Zmniejsz podsumowanie, pokaż więcej odznak”. Krótsza karta, wyjaśnienia rozwijane; lokalne odznaki przed potwierdzeniem serwera. Postępy0.8.4 zachowane.
+- Ukończony prywatny GET motywacji: ścisły DTO, osobne statusy/aktualność, brak cache na dysku, kontrola lease/generation/epoch/revision, odnowienie i trwały Retry-After. Odczyt nie zmienia zgody rankingu ani dziennika/outbox. [Raport0.8.6](android/RAPORT_0_8_6.md), codex/android-osiagniecia-serwer. Pełny126JVM/129device dla odczytu; końcowe18UI po feedbacku; Room8/22tabele/5posiłków zachowane.
+- PR40/0.8.5 scalony a6a77fc po8success PR i8success main. Ten etap ma własny PR/CI; dowody wcześniejszego PR nie zastępują bieżącego.
+- Następne: rzeczywisty prywatny odczyt APK/API w istniejącym środowisku O3; świadome zgody i publiczny ranking; semantyczny sync E4/push/ACK/import/WorkManager. Nemesis dopiero po odebranym E8.4; obecne issuance/create/accept/statistics pozostają gated.
+
 ## Aktualizacja O1 — osiągnięcia0.8.5, 12 października 2026
 
 - Właściciel: „Zachowaj wygląd i rozwijaj osiągnięcia”. Analityka0.8.4/PR38 scalona na c3009f4 po ośmiu success exactffc3027, CI38215019078; Postępy zachowane.

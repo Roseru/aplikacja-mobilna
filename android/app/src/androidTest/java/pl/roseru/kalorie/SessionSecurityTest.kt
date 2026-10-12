@@ -73,9 +73,9 @@ class SessionSecurityTest {
             .setState(state).setAuthorizationCode("fixture-code").build().toIntent()
     }
     private fun client(db: CalorieDatabase, vault: SessionVault, fixture: FixtureGateway, api: BootstrapGateway? = null,
-        profiles: ProfileGateway? = null, snapshots: SnapshotGateway? = null) = SessionController(
+        profiles: ProfileGateway? = null, snapshots: SnapshotGateway? = null, motivation: MotivationGateway? = null) = SessionController(
         db, vault, fixture, issuer, context.packageName, now = { fixture.time }, bootstrapGateway = api, profileGateway = profiles, snapshotGateway = snapshots,
-        snapshotProtocol = snapshots?.let { snapshotProtocol() })
+        snapshotProtocol = snapshots?.let { snapshotProtocol() }, motivationGateway = motivation)
     private suspend fun login(client: SessionController, fixture: FixtureGateway, subject: String) {
         fixture.subject = subject
         assertNotNull(client.beginLogin())
@@ -548,6 +548,160 @@ class SessionSecurityTest {
         } finally { profiles.hold?.complete(Unit); vault.clear(); db.close() }
     }
     private class ApiCall(val ticket: ApiSession, val key: String)
+    private fun motivationAnswer(name: String = "final", change: (JSONObject) -> Unit = {}) = BootstrapHttpResult(200,
+        JSONObject(androidx.test.platform.app.InstrumentationRegistry.getInstrumentation().context.assets
+            .open("motivation/motivation-$name.json").bufferedReader().use { it.readText() })
+            .put("sync_epoch", epoch).also(change).toString().toByteArray())
+    private inner class MotivationFixture(var answer: suspend (Int) -> BootstrapHttpResult = { motivationAnswer() }) : MotivationGateway {
+        val calls = mutableListOf<ApiSession>()
+        val started = CompletableDeferred<Unit>()
+        var hold: CompletableDeferred<Unit>? = null
+        override suspend fun get(session: ApiSession, beforeSend: suspend () -> Unit): BootstrapHttpResult {
+            beforeSend(); calls.add(session)
+            val index = calls.size
+            started.complete(Unit); hold?.await()
+            return answer(index)
+        }
+    }
+    @Test fun motivationReadRequiresBootstrapPreservesDiaryQueueAndDoesNotPersistConfirmation() = runBlocking<Unit> {
+        val db = memory(); val vault = SessionVault(context, name()); val fixture = FixtureGateway(); val api = ApiFixture(); val motivation = MotivationFixture()
+        try {
+            val controller = client(db, vault, fixture, api, motivation = motivation); controller.start()
+            controller.readMotivation(); assertTrue(motivation.calls.isEmpty())
+            login(controller, fixture, "fixture-A"); controller.readMotivation(); assertTrue(motivation.calls.isEmpty())
+            controller.bootstrap()
+            val lease = controller.view.value.binding!!.lease
+            val repo = DiaryRepository(db, context, lease).apply { initialize() }
+            repo.setProfile("Lokalny profil", 170.0, ActivityClass.GARRISON, DietAim.REDUCE)
+            repo.setGoal(2400.0, 140.0, 70.0, 250.0)
+            repo.add("basic-banana", 100.0, MealType.LUNCH, LocalDate.now(), "motivation-preserved")
+            val local = db.dao().currentProfile(lease.storageScope)
+            val goals = db.dao().goalsThrough(lease.storageScope, LocalDate.now().toString()).first()
+            val meals = db.dao().day(lease.storageScope, LocalDate.now().toString()).first()
+            val queue = db.dao().operationCount(lease.storageScope)
+            controller.readMotivation()
+            val read = (controller.view.value.motivation as MotivationState.Ready).read
+            assertEquals(20L, read.points); assertTrue(read.ranking.pendingConsentRefresh); assertFalse(read.ranking.effective)
+            assertEquals(local, db.dao().currentProfile(lease.storageScope)); assertEquals(goals, db.dao().goalsThrough(lease.storageScope, LocalDate.now().toString()).first())
+            assertEquals(meals, db.dao().day(lease.storageScope, LocalDate.now().toString()).first()); assertEquals(queue, db.dao().operationCount(lease.storageScope))
+            assertEquals(1, api.calls.size)
+            val restarted = client(db, vault, fixture, api, motivation = motivation); restarted.start()
+            assertEquals(MotivationState.NotRequested, restarted.view.value.motivation)
+            assertEquals(1, motivation.calls.size)
+        } finally { vault.clear(); db.close() }
+    }
+    @Test fun heldMotivationIsSingleFlightAndCannotLeakAcrossLogoutAToBToA() = runBlocking<Unit> {
+        val db = memory(); val vault = SessionVault(context, name()); val fixture = FixtureGateway(); val api = ApiFixture()
+        val profiles = ProfileFixture(); val motivation = MotivationFixture().apply { hold = CompletableDeferred() }
+        try {
+            val controller = client(db, vault, fixture, api, profiles, motivation = motivation); controller.start(); login(controller, fixture, "fixture-A"); controller.bootstrap()
+            val original = controller.view.value.binding!!.lease
+            val request = async { controller.readMotivation() }; withTimeout(10_000) { motivation.started.await() }
+            assertTrue(controller.view.value.motivationBusy); assertFalse(controller.view.value.profileBusy)
+            controller.readMotivation(); controller.readProfile(); controller.bootstrap()
+            assertEquals(1, motivation.calls.size); assertTrue(profiles.calls.isEmpty()); assertEquals(1, api.calls.size)
+            controller.logout(); assertEquals(MotivationState.NotRequested, controller.view.value.motivation)
+            login(controller, fixture, "fixture-B"); controller.logout(); login(controller, fixture, "fixture-A")
+            assertNotEquals(original, controller.view.value.binding!!.lease)
+            motivation.hold!!.complete(Unit); request.await()
+            assertEquals(MotivationState.NotRequested, controller.view.value.motivation); assertFalse(controller.view.value.motivationBusy)
+        } finally { motivation.hold?.complete(Unit); vault.clear(); db.close() }
+    }
+    @Test fun manualRefreshClearsConfirmedAndRejectsHeldMotivation() = runBlocking<Unit> {
+        val db = memory(); val vault = SessionVault(context, name()); val fixture = FixtureGateway(); val api = ApiFixture(); val motivation = MotivationFixture()
+        val held = CompletableDeferred<Unit>()
+        try {
+            val controller = client(db, vault, fixture, api, motivation = motivation); controller.start(); login(controller, fixture, "fixture-A"); controller.bootstrap()
+            controller.readMotivation(); assertTrue(controller.view.value.motivation is MotivationState.Ready)
+            motivation.hold = held
+            val request = async { controller.readMotivation() }; withTimeout(10_000) { while (motivation.calls.size < 2) yield() }
+            controller.refresh(); assertEquals(MotivationState.NotRequested, controller.view.value.motivation)
+            motivation.hold = null; controller.readMotivation()
+            val fresh = controller.view.value.motivation
+            assertTrue(fresh is MotivationState.Ready)
+            held.complete(Unit); request.await()
+            assertSame(fresh, controller.view.value.motivation); assertFalse(controller.view.value.motivationBusy)
+        } finally { held.complete(Unit); vault.clear(); db.close() }
+    }
+    @Test fun motivationUnauthorizedRefreshesOnceAndFailedIdentityNeverResendsOldToken() = runBlocking<Unit> {
+        val db = memory(); val vault = SessionVault(context, name()); val fixture = FixtureGateway(); val api = ApiFixture()
+        val motivation = MotivationFixture { if (it == 1) denied(401, "unauthorized") else motivationAnswer() }
+        try {
+            val controller = client(db, vault, fixture, api, motivation = motivation); controller.start(); login(controller, fixture, "fixture-A"); controller.bootstrap()
+            controller.readMotivation(); assertEquals(2, motivation.calls.size); assertEquals(2, fixture.calls)
+            assertNotEquals(motivation.calls[0].accessToken, motivation.calls[1].accessToken); assertTrue(controller.view.value.motivation is MotivationState.Ready)
+            motivation.calls.clear(); motivation.answer = { denied(401, "unauthorized") }
+            controller.readMotivation(); assertEquals(2, motivation.calls.size); assertTrue(controller.view.value.motivation is MotivationState.Failed)
+            motivation.calls.clear(); fixture.subject = "fixture-B"
+            controller.readMotivation(); assertEquals(1, motivation.calls.size); assertEquals("fixture-A", controller.view.value.binding!!.owner.subject)
+            assertNull(db.ownerDao().byIdentity(issuer, "fixture-B")); assertFalse(controller.view.value.motivationBusy)
+        } finally { vault.clear(); db.close() }
+    }
+    @Test fun motivationUnknownEpochOrGenerationMarksRecoveryWithoutReplacingBootstrap() = runBlocking<Unit> {
+        for (field in listOf("sync_epoch", "account_generation")) {
+            val db = memory(); val vault = SessionVault(context, name()); val fixture = FixtureGateway(); val api = ApiFixture()
+            val motivation = MotivationFixture { motivationAnswer { it.put(field, if (field == "sync_epoch") newEpoch else 2) } }
+            try {
+                val controller = client(db, vault, fixture, api, motivation = motivation); controller.start(); login(controller, fixture, "fixture-A"); controller.bootstrap()
+                val lease = controller.view.value.binding!!.lease; val original = db.bootstrapDao().binding(lease.storageScope)!!
+                controller.readMotivation(); assertTrue(controller.view.value.requiresRecovery); assertFalse(controller.view.value.motivationBusy)
+                assertTrue(controller.view.value.motivation is MotivationState.Failed)
+                assertEquals(original.copy(requiresRecovery = true, contextRevision = original.contextRevision + 1), db.bootstrapDao().binding(lease.storageScope))
+                controller.readMotivation(); assertEquals(1, motivation.calls.size)
+                val restarted = client(db, vault, fixture, api, motivation = motivation); restarted.start()
+                assertTrue(restarted.view.value.requiresRecovery); assertEquals(MotivationState.NotRequested, restarted.view.value.motivation)
+            } finally { vault.clear(); db.close() }
+        }
+    }
+    @Test fun motivationBackoffSurvivesRestartAndBlocksProfileAndBootstrapUntilDeadline() = runBlocking<Unit> {
+        val db = memory(); val vault = SessionVault(context, name()); val fixture = FixtureGateway(); val api = ApiFixture(); val profiles = ProfileFixture()
+        val motivation = MotivationFixture { denied(503, "service_unavailable", "60") }
+        try {
+            val controller = client(db, vault, fixture, api, profiles, motivation = motivation); controller.start(); login(controller, fixture, "fixture-A"); controller.bootstrap()
+            controller.readMotivation(); assertTrue(controller.view.value.motivation is MotivationState.Failed)
+            val restarted = client(db, vault, fixture, api, profiles, motivation = motivation); restarted.start()
+            restarted.readMotivation(); restarted.readProfile(); restarted.bootstrap()
+            assertEquals(1, motivation.calls.size); assertTrue(profiles.calls.isEmpty()); assertEquals(1, api.calls.size)
+            assertTrue(restarted.view.value.motivation is MotivationState.Failed)
+            fixture.time += 59_000; restarted.readMotivation(); assertEquals(1, motivation.calls.size)
+            fixture.time += 1000; motivation.answer = { motivationAnswer("pending-backfill") }; restarted.readMotivation()
+            assertEquals(2, motivation.calls.size); assertNull((restarted.view.value.motivation as MotivationState.Ready).read.points)
+        } finally { vault.clear(); db.close() }
+    }
+    @Test fun cancelledInvalidOrForbiddenMotivationReleasesBusyAndAllowsExplicitRetry() = runBlocking<Unit> {
+        val db = memory(); val vault = SessionVault(context, name()); val fixture = FixtureGateway(); val api = ApiFixture()
+        val motivation = MotivationFixture().apply { hold = CompletableDeferred() }
+        try {
+            val controller = client(db, vault, fixture, api, motivation = motivation); controller.start(); login(controller, fixture, "fixture-A"); controller.bootstrap()
+            val original = db.bootstrapDao().binding(controller.view.value.binding!!.lease.storageScope)
+            val task = async { controller.readMotivation() }; withTimeout(10_000) { motivation.started.await() }
+            task.cancelAndJoin(); assertFalse(controller.view.value.motivationBusy); assertTrue(controller.view.value.motivation is MotivationState.Failed)
+            motivation.hold = null
+            for (response in listOf(denied(403, "forbidden"), BootstrapHttpResult(200, "{}".toByteArray()))) {
+                motivation.answer = { response }; controller.readMotivation()
+                assertTrue(controller.view.value.motivation is MotivationState.Failed); assertFalse(controller.view.value.motivationBusy)
+                assertEquals(original, db.bootstrapDao().binding(controller.view.value.binding!!.lease.storageScope))
+            }
+            fixture.time += 400_000; motivation.answer = { motivationAnswer() }; controller.readMotivation()
+            assertEquals(2, fixture.calls); assertTrue(controller.view.value.motivation is MotivationState.Ready)
+        } finally { motivation.hold?.complete(Unit); vault.clear(); db.close() }
+    }
+    @Test fun roomContextChangeClearsDisplayedMotivationAndHeldOldRevisionCannotApply() = runBlocking<Unit> {
+        val db = memory(); val vault = SessionVault(context, name()); val fixture = FixtureGateway(); val api = ApiFixture(); val motivation = MotivationFixture()
+        var observer: Job? = null
+        try {
+            val controller = client(db, vault, fixture, api, motivation = motivation); controller.start(); login(controller, fixture, "fixture-A"); controller.bootstrap()
+            controller.readMotivation(); observer = launch(start = CoroutineStart.UNDISPATCHED) { controller.observeMotivationContext() }
+            val lease = controller.view.value.binding!!.lease; val old = db.bootstrapDao().binding(lease.storageScope)!!
+            db.bootstrapDao().update(old.copy(contextRevision = old.contextRevision + 1))
+            withTimeout(10_000) { controller.view.first { it.motivation == MotivationState.NotRequested } }
+            motivation.hold = CompletableDeferred()
+            val task = async { controller.readMotivation() }; withTimeout(10_000) { while (motivation.calls.size < 2) yield() }
+            db.bootstrapDao().update(old.copy(contextRevision = old.contextRevision + 2))
+            motivation.hold!!.complete(Unit); task.await()
+            assertTrue(controller.view.value.motivation is MotivationState.Failed); assertFalse(controller.view.value.motivationBusy)
+        } finally { observer?.cancelAndJoin(); motivation.hold?.complete(Unit); vault.clear(); db.close() }
+    }
     private inner class ApiFixture(var answer: suspend (Int) -> BootstrapHttpResult = { accepted() }) : BootstrapGateway {
         val calls = mutableListOf<ApiCall>()
         val started = CompletableDeferred<Unit>()

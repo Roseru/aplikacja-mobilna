@@ -40,7 +40,7 @@ class BootstrapHttpTest {
         OwnerLease("fixture-A", 1), token, "fixture-state", 1)
     private class Connection(url: URL, val status: Int = 200, val payload: ByteArray = "{}".toByteArray(),
         val type: String = "application/json", val declaredSize: Long = payload.size.toLong(),
-        val encoding: String? = null) : HttpsURLConnection(url) {
+        val encoding: String? = null, val cacheControl: String? = null) : HttpsURLConnection(url) {
         var disconnected = false
         var sent = false
         var readBody = false
@@ -50,7 +50,7 @@ class BootstrapHttpTest {
         override fun getResponseCode(): Int { sent = true; return status }
         override fun getContentType() = type
         override fun getContentLengthLong() = declaredSize
-        override fun getHeaderField(name: String?) = when (name) { "Content-Encoding" -> encoding; "Retry-After" -> "60"; else -> null }
+        override fun getHeaderField(name: String?) = when (name) { "Content-Encoding" -> encoding; "Retry-After" -> "60"; "Cache-Control" -> cacheControl; else -> null }
         override fun getInputStream(): ByteArrayInputStream { readBody = true; return ByteArrayInputStream(payload) }
         override fun getErrorStream() = inputStream
         override fun getOutputStream(): Nothing = error("A bootstrap request must not have a body")
@@ -162,6 +162,34 @@ class BootstrapHttpTest {
             Connection(URL("https://api.example"), type = "text/html"), Connection(URL("https://api.example"), encoding = "gzip"))) {
             assertThrows(Exception::class.java) { runBlocking { HttpsProfileGateway("https://api.example/api/v1") { connection }.get(session()) {} } }
             assertTrue(connection.disconnected)
+        }
+    }
+    @Test fun motivationReadIsPrivateBodylessGetWithNoStoreAndNoMutationHeaders() = runBlocking<Unit> {
+        var requested: URL? = null
+        val connection = Connection(URL("https://api.example"), cacheControl = "private, no-store")
+        val result = HttpsMotivationGateway("https://api.example/api/v1/") { requested = it; connection }.get(session()) { assertFalse(connection.sent) }
+        assertEquals("https://api.example/api/v1/me/motivation", requested.toString())
+        assertNull(requested!!.query); assertEquals("GET", connection.requestMethod)
+        for (header in listOf("Idempotency-Key", "If-Match", "X-Sync-Epoch", "X-Ranking-Consent-Epoch")) assertNull(connection.getRequestProperty(header))
+        assertEquals("Bearer fixture-access", connection.getRequestProperty("Authorization"))
+        assertFalse(connection.doOutput); assertFalse(connection.instanceFollowRedirects); assertFalse(connection.useCaches)
+        assertEquals("no-store", connection.getRequestProperty("Cache-Control"))
+        assertEquals(200, result.status); assertTrue(connection.disconnected)
+    }
+    @Test fun motivationRejectsCacheableSuccessStaleLeaseAndUnboundedResponseButHonoursProxyBackoff() {
+        for (connection in listOf(Connection(URL("https://api.example")), Connection(URL("https://api.example"), cacheControl = "max-age=60"),
+            Connection(URL("https://api.example"), payload = ByteArray(65_537), declaredSize = -1, cacheControl = "no-store"),
+            Connection(URL("https://api.example"), status = 302, cacheControl = "no-store"))) {
+            assertThrows(Exception::class.java) { runBlocking { HttpsMotivationGateway("https://api.example/api/v1") { connection }.get(session()) {} } }
+            assertTrue(connection.disconnected)
+        }
+        val stale = Connection(URL("https://api.example"), cacheControl = "no-store")
+        assertThrows(Exception::class.java) { runBlocking { HttpsMotivationGateway("https://api.example/api/v1") { stale }.get(session()) { error("stale") } } }
+        assertFalse(stale.sent); assertTrue(stale.disconnected)
+        for (status in listOf(429, 503)) {
+            val proxy = Connection(URL("https://api.example"), status, "private html".toByteArray(), "text/html")
+            val response = runBlocking { HttpsMotivationGateway("https://api.example/api/v1") { proxy }.get(session()) {} }
+            assertEquals(status, response.status); assertEquals("60", response.retryAfter); assertFalse(proxy.readBody)
         }
     }
 }
