@@ -12,6 +12,7 @@ RETURNS jsonb LANGUAGE plpgsql STABLE SECURITY DEFINER SET search_path=pg_catalo
 DECLARE regularity jsonb; weight_metric jsonb; deficit_metric jsonb;
  scope jsonb; observed integer; eligible integer; first_day date; last_day date;
  first_weight numeric; last_weight numeric; deficit numeric;
+ fact record; exact_num numeric:=0; exact_den numeric:=1; scaled_num numeric; rounded_units numeric;
 BEGIN
  SELECT terms->'scope' INTO scope FROM app.nemesis_challenges WHERE id=p_id;
  IF scope IS NULL OR p_role IS NULL OR p_role NOT IN('inviter','invitee') OR p_at IS NULL THEN
@@ -36,13 +37,29 @@ BEGIN
    'observed_days',observed,'first_date',first_day,'last_date',last_day); END IF;
  ELSE weight_metric:=jsonb_build_object('state','hidden'); END IF;
  IF scope->'mean_deficit'='true'::jsonb THEN
-  SELECT count(*),avg(100*(maintenance_kcal-intake_kcal)/
-   (maintenance_kcal*1.000000000000000000000000000000000000000000000000000000000000))
-  INTO eligible,deficit FROM app.nemesis_day_projections
+  SELECT count(*) INTO eligible FROM app.nemesis_day_projections
   WHERE challenge_id=p_id AND participant_role=p_role AND matures_at<=p_at
    AND effective_complete AND maintenance_kcal>0;
   IF eligible=0 THEN deficit_metric:=jsonb_build_object('state','insufficient_data','value',NULL,'eligible_days',0);
-  ELSE deficit_metric:=jsonb_build_object('state','available','value',app.e8n_percent_text(deficit),'eligible_days',eligible); END IF;
+  ELSE
+   -- NUMERIC addition/multiplication preserve every finite input exactly.
+   -- Accumulate the rational sum without rounding any daily division.
+   FOR fact IN SELECT intake_kcal,maintenance_kcal FROM app.nemesis_day_projections
+    WHERE challenge_id=p_id AND participant_role=p_role AND matures_at<=p_at
+    AND effective_complete AND maintenance_kcal>0 ORDER BY local_date LOOP
+    exact_num:=exact_num*fact.maintenance_kcal
+     +(fact.maintenance_kcal-fact.intake_kcal)*exact_den;
+    exact_den:=exact_den*fact.maintenance_kcal;
+   END LOOP;
+   exact_den:=exact_den*eligible;
+   scaled_num:=abs(exact_num)*100*1000000000000;
+   rounded_units:=div(scaled_num,exact_den);
+   IF mod(scaled_num,exact_den)*2>=exact_den THEN rounded_units:=rounded_units+1; END IF;
+   -- The denominator's scale preserves twelve fractional places even for a
+   -- large integer part. HALF_UP occurs once, above, on the exact rational.
+   deficit:=sign(exact_num)*rounded_units/1000000000000.000000000000;
+   deficit_metric:=jsonb_build_object('state','available','value',app.e8n_percent_text(deficit),'eligible_days',eligible);
+  END IF;
  ELSE deficit_metric:=jsonb_build_object('state','hidden'); END IF;
  RETURN jsonb_build_object('regularity',regularity,'weight_change',weight_metric,'mean_deficit',deficit_metric);
 END $$;
