@@ -1,5 +1,12 @@
 # Kontekst współpracy
 
+## Kontynuacja O1 — osiągnięcia0.8.6, 12 października2026
+
+- Agent1/O1; użytkownik osoba1. Branch codex/android-osiagniecia-serwer; finalne źródło `05847a06f6a62fa144dfcd8e78d8a4881c857978`;0.8.6/code17/Room8. Feedback: mniejsze podsumowanie, więcej odznak; panel serwera pod lokalnymi kartami, Postępy zachowane. [Raport](android/RAPORT_0_8_6.md).
+- Prywatny GET własnej motywacji tylko na żądanie po bootstrapie; pending/final/revoked, punkty/ranga/aktualność, pamięć sesji chroniona lease/gen/epoch/revision. Bez PUT zgód/publicznego rankingu/Nemesis/ACK. Domyślny APK offline; mocki nie są odbiorem rzeczywistego HTTPS.
+- Pełny126JVM/129device na404c106; finalny build/126JVM/lint i18UI po zmianie układu PASS. Pierwsze44/45 i17/18 zachowane w raporcie z naprawami. Nie sumować ponowień i nie deklarować lokalnego pełnego130. Install-r/launch zachowały całe22tabele/5posiłków/FK. APK `95e63068666381d2984952ad52686f0007982ee2250e6028f061e85cd150e522` pozaGit. App otwarta na osiągnięciach.
+- PR40 scalony a6a77fc,8CI PR38295790076 i8CI main38297696312. Nowy PR/CI osobno. Odczyt O2 motywacji/lifecycle; realny E8.4 jeszcze nieodebrany. Następne ranking za świadomą zgodą, E4 i Nemesis poE8.4; pytanie O1-015 doO3 o istniejące środowisko nadal otwarte. Jedyny dziennik docs/KOMUNIKACJA_AGENTOW.md/O1-021.
+
 ## Kontynuacja O1 — osiągnięcia0.8.5, 12 października2026
 
 - Agent1/O1, codex/android-osiagniecia-local, source62779d2, code16/Room8; lokalny podgląd4odznak z całej historii, bez serwerowego potwierdzenia/rankingu. Wygląd Postępów zaakceptowany przez właściciela i zachowany. Raport android/RAPORT_0_8_5.md zawiera granice, testy i syntetyczne PNG.

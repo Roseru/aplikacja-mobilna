@@ -20,16 +20,18 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import pl.roseru.kalorie.DiaryViewModel
 import pl.roseru.kalorie.core.*
 import pl.roseru.kalorie.data.AchievementState
+import pl.roseru.kalorie.session.SessionView
+import pl.roseru.kalorie.session.SessionActions
 import java.time.ZoneId
 import java.time.format.DateTimeFormatter
 import java.util.Locale
 
-@Composable fun AchievementsScreen(model: DiaryViewModel, onBack: () -> Unit) {
+@Composable fun AchievementsScreen(model: DiaryViewModel, session: SessionView, actions: SessionActions, onAccount: () -> Unit, onBack: () -> Unit) {
     val state by model.achievements.collectAsStateWithLifecycle()
-    AchievementsContent(state, onBack, model::retryAchievements)
+    AchievementsContent(state, onBack, model::retryAchievements) { ServerMotivationPanel(session, actions.readMotivation, onAccount) }
 }
 
-@Composable internal fun AchievementsContent(state: AchievementState, onBack: () -> Unit, onRetry: () -> Unit = {}) {
+@Composable internal fun AchievementsContent(state: AchievementState, onBack: () -> Unit, onRetry: () -> Unit = {}, serverPanel: (@Composable () -> Unit)? = null) {
     LazyColumn(Modifier.fillMaxSize().testTag("achievements-content"), contentPadding = PaddingValues(20.dp),
         verticalArrangement = Arrangement.spacedBy(16.dp)) {
         item(key = "header") {
@@ -40,15 +42,6 @@ import java.util.Locale
             Text("TWOJA REGULARNOŚĆ", style = MaterialTheme.typography.labelLarge, color = MaterialTheme.colorScheme.primary)
             Text("Osiągnięcia", style = MaterialTheme.typography.headlineLarge, fontWeight = FontWeight.Bold)
             Text("Małe kroki. Trwałe nawyki.", color = MaterialTheme.colorScheme.onSurfaceVariant)
-        }
-        item(key = "server") {
-            Card(shape = RoundedCornerShape(18.dp), colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface)) {
-                Column(Modifier.fillMaxWidth().padding(16.dp), verticalArrangement = Arrangement.spacedBy(6.dp)) {
-                    Text("Potwierdzenie serwerowe", style = MaterialTheme.typography.titleSmall)
-                    Text("Jeszcze nie pobrane", Modifier.testTag("achievement-server-state"), color = MaterialTheme.colorScheme.onSurfaceVariant)
-                    Text("Ten ekran pokazuje lokalny postęp. Nie publikuje punktów, rangi ani miejsca w rankingu.", style = MaterialTheme.typography.bodySmall)
-                }
-            }
         }
         when (state) {
             AchievementState.Loading -> item(key = "loading") {
@@ -63,16 +56,26 @@ import java.util.Locale
             is AchievementState.Ready -> {
                 val preview = state.preview
                 item(key = "summary") {
-                    Card(shape = RoundedCornerShape(22.dp), colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.primaryContainer)) {
-                        Column(Modifier.fillMaxWidth().padding(20.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                            Text("PODGLĄD LOKALNY · DZIAŁA OFFLINE", style = MaterialTheme.typography.labelMedium)
-                            Text("${preview.badges.count { it.satisfied }} / 4", Modifier.testTag("achievement-count"),
-                                style = MaterialTheme.typography.displaySmall, fontWeight = FontWeight.Bold)
-                            Text("warunki spełnione na tym urządzeniu", style = MaterialTheme.typography.titleSmall)
-                            Text("Najlepszy postęp z całej lokalnej historii. Korekta lub usunięcie wpisu może zmienić wynik.", style = MaterialTheme.typography.bodySmall)
-                            Text("Dzisiaj pozostaje wstępne. Serie liczymy po zamknięciu dnia w strefie urządzenia; pomiary i racje w strefie zapisanej we wpisie.", style = MaterialTheme.typography.bodySmall)
+                    var details by rememberSaveable { mutableStateOf(false) }
+                    Card(Modifier.testTag("achievement-summary"), shape = RoundedCornerShape(22.dp), colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.primaryContainer)) {
+                        Column(Modifier.fillMaxWidth().padding(16.dp), verticalArrangement = Arrangement.spacedBy(4.dp)) {
+                            Text("PODGLĄD LOKALNY · OFFLINE", style = MaterialTheme.typography.labelSmall)
+                            Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(12.dp)) {
+                                Text("${preview.badges.count { it.satisfied }} / 4", Modifier.testTag("achievement-count"),
+                                    style = MaterialTheme.typography.headlineMedium, fontWeight = FontWeight.Bold)
+                                Text("warunki spełnione na tym urządzeniu", Modifier.weight(1f), style = MaterialTheme.typography.bodySmall)
+                            }
+                            Text("Dzisiaj wstępne · korekty mogą zmienić wynik.", style = MaterialTheme.typography.bodySmall)
                             val updated = preview.asOf.atZone(ZoneId.of(preview.zoneId)).format(DateTimeFormatter.ofPattern("dd.MM.yyyy · HH:mm"))
                             Text("Przeliczono: $updated · ${preview.zoneId}", style = MaterialTheme.typography.labelSmall)
+                            TextButton(onClick = { details = !details }, modifier = Modifier.testTag("achievement-summary-details")) {
+                                Text(if (details) "Ukryj szczegóły" else "Jak liczymy postęp")
+                            }
+                            if (details) {
+                                Text("Najlepszy postęp z całej lokalnej historii. Korekta lub usunięcie wpisu może zmienić wynik.",
+                                    Modifier.testTag("achievement-summary-explanation"), style = MaterialTheme.typography.bodySmall)
+                                Text("Serie liczymy po zamknięciu dnia w strefie urządzenia; pomiary i racje w strefie zapisanej we wpisie.", style = MaterialTheme.typography.bodySmall)
+                            }
                         }
                     }
                 }
@@ -85,6 +88,19 @@ import java.util.Locale
                     Text("Regularność zamiast skrajności", style = MaterialTheme.typography.titleSmall)
                     Text("Większy deficyt, nadwyżka ani liczba posiłków nie podnoszą wyniku. Odznaki dotyczą nawyków i realizacji własnego celu.",
                         style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                }
+            }
+        }
+        item(key = "server") {
+            if (serverPanel != null) {
+                serverPanel()
+            } else {
+                Card(shape = RoundedCornerShape(18.dp), colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface)) {
+                    Column(Modifier.fillMaxWidth().padding(16.dp), verticalArrangement = Arrangement.spacedBy(6.dp)) {
+                        Text("Potwierdzenie serwerowe", style = MaterialTheme.typography.titleSmall)
+                        Text("Jeszcze nie pobrane", Modifier.testTag("achievement-server-state"), color = MaterialTheme.colorScheme.onSurfaceVariant)
+                        Text("Ten ekran pokazuje lokalny postęp. Nie publikuje punktów, rangi ani miejsca w rankingu.", style = MaterialTheme.typography.bodySmall)
+                    }
                 }
             }
         }

@@ -1,0 +1,64 @@
+{
+  "account_generation": 1,
+  "sync_epoch": "00000000-0000-0000-0000-000000000001",
+  "as_of": "2026-10-11T00:00:00Z",
+  "rule_version": "regularity_v1",
+  "revision": 1,
+  "source_position": 4,
+  "status": "pending_backfill",
+  "points": null,
+  "rank": null,
+  "badges": [
+    {
+      "code": "complete_streak_10",
+      "rule_version": "regularity_v1",
+      "status": "pending",
+      "progress": 0,
+      "required": 10,
+      "witness_dates": [],
+      "first_awarded_at": null,
+      "activated_at": null,
+      "revoked_at": null
+    },
+    {
+      "code": "in_goal_streak_10",
+      "rule_version": "regularity_v1",
+      "status": "pending",
+      "progress": 0,
+      "required": 10,
+      "witness_dates": [],
+      "first_awarded_at": null,
+      "activated_at": null,
+      "revoked_at": null
+    },
+    {
+      "code": "weight_days_4_14",
+      "rule_version": "regularity_v1",
+      "status": "pending",
+      "progress": 0,
+      "required": 4,
+      "witness_dates": [],
+      "first_awarded_at": null,
+      "activated_at": null,
+      "revoked_at": null
+    },
+    {
+      "code": "ration_days_5",
+      "rule_version": "regularity_v1",
+      "status": "pending",
+      "progress": 0,
+      "required": 5,
+      "witness_dates": [],
+      "first_awarded_at": null,
+      "activated_at": null,
+      "revoked_at": null
+    }
+  ],
+  "ranking": {
+    "requested": true,
+    "effective": false,
+    "pending_consent_refresh": true,
+    "consent_epoch": "00000000-0000-0000-0000-000000000001",
+    "own_position": null
+  }
+}
