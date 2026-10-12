@@ -41,7 +41,7 @@ Accept zawiera wyłącznie te same terms. Duration_days i time_zone mają defaul
 
 Metadata zawierają: id UUID, revision, własną role inviter/invitee, status invited/active/finished/cancelled, terms, invited_at, expires_at, nullable accepted_at/start_date/end_date/start_at/end_at/deadline/result_status/cancel_reason i nullable partner_pseudonym. `end_date` jest wyłączną granicą dat okresu. Nie zawierają partner account UUID, issuer/sub/email, źródłowych UUID, rewizji, E, goal kcal, masy ani posiłków. Deletion/restore/cancel nie odtwarza dawnego profilu z receipt. Strona ma items i nullable next_cursor, najwyżej 100 pozycji.
 
-Issuance receipt ujawnia destination_code tylko jego właścicielowi, razem z issued_at/expires_at. Raw kod nie trafia do URL/query, logów ani błędów; także walidacyjne błędy HTTP muszą usuwać input z odpowiedzi. W odpowiedziach sukcesu i błędu używamy Cache-Control: no-store. ETag reprezentuje cytowaną revision. Po retencji zwykłego receipt odpowiedź jest minimalnym already_applied lub jawnym idempotency_result_expired; nie uruchamia mutacji ponownie.
+Issuance receipt ujawnia destination_code tylko jego właścicielowi, razem z issued_at/expires_at. Raw kod nie trafia do URL/query, logów ani błędów; także walidacyjne błędy HTTP muszą usuwać input z odpowiedzi. W odpowiedziach sukcesu i błędu używamy Cache-Control: no-store. Revision pochodzi z JSON metadanych; klient cytuje ją w If-Match. Po retencji zwykłego receipt odpowiedź jest minimalnym already_applied lub jawnym idempotency_result_expired; nie uruchamia mutacji ponownie.
 
 | HTTP | Znaczenie |
 | --- | --- |

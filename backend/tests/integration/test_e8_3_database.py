@@ -388,7 +388,7 @@ def test_old_epoch_immediately_gates_and_nonempty_downgrade_atomic(pg):
     with pg[0].begin() as conn:
         assert (
             conn.scalar(text("SELECT version_num FROM app.alembic_version"))
-            == "0018_e8_nemesis_lifecycle"
+            == "0020_e8_nemesis_integration"
         )
         assert (
             conn.scalar(

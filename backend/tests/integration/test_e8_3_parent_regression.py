@@ -1,8 +1,8 @@
-"""Targeted actual-parent regressions; neither production integration nor E8.4.
+"""Targeted actual-parent and integrated-source regressions, without E8.4.
 
 The source harness keeps the explicit frozen seam. The operator connects with
-its own minimal SCRAM LOGIN. begin helper is explicit in this private fixture;
-legacy purge stays the actual upstream wrapper. No production wrapper, shared
+its own minimal SCRAM LOGIN. begin uses the actual integrated SQL wrapper;
+legacy purge stays the actual upstream chain. No production wrapper, shared
 router, common provision or runtime source file is changed by these tests.
 """
 
@@ -254,9 +254,13 @@ def test_actual_parent_begin_helper_cutoff_on_minimal_scram_login(source_account
     with operator.begin() as connection:
         job = begin(connection, owner, operation, 1)
         assert job["deleting_generation"] == 2
-        connection.execute(
-            text("SELECT app.e8n_delete_helper(:owner,:operation,false)"),
-            {"owner": owner, "operation": operation},
+        # The production 0020 SECURITY DEFINER entry point invokes its helper
+        # atomically. The minimal LOGIN deliberately has no direct helper grant.
+        assert not connection.scalar(
+            text(
+                "SELECT has_function_privilege(current_user,"
+                "'app.e8n_delete_helper(uuid,uuid,boolean)','EXECUTE')"
+            )
         )
     with f["admin"].connect() as connection:
         row = connection.execute(

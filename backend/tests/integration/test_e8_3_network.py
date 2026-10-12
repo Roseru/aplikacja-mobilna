@@ -5,6 +5,7 @@ import os
 import socket
 import subprocess
 import sys
+import sysconfig
 from concurrent.futures import ThreadPoolExecutor
 from pathlib import Path
 from threading import Barrier
@@ -46,7 +47,7 @@ def servers(runtime, tmp_path):
         log = log_path.open("w", encoding="utf-8")
         logs.append(log)
         child_env = os.environ.copy()
-        site_packages = str(Path(sys.prefix) / "Lib" / "site-packages")
+        site_packages = sysconfig.get_path("purelib")
         child_env["PYTHONPATH"] = site_packages + os.pathsep + child_env.get("PYTHONPATH", "")
         process = subprocess.Popen(
             [getattr(sys, "_base_executable", sys.executable), str(child), str(private), str(port)],

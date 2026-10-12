@@ -10,8 +10,12 @@ from sqlalchemy import create_engine
 
 from calorie_app.core.config import Settings
 from calorie_app.integrations.keycloak import OIDCVerifier
-from tests.support.e8_3_app import component_app
-from tests.support.e8_3_jwt import ISSUER
+
+# Standalone child scripts do not load pytest.ini pythonpath.
+sys.path.insert(0, str(Path(__file__).resolve().parents[2]))
+
+from tests.support.e8_3_app import component_app  # noqa: E402
+from tests.support.e8_3_jwt import ISSUER  # noqa: E402
 
 
 class BoundServer(uvicorn.Server):

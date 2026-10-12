@@ -35,6 +35,14 @@ E8_TABLES = {
     "ranking_affirmations",
     "ranking_sessions",
     "ranking_cursors",
+    "nemesis_control",
+    "nemesis_releases",
+    "nemesis_challenges",
+    "nemesis_slots",
+    "nemesis_share_codes",
+    "nemesis_receipts",
+    "nemesis_admissions",
+    "nemesis_cursors",
 }
 CASES = [
     ("Straße Suppe", [], "STRASSE SUPPE"),

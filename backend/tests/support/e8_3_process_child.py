@@ -2,11 +2,15 @@
 
 import json
 import sys
+from pathlib import Path
 from uuid import UUID, uuid4
 
 from sqlalchemy import text
 
-from tests.support.e8_3_postgres import PrivatePostgres
+# Standalone child scripts do not load pytest.ini pythonpath.
+sys.path.insert(0, str(Path(__file__).resolve().parents[2]))
+
+from tests.support.e8_3_postgres import PrivatePostgres  # noqa: E402
 
 
 def main():
