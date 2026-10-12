@@ -87,6 +87,14 @@ def test_migration_and_database_readiness(database):
         "ranking_affirmations",
         "ranking_sessions",
         "ranking_cursors",
+        "nemesis_control",
+        "nemesis_releases",
+        "nemesis_challenges",
+        "nemesis_slots",
+        "nemesis_share_codes",
+        "nemesis_receipts",
+        "nemesis_admissions",
+        "nemesis_cursors",
     }
     migrate("check")
     with TestClient(create_app(Settings(database_url=url), engine=engine)) as client:

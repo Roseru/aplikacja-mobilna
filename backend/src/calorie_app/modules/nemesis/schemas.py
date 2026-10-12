@@ -86,6 +86,10 @@ class ShareCodeReceipt(NemesisDTO):
     expires_at: Timestamp
 
 
+class RevokeCodeReceipt(NemesisDTO):
+    revoked: Literal[True]
+
+
 class NemesisMetadata(NemesisDTO):
     id: Uuid
     revision: Revision

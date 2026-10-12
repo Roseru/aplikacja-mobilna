@@ -492,7 +492,7 @@ def test_downgrade_atomic_refusal_detects_shared_orphan_artifact(database):
             assert sorted(inspect(connection).get_table_names(schema="app")) == schema
             assert (
                 connection.scalar(text("SELECT version_num FROM app.alembic_version"))
-                == "0017_e8_purge_commit"
+                == "0020_e8_nemesis_integration"
             )
     finally:
         # Privileged fixture cleanup removes only this synthetic orphan, retaining all old rows.

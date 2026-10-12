@@ -59,3 +59,33 @@ def database():
         os.environ.pop("DATABASE_URL", None)
     else:
         os.environ["DATABASE_URL"] = previous
+
+
+@pytest.fixture(scope="session", autouse=True)
+def nemesis_evidence_servers(tmp_path_factory):
+    # Explicit local credentials remain the reviewer's responsibility. CI must
+    # actually run these tests instead of skipping missing PostgreSQL evidence.
+    if os.environ.get("E8_3_POSTGRES_CREDENTIALS") and os.environ.get(
+        "E8_3_ROLE_AUDIT_CREDENTIALS"
+    ):
+        yield
+        return
+    if not os.environ.get("CI"):
+        yield
+        return
+    from tests.support.e8_3_ci import private_servers
+
+    keys = ("E8_3_POSTGRES_CREDENTIALS", "E8_3_ROLE_AUDIT_CREDENTIALS", "E8_3_HTTP_PROBE_PORT_BASE")
+    previous = {key: os.environ.get(key) for key in keys}
+    try:
+        with private_servers(tmp_path_factory.mktemp("nemesis-postgres")) as services:
+            os.environ[keys[0]] = services["source"]
+            os.environ[keys[1]] = services["audit"]
+            os.environ[keys[2]] = "18181"
+            yield
+    finally:
+        for key, value in previous.items():
+            if value is None:
+                os.environ.pop(key, None)
+            else:
+                os.environ[key] = value
