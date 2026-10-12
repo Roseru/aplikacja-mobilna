@@ -43,19 +43,6 @@ import java.util.Locale
             Text("Osiągnięcia", style = MaterialTheme.typography.headlineLarge, fontWeight = FontWeight.Bold)
             Text("Małe kroki. Trwałe nawyki.", color = MaterialTheme.colorScheme.onSurfaceVariant)
         }
-        item(key = "server") {
-            if (serverPanel != null) {
-                serverPanel()
-            } else {
-                Card(shape = RoundedCornerShape(18.dp), colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface)) {
-                    Column(Modifier.fillMaxWidth().padding(16.dp), verticalArrangement = Arrangement.spacedBy(6.dp)) {
-                        Text("Potwierdzenie serwerowe", style = MaterialTheme.typography.titleSmall)
-                        Text("Jeszcze nie pobrane", Modifier.testTag("achievement-server-state"), color = MaterialTheme.colorScheme.onSurfaceVariant)
-                        Text("Ten ekran pokazuje lokalny postęp. Nie publikuje punktów, rangi ani miejsca w rankingu.", style = MaterialTheme.typography.bodySmall)
-                    }
-                }
-            }
-        }
         when (state) {
             AchievementState.Loading -> item(key = "loading") {
                 Column(Modifier.fillMaxWidth(), horizontalAlignment = Alignment.CenterHorizontally) {
@@ -101,6 +88,19 @@ import java.util.Locale
                     Text("Regularność zamiast skrajności", style = MaterialTheme.typography.titleSmall)
                     Text("Większy deficyt, nadwyżka ani liczba posiłków nie podnoszą wyniku. Odznaki dotyczą nawyków i realizacji własnego celu.",
                         style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                }
+            }
+        }
+        item(key = "server") {
+            if (serverPanel != null) {
+                serverPanel()
+            } else {
+                Card(shape = RoundedCornerShape(18.dp), colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface)) {
+                    Column(Modifier.fillMaxWidth().padding(16.dp), verticalArrangement = Arrangement.spacedBy(6.dp)) {
+                        Text("Potwierdzenie serwerowe", style = MaterialTheme.typography.titleSmall)
+                        Text("Jeszcze nie pobrane", Modifier.testTag("achievement-server-state"), color = MaterialTheme.colorScheme.onSurfaceVariant)
+                        Text("Ten ekran pokazuje lokalny postęp. Nie publikuje punktów, rangi ani miejsca w rankingu.", style = MaterialTheme.typography.bodySmall)
+                    }
                 }
             }
         }

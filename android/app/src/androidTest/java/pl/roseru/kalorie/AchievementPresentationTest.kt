@@ -83,6 +83,7 @@ class AchievementPresentationTest {
         val result = fixture()
         val state = mutableStateOf<AchievementState>(AchievementState.Ready(result))
         show(state)
+        scroll("achievement-server-state")
         compose.onNodeWithTag("achievement-server-state").assertTextEquals("Jeszcze nie pobrane")
         scroll("achievement-count"); compose.onNodeWithTag("achievement-count").assertTextEquals("3 / 4")
         screenshot("light-summary")
