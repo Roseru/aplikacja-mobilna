@@ -49,7 +49,7 @@ import pl.roseru.kalorie.session.*
                     icon = { Icon(Icons.Outlined.BarChart, contentDescription = null) }, label = { Text("Postępy") }, modifier = Modifier.testTag("open-analytics"))
                 NavigationBarItem(selected = route == "settings", onClick = { nav.navigate("settings") { launchSingleTop = true } },
                     icon = { Icon(Icons.Outlined.Tune, contentDescription = null) }, label = { Text("Ustawienia") })
-                NavigationBarItem(selected = route == "profile", onClick = { nav.navigate("profile") { launchSingleTop = true } },
+                NavigationBarItem(selected = route in listOf("profile", "achievements"), onClick = { nav.navigate("profile") { launchSingleTop = true } },
                     icon = { Icon(Icons.Outlined.PersonOutline, contentDescription = null) }, label = { Text("Profil") }, modifier = Modifier.testTag("open-profile"))
             }
         }
@@ -60,7 +60,9 @@ import pl.roseru.kalorie.session.*
             composable("rations") { RationScreen(model, onBack = { nav.popBackStack() }) }
             composable("custom") { CustomFoodScreen(model, onBack = { nav.popBackStack() }) }
             composable("settings") { SettingsScreen(model) }
-            composable("profile") { ProfileScreen(model, onAccount = { nav.navigate("account") { launchSingleTop = true } }) }
+            composable("profile") { ProfileScreen(model, onAccount = { nav.navigate("account") { launchSingleTop = true } },
+                onAchievements = { nav.navigate("achievements") { launchSingleTop = true } }) }
+            composable("achievements") { AchievementsScreen(model) { nav.popBackStack() } }
             composable("account") { SessionScreen(session, actions) { nav.popBackStack() } }
             composable("analytics") { AnalyticsScreen(model, onDay = { date ->
                 model.selectDate(date)
@@ -68,5 +70,5 @@ import pl.roseru.kalorie.session.*
             }) }
         }
     }
-    if (route in listOf("settings", "profile", "analytics", "account")) BackHandler { nav.popBackStack() }
+    if (route in listOf("settings", "profile", "analytics", "account", "achievements")) BackHandler { nav.popBackStack() }
 }

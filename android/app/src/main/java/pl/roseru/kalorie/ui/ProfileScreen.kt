@@ -25,7 +25,7 @@ import pl.roseru.kalorie.data.WeightEntity
 import java.time.*
 
 @OptIn(ExperimentalMaterial3Api::class)
-@Composable fun ProfileScreen(model: DiaryViewModel, onAccount: () -> Unit) {
+@Composable fun ProfileScreen(model: DiaryViewModel, onAccount: () -> Unit, onAchievements: () -> Unit = {}) {
     val profile by model.profile.collectAsStateWithLifecycle()
     val todayGoal by model.todayGoal.collectAsStateWithLifecycle()
     val weights by model.weights.collectAsStateWithLifecycle()
@@ -48,6 +48,11 @@ import java.time.*
             Text("Profil", style = MaterialTheme.typography.headlineLarge, fontWeight = FontWeight.Bold)
             Text("Profil i pomiary zapisane na tym urządzeniu", color = MaterialTheme.colorScheme.onSurfaceVariant)
             TextButton(onClick = onAccount, modifier = Modifier.testTag("open-account")) { Text("Konto i logowanie") }
+        }
+        item(key = "achievements-entry") {
+            FilledTonalButton(onClick = onAchievements, modifier = Modifier.fillMaxWidth().testTag("open-achievements")) {
+                Text("Osiągnięcia · sprawdź swoją regularność")
+            }
         }
         weights.firstOrNull()?.let { latest -> item(key = "latest-weight") {
             Card(colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.primaryContainer), shape = RoundedCornerShape(16.dp)) {
