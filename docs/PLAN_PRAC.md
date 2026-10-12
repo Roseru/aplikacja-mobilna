@@ -49,7 +49,7 @@ Właściciel zatwierdził ten podział 11 października 2026 r. Rozdzielamy prac
 | Podetap | Zakres O2 | Miejsce wykonania |
 |---|---|---|
 | E8.1 + E8.2 | Punkty, rangi, osiągnięcia i ranking z opt-in/prywatnością; dojrzewanie punktów po lokalnej północy, nadrabianie po restarcie i cofanie odznak po korektach | Jeden czat i [wspólny master](MASTER_PROMPT_E8_1_2.md) dla spójnej funkcji motywacji |
-| E8.3 | Nemesis: zaproszenia, zgody, zakres udostępniania, reguły rozpoczęcia/anulowania i izolacja uczestników | Drugi czat z osobnym masterem, po odbiorze potrzebnej podstawy |
+| E8.3 | Nemesis: zaproszenia, zgody, zakres udostępniania, reguły rozpoczęcia/anulowania i izolacja uczestników | Drugi czat z [masterem E8.3](MASTER_PROMPT_E8_3.md); izolowany lifecycle po odbiorze freeze, integracja po PASS/scaleniu E8.1+2 |
 | E8.4 | Projekcje wyników, korekty, kwalifikacja synchronizacji i finalizacja po terminie; wyścigi oraz spóźniony worker | Trzeci czat z osobnym masterem, po odebraniu E8.1–E8.3 |
 | E8.5 | Integracja, pełna regresja i odbiór całości E8 z dowodami O2 oraz wymaganymi działaniami O1/O3 | Istniejący czat koordynatora „Podepnij folder do repozytorium”; poprawki wracają do właściwych wykonawców |
 

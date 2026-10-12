@@ -327,6 +327,8 @@ def main():
     assert '/me' not in api['paths'] or 'patch' not in api['paths']['/me']
     assert 'post' not in api['paths'].get('/me/goals', {})
 
+    result = subprocess.run([sys.executable, str(ROOT / 'backend/export_motivation_schema.py'), '--check'], cwd=ROOT, capture_output=True, text=True)
+    assert result.returncode == 0, result.stdout + result.stderr
     generated = read(ROOT / 'backend/openapi.json')
     generated_ids, generated_examples = verify_generated_catalog(generated, api, validate, api_path)
     assert not set(ids).intersection(generated_ids), 'Duplicate active operationId across documents'
@@ -339,7 +341,7 @@ def main():
     valid_count = invalid_count = scenario_count = 0
     for entry in index['examples']:
         assert entry['id'] not in example_ids and entry['purpose'] and entry['detection_layer']
-        assert entry['server']['result'] == 'not_executed' and entry['server']['stage'] in {'E1','E2','E3','E4','E5','E6','E7'}
+        assert entry['server']['result'] == 'not_executed' and entry['server']['stage'] in {'E1','E2','E3','E4','E5','E6','E7','E8'}
         example_ids.add(entry['id'])
         path = (index_path.parent / entry['path']).resolve()
         assert path.is_relative_to(index_path.parent) and path not in seen, path
@@ -372,7 +374,7 @@ def main():
                 if method == 'post':
                     request_schema = operation['requestBody']['content']['application/json']['schema']
                     assert not list(Draft202012Validator(request_schema, format_checker=FORMATS).iter_errors(step['request'])), f'Scenario request diverges from OpenAPI: {entry["id"]}'
-    files = {p.resolve() for folder in ['valid','invalid','scenarios','e6','e7'] for p in (index_path.parent / folder).glob('*.json')}
+    files = {p.resolve() for folder in ['valid','invalid','scenarios','e6','e7','e8'] for p in (index_path.parent / folder).glob('*.json')}
     assert files == seen, f'Orphan/missing examples: {files ^ seen}'
     source = index['source_material']
     assert source['status'] == 'unverified_source_not_contract'
@@ -418,7 +420,7 @@ def main():
     print(f'PASS E0 | Python {sys.version.split()[0]} | schemas={len(schemas)} | draft endpoints={len(ids)} | generated catalog endpoints={len(generated_ids)} | HTTP examples={api_example_count}')
     print(f'PASS examples valid={valid_count} invalid={invalid_count} scenarios={scenario_count}; refs/formats/orphans/source/gzip/manifest')
     print(f'PASS Decimal vectors={vector_count}; day completeness={day_count}; source normalizations={normalization_count}; local links={local_links}; git diff --check')
-    print('NOT EXECUTED BY THIS VALIDATOR: server transactions, PostgreSQL, Room, Kotlin, OIDC, deployment (E1-E7).')
+    print('NOT EXECUTED BY THIS VALIDATOR: server transactions, PostgreSQL, Room, Kotlin, OIDC, deployment (E1-E8).')
 
 
 if __name__ == '__main__':

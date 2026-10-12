@@ -10,6 +10,7 @@ import pytest
 from sqlalchemy import event, inspect, text
 from sqlalchemy.exc import DBAPIError
 from sqlalchemy.orm import Session
+from test_e5_upgrade import _discard_e8_upgrade_placeholders
 
 from calorie_app.core.errors import DomainError
 from calorie_app.integrations.keycloak import Principal
@@ -513,6 +514,11 @@ def test_original_0008_upgrade_preserves_private_graph_epoch_and_catalog_bytes(d
         assert artifact.read_bytes() == published
         with engine.connect() as connection:
             assert connection.scalar(text("SELECT sync_epoch FROM app.installation_state")) == epoch
+        # The historical E4 roundtrip has only unprocessed E8 upgrade rows.
+        # Refuse any E8 evidence before removing placeholders from this test;
+        # all original private rows, epoch and sealed catalogue bytes remain.
+        with engine.begin() as connection:
+            _discard_e8_upgrade_placeholders(connection)
         migrate("downgrade", "0008_diary_delete")
         assert graph(engine, owner) == before
         with engine.begin() as connection:

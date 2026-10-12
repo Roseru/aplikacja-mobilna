@@ -7,12 +7,14 @@ from zoneinfo import ZoneInfo
 from sqlalchemy import select, text
 
 from calorie_app.core.errors import DomainError
-from calorie_app.modules.analytics.repository import window_inputs
+from calorie_app.modules.analytics.motivation.rules import evaluate_day
+from calorie_app.modules.analytics.motivation.time import day_is_closed
+from calorie_app.modules.analytics.repository import window_day_facts, window_inputs
 from calorie_app.modules.catalog.nutrition import FIELDS
 from calorie_app.modules.catalog.pagination import database_now
 from calorie_app.modules.catalog.timestamps import utc_text
 from calorie_app.modules.catalog.validation import canonical
-from calorie_app.modules.diary.validation import effective_complete, meal_totals
+from calorie_app.modules.diary.validation import meal_totals
 from calorie_app.modules.identity.service import current_epoch, lock_account
 from calorie_app.modules.profiles.models import GoalTimeline, Profile
 from calorie_app.modules.profiles.service import goal_for_dates
@@ -40,7 +42,18 @@ def rounded_average(values):
         )
 
 
-def build_statistics(start, today, declarations, meals, weights, goals):
+def build_statistics(
+    start,
+    today,
+    declarations,
+    meals,
+    weights,
+    goals,
+    *,
+    as_of=None,
+    day_time_zones=None,
+    day_facts=None,
+):
     """Pure common-vector reducer; all inputs are already the same DB snapshot."""
     daily = []
     values = {field: [] for field in FIELDS}
@@ -51,7 +64,25 @@ def build_statistics(start, today, declarations, meals, weights, goals):
             day_meals = meals.get(day, [])
             items = [item for meal in day_meals for item in meal["items"]]
             declared = declarations.get(day, False)
-            complete = effective_complete(declared, day_meals)
+            goal = goals.get(day)
+            if day_facts is not None:
+                if as_of is None or day not in day_facts:
+                    raise DomainError(503, "service_unavailable")
+                fact = day_facts[day]
+                if fact["matures_at"] is not None:
+                    closed = as_of >= fact["matures_at"]
+                else:
+                    # Empty calendar rows retain E5 display semantics. A known
+                    # DiaryDay without representable maturity stays preliminary.
+                    closed = day < today and day not in (day_time_zones or {})
+                complete, match = fact["effective_complete"], fact["in_goal"]
+            else:
+                zone = (day_time_zones or {}).get(day)
+                closed = day_is_closed(day, zone, as_of) if zone and as_of else day < today
+                evaluation = evaluate_day(
+                    declared, day_meals, goal["energy_kcal"] if goal else None
+                )
+                complete, match = evaluation.effective_complete, evaluation.in_goal
             totals = meal_totals(items)
             for field in FIELDS:
                 known = sum(item["nutrition_per_100"][field] is not None for item in items)
@@ -61,14 +92,8 @@ def build_statistics(start, today, declarations, meals, weights, goals):
                     "known_count": known,
                     "missing_count": totals[field]["missing_count"],
                 }
-                if day < today and complete and totals[field]["complete"]:
+                if closed and complete and totals[field]["complete"]:
                     values[field].append(Decimal(totals[field]["known_sum"]))
-            goal = goals.get(day)
-            target = Decimal(goal["energy_kcal"]) if goal else None
-            match = None
-            if complete and target is not None and target > 0:
-                energy = Decimal(totals["energy_kcal"]["known_sum"])
-                match = target * Decimal("0.9") <= energy <= target * Decimal("1.1")
             points = weights.get(day, [])
             latest = max(
                 points,
@@ -81,7 +106,7 @@ def build_statistics(start, today, declarations, meals, weights, goals):
             daily.append(
                 {
                     "local_date": day.isoformat(),
-                    "closed": day < today,
+                    "closed": closed,
                     "declared_complete": declared,
                     "effective_complete": complete,
                     "status": "no_data"
@@ -92,12 +117,14 @@ def build_statistics(start, today, declarations, meals, weights, goals):
                     "meal_count": len(day_meals),
                     "totals": totals,
                     "goal": goal,
-                    "in_goal": match if day < today else None,
-                    "preliminary_in_goal": match if day == today else None,
+                    "in_goal": match if closed else None,
+                    "preliminary_in_goal": match if not closed else None,
                     "latest_weight": latest,
                     "weight_count": len(points),
                 }
             )
+            if day == today:
+                break
             day += timedelta(days=1)
         weight_days = [point for point in daily if point["latest_weight"] is not None]
         change = None
@@ -156,6 +183,7 @@ def statistics(session, owner_id, days, *, expected_generation=None):
         for day, goal in resolved.items()
     }
     declarations, meals, weights = window_inputs(session, owner_id, start, today)
+    day_facts = window_day_facts(session, owner_id, start, today)
     counter = session.get(SyncCounter, owner_id)
     return {
         "account_id": str(account.id),
@@ -171,5 +199,15 @@ def statistics(session, owner_id, days, *, expected_generation=None):
         "days": days,
         "statistics_version": "statistics_v1",
         "goal_rule": "goal_band_v1",
-        **build_statistics(start, today, declarations, meals, weights, goals),
+        **build_statistics(
+            start,
+            today,
+            declarations,
+            meals,
+            weights,
+            goals,
+            as_of=as_of,
+            day_time_zones=declarations.time_zones,
+            day_facts=day_facts,
+        ),
     }

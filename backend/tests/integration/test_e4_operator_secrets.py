@@ -310,10 +310,12 @@ def logging_cluster():
                 "calorie_app_api",
                 "calorie_app_worker",
                 "calorie_app_ai_worker",
+                "calorie_app_motivation_worker",
                 "keycloak",
             ):
                 connection.execute(sql.SQL("CREATE ROLE {} NOLOGIN").format(sql.Identifier(role)))
             connection.execute("ALTER ROLE calorie_app_ai_worker NOINHERIT")
+            connection.execute("ALTER ROLE calorie_app_motivation_worker NOINHERIT")
         require(
             not cluster.authenticated("postgres", "postgres", secrets.token_urlsafe(32)),
             "Wrong administrator password was accepted",

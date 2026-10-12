@@ -1,0 +1,400 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://calorie.invalid/schemas/motivation.schema.json",
+  "description": "Generated E8 regularity_v1 and live ranking DTOs; source authority is server-only.",
+  "$defs": {
+    "MotivationBadge": {
+      "properties": {
+        "code": {
+          "type": "string",
+          "enum": [
+            "complete_streak_10",
+            "in_goal_streak_10",
+            "weight_days_4_14",
+            "ration_days_5"
+          ],
+          "title": "Code"
+        },
+        "rule_version": {
+          "type": "string",
+          "const": "regularity_v1",
+          "title": "Rule Version"
+        },
+        "status": {
+          "type": "string",
+          "enum": [
+            "pending",
+            "final",
+            "revoked"
+          ],
+          "title": "Status"
+        },
+        "progress": {
+          "type": "integer",
+          "maximum": 10.0,
+          "minimum": 0.0,
+          "title": "Progress"
+        },
+        "required": {
+          "type": "integer",
+          "maximum": 10.0,
+          "minimum": 1.0,
+          "title": "Required"
+        },
+        "witness_dates": {
+          "items": {
+            "type": "string",
+            "format": "date"
+          },
+          "type": "array",
+          "maxItems": 10,
+          "title": "Witness Dates"
+        },
+        "first_awarded_at": {
+          "anyOf": [
+            {
+              "type": "string",
+              "pattern": "^\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}(\\.[0-9]{1,6})?Z$",
+              "format": "date-time"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "title": "First Awarded At"
+        },
+        "activated_at": {
+          "anyOf": [
+            {
+              "type": "string",
+              "pattern": "^\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}(\\.[0-9]{1,6})?Z$",
+              "format": "date-time"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "title": "Activated At"
+        },
+        "revoked_at": {
+          "anyOf": [
+            {
+              "type": "string",
+              "pattern": "^\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}(\\.[0-9]{1,6})?Z$",
+              "format": "date-time"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "title": "Revoked At"
+        }
+      },
+      "additionalProperties": false,
+      "type": "object",
+      "required": [
+        "code",
+        "rule_version",
+        "status",
+        "progress",
+        "required",
+        "witness_dates",
+        "first_awarded_at",
+        "activated_at",
+        "revoked_at"
+      ],
+      "title": "MotivationBadge"
+    },
+    "MotivationRanking": {
+      "properties": {
+        "requested": {
+          "type": "boolean",
+          "title": "Requested"
+        },
+        "effective": {
+          "type": "boolean",
+          "title": "Effective"
+        },
+        "pending_consent_refresh": {
+          "type": "boolean",
+          "title": "Pending Consent Refresh"
+        },
+        "consent_epoch": {
+          "type": "string",
+          "format": "uuid",
+          "title": "Consent Epoch"
+        },
+        "own_position": {
+          "anyOf": [
+            {
+              "type": "integer",
+              "minimum": 1.0
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "title": "Own Position"
+        }
+      },
+      "additionalProperties": false,
+      "type": "object",
+      "required": [
+        "requested",
+        "effective",
+        "pending_consent_refresh",
+        "consent_epoch",
+        "own_position"
+      ],
+      "title": "MotivationRanking"
+    },
+    "MotivationRead": {
+      "properties": {
+        "account_generation": {
+          "type": "integer",
+          "maximum": 2147483647.0,
+          "minimum": 1.0,
+          "title": "Account Generation"
+        },
+        "sync_epoch": {
+          "type": "string",
+          "format": "uuid",
+          "title": "Sync Epoch"
+        },
+        "as_of": {
+          "type": "string",
+          "pattern": "^\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}(\\.[0-9]{1,6})?Z$",
+          "format": "date-time",
+          "title": "As Of"
+        },
+        "rule_version": {
+          "type": "string",
+          "const": "regularity_v1",
+          "title": "Rule Version"
+        },
+        "revision": {
+          "type": "integer",
+          "maximum": 9.223372036854776e+18,
+          "minimum": 0.0,
+          "title": "Revision"
+        },
+        "source_position": {
+          "type": "integer",
+          "maximum": 9.223372036854776e+18,
+          "minimum": 0.0,
+          "title": "Source Position"
+        },
+        "status": {
+          "type": "string",
+          "enum": [
+            "pending_backfill",
+            "pending_materialization",
+            "final"
+          ],
+          "title": "Status"
+        },
+        "points": {
+          "anyOf": [
+            {
+              "type": "integer",
+              "maximum": 9.223372036854776e+18,
+              "minimum": 0.0
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "title": "Points"
+        },
+        "rank": {
+          "anyOf": [
+            {
+              "type": "string",
+              "enum": [
+                "Rekrut",
+                "Szeregowy",
+                "Kapral",
+                "Sierżant"
+              ]
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "title": "Rank"
+        },
+        "badges": {
+          "items": {
+            "$ref": "#/$defs/MotivationBadge"
+          },
+          "type": "array",
+          "maxItems": 4,
+          "minItems": 4,
+          "title": "Badges"
+        },
+        "ranking": {
+          "$ref": "#/$defs/MotivationRanking"
+        }
+      },
+      "additionalProperties": false,
+      "type": "object",
+      "required": [
+        "account_generation",
+        "sync_epoch",
+        "as_of",
+        "rule_version",
+        "revision",
+        "source_position",
+        "status",
+        "points",
+        "rank",
+        "badges",
+        "ranking"
+      ],
+      "title": "MotivationRead"
+    },
+    "RankingEntry": {
+      "properties": {
+        "position": {
+          "type": "integer",
+          "minimum": 1.0,
+          "title": "Position"
+        },
+        "pseudonym": {
+          "type": "string",
+          "maxLength": 80,
+          "minLength": 1,
+          "title": "Pseudonym"
+        },
+        "points": {
+          "type": "integer",
+          "maximum": 9.223372036854776e+18,
+          "minimum": 0.0,
+          "title": "Points"
+        },
+        "rank": {
+          "type": "string",
+          "enum": [
+            "Rekrut",
+            "Szeregowy",
+            "Kapral",
+            "Sierżant"
+          ],
+          "title": "Rank"
+        },
+        "active_badges": {
+          "type": "integer",
+          "maximum": 4.0,
+          "minimum": 0.0,
+          "title": "Active Badges"
+        }
+      },
+      "additionalProperties": false,
+      "type": "object",
+      "required": [
+        "position",
+        "pseudonym",
+        "points",
+        "rank",
+        "active_badges"
+      ],
+      "title": "RankingEntry"
+    },
+    "RankingPage": {
+      "properties": {
+        "rule_version": {
+          "type": "string",
+          "const": "regularity_v1",
+          "title": "Rule Version"
+        },
+        "pagination": {
+          "type": "string",
+          "const": "live_keyset_v1",
+          "title": "Pagination"
+        },
+        "as_of": {
+          "type": "string",
+          "pattern": "^\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}(\\.[0-9]{1,6})?Z$",
+          "format": "date-time",
+          "title": "As Of"
+        },
+        "items": {
+          "items": {
+            "$ref": "#/$defs/RankingEntry"
+          },
+          "type": "array",
+          "maxItems": 100,
+          "title": "Items"
+        },
+        "has_more": {
+          "type": "boolean",
+          "title": "Has More"
+        },
+        "next_page_token": {
+          "anyOf": [
+            {
+              "type": "string",
+              "pattern": "^rk1\\.[A-Za-z0-9_-]{43}$"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "title": "Next Page Token"
+        },
+        "cursor_expires_at": {
+          "anyOf": [
+            {
+              "type": "string",
+              "pattern": "^\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}(\\.[0-9]{1,6})?Z$",
+              "format": "date-time"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "title": "Cursor Expires At"
+        }
+      },
+      "additionalProperties": false,
+      "type": "object",
+      "required": [
+        "rule_version",
+        "pagination",
+        "as_of",
+        "items",
+        "has_more",
+        "next_page_token",
+        "cursor_expires_at"
+      ],
+      "title": "RankingPage"
+    },
+    "RankingQuery": {
+      "additionalProperties": false,
+      "properties": {
+        "limit": {
+          "default": 50,
+          "ge": 1,
+          "le": 100,
+          "title": "Limit",
+          "type": "integer"
+        },
+        "page_token": {
+          "anyOf": [
+            {
+              "pattern": "^rk1\\.[A-Za-z0-9_-]{43}$",
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Page Token"
+        }
+      },
+      "title": "RankingQuery",
+      "type": "object"
+    }
+  }
+}

@@ -239,6 +239,23 @@ def mutate(session, owner_id, op, counter):
         axis = timeline.revision if timeline else 0
         if axis == MAX_REVISION:
             raise Refusal("revision_exhausted")
+    source_old_date = getattr(row, "local_date", None)
+    source_old_revision = row.revision if row else None
+    source_position_before = counter.position
+    goal_before = None
+    goal_boundaries = set()
+    goal_axis_revision_before = None
+    if kind == "goal":
+        from calorie_app.modules.analytics.motivation.repository import goal_probe
+
+        goal_boundaries.add(date.fromisoformat(op["payload"]["effective_from"]))
+        correction_id = op["payload"]["correction_of"]
+        if correction_id:
+            corrected = owned(session, owner_id, "goal", UUID(correction_id))
+            if corrected is not None:
+                goal_boundaries.add(corrected.effective_from)
+        goal_before = goal_probe(session, owner_id, goal_boundaries)
+        goal_axis_revision_before = axis
     previous_day = None
     if kind == "meal" and op["action"] == "upsert":
         previous_day = session.scalar(
@@ -313,6 +330,50 @@ def mutate(session, owner_id, op, counter):
         )
         append_change(session, counter, entity(session, owner_id, "diary_day", day.id))
     append_change(session, counter, entity(session, owner_id, kind, target_id))
+    if kind in {"meal", "weight", "diary_day", "goal", "profile"}:
+        from calorie_app.modules.analytics.motivation.context import SourceMutationContext
+        from calorie_app.modules.analytics.motivation.service import source_mutated
+
+        goal_axis_changed = kind == "goal"
+        if goal_axis_changed:
+            from calorie_app.modules.profiles.service import resolve_goal_dates
+
+            goal_after = goal_probe(session, owner_id, goal_boundaries)
+            before = resolve_goal_dates(goal_before, goal_boundaries)
+            after = resolve_goal_dates(goal_after, goal_boundaries)
+            # Bounded probes compare actual surviving heads. Every accepted axis
+            # revision refreshes the entire sparse history, even when a probe's
+            # winning head is unchanged; a moved branch may affect other dates.
+            goal_probe_changed = any(
+                (before[d].id if before[d] else None) != (after[d].id if after[d] else None)
+                for d in goal_boundaries
+            )
+        else:
+            goal_probe_changed = False
+        new_date = row.effective_from if kind == "goal" else getattr(row, "local_date", None)
+        old_dates = (
+            tuple(sorted({v.effective_from for v in goal_before}))
+            if kind == "goal"
+            else ((source_old_date,) if source_old_date else ())
+        )
+        source_mutated(
+            session,
+            SourceMutationContext(
+                owner_id=owner_id,
+                source_kind=kind,
+                entity_id=target_id,
+                old_dates=old_dates,
+                new_dates=(new_date,) if new_date else (),
+                old_revision=source_old_revision,
+                new_revision=row.revision,
+                source_position_before=source_position_before,
+                source_position=counter.position,
+                goal_axis_changed=goal_axis_changed,
+                goal_axis_revision_before=goal_axis_revision_before,
+                goal_axis_revision=row.timeline_revision if kind == "goal" else None,
+                goal_probe_changed=goal_probe_changed,
+            ),
+        )
     mapping = None
     if "recovery" in op:
         source = op["recovery"]

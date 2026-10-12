@@ -2,7 +2,7 @@
 
 from collections import defaultdict
 
-from sqlalchemy import select
+from sqlalchemy import select, text
 
 from calorie_app.core.errors import DomainError
 from calorie_app.modules.catalog.nutrition import FIELDS
@@ -11,6 +11,14 @@ from calorie_app.modules.catalog.validation import canonical
 from calorie_app.modules.diary.models import DiaryDay, Meal, MealItem, Weight
 
 MAX_STATISTICS_ROWS = 100000
+
+
+class Declarations(dict):
+    """Preserve the three-input tuple and bool mapping while carrying source zones."""
+
+    def __init__(self):
+        super().__init__()
+        self.time_zones = {}
 
 
 def _bounded(session, query, maximum):
@@ -23,10 +31,10 @@ def _bounded(session, query, maximum):
 def window_inputs(session, owner_id, start, end, *, maximum=MAX_STATISTICS_ROWS):
     """Load minimal snapshot columns; bounded by total observed domain rows."""
     used = 0
-    declarations = {}
+    declarations = Declarations()
     for row in _bounded(
         session,
-        select(DiaryDay.local_date, DiaryDay.declared_complete).where(
+        select(DiaryDay.local_date, DiaryDay.declared_complete, DiaryDay.time_zone).where(
             DiaryDay.owner_id == owner_id,
             DiaryDay.local_date.between(start, end),
             DiaryDay.deleted_at.is_(None),
@@ -34,6 +42,7 @@ def window_inputs(session, owner_id, start, end, *, maximum=MAX_STATISTICS_ROWS)
         maximum,
     ):
         declarations[row.local_date] = row.declared_complete
+        declarations.time_zones[row.local_date] = row.time_zone
         used += 1
     meals = defaultdict(list)
     by_id = {}
@@ -108,3 +117,26 @@ def window_inputs(session, owner_id, start, end, *, maximum=MAX_STATISTICS_ROWS)
         )
         used += 1
     return declarations, meals, weights
+
+
+def window_day_facts(session, owner_id, start, end):
+    """One bounded source-authoritative query shared with E8 projections.
+
+    E5's public window remains at most 90 dates. A missing row is a failed
+    snapshot, never permission to evaluate a different runtime formula.
+    """
+    count = end.toordinal() - start.toordinal() + 1
+    if not 1 <= count <= 90:
+        raise DomainError(422, "statistics_resource_limit")
+    dates = [type(start).fromordinal(start.toordinal() + offset) for offset in range(count)]
+    rows = session.execute(
+        text(
+            "SELECT local_date, matures_at, effective_complete, in_goal "
+            "FROM app.e8_day_facts(:owner, CAST(:dates AS date[]))"
+        ),
+        {"owner": owner_id, "dates": dates},
+    ).mappings()
+    facts = {row["local_date"]: dict(row) for row in rows}
+    if len(facts) != count or set(facts) != set(dates):
+        raise DomainError(503, "service_unavailable")
+    return facts
