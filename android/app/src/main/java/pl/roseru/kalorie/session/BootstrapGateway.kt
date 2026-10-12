@@ -9,6 +9,8 @@ import pl.roseru.kalorie.core.SessionIdentity
 import pl.roseru.kalorie.core.catalog.StrictJson
 import pl.roseru.kalorie.core.requireHttps
 import pl.roseru.kalorie.data.OwnerLease
+import pl.roseru.kalorie.core.sync.SnapshotQuery
+import pl.roseru.kalorie.core.sync.SnapshotProtocol
 import java.io.ByteArrayOutputStream
 import java.io.InputStream
 import java.net.URL
@@ -32,6 +34,9 @@ internal interface BootstrapGateway {
 
 internal interface ProfileGateway {
     suspend fun get(session: ApiSession, beforeSend: suspend () -> Unit): BootstrapHttpResult
+}
+internal interface SnapshotGateway {
+    suspend fun get(session: ApiSession, query: SnapshotQuery, beforeSend: suspend () -> Unit): BootstrapHttpResult
 }
 
 internal object BootstrapHttpProtocol {
@@ -68,15 +73,16 @@ internal object BootstrapHttpProtocol {
             if (target <= nowMillis) 0 else Math.addExact(Math.subtractExact(target, nowMillis), 999) / 1000
         } catch (_: Exception) { 30 }
     }
-    fun read(stream: InputStream, beforeRead: () -> Unit = {}): ByteArray {
+    fun read(stream: InputStream, maxBytes: Int = MAX_BYTES, beforeRead: () -> Unit = {}): ByteArray {
+        require(maxBytes in 1..SnapshotProtocol.MAX_BYTES)
         val output = ByteArrayOutputStream()
         val buffer = ByteArray(4096)
         while (true) {
             beforeRead()
-            val count = stream.read(buffer, 0, minOf(buffer.size, MAX_BYTES + 1 - output.size()))
+            val count = stream.read(buffer, 0, minOf(buffer.size, maxBytes + 1 - output.size()))
             if (count == -1) break
             output.write(buffer, 0, count)
-            require(output.size() <= MAX_BYTES)
+            require(output.size() <= maxBytes)
         }
         return output.toByteArray()
     }
@@ -98,11 +104,18 @@ internal class HttpsProfileGateway(base: String,
     override suspend fun get(session: ApiSession, beforeSend: suspend () -> Unit) =
         HttpsJsonTransport.request(url, "GET", session, null, open, beforeSend)
 }
+internal class HttpsSnapshotGateway(base: String,
+    private val open: (URL) -> HttpsURLConnection = { it.openConnection() as HttpsURLConnection }) : SnapshotGateway {
+    private val endpoint = BootstrapHttpProtocol.endpoint(base).toString().removeSuffix("/me/bootstrap") + "/sync/pull"
+    override suspend fun get(session: ApiSession, query: SnapshotQuery, beforeSend: suspend () -> Unit) =
+        HttpsJsonTransport.request(URL(endpoint + "?" + query.encoded()), "GET", session, null, open, beforeSend, SnapshotProtocol.MAX_BYTES)
+}
 
 /** Shared bounded transport; callers cannot supply an arbitrary URL or extra headers. */
 private object HttpsJsonTransport {
     suspend fun request(url: URL, method: String, session: ApiSession, key: String?,
-        open: (URL) -> HttpsURLConnection, beforeSend: suspend () -> Unit) = withContext(Dispatchers.IO) {
+        open: (URL) -> HttpsURLConnection, beforeSend: suspend () -> Unit,
+        maxBytes: Int = BootstrapHttpProtocol.MAX_BYTES) = withContext(Dispatchers.IO) {
         require(session.accessToken.isNotBlank() && session.accessToken.length <= 65_536 &&
             session.accessToken.none { it.isWhitespace() || it.isISOControl() })
         val connection = open(url)
@@ -128,10 +141,11 @@ private object HttpsJsonTransport {
             val contentType = connection.contentType?.substringBefore(';')?.trim()
             require(contentType.equals("application/json", ignoreCase = true))
             require(connection.getHeaderField("Content-Encoding").let { it == null || it.equals("identity", ignoreCase = true) })
-            require(connection.contentLengthLong <= BootstrapHttpProtocol.MAX_BYTES)
+            val bound = if (status == 200) maxBytes else BootstrapHttpProtocol.MAX_BYTES
+            require(connection.contentLengthLong <= bound)
             val stream = if (status in 200..299) connection.inputStream else connection.errorStream
             val bytes = checkNotNull(stream).use {
-                BootstrapHttpProtocol.read(it) {
+                BootstrapHttpProtocol.read(it, bound) {
                     coroutineContext.ensureActive()
                     val remaining = (deadline - System.nanoTime()) / 1_000_000
                     check(remaining > 0)

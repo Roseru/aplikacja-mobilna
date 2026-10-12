@@ -5,9 +5,10 @@ import androidx.room.Room
 import pl.roseru.kalorie.data.*
 import kotlinx.coroutines.*
 import pl.roseru.kalorie.session.*
+import pl.roseru.kalorie.core.sync.*
 
 class CalorieApplication : Application() {
-    val database by lazy { Room.databaseBuilder(this, CalorieDatabase::class.java, "calorie-diary.db").addMigrations(MIGRATION_1_2, MIGRATION_2_3, MIGRATION_3_4, MIGRATION_4_5, MIGRATION_5_6).addCallback(DATABASE_GUARDS).build() }
+    val database by lazy { Room.databaseBuilder(this, CalorieDatabase::class.java, "calorie-diary.db").addMigrations(MIGRATION_1_2, MIGRATION_2_3, MIGRATION_3_4, MIGRATION_4_5, MIGRATION_5_6, MIGRATION_6_7).addCallback(DATABASE_GUARDS).build() }
     // Legacy guest setup API. UI repositories always use the active, captured lease.
     val repository get() = DiaryRepository(database, this)
     val preferences by lazy { Preferences(this) }
@@ -18,7 +19,11 @@ class CalorieApplication : Application() {
             try { HttpsBootstrapGateway(it) } catch (_: Exception) { null }
         }, profileGateway = getString(R.string.api_base_url).takeIf { it.isNotEmpty() }?.let {
             try { HttpsProfileGateway(it) } catch (_: Exception) { null }
-        }) }
+        }, snapshotGateway = getString(R.string.api_base_url).takeIf { it.isNotEmpty() }?.let {
+            try { HttpsSnapshotGateway(it) } catch (_: Exception) { null }
+        }, snapshotProtocol = SnapshotProtocol(SyncWireSchema(SyncWireSchema.FILES.associateWith { file ->
+            assets.open("sync/$file").use { it.readBytes() }
+        }))) }
     override fun onCreate() {
         super.onCreate()
         sessionScope.launch { sessions.start() }

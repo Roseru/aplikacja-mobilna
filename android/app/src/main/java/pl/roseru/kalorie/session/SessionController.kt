@@ -15,6 +15,7 @@ import kotlinx.coroutines.Dispatchers
 import net.openid.appauth.*
 import org.json.JSONObject
 import pl.roseru.kalorie.core.*
+import pl.roseru.kalorie.core.sync.SnapshotProtocol
 import pl.roseru.kalorie.core.catalog.StrictJson
 import pl.roseru.kalorie.data.*
 import java.util.UUID
@@ -24,7 +25,8 @@ data class SessionView(val binding: SessionBinding? = null, val busy: Boolean = 
     val pendingLogin: Boolean = false, val configured: Boolean = false, val hasSession: Boolean = false,
     val message: String? = null, val apiConfigured: Boolean = false, val bootstrapBusy: Boolean = false,
     val serverLinked: Boolean = false, val requiresRecovery: Boolean = false,
-    val profileBusy: Boolean = false, val serverProfile: ProfileRead? = null)
+    val profileBusy: Boolean = false, val serverProfile: ProfileRead? = null,
+    val snapshotBusy: Boolean = false, val snapshot: SnapshotStatus? = null)
 
 /** Serializes durable decisions, not network waits. A callback/refresh is fenced by a captured
  * owner lease AND an operation ID, so logout and A→B→A cannot apply an old response.
@@ -33,13 +35,17 @@ class SessionController internal constructor(private val db: CalorieDatabase, pr
     private val gateway: OidcGateway, private val issuer: String, private val applicationId: String,
     private val now: () -> Long = System::currentTimeMillis,
     private val bootstrapGateway: BootstrapGateway? = null,
-    private val profileGateway: ProfileGateway? = null) {
+    private val profileGateway: ProfileGateway? = null,
+    private val snapshotGateway: SnapshotGateway? = null, snapshotProtocol: SnapshotProtocol? = null) {
     private val owners = LocalOwnerStore(db)
     private val mutex = Mutex()
     private var record = JSONObject()
     private var operation: String? = null
     private var bootstrapOperation: String? = null
     private var profileOperation: String? = null
+    private var snapshotOperation: String? = null
+    private val snapshots = snapshotProtocol?.let { ServerSnapshotStore(db, it) }
+    private val snapshotProtocol = snapshotProtocol
     private var serverProfile: ProfileRead? = null
     private var sessionRevision = 0L
     private val bootstraps = AccountBootstrapStore(db)
@@ -70,7 +76,8 @@ class SessionController internal constructor(private val db: CalorieDatabase, pr
         mutable.value = SessionView(current, configured = issuer.isNotEmpty(), pendingLogin = record.has("pending"), hasSession = fresh,
             message = message, apiConfigured = bootstrapGateway != null, bootstrapBusy = bootstrapOperation != null,
             serverLinked = server != null, requiresRecovery = server?.requiresRecovery == true,
-            profileBusy = profileOperation != null, serverProfile = serverProfile)
+            profileBusy = profileOperation != null, serverProfile = serverProfile,
+            snapshotBusy = snapshotOperation != null, snapshot = snapshots?.status(current.lease))
     }
     suspend fun start() = mutex.withLock {
         if (mutable.value.binding != null) return@withLock
@@ -112,9 +119,10 @@ class SessionController internal constructor(private val db: CalorieDatabase, pr
             val lease = owners.currentLease()
             bootstrapOperation = null
             profileOperation = null
+            snapshotOperation = null
             serverProfile = null
             operation = id
-            mutable.value = mutable.value.copy(busy = true, bootstrapBusy = false, profileBusy = false, serverProfile = null, message = null)
+            mutable.value = mutable.value.copy(busy = true, bootstrapBusy = false, profileBusy = false, snapshotBusy = false, snapshot = null, serverProfile = null, message = null)
             lease
         } } catch (error: CancellationException) { throw error }
         catch (_: Exception) { mutable.value = mutable.value.copy(message = "Logowanie jest niedostępne. Dziennik działa offline."); return null }
@@ -204,6 +212,7 @@ class SessionController internal constructor(private val db: CalorieDatabase, pr
         operation = null
         bootstrapOperation = null
         profileOperation = null
+        snapshotOperation = null
         serverProfile = null
         forget()
         mutable.value = mutable.value.copy(binding = null)
@@ -294,7 +303,7 @@ class SessionController internal constructor(private val db: CalorieDatabase, pr
         val id = UUID.randomUUID().toString()
         val lease = try { mutex.withLock {
             if (bootstrapOperation != null || operation != null || record.has("pending")) return
-            if (profileOperation != null) return
+            if (profileOperation != null || snapshotOperation != null) return
             val current = binding()
             if (current.owner.kind != "account" || sessionFor(current) == null) {
                 publish("Zaloguj się, aby połączyć konto z serwerem. Dziennik działa offline."); return
@@ -395,7 +404,7 @@ class SessionController internal constructor(private val db: CalorieDatabase, pr
         val gateway = profileGateway ?: return
         val id = UUID.randomUUID().toString()
         val capturedBinding = try { mutex.withLock {
-            if (profileOperation != null || bootstrapOperation != null || operation != null || record.has("pending")) return
+            if (profileOperation != null || snapshotOperation != null || bootstrapOperation != null || operation != null || record.has("pending")) return
             val current = binding()
             if (current.owner.kind != "account" || sessionFor(current) == null) {
                 publish("Zaloguj się, aby odczytać profil z serwera."); return
@@ -500,5 +509,109 @@ class SessionController internal constructor(private val db: CalorieDatabase, pr
             mutable.value = mutable.value.copy(profileBusy = false, serverProfile = null,
                 message = "Odczyt nie został potwierdzony. Dziennik pozostaje lokalny.")
         }
+    }
+
+    /** Full server archive. The local diary remains editable, and no queue entry is acknowledged. */
+    suspend fun downloadSnapshot() {
+        val transport = snapshotGateway ?: return
+        val store = snapshots ?: return
+        val protocol = snapshotProtocol ?: return
+        val id = UUID.randomUUID().toString()
+        val lease = try { mutex.withLock {
+            if (snapshotOperation != null || profileOperation != null || bootstrapOperation != null || operation != null || record.has("pending")) return
+            val current = binding()
+            if (current.owner.kind != "account" || sessionFor(current) == null || !mutable.value.serverLinked) {
+                publish("Zaloguj się i połącz konto, aby pobrać kopię serwera."); return
+            }
+            val retryAt = sessionFor(current)!!.optLong("apiRetryAt")
+            if (retryAt > now()) { publish("Serwer jest zajęty. Ponów za co najmniej ${(retryAt - now() + 999) / 1000} s."); return }
+            snapshotOperation = id
+            mutable.value = mutable.value.copy(snapshotBusy = true, message = null)
+            current.lease
+        } } catch (error: CancellationException) { throw error }
+        catch (_: Exception) { mutable.value = mutable.value.copy(message = "Pobieranie jest niedostępne. Dziennik zachowany."); return }
+        try {
+            val fresh = mutex.withLock {
+                owners.requireCurrent(lease)
+                val state = AuthState.jsonDeserialize(checkNotNull(sessionFor(binding())).getString("authState"))
+                (state.accessTokenExpirationTime ?: 0) > now() + 30_000
+            }
+            if (!fresh) check(refreshFor(lease))
+            var ticket = apiSession(lease)
+            var request = withApiSession(ticket) { check(snapshotOperation == id); store.begin(lease) }
+            var refreshed = false
+            while (true) {
+                val captured = ticket
+                val sent = request
+                suspend fun ready() { check(snapshotOperation == id); store.requireCurrent(sent) }
+                val result = transport.get(captured, sent.query) { withApiSession(captured) { ready() } }
+                if (result.status == 200) {
+                    val next = withApiSession(captured) {
+                        ready()
+                        store.apply(sent, result.body)
+                    }
+                    mutex.withLock {
+                        if (snapshotOperation == id) {
+                            requireApi(captured)
+                            if (next == null) snapshotOperation = null
+                            publish(if (next == null) "Kopia serwera pobrana. Lokalny dziennik i kolejka zachowane." else null)
+                        }
+                    }
+                    if (next == null) return
+                    request = next
+                    continue
+                }
+                val code = if (result.status in setOf(429, 503)) "" else protocol.errorCode(result.body)
+                withApiSession(captured) { ready() }
+                if (result.status == 401 && code == "unauthorized" && !refreshed) {
+                    refreshed = true
+                    check(refreshFor(lease))
+                    ticket = apiSession(lease)
+                    withApiSession(ticket) { ready() }
+                    continue
+                }
+                val message = withApiSession(captured) {
+                    ready()
+                    when {
+                        result.status in setOf(429, 503) -> {
+                            val seconds = BootstrapHttpProtocol.retrySeconds(result.retryAfter, now())
+                            val retryAt = Math.addExact(now(), Math.multiplyExact(seconds, 1000))
+                            val session = checkNotNull(sessionFor(binding()))
+                            persist(copyRecord().put("session", JSONObject(session.toString()).put("apiRetryAt", retryAt)))
+                            "Serwer jest zajęty. Ponów za co najmniej $seconds s; pobrane strony zachowane."
+                        }
+                        result.status == 403 && code == "account_deleting" -> {
+                            store.block(sent)
+                            "Konto jest usuwane. Pobieranie zostało zablokowane; dane lokalne zachowane."
+                        }
+                        result.status == 410 && code in setOf("snapshot_expired", "sync_cursor_expired") -> {
+                            store.expire(sent)
+                            "Próba pobrania wygasła. Ponów od początku; poprzednia kopia i dziennik zachowane."
+                        }
+                        result.status == 409 && code in setOf("sync_epoch_changed", "account_generation_changed", "sync_reconciliation_required") -> {
+                            store.invalidate(sent)
+                            "Stan serwera się zmienił. Połącz konto ponownie; wymagane uzgodnienie, dane zachowane."
+                        }
+                        result.status == 401 -> "Sesja wymaga ponownego logowania. Pobrane strony i dziennik zachowane."
+                        else -> "Pobieranie przerwane. Możesz je wznowić; dziennik zachowany."
+                    }
+                }
+                mutex.withLock {
+                    if (snapshotOperation == id) { owners.requireCurrent(lease); snapshotOperation = null; publish(message) }
+                }
+                return
+            }
+        } catch (error: CancellationException) {
+            withContext(NonCancellable) { finishSnapshot(id, lease) }; throw error
+        } catch (error: SnapshotCapacityException) {
+            finishSnapshot(id, lease, "Pamięć kopii serwera jest pełna. Dziennik zachowany; potrzebne uporządkowanie kopii.")
+        } catch (_: Exception) { finishSnapshot(id, lease) }
+    }
+    private suspend fun finishSnapshot(id: String, lease: OwnerLease,
+        message: String = "Pobieranie przerwane. Ponów, aby wznowić; pobrane strony i dziennik zachowane.") = mutex.withLock {
+        if (snapshotOperation != id) return@withLock
+        snapshotOperation = null
+        try { publish(if (owners.currentLease() == lease) message else null) }
+        catch (_: Exception) { mutable.value = mutable.value.copy(snapshotBusy = false, message = message) }
     }
 }

@@ -42,4 +42,26 @@ class ServerProfileScreenTest {
         compose.onNodeWithTag("server-profile-name").assertDoesNotExist()
         compose.onNodeWithTag("session-read-profile").assertDoesNotExist()
     }
+    @Test fun savedCopyAndProgressAreVisibleAndRecoveryAllowsFullRead() {
+        var calls = 0
+        val view = mutableStateOf(SessionView(binding = account, configured = true, apiConfigured = true, serverLinked = true,
+            requiresRecovery = true, snapshot = SnapshotStatus("2026-10-11T10:00:00Z", 42, 2, 10, 1, false)))
+        compose.setContent { CalorieTheme(true) { SessionScreen(view.value, SessionActions({}, {}, {}, {}, {}, {}, { calls++ }), {}) } }
+        compose.onNodeWithTag("snapshot-complete").performScrollTo().assertIsDisplayed()
+        compose.onNodeWithTag("snapshot-progress").performScrollTo().assertTextContains("Rekordy: 10", substring = true)
+        compose.onNodeWithTag("session-download-snapshot").performScrollTo().assertIsEnabled().performClick()
+        assertEquals(1, calls)
+        compose.runOnIdle { view.value = view.value.copy(snapshotBusy = true) }
+        compose.onNodeWithTag("session-download-snapshot").performScrollTo().assertIsNotEnabled()
+        compose.onNodeWithTag("session-bootstrap").performScrollTo().assertIsNotEnabled()
+        compose.onNodeWithTag("session-read-profile").performScrollTo().assertIsNotEnabled()
+    }
+    @Test fun deletionBlockDisablesDownloadAndGuestHasNoServerCopyCard() {
+        val view = mutableStateOf(SessionView(binding = account, configured = true, apiConfigured = true, serverLinked = true,
+            snapshot = SnapshotStatus(null, 0, 0, 0, 0, true)))
+        compose.setContent { CalorieTheme(true) { SessionScreen(view.value, SessionActions({}, {}, {}, {}, {}, {}), {}) } }
+        compose.onNodeWithTag("session-download-snapshot").performScrollTo().assertIsNotEnabled()
+        compose.runOnIdle { view.value = SessionView(binding = SessionBinding(LocalOwnerEntity("fixture-guest", "guest", "guest", null, null), OwnerLease("guest", 2))) }
+        compose.onNodeWithTag("session-download-snapshot").assertDoesNotExist()
+    }
 }
