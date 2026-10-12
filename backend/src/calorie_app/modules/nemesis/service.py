@@ -81,15 +81,9 @@ def mutate(
     if challenge_id is not None:
         payload["challenge_id"] = str(challenge_id)
         payload["revision"] = revision
-    if operation == "accept" and projection_initializer is None:
-        # A future production adapter is required in addition to the DB gate.
-        # Component probes supply it explicitly in their private app factory.
-        def require_adapter(session, response):
-            raise DomainError(503, "nemesis_projection_unavailable")
-
-        initializer = require_adapter
-    else:
-        initializer = projection_initializer if operation == "accept" else None
+    # Production accept is initialized inside DB lifecycle, including direct
+    # EXECUTE. An explicit test callback may inject failure after the DB seed.
+    initializer = projection_initializer if operation == "accept" else None
     return transact(
         engine,
         lambda session: repository.execute(

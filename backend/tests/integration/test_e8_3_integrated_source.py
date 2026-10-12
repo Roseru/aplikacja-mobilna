@@ -1,8 +1,9 @@
 """Integrated production sync, source guard, JWT and real transaction races.
 
 Uses create_app unchanged, real SCRAM API/operator logins and synthetic signed
-JWT/JWKS. Test-only migration fixtures prepare accepted history and may enable
-fake capability solely for a direct SQL accept race. They are not E8.4 proof.
+JWT/JWKS. Test-only migrator fixtures genuinely initialize synthetic accepted
+calendar history. Accept races use real operator activation. These historical
+fixtures do not count as E8.4 lifecycle accept proof; parent20 stays untouched.
 """
 
 import json
@@ -16,15 +17,17 @@ from uuid import UUID, uuid4
 import pytest
 from fastapi.testclient import TestClient
 from pydantic import SecretStr
-from sqlalchemy import create_engine, text
+from sqlalchemy import text
 
 from calorie_app.core.config import Settings
 from calorie_app.main import create_app
-from calorie_app.modules.analytics.motivation import repository as motivation_repository
 from calorie_app.modules.nemesis.source_guard import NemesisSourceProjection
 from calorie_app.modules.sync.schemas import validate_wire
+from tests.integration.test_e8_3_source_guard_pg import (
+    isolated_current_database,
+    isolated_deletion_operator,
+)
 from tests.support.e8_3_jwt import ISSUER, SignedTokens
-from tests.support.e8_3_postgres import PrivatePostgres
 
 pytestmark = pytest.mark.integration
 EXAMPLES = Path(__file__).resolve().parents[3] / "contracts/examples/valid"
@@ -42,31 +45,28 @@ def example(name):
 
 
 @pytest.fixture(scope="module")
-def integrated_db():
-    import os
-
-    private = PrivatePostgres.from_environment()
-    admin, api, migrator = (
-        private.engine("admin"),
-        private.engine("api"),
-        private.engine("migrator"),
-    )
-    raw = json.loads(
-        Path(os.environ["E8_3_PARENT_DELETION_CREDENTIALS"]).read_text(encoding="utf-8")
-    )
-    operator = create_engine(raw["operator_url"], hide_parameters=True)
-    with admin.connect() as c:
-        assert c.scalar(text("SELECT version_num FROM app.alembic_version")) == (
-            "0020_e8_nemesis_integration"
+def integrated_db(tmp_path_factory):
+    folder = tmp_path_factory.mktemp("integrated-source-current")
+    with isolated_current_database(folder) as private:
+        admin, api, migrator = (
+            private.engine("admin"),
+            private.engine("api"),
+            private.engine("migrator"),
         )
-        assert 170000 <= int(c.scalar(text("SHOW server_version_num"))) < 180000
-    for engine, role in ((api, "calorie_app_api"), (operator, "e8_3_parent_deletion_login")):
-        with engine.connect() as c:
-            assert c.scalar(text("SELECT current_user=session_user"))
-            assert c.scalar(text("SELECT session_user")) == role
-    yield admin, api, migrator, operator
-    for engine in (api, admin, migrator, operator):
-        engine.dispose()
+        with isolated_deletion_operator(private, folder) as operator:
+            with admin.connect() as c:
+                assert (
+                    c.scalar(text("SELECT version_num FROM app.alembic_version"))
+                    == "0021_e8_nemesis_results"
+                )
+                assert 170000 <= int(c.scalar(text("SHOW server_version_num"))) < 180000
+            for engine in (api, operator):
+                with engine.connect() as c:
+                    assert c.scalar(text("SELECT current_user=session_user"))
+                    assert c.scalar(text("SELECT session_user")) == engine.url.username
+            yield admin, api, migrator, operator
+        for engine in (api, admin, migrator):
+            engine.dispose()
 
 
 @pytest.fixture
@@ -201,7 +201,7 @@ def seed_challenge(rt, *, status="active", start=None):
             "a": rt["actors"]["a"]["owner"],
             "b": rt["actors"]["b"]["owner"],
             "epoch": rt["epoch"],
-            "status": status,
+            "status": "invited" if status == "invited" else "active",
             "terms": json.dumps(TERMS),
             "created": created,
             "expires": created + timedelta(hours=168),
@@ -236,6 +236,15 @@ def seed_challenge(rt, *, status="active", start=None):
                 ),
                 values,
             )
+            c.execute(text("SELECT app.e8n_initialize(:id,:q)"), {"id": identifier, "q": accepted})
+            if status == "finished":
+                c.execute(
+                    text(
+                        "UPDATE app.nemesis_challenges SET "
+                        "status='finished',revision=revision+1 WHERE id=:id"
+                    ),
+                    {"id": identifier},
+                )
             if status == "active":
                 for owner in sorted([values["a"], values["b"]]):
                     c.execute(
@@ -264,7 +273,7 @@ def snapshot(rt, name="a"):
         "motivation_badges",
     )
     with rt["admin"].connect() as c:
-        return {
+        result = {
             table: list(
                 c.scalars(
                     text(
@@ -276,6 +285,18 @@ def snapshot(rt, name="a"):
             )
             for table in tables
         }
+        for table in ("nemesis_projection_seeds", "nemesis_day_projections"):
+            result[table] = list(
+                c.scalars(
+                    text(
+                        f"SELECT to_jsonb(t)::text FROM app.{table} t JOIN "
+                        "app.nemesis_challenges c ON c.id=t.challenge_id "
+                        "WHERE :owner IN(c.inviter_id,c.invitee_id) ORDER BY to_jsonb(t)::text"
+                    ),
+                    {"owner": owner},
+                )
+            )
+        return result
 
 
 def meal_payload(day, zone="UTC"):
@@ -415,11 +436,11 @@ def test_goal_full_axis_locks_all_history_before_real_refresh(live, monkeypatch)
         seed_challenge(rt),
         seed_challenge(rt, status="finished", start=rt["start"] - timedelta(days=100)),
     ]
-    real_refresh = motivation_repository.refresh
+    real_refresh = NemesisSourceProjection.refresh
     checked = []
 
-    def before_refresh(session, owner, dates=None, batch=256):
-        assert dates is None
+    def before_refresh(self, session, context):
+        assert context.goal_axis_changed
         for identifier in sorted(ids):
             from sqlalchemy.exc import DBAPIError
 
@@ -430,9 +451,9 @@ def test_goal_full_axis_locks_all_history_before_real_refresh(live, monkeypatch)
                 )
             assert blocked.value.orig.sqlstate == "55P03"
         checked.append(True)
-        return real_refresh(session, owner, dates, batch)
+        return real_refresh(self, session, context)
 
-    monkeypatch.setattr(motivation_repository, "refresh", before_refresh)
+    monkeypatch.setattr(NemesisSourceProjection, "refresh", before_refresh)
     assert push(rt, "a", operation(rt, "goal"))["status"] == "accepted"
     assert checked == [True]
 
@@ -519,16 +540,16 @@ def wait_for_blocker(rt, blocker_pid):
 
 def hold_source(monkeypatch):
     entered, release, state = Event(), Event(), {}
-    real_refresh = motivation_repository.refresh
+    real_refresh = NemesisSourceProjection.refresh
 
-    def refresh(session, owner, dates=None, batch=256):
-        qualified = real_refresh(session, owner, dates, batch)
+    def refresh(self, session, context):
+        qualified = real_refresh(self, session, context)
         state["pid"] = session.scalar(text("SELECT pg_backend_pid()"))
         entered.set()
         assert release.wait(12), "source commit barrier was not released"
         return qualified
 
-    monkeypatch.setattr(motivation_repository, "refresh", refresh)
+    monkeypatch.setattr(NemesisSourceProjection, "refresh", refresh)
     return entered, release, state
 
 
@@ -589,19 +610,8 @@ def test_source_profile_commit_precedes_accept_axis_recheck(live, monkeypatch):
     rt = live
     challenge = seed_challenge(rt, status="invited")
     with rt["migrator"].begin() as c:
-        c.execute(
-            text(
-                "INSERT INTO app.nemesis_releases VALUES('test-projector','test-finalizer') "
-                "ON CONFLICT DO NOTHING"
-            )
-        )
-        c.execute(
-            text(
-                "UPDATE app.nemesis_control SET enabled=true,sync_epoch=:epoch,"
-                "projector_revision='test-projector',finalizer_revision='test-finalizer'"
-            ),
-            {"epoch": rt["epoch"]},
-        )
+        c.execute(text("SELECT app.e8n_activate(:epoch)"), {"epoch": rt["epoch"]})
+        assert c.scalar(text("SELECT app.e8n_gate()"))
     entered, release, state = hold_source(monkeypatch)
     op = operation(
         rt,
@@ -694,3 +704,42 @@ def test_deletion_committed_before_sync_blocks_old_receipt_replay_and_new_source
         assert response.status_code == 403 and response.json()["code"] == "account_deleting"
         assert "results" not in response.json()
     assert snapshot(rt) == before
+
+
+def test_legacy_without_initialization_preserves_metadata_cancel_but_never_acks_source(live):
+    rt = live
+    identifier = seed_challenge(rt)
+    with rt["migrator"].begin() as connection:
+        connection.execute(
+            text("DELETE FROM app.nemesis_day_projections WHERE challenge_id=:id"),
+            {"id": identifier},
+        )
+        connection.execute(
+            text("DELETE FROM app.nemesis_projection_seeds WHERE challenge_id=:id"),
+            {"id": identifier},
+        )
+        connection.execute(text("SELECT app.e8n_activate(:epoch)"), {"epoch": rt["epoch"]})
+    actor = rt["actors"]["a"]
+    headers = actor["headers"] | {"X-Sync-Epoch": str(rt["epoch"])}
+    metadata = rt["client"].get(f"/api/v1/nemesis/{identifier}", headers=headers)
+    assert metadata.status_code == 200 and metadata.json()["id"] == str(identifier)
+    response = rt["client"].get(f"/api/v1/nemesis/{identifier}/statistics", headers=headers)
+    assert (
+        response.status_code == 503 and response.json()["code"] == "nemesis_statistics_unavailable"
+    )
+    assert response.headers["cache-control"] == "no-store"
+    outsider = rt["client"].get(
+        f"/api/v1/nemesis/{identifier}/statistics",
+        headers=rt["actors"]["c"]["headers"] | {"X-Sync-Epoch": str(rt["epoch"])},
+    )
+    assert outsider.status_code == 404 and outsider.headers["cache-control"] == "no-store"
+    before = snapshot(rt)
+    denied = push_response(rt, "a", [operation(rt, "weight")])
+    assert denied.status_code == 503 and "results" not in denied.json()
+    assert snapshot(rt) == before
+    cancelled = rt["client"].post(
+        f"/api/v1/nemesis/{identifier}/cancel",
+        headers=headers | {"Idempotency-Key": str(uuid4()), "If-Match": '"1"'},
+        json={"reason": "sharing_revoked"},
+    )
+    assert cancelled.status_code == 200 and cancelled.json()["status"] == "cancelled"

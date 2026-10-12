@@ -1,21 +1,32 @@
-"""Real PostgreSQL source guards through the explicit, unmounted E8.3 seam."""
+"""Current real orchestrator regression on isolated PG21; frozen parent20 untouched."""
 
 import json
+import os
+import secrets
+import subprocess
+import sys
+from contextlib import contextmanager
 from dataclasses import replace
 from datetime import UTC, date, datetime, time, timedelta
+from pathlib import Path
 from uuid import uuid4
 
 import pytest
-from sqlalchemy import text
+from psycopg import sql
+from sqlalchemy import create_engine, text
+from sqlalchemy.engine import make_url
 from sqlalchemy.exc import DBAPIError
 from sqlalchemy.orm import Session
 
 from calorie_app.core.errors import DomainError
 from calorie_app.modules.analytics.motivation.context import SourceMutationContext
 from calorie_app.modules.analytics.motivation.service import source_mutated
+from calorie_app.modules.diary import service as diary_service
 from calorie_app.modules.nemesis.source_guard import NemesisSourceProjection, SourceProvenance
+from calorie_app.modules.profiles.models import Profile
 from calorie_app.modules.profiles.schemas import GoalPayload
 from calorie_app.modules.profiles.service import create_goal
+from calorie_app.modules.sync import repository as sync_repository
 from tests.support.e8_3_postgres import PrivatePostgres
 
 pytestmark = pytest.mark.integration
@@ -27,20 +38,138 @@ TERMS = {
 }
 
 
-@pytest.fixture(scope="module")
-def private_pg():
-    private = PrivatePostgres.from_environment()
-    admin, api = private.engine("admin"), private.engine("api")
-    with admin.connect() as c:
-        assert 170000 <= int(c.scalar(text("SHOW server_version_num"))) < 180000
-        assert c.scalar(text("SELECT version_num FROM app.alembic_version")) == (
-            "0020_e8_nemesis_integration"
-        )
-    with api.connect() as c:
-        assert c.scalar(text("SELECT session_user")) == "calorie_app_api"
-    yield admin, api
-    api.dispose()
-    admin.dispose()
+@contextmanager
+def isolated_current_database(folder):
+    """Own named DB21 on explicitly supplied source cluster; never migrate parent20."""
+    base = PrivatePostgres.from_environment()
+    name = "e8_3_current_" + uuid4().hex[:12] + "_test"
+    private = replace(
+        base,
+        **{
+            field: make_url(getattr(base, field))
+            .set(database=name)
+            .render_as_string(hide_password=False)
+            for field in base.__dataclass_fields__
+        },
+    )
+    admin = base.engine("admin")
+    with admin.begin() as c:
+        role = c.execute(
+            text(
+                "SELECT "
+                "rolcanlogin,rolinherit,rolsuper,rolcreatedb,rolcreaterole,"
+                "rolreplication,rolbypassrls FROM pg_roles "
+                "WHERE rolname='calorie_app_nemesis_finalizer'"
+            )
+        ).one_or_none()
+        if role is None:
+            c.execute(
+                text(
+                    "CREATE ROLE calorie_app_nemesis_finalizer NOLOGIN NOINHERIT NOSUPERUSER "
+                    "NOCREATEDB NOCREATEROLE"
+                )
+            )
+        else:
+            assert role == (False, False, False, False, False, False, False)
+    with admin.connect().execution_options(isolation_level="AUTOCOMMIT") as c:
+        raw = c.connection.driver_connection
+        for statement in (
+            sql.SQL("CREATE DATABASE {} OWNER calorie_app_migrator").format(sql.Identifier(name)),
+            sql.SQL("REVOKE ALL ON DATABASE {} FROM PUBLIC").format(sql.Identifier(name)),
+            sql.SQL(
+                "GRANT CONNECT ON DATABASE {} TO "
+                "calorie_app_api,calorie_app_worker,e8_3_nemesis_worker_login"
+            ).format(sql.Identifier(name)),
+        ):
+            c.exec_driver_sql(statement.as_string(raw))
+    migrator = private.engine()
+    try:
+        with migrator.begin() as c:
+            c.execute(text("CREATE SCHEMA app AUTHORIZATION calorie_app_migrator"))
+            c.execute(text("GRANT USAGE ON SCHEMA app TO calorie_app_api,calorie_app_worker"))
+            c.execute(
+                text(
+                    "ALTER DEFAULT PRIVILEGES IN SCHEMA app GRANT SELECT,INSERT,UPDATE,DELETE "
+                    "ON TABLES TO calorie_app_api,calorie_app_worker"
+                )
+            )
+        private.migrate("0021_e8_nemesis_results")
+        yield private
+    finally:
+        migrator.dispose()
+        with admin.connect().execution_options(isolation_level="AUTOCOMMIT") as c:
+            c.exec_driver_sql(
+                sql.SQL("DROP DATABASE {} WITH (FORCE)")
+                .format(sql.Identifier(name))
+                .as_string(c.connection.driver_connection)
+            )
+        with admin.connect() as c:
+            assert (
+                c.scalar(text("SELECT version_num FROM app.alembic_version"))
+                == "0020_e8_nemesis_integration"
+            )
+        admin.dispose()
+
+
+@contextmanager
+def isolated_deletion_operator(private, folder):
+    """Actual hardened CLI provisions one random SCRAM LOGIN bound to this DB."""
+    admin = make_url(private.admin_url)
+    login, password = "e8_3_current_delete_" + uuid4().hex[:12], secrets.token_urlsafe(40)
+    env = {key: value for key, value in os.environ.items() if not key.startswith("PG")}
+    env.update(
+        PGHOST=admin.host,
+        PGPORT=str(admin.port),
+        PGDATABASE=admin.database,
+        PGUSER=admin.username,
+        PGPASSWORD=admin.password,
+        DELETION_OPERATOR_LOGIN=login,
+        DELETION_OPERATOR_PASSWORD=password,
+    )
+    script = Path(__file__).resolve().parents[3] / "infra/local/provision_deletion_operator.py"
+    result = subprocess.run(
+        [sys.executable, str(script)], env=env, capture_output=True, text=True, timeout=30
+    )
+    if result.returncode:
+        raise RuntimeError("owned current-source deletion provision failed")
+    file = Path(folder) / "current-deletion.private.json"
+    url = admin.set(username=login, password=password).render_as_string(hide_password=False)
+    file.write_text(json.dumps({"operator_url": url}), encoding="utf-8")
+    file.chmod(0o600)
+    engine = create_engine(url, hide_parameters=True)
+    try:
+        with engine.connect() as c:
+            assert c.scalar(text("SELECT session_user")) == login
+            assert c.scalar(text("SELECT current_user=session_user"))
+        yield engine
+    finally:
+        engine.dispose()
+        owner = private.engine("admin")
+        with owner.begin() as c:
+            raw = c.connection.driver_connection
+            c.exec_driver_sql(
+                sql.SQL("DROP OWNED BY {}").format(sql.Identifier(login)).as_string(raw)
+            )
+            c.exec_driver_sql(sql.SQL("DROP ROLE {}").format(sql.Identifier(login)).as_string(raw))
+        owner.dispose()
+        file.unlink()
+
+
+@pytest.fixture
+def private_pg(tmp_path):
+    with isolated_current_database(tmp_path) as private:
+        admin, api = private.engine("admin"), private.engine("api")
+        with admin.connect() as c:
+            assert 170000 <= int(c.scalar(text("SHOW server_version_num"))) < 180000
+            assert (
+                c.scalar(text("SELECT version_num FROM app.alembic_version"))
+                == "0021_e8_nemesis_results"
+            )
+        with api.connect() as c:
+            assert c.scalar(text("SELECT session_user")) == "calorie_app_api"
+        yield admin, api
+        api.dispose()
+        admin.dispose()
 
 
 def add_challenge(c, owners, epoch, start, *, status="active"):
@@ -59,7 +188,7 @@ def add_challenge(c, owners, epoch, start, *, status="active"):
             "a": owners[0],
             "b": owners[1],
             "epoch": epoch,
-            "status": status,
+            "status": "active",
             "terms": json.dumps(TERMS),
             "created": start_at - timedelta(days=2),
             "expires": start_at + timedelta(days=5),
@@ -71,6 +200,18 @@ def add_challenge(c, owners, epoch, start, *, status="active"):
             "deadline": end_at + timedelta(days=30),
         },
     )
+    c.execute(
+        text("SELECT app.e8n_initialize(:id,:q)"),
+        {"id": identifier, "q": start_at - timedelta(hours=12)},
+    )
+    if status == "finished":
+        c.execute(
+            text(
+                "UPDATE app.nemesis_challenges SET status='finished',revision=revision+1 WHERE "
+                "id=:id"
+            ),
+            {"id": identifier},
+        )
     if status == "active":
         for owner in sorted(owners):
             c.execute(
@@ -112,45 +253,7 @@ def source_accounts(private_pg):
         "start": start,
         "challenge": challenge,
     }
-    # Target only this fixture's accounts, never truncate a shared history.
-    with admin.begin() as c:
-        values = {"owners": list(owners)}
-        for table in (
-            "nemesis_slots",
-            "nemesis_receipts",
-            "nemesis_admissions",
-            "nemesis_share_codes",
-            "nemesis_cursors",
-        ):
-            column = "requester_id" if table == "nemesis_cursors" else "owner_id"
-            c.execute(text(f"DELETE FROM app.{table} WHERE {column}=ANY(:owners)"), values)
-        c.execute(
-            text(
-                "DELETE FROM app.nemesis_challenges WHERE "
-                "inviter_id=ANY(:owners) OR invitee_id=ANY(:owners)"
-            ),
-            values,
-        )
-        for table in (
-            "motivation_badges",
-            "motivation_days",
-            "motivation_accounts",
-            "ranking_affirmations",
-            "online_receipts",
-            "user_consents",
-            "sync_receipts",
-            "sync_changes",
-            "weights",
-            "meal_items",
-            "meals",
-            "diary_days",
-            "goal_versions",
-            "goal_timelines",
-            "user_profiles",
-            "sync_counters",
-        ):
-            c.execute(text(f"DELETE FROM app.{table} WHERE owner_id=ANY(:owners)"), values)
-        c.execute(text("DELETE FROM app.user_accounts WHERE id=ANY(:owners)"), values)
+    # The following private_pg teardown drops only this test's named database.
 
 
 def context(fixture, kind="meal", **changes):
@@ -171,6 +274,73 @@ def context(fixture, kind="meal", **changes):
     )
 
 
+def append_source_context(session, fixture, kind, entity_id, *, old_dates=(), old_revision=None):
+    counter = sync_repository.lock_counter(session, fixture["owners"][0])
+    before = counter.position
+    value = sync_repository.entity(session, fixture["owners"][0], kind, entity_id)
+    sync_repository.append_change(session, counter, value)
+    row = sync_repository.owned(session, fixture["owners"][0], kind, entity_id)
+    day = () if kind == "profile" else (row.effective_from if kind == "goal" else row.local_date,)
+    return SourceMutationContext(
+        owner_id=fixture["owners"][0],
+        source_kind=kind,
+        entity_id=entity_id,
+        old_dates=old_dates,
+        new_dates=day,
+        old_revision=old_revision,
+        new_revision=row.revision,
+        source_position_before=before,
+        source_position=counter.position,
+        goal_axis_changed=kind == "goal",
+        goal_axis_revision_before=row.timeline_revision - 1 if kind == "goal" else None,
+        goal_axis_revision=row.timeline_revision if kind == "goal" else None,
+    )
+
+
+def produce_context(session, fixture, kind="meal", *, day=None):
+    """The production domain writer and source serializer produce genuine rows."""
+    owner = fixture["owners"][0]
+    identifier = uuid4()
+    day = day or fixture["start"] + timedelta(days=1)
+    examples = Path(__file__).resolve().parents[3] / "contracts/examples/valid"
+    filename = "diary-day" if kind == "diary_day" else kind
+    payload = json.loads((examples / (filename + ".json")).read_text())
+    old_revision = None
+    if kind == "profile":
+        row = session.query(Profile).filter_by(owner_id=owner).one()
+        identifier = row.id
+        old_revision = row.revision
+        row.pseudonym = "Edited fixture"
+        row.revision += 1
+        session.flush()
+    elif kind == "goal":
+        payload.update(
+            effective_from=day.isoformat(),
+            decided_at=datetime.combine(day, time(12), UTC).isoformat().replace("+00:00", "Z"),
+            time_zone="UTC",
+        )
+        payload["timeline_base_revision"] = (
+            session.scalar(
+                text("SELECT revision FROM app.goal_timelines WHERE owner_id=:owner"),
+                {"owner": owner},
+            )
+            or 0
+        )
+        create_goal(
+            session, owner, identifier, GoalPayload.model_validate(payload), expected_generation=1
+        )
+    else:
+        payload.update(local_date=day.isoformat(), time_zone="UTC")
+        if kind != "diary_day":
+            payload["occurred_at"] = (
+                datetime.combine(day, time(12), UTC).isoformat().replace("+00:00", "Z")
+            )
+        getattr(diary_service, "save_" + kind)(
+            session, owner, identifier, payload, expected_generation=1
+        )
+    return append_source_context(session, fixture, kind, identifier, old_revision=old_revision)
+
+
 def projection(fixture):
     return NemesisSourceProjection(SourceProvenance(fixture["owners"][0], 1, fixture["epoch"]))
 
@@ -187,8 +357,9 @@ def insert_day(session, fixture, day, zone="UTC"):
 @pytest.mark.parametrize("kind", ["profile", "meal", "diary_day", "weight", "goal"])
 def test_actual_seam_qualifies_and_never_mutates_shared_context(source_accounts, kind):
     f = source_accounts
-    ctx, extension = context(f, kind), projection(f)
+    extension = projection(f)
     with Session(f["api"]) as session, session.begin():
+        ctx = produce_context(session, f, kind)
         qualified = source_mutated(session, ctx, (extension,))
         assert qualified.qualified_at is not None and qualified.qualified_at.tzinfo is not None
         assert extension.plan.challenges[0].id == f["challenge"]
@@ -250,7 +421,7 @@ def test_zone_on_unrelated_date_does_not_block_meal(source_accounts):
     f = source_accounts
     with Session(f["api"]) as session, session.begin():
         insert_day(session, f, f["start"] - timedelta(days=30), "Europe/Warsaw")
-        qualified = source_mutated(session, context(f), (projection(f),))
+        qualified = source_mutated(session, produce_context(session, f), (projection(f),))
         assert qualified.qualified_at is not None
 
 
@@ -268,7 +439,7 @@ def test_weight_discovery_ignores_source_local_dates_and_zone(source_accounts):
             VALUES(:id,:owner,1,80,:occurred,:day,'Pacific/Honolulu')"""),
             {"id": entity, "owner": f["owners"][0], "occurred": occurred, "day": local_day},
         )
-        ctx = context(f, "weight", entity_id=entity, old_dates=(), new_dates=(local_day,))
+        ctx = append_source_context(session, f, "weight", entity)
         extension = projection(f)
         qualified = source_mutated(session, ctx, (extension,))
         assert qualified.qualified_at is not None
@@ -291,7 +462,7 @@ def test_full_goal_axis_and_weight_discover_sorted_finished_history(source_accou
             extension = projection(f)
             qualified = source_mutated(
                 session,
-                context(f, kind, old_dates=(date(2000, 1, 1),), new_dates=(date(2000, 1, 2),)),
+                produce_context(session, f, kind, day=date(2000, 1, 2)),
                 (extension,),
             )
             assert qualified.qualified_at is not None
@@ -322,7 +493,15 @@ def test_stale_context_fail_closed_before_qualification(source_accounts, stale):
 def test_apply_failure_rolls_source_motivation_change_and_receipt_back(source_accounts):
     f = source_accounts
     entity, operation = uuid4(), uuid4()
-    ctx = context(f, "weight", entity_id=entity, old_dates=(), new_dates=(f["start"],))
+    ctx = context(
+        f,
+        "weight",
+        entity_id=entity,
+        old_dates=(),
+        new_dates=(f["start"],),
+        old_revision=None,
+        new_revision=1,
+    )
 
     class FailAfterGuard(NemesisSourceProjection):
         def apply(self, session, qualified):
@@ -361,7 +540,12 @@ def test_apply_failure_rolls_source_motivation_change_and_receipt_back(source_ac
                     "INSERT INTO app.sync_changes(owner_id,position,entity) "
                     "VALUES(:owner,1,CAST(:entity AS jsonb))"
                 ),
-                {"owner": f["owners"][0], "entity": json.dumps({"id": str(entity)})},
+                {
+                    "owner": f["owners"][0],
+                    "entity": json.dumps(
+                        {"entity_id": str(entity), "entity_type": "weight", "revision": 1}
+                    ),
+                },
             )
             session.execute(
                 text("""INSERT INTO app.sync_receipts
@@ -450,17 +634,7 @@ def test_historical_goal_zone_is_preserved_and_full_axis_qualified(source_accoun
         extension = projection(f)
         qualified = source_mutated(
             session,
-            context(
-                f,
-                "goal",
-                entity_id=entity,
-                old_dates=(),
-                new_dates=(date(2000, 1, 1),),
-                old_revision=None,
-                new_revision=1,
-                goal_axis_revision_before=0,
-                goal_axis_revision=goal.timeline_revision,
-            ),
+            append_source_context(session, f, "goal", entity),
             (extension,),
         )
         assert qualified.qualified_at is not None
@@ -498,7 +672,15 @@ def test_profile_change_after_end_preserves_historical_period(source_accounts):
             {"owner": f["owners"][0]},
         )
         extension = projection(f)
-        qualified = source_mutated(session, context(f, "profile"), (extension,))
+        profile_id = session.scalar(
+            text("SELECT id FROM app.user_profiles WHERE owner_id=:owner"),
+            {"owner": f["owners"][0]},
+        )
+        qualified = source_mutated(
+            session,
+            append_source_context(session, f, "profile", profile_id, old_revision=1),
+            (extension,),
+        )
         assert qualified.qualified_at is not None
         assert [row.id for row in extension.plan.challenges] == [ended]
     with f["admin"].connect() as c:
@@ -513,8 +695,6 @@ def test_profile_change_after_end_preserves_historical_period(source_accounts):
 
 
 def test_source_locks_held_before_qualification_and_through_commit(source_accounts, monkeypatch):
-    from calorie_app.modules.analytics.motivation import repository
-
     f = source_accounts
     with f["admin"].begin() as c:
         finished = [
@@ -523,7 +703,7 @@ def test_source_locks_held_before_qualification_and_through_commit(source_accoun
         ]
     expected = sorted([f["challenge"], *finished])
     extension = projection(f)
-    real_refresh = repository.refresh
+    real_refresh = NemesisSourceProjection.refresh
 
     def assert_all_locked():
         assert [row.id for row in extension.plan.challenges] == expected
@@ -535,13 +715,13 @@ def test_source_locks_held_before_qualification_and_through_commit(source_accoun
                 )
             assert blocked.value.orig.sqlstate == "55P03"
 
-    def refresh_after_complete_lock(session, owner, dates=None, batch=256):
+    def refresh_after_complete_lock(self, session, context):
         assert_all_locked()
-        return real_refresh(session, owner, dates, batch)
+        return real_refresh(self, session, context)
 
-    monkeypatch.setattr(repository, "refresh", refresh_after_complete_lock)
+    monkeypatch.setattr(NemesisSourceProjection, "refresh", refresh_after_complete_lock)
     with Session(f["api"]) as session, session.begin():
-        qualified = source_mutated(session, context(f, "goal"), (extension,))
+        qualified = source_mutated(session, produce_context(session, f, "goal"), (extension,))
         assert qualified.qualified_at is not None
         assert_all_locked()
     with f["admin"].begin() as c:
@@ -557,12 +737,11 @@ def test_source_locks_held_before_qualification_and_through_commit(source_accoun
 
 def test_apply_after_source_savepoint_rollback_is_fail_closed(source_accounts):
     f = source_accounts
-    ctx, extension = context(f), projection(f)
+    extension = projection(f)
     with Session(f["api"]) as session, session.begin():
         with session.begin_nested() as savepoint:
-            extension.lock(session, ctx)
-            qualified = replace(ctx, qualified_at=session.scalar(text("SELECT clock_timestamp()")))
-            extension.apply(session, qualified)
+            ctx = produce_context(session, f)
+            qualified = source_mutated(session, ctx, (extension,))
             savepoint.rollback()
         with pytest.raises(DomainError) as refused:
             extension.apply(session, qualified)

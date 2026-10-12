@@ -17,6 +17,7 @@ class PrivateSession:
         self.savepoint = None
         self.rows = rows or []
         self.calls = []
+        self.q = datetime(2026, 10, 12, tzinfo=UTC)
 
     def get_transaction(self):
         return self.transaction
@@ -29,7 +30,7 @@ class PrivateSession:
 
     def scalar(self, statement, values):
         self.calls.append((str(statement), values))
-        return self.rows
+        return self.q if "app.e8n_source_refresh" in str(statement) else self.rows
 
 
 def source(owner=None, **changes):
@@ -97,9 +98,9 @@ def test_lock_is_one_query_and_preserves_both_dates():
     assert p.plan.challenges[0].end_date == date(2026, 10, 18)
     with pytest.raises(FrozenInstanceError):
         p.plan.challenges[0].time_zone = "UTC"
-    qualified = replace(context, qualified_at=datetime.now(UTC))
+    qualified = replace(context, qualified_at=p.refresh(session, context))
     p.apply(session, qualified)
-    assert len(session.calls) == 2  # Apply never adds SQL, flush or commit.
+    assert len(session.calls) == 3  # One orchestrator; apply never adds SQL or commit.
     assert context.qualified_at is None
 
 
@@ -110,7 +111,7 @@ def test_supported_sources_have_same_single_lock_phase(kind):
     p.lock(session, context)
     assert session.calls[1][1]["kind"] == kind
     assert session.calls[1][1]["goal_axis_changed"] == (kind == "goal")
-    p.apply(session, replace(context, qualified_at=datetime.now(UTC)))
+    p.apply(session, replace(context, qualified_at=p.refresh(session, context)))
 
 
 @pytest.mark.parametrize(
@@ -200,10 +201,26 @@ def test_apply_rejects_ended_or_replaced_source_savepoint():
     p, session = projection(context), PrivateSession()
     session.savepoint = object()
     p.lock(session, context)
-    qualified = replace(context, qualified_at=datetime.now(UTC))
+    qualified = replace(context, qualified_at=p.refresh(session, context))
     p.apply(session, qualified)
     for replacement in (None, object()):
         session.savepoint = replacement
         with pytest.raises(DomainError):
             p.apply(session, qualified)
-    assert len(session.calls) == 2
+    assert len(session.calls) == 3
+
+
+def test_apply_requires_exact_orchestrator_q_and_refresh_cannot_repeat():
+    context = source()
+    p, session = projection(context), PrivateSession()
+    p.lock(session, context)
+    with pytest.raises(DomainError):
+        p.apply(session, replace(context, qualified_at=session.q))
+    q = p.refresh(session, context)
+    with pytest.raises(DomainError):
+        p.refresh(session, context)
+    with pytest.raises(DomainError):
+        p.apply(session, replace(context, qualified_at=q.replace(year=2025)))
+    p.apply(session, replace(context, qualified_at=q))
+    assert len(session.calls) == 3
+    assert "app.e8n_source_refresh" in session.calls[-1][0]
