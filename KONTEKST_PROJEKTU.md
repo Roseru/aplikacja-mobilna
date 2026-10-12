@@ -1,5 +1,12 @@
 # Kontekst współpracy
 
+## Kontynuacja O1 — osiągnięcia0.8.5, 12 października2026
+
+- Agent1/O1, codex/android-osiagniecia-local, source62779d2, code16/Room8; lokalny podgląd4odznak z całej historii, bez serwerowego potwierdzenia/rankingu. Wygląd Postępów zaakceptowany przez właściciela i zachowany. Raport android/RAPORT_0_8_5.md zawiera granice, testy i syntetyczne PNG.
+- 115JVM/117device PASS, lint0error/4warning/1info; pierwszy błąd sygnaturyJUnit naprawiony przed finalnym117/117. Rzeczywista aktualizacja/launch zachowały wszystkie stare kolumny22tabel/5posiłków/FK; nowa kolumna starych składników NULL. APK577b98a74e659e7b6cd2ed7b5c7d4cb22409216f2115255b1325a15d74d0364d pozaGit, app otwarta na Osiągnięciach. Bez clear/uninstall i bez publikacji prywatnego dziennika.
+- PR38 scalony c300 po8success exactffc3027/CI38215019078. Następny main7654640 dołączony zwykłym merge; Android identyczny z przetestowanym62779d2. Odczyt O2-024/026 i PR37/E8.3-I/PR39: router0020 podłączony, publiczne nowe zaproszenia/akceptacja/statystyki nadal gated doE8.4. Wyników O2/O3 nie przypisujemy O1.
+- Następne: osobny prywatny odczyt motywacji z rewizją/aktualnością/statusami i ochroną lease/generation/epoch; potem ranking za świadomą zgodą oraz Nemesis po odebranym E8.4. Dalszy E4 pozostaje konieczny do potwierdzenia lokalnego dziennika. Komunikacja wyłącznie docs/KOMUNIKACJA_AGENTOW.md/O1-020.
+
 ## Kontynuacja O1 — analityka0.8.4, 12 października 2026
 
 - Agent1/O1: codex/android-analityka-wyglad, wersja0.8.4/code15/Room7, nowy wygląd Postępów i dostępny układ320dp/font150%; obliczenia oraz zapis niezmienione. Raport android/RAPORT_0_8_4.md ma podglądy syntetyczne i scenariusze manualne. App została otwarta do testów właściciela.
