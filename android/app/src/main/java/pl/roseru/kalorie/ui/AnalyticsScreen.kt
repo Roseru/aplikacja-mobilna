@@ -10,6 +10,9 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.outlined.KeyboardArrowLeft
 import androidx.compose.material.icons.automirrored.outlined.KeyboardArrowRight
 import androidx.compose.material.icons.outlined.CloudOff
+import androidx.compose.material.icons.outlined.CheckCircle
+import androidx.compose.material.icons.outlined.LocalFireDepartment
+import androidx.compose.material.icons.outlined.MonitorWeight
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.runtime.saveable.rememberSaveable
@@ -17,8 +20,12 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.Size
+import androidx.compose.ui.geometry.CornerRadius
+import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.PathEffect
 import androidx.compose.ui.graphics.drawscope.Stroke
+import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.semantics
@@ -45,39 +52,48 @@ private fun FieldAggregate.label(unit: String) = (if (complete) "" else "≥ ") 
     val window by model.analyticsWindow.collectAsStateWithLifecycle()
     val today by model.currentDay.collectAsStateWithLifecycle()
     val result by model.analytics.collectAsStateWithLifecycle()
-    var metric by rememberSaveable { mutableIntStateOf(0) }
     val current = result?.takeIf { it.window == window }
+    AnalyticsContent(window, today, current, model::setAnalyticsPeriod, model::moveAnalyticsWindow, model::analyticsToday, onDay)
+}
+
+@Composable internal fun AnalyticsContent(window: AnalyticsWindow, today: LocalDate, current: AnalyticsResult?,
+    onPeriod: (AnalyticsPeriod) -> Unit, onMove: (Int) -> Unit, onToday: () -> Unit, onDay: (LocalDate) -> Unit) {
+    var metric by rememberSaveable { mutableIntStateOf(0) }
     LazyColumn(Modifier.fillMaxSize().testTag("analytics-content"), contentPadding = PaddingValues(20.dp),
         verticalArrangement = Arrangement.spacedBy(16.dp)) {
         item {
+            Text("TWÓJ RAPORT", style = MaterialTheme.typography.labelMedium, color = MaterialTheme.colorScheme.primary)
             Text("Postępy", style = MaterialTheme.typography.headlineLarge, fontWeight = FontWeight.Bold)
-            Text("Twoje spożycie, cele i pomiary wagi", color = MaterialTheme.colorScheme.onSurfaceVariant)
+            Text("Kalorie, regularność i masa ciała", color = MaterialTheme.colorScheme.onSurfaceVariant)
         }
         item {
-            Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                AnalyticsPeriod.entries.forEach { period ->
-                    FilterChip(selected = window.period == period, onClick = { model.setAnalyticsPeriod(period) },
-                        label = { Text("${period.days} dni") }, modifier = Modifier.weight(1f).testTag("period-${period.days}"))
+            Surface(shape = RoundedCornerShape(20.dp), color = MaterialTheme.colorScheme.surface) {
+                Column(Modifier.padding(12.dp)) {
+                    Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                        AnalyticsPeriod.entries.forEach { period ->
+                            FilterChip(selected = window.period == period, onClick = { onPeriod(period) },
+                                label = { Text("${period.days} dni") }, modifier = Modifier.weight(1f).testTag("period-${period.days}"))
+                        }
+                    }
+                    Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
+                        IconButton(onClick = { onMove(-1) }, modifier = Modifier.testTag("analytics-previous")) {
+                            Icon(Icons.AutoMirrored.Outlined.KeyboardArrowLeft, "Poprzedni okres")
+                        }
+                        Text("${window.start.format(fullDate)} – ${window.end.format(fullDate)}", style = MaterialTheme.typography.labelLarge,
+                            modifier = Modifier.weight(1f).testTag("analytics-range"), textAlign = androidx.compose.ui.text.style.TextAlign.Center)
+                        IconButton(onClick = { onMove(1) }, enabled = window.end < today) {
+                            Icon(Icons.AutoMirrored.Outlined.KeyboardArrowRight, "Następny okres")
+                        }
+                    }
+                    if (window.end < today) TextButton(onClick = onToday) { Text("Do dzisiaj") }
                 }
             }
-            Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.SpaceBetween) {
-                IconButton(onClick = { model.moveAnalyticsWindow(-1) }, modifier = Modifier.testTag("analytics-previous")) {
-                    Icon(Icons.AutoMirrored.Outlined.KeyboardArrowLeft, "Poprzedni okres")
-                }
-                Text("${window.start.format(fullDate)} – ${window.end.format(fullDate)}", style = MaterialTheme.typography.labelLarge,
-                    modifier = Modifier.testTag("analytics-range"))
-                IconButton(onClick = { model.moveAnalyticsWindow(1) }, enabled = window.end < today) {
-                    Icon(Icons.AutoMirrored.Outlined.KeyboardArrowRight, "Następny okres")
-                }
-            }
-            if (window.end < today) TextButton(onClick = model::analyticsToday) { Text("Do dzisiaj") }
         }
         item {
-            Surface(color = MaterialTheme.colorScheme.surfaceVariant, shape = RoundedCornerShape(14.dp)) {
-                Row(Modifier.padding(14.dp), horizontalArrangement = Arrangement.spacedBy(10.dp)) {
-                    Icon(Icons.Outlined.CloudOff, null)
-                    Text("Dane z tego urządzenia · synchronizacja jeszcze nie jest podłączona.", style = MaterialTheme.typography.bodySmall)
-                }
+            Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp), verticalAlignment = Alignment.CenterVertically) {
+                Icon(Icons.Outlined.CloudOff, null, tint = MaterialTheme.colorScheme.onSurfaceVariant, modifier = Modifier.size(18.dp))
+                Text("Lokalny raport · obejmuje dziennik na tym urządzeniu", style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant)
             }
         }
         if (current == null) {
@@ -97,33 +113,67 @@ private fun FieldAggregate.label(unit: String) = (if (complete) "" else "≥ ") 
 }
 
 @Composable private fun PeriodSummary(result: AnalyticsResult) {
+    val colors = MaterialTheme.colorScheme
+    val energy = result.averages[0]
+    Column(Modifier.fillMaxWidth()) {
     Card(modifier = Modifier.testTag("analytics-loaded-${result.window.end}-${result.window.period.days}"),
-        shape = RoundedCornerShape(20.dp), colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface)) {
-        Column(Modifier.padding(18.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
-            Text("Podsumowanie okresu", style = MaterialTheme.typography.titleMedium)
-            Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
-                SummaryValue("Kompletne dni", "${result.completeDays} / ${result.window.period.days}", Modifier.weight(1f).testTag("complete-days"))
-                SummaryValue("Dni w celu", "${result.daysInGoal} / ${result.daysWithGoal}", Modifier.weight(1f).testTag("days-in-goal"))
+        shape = RoundedCornerShape(24.dp), colors = CardDefaults.cardColors(containerColor = colors.primaryContainer)) {
+        Column(Modifier.fillMaxWidth().padding(22.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
+            Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                Icon(Icons.Outlined.LocalFireDepartment, null, tint = colors.onPrimaryContainer)
+                Text("ŚREDNIE SPOŻYCIE", style = MaterialTheme.typography.labelLarge, color = colors.onPrimaryContainer)
             }
-            val energy = result.averages[0]
-            SummaryValue("Średnie spożycie", energy.value?.let { "${it.display(0)} kcal" } ?: "Brak kompletnych dni",
-                Modifier.testTag("average-kcal"))
-            Text("Średnia z ${energy.dayCount} kompletnych dni. Wpisy: ${result.daysWithEntries} / ${result.window.period.days} dni.",
-                style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
-            Text("Dzień w celu: kompletny dziennik i ±10% celu obowiązującego tego dnia. Bez celu nie oceniamy wyniku.",
-                style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
-            Text("Średnie i liczniki obejmują zamknięte dni. Dzisiejszy wynik jest wstępny.",
-                style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+            Text(energy.value?.let { "${it.display(0)} kcal" } ?: "Brak kompletnych dni",
+                style = if (energy.value == null) MaterialTheme.typography.headlineSmall else MaterialTheme.typography.displaySmall,
+                fontWeight = FontWeight.Bold, color = colors.onPrimaryContainer, modifier = Modifier.testTag("average-kcal"))
+            Text("Z ${energy.dayCount} zamkniętych, kompletnych dni", style = MaterialTheme.typography.bodyMedium, color = colors.onPrimaryContainer)
+            HorizontalDivider(color = colors.onPrimaryContainer.copy(alpha = .18f))
+            Text("Wpisy: ${result.daysWithEntries} / ${result.window.period.days} dni. Dzisiejszy wynik jest wstępny.",
+                style = MaterialTheme.typography.bodySmall, color = colors.onPrimaryContainer)
+        }
+    }
+    Spacer(Modifier.height(12.dp))
+    val cards: @Composable () -> Unit = {
+        ProgressSummary("Kompletne dni", "${result.completeDays} / ${result.window.period.days}",
+            result.completeDays.toFloat() / result.window.period.days, Icons.Outlined.CheckCircle, "complete-days")
+        ProgressSummary("Dni w celu", "${result.daysInGoal} / ${result.daysWithGoal}",
+            if (result.daysWithGoal == 0) null else result.daysInGoal.toFloat() / result.daysWithGoal,
+            Icons.Outlined.LocalFireDepartment, "days-in-goal")
+    }
+    // A vertical layout leaves space for enlarged system text and narrow phones.
+    BoxWithConstraints(Modifier.fillMaxWidth()) {
+        if (maxWidth < 340.dp || LocalDensity.current.fontScale > 1.3f) {
+            Column(verticalArrangement = Arrangement.spacedBy(12.dp)) { cards() }
+        } else {
+            Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
+                Box(Modifier.weight(1f)) { ProgressSummary("Kompletne dni", "${result.completeDays} / ${result.window.period.days}",
+                    result.completeDays.toFloat() / result.window.period.days, Icons.Outlined.CheckCircle, "complete-days") }
+                Box(Modifier.weight(1f)) { ProgressSummary("Dni w celu", "${result.daysInGoal} / ${result.daysWithGoal}",
+                    if (result.daysWithGoal == 0) null else result.daysInGoal.toFloat() / result.daysWithGoal,
+                    Icons.Outlined.LocalFireDepartment, "days-in-goal") }
+            }
+        }
+    }
+    Text("W celu = ±10% celu obowiązującego danego dnia. Oceniamy zamknięte, kompletne dni z ustawionym celem.",
+        modifier = Modifier.padding(top = 10.dp), style = MaterialTheme.typography.bodySmall, color = colors.onSurfaceVariant)
+    }
+}
+@Composable private fun ProgressSummary(label: String, value: String, fraction: Float?, icon: ImageVector, tag: String) {
+    Card(Modifier.fillMaxWidth().testTag(tag).semantics(mergeDescendants = true) {}, shape = RoundedCornerShape(20.dp),
+        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface)) {
+        Column(Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
+            Icon(icon, null, tint = MaterialTheme.colorScheme.primary, modifier = Modifier.size(20.dp))
+            Text(label, style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+            Text(value, style = MaterialTheme.typography.headlineSmall, fontWeight = FontWeight.Bold)
+            if (fraction == null) Text("Brak dni do oceny", style = MaterialTheme.typography.labelSmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant)
+            else LinearProgressIndicator(progress = { fraction }, modifier = Modifier.fillMaxWidth().height(6.dp),
+                color = MaterialTheme.colorScheme.primary, trackColor = MaterialTheme.colorScheme.surfaceVariant)
         }
     }
 }
-@Composable private fun SummaryValue(label: String, value: String, modifier: Modifier = Modifier) {
-    Column(modifier.semantics(mergeDescendants = true) {}) {
-        Text(label, style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
-        Text(value, style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.SemiBold)
-    }
-}
 
+@OptIn(ExperimentalLayoutApi::class)
 @Composable private fun NutritionChartCard(result: AnalyticsResult, metric: Int, onMetric: (Int) -> Unit) {
     val unit = if (metric == 0) "kcal" else "g"
     val primary = MaterialTheme.colorScheme.primary
@@ -135,19 +185,23 @@ private fun FieldAggregate.label(unit: String) = (if (complete) "" else "≥ ") 
     Card(shape = RoundedCornerShape(20.dp), colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface)) {
         Column(Modifier.padding(18.dp), verticalArrangement = Arrangement.spacedBy(10.dp)) {
             SectionTitle("${metricLabels[metric]} w kolejnych dniach")
-            Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+            FlowRow(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                 metricChips.forEachIndexed { index, label -> FilterChip(selected = metric == index, onClick = { onMetric(index) },
-                    label = { Text(label) }, modifier = Modifier.testTag("metric-$index")) }
+                    label = { Text(label) }, modifier = Modifier.testTag("metric-$index").semantics { contentDescription = metricLabels[index] }) }
             }
             Text("Średnia: ${average.value?.let { it.display(if (metric == 0) 0 else 1) + " $unit" } ?: "brak danych"} · ${average.dayCount} dni",
                 style = MaterialTheme.typography.bodyMedium, modifier = Modifier.testTag("metric-average"))
             Text("Skala: 0 – ${BigDecimal.valueOf(maximum).display(if (metric == 0) 0 else 1)} $unit", style = MaterialTheme.typography.labelSmall)
-            Canvas(Modifier.fillMaxWidth().height(140.dp).testTag("nutrition-chart").semantics {
+            Canvas(Modifier.fillMaxWidth().height(170.dp).testTag("nutrition-chart").semantics {
                 contentDescription = "Wykres: ${metricLabels[metric]}. Szczegółowe wartości i braki w historii dni poniżej."
             }) {
                 val bottom = size.height - 5.dp.toPx()
                 val step = size.width / result.days.size
                 val barWidth = (step * .6f).coerceAtLeast(1f)
+                for (level in 1..3) {
+                    val y = bottom * level / 4
+                    drawLine(outline.copy(alpha = .18f), Offset(0f, y), Offset(size.width, y), 1.dp.toPx())
+                }
                 drawLine(outline, Offset(0f, bottom), Offset(size.width, bottom), 1.dp.toPx())
                 result.days.forEachIndexed { index, day ->
                     val x = step * (index + .5f)
@@ -157,13 +211,15 @@ private fun FieldAggregate.label(unit: String) = (if (complete) "" else "≥ ") 
                     } else {
                         val height = (field.knownSum.toDouble() / maximum * (bottom - 4.dp.toPx())).toFloat()
                         if (height <= .5f) {
-                            drawLine(if (field.complete && day.status == AnalyticsDayStatus.COMPLETE) primary else muted,
+                            drawLine(if (field.complete && day.closed && day.status == AnalyticsDayStatus.COMPLETE) primary else muted,
                                 Offset(x - barWidth / 2, bottom - 2.dp.toPx()), Offset(x + barWidth / 2, bottom - 2.dp.toPx()), 2.dp.toPx())
                         } else {
                             val position = Offset(x - barWidth / 2, bottom - height)
                             val dimensions = Size(barWidth, height)
-                            if (field.complete && day.status == AnalyticsDayStatus.COMPLETE) drawRect(primary, position, dimensions)
-                            else drawRect(muted, position, dimensions, style = Stroke(width = 1.dp.toPx()))
+                            val corner = CornerRadius(minOf(barWidth / 2, 3.dp.toPx()), minOf(height / 2, 3.dp.toPx()))
+                            if (field.complete && day.closed && day.status == AnalyticsDayStatus.COMPLETE)
+                                drawRoundRect(Brush.verticalGradient(listOf(primary.copy(alpha = .7f), primary)), position, dimensions, corner)
+                            else drawRoundRect(muted, position, dimensions, corner, style = Stroke(width = 1.dp.toPx()))
                         }
                     }
                     if (metric == 0 && day.goal != null) {
@@ -174,7 +230,7 @@ private fun FieldAggregate.label(unit: String) = (if (complete) "" else "≥ ") 
                 }
             }
             ChartDates(result.window)
-            Text("Pełny słupek: kompletny dzień. Obrys: wpisy niepełne. Kropka: brak wpisów." +
+            Text("Pełny słupek: zamknięty, kompletny dzień. Obrys: wpisy niepełne lub wynik wstępny. Kropka: brak wpisów." +
                 if (metric == 0) " Kreskowana linia: cel dnia." else "",
                 style = MaterialTheme.typography.bodySmall, color = muted)
             Text("Średnia obejmuje wyłącznie kompletne dni ze znaną wartością wybranego składnika.",
@@ -192,24 +248,33 @@ private fun FieldAggregate.label(unit: String) = (if (complete) "" else "≥ ") 
     val padding = maxOf(.5, (high - low) * .1)
     Card(shape = RoundedCornerShape(20.dp), colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface)) {
         Column(Modifier.padding(18.dp), verticalArrangement = Arrangement.spacedBy(10.dp)) {
-            SectionTitle("Masa ciała")
+            Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                Icon(Icons.Outlined.MonitorWeight, null, tint = primary)
+                SectionTitle("Masa ciała")
+            }
             Text("${result.weightCount} pomiarów · ${points.size} dni z pomiarem", modifier = Modifier.testTag("weight-count"))
             val change = result.weightChange
             Text(if (change == null) "Do zmiany masy potrzeba pomiarów z dwóch dni." else
                 "Zmiana: ${if (change > BigDecimal.ZERO) "+" else ""}${change.display()} kg · ${points.first().second.date.format(shortDate)} – ${points.last().second.date.format(shortDate)}",
-                modifier = Modifier.testTag("weight-change"), style = MaterialTheme.typography.bodyMedium)
+                modifier = Modifier.testTag("weight-change"), style = if (change == null) MaterialTheme.typography.bodyMedium else MaterialTheme.typography.titleLarge,
+                fontWeight = if (change == null) FontWeight.Normal else FontWeight.SemiBold)
             if (points.isEmpty()) Text("Brak pomiarów w wybranym okresie.", color = MaterialTheme.colorScheme.onSurfaceVariant)
             else {
                 Text("Skala: ${BigDecimal.valueOf(low - padding).display()} – ${BigDecimal.valueOf(high + padding).display()} kg",
                     style = MaterialTheme.typography.labelSmall)
-                Canvas(Modifier.fillMaxWidth().height(120.dp).testTag("weight-chart").semantics {
+                Canvas(Modifier.fillMaxWidth().height(150.dp).testTag("weight-chart").semantics {
                     contentDescription = "Wykres rzeczywistych pomiarów wagi: ${points.size} dni. Bez uzupełniania brakujących pomiarów."
                 }) {
                     val bottom = size.height - 6.dp.toPx()
+                    for (level in 1..3) {
+                        val y = bottom * level / 4
+                        drawLine(outline.copy(alpha = .18f), Offset(0f, y), Offset(size.width, y), 1.dp.toPx())
+                    }
                     drawLine(outline, Offset(0f, bottom), Offset(size.width, bottom), 1.dp.toPx())
                     points.forEach { (index, point) ->
                         val x = size.width * (index + .5f) / result.days.size
                         val y = bottom - ((point.kg.toDouble() - low + padding) / (high - low + 2 * padding) * (bottom - 6.dp.toPx())).toFloat()
+                        drawCircle(primary.copy(alpha = .14f), 8.dp.toPx(), Offset(x, y))
                         drawCircle(primary, 4.dp.toPx(), Offset(x, y))
                     }
                 }
@@ -231,7 +296,7 @@ private fun FieldAggregate.label(unit: String) = (if (complete) "" else "≥ ") 
     Card(Modifier.fillMaxWidth().testTag("history-${day.date}").clickable(onClickLabel = "Otwórz dziennik ${day.date.format(fullDate)}") { onDay(day.date) },
         shape = RoundedCornerShape(16.dp), colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface)) {
         Column(Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(6.dp)) {
-            Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
+            Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
                 Text(day.date.format(fullDate), fontWeight = FontWeight.SemiBold)
                 Text(if (day.closed) day.status.label else "Wynik wstępny", style = MaterialTheme.typography.labelMedium)
             }
