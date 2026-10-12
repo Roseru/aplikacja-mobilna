@@ -8,6 +8,7 @@ from collections.abc import Iterable
 from dataclasses import dataclass
 from datetime import date, datetime, timedelta
 from decimal import ROUND_HALF_UP, Decimal, localcontext
+from fractions import Fraction
 
 from calorie_app.modules.analytics.motivation.rules import day_candidate_points
 from calorie_app.modules.nemesis.schemas import canonical_percent
@@ -60,9 +61,8 @@ def _utc(value: datetime) -> None:
 
 
 def _precision(values: Iterable[Decimal]) -> int:
-    # Decimal source scales and all denominators contribute to the bound. For
-    # finite decimal inputs this exceeds the denominator-product precision of
-    # the <=90 daily ratios, including cancellation close to a rounding tie.
+    # Decimal precision for the unchanged first/last weight ratio. The mean
+    # deficit uses exact fractions so recurring daily ratios cannot bias a tie.
     return max(
         80,
         50 + sum(len(value.as_tuple().digits) + abs(value.as_tuple().exponent) for value in values),
@@ -72,6 +72,16 @@ def _precision(values: Iterable[Decimal]) -> int:
 def _rounded_percent(value: Decimal) -> str:
     rounded = value.quantize(Decimal("0.000000000001"), rounding=ROUND_HALF_UP)
     return canonical_percent(rounded)
+
+
+def _rounded_fraction_percent(value: Fraction) -> str:
+    """Round the exact aggregate once, HALF_UP, without a Decimal context."""
+    units, remainder = divmod(abs(value.numerator) * 10**12, value.denominator)
+    units += int(2 * remainder >= value.denominator)
+    if units == 0:
+        return "0"
+    digits = Decimal(units).as_tuple().digits
+    return canonical_percent(Decimal((int(value.numerator < 0), digits, -12)))
 
 
 def aggregate_projection_days(
@@ -134,20 +144,16 @@ def aggregate_projection_days(
         if not eligible:
             deficit = {"state": "insufficient_data", "value": None, "eligible_days": 0}
         else:
-            with localcontext() as context:
-                context.prec = _precision(
-                    value
+            total = sum(
+                (
+                    100
+                    * (Fraction(fact.maintenance_kcal) - Fraction(fact.intake_kcal))
+                    / Fraction(fact.maintenance_kcal)
                     for fact in eligible
-                    for value in (fact.intake_kcal, fact.maintenance_kcal)
-                )
-                total = sum(
-                    (
-                        100 * (fact.maintenance_kcal - fact.intake_kcal) / fact.maintenance_kcal
-                        for fact in eligible
-                    ),
-                    Decimal(0),
-                )
-                value = _rounded_percent(total / len(eligible))
+                ),
+                Fraction(),
+            )
+            value = _rounded_fraction_percent(total / len(eligible))
             deficit = {"state": "available", "value": value, "eligible_days": len(eligible)}
     return {"regularity": regularity, "weight_change": weight, "mean_deficit": deficit}
 

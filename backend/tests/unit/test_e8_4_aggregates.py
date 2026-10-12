@@ -295,3 +295,33 @@ def test_known_zero_incomplete_intake_is_not_deficit_data():
     }
     with pytest.raises(ValueError, match="positive_intake"):
         replace(days[0], effective_complete=True, candidate_points=1)
+
+
+@pytest.mark.parametrize(
+    "intakes,expected",
+    [
+        (["1800", "1800", "4500", "2699.999999999946"], "0.000000000001"),
+        (["3600", "3600", "900", "2700.000000000054"], "-0.000000000001"),
+    ],
+    ids=["positive", "negative"],
+)
+@pytest.mark.parametrize("order", [(0, 1, 2, 3), (3, 2, 1, 0)], ids=["forward", "reverse"])
+def test_exact_mean_half_tie_after_recurring_daily_percent_cancellation(intakes, expected, order):
+    # The first three daily thirds cancel exactly. The fourth contributes
+    # +/-2e-12%, so the four-day mean is exactly +/-0.5e-12%.
+    # Three valid empty dates stay excluded rather than diluting that mean.
+    days = seed()
+    for index, source in enumerate(order):
+        days[index] = fact(days[index], intake=intakes[source], maintenance="2700", in_goal=False)
+    result = aggregate(days)
+    assert result["mean_deficit"] == {
+        "state": "available",
+        "value": expected,
+        "eligible_days": 4,
+    }
+    assert result["regularity"] == {
+        "points": 4,
+        "closed_days": 7,
+        "complete_days": 4,
+        "days_in_goal": 0,
+    }
