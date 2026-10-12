@@ -139,3 +139,57 @@ def test_bootstrap_calls_hardened_provision_and_binds_operator_to_source(monkeyp
         ("rm", "--force", "audit-container"),
         ("rm", "--force", "source-container"),
     ]
+
+
+def test_operator_provision_discards_inherited_libpq_defaults(monkeypatch, tmp_path):
+    inherited = {
+        "PGSERVICE": "other-owned-database",
+        "PGSERVICEFILE": str(tmp_path / "other-owned-service.conf"),
+        "PGHOSTADDR": "192.0.2.1",
+        "PGOPTIONS": "-c search_path=untrusted",
+        "PGPASSFILE": str(tmp_path / "other-owned-passwords"),
+        "PGDATABASE": "other_owned_test",
+        "PGUSER": "other_login",
+        "PGPASSWORD": "inherited-secret",
+    }
+    for key, value in inherited.items():
+        monkeypatch.setenv(key, value)
+    monkeypatch.setenv("E8_3_KEEP_PARENT_SETTING", "preserved")
+    source = URL.create(
+        "postgresql+psycopg",
+        username="source_admin",
+        password="source-secret",
+        host="127.0.0.1",
+        port=55483,
+        database="source_owned_test",
+    )
+    calls = []
+
+    def provision(arguments, **kwargs):
+        calls.append((arguments, kwargs["env"]))
+        return SimpleNamespace(returncode=0)
+
+    monkeypatch.setattr(bootstrap.subprocess, "run", provision)
+    result = bootstrap.provision_operator(
+        SimpleNamespace(admin_url=source.render_as_string(hide_password=False)), tmp_path
+    )
+    arguments, environment = calls[0]
+    assert {key: value for key, value in environment.items() if key.startswith("PG")} == {
+        "PGHOST": "127.0.0.1",
+        "PGPORT": "55483",
+        "PGDATABASE": "source_owned_test",
+        "PGUSER": "source_admin",
+        "PGPASSWORD": "source-secret",
+    }
+    assert environment["E8_3_KEEP_PARENT_SETTING"] == "preserved"
+    assert all(os.environ[key] == value for key, value in inherited.items())
+    assert "source-secret" not in " ".join(arguments)
+    assert "inherited-secret" not in " ".join(arguments)
+    from sqlalchemy.engine import make_url
+
+    generated = make_url(json.loads(Path(result).read_text())["operator_url"])
+    assert (generated.host, generated.port, generated.database) == (
+        source.host,
+        source.port,
+        source.database,
+    )

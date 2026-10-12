@@ -117,7 +117,10 @@ def provision_operator(private, folder):
     """The same hardened real SCRAM provision used by CI and reviewer proofs."""
     admin = make_url(private.admin_url)
     login, password = "e8_3_parent_deletion_login", secrets.token_urlsafe(40)
-    environment = os.environ.copy()
+    # libpq also reads service files, hostaddr, options and other PG* defaults.
+    # The child must use only the trusted source connection, regardless of the
+    # caller's environment. Preserve non-libpq settings without changing parent ENV.
+    environment = {key: value for key, value in os.environ.items() if not key.startswith("PG")}
     environment.update(
         {
             "PGHOST": admin.host,
