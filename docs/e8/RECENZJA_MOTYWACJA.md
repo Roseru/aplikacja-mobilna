@@ -1,78 +1,52 @@
 # Recenzja motywacji E8.1 + E8.2 - osoba 2
 
-12 października 2026. **Aktualny odbiór jest otwarty: potwierdzony P2 purge COMMIT na 5c36c9e.** Poprzednia ocena 9,3/10 i poniższe 44 przypadki są historycznymi dowodami wcześniejszego snapshotu; nie stanowią akceptacji nowej 0017. Dwaj dodatkowi nieautorzy koordynatora odtworzyli minimalny real SCRAM deletion LOGIN z żywym Meal/MealItems i 42501 dopiero przy COMMIT (także na 0015). Wcześniejszy zakres nie wykrył tej ścieżki. [Zapis blockera](https://github.com/Roseru/aplikacja-mobilna/pull/35#issuecomment-6115507635). Nowa niezależna ocena zostanie zapisana po wykonaniu nowych oracles na nowym frozen source. [PR35](https://github.com/Roseru/aplikacja-mobilna/pull/35) jest draftem; autor nie scala.
+12 października 2026. **Nowy niezależny odbiór: 9,3/10, zero otwartych P1/P2.** Własny realny SCRAM LOGIN i actual COMMIT potwierdzają zamknięcie P2 purge. Werdykt: backend E8.1+E8.2 gotowy do odbioru koordynatora po ośmiu kontrolach końcowego head/base. [PR35](https://github.com/Roseru/aplikacja-mobilna/pull/35) pozostaje niescalony; autor nie scala. O1 APK/Room i wdrożenie O3 są osobne.
 
-Nieautor nie implementował tej dostawy ani testów autora. Wykonał własny managed checkout, własne zamrożone źródło, PG17, SCRAM LOGIN i procesy CLI; nie edytował runtime/testów autora ani nie publikował commitów/PR. Autor zapisał przekazany wynik w tym dokumencie. [Recenzja mastera](RECENZJA_MASTER_MOTYWACJA.md) i odbiór seam nie są tym odbiorem runtime.
+Nieautor nie implementował runtime/testów/migracji autora. Wykonał nowy własny managed checkout, locked environment, PG17/SCRAM/process oraz nowe prywatne oracles. Nie edytował dokumentów autora, nie publikował commitów/PR/commentów. Autor przeniósł przekazany wynik do tego dokumentu. Poprzedni odbiór 9,3/44 probes/1041 PG na 44986a5–5c36c9e był historyczny; nie zamykał nowego [P2](https://github.com/Roseru/aplikacja-mobilna/pull/35#issuecomment-6115507635).
 
-## Źródło i tożsamość dowodów
+## Exact source i manifesty
 
-- Exact tested source: `44986a5986c778d0dd3f7529db155197940bb73b`.
-- Nieautor potwierdził pusty executable diff backend/contracts/infra/tools/.github do head `3080de5a7e0d1c0c6a09cb56b36db2a811f2b2d2`, base `e93e38e02fed9663217b9036e5831cbc934e1baf`. Następny końcowy commit zmienia wyłącznie raport/recenzję, dziennik i literówkę polecenia O3; jego exact-head CI będzie odczytane osobno.
-- Manifest źródła: 695 plików, normalized SHA-256 `b1f8d21b40bfea575fc65d05305d6760555cf1039084f732b4addad3db1fe697`.
-- Manifest własnych probes: 7 plików, SHA-256 `6b879990ffd40697a9d5eddf10504c15c3ce21a60468289e973ed965e0277ccd`.
-- Prywatny wynik `INDEPENDENT_REVIEW_RESULT.json`: SHA-256 `d6b26c5eae9f22e5cc04e722cf91ab4c2af7ca150488bd4a12c12477bb7b9f57`. Harness, syntetyczne dumpy, credentials, logi i prywatne ścieżki nie trafiają do Git.
+- Tested source: `b2c6709e95796ab2c10a63493b78635664ea4f9e`, base `e93e38e02fed9663217b9036e5831cbc934e1baf`, branch `codex/backend-e8-motywacja-ranking`.
+- Manifest po właściwym pełnym PG: 699 plików, SHA-256 `ac0f956c8ed0f236150d6db023ff4d3814bd8f39d22304bf6895f4a0f260fc6e`, clean checkout.
+- Manifest 3 nowych probes: SHA-256 `41e94c38d3881c93820d8c52fef7e66b6c5cd7e33eb0f22714c7f3cde04f532d`.
+- Prywatny `INDEPENDENT_PURGE_COMMIT_RESULT.json`: SHA-256 `1c0b1ea35272341e3e251e667b9f5d8b5a8f31a6fab103d57a3aa2b94e136873`. Basename i hash identyfikują dowód; prywatne ścieżki, harness, dumpy, credentials i logi nie trafiają do Git.
+- 28 opublikowanych plików migracji 0001–0016 porównano byte-for-byte do 5c36c9e: identyczne. Nowa 0017 jest zamrożona; końcowe raporty zmieniają wyłącznie dokumentację, bez ponownej zmiany code/interface.
 
-## Historyczne faktycznie wykonane kontrole wcześniejszego nieautora
+## Faktycznie wykonane nowe kontrole
 
-Własne **1370 unit PASS** (77,42 s), **1041 pełne PG PASS** (1126,44 s) oraz **44 unikalne własne oracles PASS**, bez skips. Nie sumujemy powtórek ani zachodzących testów autora. E0: 8 schematów/95 valid/35 invalid/18 scenariuszy/426 linków; Ruff z root i backend cwd, format 251 plików, diff check PASS. Wheel/sdist: 139 dokładnych plików pakietu, 7 dokładnych zasobów migracji, 38 locked runtime dependencies i installed `python -I` PASS.
+**1370 unit PASS**, 74,63 s; **1059 pełne PG17 PASS**, 1139,16 s, zero failures/errors/skips. **18 nowych unikalnych własnych oracles PASS**; osobno 18 dostarczonych scenariuszy PASS/53,22 s, które są również w pełnym 1059. Nie sumujemy zakresów i powtórek ani nie dodajemy historycznych 44.
 
-Niezależne artefakty: wheel SHA-256 `6b9d2e9931d6664e57f2d1f1fdcdafecbcaa9994ac504128e8de47c1d4e5f6b6`; sdist `32ab16c160990993c4cfb7228bbd07aa159e8e8b4f1c24a5adf75d52886b3f49`. Hash artefaktu z oddzielnego builda może różnić się od autora; nieautor sprawdził zawartość względem zamrożonego source.
+Mandatory Ruff/format 281/diff PASS. E0: 8 schematów/95 valid/35 invalid/18 scenariuszy/435 linków. Wheel/sdist: 139 dokładnych plików pakietu, 8 dokładnych zasobów E8, 37 locked runtime dependencies plus project (38), czyste installed `python -I` i head 0017 PASS. Niezależny wheel SHA-256 `a4378ea5925a2173c5d739e9f946169e086c035327cfe8d88c5721ec2cb28bef`; sdist `23a57f3e4ef30d8c245c1a154341f6aa44562c5bbed8533b830ab0e0a613490d`. Oddzielny build ma własny hash; zawartość sprawdzono względem exact source.
 
-Własne probes obejmują niezależne granice Decimal, nowe strefy/civil dates, korekty branched heads, ponad 10037 celów, rollback po rzeczywistej projekcji, alternatywne witness i legacy racje, effective column/PUBLIC ACL, dwa procesy przez midnight, barierę lockowania, 2000 dat historii z zapisem za checkpointem, actual dump/restore, zgodność legacy hash, ranking 10137 z remisami/głęboką kontynuacją/quota/opt-out/epoch/purge oraz realne API-role E5 7/30/90 bez sztucznego DiaryDay.
+## Zamknięcie P2 i nowe adversarial oracles
 
-## Zamknięte uwagi
+Na fresh 0015 i 0016 minimalny realny LOGIN SCRAM wywoływał canonical purge, który wracał, lecz actual COMMIT dawał 42501 diary_aggregate_count i cofał wszystkie app rows. Upgrade 0017 zachował raw checker metadata poza prosecdef; actual COMMIT i fresh 0017 przeszły. Nie dodano SELECT źródeł albo EXECUTE checkera operatorowi. Powtórny resume/status/CLI był idempotentny, fence i partner/cursor privacy zachowane.
 
-1. P2: świeża afirmacja przyjęta przed restore backfill ginęła podczas resetu projekcji. Własny RED na 8d57178; własny API-role GREEN na 6606cf1, ten kod niezmieniony w 44986a5. Nowa operacja uzgadnia epokę przed markerem, rollback pozostaje atomowy. Legacy/replay/energy-only nie regrantują publikacji.
-2. P2: puste minione daty E5 miały closed=false. Własny real API LOGIN/SCRAM RED na 6606cf1; GREEN na 44986a5 dla 7/30/90. No_data/null i źródłowe facts zachowane; odczyt nie tworzy pochodnych lub DiaryDay.
-3. Naprawy jakości i pięciu historycznych fixtures zostały sprawdzone w nowym pełnym 1041 PG. Nie osłabiono source guards ani nonempty downgrade. Wcześniejsze porażki własnego harnessu (TEMP/SQL/env/keycloak/password) zostały naprawione wyłącznie w środowisku nieautora; nie są liczone jako PASS.
+Nowe własne przypadki sprawdzają żywy confirmed job i pełny graf przed downgrade 16, oraz legalny legacy/E7 graf przed downgrade 15: naprawa i realny CLI retry pozostają. Pełne E8 evidence nadal blokuje głębszy downgrade 15 atomowo, bez discard. Mixed unrelated TEMP constraints zachowują caller modes i moment odmowy; explicit diary IMMEDIATE odmawia 23514 i cofa graf, a świeży default retry przechodzi. 0 i diagnostyczne 102 elements odmawiają przy actual COMMIT; 100 przechodzi. Zewnętrzny position CHECK nadal odmawia standardowej 101/102 przed COMMIT; transactional diagnostic izoluje checker i odtwarza CHECK po rollback.
 
-Własny główny PG oraz izolowane serwery testów E4 zatrzymane; CLI children zakończone i odebrane, tymczasowe restore DB usunięte, review checkout czysty. Nieautor nie wykonywał produkcji, Gemini, billing ani automatyzacji. [Raport](RAPORT_MOTYWACJA.md) podaje dowody autora, ograniczenia fixture i osobne CI.
+Extra proconfig, brak item trigger, nie-INITIALLY-DEFERRED trigger, EXECUTE dla nieznanej roli oraz invoker przed downgrade odmawiają 23514 atomowo. Hardened LOGIN ma INHERIT i tylko base membership bez ADMIN, nie ma raw source access. Poprawki własnego harnessu (ancestor config, keyword-only call, błędne oczekiwanie NOINHERIT LOGIN, packaging cwd/yaml environment) nie są PASS i nie zmieniały źródeł autora.
 
-## Identyfikatory 44 własnych przypadków
+Wszystkie własne usługi zatrzymane: PG15683 i izolowane postmastery nie pozostają, CLI children odebrane, zero pozostałych case DB/loginów. Autor również zatrzymał swoje środowisko. Nieautor nie korzystał z produkcji/usług autora, Google/billing lub automatyzacji. [Raport](RAPORT_MOTYWACJA.md) rozdziela dowody autora, ograniczenia danych i CI. Dwa osobne [odbiory granicy koordynatora](https://github.com/Roseru/aplikacja-mobilna/pull/35#issuecomment-6115913896) 9,3/9,4 zwalniają zależny etap E8.3, bez zastępowania niniejszego pełnego odbioru.
+
+## Identyfikatory 18 nowych własnych przypadków
 
 ```text
-test_independent.py::test_independent_inclusive_decimal_and_max2[180-True-2]
-test_independent.py::test_independent_inclusive_decimal_and_max2[220-True-2]
-test_independent.py::test_independent_inclusive_decimal_and_max2[179.999999-True-1]
-test_independent.py::test_independent_inclusive_decimal_and_max2[220.000001-True-1]
-test_independent.py::test_independent_inclusive_decimal_and_max2[0-True-0]
-test_independent.py::test_independent_inclusive_decimal_and_max2[None-True-0]
-test_independent.py::test_independent_inclusive_decimal_and_max2[200-False-0]
-test_independent.py::test_independent_sql_decimal_reverse_density[7.999997-123.000001-0.019999]
-test_independent.py::test_independent_sql_decimal_reverse_density[9999.999999-999999.999999-999999.999999]
-test_independent.py::test_independent_sql_decimal_reverse_density[0.000001-0.000001-0.000001]
-test_independent.py::test_independent_new_civil_time_oracles[1994-12-30-Pacific/Kiritimati-1994-12-31T10:00:00+00:00]
-test_independent.py::test_independent_new_civil_time_oracles[1985-12-31-Asia/Kathmandu-1985-12-31T18:30:00+00:00]
-test_independent.py::test_independent_new_civil_time_oracles[2024-04-06-Australia/Lord_Howe-2024-04-06T13:00:00+00:00]
-test_independent.py::test_independent_new_civil_time_oracles[2024-10-06-Australia/Lord_Howe-2024-10-06T13:00:00+00:00]
-test_independent.py::test_independent_new_civil_time_oracles[2010-03-13-America/Santiago-2010-03-14T03:00:00+00:00]
-test_independent.py::test_independent_sql_contract_date_edges[UTC]
-test_independent.py::test_independent_sql_contract_date_edges[Pacific/Kiritimati]
-test_independent.py::test_independent_sql_contract_date_edges[America/Adak]
-test_independent.py::test_independent_correction_branches_do_not_revive_original
-test_independent.py::test_independent_goals_10037_accept_write_no_cap
-test_independent.py::test_independent_hook_failure_after_real_projection_rolls_back
-test_independent.py::test_independent_closed_weight_witness_alternative_and_distinct[False]
-test_independent.py::test_independent_closed_weight_witness_alternative_and_distinct[True]
-test_independent.py::test_independent_legacy_ration_no_provenance_still_ordinary_points[None]
-test_independent.py::test_independent_legacy_ration_no_provenance_still_ordinary_points[1]
-test_runtime.py::test_own_scram_cli_effective_column_public_denials
-test_runtime.py::test_own_midnight_pending_two_scram_processes_no_new_sync
-test_runtime.py::test_own_account_lock_barrier_worker_observes_committed_correction
-test_runtime.py::test_own_large_history_bounded_resume_concurrent_behind_checkpoint
-test_runtime.py::test_own_real_dump_restore_true_requires_new_affirmation
-test_privacy.py::test_own_legacy_hash_exact_new_presence_and_replay_cannot_regrant
-test_privacy.py::test_own_10137_ranking_mixed_ties_quota_anchor_epoch_live
-test_privacy.py::test_own_cursor_context_invalidates_without_disclosure[generation]
-test_privacy.py::test_own_cursor_context_invalidates_without_disclosure[epoch]
-test_privacy.py::test_own_cursor_context_invalidates_without_disclosure[purge_anchor]
-test_regression.py::test_fresh_affirm_before_worker_survives_rebuild_and_replay
-test_regression.py::test_legacy_or_energy_only_before_worker_never_reaffirms[False]
-test_regression.py::test_legacy_or_energy_only_before_worker_never_reaffirms[True]
-test_regression.py::test_fresh_preparation_and_affirmation_rollback_atomically
-test_lifecycle.py::test_own_purge_cuts_publication_then_deletes_e8_and_invalidates_foreign_cursor
-test_lifecycle.py::test_own_upgrade_missing_projection_then_fresh_affirm_survives_worker
-E5-empty-calendar-window-7-real-api-SCRAM-no-synthetic-source
-E5-empty-calendar-window-30-real-api-SCRAM-no-synthetic-source
-E5-empty-calendar-window-90-real-api-SCRAM-no-synthetic-source
+test_independent_purge.py::test_own_real_minimal_login_parent_red_and_repair_green_at_actual_commit[0015_e7_ai]
+test_independent_purge.py::test_own_real_minimal_login_parent_red_and_repair_green_at_actual_commit[0016_e8_motivation]
+test_independent_purge.py::test_own_real_minimal_login_parent_red_and_repair_green_at_actual_commit[0017_e8_purge_commit]
+test_independent_purge.py::test_own_filled_downgrade_keeps_security_and_resumable_live_job_before_purge[0016_e8_motivation]
+test_independent_purge.py::test_own_filled_downgrade_keeps_security_and_resumable_live_job_before_purge[0015_e7_ai]
+test_independent_purge.py::test_own_constraint_modes_return_stage_and_whole_rollback[queued_invalid_deferred]
+test_independent_purge.py::test_own_constraint_modes_return_stage_and_whole_rollback[immediate_probe]
+test_independent_purge.py::test_own_constraint_modes_return_stage_and_whole_rollback[explicit_diary_immediate]
+test_independent_purge.py::test_own_cardinality_commit_oracle_and_no_acl_expansion[0]
+test_independent_purge.py::test_own_cardinality_commit_oracle_and_no_acl_expansion[100]
+test_independent_purge.py::test_own_cardinality_commit_oracle_and_no_acl_expansion[102]
+test_independent_purge.py::test_own_new_adversarial_metadata_fail_closed_preserves_job_and_rows[extra_config]
+test_independent_purge.py::test_own_new_adversarial_metadata_fail_closed_preserves_job_and_rows[missing_items_trigger]
+test_independent_purge.py::test_own_new_adversarial_metadata_fail_closed_preserves_job_and_rows[not_initially_deferred]
+test_independent_purge.py::test_own_new_adversarial_metadata_fail_closed_preserves_job_and_rows[unknown_role_execute]
+test_independent_purge.py::test_own_new_adversarial_metadata_fail_closed_preserves_job_and_rows[downgrade_invoker]
+test_independent_purge.py::test_own_full_e8_evidence_blocks_deeper_downgrade_without_discard
+test_independent_purge.py::test_own_actual_cli_begin_status_resume_repeat_with_scram
 ```
