@@ -1,95 +1,65 @@
 # Recenzja Nemesis lifecycle E8.3-C - osoba 2
 
-12 października 2026 r. Niezależny nieautor komponentu. Aktualny wynik: **9,3/10 dla lokalnego prototypu komponentu na `ced65cc3c9913260619ae5052b6be05fa48680ab`, zero otwartych P1/P2 kodu tego zakresu; końcowy E8.3-C oczekuje na rzeczywistą nową linię migracji**. Wcześniejsze źródło `a2dc066155494bb9ebb453698055123e63cdcb9a` zostało dodatkowo sprawdzone i ujawniło piąty P2 ścisłości liczbowych terms; jego dawny pełny PASS został wycofany, a małą poprawkę na ced odebrano odrębnie przed/po. Ten wynik odbiera izolowany komponent. E8.3-I, osiem zdalnych CI, realny Keycloak, O1/O3, APK, produkcja i pełne E8 pozostają osobnymi odbiorami. Publiczna aktywacja i statystyki są zamknięte do E8.4.
+12 października 2026 r. Niezależny nieautor. **Końcowy odbiór rzeczywistego E8.3-C: 9,3/10, zero otwartych P1/P2**, dla head `558e920166a2fee88c47567657a5d68aa6e7edc2`. Odbiór dotyczy izolowanego komponentu na rzeczywistej linii **0016→0017_e8_purge_commit→0018_e8_nemesis_lifecycle**. E8.3-I, osiem zdalnych kontroli CI, pełny odbiór upstream PR #35/main, realny Keycloak, O1/O3, APK, produkcja i E8.4 nie są tu zaliczone. Publiczne issuance/create/accept/statistics nadal są zamknięte do E8.4.
 
-## Źródło i granica odbioru
+## Zamrożone źródło i zależność
 
-Gałąź autora: `codex/backend-e8-nemesis-lifecycle`. Początek kodu: `fe0098c079d199e346b9eb1b2131165d2dd90d5e`, zależność od PR #35. Pierwszy freeze `bf2a5a6a03580d1594d957a286ae35f42f5bb43d` wymagał zmian. Poprawkę odczytano na czystym, własnym detached managed worktree i odebrano na `a2dc066155494bb9ebb453698055123e63cdcb9a`. Recenzent nie edytował kodu wykonawczego autora i nie wykonywał commit/push. Migracja jest nadal nieopublikowaną 0017 po 0016; pierwsza publikacja wymaga uzgodnionego finalnego numeru/parent przez koordynatora. Draft stacked PR i późniejszy retarget/main należą do autora oraz koordynatora.
+Branch autora: `codex/backend-e8-nemesis-lifecycle`; pierwotny start kodu `fe0098c079d199e346b9eb1b2131165d2dd90d5e`. Recenzent użył własnego managed detached worktree i własnych usług, nie edytował wykonywalnych plików autora ani nie wykonywał commit/push. Przeczytał master E8.3, wymagania, AGENTS, koordynację i potrzebne kontrakty motywacji, repozytorium oraz nowy rzeczywisty parent. SHA-256 kanonicznego mastera LF z e93e38e02fed9663217b9036e5831cbc934e1baf pozostaje `32c3925be33333a49781f96c65675350b872948d515c6f0564c67c10fa7416e5`.
 
-Odczytano master E8.3, wymagania i reguły repozytorium, master koordynacji oraz motywacji, komunikację, decyzje/interfejsy i właściwy kod identity/profiles/diary/sync oraz SQL 0016–0017. Kanoniczny master z `e93e38e02fed9663217b9036e5831cbc934e1baf` ma zweryfikowany SHA-256 LF `32c3925be33333a49781f96c65675350b872948d515c6f0564c67c10fa7416e5`. Znana poprawka upstream `6606cf1` w profiles.service nie jest częścią starego freeze i nie została tu zaliczona jako nowy PASS rankingu.
+Nowa rzeczywista podstawa `b2c6709e95796ab2c10a63493b78635664ea4f9e` została jawnie przyjęta i dołączona zwykłym merge; jest sprawdzonym ancestor końcowego head. Jej 0017 ma dokładny blob `aac0cdc62e47af2f7c5391937b37e29a59bb8a82`. Runtime odebrano na `ee52b3bd2b7c5109325e19debf2339bcccf4934e`; końcowy `558e920166a2fee88c47567657a5d68aa6e7edc2` ma **zerowy diff backend/src, migrations, pyproject i lock** względem runtime freeze, a nowy testowy zakres wykonano odrębnie. 0018 jest addytywna po prawdziwej 0017. Nie użyto stubu parent, prototypowej migracji zamiast nowej linii albo przejęcia starego PASS jako nowego dowodu.
 
-Nie podłączano wspólnego main, sync, health, model imports, provision lub purge wrapper. SQL i source guard wykonano przez jawne prywatne adapters; fake release pary w prywatnej bazie migratora nie dowodzą E8.4 ani produkcyjnej aktywacji. Cancel/revoke oraz własne metadata działają przy zamkniętej bramce, po aktualnym access/epoch/auth.
+Produktowy router, wspólny main/sync/health/model imports/provision/purge wrapper nie zostały zintegrowane w C. Produkcyjny health nadal oczekuje parent 0017; prywatna factory 0018 nie ma produkcyjnego readiness. To świadoma granica zarezerwowanej fazy I, a nie potwierdzona gotowość wdrożenia.
 
-## Manifest źródła, testów i instalacji
+## Własne rzeczywiste dowody nieautora
 
-Manifest kanonicznych blobów Git LF obejmuje dziewięć plików runtime Nemesis, migrację z pięcioma SQL resources oraz dwa testowe helpers. Jego SHA-256 wynosi `2509477d00f922bc7fb82ac9231b9ee9880d140fcc9f11c7bf504cd1cd98c9b2`. Dokładne SHA-256 źródeł migracji:
+Recenzent uruchomił własny PostgreSQL 17.11 na porcie 55484, świeże prywatne bazy, własne random credentials, prawdziwe SCRAM API/worker/deletion LOGIN, własne procesy TCP 18184/18185 i osobny frozen Python 3.13.9. Świeża linia faktycznie wykonała migracje 0016, 0017 i 0018. Kontrolowany czas oraz fake release pary ustawiał wyłącznie migrator prywatnego fixture. Nie są to produkcyjne fallbacki lub projekcje E8.4.
 
-| Plik | SHA-256 LF |
+| Wykonany zakres | Wynik i dokładny dowód |
 | --- | --- |
-| migrations/versions/0017_e8_nemesis_lifecycle.py | `4c4f07dd7b9f0fec035a81fe55fcd241b56c5ea0c9fa9fbc4c1a053da18350aa` |
-| migrations/versions/e8_0017/acl.sql | `b7b2d98abe398568eff768a006cb6014807602b17be3560f1b30cfd8f3560f5b` |
-| migrations/versions/e8_0017/addressing.sql | `270f45df0b03c51736b901736f0f9674e156bd925407d312438ee8e7f9381f1e` |
-| migrations/versions/e8_0017/lifecycle.sql | `8b4c7e4a816d4b022d8c4ab42d98aa1f95652477190cc3214034c9f06261b27b` |
-| migrations/versions/e8_0017/maintenance.sql | `52ed6de6fa8551a23d58c7207f9abb5ffaa11b5bccc5a6c3acd7f35ac5743bb4` |
-| migrations/versions/e8_0017/schema.sql | `2a4cfbe16141ea214fc1f3b9ba927d31d55a2b519d2d7f70185f941e463d3e23` |
+| Własne lifecycle/PG/transakcje/source/time/privacy oraz ścisłe numeric probes ponowione na rzeczywistej 0018 | **36 PASS, 60,28 s**, `real-existing.xml`; jeden niezmieniony przypadek dużej historii nie był powtarzany. |
+| Dziewięć nowych niezależnych przypadków dla rzeczywistego parenta i nowej linii | **9 PASS, 13,27 s**, `real-new3.xml`. |
+| Dwie własne rzeczywiste TCP repliki na nowej podstawie | **2 PASS, 21,20 s**, `real-tcp.xml`. |
+| Nowe dostarczone regresje parenta na końcowym testowym head, wykonane własnymi credentials/operator LOGIN | **6 PASS, 6,16 s**, `real-delivered.xml`. |
+| Dwa poisoned memberships przed prawdziwą 0018 | PASS: 23514, head pozostaje 0017 purge, brak Nemesis DDL. |
+| Semantic ACL, rzeczywiste SCRAM i installed Python -I na aktualnej bazie | PASS: zero PUBLIC EXECUTE, zamknięty search_path, zero bezpośrednich Nemesis column privileges API/worker; własne read/revoke dostępne przy closed gate. |
+| Własna historia 1007 rekordów z pierwszego freeze, kod odczytu identyczny w finalnym źródle | **1 PASS, 180,38 s**; 11 stron, najwolniejsza strona 0,202 s, pula cursorów ≤8, obcy cursor denied. |
 
-Manifest 14 własnych tracked plików test/support E8.3 na tym samym SHA: `94157099cb772b8233c31c0b16d448bab8d5d085f2e409bb818d2d48e2a72531`. Manifest ośmiu nowych prywatnych programów recenzenta: `3d96817343e1e8156b1387c7c4323725d7208eda466a11bd27b6b600dd9f9205`. Pełne manifesty oraz JUnit/logi są zachowane w ignorowanym prywatnym katalogu dowodów; nie publikujemy credentials, kluczy, lokalnych ścieżek, buildów lub cache.
+Nie sumujemy nakładających się scope, powtórek ani wyników autora. Poprzednie 138 komponentowych unit z a2 oraz pięć poprawionych P2 mają własne historyczne dowody; pełny finalny unit/regresje autora i CI mają osobne pochodzenie. Pamięć historii/cursorów została sprawdzona bez globalnego obcięcia. Lokalne czasy nie są docelowym SLA.
 
-| Nowy własny program recenzenta | SHA-256 |
+Nowy zakres nieautora obejmuje rzeczywiste empty i populated 0016→0017→0018, atomową odmowę nonempty downgrade 0018 przed DDL wraz z zachowaniem receipts, pusty downgrade 0018→0017→0016 i reupgrade 0018. 0017 celowo zachowuje SECURITY DEFINER repair przy downgrade. Własny oracle porównał niezmieniony prosrc hash `a07b30c41bda409d6aaa734486170d0141939eae729007269d3b46f2da5e473d`, właściciela, search_path, ACL oraz wcześniejsze źródłowe profile/DiaryDay/Meal/MealItem. Retained repair pozostaje zachowana, dane nie znikają.
+
+Prawdziwy minimalny SCRAM deletion LOGIN nie ma SELECT/DML źródeł i nie może wywołać `diary_aggregate_count()` bezpośrednio. W prywatnym, jawnie zamontowanym seam wykonał jednak faktyczny COMMIT purge grafu Meal/MealItem i Nemesis poprzez realny upstream chain E8→E7→E6→E4. Rollback po purge i sprawdzeniu deferred constraints zachował wcześniejszy stan; COMMIT oraz retry zakończyły się poprawnie, peer data i bezpieczny cancelled marker pozostały. Osobna dostarczona próba potwierdziła rzeczywisty legacy purge bez sztucznego SET CONSTRAINTS shortcut. Ten testowy seam nie modyfikuje ani nie zastępuje produkcyjnego wrappera.
+
+Nowe niezależne źródłowe probes potwierdziły rollback Meal/DiaryDay/motivation/change/counter po błędzie w apply **po** e8_refresh, wewnątrz właściwego savepointu. Nowa pierwsza ranking affirmation po restore przeżyła reconcile i worker/backfill. E5 puste dni 7/30/90 mają zamknięte przeszłe daty, null averages/counts bez fikcyjnego zera i nie tworzą źródeł. Dostarczone parent probes wykonane przez nieautora dodatkowo sprawdziły świeżą epokę/restore cancel, cutoff przy deleting oraz rzeczywisty legacy MealItem purge na własnym minimalnym LOGIN.
+
+Ponowione 36 prób dowiodło dwóch osobnych procesów przeciwnych A→B/B→A i wspólnego receiver, dwóch slots, braku caller prelock przez NOWAIT i lifecycle czasu pobranego po lockach. Obejmują code consumption rollback, projection-init failure, durable limits i odmowy/replay, exact terms, immutable participants/scope, deletion/restore/generation/cursor isolation, źródłowy guard, retention oraz niezależne UTC/calendar oracle dla Warszawy, Hawany, półgodzinnego Lord Howe i granic roku 0000/10000. Minimalny receipt nie uruchamia mutacji po retencji; cancel/revoke nie przywracają sharing.
+
+TCP utrata ACK została wykonana przez wysłanie pełnego POST socketem, oczekiwanie na **DB COMMIT receipt barrier** i zamknięcie socketu bez odczytania odpowiedzi HTTP. Sprawdzono faktyczne zamknięcie listenera przed restartem, a replay wrócił z tym samym ID. Accept/cancel i stary accept replay nie odtworzyły sharing. Dwie rzeczywiste repliki dzielą quota: pięć wydań kodu i szósta odmowa 429 z Retry-After. Odpowiedzi no-store, auth/wrong signature/foreign admin, parser/error redaction, 404/405 oraz captured logs bez JWT/kodów/prywatnego body są sprawdzone. JWKS/JWT były syntetyczne i podpisane; nie jest to dowód realnego Keycloak lub HTTPS.
+
+## Pięć zamkniętych P2 i historia nieudanych prób
+
+Pierwszy bf2 wymagał zmian. Na własnym PG ujawniono i odtworzono: cached invited/active replay po skutecznym expiry/end; brak bounded admission cleanup; eskalację istniejącego worker membership przez SET ROLE; nieprzedstawialny local roundtrip przy poprawnym UTC. Reprodukcje RED miały własne późniejsze GREEN na a2. Dodatkowa kontrola a2 odkryła piąty P2: JSONB przyjmował 7.0/30.0/90.0, konsumował kod i utrwalał DTO-invalid terms, a accept abortował 22P02. Poprzedni PASS został jawnie wycofany; mała poprawka ced dostała osobny własny odbiór. Na rzeczywistej finalnej linii wszystkie te granice ponownie przeszły: malformed floats 422 bez challenge/admission/consumption, direct INSERT CHECK 23514, potem ten sam kod działa dla integer 7/30/90.
+
+Nie ukrywano wcześniejszych błędów prywatnego harnessu: zakończony PG, brak credentials, scalar dla DDL, shadow zmiennej connection, Windows venv launcher PID, brak jawnego testowego FK metadata bootstrapu, `%ROWTYPE` w driver SQL oraz zła nazwa pola E5. Naprawiono prywatne testy/harness i powtórzono odpowiedni zakres, bez zmiany wykonywalnego kodu autora. Ich nieudane przebiegi nie są liczone jako PASS. P3 uszkodzonych znaków UTF-8 w dokumentach został naprawiony i zweryfikowany.
+
+## Końcowy manifest Git LF i zainstalowany pakiet
+
+Kanoniczny manifest **148 plików runtime i 14 migration resources** dla `558e920166a2fee88c47567657a5d68aa6e7edc2`: SHA-256 `505b83c1a2c6e34041e2bd1dbc017d39b50ca4d08122276d2069e9ef81425eab`. Manifest tracked test/support E8.3: `37ddc8db653af13675aaf4fda3d7795af6d869e1606a68bb40be48babc6c1986`. Manifest dziewięciu własnych prywatnych programów nieautora: `57e0a72699a220e37a1bcf4c6620f4ec677a9a47415133be2532ea0f135a17a9`. Pełne per-file blob SHA/Git LF SHA-256 i JUnit/logi pozostały w ignorowanym prywatnym storage; bez publikacji credentials, kluczy, lokalnych ścieżek, buildów lub cache.
+
+| Migration resource | SHA-256 LF |
 | --- | --- |
-| test_independent.py | `1a8fc71df93d6103baa32cc0e287615cd1ef3b0e2d67eb28b2624c1fa7ae99fa` |
-| process_review.py | `6b5c6f18e50eea3795dac60a3e469b404dec8a6e090338fa26f84e240c423852` |
-| test_tcp_independent.py | `1a5e4f52a89f7a82d5fabd1c023476e1ca39661add2f064dc226847a68e11ed6` |
-| tcp_server_review.py | `178999fd972dfd0241aada84da0570128d7df93ffa5cfdcbcfda2302afd3b094` |
-| poison_green.py | `03f74e59868320b6cd3b88ab54f0a84e9a4ad524259c386a0e619e1d914bc788` |
-| acl_semantics.py | `85c7546b47bf0c8bc312eda1a8e709dd8bf9b92cb1ac6fe9809f32e346266398` |
-| manifest_installed.py | `c4aa9326df2ba40ad720ebb07357c438e68fe182449ca8cf121ebf8c874803c4` |
-| installed_smoke.py | `162a4f859ba3f88244f006e11e1caab2e2bd04c85e8a17c79f13485be14eb808` |
+| 0017_e8_purge_commit.py | `2e96203d212d374b6c3687edc622e5e832fc52391e170d3d9da889fcaa8b1333` |
+| 0018_e8_nemesis_lifecycle.py | `42f324cd9ad9d325a3664cac1a755e8d23d205ea63d7c1080c346beb77801336` |
+| e8_0018/acl.sql | `b7b2d98abe398568eff768a006cb6014807602b17be3560f1b30cfd8f3560f5b` |
+| e8_0018/addressing.sql | `270f45df0b03c51736b901736f0f9674e156bd925407d312438ee8e7f9381f1e` |
+| e8_0018/lifecycle.sql | `8b4c7e4a816d4b022d8c4ab42d98aa1f95652477190cc3214034c9f06261b27b` |
+| e8_0018/maintenance.sql | `52ed6de6fa8551a23d58c7207f9abb5ffaa11b5bccc5a6c3acd7f35ac5743bb4` |
+| e8_0018/schema.sql | `f029bca046dbaf5bd86cdf4aea8c3ea319e7fc9f163ba544145b60a044f9a37b` |
 
-Recenzent sam wykonał `uv sync --frozen` z Python 3.13.9, budowę wheel/sdist i instalację nieedytowalnego wheel. Wszystkie dziewięć runtime plików zainstalowanego pakietu i wheel odpowiadają LF Git; wszystkie sześć resources migracji w sdist odpowiadają aktualnemu Git. Testowa factory/bootstrap nie znajdują się w wheel. Wheel SHA-256 `1e7fd99defdf853922b336caba78ba1b941bd4f8af83ecc195ddd7de72062a96`, sdist SHA-256 `4591019a6e12d926ace50cf4579e8646585f1f123cdb9df43c93a489f19417cf`. Osobny Python `-I` wykonał rzeczywiste service/read/revoke i domyślną odmowę issuance na aktualnej bazie przez prawdziwy API LOGIN.
+Nieautor zbudował aktualny wheel i sdist, zainstalował nieedytowalny wheel oraz porównał wszystkie 148 runtime plików z Git LF. Wszystkie 14 resources 0016/0017/0018 w sdist odpowiadają końcowemu Git. Wheel nie zawiera test factory/bootstrap/server helpers. Wheel SHA-256 `832665cf46d414702d608b4675b560d47028cce55859ed5783d559efe3416bf5`; sdist SHA-256 `b8bc606676861acae939757d7037a9de067b85489a9df04b751d2605c904b37d`. Python `-I` importuje installed package, a realny API LOGIN wykonał read/revoke i odmowę default closed issuance. Nie zalicza to produkcyjnego readiness lub montowania routera.
 
-## Rzeczywiście wykonane własne próby
+## Granica końcowego odbioru
 
-Recenzent uruchomił własny PostgreSQL **17.11** na port 55484 z osobnym storage i losowymi prywatnymi credentials. Wykonano świeży bootstrap 0016→0017 oraz osobne świeże bazy dla probes niebezpiecznych memberships. API i lifecycle worker używały rzeczywistych SCRAM LOGIN; SET ROLE nie zastępował dowodu logowania. Dla testów czasu wyłącznie migrator prywatnej bazy zmieniał e8n_clock. Nie przekazywano czasu w API.
+**E8.3-C rzeczywiście odebrane**, na aktualnym kodzie, realnym parent i rzeczywistej nowej linii; poprzednie prototypowe oceny nie zastąpiły tego odbioru. Własne TCP listenery i PG 55484 zatrzymano po testach; cudzych usług nie dotykano. Brak zdalnego CI w stacked draft do feature branch pozostaje jawny.
 
-| Zakres nieautora | Końcowy dowód |
-| --- | --- |
-| Nowe niezależne PostgreSQL/ASGI/transakcje/source/privacy/time probes na poprawionym freeze | **32 PASS, 54,35 s**, bez skips; `new-corrected.xml`. |
-| Właściwe tracked unit komponentu uruchomione w własnym frozen środowisku | **138 PASS, 2,32 s**; `unit-corrected.xml`. |
-| Nowe rzeczywiste dwie repliki TCP HTTP i restart | **2 PASS, 21,31 s**; `new-tcp-corrected2.xml`. |
-| Nowe outgoing oraz inbound API poisoned membership przed migracją | **2 PASS**: SQLSTATE 23514, niezmienione 0016 i brak Nemesis DDL. |
-| Semantic ACL oraz installed Python -I | PASS: prawdziwe SCRAM, zero PUBLIC EXECUTE, zamknięty search_path, zero Nemesis column privileges API/worker, gate/read/revoke. |
-| Nowa własna historia 1007 rekordów na pierwszym freeze | **1 PASS, 180,38 s**, 11 stron, najwolniejszy odczyt 0,202 s, pula cursorów ≤8. |
-
-Nie sumujemy powtórek ani autora i nieautora. Długą historię zachowano z pierwszego freeze, ponieważ `e8n_read`, schema, addressing i reguły cursorów są identyczne między bf2 a poprawką; końcowy zakres ponownie sprawdza zmieniony maintenance, ACL i wszystkie reprodukcje P2. Lokalny pomiar 30-dniowej akceptacji wynosił 0,352–0,379 s; nie jest docelowym SLA.
-
-Nowe oczekiwania recenzenta obejmują:
-
-- Dwa osobne procesy wykonujące przeciwne A→B/B→A oraz A→B/C→B: dokładnie jeden accept i jeden konflikt, tylko dwa slots. Próba NOWAIT na wysokim UUID wywołującego dowodzi braku wcześniejszego caller lock, a opóźniony accept używa czasu po zwolnieniu blokady i odmawia na granicy expiry.
-- Dwóch tworzących jeden kod, atomowe consumption/rollback z deferred constraints, trwały receipt lost ACK, failure adaptera po accept bez slots/receipt oraz stałe terms, participant bindings i scope.
-- Outgoing cap 3, incoming cap 5, brak refund po cancel, durable odmowa/replay, kod własny/nieznany/wycofany/wygasły z tą samą neutralną odpowiedzią, generation/cursor denial i pełny minimalny receipt po 60 dniach.
-- Deletion przed własnym helperem odcina partner read/replay/list; dokładny purge job/context jest wymagany; po purge pozostaje tylko bezpieczny marker bez pseudonimu i bindingu usuniętego właściciela. Restore nowej epoki zamyka gate, stare receipts/zgody nie reaktywują challenge, bounded cancellation zwalnia slots przed nowym invite.
-- Niezależne daty UTC dla Warszawy, północy, Hawany i półgodzinnej zmiany Lord Howe; UTC deadline 720 godzin. Dwie skrajne lokalne reprezentacje roku 0000/10000 odmawiają przed aktywacją.
-- Source guard cofa zmianę/deletion profilu w tej samej transakcji i nie utrwala motywacji przy odmowie; po end dopuszcza zmianę. Obejmuje przyszłą konfliktową oś oraz konserwatywne discovery wag i całej osi celu. Immutable SourceMutationContext/provenance, kwalifikacja i jedna faza locks pozostają zachowane.
-- Własne syntetycznie podpisane JWT przechodzą prawdziwy fixed-trust verifier: obce/admin/moderator, zły issuer/audience/ID token/podpis nie otwierają danych; body/errors i receipts nie ujawniają surowych danych partnera.
-
-TCP używa dwóch własnych procesów uvicorn na portach 18184/18185. Klient wysłał pełny POST przez socket, poczekał na commit receipt w PostgreSQL i zamknął socket **bez odczytania odpowiedzi HTTP**. Po faktycznym zatrzymaniu listenera i restarcie replay zwrócił ten sam ID. Accept/cancel i stary accept replay nie odtworzyły sharing. Dwie HTTP repliki wspólnie wydały pięć kodów, szósta otrzymała 429 z Retry-After. Sprawdzono no-store także dla 401/404/405/422/503 i brak JWT/kodów/prywatnego body w przechwyconych logach. To syntetyczny JWKS, bez rzeczywistego Keycloak, HTTPS, O1 lub produkcji.
-
-## Cztery zamknięte P2
-
-1. **Nieaktualny skuteczny status przy replay.** Na bf2 GET rozpoznawał expired/finished, ale receipt replay bez nowej rewizji zwracał invited/active. Dwie niezależne próby RED na dokładnych granicach czasu. Na a2 replay buduje aktualne metadata po auth/access i obie próby są GREEN.
-2. **Brak bounded cleanup admissions.** Na bf2 stare próby pozostawały bezterminowo; maintenance nie usuwał żadnej z 13 starych rows. Na a2 batch 5 usuwa dokładnie pięć najstarszych rekordów spoza maksimum 24 h, kolejne batche kończą cleanup, a minimalny receipt nadal zapobiega ponownemu admission/mutacji.
-3. **Możliwa eskalacja przez istniejące membership workera.** Na bf2 po nadaniu worker base membership migratora migracja przechodziła, a realny SCRAM worker mógł SET ROLE i zmienić control/release row. Na a2 dwa osobne poisoned upgrades odmawiają 23514 atomowo przed DDL; czyste role nadal wykonują tylko minimalny zakres.
-4. **SQL akceptował nieprzedstawialny local roundtrip.** Na bf2 Kiritimati dawało deadline w lokalnym roku 10000, a Honolulu accept w lokalnym roku 0000, mimo odmowy Python rules. Dwie nowe realPG próby RED. Na a2 oba przypadki są GREEN z odmową 409 i bez aktywacji/slots.
-
-Pierwszy freeze nie otrzymał sztucznego PASS. Wcześniejsze przerwane przebiegi miały błędy prywatnego harnessu: zakończony proces PG, brak credentials, scalar dla poleceń bez rows oraz shadow zmiennej uczestnika przez connection. Windows launcher wymagał także sprawdzenia rzeczywistego PID/listenera. Poprawiono wyłącznie prywatne programs/harness i powtórzono właściwy zakres; te porażki nie zostały policzone jako PASS lub ukryte przez zmianę kodu aplikacji.
-
-## Ograniczenia i następny odbiór
-
-Ocena 9,3 dotyczy komponentu po czterech potwierdzonych poprawkach i nowych własnych dowodach. Dokumentacyjna uwaga P3 dotycząca uszkodzonych polskich znaków w decyzjach/interfejsie/raporcie została usunięta przez autora przed publikacją. Recenzent zweryfikował rzeczywisty poprawny tekst UTF-8 tych trzech plików; naprawa nie zmieniła wykonywalnego freeze. Oficjalne OpenAPI/header copies oraz produkcyjna integracja należą do fazy I. Oddzielny brak realnego Keycloak, CI i wrapper/provision/restore integracji jest jawną granicą C, nie zaliczonym runtime.
-
-Recenzent po zakończeniu zatrzymał własne repliki HTTP i własny PostgreSQL; cudzych usług nie dotykał. Dowody i prywatne credentials pozostały poza Git. Kolejny krok koordynatora: końcowe potwierdzenie migracji i component callback; po merge E8.1+2 zlecenie E8.3-I w tej samej rozmowie/PR, zwykły merge main, retarget, właściwa pełna integracja, nowy nieautor i osiem rzeczywistych CI. E8.4 dopiero zapewni projekcje/finalizer i odbiór KO22/26/27/29; E8.3 nie nalicza wyników.
-
-## Uzupełnienie: nowy P2 liczbowych warunków i zmiana rezerwacji
-
-Po poprzednim odbiorze root wskazał dodatkową granicę JSONB numeric. Nieautor wznowił wyłącznie własny PG 55484 i wykonał na świeżej bazie z dokładnego a2 cztery nowe próby: **7.0/30.0/90.0 — trzy RED; zdrowe integer 7 — PASS**, 6,03 s. `e8n_terms_valid` zwraca true dla tych floats, a rzeczywisty API LOGIN przez raw EXECUTE create zapisuje invited z DTO-invalid terms i konsumuje kod. Własny `strict_accept_red.py` potwierdził późniejszy abort accept SQLSTATE 22P02 bez slots. Oczekiwana poprawka: numeric type oraz kanoniczny tekst duration wyłącznie 7/30/90, odmowa 422 przed consumption, następnie poprawny integer create/accept tym samym niewykorzystanym kodem. Błąd jest P2 integralności DB/wire; produkcyjna bramka nadal closed. Autor wykonuje małą poprawkę i permanentne regresje; nieautor wymaga nowego dokładnego freeze i własnego GREEN przed zamknięciem uwagi.
-
-Koordynator przydzielił upstream korekcyjną `0017_e8_purge_commit` po niezmiennej 0016. Nieopublikowany lifecycle otrzymuje teraz `0018_e8_nemesis_lifecycle` z parent `0017_e8_purge_commit`. Dotychczasowe testy 0016→0017 lifecycle są prawdziwymi dowodami lokalnego prototypu, ale nie stanowią PASS rzeczywistej nowej linii 0016→0017 purge→0018 lifecycle. Jej źródło i downgrade/upgrade muszą zostać sprawdzone po otrzymaniu dokładnej rzeczywistej migracji upstream. Recenzent nie tworzy stubu upstream, nie naprawia cudzego purge i nie podłącza wspólnych plików. Pierwszy push pozostaje wstrzymany. E8.3-I oraz E8.4 nadal wymagają oddzielnego zlecenia i odbioru.
-
-## Zamknięcie piątego P2 na dokładnym ced — odbiór prototypu
-
-Nieautor odczytał czysty własny detached checkout `ced65cc3c9913260619ae5052b6be05fa48680ab`. Diff względem a2 obejmuje tylko schema.sql i permanentne testy DB. Odczytał konkretną poprawkę numeric type + kanoniczny tekst duration, wykonał świeży własny prototype upgrade 0016→0017 i **4 nowe niezależne próby PASS, 6,56 s** (`strict-ced2.xml`): trzy nieprawidłowe float durations są odrzucane 422 przed consumption/challenge/admission; bezpośredni INSERT migratora odmawia CHECK SQLSTATE 23514; po odmowie ten sam niewykorzystany kod działa dla integer 7/30/90 i accept. Oddzielna zdrowa integer 7 create/accept również przechodzi. Wcześniejsze trzy RED na a2 i jego 22P02 accept pozostają zachowanym dowodem błędu, nie PASS. Powtórka 6,61 s bez dodatkowego count admission nie jest sumowana.
-
-W tym małym diff bramka, ACL/preflight, maintenance, replay, okresy, source guard oraz wszystkie dziewięć runtime plików są identyczne z odebranym a2. Zachowano zatem wcześniejsze właściwe dowody czterech zamkniętych P2, 32 PostgreSQL probes i dwóch TCP przypadków; nie powtarzano niezmienionego zakresu bez powodu. Źródło lokalnego prototypu po piątej poprawce nie ma otwartych P1/P2 i otrzymuje 9,3/10. Nie jest to jeszcze PASS nowej faktycznej migracji 0016→0017 purge→0018 lifecycle ani E8.3-I.
-
-Manifest ced źródła Git LF: `3de89a019cd87bc5a69caaf7990d9997812e9f5f727dda5e1675b48f7a3a19ee`; manifest tracked testów: `33c662cfce58f52a384f155f6a1238f61b2faa9ff0c517464bc19fb6248ba1a4`; nowe schema.sql SHA-256 LF: `f029bca046dbaf5bd86cdf4aea8c3ea319e7fc9f163ba544145b60a044f9a37b`; prywatny test_numeric_strictness.py SHA-256: `d402eedd4ce9fafe9045e95d7f179e5ef7deb7601bf7454235bb4ebb20e7a035`. Pełny manifest zachowano w prywatnych dowodach. Wcześniejszy wheel/sdist dowód dotyczy a2 i nie udaje nowego sdist ced albo finalnego 0018; dziewięć runtime plików pakietu jest identyczne. Faktyczna nowa linia i pakiet finalnego źródła wymagają własnej weryfikacji po otrzymaniu prawdziwego parent, bez stubu upstream. Recenzent ponownie zatrzymał wyłącznie własny PG 55484 po tej kontroli.
+Koordynator i autor mogą opublikować zaakceptowaną linię oraz draft stacked PR z dokładnym head/base/dependency. Pełny upstream PR/main i E8.3-I pozostają odrębnym warunkiem: zwykły merge main, retarget, zwolnione seams, właściwa produkcyjna integracja, nowy nieautor i osiem rzeczywistych CI. O1/O3, realne Keycloak/HTTPS/restore oraz APK nie są zaliczone. Public activation pozostaje closed, a E8.4 dopiero posiada projekcje i finalizer dla KO22/26/27/29; E8.3 nie nalicza wyników.
