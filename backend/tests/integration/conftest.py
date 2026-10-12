@@ -59,3 +59,22 @@ def database():
         os.environ.pop("DATABASE_URL", None)
     else:
         os.environ["DATABASE_URL"] = previous
+
+
+@pytest.fixture(scope="session", autouse=True)
+def nemesis_evidence_servers(tmp_path_factory, request):
+    from tests.support.e8_3_ci import configured_servers, explicit_credentials_complete
+
+    if explicit_credentials_complete(os.environ):
+        yield
+        return
+    requires_nemesis = any(
+        item.path.name.startswith("test_e8_3_") for item in request.session.items
+    )
+    if not requires_nemesis:
+        yield
+        return
+    if not os.environ.get("CI"):
+        pytest.fail("Nemesis integration requires complete owned source/audit/deletion credentials")
+    with configured_servers(tmp_path_factory.mktemp("nemesis-postgres")):
+        yield

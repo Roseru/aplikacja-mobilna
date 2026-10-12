@@ -35,6 +35,14 @@ E8_TABLES = {
     "ranking_affirmations",
     "ranking_sessions",
     "ranking_cursors",
+    "nemesis_control",
+    "nemesis_releases",
+    "nemesis_challenges",
+    "nemesis_slots",
+    "nemesis_share_codes",
+    "nemesis_receipts",
+    "nemesis_admissions",
+    "nemesis_cursors",
 }
 CASES = [
     ("Straße Suppe", [], "STRASSE SUPPE"),
@@ -278,7 +286,7 @@ def test_upgrade0013_backfill_down_reup_bytes_hash_history_readiness(request, tm
             assert frozen_table_rows(connection) == before
         with TestClient(create_app(settings, engine=engine)) as client:
             assert client.get("/health/ready").status_code == 200
-        assert EXPECTED_REVISION == "0017_e8_purge_commit"
+        assert EXPECTED_REVISION == "0020_e8_nemesis_integration"
     finally:
         migrate("upgrade", "head")
 

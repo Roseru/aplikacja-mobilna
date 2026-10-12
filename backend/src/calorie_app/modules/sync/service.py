@@ -16,6 +16,7 @@ from calorie_app.modules.catalog.validation import canonical_json
 from calorie_app.modules.diary import service as diary
 from calorie_app.modules.diary.models import DiaryDay, Meal
 from calorie_app.modules.identity.service import current_epoch, lock_account
+from calorie_app.modules.nemesis.source_guard import NemesisSourceProjection, SourceProvenance
 from calorie_app.modules.profiles import service as profiles
 from calorie_app.modules.profiles.models import GoalTimeline, Profile
 from calorie_app.modules.profiles.schemas import GoalPayload, ProfilePayload
@@ -187,7 +188,7 @@ def check_recovery(session, owner_id, op):
     return None
 
 
-def mutate(session, owner_id, op, counter):
+def mutate(session, owner_id, op, counter, *, source_extensions=()):
     kind, target_id, base = op["entity_type"], UUID(op["entity_id"]), op["base_revision"]
     recovered = check_recovery(session, owner_id, op)
     if recovered is not None:
@@ -373,6 +374,7 @@ def mutate(session, owner_id, op, counter):
                 goal_axis_revision=row.timeline_revision if kind == "goal" else None,
                 goal_probe_changed=goal_probe_changed,
             ),
+            extensions=source_extensions,
         )
     mapping = None
     if "recovery" in op:
@@ -394,13 +396,24 @@ def mutate(session, owner_id, op, counter):
 def apply_operation(session, owner_id, data, op, secret, generation):
     lock_account(session, owner_id, generation)
     counter = lock_counter(session, owner_id)
-    context(session, owner_id, data, secret, generation=generation)
+    account = context(session, owner_id, data, secret, generation=generation)
+    # Capture our immutable provenance from the locked DB context, never from a
+    # body-supplied generation or an unverified epoch. A restore between reads
+    # is a request context failure, not a durable rejection of its source.
+    epoch = current_epoch(session)
+    if data["sync_epoch"] != str(epoch):
+        raise SyncFailure(409, "sync_epoch_changed")
     receipt = session.get(SyncReceipt, (owner_id, UUID(op["operation_id"])))
     if receipt is not None:
         return replay(session, receipt, op)
+    source_extensions = ()
+    if op["entity_type"] in {"profile", "meal", "diary_day", "goal", "weight"}:
+        source_extensions = (
+            NemesisSourceProjection(SourceProvenance(account.id, account.generation, epoch)),
+        )
     try:
         with session.begin_nested():
-            outcome = mutate(session, owner_id, op, counter)
+            outcome = mutate(session, owner_id, op, counter, source_extensions=source_extensions)
         result = {"operation_id": op["operation_id"], "entity_id": op["entity_id"], **outcome}
     except Refusal as error:
         result = refusal_result(op, error)
@@ -408,12 +421,19 @@ def apply_operation(session, owner_id, data, op, secret, generation):
         # Valid schema can still fail a DB-dependent domain rule.
         result = refusal_result(op, Refusal("invalid_payload"))
     except IntegrityError as error:
-        # Only named E3 domain constraints are durable refusals. Connection,
-        # deadlock, serialization and unknown DB failures propagate to caller.
+        # Only named E3 dependencies and the two Nemesis axis guards are durable
+        # refusals. Connection, deadlock, serialization and unknown DB failures
+        # propagate to the caller.
         constraint = getattr(getattr(error.orig, "diag", None), "constraint_name", None)
-        if constraint not in {"meal_day_fk", "meal_goal_fk", "meal_item_product_fk"}:
+        if getattr(error.orig, "sqlstate", None) == "23514" and constraint in {
+            "e8n_profile_axis_active",
+            "e8n_diary_axis_conflict",
+        }:
+            result = refusal_result(op, Refusal("invalid_payload"))
+        elif constraint in {"meal_day_fk", "meal_goal_fk", "meal_item_product_fk"}:
+            result = refusal_result(op, Refusal("dependency_missing"))
+        else:
             raise
-        result = refusal_result(op, Refusal("dependency_missing"))
     source = op.get("recovery", {})
     session.add(
         SyncReceipt(
