@@ -1,4 +1,12 @@
 # Kontekst współpracy
+
+## Kontynuacja O1 — analityka0.8.4, 12 października 2026
+
+- Agent1/O1: codex/android-analityka-wyglad, wersja0.8.4/code15/Room7, nowy wygląd Postępów i dostępny układ320dp/font150%; obliczenia oraz zapis niezmienione. Raport android/RAPORT_0_8_4.md ma podglądy syntetyczne i scenariusze manualne. App została otwarta do testów właściciela.
+- 103JVM/107device/full PASS, lint0error/4warning/1info; trzy UI powtórzone po korekcie wyłącznie fixture. Pierwsze dwa błędy lint naprawiono bez suppressions. Aktualizacja/przed/po/launch zachowały wszystkie22tabele i5posiłków/FK. APK SHA256 a5b254bbe58e580b3f895fd38c636cd1cfe8ae56762baf3f81fc4c7abdfb738f pozaGit. Prywatne dane pozostają lokalnie.
+- PR34 scalony ffc6ab01a0740c93369a7921f65204785c02258d po ośmiu rzeczywistych success302ffae/base2b3ac61, CI38210074687, reviews/comments0. To dowód0.8.3, nie CI0.8.4 lub pełnego E4/KO31.
+- Odczytano main E8.1+2/PR35, O2-025 i przekazanie motywacji. Osiągnięcia/ranking mają finalne kontrakty, ich Android jest kolejny. NEMESIS/PR37/head27af3a3 odczytany tylko jako niescalone przekazanie E8.3-C; produkcyjna aktywacja i wyniki czekają naE8.4. Nie przejęto runtime/testów O2/O3. Komunikacja: docs/KOMUNIKACJA_AGENTOW.md/O1-019.
+
 ## Kontynuacja O1 — kopia serwera 0.8.3 i priorytety produktu
 
 - Agent1/O1 realizuje Androida; właściciel ponownie wskazał NEMESIS, osiągnięcia i dopracowaną analitykę. Bieżąca kolejność jest w PLAN_IMPLEMENTACJI_ANDROID.md; nowy wygląd analityki to kolejny lokalny etap. Potwierdzone wyniki i rywalizacja wymagają odebranych E8 O2 oraz dalszego E4.

@@ -1,4 +1,14 @@
 # Plan implementacji — osoba 1: Android i pamięć lokalna
+
+## Aktualizacja O1 — 12 października 2026
+
+- 0.8.3 / PR34 scalony na main ffc6ab0 po ośmiu success exact302ffae/base2b3ac61; CI38210074687, brak uwag. Trwałe archiwum wire pozostaje oddzielne od semantycznej projekcji oraz kolejki.
+- 0.8.4 / codex/android-analityka-wyglad: nowy wygląd Postępów7/30/90, wskaźniki/wykresy, układ320dp/font150%, jasny/ciemny motyw; obliczenia i Room7 bez zmian. 103JVM/107device PASS, końcowe3UI po poprawce fixture PASS. Aktualizacja zachowała22tabele i5posiłków. [Raport i podglądy](android/RAPORT_0_8_4.md); CI tej gałęzi będzie odczytany osobno.
+- Kolejny etap implementacyjny: **osiągnięcia**, najpierw jawny lokalny postęp czterech warunków v1, następnie prywatny GET /me/motivation i osobny stan potwierdzony z rewizją/aktualnością/pending/final/revoked. Odczytano finalne przekazanie scalonego E8.1+2 / PR35 i O2-025, a nie tylko master. Ranking wymaga oddzielnego świadomego opt-in z bieżącą epoką; odczyt nie publikuje użytkownika.
+- **NEMESIS**: odczytano draftPR37/head27af3a3 i INTEGRACJA_O1_NEMESIS_LIFECYCLE. Jednorazowy prywatny kod w body, pełne terms/zgody, zgoda weight_change/mean_deficit domyślnie wyłączona, Idempotency-Key/X-Sync-Epoch/If-Match i unieważnienie lease/cache. E8.3-C nie jest publicznym routerem, tworzenie/akceptacja/statystyki pozostają zamknięte do E8.4. Nie dołączono niescalonego backendu lub fikcyjnego partnera/wyniku.
+- Dalsze E4: semantyczne projekcje, trwałe operacje/push/ACK, incremental, import/recovery i WorkManager. Realny APK/API/TLS pozostaje własnym odbiorem O1/O3, z istniejącego środowiska O3; nie przypisujemy sobie testów backendu lub DevOps.
+
+Poniżej zachowano historię planu i jego wcześniejsze zależności.
 ## Bieżąca kolejność O1 — 11 października 2026
 
 Właściciel potwierdził: ten etap realizuje **agent 1 / aplikacja Android**. Priorytety produktu obejmują **NEMESIS, osiągnięcia i dopracowany ekran analityki**, obok trwałego działania offline i synchronizacji. Zachowujemy zasady WF-10–12 oraz podział prac O2/O3; ranking i rywalizacja wymagają potwierdzonych wyników i zgód.
