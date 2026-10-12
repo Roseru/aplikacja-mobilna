@@ -7,6 +7,7 @@ import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.NonCancellable
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.collect
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
 import kotlinx.coroutines.withTimeout
@@ -26,7 +27,9 @@ data class SessionView(val binding: SessionBinding? = null, val busy: Boolean = 
     val message: String? = null, val apiConfigured: Boolean = false, val bootstrapBusy: Boolean = false,
     val serverLinked: Boolean = false, val requiresRecovery: Boolean = false,
     val profileBusy: Boolean = false, val serverProfile: ProfileRead? = null,
-    val snapshotBusy: Boolean = false, val snapshot: SnapshotStatus? = null)
+    val snapshotBusy: Boolean = false, val snapshot: SnapshotStatus? = null,
+    val motivationConfigured: Boolean = false, val motivationBusy: Boolean = false,
+    val motivation: MotivationState = MotivationState.NotRequested)
 
 /** Serializes durable decisions, not network waits. A callback/refresh is fenced by a captured
  * owner lease AND an operation ID, so logout and A→B→A cannot apply an old response.
@@ -36,13 +39,18 @@ class SessionController internal constructor(private val db: CalorieDatabase, pr
     private val now: () -> Long = System::currentTimeMillis,
     private val bootstrapGateway: BootstrapGateway? = null,
     private val profileGateway: ProfileGateway? = null,
-    private val snapshotGateway: SnapshotGateway? = null, snapshotProtocol: SnapshotProtocol? = null) {
+    private val snapshotGateway: SnapshotGateway? = null, snapshotProtocol: SnapshotProtocol? = null,
+    private val motivationGateway: MotivationGateway? = null) {
     private val owners = LocalOwnerStore(db)
     private val mutex = Mutex()
     private var record = JSONObject()
     private var operation: String? = null
     private var bootstrapOperation: String? = null
     private var profileOperation: String? = null
+    private enum class PrivateReadKind { PROFILE, MOTIVATION }
+    private var privateReadKind = PrivateReadKind.PROFILE
+    private var motivationState: MotivationState = MotivationState.NotRequested
+    private var motivationFence: Pair<OwnerLease, Long>? = null
     private var snapshotOperation: String? = null
     private val snapshots = snapshotProtocol?.let { ServerSnapshotStore(db, it) }
     private val snapshotProtocol = snapshotProtocol
@@ -51,6 +59,20 @@ class SessionController internal constructor(private val db: CalorieDatabase, pr
     private val bootstraps = AccountBootstrapStore(db)
     private val mutable = MutableStateFlow(SessionView(configured = issuer.isNotEmpty()))
     val view = mutable.asStateFlow()
+    /** In-memory confirmation is invalidated also by an external Room context update. */
+    suspend fun observeMotivationContext() {
+        try {
+            db.invalidationTracker.createFlow("account_bindings", "local_active_owner", "local_owners").collect {
+                mutex.withLock {
+                    if (mutable.value.binding != null && motivationState is MotivationState.Ready) publish(mutable.value.message)
+                }
+            }
+        } catch (error: CancellationException) { throw error }
+        catch (_: Exception) { mutex.withLock {
+            clearMotivation()
+            mutable.value = mutable.value.copy(motivation = MotivationState.NotRequested)
+        } }
+    }
     private fun copyRecord() = JSONObject(record.toString())
     private suspend fun persist(value: JSONObject) {
         withContext(Dispatchers.IO) { vault.write(value) }; record = value; sessionRevision++
@@ -68,16 +90,28 @@ class SessionController internal constructor(private val db: CalorieDatabase, pr
     private fun sessionFor(value: SessionBinding): JSONObject? = record.optJSONObject("session")?.takeIf {
         it.optString("ownerId") == value.owner.id && it.optString("issuer") == value.owner.issuer && it.optString("subject") == value.owner.subject
     }
+    private fun clearMotivation() {
+        motivationState = MotivationState.NotRequested
+        motivationFence = null
+    }
     private suspend fun publish(message: String? = null) {
         val current = binding()
         val session = sessionFor(current)
         val fresh = session?.let { AuthState.jsonDeserialize(it.getString("authState")).accessTokenExpirationTime?.let { expiry -> expiry > now() + 30_000 } } == true
         val server = db.bootstrapDao().binding(current.lease.storageScope)
+        (motivationState as? MotivationState.Ready)?.let { confirmed ->
+            if (session == null || server == null || server.requiresRecovery ||
+                motivationFence != (current.lease to server.contextRevision) ||
+                confirmed.read.accountGeneration != server.accountGeneration || confirmed.read.syncEpoch != server.syncEpoch) clearMotivation()
+        }
         mutable.value = SessionView(current, configured = issuer.isNotEmpty(), pendingLogin = record.has("pending"), hasSession = fresh,
             message = message, apiConfigured = bootstrapGateway != null, bootstrapBusy = bootstrapOperation != null,
             serverLinked = server != null, requiresRecovery = server?.requiresRecovery == true,
-            profileBusy = profileOperation != null, serverProfile = serverProfile,
-            snapshotBusy = snapshotOperation != null, snapshot = snapshots?.status(current.lease))
+            profileBusy = profileOperation != null && privateReadKind == PrivateReadKind.PROFILE, serverProfile = serverProfile,
+            snapshotBusy = snapshotOperation != null, snapshot = snapshots?.status(current.lease),
+            motivationConfigured = motivationGateway != null,
+            motivationBusy = profileOperation != null && privateReadKind == PrivateReadKind.MOTIVATION,
+            motivation = if (profileOperation != null && privateReadKind == PrivateReadKind.MOTIVATION) MotivationState.Loading else motivationState)
     }
     suspend fun start() = mutex.withLock {
         if (mutable.value.binding != null) return@withLock
@@ -121,8 +155,10 @@ class SessionController internal constructor(private val db: CalorieDatabase, pr
             profileOperation = null
             snapshotOperation = null
             serverProfile = null
+            clearMotivation()
             operation = id
-            mutable.value = mutable.value.copy(busy = true, bootstrapBusy = false, profileBusy = false, snapshotBusy = false, snapshot = null, serverProfile = null, message = null)
+            mutable.value = mutable.value.copy(busy = true, bootstrapBusy = false, profileBusy = false, snapshotBusy = false, snapshot = null, serverProfile = null,
+                motivationBusy = false, motivation = MotivationState.NotRequested, message = null)
             lease
         } } catch (error: CancellationException) { throw error }
         catch (_: Exception) { mutable.value = mutable.value.copy(message = "Logowanie jest niedostępne. Dziennik działa offline."); return null }
@@ -214,6 +250,7 @@ class SessionController internal constructor(private val db: CalorieDatabase, pr
         profileOperation = null
         snapshotOperation = null
         serverProfile = null
+        clearMotivation()
         forget()
         mutable.value = mutable.value.copy(binding = null)
         owners.selectIfCurrent(captured, guest.id)
@@ -223,6 +260,7 @@ class SessionController internal constructor(private val db: CalorieDatabase, pr
             operation = null
             try { publish("Nie udało się otworzyć gościa. Spróbuj ponownie; dziennik konta pozostaje lokalny.") }
             catch (_: Exception) { mutable.value = mutable.value.copy(binding = previous, busy = false, hasSession = false,
+                motivationBusy = false, motivation = MotivationState.NotRequested,
                 message = "Pamięć dziennika jest niedostępna. Spróbuj ponownie.") }
         } }
     }
@@ -242,7 +280,12 @@ class SessionController internal constructor(private val db: CalorieDatabase, pr
                 operation = id
                 registered = true
                 serverProfile = null
-                mutable.value = mutable.value.copy(busy = true, serverProfile = null, message = null)
+                clearMotivation()
+                // Manual renewal invalidates a held private read. Automatic renewal belongs to it.
+                if (expected == null) profileOperation = null
+                mutable.value = mutable.value.copy(busy = true, profileBusy = profileOperation != null && privateReadKind == PrivateReadKind.PROFILE,
+                    motivationBusy = profileOperation != null && privateReadKind == PrivateReadKind.MOTIVATION,
+                    serverProfile = null, motivation = MotivationState.NotRequested, message = null)
                 Triple(current, state, SessionIdentity(session.getString("issuer"), session.getString("subject")))
             }
             val tokens = withTimeout(30_000) { gateway.tokens(captured.second.createTokenRefreshRequest()) }
@@ -314,7 +357,8 @@ class SessionController internal constructor(private val db: CalorieDatabase, pr
             }
             bootstrapOperation = id
             serverProfile = null
-            mutable.value = mutable.value.copy(bootstrapBusy = true, serverProfile = null, message = null)
+            clearMotivation()
+            mutable.value = mutable.value.copy(bootstrapBusy = true, serverProfile = null, motivation = MotivationState.NotRequested, message = null)
             current.lease
         } } catch (error: CancellationException) { throw error }
         catch (_: Exception) {
@@ -400,14 +444,19 @@ class SessionController internal constructor(private val db: CalorieDatabase, pr
     }
 
     /** Explicit online preview. Never upserts a local profile, recalculates goals or ACKs outbox. */
-    suspend fun readProfile() {
-        val gateway = profileGateway ?: return
+    suspend fun readProfile() = readPrivate(PrivateReadKind.PROFILE)
+    suspend fun readMotivation() = readPrivate(PrivateReadKind.MOTIVATION)
+    private suspend fun readPrivate(kind: PrivateReadKind) {
+        val gateway: ProfileGateway = (if (kind == PrivateReadKind.PROFILE) profileGateway else motivationGateway) ?: return
+        val label = if (kind == PrivateReadKind.PROFILE) "profil" else "osiągnięcia"
         val id = UUID.randomUUID().toString()
+        var capturedLease: OwnerLease? = null
         val capturedBinding = try { mutex.withLock {
             if (profileOperation != null || snapshotOperation != null || bootstrapOperation != null || operation != null || record.has("pending")) return
             val current = binding()
+            capturedLease = current.lease
             if (current.owner.kind != "account" || sessionFor(current) == null) {
-                publish("Zaloguj się, aby odczytać profil z serwera."); return
+                publish("Zaloguj się, aby odczytać $label z serwera."); return
             }
             val server = db.bootstrapDao().binding(current.lease.storageScope)
             if (server == null || server.requiresRecovery) {
@@ -415,15 +464,23 @@ class SessionController internal constructor(private val db: CalorieDatabase, pr
             }
             val retryAt = sessionFor(current)!!.optLong("apiRetryAt")
             if (retryAt > now()) {
-                publish("Serwer jest zajęty. Ponów za co najmniej ${(retryAt - now() + 999) / 1000} s."); return
+                val message = "Serwer jest zajęty. Ponów za co najmniej ${(retryAt - now() + 999) / 1000} s."
+                if (kind == PrivateReadKind.MOTIVATION) motivationState = MotivationState.Failed(message)
+                publish(message); return
             }
             profileOperation = id
+            privateReadKind = kind
             serverProfile = null
-            mutable.value = mutable.value.copy(profileBusy = true, serverProfile = null, message = null)
+            clearMotivation()
+            if (kind == PrivateReadKind.MOTIVATION) motivationState = MotivationState.Loading
+            publish()
             current.lease to server
-        } } catch (error: CancellationException) { throw error }
+        } } catch (error: CancellationException) {
+            capturedLease?.let { withContext(NonCancellable) { finishPrivate(id, it, kind) } }
+            throw error
+        }
         catch (_: Exception) {
-            mutable.value = mutable.value.copy(message = "Odczyt jest niedostępny. Dziennik pozostaje lokalny.")
+            capturedLease?.let { finishPrivate(id, it, kind) }
             return
         }
         val lease = capturedBinding.first
@@ -445,20 +502,30 @@ class SessionController internal constructor(private val db: CalorieDatabase, pr
                 }
                 val result = gateway.get(captured) { withApiSession(captured) { ready() } }
                 if (result.status == 200) {
-                    val response = ProfileReadProtocol.parse(result.body)
+                    val response = if (kind == PrivateReadKind.PROFILE) ProfileReadProtocol.parse(result.body) else null
+                    val motivation = if (kind == PrivateReadKind.MOTIVATION) MotivationReadProtocol.parse(result.body) else null
                     withApiSession(captured) {
                         ready()
                         // GET me has no account_generation; it cannot replace the bootstrap mapping.
-                        require(response.accountId == server.accountId)
-                        if (response.syncEpoch != server.syncEpoch) {
+                        require(response == null || response.accountId == server.accountId)
+                        if ((response?.syncEpoch ?: motivation!!.syncEpoch) != server.syncEpoch ||
+                            (motivation != null && motivation.accountGeneration != server.accountGeneration)) {
                             db.bootstrapDao().update(server.copy(requiresRecovery = true,
                                 contextRevision = Math.addExact(server.contextRevision, 1)))
                             profileOperation = null
-                            publish("Stan serwera się zmienił. Lokalny dziennik zachowany; wymagane uzgodnienie danych.")
+                            clearMotivation()
+                            val message = "Stan serwera się zmienił. Lokalny dziennik zachowany; wymagane uzgodnienie danych."
+                            if (kind == PrivateReadKind.MOTIVATION) motivationState = MotivationState.Failed(message)
+                            publish(message)
                         } else {
                             serverProfile = response
+                            if (motivation != null) {
+                                motivationState = MotivationState.Ready(motivation)
+                                motivationFence = lease to server.contextRevision
+                            }
                             profileOperation = null
-                            publish("Odczytano profil serwerowy. Lokalny profil i cel kalorii zachowane.")
+                            publish(if (kind == PrivateReadKind.PROFILE) "Odczytano profil serwerowy. Lokalny profil i cel kalorii zachowane."
+                                else "Odczytano potwierdzenie serwerowe. Lokalny dziennik i zgoda rankingu zachowane.")
                         }
                     }
                     return
@@ -475,7 +542,7 @@ class SessionController internal constructor(private val db: CalorieDatabase, pr
                 val message = when (result.status) {
                     401 -> "Sesja wymaga ponownego logowania. Dziennik działa offline."
                     403 -> if (code == "account_bootstrap_required") "Serwer wymaga ponownego połączenia konta."
-                        else "Serwer nie pozwala odczytać profilu tego konta."
+                        else "Serwer nie pozwala odczytać danych tego konta."
                     409 -> "Stan serwera wymaga ponownego sprawdzenia połączenia. Dane lokalne zachowane."
                     429, 503 -> {
                         val seconds = BootstrapHttpProtocol.retrySeconds(result.retryAfter, now())
@@ -487,26 +554,35 @@ class SessionController internal constructor(private val db: CalorieDatabase, pr
                         }
                         "Serwer jest zajęty. Ponów za co najmniej $seconds s. Dziennik działa offline."
                     }
-                    else -> "Nie udało się odczytać profilu serwerowego. Dziennik działa offline."
+                    else -> "Nie udało się odczytać danych serwerowych. Dziennik działa offline."
                 }
                 mutex.withLock {
-                    if (profileOperation == id) { owners.requireCurrent(lease); profileOperation = null; publish(message) }
+                    if (profileOperation == id) {
+                        owners.requireCurrent(lease); profileOperation = null
+                        if (kind == PrivateReadKind.MOTIVATION) motivationState = MotivationState.Failed(message)
+                        publish(message)
+                    }
                 }
                 return
             }
         } catch (error: CancellationException) {
-            withContext(NonCancellable) { finishProfile(id, lease) }; throw error
-        } catch (_: Exception) { finishProfile(id, lease) }
+            withContext(NonCancellable) { finishPrivate(id, lease, kind) }; throw error
+        } catch (_: Exception) { finishPrivate(id, lease, kind) }
     }
-    private suspend fun finishProfile(id: String, lease: OwnerLease) = mutex.withLock {
+    private suspend fun finishPrivate(id: String, lease: OwnerLease, kind: PrivateReadKind) = mutex.withLock {
         if (profileOperation != id) return@withLock
         profileOperation = null
         serverProfile = null
+        clearMotivation()
+        val message = "Odczyt nie został potwierdzony. Możesz ponowić; dziennik zachowany."
         try {
-            if (owners.currentLease() == lease) publish("Odczyt nie został potwierdzony. Możesz ponowić; dziennik zachowany.")
+            if (owners.currentLease() == lease) {
+                if (kind == PrivateReadKind.MOTIVATION) motivationState = MotivationState.Failed(message)
+                publish(message)
+            }
             else publish()
         } catch (_: Exception) {
-            mutable.value = mutable.value.copy(profileBusy = false, serverProfile = null,
+            mutable.value = mutable.value.copy(profileBusy = false, serverProfile = null, motivationBusy = false, motivation = MotivationState.NotRequested,
                 message = "Odczyt nie został potwierdzony. Dziennik pozostaje lokalny.")
         }
     }

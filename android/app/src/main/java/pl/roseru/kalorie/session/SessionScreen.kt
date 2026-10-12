@@ -10,13 +10,13 @@ import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.unit.dp
 
 data class SessionActions(val login: () -> Unit, val logout: () -> Unit, val refresh: () -> Unit, val cancel: () -> Unit,
-    val bootstrap: () -> Unit, val readProfile: () -> Unit, val downloadSnapshot: () -> Unit = {})
+    val bootstrap: () -> Unit, val readProfile: () -> Unit, val downloadSnapshot: () -> Unit = {}, val readMotivation: () -> Unit = {})
 
-@Composable fun SessionScreen(view: SessionView, actions: SessionActions, back: () -> Unit) {
+@Composable fun SessionScreen(view: SessionView, actions: SessionActions, back: () -> Unit, backLabel: String = "Wróć do profilu") {
     val account = view.binding?.owner?.kind == "account"
     var confirmLogout by remember { mutableStateOf(false) }
     Column(Modifier.fillMaxSize().verticalScroll(rememberScrollState()).padding(20.dp), verticalArrangement = Arrangement.spacedBy(16.dp)) {
-        TextButton(onClick = back) { Text("Wróć do profilu") }
+        TextButton(onClick = back) { Text(backLabel) }
         Text("Konto i logowanie", style = MaterialTheme.typography.headlineLarge)
         Card(Modifier.fillMaxWidth()) {
             Column(Modifier.padding(20.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {

@@ -20,16 +20,18 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import pl.roseru.kalorie.DiaryViewModel
 import pl.roseru.kalorie.core.*
 import pl.roseru.kalorie.data.AchievementState
+import pl.roseru.kalorie.session.SessionView
+import pl.roseru.kalorie.session.SessionActions
 import java.time.ZoneId
 import java.time.format.DateTimeFormatter
 import java.util.Locale
 
-@Composable fun AchievementsScreen(model: DiaryViewModel, onBack: () -> Unit) {
+@Composable fun AchievementsScreen(model: DiaryViewModel, session: SessionView, actions: SessionActions, onAccount: () -> Unit, onBack: () -> Unit) {
     val state by model.achievements.collectAsStateWithLifecycle()
-    AchievementsContent(state, onBack, model::retryAchievements)
+    AchievementsContent(state, onBack, model::retryAchievements) { ServerMotivationPanel(session, actions.readMotivation, onAccount) }
 }
 
-@Composable internal fun AchievementsContent(state: AchievementState, onBack: () -> Unit, onRetry: () -> Unit = {}) {
+@Composable internal fun AchievementsContent(state: AchievementState, onBack: () -> Unit, onRetry: () -> Unit = {}, serverPanel: (@Composable () -> Unit)? = null) {
     LazyColumn(Modifier.fillMaxSize().testTag("achievements-content"), contentPadding = PaddingValues(20.dp),
         verticalArrangement = Arrangement.spacedBy(16.dp)) {
         item(key = "header") {
@@ -42,11 +44,15 @@ import java.util.Locale
             Text("Małe kroki. Trwałe nawyki.", color = MaterialTheme.colorScheme.onSurfaceVariant)
         }
         item(key = "server") {
-            Card(shape = RoundedCornerShape(18.dp), colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface)) {
-                Column(Modifier.fillMaxWidth().padding(16.dp), verticalArrangement = Arrangement.spacedBy(6.dp)) {
-                    Text("Potwierdzenie serwerowe", style = MaterialTheme.typography.titleSmall)
-                    Text("Jeszcze nie pobrane", Modifier.testTag("achievement-server-state"), color = MaterialTheme.colorScheme.onSurfaceVariant)
-                    Text("Ten ekran pokazuje lokalny postęp. Nie publikuje punktów, rangi ani miejsca w rankingu.", style = MaterialTheme.typography.bodySmall)
+            if (serverPanel != null) {
+                serverPanel()
+            } else {
+                Card(shape = RoundedCornerShape(18.dp), colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface)) {
+                    Column(Modifier.fillMaxWidth().padding(16.dp), verticalArrangement = Arrangement.spacedBy(6.dp)) {
+                        Text("Potwierdzenie serwerowe", style = MaterialTheme.typography.titleSmall)
+                        Text("Jeszcze nie pobrane", Modifier.testTag("achievement-server-state"), color = MaterialTheme.colorScheme.onSurfaceVariant)
+                        Text("Ten ekran pokazuje lokalny postęp. Nie publikuje punktów, rangi ani miejsca w rankingu.", style = MaterialTheme.typography.bodySmall)
+                    }
                 }
             }
         }

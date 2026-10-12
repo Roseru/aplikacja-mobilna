@@ -32,6 +32,11 @@ class DiaryFlowTest {
         compose.onNodeWithTag("open-achievements").performClick()
         compose.waitUntil(15_000) { compose.onAllNodesWithTag("achievement-count").fetchSemanticsNodes().isNotEmpty() }
         compose.onNodeWithTag("achievement-server-state").assertTextEquals("Jeszcze nie pobrane")
+        compose.onNodeWithTag("achievements-content").performScrollToNode(hasTestTag("achievement-server-account"))
+        compose.onNodeWithTag("achievement-server-account").performClick()
+        compose.onNodeWithTag("session-owner").assertTextEquals("Gość poligonowy")
+        compose.onNodeWithText("Wróć do osiągnięć").performClick()
+        compose.onNodeWithTag("achievement-server-state").assertTextEquals("Jeszcze nie pobrane")
         compose.activityRule.scenario.recreate()
         compose.waitUntil(15_000) { compose.onAllNodesWithTag("achievement-count").fetchSemanticsNodes().isNotEmpty() }
         compose.onNodeWithTag("achievements-back").performClick()
