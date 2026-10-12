@@ -1,5 +1,7 @@
 # Android — Racje i kalorie
 
+Wersja **0.8.4** odświeża analitykę7/30/90 i układ na wąskich ekranach/powiększonej czcionce, bez zmiany obliczeń lub Room7. [Raport, podglądy i próba manualna](RAPORT_0_8_4.md):103JVM/107device oraz końcowe3UI PASS, lint0błędów; aktualizacja zachowała22tabele/5posiłków. Backend osiągnięć/rankingu E8.1+2 jest scalony, jego połączenie z Androidem pozostaje kolejnym etapem.
+
 Wersja `0.8.3` dodaje [trwałe pobieranie kopii danych serwera](SYNCHRONIZACJA_PULL.md), wznowienie stron i atomowy checkpoint w Room 7. Lokalny dziennik oraz outbox pozostają osobno. Semantyczne projekcje, push, inkrementalny pull, import gościa i WorkManager są kolejnymi etapami E4. Domyślny APK nadal działa offline bez skonfigurowanego API.
 
 Wersja `0.8.2` dodaje [podgląd profilu na serwerze](ODCZYT_PROFILU.md) po bootstrapie: pseudonim, wzrost, klasa, strefa i zgody. Odczyt nie nadpisuje lokalnego profilu, celu kcal ani kolejki. [Raport 0.8.2](RAPORT_0_8_2.md) rozdziela testy zastępcze od wymaganego odbioru rzeczywistego API. PR26 i PR31 są scalone na main; pełny sync pozostaje kolejnym zadaniem.
