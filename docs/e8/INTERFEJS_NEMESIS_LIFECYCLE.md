@@ -1,6 +1,6 @@
 # Interfejs Nemesis lifecycle E8.3 - osoba 2
 
-12 października 2026 r. Kontrakt komponentu fazy C; router nie jest podłączony do produkcyjnego main. Public activation i statystyki pozostają zablokowane w DB do E8.4. Dokument ustala semantykę, nie deklaruje PASS HTTP/PG/CI.
+12 października 2026 r. Kontrakt lifecycle i podłączonej integracji E8.3-I na migracji 0020. Produkcyjny create_app montuje router. Wydawanie kodów, create, accept i statystyki pozostają zablokowane w DB do odbioru E8.4. Faktycznie wykonane kontrole i stan publikacji określają raport oraz recenzja; ten dokument ustala interfejs.
 
 ## Żądania
 
@@ -55,13 +55,13 @@ Niepoprawny, wygasły i wycofany kod mają wspólną neutralną odmowę bez iden
 
 ## Python i integracja
 
-`schemas.py` zawiera NemesisScope, NemesisTerms, CreateNemesis, AcceptNemesis, CancelNemesis, EmptyNemesisOperation, ShareCodeReceipt, NemesisMetadata oraz NemesisPage. Router sprawdza validate_body_size na rzeczywistym body i validate_response_size przed wysłaniem. `addressing.py` udostępnia generate_share_code, share_code_digest oraz canonical_request_hash(operation, body, epoch, if_match=None, entity_id=None). Python wyznacza checksum kanonicznej semantyki, a SQL niezależnie ponownie oblicza autorytatywny hash znormalizowanego JSONB payload i kontekstu; kodek digest przechowuje tylko hex. Nie stanowi autoryzacji.
+`schemas.py` zawiera NemesisScope, NemesisTerms, CreateNemesis, AcceptNemesis, CancelNemesis, EmptyNemesisOperation, ShareCodeReceipt, RevokeCodeReceipt, NemesisMetadata oraz NemesisPage. Router sprawdza validate_body_size na rzeczywistym body i validate_response_size przed wysłaniem. `addressing.py` udostępnia generate_share_code, share_code_digest oraz canonical_request_hash(operation, body, epoch, if_match=None, entity_id=None). Python wyznacza checksum kanonicznej semantyki, a SQL niezależnie ponownie oblicza autorytatywny hash znormalizowanego JSONB payload i kontekstu; kodek digest przechowuje tylko hex. Nie stanowi autoryzacji.
 
 `rules.py` udostępnia frozen ChallengePeriod oraz challenge_period(accepted_at, duration_days, time_zone), next_local_day_start i first_real_day_start. Lifecycle clock musi pochodzić z DB po lockach. Start jest pierwszym rzeczywistym początkiem kolejnej lokalnej daty, a koniec obejmuje dokładnie 7/30/90 kolejnych istniejących dat. Nieistniejąca pełna data wewnątrz okresu odmawia przed mutacją. Gdy nie istnieje wyłącznie wyłączna end_date, end_at wskazuje pierwszą rzeczywistą granicę po ostatnim włączonym dniu, a end_date pozostaje start_date + N. Deadline to end_at UTC + 30 × 24 h. Warsaw DST zmienia liczbę godzin, a nie dat. Przed zapisem wszystkie daty oraz UTC/local roundtrip są sprawdzane względem wspieranego zakresu 0001–9999.
 
 Source seam jest frozen SourceMutationContext na dokładnym freeze. Jeden aggregate projection wykonuje wszystkie locki challenges UUID ASC po account/counter, przed wspólną kwalifikacją. Guard E8.3 nie jest projector/finalizer E8.4, nie oblicza punktów i nie zakazuje poprawnej historycznej strefy wagi. W przyszłym adapterze masa używa occurred_at UTC i ostatniego żywego pomiaru dnia według (occurred_at, UUID); mean_deficit korzysta z dodatniego historycznego E. Hidden nie ujawnia partner counts; insufficient_data jest null z counts; pending nie jest zerem.
 
-Produkcyjne main/health/sync/provision/purge/global schema są zarezerwowane autorowi E8.1+2 do finalnego odbioru PR #35. Faza C ma tylko prywatną factory/bootstrap w tests/support. Faza I podłącza zwolnione seams po zwykłym merge main i wymaga nowych dowodów runtime/nieautora/CI. O1 ma zachować świadomy wybór scope i cache isolation; O3 ma zapewnić minimalne LOGIN, bounded maintenance i restore cancellation. Te przekazania nie zaliczają wykonania O1/O3 ani E8.4.
+Historyczna faza C używała prywatnej factory/bootstrap w tests/support. Po odbiorze i scaleniu PR #35 zwykły merge main 2b3ac61 zwolnił produkcyjne main/health/sync/provision/purge/global schema do integracji I. Podłączoną granicę opisano poniżej; wymaga ona osobnego odbioru runtime, nieautora i CI. O1 ma zachować świadomy wybór scope i cache isolation; O3 ma zapewnić minimalne LOGIN, bounded maintenance i restore cancellation. Te przekazania nie zaliczają wykonania O1/O3 ani E8.4.
 
 Przyszłe E8.4 musi inicjalizować rzeczywiste projections także w transakcji DB accept przed przyznaniem capability, w tym przy raw EXECUTE. Pythonowy testowy initializer nie zastępuje tej zależności. Wydana 0018 pozostanie niezmienna; maintenance dostaje własną 0019, a E8.4 zmieni potrzebną funkcję/schema przez kolejną migrację i dopiero po odbiorze zarejestruje zgodne rewizje.
 

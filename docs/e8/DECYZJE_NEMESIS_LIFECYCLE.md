@@ -39,3 +39,10 @@ Opublikowana w draft PR #37 migracja to `0018_e8_nemesis_lifecycle` po `0017_e8_
 E8.3-I wraca do tej samej rozmowy po merge finalnego E8.1+2: zwykły merge main, retarget PR, produkcyjne seams, nowy nieautor i rzeczywiste osiem CI. E8.4 posiada projekcje, qualification do deadline i finalizer. O1/O3, realny Keycloak, APK oraz produkcja mają osobne dowody; unit lub własne podpisane JWT ich nie zastępują.
 
 Nowa migracja 0019_e8_nemesis_maintenance po niezmiennej0018 kwalifikuje do maintenance invited wyłącznie przez expires_at, active wyłącznie przez end_at. Dzięki temu niezakończoneactive nie zajmują bounded partii. Zachowuje sorted locks, zegar i ponowną kwalifikację po locks, GC i receipts. Downgrade utrzymuje naprawę z jawnym warning; nie przywraca głodzenia backlogu. Nowy rzeczywisty odbiór tej linii na 2960112 zakończył się oceną 9,3/10, zero otwartych P1/P2 zmienionego kodu. Integracja ma zarezerwowaną 0020 po 0019, a E8.4 dostanie najwcześniej 0021.
+
+
+## Aktualna integracja I
+
+Po odebraniu C19 i scaleniu PR #35 integrację oparto na main `2b3ac613dcd0a7950e3e14183bdd1a5d3caee7d2`, dołączonym zwykłym merge. Ten sam draft PR #37 porównuje się z main. Router, source projection, readiness, ORM, minimalny worker provision oraz produkcyjne begin/purge i bounded restore są podłączone na nowej 0020. Szczegóły są w [interfejsie](INTERFEJS_NEMESIS_LIFECYCLE.md); historia C powyżej pozostaje dowodem poprzedniego etapu.
+
+Runtime i migracja są zamrożone na `721f9a842e6aedeb2916bfa98d652045d6652423`. Następne poprawki dotyczą testów i dokumentacji: aktualnych fixtures oraz przygotowania CI, w tym obowiązkowego pliku operatora i eliminacji odziedziczonych ustawień libpq. Publikacja 0020 następuje po właściwej pełnej regresji i nowym nieautorze; osiem rzeczywistych kontroli musi dotyczyć finalnego head/base. Autor nie scala PR. Migracje 0001–0019 pozostają niezmienne, a po publikacji ta sama zasada obejmie 0020. E8.4 zaczyna od co najmniej 0021 po odbiorze integracji. Bramka publiczna pozostaje zamknięta.

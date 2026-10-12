@@ -1,6 +1,6 @@
 # Integracja Androida z Nemesis lifecycle - osoba 2
 
-12 października 2026. To przekazanie komponentu E8.3-C; nie potwierdza wykonania Androida. Produkcyjny router zostanie podłączony w E8.3-I, a wydanie kodu, tworzenie i akceptacja oraz statystyki pozostają niedostępne do odbioru E8.4. W tym etapie 503 jest właściwym stanem bramki.
+12 października 2026. Produkcyjny router jest podłączony w integracji E8.3-I na migracji 0020; przekazanie nie potwierdza wykonania Androida. Wydanie kodu, tworzenie, akceptacja i statystyki pozostają niedostępne do odbioru E8.4. W tym etapie 503 jest właściwym stanem bramki. Aktualną publikację i wyniki kontroli określają raport oraz recenzja.
 
 Adresat świadomie wydaje jednorazowy kod i przekazuje go wybranej osobie poza aplikacją. Kod jest prywatny, ważny najwyżej 24 h, a rotacja unieważnia poprzedni. Nie wyszukujemy adresata po emailu, pseudonimie lub UUID. Kod przesyłamy w body POST /api/v1/nemesis i nie wpisujemy go do URL, logów lub analityki. Opaque code pozwala jedynie skierować propozycję; nie przyznaje dostępu do statystyk.
 
