@@ -65,7 +65,9 @@ BEGIN
  IF p IS NULL OR jsonb_typeof(p) IS DISTINCT FROM 'object' OR jsonb_typeof(p->'scope') IS DISTINCT FROM 'object' THEN RETURN false; END IF;
  RETURN coalesce(p IS NOT NULL AND jsonb_typeof(p)='object' AND
  (SELECT count(*) FROM jsonb_object_keys(p))=4 AND
- p->>'rule_version'='regularity_v1' AND p->'duration_days' IN ('7'::jsonb,'30'::jsonb,'90'::jsonb) AND
+ p->>'rule_version'='regularity_v1' AND
+ jsonb_typeof(p->'duration_days') = 'number' AND
+ p->>'duration_days' IN ('7', '30', '90') AND
  jsonb_typeof(p->'time_zone')='string' AND length(p->>'time_zone') BETWEEN 1 AND 100 AND
  EXISTS(SELECT 1 FROM pg_timezone_names WHERE name=p->>'time_zone') AND
  jsonb_typeof(p->'scope')='object' AND (SELECT count(*) FROM jsonb_object_keys(p->'scope'))=3 AND

@@ -969,3 +969,63 @@ def test_accept_rejects_nonfinite_clock_without_expiring_or_activating(pg, insta
             )
             == 0
         )
+
+
+@pytest.mark.parametrize("duration", [7.0, 30.0, 90.0])
+def test_raw_float_duration_rejected_without_consuming_code_or_admission(pg, duration):
+    a, b = account(pg), account(pg)
+    code = execute(pg, b, "issue")["response"]["destination_code"]
+    digest = hashlib.sha256(code.encode()).hexdigest()
+    result = execute(
+        pg,
+        a,
+        "create",
+        {
+            "destination_digest": digest,
+            "terms": {**TERMS, "duration_days": duration},
+        },
+    )
+    assert result["http_status"] == 422 and result["code"] == "invalid_terms"
+    with pg[0].begin() as conn:
+        assert (
+            conn.scalar(
+                text("SELECT consumed_at FROM app.nemesis_share_codes WHERE owner_id=:id"),
+                {"id": b[0]},
+            )
+            is None
+        )
+        assert (
+            conn.scalar(
+                text("SELECT count(*) FROM app.nemesis_challenges WHERE inviter_id=:id"),
+                {"id": a[0]},
+            )
+            == 0
+        )
+        assert (
+            conn.scalar(
+                text("SELECT count(*) FROM app.nemesis_admissions WHERE owner_id=:id"), {"id": a[0]}
+            )
+            == 0
+        )
+    # The original code stays usable by valid, strictly integral terms.
+    valid = execute(pg, a, "create", {"destination_digest": digest, "terms": TERMS})
+    assert valid["http_status"] == 201 and valid["ok"]
+    assert type(valid["response"]["terms"]["duration_days"]) is int
+    accepted = accept(pg, b, valid["response"])
+    assert accepted["ok"] and accepted["response"]["status"] == "active"
+
+
+@pytest.mark.parametrize("duration", [7, 30, 90])
+def test_raw_valid_integral_durations_create_and_accept(pg, duration):
+    from datetime import date
+
+    a, b = account(pg), account(pg)
+    terms = {**TERMS, "duration_days": duration}
+    metadata = invite(pg, a, b, terms)
+    accepted = accept(pg, b, metadata)
+    assert accepted["ok"] and accepted["response"]["status"] == "active"
+    response = accepted["response"]
+    assert type(response["terms"]["duration_days"]) is int
+    assert (
+        date.fromisoformat(response["end_date"]) - date.fromisoformat(response["start_date"])
+    ).days == duration
