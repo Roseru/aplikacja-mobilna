@@ -39,3 +39,5 @@ Następny etap O1: osiągnięcia z jawnym rozróżnieniem lokalnego postępu i p
 3. Porównaj zamknięty kompletny dzień z dzisiejszym wstępnym oraz datą bez wpisów.
 4. Sprawdź pomiary z dwóch różnych dni; przerwy nie powinny dostawać wymyślonej wagi.
 5. Porównaj jasny i ciemny motyw oraz powiększoną czcionkę. Przyciski i pełne opisy mają pozostawać dostępne przez przewijanie.
+
+Publikacja: [PR38](https://github.com/Roseru/aplikacja-mobilna/pull/38), pierwszy opublikowany head `d8973e526ed1c9cded7c4a33195672d5fa4f774a`, źródła Androida `302cb1503e6ecd9997dbeba220d2de1195583269`. E0 przed pushem8schemas/95valid/35invalid/18scenarios/441links PASS. Ten dopisek ma własne CI; stan zdalnych kontroli nie jest potwierdzony wynikiem lokalnym.
