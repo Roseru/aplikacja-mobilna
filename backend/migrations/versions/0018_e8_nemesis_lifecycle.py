@@ -4,11 +4,11 @@ from pathlib import Path
 
 from alembic import op
 
-revision = "0017_e8_nemesis_lifecycle"
-down_revision = "0016_e8_motivation"
+revision = "0018_e8_nemesis_lifecycle"
+down_revision = "0017_e8_purge_commit"
 branch_labels = None
 depends_on = None
-ROOT = Path(__file__).with_name("e8_0017")
+ROOT = Path(__file__).with_name("e8_0018")
 TABLES = (
     "nemesis_control",
     "nemesis_releases",

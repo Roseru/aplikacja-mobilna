@@ -34,7 +34,7 @@ def private_pg():
     with admin.connect() as c:
         assert 170000 <= int(c.scalar(text("SHOW server_version_num"))) < 180000
         assert c.scalar(text("SELECT version_num FROM app.alembic_version")) == (
-            "0017_e8_nemesis_lifecycle"
+            "0018_e8_nemesis_lifecycle"
         )
     with api.connect() as c:
         assert c.scalar(text("SELECT session_user")) == "calorie_app_api"

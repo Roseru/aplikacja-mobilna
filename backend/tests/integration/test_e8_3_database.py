@@ -384,11 +384,11 @@ def test_old_epoch_immediately_gates_and_nonempty_downgrade_atomic(pg):
     config = Config(str(Path(__file__).resolve().parents[2] / "alembic.ini"))
     with pytest.raises(DBAPIError), pg[0].begin() as conn:
         config.attributes["connection"] = conn
-        command.downgrade(config, "0016_e8_motivation")
+        command.downgrade(config, "0017_e8_purge_commit")
     with pg[0].begin() as conn:
         assert (
             conn.scalar(text("SELECT version_num FROM app.alembic_version"))
-            == "0017_e8_nemesis_lifecycle"
+            == "0018_e8_nemesis_lifecycle"
         )
         assert (
             conn.scalar(
@@ -757,7 +757,7 @@ def role_audit_pg():
         conn.execute(text("DROP SCHEMA IF EXISTS app CASCADE"))
         conn.execute(text("CREATE SCHEMA app AUTHORIZATION calorie_app_migrator"))
         conn.execute(text("GRANT USAGE ON SCHEMA app TO calorie_app_api,calorie_app_worker"))
-    private.migrate("0016_e8_motivation")
+    private.migrate("0017_e8_purge_commit")
     yield private
     engine.dispose()
 
@@ -818,11 +818,11 @@ def test_migration_rejects_poisoned_role_or_effective_acl_before_ddl(role_audit_
         with admin.begin() as conn:
             conn.execute(text(grant))
         with pytest.raises(DBAPIError) as caught:
-            role_audit_pg.migrate("0017_e8_nemesis_lifecycle")
+            role_audit_pg.migrate("0018_e8_nemesis_lifecycle")
         assert caught.value.orig.sqlstate == "23514"
         with migrator.begin() as conn:
             assert conn.scalar(text("SELECT version_num FROM app.alembic_version")) == (
-                "0016_e8_motivation"
+                "0017_e8_purge_commit"
             )
             assert conn.scalar(text("SELECT to_regclass('app.nemesis_control')")) is None
             assert conn.scalar(text("SELECT to_regclass('app.nemesis_receipts')")) is None
@@ -834,7 +834,7 @@ def test_migration_rejects_poisoned_role_or_effective_acl_before_ddl(role_audit_
 
 
 def test_minimal_dedicated_login_allowed_and_all_runtime_privileges_narrow(role_audit_pg):
-    role_audit_pg.migrate("0017_e8_nemesis_lifecycle")
+    role_audit_pg.migrate("0018_e8_nemesis_lifecycle")
     worker = role_audit_pg.engine("worker")
     try:
         with worker.begin() as conn:
