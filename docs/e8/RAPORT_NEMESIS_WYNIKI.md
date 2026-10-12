@@ -1,6 +1,6 @@
 # Raport E8.4: projekcje i wynik Nemesis - osoba 2
 
-Bieżący stan: lokalny kod i kontrakt są zamrożone do odbioru. Nieautor zakończył własny odbiór nowego zakresu; własny suplement poprawionej granicy605 również zaliczono9,3 bez nierozwiązanychP1/P2. Publikacja PR i pełne zdalne CI są jeszcze w toku. Niniejszy zapis nie deklaruje zakończenia E8.4 lub całego zespołowego E8.
+Bieżący stan: lokalny kod i kontrakt są zamrożone do odbioru. Nieautor zakończył własny odbiór nowego zakresu; własny suplement poprawionej granicy605 również zaliczono9,3 bez nierozwiązanychP1/P2. [PR42](https://github.com/Roseru/aplikacja-mobilna/pull/42) opublikowano; pełne zdalne CI końcowego head jest jeszcze w toku. Actual head/base/run/logs zostaną zapisane w opisie PR i przekazaniu. Niniejszy zapis nie deklaruje zakończenia E8.4 lub całego zespołowego E8.
 
 ## Źródło i zgodność
 
@@ -48,4 +48,4 @@ Zachowano wszystkie RED i ich wyjaśnienia: parser SQL CASE/alias; initial snaps
 
 [O1](INTEGRACJA_O1_NEMESIS_WYNIKI.md) otrzymuje DTO, przykłady, polling/read revision, świeżość sharing i izolację sesji/cache. [O3](KONFIGURACJA_O3_NEMESIS_WYNIKI.md) otrzymuje role/provision, migracje, activation, CLI/schedule/backlog oraz purge/backup/restore. O1 sam odbiera APK/UI/cache/Room/HTTP; O3 rollout, TLS/Keycloak, schedule i RPO/RTO. Signed synthetic JWT/JWKS oraz lokalny TCP nie zastępują tych odbiorów.
 
-Jedyny dziennik to KOMUNIKACJA_AGENTOW/O2-027; O1-020 i cała wcześniejsza komunikacja zachowane. Koordynator scala dokładny head po odbiorze i current-head/base ośmiu CI, następnie odbiera osobny push main i E8.5. Wykonawca nie scala własnego PR. Własne PG55521/55522 zatrzymano fast/wait po odbiorze installed CLI; nie ma listenerów. Autorzy55523/55525 zatrzymali swoje usługi. Nieautor zatrzymał55524 po suplemencie; listener55534 nie był uruchamiany. Finalne source/head/base/PR/nieautor/CI zostaną dopisane przy końcowym przekazaniu.
+Publikacja: branch wypchnięty, PR42 open, pierwszy head62004b2/basea6; końcowy metadopisek wymaga własnych ośmiu kontroli, bez ponawiania długiej lokalnej regresji po docs-only. Jedyny dziennik to KOMUNIKACJA_AGENTOW/O2-027; O1-020 i cała wcześniejsza komunikacja zachowane. Koordynator scala dokładny head po odbiorze i current-head/base ośmiu CI, następnie odbiera osobny push main i E8.5. Wykonawca nie scala własnego PR. Własne PG55521/55522 zatrzymano fast/wait po odbiorze installed CLI; nie ma listenerów. Autorzy55523/55525 zatrzymali swoje usługi. Nieautor zatrzymał55524 po suplemencie; listener55534 nie był uruchamiany. Finalne source/head/base/PR/nieautor/CI zostaną dopisane przy końcowym przekazaniu.
