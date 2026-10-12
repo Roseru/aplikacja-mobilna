@@ -244,11 +244,11 @@ class BootstrapGoalStorageTest {
                 old.version = 5
             }
         } finally { fixture.close() }
-        val db = Room.databaseBuilder(context, CalorieDatabase::class.java, name).addMigrations(MIGRATION_5_6).addCallback(DATABASE_GUARDS).build()
+        val db = Room.databaseBuilder(context, CalorieDatabase::class.java, name).addMigrations(MIGRATION_5_6, MIGRATION_6_7).addCallback(DATABASE_GUARDS).build()
         try {
             val sql = db.openHelper.readableDatabase
             queries.forEach { (table, query) -> assertEquals(table, expected.getValue(table), sql.query(query).use(::rows)) }
-            assertEquals(6, sql.version)
+            assertEquals(7, sql.version)
             assertEquals("legacy", db.dao().goalById("guest", "old-goal")!!.reason)
             assertEquals(0, db.dao().goalById("guest", "old-goal")!!.localSequence)
             assertNull(db.bootstrapDao().binding("guest"))

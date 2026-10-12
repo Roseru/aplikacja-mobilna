@@ -1,0 +1,21 @@
+{
+  "protocol_version": 1,
+  "sync_epoch": "00000000-0000-4000-8000-000000000064",
+  "checkpoint": "checkpoint-demo-A-E100",
+  "operations": [
+    {
+      "operation_id": "00000000-0000-4000-8000-00000000012c",
+      "entity_type": "weight",
+      "entity_id": "00000000-0000-4000-8000-0000000000c8",
+      "action": "upsert",
+      "base_revision": null,
+      "sync_epoch": "00000000-0000-4000-8000-000000000064",
+      "payload": {
+        "weight_kg": "80",
+        "occurred_at": "2026-10-09T06:00:00Z",
+        "time_zone": "Europe/Warsaw",
+        "local_date": "2026-10-09"
+      }
+    }
+  ]
+}
