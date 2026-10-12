@@ -1,5 +1,13 @@
 # Plan implementacji — osoba 1: Android i pamięć lokalna
 
+## Aktualizacja O1 — osiągnięcia0.8.5, 12 października 2026
+
+- Właściciel: „Zachowaj wygląd i rozwijaj osiągnięcia”. Analityka0.8.4/PR38 scalona na c3009f4 po ośmiu success exactffc3027, CI38215019078; Postępy zachowane.
+- Osiągnięcia0.8.5/code16/Room8: lokalny podgląd czterech warunków całej historii, stany lokalnie spełniony/wstępny/wtrakcie, daty i korekty, bez potwierdzonych punktów/rangi/rankingu. Profil otwiera osobną stronę. [Raport i podglądy](android/RAPORT_0_8_5.md), branch codex/android-osiagniecia-local, source62779d2. 115JVM/117device PASS, lint0error; rzeczywisty install-r/launch zachował wszystkie stare kolumny22tabel/5posiłków/FK. Nowa nullable pozycja składnika racji jest utrwalana tylko przy nowym zapisie; dawnym wpisom nie dopisujemy dowodu.
+- Następne: prywatny GET /me/motivation, ścisłe DTO i osobny stan pending/final/revoked z revision/as_of. Wykorzystać istniejące odnowienie sesji i bootstrap; chronić owner lease/account_generation/sync_epoch/contextRevision i spóźnione odpowiedzi. Odczyt/cache nie może publikować ranking opt-in. Ranking i afirmacja po restore pozostają osobnym świadomym krokiem.
+- Nemesis: wczytano scalony PR37/E8.3-I, main7654640 i instrukcję E8.4/PR39. Router0020 jest podłączony, ale issuance/create/accept/statistics nadal zamknięte do odbioru E8.4. Android przygotuje terms/kod/zgody/retry/cache według finalnych interfejsów, bez fikcyjnego partnera lub zerowych wyników. Pełny E8.4/realHTTP/DevOps wymagają własnych odbiorów.
+- Dalsze E4: semantyczna projekcja, adapter Decimal i zapisanych markerów racji, trwałe push/ACK, incremental, import/recovery i WorkManager; lokalny outbox nie jest wire DTO.
+
 ## Aktualizacja O1 — 12 października 2026
 
 - 0.8.3 / PR34 scalony na main ffc6ab0 po ośmiu success exact302ffae/base2b3ac61; CI38210074687, brak uwag. Trwałe archiwum wire pozostaje oddzielne od semantycznej projekcji oraz kolejki.
