@@ -41,7 +41,7 @@ class PrivatePostgres:
     @classmethod
     def from_environment(cls):
         private_file = os.environ.get("E8_3_POSTGRES_CREDENTIALS")
-        values = json.loads(Path(private_file).read_text()) if private_file else {}
+        values = json.loads(Path(private_file).read_text(encoding="utf-8")) if private_file else {}
         for name in ("admin", "migrator", "api", "worker"):
             override = os.environ.get(f"E8_3_{name.upper()}_DATABASE_URL")
             if override:

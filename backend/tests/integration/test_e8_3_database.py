@@ -745,7 +745,7 @@ def role_audit_pg():
     private_path = os.environ.get("E8_3_ROLE_AUDIT_CREDENTIALS")
     if not private_path:
         pytest.fail("Role audit requires E8_3_ROLE_AUDIT_CREDENTIALS for a second private cluster")
-    values = json.loads(Path(private_path).read_text())
+    values = json.loads(Path(private_path).read_text(encoding="utf-8"))
     private = PrivatePostgres(**values)
     ordinary = PrivatePostgres.from_environment()
     isolated_url, ordinary_url = make_url(private.admin_url), make_url(ordinary.admin_url)

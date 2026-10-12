@@ -136,6 +136,8 @@ def source_accounts(private_pg):
             "motivation_days",
             "motivation_accounts",
             "ranking_affirmations",
+            "online_receipts",
+            "user_consents",
             "sync_receipts",
             "sync_changes",
             "weights",
