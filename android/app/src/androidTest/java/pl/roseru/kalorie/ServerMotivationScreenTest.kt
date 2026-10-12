@@ -18,6 +18,7 @@ import androidx.test.platform.app.InstrumentationRegistry
 import org.junit.Assert.*
 import org.junit.Rule
 import org.junit.Test
+import org.json.JSONObject
 import pl.roseru.kalorie.core.*
 import pl.roseru.kalorie.data.*
 import pl.roseru.kalorie.session.*
@@ -75,6 +76,12 @@ class ServerMotivationScreenTest {
         val state = mutableStateOf(view(MotivationState.Ready(read("pending-backfill"))))
         show(state)
         compose.onNodeWithTag("achievement-server-points").assertTextEquals("Punkty i ranga jeszcze niedostępne")
+        val unavailable = JSONObject(String(InstrumentationRegistry.getInstrumentation().context.assets
+            .open("motivation/motivation-pending-backfill.json").use { it.readBytes() })).apply {
+            getJSONObject("ranking").put("pending_consent_refresh", false)
+        }
+        compose.runOnIdle { state.value = view(MotivationState.Ready(MotivationReadProtocol.parse(unavailable.toString().toByteArray()))) }
+        compose.onNodeWithTag("achievement-server-ranking").assertTextContains("Zgoda na ranking jest zapisana", substring = true)
         compose.runOnIdle { state.value = view(MotivationState.Ready(read("revoked"))) }
         compose.onNodeWithTag("achievement-server-details").performScrollTo().performClick()
         compose.onNodeWithTag("server-badge-complete_streak_10").performScrollTo().assertTextEquals("Cofnięta po korekcie · 0 / 10")

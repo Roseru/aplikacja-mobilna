@@ -69,16 +69,26 @@ import java.util.Locale
             is AchievementState.Ready -> {
                 val preview = state.preview
                 item(key = "summary") {
-                    Card(shape = RoundedCornerShape(22.dp), colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.primaryContainer)) {
-                        Column(Modifier.fillMaxWidth().padding(20.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                            Text("PODGLĄD LOKALNY · DZIAŁA OFFLINE", style = MaterialTheme.typography.labelMedium)
-                            Text("${preview.badges.count { it.satisfied }} / 4", Modifier.testTag("achievement-count"),
-                                style = MaterialTheme.typography.displaySmall, fontWeight = FontWeight.Bold)
-                            Text("warunki spełnione na tym urządzeniu", style = MaterialTheme.typography.titleSmall)
-                            Text("Najlepszy postęp z całej lokalnej historii. Korekta lub usunięcie wpisu może zmienić wynik.", style = MaterialTheme.typography.bodySmall)
-                            Text("Dzisiaj pozostaje wstępne. Serie liczymy po zamknięciu dnia w strefie urządzenia; pomiary i racje w strefie zapisanej we wpisie.", style = MaterialTheme.typography.bodySmall)
+                    var details by rememberSaveable { mutableStateOf(false) }
+                    Card(Modifier.testTag("achievement-summary"), shape = RoundedCornerShape(22.dp), colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.primaryContainer)) {
+                        Column(Modifier.fillMaxWidth().padding(16.dp), verticalArrangement = Arrangement.spacedBy(4.dp)) {
+                            Text("PODGLĄD LOKALNY · OFFLINE", style = MaterialTheme.typography.labelSmall)
+                            Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(12.dp)) {
+                                Text("${preview.badges.count { it.satisfied }} / 4", Modifier.testTag("achievement-count"),
+                                    style = MaterialTheme.typography.headlineMedium, fontWeight = FontWeight.Bold)
+                                Text("warunki spełnione na tym urządzeniu", Modifier.weight(1f), style = MaterialTheme.typography.bodySmall)
+                            }
+                            Text("Dzisiaj wstępne · korekty mogą zmienić wynik.", style = MaterialTheme.typography.bodySmall)
                             val updated = preview.asOf.atZone(ZoneId.of(preview.zoneId)).format(DateTimeFormatter.ofPattern("dd.MM.yyyy · HH:mm"))
                             Text("Przeliczono: $updated · ${preview.zoneId}", style = MaterialTheme.typography.labelSmall)
+                            TextButton(onClick = { details = !details }, modifier = Modifier.testTag("achievement-summary-details")) {
+                                Text(if (details) "Ukryj szczegóły" else "Jak liczymy postęp")
+                            }
+                            if (details) {
+                                Text("Najlepszy postęp z całej lokalnej historii. Korekta lub usunięcie wpisu może zmienić wynik.",
+                                    Modifier.testTag("achievement-summary-explanation"), style = MaterialTheme.typography.bodySmall)
+                                Text("Serie liczymy po zamknięciu dnia w strefie urządzenia; pomiary i racje w strefie zapisanej we wpisie.", style = MaterialTheme.typography.bodySmall)
+                            }
                         }
                     }
                 }

@@ -70,6 +70,7 @@ import java.time.format.DateTimeFormatter
         read.ranking.pendingConsentRefresh -> "Ranking czeka na ponowne potwierdzenie zgody. Ten odczyt jej nie odnawia."
         read.ranking.effective && read.ranking.ownPosition != null -> "Twoje miejsce w rankingu: ${read.ranking.ownPosition}"
         read.ranking.effective -> "Udział w rankingu aktywny; miejsce jeszcze niedostępne."
+        read.ranking.requested -> "Zgoda na ranking jest zapisana. Publikacja wyniku jest jeszcze niedostępna."
         else -> "Udział w rankingu wyłączony."
     }, Modifier.testTag("achievement-server-ranking"), style = MaterialTheme.typography.bodySmall)
     var expanded by rememberSaveable { mutableStateOf(false) }
