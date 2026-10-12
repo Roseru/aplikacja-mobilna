@@ -65,11 +65,25 @@ class AchievementPresentationTest {
         val bytes = ParcelFileDescriptor.AutoCloseInputStream(instrumentation.uiAutomation.executeShellCommand("head -c 8 $path")).use { it.readBytes() }
         assertTrue(bytes.contentEquals(byteArrayOf(0x89.toByte(), 0x50, 0x4e, 0x47, 13, 10, 26, 10)))
     }
+    @Test fun compactSummaryShowsBadgesEarlierAndRulesRemainAvailableOnDemand() {
+        show(mutableStateOf(AchievementState.Ready(fixture())))
+        val summary = compose.onNodeWithTag("achievement-summary").fetchSemanticsNode()
+        val density = InstrumentationRegistry.getInstrumentation().targetContext.resources.displayMetrics.density
+        assertTrue(summary.boundsInRoot.height <= 200f * density)
+        compose.onNodeWithTag("badge-complete_streak_10").assertIsDisplayed()
+        compose.onNodeWithTag("badge-in_goal_streak_10").assertIsDisplayed()
+        compose.onNodeWithTag("achievement-summary-explanation").assertDoesNotExist()
+        scroll("achievement-summary-details"); compose.onNodeWithTag("achievement-summary-details").performClick()
+        scroll("achievement-summary-explanation"); compose.onNodeWithTag("achievement-summary-explanation").assertIsDisplayed()
+        scroll("achievement-summary-details"); compose.onNodeWithTag("achievement-summary-details").performClick()
+        compose.onNodeWithTag("achievement-summary-explanation").assertDoesNotExist()
+    }
 
     @Test fun localWitnessAndTodayProgressStaySeparateFromServerAndCorrectionRemovesWitness() {
         val result = fixture()
         val state = mutableStateOf<AchievementState>(AchievementState.Ready(result))
         show(state)
+        scroll("achievement-server-state")
         compose.onNodeWithTag("achievement-server-state").assertTextEquals("Jeszcze nie pobrane")
         scroll("achievement-count"); compose.onNodeWithTag("achievement-count").assertTextEquals("3 / 4")
         screenshot("light-summary")

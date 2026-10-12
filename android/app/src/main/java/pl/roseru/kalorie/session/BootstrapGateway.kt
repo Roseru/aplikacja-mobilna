@@ -35,6 +35,7 @@ internal interface BootstrapGateway {
 internal interface ProfileGateway {
     suspend fun get(session: ApiSession, beforeSend: suspend () -> Unit): BootstrapHttpResult
 }
+internal interface MotivationGateway : ProfileGateway
 internal interface SnapshotGateway {
     suspend fun get(session: ApiSession, query: SnapshotQuery, beforeSend: suspend () -> Unit): BootstrapHttpResult
 }
@@ -104,6 +105,12 @@ internal class HttpsProfileGateway(base: String,
     override suspend fun get(session: ApiSession, beforeSend: suspend () -> Unit) =
         HttpsJsonTransport.request(url, "GET", session, null, open, beforeSend)
 }
+internal class HttpsMotivationGateway(base: String,
+    private val open: (URL) -> HttpsURLConnection = { it.openConnection() as HttpsURLConnection }) : MotivationGateway {
+    private val url = URL(BootstrapHttpProtocol.endpoint(base).toString().removeSuffix("/bootstrap") + "/motivation")
+    override suspend fun get(session: ApiSession, beforeSend: suspend () -> Unit) =
+        HttpsJsonTransport.request(url, "GET", session, null, open, beforeSend, requireNoStore = true)
+}
 internal class HttpsSnapshotGateway(base: String,
     private val open: (URL) -> HttpsURLConnection = { it.openConnection() as HttpsURLConnection }) : SnapshotGateway {
     private val endpoint = BootstrapHttpProtocol.endpoint(base).toString().removeSuffix("/me/bootstrap") + "/sync/pull"
@@ -115,7 +122,7 @@ internal class HttpsSnapshotGateway(base: String,
 private object HttpsJsonTransport {
     suspend fun request(url: URL, method: String, session: ApiSession, key: String?,
         open: (URL) -> HttpsURLConnection, beforeSend: suspend () -> Unit,
-        maxBytes: Int = BootstrapHttpProtocol.MAX_BYTES) = withContext(Dispatchers.IO) {
+        maxBytes: Int = BootstrapHttpProtocol.MAX_BYTES, requireNoStore: Boolean = false) = withContext(Dispatchers.IO) {
         require(session.accessToken.isNotBlank() && session.accessToken.length <= 65_536 &&
             session.accessToken.none { it.isWhitespace() || it.isISOControl() })
         val connection = open(url)
@@ -138,6 +145,8 @@ private object HttpsJsonTransport {
             require(status in 200..599 && status !in 300..399)
             // A proxy may return HTML for overload. Honour its delay without reading/echoing the body.
             if (status == 429 || status == 503) return@withContext BootstrapHttpResult(status, ByteArray(0), connection.getHeaderField("Retry-After"))
+            if (status == 200 && requireNoStore) require(connection.getHeaderField("Cache-Control")
+                ?.split(',')?.any { it.trim().equals("no-store", ignoreCase = true) } == true)
             val contentType = connection.contentType?.substringBefore(';')?.trim()
             require(contentType.equals("application/json", ignoreCase = true))
             require(connection.getHeaderField("Content-Encoding").let { it == null || it.equals("identity", ignoreCase = true) })

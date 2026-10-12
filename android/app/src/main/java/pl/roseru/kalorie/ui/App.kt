@@ -62,8 +62,10 @@ import pl.roseru.kalorie.session.*
             composable("settings") { SettingsScreen(model) }
             composable("profile") { ProfileScreen(model, onAccount = { nav.navigate("account") { launchSingleTop = true } },
                 onAchievements = { nav.navigate("achievements") { launchSingleTop = true } }) }
-            composable("achievements") { AchievementsScreen(model) { nav.popBackStack() } }
-            composable("account") { SessionScreen(session, actions) { nav.popBackStack() } }
+            composable("achievements") { AchievementsScreen(model, session, actions,
+                onAccount = { nav.navigate("account") { launchSingleTop = true } }, onBack = { nav.popBackStack() }) }
+            composable("account") { SessionScreen(session, actions, back = { nav.popBackStack() },
+                backLabel = if (nav.previousBackStackEntry?.destination?.route == "achievements") "Wróć do osiągnięć" else "Wróć do profilu") }
             composable("analytics") { AnalyticsScreen(model, onDay = { date ->
                 model.selectDate(date)
                 nav.navigate("diary") { popUpTo("diary"); launchSingleTop = true }

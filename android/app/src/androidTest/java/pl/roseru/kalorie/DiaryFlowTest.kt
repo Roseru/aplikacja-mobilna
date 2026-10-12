@@ -31,7 +31,15 @@ class DiaryFlowTest {
         compose.onNodeWithTag("open-profile").performClick()
         compose.onNodeWithTag("open-achievements").performClick()
         compose.waitUntil(15_000) { compose.onAllNodesWithTag("achievement-count").fetchSemanticsNodes().isNotEmpty() }
+        compose.onNodeWithTag("achievements-content").performScrollToNode(hasTestTag("achievement-server-state"))
         compose.onNodeWithTag("achievement-server-state").assertTextEquals("Jeszcze nie pobrane")
+        compose.onNodeWithTag("achievements-content").performScrollToNode(hasTestTag("achievement-server-account"))
+        compose.onNodeWithTag("achievement-server-account").performClick()
+        compose.onNodeWithTag("session-owner").assertTextEquals("Gość poligonowy")
+        compose.onNodeWithText("Wróć do osiągnięć").performClick()
+        compose.onNodeWithTag("achievements-content").performScrollToNode(hasTestTag("achievement-server-state"))
+        compose.onNodeWithTag("achievement-server-state").assertTextEquals("Jeszcze nie pobrane")
+        compose.onNodeWithTag("achievements-content").performScrollToIndex(0)
         compose.activityRule.scenario.recreate()
         compose.waitUntil(15_000) { compose.onAllNodesWithTag("achievement-count").fetchSemanticsNodes().isNotEmpty() }
         compose.onNodeWithTag("achievements-back").performClick()
@@ -295,7 +303,9 @@ class DiaryFlowTest {
 
     private fun finishQuantityInput(tag: String, buttonTag: String) {
         compose.onNodeWithTag(tag).performClick().performImeAction()
-        compose.onNodeWithTag(tag).assertIsNotFocused()
+        // After Done the merged tree may absorb the field into its parent. Check the tagged
+        // field itself; the focus=false oracle and the separate IME visibility check stay intact.
+        compose.onNodeWithTag(tag, useUnmergedTree = true).assertIsNotFocused()
         compose.waitUntil(5_000) {
             ViewCompat.getRootWindowInsets(compose.activity.window.decorView)?.isVisible(WindowInsetsCompat.Type.ime()) != true
         }
