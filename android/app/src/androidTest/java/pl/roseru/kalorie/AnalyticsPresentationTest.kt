@@ -1,6 +1,5 @@
 package pl.roseru.kalorie
 
-import android.graphics.Bitmap
 import android.os.ParcelFileDescriptor
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
@@ -10,7 +9,6 @@ import androidx.compose.material3.Surface
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.asAndroidBitmap
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.test.*
@@ -25,7 +23,6 @@ import org.junit.Test
 import pl.roseru.kalorie.core.*
 import pl.roseru.kalorie.ui.AnalyticsContent
 import pl.roseru.kalorie.ui.CalorieTheme
-import java.io.File
 import java.math.BigDecimal
 import java.time.LocalDate
 
@@ -68,18 +65,19 @@ class AnalyticsPresentationTest {
     }
     private fun scroll(tag: String) = compose.onNodeWithTag("analytics-content").performScrollToNode(hasTestTag(tag))
     private fun screenshot(name: String) {
-        val image = compose.onNodeWithTag("analytics-preview").captureToImage().asAndroidBitmap()
-        val directory = File(InstrumentationRegistry.getInstrumentation().targetContext.filesDir, "analytics-preview")
-        directory.mkdirs()
-        File(directory, "$name.png").outputStream().use { assertTrue(image.compress(Bitmap.CompressFormat.PNG, 100, it)) }
+        compose.onNodeWithTag("analytics-preview").assertIsDisplayed()
         // Connected tests remove the validation package afterwards. Preserve only these synthetic
         // previews in the emulator's shell-owned temporary directory, outside private app data.
         val instrumentation = InstrumentationRegistry.getInstrumentation()
         val packageName = instrumentation.targetContext.packageName
         check(packageName == "pl.roseru.kalorie.validation")
         check(name in setOf("light-summary", "light-chart", "dark-large-text", "dark-large-chart"))
-        val command = "run-as $packageName cat files/analytics-preview/$name.png > /data/local/tmp/calorie-v084-$name.png"
+        val path = "/data/local/tmp/calorie-v084-$name.png"
+        val command = "screencap -p $path"
         ParcelFileDescriptor.AutoCloseInputStream(instrumentation.uiAutomation.executeShellCommand(command)).use { it.readBytes() }
+        val signature = ParcelFileDescriptor.AutoCloseInputStream(instrumentation.uiAutomation.executeShellCommand("head -c 8 $path"))
+            .use { it.readBytes() }
+        assertTrue("Export must preserve a real PNG", signature.contentEquals(byteArrayOf(0x89.toByte(), 0x50, 0x4e, 0x47, 13, 10, 26, 10)))
     }
     @Test fun closedDaySummaryAndRealWeightRemainSeparateFromPreliminaryAndMissingDays() {
         var selectedDay: LocalDate? = null
