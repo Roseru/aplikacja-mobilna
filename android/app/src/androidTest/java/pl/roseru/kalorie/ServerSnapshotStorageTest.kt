@@ -182,7 +182,9 @@ class ServerSnapshotStorageTest {
                     old.execSQL(resolve(entity.getString("createSql")))
                     val indices = entity.optJSONArray("indices") ?: JSONArray()
                     for (j in 0 until indices.length()) old.execSQL(resolve(indices.getJSONObject(j).getString("createSql")))
-                    fixture.openHelper.readableDatabase.query("SELECT * FROM `$table`").use { cursor ->
+                    val fields = entity.getJSONArray("fields")
+                    val oldColumns = (0 until fields.length()).joinToString(",") { "`${fields.getJSONObject(it).getString("columnName")}`" }
+                    fixture.openHelper.readableDatabase.query("SELECT $oldColumns FROM `$table`").use { cursor ->
                         while (cursor.moveToNext()) {
                             val values: Array<Any?> = (0 until cursor.columnCount).map { index -> when(cursor.getType(index)) {
                                 Cursor.FIELD_TYPE_NULL -> null; Cursor.FIELD_TYPE_INTEGER -> cursor.getLong(index)
@@ -198,9 +200,9 @@ class ServerSnapshotStorageTest {
             }
             expected = originalTables(fixture); assertEquals(18, expected.size)
         } finally { fixture.close() }
-        val migrated = Room.databaseBuilder(context, CalorieDatabase::class.java, name).addMigrations(MIGRATION_6_7).addCallback(DATABASE_GUARDS).build()
+        val migrated = Room.databaseBuilder(context, CalorieDatabase::class.java, name).addMigrations(MIGRATION_6_7, MIGRATION_7_8).addCallback(DATABASE_GUARDS).build()
         try {
-            assertEquals(expected, originalTables(migrated)); assertEquals(7, migrated.openHelper.readableDatabase.version)
+            assertEquals(expected, originalTables(migrated)); assertEquals(8, migrated.openHelper.readableDatabase.version)
             assertTrue(migrated.snapshotDao().runs("guest").isEmpty())
             assertFalse(migrated.openHelper.readableDatabase.query("PRAGMA foreign_key_check").use { it.moveToFirst() })
         } finally { migrated.close(); context.deleteDatabase(name) }

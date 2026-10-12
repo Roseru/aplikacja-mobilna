@@ -43,6 +43,10 @@ class DiaryViewModel(private val repository: DiaryRepository, private val prefer
         AnalyticsRepository(repository.dao, clock).observe(repository.owner, window).map<AnalyticsResult, AnalyticsResult?> { it }.onStart { emit(null) }
     }.stateIn(viewModelScope, policy, null)
     val theme = preferences.theme.stateIn(viewModelScope, policy, ThemeMode.SYSTEM)
+    private val achievementRetry = MutableStateFlow(0)
+    val achievements = achievementRetry.flatMapLatest { repository.achievements(clock) }
+        .stateIn(viewModelScope, policy, AchievementState.Loading)
+    fun retryAchievements() { achievementRetry.value += 1 }
     val products = repository.dao.products(repository.owner).stateIn(viewModelScope, policy, emptyList())
     val rations = repository.dao.rations().stateIn(viewModelScope, policy, emptyList())
     val profile = repository.dao.profile(repository.owner).stateIn(viewModelScope, policy, null)

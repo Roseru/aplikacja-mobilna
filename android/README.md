@@ -1,5 +1,7 @@
 # Android — Racje i kalorie
 
+Wersja **0.8.5** dodaje „Profil → Osiągnięcia”: cztery lokalne warunki v1, postęp całej historii i daty spełnienia, wstępne dzisiaj, przeliczenie po korekcie oraz osobny stan niepobranego potwierdzenia serwera. [Raport i syntetyczne podglądy](RAPORT_0_8_5.md):115JVM/117device PASS, lint0błędów; Room7→8 zachował wszystkie stare kolumny22tabel/5posiłków. Wygląd Postępów0.8.4 został zaakceptowany i pozostaje zachowany. GET motywacji, ranking i Nemesis mają osobną integrację.
+
 Wersja **0.8.4** odświeża analitykę7/30/90 i układ na wąskich ekranach/powiększonej czcionce, bez zmiany obliczeń lub Room7. [Raport, podglądy i próba manualna](RAPORT_0_8_4.md):103JVM/107device oraz końcowe3UI PASS, lint0błędów; aktualizacja zachowała22tabele/5posiłków. Backend osiągnięć/rankingu E8.1+2 jest scalony, jego połączenie z Androidem pozostaje kolejnym etapem.
 
 Wersja `0.8.3` dodaje [trwałe pobieranie kopii danych serwera](SYNCHRONIZACJA_PULL.md), wznowienie stron i atomowy checkpoint w Room 7. Lokalny dziennik oraz outbox pozostają osobno. Semantyczne projekcje, push, inkrementalny pull, import gościa i WorkManager są kolejnymi etapami E4. Domyślny APK nadal działa offline bez skonfigurowanego API.
@@ -12,6 +14,7 @@ Wersja `0.8.1` dodaje połączenie konta z API przez trwały bootstrap HTTP, odn
 
 ## Co zawiera
 
+- Cztery lokalne osiągnięcia: serie10dni kompletności/celu, pomiary4różnych dni w14dniach, racje5różnych dni; korekty mogą usunąć spełnienie warunku. Odczyt nie publikuje punktów/rankingu.
 - Jasny i ciemny motyw oraz wybór zgodny z systemem, zapisany w DataStore.
 - Dziennik według dni, wybór daty, suma kcal i B/T/W oraz realizacja celu.
 - Wbudowany katalog: 15 dawnych produktów oraz 18 produktów pakietu E2; wyszukiwanie także bez polskich znaków, aliasy E2 i ostatnio używane produkty.
@@ -29,7 +32,7 @@ Wersja `0.8.1` dodaje połączenie konta z API przez trwały bootstrap HTTP, odn
 
 Katalog i początkowy cel 2800 kcal są **danymi demonstracyjnymi**, nie zweryfikowaną bazą żywieniową ani wyliczonym zapotrzebowaniem użytkownika. Dawne zestawy A/B nie odwzorowują specyfikacji S-R/S-RG ani żadnego producenta. Nowy pakiet E2 dodaje osobną niezweryfikowaną, niepełną rację S-RG-1 z 18 policzalnymi komponentami i informacją o pozycjach poza obliczeniami. Nie łączymy zestawów po nazwie lub kalorii. Dawne napoje pozostają w gramach; nowy katalog obsługuje g/ml, bez założenia, że 1 ml = 1 g.
 
-Schemat Room 7 zawiera migracje 1 → 2 → 3 → 4 → 5 → 6 → 7 zachowujące posiłki, racje, cele, prywatne produkty, profil, pomiary, deklaracje dni, właścicieli i całą kolejkę. Migracja 6→7 dodaje cztery osobne tabele kopii serwera. Migracja 5→6 przebudowuje tabelę celów z zachowaniem wszystkich wcześniejszych kolumn i ID, dodaje metadane wersji/złożony FK korekty oraz dwie tabele bootstrapu. Nie zmienia wartości REAL ani dawnych payloadów outbox. Prywatne dane mają zakres właściciela. Usuwanie spożycia pozostawia znacznik i operację kolejki; wersje celów są niezmienne.
+Schemat Room 8 zawiera migracje 1 → 2 → 3 → 4 → 5 → 6 → 7 → 8 zachowujące posiłki, racje, cele, prywatne produkty, profil, pomiary, deklaracje dni, właścicieli i całą kolejkę. Migracja7→8 dodaje nullable pozycję składnika zapisaną przy nowym spożyciu racji, bez backfill wcześniejszych wpisów. Migracja 6→7 dodaje cztery osobne tabele kopii serwera. Migracja 5→6 przebudowuje tabelę celów z zachowaniem wszystkich wcześniejszych kolumn i ID, dodaje metadane wersji/złożony FK korekty oraz dwie tabele bootstrapu. Nie zmienia wartości REAL ani dawnych payloadów outbox. Prywatne dane mają zakres właściciela. Usuwanie spożycia pozostawia znacznik i operację kolejki; wersje celów są niezmienne.
 
 ## Przygotowanie E3 i niezmienne cele
 

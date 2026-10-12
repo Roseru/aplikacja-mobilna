@@ -24,6 +24,25 @@ import kotlin.math.roundToInt
 class DiaryFlowTest {
     @get:Rule val compose = createAndroidComposeRule<MainActivity>()
 
+    @Test fun achievementsRemainOfflineAcrossRecreationAndChangingLeaseDiscardsPageWithoutWritingDiary() {
+        compose.waitUntil(15_000) { compose.onAllNodesWithTag("daily-kcal").fetchSemanticsNodes().isNotEmpty() }
+        val app = compose.activity.application as CalorieApplication
+        val before = runBlocking { app.database.dao().operationCount(DiaryRepository.GUEST) }
+        compose.onNodeWithTag("open-profile").performClick()
+        compose.onNodeWithTag("open-achievements").performClick()
+        compose.waitUntil(15_000) { compose.onAllNodesWithTag("achievement-count").fetchSemanticsNodes().isNotEmpty() }
+        compose.onNodeWithTag("achievement-server-state").assertTextEquals("Jeszcze nie pobrane")
+        compose.activityRule.scenario.recreate()
+        compose.waitUntil(15_000) { compose.onAllNodesWithTag("achievement-count").fetchSemanticsNodes().isNotEmpty() }
+        compose.onNodeWithTag("achievements-back").performClick()
+        compose.onNodeWithTag("profile-content").assertIsDisplayed()
+        compose.onNodeWithTag("open-achievements").performClick()
+        runBlocking { app.sessions.logout() }
+        compose.waitUntil(15_000) { compose.onAllNodesWithTag("daily-kcal").fetchSemanticsNodes().isNotEmpty() }
+        compose.onNodeWithTag("achievement-server-state").assertDoesNotExist()
+        assertEquals(before, runBlocking { app.database.dao().operationCount(DiaryRepository.GUEST) })
+    }
+
     @Test fun accountScreenKeepsGuestOfflineAndRestoresNavigation() {
         compose.waitUntil(15_000) { compose.onAllNodesWithTag("daily-kcal").fetchSemanticsNodes().isNotEmpty() }
         compose.onNodeWithTag("open-profile").performClick()
