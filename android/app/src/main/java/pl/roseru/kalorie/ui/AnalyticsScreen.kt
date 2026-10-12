@@ -116,46 +116,46 @@ private fun FieldAggregate.label(unit: String) = (if (complete) "" else "≥ ") 
     val colors = MaterialTheme.colorScheme
     val energy = result.averages[0]
     Column(Modifier.fillMaxWidth()) {
-    Card(modifier = Modifier.testTag("analytics-loaded-${result.window.end}-${result.window.period.days}"),
-        shape = RoundedCornerShape(24.dp), colors = CardDefaults.cardColors(containerColor = colors.primaryContainer)) {
-        Column(Modifier.fillMaxWidth().padding(22.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
-            Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                Icon(Icons.Outlined.LocalFireDepartment, null, tint = colors.onPrimaryContainer)
-                Text("ŚREDNIE SPOŻYCIE", style = MaterialTheme.typography.labelLarge, color = colors.onPrimaryContainer)
-            }
-            Text(energy.value?.let { "${it.display(0)} kcal" } ?: "Brak kompletnych dni",
-                style = if (energy.value == null) MaterialTheme.typography.headlineSmall else MaterialTheme.typography.displaySmall,
-                fontWeight = FontWeight.Bold, color = colors.onPrimaryContainer, modifier = Modifier.testTag("average-kcal"))
-            Text("Z ${energy.dayCount} zamkniętych, kompletnych dni", style = MaterialTheme.typography.bodyMedium, color = colors.onPrimaryContainer)
-            HorizontalDivider(color = colors.onPrimaryContainer.copy(alpha = .18f))
-            Text("Wpisy: ${result.daysWithEntries} / ${result.window.period.days} dni. Dzisiejszy wynik jest wstępny.",
-                style = MaterialTheme.typography.bodySmall, color = colors.onPrimaryContainer)
-        }
-    }
-    Spacer(Modifier.height(12.dp))
-    val cards: @Composable () -> Unit = {
-        ProgressSummary("Kompletne dni", "${result.completeDays} / ${result.window.period.days}",
-            result.completeDays.toFloat() / result.window.period.days, Icons.Outlined.CheckCircle, "complete-days")
-        ProgressSummary("Dni w celu", "${result.daysInGoal} / ${result.daysWithGoal}",
-            if (result.daysWithGoal == 0) null else result.daysInGoal.toFloat() / result.daysWithGoal,
-            Icons.Outlined.LocalFireDepartment, "days-in-goal")
-    }
-    // A vertical layout leaves space for enlarged system text and narrow phones.
-    BoxWithConstraints(Modifier.fillMaxWidth()) {
-        if (maxWidth < 340.dp || LocalDensity.current.fontScale > 1.3f) {
-            Column(verticalArrangement = Arrangement.spacedBy(12.dp)) { cards() }
-        } else {
-            Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
-                Box(Modifier.weight(1f)) { ProgressSummary("Kompletne dni", "${result.completeDays} / ${result.window.period.days}",
-                    result.completeDays.toFloat() / result.window.period.days, Icons.Outlined.CheckCircle, "complete-days") }
-                Box(Modifier.weight(1f)) { ProgressSummary("Dni w celu", "${result.daysInGoal} / ${result.daysWithGoal}",
-                    if (result.daysWithGoal == 0) null else result.daysInGoal.toFloat() / result.daysWithGoal,
-                    Icons.Outlined.LocalFireDepartment, "days-in-goal") }
+        Card(modifier = Modifier.testTag("analytics-loaded-${result.window.end}-${result.window.period.days}"),
+            shape = RoundedCornerShape(24.dp), colors = CardDefaults.cardColors(containerColor = colors.primaryContainer)) {
+            Column(Modifier.fillMaxWidth().padding(22.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
+                Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                    Icon(Icons.Outlined.LocalFireDepartment, null, tint = colors.onPrimaryContainer)
+                    Text("ŚREDNIE SPOŻYCIE", style = MaterialTheme.typography.labelLarge, color = colors.onPrimaryContainer)
+                }
+                Text(energy.value?.let { "${it.display(0)} kcal" } ?: "Brak kompletnych dni",
+                    style = if (energy.value == null) MaterialTheme.typography.headlineSmall else MaterialTheme.typography.displaySmall,
+                    fontWeight = FontWeight.Bold, color = colors.onPrimaryContainer, modifier = Modifier.testTag("average-kcal"))
+                Text("Z ${energy.dayCount} zamkniętych, kompletnych dni", style = MaterialTheme.typography.bodyMedium, color = colors.onPrimaryContainer)
+                HorizontalDivider(color = colors.onPrimaryContainer.copy(alpha = .18f))
+                Text("Wpisy: ${result.daysWithEntries} / ${result.window.period.days} dni. Dzisiejszy wynik jest wstępny.",
+                    style = MaterialTheme.typography.bodySmall, color = colors.onPrimaryContainer)
             }
         }
-    }
-    Text("W celu = ±10% celu obowiązującego danego dnia. Oceniamy zamknięte, kompletne dni z ustawionym celem.",
-        modifier = Modifier.padding(top = 10.dp), style = MaterialTheme.typography.bodySmall, color = colors.onSurfaceVariant)
+        Spacer(Modifier.height(12.dp))
+        val cards: @Composable () -> Unit = {
+            ProgressSummary("Kompletne dni", "${result.completeDays} / ${result.window.period.days}",
+                result.completeDays.toFloat() / result.window.period.days, Icons.Outlined.CheckCircle, "complete-days")
+            ProgressSummary("Dni w celu", "${result.daysInGoal} / ${result.daysWithGoal}",
+                if (result.daysWithGoal == 0) null else result.daysInGoal.toFloat() / result.daysWithGoal,
+                Icons.Outlined.LocalFireDepartment, "days-in-goal")
+        }
+        // A vertical layout leaves space for enlarged system text and narrow phones.
+        BoxWithConstraints(Modifier.fillMaxWidth()) {
+            if (maxWidth < 340.dp || LocalDensity.current.fontScale > 1.3f) {
+                Column(verticalArrangement = Arrangement.spacedBy(12.dp)) { cards() }
+            } else {
+                Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
+                    Box(Modifier.weight(1f)) { ProgressSummary("Kompletne dni", "${result.completeDays} / ${result.window.period.days}",
+                        result.completeDays.toFloat() / result.window.period.days, Icons.Outlined.CheckCircle, "complete-days") }
+                    Box(Modifier.weight(1f)) { ProgressSummary("Dni w celu", "${result.daysInGoal} / ${result.daysWithGoal}",
+                        if (result.daysWithGoal == 0) null else result.daysInGoal.toFloat() / result.daysWithGoal,
+                        Icons.Outlined.LocalFireDepartment, "days-in-goal") }
+                }
+            }
+        }
+        Text("W celu = ±10% celu obowiązującego danego dnia. Oceniamy zamknięte, kompletne dni z ustawionym celem.",
+            modifier = Modifier.padding(top = 10.dp), style = MaterialTheme.typography.bodySmall, color = colors.onSurfaceVariant)
     }
 }
 @Composable private fun ProgressSummary(label: String, value: String, fraction: Float?, icon: ImageVector, tag: String) {
@@ -198,7 +198,7 @@ private fun FieldAggregate.label(unit: String) = (if (complete) "" else "≥ ") 
                 val bottom = size.height - 5.dp.toPx()
                 val step = size.width / result.days.size
                 val barWidth = (step * .6f).coerceAtLeast(1f)
-                for (level in 1..3) {
+                (1..3).forEach { level ->
                     val y = bottom * level / 4
                     drawLine(outline.copy(alpha = .18f), Offset(0f, y), Offset(size.width, y), 1.dp.toPx())
                 }
@@ -266,7 +266,7 @@ private fun FieldAggregate.label(unit: String) = (if (complete) "" else "≥ ") 
                     contentDescription = "Wykres rzeczywistych pomiarów wagi: ${points.size} dni. Bez uzupełniania brakujących pomiarów."
                 }) {
                     val bottom = size.height - 6.dp.toPx()
-                    for (level in 1..3) {
+                    (1..3).forEach { level ->
                         val y = bottom * level / 4
                         drawLine(outline.copy(alpha = .18f), Offset(0f, y), Offset(size.width, y), 1.dp.toPx())
                     }

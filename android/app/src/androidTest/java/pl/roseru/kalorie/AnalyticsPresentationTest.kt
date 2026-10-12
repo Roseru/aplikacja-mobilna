@@ -6,6 +6,7 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.width
 import androidx.compose.material3.Surface
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.asAndroidBitmap
@@ -53,7 +54,7 @@ class AnalyticsPresentationTest {
             val density = LocalDensity.current
             CompositionLocalProvider(LocalDensity provides Density(density.density, if (compact) 1.5f else 1f)) {
                 CalorieTheme(dark) {
-                    Surface(Modifier.fillMaxSize()) {
+                    Surface(Modifier.fillMaxSize(), color = MaterialTheme.colorScheme.background) {
                         Box(Modifier.fillMaxSize()) {
                             Box((if (compact) Modifier.width(320.dp).fillMaxHeight() else Modifier.fillMaxSize()).testTag("analytics-preview")) {
                                 AnalyticsContent(window, today, result, onPeriod, onMove, {}, onDay)
