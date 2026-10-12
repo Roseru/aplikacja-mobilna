@@ -19,6 +19,7 @@ def main():
         "community.schema.json",
         "ai.schema.json",
         "motivation.schema.json",
+        "nemesis.schema.json",
     ):
         data = (source / name).read_bytes()
         target = destination / name

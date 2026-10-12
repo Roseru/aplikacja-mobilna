@@ -15,12 +15,23 @@ def source_mutated(
     session, context: SourceMutationContext, extensions: tuple[SourceProjection, ...] = ()
 ):
     """Invoked exactly once for accepted source, within its source savepoint."""
+    # One explicit DB refresh owner. Other extensions remain lock/apply only.
+    from calorie_app.core.errors import DomainError
+    from calorie_app.modules.nemesis.source_guard import NemesisSourceProjection
+
+    nemesis = [item for item in extensions if isinstance(item, NemesisSourceProjection)]
+    if len(nemesis) > 1:
+        raise DomainError(503, "nemesis_source_unqualified")
     for projection in extensions:
         projection.lock(session, context)
-    qualified_at = repository.refresh(
-        session,
-        context.owner_id,
-        None if context.goal_axis_changed else list(context.affected_dates),
+    qualified_at = (
+        nemesis[0].refresh(session, context)
+        if nemesis
+        else repository.refresh(
+            session,
+            context.owner_id,
+            None if context.goal_axis_changed else list(context.affected_dates),
+        )
     )
     qualified = replace(context, qualified_at=qualified_at)
     for projection in extensions:

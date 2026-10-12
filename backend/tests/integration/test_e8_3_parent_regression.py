@@ -1,24 +1,29 @@
-"""Targeted actual-parent and integrated-source regressions, without E8.4.
+"""Actual-parent regressions on isolated current21 with genuine source provenance.
 
-The source harness keeps the explicit frozen seam. The operator connects with
-its own minimal SCRAM LOGIN. begin uses the actual integrated SQL wrapper;
+The source harness uses the production orchestrator and real counter/change.
+The hardened CLI provisions a random minimal SCRAM LOGIN bound to the own DB.
+Begin uses the actual integrated SQL wrapper;
 legacy purge stays the actual upstream chain. No production wrapper, shared
 router, common provision or runtime source file is changed by these tests.
 """
 
 import json
-import os
 from dataclasses import replace
 from datetime import UTC, datetime, time, timedelta
 from pathlib import Path
 from uuid import UUID, uuid4
 
 import pytest
-from sqlalchemy import create_engine, text
+from sqlalchemy import text
 from sqlalchemy.engine import make_url
 from sqlalchemy.exc import DBAPIError
 from sqlalchemy.orm import Session
-from test_e8_3_source_guard_pg import context, projection
+from test_e8_3_source_guard_pg import (
+    append_source_context,
+    context,
+    isolated_deletion_operator,
+    projection,
+)
 from test_e8_3_source_guard_pg import private_pg as private_pg
 from test_e8_3_source_guard_pg import source_accounts as source_accounts
 
@@ -32,6 +37,7 @@ from calorie_app.modules.identity.deletion import begin, resume
 from calorie_app.modules.identity.service import bootstrap
 from calorie_app.modules.profiles.schemas import ConsentInput, GoalPayload, ProfilePayload
 from calorie_app.modules.profiles.service import create_goal, put_consents, save_profile
+from tests.support.e8_3_postgres import PrivatePostgres
 
 pytestmark = pytest.mark.integration
 EXAMPLES = Path(__file__).resolve().parents[3] / "contracts/examples/valid"
@@ -41,59 +47,66 @@ def example(name):
     return json.loads(EXAMPLES.joinpath(name + ".json").read_text(encoding="utf-8"))
 
 
-@pytest.fixture(scope="module")
-def operator(private_pg):
+@pytest.fixture
+def operator(private_pg, tmp_path):
     admin, _ = private_pg
-    raw = json.loads(
-        Path(os.environ["E8_3_PARENT_DELETION_CREDENTIALS"]).read_text(encoding="utf-8")
+    base = PrivatePostgres.from_environment()
+    private = replace(
+        base,
+        **{
+            field: make_url(getattr(base, field))
+            .set(database=admin.url.database)
+            .render_as_string(hide_password=False)
+            for field in base.__dataclass_fields__
+        },
     )
-    url = raw["operator_url"]
-    assert make_url(url).database == admin.url.database
-    engine = create_engine(url, hide_parameters=True)
-    identity = make_url(url).username
-    with engine.connect() as connection:
-        assert connection.scalar(text("SELECT current_user=session_user"))
-        assert connection.scalar(text("SELECT session_user")) == identity
-        for table in ("meals", "meal_items", "motivation_accounts", "nemesis_challenges"):
+    with isolated_deletion_operator(private, tmp_path) as engine:
+        assert engine.url.database == admin.url.database
+        identity = engine.url.username
+        with engine.connect() as connection:
+            assert connection.scalar(text("SELECT current_user=session_user"))
+            assert connection.scalar(text("SELECT session_user")) == identity
+            for table in ("meals", "meal_items", "motivation_accounts", "nemesis_challenges"):
+                assert not connection.scalar(
+                    text(
+                        "SELECT has_table_privilege(current_user,:table,"
+                        "'SELECT,INSERT,UPDATE,DELETE,TRUNCATE')"
+                    ),
+                    {"table": "app." + table},
+                )
             assert not connection.scalar(
                 text(
-                    "SELECT has_table_privilege(current_user,:table,"
-                    "'SELECT,INSERT,UPDATE,DELETE,TRUNCATE')"
-                ),
-                {"table": "app." + table},
+                    "SELECT has_function_privilege(current_user,"
+                    "'app.diary_aggregate_count()','EXECUTE')"
+                )
             )
-        assert not connection.scalar(
-            text(
-                "SELECT has_function_privilege(current_user,"
-                "'app.diary_aggregate_count()','EXECUTE')"
-            )
-        )
-    with admin.connect() as connection:
-        assert connection.scalar(
-            text("SELECT rolpassword LIKE 'SCRAM-SHA-256$%' FROM pg_authid WHERE rolname=:login"),
-            {"login": identity},
-        )
-        assert not connection.scalar(
-            text(
-                "SELECT rolsuper OR rolcreatedb OR rolcreaterole "
-                "OR rolreplication OR rolbypassrls FROM pg_roles "
-                "WHERE rolname=:login"
-            ),
-            {"login": identity},
-        )
-        assert list(
-            connection.scalars(
+        with admin.connect() as connection:
+            assert connection.scalar(
                 text(
-                    "SELECT parent.rolname FROM pg_auth_members m "
-                    "JOIN pg_roles child ON child.oid=m.member "
-                    "JOIN pg_roles parent ON parent.oid=m.roleid "
-                    "WHERE child.rolname=:login"
+                    "SELECT rolpassword LIKE 'SCRAM-SHA-256$%' FROM pg_authid WHERE rolname=:login"
                 ),
                 {"login": identity},
             )
-        ) == ["calorie_app_deletion_operator"]
-    yield engine
-    engine.dispose()
+            assert not connection.scalar(
+                text(
+                    "SELECT rolsuper OR rolcreatedb OR rolcreaterole "
+                    "OR rolreplication OR rolbypassrls FROM pg_roles "
+                    "WHERE rolname=:login"
+                ),
+                {"login": identity},
+            )
+            assert list(
+                connection.scalars(
+                    text(
+                        "SELECT parent.rolname FROM pg_auth_members m "
+                        "JOIN pg_roles child ON child.oid=m.member "
+                        "JOIN pg_roles parent ON parent.oid=m.roleid "
+                        "WHERE child.rolname=:login"
+                    ),
+                    {"login": identity},
+                )
+            ) == ["calorie_app_deletion_operator"]
+        yield engine
 
 
 @pytest.mark.parametrize("days", [7, 30, 90])
@@ -201,14 +214,7 @@ def test_actual_parent_fresh_affirmation_survives_epoch_reconcile_source_and_bac
         extension = projection(current)
         qualified = source_mutated(
             session,
-            replace(
-                context(current, "weight"),
-                entity_id=entity,
-                old_revision=None,
-                new_revision=1,
-                old_dates=(),
-                new_dates=(day,),
-            ),
+            append_source_context(session, current, "weight", entity),
             (extension,),
         )
         assert qualified.qualified_at is not None and extension.plan.challenges == ()

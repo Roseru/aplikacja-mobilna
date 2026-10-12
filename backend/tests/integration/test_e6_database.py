@@ -10,6 +10,8 @@ import pytest
 from sqlalchemy import inspect, text
 from sqlalchemy.exc import DBAPIError
 
+from calorie_app.health import EXPECTED_REVISION
+
 pytestmark = pytest.mark.integration
 
 
@@ -492,7 +494,7 @@ def test_downgrade_atomic_refusal_detects_shared_orphan_artifact(database):
             assert sorted(inspect(connection).get_table_names(schema="app")) == schema
             assert (
                 connection.scalar(text("SELECT version_num FROM app.alembic_version"))
-                == "0020_e8_nemesis_integration"
+                == EXPECTED_REVISION
             )
     finally:
         # Privileged fixture cleanup removes only this synthetic orphan, retaining all old rows.
