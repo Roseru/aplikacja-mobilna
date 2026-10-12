@@ -1879,6 +1879,147 @@
         "expected_result": "Structural fixture only; real state and authorization acceptance is separate."
       },
       "detection_layer": "schema"
+    },
+    {
+      "id": "e8-motivation-final",
+      "purpose": "Synthetic E8 structural fixture; real source, consent and PG authorization tested separately.",
+      "path": "e8/motivation-final.json",
+      "schema": "../schemas/motivation.schema.json#/$defs/MotivationRead",
+      "local": {
+        "result": "valid"
+      },
+      "server": {
+        "result": "not_executed",
+        "stage": "E8",
+        "expected_result": "Structural fixture only; server confirms authoritative projections."
+      },
+      "detection_layer": "schema"
+    },
+    {
+      "id": "e8-motivation-pending-backfill",
+      "purpose": "Synthetic E8 structural fixture; real source, consent and PG authorization tested separately.",
+      "path": "e8/motivation-pending-backfill.json",
+      "schema": "../schemas/motivation.schema.json#/$defs/MotivationRead",
+      "local": {
+        "result": "valid"
+      },
+      "server": {
+        "result": "not_executed",
+        "stage": "E8",
+        "expected_result": "Structural fixture only; server confirms authoritative projections."
+      },
+      "detection_layer": "schema"
+    },
+    {
+      "id": "e8-motivation-pending-materialization",
+      "purpose": "Synthetic E8 structural fixture; real source, consent and PG authorization tested separately.",
+      "path": "e8/motivation-pending-materialization.json",
+      "schema": "../schemas/motivation.schema.json#/$defs/MotivationRead",
+      "local": {
+        "result": "valid"
+      },
+      "server": {
+        "result": "not_executed",
+        "stage": "E8",
+        "expected_result": "Structural fixture only; server confirms authoritative projections."
+      },
+      "detection_layer": "schema"
+    },
+    {
+      "id": "e8-motivation-revoked",
+      "purpose": "Synthetic E8 structural fixture; real source, consent and PG authorization tested separately.",
+      "path": "e8/motivation-revoked.json",
+      "schema": "../schemas/motivation.schema.json#/$defs/MotivationRead",
+      "local": {
+        "result": "valid"
+      },
+      "server": {
+        "result": "not_executed",
+        "stage": "E8",
+        "expected_result": "Structural fixture only; server confirms authoritative projections."
+      },
+      "detection_layer": "schema"
+    },
+    {
+      "id": "e8-ranking-ties",
+      "purpose": "Synthetic E8 structural fixture; real source, consent and PG authorization tested separately.",
+      "path": "e8/ranking-ties.json",
+      "schema": "../schemas/motivation.schema.json#/$defs/RankingPage",
+      "local": {
+        "result": "valid"
+      },
+      "server": {
+        "result": "not_executed",
+        "stage": "E8",
+        "expected_result": "Structural fixture only; server confirms authoritative projections."
+      },
+      "detection_layer": "schema"
+    },
+    {
+      "id": "e8-ranking-next-page",
+      "purpose": "Synthetic E8 structural fixture; real source, consent and PG authorization tested separately.",
+      "path": "e8/ranking-next-page.json",
+      "schema": "../schemas/motivation.schema.json#/$defs/RankingPage",
+      "local": {
+        "result": "valid"
+      },
+      "server": {
+        "result": "not_executed",
+        "stage": "E8",
+        "expected_result": "Structural fixture only; server confirms authoritative projections."
+      },
+      "detection_layer": "schema"
+    },
+    {
+      "id": "e8-ranking-private-authority",
+      "purpose": "Synthetic E8 structural fixture; real source, consent and PG authorization tested separately.",
+      "path": "e8/ranking-private-authority.json",
+      "schema": "../schemas/motivation.schema.json#/$defs/RankingPage",
+      "local": {
+        "result": "invalid",
+        "layer": "schema",
+        "reason": "additionalProperties"
+      },
+      "server": {
+        "result": "not_executed",
+        "stage": "E8",
+        "expected_result": "Structural fixture only; server confirms authoritative projections."
+      },
+      "detection_layer": "schema"
+    },
+    {
+      "id": "e8-motivation-client-authority",
+      "purpose": "Synthetic E8 structural fixture; real source, consent and PG authorization tested separately.",
+      "path": "e8/motivation-client-authority.json",
+      "schema": "../schemas/motivation.schema.json#/$defs/MotivationRead",
+      "local": {
+        "result": "invalid",
+        "layer": "schema",
+        "reason": "additionalProperties"
+      },
+      "server": {
+        "result": "not_executed",
+        "stage": "E8",
+        "expected_result": "Structural fixture only; server confirms authoritative projections."
+      },
+      "detection_layer": "schema"
+    },
+    {
+      "id": "e8-ranking-boolean-points",
+      "purpose": "Synthetic E8 structural fixture; real source, consent and PG authorization tested separately.",
+      "path": "e8/ranking-boolean-points.json",
+      "schema": "../schemas/motivation.schema.json#/$defs/RankingPage",
+      "local": {
+        "result": "invalid",
+        "layer": "schema",
+        "reason": "type"
+      },
+      "server": {
+        "result": "not_executed",
+        "stage": "E8",
+        "expected_result": "Structural fixture only; server confirms authoritative projections."
+      },
+      "detection_layer": "schema"
     }
   ],
   "source_material": {

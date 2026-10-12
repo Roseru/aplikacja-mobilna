@@ -87,6 +87,14 @@ def read_profile(session, owner_id: UUID) -> dict:
     }
 
 
+def consent_request_hash(data, base_revision, ranking_consent_epoch=None):
+    """Preserve pre-E8 receipts byte-for-byte when the optional header is absent."""
+    semantic_request = {"body": data.model_dump(mode="json"), "if_match": base_revision}
+    if ranking_consent_epoch is not None:
+        semantic_request["ranking_consent_epoch"] = str(ranking_consent_epoch)
+    return hashlib.sha256(canonical_json(semantic_request)).hexdigest()
+
+
 def put_consents(
     session,
     owner_id: UUID,
@@ -94,15 +102,14 @@ def put_consents(
     base_revision: int,
     key: UUID,
     expected_generation: int | None = None,
+    ranking_consent_epoch: UUID | None = None,
 ) -> dict:
     account = lock_account(session, owner_id, expected_generation)
     from calorie_app.modules.sync.repository import append_change, lock_counter
 
     counter = lock_counter(session, owner_id)
     epoch = current_epoch(session)
-    fingerprint = hashlib.sha256(
-        canonical_json({"body": data.model_dump(mode="json"), "if_match": base_revision})
-    ).hexdigest()
+    fingerprint = consent_request_hash(data, base_revision, ranking_consent_epoch)
     receipt = session.get(OnlineReceipt, (owner_id, "consents", key))
     if receipt is not None:
         check_receipt_context(receipt, account, epoch)
@@ -115,6 +122,8 @@ def put_consents(
                 details=[{"field": "accepted_revision", "reason": str(receipt.accepted_revision)}],
             )
         return receipt.response
+    if ranking_consent_epoch is not None and (ranking_consent_epoch != epoch or not data.ranking):
+        raise DomainError(409, "ranking_consent_context_invalid")
     consent = session.get(UserConsent, owner_id, populate_existing=True)
     if consent is None:
         raise DomainError(503, "service_unavailable")
@@ -128,6 +137,31 @@ def put_consents(
     consent.updated_at = database_now(session)
     # Online state can advance H without pretending to be a seventh wire entity.
     append_change(session, counter, None)
+    # Flush the consent source before validating its narrow provenance function.
+    session.flush()
+    if ranking_consent_epoch is not None:
+        # Reconcile a restored projection epoch before writing the new current
+        # affirmation. Otherwise the first later worker would delete this fresh
+        # marker together with stale restored provenance. This happens only on
+        # an accepted new header operation, never on legacy writes or replay.
+        stale_projection = session.scalar(
+            text(
+                "SELECT EXISTS(SELECT 1 FROM app.motivation_accounts "
+                "WHERE owner_id=:owner AND sync_epoch<>:epoch)"
+            ),
+            {"owner": owner_id, "epoch": epoch},
+        )
+        if stale_projection:
+            session.scalar(
+                text("SELECT app.e8_refresh(:owner,ARRAY[]::date[],256)"),
+                {"owner": owner_id},
+            )
+        session.execute(
+            text("SELECT app.e8_affirm_ranking(:owner,:epoch,:revision)"),
+            {"owner": owner_id, "epoch": epoch, "revision": consent.revision},
+        )
+    elif not data.ranking:
+        session.execute(text("SELECT app.e8_revoke_ranking(:owner)"), {"owner": owner_id})
     result = consent_data(consent)
     session.add(
         OnlineReceipt(

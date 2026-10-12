@@ -598,3 +598,107 @@ def test_database_error_safe_no_store_and_retry(api, monkeypatch):
     assert response.headers["cache-control"] == "no-store"
     assert response.headers["retry-after"] == "5"
     assert "private payload" not in response.text
+
+
+@pytest.mark.parametrize(
+    "old_zone,new_zone,as_of,closed",
+    [
+        ("Europe/Warsaw", "America/Los_Angeles", datetime(2026, 10, 10, 23, tzinfo=UTC), True),
+        ("America/Los_Angeles", "Europe/Warsaw", datetime(2026, 10, 11, 1, tzinfo=UTC), False),
+    ],
+)
+def test_profile_zone_change_uses_preserved_day_closure(
+    api, monkeypatch, old_zone, new_zone, as_of, closed
+):
+    from calorie_app.modules.diary.models import DiaryDay
+
+    client, engine, _, owners = api
+    owner = owners["a"]
+    profile_id = profile(engine, owner, old_zone)
+    payload = example("meal") | {
+        "local_date": "2026-10-10",
+        "occurred_at": "2026-10-10T10:00:00Z",
+        "time_zone": old_zone,
+    }
+    payload["items"][0]["quantity"]["amount"] = "100"
+    payload["items"][0]["nutrition_per_100"]["energy_kcal"] = "100"
+    entity = uuid4()
+    with Session(engine) as session, session.begin():
+        save_meal(session, owner, entity, payload)
+        day = day_for_date(session, owner, date(2026, 10, 10))
+        day_id = day.id
+        save_diary_day(
+            session,
+            owner,
+            day.id,
+            {
+                "local_date": "2026-10-10",
+                "time_zone": old_zone,
+                "declared_complete": True,
+            },
+            base_revision=day.revision,
+        )
+        save_profile(
+            session,
+            owner,
+            profile_id,
+            ProfilePayload.model_validate(example("profile") | {"time_zone": new_zone}),
+            base_revision=1,
+        )
+    monkeypatch.setattr(service, "database_now", lambda session: as_of)
+    response = get(client)
+    assert response.status_code == 200, response.text
+    result = response.json()
+    stored_day = next(point for point in result["daily"] if point["local_date"] == "2026-10-10")
+    assert stored_day["closed"] is closed
+    assert stored_day["effective_complete"]
+    assert stored_day["totals"]["energy_kcal"]["known_sum"] == "100"
+    assert result["complete_day_count"] == int(closed)
+    assert result["averages"]["energy_kcal"]["day_count"] == int(closed)
+    with Session(engine) as session:
+        assert session.get(DiaryDay, day_id).time_zone == old_zone
+        assert session.get(Meal, entity).time_zone == old_zone
+
+
+@pytest.mark.parametrize("days", [7, 30, 90])
+def test_profile_only_calendar_closure_preserves_nulls_and_creates_no_sources(api, days):
+    client, engine, _, owners = api
+    owner = owners["a"]
+    profile(engine, owner, "UTC")
+    tables = (
+        "diary_days",
+        "meals",
+        "weights",
+        "motivation_accounts",
+        "motivation_days",
+        "motivation_badges",
+    )
+
+    def row_counts():
+        with engine.connect() as connection:
+            return {
+                table: connection.scalar(
+                    text(f"SELECT count(*) FROM app.{table} WHERE owner_id=:owner"),
+                    {"owner": owner},
+                )
+                for table in tables
+            }
+
+    before = row_counts()
+    assert all(count == 0 for count in before.values())
+    response = get(client, days)
+    assert response.status_code == 200, response.text
+    assert response.headers["cache-control"] == "no-store"
+    result = response.json()
+    assert len(result["daily"]) == days
+    assert [row["closed"] for row in result["daily"]] == [True] * (days - 1) + [False]
+    assert result["complete_day_count"] == result["in_goal_day_count"] == 0
+    for row in result["daily"]:
+        assert row["status"] == "no_data" and not row["effective_complete"]
+        assert row["meal_count"] == row["weight_count"] == 0
+        assert row["in_goal"] is None and row["preliminary_in_goal"] is None
+        assert all(field["known_sum"] is None for field in row["totals"].values())
+    assert all(
+        average == {"value": None, "day_count": 0} for average in result["averages"].values()
+    )
+    assert row_counts() == before

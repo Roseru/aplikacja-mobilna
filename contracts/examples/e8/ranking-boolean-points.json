@@ -1,0 +1,17 @@
+{
+  "rule_version": "regularity_v1",
+  "pagination": "live_keyset_v1",
+  "as_of": "2026-10-11T00:00:00Z",
+  "items": [
+    {
+      "position": 1,
+      "pseudonym": "Alfa",
+      "points": true,
+      "rank": "Rekrut",
+      "active_badges": 0
+    }
+  ],
+  "has_more": false,
+  "next_page_token": null,
+  "cursor_expires_at": null
+}

@@ -22,6 +22,19 @@ def main():
     assert files("calorie_app.modules.catalog.resources").joinpath("sync.schema.json").is_file()
     assert files("calorie_app.modules.catalog.resources").joinpath("ai.schema.json").is_file()
     assert files("calorie_app.modules.ai.prompts").joinpath("food_photo_v1.txt").is_file()
+    assert (
+        files("calorie_app.modules.catalog.resources").joinpath("motivation.schema.json").is_file()
+    )
+    from datetime import date
+
+    from calorie_app.modules.analytics.motivation.rules import rank_for_points
+    from calorie_app.modules.analytics.motivation.time import day_matures_at
+
+    assert rank_for_points(120) == "Sier\u017cant"
+    assert (
+        day_matures_at(date(2026, 3, 29), "Europe/Warsaw").isoformat()
+        == "2026-03-29T22:00:00+00:00"
+    )
     assert callable(prepare_image) and parse_bounded_json(b'{"installed":true}') == {
         "installed": True
     }
@@ -48,6 +61,8 @@ def main():
     assert "/api/v1/sync/push" in app.openapi()["paths"]
     assert "/api/v1/sync/pull" in app.openapi()["paths"]
     assert "/api/v1/ai/food-analyses" in app.openapi()["paths"]
+    assert "/api/v1/me/motivation" in app.openapi()["paths"]
+    assert "/api/v1/ranking" in app.openapi()["paths"]
     assert "/api/v1/ai/capabilities" in app.openapi()["paths"]
     for route in ("meals", "weights", "diary-days", "statistics"):
         assert "/api/v1/me/" + route in app.openapi()["paths"]

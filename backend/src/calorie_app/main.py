@@ -13,6 +13,7 @@ from calorie_app.db.session import make_engine, session_factory
 from calorie_app.health import router
 from calorie_app.integrations.keycloak import OIDCVerifier
 from calorie_app.modules.ai.router import router as ai_router
+from calorie_app.modules.analytics.motivation.router import router as motivation_router
 from calorie_app.modules.analytics.router import router as analytics_router
 from calorie_app.modules.catalog.community.feedback_router import router as feedback_router
 from calorie_app.modules.catalog.community.router import router as community_router
@@ -85,6 +86,7 @@ def create_app(settings: Settings | None = None, *, engine=None) -> FastAPI:
     app.include_router(sync_router)
     app.include_router(diary_read_router)
     app.include_router(analytics_router)
+    app.include_router(motivation_router)
     app.include_router(community_router)
     app.include_router(feedback_router)
     app.include_router(moderation_router)
@@ -96,10 +98,17 @@ def create_app(settings: Settings | None = None, *, engine=None) -> FastAPI:
         # spool/body parser. Their DTOs still belong to the same normative API.
         from calorie_app.modules.ai.result import ProviderFoodResult
         from calorie_app.modules.ai.schemas import CancelRequest, ConfirmRequest, CreateMetadata
+        from calorie_app.modules.analytics.motivation.schemas import RankingQuery
 
         schema = original_openapi()
         components = schema["components"]["schemas"]
-        for model in (CreateMetadata, ConfirmRequest, CancelRequest, ProviderFoodResult):
+        for model in (
+            CreateMetadata,
+            ConfirmRequest,
+            CancelRequest,
+            ProviderFoodResult,
+            RankingQuery,
+        ):
             definition = model.model_json_schema(ref_template="#/components/schemas/{model}")
             for name, value in definition.pop("$defs", {}).items():
                 components.setdefault(name, value)

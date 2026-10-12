@@ -13,6 +13,7 @@ from sqlalchemy import event, inspect, select, text
 from sqlalchemy.exc import DBAPIError
 from sqlalchemy.orm import Session
 from test_catalog_delivery import catalog_db, synthetic_official  # noqa: F401
+from test_e5_upgrade import _discard_e8_upgrade_placeholders
 from test_e6_community_publication import boot, community_db, draft, publication  # noqa: F401
 
 from calorie_app.core.config import Settings
@@ -27,6 +28,14 @@ from calorie_app.modules.identity.dependencies import current_principal
 
 pytestmark = pytest.mark.integration
 ROOT = Path(__file__).resolve().parents[3]
+E8_TABLES = {
+    "motivation_accounts",
+    "motivation_days",
+    "motivation_badges",
+    "ranking_affirmations",
+    "ranking_sessions",
+    "ranking_cursors",
+}
 CASES = [
     ("Straße Suppe", [], "STRASSE SUPPE"),
     ("Ｒｏｓｏｌ", [], "Rosol"),
@@ -158,7 +167,8 @@ def frozen_table_rows(connection):
     tables = [
         name
         for name in inspect(connection).get_table_names(schema="app")
-        if name not in {"alembic_version", "product_search_metadata"} and not name.startswith("ai_")
+        if name not in ({"alembic_version", "product_search_metadata"} | E8_TABLES)
+        and not name.startswith("ai_")
     ]
     return {
         name: list(
@@ -255,6 +265,11 @@ def test_upgrade0013_backfill_down_reup_bytes_hash_history_readiness(request, tm
         assert publish_package(engine, imported.package_id, 1, tmp_path) == manifest
         assert next(tmp_path.rglob("*.json.gz")).read_bytes() == rawfile
         assert not import_catalog(engine, value).created
+        # No motivation worker/source hook runs in this pre-E8 fixture. Keep
+        # every old source column and published byte in the assertions, and
+        # discard only verified unprocessed E8 placeholders before its down/up.
+        with engine.begin() as connection:
+            _discard_e8_upgrade_placeholders(connection)
         migrate("downgrade", "0013_e6_community")
         with engine.connect() as connection:
             assert frozen_table_rows(connection) == before
@@ -263,7 +278,7 @@ def test_upgrade0013_backfill_down_reup_bytes_hash_history_readiness(request, tm
             assert frozen_table_rows(connection) == before
         with TestClient(create_app(settings, engine=engine)) as client:
             assert client.get("/health/ready").status_code == 200
-        assert EXPECTED_REVISION == "0015_e7_ai"
+        assert EXPECTED_REVISION == "0017_e8_purge_commit"
     finally:
         migrate("upgrade", "head")
 
