@@ -300,7 +300,9 @@ class DiaryFlowTest {
 
     private fun finishQuantityInput(tag: String, buttonTag: String) {
         compose.onNodeWithTag(tag).performClick().performImeAction()
-        compose.onNodeWithTag(tag).assertIsNotFocused()
+        // After Done the merged tree may absorb the field into its parent. Check the tagged
+        // field itself; the focus=false oracle and the separate IME visibility check stay intact.
+        compose.onNodeWithTag(tag, useUnmergedTree = true).assertIsNotFocused()
         compose.waitUntil(5_000) {
             ViewCompat.getRootWindowInsets(compose.activity.window.decorView)?.isVisible(WindowInsetsCompat.Type.ime()) != true
         }
