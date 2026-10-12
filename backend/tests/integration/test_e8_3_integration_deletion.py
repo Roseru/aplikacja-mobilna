@@ -5,7 +5,6 @@ import json
 import os
 import subprocess
 import sys
-from pathlib import Path
 from uuid import uuid4
 
 import pytest
@@ -30,6 +29,7 @@ from tests.integration.test_e8_3_chain import (
     chain_database as chain_database,
 )
 from tests.integration.test_e8_3_database import accept, execute, invite
+from tests.support.e8_3_archive import archive_environment, pg_command
 
 pytestmark = pytest.mark.integration
 PARENT = "0019_e8_nemesis_maintenance"
@@ -619,30 +619,16 @@ def test_actual_archive_cannot_resurrect_withdrawn_sharing_after_new_epoch(produ
     parsed = make_url(private.migrator_url)
     root = private_root(tmp_path / "archive")
     archive = root / "before-withdrawal.dump"
-    binary = Path(r"S:\studia\projekt aplikacja moblina\.tools\postgresql-17\pgsql\bin")
-    # Explicit runtime path may be supplied on another review/CI host.
-    binary = Path(os.environ.get("E8_3_POSTGRES_BIN", str(binary)))
-    environment = os.environ | {
-        "PGHOST": parsed.host,
-        "PGPORT": str(parsed.port),
-        "PGUSER": parsed.username,
-        "PGPASSWORD": parsed.password,
-    }
-    dump = subprocess.run(
-        [
-            str(binary / "pg_dump.exe") if os.name == "nt" else str(binary / "pg_dump"),
-            "--format=custom",
-            "--file",
-            str(archive),
-            "--dbname",
-            parsed.database,
-        ],
-        env=environment,
-        capture_output=True,
-        text=True,
-        timeout=30,
-    )
-    assert dump.returncode == 0, dump.stderr
+    environment = archive_environment(parsed)
+    with archive.open("wb") as output:
+        dump = subprocess.run(
+            pg_command("pg_dump", ["--format=custom", "--dbname", parsed.database], environment),
+            stdout=output,
+            stderr=subprocess.PIPE,
+            env=environment,
+            timeout=30,
+        )
+    assert dump.returncode == 0 and archive.stat().st_size > 0, "PG17 archive creation failed"
     withdrawn = execute(
         state["context"],
         (state["owners"][0], state["principals"][0].subject),
@@ -673,20 +659,20 @@ def test_actual_archive_cannot_resurrect_withdrawn_sharing_after_new_epoch(produ
         make_url(private.api_url).set(database=restore_name), hide_parameters=True
     )
     try:
-        restore = subprocess.run(
-            [
-                str(binary / "pg_restore.exe") if os.name == "nt" else str(binary / "pg_restore"),
-                "--exit-on-error",
-                "--dbname",
-                restore_name,
-                str(archive),
-            ],
-            env=environment,
-            capture_output=True,
-            text=True,
-            timeout=30,
-        )
-        assert restore.returncode == 0, restore.stderr
+        with archive.open("rb") as input_archive:
+            restore = subprocess.run(
+                pg_command(
+                    "pg_restore",
+                    ["--exit-on-error", "--dbname", restore_name],
+                    environment,
+                    interactive=True,
+                ),
+                stdin=input_archive,
+                capture_output=True,
+                env=environment,
+                timeout=30,
+            )
+        assert restore.returncode == 0, "PG17 archive restoration failed"
         with restored.begin() as conn:
             assert (
                 conn.scalar(
