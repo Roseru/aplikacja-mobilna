@@ -12,9 +12,17 @@ Migracja odmawia atomowo przy braku roli, jej nadmiarowych membership/table/colu
 
 Worker otrzymuje EXECUTE e8_process/e8_candidates/e8_status/e8_prune_ranking_sessions oraz SELECT wyłącznie installation_state/alembic_version. Bez raw diary lub raw projekcji/punktów, bez DDL/deletion/AI. API nie ma raw DML projekcji/odznak/markeru; wyniki wyznaczają funkcje źródłowe. Wewnętrzny e8_clock jest prawdziwym clock_timestamp i nie jest publicznie wykonywalny; testy disposable DB mogą podmienić jego body, O3 nie stosuje tego w produkcji.
 
+## Forward repair 0017 i transakcje usuwania
+
+`0017_e8_purge_commit` po 0016 naprawia COMMIT minimalnego operatora z żywym posiłkiem. Zmienia tylko atrybut SECURITY DEFINER istniejącego `app.diary_aggregate_count()`. Checker pozostaje deferred i wyłącznie sprawdza 1..100 źródłowych elementów; body, qualified tables, owner calorie_app_migrator bez SUPER, closed search_path i ACL nie są zmieniane. Migracja weryfikuje ich frozen stan i odmawia po tamper. Nie dodaje SELECT/EXECUTE/DML operatorowi, API lub workerom. Readiness/worker wymaga teraz head 0017. Opublikowane 0001–0016 są niezmienne.
+
+Downgrade metadata jawnie zawsze zachowuje tę wstecznie zgodną poprawkę, emitując warning. Nie usuwa danych, jobs/fences ani nie cofa checkera do znanego 42501. Re-upgrade jest idempotentny po weryfikacji niezmienionego body/path/owner/ACL. Pozostałe data-protection guards starszych migracji nadal obowiązują. E8.3 rezerwuje teraz 0018 po tej naprawie.
+
+Normalny operator CLI wykonuje świeże oddzielne transakcje begin commit → provider → confirm commit → purge commit, z INITIALLY DEFERRED. Ręczne wymuszenie diary IMMEDIATE nadal odmawia 23514 podczas przejściowego usuwania items przed meals i cofa całość; retry powinien korzystać ze świeżej domyślnej transakcji. Naprawa nie przestawia trybów caller ani nie wymusza sprawdzenia innych pending constraints. Nie dodawaj GRANT SELECT operatorowi w celu obejścia błędu.
+
 ## Proces i monitoring
 
-Odrębny DATABASE_URL LOGIN E8. Uruchom python -m calorie_app.motivation_worker --batch100 --date-batch256 jako oddzielną usługę. Użyj poprawnej składni ze spacjami: --batch 100 --date-batch 256. Startup natychmiast nadrabia pierwszą ograniczoną porcję; dalszy cykl co60s. --once wykonuje jeden bounded cykl, --status zwraca zagregowany backlog bez identyfikatorów kont. SIGINT/SIGTERM kończy bieżącą transakcję i zamyka engine. CLI odmawia niewłaściwej roli/schematu i nie drukuje credentiali ani źródeł.
+Odrębny DATABASE_URL LOGIN E8. Uruchom `python -m calorie_app.motivation_worker --batch 100 --date-batch 256` jako oddzielną usługę. Startup natychmiast nadrabia pierwszą ograniczoną porcję; dalszy cykl co60s. --once wykonuje jeden bounded cykl, --status zwraca zagregowany backlog bez identyfikatorów kont. SIGINT/SIGTERM kończy bieżącą transakcję i zamyka engine. CLI odmawia niewłaściwej roli/schematu i nie drukuje credentiali ani źródeł.
 
 Obserwuj pending_backfill, pending_materialization, oldest_matures_at, owners_handled, dates_processed, exitcode i motivation_worker_unavailable. Duży backlog wymaga kolejnych cykli, nie nowego klienta. Wiele instancji serializuje konto→counter i rewaliduje źródła/czas po lock; brak zewnętrznej kolejki/lease. Batch1..1000, date-batch1..1000, maksymalnie4×date-batch kandydatów keyset przed merge źródeł, brak limitu całkowitej historii lub pozycji rankingu. SQL pełnohistoryczne streak/agregacje mogą korzystać z work_mem/spill; dobierz monitoring czasu i dysku, nie obcinaj historii. Korekta osi celu atomowo przechodzi całą sparse historię w porcjach w jednej transakcji.
 

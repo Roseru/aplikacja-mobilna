@@ -140,6 +140,22 @@ def put_consents(
     # Flush the consent source before validating its narrow provenance function.
     session.flush()
     if ranking_consent_epoch is not None:
+        # Reconcile a restored projection epoch before writing the new current
+        # affirmation. Otherwise the first later worker would delete this fresh
+        # marker together with stale restored provenance. This happens only on
+        # an accepted new header operation, never on legacy writes or replay.
+        stale_projection = session.scalar(
+            text(
+                "SELECT EXISTS(SELECT 1 FROM app.motivation_accounts "
+                "WHERE owner_id=:owner AND sync_epoch<>:epoch)"
+            ),
+            {"owner": owner_id, "epoch": epoch},
+        )
+        if stale_projection:
+            session.scalar(
+                text("SELECT app.e8_refresh(:owner,ARRAY[]::date[],256)"),
+                {"owner": owner_id},
+            )
         session.execute(
             text("SELECT app.e8_affirm_ranking(:owner,:epoch,:revision)"),
             {"owner": owner_id, "epoch": epoch, "revision": consent.revision},

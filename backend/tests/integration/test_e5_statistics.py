@@ -658,3 +658,47 @@ def test_profile_zone_change_uses_preserved_day_closure(
     with Session(engine) as session:
         assert session.get(DiaryDay, day_id).time_zone == old_zone
         assert session.get(Meal, entity).time_zone == old_zone
+
+
+@pytest.mark.parametrize("days", [7, 30, 90])
+def test_profile_only_calendar_closure_preserves_nulls_and_creates_no_sources(api, days):
+    client, engine, _, owners = api
+    owner = owners["a"]
+    profile(engine, owner, "UTC")
+    tables = (
+        "diary_days",
+        "meals",
+        "weights",
+        "motivation_accounts",
+        "motivation_days",
+        "motivation_badges",
+    )
+
+    def row_counts():
+        with engine.connect() as connection:
+            return {
+                table: connection.scalar(
+                    text(f"SELECT count(*) FROM app.{table} WHERE owner_id=:owner"),
+                    {"owner": owner},
+                )
+                for table in tables
+            }
+
+    before = row_counts()
+    assert all(count == 0 for count in before.values())
+    response = get(client, days)
+    assert response.status_code == 200, response.text
+    assert response.headers["cache-control"] == "no-store"
+    result = response.json()
+    assert len(result["daily"]) == days
+    assert [row["closed"] for row in result["daily"]] == [True] * (days - 1) + [False]
+    assert result["complete_day_count"] == result["in_goal_day_count"] == 0
+    for row in result["daily"]:
+        assert row["status"] == "no_data" and not row["effective_complete"]
+        assert row["meal_count"] == row["weight_count"] == 0
+        assert row["in_goal"] is None and row["preliminary_in_goal"] is None
+        assert all(field["known_sum"] is None for field in row["totals"].values())
+    assert all(
+        average == {"value": None, "day_count": 0} for average in result["averages"].values()
+    )
+    assert row_counts() == before
