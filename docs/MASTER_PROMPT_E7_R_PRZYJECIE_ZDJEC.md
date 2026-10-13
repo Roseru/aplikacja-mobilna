@@ -100,4 +100,3 @@ HUMAN_REVIEW_PENDING i O3_CONFIGURATION_PENDING nie oznaczają E7-R.
 Wznowienie: zatwierdzenia + kompletny przekrój + O3 + prywatny manifest/output,
 istniejący runner przez API, najpierw jeden case.
 Realne wykonanie wymaga osobnego zlecenia; to nie jest dispatch live Gemini.
-
