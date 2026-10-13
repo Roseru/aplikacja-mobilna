@@ -32,7 +32,7 @@ pytestmark = pytest.mark.integration
 ROOT = Path(__file__).resolve().parents[3]
 HELPER = ROOT / "infra/local/provision_deletion_operator.py"
 IMAGE = (
-    "public.ecr.aws/docker/library/postgres:17@"
+    "docker.io/library/postgres:17@"
     "sha256:2d2b8998d31037bf721cfdf764d76ba74171b4fab3431b7f72c27c56ddbdf9e3"
 )
 LOGGING = {
@@ -309,9 +309,13 @@ def logging_cluster():
                 "calorie_app_migrator",
                 "calorie_app_api",
                 "calorie_app_worker",
+                "calorie_app_ai_worker",
+                "calorie_app_motivation_worker",
                 "keycloak",
             ):
                 connection.execute(sql.SQL("CREATE ROLE {} NOLOGIN").format(sql.Identifier(role)))
+            connection.execute("ALTER ROLE calorie_app_ai_worker NOINHERIT")
+            connection.execute("ALTER ROLE calorie_app_motivation_worker NOINHERIT")
         require(
             not cluster.authenticated("postgres", "postgres", secrets.token_urlsafe(32)),
             "Wrong administrator password was accepted",

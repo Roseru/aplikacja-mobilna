@@ -15,8 +15,9 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.navigation.compose.*
 import pl.roseru.kalorie.DiaryEvent
 import pl.roseru.kalorie.DiaryViewModel
+import pl.roseru.kalorie.session.*
 
-@Composable fun CalorieApp(model: DiaryViewModel) {
+@Composable fun CalorieApp(model: DiaryViewModel, session: SessionView, actions: SessionActions) {
     val ready by model.ready.collectAsStateWithLifecycle()
     val error by model.startupError.collectAsStateWithLifecycle()
     val nav = rememberNavController()
@@ -48,7 +49,7 @@ import pl.roseru.kalorie.DiaryViewModel
                     icon = { Icon(Icons.Outlined.BarChart, contentDescription = null) }, label = { Text("Postępy") }, modifier = Modifier.testTag("open-analytics"))
                 NavigationBarItem(selected = route == "settings", onClick = { nav.navigate("settings") { launchSingleTop = true } },
                     icon = { Icon(Icons.Outlined.Tune, contentDescription = null) }, label = { Text("Ustawienia") })
-                NavigationBarItem(selected = route == "profile", onClick = { nav.navigate("profile") { launchSingleTop = true } },
+                NavigationBarItem(selected = route in listOf("profile", "achievements"), onClick = { nav.navigate("profile") { launchSingleTop = true } },
                     icon = { Icon(Icons.Outlined.PersonOutline, contentDescription = null) }, label = { Text("Profil") }, modifier = Modifier.testTag("open-profile"))
             }
         }
@@ -59,12 +60,17 @@ import pl.roseru.kalorie.DiaryViewModel
             composable("rations") { RationScreen(model, onBack = { nav.popBackStack() }) }
             composable("custom") { CustomFoodScreen(model, onBack = { nav.popBackStack() }) }
             composable("settings") { SettingsScreen(model) }
-            composable("profile") { ProfileScreen(model) }
+            composable("profile") { ProfileScreen(model, onAccount = { nav.navigate("account") { launchSingleTop = true } },
+                onAchievements = { nav.navigate("achievements") { launchSingleTop = true } }) }
+            composable("achievements") { AchievementsScreen(model, session, actions,
+                onAccount = { nav.navigate("account") { launchSingleTop = true } }, onBack = { nav.popBackStack() }) }
+            composable("account") { SessionScreen(session, actions, back = { nav.popBackStack() },
+                backLabel = if (nav.previousBackStackEntry?.destination?.route == "achievements") "Wróć do osiągnięć" else "Wróć do profilu") }
             composable("analytics") { AnalyticsScreen(model, onDay = { date ->
                 model.selectDate(date)
                 nav.navigate("diary") { popUpTo("diary"); launchSingleTop = true }
             }) }
         }
     }
-    if (route in listOf("settings", "profile", "analytics")) BackHandler { nav.popBackStack() }
+    if (route in listOf("settings", "profile", "analytics", "account", "achievements")) BackHandler { nav.popBackStack() }
 }

@@ -1,5 +1,62 @@
 # Kontekst współpracy
 
+## Kontynuacja O1 — osiągnięcia0.8.6, 12 października2026
+
+- Agent1/O1; użytkownik osoba1. Branch codex/android-osiagniecia-serwer; finalne źródło `05847a06f6a62fa144dfcd8e78d8a4881c857978`;0.8.6/code17/Room8. Feedback: mniejsze podsumowanie, więcej odznak; panel serwera pod lokalnymi kartami, Postępy zachowane. [Raport](android/RAPORT_0_8_6.md).
+- Prywatny GET własnej motywacji tylko na żądanie po bootstrapie; pending/final/revoked, punkty/ranga/aktualność, pamięć sesji chroniona lease/gen/epoch/revision. Bez PUT zgód/publicznego rankingu/Nemesis/ACK. Domyślny APK offline; mocki nie są odbiorem rzeczywistego HTTPS.
+- Pełny126JVM/129device na404c106; finalny build/126JVM/lint i18UI po zmianie układu PASS. Pierwsze44/45 i17/18 zachowane w raporcie z naprawami. Nie sumować ponowień i nie deklarować lokalnego pełnego130. Install-r/launch zachowały całe22tabele/5posiłków/FK. APK `95e63068666381d2984952ad52686f0007982ee2250e6028f061e85cd150e522` pozaGit. App otwarta na osiągnięciach.
+- PR40 scalony a6a77fc,8CI PR38295790076 i8CI main38297696312. Nowy PR/CI osobno. Odczyt O2 motywacji/lifecycle; realny E8.4 jeszcze nieodebrany. Następne ranking za świadomą zgodą, E4 i Nemesis poE8.4; pytanie O1-015 doO3 o istniejące środowisko nadal otwarte. Jedyny dziennik docs/KOMUNIKACJA_AGENTOW.md/O1-021.
+
+## Kontynuacja O1 — osiągnięcia0.8.5, 12 października2026
+
+- Agent1/O1, codex/android-osiagniecia-local, source62779d2, code16/Room8; lokalny podgląd4odznak z całej historii, bez serwerowego potwierdzenia/rankingu. Wygląd Postępów zaakceptowany przez właściciela i zachowany. Raport android/RAPORT_0_8_5.md zawiera granice, testy i syntetyczne PNG.
+- 115JVM/117device PASS, lint0error/4warning/1info; pierwszy błąd sygnaturyJUnit naprawiony przed finalnym117/117. Rzeczywista aktualizacja/launch zachowały wszystkie stare kolumny22tabel/5posiłków/FK; nowa kolumna starych składników NULL. APK577b98a74e659e7b6cd2ed7b5c7d4cb22409216f2115255b1325a15d74d0364d pozaGit, app otwarta na Osiągnięciach. Bez clear/uninstall i bez publikacji prywatnego dziennika.
+- PR38 scalony c300 po8success exactffc3027/CI38215019078. Następny main7654640 dołączony zwykłym merge; Android identyczny z przetestowanym62779d2. Odczyt O2-024/026 i PR37/E8.3-I/PR39: router0020 podłączony, publiczne nowe zaproszenia/akceptacja/statystyki nadal gated doE8.4. Wyników O2/O3 nie przypisujemy O1.
+- Następne: osobny prywatny odczyt motywacji z rewizją/aktualnością/statusami i ochroną lease/generation/epoch; potem ranking za świadomą zgodą oraz Nemesis po odebranym E8.4. Dalszy E4 pozostaje konieczny do potwierdzenia lokalnego dziennika. Komunikacja wyłącznie docs/KOMUNIKACJA_AGENTOW.md/O1-020.
+
+## Kontynuacja O1 — analityka0.8.4, 12 października 2026
+
+- Agent1/O1: codex/android-analityka-wyglad, wersja0.8.4/code15/Room7, nowy wygląd Postępów i dostępny układ320dp/font150%; obliczenia oraz zapis niezmienione. Raport android/RAPORT_0_8_4.md ma podglądy syntetyczne i scenariusze manualne. App została otwarta do testów właściciela.
+- 103JVM/107device/full PASS, lint0error/4warning/1info; trzy UI powtórzone po korekcie wyłącznie fixture. Pierwsze dwa błędy lint naprawiono bez suppressions. Aktualizacja/przed/po/launch zachowały wszystkie22tabele i5posiłków/FK. APK SHA256 a5b254bbe58e580b3f895fd38c636cd1cfe8ae56762baf3f81fc4c7abdfb738f pozaGit. Prywatne dane pozostają lokalnie.
+- PR34 scalony ffc6ab01a0740c93369a7921f65204785c02258d po ośmiu rzeczywistych success302ffae/base2b3ac61, CI38210074687, reviews/comments0. To dowód0.8.3, nie CI0.8.4 lub pełnego E4/KO31.
+- Odczytano main E8.1+2/PR35, O2-025 i przekazanie motywacji. Osiągnięcia/ranking mają finalne kontrakty, ich Android jest kolejny. NEMESIS/PR37/head27af3a3 odczytany tylko jako niescalone przekazanie E8.3-C; produkcyjna aktywacja i wyniki czekają naE8.4. Nie przejęto runtime/testów O2/O3. Komunikacja: docs/KOMUNIKACJA_AGENTOW.md/O1-019.
+
+## Kontynuacja O1 — kopia serwera 0.8.3 i priorytety produktu
+
+- Agent1/O1 realizuje Androida; właściciel ponownie wskazał NEMESIS, osiągnięcia i dopracowaną analitykę. Bieżąca kolejność jest w PLAN_IMPLEMENTACJI_ANDROID.md; nowy wygląd analityki to kolejny lokalny etap. Potwierdzone wyniki i rywalizacja wymagają odebranych E8 O2 oraz dalszego E4.
+- `codex/android-sync-pull`, kod d782a2e546667f5ddf74f172bb6c980c3a8d591b: pełny bounded snapshot, trwałe strony/wznowienie, atomowy finał/checkpoint, osobne archiwum wire i Room7/6→7. Kontekst/lease/sesja/A→B→A/retry/expiry/recovery/deleting kontrolowane; kopiowanie nie wysyła kolejki ani nie nadpisuje lokalnego dziennika.
+- Finalne103JVM i104/104 API35/full/offline PASS; build/lint0error/4warning/1info. Pierwsze101/104 z trzema błędami nowych fixtures/asercji oraz ich poprawki opisane w android/RAPORT_0_8_3.md. Nie ma retry/skip lub osłabienia kontraktu. Aktualizacja i pierwszy launch zachowały wszystkie kolumny18wcześniejszych tabel i5posiłków/outbox/FK; APK0.8.3/code14/Room7 e892cf1ef65e4b4d808b99c6dfd124bce4e290e38838307f504ab181adf8b901 pozaGit, widoczny emulator.
+- E7/PR28 i instrukcje E8/PR33 odczytane oraz połączone zwykłym merge. Własny PR32 poprawia base_revision=null; main0ed58d6 zawiera tę zmianę po ośmiu success CI38176933888. Kod Androida identyczny z testowanym źródłem po normalizacji końców linii. Komunikacja tylko docs/KOMUNIKACJA_AGENTOW.md, nowy wpis O1-018.
+- Prawdziwy odbiór API/TLS/Keycloak0.8.3 wymaga istniejącego środowiska O3 (O1-015). Archiwum ma walidację struktury; semantyczne projekcje, materializacja/push/inkrementalny pull/import/recovery/WorkManager nadal są do implementacji. Nie deklarować pełnego E4 lub KO-31. Nie uruchomiono E8 backendu, jego master nie jest runtime.
+
+## Integracja O1 — merge sesji / CI profilu, 11 października 2026
+
+Aktualizacja 11.10.2026/O1: PR26 scalony normalnym merge na main c59e6d68d18bbafd157a9d1383aae8d36fa1b893 po osmiu success dla42763f8 i zerze reviews/comments. Zgodnie z docs/WORKFLOW.md odbior rzeczywistego bootstrapu/GET pozostaje kolejnym etapem integracyjnym; merge nie zamyka E3/KO-31. PR31 skierowano na main, nastepnie dolaczono main zwyklym merge; zrodla android/app pozostaly identyczne z przetestowanym0522824. Wczesniejsze uwagi o bazie zależnej/nieuruchamianiu CI sa historyczne; nowy push uruchamia wymagane CI PR do main.
+
+## Kontynuacja O1 — odczyt profilu 0.8.2, 11 października 2026
+
+- Kod `0522824990a35c0b54bec9cceaa4d3a8e9c7b069` / `codex/android-odczyt-profilu` / [PR31](https://github.com/Roseru/aplikacja-mobilna/pull/31) draft, baza codex/android-sesja /42763f8/PR26. Zachować kolejność: odbiór i merge PR26, retarget nowego PR na main, ponowna integracja. Nie scalać zależnego PR do oczekującej sesji.
+- GET me po bootstrapie: ścisły ProfileRead, snapshot osobno w UI, brak zmiany lokalnego profilu/celu/outbox, lease+session+contextRevision, bounded GET/TLS, 401/Retry-After, trwałe requiresRecovery przy innej epoce. Brak odczytu celów, wysyłki sync/WorkManager/importu gościa. Room6 bez migracji.
+- 87JVM +86/86 API35/full/offline PASS, zero skips/errors; lint0error/4warning/1info bez suppressions. Aktualizacja oraz pierwszy launch zachowały wszystkie18tabel/2posiłki/outbox/FK. APK0.8.2/code13 SHA256 ffac4d261e6cab14a564db54b78deaa1c842e54314133ea5939ce0a199cb6128 poza Git, widoczny Dziennik w emulatorze.
+- O2-019/PR30 odczytano na4346964. PR26 po zwykłym merge main75c4414 ma clean/mergeable i osiem success dla dokładnego42763f8; opis poprawiony. To CI sesji, nie nowego PR31. Zachowano komunikację; O1-015 wskazuje status/pytanie O3.
+- Rzeczywiste bootstrap/GET/KO-31 nadal nieodebrane. Docker/uv/stan integration nieodnaleziony na komputerze O1; potrzebne istniejące środowisko O3 i validation-only publiczny CA. Nie reinit ani fikcyjne endpointy. O3-011 dowodzi realnego loginu0.8.0, nie HTTP0.8.2. Kolejne: realny odbiór HTTP, cele, adapter E4/Room/WorkManager, E5/E6. Raport android/RAPORT_0_8_2.md i opis android/ODCZYT_PROFILU.md.
+
+## Kontynuacja O1 — bootstrap HTTP 0.8.1, 11 października 2026
+
+- codex/android-sesja / PR26, kod c6b7a2fd4df4bd26c5ea81e6b97026d8476445c6; zwykły merge main75c4414 zachowuje komunikację O1/O2/O3. PR nadal draft do rzeczywistego odbioru HTTP.
+- 0.8.1/code12/Room6: przechwycony token+identity+lease i rewizja sesji, trwały bodyless bootstrap HTTP, bounded retry/Retry-After, ochrona logout/ABA/refresh, zachowany requiresRecovery. Brak importu gościa, odczytów API, wysyłki outbox i WorkManager.
+- Finalny pełny build/lint/JVM/device PASS:81JVM i76/76 API35/offline, lint0error/28warning/1info. 10UI failures wcześniejszego run przy wygaszonym emulatorze są udokumentowane; po emulowanymAC/StayOn=true pełne76/76 bez zmian źródeł/testów. Raport android/RAPORT_0_8_1.md; config android/BOOTSTRAP_HTTP.md.
+- APK poza Git:0985e14e66ed62046d49d0793617ef6d2ce6cab36806327a41ed3b2fe035b78a. Aktualizacja i pierwsze uruchomienie zachowały całe18tabel/2posiłki/outbox/FK; widoczny Dziennik do testów manualnych.
+- Odczyt O3-011/PR27: rzeczywista sesja APK0.8.0/3b081c4 odebrana przez O3, zewnętrzny validation-only CA overlay/profile-scope helper już dostarczony. Nie zastępuje odbioru HTTP0.8.1. Użyć istniejącej instalacji, nie reinit/nowego CA; adres API ze stanu O3. Odczytano E8/PR29, E7/PR28 nie przejęty. CI nowego head odczytać osobno, stare8success3b081c4 nie są jego wynikiem.
+
+## Kontynuacja O1 — klient sesji 0.8.0, 11 października 2026
+
+- Gałąź codex/android-sesja z main f551ecc, kod ca69929147b6861a79fd77cd950fa232e78afdcd, draft PR #26: https://github.com/Roseru/aplikacja-mobilna/pull/26. PR #25 / 0.7.3 scalony po ośmiu success dla 4930cca i braku uwag. Review opcjonalne; kontrola exact head pozostaje.
+- 0.8.0 / versionCode 11 / Room 6: klient przeglądarkowy AppAuth/PKCE, AES/GCM + Keystore, dokładny callback, odnowienie, lokalny logout i odrębny ViewModel/stan formularzy dla lease. Gość i konta offline zachowują dzienniki. Brak automatycznego importu gościa i HTTP/bootstrap/sync.
+- Końcowy pełny build/JVM/lint/device PASS: 73 JVM, 65/65 API35 przy 1080×2400/density420/font1/offline, lint 0 błędów/28 ostrzeżeń. Próby sesji to transport zastępczy; nie potwierdzają przeglądarki/Keycloak/TLS APK lub zabicia procesu. Raport android/RAPORT_0_8_0.md, konfiguracja android/SESJA_OIDC.md.
+- APK SHA256 baadadc10afcf1057d70470fd1135703f4bd7b04f28570ab9b3005123ae7bf02 poza Git. Aktualizacja zachowała wszystkie kolumny 18 tabel, 2 posiłki i outbox. Widoczny emulator na ekranie Konto i logowanie. Domyślny issuer pusty, przycisk nieaktywny; Docker/uv nie były dostępne na komputerze O1.
+- Następne konkretne zadanie: uruchomione środowisko O3, ograniczony publiczny CA w wariancie testowym i prawdziwe APK/A/B/callback/restart, potem token+identity+lease i bootstrap E3; E4/WorkManager później. Nie uznawać zielonego harnessu O2/O3 lub fixture za pełny mobilny odbiór. Zdalny CI PR26 odczytywać osobno; draft pozostaje otwarty do integracji.
+
 ## Kontynuacja O1 — tryby 0.7.3, 11 października 2026
 
 - Gałąź codex/android-tryby-aktywnosci, kod 1af9091. PR #23 / 0.7.2 scalony na main 446ac0c po pełnych ośmiu success; konflikt wspólnej komunikacji rozwiązany z zachowaniem O1-011/O2-018/019 i obu aktualnych wierszy. E7 jest przekazaniem O2, nie implementacją O1.

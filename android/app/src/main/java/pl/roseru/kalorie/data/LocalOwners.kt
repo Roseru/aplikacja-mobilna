@@ -60,6 +60,10 @@ class LocalOwnerStore(private val db: CalorieDatabase) {
         dao.select(LocalActiveOwnerEntity(storageScope = owner.storageScope, generation = generation))
         OwnerLease(owner.storageScope, generation)
     }
+    suspend fun selectIfCurrent(expected: OwnerLease, ownerId: String): OwnerLease = db.withTransaction {
+        requireCurrent(expected)
+        select(ownerId)
+    }
     suspend fun requireCurrent(lease: OwnerLease) {
         val active = dao.active()
         if (active?.storageScope != lease.storageScope || active.generation != lease.generation) throw StaleOwnerException()

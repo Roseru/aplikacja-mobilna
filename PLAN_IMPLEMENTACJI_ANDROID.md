@@ -1,5 +1,43 @@
 # Plan implementacji — osoba 1: Android i pamięć lokalna
 
+## Aktualizacja O1 — potwierdzenie osiągnięć0.8.6, 12 października2026
+
+- Feedback właściciela: „Zmniejsz podsumowanie, pokaż więcej odznak”. Krótsza karta, wyjaśnienia rozwijane; lokalne odznaki przed potwierdzeniem serwera. Postępy0.8.4 zachowane.
+- Ukończony prywatny GET motywacji: ścisły DTO, osobne statusy/aktualność, brak cache na dysku, kontrola lease/generation/epoch/revision, odnowienie i trwały Retry-After. Odczyt nie zmienia zgody rankingu ani dziennika/outbox. [Raport0.8.6](android/RAPORT_0_8_6.md), codex/android-osiagniecia-serwer. Pełny126JVM/129device dla odczytu; końcowe18UI po feedbacku; Room8/22tabele/5posiłków zachowane.
+- PR40/0.8.5 scalony a6a77fc po8success PR i8success main. Ten etap ma własny PR/CI; dowody wcześniejszego PR nie zastępują bieżącego.
+- Następne: rzeczywisty prywatny odczyt APK/API w istniejącym środowisku O3; świadome zgody i publiczny ranking; semantyczny sync E4/push/ACK/import/WorkManager. Nemesis dopiero po odebranym E8.4; obecne issuance/create/accept/statistics pozostają gated.
+
+## Aktualizacja O1 — osiągnięcia0.8.5, 12 października 2026
+
+- Właściciel: „Zachowaj wygląd i rozwijaj osiągnięcia”. Analityka0.8.4/PR38 scalona na c3009f4 po ośmiu success exactffc3027, CI38215019078; Postępy zachowane.
+- Osiągnięcia0.8.5/code16/Room8: lokalny podgląd czterech warunków całej historii, stany lokalnie spełniony/wstępny/wtrakcie, daty i korekty, bez potwierdzonych punktów/rangi/rankingu. Profil otwiera osobną stronę. [Raport i podglądy](android/RAPORT_0_8_5.md), branch codex/android-osiagniecia-local, source62779d2. 115JVM/117device PASS, lint0error; rzeczywisty install-r/launch zachował wszystkie stare kolumny22tabel/5posiłków/FK. Nowa nullable pozycja składnika racji jest utrwalana tylko przy nowym zapisie; dawnym wpisom nie dopisujemy dowodu.
+- Następne: prywatny GET /me/motivation, ścisłe DTO i osobny stan pending/final/revoked z revision/as_of. Wykorzystać istniejące odnowienie sesji i bootstrap; chronić owner lease/account_generation/sync_epoch/contextRevision i spóźnione odpowiedzi. Odczyt/cache nie może publikować ranking opt-in. Ranking i afirmacja po restore pozostają osobnym świadomym krokiem.
+- Nemesis: wczytano scalony PR37/E8.3-I, main7654640 i instrukcję E8.4/PR39. Router0020 jest podłączony, ale issuance/create/accept/statistics nadal zamknięte do odbioru E8.4. Android przygotuje terms/kod/zgody/retry/cache według finalnych interfejsów, bez fikcyjnego partnera lub zerowych wyników. Pełny E8.4/realHTTP/DevOps wymagają własnych odbiorów.
+- Dalsze E4: semantyczna projekcja, adapter Decimal i zapisanych markerów racji, trwałe push/ACK, incremental, import/recovery i WorkManager; lokalny outbox nie jest wire DTO.
+
+## Aktualizacja O1 — 12 października 2026
+
+- 0.8.3 / PR34 scalony na main ffc6ab0 po ośmiu success exact302ffae/base2b3ac61; CI38210074687, brak uwag. Trwałe archiwum wire pozostaje oddzielne od semantycznej projekcji oraz kolejki.
+- 0.8.4 / codex/android-analityka-wyglad: nowy wygląd Postępów7/30/90, wskaźniki/wykresy, układ320dp/font150%, jasny/ciemny motyw; obliczenia i Room7 bez zmian. 103JVM/107device PASS, końcowe3UI po poprawce fixture PASS. Aktualizacja zachowała22tabele i5posiłków. [Raport i podglądy](android/RAPORT_0_8_4.md); CI tej gałęzi będzie odczytany osobno.
+- Kolejny etap implementacyjny: **osiągnięcia**, najpierw jawny lokalny postęp czterech warunków v1, następnie prywatny GET /me/motivation i osobny stan potwierdzony z rewizją/aktualnością/pending/final/revoked. Odczytano finalne przekazanie scalonego E8.1+2 / PR35 i O2-025, a nie tylko master. Ranking wymaga oddzielnego świadomego opt-in z bieżącą epoką; odczyt nie publikuje użytkownika.
+- **NEMESIS**: odczytano draftPR37/head27af3a3 i INTEGRACJA_O1_NEMESIS_LIFECYCLE. Jednorazowy prywatny kod w body, pełne terms/zgody, zgoda weight_change/mean_deficit domyślnie wyłączona, Idempotency-Key/X-Sync-Epoch/If-Match i unieważnienie lease/cache. E8.3-C nie jest publicznym routerem, tworzenie/akceptacja/statystyki pozostają zamknięte do E8.4. Nie dołączono niescalonego backendu lub fikcyjnego partnera/wyniku.
+- Dalsze E4: semantyczne projekcje, trwałe operacje/push/ACK, incremental, import/recovery i WorkManager. Realny APK/API/TLS pozostaje własnym odbiorem O1/O3, z istniejącego środowiska O3; nie przypisujemy sobie testów backendu lub DevOps.
+
+Poniżej zachowano historię planu i jego wcześniejsze zależności.
+## Bieżąca kolejność O1 — 11 października 2026
+
+Właściciel potwierdził: ten etap realizuje **agent 1 / aplikacja Android**. Priorytety produktu obejmują **NEMESIS, osiągnięcia i dopracowany ekran analityki**, obok trwałego działania offline i synchronizacji. Zachowujemy zasady WF-10–12 oraz podział prac O2/O3; ranking i rywalizacja wymagają potwierdzonych wyników i zgód.
+
+1. Domknąć 0.8.3: pełne pobieranie kopii serwera, trwałe strony/wznowienie/Room 7, kontrole sesji i kontekstu; testy, PR/CI i uruchomienie APK bez utraty lokalnych wpisów. Archiwum odpowiedzi nie zastępuje dziennika ani nie potwierdza kolejki.
+2. Dopracować **analitykę**: czytelne karty podsumowań, wyróżniony bilans okresu i realizacja celu, wykresy kcal/B/T/W oraz rzeczywistych pomiarów wagi, spójny wojskowy motyw, wygodny wybór 7/30/90 dni. Zachować obliczenia i jawne braki danych; przetestować mały ekran, oba motywy, dużą czcionkę i odtworzenie stanu. Ta część może działać całkowicie offline.
+3. Dodać **osiągnięcia** z postępem czterech reguł v1: 10 kompletnych dni z rzędu, 10 dni w celu, pomiary w 4 dniach/14 dni i racje w 5 dniach. Lokalny podgląd ma jawny status; potwierdzone punkty/ranga/odznaki i ich cofnięcia pochodzą z E8.1+2 O2, z rewizją i datą aktualności. Brak wpisu nie daje punktów, dzisiejszy dzień nie jest zamknięty. Ranking dopiero po świadomej, aktualnej zgodzie.
+4. Kontynuować **E4**: semantyczna projekcja kopii i jawne konflikty, niezmienna materializacja outbox, pełne ACK push, inkrementalny pull, świadome przypisanie gościa, recovery i WorkManager. Zgodność z serwerem jest podstawą potwierdzonych osiągnięć i wyników rywalizacji.
+5. Dostarczyć **NEMESIS** zgodnie z odebranym kontraktem E8.3/E8.4: zaproszenie → wspólne ustawienie celu/okresu/udostępniania → akceptacja → porównanie regularności i realizacji celu → wynik wstępny/ostateczny → anulowanie. Maksymalnie jedna aktywna rywalizacja, izolacja dwóch uczestników, osobne zgody; surowa waga i posiłki nie są domyślnie ujawniane. Większy deficyt nie daje lepszego wyniku. Offline widoczna jest datowana kopia, bez udawanego partnera lub serwerowego zwycięstwa.
+
+Odczytano scalony E7/PR28 i instrukcje E8/PR33. Master E8.1+2 przewiduje `/me/motivation` i `/ranking`, ale publikacja instrukcji nie oznacza dostarczenia tych endpointów. Przed integracją odczytać rzeczywisty kontrakt i przekazanie O2; dla NEMESIS potrzebne są osobne odebrane E8.3/E8.4. O1 nie przejmuje backendu ani nie rozpoczyna zadań O2.
+
+**Aktualizacja 0.8.2:** zaimplementowany podgląd GET me po bootstrapie, bez zmiany lokalnego profilu i celu. 87JVM/86device PASS; [raport](android/RAPORT_0_8_2.md), [kontrakt i granice](android/ODCZYT_PROFILU.md). PR31 zależy od PR26; rzeczywisty bootstrap/GET ze środowiskiem O3 pozostaje otwarty. Następnie odczyty celów i trwały adapter E4/Room/WorkManager, z jawnym przypisaniem gościa.
+
 Data: 9 października 2026 r.
 
 Podstawa: `WYMAGANIA_PROJEKTOWE.md` oraz zaakceptowane makiety. Użytkownik jest osobą 1 w trzyosobowym zespole. Ten dokument wyznacza kolejność implementacji; bieżący zakres kodu jest opisany w [android/README.md](android/README.md).
@@ -172,7 +210,7 @@ Nie potrzebujemy na start kompletnego backendu ani działającej analizy AI. Do 
 
 Lokalny rdzeń A-01–05, formularze profilu/wagi/prywatnego produktu/kompletności, importer E2, BigDecimal i analityka 7/30/90 dni są zaimplementowane. Fundament 0.6 utrwala UUID gościa/tożsamości, rozdziela zakres repozytoriów/kolejek i chroni lokalne transakcje generacją. Nie dodaje autoryzacji ani przełączania kont w UI; zachowuje dawny alias gościa i globalne klucze encji.
 
-W 0.7 przygotowano trwałe żądanie bootstrapu, atomowe mapowanie account_id/generacji/epoki i blokadę zmiany kontekstu oraz niezmienne cele. Parametry przyszłego klienta i granice są w [przekazaniu E3](android/INTEGRACJA_E3.md). Następny etap: powiązanie rejestru z potwierdzoną sesją, odtwarzanie ViewModel i czyszczenie stanu po zmianie konta, docelowe klucze z właścicielem oraz adapter E0 i scenariusze synchronizacji. Wymaga endpointów E3/E4 O2 i konfiguracji środowiska O3. Przed wysyłką oraz zapisem odpowiedzi trzeba sprawdzać właściciela/generację zadania; import gościa wymaga jawnej zgody i trwałego potwierdzenia. Roboczy outbox nie jest gotowym payloadem HTTP. Do dostawy API można przygotować adaptery i scenariusze offline bez udawania rzeczywistego sync. MRE 2026 pozostaje osobnym importem katalogu: nie sumujemy alternatyw ani zbiorczego pakietu dodatków ze składnikami.
+W 0.7 przygotowano trwałe żądanie bootstrapu, atomowe mapowanie account_id/generacji/epoki i blokadę zmiany kontekstu oraz niezmienne cele. Parametry przyszłego klienta i granice są w [przekazaniu E3](android/INTEGRACJA_E3.md). Android 0.8.1 łączy klienta sesji AppAuth/PKCE i odtwarzanie ViewModel/formularzy z trwałym bootstrapem HTTP, przechwyconym tokenem/tożsamością/lease i bezpiecznym ponawianiem. [Raport](android/RAPORT_0_8_1.md) opisuje lokalne testy i granice transportu zastępczego; [konfiguracja](android/BOOTSTRAP_HTTP.md) rozdziela połączenie konta od synchronizacji. Następny etap: rzeczywisty odbiór APK/HTTPS/Keycloak O3 z ograniczonym publicznym CA, odczyty API, docelowe klucze właściciela oraz adapter E0 i scenariusze synchronizacji. Wymaga endpointów E3/E4 O2 i konfiguracji środowiska O3. Przed wysyłką oraz zapisem odpowiedzi trzeba sprawdzać właściciela/generację zadania; import gościa wymaga jawnej zgody i trwałego potwierdzenia. Roboczy outbox nie jest gotowym payloadem HTTP. Do dostawy API można przygotować adaptery i scenariusze offline bez udawania rzeczywistego sync. MRE 2026 pozostaje osobnym importem katalogu: nie sumujemy alternatyw ani zbiorczego pakietu dodatków ze składnikami.
 
 ## Dokumentacja techniczna
 

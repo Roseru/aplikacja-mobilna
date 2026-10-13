@@ -130,6 +130,20 @@ def test_upgrade_0002_preserves_legacy_and_finite_nutrition(database):
             connection.execute(
                 text("DELETE FROM app.sync_counters WHERE owner_id=:owner"), {"owner": account_id}
             )
+            # E8 upgrade creates a private pending placeholder for this source-only
+            # legacy fixture. Remove exactly that untouched derivative before
+            # deleting the disposable synthetic parent; real purge is separate.
+            assert connection.execute(
+                text(
+                    "SELECT backfill_state,total_points,revision FROM app.motivation_accounts "
+                    "WHERE owner_id=:owner"
+                ),
+                {"owner": account_id},
+            ).one() == ("pending", 0, 0)
+            connection.execute(
+                text("DELETE FROM app.motivation_accounts WHERE owner_id=:owner"),
+                {"owner": account_id},
+            )
             connection.execute(delete(UserAccount).where(UserAccount.id == account_id))
 
 

@@ -12,8 +12,15 @@ android {
         applicationId = "pl.roseru.kalorie"
         minSdk = 26
         targetSdk = 35
-        versionCode = 10
-        versionName = "0.7.3"
+        versionCode = 17
+        versionName = "0.8.6"
+        // Public deployment configuration only. No credentials or client secret in the APK.
+        val issuer = providers.gradleProperty("CALORIE_OIDC_ISSUER").orElse("").get()
+        require(issuer.none { it == '\n' || it == '\r' || it == '"' || it == '\\' })
+        resValue("string", "oidc_issuer", issuer)
+        val apiBase = providers.gradleProperty("CALORIE_API_BASE_URL").orElse("").get()
+        require(apiBase.none { it == '\n' || it == '\r' || it == '"' || it == '\\' })
+        resValue("string", "api_base_url", apiBase)
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
     }
     buildFeatures { compose = true }
@@ -51,6 +58,7 @@ dependencies {
     implementation(libs.room.ktx)
     ksp(libs.room.compiler)
     implementation(libs.datastore.preferences)
+    implementation(libs.appauth)
     debugImplementation(libs.compose.tooling)
     debugImplementation(libs.compose.test.manifest)
     "validationImplementation"(libs.compose.tooling)

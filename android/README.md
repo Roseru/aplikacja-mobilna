@@ -1,11 +1,22 @@
 # Android — Racje i kalorie
 
-Wersja `0.7.3` dodaje tryby aktywności z ikonami żołnierzy i przeliczanie celu kcal po zapisaniu zmiany trybu. Wersja `0.7.2` usprawnia przewijanie wyboru produktów na mniejszym ekranie i dodaje akcję klawiatury „Gotowe” bez niejawnego zapisu. Przygotowanie bootstrapu E3 i niezmienne wersje lokalnych celów pozostają z 0.7.1. Rejestr właścicieli i ochrona zapisu pozostają z 0.6; Room 6 zachowuje dotychczasowe wartości i kolejkę. Ekrany nadal działają jako gość bez konta i internetu, z Postępami 7/30/90 dni. Logowanie i HTTP nie są jeszcze podłączone.
+Wersja **0.8.6** pokazuje mniejsze podsumowanie i więcej lokalnych odznak, a pod nimi prywatny panel GET `/api/v1/me/motivation`: punkty, ranga, pending/final/revoked i data potwierdzenia. Pobranie na żądanie po zalogowaniu/bootstrapie, bez odnawiania zgody rankingu. [Raport i podglądy](RAPORT_0_8_6.md) rozdzielają pełny126JVM/129device od końcowych18UI; lint0error. Room8 bez migracji; install-r/launch zachował wszystkie kolumny22tabel/5posiłków. Domyślny APK nadal działa jako gość offline; rzeczywiste API czeka na własny odbiór.
+
+Wersja **0.8.5** dodaje „Profil → Osiągnięcia”: cztery lokalne warunki v1, postęp całej historii i daty spełnienia, wstępne dzisiaj, przeliczenie po korekcie oraz osobny stan niepobranego potwierdzenia serwera. [Raport i syntetyczne podglądy](RAPORT_0_8_5.md):115JVM/117device PASS, lint0błędów; Room7→8 zachował wszystkie stare kolumny22tabel/5posiłków. Wygląd Postępów0.8.4 został zaakceptowany i pozostaje zachowany. GET motywacji, ranking i Nemesis mają osobną integrację.
+
+Wersja **0.8.4** odświeża analitykę7/30/90 i układ na wąskich ekranach/powiększonej czcionce, bez zmiany obliczeń lub Room7. [Raport, podglądy i próba manualna](RAPORT_0_8_4.md):103JVM/107device oraz końcowe3UI PASS, lint0błędów; aktualizacja zachowała22tabele/5posiłków. Backend osiągnięć/rankingu E8.1+2 jest scalony, jego połączenie z Androidem pozostaje kolejnym etapem.
+
+Wersja `0.8.3` dodaje [trwałe pobieranie kopii danych serwera](SYNCHRONIZACJA_PULL.md), wznowienie stron i atomowy checkpoint w Room 7. Lokalny dziennik oraz outbox pozostają osobno. Semantyczne projekcje, push, inkrementalny pull, import gościa i WorkManager są kolejnymi etapami E4. Domyślny APK nadal działa offline bez skonfigurowanego API.
+
+Wersja `0.8.2` dodaje [podgląd profilu na serwerze](ODCZYT_PROFILU.md) po bootstrapie: pseudonim, wzrost, klasa, strefa i zgody. Odczyt nie nadpisuje lokalnego profilu, celu kcal ani kolejki. [Raport 0.8.2](RAPORT_0_8_2.md) rozdziela testy zastępcze od wymaganego odbioru rzeczywistego API. PR26 i PR31 są scalone na main; pełny sync pozostaje kolejnym zadaniem.
+
+Wersja `0.8.1` dodaje połączenie konta z API przez trwały bootstrap HTTP, odnowienie sesji przed żądaniem i bezpieczne ponawianie bez utraty klucza. [Raport](RAPORT_0_8_1.md), [konfiguracja HTTP](BOOTSTRAP_HTTP.md) i [sesja OIDC](SESJA_OIDC.md) rozdzielają testy lokalne od pozostającego odbioru prawdziwego APK/HTTPS/Keycloak. Domyślne APK bez issuer i adresu API działa jako gość offline. Bootstrap nie wysyła dziennika ani nie importuje gościa; synchronizacja pozostaje kolejnym etapem. Room 6 zachowuje dotychczasowe wartości i kolejkę.
 
 [Raport 0.7.2 i scenariusze manualne](RAPORT_0_7_2.md) opisują odbiór poprzedniego etapu. Tryby 0.7.3: etat biurowo-kawowy ×1,00, Linia ×1,25, Komandos ×1,50; zmiana przelicza bieżący cel przez stosunek mnożników. Podgląd poprzedza zapis. Ręczne kcal, B/T/W i wcześniejsze dni pozostają zachowane; to przelicznik celu, osobny od kalkulatora zapotrzebowania backendu.
 
 ## Co zawiera
 
+- Cztery lokalne osiągnięcia: serie10dni kompletności/celu, pomiary4różnych dni w14dniach, racje5różnych dni; korekty mogą usunąć spełnienie warunku. Odczyt nie publikuje punktów/rankingu.
 - Jasny i ciemny motyw oraz wybór zgodny z systemem, zapisany w DataStore.
 - Dziennik według dni, wybór daty, suma kcal i B/T/W oraz realizacja celu.
 - Wbudowany katalog: 15 dawnych produktów oraz 18 produktów pakietu E2; wyszukiwanie także bez polskich znaków, aliasy E2 i ostatnio używane produkty.
@@ -13,7 +24,7 @@ Wersja `0.7.3` dodaje tryby aktywności z ikonami żołnierzy i przeliczanie cel
 - Racja jest jednym wpisem z wieloma składnikami. Można poprawić lub usunąć jeden składnik albo usunąć całą rację; usunięcie ostatniego składnika usuwa wpis z dziennika.
 - Wybór grupy posiłku, gramatury, podgląd kcal, zapis, edycja i usunięcie wpisu.
 - Własny produkt z nazwą, źródłem i wartościami na 100 g, opcjonalnymi makrami oraz gramaturą spożycia. Produkt jest prywatny i dostępny do ponownego wyboru; zapis szkicu i pierwszego posiłku jest transakcją.
-- Lokalny profil: pseudonim, wzrost, klasa Garnizon/Linia/Komandos i cel redukcja/utrzymanie/nadwyżka. Kcal/B/T/W ustawia się oddzielnie; zapis profilu ich nie zmienia.
+- Lokalny profil: pseudonim, wzrost, Etat biurowo-kawowy/Linia/Komandos i cel redukcja/utrzymanie/nadwyżka. Zmiana klasy przelicza bieżący cel kcal po podglądzie i zapisaniu; B/T/W i wcześniejsze dni pozostają. Ręczne cele są dostępne w ustawieniach.
 - Pomiary wagi z datą, historią, korektą i usunięciem. Kilka pomiarów jednego dnia jest dozwolone. Po poprawnym zapisie pole masy jest czyszczone, aby ponowny przypadkowy klik nie zapisał kolejnego pomiaru.
 - Deklaracja kompletności dnia. Efektywna kompletność wymaga deklaracji, nieusuniętych składników, dodatniej sumy kcal i znanej energii wszystkich pozycji. Brak makr pozostaje brakiem danych. Usunięcie ostatniego posiłku lub dodanie pozycji bez kcal cofa efektywną kompletność; wcześniejsza deklaracja pozostaje w historii i można ją wyłączyć.
 - Postępy dla 7/30/90 dni: wykresy kcal/B/T/W i rzeczywistych pomiarów wagi, średnie, kompletność oraz realizacja celu obowiązującego każdego dnia. Historia pozwala otworzyć dziennik wybranej daty, także pustego dnia.
@@ -23,11 +34,11 @@ Wersja `0.7.3` dodaje tryby aktywności z ikonami żołnierzy i przeliczanie cel
 
 Katalog i początkowy cel 2800 kcal są **danymi demonstracyjnymi**, nie zweryfikowaną bazą żywieniową ani wyliczonym zapotrzebowaniem użytkownika. Dawne zestawy A/B nie odwzorowują specyfikacji S-R/S-RG ani żadnego producenta. Nowy pakiet E2 dodaje osobną niezweryfikowaną, niepełną rację S-RG-1 z 18 policzalnymi komponentami i informacją o pozycjach poza obliczeniami. Nie łączymy zestawów po nazwie lub kalorii. Dawne napoje pozostają w gramach; nowy katalog obsługuje g/ml, bez założenia, że 1 ml = 1 g.
 
-Schemat Room 6 zawiera migracje 1 → 2 → 3 → 4 → 5 → 6 zachowujące posiłki, racje, cele, prywatne produkty, profil, pomiary, deklaracje dni, właścicieli i całą kolejkę. Ostatnia migracja przebudowuje tabelę celów z zachowaniem wszystkich wcześniejszych kolumn i ID, dodaje metadane wersji/złożony FK korekty oraz dwie tabele bootstrapu. Nie zmienia wartości REAL ani dawnych payloadów outbox. Prywatne dane mają zakres właściciela. Usuwanie spożycia pozostawia znacznik i operację kolejki; wersje celów są niezmienne.
+Schemat Room 8 zawiera migracje 1 → 2 → 3 → 4 → 5 → 6 → 7 → 8 zachowujące posiłki, racje, cele, prywatne produkty, profil, pomiary, deklaracje dni, właścicieli i całą kolejkę. Migracja7→8 dodaje nullable pozycję składnika zapisaną przy nowym spożyciu racji, bez backfill wcześniejszych wpisów. Migracja 6→7 dodaje cztery osobne tabele kopii serwera. Migracja 5→6 przebudowuje tabelę celów z zachowaniem wszystkich wcześniejszych kolumn i ID, dodaje metadane wersji/złożony FK korekty oraz dwie tabele bootstrapu. Nie zmienia wartości REAL ani dawnych payloadów outbox. Prywatne dane mają zakres właściciela. Usuwanie spożycia pozostawia znacznik i operację kolejki; wersje celów są niezmienne.
 
 ## Przygotowanie E3 i niezmienne cele
 
-`AccountBootstrapStore` utrwala klucz niezakończonego żądania, powiązanie lokalnego właściciela z `account_id` oraz niezależne `account_generation`/`sync_epoch`. Sprawdza właściciela, generację lease i żądanie przy przyjmowaniu odpowiedzi; powiązanie i potwierdzenie zapisują się atomowo. Restart nie zmienia klucza ponowienia. Zmiana kontekstu serwera ustawia trwałą blokadę wymagającą uzgodnienia E4; nie resetuje dziennika lub kolejki. Nie ma jeszcze wywołania sieciowego ani klienta sesji.
+`AccountBootstrapStore` utrwala klucz niezakończonego żądania, powiązanie lokalnego właściciela z `account_id` oraz niezależne `account_generation`/`sync_epoch`. Sprawdza właściciela, generację lease i żądanie przy przyjmowaniu odpowiedzi; powiązanie i potwierdzenie zapisują się atomowo. Restart nie zmienia klucza ponowienia. Zmiana kontekstu serwera ustawia trwałą blokadę wymagającą uzgodnienia E4; nie resetuje dziennika lub kolejki. Klient sesji i bootstrap HTTP są dostępne od 0.8.0/0.8.1; realny odbiór API nadal jest osobny.
 
 Zmiana celu tworzy nowy UUID zamiast nadpisania poprzedniego wiersza. Wersja ma lokalną sekwencję, czas/strefę decyzji i referencję korekty z własnością wymuszoną w SQLite. Odczyty dziennika i analityki wybierają najnowszą wersję dla daty. Callback `DATABASE_GUARDS` chroni treść przed UPDATE/DELETE oraz zmieniającym INSERT OR REPLACE, także po ponownym otwarciu bazy; przy tworzeniu bazy poza aplikacją należy go dołączyć. Lokalne sekwencje i kolejka wymagają osobnego adaptera serwerowej osi/Decimal.
 
@@ -68,7 +79,7 @@ Dolna zakładka **Postępy** pokazuje ostatnie 7, 30 lub 90 dat kalendarzowych w
 
 ## Co pozostaje na następne etapy
 
-Zweryfikowane pakiety rzeczywistych racji i osobny import materiałów MRE 2026, kalkulator zapotrzebowania, konto, rzeczywista synchronizacja z API, zdjęcia/Gemini, produkty społeczności, ranking i Nemesis. Istnieje lokalna kolejka, ale ta wersja **nie wysyła danych na serwer**. Prywatne produkty nie są publikowane w katalogu społeczności. API katalogu E2 udostępnia wyłącznie official; demo jest lokalne w APK i nie powoduje oczekiwania na konto/API.
+Zweryfikowane pakiety rzeczywistych racji i osobny import materiałów MRE 2026, kalkulator zapotrzebowania, odbiór rzeczywistej sesji z O3, bootstrap i synchronizacja API, zdjęcia/Gemini, produkty społeczności, ranking i Nemesis. Istnieje lokalna kolejka, ale ta wersja **nie wysyła dziennika na serwer**. HTTP tej wersji dotyczy tylko OIDC w skonfigurowanym wariancie. Prywatne produkty nie są publikowane w katalogu społeczności. API katalogu E2 udostępnia wyłącznie official; demo jest lokalne w APK i nie powoduje oczekiwania na konto/API.
 
 ## Uruchomienie w Android Studio
 

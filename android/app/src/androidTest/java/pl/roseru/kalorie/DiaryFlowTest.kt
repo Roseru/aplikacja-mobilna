@@ -6,6 +6,8 @@ import androidx.core.view.WindowInsetsCompat
 import androidx.compose.ui.test.*
 import androidx.compose.ui.test.junit4.createAndroidComposeRule
 import androidx.compose.ui.semantics.SemanticsActions
+import androidx.compose.ui.semantics.SemanticsProperties
+import androidx.compose.ui.text.AnnotatedString
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.runBlocking
@@ -21,6 +23,67 @@ import kotlin.math.roundToInt
 @RunWith(AndroidJUnit4::class)
 class DiaryFlowTest {
     @get:Rule val compose = createAndroidComposeRule<MainActivity>()
+
+    @Test fun achievementsRemainOfflineAcrossRecreationAndChangingLeaseDiscardsPageWithoutWritingDiary() {
+        compose.waitUntil(15_000) { compose.onAllNodesWithTag("daily-kcal").fetchSemanticsNodes().isNotEmpty() }
+        val app = compose.activity.application as CalorieApplication
+        val before = runBlocking { app.database.dao().operationCount(DiaryRepository.GUEST) }
+        compose.onNodeWithTag("open-profile").performClick()
+        compose.onNodeWithTag("open-achievements").performClick()
+        compose.waitUntil(15_000) { compose.onAllNodesWithTag("achievement-count").fetchSemanticsNodes().isNotEmpty() }
+        compose.onNodeWithTag("achievements-content").performScrollToNode(hasTestTag("achievement-server-state"))
+        compose.onNodeWithTag("achievement-server-state").assertTextEquals("Jeszcze nie pobrane")
+        compose.onNodeWithTag("achievements-content").performScrollToNode(hasTestTag("achievement-server-account"))
+        compose.onNodeWithTag("achievement-server-account").performClick()
+        compose.onNodeWithTag("session-owner").assertTextEquals("Gość poligonowy")
+        compose.onNodeWithText("Wróć do osiągnięć").performClick()
+        compose.onNodeWithTag("achievements-content").performScrollToNode(hasTestTag("achievement-server-state"))
+        compose.onNodeWithTag("achievement-server-state").assertTextEquals("Jeszcze nie pobrane")
+        compose.onNodeWithTag("achievements-content").performScrollToIndex(0)
+        compose.activityRule.scenario.recreate()
+        compose.waitUntil(15_000) { compose.onAllNodesWithTag("achievement-count").fetchSemanticsNodes().isNotEmpty() }
+        compose.onNodeWithTag("achievements-back").performClick()
+        compose.onNodeWithTag("profile-content").assertIsDisplayed()
+        compose.onNodeWithTag("open-achievements").performClick()
+        runBlocking { app.sessions.logout() }
+        compose.waitUntil(15_000) { compose.onAllNodesWithTag("daily-kcal").fetchSemanticsNodes().isNotEmpty() }
+        compose.onNodeWithTag("achievement-server-state").assertDoesNotExist()
+        assertEquals(before, runBlocking { app.database.dao().operationCount(DiaryRepository.GUEST) })
+    }
+
+    @Test fun accountScreenKeepsGuestOfflineAndRestoresNavigation() {
+        compose.waitUntil(15_000) { compose.onAllNodesWithTag("daily-kcal").fetchSemanticsNodes().isNotEmpty() }
+        compose.onNodeWithTag("open-profile").performClick()
+        compose.onNodeWithTag("open-account").performClick()
+        compose.onNodeWithTag("session-owner").assertTextEquals("Gość poligonowy")
+        compose.onNodeWithTag("session-login").assertIsNotEnabled()
+        compose.activityRule.scenario.recreate()
+        compose.waitUntil(10_000) { compose.onAllNodesWithTag("session-owner").fetchSemanticsNodes().isNotEmpty() }
+        compose.onNodeWithTag("session-owner").assertTextEquals("Gość poligonowy")
+        compose.onNodeWithText("Wróć do profilu").performClick()
+        compose.onNodeWithTag("profile-content").assertIsDisplayed()
+    }
+
+    @Test fun changingLeaseDiscardsPrivateEditorAndPreservesDiary() {
+        compose.waitUntil(15_000) { compose.onAllNodesWithTag("daily-kcal").fetchSemanticsNodes().isNotEmpty() }
+        val app = compose.activity.application as CalorieApplication
+        val before = runBlocking { app.database.dao().day(DiaryRepository.GUEST, LocalDate.now().toString()).first() }
+        val oldLease = app.sessions.view.value.binding!!.lease
+        compose.onNodeWithText("Dodaj posiłek").performClick()
+        compose.onNodeWithTag("open-custom-food").performClick()
+        compose.onNodeWithTag("custom-name").performScrollTo().performTextInput("Niezapisany prywatny formularz")
+        runBlocking { app.sessions.logout() }
+        compose.waitUntil(10_000) { compose.onAllNodesWithTag("daily-kcal").fetchSemanticsNodes().isNotEmpty() }
+        assertNotEquals(oldLease, app.sessions.view.value.binding!!.lease)
+        compose.onAllNodesWithText("Niezapisany prywatny formularz").assertCountEquals(0)
+        compose.onNodeWithText("Dodaj posiłek").performClick()
+        compose.onNodeWithTag("open-custom-food").performClick()
+        compose.onNodeWithTag("custom-name").performScrollTo().assert(SemanticsMatcher.expectValue(SemanticsProperties.EditableText, AnnotatedString("")))
+        compose.activityRule.scenario.recreate()
+        compose.waitUntil(10_000) { compose.onAllNodesWithTag("custom-name").fetchSemanticsNodes().isNotEmpty() }
+        compose.onNodeWithTag("custom-name").performScrollTo().assert(SemanticsMatcher.expectValue(SemanticsProperties.EditableText, AnnotatedString("")))
+        assertEquals(before, runBlocking { app.database.dao().day(DiaryRepository.GUEST, LocalDate.now().toString()).first() })
+    }
 
     @Test fun addFoodThroughUiAndRecreateActivity() {
         compose.waitUntil(15_000) { compose.onAllNodesWithTag("daily-kcal").fetchSemanticsNodes().isNotEmpty() }
@@ -240,7 +303,9 @@ class DiaryFlowTest {
 
     private fun finishQuantityInput(tag: String, buttonTag: String) {
         compose.onNodeWithTag(tag).performClick().performImeAction()
-        compose.onNodeWithTag(tag).assertIsNotFocused()
+        // After Done the merged tree may absorb the field into its parent. Check the tagged
+        // field itself; the focus=false oracle and the separate IME visibility check stay intact.
+        compose.onNodeWithTag(tag, useUnmergedTree = true).assertIsNotFocused()
         compose.waitUntil(5_000) {
             ViewCompat.getRootWindowInsets(compose.activity.window.decorView)?.isVisible(WindowInsetsCompat.Type.ime()) != true
         }

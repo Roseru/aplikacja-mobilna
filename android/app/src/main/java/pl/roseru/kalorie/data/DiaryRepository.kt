@@ -15,6 +15,7 @@ import java.util.UUID
 
 class DiaryRepository(private val db: CalorieDatabase, private val context: Context, lease: OwnerLease? = null) {
     val dao = db.dao()
+    fun achievements(clock: LocalDayClock) = AchievementRepository(db, clock).observe(owner)
     companion object { const val GUEST = "guest" }
     val owner: String = lease?.storageScope ?: GUEST
     private var boundLease: OwnerLease? = lease
@@ -110,7 +111,10 @@ class DiaryRepository(private val db: CalorieDatabase, private val context: Cont
             val product = requireNotNull(dao.product(component.productId, owner))
             MealItemEntity(UUID.randomUUID().toString(), id, product.id, product.name, grams,
                 product.kcal, product.protein, product.fat, product.carbs, component.id,
-                snapshot(product, amountText, component.quantityUnit))
+                snapshot(product, amountText, component.quantityUnit),
+                // The legacy demo uses zero-based ordinals; E2 uses positive contract positions.
+                rationComponentPosition = (if (ration.ration.catalogJson == null) component.position + 1 else component.position)
+                    .also { require(it > 0) })
         }
         dao.insertMeal(meal)
         items.forEach { dao.insertItem(it) }
@@ -284,6 +288,7 @@ class DiaryRepository(private val db: CalorieDatabase, private val context: Cont
             rows.put(JSONObject().put("id", item.id).put("product_id", item.productId).put("product_name", item.productName)
                 .put("grams", item.grams).put("kcal_per_100", item.kcalPer100)
                 .put("ration_component_id", item.rationComponentId ?: JSONObject.NULL)
+                .put("ration_component_position", item.rationComponentPosition ?: JSONObject.NULL)
                 .put("exact_snapshot", item.snapshotJson?.let(::JSONObject) ?: JSONObject.NULL)
                 .put("protein_per_100", item.proteinPer100 ?: JSONObject.NULL)
                 .put("fat_per_100", item.fatPer100 ?: JSONObject.NULL).put("carbs_per_100", item.carbsPer100 ?: JSONObject.NULL))

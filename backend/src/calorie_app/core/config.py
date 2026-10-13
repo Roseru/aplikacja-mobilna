@@ -27,6 +27,14 @@ class Settings(BaseSettings):
     oidc_jwks_cache_seconds: int = Field(default=900, ge=1, le=900)
     oidc_jwks_refresh_cooldown_seconds: int = Field(default=5, ge=1, le=60)
     oidc_jwks_timeout_seconds: float = Field(default=3, gt=0, le=10)
+    ai_provider: str = "mock"
+    ai_photo_root: Path | None = None
+    ai_project_id: str = "local"
+    ai_environment_id: str = "local"
+    ai_model: str | None = None
+    ai_mock_scenario: str = "valid"
+    ai_live_confirmation: Path | None = None
+    gemini_api_key: SecretStr | None = None
 
     @model_validator(mode="after")
     def trusted_oidc(self):

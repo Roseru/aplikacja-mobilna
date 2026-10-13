@@ -1,0 +1,15 @@
+{
+  "effective_from": "2026-10-09",
+  "decided_at": "2026-10-09T06:00:00Z",
+  "time_zone": "Europe/Warsaw",
+  "goal_type": "maintain",
+  "energy_kcal": "2500",
+  "protein_g": null,
+  "fat_g": null,
+  "carbs_g": null,
+  "activity_class": "line",
+  "estimate": null,
+  "timeline_base_revision": 0,
+  "reason": "user_decision",
+  "correction_of": null
+}

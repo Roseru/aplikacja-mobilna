@@ -39,7 +39,8 @@ data class MealItemEntity(
     @PrimaryKey val id: String, val mealId: String, val productId: String,
     val productName: String, val grams: Double, val kcalPer100: Double,
     val proteinPer100: Double?, val fatPer100: Double?, val carbsPer100: Double?,
-    val rationComponentId: String? = null, val snapshotJson: String? = null
+    val rationComponentId: String? = null, val snapshotJson: String? = null,
+    val rationComponentPosition: Int? = null
 ) {
     val unit: String get() = snapshotJson?.let { JSONObject(it).getJSONObject("quantity").getString("unit") } ?: "g"
     val amountText: String get() = snapshotJson?.let { JSONObject(it).getJSONObject("quantity").getString("amount") } ?: grams.toBigDecimal().stripTrailingZeros().toPlainString()
@@ -102,6 +103,14 @@ data class DiaryDayEntity(@PrimaryKey val id: String, val ownerScope: String, va
 
 @Dao
 interface CalorieDao {
+    @Transaction @Query("SELECT * FROM meals WHERE ownerScope = :owner AND deleted = 0 ORDER BY localDate, occurredAt, id")
+    suspend fun achievementMeals(owner: String): List<MealWithItems>
+    @Query("SELECT * FROM goals WHERE ownerScope = :owner ORDER BY validFrom, localSequence, id")
+    suspend fun achievementGoals(owner: String): List<GoalEntity>
+    @Query("SELECT * FROM diary_days WHERE ownerScope = :owner AND declaredComplete = 1 ORDER BY localDate")
+    suspend fun achievementDeclarations(owner: String): List<DiaryDayEntity>
+    @Query("SELECT * FROM weights WHERE ownerScope = :owner AND deleted = 0 ORDER BY localDate, occurredAt, id")
+    suspend fun achievementWeights(owner: String): List<WeightEntity>
     @Transaction @Query("SELECT * FROM meals WHERE ownerScope = :owner AND localDate BETWEEN :start AND :end AND deleted = 0 ORDER BY localDate, occurredAt, id")
     fun mealsBetween(owner: String, start: String, end: String): Flow<List<MealWithItems>>
     @Query("SELECT * FROM goals WHERE ownerScope = :owner AND validFrom <= :end ORDER BY validFrom, localSequence, id")
@@ -154,12 +163,20 @@ interface CalorieDao {
     RationEntity::class, RationComponentEntity::class, ProfileEntity::class, WeightEntity::class, DiaryDayEntity::class,
     CatalogGenerationEntity::class, CatalogRecordEntity::class, CatalogMemberEntity::class, CatalogActiveEntity::class,
     LocalOwnerEntity::class, LocalActiveOwnerEntity::class, AccountBindingEntity::class,
-    BootstrapAttemptEntity::class], version = 6, exportSchema = true)
+    BootstrapAttemptEntity::class, ServerSnapshotRun::class, ServerSnapshotPage::class, ServerSnapshotAccess::class, ServerSnapshotIdentity::class], version = 8, exportSchema = true)
 abstract class CalorieDatabase : RoomDatabase() {
     abstract fun dao(): CalorieDao
     abstract fun catalogDao(): CatalogDao
     abstract fun ownerDao(): LocalOwnerDao
     abstract fun bootstrapDao(): AccountBootstrapDao
+    abstract fun snapshotDao(): ServerSnapshotDao
+}
+
+val MIGRATION_7_8 = object : Migration(7, 8) {
+    override fun migrate(db: SupportSQLiteDatabase) {
+        // No historical backfill from a mutable catalogue or fabricated component positions.
+        db.execSQL("ALTER TABLE meal_items ADD COLUMN rationComponentPosition INTEGER")
+    }
 }
 
 val MIGRATION_1_2 = object : Migration(1, 2) {

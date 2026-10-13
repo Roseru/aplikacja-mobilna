@@ -4,11 +4,15 @@ from calorie_app.core.config import Settings
 from calorie_app.db.base import Base
 from calorie_app.db.models import UserAccount  # noqa: F401
 from calorie_app.db.session import make_engine
+from calorie_app.modules.ai import models as ai_models  # noqa: F401
+from calorie_app.modules.analytics.motivation import models as motivation_models  # noqa: F401
 from calorie_app.modules.catalog import models as catalog_models  # noqa: F401
 from calorie_app.modules.catalog.community import models as community_models  # noqa: F401
 from calorie_app.modules.diary import models as diary_models  # noqa: F401
 from calorie_app.modules.diary import read_models  # noqa: F401
 from calorie_app.modules.identity import deletion_models  # noqa: F401
+from calorie_app.modules.jobs import models as job_models  # noqa: F401
+from calorie_app.modules.nemesis import models as nemesis_models  # noqa: F401
 from calorie_app.modules.profiles import models as profile_models  # noqa: F401
 from calorie_app.modules.sync import models as sync_models  # noqa: F401
 from calorie_app.modules.sync import snapshot_models  # noqa: F401
@@ -30,6 +34,35 @@ def apply_migrations(connection):
         connection.exec_driver_sql(
             "GRANT USAGE ON SCHEMA app TO calorie_app_api, calorie_app_worker"
         )
+        # E7 has a separate minimal role; historic worker grants stay unchanged.
+        if connection.exec_driver_sql(
+            "SELECT EXISTS(SELECT 1 FROM pg_roles WHERE rolname='calorie_app_ai_worker')"
+        ).scalar():
+            connection.exec_driver_sql("GRANT USAGE ON SCHEMA app TO calorie_app_ai_worker")
+            connection.exec_driver_sql(
+                "GRANT SELECT ON app.alembic_version TO calorie_app_ai_worker"
+            )
+        if connection.exec_driver_sql(
+            "SELECT EXISTS(SELECT 1 FROM pg_roles WHERE rolname='calorie_app_motivation_worker')"
+        ).scalar():
+            connection.exec_driver_sql("GRANT USAGE ON SCHEMA app TO calorie_app_motivation_worker")
+            connection.exec_driver_sql(
+                "GRANT SELECT ON app.alembic_version TO calorie_app_motivation_worker"
+            )
+        if connection.exec_driver_sql(
+            "SELECT EXISTS(SELECT 1 FROM pg_roles WHERE rolname='calorie_app_nemesis_worker')"
+        ).scalar():
+            connection.exec_driver_sql("GRANT USAGE ON SCHEMA app TO calorie_app_nemesis_worker")
+            connection.exec_driver_sql(
+                "GRANT SELECT ON app.alembic_version TO calorie_app_nemesis_worker"
+            )
+        if connection.exec_driver_sql(
+            "SELECT EXISTS(SELECT 1 FROM pg_roles WHERE rolname='calorie_app_nemesis_finalizer')"
+        ).scalar():
+            connection.exec_driver_sql("GRANT USAGE ON SCHEMA app TO calorie_app_nemesis_finalizer")
+            connection.exec_driver_sql(
+                "GRANT SELECT ON app.alembic_version TO calorie_app_nemesis_finalizer"
+            )
         connection.exec_driver_sql(
             "GRANT SELECT ON TABLE app.alembic_version TO calorie_app_api, calorie_app_worker"
         )

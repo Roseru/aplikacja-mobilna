@@ -16,6 +16,7 @@ from calorie_app.modules.catalog.validation import canonical_json
 from calorie_app.modules.diary import service as diary
 from calorie_app.modules.diary.models import DiaryDay, Meal
 from calorie_app.modules.identity.service import current_epoch, lock_account
+from calorie_app.modules.nemesis.source_guard import NemesisSourceProjection, SourceProvenance
 from calorie_app.modules.profiles import service as profiles
 from calorie_app.modules.profiles.models import GoalTimeline, Profile
 from calorie_app.modules.profiles.schemas import GoalPayload, ProfilePayload
@@ -187,7 +188,7 @@ def check_recovery(session, owner_id, op):
     return None
 
 
-def mutate(session, owner_id, op, counter):
+def mutate(session, owner_id, op, counter, *, source_extensions=()):
     kind, target_id, base = op["entity_type"], UUID(op["entity_id"]), op["base_revision"]
     recovered = check_recovery(session, owner_id, op)
     if recovered is not None:
@@ -239,6 +240,23 @@ def mutate(session, owner_id, op, counter):
         axis = timeline.revision if timeline else 0
         if axis == MAX_REVISION:
             raise Refusal("revision_exhausted")
+    source_old_date = getattr(row, "local_date", None)
+    source_old_revision = row.revision if row else None
+    source_position_before = counter.position
+    goal_before = None
+    goal_boundaries = set()
+    goal_axis_revision_before = None
+    if kind == "goal":
+        from calorie_app.modules.analytics.motivation.repository import goal_probe
+
+        goal_boundaries.add(date.fromisoformat(op["payload"]["effective_from"]))
+        correction_id = op["payload"]["correction_of"]
+        if correction_id:
+            corrected = owned(session, owner_id, "goal", UUID(correction_id))
+            if corrected is not None:
+                goal_boundaries.add(corrected.effective_from)
+        goal_before = goal_probe(session, owner_id, goal_boundaries)
+        goal_axis_revision_before = axis
     previous_day = None
     if kind == "meal" and op["action"] == "upsert":
         previous_day = session.scalar(
@@ -313,6 +331,51 @@ def mutate(session, owner_id, op, counter):
         )
         append_change(session, counter, entity(session, owner_id, "diary_day", day.id))
     append_change(session, counter, entity(session, owner_id, kind, target_id))
+    if kind in {"meal", "weight", "diary_day", "goal", "profile"}:
+        from calorie_app.modules.analytics.motivation.context import SourceMutationContext
+        from calorie_app.modules.analytics.motivation.service import source_mutated
+
+        goal_axis_changed = kind == "goal"
+        if goal_axis_changed:
+            from calorie_app.modules.profiles.service import resolve_goal_dates
+
+            goal_after = goal_probe(session, owner_id, goal_boundaries)
+            before = resolve_goal_dates(goal_before, goal_boundaries)
+            after = resolve_goal_dates(goal_after, goal_boundaries)
+            # Bounded probes compare actual surviving heads. Every accepted axis
+            # revision refreshes the entire sparse history, even when a probe's
+            # winning head is unchanged; a moved branch may affect other dates.
+            goal_probe_changed = any(
+                (before[d].id if before[d] else None) != (after[d].id if after[d] else None)
+                for d in goal_boundaries
+            )
+        else:
+            goal_probe_changed = False
+        new_date = row.effective_from if kind == "goal" else getattr(row, "local_date", None)
+        old_dates = (
+            tuple(sorted({v.effective_from for v in goal_before}))
+            if kind == "goal"
+            else ((source_old_date,) if source_old_date else ())
+        )
+        source_mutated(
+            session,
+            SourceMutationContext(
+                owner_id=owner_id,
+                source_kind=kind,
+                entity_id=target_id,
+                old_dates=old_dates,
+                new_dates=(new_date,) if new_date else (),
+                old_revision=source_old_revision,
+                new_revision=row.revision,
+                source_position_before=source_position_before,
+                source_position=counter.position,
+                goal_axis_changed=goal_axis_changed,
+                goal_axis_revision_before=goal_axis_revision_before,
+                goal_axis_revision=row.timeline_revision if kind == "goal" else None,
+                goal_probe_changed=goal_probe_changed,
+            ),
+            extensions=source_extensions,
+        )
     mapping = None
     if "recovery" in op:
         source = op["recovery"]
@@ -333,13 +396,24 @@ def mutate(session, owner_id, op, counter):
 def apply_operation(session, owner_id, data, op, secret, generation):
     lock_account(session, owner_id, generation)
     counter = lock_counter(session, owner_id)
-    context(session, owner_id, data, secret, generation=generation)
+    account = context(session, owner_id, data, secret, generation=generation)
+    # Capture our immutable provenance from the locked DB context, never from a
+    # body-supplied generation or an unverified epoch. A restore between reads
+    # is a request context failure, not a durable rejection of its source.
+    epoch = current_epoch(session)
+    if data["sync_epoch"] != str(epoch):
+        raise SyncFailure(409, "sync_epoch_changed")
     receipt = session.get(SyncReceipt, (owner_id, UUID(op["operation_id"])))
     if receipt is not None:
         return replay(session, receipt, op)
+    source_extensions = ()
+    if op["entity_type"] in {"profile", "meal", "diary_day", "goal", "weight"}:
+        source_extensions = (
+            NemesisSourceProjection(SourceProvenance(account.id, account.generation, epoch)),
+        )
     try:
         with session.begin_nested():
-            outcome = mutate(session, owner_id, op, counter)
+            outcome = mutate(session, owner_id, op, counter, source_extensions=source_extensions)
         result = {"operation_id": op["operation_id"], "entity_id": op["entity_id"], **outcome}
     except Refusal as error:
         result = refusal_result(op, error)
@@ -347,12 +421,19 @@ def apply_operation(session, owner_id, data, op, secret, generation):
         # Valid schema can still fail a DB-dependent domain rule.
         result = refusal_result(op, Refusal("invalid_payload"))
     except IntegrityError as error:
-        # Only named E3 domain constraints are durable refusals. Connection,
-        # deadlock, serialization and unknown DB failures propagate to caller.
+        # Only named E3 dependencies and the two Nemesis axis guards are durable
+        # refusals. Connection, deadlock, serialization and unknown DB failures
+        # propagate to the caller.
         constraint = getattr(getattr(error.orig, "diag", None), "constraint_name", None)
-        if constraint not in {"meal_day_fk", "meal_goal_fk", "meal_item_product_fk"}:
+        if getattr(error.orig, "sqlstate", None) == "23514" and constraint in {
+            "e8n_profile_axis_active",
+            "e8n_diary_axis_conflict",
+        }:
+            result = refusal_result(op, Refusal("invalid_payload"))
+        elif constraint in {"meal_day_fk", "meal_goal_fk", "meal_item_product_fk"}:
+            result = refusal_result(op, Refusal("dependency_missing"))
+        else:
             raise
-        result = refusal_result(op, Refusal("dependency_missing"))
     source = op.get("recovery", {})
     session.add(
         SyncReceipt(

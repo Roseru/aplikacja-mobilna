@@ -5,13 +5,13 @@ x-backend: &backend
   build:
     context: ../../backend
     args:
-      PYTHON_IMAGE: public.ecr.aws/docker/library/python:3.13-slim@sha256:70729b46c69b4f1e97c4822c1af3df53a1476cf5ddc6c087c0c10bc3a5678c2f
+      PYTHON_IMAGE: docker.io/library/python:3.13-slim@sha256:70729b46c69b4f1e97c4822c1af3df53a1476cf5ddc6c087c0c10bc3a5678c2f
   security_opt: [no-new-privileges:true]
   cap_drop: [ALL]
 
 services:
   postgres:
-    image: public.ecr.aws/docker/library/postgres:17@sha256:2d2b8998d31037bf721cfdf764d76ba74171b4fab3431b7f72c27c56ddbdf9e3
+    image: docker.io/library/postgres:17@sha256:2d2b8998d31037bf721cfdf764d76ba74171b4fab3431b7f72c27c56ddbdf9e3
     env_file: ${INTEGRATION_STATE}/postgres.env
     volumes:
       - postgres_data:/var/lib/postgresql/data

@@ -1,0 +1,16 @@
+{
+  "name": "Własny wpis tylko kcal",
+  "brand": null,
+  "variant": null,
+  "basis_unit": "g",
+  "nutrition_per_100": {
+    "energy_kcal": "50",
+    "protein_g": null,
+    "fat_g": null,
+    "carbs_g": null
+  },
+  "package_quantity": null,
+  "density_g_per_ml": null,
+  "density_source": null,
+  "source_description": "Własny szacunek do demonstracji formatu, nie źródło oficjalne"
+}

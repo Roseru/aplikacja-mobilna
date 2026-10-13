@@ -739,7 +739,7 @@
           "profiles"
         ],
         "summary": "Consents",
-        "description": "Pełne booleany, UUID Idempotency-Key i cytowana revision If-Match. Identyczny replay poprzedza sprawdzenie bieżącej revision. Pełny wynik minimum 60 dni; po sprzątaniu 409 idempotency_result_expired bez mutacji.",
+        "description": "Pełne booleany, UUID Idempotency-Key i cytowana revision If-Match. Identyczny replay poprzedza sprawdzenie bieżącej revision. Pełny wynik minimum 60 dni; po sprzątaniu 409 idempotency_result_expired bez mutacji. Opcjonalny X-Ranking-Consent-Epoch wymaga jawnego ranking=true, bieżącej epoki i nowej operacji; replay nie odnawia publikacji. Brak nagłówka zachowuje kontrakt E3.",
         "operationId": "update_consents",
         "security": [
           {
@@ -763,6 +763,22 @@
             "schema": {
               "type": "string",
               "title": "If-Match"
+            }
+          },
+          {
+            "name": "X-Ranking-Consent-Epoch",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Ranking-Consent-Epoch"
             }
           }
         ],
@@ -5170,6 +5186,1349 @@
         }
       }
     },
+    "/api/v1/me/motivation": {
+      "get": {
+        "tags": [
+          "motivation"
+        ],
+        "summary": "Motivation",
+        "description": "Prywatny wynik serwerowy regularity_v1. Pending nie jest wynikiem ostatecznym.",
+        "operationId": "read_motivation",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/MotivationRead"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Forbidden",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Conflict",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "410": {
+            "description": "Gone",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Unprocessable Content",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "Too Many Requests",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "Service Unavailable",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ]
+      }
+    },
+    "/api/v1/ranking": {
+      "get": {
+        "tags": [
+          "motivation"
+        ],
+        "summary": "Ranking",
+        "description": "Bieżący dobrowolny ranking. RANK liczy wyłącznie punkty. Losowy cursor wygasa po 10 minutach; 410 wymaga restartu. Zmiany między stronami mogą powodować powtórzenia lub pominięcia. Cursor nie zachowuje kopii wyników.",
+        "operationId": "read_ranking",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "limit",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "ge": 1,
+              "le": 100,
+              "default": 50,
+              "title": "Limit"
+            }
+          },
+          {
+            "name": "page_token",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string",
+                  "pattern": "^rk1\\.[A-Za-z0-9_-]{43}$"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Page Token"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RankingPage"
+                }
+              }
+            }
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            },
+            "description": "Unauthorized"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            },
+            "description": "Forbidden"
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            },
+            "description": "Conflict"
+          },
+          "410": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            },
+            "description": "Gone"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            },
+            "description": "Unprocessable Content"
+          },
+          "429": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            },
+            "description": "Too Many Requests"
+          },
+          "503": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            },
+            "description": "Service Unavailable"
+          }
+        }
+      }
+    },
+    "/api/v1/me/nemesis/share-code": {
+      "post": {
+        "tags": [
+          "nemesis"
+        ],
+        "summary": "Issue",
+        "operationId": "issue_nemesis_share_code",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ShareCodeReceipt"
+                }
+              }
+            }
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            },
+            "description": "Unauthorized"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            },
+            "description": "Forbidden"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            },
+            "description": "Not Found"
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            },
+            "description": "Conflict"
+          },
+          "413": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            },
+            "description": "Content Too Large"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            },
+            "description": "Unprocessable Content"
+          },
+          "429": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            },
+            "description": "Too Many Requests"
+          },
+          "503": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            },
+            "description": "Service Unavailable"
+          }
+        },
+        "parameters": [
+          {
+            "name": "X-Sync-Epoch",
+            "in": "header",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "name": "Idempotency-Key",
+            "in": "header",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ]
+      },
+      "delete": {
+        "tags": [
+          "nemesis"
+        ],
+        "summary": "Revoke",
+        "operationId": "revoke_nemesis_share_code",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RevokeCodeReceipt"
+                }
+              }
+            }
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            },
+            "description": "Unauthorized"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            },
+            "description": "Forbidden"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            },
+            "description": "Not Found"
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            },
+            "description": "Conflict"
+          },
+          "413": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            },
+            "description": "Content Too Large"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            },
+            "description": "Unprocessable Content"
+          },
+          "429": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            },
+            "description": "Too Many Requests"
+          },
+          "503": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            },
+            "description": "Service Unavailable"
+          }
+        },
+        "parameters": [
+          {
+            "name": "X-Sync-Epoch",
+            "in": "header",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "name": "Idempotency-Key",
+            "in": "header",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ]
+      }
+    },
+    "/api/v1/nemesis": {
+      "post": {
+        "tags": [
+          "nemesis"
+        ],
+        "summary": "Create",
+        "operationId": "create_nemesis",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreateNemesis"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/NemesisMetadata"
+                }
+              }
+            }
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            },
+            "description": "Unauthorized"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            },
+            "description": "Forbidden"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            },
+            "description": "Not Found"
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            },
+            "description": "Conflict"
+          },
+          "413": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            },
+            "description": "Content Too Large"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            },
+            "description": "Unprocessable Content"
+          },
+          "429": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            },
+            "description": "Too Many Requests"
+          },
+          "503": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            },
+            "description": "Service Unavailable"
+          }
+        },
+        "parameters": [
+          {
+            "name": "X-Sync-Epoch",
+            "in": "header",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "name": "Idempotency-Key",
+            "in": "header",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ]
+      }
+    },
+    "/api/v1/me/nemesis": {
+      "get": {
+        "tags": [
+          "nemesis"
+        ],
+        "summary": "Listing",
+        "operationId": "list_nemesis",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "limit",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "maximum": 100,
+              "minimum": 1,
+              "default": 30,
+              "title": "Limit"
+            }
+          },
+          {
+            "name": "cursor",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string",
+                  "minLength": 1,
+                  "maxLength": 128
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Cursor"
+            }
+          },
+          {
+            "name": "X-Sync-Epoch",
+            "in": "header",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/NemesisPage"
+                }
+              }
+            }
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            },
+            "description": "Unauthorized"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            },
+            "description": "Forbidden"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            },
+            "description": "Not Found"
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            },
+            "description": "Conflict"
+          },
+          "413": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            },
+            "description": "Content Too Large"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            },
+            "description": "Unprocessable Content"
+          },
+          "429": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            },
+            "description": "Too Many Requests"
+          },
+          "503": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            },
+            "description": "Service Unavailable"
+          }
+        }
+      }
+    },
+    "/api/v1/nemesis/{challenge_id}": {
+      "get": {
+        "tags": [
+          "nemesis"
+        ],
+        "summary": "Metadata",
+        "operationId": "read_nemesis",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "challenge_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Challenge Id"
+            }
+          },
+          {
+            "name": "X-Sync-Epoch",
+            "in": "header",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/NemesisMetadata"
+                }
+              }
+            }
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            },
+            "description": "Unauthorized"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            },
+            "description": "Forbidden"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            },
+            "description": "Not Found"
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            },
+            "description": "Conflict"
+          },
+          "413": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            },
+            "description": "Content Too Large"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            },
+            "description": "Unprocessable Content"
+          },
+          "429": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            },
+            "description": "Too Many Requests"
+          },
+          "503": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            },
+            "description": "Service Unavailable"
+          }
+        }
+      }
+    },
+    "/api/v1/nemesis/{challenge_id}/accept": {
+      "post": {
+        "tags": [
+          "nemesis"
+        ],
+        "summary": "Accept",
+        "operationId": "accept_nemesis",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "challenge_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Challenge Id"
+            }
+          },
+          {
+            "name": "X-Sync-Epoch",
+            "in": "header",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "name": "Idempotency-Key",
+            "in": "header",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "name": "If-Match",
+            "in": "header",
+            "required": true,
+            "description": "Quoted revision in 1..2147483647",
+            "schema": {
+              "type": "string",
+              "pattern": "^\"[1-9][0-9]{0,9}\"$"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/AcceptNemesis"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/NemesisMetadata"
+                }
+              }
+            }
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            },
+            "description": "Unauthorized"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            },
+            "description": "Forbidden"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            },
+            "description": "Not Found"
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            },
+            "description": "Conflict"
+          },
+          "413": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            },
+            "description": "Content Too Large"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            },
+            "description": "Unprocessable Content"
+          },
+          "429": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            },
+            "description": "Too Many Requests"
+          },
+          "503": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            },
+            "description": "Service Unavailable"
+          }
+        }
+      }
+    },
+    "/api/v1/nemesis/{challenge_id}/cancel": {
+      "post": {
+        "tags": [
+          "nemesis"
+        ],
+        "summary": "Cancel",
+        "operationId": "cancel_nemesis",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "challenge_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Challenge Id"
+            }
+          },
+          {
+            "name": "X-Sync-Epoch",
+            "in": "header",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "name": "Idempotency-Key",
+            "in": "header",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "name": "If-Match",
+            "in": "header",
+            "required": true,
+            "description": "Quoted revision in 1..2147483647",
+            "schema": {
+              "type": "string",
+              "pattern": "^\"[1-9][0-9]{0,9}\"$"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CancelNemesis"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/NemesisMetadata"
+                }
+              }
+            }
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            },
+            "description": "Unauthorized"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            },
+            "description": "Forbidden"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            },
+            "description": "Not Found"
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            },
+            "description": "Conflict"
+          },
+          "413": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            },
+            "description": "Content Too Large"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            },
+            "description": "Unprocessable Content"
+          },
+          "429": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            },
+            "description": "Too Many Requests"
+          },
+          "503": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            },
+            "description": "Service Unavailable"
+          }
+        }
+      }
+    },
+    "/api/v1/nemesis/{challenge_id}/statistics": {
+      "get": {
+        "tags": [
+          "nemesis"
+        ],
+        "summary": "Statistics",
+        "operationId": "read_nemesis_statistics",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "challenge_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Challenge Id"
+            }
+          },
+          {
+            "name": "X-Sync-Epoch",
+            "in": "header",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "oneOf": [
+                    {
+                      "$ref": "#/components/schemas/NemesisStatisticsPending"
+                    },
+                    {
+                      "$ref": "#/components/schemas/NemesisStatisticsProvisional"
+                    },
+                    {
+                      "$ref": "#/components/schemas/NemesisStatisticsFinal"
+                    }
+                  ],
+                  "discriminator": {
+                    "propertyName": "status",
+                    "mapping": {
+                      "pending": "#/components/schemas/NemesisStatisticsPending",
+                      "provisional": "#/components/schemas/NemesisStatisticsProvisional",
+                      "final": "#/components/schemas/NemesisStatisticsFinal"
+                    }
+                  },
+                  "title": "Response Read Nemesis Statistics"
+                }
+              }
+            }
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            },
+            "description": "Unauthorized"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            },
+            "description": "Forbidden"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            },
+            "description": "Not Found"
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            },
+            "description": "Conflict"
+          },
+          "413": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            },
+            "description": "Content Too Large"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            },
+            "description": "Unprocessable Content"
+          },
+          "429": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            },
+            "description": "Too Many Requests"
+          },
+          "503": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            },
+            "description": "Service Unavailable"
+          }
+        }
+      }
+    },
     "/api/v1/products/matches": {
       "post": {
         "tags": [
@@ -6829,10 +8188,934 @@
           }
         }
       }
+    },
+    "/api/v1/ai/capabilities": {
+      "get": {
+        "tags": [
+          "photo-analysis"
+        ],
+        "summary": "Capabilities",
+        "operationId": "capabilities_api_v1_ai_capabilities_get",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Capabilities"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Forbidden",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Not Found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Conflict",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "410": {
+            "description": "Gone",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "413": {
+            "description": "Content Too Large",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Unprocessable Content",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "Too Many Requests",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "Service Unavailable",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ]
+      }
+    },
+    "/api/v1/ai/food-analyses": {
+      "post": {
+        "tags": [
+          "photo-analysis"
+        ],
+        "summary": "Create",
+        "operationId": "create_api_v1_ai_food_analyses_post",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "Idempotency-Key",
+            "in": "header",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Idempotency-Key"
+            }
+          },
+          {
+            "name": "X-Sync-Epoch",
+            "in": "header",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "X-Sync-Epoch"
+            }
+          }
+        ],
+        "responses": {
+          "202": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CreateResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            },
+            "description": "Unauthorized"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            },
+            "description": "Forbidden"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            },
+            "description": "Not Found"
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            },
+            "description": "Conflict"
+          },
+          "410": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            },
+            "description": "Gone"
+          },
+          "413": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            },
+            "description": "Content Too Large"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            },
+            "description": "Unprocessable Content"
+          },
+          "429": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            },
+            "description": "Too Many Requests"
+          },
+          "503": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            },
+            "description": "Service Unavailable"
+          }
+        },
+        "requestBody": {
+          "required": true,
+          "content": {
+            "multipart/form-data": {
+              "schema": {
+                "type": "object",
+                "additionalProperties": false,
+                "required": [
+                  "metadata",
+                  "image"
+                ],
+                "properties": {
+                  "metadata": {
+                    "type": "string",
+                    "description": "UTF-8 JSON CreateMetadata, <=16 KiB"
+                  },
+                  "image": {
+                    "type": "string",
+                    "format": "binary",
+                    "description": "JPEG/PNG/WebP <=5 MiB"
+                  }
+                }
+              },
+              "encoding": {
+                "metadata": {
+                  "contentType": "application/json"
+                },
+                "image": {
+                  "contentType": "image/jpeg, image/png, image/webp"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/ai/food-analyses/{analysis_id}": {
+      "get": {
+        "tags": [
+          "photo-analysis"
+        ],
+        "summary": "Get",
+        "operationId": "get_api_v1_ai_food_analyses__analysis_id__get",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "analysis_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Analysis Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AnalysisResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            },
+            "description": "Unauthorized"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            },
+            "description": "Forbidden"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            },
+            "description": "Not Found"
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            },
+            "description": "Conflict"
+          },
+          "410": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            },
+            "description": "Gone"
+          },
+          "413": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            },
+            "description": "Content Too Large"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            },
+            "description": "Unprocessable Content"
+          },
+          "429": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            },
+            "description": "Too Many Requests"
+          },
+          "503": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            },
+            "description": "Service Unavailable"
+          }
+        }
+      }
+    },
+    "/api/v1/ai/food-analyses/{analysis_id}/confirm": {
+      "post": {
+        "tags": [
+          "photo-analysis"
+        ],
+        "summary": "Confirm",
+        "operationId": "confirm_api_v1_ai_food_analyses__analysis_id__confirm_post",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "analysis_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Analysis Id"
+            }
+          },
+          {
+            "name": "Idempotency-Key",
+            "in": "header",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Idempotency-Key"
+            }
+          },
+          {
+            "name": "X-Sync-Epoch",
+            "in": "header",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "X-Sync-Epoch"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ConfirmResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            },
+            "description": "Unauthorized"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            },
+            "description": "Forbidden"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            },
+            "description": "Not Found"
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            },
+            "description": "Conflict"
+          },
+          "410": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            },
+            "description": "Gone"
+          },
+          "413": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            },
+            "description": "Content Too Large"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            },
+            "description": "Unprocessable Content"
+          },
+          "429": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            },
+            "description": "Too Many Requests"
+          },
+          "503": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            },
+            "description": "Service Unavailable"
+          }
+        },
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "additionalProperties": false,
+                "properties": {
+                  "expected_revision": {
+                    "maximum": 2147483647,
+                    "minimum": 1,
+                    "title": "Expected Revision",
+                    "type": "integer"
+                  },
+                  "meal": {
+                    "$ref": "#/components/schemas/MealTemplate"
+                  },
+                  "drafts": {
+                    "items": {
+                      "$ref": "#/components/schemas/DraftTemplate"
+                    },
+                    "maxItems": 30,
+                    "title": "Drafts",
+                    "type": "array"
+                  }
+                },
+                "required": [
+                  "expected_revision",
+                  "meal"
+                ],
+                "title": "ConfirmRequest",
+                "type": "object"
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/ai/food-analyses/{analysis_id}/cancel": {
+      "post": {
+        "tags": [
+          "photo-analysis"
+        ],
+        "summary": "Cancel",
+        "operationId": "cancel_api_v1_ai_food_analyses__analysis_id__cancel_post",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "analysis_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Analysis Id"
+            }
+          },
+          {
+            "name": "Idempotency-Key",
+            "in": "header",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Idempotency-Key"
+            }
+          },
+          {
+            "name": "X-Sync-Epoch",
+            "in": "header",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "X-Sync-Epoch"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CancelResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            },
+            "description": "Unauthorized"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            },
+            "description": "Forbidden"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            },
+            "description": "Not Found"
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            },
+            "description": "Conflict"
+          },
+          "410": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            },
+            "description": "Gone"
+          },
+          "413": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            },
+            "description": "Content Too Large"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            },
+            "description": "Unprocessable Content"
+          },
+          "429": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            },
+            "description": "Too Many Requests"
+          },
+          "503": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            },
+            "description": "Service Unavailable"
+          }
+        },
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "additionalProperties": false,
+                "properties": {
+                  "expected_revision": {
+                    "maximum": 2147483647,
+                    "minimum": 1,
+                    "title": "Expected Revision",
+                    "type": "integer"
+                  }
+                },
+                "required": [
+                  "expected_revision"
+                ],
+                "title": "CancelRequest",
+                "type": "object"
+              }
+            }
+          }
+        }
+      }
     }
   },
   "components": {
     "schemas": {
+      "AcceptNemesis": {
+        "properties": {
+          "terms": {
+            "$ref": "#/components/schemas/NemesisTerms"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "terms"
+        ],
+        "title": "AcceptNemesis"
+      },
+      "AnalysisProfile": {
+        "properties": {
+          "provider": {
+            "type": "string",
+            "enum": [
+              "mock",
+              "gemini"
+            ],
+            "title": "Provider"
+          },
+          "model": {
+            "type": "string",
+            "maxLength": 100,
+            "minLength": 1,
+            "title": "Model"
+          },
+          "prompt_version": {
+            "type": "string",
+            "title": "Prompt Version"
+          },
+          "schema_version": {
+            "type": "string",
+            "title": "Schema Version"
+          },
+          "preparation_version": {
+            "type": "string",
+            "title": "Preparation Version"
+          },
+          "rest_profile_version": {
+            "type": "string",
+            "title": "Rest Profile Version"
+          },
+          "mock_scenario": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Mock Scenario"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "provider",
+          "model",
+          "prompt_version",
+          "schema_version",
+          "preparation_version",
+          "rest_profile_version",
+          "mock_scenario"
+        ],
+        "title": "AnalysisProfile"
+      },
+      "AnalysisResponse": {
+        "properties": {
+          "analysis_id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Analysis Id"
+          },
+          "revision": {
+            "type": "integer",
+            "maximum": 2147483647.0,
+            "minimum": 1.0,
+            "title": "Revision"
+          },
+          "state": {
+            "type": "string",
+            "enum": [
+              "queued",
+              "running",
+              "succeeded",
+              "failed"
+            ],
+            "title": "State"
+          },
+          "decision_state": {
+            "type": "string",
+            "enum": [
+              "pending",
+              "confirmed",
+              "cancelled"
+            ],
+            "title": "Decision State"
+          },
+          "queue_deadline": {
+            "type": "string",
+            "pattern": "^\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}(\\.[0-9]{1,6})?Z$",
+            "format": "date-time",
+            "title": "Queue Deadline"
+          },
+          "photo_expires_at": {
+            "type": "string",
+            "pattern": "^\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}(\\.[0-9]{1,6})?Z$",
+            "format": "date-time",
+            "title": "Photo Expires At"
+          },
+          "profile": {
+            "$ref": "#/components/schemas/AnalysisProfile"
+          },
+          "proposal": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/Proposal"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "error_code": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Error Code"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "analysis_id",
+          "revision",
+          "state",
+          "decision_state",
+          "queue_deadline",
+          "photo_expires_at",
+          "profile",
+          "proposal",
+          "error_code"
+        ],
+        "title": "AnalysisResponse"
+      },
       "ApiError": {
         "properties": {
           "code": {
@@ -6932,6 +9215,166 @@
           "server_time"
         ],
         "title": "Bootstrap"
+      },
+      "CancelNemesis": {
+        "properties": {
+          "reason": {
+            "type": "string",
+            "enum": [
+              "withdrawn",
+              "declined",
+              "sharing_revoked"
+            ],
+            "title": "Reason"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "reason"
+        ],
+        "title": "CancelNemesis"
+      },
+      "CancelResponse": {
+        "properties": {
+          "analysis_id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Analysis Id"
+          },
+          "revision": {
+            "type": "integer",
+            "maximum": 2147483647.0,
+            "minimum": 1.0,
+            "title": "Revision"
+          },
+          "state": {
+            "type": "string",
+            "const": "failed",
+            "title": "State"
+          },
+          "decision_state": {
+            "type": "string",
+            "const": "cancelled",
+            "title": "Decision State"
+          },
+          "error_code": {
+            "type": "string",
+            "const": "analysis_cancelled",
+            "title": "Error Code"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "analysis_id",
+          "revision",
+          "state",
+          "decision_state",
+          "error_code"
+        ],
+        "title": "CancelResponse"
+      },
+      "Capabilities": {
+        "properties": {
+          "provider": {
+            "type": "string",
+            "enum": [
+              "mock",
+              "gemini"
+            ],
+            "title": "Provider"
+          },
+          "profile": {
+            "$ref": "#/components/schemas/AnalysisProfile"
+          },
+          "notice_version": {
+            "type": "string",
+            "const": "food-photo-notice-v1",
+            "title": "Notice Version"
+          },
+          "available": {
+            "type": "boolean",
+            "title": "Available"
+          },
+          "unavailable_reason": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Unavailable Reason"
+          },
+          "image_bytes": {
+            "type": "integer",
+            "title": "Image Bytes",
+            "default": 5242880
+          },
+          "body_bytes": {
+            "type": "integer",
+            "title": "Body Bytes",
+            "default": 6291456
+          },
+          "ingredients": {
+            "type": "integer",
+            "title": "Ingredients",
+            "default": 30
+          },
+          "daily_photos": {
+            "type": "integer",
+            "title": "Daily Photos",
+            "default": 10
+          },
+          "queue_seconds": {
+            "type": "integer",
+            "title": "Queue Seconds",
+            "default": 300
+          },
+          "attempt_seconds": {
+            "type": "integer",
+            "title": "Attempt Seconds",
+            "default": 45
+          },
+          "total_seconds": {
+            "type": "integer",
+            "title": "Total Seconds",
+            "default": 120
+          },
+          "max_generate_attempts": {
+            "type": "integer",
+            "title": "Max Generate Attempts",
+            "default": 2
+          },
+          "max_outbound_calls": {
+            "type": "integer",
+            "title": "Max Outbound Calls",
+            "default": 2
+          },
+          "active_jobs_per_account": {
+            "type": "integer",
+            "title": "Active Jobs Per Account",
+            "default": 1
+          },
+          "manual_entry_available": {
+            "type": "boolean",
+            "const": true,
+            "title": "Manual Entry Available",
+            "default": true
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "provider",
+          "profile",
+          "notice_version",
+          "available",
+          "unavailable_reason"
+        ],
+        "title": "Capabilities"
       },
       "CommunityProductDTO": {
         "properties": {
@@ -7260,6 +9703,40 @@
         ],
         "title": "CompositionDTO"
       },
+      "ConfirmResponse": {
+        "properties": {
+          "analysis_id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Analysis Id"
+          },
+          "meal": {
+            "$ref": "#/components/schemas/MealTemplate"
+          },
+          "drafts": {
+            "items": {
+              "$ref": "#/components/schemas/DraftTemplate"
+            },
+            "type": "array",
+            "maxItems": 30,
+            "title": "Drafts"
+          },
+          "provenance": {
+            "additionalProperties": true,
+            "type": "object",
+            "title": "Provenance"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "analysis_id",
+          "meal",
+          "drafts",
+          "provenance"
+        ],
+        "title": "ConfirmResponse"
+      },
       "Consent": {
         "properties": {
           "ranking": {
@@ -7349,6 +9826,70 @@
         ],
         "title": "CountsDTO"
       },
+      "CreateNemesis": {
+        "properties": {
+          "destination_code": {
+            "type": "string",
+            "maxLength": 43,
+            "minLength": 43,
+            "title": "Destination Code"
+          },
+          "terms": {
+            "$ref": "#/components/schemas/NemesisTerms"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "destination_code",
+          "terms"
+        ],
+        "title": "CreateNemesis"
+      },
+      "CreateResponse": {
+        "properties": {
+          "analysis_id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Analysis Id"
+          },
+          "revision": {
+            "type": "integer",
+            "maximum": 2147483647.0,
+            "minimum": 1.0,
+            "title": "Revision"
+          },
+          "state": {
+            "type": "string",
+            "enum": [
+              "queued",
+              "running",
+              "succeeded",
+              "failed"
+            ],
+            "title": "State"
+          },
+          "queue_deadline": {
+            "type": "string",
+            "pattern": "^\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}(\\.[0-9]{1,6})?Z$",
+            "format": "date-time",
+            "title": "Queue Deadline"
+          },
+          "profile": {
+            "$ref": "#/components/schemas/AnalysisProfile"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "analysis_id",
+          "revision",
+          "state",
+          "queue_deadline",
+          "profile"
+        ],
+        "title": "CreateResponse"
+      },
       "DailyWeight": {
         "properties": {
           "entity_id": {
@@ -7377,6 +9918,64 @@
           "weight_kg"
         ],
         "title": "DailyWeight"
+      },
+      "DeficitAvailable": {
+        "properties": {
+          "state": {
+            "type": "string",
+            "const": "available",
+            "title": "State"
+          },
+          "value": {
+            "not": {
+              "const": "-0"
+            },
+            "type": "string",
+            "pattern": "^-?(?:0|[1-9][0-9]*)(?:\\.[0-9]{0,11}[1-9])?$",
+            "title": "Value"
+          },
+          "eligible_days": {
+            "type": "integer",
+            "maximum": 90.0,
+            "minimum": 1.0,
+            "title": "Eligible Days"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "state",
+          "value",
+          "eligible_days"
+        ],
+        "title": "DeficitAvailable"
+      },
+      "DeficitInsufficient": {
+        "properties": {
+          "state": {
+            "type": "string",
+            "const": "insufficient_data",
+            "title": "State"
+          },
+          "value": {
+            "type": "null",
+            "title": "Value"
+          },
+          "eligible_days": {
+            "type": "integer",
+            "maximum": 0.0,
+            "minimum": 0.0,
+            "title": "Eligible Days"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "state",
+          "value",
+          "eligible_days"
+        ],
+        "title": "DeficitInsufficient"
       },
       "DensityDTO": {
         "properties": {
@@ -7587,6 +10186,286 @@
           "effective_complete"
         ],
         "title": "DiaryDayRecord"
+      },
+      "DraftTemplate": {
+        "properties": {
+          "draft_id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Draft Id"
+          },
+          "payload": {
+            "properties": {
+              "name": {
+                "allOf": [
+                  {
+                    "type": "string",
+                    "pattern": "^(?:[^\\u0000\\uD800-\\uDFFF]|[\\uD800-\\uDBFF][\\uDC00-\\uDFFF])*(?![\\s\\S])",
+                    "description": "Unicode bez NUL i samotnych surrogate; poprawne pary UTF-16/emoji są dozwolone."
+                  }
+                ],
+                "type": "string",
+                "maxLength": 200,
+                "minLength": 1
+              },
+              "brand": {
+                "anyOf": [
+                  {
+                    "allOf": [
+                      {
+                        "type": "string",
+                        "pattern": "^(?:[^\\u0000\\uD800-\\uDFFF]|[\\uD800-\\uDBFF][\\uDC00-\\uDFFF])*(?![\\s\\S])",
+                        "description": "Unicode bez NUL i samotnych surrogate; poprawne pary UTF-16/emoji są dozwolone."
+                      }
+                    ],
+                    "type": "string",
+                    "maxLength": 200,
+                    "minLength": 1
+                  },
+                  {
+                    "type": "null"
+                  }
+                ]
+              },
+              "variant": {
+                "anyOf": [
+                  {
+                    "allOf": [
+                      {
+                        "type": "string",
+                        "pattern": "^(?:[^\\u0000\\uD800-\\uDFFF]|[\\uD800-\\uDBFF][\\uDC00-\\uDFFF])*(?![\\s\\S])",
+                        "description": "Unicode bez NUL i samotnych surrogate; poprawne pary UTF-16/emoji są dozwolone."
+                      }
+                    ],
+                    "type": "string",
+                    "maxLength": 200,
+                    "minLength": 1
+                  },
+                  {
+                    "type": "null"
+                  }
+                ]
+              },
+              "basis_unit": {
+                "enum": [
+                  "g",
+                  "ml"
+                ]
+              },
+              "nutrition_per_100": {
+                "properties": {
+                  "energy_kcal": {
+                    "anyOf": [
+                      {
+                        "allOf": [
+                          {
+                            "type": "string",
+                            "pattern": "^(?:[^\\u0000\\uD800-\\uDFFF]|[\\uD800-\\uDBFF][\\uDC00-\\uDFFF])*(?![\\s\\S])",
+                            "description": "Unicode bez NUL i samotnych surrogate; poprawne pary UTF-16/emoji są dozwolone."
+                          }
+                        ],
+                        "type": "string",
+                        "pattern": "^(0|[1-9][0-9]{0,5})(\\.[0-9]{0,5}[1-9])?(?![\\s\\S])",
+                        "description": "Kanoniczne 0..999999.999999, maksymalnie 6 miejsc; bez znaku, wykładnika i końcowych zer."
+                      },
+                      {
+                        "type": "null"
+                      }
+                    ]
+                  },
+                  "protein_g": {
+                    "anyOf": [
+                      {
+                        "allOf": [
+                          {
+                            "type": "string",
+                            "pattern": "^(?:[^\\u0000\\uD800-\\uDFFF]|[\\uD800-\\uDBFF][\\uDC00-\\uDFFF])*(?![\\s\\S])",
+                            "description": "Unicode bez NUL i samotnych surrogate; poprawne pary UTF-16/emoji są dozwolone."
+                          }
+                        ],
+                        "type": "string",
+                        "pattern": "^(0|[1-9][0-9]{0,5})(\\.[0-9]{0,5}[1-9])?(?![\\s\\S])",
+                        "description": "Kanoniczne 0..999999.999999, maksymalnie 6 miejsc; bez znaku, wykładnika i końcowych zer."
+                      },
+                      {
+                        "type": "null"
+                      }
+                    ]
+                  },
+                  "fat_g": {
+                    "anyOf": [
+                      {
+                        "allOf": [
+                          {
+                            "type": "string",
+                            "pattern": "^(?:[^\\u0000\\uD800-\\uDFFF]|[\\uD800-\\uDBFF][\\uDC00-\\uDFFF])*(?![\\s\\S])",
+                            "description": "Unicode bez NUL i samotnych surrogate; poprawne pary UTF-16/emoji są dozwolone."
+                          }
+                        ],
+                        "type": "string",
+                        "pattern": "^(0|[1-9][0-9]{0,5})(\\.[0-9]{0,5}[1-9])?(?![\\s\\S])",
+                        "description": "Kanoniczne 0..999999.999999, maksymalnie 6 miejsc; bez znaku, wykładnika i końcowych zer."
+                      },
+                      {
+                        "type": "null"
+                      }
+                    ]
+                  },
+                  "carbs_g": {
+                    "anyOf": [
+                      {
+                        "allOf": [
+                          {
+                            "type": "string",
+                            "pattern": "^(?:[^\\u0000\\uD800-\\uDFFF]|[\\uD800-\\uDBFF][\\uDC00-\\uDFFF])*(?![\\s\\S])",
+                            "description": "Unicode bez NUL i samotnych surrogate; poprawne pary UTF-16/emoji są dozwolone."
+                          }
+                        ],
+                        "type": "string",
+                        "pattern": "^(0|[1-9][0-9]{0,5})(\\.[0-9]{0,5}[1-9])?(?![\\s\\S])",
+                        "description": "Kanoniczne 0..999999.999999, maksymalnie 6 miejsc; bez znaku, wykładnika i końcowych zer."
+                      },
+                      {
+                        "type": "null"
+                      }
+                    ]
+                  }
+                },
+                "additionalProperties": false,
+                "type": "object",
+                "required": [
+                  "energy_kcal",
+                  "protein_g",
+                  "fat_g",
+                  "carbs_g"
+                ]
+              },
+              "package_quantity": {
+                "anyOf": [
+                  {
+                    "properties": {
+                      "amount": {
+                        "allOf": [
+                          {
+                            "allOf": [
+                              {
+                                "type": "string",
+                                "pattern": "^(?:[^\\u0000\\uD800-\\uDFFF]|[\\uD800-\\uDBFF][\\uDC00-\\uDFFF])*(?![\\s\\S])",
+                                "description": "Unicode bez NUL i samotnych surrogate; poprawne pary UTF-16/emoji są dozwolone."
+                              }
+                            ],
+                            "type": "string",
+                            "pattern": "^(0|[1-9][0-9]{0,5})(\\.[0-9]{0,5}[1-9])?(?![\\s\\S])",
+                            "description": "Kanoniczne 0..999999.999999, maksymalnie 6 miejsc; bez znaku, wykładnika i końcowych zer."
+                          },
+                          {
+                            "not": {
+                              "const": "0"
+                            }
+                          }
+                        ]
+                      },
+                      "unit": {
+                        "enum": [
+                          "g",
+                          "ml"
+                        ]
+                      }
+                    },
+                    "additionalProperties": false,
+                    "type": "object",
+                    "required": [
+                      "amount",
+                      "unit"
+                    ]
+                  },
+                  {
+                    "type": "null"
+                  }
+                ]
+              },
+              "density_g_per_ml": {
+                "anyOf": [
+                  {
+                    "allOf": [
+                      {
+                        "allOf": [
+                          {
+                            "type": "string",
+                            "pattern": "^(?:[^\\u0000\\uD800-\\uDFFF]|[\\uD800-\\uDBFF][\\uDC00-\\uDFFF])*(?![\\s\\S])",
+                            "description": "Unicode bez NUL i samotnych surrogate; poprawne pary UTF-16/emoji są dozwolone."
+                          }
+                        ],
+                        "type": "string",
+                        "pattern": "^(0|[1-9][0-9]{0,5})(\\.[0-9]{0,5}[1-9])?(?![\\s\\S])",
+                        "description": "Kanoniczne 0..999999.999999, maksymalnie 6 miejsc; bez znaku, wykładnika i końcowych zer."
+                      },
+                      {
+                        "not": {
+                          "const": "0"
+                        }
+                      }
+                    ]
+                  },
+                  {
+                    "type": "null"
+                  }
+                ]
+              },
+              "density_source": {
+                "anyOf": [
+                  {
+                    "allOf": [
+                      {
+                        "type": "string",
+                        "pattern": "^(?:[^\\u0000\\uD800-\\uDFFF]|[\\uD800-\\uDBFF][\\uDC00-\\uDFFF])*(?![\\s\\S])",
+                        "description": "Unicode bez NUL i samotnych surrogate; poprawne pary UTF-16/emoji są dozwolone."
+                      }
+                    ],
+                    "type": "string",
+                    "maxLength": 500,
+                    "minLength": 1
+                  },
+                  {
+                    "type": "null"
+                  }
+                ]
+              },
+              "source_description": {
+                "allOf": [
+                  {
+                    "type": "string",
+                    "pattern": "^(?:[^\\u0000\\uD800-\\uDFFF]|[\\uD800-\\uDBFF][\\uDC00-\\uDFFF])*(?![\\s\\S])",
+                    "description": "Unicode bez NUL i samotnych surrogate; poprawne pary UTF-16/emoji są dozwolone."
+                  }
+                ],
+                "type": "string",
+                "maxLength": 2000,
+                "minLength": 1
+              }
+            },
+            "additionalProperties": false,
+            "type": "object",
+            "required": [
+              "name",
+              "brand",
+              "variant",
+              "basis_unit",
+              "nutrition_per_100",
+              "package_quantity",
+              "density_g_per_ml",
+              "density_source",
+              "source_description"
+            ]
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "draft_id",
+          "payload"
+        ],
+        "title": "DraftTemplate"
       },
       "ErrorDetail": {
         "properties": {
@@ -8122,6 +11001,21 @@
         },
         "type": "object",
         "title": "Health"
+      },
+      "HiddenMetric": {
+        "properties": {
+          "state": {
+            "type": "string",
+            "const": "hidden",
+            "title": "State"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "state"
+        ],
+        "title": "HiddenMetric"
       },
       "HistoricalGoal": {
         "properties": {
@@ -9038,6 +11932,448 @@
         ],
         "title": "MealRecord"
       },
+      "MealTemplate": {
+        "properties": {
+          "meal_id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Meal Id"
+          },
+          "payload": {
+            "properties": {
+              "title": {
+                "allOf": [
+                  {
+                    "type": "string",
+                    "pattern": "^(?:[^\\u0000\\uD800-\\uDFFF]|[\\uD800-\\uDBFF][\\uDC00-\\uDFFF])*(?![\\s\\S])",
+                    "description": "Unicode bez NUL i samotnych surrogate; poprawne pary UTF-16/emoji są dozwolone."
+                  }
+                ],
+                "type": "string",
+                "maxLength": 200,
+                "minLength": 1
+              },
+              "occurred_at": {
+                "allOf": [
+                  {
+                    "type": "string",
+                    "pattern": "^(?:[^\\u0000\\uD800-\\uDFFF]|[\\uD800-\\uDBFF][\\uDC00-\\uDFFF])*(?![\\s\\S])",
+                    "description": "Unicode bez NUL i samotnych surrogate; poprawne pary UTF-16/emoji są dozwolone."
+                  }
+                ],
+                "type": "string",
+                "pattern": "^\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}(\\.[0-9]{1,6})?Z$",
+                "format": "date-time"
+              },
+              "time_zone": {
+                "allOf": [
+                  {
+                    "type": "string",
+                    "pattern": "^(?:[^\\u0000\\uD800-\\uDFFF]|[\\uD800-\\uDBFF][\\uDC00-\\uDFFF])*(?![\\s\\S])",
+                    "description": "Unicode bez NUL i samotnych surrogate; poprawne pary UTF-16/emoji są dozwolone."
+                  }
+                ],
+                "type": "string",
+                "maxLength": 100,
+                "format": "iana-time-zone"
+              },
+              "local_date": {
+                "allOf": [
+                  {
+                    "type": "string",
+                    "pattern": "^(?:[^\\u0000\\uD800-\\uDFFF]|[\\uD800-\\uDBFF][\\uDC00-\\uDFFF])*(?![\\s\\S])",
+                    "description": "Unicode bez NUL i samotnych surrogate; poprawne pary UTF-16/emoji są dozwolone."
+                  }
+                ],
+                "type": "string",
+                "format": "date"
+              },
+              "meal_type": {
+                "anyOf": [
+                  {
+                    "enum": [
+                      "breakfast",
+                      "lunch",
+                      "dinner",
+                      "snack"
+                    ]
+                  },
+                  {
+                    "type": "null"
+                  }
+                ]
+              },
+              "goal_id": {
+                "anyOf": [
+                  {
+                    "allOf": [
+                      {
+                        "type": "string",
+                        "pattern": "^(?:[^\\u0000\\uD800-\\uDFFF]|[\\uD800-\\uDBFF][\\uDC00-\\uDFFF])*(?![\\s\\S])",
+                        "description": "Unicode bez NUL i samotnych surrogate; poprawne pary UTF-16/emoji są dozwolone."
+                      }
+                    ],
+                    "type": "string",
+                    "pattern": "^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$",
+                    "format": "uuid"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ]
+              },
+              "ration": {
+                "anyOf": [
+                  {
+                    "properties": {
+                      "ration_id": {
+                        "allOf": [
+                          {
+                            "type": "string",
+                            "pattern": "^(?:[^\\u0000\\uD800-\\uDFFF]|[\\uD800-\\uDBFF][\\uDC00-\\uDFFF])*(?![\\s\\S])",
+                            "description": "Unicode bez NUL i samotnych surrogate; poprawne pary UTF-16/emoji są dozwolone."
+                          }
+                        ],
+                        "type": "string",
+                        "pattern": "^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$",
+                        "format": "uuid"
+                      },
+                      "revision": {
+                        "type": "integer",
+                        "maximum": 2147483647.0,
+                        "minimum": 1.0
+                      },
+                      "name": {
+                        "allOf": [
+                          {
+                            "type": "string",
+                            "pattern": "^(?:[^\\u0000\\uD800-\\uDFFF]|[\\uD800-\\uDBFF][\\uDC00-\\uDFFF])*(?![\\s\\S])",
+                            "description": "Unicode bez NUL i samotnych surrogate; poprawne pary UTF-16/emoji są dozwolone."
+                          }
+                        ],
+                        "type": "string",
+                        "maxLength": 200,
+                        "minLength": 1
+                      }
+                    },
+                    "additionalProperties": false,
+                    "type": "object",
+                    "required": [
+                      "ration_id",
+                      "revision",
+                      "name"
+                    ]
+                  },
+                  {
+                    "type": "null"
+                  }
+                ]
+              },
+              "items": {
+                "items": {
+                  "properties": {
+                    "item_id": {
+                      "allOf": [
+                        {
+                          "type": "string",
+                          "pattern": "^(?:[^\\u0000\\uD800-\\uDFFF]|[\\uD800-\\uDBFF][\\uDC00-\\uDFFF])*(?![\\s\\S])",
+                          "description": "Unicode bez NUL i samotnych surrogate; poprawne pary UTF-16/emoji są dozwolone."
+                        }
+                      ],
+                      "type": "string",
+                      "pattern": "^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$",
+                      "format": "uuid"
+                    },
+                    "name": {
+                      "allOf": [
+                        {
+                          "type": "string",
+                          "pattern": "^(?:[^\\u0000\\uD800-\\uDFFF]|[\\uD800-\\uDBFF][\\uDC00-\\uDFFF])*(?![\\s\\S])",
+                          "description": "Unicode bez NUL i samotnych surrogate; poprawne pary UTF-16/emoji są dozwolone."
+                        }
+                      ],
+                      "type": "string",
+                      "maxLength": 200,
+                      "minLength": 1
+                    },
+                    "product": {
+                      "anyOf": [
+                        {
+                          "properties": {
+                            "product_id": {
+                              "allOf": [
+                                {
+                                  "type": "string",
+                                  "pattern": "^(?:[^\\u0000\\uD800-\\uDFFF]|[\\uD800-\\uDBFF][\\uDC00-\\uDFFF])*(?![\\s\\S])",
+                                  "description": "Unicode bez NUL i samotnych surrogate; poprawne pary UTF-16/emoji są dozwolone."
+                                }
+                              ],
+                              "type": "string",
+                              "pattern": "^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$",
+                              "format": "uuid"
+                            },
+                            "revision": {
+                              "type": "integer",
+                              "maximum": 2147483647.0,
+                              "minimum": 1.0
+                            }
+                          },
+                          "additionalProperties": false,
+                          "type": "object",
+                          "required": [
+                            "product_id",
+                            "revision"
+                          ]
+                        },
+                        {
+                          "type": "null"
+                        }
+                      ]
+                    },
+                    "quantity": {
+                      "properties": {
+                        "amount": {
+                          "allOf": [
+                            {
+                              "allOf": [
+                                {
+                                  "type": "string",
+                                  "pattern": "^(?:[^\\u0000\\uD800-\\uDFFF]|[\\uD800-\\uDBFF][\\uDC00-\\uDFFF])*(?![\\s\\S])",
+                                  "description": "Unicode bez NUL i samotnych surrogate; poprawne pary UTF-16/emoji są dozwolone."
+                                }
+                              ],
+                              "type": "string",
+                              "pattern": "^(0|[1-9][0-9]{0,5})(\\.[0-9]{0,5}[1-9])?(?![\\s\\S])",
+                              "description": "Kanoniczne 0..999999.999999, maksymalnie 6 miejsc; bez znaku, wykładnika i końcowych zer."
+                            },
+                            {
+                              "not": {
+                                "const": "0"
+                              }
+                            }
+                          ]
+                        },
+                        "unit": {
+                          "enum": [
+                            "g",
+                            "ml"
+                          ]
+                        }
+                      },
+                      "additionalProperties": false,
+                      "type": "object",
+                      "required": [
+                        "amount",
+                        "unit"
+                      ]
+                    },
+                    "basis_unit": {
+                      "enum": [
+                        "g",
+                        "ml"
+                      ]
+                    },
+                    "nutrition_per_100": {
+                      "properties": {
+                        "energy_kcal": {
+                          "anyOf": [
+                            {
+                              "allOf": [
+                                {
+                                  "type": "string",
+                                  "pattern": "^(?:[^\\u0000\\uD800-\\uDFFF]|[\\uD800-\\uDBFF][\\uDC00-\\uDFFF])*(?![\\s\\S])",
+                                  "description": "Unicode bez NUL i samotnych surrogate; poprawne pary UTF-16/emoji są dozwolone."
+                                }
+                              ],
+                              "type": "string",
+                              "pattern": "^(0|[1-9][0-9]{0,5})(\\.[0-9]{0,5}[1-9])?(?![\\s\\S])",
+                              "description": "Kanoniczne 0..999999.999999, maksymalnie 6 miejsc; bez znaku, wykładnika i końcowych zer."
+                            },
+                            {
+                              "type": "null"
+                            }
+                          ]
+                        },
+                        "protein_g": {
+                          "anyOf": [
+                            {
+                              "allOf": [
+                                {
+                                  "type": "string",
+                                  "pattern": "^(?:[^\\u0000\\uD800-\\uDFFF]|[\\uD800-\\uDBFF][\\uDC00-\\uDFFF])*(?![\\s\\S])",
+                                  "description": "Unicode bez NUL i samotnych surrogate; poprawne pary UTF-16/emoji są dozwolone."
+                                }
+                              ],
+                              "type": "string",
+                              "pattern": "^(0|[1-9][0-9]{0,5})(\\.[0-9]{0,5}[1-9])?(?![\\s\\S])",
+                              "description": "Kanoniczne 0..999999.999999, maksymalnie 6 miejsc; bez znaku, wykładnika i końcowych zer."
+                            },
+                            {
+                              "type": "null"
+                            }
+                          ]
+                        },
+                        "fat_g": {
+                          "anyOf": [
+                            {
+                              "allOf": [
+                                {
+                                  "type": "string",
+                                  "pattern": "^(?:[^\\u0000\\uD800-\\uDFFF]|[\\uD800-\\uDBFF][\\uDC00-\\uDFFF])*(?![\\s\\S])",
+                                  "description": "Unicode bez NUL i samotnych surrogate; poprawne pary UTF-16/emoji są dozwolone."
+                                }
+                              ],
+                              "type": "string",
+                              "pattern": "^(0|[1-9][0-9]{0,5})(\\.[0-9]{0,5}[1-9])?(?![\\s\\S])",
+                              "description": "Kanoniczne 0..999999.999999, maksymalnie 6 miejsc; bez znaku, wykładnika i końcowych zer."
+                            },
+                            {
+                              "type": "null"
+                            }
+                          ]
+                        },
+                        "carbs_g": {
+                          "anyOf": [
+                            {
+                              "allOf": [
+                                {
+                                  "type": "string",
+                                  "pattern": "^(?:[^\\u0000\\uD800-\\uDFFF]|[\\uD800-\\uDBFF][\\uDC00-\\uDFFF])*(?![\\s\\S])",
+                                  "description": "Unicode bez NUL i samotnych surrogate; poprawne pary UTF-16/emoji są dozwolone."
+                                }
+                              ],
+                              "type": "string",
+                              "pattern": "^(0|[1-9][0-9]{0,5})(\\.[0-9]{0,5}[1-9])?(?![\\s\\S])",
+                              "description": "Kanoniczne 0..999999.999999, maksymalnie 6 miejsc; bez znaku, wykładnika i końcowych zer."
+                            },
+                            {
+                              "type": "null"
+                            }
+                          ]
+                        }
+                      },
+                      "additionalProperties": false,
+                      "type": "object",
+                      "required": [
+                        "energy_kcal",
+                        "protein_g",
+                        "fat_g",
+                        "carbs_g"
+                      ]
+                    },
+                    "density_g_per_ml": {
+                      "anyOf": [
+                        {
+                          "allOf": [
+                            {
+                              "allOf": [
+                                {
+                                  "type": "string",
+                                  "pattern": "^(?:[^\\u0000\\uD800-\\uDFFF]|[\\uD800-\\uDBFF][\\uDC00-\\uDFFF])*(?![\\s\\S])",
+                                  "description": "Unicode bez NUL i samotnych surrogate; poprawne pary UTF-16/emoji są dozwolone."
+                                }
+                              ],
+                              "type": "string",
+                              "pattern": "^(0|[1-9][0-9]{0,5})(\\.[0-9]{0,5}[1-9])?(?![\\s\\S])",
+                              "description": "Kanoniczne 0..999999.999999, maksymalnie 6 miejsc; bez znaku, wykładnika i końcowych zer."
+                            },
+                            {
+                              "not": {
+                                "const": "0"
+                              }
+                            }
+                          ]
+                        },
+                        {
+                          "type": "null"
+                        }
+                      ]
+                    },
+                    "density_source": {
+                      "anyOf": [
+                        {
+                          "allOf": [
+                            {
+                              "type": "string",
+                              "pattern": "^(?:[^\\u0000\\uD800-\\uDFFF]|[\\uD800-\\uDBFF][\\uDC00-\\uDFFF])*(?![\\s\\S])",
+                              "description": "Unicode bez NUL i samotnych surrogate; poprawne pary UTF-16/emoji są dozwolone."
+                            }
+                          ],
+                          "type": "string",
+                          "maxLength": 500,
+                          "minLength": 1
+                        },
+                        {
+                          "type": "null"
+                        }
+                      ]
+                    },
+                    "nutrition_origin": {
+                      "enum": [
+                        "catalog_snapshot",
+                        "manual",
+                        "ai_estimate"
+                      ]
+                    },
+                    "formula_version": {
+                      "const": "nutrition_v1"
+                    },
+                    "ration_component_position": {
+                      "anyOf": [
+                        {
+                          "type": "integer",
+                          "maximum": 100000.0,
+                          "minimum": 1.0
+                        },
+                        {
+                          "type": "null"
+                        }
+                      ]
+                    }
+                  },
+                  "additionalProperties": false,
+                  "type": "object",
+                  "required": [
+                    "item_id",
+                    "name",
+                    "product",
+                    "quantity",
+                    "basis_unit",
+                    "nutrition_per_100",
+                    "density_g_per_ml",
+                    "density_source",
+                    "nutrition_origin",
+                    "formula_version",
+                    "ration_component_position"
+                  ]
+                },
+                "type": "array",
+                "maxItems": 30,
+                "minItems": 1
+              }
+            },
+            "additionalProperties": false,
+            "type": "object",
+            "required": [
+              "title",
+              "occurred_at",
+              "time_zone",
+              "local_date",
+              "meal_type",
+              "goal_id",
+              "ration",
+              "items"
+            ]
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "meal_id",
+          "payload"
+        ],
+        "title": "MealTemplate"
+      },
       "MergeProductRequest": {
         "properties": {
           "target": {
@@ -9301,6 +12637,883 @@
         ],
         "title": "ModerationReportPage"
       },
+      "MotivationBadge": {
+        "properties": {
+          "code": {
+            "type": "string",
+            "enum": [
+              "complete_streak_10",
+              "in_goal_streak_10",
+              "weight_days_4_14",
+              "ration_days_5"
+            ],
+            "title": "Code"
+          },
+          "rule_version": {
+            "type": "string",
+            "const": "regularity_v1",
+            "title": "Rule Version"
+          },
+          "status": {
+            "type": "string",
+            "enum": [
+              "pending",
+              "final",
+              "revoked"
+            ],
+            "title": "Status"
+          },
+          "progress": {
+            "type": "integer",
+            "maximum": 10.0,
+            "minimum": 0.0,
+            "title": "Progress"
+          },
+          "required": {
+            "type": "integer",
+            "maximum": 10.0,
+            "minimum": 1.0,
+            "title": "Required"
+          },
+          "witness_dates": {
+            "items": {
+              "type": "string",
+              "format": "date"
+            },
+            "type": "array",
+            "maxItems": 10,
+            "title": "Witness Dates"
+          },
+          "first_awarded_at": {
+            "anyOf": [
+              {
+                "type": "string",
+                "pattern": "^\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}(\\.[0-9]{1,6})?Z$",
+                "format": "date-time"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "First Awarded At"
+          },
+          "activated_at": {
+            "anyOf": [
+              {
+                "type": "string",
+                "pattern": "^\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}(\\.[0-9]{1,6})?Z$",
+                "format": "date-time"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Activated At"
+          },
+          "revoked_at": {
+            "anyOf": [
+              {
+                "type": "string",
+                "pattern": "^\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}(\\.[0-9]{1,6})?Z$",
+                "format": "date-time"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Revoked At"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "code",
+          "rule_version",
+          "status",
+          "progress",
+          "required",
+          "witness_dates",
+          "first_awarded_at",
+          "activated_at",
+          "revoked_at"
+        ],
+        "title": "MotivationBadge"
+      },
+      "MotivationRanking": {
+        "properties": {
+          "requested": {
+            "type": "boolean",
+            "title": "Requested"
+          },
+          "effective": {
+            "type": "boolean",
+            "title": "Effective"
+          },
+          "pending_consent_refresh": {
+            "type": "boolean",
+            "title": "Pending Consent Refresh"
+          },
+          "consent_epoch": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Consent Epoch"
+          },
+          "own_position": {
+            "anyOf": [
+              {
+                "type": "integer",
+                "minimum": 1.0
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Own Position"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "requested",
+          "effective",
+          "pending_consent_refresh",
+          "consent_epoch",
+          "own_position"
+        ],
+        "title": "MotivationRanking"
+      },
+      "MotivationRead": {
+        "properties": {
+          "account_generation": {
+            "type": "integer",
+            "maximum": 2147483647.0,
+            "minimum": 1.0,
+            "title": "Account Generation"
+          },
+          "sync_epoch": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Sync Epoch"
+          },
+          "as_of": {
+            "type": "string",
+            "pattern": "^\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}(\\.[0-9]{1,6})?Z$",
+            "format": "date-time",
+            "title": "As Of"
+          },
+          "rule_version": {
+            "type": "string",
+            "const": "regularity_v1",
+            "title": "Rule Version"
+          },
+          "revision": {
+            "type": "integer",
+            "maximum": 9.223372036854776e+18,
+            "minimum": 0.0,
+            "title": "Revision"
+          },
+          "source_position": {
+            "type": "integer",
+            "maximum": 9.223372036854776e+18,
+            "minimum": 0.0,
+            "title": "Source Position"
+          },
+          "status": {
+            "type": "string",
+            "enum": [
+              "pending_backfill",
+              "pending_materialization",
+              "final"
+            ],
+            "title": "Status"
+          },
+          "points": {
+            "anyOf": [
+              {
+                "type": "integer",
+                "maximum": 9.223372036854776e+18,
+                "minimum": 0.0
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Points"
+          },
+          "rank": {
+            "anyOf": [
+              {
+                "type": "string",
+                "enum": [
+                  "Rekrut",
+                  "Szeregowy",
+                  "Kapral",
+                  "Sierżant"
+                ]
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Rank"
+          },
+          "badges": {
+            "items": {
+              "$ref": "#/components/schemas/MotivationBadge"
+            },
+            "type": "array",
+            "maxItems": 4,
+            "minItems": 4,
+            "title": "Badges"
+          },
+          "ranking": {
+            "$ref": "#/components/schemas/MotivationRanking"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "account_generation",
+          "sync_epoch",
+          "as_of",
+          "rule_version",
+          "revision",
+          "source_position",
+          "status",
+          "points",
+          "rank",
+          "badges",
+          "ranking"
+        ],
+        "title": "MotivationRead"
+      },
+      "NemesisMetadata": {
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Id"
+          },
+          "revision": {
+            "type": "integer",
+            "maximum": 2147483647.0,
+            "minimum": 1.0,
+            "title": "Revision"
+          },
+          "role": {
+            "type": "string",
+            "enum": [
+              "inviter",
+              "invitee"
+            ],
+            "title": "Role"
+          },
+          "status": {
+            "type": "string",
+            "enum": [
+              "invited",
+              "active",
+              "finished",
+              "cancelled"
+            ],
+            "title": "Status"
+          },
+          "terms": {
+            "$ref": "#/components/schemas/NemesisTerms"
+          },
+          "invited_at": {
+            "type": "string",
+            "pattern": "^\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}(\\.[0-9]{1,6})?Z$",
+            "format": "date-time",
+            "title": "Invited At"
+          },
+          "expires_at": {
+            "type": "string",
+            "pattern": "^\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}(\\.[0-9]{1,6})?Z$",
+            "format": "date-time",
+            "title": "Expires At"
+          },
+          "accepted_at": {
+            "anyOf": [
+              {
+                "type": "string",
+                "pattern": "^\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}(\\.[0-9]{1,6})?Z$",
+                "format": "date-time"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Accepted At"
+          },
+          "start_date": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Start Date"
+          },
+          "end_date": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "End Date",
+            "description": "Exclusive calendar date boundary"
+          },
+          "start_at": {
+            "anyOf": [
+              {
+                "type": "string",
+                "pattern": "^\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}(\\.[0-9]{1,6})?Z$",
+                "format": "date-time"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Start At"
+          },
+          "end_at": {
+            "anyOf": [
+              {
+                "type": "string",
+                "pattern": "^\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}(\\.[0-9]{1,6})?Z$",
+                "format": "date-time"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "End At"
+          },
+          "deadline": {
+            "anyOf": [
+              {
+                "type": "string",
+                "pattern": "^\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}(\\.[0-9]{1,6})?Z$",
+                "format": "date-time"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Deadline"
+          },
+          "result_status": {
+            "anyOf": [
+              {
+                "type": "string",
+                "enum": [
+                  "provisional",
+                  "final"
+                ]
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Result Status"
+          },
+          "cancel_reason": {
+            "anyOf": [
+              {
+                "type": "string",
+                "enum": [
+                  "withdrawn",
+                  "declined",
+                  "sharing_revoked",
+                  "expired",
+                  "deleted",
+                  "restore"
+                ]
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Cancel Reason"
+          },
+          "partner_pseudonym": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 80
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Partner Pseudonym"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "id",
+          "revision",
+          "role",
+          "status",
+          "terms",
+          "invited_at",
+          "expires_at",
+          "accepted_at",
+          "start_date",
+          "end_date",
+          "start_at",
+          "end_at",
+          "deadline",
+          "result_status",
+          "cancel_reason",
+          "partner_pseudonym"
+        ],
+        "title": "NemesisMetadata"
+      },
+      "NemesisPage": {
+        "properties": {
+          "items": {
+            "items": {
+              "$ref": "#/components/schemas/NemesisMetadata"
+            },
+            "type": "array",
+            "maxItems": 100,
+            "title": "Items"
+          },
+          "next_cursor": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 128
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Next Cursor"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "items",
+          "next_cursor"
+        ],
+        "title": "NemesisPage"
+      },
+      "NemesisParticipantStatistics": {
+        "properties": {
+          "regularity": {
+            "$ref": "#/components/schemas/NemesisRegularity"
+          },
+          "weight_change": {
+            "oneOf": [
+              {
+                "$ref": "#/components/schemas/HiddenMetric"
+              },
+              {
+                "$ref": "#/components/schemas/WeightInsufficient"
+              },
+              {
+                "$ref": "#/components/schemas/WeightAvailable"
+              }
+            ],
+            "title": "Weight Change",
+            "discriminator": {
+              "propertyName": "state",
+              "mapping": {
+                "available": "#/components/schemas/WeightAvailable",
+                "hidden": "#/components/schemas/HiddenMetric",
+                "insufficient_data": "#/components/schemas/WeightInsufficient"
+              }
+            }
+          },
+          "mean_deficit": {
+            "oneOf": [
+              {
+                "$ref": "#/components/schemas/HiddenMetric"
+              },
+              {
+                "$ref": "#/components/schemas/DeficitInsufficient"
+              },
+              {
+                "$ref": "#/components/schemas/DeficitAvailable"
+              }
+            ],
+            "title": "Mean Deficit",
+            "discriminator": {
+              "propertyName": "state",
+              "mapping": {
+                "available": "#/components/schemas/DeficitAvailable",
+                "hidden": "#/components/schemas/HiddenMetric",
+                "insufficient_data": "#/components/schemas/DeficitInsufficient"
+              }
+            }
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "regularity",
+          "weight_change",
+          "mean_deficit"
+        ],
+        "title": "NemesisParticipantStatistics"
+      },
+      "NemesisRegularity": {
+        "properties": {
+          "points": {
+            "type": "integer",
+            "maximum": 180.0,
+            "minimum": 0.0,
+            "title": "Points"
+          },
+          "closed_days": {
+            "type": "integer",
+            "maximum": 90.0,
+            "minimum": 1.0,
+            "title": "Closed Days"
+          },
+          "complete_days": {
+            "type": "integer",
+            "maximum": 90.0,
+            "minimum": 0.0,
+            "title": "Complete Days"
+          },
+          "days_in_goal": {
+            "type": "integer",
+            "maximum": 90.0,
+            "minimum": 0.0,
+            "title": "Days In Goal"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "points",
+          "closed_days",
+          "complete_days",
+          "days_in_goal"
+        ],
+        "title": "NemesisRegularity"
+      },
+      "NemesisScope": {
+        "properties": {
+          "regularity": {
+            "type": "boolean",
+            "const": true,
+            "title": "Regularity"
+          },
+          "weight_change": {
+            "type": "boolean",
+            "title": "Weight Change",
+            "default": false
+          },
+          "mean_deficit": {
+            "type": "boolean",
+            "title": "Mean Deficit",
+            "default": false
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "regularity"
+        ],
+        "title": "NemesisScope"
+      },
+      "NemesisStatisticsFinal": {
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Id"
+          },
+          "revision": {
+            "type": "integer",
+            "maximum": 9.223372036854776e+18,
+            "minimum": 1.0,
+            "title": "Revision"
+          },
+          "rule_version": {
+            "type": "string",
+            "const": "regularity_v1",
+            "title": "Rule Version"
+          },
+          "as_of": {
+            "type": "string",
+            "pattern": "^\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}(\\.[0-9]{1,6})?Z$",
+            "format": "date-time",
+            "title": "As Of"
+          },
+          "time_zone": {
+            "type": "string",
+            "maxLength": 100,
+            "format": "iana-time-zone",
+            "title": "Time Zone"
+          },
+          "start_date": {
+            "type": "string",
+            "format": "date",
+            "title": "Start Date"
+          },
+          "end_date": {
+            "type": "string",
+            "format": "date",
+            "title": "End Date",
+            "description": "Exclusive calendar date boundary"
+          },
+          "deadline": {
+            "type": "string",
+            "pattern": "^\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}(\\.[0-9]{1,6})?Z$",
+            "format": "date-time",
+            "title": "Deadline"
+          },
+          "self": {
+            "$ref": "#/components/schemas/NemesisParticipantStatistics"
+          },
+          "opponent": {
+            "$ref": "#/components/schemas/NemesisParticipantStatistics"
+          },
+          "outcome": {
+            "type": "string",
+            "enum": [
+              "self_wins",
+              "opponent_wins",
+              "tie"
+            ],
+            "title": "Outcome"
+          },
+          "status": {
+            "type": "string",
+            "const": "final",
+            "title": "Status"
+          },
+          "finalized_at": {
+            "type": "string",
+            "pattern": "^\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}(\\.[0-9]{1,6})?Z$",
+            "format": "date-time",
+            "title": "Finalized At"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "id",
+          "revision",
+          "rule_version",
+          "as_of",
+          "time_zone",
+          "start_date",
+          "end_date",
+          "deadline",
+          "self",
+          "opponent",
+          "outcome",
+          "status",
+          "finalized_at"
+        ],
+        "title": "NemesisStatisticsFinal"
+      },
+      "NemesisStatisticsPending": {
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Id"
+          },
+          "revision": {
+            "type": "integer",
+            "maximum": 9.223372036854776e+18,
+            "minimum": 1.0,
+            "title": "Revision"
+          },
+          "rule_version": {
+            "type": "string",
+            "const": "regularity_v1",
+            "title": "Rule Version"
+          },
+          "as_of": {
+            "type": "string",
+            "pattern": "^\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}(\\.[0-9]{1,6})?Z$",
+            "format": "date-time",
+            "title": "As Of"
+          },
+          "time_zone": {
+            "type": "string",
+            "maxLength": 100,
+            "format": "iana-time-zone",
+            "title": "Time Zone"
+          },
+          "start_date": {
+            "type": "string",
+            "format": "date",
+            "title": "Start Date"
+          },
+          "end_date": {
+            "type": "string",
+            "format": "date",
+            "title": "End Date",
+            "description": "Exclusive calendar date boundary"
+          },
+          "deadline": {
+            "type": "string",
+            "pattern": "^\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}(\\.[0-9]{1,6})?Z$",
+            "format": "date-time",
+            "title": "Deadline"
+          },
+          "status": {
+            "type": "string",
+            "const": "pending",
+            "title": "Status"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "id",
+          "revision",
+          "rule_version",
+          "as_of",
+          "time_zone",
+          "start_date",
+          "end_date",
+          "deadline",
+          "status"
+        ],
+        "title": "NemesisStatisticsPending"
+      },
+      "NemesisStatisticsProvisional": {
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Id"
+          },
+          "revision": {
+            "type": "integer",
+            "maximum": 9.223372036854776e+18,
+            "minimum": 1.0,
+            "title": "Revision"
+          },
+          "rule_version": {
+            "type": "string",
+            "const": "regularity_v1",
+            "title": "Rule Version"
+          },
+          "as_of": {
+            "type": "string",
+            "pattern": "^\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}(\\.[0-9]{1,6})?Z$",
+            "format": "date-time",
+            "title": "As Of"
+          },
+          "time_zone": {
+            "type": "string",
+            "maxLength": 100,
+            "format": "iana-time-zone",
+            "title": "Time Zone"
+          },
+          "start_date": {
+            "type": "string",
+            "format": "date",
+            "title": "Start Date"
+          },
+          "end_date": {
+            "type": "string",
+            "format": "date",
+            "title": "End Date",
+            "description": "Exclusive calendar date boundary"
+          },
+          "deadline": {
+            "type": "string",
+            "pattern": "^\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}(\\.[0-9]{1,6})?Z$",
+            "format": "date-time",
+            "title": "Deadline"
+          },
+          "self": {
+            "$ref": "#/components/schemas/NemesisParticipantStatistics"
+          },
+          "opponent": {
+            "$ref": "#/components/schemas/NemesisParticipantStatistics"
+          },
+          "outcome": {
+            "type": "string",
+            "enum": [
+              "self_wins",
+              "opponent_wins",
+              "tie"
+            ],
+            "title": "Outcome"
+          },
+          "status": {
+            "type": "string",
+            "const": "provisional",
+            "title": "Status"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "id",
+          "revision",
+          "rule_version",
+          "as_of",
+          "time_zone",
+          "start_date",
+          "end_date",
+          "deadline",
+          "self",
+          "opponent",
+          "outcome",
+          "status"
+        ],
+        "title": "NemesisStatisticsProvisional"
+      },
+      "NemesisTerms": {
+        "properties": {
+          "rule_version": {
+            "type": "string",
+            "const": "regularity_v1",
+            "title": "Rule Version"
+          },
+          "duration_days": {
+            "type": "integer",
+            "enum": [
+              7,
+              30,
+              90
+            ],
+            "title": "Duration Days",
+            "default": 30
+          },
+          "time_zone": {
+            "type": "string",
+            "maxLength": 100,
+            "format": "iana-time-zone",
+            "title": "Time Zone",
+            "default": "Europe/Warsaw"
+          },
+          "scope": {
+            "$ref": "#/components/schemas/NemesisScope"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "rule_version",
+          "scope"
+        ],
+        "title": "NemesisTerms"
+      },
       "NutrientAverages": {
         "properties": {
           "energy_kcal": {
@@ -9411,6 +13624,64 @@
           "carbs_g"
         ],
         "title": "NutritionDTO"
+      },
+      "NutritionTotal": {
+        "properties": {
+          "known_sum": {
+            "type": "string",
+            "pattern": "^(0|[1-9][0-9]{0,12})(\\.[0-9]{1,12})?$",
+            "title": "Known Sum"
+          },
+          "missing_count": {
+            "type": "integer",
+            "maximum": 30.0,
+            "minimum": 0.0,
+            "title": "Missing Count"
+          },
+          "complete": {
+            "type": "boolean",
+            "title": "Complete"
+          },
+          "display": {
+            "type": "string",
+            "pattern": "^(0|[1-9][0-9]{0,12})(\\.[0-9])?$",
+            "title": "Display"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "known_sum",
+          "missing_count",
+          "complete",
+          "display"
+        ],
+        "title": "NutritionTotal"
+      },
+      "NutritionTotals": {
+        "properties": {
+          "energy_kcal": {
+            "$ref": "#/components/schemas/NutritionTotal"
+          },
+          "protein_g": {
+            "$ref": "#/components/schemas/NutritionTotal"
+          },
+          "fat_g": {
+            "$ref": "#/components/schemas/NutritionTotal"
+          },
+          "carbs_g": {
+            "$ref": "#/components/schemas/NutritionTotal"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "energy_kcal",
+          "protein_g",
+          "fat_g",
+          "carbs_g"
+        ],
+        "title": "NutritionTotals"
       },
       "ProductCorrectionDTO": {
         "properties": {
@@ -9798,6 +14069,129 @@
           "payload"
         ],
         "title": "ProfileRecord"
+      },
+      "Proposal": {
+        "properties": {
+          "items": {
+            "items": {
+              "$ref": "#/components/schemas/ProposalItem"
+            },
+            "type": "array",
+            "maxItems": 30,
+            "minItems": 1,
+            "title": "Items"
+          },
+          "notes": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "maxItems": 10,
+            "title": "Notes"
+          },
+          "totals": {
+            "$ref": "#/components/schemas/NutritionTotals"
+          },
+          "model_version": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 200
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Model Version"
+          },
+          "formula_version": {
+            "type": "string",
+            "const": "nutrition_v1",
+            "title": "Formula Version"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "items",
+          "notes",
+          "totals",
+          "model_version",
+          "formula_version"
+        ],
+        "title": "Proposal"
+      },
+      "ProposalItem": {
+        "properties": {
+          "name": {
+            "type": "string",
+            "maxLength": 2000,
+            "minLength": 1,
+            "title": "Name"
+          },
+          "quantity": {
+            "$ref": "#/components/schemas/QuantityDTO"
+          },
+          "basis_unit": {
+            "type": "string",
+            "enum": [
+              "g",
+              "ml"
+            ],
+            "title": "Basis Unit"
+          },
+          "nutrition_per_100": {
+            "$ref": "#/components/schemas/NutritionDTO"
+          },
+          "identity": {
+            "$ref": "#/components/schemas/IdentityDTO"
+          },
+          "density": {
+            "type": "null",
+            "title": "Density"
+          },
+          "uncertainty": {
+            "type": "string",
+            "enum": [
+              "low",
+              "medium",
+              "high"
+            ],
+            "title": "Uncertainty"
+          },
+          "notes": {
+            "items": {
+              "type": "string",
+              "maxLength": 2000,
+              "minLength": 1
+            },
+            "type": "array",
+            "maxItems": 5,
+            "title": "Notes"
+          },
+          "component_id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Component Id"
+          },
+          "matches": {
+            "$ref": "#/components/schemas/MatchProductResponse"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "name",
+          "quantity",
+          "basis_unit",
+          "nutrition_per_100",
+          "identity",
+          "uncertainty",
+          "notes",
+          "component_id",
+          "matches"
+        ],
+        "title": "ProposalItem"
       },
       "PublicationDensityDTO": {
         "properties": {
@@ -15850,6 +20244,122 @@
         ],
         "title": "QuantityDTO"
       },
+      "RankingEntry": {
+        "properties": {
+          "position": {
+            "type": "integer",
+            "minimum": 1.0,
+            "title": "Position"
+          },
+          "pseudonym": {
+            "type": "string",
+            "maxLength": 80,
+            "minLength": 1,
+            "title": "Pseudonym"
+          },
+          "points": {
+            "type": "integer",
+            "maximum": 9.223372036854776e+18,
+            "minimum": 0.0,
+            "title": "Points"
+          },
+          "rank": {
+            "type": "string",
+            "enum": [
+              "Rekrut",
+              "Szeregowy",
+              "Kapral",
+              "Sierżant"
+            ],
+            "title": "Rank"
+          },
+          "active_badges": {
+            "type": "integer",
+            "maximum": 4.0,
+            "minimum": 0.0,
+            "title": "Active Badges"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "position",
+          "pseudonym",
+          "points",
+          "rank",
+          "active_badges"
+        ],
+        "title": "RankingEntry"
+      },
+      "RankingPage": {
+        "properties": {
+          "rule_version": {
+            "type": "string",
+            "const": "regularity_v1",
+            "title": "Rule Version"
+          },
+          "pagination": {
+            "type": "string",
+            "const": "live_keyset_v1",
+            "title": "Pagination"
+          },
+          "as_of": {
+            "type": "string",
+            "pattern": "^\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}(\\.[0-9]{1,6})?Z$",
+            "format": "date-time",
+            "title": "As Of"
+          },
+          "items": {
+            "items": {
+              "$ref": "#/components/schemas/RankingEntry"
+            },
+            "type": "array",
+            "maxItems": 100,
+            "title": "Items"
+          },
+          "has_more": {
+            "type": "boolean",
+            "title": "Has More"
+          },
+          "next_page_token": {
+            "anyOf": [
+              {
+                "type": "string",
+                "pattern": "^rk1\\.[A-Za-z0-9_-]{43}$"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Next Page Token"
+          },
+          "cursor_expires_at": {
+            "anyOf": [
+              {
+                "type": "string",
+                "pattern": "^\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}(\\.[0-9]{1,6})?Z$",
+                "format": "date-time"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Cursor Expires At"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "rule_version",
+          "pagination",
+          "as_of",
+          "items",
+          "has_more",
+          "next_page_token",
+          "cursor_expires_at"
+        ],
+        "title": "RankingPage"
+      },
       "RationDTO": {
         "properties": {
           "ration_id": {
@@ -16070,6 +20580,51 @@
           "status"
         ],
         "title": "ReportResultDTO"
+      },
+      "RevokeCodeReceipt": {
+        "properties": {
+          "revoked": {
+            "type": "boolean",
+            "const": true,
+            "title": "Revoked"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "revoked"
+        ],
+        "title": "RevokeCodeReceipt"
+      },
+      "ShareCodeReceipt": {
+        "properties": {
+          "destination_code": {
+            "type": "string",
+            "maxLength": 43,
+            "minLength": 43,
+            "title": "Destination Code"
+          },
+          "issued_at": {
+            "type": "string",
+            "pattern": "^\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}(\\.[0-9]{1,6})?Z$",
+            "format": "date-time",
+            "title": "Issued At"
+          },
+          "expires_at": {
+            "type": "string",
+            "pattern": "^\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}(\\.[0-9]{1,6})?Z$",
+            "format": "date-time",
+            "title": "Expires At"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "destination_code",
+          "issued_at",
+          "expires_at"
+        ],
+        "title": "ShareCodeReceipt"
       },
       "Statistics": {
         "properties": {
@@ -16520,6 +21075,76 @@
         ],
         "title": "VoteResultDTO"
       },
+      "WeightAvailable": {
+        "properties": {
+          "state": {
+            "type": "string",
+            "const": "available",
+            "title": "State"
+          },
+          "value": {
+            "not": {
+              "const": "-0"
+            },
+            "type": "string",
+            "pattern": "^-?(?:0|[1-9][0-9]*)(?:\\.[0-9]{0,11}[1-9])?$",
+            "title": "Value"
+          },
+          "observed_days": {
+            "type": "integer",
+            "maximum": 90.0,
+            "minimum": 2.0,
+            "title": "Observed Days"
+          },
+          "first_date": {
+            "type": "string",
+            "format": "date",
+            "title": "First Date"
+          },
+          "last_date": {
+            "type": "string",
+            "format": "date",
+            "title": "Last Date"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "state",
+          "value",
+          "observed_days",
+          "first_date",
+          "last_date"
+        ],
+        "title": "WeightAvailable"
+      },
+      "WeightInsufficient": {
+        "properties": {
+          "state": {
+            "type": "string",
+            "const": "insufficient_data",
+            "title": "State"
+          },
+          "value": {
+            "type": "null",
+            "title": "Value"
+          },
+          "observed_days": {
+            "type": "integer",
+            "maximum": 1.0,
+            "minimum": 0.0,
+            "title": "Observed Days"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "state",
+          "value",
+          "observed_days"
+        ],
+        "title": "WeightInsufficient"
+      },
       "WeightPage": {
         "properties": {
           "account_id": {
@@ -16786,6 +21411,219 @@
           "change_kg"
         ],
         "title": "WeightSummary"
+      },
+      "PhotoConsent": {
+        "additionalProperties": false,
+        "properties": {
+          "accepted": {
+            "const": true,
+            "title": "Accepted",
+            "type": "boolean"
+          },
+          "notice_version": {
+            "const": "food-photo-notice-v1",
+            "title": "Notice Version",
+            "type": "string"
+          },
+          "provider": {
+            "enum": [
+              "mock",
+              "gemini"
+            ],
+            "title": "Provider",
+            "type": "string"
+          },
+          "scope": {
+            "const": "this_photo",
+            "title": "Scope",
+            "type": "string"
+          }
+        },
+        "required": [
+          "accepted",
+          "notice_version",
+          "provider",
+          "scope"
+        ],
+        "title": "PhotoConsent",
+        "type": "object"
+      },
+      "CreateMetadata": {
+        "additionalProperties": false,
+        "properties": {
+          "consent": {
+            "$ref": "#/components/schemas/PhotoConsent"
+          }
+        },
+        "required": [
+          "consent"
+        ],
+        "title": "CreateMetadata",
+        "type": "object"
+      },
+      "ConfirmRequest": {
+        "additionalProperties": false,
+        "properties": {
+          "expected_revision": {
+            "maximum": 2147483647,
+            "minimum": 1,
+            "title": "Expected Revision",
+            "type": "integer"
+          },
+          "meal": {
+            "$ref": "#/components/schemas/MealTemplate"
+          },
+          "drafts": {
+            "items": {
+              "$ref": "#/components/schemas/DraftTemplate"
+            },
+            "maxItems": 30,
+            "title": "Drafts",
+            "type": "array"
+          }
+        },
+        "required": [
+          "expected_revision",
+          "meal"
+        ],
+        "title": "ConfirmRequest",
+        "type": "object"
+      },
+      "CancelRequest": {
+        "additionalProperties": false,
+        "properties": {
+          "expected_revision": {
+            "maximum": 2147483647,
+            "minimum": 1,
+            "title": "Expected Revision",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "expected_revision"
+        ],
+        "title": "CancelRequest",
+        "type": "object"
+      },
+      "ProviderFoodItem": {
+        "additionalProperties": false,
+        "properties": {
+          "name": {
+            "maxLength": 2000,
+            "minLength": 1,
+            "title": "Name",
+            "type": "string"
+          },
+          "quantity": {
+            "$ref": "#/components/schemas/QuantityDTO"
+          },
+          "basis_unit": {
+            "enum": [
+              "g",
+              "ml"
+            ],
+            "title": "Basis Unit",
+            "type": "string"
+          },
+          "nutrition_per_100": {
+            "$ref": "#/components/schemas/NutritionDTO"
+          },
+          "identity": {
+            "$ref": "#/components/schemas/IdentityDTO"
+          },
+          "density": {
+            "default": null,
+            "title": "Density",
+            "type": "null"
+          },
+          "uncertainty": {
+            "enum": [
+              "low",
+              "medium",
+              "high"
+            ],
+            "title": "Uncertainty",
+            "type": "string"
+          },
+          "notes": {
+            "items": {
+              "maxLength": 2000,
+              "minLength": 1,
+              "type": "string"
+            },
+            "maxItems": 5,
+            "title": "Notes",
+            "type": "array"
+          }
+        },
+        "required": [
+          "name",
+          "quantity",
+          "basis_unit",
+          "nutrition_per_100",
+          "identity",
+          "uncertainty",
+          "notes"
+        ],
+        "title": "ProviderFoodItem",
+        "type": "object"
+      },
+      "ProviderFoodResult": {
+        "additionalProperties": false,
+        "properties": {
+          "items": {
+            "items": {
+              "$ref": "#/components/schemas/ProviderFoodItem"
+            },
+            "maxItems": 30,
+            "minItems": 1,
+            "title": "Items",
+            "type": "array"
+          },
+          "notes": {
+            "items": {
+              "maxLength": 2000,
+              "minLength": 1,
+              "type": "string"
+            },
+            "maxItems": 10,
+            "title": "Notes",
+            "type": "array"
+          }
+        },
+        "required": [
+          "items",
+          "notes"
+        ],
+        "title": "ProviderFoodResult",
+        "type": "object"
+      },
+      "RankingQuery": {
+        "additionalProperties": false,
+        "properties": {
+          "limit": {
+            "default": 50,
+            "ge": 1,
+            "le": 100,
+            "title": "Limit",
+            "type": "integer"
+          },
+          "page_token": {
+            "anyOf": [
+              {
+                "pattern": "^rk1\\.[A-Za-z0-9_-]{43}$",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "title": "Page Token"
+          }
+        },
+        "title": "RankingQuery",
+        "type": "object"
       }
     },
     "securitySchemes": {

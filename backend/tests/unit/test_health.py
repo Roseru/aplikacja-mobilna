@@ -115,6 +115,15 @@ def test_generated_api_only_claims_implemented_operations(client):
         "/api/v1/me/weights",
         "/api/v1/me/diary-days",
         "/api/v1/me/statistics",
+        "/api/v1/me/motivation",
+        "/api/v1/ranking",
+        "/api/v1/me/nemesis/share-code",
+        "/api/v1/me/nemesis",
+        "/api/v1/nemesis",
+        "/api/v1/nemesis/{challenge_id}",
+        "/api/v1/nemesis/{challenge_id}/accept",
+        "/api/v1/nemesis/{challenge_id}/cancel",
+        "/api/v1/nemesis/{challenge_id}/statistics",
         "/api/v1/products/matches",
         "/api/v1/community/products",
         "/api/v1/community/products/{id}",
@@ -125,6 +134,11 @@ def test_generated_api_only_claims_implemented_operations(client):
         "/api/v1/moderation/reports/{id}",
         "/api/v1/moderation/products/{id}",
         "/api/v1/moderation/products/{id}/merge",
+        "/api/v1/ai/capabilities",
+        "/api/v1/ai/food-analyses",
+        "/api/v1/ai/food-analyses/{analysis_id}",
+        "/api/v1/ai/food-analyses/{analysis_id}/confirm",
+        "/api/v1/ai/food-analyses/{analysis_id}/cancel",
     }
     assert schema["paths"]["/api/v1/products"]["get"]["security"] == [{"bearerAuth": []}]
     assert "503" in schema["paths"]["/health/ready"]["get"]["responses"]

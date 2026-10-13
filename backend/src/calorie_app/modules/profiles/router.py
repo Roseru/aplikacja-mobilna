@@ -1,5 +1,6 @@
 import re
 from typing import Annotated
+from uuid import UUID
 
 from fastapi import APIRouter, Depends, Header, Query, Request, Response
 from sqlalchemy.exc import SQLAlchemyError
@@ -24,6 +25,18 @@ from calorie_app.modules.profiles.service import estimate_energy, put_consents, 
 
 router = APIRouter(prefix="/api/v1", tags=["profiles"])
 ERRORS = {status: {"model": ApiError} for status in (401, 403, 409, 422, 503)}
+
+
+def ranking_consent_epoch_header(value):
+    if value is None:
+        return None
+    try:
+        parsed = UUID(value)
+        if str(parsed) != value:
+            raise ValueError
+        return parsed
+    except (ValueError, TypeError, AttributeError):
+        raise DomainError(422, "invalid_request") from None
 
 
 def if_match_revision(value):
@@ -100,7 +113,9 @@ def energy_estimate(
     responses=ERRORS,
     description="Pełne booleany, UUID Idempotency-Key i cytowana revision If-Match. "
     "Identyczny replay poprzedza sprawdzenie bieżącej revision. "
-    "Pełny wynik minimum 60 dni; po sprzątaniu 409 idempotency_result_expired bez mutacji.",
+    "Pełny wynik minimum 60 dni; po sprzątaniu 409 idempotency_result_expired bez mutacji. "
+    "Opcjonalny X-Ranking-Consent-Epoch wymaga jawnego ranking=true, bieżącej epoki "
+    "i nowej operacji; replay nie odnawia publikacji. Brak nagłówka zachowuje kontrakt E3.",
 )
 def consents(
     request: Request,
@@ -109,13 +124,17 @@ def consents(
     principal: Annotated[Principal, Depends(current_principal)],
     key: Annotated[str, Header(alias="Idempotency-Key")],
     match: Annotated[str, Header(alias="If-Match")],
+    ranking_epoch: Annotated[str | None, Header(alias="X-Ranking-Consent-Epoch")] = None,
 ):
     parsed_key, revision = idempotency_key(key), if_match_revision(match)
+    parsed_epoch = ranking_consent_epoch_header(ranking_epoch)
+    if len(request.headers.getlist("X-Ranking-Consent-Epoch")) > 1:
+        raise DomainError(422, "invalid_request")
     try:
         with Session(request.app.state.engine) as session, session.begin():
             account = require_account(session, principal)
             result = put_consents(
-                session, account.id, data, revision, parsed_key, account.generation
+                session, account.id, data, revision, parsed_key, account.generation, parsed_epoch
             )
             response.headers["ETag"] = f'"{result["revision"]}"'
             return result

@@ -64,7 +64,7 @@ def validate_wire(value, definition):
         raise ValueError("invalid_sync_wire")
 
 
-def expanded_schema(definition):
+def expanded_schema(definition, document="sync.schema.json"):
     def resolve(value, document):
         if isinstance(value, list):
             return [resolve(v, document) for v in value]
@@ -79,7 +79,7 @@ def expanded_schema(definition):
             return resolve(target, file)
         return {key: resolve(item, document) for key, item in value.items()}
 
-    return resolve(resources()["sync.schema.json"]["$defs"][definition], "sync.schema.json")
+    return resolve(resources()[document]["$defs"][definition], document)
 
 
 class WireDTO(RootModel[dict]):

@@ -31,8 +31,8 @@ jobs:
         with:
           version: '0.9.5'
       - run: uv sync --project backend --locked
-      - run: uv run --project backend --locked ruff check --config backend/pyproject.toml backend tools/offline_catalog tools/sync_client infra/local infra/integration tools/android_ci.py tools/tests/test_android_ci.py
-      - run: uv run --project backend --locked ruff format --check --config backend/pyproject.toml backend tools/offline_catalog tools/sync_client infra/local infra/integration tools/android_ci.py tools/tests/test_android_ci.py
+      - run: uv run --project backend --locked ruff check --config backend/pyproject.toml backend tools/ai_reference tools/offline_catalog tools/sync_client infra/local infra/integration tools/android_ci.py tools/tests/test_android_ci.py
+      - run: uv run --project backend --locked ruff format --check --config backend/pyproject.toml backend tools/ai_reference tools/offline_catalog tools/sync_client infra/local infra/integration tools/android_ci.py tools/tests/test_android_ci.py
       - run: uv run --project backend --locked python -m pytest backend/tests/unit
       - run: uv run --project backend --locked python -m pytest infra/integration/tests --tb=short
       - run: uv build backend
@@ -52,7 +52,7 @@ jobs:
             --manifest "$GITHUB_WORKSPACE/backend/data/demo/export/manifest.json" \
             --package "$GITHUB_WORKSPACE/backend/data/demo/export/base-pl.1.json.gz" \
             --expected-package-id 47bdff67-e58b-5437-919b-ec00159afbc5 --expected-kind demo
-      - run: docker build --build-arg PYTHON_IMAGE=public.ecr.aws/docker/library/python:3.13-slim@sha256:70729b46c69b4f1e97c4822c1af3df53a1476cf5ddc6c087c0c10bc3a5678c2f -t calorie-backend:test backend
+      - run: docker build --build-arg PYTHON_IMAGE=docker.io/library/python:3.13-slim@sha256:70729b46c69b4f1e97c4822c1af3df53a1476cf5ddc6c087c0c10bc3a5678c2f -t calorie-backend:test backend
       - name: Smoke test built API image
         run: |
           docker run --rm -v "$GITHUB_WORKSPACE/backend/smoke_installed.py:/tmp/e3-smoke.py:ro" \
@@ -67,7 +67,7 @@ jobs:
     runs-on: ubuntu-latest
     services:
       postgres:
-        image: public.ecr.aws/docker/library/postgres:17@sha256:2d2b8998d31037bf721cfdf764d76ba74171b4fab3431b7f72c27c56ddbdf9e3
+        image: docker.io/library/postgres:17@sha256:2d2b8998d31037bf721cfdf764d76ba74171b4fab3431b7f72c27c56ddbdf9e3
         env:
           POSTGRES_PASSWORD: ci-test-only
           POSTGRES_DB: postgres
@@ -101,7 +101,7 @@ jobs:
         run: docker info > /dev/null
       - name: PostgreSQL integration and isolated SCRAM/server-log regression
         run: uv run --project backend --locked python -m pytest backend/tests/integration --tb=short
-      - run: docker build --build-arg PYTHON_IMAGE=public.ecr.aws/docker/library/python:3.13-slim@sha256:70729b46c69b4f1e97c4822c1af3df53a1476cf5ddc6c087c0c10bc3a5678c2f -t calorie-backend:e2 backend
+      - run: docker build --build-arg PYTHON_IMAGE=docker.io/library/python:3.13-slim@sha256:70729b46c69b4f1e97c4822c1af3df53a1476cf5ddc6c087c0c10bc3a5678c2f -t calorie-backend:e2 backend
       - name: Real PostgreSQL export and offline import in the built image
         run: |
           storage="$RUNNER_TEMP/e2-artifacts"
@@ -173,7 +173,7 @@ jobs:
     timeout-minutes: 15
     services:
       postgres:
-        image: public.ecr.aws/docker/library/postgres:17@sha256:2d2b8998d31037bf721cfdf764d76ba74171b4fab3431b7f72c27c56ddbdf9e3
+        image: docker.io/library/postgres:17@sha256:2d2b8998d31037bf721cfdf764d76ba74171b4fab3431b7f72c27c56ddbdf9e3
         env:
           POSTGRES_PASSWORD: ci-test-only
           POSTGRES_DB: postgres
@@ -356,18 +356,43 @@ jobs:
         run: >-
           uv run --project backend --locked python infra/integration/run.py verify
           --state "${{ runner.temp }}/calorie-integration"
+      - name: Start three minimal E8 workers without activating Nemesis
+        run: >-
+          uv run --project backend --locked python infra/integration/run_e8.py up
+          --state "${{ runner.temp }}/calorie-integration"
+      - name: Verify installed E8 processes, minute cycles, effective LOGINs and restart
+        run: >-
+          uv run --project backend --locked python infra/integration/run_e8.py verify
+          --state "${{ runner.temp }}/calorie-integration"
+      - name: Capture coherent private app and identity backup with writers stopped
+        run: >-
+          uv run --project backend --locked python infra/integration/backup.py capture
+          --state "${{ runner.temp }}/calorie-integration"
+          --backup "${{ runner.temp }}/calorie-paired-backup"
+      - name: Rehearse real offline restore with new epoch and closed capabilities
+        run: |
+          uv run --project backend --locked python infra/integration/backup.py rehearse \
+            --backup "${{ runner.temp }}/calorie-paired-backup" > \
+            "${{ runner.temp }}/calorie-integration/restore-verification.json"
       - name: Upload secret-free infrastructure receipt
         uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
         with:
           name: local-integration-receipt
-          path: ${{ runner.temp }}/calorie-integration/verification.json
+          path: |
+            ${{ runner.temp }}/calorie-integration/verification.json
+            ${{ runner.temp }}/calorie-integration/e8-verification.json
+            ${{ runner.temp }}/calorie-integration/restore-verification.json
           if-no-files-found: error
           retention-days: 14
       - name: Stop only this stack, retain private runner state until job cleanup
         if: always()
-        run: >-
-          uv run --project backend --locked python infra/integration/run.py down
-          --state "${{ runner.temp }}/calorie-integration"
+        run: |
+          if test -f "${{ runner.temp }}/calorie-integration/e8-admin.env"; then
+            uv run --project backend --locked python infra/integration/run_e8.py stop \
+              --state "${{ runner.temp }}/calorie-integration"
+          fi
+          uv run --project backend --locked python infra/integration/run.py down \
+            --state "${{ runner.temp }}/calorie-integration"
   ci-required:
     if: always()
     needs: [contracts, quality, postgres, keycloak-pkce, android-build, android-device, local-integration]

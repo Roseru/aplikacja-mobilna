@@ -45,7 +45,67 @@ NEW_TABLES |= {
     "community_receipts",
     "community_quotas",
     "product_search_metadata",
+    "ai_controls",
+    "ai_pools",
+    "ai_analyses",
+    "ai_jobs",
+    "ai_photo_consents",
+    "ai_decisions",
+    "ai_receipts",
+    "ai_admissions",
+    "ai_energy_admissions",
+    "ai_attempts",
+    "ai_transport_permits",
+    "ai_cleanup_intents",
+    "motivation_accounts",
+    "motivation_days",
+    "motivation_badges",
+    "ranking_affirmations",
+    "ranking_sessions",
+    "ranking_cursors",
+    "nemesis_control",
+    "nemesis_releases",
+    "nemesis_challenges",
+    "nemesis_slots",
+    "nemesis_share_codes",
+    "nemesis_receipts",
+    "nemesis_admissions",
+    "nemesis_cursors",
+    "nemesis_projection_seeds",
+    "nemesis_day_projections",
+    "nemesis_final_results",
+    "nemesis_runtime_contract",
 }
+
+
+def _discard_e8_upgrade_placeholders(connection):
+    """Remove only untouched E8 upgrade placeholders in this disposable graph.
+
+    The historical E5/E7 roundtrips predate E8. The current head adds a pending
+    account row during upgrade; no worker or motivation source write runs here.
+    Refuse to erase any actual points, badge, consent or cursor evidence. E8's
+    nonempty downgrade refusal is exercised independently by test_e8_migration.
+    """
+    for table in (
+        "motivation_days",
+        "motivation_badges",
+        "ranking_affirmations",
+        "ranking_sessions",
+        "ranking_cursors",
+    ):
+        assert connection.scalar(text(f"SELECT count(*) FROM app.{table}")) == 0, table
+    assert (
+        connection.scalar(
+            text(
+                "SELECT count(*) FROM app.motivation_accounts WHERE backfill_state<>'pending' "
+                "OR backfill_after IS NOT NULL OR next_matures_at IS NOT NULL "
+                "OR total_points<>0 OR active_badges<>0 OR revision<>0 OR source_position<>0 "
+                "OR progress<>'{}'::jsonb"
+            )
+        )
+        == 0
+    )
+    connection.execute(text("DELETE FROM app.motivation_accounts"))
 
 
 def _tables(connection):
@@ -111,6 +171,20 @@ def _push(factory, principal, owner, boot, checkpoint, op):
 
 
 def _seed_e4(engine, artifact_root):
+    # Only the additional E8 projection/probe seams are absent in these exact
+    # historical schemas. Source validation, transactions, counters, receipts,
+    # snapshots and publication still execute their real E4 implementations.
+    with engine.connect() as connection:
+        revision = connection.scalar(text("SELECT version_num FROM app.alembic_version"))
+    assert revision in {E4_REVISION, "0014_catalog_search"}, revision
+    with (
+        patch("calorie_app.modules.analytics.motivation.repository.goal_probe", return_value=[]),
+        patch("calorie_app.modules.analytics.motivation.service.source_mutated", return_value=None),
+    ):
+        _seed_e4_sources(engine, artifact_root)
+
+
+def _seed_e4_sources(engine, artifact_root):
     who = Principal("https://e5-upgrade.test/realms/fixture", str(uuid4()), frozenset({"user"}))
     with Session(engine) as session, session.begin():
         boot = bootstrap(session, who, uuid4())
@@ -333,6 +407,8 @@ def test_e4_entire_rowsets_survive_e5_upgrade_downgrade_reupgrade(database, tmp_
                 assert set(_tables(connection)) == set(tables) | NEW_TABLES
                 assert _rowsets(connection, tables) == before
                 _assert_new_acl(connection)
+            with engine.begin() as connection:
+                _discard_e8_upgrade_placeholders(connection)
             migrate("downgrade", E4_REVISION)
             assert client.get("/health/ready").status_code == 503
             with engine.connect() as connection:

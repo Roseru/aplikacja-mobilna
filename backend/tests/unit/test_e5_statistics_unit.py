@@ -161,3 +161,178 @@ def test_unsigned_nutrient_results_reject_negative_values(value):
 
     with pytest.raises(ValidationError):
         TypeAdapter(NonnegativeResultDecimal).validate_python(value)
+
+
+@pytest.mark.parametrize(
+    "historical_zone,as_of,closed",
+    [
+        ("America/Los_Angeles", datetime(2026, 10, 11, 1, tzinfo=UTC), False),
+        ("Europe/Warsaw", datetime(2026, 10, 10, 23, tzinfo=UTC), True),
+    ],
+)
+def test_preserved_diary_zone_closure_independent_from_profile_window(
+    historical_zone, as_of, closed
+):
+    day = date(2026, 10, 10)
+    item = {
+        "quantity": {"amount": "100", "unit": "g"},
+        "basis_unit": "g",
+        "density_g_per_ml": None,
+        "nutrition_per_100": {
+            "energy_kcal": "100",
+            "protein_g": None,
+            "fat_g": None,
+            "carbs_g": None,
+        },
+    }
+    result = build_statistics(
+        day,
+        date(2026, 10, 11),
+        {day: True},
+        {day: [{"items": [item]}]},
+        {},
+        {day: {"energy_kcal": "100"}},
+        as_of=as_of,
+        day_time_zones={day: historical_zone},
+    )
+    first = result["daily"][0]
+    assert first["closed"] is closed
+    assert first["in_goal"] is (True if closed else None)
+    assert first["preliminary_in_goal"] is (None if closed else True)
+    assert result["complete_day_count"] == int(closed)
+    assert result["averages"]["energy_kcal"]["day_count"] == int(closed)
+
+
+def test_statistics_max_date_window_does_not_increment_past_supported_contract():
+    result = build_statistics(date.max, date.max, {}, {}, {}, {})
+    assert len(result["daily"]) == 1
+    assert not result["daily"][0]["closed"]
+
+
+def test_runtime_shared_facts_are_authoritative_and_python_is_only_oracle(monkeypatch):
+    import calorie_app.modules.analytics.service as service
+
+    day = date(2026, 10, 10)
+    as_of = datetime(2026, 10, 11, tzinfo=UTC)
+    item = {
+        "quantity": {"amount": "100", "unit": "g"},
+        "basis_unit": "g",
+        "density_g_per_ml": None,
+        "nutrition_per_100": {
+            "energy_kcal": "100",
+            "protein_g": None,
+            "fat_g": None,
+            "carbs_g": None,
+        },
+    }
+
+    def forbidden(*args):
+        raise AssertionError("second runtime eligibility formula")
+
+    monkeypatch.setattr(service, "evaluate_day", forbidden)
+    result = build_statistics(
+        day,
+        day,
+        {day: True},
+        {day: [{"items": [item]}]},
+        {},
+        {day: {"energy_kcal": "100"}},
+        as_of=as_of,
+        day_facts={
+            day: {
+                "matures_at": datetime(2026, 10, 10, 22, tzinfo=UTC),
+                "effective_complete": False,
+                "in_goal": None,
+            }
+        },
+    )
+    assert not result["daily"][0]["effective_complete"]
+    assert result["daily"][0]["closed"]
+    assert result["complete_day_count"] == 0
+    assert result["averages"]["energy_kcal"]["value"] is None
+
+
+@pytest.mark.parametrize(
+    "matures_at,closed",
+    [
+        (None, False),
+        (datetime(2026, 10, 11, 1, tzinfo=UTC), False),
+        (datetime(2026, 10, 11, tzinfo=UTC), True),
+    ],
+)
+def test_runtime_shared_facts_closure_uses_same_source_boundary(matures_at, closed):
+    day = date(2026, 10, 10)
+    result = build_statistics(
+        day,
+        day,
+        {},
+        {},
+        {},
+        {},
+        as_of=datetime(2026, 10, 11, tzinfo=UTC),
+        day_time_zones={day: "UTC"},
+        day_facts={day: {"matures_at": matures_at, "effective_complete": False, "in_goal": None}},
+    )
+    assert result["daily"][0]["closed"] is closed
+
+
+def test_runtime_missing_fact_is_error_not_silent_partial_snapshot():
+    day = date(2026, 10, 10)
+    with pytest.raises(DomainError) as error:
+        build_statistics(
+            day, day, {}, {}, {}, {}, as_of=datetime(2026, 10, 11, tzinfo=UTC), day_facts={}
+        )
+    assert error.value.status == 503
+
+
+def test_missing_diary_calendar_rows_keep_past_closed_without_inventing_data(monkeypatch):
+    import calorie_app.modules.analytics.service as service
+
+    today = date(2026, 10, 11)
+    days = [date.fromordinal(today.toordinal() - offset) for offset in range(6, -1, -1)]
+
+    def forbidden(*args):
+        raise AssertionError("calendar metadata must not recompute SQL eligibility")
+
+    monkeypatch.setattr(service, "evaluate_day", forbidden)
+    result = build_statistics(
+        days[0],
+        today,
+        {},
+        {},
+        {},
+        {},
+        as_of=datetime(2026, 10, 11, 10, tzinfo=UTC),
+        day_time_zones={},
+        day_facts={
+            day: {"matures_at": None, "effective_complete": False, "in_goal": None} for day in days
+        },
+    )
+    assert [row["closed"] for row in result["daily"]] == [True] * 6 + [False]
+    assert result["complete_day_count"] == result["in_goal_day_count"] == 0
+    for row in result["daily"]:
+        assert row["status"] == "no_data" and not row["effective_complete"]
+        assert row["in_goal"] is None and row["preliminary_in_goal"] is None
+        assert all(field["known_sum"] is None for field in row["totals"].values())
+    assert all(
+        average == {"value": None, "day_count": 0} for average in result["averages"].values()
+    )
+
+
+def test_known_diary_without_representable_maturity_does_not_use_calendar_fallback():
+    day = date(2026, 10, 10)
+    result = build_statistics(
+        day,
+        date(2026, 10, 11),
+        {day: False},
+        {},
+        {},
+        {},
+        as_of=datetime(2026, 10, 11, 10, tzinfo=UTC),
+        day_time_zones={day: "UTC"},
+        day_facts={
+            date(2026, 10, 10): {"matures_at": None, "effective_complete": False, "in_goal": None},
+            date(2026, 10, 11): {"matures_at": None, "effective_complete": False, "in_goal": None},
+        },
+    )
+    assert not result["daily"][0]["closed"]

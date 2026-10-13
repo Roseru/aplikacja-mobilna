@@ -2,22 +2,56 @@
 
 import asyncio
 from importlib.resources import files
+from pathlib import Path
 from zoneinfo import ZoneInfo, reset_tzpath
 
 from calorie_app.core.config import Settings
 from calorie_app.main import create_app
+from calorie_app.modules.ai.image_preparation import prepare_image
+from calorie_app.modules.ai.result import parse_bounded_json
 from calorie_app.modules.diary.validation import validate_payload
 from calorie_app.modules.profiles.schemas import EstimateInput
 from calorie_app.modules.profiles.service import estimate_energy
 
 
 def main():
+    import calorie_app.core.config as installed_config
+
+    assert "site-packages" in Path(installed_config.__file__).parts
     # This checks the declared Python tzdata fallback even on a host with IANA files.
     reset_tzpath(())
     ZoneInfo.clear_cache()
     assert ZoneInfo("Europe/Warsaw").key == "Europe/Warsaw"
     assert files("calorie_app.modules.catalog.resources").joinpath("domain.schema.json").is_file()
     assert files("calorie_app.modules.catalog.resources").joinpath("sync.schema.json").is_file()
+    assert files("calorie_app.modules.catalog.resources").joinpath("ai.schema.json").is_file()
+    assert files("calorie_app.modules.ai.prompts").joinpath("food_photo_v1.txt").is_file()
+    assert (
+        files("calorie_app.modules.catalog.resources").joinpath("motivation.schema.json").is_file()
+    )
+    assert files("calorie_app.modules.catalog.resources").joinpath("nemesis.schema.json").is_file()
+    assert files("calorie_app").joinpath("migrations/versions/e8_0021/source.sql").is_file()
+    assert files("calorie_app").joinpath("migrations/versions/e8_0021/finalizer.sql").is_file()
+    from decimal import Decimal
+
+    from calorie_app.modules.nemesis.finalization import finalize
+    from calorie_app.modules.nemesis.schemas import canonical_percent
+
+    assert canonical_percent(Decimal("-15")) == "-15" and canonical_percent(Decimal("0")) == "0"
+    assert callable(finalize)
+    from datetime import date
+
+    from calorie_app.modules.analytics.motivation.rules import rank_for_points
+    from calorie_app.modules.analytics.motivation.time import day_matures_at
+
+    assert rank_for_points(120) == "Sier\u017cant"
+    assert (
+        day_matures_at(date(2026, 3, 29), "Europe/Warsaw").isoformat()
+        == "2026-03-29T22:00:00+00:00"
+    )
+    assert callable(prepare_image) and parse_bounded_json(b'{"installed":true}') == {
+        "installed": True
+    }
     validate_payload(
         {
             "weight_kg": "80",
@@ -40,11 +74,18 @@ def main():
     assert "/api/v1/products" in app.openapi()["paths"]
     assert "/api/v1/sync/push" in app.openapi()["paths"]
     assert "/api/v1/sync/pull" in app.openapi()["paths"]
+    assert "/api/v1/ai/food-analyses" in app.openapi()["paths"]
+    assert "/api/v1/me/motivation" in app.openapi()["paths"]
+    assert "/api/v1/ranking" in app.openapi()["paths"]
+    assert "/api/v1/nemesis/{challenge_id}/statistics" in app.openapi()["paths"]
+    assert "/api/v1/ai/capabilities" in app.openapi()["paths"]
     for route in ("meals", "weights", "diary-days", "statistics"):
         assert "/api/v1/me/" + route in app.openapi()["paths"]
     app.state.engine.dispose()
     asyncio.run(app.state.oidc_verifier.close())
-    print("PASS installed E4 runtime: bundled schemas, tzdata, calculator, OIDC and sync routes")
+    print(
+        "PASS installed E8.4 runtime: bundled schemas/prompts, codec, tzdata, OIDC and sync routes"
+    )
 
 
 if __name__ == "__main__":

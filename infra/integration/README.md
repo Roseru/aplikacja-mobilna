@@ -162,7 +162,77 @@ Testy CI na rzeczywistym loginie workera sprawdzają wiele partii, konta A/B bez
 zachowanie danych i epoki, świeże/wygasłe sesje, proces okresowy, restart kursora,
 konkurencyjną blokadę, timeout konta, przejście w deleting i utratę połączenia.
 Próba całego zestawu dodatkowo sprawdza zdrowie/UID/ACL workera po restarcie.
-To nie jest harmonogram AI/Nemesis/punktów/zdjęć, pełny monitoring ani backup/restore.
+Retencja nie jest harmonogramem AI/zdjęć, pełnym monitoringiem ani backup/restore.
+Odrębne, opcjonalne usługi E8 opisano poniżej; nie zmieniają roli retencji.
+
+## Opcjonalne workery E8
+
+Istniejący wolumen sprzed E8 wymaga owner-only sprawdzenia/utworzenia brakujących
+bazowych ról przed upgrade. Sam nowy init-db.sh działa wyłącznie przy pierwszej
+inicjalizacji. [Odbiór aktualizacji E7→E8](../../docs/e8/AKTUALIZACJA_ISTNIEJACEJ_INSTALACJI_O3.md)
+podaje minimalne atrybuty i rzeczywisty test zachowania historii/receipts/zgód.
+
+Po aktualizacji własnego środowiska przez `run.py up` można przygotować i uruchomić
+trzy usługi z odebranego backendu E8. W przykładach należy wskazać ten sam prywatny
+`--state` co dla właściwego lokalnego zestawu. Polecenie `up` nie aktywuje Nemesis.
+
+```powershell
+uv run --project backend --locked python infra/integration/run_e8.py up
+uv run --project backend --locked python infra/integration/run_e8.py status
+uv run --project backend --locked python infra/integration/run_e8.py verify
+```
+
+`compose.e8.yaml` jest osobnym overlayem. Zwykły `run.py up` nie dołącza go.
+`motivation`, `nemesis-lifecycle` i `nemesis-finalizer` otrzymują trzy różne
+SCRAM LOGINy, tworzone wyłącznie istniejącymi hardened provisionerami O2.
+Ich hasła pochodzą z prywatnych plików środowiska; ponowny `up` zachowuje je.
+Usługi nie otrzymują administracyjnych PG* ani haseł pozostałych usług.
+Provisioner ma odrębny, jednorazowy kontener administracyjny. Nie dopisujemy
+uprawnień do API, retencji ani Keycloak i nie zmieniamy opublikowanych migracji.
+
+Każdy runner uruchamia zainstalowany CLI przez `python -I`, jako UID10001,
+bez surowego źródła lub editable. Start nadrabia pierwszą ograniczoną partię;
+dalsze wywołania rozpoczynają się co60s. Procesy nie nakładają się w jednej
+usłudze. Domyślny timeout55s przerywa zbyt długi proces, który zamyka połączenie
+i wycofuje otwartą transakcję. Gdy historia wymaga dłuższej pracy, można jawnie
+ustawić `E8_PASS_TIMEOUT_SECONDS=5..300` w prywatnym pliku danej usługi;
+długi cykl opóźnia następny. SIGTERM kończy runner i jego dziecko. Utrzymujemy
+jedną replikę każdej usługi dla jednoznacznego statusu jej prywatnego wolumenu.
+
+Status przechowuje tylko allowlistę agregatów, `last_attempt`, `last_success`,
+czas przebiegu i stan. `pending` oznacza udany bounded batch z zaległością.
+Motywacja raportuje faktyczny backlog i najstarszą maturity, finalizer due
+backlog. Lifecycle raportuje liczby transitions/pruned; pełna partia oznacza
+możliwą dalszą pracę, nie pomiar całego backlogu. Brak timestampu, błąd,
+timeout, przyszła/stara data lub `disabled` dają unhealthy. Zwykły healthcheck
+nie restartuje kontenera: `unless-stopped` odtwarza zakończony proces, a operator
+reaguje na unhealthy i zaległości. Prywatne wolumeny zachowują ostatni status
+przez restart; sukces jest aktualizowany dopiero po właściwym przebiegu CLI.
+
+Domyślnie zamknięty finalizer zwraca `disabled`, `ready=false` i unhealthy.
+To oczekiwany sygnał, a nie powód do automatycznej aktywacji. Operator po własnym
+odbiorze pakietu, migracji, ACL i manifestu może świadomie wykonać:
+
+```powershell
+uv run --project backend --locked python infra/integration/run_e8.py activate
+```
+
+Polecenie korzysta z istniejącego owner-only `e8n_activate` bieżącej epoki.
+Nie zastępuje rzeczywistego odbioru O1 lub produkcyjnego rollout. `verify`
+wymaga zamkniętej bramki i sprawdza startup, drugi naturalny minutowy cykl,
+efektywne LOGINY/UID oraz restart bez rotacji epoki. CI uruchamia ten odbiór
+na własnym zestawie; receipt nie zawiera sekretów lub identyfikatorów kont.
+Nie należy uruchamiać tej próby restartu na cudzym współdzielonym środowisku.
+
+Przed zatrzymaniem własnego zestawu zatrzymaj także opcjonalne workery:
+
+```powershell
+uv run --project backend --locked python infra/integration/run_e8.py stop
+uv run --project backend --locked python infra/integration/run.py down
+```
+
+Nie usuwa to wolumenów. Pełny lokalny odbiór przetwarzania danych i granice
+produkcji/restore opisuje [raport O3](../../docs/e8/ODBIOR_O3_WORKERY.md).
 
 ```text
 uv run --project backend --locked python infra/integration/run.py down
@@ -180,6 +250,39 @@ NTFS ACL do bieżącego użytkownika i SYSTEM. Plik importu realm z testowymi ha
 dla kontenera Keycloak, ale jego katalog nadrzędny pozostaje prywatny. Nie udostępniaj całego stanu.
 Wolumeny i stan są powiązaną instalacją — oba należy zachować. Kopie i kontrolowany restore
 z nową epoką oraz rejestrem usunięć należą do osobnego zadania; zwykły down/up nie jest restore.
+
+## Prywatna kopia i odizolowana próba odtworzenia
+
+Po lokalnym odbiorze workerów można wykonać spójną kopię własnego zestawu.
+Wskaż jego konkretny `--state` i nowy prywatny `--backup` poza Git. Przykład:
+
+```powershell
+uv run --project backend --locked python infra/integration/backup.py capture --state .tools/local-integration --backup .tools/paired-backup-1
+uv run --project backend --locked python infra/integration/backup.py verify --backup .tools/paired-backup-1
+uv run --project backend --locked python infra/integration/backup.py rehearse --backup .tools/paired-backup-1
+```
+
+Capture zatrzymuje ruch i wszystkich piszących klientów, włącznie z Keycloak;
+kopiuje obie bazy, role/SCRAM, konfigurację/TLS i katalog. Pozostawia źródło
+zatrzymane. Rehearse odtwarza nowy własny PG bez publicznego portu, nadaje nową
+epokę i wykonuje fence/cleanup z zamkniętym AI/Nemesis, sprawdza katalog oraz
+rzeczywisty LOGIN finalizera, po czym usuwa tylko własny kontener próby.
+Nie przywraca danych do istniejącej instalacji i nie otwiera API.
+
+Archiwa, konfiguracja, manifest i raw logs są prywatne i zawierają dane/sekrety.
+CI publikuje wyłącznie neutralny receipt. Wymagania przed rzeczywistym reopen,
+wykonane pomiary i granice RPO/RTO opisuje [raport](../../docs/e8/KOPIA_ODTWORZENIE_O3.md).
+
+Osobna [pełna lokalna próba odtworzenia](../../docs/e8/ODTWORZENIE_SESJE_I_KLIENT_O3.md)
+obejmuje prawdziwe sesje HTTPS/PKCE, deletion wykonaną po kopii, niezależny
+lokalny rejestr, odcięcie starego JWT/refresh i świadome recovery po zmianie epoki.
+Nie zmienia zachowania `rehearse`: ta komenda nadal kończy się z zamkniętym ruchem.
+Produkcyjny rejestr, docelowe środowisko, RPO/RTO i Room/APK wymagają własnego odbioru.
+
+[Aktualizacja rzeczywistej starszej instalacji lokalnej](../../docs/e8/ROLLOUT_LOKALNEJ_INSTALACJI_O3.md)
+potwierdza0014→0021, parę sprawdzonych archiwów, zachowanie danych/epoki/TLS oraz
+trzy realne workery. Obecny bind to loopback, przy zachowanym dotychczasowym issuer;
+raport wyjaśnia brak dawnego adresu LAN i zakres rzeczywistego operatorskiego HTTPS.
 
 ## Co sprawdza `verify`
 
@@ -211,11 +314,16 @@ pozostają obowiązkowe. Testy TLS obejmują prawdziwy lokalny serwer JWKS, nie 
 
 ## Granice odbioru
 
-To działająca infrastruktura lokalna. Jej `verify` nie potwierdza podłączenia obecnego APK,
-KO-31, kompletu official ARPOL, publicznego VPS/domeny/SMTP, harmonogramu workerów ani restore/RPO/RTO.
+To działająca infrastruktura lokalna. Podstawowy `verify` nie potwierdza podłączenia obecnego APK,
+KO-31, kompletu official ARPOL, publicznego VPS/domeny/SMTP ani restore/RPO/RTO.
+Minutowe workery E8 mają odrębny `run_e8.py verify` i lokalny odbiór opisany wyżej.
 O1 otrzymuje issuer/API, publiczny CA i konfigurację klienta; osobne próby sesji konkretnego
 APK O1/0.8.0 i ich ograniczenia dokumentuje [odbiór O3](ANDROID_PKCE.md).
 O2 zachowuje kontrakty i kod logiki. Publiczny deployment oraz kopie/restore są kolejnymi etapami.
+
+Przypięte obrazy Python/PostgreSQL pobieramy z Docker Hub z tymi samymi SHA256
+co wcześniejszy mirror ECR. [Opis i faktyczny odbiór](REGISTRY.md) zachowuje
+historię błędów429; failure/skipped nie jest sukcesem kontroli.
 
 Źródła konfiguracji: [Keycloak containers](https://www.keycloak.org/server/containers),
 [Keycloak hostname](https://www.keycloak.org/server/hostname),

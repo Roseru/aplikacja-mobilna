@@ -1,0 +1,166 @@
+"""Complete E4/E6 rowsets and atomic E7 durable-evidence downgrade guards."""
+
+from contextlib import contextmanager
+from uuid import UUID, uuid4
+
+import pytest
+from sqlalchemy import inspect, text
+from sqlalchemy.exc import DBAPIError
+from sqlalchemy.orm import Session
+from test_e5_upgrade import _discard_e8_upgrade_placeholders, _seed_e4
+from test_e6_matching_pg import seed
+from test_e7_runtime import create
+from test_e7_runtime import e7 as e7_fixture
+
+from calorie_app.modules.catalog.community.repository import lock_catalog
+
+pytestmark = pytest.mark.integration
+e7 = e7_fixture
+E7_REVISION = "0015_e7_ai"
+
+
+@contextmanager
+def e7_baseline(database):
+    """Exercise the real E7 head, then restore current head for following tests.
+
+    E8's separate downgrade guard must not substitute for E7's guard. Only
+    untouched E8 upgrade placeholders may be discarded; source/evidence rows
+    remain intact, and current runtime projection hooks are never disabled here.
+    """
+    admin, migrate, _ = database
+    with admin.begin() as connection:
+        _discard_e8_upgrade_placeholders(connection)
+    migrate("downgrade", E7_REVISION)
+    try:
+        yield
+    finally:
+        migrate("upgrade", "head")
+
+
+def graph(engine, names=None):
+    with engine.connect() as connection:
+        names = names or [
+            n
+            for n in inspect(connection).get_table_names(schema="app")
+            if not n.startswith("ai_") and n != "alembic_version"
+        ]
+        return {
+            name: list(
+                connection.scalars(
+                    text(
+                        'SELECT to_jsonb(t)::text FROM app."'
+                        + name
+                        + '" t ORDER BY to_jsonb(t)::text'
+                    )
+                )
+            )
+            for name in names
+        }
+
+
+def test_e7_empty_roundtrip_preserves_entire_filled_e4_e6_graph(e7, database, tmp_path):
+    admin, migrate, _ = database
+    with e7_baseline(database):
+        migrate("downgrade", "0014_catalog_search")
+        _seed_e4(admin, tmp_path / "catalogue-artifacts")
+        with Session(admin) as session, session.begin():
+            lock_catalog(session)
+            seed(session, "123.456789", "g")
+        before = graph(admin)
+        for table in (
+            "meals",
+            "meal_items",
+            "weights",
+            "product_drafts",
+            "sync_receipts",
+            "online_receipts",
+            "community_products",
+            "community_versions",
+            "product_sources",
+            "offline_packages",
+            "product_search_metadata",
+        ):
+            assert before[table], table
+        migrate("upgrade", E7_REVISION)
+        assert graph(admin, list(before)) == before
+        migrate("downgrade", "0014_catalog_search")
+        assert graph(admin, list(before)) == before
+        migrate("upgrade", E7_REVISION)
+        assert graph(admin, list(before)) == before
+        # Metadata represents the current head. Compare it there, after the
+        # genuine E7 down/up roundtrip has already preserved every old row.
+        migrate("upgrade", "head")
+        assert graph(admin, list(before)) == before
+        migrate("check")
+
+
+@pytest.mark.parametrize("artifact", ["photo", "cleanup_intent", "admission", "energy_admission"])
+def test_e7_durable_evidence_refuses_before_ddl_with_exact_rowsets(e7, database, artifact):
+    admin, migrate, _ = database
+    with e7_baseline(database):
+        owner = UUID(e7["boots"][0]["account_id"])
+        if artifact == "photo":
+            create(e7)
+        else:
+            with admin.begin() as connection:
+                if artifact == "cleanup_intent":
+                    connection.execute(
+                        text("INSERT INTO app.ai_cleanup_intents(storage_key) VALUES(:key)"),
+                        {"key": uuid4().hex},
+                    )
+                elif artifact == "admission":
+                    connection.execute(
+                        text(
+                            "INSERT INTO app.ai_admissions(owner_id,day,receipts) "
+                            "VALUES(:owner,current_date,1)"
+                        ),
+                        {"owner": owner},
+                    )
+                else:
+                    connection.execute(
+                        text(
+                            "INSERT INTO app.ai_energy_admissions(owner_id,accepted_at) "
+                            "VALUES(:owner,clock_timestamp())"
+                        ),
+                        {"owner": owner},
+                    )
+        with admin.connect() as connection:
+            names = inspect(connection).get_table_names(schema="app")
+        before = graph(admin, names)
+        with pytest.raises(DBAPIError, match="cannot downgrade durable E7 evidence") as error:
+            migrate("downgrade", "0014_catalog_search")
+        assert error.value.orig.sqlstate == "23514"
+        assert graph(admin, names) == before
+
+
+@pytest.mark.parametrize("privilege", ["maintain", "definer_execute"])
+@pytest.mark.parametrize("grantee", ["calorie_app_ai_worker", "PUBLIC"])
+def test_hostile_effective_ai_acl_refuses_upgrade_atomically(e7, database, privilege, grantee):
+    admin, migrate, _ = database
+    with e7_baseline(database):
+        migrate("downgrade", "0014_catalog_search")
+        target = (
+            "MAINTAIN ON TABLE app.meals"
+            if privilege == "maintain"
+            else ("EXECUTE ON FUNCTION app.begin_account_deletion(uuid,uuid,integer)")
+        )
+        try:
+            with admin.begin() as connection:
+                connection.exec_driver_sql("GRANT " + target + " TO " + grantee)
+            before = graph(admin)
+            with pytest.raises(DBAPIError, match="AI worker has incompatible") as error:
+                migrate("upgrade", E7_REVISION)
+            assert error.value.orig.sqlstate == "23514"
+            assert graph(admin, list(before)) == before
+            with admin.connect() as connection:
+                assert connection.scalar(text("SELECT version_num FROM app.alembic_version")) == (
+                    "0014_catalog_search"
+                )
+                assert not any(
+                    name.startswith("ai_")
+                    for name in inspect(connection).get_table_names(schema="app")
+                )
+        finally:
+            with admin.begin() as connection:
+                connection.exec_driver_sql("REVOKE " + target + " FROM " + grantee)
+            migrate("upgrade", E7_REVISION)

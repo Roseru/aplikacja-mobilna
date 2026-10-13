@@ -15,6 +15,7 @@ dependencies = [
   "PyJWT[crypto]==2.15.1",
   "httpx>=0.28,<1",
   "tzdata==2026.5",
+  "Pillow==12.3.0",
 ]
 
 [dependency-groups]
@@ -25,6 +26,7 @@ requires = ["hatchling>=1.27,<2"]
 build-backend = "hatchling.build"
 
 [tool.pytest.ini_options]
+pythonpath = ["."]
 testpaths = ["tests"]
 addopts = "-ra --strict-markers"
 markers = ["integration: requires PostgreSQL 17 (TEST_DATABASE_URL)"]
@@ -40,4 +42,7 @@ line-length = 100
 select = ["E", "F", "I", "UP", "B"]
 
 [tool.ruff.lint.isort]
-known-first-party = ["calorie_app"]
+known-first-party = ["calorie_app", "tools", "tests"]
+
+[tool.hatch.build.targets.wheel.force-include]
+"migrations" = "calorie_app/migrations"

@@ -197,10 +197,10 @@ def test_late_real_database_error_prefix_receipt_and_safe_retry(setup, monkeypat
     ops = [operation(a), operation(a)]
     original = sync_service.mutate
 
-    def fail_second(session, owner, op, counter):
+    def fail_second(session, owner, op, counter, *, source_extensions=()):
         if op["operation_id"] == ops[1]["operation_id"]:
             session.execute(text("SELECT 1/0"))
-        return original(session, owner, op, counter)
+        return original(session, owner, op, counter, source_extensions=source_extensions)
 
     monkeypatch.setattr(sync_service, "mutate", fail_second)
     with api_client(setup) as client:
