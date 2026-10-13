@@ -31,6 +31,9 @@ def main():
     )
     assert files("calorie_app.modules.catalog.resources").joinpath("nemesis.schema.json").is_file()
     assert files("calorie_app").joinpath("migrations/versions/e8_0021/source.sql").is_file()
+    assert files("calorie_app").joinpath("migrations/versions/e9_0022/history.sql").is_file()
+    assert files("calorie_app").joinpath("migrations/versions/e9_0022/worker.sql").is_file()
+    assert files("calorie_app.modules.catalog.resources").joinpath("energy.schema.json").is_file()
     assert files("calorie_app").joinpath("migrations/versions/e8_0021/finalizer.sql").is_file()
     from decimal import Decimal
 
@@ -76,6 +79,7 @@ def main():
     assert "/api/v1/sync/pull" in app.openapi()["paths"]
     assert "/api/v1/ai/food-analyses" in app.openapi()["paths"]
     assert "/api/v1/me/motivation" in app.openapi()["paths"]
+    assert "/api/v1/me/energy/analyses" in app.openapi()["paths"]
     assert "/api/v1/ranking" in app.openapi()["paths"]
     assert "/api/v1/nemesis/{challenge_id}/statistics" in app.openapi()["paths"]
     assert "/api/v1/ai/capabilities" in app.openapi()["paths"]

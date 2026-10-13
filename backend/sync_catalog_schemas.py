@@ -20,6 +20,7 @@ def main():
         "ai.schema.json",
         "motivation.schema.json",
         "nemesis.schema.json",
+        "energy.schema.json",
     ):
         data = (source / name).read_bytes()
         target = destination / name

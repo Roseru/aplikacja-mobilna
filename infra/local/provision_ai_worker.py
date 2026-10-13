@@ -108,7 +108,8 @@ DECLARE login_name text := current_setting('calorie.ai_worker_login');
           'app.e7_cleanup_candidate(text)',
           'app.e7_prune_receipts(uuid,integer)', 'app.e7_prune_ledger(integer)',
           'app.e7_receipt_cleanup_owners(integer)',
-          'app.e7_io_finished(uuid,uuid,text,integer,integer,integer)'];
+          'app.e7_io_finished(uuid,uuid,text,integer,integer,integer)',
+          'app.e9_auto_candidates(integer)', 'app.e9_auto_enqueue(uuid,jsonb)'];
         signature text; source_role text; column_name text;
 BEGIN
  IF NOT has_database_privilege(login_name,current_database(),'CONNECT') OR

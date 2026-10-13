@@ -378,6 +378,9 @@ def main():
                 response_schema = operation['responses'][str(step['expected_status'])]['content']['application/json']['schema']
                 if '$ref' in response_schema:
                     response_schema = generated['components']['schemas'][response_schema['$ref'].split('/')[-1]]
+                # Union responses keep nested component references. Attach the
+                # same normative components at their original JSON Pointer path.
+                response_schema = response_schema | {'components': generated['components']}
                 assert not list(Draft202012Validator(response_schema, format_checker=FORMATS).iter_errors(step['response'])), f'Scenario diverges from OpenAPI: {entry["id"]}'
                 if method == 'post':
                     request_schema = operation['requestBody']['content']['application/json']['schema']

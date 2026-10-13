@@ -14,8 +14,11 @@ from calorie_app.modules.ai import repository as ai_repo
 from calorie_app.modules.ai.cleanup import sweep
 from calorie_app.modules.ai.configuration import configuration
 from calorie_app.modules.ai.food_analysis import proposal
+from calorie_app.modules.ai.result import ProviderFoodResult
 from calorie_app.modules.ai.schemas import Proposal
 from calorie_app.modules.ai.storage import PhotoStorage
+from calorie_app.modules.energy.schemas import Explanation
+from calorie_app.modules.energy.service import energy_configuration
 from calorie_app.modules.jobs import repository as repo
 
 
@@ -67,9 +70,14 @@ class Runner:
             retry = None
             if outcome.code == "ok" and outcome.result is not None:
                 try:
-                    value = Proposal.model_validate(
-                        proposal(session, outcome.result, outcome.model_version)
-                    ).model_dump(mode="json")
+                    if claimed.get("purpose") == "energy_adjustment":
+                        value = Explanation.model_validate(outcome.result).model_dump(mode="json")
+                    else:
+                        if not isinstance(outcome.result, ProviderFoodResult):
+                            raise ValueError("provider payload purpose mismatch")
+                        value = Proposal.model_validate(
+                            proposal(session, outcome.result, outcome.model_version)
+                        ).model_dump(mode="json")
                 except ValueError:
                     code = "provider_result_invalid"
             elif allow_retry and outcome.retry_kind == "minute" and not self.stop():
@@ -99,7 +107,11 @@ class Runner:
             return False
         self.hook("after_claim", claimed)
         try:
-            cfg = configuration(self.settings)
+            cfg = (
+                energy_configuration(self.settings)
+                if claimed.get("purpose") == "energy_adjustment"
+                else configuration(self.settings)
+            )
             pinned = claimed["profile"]
             if cfg.reason is not None or any(
                 pinned[key] != cfg.profile[key]
@@ -120,7 +132,11 @@ class Runner:
                     code_override="ai_profile_unavailable",
                 )
                 return True
-            image = self._read_image(claimed)
+            image = (
+                claimed["aggregates"]
+                if claimed.get("purpose") == "energy_adjustment"
+                else self._read_image(claimed)
+            )
             kinds = (["count_tokens"] if not claimed["preflight_done"] else []) + ["generate"]
             for kind in kinds:
                 if self.stop():
@@ -196,6 +212,29 @@ class Runner:
     def cycle(self, batch=100):
         if not 1 <= batch <= 1000:
             raise ValueError("invalid worker batch")
+        cfg = energy_configuration(self.settings)
+        if cfg.reason is None:
+            with self.factory() as session:
+                owners = (
+                    ai_repo.call(
+                        session,
+                        "SELECT array_agg(v) FROM app.e9_auto_candidates(:batch) v",
+                        batch=min(batch, 100),
+                    )
+                    or []
+                )
+                session.commit()
+            for owner in owners:
+                if self.stop():
+                    break
+                with self.factory() as session:
+                    ai_repo.call(
+                        session,
+                        "SELECT app.e9_auto_enqueue(:owner,CAST(:profile AS jsonb))",
+                        owner=owner,
+                        profile=ai_repo.encoded(cfg.profile),
+                    )
+                    session.commit()
         with self.factory() as session:
             jobs = repo.candidates(session, batch)
         handled = 0
