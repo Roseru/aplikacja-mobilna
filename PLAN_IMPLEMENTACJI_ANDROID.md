@@ -1,5 +1,7 @@
 # Plan implementacji — osoba 1: Android i pamięć lokalna
 
+Android **0.8.12** dodaje lokalne zdjęcia z aparatu i galerii, trwały podgląd/usuwanie w aktywnym profilu oraz ręczny fallback. Poprawia Done w edycji gramatury. [Raport](android/RAPORT_0_8_12.md):165 JVM/21 końcowych zmienionych testów PASS; wcześniejsze188/186PASS+2RED zachowane osobno. Room8→9 zachował wszystkie stare kolumny22tabel/5posiłków. Upload/Gemini/confirm/sync i rzeczywisty APK/API nadal mają dalsze odbiory.
+
 ## Priorytety O1 po Nemesis0.8.11
 
 1. Domknąć PR operacji Nemesis: pełne CI aktualnego head, uwagi i merge; zachować dane przy aktualizacji emulatora.
