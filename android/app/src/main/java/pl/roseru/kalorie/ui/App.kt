@@ -49,7 +49,7 @@ import pl.roseru.kalorie.session.*
                     icon = { Icon(Icons.Outlined.BarChart, contentDescription = null) }, label = { Text("Postępy") }, modifier = Modifier.testTag("open-analytics"))
                 NavigationBarItem(selected = route == "settings", onClick = { nav.navigate("settings") { launchSingleTop = true } },
                     icon = { Icon(Icons.Outlined.Tune, contentDescription = null) }, label = { Text("Ustawienia") })
-                NavigationBarItem(selected = route in listOf("profile", "achievements", "ranking-consent"), onClick = { nav.navigate("profile") { launchSingleTop = true } },
+                NavigationBarItem(selected = route in listOf("profile", "achievements", "ranking-consent", "ranking"), onClick = { nav.navigate("profile") { launchSingleTop = true } },
                     icon = { Icon(Icons.Outlined.PersonOutline, contentDescription = null) }, label = { Text("Profil") }, modifier = Modifier.testTag("open-profile"))
             }
         }
@@ -66,10 +66,12 @@ import pl.roseru.kalorie.session.*
                 onAccount = { nav.navigate("account") { launchSingleTop = true } }, onBack = { nav.popBackStack() },
                 onRanking = { nav.navigate("ranking-consent") { launchSingleTop = true } }) }
             composable("ranking-consent") { RankingConsentScreen(session, actions, onBack = { nav.popBackStack() },
-                onAccount = { nav.navigate("account") { launchSingleTop = true } }) }
+                onAccount = { nav.navigate("account") { launchSingleTop = true } }, onRanking = { nav.navigate("ranking") { launchSingleTop = true } }) }
+            composable("ranking") { RankingScreen(session, actions, onBack = { nav.popBackStack() },
+                onAccount = { nav.navigate("account") { launchSingleTop = true } }, onConsent = { nav.navigate("ranking-consent") { launchSingleTop = true } }) }
             composable("account") { SessionScreen(session, actions, back = { nav.popBackStack() },
                 backLabel = when (nav.previousBackStackEntry?.destination?.route) {
-                    "achievements" -> "Wróć do osiągnięć"; "ranking-consent" -> "Wróć do zgód rankingu"; else -> "Wróć do profilu"
+                    "achievements" -> "Wróć do osiągnięć"; "ranking-consent" -> "Wróć do zgód rankingu"; "ranking" -> "Wróć do rankingu"; else -> "Wróć do profilu"
                 }) }
             composable("analytics") { AnalyticsScreen(model, onDay = { date ->
                 model.selectDate(date)
@@ -77,5 +79,5 @@ import pl.roseru.kalorie.session.*
             }) }
         }
     }
-    if (route in listOf("settings", "profile", "analytics", "account", "achievements", "ranking-consent")) BackHandler { nav.popBackStack() }
+    if (route in listOf("settings", "profile", "analytics", "account", "achievements", "ranking-consent", "ranking")) BackHandler { nav.popBackStack() }
 }

@@ -7,6 +7,7 @@ import org.json.JSONArray
 import pl.roseru.kalorie.core.BootstrapProtocol
 import pl.roseru.kalorie.core.SessionIdentity
 import pl.roseru.kalorie.core.RankingConsentAttempt
+import pl.roseru.kalorie.core.RankingQuery
 import pl.roseru.kalorie.core.catalog.StrictJson
 import pl.roseru.kalorie.core.requireHttps
 import pl.roseru.kalorie.data.OwnerLease
@@ -37,6 +38,9 @@ internal interface ProfileGateway {
     suspend fun get(session: ApiSession, beforeSend: suspend () -> Unit): BootstrapHttpResult
 }
 internal interface MotivationGateway : ProfileGateway
+internal interface RankingGateway {
+    suspend fun get(session: ApiSession, query: RankingQuery, beforeSend: suspend () -> Unit): BootstrapHttpResult
+}
 internal interface RankingConsentGateway {
     suspend fun put(session: ApiSession, request: RankingConsentAttempt, beforeSend: suspend () -> Unit): BootstrapHttpResult
 }
@@ -127,6 +131,13 @@ internal class HttpsRankingConsentGateway(base: String,
     private val url = URL(BootstrapHttpProtocol.endpoint(base).toString().removeSuffix("/bootstrap") + "/consents")
     override suspend fun put(session: ApiSession, request: RankingConsentAttempt, beforeSend: suspend () -> Unit) =
         HttpsJsonTransport.request(url, "PUT", session, request.key, open, beforeSend, requireNoStore = true, consent = request)
+}
+
+internal class HttpsRankingGateway(base: String,
+    private val open: (URL) -> HttpsURLConnection = { it.openConnection() as HttpsURLConnection }) : RankingGateway {
+    private val endpoint = BootstrapHttpProtocol.endpoint(base).toString().removeSuffix("/me/bootstrap") + "/ranking"
+    override suspend fun get(session: ApiSession, query: RankingQuery, beforeSend: suspend () -> Unit) =
+        HttpsJsonTransport.request(URL(endpoint + "?" + query.encoded()), "GET", session, null, open, beforeSend, requireNoStore = true)
 }
 
 /** Shared bounded transport; callers cannot supply an arbitrary URL or extra headers. */
