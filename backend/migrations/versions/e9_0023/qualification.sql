@@ -44,10 +44,14 @@ DECLARE resolved app.energy_versions%ROWTYPE;BEGIN
 
 -- The scoped deletion helper is internal; a replacement must not inherit
 -- PostgreSQL's default PUBLIC EXECUTE.
-REVOKE ALL ON FUNCTION app.e8n_delete_helper(uuid,uuid,boolean) FROM PUBLIC,
- calorie_app_api,calorie_app_worker,calorie_app_ai_worker,
- calorie_app_motivation_worker,calorie_app_nemesis_worker,
- calorie_app_nemesis_finalizer,calorie_app_deletion_operator;
+REVOKE ALL ON FUNCTION app.e8n_delete_helper(uuid,uuid,boolean) FROM PUBLIC;
+DO $$ DECLARE r record;BEGIN
+ FOR r IN SELECT rolname FROM pg_roles WHERE rolname IN('calorie_app_api',
+ 'calorie_app_worker','calorie_app_ai_worker','calorie_app_motivation_worker',
+ 'calorie_app_nemesis_worker','calorie_app_nemesis_finalizer','calorie_app_deletion_operator') LOOP
+ EXECUTE 'REVOKE ALL ON FUNCTION app.e8n_delete_helper(uuid,uuid,boolean) FROM '||quote_ident(r.rolname);
+ END LOOP;
+END $$;
 CREATE OR REPLACE FUNCTION app.e8n_gate() RETURNS boolean
 LANGUAGE sql STABLE SECURITY DEFINER SET search_path=pg_catalog,pg_temp AS $$
  SELECT app.e8n_runtime_ready() AND EXISTS(SELECT 1 FROM app.nemesis_control c JOIN app.installation_state i

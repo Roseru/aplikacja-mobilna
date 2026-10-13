@@ -131,3 +131,26 @@ uzupełniamy istniejące wymagania PG_BIN i TEST_WORKER_PASSWORD; stary fullrun
 własnej dodatkowej zmiany globalnego członkostwa LOGIN; nie wykonano jej i nie
 zaliczamy niezależnego rzeczywistego SCRAM proof. Autorski installed-I proof był
 rzeczywisty; read-only niezależne ACL i pozostałe własne próby są osobnym dowodem.
+
+
+### Ograniczone poprawki końcowego zakresu
+
+Recenzent potwierdził54000 przy drugim zbudowaniu contextu po wzroście metadata
+axis; pending004 obejmuje scoped odmową oba odczyty przed admission.
+Oracle fault injection deleguje pierwszy odczyt do rzeczywistego helpera,
+drugi odmawia po UPDATE axis. Physical100001 source proof testuje osobno realny
+limit pierwszego odczytu; nie przedstawiamy injection jako fizycznego8MiB proof.
+
+33realne E4 SCRAM/server-log tests PASS42.52s po naprawie conditional003 ACL.
+Historyczne migracje001–21 oraz0022 pozostają niezmienione. Nowe funkcje003
+również pozostają niezmienione; jedyny poprawiony statement pending003 w tym PR
+to REVOKE znanych runtime ról przez pg_roles zamiast wymagania nieistniejących
+opcjonalnych ról Nemesis. PUBLIC EXECUTE zawsze cofnięte, bez nowych grantów lub
+ról. Nie da się naprawić brakującej roli w forward004, ponieważ wcześniej003
+odmawiał wejścia na istniejący minimalny E3/E4. Poprawkę draft migracji opisujemy
+jawnie; wcześniejsze twierdzenie o byte-immutable całego003 jest zastąpione tym
+konkretnym zakresem. Nowe SQL definicje pozostają w liniowych nowych migracjach.
+
+Odczytano uwagę koordynatora o ranking PUT / energy boolean. Requested/effective
+oraz fresh notice są opisane w [przekazaniu O1](INTEGRACJA_O1.md); backendowa
+kwalifikacja zgód zachowana. Nowy publiczny PUT oracle w final_edges domyka seam.

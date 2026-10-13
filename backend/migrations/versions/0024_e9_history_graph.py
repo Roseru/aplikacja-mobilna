@@ -28,5 +28,6 @@ def downgrade():
             )
         ]
     )
+    op.execute(previous[previous.index("CREATE OR REPLACE FUNCTION app.e9_auto_enqueue") :])
     op.execute("DELETE FROM app.nemesis_releases WHERE schema_revision='0024_e9_history_graph'")
     op.execute("UPDATE app.nemesis_control SET enabled=false")

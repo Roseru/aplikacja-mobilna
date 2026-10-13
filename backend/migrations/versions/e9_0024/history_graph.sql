@@ -89,3 +89,53 @@ END $$;
 INSERT INTO app.nemesis_releases(projector_revision,finalizer_revision,schema_revision,initializer_revision)
  VALUES('0024_projection_v1','0021_finalizer_v1','0024_e9_history_graph','0021_initializer_v1');
 UPDATE app.nemesis_control SET enabled=false;
+
+CREATE OR REPLACE FUNCTION app.e9_auto_enqueue(p_owner uuid,p_profile jsonb) RETURNS jsonb
+LANGUAGE plpgsql SECURITY DEFINER SET search_path=pg_catalog,pg_temp AS $$
+DECLARE context jsonb;result jsonb;u app.user_accounts%ROWTYPE;t timestamptz;today date;new_id uuid:=gen_random_uuid();zone text;
+BEGIN
+ SELECT * INTO u FROM app.user_accounts WHERE id=p_owner AND state='active' FOR UPDATE;
+ IF NOT FOUND OR app.subject_blocked(u.issuer,u.subject) THEN RETURN NULL;END IF;
+ INSERT INTO app.sync_counters(owner_id) VALUES(p_owner) ON CONFLICT DO NOTHING;
+ PERFORM 1 FROM app.sync_counters WHERE owner_id=p_owner FOR UPDATE;
+ PERFORM 1 FROM app.installation_state WHERE id=1 FOR SHARE;
+ IF NOT EXISTS(SELECT 1 FROM app.energy_axes a JOIN app.user_consents c ON c.owner_id=a.owner_id
+ WHERE a.owner_id=p_owner AND c.automatic_energy_adjustment AND a.baseline_id IS NOT NULL
+ AND app.e9_notice_valid(a.baseline_notice,p_profile->>'provider','automatic_energy_adjustment')
+ AND (a.baseline_notice->>'account_generation')::integer=u.generation
+ AND a.baseline_epoch=(SELECT sync_epoch FROM app.installation_state WHERE id=1) AND a.baseline_consent_revision=c.revision
+ AND(a.last_applied_at IS NULL OR a.last_applied_at<=clock_timestamp()-interval '336 hours')) THEN RETURN NULL;END IF;
+ PERFORM 1 FROM app.ai_controls WHERE id=1 FOR UPDATE;
+ IF NOT EXISTS(SELECT 1 FROM app.ai_controls c JOIN app.installation_state i ON i.id=c.id AND i.sync_epoch=c.sync_epoch WHERE c.dispatch_open) THEN RETURN NULL;END IF;
+ IF NOT EXISTS(SELECT 1 FROM app.ai_pools WHERE scope=p_profile->>'pool_scope' AND enabled AND provider=p_profile->>'provider' AND model=p_profile->>'model') THEN RETURN NULL;END IF;
+ IF EXISTS(SELECT 1 FROM app.ai_jobs WHERE owner_id=p_owner AND state IN('queued','running')) THEN RETURN NULL;END IF;
+ SELECT time_zone INTO zone FROM app.user_profiles WHERE owner_id=p_owner AND deleted_at IS NULL;IF zone IS NULL THEN RETURN NULL;END IF;
+ t:=clock_timestamp();today:=(t AT TIME ZONE zone)::date;
+ IF EXISTS(SELECT 1 FROM app.energy_axes WHERE owner_id=p_owner AND last_auto_checked_date=today) THEN RETURN NULL;END IF;
+ BEGIN
+ context:=app.e9_context(p_owner,today-14,today-1);
+ EXCEPTION WHEN SQLSTATE '54000' THEN
+ -- Only the documented per-owner source limit is an expected refusal.
+ -- Other database failures propagate; no quota or job was admitted.
+ UPDATE app.energy_axes SET last_auto_checked_date=today,last_auto_state='resource_exhausted'
+ WHERE owner_id=p_owner;
+ RETURN NULL;
+ END;
+ result:=app.e9_rules(context,true);
+ UPDATE app.energy_axes SET last_auto_checked_date=today,last_auto_state=result->>'state' WHERE owner_id=p_owner;
+ BEGIN
+ context:=app.e9_context(p_owner,today-14,today-1);
+ EXCEPTION WHEN SQLSTATE '54000' THEN
+ UPDATE app.energy_axes SET last_auto_state='resource_exhausted' WHERE owner_id=p_owner;
+ RETURN NULL;
+ END;
+ IF result->>'state' IN('insufficient_data','energy_history_unavailable','baseline_required','baseline_range_conflict') THEN RETURN NULL;END IF;
+ IF NOT app.e7_admit(p_owner,'energy_adjustment') THEN RETURN NULL;END IF;
+ INSERT INTO app.energy_analyses(id,owner_id,generation,sync_epoch,automatic,accepted_at,date_from,date_to,context,fingerprint,profile,notice,result,state)
+ VALUES(new_id,p_owner,u.generation,(SELECT sync_epoch FROM app.installation_state WHERE id=1),true,t,today-14,today-1,context,app.e9_fingerprint(context),p_profile,
+ app.e9_notice_snapshot((SELECT baseline_notice FROM app.energy_axes WHERE owner_id=p_owner),context,t,
+ (SELECT baseline_id FROM app.energy_axes WHERE owner_id=p_owner)),result,'queued');
+ INSERT INTO app.ai_jobs(id,owner_id,energy_analysis_id,purpose,generation,sync_epoch,pool_scope,state,queue_deadline,next_attempt_at)
+ VALUES(gen_random_uuid(),p_owner,new_id,'energy_adjustment',u.generation,(SELECT sync_epoch FROM app.installation_state WHERE id=1),p_profile->>'pool_scope','queued',t+interval '5 minutes',t);
+ RETURN jsonb_build_object('id',new_id,'state','queued');
+END $$;

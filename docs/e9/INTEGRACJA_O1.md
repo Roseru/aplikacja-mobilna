@@ -105,3 +105,22 @@ Najważniejsze odmowy:403 notice/provider mismatch,404 obce ID,409 stale/revisio
 scheduled/receipt conflict,410 expiry,429 cooldown/quota,503 brak konfiguracji/
 gate/puli. Nieznany błąd nie jest ACK. Globalny no-store i fencing sesji obowiązują
 także dla tych odczytów. Migracja Room, UI i rzeczywisty odbiór APK należą do O1.
+
+
+## Styk ze zgodą rankingu z PR50
+
+Kontrakt backendu: po nowym PUT zmieniającym tylko ranking z zachowaniem
+`automatic_energy_adjustment=true` state zwraca `automatic_requested=true`,
+`automatic_effective=false`, `baseline_id=null` i `automatic_notice=null`.
+Poprzednia energy affirmation jest związana z dawną consent_revision; jej próba
+na nowym kluczu daje409. Dopiero osobne świadome `POST /me/energy/affirm`
+z aktualną rewizją i świeżym notice może przywrócić effective. Sam ranking PUT,
+GET state lub retry starej zgody nie uruchamia modelu.
+
+O1: tekst „pozostanie włączona” z PR50 oznacza zachowanie deklaracji boolean,
+nie skuteczny automat E9. Przy integracji E9 pokaż stan oczekiwania na ponowną
+świadomą afirmację i odczytaj state po PUT. Nie afirmuj energii automatycznie
+w ekranie rankingu. Konkretny backend oracle publicznego PUT i fresh affirmation:
+[test_e9_final_edges](../../backend/tests/integration/test_e9_final_edges.py).
+Obserwacja koordynatora dotyczyła0c81; ochrona consent revision pozostaje celowa,
+nie osłabiono jej, a UI/Room O1 nie są zmieniane przez ten PR backendu.

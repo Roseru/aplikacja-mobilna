@@ -1191,3 +1191,12 @@ Integracja O3-019/020/021 w O1-023: main6952c1418b3a79e4da93803808d40c5097f3a40b
   rzeczywisty parent manifest zamiast rehash drift.33PG krytycznego zakresu PASS.
   Stary fullPG:1216PASS/28fail/111setup errors; brak PG_BIN i TEST_WORKER_PASSWORD
   zostaną uzupełnione, a pełny odbiór powtórzony na spójnym freeze po merge.
+
+
+Uzupełnienie O2-030: ochrona każdej nowej consent revision zachowana; ranking-only
+PUT pozostawia energy requested=true, effective=false do świeżej osobnej energy
+affirmation/notice. Przekazanie O1 i publiczny PUT oracle final_edges są dodane.
+Poprawka pending004 obejmuje również limit drugiego contextu; conditional ACL
+statement pending003 umożliwia existing minimalny E3 bez opcjonalnych ról Nemesis
+(33E4 secret/SCRAM/log PASS), bez zmian003funkcji/0022/001–21 i bez nowych grantów.
+Odczytano koordynatora/O2-029; nie otwarto drugiego backendu lub watchera.

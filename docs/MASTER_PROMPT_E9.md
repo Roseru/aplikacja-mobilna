@@ -136,3 +136,10 @@ aktualny head0023; brak automatycznej aktywacji live Nemesis.
 i literalną kwalifikację parent prosrc. Wszystkie opublikowane wcześniejsze
 migracje pozostają niezmienne; końcowy head jest liniowy0024. Rozróżnienie zwykłej
 zmiany celu i jawnej korekty dat jest potwierdzone niezależnym oracle PG.
+
+
+Korekta draft003: wyłącznie ACL statement warunkuje REVOKE opcjonalnych runtime
+ról ich istnieniem; bez nowych grantów/rol i bez zmian funkcji003,0022 lub001–21.
+Wykazana przez istniejące E4 secret/log tests minimalnego legacy bootstrapu.
+Drugi bounded context odmawia scoped54000 w004. Requested/effective po ranking
+PUT ma jawne przekazanie O1; boolean nie zastępuje świeżej energy affirmation.
