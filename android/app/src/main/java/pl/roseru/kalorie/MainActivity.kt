@@ -89,7 +89,13 @@ class MainActivity : ComponentActivity() {
                 readNemesisChallenge = { id -> app.sessionScope.launch { app.sessions.readNemesisChallenge(id) } },
                 nextNemesisPage = { app.sessionScope.launch { app.sessions.nextNemesisPage() } },
                 retryNemesis = { app.sessionScope.launch { app.sessions.retryNemesis() } },
-                clearNemesis = { app.sessionScope.launch { app.sessions.clearNemesisPreview() } })
+                clearNemesis = { app.sessionScope.launch { app.sessions.clearNemesisPreview() } },
+                issueNemesisCode = { app.sessionScope.launch { app.sessions.issueNemesisCode() } },
+                revokeNemesisCode = { app.sessionScope.launch { app.sessions.revokeNemesisCode() } },
+                createNemesis = { code,days,zone,weight,deficit,ack -> app.sessionScope.launch { app.sessions.createNemesis(code,days,zone,weight,deficit,ack) } },
+                acceptNemesis = { id,ack,weight,deficit -> app.sessionScope.launch { app.sessions.acceptNemesis(id,ack,weight,deficit) } },
+                cancelNemesis = { id -> app.sessionScope.launch { app.sessions.cancelNemesis(id) } },
+                retryNemesisMutation = { app.sessionScope.launch { app.sessions.retryNemesisMutation() } })
             CalorieTheme(dark) { CalorieApp(model, session, actions) }
             }
         }
