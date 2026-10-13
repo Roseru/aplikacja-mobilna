@@ -29,7 +29,9 @@ data class SessionView(val binding: SessionBinding? = null, val busy: Boolean = 
     val profileBusy: Boolean = false, val serverProfile: ProfileRead? = null,
     val snapshotBusy: Boolean = false, val snapshot: SnapshotStatus? = null,
     val motivationConfigured: Boolean = false, val motivationBusy: Boolean = false,
-    val motivation: MotivationState = MotivationState.NotRequested)
+    val motivation: MotivationState = MotivationState.NotRequested,
+    val rankingConsentConfigured: Boolean = false, val rankingConsentBusy: Boolean = false,
+    val rankingConsent: RankingConsentState = RankingConsentState.NotRequested)
 
 /** Serializes durable decisions, not network waits. A callback/refresh is fenced by a captured
  * owner lease AND an operation ID, so logout and A→B→A cannot apply an old response.
@@ -40,21 +42,28 @@ class SessionController internal constructor(private val db: CalorieDatabase, pr
     private val bootstrapGateway: BootstrapGateway? = null,
     private val profileGateway: ProfileGateway? = null,
     private val snapshotGateway: SnapshotGateway? = null, snapshotProtocol: SnapshotProtocol? = null,
-    private val motivationGateway: MotivationGateway? = null) {
+    private val motivationGateway: MotivationGateway? = null,
+    private val rankingConsentGateway: RankingConsentGateway? = null) {
     private val owners = LocalOwnerStore(db)
     private val mutex = Mutex()
     private var record = JSONObject()
     private var operation: String? = null
     private var bootstrapOperation: String? = null
     private var profileOperation: String? = null
-    private enum class PrivateReadKind { PROFILE, MOTIVATION }
+    private enum class PrivateReadKind { PROFILE, MOTIVATION, CONSENTS }
     private var privateReadKind = PrivateReadKind.PROFILE
     private var motivationState: MotivationState = MotivationState.NotRequested
     private var motivationFence: Pair<OwnerLease, Long>? = null
+    private var consentState: RankingConsentState = RankingConsentState.NotRequested
+    private var consentFence: Pair<OwnerLease, Long>? = null
+    private var consentServerContext: Pair<Int, String>? = null
+    private var consentOperation: String? = null
     private var snapshotOperation: String? = null
     private val snapshots = snapshotProtocol?.let { ServerSnapshotStore(db, it) }
     private val snapshotProtocol = snapshotProtocol
     private var serverProfile: ProfileRead? = null
+    private var profileFence: Pair<OwnerLease, Long>? = null
+    private var profileServerContext: Pair<Int, String>? = null
     private var sessionRevision = 0L
     private val bootstraps = AccountBootstrapStore(db)
     private val mutable = MutableStateFlow(SessionView(configured = issuer.isNotEmpty()))
@@ -64,13 +73,13 @@ class SessionController internal constructor(private val db: CalorieDatabase, pr
         try {
             db.invalidationTracker.createFlow("account_bindings", "local_active_owner", "local_owners").collect {
                 mutex.withLock {
-                    if (mutable.value.binding != null && motivationState is MotivationState.Ready) publish(mutable.value.message)
+                    if (mutable.value.binding != null) publish(mutable.value.message)
                 }
             }
         } catch (error: CancellationException) { throw error }
         catch (_: Exception) { mutex.withLock {
             clearMotivation()
-            mutable.value = mutable.value.copy(motivation = MotivationState.NotRequested)
+            mutable.value = mutable.value.copy(motivation = MotivationState.NotRequested, rankingConsent = RankingConsentState.NotRequested)
         } }
     }
     private fun copyRecord() = JSONObject(record.toString())
@@ -93,17 +102,42 @@ class SessionController internal constructor(private val db: CalorieDatabase, pr
     private fun clearMotivation() {
         motivationState = MotivationState.NotRequested
         motivationFence = null
+        consentState = RankingConsentState.NotRequested
+        consentFence = null
+        consentServerContext = null
     }
+    private fun pendingConsent(current: SessionBinding, server: AccountBindingEntity?): RankingConsentAttempt? = try {
+        record.optJSONObject("rankingConsentAttempt")?.let(RankingConsentAttempt::restore)?.takeIf {
+            sessionFor(current) != null && current.owner.kind == "account" && server != null && !server.requiresRecovery &&
+                it.ownerScope == current.lease.storageScope && it.leaseGeneration == current.lease.generation &&
+                it.accountId == server.accountId && it.accountGeneration == server.accountGeneration &&
+                it.syncEpoch == server.syncEpoch && it.contextRevision == server.contextRevision
+        }
+    } catch (_: Exception) { null }
     private suspend fun publish(message: String? = null) {
         val current = binding()
         val session = sessionFor(current)
         val fresh = session?.let { AuthState.jsonDeserialize(it.getString("authState")).accessTokenExpirationTime?.let { expiry -> expiry > now() + 30_000 } } == true
         val server = db.bootstrapDao().binding(current.lease.storageScope)
+        serverProfile?.let { confirmed ->
+            if (session == null || server == null || server.requiresRecovery || profileFence != (current.lease to server.contextRevision) ||
+                profileServerContext != (server.accountGeneration to server.syncEpoch) || confirmed.accountId != server.accountId || confirmed.syncEpoch != server.syncEpoch) {
+                serverProfile = null; profileFence = null; profileServerContext = null
+            }
+        }
         (motivationState as? MotivationState.Ready)?.let { confirmed ->
             if (session == null || server == null || server.requiresRecovery ||
                 motivationFence != (current.lease to server.contextRevision) ||
                 confirmed.read.accountGeneration != server.accountGeneration || confirmed.read.syncEpoch != server.syncEpoch) clearMotivation()
         }
+        if (consentState is RankingConsentState.Ready || consentState is RankingConsentState.Confirmed) {
+            if (session == null || server == null || server.requiresRecovery || consentFence != (current.lease to server.contextRevision) ||
+                consentServerContext != (server.accountGeneration to server.syncEpoch)) {
+                consentState = RankingConsentState.NotRequested; consentFence = null
+            }
+        }
+        val pendingConsent = pendingConsent(current, server)
+        val consentBusy = consentOperation != null || (profileOperation != null && privateReadKind == PrivateReadKind.CONSENTS)
         mutable.value = SessionView(current, configured = issuer.isNotEmpty(), pendingLogin = record.has("pending"), hasSession = fresh,
             message = message, apiConfigured = bootstrapGateway != null, bootstrapBusy = bootstrapOperation != null,
             serverLinked = server != null, requiresRecovery = server?.requiresRecovery == true,
@@ -111,7 +145,10 @@ class SessionController internal constructor(private val db: CalorieDatabase, pr
             snapshotBusy = snapshotOperation != null, snapshot = snapshots?.status(current.lease),
             motivationConfigured = motivationGateway != null,
             motivationBusy = profileOperation != null && privateReadKind == PrivateReadKind.MOTIVATION,
-            motivation = if (profileOperation != null && privateReadKind == PrivateReadKind.MOTIVATION) MotivationState.Loading else motivationState)
+            motivation = if (profileOperation != null && privateReadKind == PrivateReadKind.MOTIVATION) MotivationState.Loading else motivationState,
+            rankingConsentConfigured = rankingConsentGateway != null && profileGateway != null && motivationGateway != null,
+            rankingConsentBusy = consentBusy,
+            rankingConsent = if (consentBusy) RankingConsentState.Loading else pendingConsent?.let { RankingConsentState.Pending(it.ranking) } ?: consentState)
     }
     suspend fun start() = mutex.withLock {
         if (mutable.value.binding != null) return@withLock
@@ -154,11 +191,13 @@ class SessionController internal constructor(private val db: CalorieDatabase, pr
             bootstrapOperation = null
             profileOperation = null
             snapshotOperation = null
+            consentOperation = null
             serverProfile = null
             clearMotivation()
             operation = id
             mutable.value = mutable.value.copy(busy = true, bootstrapBusy = false, profileBusy = false, snapshotBusy = false, snapshot = null, serverProfile = null,
-                motivationBusy = false, motivation = MotivationState.NotRequested, message = null)
+                motivationBusy = false, motivation = MotivationState.NotRequested, rankingConsentBusy = false,
+                rankingConsent = RankingConsentState.NotRequested, message = null)
             lease
         } } catch (error: CancellationException) { throw error }
         catch (_: Exception) { mutable.value = mutable.value.copy(message = "Logowanie jest niedostępne. Dziennik działa offline."); return null }
@@ -249,6 +288,7 @@ class SessionController internal constructor(private val db: CalorieDatabase, pr
         bootstrapOperation = null
         profileOperation = null
         snapshotOperation = null
+        consentOperation = null
         serverProfile = null
         clearMotivation()
         forget()
@@ -282,10 +322,11 @@ class SessionController internal constructor(private val db: CalorieDatabase, pr
                 serverProfile = null
                 clearMotivation()
                 // Manual renewal invalidates a held private read. Automatic renewal belongs to it.
-                if (expected == null) profileOperation = null
+                if (expected == null) { profileOperation = null; consentOperation = null }
                 mutable.value = mutable.value.copy(busy = true, profileBusy = profileOperation != null && privateReadKind == PrivateReadKind.PROFILE,
                     motivationBusy = profileOperation != null && privateReadKind == PrivateReadKind.MOTIVATION,
-                    serverProfile = null, motivation = MotivationState.NotRequested, message = null)
+                    serverProfile = null, motivation = MotivationState.NotRequested, rankingConsent = RankingConsentState.NotRequested,
+                    rankingConsentBusy = expected != null && (consentOperation != null || (profileOperation != null && privateReadKind == PrivateReadKind.CONSENTS)), message = null)
                 Triple(current, state, SessionIdentity(session.getString("issuer"), session.getString("subject")))
             }
             val tokens = withTimeout(30_000) { gateway.tokens(captured.second.createTokenRefreshRequest()) }
@@ -346,7 +387,7 @@ class SessionController internal constructor(private val db: CalorieDatabase, pr
         val id = UUID.randomUUID().toString()
         val lease = try { mutex.withLock {
             if (bootstrapOperation != null || operation != null || record.has("pending")) return
-            if (profileOperation != null || snapshotOperation != null) return
+            if (profileOperation != null || snapshotOperation != null || consentOperation != null) return
             val current = binding()
             if (current.owner.kind != "account" || sessionFor(current) == null) {
                 publish("Zaloguj się, aby połączyć konto z serwerem. Dziennik działa offline."); return
@@ -446,13 +487,15 @@ class SessionController internal constructor(private val db: CalorieDatabase, pr
     /** Explicit online preview. Never upserts a local profile, recalculates goals or ACKs outbox. */
     suspend fun readProfile() = readPrivate(PrivateReadKind.PROFILE)
     suspend fun readMotivation() = readPrivate(PrivateReadKind.MOTIVATION)
+    suspend fun readRankingConsents() = readPrivate(PrivateReadKind.CONSENTS)
     private suspend fun readPrivate(kind: PrivateReadKind) {
-        val gateway: ProfileGateway = (if (kind == PrivateReadKind.PROFILE) profileGateway else motivationGateway) ?: return
-        val label = if (kind == PrivateReadKind.PROFILE) "profil" else "osiągnięcia"
+        val firstGateway: ProfileGateway = (if (kind == PrivateReadKind.MOTIVATION) motivationGateway else profileGateway) ?: return
+        if (kind == PrivateReadKind.CONSENTS && (motivationGateway == null || rankingConsentGateway == null)) return
+        val label = when (kind) { PrivateReadKind.PROFILE -> "profil"; PrivateReadKind.MOTIVATION -> "osiągnięcia"; PrivateReadKind.CONSENTS -> "zgody" }
         val id = UUID.randomUUID().toString()
         var capturedLease: OwnerLease? = null
         val capturedBinding = try { mutex.withLock {
-            if (profileOperation != null || snapshotOperation != null || bootstrapOperation != null || operation != null || record.has("pending")) return
+            if (profileOperation != null || consentOperation != null || snapshotOperation != null || bootstrapOperation != null || operation != null || record.has("pending")) return
             val current = binding()
             capturedLease = current.lease
             if (current.owner.kind != "account" || sessionFor(current) == null) {
@@ -462,10 +505,14 @@ class SessionController internal constructor(private val db: CalorieDatabase, pr
             if (server == null || server.requiresRecovery) {
                 publish("Najpierw połącz konto i uzgodnij stan serwera. Dziennik pozostaje lokalny."); return
             }
+            if (kind == PrivateReadKind.CONSENTS && pendingConsent(current, server) != null) {
+                publish("Poprzedni zapis zgody czeka na potwierdzenie. Ponów tę samą decyzję."); return
+            }
             val retryAt = sessionFor(current)!!.optLong("apiRetryAt")
             if (retryAt > now()) {
                 val message = "Serwer jest zajęty. Ponów za co najmniej ${(retryAt - now() + 999) / 1000} s."
                 if (kind == PrivateReadKind.MOTIVATION) motivationState = MotivationState.Failed(message)
+                if (kind == PrivateReadKind.CONSENTS) consentState = RankingConsentState.Failed(message)
                 publish(message); return
             }
             profileOperation = id
@@ -494,16 +541,21 @@ class SessionController internal constructor(private val db: CalorieDatabase, pr
             if (!fresh) check(refreshFor(lease))
             var ticket = apiSession(lease)
             var refreshed = false
+            var stagedProfile: ProfileRead? = null
+            var readGateway = firstGateway
             while (true) {
                 val captured = ticket
                 suspend fun ready() {
                     check(profileOperation == id)
-                    bootstraps.requireReady(lease, server.contextRevision)
+                    val active = bootstraps.requireReady(lease, server.contextRevision)
+                    require(active.accountId == server.accountId && active.accountGeneration == server.accountGeneration && active.syncEpoch == server.syncEpoch)
                 }
-                val result = gateway.get(captured) { withApiSession(captured) { ready() } }
+                val result = readGateway.get(captured) { withApiSession(captured) { ready() } }
                 if (result.status == 200) {
-                    val response = if (kind == PrivateReadKind.PROFILE) ProfileReadProtocol.parse(result.body) else null
-                    val motivation = if (kind == PrivateReadKind.MOTIVATION) MotivationReadProtocol.parse(result.body) else null
+                    val profileStage = kind == PrivateReadKind.PROFILE || (kind == PrivateReadKind.CONSENTS && stagedProfile == null)
+                    val response = if (profileStage) ProfileReadProtocol.parse(result.body) else null
+                    val motivation = if (!profileStage) MotivationReadProtocol.parse(result.body) else null
+                    var continueRead = false
                     withApiSession(captured) {
                         ready()
                         // GET me has no account_generation; it cannot replace the bootstrap mapping.
@@ -516,18 +568,37 @@ class SessionController internal constructor(private val db: CalorieDatabase, pr
                             clearMotivation()
                             val message = "Stan serwera się zmienił. Lokalny dziennik zachowany; wymagane uzgodnienie danych."
                             if (kind == PrivateReadKind.MOTIVATION) motivationState = MotivationState.Failed(message)
+                            if (kind == PrivateReadKind.CONSENTS) consentState = RankingConsentState.Failed(message)
                             publish(message)
+                        } else if (kind == PrivateReadKind.CONSENTS && response != null) {
+                            stagedProfile = response
+                            readGateway = checkNotNull(motivationGateway)
+                            continueRead = true
                         } else {
                             serverProfile = response
+                            if (response != null) {
+                                profileFence = lease to server.contextRevision
+                                profileServerContext = server.accountGeneration to server.syncEpoch
+                            }
                             if (motivation != null) {
                                 motivationState = MotivationState.Ready(motivation)
                                 motivationFence = lease to server.contextRevision
                             }
+                            if (kind == PrivateReadKind.CONSENTS) {
+                                val source = checkNotNull(stagedProfile)
+                                val ranking = checkNotNull(motivation).ranking
+                                require(source.consents.ranking == ranking.requested && ranking.consentEpoch == server.syncEpoch)
+                                consentState = RankingConsentState.Ready(RankingConsentSource(UUID.randomUUID().toString(), source.consents, ranking, now()))
+                                consentFence = lease to server.contextRevision
+                                consentServerContext = server.accountGeneration to server.syncEpoch
+                            }
                             profileOperation = null
                             publish(if (kind == PrivateReadKind.PROFILE) "Odczytano profil serwerowy. Lokalny profil i cel kalorii zachowane."
-                                else "Odczytano potwierdzenie serwerowe. Lokalny dziennik i zgoda rankingu zachowane.")
+                                else if (kind == PrivateReadKind.MOTIVATION) "Odczytano potwierdzenie serwerowe. Lokalny dziennik i zgoda rankingu zachowane."
+                                else "Odczytano aktualne zgody. Udział w rankingu wymaga osobnej decyzji.")
                         }
                     }
+                    if (continueRead) continue
                     return
                 }
                 val code = if (result.status in setOf(429, 503)) "" else BootstrapHttpProtocol.errorCode(result.body)
@@ -560,6 +631,7 @@ class SessionController internal constructor(private val db: CalorieDatabase, pr
                     if (profileOperation == id) {
                         owners.requireCurrent(lease); profileOperation = null
                         if (kind == PrivateReadKind.MOTIVATION) motivationState = MotivationState.Failed(message)
+                        if (kind == PrivateReadKind.CONSENTS) consentState = RankingConsentState.Failed(message)
                         publish(message)
                     }
                 }
@@ -578,13 +650,144 @@ class SessionController internal constructor(private val db: CalorieDatabase, pr
         try {
             if (owners.currentLease() == lease) {
                 if (kind == PrivateReadKind.MOTIVATION) motivationState = MotivationState.Failed(message)
+                if (kind == PrivateReadKind.CONSENTS) consentState = RankingConsentState.Failed(message)
                 publish(message)
             }
             else publish()
         } catch (_: Exception) {
             mutable.value = mutable.value.copy(profileBusy = false, serverProfile = null, motivationBusy = false, motivation = MotivationState.NotRequested,
+                rankingConsentBusy = false, rankingConsent = RankingConsentState.NotRequested,
                 message = "Odczyt nie został potwierdzony. Dziennik pozostaje lokalny.")
         }
+    }
+
+    suspend fun confirmRankingConsent(sourceId: String, enabled: Boolean) = writeRankingConsent(sourceId, enabled)
+    suspend fun retryRankingConsent() = writeRankingConsent(null, null)
+    private suspend fun writeRankingConsent(sourceId: String?, enabled: Boolean?) {
+        val transport = rankingConsentGateway ?: return
+        val id = UUID.randomUUID().toString()
+        var lease: OwnerLease? = null
+        val request = try { mutex.withLock {
+            if (consentOperation != null || profileOperation != null || snapshotOperation != null || bootstrapOperation != null || operation != null || record.has("pending")) return
+            val current = binding()
+            lease = current.lease
+            check(current.owner.kind == "account" && sessionFor(current) != null)
+            val server = checkNotNull(db.bootstrapDao().binding(current.lease.storageScope))
+            check(!server.requiresRecovery)
+            val retryAt = checkNotNull(sessionFor(current)).optLong("apiRetryAt")
+            if (retryAt > now()) { publish("Serwer jest zajęty. Ponów za co najmniej ${(retryAt - now() + 999) / 1000} s."); return }
+            val previous = pendingConsent(current, server)
+            val attempt = if (sourceId == null) checkNotNull(previous) else {
+                check(previous == null)
+                val source = (consentState as? RankingConsentState.Ready)?.source ?: error("Fresh source required")
+                check(source.id == sourceId && consentFence == (current.lease to server.contextRevision))
+                check(consentServerContext == (server.accountGeneration to server.syncEpoch))
+                require(Math.subtractExact(now(), source.readAtMillis) in 0..300_000)
+                val desired = checkNotNull(enabled)
+                RankingConsentAttempt(UUID.randomUUID().toString(), current.lease.storageScope, current.lease.generation,
+                    server.accountId, server.accountGeneration, server.syncEpoch, server.contextRevision, source.consents.revision,
+                    desired, source.consents.automaticEnergyAdjustment, if (desired) source.ranking.consentEpoch else null)
+            }
+            // Persist the exact decision BEFORE any PUT. Retry never creates a different key or body.
+            persist(copyRecord().put("rankingConsentAttempt", attempt.journal()))
+            // AtomicFile may report a failed rename only in system logs. Verify the durable record before sending.
+            withContext(Dispatchers.IO) {
+                val durable = checkNotNull(vault.read().optJSONObject("rankingConsentAttempt"))
+                require(StrictJson.canonical(durable) == StrictJson.canonical(attempt.journal()))
+            }
+            consentOperation = id
+            serverProfile = null
+            clearMotivation()
+            publish()
+            attempt
+        } } catch (error: CancellationException) { withContext(NonCancellable) { finishConsent(id) }; throw error }
+        catch (_: Exception) {
+            mutex.withLock {
+                if (consentOperation == id) consentOperation = null
+                if (lease == null || owners.currentLease() == lease) {
+                    consentState = RankingConsentState.Failed("Zapis wymaga aktualnego odczytu zgód i decyzji. Dziennik zachowany.")
+                    publish()
+                }
+            }
+            return
+        }
+        val capturedLease = checkNotNull(lease)
+        try {
+            val fresh = mutex.withLock {
+                owners.requireCurrent(capturedLease)
+                val state = AuthState.jsonDeserialize(checkNotNull(sessionFor(binding())).getString("authState"))
+                (state.accessTokenExpirationTime ?: 0) > now() + 30_000
+            }
+            if (!fresh) check(refreshFor(capturedLease))
+            var ticket = apiSession(capturedLease)
+            var refreshed = false
+            while (true) {
+                val captured = ticket
+                suspend fun ready() {
+                    check(consentOperation == id)
+                    val server = bootstraps.requireReady(capturedLease, request.contextRevision)
+                    require(server.accountId == request.accountId && server.accountGeneration == request.accountGeneration && server.syncEpoch == request.syncEpoch)
+                    val pending = checkNotNull(pendingConsent(binding(), server))
+                    require(StrictJson.canonical(pending.journal()) == StrictJson.canonical(request.journal()))
+                }
+                val result = transport.put(captured, request) { withApiSession(captured) { ready() } }
+                if (result.status == 200) {
+                    val response = request.parseReceipt(result.body)
+                    require(result.etag == "\"${response.revision}\"")
+                    withApiSession(captured) {
+                        ready()
+                        persist(copyRecord().also { it.remove("rankingConsentAttempt") })
+                        consentOperation = null
+                        clearMotivation()
+                        consentState = RankingConsentState.Confirmed(response)
+                        consentFence = capturedLease to request.contextRevision
+                        consentServerContext = request.accountGeneration to request.syncEpoch
+                        publish("Serwer potwierdził decyzję o udziale w rankingu. Odśwież, aby sprawdzić bieżący stan.")
+                    }
+                    return
+                }
+                val code = if (result.status in setOf(429, 503)) "" else BootstrapHttpProtocol.errorCode(result.body)
+                withApiSession(captured) { ready() }
+                if (result.status == 401 && code == "unauthorized" && !refreshed) {
+                    refreshed = true
+                    check(refreshFor(capturedLease))
+                    ticket = apiSession(capturedLease)
+                    continue
+                }
+                if (result.status in setOf(409, 400, 422)) {
+                    withApiSession(captured) {
+                        ready()
+                        persist(copyRecord().also { it.remove("rankingConsentAttempt") })
+                        consentOperation = null
+                        clearMotivation()
+                        consentState = RankingConsentState.Failed("Stan zgód się zmienił lub poprzedni wynik jest niedostępny. Pobierz aktualne zgody i podejmij nową decyzję.")
+                        publish()
+                    }
+                    return
+                }
+                if (result.status in setOf(429, 503)) {
+                    val seconds = BootstrapHttpProtocol.retrySeconds(result.retryAfter, now())
+                    val retryAt = Math.addExact(now(), Math.multiplyExact(seconds, 1000))
+                    withApiSession(captured) {
+                        ready()
+                        val session = checkNotNull(sessionFor(binding()))
+                        persist(copyRecord().put("session", JSONObject(session.toString()).put("apiRetryAt", retryAt)))
+                    }
+                }
+                finishConsent(id)
+                return
+            }
+        } catch (error: CancellationException) {
+            withContext(NonCancellable) { finishConsent(id) }; throw error
+        } catch (_: Exception) { finishConsent(id) }
+    }
+    private suspend fun finishConsent(id: String) = mutex.withLock {
+        if (consentOperation != id) return@withLock
+        consentOperation = null
+        clearMotivation()
+        try { publish("Zapis nie został potwierdzony. Możesz ponowić tę samą decyzję; nie zmieniamy jej klucza ani treści.") }
+        catch (_: Exception) { mutable.value = mutable.value.copy(rankingConsentBusy = false, rankingConsent = RankingConsentState.NotRequested,
+            message = "Potwierdzenie jest niedostępne. Dziennik pozostaje zapisany.") }
     }
 
     /** Full server archive. The local diary remains editable, and no queue entry is acknowledged. */
@@ -594,7 +797,7 @@ class SessionController internal constructor(private val db: CalorieDatabase, pr
         val protocol = snapshotProtocol ?: return
         val id = UUID.randomUUID().toString()
         val lease = try { mutex.withLock {
-            if (snapshotOperation != null || profileOperation != null || bootstrapOperation != null || operation != null || record.has("pending")) return
+            if (snapshotOperation != null || profileOperation != null || consentOperation != null || bootstrapOperation != null || operation != null || record.has("pending")) return
             val current = binding()
             if (current.owner.kind != "account" || sessionFor(current) == null || !mutable.value.serverLinked) {
                 publish("Zaloguj się i połącz konto, aby pobrać kopię serwera."); return

@@ -77,7 +77,10 @@ class MainActivity : ComponentActivity() {
                 bootstrap = { app.sessionScope.launch { app.sessions.bootstrap() } },
                 readProfile = { app.sessionScope.launch { app.sessions.readProfile() } },
                 downloadSnapshot = { app.sessionScope.launch { app.sessions.downloadSnapshot() } },
-                readMotivation = { app.sessionScope.launch { app.sessions.readMotivation() } })
+                readMotivation = { app.sessionScope.launch { app.sessions.readMotivation() } },
+                readRankingConsents = { app.sessionScope.launch { app.sessions.readRankingConsents() } },
+                confirmRankingConsent = { id, enabled -> app.sessionScope.launch { app.sessions.confirmRankingConsent(id, enabled) } },
+                retryRankingConsent = { app.sessionScope.launch { app.sessions.retryRankingConsent() } })
             CalorieTheme(dark) { CalorieApp(model, session, actions) }
             }
         }
