@@ -78,3 +78,12 @@ Produkcyjny magazyn kopii, retencja/schedule, RPO/RTO, public origin/VPS/domena/
 i odbiór APK wymagają właściwego środowiska i danych konfiguracyjnych właściciela.
 Te rzeczywiste odbiory pozostają WAITING_EXTERNAL. Narzędzie dostarcza lokalną
 kopię i próbę z fencing; nie oznacza PASS całego E8 lub zgody na E9/Google/billing.
+
+## Uzupełnienie lokalnego odbioru — 13 października 2026
+
+Osobna [próba sesji, deletion i klienta](ODTWORZENIE_SESJE_I_KLIENT_O3.md)
+wykonała rzeczywiste odtworzenie z HTTPS/PKCE, ponowne usunięcie konta na
+podstawie nowszego lokalnego rejestru oraz odmowy starych JWT/refresh/epoki
+i świadome recovery utraconego zapisu. Rejestr jest prywatnym niezależnym fixture;
+nie stanowi wdrożenia produkcyjnego magazynu. Historyczna offline rehearsal
+i jej pomiary zachowują swój zakres, a `rehearse` nadal nie otwiera ruchu.

@@ -273,6 +273,12 @@ Archiwa, konfiguracja, manifest i raw logs są prywatne i zawierają dane/sekret
 CI publikuje wyłącznie neutralny receipt. Wymagania przed rzeczywistym reopen,
 wykonane pomiary i granice RPO/RTO opisuje [raport](../../docs/e8/KOPIA_ODTWORZENIE_O3.md).
 
+Osobna [pełna lokalna próba odtworzenia](../../docs/e8/ODTWORZENIE_SESJE_I_KLIENT_O3.md)
+obejmuje prawdziwe sesje HTTPS/PKCE, deletion wykonaną po kopii, niezależny
+lokalny rejestr, odcięcie starego JWT/refresh i świadome recovery po zmianie epoki.
+Nie zmienia zachowania `rehearse`: ta komenda nadal kończy się z zamkniętym ruchem.
+Produkcyjny rejestr, docelowe środowisko, RPO/RTO i Room/APK wymagają własnego odbioru.
+
 ## Co sprawdza `verify`
 
 Test wykonuje rzeczywiste żądania HTTPS, podpisane tokeny z Keycloak i API z PostgreSQL:
