@@ -1,5 +1,11 @@
 # Plan implementacji — osoba 1: Android i pamięć lokalna
 
+## Aktualizacja O1 — lista rankingu0.8.8, 13 października2026
+
+- Dostarczony live ranking:25osób/strona, rank/points/badges, cursor/410/expiry/exact retry, shared Retry-After i private preflight/fencing. Odczyt bez opt-in oraz bez zapisu peer/cursor doRoom/vault. [Raport](android/RAPORT_0_8_8.md), codex/android-ranking-lista.
+- Pełny144JVM/156device PASS na92ace79; po końcowym UI14PASS, po pomiarze320dp3QA PASS. Nie sumować zestawów. Install-r/launch zachował22tabele/5posiłków. Końcowa integracja testów O3 ma oddzielne dowody.
+- Następne: pairing/scopes/wyniki Nemesis, rzeczywisty API/OIDC/trust, semantyczne E4/push/ACK/import/WorkManager/KO31 i recovery/KO32. Zlecenie backenduE9 należy doO3; O1 odczytuje kontrakt, bez drugiej implementacji backendu lub aktywacjiAI.
+
 Aktualizacja PR50: source36a3b07/test-only selektor po recreation;135JVM/147device pełnyPASS, lint0error. CI ac403a5 miało146/147 przez brak mergednode; historiaRED zachowana w raporcie/O1-023. Runtime/APK5234edb bez zmian. Nowy final-head CI oddzielnie.
 
 ## Aktualizacja O1 — świadome zgody rankingu 0.8.7, 13 października 2026
