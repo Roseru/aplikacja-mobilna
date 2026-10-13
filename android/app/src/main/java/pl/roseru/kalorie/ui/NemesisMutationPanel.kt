@@ -14,13 +14,14 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
-import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.platform.LocalDensity
+import androidx.compose.ui.platform.LocalWindowInfo
 import androidx.compose.ui.platform.LocalFocusManager
 import androidx.compose.ui.platform.LocalSoftwareKeyboardController
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.Dp
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.LifecycleEventObserver
 import androidx.lifecycle.compose.LocalLifecycleOwner
@@ -33,6 +34,8 @@ import java.time.format.DateTimeFormatter
 @Composable internal fun NemesisMutationPanel(view: SessionView, actions: SessionActions, busy: Boolean) {
     val context=LocalContext.current
     val lifecycle=LocalLifecycleOwner.current.lifecycle
+    val density=LocalDensity.current
+    val bodyHeight=((LocalWindowInfo.current.containerSize.height-WindowInsets.ime.getBottom(density))/density.density-200f).coerceAtLeast(100f).dp
     var dialog by remember { mutableStateOf<String?>(null) }
     var create by remember { mutableStateOf(false) }
     var decision by remember { mutableStateOf<NemesisDecisionSource?>(null) }
@@ -83,26 +86,26 @@ import java.time.format.DateTimeFormatter
             }
         }
     }
-    if(create) CreateNemesisDialog(actions,busy,onDismiss={create=false})
+    if(create) CreateNemesisDialog(actions,busy,bodyHeight,onDismiss={create=false})
     val kind=dialog
     if(kind in setOf("issue","revoke")) AlertDialog(onDismissRequest={dialog=null},title={Text(if(kind=="issue") "Wydać nowy kod?" else "Unieważnić kod?")},
         text={Text(if(kind=="issue") "Kod jest prywatny i ważny najwyżej 24 godziny. Przekaż go tylko wybranej osobie. Nowy kod wyłączy poprzedni; sam kod nie udostępnia wyników." else "Nieużyty kod przestanie przyjmować zaproszenia. Ta czynność nie anuluje już istniejącej rywalizacji.")},
         confirmButton={TextButton(onClick={dialog=null;if(kind=="issue") actions.issueNemesisCode() else actions.revokeNemesisCode()},enabled=!busy,
             modifier=Modifier.testTag("nemesis-confirm-code")) { Text("Potwierdź") }},dismissButton={TextButton(onClick={dialog=null}) { Text("Wróć") }})
     if(kind=="accept") decision?.let { source -> AcceptNemesisDialog(source,actions,busy,
-        current=view.nemesisDecision?.id==source.id,onDismiss={dialog=null;decision=null}) }
+        current=view.nemesisDecision?.id==source.id,maximum=bodyHeight,onDismiss={dialog=null;decision=null}) }
     if(kind=="cancel") decision?.let { source -> AlertDialog(onDismissRequest={dialog=null;decision=null},title={Text("Zakończyć udostępnianie?")},
         text={Text("Wycofanie zaproszenia lub zgody zakończy tę rywalizację. Ponowne rozpoczęcie wymaga nowego zaproszenia i akceptacji obu osób.")},
         confirmButton={TextButton(onClick={dialog=null;decision=null;actions.cancelNemesis(source.id)},enabled=!busy && view.nemesisDecision?.id==source.id,
             modifier=Modifier.testTag("nemesis-confirm-cancel")) { Text("Potwierdź zakończenie") }},dismissButton={TextButton(onClick={dialog=null;decision=null}) { Text("Wróć") }}) }
 }
-@Composable private fun CreateNemesisDialog(actions: SessionActions,busy: Boolean,onDismiss:()->Unit) {
+@Composable private fun CreateNemesisDialog(actions: SessionActions,busy: Boolean,maximum:Dp,onDismiss:()->Unit) {
     val focus=LocalFocusManager.current;val keyboard=LocalSoftwareKeyboardController.current
     var code by remember { mutableStateOf("") }; var days by remember { mutableIntStateOf(30) }
     var zone by remember { mutableStateOf(ZoneId.systemDefault().id.takeIf { it in ZoneId.getAvailableZoneIds() } ?: "Europe/Warsaw") }
     var weight by remember { mutableStateOf(false) }; var deficit by remember { mutableStateOf(false) }; var ack by remember { mutableStateOf(false) }
     val valid=runCatching { NemesisCommand.validateCode(code) }.isSuccess && zone in ZoneId.getAvailableZoneIds()
-    AlertDialog(onDismissRequest=onDismiss,title={Text("Warunki zaproszenia")},text={Column(dialogBody(),verticalArrangement=Arrangement.spacedBy(8.dp)) {
+    AlertDialog(onDismissRequest=onDismiss,title={Text("Warunki zaproszenia")},text={Column(Modifier.dialogBody(maximum),verticalArrangement=Arrangement.spacedBy(8.dp)) {
         OutlinedTextField(code,{if(it.length<=43) code=it;ack=false},label={Text("Prywatny kod drugiej osoby")},singleLine=true,
             keyboardOptions=KeyboardOptions(imeAction=ImeAction.Done),keyboardActions=KeyboardActions(onDone={focus.clearFocus();keyboard?.hide()}),modifier=Modifier.testTag("nemesis-destination-code"))
         Text("Okres rywalizacji")
@@ -117,10 +120,10 @@ import java.time.format.DateTimeFormatter
     }},confirmButton={TextButton(onClick={onDismiss();actions.createNemesis(code,days,zone,weight,deficit,ack)},enabled=valid && ack && !busy,
         modifier=Modifier.testTag("nemesis-confirm-create")) { Text("Wyślij zaproszenie") }},dismissButton={TextButton(onClick=onDismiss) { Text("Wróć") }})
 }
-@Composable private fun AcceptNemesisDialog(source: NemesisDecisionSource,actions: SessionActions,busy: Boolean,current: Boolean,onDismiss:()->Unit) {
+@Composable private fun AcceptNemesisDialog(source: NemesisDecisionSource,actions: SessionActions,busy: Boolean,current: Boolean,maximum:Dp,onDismiss:()->Unit) {
     val terms=source.challenge.terms
     var regularity by remember(source.id) { mutableStateOf(false) }; var weight by remember(source.id) { mutableStateOf(false) }; var deficit by remember(source.id) { mutableStateOf(false) }
-    AlertDialog(onDismissRequest=onDismiss,title={Text("Akceptacja warunków")},text={Column(dialogBody(),verticalArrangement=Arrangement.spacedBy(8.dp)) {
+    AlertDialog(onDismissRequest=onDismiss,title={Text("Akceptacja warunków")},text={Column(Modifier.dialogBody(maximum),verticalArrangement=Arrangement.spacedBy(8.dp)) {
         Text("${terms.days} dni · ${terms.zone.id}")
         Text("Regularność v1: punkty za kompletne dni i realizację własnego celu. Rywalizacja zacznie się od następnej lokalnej daty.",style=MaterialTheme.typography.bodySmall)
         Choice("Akceptuję regularność, okres i strefę czasu",regularity,{regularity=it},"nemesis-accept-ack")
@@ -135,9 +138,4 @@ import java.time.format.DateTimeFormatter
     Row(verticalAlignment=Alignment.CenterVertically) { Checkbox(checked,onChange,modifier=Modifier.testTag(tag)); Text(label,Modifier.weight(1f),style=MaterialTheme.typography.bodySmall) }
 }
 private fun actionLabel(action: NemesisAction)=when(action) { NemesisAction.ISSUE->"Wydanie kodu";NemesisAction.REVOKE->"Unieważnienie kodu";NemesisAction.CREATE->"Zaproszenie";NemesisAction.ACCEPT->"Akceptacja";NemesisAction.CANCEL->"Zakończenie udostępniania" }
-@Composable private fun dialogBody():Modifier {
-    val density=LocalDensity.current
-    val ime=WindowInsets.ime.getBottom(density)/density.density
-    val maximum=(LocalConfiguration.current.screenHeightDp-ime-200f).coerceAtLeast(100f).dp
-    return Modifier.heightIn(max=maximum).verticalScroll(rememberScrollState())
-}
+@Composable private fun Modifier.dialogBody(maximum:Dp):Modifier = heightIn(max=maximum).verticalScroll(rememberScrollState())
