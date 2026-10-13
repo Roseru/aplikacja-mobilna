@@ -1,5 +1,7 @@
 # Kontekst współpracy
 
+Aktualizacja PR50: source36a3b07/test-only selektor po recreation;135JVM/147device pełnyPASS, lint0error. CI ac403a5 miało146/147 przez brak mergednode; historiaRED zachowana w raporcie/O1-023. Runtime/APK5234edb bez zmian. Nowy final-head CI oddzielnie.
+
 ## Kontynuacja O1 — zgody rankingu 0.8.7, 13 października 2026
 
 - Agent1/O1; użytkownik osoba1. Branch codex/android-ranking-zgody; źródło `8f37f7a65da97e8f0bf4ccf46978700a9075b5a0`; 0.8.7/code18/Room8. [Raport](android/RAPORT_0_8_7.md). Mniejsze podsumowanie i większa widoczność odznak oraz Postępy zachowane.

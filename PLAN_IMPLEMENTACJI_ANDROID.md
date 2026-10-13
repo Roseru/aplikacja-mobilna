@@ -1,5 +1,7 @@
 # Plan implementacji — osoba 1: Android i pamięć lokalna
 
+Aktualizacja PR50: source36a3b07/test-only selektor po recreation;135JVM/147device pełnyPASS, lint0error. CI ac403a5 miało146/147 przez brak mergednode; historiaRED zachowana w raporcie/O1-023. Runtime/APK5234edb bez zmian. Nowy final-head CI oddzielnie.
+
 ## Aktualizacja O1 — świadome zgody rankingu 0.8.7, 13 października 2026
 
 - Dostarczony ekran odczytu i decyzji; exact idempotent PUT zapisany w szyfrowanej sesji przed siecią, świeży source/revision/epoch, zachowany energy consent, konflikty i ochrona starego konta. [Raport](android/RAPORT_0_8_7.md), codex/android-ranking-zgody.

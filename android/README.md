@@ -1,6 +1,6 @@
 # Android — Racje i kalorie
 
-Wersja **0.8.7**, code18, Room8: Profil → Osiągnięcia → Udział w rankingu. Jawny odczyt zgód, afirmacja checkboxem, osobny opt-out, zachowanie zgody korekty zapotrzebowania oraz trwałe ponowienie identycznego PUT po utracie odpowiedzi. [Raport i podglądy](RAPORT_0_8_7.md) rozdzielają 135 JVM, pełny 146/147 device i finalne 11/11 zmienionej klasy; oryginalne RED zachowane. Domyślny APK pozostaje offline, rzeczywisty API/OIDC/TLS nie jest potwierdzony fixtures.
+Wersja **0.8.7**, code18, Room8: Profil → Osiągnięcia → Udział w rankingu. Jawny odczyt zgód, afirmacja checkboxem, osobny opt-out, zachowanie zgody korekty zapotrzebowania oraz trwałe ponowienie identycznego PUT po utracie odpowiedzi. [Raport i podglądy](RAPORT_0_8_7.md) rozdzielają historyczne146/147,11/11 oraz nowy pełny135JVM/147device PASS po selektorze; oryginalne RED zachowane. Domyślny APK pozostaje offline, rzeczywisty API/OIDC/TLS nie jest potwierdzony fixtures.
 
 Wersja **0.8.6** pokazuje mniejsze podsumowanie i więcej lokalnych odznak, a pod nimi prywatny panel GET `/api/v1/me/motivation`: punkty, ranga, pending/final/revoked i data potwierdzenia. Pobranie na żądanie po zalogowaniu/bootstrapie, bez odnawiania zgody rankingu. [Raport i podglądy](RAPORT_0_8_6.md) rozdzielają pełny126JVM/129device od końcowych18UI; lint0error. Room8 bez migracji; install-r/launch zachował wszystkie kolumny22tabel/5posiłków. Domyślny APK nadal działa jako gość offline; rzeczywiste API czeka na własny odbiór.
 

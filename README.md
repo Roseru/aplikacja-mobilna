@@ -1,6 +1,6 @@
 # Wojskowy licznik kalorii
 
-Android **0.8.7** dodaje świadome zarządzanie udziałem w rankingu. Odczyt nie włącza zgody; utrata odpowiedzi pozwala ponowić tę samą zatwierdzoną decyzję. Mniejsze podsumowanie i więcej widocznych odznak z 0.8.6 pozostają zachowane. [Raport i podglądy](android/RAPORT_0_8_7.md): 135 JVM PASS, pełny device 146/147 z poprawioną datą testu oraz końcowe 11/11 DiaryFlow PASS, bez sumowania. Room8 bez migracji; aktualizacja zachowała wszystkie 22 tabele. Rzeczywisty odbiór API, publiczna lista rankingu, E4 i Nemesis mają dalsze etapy.
+Android **0.8.7** dodaje świadome zarządzanie udziałem w rankingu. Odczyt nie włącza zgody; utrata odpowiedzi pozwala ponowić tę samą zatwierdzoną decyzję. Mniejsze podsumowanie i więcej widocznych odznak z 0.8.6 pozostają zachowane. [Raport i podglądy](android/RAPORT_0_8_7.md): 135 JVM i nowy pełny147device PASS po poprawkach testu, historyczne146/147 i11/11 rozdzielone. Room8 bez migracji; aktualizacja zachowała wszystkie 22 tabele. Rzeczywisty odbiór API, publiczna lista rankingu, E4 i Nemesis mają dalsze etapy.
 
 Android **0.8.6** zmniejsza podsumowanie osiągnięć i pokazuje odznaki przed panelem serwera. Dodaje prywatne, ręczne pobranie potwierdzenia własnych punktów/rangi/odznak po logowaniu i bootstrapie. [Raport i podglądy](android/RAPORT_0_8_6.md): pełny126JVM/129device dla odczytu/sesji oraz końcowe18UI po feedbacku; Room8 bez migracji, wszystkie dane22tabel/5posiłków zachowane. Postępy bez zmian; zgody rankingu, E4 i Nemesis mają dalsze etapy.
 
