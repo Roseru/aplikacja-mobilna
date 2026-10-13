@@ -64,6 +64,26 @@ class DiaryFlowTest {
         compose.onNodeWithTag("profile-content").assertIsDisplayed()
     }
 
+    @Test fun rankingConsentGuestNavigationReturnsToAchievementsAndNeverQueuesConsent() {
+        compose.waitUntil(15_000) { compose.onAllNodesWithTag("daily-kcal").fetchSemanticsNodes().isNotEmpty() }
+        val app = compose.activity.application as CalorieApplication
+        val before = runBlocking { app.database.dao().operationCount(DiaryRepository.GUEST) }
+        compose.onNodeWithTag("open-profile").performClick(); compose.onNodeWithTag("open-achievements").performClick()
+        compose.onNodeWithTag("achievements-content").performScrollToNode(hasTestTag("achievement-ranking"))
+        compose.onNodeWithTag("achievement-ranking").performClick()
+        compose.onNodeWithTag("ranking-consent-state").performScrollTo().assertTextContains("Zaloguj", substring = true)
+        compose.onNodeWithTag("ranking-consent-enable").assertDoesNotExist()
+        compose.onNodeWithTag("ranking-consent-account").performScrollTo().performClick()
+        compose.onNodeWithTag("session-owner").assertTextEquals("Gość poligonowy")
+        compose.onNodeWithText("Wróć do zgód rankingu").performClick()
+        compose.activityRule.scenario.recreate()
+        compose.waitUntil(15_000) { compose.onAllNodesWithTag("ranking-consent-state").fetchSemanticsNodes().isNotEmpty() }
+        compose.onNodeWithText("Wróć do osiągnięć").performScrollTo().performClick()
+        compose.onNodeWithTag("achievements-content").performScrollToNode(hasTestTag("achievement-ranking"))
+        compose.onNodeWithTag("achievement-ranking").assertIsDisplayed()
+        assertEquals(before, runBlocking { app.database.dao().operationCount(DiaryRepository.GUEST) })
+    }
+
     @Test fun changingLeaseDiscardsPrivateEditorAndPreservesDiary() {
         compose.waitUntil(15_000) { compose.onAllNodesWithTag("daily-kcal").fetchSemanticsNodes().isNotEmpty() }
         val app = compose.activity.application as CalorieApplication
@@ -110,7 +130,10 @@ class DiaryFlowTest {
     @Test fun choosePartialRationAndRestoreSelectionBeforeSaving() {
         compose.waitUntil(15_000) { compose.onAllNodesWithTag("daily-kcal").fetchSemanticsNodes().isNotEmpty() }
         val app = compose.activity.application as CalorieApplication
-        val baseline = runBlocking { app.database.dao().day(DiaryRepository.GUEST, LocalDate.now().toString()).first()
+        // The editor deliberately retains its selected day across recreation. A suspended
+        // device can cross midnight; validate the same day rather than a later "today".
+        val testedDay = LocalDate.now().toString()
+        val baseline = runBlocking { app.database.dao().day(DiaryRepository.GUEST, testedDay).first()
             .flatMap { it.items }.sumOf { it.consumed().kcal } }
         compose.onNodeWithText("Dodaj posiłek").performClick()
         compose.onNodeWithTag("open-rations").performClick()
@@ -129,16 +152,16 @@ class DiaryFlowTest {
         compose.waitForIdle()
         compose.activityRule.scenario.recreate()
         compose.waitUntil(10_000) { compose.onAllNodesWithTag("confirm-ration").fetchSemanticsNodes().isNotEmpty() }
-        // A LazyColumn only exposes composed items. Restore the viewport before checking
-        // the saved quantity, independently of the IME's previous scroll position.
+        // Wait for the restored editor, then recompose the exact field before checking it.
+        // O3's viewport/IME fix and O1's direct selector/date oracle remain combined.
         compose.onNodeWithTag("ration-content").performScrollToNode(hasTestTag("ration-grams-demo-a-crackers"))
-        compose.onNodeWithTag("ration-grams-demo-a-crackers").assertTextContains("22,5")
+        compose.onNodeWithTag("ration-grams-demo-a-crackers", useUnmergedTree = true).assertTextContains("22,5")
         finishQuantityInput("ration-grams-demo-a-crackers", "confirm-ration", "ration-content")
         compose.onNodeWithTag("confirm-ration").assertIsEnabled().performClick()
         val expected = (baseline + 222.0).roundToInt().toString()
         compose.waitUntil(10_000) { compose.onAllNodes(hasTestTag("daily-kcal") and hasText(expected)).fetchSemanticsNodes().isNotEmpty() }
         runBlocking {
-            val meal = app.database.dao().day(DiaryRepository.GUEST, LocalDate.now().toString()).first().last { it.meal.rationId == "demo-ration-a" }
+            val meal = app.database.dao().day(DiaryRepository.GUEST, testedDay).first().last { it.meal.rationId == "demo-ration-a" }
             assertEquals(2, meal.items.size)
             assertEquals(setOf("demo-a-meat", "demo-a-crackers"), meal.items.map { it.rationComponentId }.toSet())
         }

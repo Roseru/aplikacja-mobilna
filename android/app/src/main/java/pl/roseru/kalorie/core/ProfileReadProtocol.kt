@@ -47,17 +47,22 @@ object ProfileReadProtocol {
             }
             ServerProfile(uuid(record, "entity_id"), revision(record, "revision"), pseudonym, height, activity, zone)
         }
-        val consents = json.getJSONObject("consents")
+        return ProfileRead(uuid(json, "account_id"), uuid(json, "sync_epoch"), profile,
+            consents(json.getJSONObject("consents")), revision(json, "goal_timeline_revision", allowZero = true))
+    }
+    fun parseConsents(bytes: ByteArray): ServerConsents {
+        require(bytes.size in 1..65_536)
+        return consents(StrictJson.read(bytes))
+    }
+    private fun consents(consents: JSONObject): ServerConsents {
         exact(consents, "revision", "ranking", "automatic_energy_adjustment", "updated_at")
         val updatedAt = text(consents, "updated_at").also {
             require(Regex("\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}(\\.[0-9]{1,6})?Z").matches(it))
             require(LocalDateTime.parse(it.dropLast(1)).year in 1..9999)
             Instant.parse(it)
         }
-        return ProfileRead(uuid(json, "account_id"), uuid(json, "sync_epoch"), profile,
-            ServerConsents(revision(consents, "revision"), consents.get("ranking") as Boolean,
-                consents.get("automatic_energy_adjustment") as Boolean, updatedAt),
-            revision(json, "goal_timeline_revision", allowZero = true))
+        return ServerConsents(revision(consents, "revision"), consents.get("ranking") as Boolean,
+            consents.get("automatic_energy_adjustment") as Boolean, updatedAt)
     }
     private fun exact(json: JSONObject, vararg keys: String) {
         require(json.keys().asSequence().toSet() == keys.toSet())
