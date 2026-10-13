@@ -1123,3 +1123,28 @@ Odbiór przygotowania O3-021: niezależny nieautor ocenił pierwotny2dad200 na8,
   Koordynator scala dopiero po PASS. O1/O3 mają własne przekazania; pełne E9/R,
   realny APK i produkcja otwarte. Demo pozostaje demo; live/default automat off,
   brak Google I/O/E10/nowych watcherów. Automatyzacje pozostają PAUSED.
+
+
+### O2-030 — E9 odbiór korekt, 2026-10-13
+
+- Wypchnięte: [PR54](https://github.com/Roseru/aplikacja-mobilna/pull/54), draft,
+  codex/backend-e9-korekta-zapotrzebowania, head0c81fb7428bae783d7202e03dec1e1ab876f85cc,
+  base6952c1418b3a79e4da93803808d40c5097f3a40b. Niescalone.
+- Niezależny odbiór e933:145PASS,3krytyczneP2 RED; nie udajemy akceptacji.
+  Forward0023 zachowuje wypchniętą0022. Rozwiązuje tożsamość estimate/goal,
+  pusty quantum clamp, per-owner limit producenta oraz ACL/provisioning.
+- Lokalnie1714unit,94 rules/infra, przypadki PG populated duplicate upgrade,
+  clone/precision/oversize GREEN. Installed-I migracja/drift/manifest i rzeczywisty
+  CLI--once minimalSCRAM/deniedSETROLE/photo+energy PASS. Mock, bez Google IO.
+- Pełny backend PG oraz ponowny odbiór nieautora aktualnego freeze i osiem CI
+  pozostają w toku. Poprzedni CI e933 miał PostgreSQL/local-integration RED.
+  Dalej: zakończyć rzeczywisty odbiór, uaktualnić raport i opis tego samego PR.
+  Koordynator scala po PASS; E9/R,O1UI,E10 i produkcja nie są zamknięte.
+
+- Odczytano przekazanie koordynatora: O2-029 zarezerwowane na odrębny pakiet
+  APK/API/E7-R; własny wpis E9 ma O2-030. Nowy main2fc70f7 (PR50) obejmuje Android
+  i komunikację, bez drugiego backendu E9. O1-023 odczytane, własny odbiór API/UI
+  pozostaje odrębny. Korekta0024 zachowuje jawny graf history_correction i kwalifikuje
+  rzeczywisty parent manifest zamiast rehash drift.33PG krytycznego zakresu PASS.
+  Stary fullPG:1216PASS/28fail/111setup errors; brak PG_BIN i TEST_WORKER_PASSWORD
+  zostaną uzupełnione, a pełny odbiór powtórzony na spójnym freeze po merge.

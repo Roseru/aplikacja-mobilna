@@ -89,7 +89,7 @@ def test_populated_upgrade_preserves_sources_epoch_and_bootstraps_without_affirm
 
 
 def test_real_published_legacy_snapshot_source_skips_new_marker():
-    with fresh_database("0023_e9_qualification") as private:
+    with fresh_database("0024_e9_history_graph") as private:
         admin, api = (private.engine(name) for name in ("admin", "api"))
         try:
             who = Principal("https://e9-legacy.test", str(uuid4()), frozenset({"user"}))
@@ -148,7 +148,7 @@ def test_real_published_legacy_snapshot_source_skips_new_marker():
 
 
 def test_empty_e9_downgrade_reupgrade_preserves_legacy_contract():
-    with fresh_database("0023_e9_qualification") as private:
+    with fresh_database("0024_e9_history_graph") as private:
         engine = private.engine()
         cfg = Config(str(ROOT / "backend/alembic.ini"))
         try:
@@ -162,7 +162,7 @@ def test_empty_e9_downgrade_reupgrade_preserves_legacy_contract():
             with engine.connect() as c:
                 assert (
                     c.scalar(text("SELECT version_num FROM app.alembic_version"))
-                    == "0023_e9_qualification"
+                    == "0024_e9_history_graph"
                 )
                 assert c.scalar(text("SELECT app.e8n_runtime_ready()")) is True
         finally:
@@ -362,3 +362,30 @@ def test_0023_qualifies_existing_duplicate_artifact_without_rewriting_history(tm
                 )
             admin.dispose()
             api.dispose()
+
+
+def test_forward_0024_refuses_drifted_parent_even_if_0023_rehashed_it():
+    from sqlalchemy.exc import DBAPIError
+
+    with fresh_database("0022_e9_energy") as private:
+        engine = private.engine("migrator")
+        try:
+            with engine.begin() as c:
+                c.execute(
+                    text(
+                        "CREATE OR REPLACE FUNCTION app.e8n_source_in_transaction(p_xmin xid) "
+                        "RETURNS boolean LANGUAGE sql STABLE SECURITY DEFINER "
+                        "SET search_path=pg_catalog,pg_temp AS 'SELECT true'"
+                    )
+                )
+                assert c.scalar(text("SELECT app.e8n_runtime_ready()")) is False
+            with pytest.raises(DBAPIError, match="parent Nemesis contract drift"):
+                private.migrate("head")
+            with engine.connect() as c:
+                assert (
+                    c.scalar(text("SELECT version_num FROM app.alembic_version"))
+                    == "0022_e9_energy"
+                )
+                assert c.scalar(text("SELECT app.e8n_runtime_ready()")) is False
+        finally:
+            engine.dispose()

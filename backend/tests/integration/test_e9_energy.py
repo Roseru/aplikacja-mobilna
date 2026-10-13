@@ -572,6 +572,8 @@ def test_planned_next_day_requires_explicit_conflict_resolution(e7):
                     "effective_from": (today + timedelta(days=1)).isoformat(),
                     "decided_at": today.isoformat() + "T00:00:00Z",
                     "timeline_base_revision": 1,
+                    "estimate": goal["estimate"]
+                    | {"estimated_at": today.isoformat() + "T00:00:00Z"},
                 }
             ),
         )

@@ -7,7 +7,7 @@ Nie wdrożono do istniejącej instalacji użytkownika i nie aktywowano live.
 
 ## Upgrade i role
 
-Migracja `0023_e9_qualification` jest addytywna wobec0021; stare migracje/SQL niezmienne.
+Liniowy ciąg0022→0023→`0024_e9_history_graph` jest addytywny wobec0021; stare migracje/SQL niezmienne.
 Uogólnia FK joba (photo albo energy), zachowuje istniejące zdjęcia/jobs i dodaje
 prywatne wersje E, snapshoty/notice/receipts oraz payload przy wspólnej pozycji
 ChangeLog. Bootstrap źródeł Mifflina nie daje baseline/notice ani zgody.

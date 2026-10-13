@@ -112,3 +112,22 @@ reprodukcja→jedna korekta→regresja; krytyczne oracles najpierw wykryły bł�
 w poprzednim freeze. Powtarzalne przygotowanie używa istniejącego PostgreSQL CI,
 infra bootstrapu i installed smoke. Przepływ O1 klient→PKCE→API→E9→sync pozostaje
 następnym odbiorem O1 po przyjęciu backendu; testy backendu nie udają gotowego UI.
+
+
+### Aktualna korekta grafu i parent contract
+
+Po pierwszym recheck003 wykryto regresję explicit history_correction (daty źródła)
+oraz rehash obcego driftu manifestu. Nowa0024 zachowuje korekty grafu dat,
+deduplikuje wyłącznie zwykłe user_decision clone i sprawdza actual prosrc wszystkich
+10 normatywnych funkcji względem literalnego pristine003 manifestu. Żadna z10
+nie jest zmieniana przez004, więc żaden digest nie jest odświeżany. Upgrade z
+uszkodzonym guarda źródła odmawia transakcyjnie nawet po wcześniejszym rehash003.
+33PG aktualnego krytycznego zakresu PASS,88.46s, obejmuje oracles daty/clone/fresh
+estimate, wszystkie migracje, literalny drift, ACL, wire i oversize+photo.
+Head/health i provisioner wskazują0024; live gate po migracji nadal zamknięty.
+Pełny przebieg003 przerwano jako nieaktualny bez PASS. Przed końcowym fullPG
+uzupełniamy istniejące wymagania PG_BIN i TEST_WORKER_PASSWORD; stary fullrun
+1216PASS/28failure/111setup error nie zamyka odbioru. Automatyczny reviewer odmówił
+własnej dodatkowej zmiany globalnego członkostwa LOGIN; nie wykonano jej i nie
+zaliczamy niezależnego rzeczywistego SCRAM proof. Autorski installed-I proof był
+rzeczywisty; read-only niezależne ACL i pozostałe własne próby są osobnym dowodem.

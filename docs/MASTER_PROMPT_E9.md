@@ -130,3 +130,9 @@ kwalifikacja wcześniej zaimportowanych duplikatów bez zmian immutable JSON,
 fail-closed pustego przedziału kwantów wire12, scoped54000 odmowa bounded auto
 producenta oraz wewnętrzny ACL helpera. Health/runtime/provisioning przyjmują
 aktualny head0023; brak automatycznej aktywacji live Nemesis.
+
+
+0024_e9_history_graph domyka jawne history_correction (nie pomija ich jak clone)
+i literalną kwalifikację parent prosrc. Wszystkie opublikowane wcześniejsze
+migracje pozostają niezmienne; końcowy head jest liniowy0024. Rozróżnienie zwykłej
+zmiany celu i jawnej korekty dat jest potwierdzone niezależnym oracle PG.
