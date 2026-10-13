@@ -1,5 +1,16 @@
 # Commons: 14 kandydatów do oceny - osoba 2
 
+## Aktualny wynik offline 13.10.2026
+
+Pierwotne14 obrazy pozostają zachowane. Dodano2 oryginały z batch źródeł
+(commons-19/20); trzeci downloadHTTP429 przerwał próbę. commons-19 peanut butter
+proponowany zamiast commons-08; commons-20 zamknięty zestaw odrzucony.
+Dodano commons-21 (pieczywo NatickMRE) i commons-22 (historyczny TabascoMRE).
+Łącznie Commons:14 PROPOSED (10rations/4unreadable),4REJECTED;18 zbadanych.
+Nowe źródła w completion-index.json i completion-source-evidence.json.
+[Propozycje](../reference_proposals.json) i [galeria](../GALLERY.md) są aktualne;
+niższy opis10/4 dotyczy pierwotnego pozyskania. Human/consents/uploads=0.
+
 Status: **CANDIDATES_REVIEW_REQUIRED**, not a runnable manifest and not E7-R PASS.
 
 `index.json` selects 14 different photographs: 10 rations/components and 4 food photos whose contents are naturally obscured by opaque leaf wrapping. All selected images were downloaded and inspected with `view_image`. No image was generated, cropped, blurred or edited locally. Server thumbnails are explicitly linked to original uploads in metadata. The historical Commons source of commons-01 itself declares prior author cropping; this is disclosed, not concealed.

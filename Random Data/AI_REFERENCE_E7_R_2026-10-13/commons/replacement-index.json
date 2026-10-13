@@ -1,0 +1,40 @@
+[
+  {
+    "candidate_id": "commons-19",
+    "proposed_group": "rations",
+    "source_id": "File:FEMA - 39890 - Peanut butter packet inside a MRE.jpg",
+    "image": "commons/commons-19.jpg",
+    "image_sha256": "2e41417ef0984351ba6221b97dbf68632e49c471037c3db8ca687eca9216f7ba",
+    "bytes": 26325,
+    "source_url": "https://commons.wikimedia.org/wiki/File:FEMA_-_39890_-_Peanut_butter_packet_inside_a_MRE.jpg",
+    "license": "Public domain",
+    "details": "commons/replacement-source-evidence.json",
+    "human_reference": null,
+    "provider_consent": null,
+    "source_sha1": "60adb7ecc57713beaa3ac9de20d362bd4c5c55cb",
+    "downloaded_url": "https://upload.wikimedia.org/wikipedia/commons/9/99/FEMA_-_39890_-_Peanut_butter_packet_inside_a_MRE.jpg?utm_source=commons.wikimedia.org&utm_campaign=imageinfo&utm_content=original",
+    "downloaded_variant": "original",
+    "retrieved_at": null,
+    "observed_file_modified_utc": "2026-10-13T18:44:07.794469+00:00",
+    "recovery_note": "Batch stopped on third request HTTP429 before index was written; actual first two original image files recovered and SHA1 independently matched source. File mtime is observation, not fabricated retrieval timestamp."
+  },
+  {
+    "candidate_id": "commons-20",
+    "proposed_group": "rations",
+    "source_id": "File:First Strike Ration.jpg",
+    "image": "commons/commons-20.jpg",
+    "image_sha256": "ef54f970bb5a216fc0bbef5052a7a91a8863d8bdfd6d1ef31471da05a52186ff",
+    "bytes": 312292,
+    "source_url": "https://commons.wikimedia.org/wiki/File:First_Strike_Ration.jpg",
+    "license": "Public domain",
+    "details": "commons/replacement-source-evidence.json",
+    "human_reference": null,
+    "provider_consent": null,
+    "source_sha1": "ffcaf11c408d535c3a67afe7ca06d7964fc47ed0",
+    "downloaded_url": "https://upload.wikimedia.org/wikipedia/commons/2/21/First_Strike_Ration.jpg?utm_source=commons.wikimedia.org&utm_campaign=imageinfo&utm_content=original",
+    "downloaded_variant": "original",
+    "retrieved_at": null,
+    "observed_file_modified_utc": "2026-10-13T18:44:08.163709+00:00",
+    "recovery_note": "Batch stopped on third request HTTP429 before index was written; actual first two original image files recovered and SHA1 independently matched source. File mtime is observation, not fabricated retrieval timestamp."
+  }
+]

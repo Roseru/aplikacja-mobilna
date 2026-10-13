@@ -1,0 +1,217 @@
+{
+  "batchcomplete": "",
+  "query": {
+    "pages": {
+      "93173416": {
+        "pageid": 93173416,
+        "ns": 6,
+        "title": "File:MRE Tabasco Sauce DSCF0043.jpg",
+        "imagerepository": "local",
+        "imageinfo": [
+          {
+            "timestamp": "2020-08-15T18:01:31Z",
+            "size": 516460,
+            "width": 1780,
+            "height": 2500,
+            "thumburl": "https://thumb.wikimedia.org/wikipedia/commons/thumb/8/84/MRE_Tabasco_Sauce_DSCF0043.jpg/1280px-MRE_Tabasco_Sauce_DSCF0043.jpg?utm_source=commons.wikimedia.org&utm_campaign=imageinfo&utm_content=thumbnail",
+            "thumbwidth": 1280,
+            "thumbheight": 1798,
+            "responsiveUrls": {
+              "2": "https://upload.wikimedia.org/wikipedia/commons/8/84/MRE_Tabasco_Sauce_DSCF0043.jpg?utm_source=commons.wikimedia.org&utm_campaign=imageinfo&utm_content=thumbnail_unscaled"
+            },
+            "thumbattribs": {
+              "src": "https://thumb.wikimedia.org/wikipedia/commons/thumb/8/84/MRE_Tabasco_Sauce_DSCF0043.jpg/1280px-MRE_Tabasco_Sauce_DSCF0043.jpg?utm_source=commons.wikimedia.org&utm_campaign=imageinfo&utm_content=thumbnail",
+              "decoding": "async",
+              "loading": "lazy",
+              "width": 1280,
+              "height": 1798,
+              "srcset": "https://upload.wikimedia.org/wikipedia/commons/8/84/MRE_Tabasco_Sauce_DSCF0043.jpg?utm_source=commons.wikimedia.org&utm_campaign=imageinfo&utm_content=thumbnail_unscaled 2x"
+            },
+            "url": "https://upload.wikimedia.org/wikipedia/commons/8/84/MRE_Tabasco_Sauce_DSCF0043.jpg?utm_source=commons.wikimedia.org&utm_campaign=imageinfo&utm_content=original",
+            "descriptionurl": "https://commons.wikimedia.org/wiki/File:MRE_Tabasco_Sauce_DSCF0043.jpg",
+            "descriptionshorturl": "https://commons.wikimedia.org/w/index.php?curid=93173416",
+            "sha1": "e293ccd1621897ba20ab261eb766cbf17d8dc148",
+            "extmetadata": {
+              "DateTime": {
+                "value": "2020-08-15 18:01:31",
+                "source": "mediawiki-metadata",
+                "hidden": ""
+              },
+              "ObjectName": {
+                "value": "MRE Tabasco Sauce DSCF0043",
+                "source": "mediawiki-metadata"
+              },
+              "CommonsMetadataExtension": {
+                "value": 1.2,
+                "source": "extension",
+                "hidden": ""
+              },
+              "Categories": {
+                "value": "Self-published work|Meal, Ready-to-Eat components",
+                "source": "commons-categories",
+                "hidden": ""
+              },
+              "Assessments": {
+                "value": "",
+                "source": "commons-categories",
+                "hidden": ""
+              },
+              "ImageDescription": {
+                "value": "A dried-out MRE tabasco sauce bottle from 2001",
+                "source": "commons-desc-page"
+              },
+              "DateTimeOriginal": {
+                "value": "2020-08-15 17:49:55",
+                "source": "commons-desc-page"
+              },
+              "Credit": {
+                "value": "<span class=\"int-own-work\" lang=\"en\">Own work</span>",
+                "source": "commons-desc-page"
+              },
+              "Artist": {
+                "value": "<a href=\"//commons.wikimedia.org/wiki/User:Ashley_Pomeroy\" title=\"User:Ashley Pomeroy\">Ashley Pomeroy</a>",
+                "source": "commons-desc-page"
+              },
+              "LicenseShortName": {
+                "value": "CC BY-SA 4.0",
+                "source": "commons-desc-page",
+                "hidden": ""
+              },
+              "UsageTerms": {
+                "value": "Creative Commons Attribution-Share Alike 4.0",
+                "source": "commons-desc-page"
+              },
+              "AttributionRequired": {
+                "value": "true",
+                "source": "commons-desc-page",
+                "hidden": ""
+              },
+              "LicenseUrl": {
+                "value": "https://creativecommons.org/licenses/by-sa/4.0",
+                "source": "commons-desc-page"
+              },
+              "Copyrighted": {
+                "value": "True",
+                "source": "commons-desc-page",
+                "hidden": ""
+              },
+              "Restrictions": {
+                "value": "",
+                "source": "commons-desc-page",
+                "hidden": ""
+              },
+              "License": {
+                "value": "cc-by-sa-4.0",
+                "source": "commons-templates",
+                "hidden": ""
+              }
+            }
+          }
+        ]
+      },
+      "115670368": {
+        "pageid": 115670368,
+        "ns": 6,
+        "title": "File:MRE pouched bread - commonwealth zk51xh600.jpg",
+        "imagerepository": "local",
+        "imageinfo": [
+          {
+            "timestamp": "2022-03-01T13:58:32Z",
+            "size": 851933,
+            "width": 4110,
+            "height": 3240,
+            "thumburl": "https://thumb.wikimedia.org/wikipedia/commons/thumb/1/1d/MRE_pouched_bread_-_commonwealth_zk51xh600.jpg/1280px-MRE_pouched_bread_-_commonwealth_zk51xh600.jpg?utm_source=commons.wikimedia.org&utm_campaign=imageinfo&utm_content=thumbnail",
+            "thumbwidth": 1280,
+            "thumbheight": 1009,
+            "responsiveUrls": {
+              "2": "https://thumb.wikimedia.org/wikipedia/commons/thumb/1/1d/MRE_pouched_bread_-_commonwealth_zk51xh600.jpg/3840px-MRE_pouched_bread_-_commonwealth_zk51xh600.jpg?utm_source=commons.wikimedia.org&utm_campaign=imageinfo&utm_content=thumbnail"
+            },
+            "thumbattribs": {
+              "src": "https://thumb.wikimedia.org/wikipedia/commons/thumb/1/1d/MRE_pouched_bread_-_commonwealth_zk51xh600.jpg/1280px-MRE_pouched_bread_-_commonwealth_zk51xh600.jpg?utm_source=commons.wikimedia.org&utm_campaign=imageinfo&utm_content=thumbnail",
+              "decoding": "async",
+              "loading": "lazy",
+              "width": 1280,
+              "height": 1009,
+              "srcset": "https://thumb.wikimedia.org/wikipedia/commons/thumb/1/1d/MRE_pouched_bread_-_commonwealth_zk51xh600.jpg/3840px-MRE_pouched_bread_-_commonwealth_zk51xh600.jpg?utm_source=commons.wikimedia.org&utm_campaign=imageinfo&utm_content=thumbnail 2x"
+            },
+            "url": "https://upload.wikimedia.org/wikipedia/commons/1/1d/MRE_pouched_bread_-_commonwealth_zk51xh600.jpg?utm_source=commons.wikimedia.org&utm_campaign=imageinfo&utm_content=original",
+            "descriptionurl": "https://commons.wikimedia.org/wiki/File:MRE_pouched_bread_-_commonwealth_zk51xh600.jpg",
+            "descriptionshorturl": "https://commons.wikimedia.org/w/index.php?curid=115670368",
+            "sha1": "6cebe0c1493e9e236173b0ecbc9914d48c0af134",
+            "extmetadata": {
+              "DateTime": {
+                "value": "2022-03-01 13:58:32",
+                "source": "mediawiki-metadata",
+                "hidden": ""
+              },
+              "ObjectName": {
+                "value": "MRE pouched bread - commonwealth zk51xh600",
+                "source": "mediawiki-metadata"
+              },
+              "CommonsMetadataExtension": {
+                "value": 1.2,
+                "source": "extension",
+                "hidden": ""
+              },
+              "Categories": {
+                "value": "PD US Army|Combat rations (U.S. Army Natick Soldier Systems Center)|Meal, Ready-to-Eat components",
+                "source": "commons-categories",
+                "hidden": ""
+              },
+              "Assessments": {
+                "value": "",
+                "source": "commons-categories",
+                "hidden": ""
+              },
+              "ImageDescription": {
+                "value": "Combat rations from the U.S. Army Natick Soldier Systems Center, which has developed military food for the US Army based on experimentation and inspection of rations from other countries.",
+                "source": "commons-desc-page"
+              },
+              "DateTimeOriginal": {
+                "value": "3 February 1989",
+                "source": "commons-desc-page"
+              },
+              "Credit": {
+                "value": "<a rel=\"nofollow\" class=\"external free\" href=\"https://ark.digitalcommonwealth.org/ark:/50959/zk51xh600\">https://ark.digitalcommonwealth.org/ark:/50959/zk51xh600</a>",
+                "source": "commons-desc-page"
+              },
+              "Artist": {
+                "value": "U.S. Army Natick Soldier Systems Center",
+                "source": "commons-desc-page"
+              },
+              "LicenseShortName": {
+                "value": "Public domain",
+                "source": "commons-desc-page",
+                "hidden": ""
+              },
+              "UsageTerms": {
+                "value": "Public domain",
+                "source": "commons-desc-page"
+              },
+              "AttributionRequired": {
+                "value": "false",
+                "source": "commons-desc-page",
+                "hidden": ""
+              },
+              "Copyrighted": {
+                "value": "False",
+                "source": "commons-desc-page",
+                "hidden": ""
+              },
+              "Restrictions": {
+                "value": "",
+                "source": "commons-desc-page",
+                "hidden": ""
+              },
+              "License": {
+                "value": "pd",
+                "source": "commons-templates",
+                "hidden": ""
+              }
+            }
+          }
+        ]
+      }
+    }
+  }
+}

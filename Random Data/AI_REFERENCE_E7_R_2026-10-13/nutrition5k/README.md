@@ -1,5 +1,15 @@
 # Nutrition5k: 16 kandydatów referencyjnych - osoba 2
 
+## Aktualne uzupełnienie offline13.10.2026
+
+Dodano n5-17: bacon/scrambled eggs/cooked spinach, dokładny obraz dish1572278972
+i dopasowana źródłowa anotacja cafe2. Łącznie17 zdjęć,16PROPOSED (8products/8mixed),
+1UNRESOLVED n5-16. [Obraz/hash](completion-image.json) i
+[źródłowy rekord](completion-annotations.json). Source totalmakra cafe2 są
+placeholder0 niezgodnymi z niezerowymi rekordami składników; zachowano raw
+bez używania ich jako referencji. Masa/kcal propozycji null.
+Niższy opis16 kandydatów to pierwotne pozyskanie; human/consents/uploads0.
+
 Status **CANDIDATE / PENDING_REVIEW**. Wybrano 16 niezmienionych RGB PNG, łącznie 6 469 068 bajtów: osiem pojedynczych składników i osiem różnych dań mieszanych. Wszystkie obejrzano i sprawdzono: 640×480, poniżej 5 MiB na plik, unikalne SHA-256. Qualified i actual_ready pozostają 0.
 
 ## Źródło i atrybucja
