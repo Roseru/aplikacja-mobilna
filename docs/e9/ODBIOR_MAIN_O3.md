@@ -76,8 +76,11 @@ Wcześniejszy odbiór całego runtime 9,2/10 pozostaje opisany w
 
 ## Granice odbioru i następne kroki
 
-Odebrany jest backend E9-O2 na rzeczywistym PG i mocku. Ten odbiór nie wdraża
-E9 do wcześniejszej lokalnej instalacji użytkownika i nie potwierdza pełnego E9/R.
+Odebrany jest backend E9-O2 na rzeczywistym PG i mocku. Po tym odbiorze wykonano
+osobny [rollout rzeczywistej lokalnej instalacji](ROLLOUT_LOKALNY_O3.md):
+paired backup, próba upgrade kopii, migracja źródła do0024, zachowane stare dane
+i realne HTTPS/PKCE/E9 reads oraz worker cadence/ACL/restart PASS.
+Żaden z tych dwóch zakresów nie potwierdza pełnego E9/R.
 Gemini, realny APK/API/Room, stabilny adres dostępny z telefonu, produkcja
 i E10 pozostają osobnymi odbiorami. Nie wykonano Google I/O ani billing.
 AI/Nemesis nie otwarto; automatyzacje pozostają PAUSED. Demo katalogu pozostaje demo.
