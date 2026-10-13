@@ -1,22 +1,37 @@
 # E9-O2 — raport wykonania
 
-Status: **kod odebrany9,2/10, bez otwartych P1/P2**;
-pełna zdalna regresja PostgreSQL1362PASS/0fail/0error/0skip,
-osiem CI success na runtime freeze dfaad1b/base2fc70f7. Niescalone.
-Dodatkowy końcowy przebieg Windows/PG17 jest jeszcze w toku w chwili zapisu;
-jego wynik nie jest potrzebny do zastąpienia rzeczywistego zdalnego pełnego PASS.
-Oceniany runtime freeze:`dfaad1b15b3d0d768f3edb3475da2240875b7762`;
-base:`2fc70f7ae612c031f63d53c04d3c81b4402b72c5`.
-PR:[54](https://github.com/Roseru/aplikacja-mobilna/pull/54).
-Recenzja:[niezależny odbiór](RECENZJA_E9.md).
-Bieżący head migracji:`0024_e9_history_graph`.
-Lokalnie1714unit/E0/Ruff/diff-check PASS; aktualny installed-I/migracja i realCLI
-PHOTO+ENERGY PASS. Wszystkie zakresy dowodów i wcześniejsze RED poniżej.
-Start: `a522471140150271d853d66aa06f11d868699e49`.
+Status: **backend odebrany 9,2/10, bez otwartych P1/P2 kodu; gotowy do scalenia**.
+PR: [54](https://github.com/Roseru/aplikacja-mobilna/pull/54).
 Gałąź: `codex/backend-e9-korekta-zapotrzebowania`.
+Odebrany head: `6a12c4bef945b273e63b73ba7f565f8f7401e1d9`;
+base: `7fd05d6afcf4a45d3201f14a71dffdc9c65812c6`.
+Runtime jest identyczny z niezależnie odebranym freeze
+`dfaad1b15b3d0d768f3edb3475da2240875b7762`; późniejsze zmiany dotyczą dokumentacji
+i przyjęcia pakietu przygotowania O2. Bieżący head migracji: `0024_e9_history_graph`.
+
+Końcowy [CI38421712618](https://github.com/Roseru/aplikacja-mobilna/actions/runs/38421712618)
+dla head6a12/base7fd zaliczył wszystkie osiem kontroli. Koordynator odczytał
+rzeczywiste osiem logów: 1714 unit, 1362 PostgreSQL (919,32 s), 49 infra,
+28 Keycloak, 135 JVM i 148 testów urządzenia bez failure/skips; installed wheel,
+Docker-I i realna integracja HTTPS/PKCE/ACL/restart/paired restore PASS.
+Autorski końcowy Windows/PG17 zakończył się 1362 PASS, zero failure/error/skip,
+3199,33 s; jego dowód jest odrębny od CI i wcześniejszych przebiegów.
+[Nieautorski odbiór](RECENZJA_E9.md) i
+[ocena koordynatora](https://github.com/Roseru/aplikacja-mobilna/pull/54#issuecomment-6150467129)
+dotyczą backendu. Koordynator dodatkowo powtórzył 56 krytycznych unit na head6a12;
+tego podzbioru nie dodajemy do 1714.
+
+Poprawka koordynatora zmienia wyłącznie numer head w instrukcji O3 i ten
+bieżący nagłówek. Jej nowy final-head przechodzi własne wymagane CI tego samego PR;
+poprzedni sukces nie zastępuje tej bramki ani osobnego CI main po merge.
+Historyczne RED i ich datowane zakresy pozostają poniżej.
+
+Start: `a522471140150271d853d66aa06f11d868699e49`.
 Master: [MASTER_PROMPT_E9](../MASTER_PROMPT_E9.md).
 Przekazania: [O1](INTEGRACJA_O1.md), [O3](KONFIGURACJA_O3.md).
-Pełne E9/R i E10 pozostają otwarte. Katalog jest demo; live gate zamknięty.
+Pełne E9/R, rzeczywisty APK/API/Room i live Gemini pozostają otwarte;
+P2 requested/effective po ranking PUT jest oddzielnym działaniem O1.
+Katalog jest demo, live gate zamknięty, automatyzacje PAUSED, E10 nie uruchomiono.
 
 ## Reprezentacja i granice
 

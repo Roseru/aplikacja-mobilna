@@ -66,7 +66,7 @@ Anonimowe attempts/zużycie i fizyczne permits mają wcześniejsze zasady retenc
 Receipt po60d traci pełny wynik, lecz zachowuje hash/kontekst/minimalny marker;
 powtórzenie daje idempotency_result_expired, bez odtworzenia joba.
 
-Readiness nadal wymaga PG17/head0022/sekretu tokenów. Diagnostyka/CLI wyświetla
+Readiness nadal wymaga PostgreSQL 17, head `0024_e9_history_graph` i sekretu tokenów. Diagnostyka/CLI wyświetla
 kontrolowane kody i liczniki, bez diary/notice payloads lub sekretów w logach.
 O3 odbiera rollout, właściwe LOGINS/health/minutowy cykl i restore w swoim zakresie.
 
