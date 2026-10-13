@@ -8,6 +8,8 @@ import pl.roseru.kalorie.core.BootstrapProtocol
 import pl.roseru.kalorie.core.SessionIdentity
 import pl.roseru.kalorie.core.RankingConsentAttempt
 import pl.roseru.kalorie.core.RankingQuery
+import pl.roseru.kalorie.core.NemesisQuery
+import pl.roseru.kalorie.core.NemesisReadProtocol
 import pl.roseru.kalorie.core.catalog.StrictJson
 import pl.roseru.kalorie.core.requireHttps
 import pl.roseru.kalorie.data.OwnerLease
@@ -40,6 +42,9 @@ internal interface ProfileGateway {
 internal interface MotivationGateway : ProfileGateway
 internal interface RankingGateway {
     suspend fun get(session: ApiSession, query: RankingQuery, beforeSend: suspend () -> Unit): BootstrapHttpResult
+}
+internal interface NemesisGateway {
+    suspend fun get(session: ApiSession, epoch: String, query: NemesisQuery, beforeSend: suspend () -> Unit): BootstrapHttpResult
 }
 internal interface RankingConsentGateway {
     suspend fun put(session: ApiSession, request: RankingConsentAttempt, beforeSend: suspend () -> Unit): BootstrapHttpResult
@@ -140,12 +145,21 @@ internal class HttpsRankingGateway(base: String,
         HttpsJsonTransport.request(URL(endpoint + "?" + query.encoded()), "GET", session, null, open, beforeSend, requireNoStore = true)
 }
 
+internal class HttpsNemesisGateway(base: String,
+    private val open: (URL) -> HttpsURLConnection = { it.openConnection() as HttpsURLConnection }) : NemesisGateway {
+    private val endpoint = BootstrapHttpProtocol.endpoint(base).toString().removeSuffix("/me/bootstrap")
+    override suspend fun get(session: ApiSession, epoch: String, query: NemesisQuery, beforeSend: suspend () -> Unit): BootstrapHttpResult =
+        HttpsJsonTransport.request(URL(endpoint + query.path()), "GET", session, null, open, beforeSend,
+            NemesisReadProtocol.MAX_BYTES, requireNoStore = true, syncEpoch = epoch, privateErrors = true)
+}
+
 /** Shared bounded transport; callers cannot supply an arbitrary URL or extra headers. */
 private object HttpsJsonTransport {
     suspend fun request(url: URL, method: String, session: ApiSession, key: String?,
         open: (URL) -> HttpsURLConnection, beforeSend: suspend () -> Unit,
         maxBytes: Int = BootstrapHttpProtocol.MAX_BYTES, requireNoStore: Boolean = false,
-        consent: RankingConsentAttempt? = null) = withContext(Dispatchers.IO) {
+        consent: RankingConsentAttempt? = null, syncEpoch: String? = null, privateErrors: Boolean = false) = withContext(Dispatchers.IO) {
+        syncEpoch?.let(NemesisReadProtocol::uuid)
         require(session.accessToken.isNotBlank() && session.accessToken.length <= 65_536 &&
             session.accessToken.none { it.isWhitespace() || it.isISOControl() })
         val connection = open(url)
@@ -161,6 +175,7 @@ private object HttpsJsonTransport {
             connection.setRequestProperty("Accept", "application/json")
             connection.setRequestProperty("Accept-Encoding", "identity")
             connection.setRequestProperty("Cache-Control", "no-store")
+            syncEpoch?.let { connection.setRequestProperty("X-Sync-Epoch", it) }
             if (consent != null) {
                 require(method == "PUT" && key == consent.key)
                 connection.setRequestProperty("Content-Type", "application/json; charset=utf-8")
@@ -176,7 +191,7 @@ private object HttpsJsonTransport {
             require(status in 200..599 && status !in 300..399)
             // A proxy may return HTML for overload. Honour its delay without reading/echoing the body.
             if (status == 429 || status == 503) return@withContext BootstrapHttpResult(status, ByteArray(0), connection.getHeaderField("Retry-After"))
-            if (status == 200 && requireNoStore) require(connection.getHeaderField("Cache-Control")
+            if ((status == 200 || privateErrors) && requireNoStore) require(connection.getHeaderField("Cache-Control")
                 ?.split(',')?.any { it.trim().equals("no-store", ignoreCase = true) } == true)
             val contentType = connection.contentType?.substringBefore(';')?.trim()
             require(contentType.equals("application/json", ignoreCase = true))

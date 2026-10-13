@@ -12,7 +12,9 @@ import androidx.compose.ui.unit.dp
 data class SessionActions(val login: () -> Unit, val logout: () -> Unit, val refresh: () -> Unit, val cancel: () -> Unit,
     val bootstrap: () -> Unit, val readProfile: () -> Unit, val downloadSnapshot: () -> Unit = {}, val readMotivation: () -> Unit = {},
     val readRankingConsents: () -> Unit = {}, val confirmRankingConsent: (String, Boolean) -> Unit = { _, _ -> }, val retryRankingConsent: () -> Unit = {},
-    val readRanking: () -> Unit = {}, val nextRankingPage: () -> Unit = {}, val retryRankingPage: () -> Unit = {}, val clearRanking: () -> Unit = {})
+    val readRanking: () -> Unit = {}, val nextRankingPage: () -> Unit = {}, val retryRankingPage: () -> Unit = {}, val clearRanking: () -> Unit = {},
+    val readNemesis: () -> Unit = {}, val readNemesisChallenge: (String) -> Unit = {}, val nextNemesisPage: () -> Unit = {},
+    val retryNemesis: () -> Unit = {}, val clearNemesis: () -> Unit = {})
 
 @Composable fun SessionScreen(view: SessionView, actions: SessionActions, back: () -> Unit, backLabel: String = "Wróć do profilu") {
     val account = view.binding?.owner?.kind == "account"
