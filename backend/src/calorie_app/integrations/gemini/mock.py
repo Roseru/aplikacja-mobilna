@@ -96,6 +96,17 @@ def mock_call(call_kind: str, config: dict) -> ProviderOutcome:
         return parse_generate_response(b'{"promptFeedback":{"blockReason":"SAFETY"}}')
     if scenario == "invalid":
         return parse_generate_response(b'{"candidates":false}')
+    if config.get("purpose") == "energy_adjustment":
+        result = {
+            "explanation": (
+                "Synthetic explanation of the deterministic result; uncertainty remains."
+            ),
+            "uncertainty": "high",
+            "suggested_class": None,
+        }
+        if scenario in {"injection", "no_food", "null"}:
+            result["maintenance_kcal"] = "999999"
+        return parse_generate_response(generate_envelope(result), purpose="energy_adjustment")
     food = sample_food(null_macros=scenario == "null")
     if scenario == "no_food":
         food["items"] = []

@@ -19,7 +19,8 @@ AIJob = table(
     "ai_jobs",
     col("id", UUID, pk=True),
     col("owner_id", UUID),
-    col("analysis_id", UUID),
+    col("analysis_id", UUID, nullable=True),
+    col("energy_analysis_id", UUID, nullable=True),
     col("purpose", Text),
     col("generation", Integer),
     col("sync_epoch", UUID),
@@ -36,6 +37,12 @@ AIJob = table(
     col("preflight_done", Boolean),
     col("input_tokens", Integer, nullable=True),
     UniqueConstraint("analysis_id", name="ai_jobs_analysis_id_key"),
+    UniqueConstraint("energy_analysis_id", name="ai_jobs_energy_unique"),
+    ForeignKeyConstraint(
+        ["owner_id", "energy_analysis_id"],
+        ["app.energy_analyses.owner_id", "app.energy_analyses.id"],
+        name="ai_jobs_energy_fk",
+    ),
     ForeignKeyConstraint(
         ["owner_id", "analysis_id"], ["app.ai_analyses.owner_id", "app.ai_analyses.id"]
     ),

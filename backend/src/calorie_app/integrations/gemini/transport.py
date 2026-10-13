@@ -29,8 +29,13 @@ def execute(
         provider not in ("mock", "gemini")
         or call_kind not in ("countTokens", "generateContent")
         or not isinstance(config, dict)
-        or not isinstance(image, bytes)
-        or not 1 <= len(image) <= MAX_IMAGE_BYTES
+        or not (
+            isinstance(image, bytes)
+            and 1 <= len(image) <= MAX_IMAGE_BYTES
+            and config.get("purpose", "food_photo") == "food_photo"
+            or isinstance(image, dict)
+            and config.get("purpose") == "energy_adjustment"
+        )
         or isinstance(timeout_seconds, bool)
         or not isinstance(timeout_seconds, (int, float))
         or not math.isfinite(timeout_seconds)
@@ -42,7 +47,10 @@ def execute(
             {
                 "provider": provider,
                 "call_kind": call_kind,
-                "image": base64.b64encode(image).decode("ascii"),
+                "image": base64.b64encode(image).decode("ascii")
+                if isinstance(image, bytes)
+                else None,
+                **({"aggregates": image} if isinstance(image, dict) else {}),
                 "config": config,
                 "timeout_seconds": timeout_seconds,
                 "deadline_monotonic": started + timeout_seconds,
@@ -96,7 +104,7 @@ def run_request(raw: bytes) -> bytes:
     logging.disable(logging.CRITICAL)
     try:
         request = parse_bounded_json(raw, max_bytes=MAX_PROCESS_REQUEST_BYTES)
-        if set(request) != {
+        if set(request) - {"aggregates"} != {
             "provider",
             "call_kind",
             "image",
@@ -108,9 +116,18 @@ def run_request(raw: bytes) -> bytes:
         remaining = request["deadline_monotonic"] - time.monotonic()
         if remaining <= 0:
             return encode_outcome(ProviderOutcome("provider_result_unknown"))
-        image = base64.b64decode(request["image"], validate=True)
-        if not 1 <= len(image) <= MAX_IMAGE_BYTES:
-            raise ValueError("invalid process image")
+        if request["config"].get("purpose") == "energy_adjustment":
+            from calorie_app.integrations.gemini.energy import validate_aggregates
+
+            if request["image"] is not None or "aggregates" not in request:
+                raise ValueError("invalid typed process payload")
+            image = validate_aggregates(request["aggregates"])
+        else:
+            if "aggregates" in request:
+                raise ValueError("unexpected aggregate payload")
+            image = base64.b64decode(request["image"], validate=True)
+            if not 1 <= len(image) <= MAX_IMAGE_BYTES:
+                raise ValueError("invalid process image")
         if request["provider"] == "mock":
             outcome = mock_call(request["call_kind"], request["config"])
         elif request["provider"] == "gemini":

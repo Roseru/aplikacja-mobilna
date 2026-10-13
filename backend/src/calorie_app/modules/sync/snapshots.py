@@ -3,7 +3,7 @@
 import json
 from uuid import UUID, uuid4
 
-from sqlalchemy import func, select
+from sqlalchemy import func, select, text
 from sqlalchemy.exc import DBAPIError
 
 from calorie_app.core.errors import DomainError
@@ -207,8 +207,19 @@ def _materialize(session, owner_id, query, secret, installation_id):
             .execution_options(yield_per=64)
         )
         for change in changes:
-            if change.entity is not None:  # An internal online marker is not a wire entity.
+            if change.entity is not None:
                 _add_item(session, state, "entities", change.entity)
+            elif installation_id == "calorie-app:energy_estimates_v1":
+                value = session.scalar(
+                    text(
+                        "SELECT app.e9_entity(version_id) FROM app.energy_changes "
+                        "WHERE owner_id=:owner AND position=:position"
+                    ),
+                    {"owner": owner_id, "position": change.position},
+                )
+                if value is not None:
+                    _add_item(session, state, "entities", value)
+
     else:
         for entity_type, model in MODELS.items():
             ids = select(model.id).where(model.owner_id == owner_id)
@@ -221,6 +232,15 @@ def _materialize(session, owner_id, query, secret, installation_id):
                 if value is None or value["deleted"]:
                     raise SyncFailure(503, "service_unavailable")
                 _add_item(session, state, "entities", value)
+    if not claims and installation_id == "calorie-app:energy_estimates_v1":
+        for value in session.scalars(
+            text(
+                "SELECT app.e9_entity(id) FROM app.energy_versions WHERE owner_id="
+                ":owner ORDER BY revision"
+            ),
+            {"owner": owner_id},
+        ).yield_per(64):
+            _add_item(session, state, "entities", value)
     # Maps are copied with the target revision from this same frozen read. They
     # are harmlessly repeated in incremental pulls so deleted targets remain
     # associated with their original source without a second recreate.

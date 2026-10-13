@@ -18,7 +18,7 @@ Każda osoba aktualizuje własny wiersz. Daty i dokładne źródła są w jej wp
 | Rola | Ostatni znany rezultat | Następny krok / zależność | Źródło |
 |---|---|---|---|
 | O1 — Android, Kotlin, Room | 0.8.6/code17/Room8: mniejsze podsumowanie, odznaki przed serwerem, prywatny GET motywacji; pełny126JVM/129device i końcowe18UI PASS;22tabele/5posiłków zachowane | Własny PR/CI; rzeczywiste API O3, świadome zgody rankingu, E4 i Nemesis poE8.4 | O1-021, [raport](../android/RAPORT_0_8_6.md), codex/android-osiagniecia-serwer |
-| O2 — Python, PostgreSQL, API | E8-O2 i backendowy odbiór E8.5 scalone/odebrane; odczytano lokalne wyniki O3-012–018 i niescalone O1-022/023 z PR50 | O3: osiągalny origin/issuer/CA dla APK; O1: rzeczywista integracja. O2: official E5-C, E7-R po konfiguracji/corpus; E9 technicznie możliwe na mocku, niezlecone | O2-024/027, [aktualizacja komunikacji PR30](https://github.com/Roseru/aplikacja-mobilna/pull/30), [odbiór E8.5](e8/ODBIOR_E8_5.md), [rollout O3](e8/ROLLOUT_LOKALNEJ_INSTALACJI_O3.md) |
+| O2 — Python, PostgreSQL, API | Backend E8/E8.5 odebrany; E9-O2 w toku w jednym wykonawczym czacie/gałęzi | Aktualny freeze/pełna regresja/nieautor/CI; O1/O3 własna integracja. Demo/live bez zmian | O2-028, [raport E9](e9/RAPORT_E9.md), codex/backend-e9-korekta-zapotrzebowania |
 | O3 — DevOps, CI/CD, serwer | PR44–48 scalone, osobny main0410 ma8CI PASS; rzeczywista lokalna instalacja/API/workery z0014 do0021, wszystkie stare50 tabel/epoka/TLS zachowane, realne PKCE i minutowy cykl/ACL/restart PASS | Osiągalny stabilny LAN/public origin, O1 aktualne API/APK/zgody/Nemesis/Room oraz produkcyjny rejestr/kopie/RPO-RTO; AI/Nemesis closed | O3-012–018, [lokalny rollout](e8/ROLLOUT_LOKALNEJ_INSTALACJI_O3.md), [pełny restore](e8/ODTWORZENIE_SESJE_I_KLIENT_O3.md), [PR49](https://github.com/Roseru/aplikacja-mobilna/pull/49) |
 
 ## Wpisy
@@ -1063,3 +1063,28 @@ Publikacja odczytu komunikacji O2: `codex/docs-komunikacja-odczyt`, commit treś
 - **Nadal otwarte:** O3 — docelowy VPS/domena/SMTP, niezależny rejestr usunięć, szyfrowane kopie/retencja, produkcyjne RPO/RTO i świadomy reopen/activation; O1 — realny klient/UI/Room/cache/sync i Nemesis. O2 — E5-O2-C: dokładne źródła i dopasowanie wariantów/producentów oraz pakiet official; E7-R: co najmniej 30 zatwierdzonych zdjęć i własny pomiar po konfiguracji Free Tier/model/limitów od O3. E9 ma techniczne wejścia do PG/mock, ale master i wykonanie nie są zlecone. Pełne zespołowe E8 pozostaje **WAITING_EXTERNAL** konkretnych dowodów klienta i docelowego środowiska; backend E8/E8.5 jest odebrany.
 - **Porządek historii i PR:** kontynuujemy własny PR30, którego stare uzupełnienie O2-019 i odpowiedzi zachowano powyżej; jego ówczesne oczekiwania na PR26/28 i brak startu E8 zastąpiły późniejsze scalenia. Z PR22 przeniesiono tylko brakujące O1-009/010, nie całą gałąź ani stare wersje planów/raportów Androida. Propozycja dla O1: po sprawdzeniu zachowania treści i scaleniu tej aktualizacji zamknąć lub oznaczyć PR22 jako zastąpiony; O2 nie zamyka go za autora. Main zawiera dwa identyczne wystąpienia historycznego O1-017 dotyczące jednego przekazania PR32; oba i różne późniejsze dopiski O2 pozostają zachowaną historią, nie dwoma zadaniami.
 - Publikacja: gałąź `codex/docs-komunikacja-odczyt`, istniejący [PR30](https://github.com/Roseru/aplikacja-mobilna/pull/30), commit treści/merge `c72d4a0f505a54e0f6e48203288505523e3a1961`, baza83eab. Niezależny przegląd dokumentacji9,4/10 bez zidentyfikowanych P1/P2; E0 locked/offline9schemas/95valid/35invalid/18scenarios/530links i diff-check PASS. Aktualny head/base/CI i rezultat publikacji będą odczytane w tym PR; stare wyniki CI z 11 października pozostają wyłącznie historią swoich źródeł. Jeden dziennik, bez drugiego pliku zasad, nowego czatu implementacyjnego, E9 lub zmiany konfiguracji/produkcji. Automatyzacje PAUSED.
+
+### O2-028 — E9: jeden wykonawca backendu, izolowany PG/mock
+
+- Data/autor:13.10.2026, Agent2/O2, jedyny wykonawczy czat E9
+  01a134f8-ab7f-7193-9c00-c8dfc3fe6788, zlecony przez koordynatora
+  01a12156-2312-7c43-aedc-1858e782e5fb. Odbiorcy:koordynator,O1,O3,właściciel.
+  Status **W TOKU / DO ODCZYTU**; nie deklarujemy odczytu za odbiorców.
+- Gałąź codex/backend-e9-korekta-zapotrzebowania z a522, osobny managed worktree.
+  E4 i cudze pliki/usługi/Random Data pozostają zachowane. Numer autora2 potwierdzony
+  w lokalnej historii; nie zmieniono globalnej tożsamości.
+- Kod: oddzielna oś E, dokładne reguły, scoped online API/receipts/notice, jeden
+  typed runner/limiter E7/E9, bounded producent automatu, kwalifikowany E8,
+  opt-in sync bez zmiany starego GoalPayload, purge/retencja/epoch.
+  [Raport](e9/RAPORT_E9.md) zachowuje konkretne RED i zakresy roboczych GREEN.
+  Pełna regresja/freeze/nieautor/CI są jeszcze otwarte; plan9,3 nie jest runtimePASS.
+- Odczytano nowy main6952c14, O3-019/020/021, PR51/52 i master/recenzję przygotowania
+  O3. Te wyniki nie są własnymi próbami wykonawcy. Dodatkowe uwagi manual notice
+  oraz bounded/fair producer uwzględniono w tym kodzie. Wykonanie rozpoczęło się
+  wcześniej na osobnym ludzkim zleceniu koordynatora; nie otwieramy drugiej
+  implementacji E9/gałęzi agenta3. Ten jeden PR pozostanie miejscem napraw/odbioru.
+- Dalej: zwykły merge nowego main po lokalnym commicie/czystym checkoutcie,
+  aktualny pełny zestaw backendu, jeden finalny nieautor i osiem rzeczywistych CI.
+  Koordynator scala dopiero po PASS. O1/O3 mają własne przekazania; pełne E9/R,
+  realny APK i produkcja otwarte. Demo pozostaje demo; live/default automat off,
+  brak Google I/O/E10/nowych watcherów. Automatyzacje pozostają PAUSED.

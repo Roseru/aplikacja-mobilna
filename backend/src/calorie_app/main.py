@@ -22,6 +22,7 @@ from calorie_app.modules.catalog.moderation.router import router as moderation_r
 from calorie_app.modules.catalog.protected_router import router as protected_catalog_router
 from calorie_app.modules.catalog.router import router as catalog_router
 from calorie_app.modules.diary.read_router import router as diary_read_router
+from calorie_app.modules.energy.router import router as energy_router
 from calorie_app.modules.identity.router import router as identity_router
 from calorie_app.modules.nemesis.router import router as nemesis_router
 from calorie_app.modules.profiles.router import router as profile_router
@@ -83,6 +84,7 @@ def create_app(settings: Settings | None = None, *, engine=None) -> FastAPI:
     app.include_router(catalog_router)
     app.include_router(identity_router)
     app.include_router(profile_router)
+    app.include_router(energy_router)
     app.include_router(protected_catalog_router)
     app.include_router(sync_router)
     app.include_router(diary_read_router)

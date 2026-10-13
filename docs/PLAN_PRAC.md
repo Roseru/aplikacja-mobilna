@@ -155,3 +155,11 @@ E3 dostarcza wewnętrzną atomową blokadę active/deleting i zmianę generacji;
 ## Dostawa E4 O2 do osobnego odbioru
 
 Implementacja backendu, trwałego klienta i deletion znajduje się na codex/backend-e4-synchronizacja z aktualnego main po odebranym E3/0008. [Raport E4](e4/RAPORT_E4.md) wskazuje rzeczywiste testy, niezależny odbiór i CI końcowego head. Room/APK/KO-31 oraz produkcyjny restore są odrębne; E4 nie jest scalane w tym zadaniu i E5 nie rozpoczęto. Starszy zapis „E4 nie rozpoczęto” dotyczy historii przygotowania E3.
+
+## E9-O2 — wykonanie na izolowanym checkoutcie, 13 października 2026
+
+Agent2 wykonuje jedną gałąź codex/backend-e9-korekta-zapotrzebowania i jeden PR
+według [mastera](MASTER_PROMPT_E9.md). [Raport](e9/RAPORT_E9.md) oddziela robocze
+testy od finalnego freeze/nieautorskiego odbioru i CI. Stan W TOKU; nie ma jeszcze
+PASS całości ani merge. Nowy master O3 i jego uwagi notice/producer są odczytane;
+nie są drugim runtime. Pełne E9/R/O1/O3/E10 pozostają otwarte, demo/live bez zmiany.

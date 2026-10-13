@@ -19,6 +19,11 @@ def test_migration_and_database_readiness(database):
     engine, migrate, url = database
     assert set(inspect(engine).get_table_names(schema="app")) == {
         "alembic_version",
+        "energy_axes",
+        "energy_versions",
+        "energy_changes",
+        "energy_analyses",
+        "energy_receipts",
         "user_accounts",
         "products",
         "product_sources",
