@@ -151,8 +151,12 @@ class DiaryFlowTest {
         compose.onNodeWithTag("ration-grams-demo-a-crackers").assertTextContains("22,5")
         compose.waitForIdle()
         compose.activityRule.scenario.recreate()
-        compose.waitUntil(10_000) { compose.onAllNodesWithTag("ration-grams-demo-a-crackers").fetchSemanticsNodes().isNotEmpty() }
-        compose.onNodeWithTag("ration-grams-demo-a-crackers").assertTextContains("22,5")
+        compose.waitUntil(10_000) { compose.onAllNodesWithTag("ration-grams-demo-a-crackers", useUnmergedTree = true).fetchSemanticsNodes().isNotEmpty() }
+        // Recreation restores the IME and lazy scroll asynchronously. Bring the field back
+        // into composition before checking its exact saved quantity; do not rely on a
+        // transient merged node from the preceding wait.
+        compose.onNodeWithTag("ration-content").performScrollToNode(hasTestTag("ration-grams-demo-a-crackers"))
+        compose.onNodeWithTag("ration-grams-demo-a-crackers", useUnmergedTree = true).assertTextContains("22,5")
         finishQuantityInput("ration-grams-demo-a-crackers", "confirm-ration")
         compose.onNodeWithTag("confirm-ration").assertIsEnabled().performClick()
         val expected = (baseline + 222.0).roundToInt().toString()
