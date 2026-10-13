@@ -66,7 +66,9 @@ import pl.roseru.kalorie.session.*
                             source.consents.ranking -> "Zgoda zapisana; publikacja jeszcze niedostępna."
                             else -> "Udział wyłączony według ostatniego odczytu."
                         }, Modifier.testTag("ranking-consent-state"))
-                        Text("Automatyczna korekta zapotrzebowania pozostanie ${if (source.consents.automaticEnergyAdjustment) "włączona" else "wyłączona"}.",
+                        Text(if (source.consents.automaticEnergyAdjustment)
+                            "Zachowamy deklarację zgody na korekty zapotrzebowania. Zmiana zgód wymaga osobnego, ponownego potwierdzenia automatu; sam zapis rankingu go nie uruchamia."
+                            else "Deklaracja zgody na automatyczne korekty zapotrzebowania pozostanie wyłączona.",
                             Modifier.testTag("ranking-consent-energy"), style = MaterialTheme.typography.bodySmall)
                         Row(verticalAlignment = Alignment.CenterVertically) {
                             Checkbox(checked = accepted, onCheckedChange = { accepted = it }, enabled = !busy, modifier = Modifier.testTag("ranking-consent-ack"))

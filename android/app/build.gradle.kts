@@ -12,8 +12,8 @@ android {
         applicationId = "pl.roseru.kalorie"
         minSdk = 26
         targetSdk = 35
-        versionCode = 19
-        versionName = "0.8.8"
+        versionCode = 20
+        versionName = "0.8.9"
         // Public deployment configuration only. No credentials or client secret in the APK.
         val issuer = providers.gradleProperty("CALORIE_OIDC_ISSUER").orElse("").get()
         require(issuer.none { it == '\n' || it == '\r' || it == '"' || it == '\\' })

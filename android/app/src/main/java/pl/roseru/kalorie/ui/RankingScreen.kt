@@ -7,6 +7,7 @@ import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
@@ -33,12 +34,12 @@ import java.time.format.DateTimeFormatter
     val listState = rememberLazyListState()
     val page = (state as? RankingState.Ready)?.page
     LaunchedEffect(page) { if (page != null) listState.scrollToItem(0) }
-    LazyColumn(Modifier.fillMaxSize().testTag("ranking-content"), state = listState, contentPadding = PaddingValues(20.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
+    LazyColumn(Modifier.fillMaxSize().testTag("ranking-content"), state = listState, contentPadding = PaddingValues(16.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
         item { TextButton(onClick = onBack) { Text("Wróć") } }
         item {
             Text("Ranking", style = MaterialTheme.typography.headlineLarge)
             Text("Punkty za regularność", color = MaterialTheme.colorScheme.onSurfaceVariant)
-            Text("Potwierdzone punkty za kompletne dni i realizację celu. Większy deficyt nie daje dodatkowych punktów.", style = MaterialTheme.typography.bodySmall)
+            Text("Kompletne dni i realizacja celu dają punkty. Większy deficyt nie zwiększa wyniku.", style = MaterialTheme.typography.bodySmall)
             TextButton(onClick = onConsent, modifier = Modifier.testTag("ranking-consents")) { Text("Udział w rankingu") }
         }
         item { when (state) {
@@ -52,16 +53,24 @@ import java.time.format.DateTimeFormatter
             is RankingState.Failed -> Text(state.message, Modifier.testTag("ranking-state"))
             is RankingState.Ready -> {
                 Text("Odczyt: " + state.page.asOf.atZone(ZoneId.systemDefault()).format(DateTimeFormatter.ofPattern("dd.MM.yyyy HH:mm")), Modifier.testTag("ranking-state"), style = MaterialTheme.typography.labelLarge)
-                Text("Lista zmienia się na żywo. Między stronami możliwe powtórzenia lub pominięcia; pozycje i remisy wylicza serwer.", style = MaterialTheme.typography.bodySmall)
+                Text("Remisy mają wspólną pozycję. Lista jest zmienna: między stronami możliwe powtórzenia lub pominięcia.", style = MaterialTheme.typography.bodySmall)
                 if (state.page.items.isEmpty()) Text("Na tej stronie nie ma osób do wyświetlenia. Możesz odświeżyć listę od początku.", Modifier.testTag("ranking-empty"))
             }
         } }
         if (state is RankingState.Ready) itemsIndexed(state.page.items, key = { index, _ -> index }) { index, entry ->
             Card(Modifier.fillMaxWidth().testTag("ranking-entry-$index")) {
-                Column(Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(4.dp)) {
-                    Text("Pozycja ${entry.position}", style = MaterialTheme.typography.labelLarge)
+                Column(Modifier.padding(horizontal = 12.dp, vertical = 8.dp), verticalArrangement = Arrangement.spacedBy(2.dp)) {
+                    // Keep long server counts readable without squeezing the name or clipping digits.
+                    if (LocalDensity.current.fontScale > 1.3f || entry.position > 99_999 || entry.points > 99_999) {
+                        Text("Pozycja ${entry.position}", style = MaterialTheme.typography.labelLarge)
+                        Text("${entry.points} pkt", style = MaterialTheme.typography.titleMedium)
+                    } else {
+                        Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                            Text("Pozycja ${entry.position}", Modifier.weight(1f), style = MaterialTheme.typography.labelLarge)
+                            Text("${entry.points} pkt", style = MaterialTheme.typography.titleMedium)
+                        }
+                    }
                     Text(entry.pseudonym, style = MaterialTheme.typography.titleMedium, maxLines = 2, overflow = TextOverflow.Ellipsis)
-                    Text("${entry.points} pkt", style = MaterialTheme.typography.titleLarge)
                     Text("${entry.rank} · Odznaki: ${entry.activeBadges}", style = MaterialTheme.typography.bodySmall)
                 }
             }

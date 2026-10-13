@@ -53,7 +53,7 @@ class RankingScreenTest {
     private fun screenshot(name: String) {
         val inst = InstrumentationRegistry.getInstrumentation()
         check(inst.targetContext.packageName == "pl.roseru.kalorie.validation"); check(name in setOf("light", "dark"))
-        val path = "/data/local/tmp/calorie-v088-ranking-$name.png"
+        val path = "/data/local/tmp/calorie-v089-ranking-$name.png"
         ParcelFileDescriptor.AutoCloseInputStream(inst.uiAutomation.executeShellCommand("screencap -p $path")).use { it.readBytes() }
         val bytes = ParcelFileDescriptor.AutoCloseInputStream(inst.uiAutomation.executeShellCommand("head -c 8 $path")).use { it.readBytes() }
         assertTrue(bytes.contentEquals(byteArrayOf(0x89.toByte(), 0x50, 0x4e, 0x47, 13, 10, 26, 10)))
@@ -66,6 +66,10 @@ class RankingScreenTest {
         node("ranking-entry-0").assert(hasText("Pozycja 1") or hasAnyDescendant(hasText("Pozycja 1")))
         node("ranking-entry-1").assert(hasText("Pozycja 1") or hasAnyDescendant(hasText("Pozycja 1")))
         node("ranking-entry-2").assert(hasText("Pozycja 3") or hasAnyDescendant(hasText("Pozycja 3")))
+        val compactRow = node("ranking-entry-0").fetchSemanticsNode()
+        assertTrue("Standard row must leave room for more participants", compactRow.boundsInRoot.height <= with(compose.density) { 100.dp.toPx() })
+        node("ranking-entry-0").assert(hasAnyDescendant(hasText("10 pkt")))
+        node("ranking-entry-0").assert(hasAnyDescendant(hasText("Rekrut · Odznaki: 2")))
         compose.onNodeWithTag("ranking-next").assertDoesNotExist()
         compose.onNodeWithTag("ranking-content").performScrollToIndex(0); screenshot("light")
         compose.runOnIdle { state.value = view(RankingState.Ready(page(true))) }
