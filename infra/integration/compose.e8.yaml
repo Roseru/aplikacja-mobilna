@@ -1,0 +1,68 @@
+# Optional overlay; default stack does not provision or activate E8.
+x-e8: &e8
+  image: ${INTEGRATION_PROJECT}-backend:local
+  user: "10001:10001"
+  security_opt: [no-new-privileges:true]
+  cap_drop: [ALL]
+  read_only: true
+  tmpfs: [/tmp]
+  restart: unless-stopped
+  stop_grace_period: 10s
+
+services:
+  e8-storage-init:
+    <<: *e8
+    user: "0:0"
+    restart: "no"
+    cap_add: [CHOWN, DAC_OVERRIDE, FOWNER]
+    command: [.venv/bin/python, -c, "import os; [(os.chmod(p,0o700),os.chown(p,10001,10001)) for p in ['/motivation','/lifecycle','/finalizer']]"]
+    volumes: [motivation_data:/motivation, lifecycle_data:/lifecycle, finalizer_data:/finalizer]
+
+  e8-provision:
+    <<: *e8
+    restart: "no"
+    env_file: ${INTEGRATION_STATE}/e8-admin.env
+    volumes:
+      - ../local:/opt/provision:ro
+    command: [.venv/bin/python, /opt/provision/provision_motivation_worker.py]
+
+  motivation:
+    <<: *e8
+    env_file: ${INTEGRATION_STATE}/e8-motivation.env
+    command: [.venv/bin/python, -I, /opt/e8/e8_worker.py, motivation, serve]
+    volumes: [./e8_worker.py:/opt/e8/e8_worker.py:ro, motivation_data:/worker]
+    healthcheck:
+      test: [CMD, .venv/bin/python, -I, /opt/e8/e8_worker.py, motivation, health]
+      interval: 10s
+      timeout: 3s
+      retries: 2
+      start_period: 60s
+
+  nemesis-lifecycle:
+    <<: *e8
+    env_file: ${INTEGRATION_STATE}/e8-lifecycle.env
+    command: [.venv/bin/python, -I, /opt/e8/e8_worker.py, lifecycle, serve]
+    volumes: [./e8_worker.py:/opt/e8/e8_worker.py:ro, lifecycle_data:/worker]
+    healthcheck:
+      test: [CMD, .venv/bin/python, -I, /opt/e8/e8_worker.py, lifecycle, health]
+      interval: 10s
+      timeout: 3s
+      retries: 2
+      start_period: 60s
+
+  nemesis-finalizer:
+    <<: *e8
+    env_file: ${INTEGRATION_STATE}/e8-finalizer.env
+    command: [.venv/bin/python, -I, /opt/e8/e8_worker.py, finalizer, serve]
+    volumes: [./e8_worker.py:/opt/e8/e8_worker.py:ro, finalizer_data:/worker]
+    healthcheck:
+      test: [CMD, .venv/bin/python, -I, /opt/e8/e8_worker.py, finalizer, health]
+      interval: 10s
+      timeout: 3s
+      retries: 2
+      start_period: 60s
+
+volumes:
+  motivation_data:
+  lifecycle_data:
+  finalizer_data:
