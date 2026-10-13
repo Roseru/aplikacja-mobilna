@@ -356,18 +356,32 @@ jobs:
         run: >-
           uv run --project backend --locked python infra/integration/run.py verify
           --state "${{ runner.temp }}/calorie-integration"
+      - name: Start three minimal E8 workers without activating Nemesis
+        run: >-
+          uv run --project backend --locked python infra/integration/run_e8.py up
+          --state "${{ runner.temp }}/calorie-integration"
+      - name: Verify installed E8 processes, minute cycles, effective LOGINs and restart
+        run: >-
+          uv run --project backend --locked python infra/integration/run_e8.py verify
+          --state "${{ runner.temp }}/calorie-integration"
       - name: Upload secret-free infrastructure receipt
         uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
         with:
           name: local-integration-receipt
-          path: ${{ runner.temp }}/calorie-integration/verification.json
+          path: |
+            ${{ runner.temp }}/calorie-integration/verification.json
+            ${{ runner.temp }}/calorie-integration/e8-verification.json
           if-no-files-found: error
           retention-days: 14
       - name: Stop only this stack, retain private runner state until job cleanup
         if: always()
-        run: >-
-          uv run --project backend --locked python infra/integration/run.py down
-          --state "${{ runner.temp }}/calorie-integration"
+        run: |
+          if test -f "${{ runner.temp }}/calorie-integration/e8-admin.env"; then
+            uv run --project backend --locked python infra/integration/run_e8.py stop \
+              --state "${{ runner.temp }}/calorie-integration"
+          fi
+          uv run --project backend --locked python infra/integration/run.py down \
+            --state "${{ runner.temp }}/calorie-integration"
   ci-required:
     if: always()
     needs: [contracts, quality, postgres, keycloak-pkce, android-build, android-device, local-integration]
