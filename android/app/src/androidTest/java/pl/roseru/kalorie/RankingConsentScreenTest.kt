@@ -62,7 +62,8 @@ class RankingConsentScreenTest {
         compose.waitForIdle(); assertEquals(0, reads); assertTrue(decisions.isEmpty())
         node("ranking-consent-read").performClick(); assertEquals(1, reads); assertTrue(decisions.isEmpty())
         compose.runOnIdle { state.value = view(RankingConsentState.Ready(source())) }
-        node("ranking-consent-energy").assertTextContains("włączona", substring = true)
+        node("ranking-consent-energy").assertTextContains("Zachowamy deklarację zgody", substring = true)
+        node("ranking-consent-energy").assertTextContains("sam zapis rankingu go nie uruchamia", substring = true)
         node("ranking-consent-ack").assertIsOff(); node("ranking-consent-enable").assertIsNotEnabled()
         screenshot("light")
         node("ranking-consent-ack").performClick(); node("ranking-consent-enable").assertIsEnabled().performClick()

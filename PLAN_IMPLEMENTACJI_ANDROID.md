@@ -1,5 +1,13 @@
 # Plan implementacji — osoba 1: Android i pamięć lokalna
 
+Android **0.8.9** zagęszcza ranking zgodnie z feedbackiem: wspólny wiersz pozycji/punktów i mniejsze odstępy, z czytelnym układem przy dużym tekście. Poprawia rozróżnienie deklaracji zgody i aktywnego automatu po przekazaniu E9. [Raport i podglądy](android/RAPORT_0_8_9.md):144 JVM i18 zmienionych testów urządzenia PASS, Room8 bez migracji,22tabele/5posiłków zachowane. Nemesis, klientE9 i rzeczywisty API mają dalsze etapy.
+
+## Aktualizacja O1 — lista rankingu0.8.8, 13 października2026
+
+- Dostarczony live ranking:25osób/strona, rank/points/badges, cursor/410/expiry/exact retry, shared Retry-After i private preflight/fencing. Odczyt bez opt-in oraz bez zapisu peer/cursor doRoom/vault. [Raport](android/RAPORT_0_8_8.md), codex/android-ranking-lista.
+- Pełny144JVM/156device PASS na92ace79; po końcowym UI14PASS, po pomiarze320dp3QA PASS. Nie sumować zestawów. Install-r/launch zachował22tabele/5posiłków. Końcowa integracja testów O3 ma oddzielne dowody.
+- Następne: pairing/scopes/wyniki Nemesis, rzeczywisty API/OIDC/trust, semantyczne E4/push/ACK/import/WorkManager/KO31 i recovery/KO32. Zlecenie backenduE9 należy doO3; O1 odczytuje kontrakt, bez drugiej implementacji backendu lub aktywacjiAI.
+
 Aktualizacja PR50: source36a3b07/test-only selektor po recreation;135JVM/147device pełnyPASS, lint0error. CI ac403a5 miało146/147 przez brak mergednode; historiaRED zachowana w raporcie/O1-023. Runtime/APK5234edb bez zmian. Nowy final-head CI oddzielnie.
 
 ## Aktualizacja O1 — świadome zgody rankingu 0.8.7, 13 października 2026
@@ -228,3 +236,5 @@ Dobór rozwiązań bazuje na oficjalnej dokumentacji Androida:
 - ViewModel, repozytoria i przepływ stanu: [zalecenia architektury Android](https://developer.android.com/topic/architecture/recommendations).
 - Lokalna warstwa danych: [offline-first](https://developer.android.com/topic/architecture/data-layer/offline-first), [Room](https://developer.android.com/training/data-storage/room).
 - Trwałe zadania synchronizacji: [WorkManager](https://developer.android.com/develop/background-work/background-tasks/persistent).
+
+Przekazanie E9 odczytane na main2b4073e i PR57/58. Po kliencie Nemesis wydzielimy `codex/android-korekty-zapotrzebowania`: state/history/requested/effective, osobne świadome notice/affirm i decyzje analizy, oś E oddzielona od celu kcal. Ten etap nie jest wykonany ani opublikowany jako PR. Pierwszy rzeczywisty APK/API wymaga osiągalnego z urządzenia issuer/origin/publicCA i poprawnego discovery/readiness od O3; lokalny rollout0024 nie zastępuje tego warunku. SemantyczneE4/WorkManager/KO31/recovery pozostają otwarte.

@@ -11,7 +11,8 @@ import androidx.compose.ui.unit.dp
 
 data class SessionActions(val login: () -> Unit, val logout: () -> Unit, val refresh: () -> Unit, val cancel: () -> Unit,
     val bootstrap: () -> Unit, val readProfile: () -> Unit, val downloadSnapshot: () -> Unit = {}, val readMotivation: () -> Unit = {},
-    val readRankingConsents: () -> Unit = {}, val confirmRankingConsent: (String, Boolean) -> Unit = { _, _ -> }, val retryRankingConsent: () -> Unit = {})
+    val readRankingConsents: () -> Unit = {}, val confirmRankingConsent: (String, Boolean) -> Unit = { _, _ -> }, val retryRankingConsent: () -> Unit = {},
+    val readRanking: () -> Unit = {}, val nextRankingPage: () -> Unit = {}, val retryRankingPage: () -> Unit = {}, val clearRanking: () -> Unit = {})
 
 @Composable fun SessionScreen(view: SessionView, actions: SessionActions, back: () -> Unit, backLabel: String = "Wróć do profilu") {
     val account = view.binding?.owner?.kind == "account"
@@ -47,7 +48,7 @@ data class SessionActions(val login: () -> Unit, val logout: () -> Unit, val ref
                     if (!view.apiConfigured) Text("Połączenie będzie dostępne po podłączeniu serwera aplikacji.")
                     if (view.bootstrapBusy) { LinearProgressIndicator(Modifier.fillMaxWidth()); Text("Łączę konto z serwerem…") }
                     OutlinedButton(onClick = actions.bootstrap,
-                        enabled = view.apiConfigured && !view.bootstrapBusy && !view.profileBusy && !view.snapshotBusy && !view.rankingConsentBusy && !view.busy && !view.pendingLogin,
+                        enabled = view.apiConfigured && !view.bootstrapBusy && !view.profileBusy && !view.snapshotBusy && !view.rankingConsentBusy && !view.rankingBusy && !view.busy && !view.pendingLogin,
                         modifier = Modifier.fillMaxWidth().testTag("session-bootstrap")) {
                         Text(if (view.serverLinked) "Sprawdź połączenie" else "Połącz konto z serwerem")
                     }
@@ -73,7 +74,7 @@ data class SessionActions(val login: () -> Unit, val logout: () -> Unit, val ref
                     }
                     OutlinedButton(onClick = actions.readProfile,
                         enabled = view.apiConfigured && view.serverLinked && !view.requiresRecovery && !view.busy &&
-                            !view.bootstrapBusy && !view.profileBusy && !view.snapshotBusy && !view.motivationBusy && !view.rankingConsentBusy && !view.pendingLogin,
+                            !view.bootstrapBusy && !view.profileBusy && !view.snapshotBusy && !view.motivationBusy && !view.rankingConsentBusy && !view.rankingBusy && !view.pendingLogin,
                         modifier = Modifier.fillMaxWidth().testTag("session-read-profile")) { Text("Pobierz profil z serwera") }
                 }
             }
@@ -93,7 +94,7 @@ data class SessionActions(val login: () -> Unit, val logout: () -> Unit, val ref
                     if (status?.needsBootstrap == true) Text("Najpierw wybierz Sprawdź połączenie, aby ponownie potwierdzić stan konta.")
                     OutlinedButton(onClick = actions.downloadSnapshot,
                         enabled = view.apiConfigured && view.serverLinked && status?.blocked != true && status?.needsBootstrap != true && !view.busy &&
-                            !view.bootstrapBusy && !view.profileBusy && !view.snapshotBusy && !view.motivationBusy && !view.rankingConsentBusy && !view.pendingLogin,
+                            !view.bootstrapBusy && !view.profileBusy && !view.snapshotBusy && !view.motivationBusy && !view.rankingConsentBusy && !view.rankingBusy && !view.pendingLogin,
                         modifier = Modifier.fillMaxWidth().testTag("session-download-snapshot")) {
                         Text(if (status != null && status.pendingPages > 0) "Wznów pobieranie kopii" else "Pobierz kopię danych serwera")
                     }

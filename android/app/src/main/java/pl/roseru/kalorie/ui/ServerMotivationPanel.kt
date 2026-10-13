@@ -18,7 +18,7 @@ import java.time.format.DateTimeFormatter
 @Composable internal fun ServerMotivationPanel(view: SessionView, onRead: () -> Unit, onAccount: () -> Unit, onRanking: (() -> Unit)? = null) {
     val account = view.binding?.owner?.kind == "account"
     val ready = account && view.motivationConfigured && view.serverLinked && !view.requiresRecovery && !view.pendingLogin
-    val canRead = ready && !view.busy && !view.bootstrapBusy && !view.profileBusy && !view.snapshotBusy && !view.motivationBusy && !view.rankingConsentBusy
+    val canRead = ready && !view.busy && !view.bootstrapBusy && !view.profileBusy && !view.snapshotBusy && !view.motivationBusy && !view.rankingConsentBusy && !view.rankingBusy
     // The controller fences the result; this also hides it immediately during a visible transition.
     val state = if (ready && !view.busy) view.motivation else MotivationState.NotRequested
     Card(Modifier.fillMaxWidth(), shape = RoundedCornerShape(18.dp),
