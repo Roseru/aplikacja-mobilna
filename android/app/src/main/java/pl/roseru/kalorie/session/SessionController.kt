@@ -33,7 +33,9 @@ data class SessionView(val binding: SessionBinding? = null, val busy: Boolean = 
     val rankingConsentConfigured: Boolean = false, val rankingConsentBusy: Boolean = false,
     val rankingConsent: RankingConsentState = RankingConsentState.NotRequested,
     val rankingConfigured: Boolean = false, val rankingBusy: Boolean = false,
-    val ranking: RankingState = RankingState.NotRequested)
+    val ranking: RankingState = RankingState.NotRequested,
+    val nemesisConfigured: Boolean = false, val nemesisBusy: Boolean = false,
+    val nemesis: NemesisState = NemesisState.NotRequested)
 
 /** Serializes durable decisions, not network waits. A callback/refresh is fenced by a captured
  * owner lease AND an operation ID, so logout and A→B→A cannot apply an old response.
@@ -46,14 +48,15 @@ class SessionController internal constructor(private val db: CalorieDatabase, pr
     private val snapshotGateway: SnapshotGateway? = null, snapshotProtocol: SnapshotProtocol? = null,
     private val motivationGateway: MotivationGateway? = null,
     private val rankingConsentGateway: RankingConsentGateway? = null,
-    private val rankingGateway: RankingGateway? = null) {
+    private val rankingGateway: RankingGateway? = null,
+    private val nemesisGateway: NemesisGateway? = null) {
     private val owners = LocalOwnerStore(db)
     private val mutex = Mutex()
     private var record = JSONObject()
     private var operation: String? = null
     private var bootstrapOperation: String? = null
     private var profileOperation: String? = null
-    private enum class PrivateReadKind { PROFILE, MOTIVATION, CONSENTS, RANKING }
+    private enum class PrivateReadKind { PROFILE, MOTIVATION, CONSENTS, RANKING, NEMESIS }
     private enum class RankingStep { FIRST, NEXT, RETRY }
     private var privateReadKind = PrivateReadKind.PROFILE
     private var motivationState: MotivationState = MotivationState.NotRequested
@@ -68,6 +71,11 @@ class SessionController internal constructor(private val db: CalorieDatabase, pr
     private var rankingRetryQuery: RankingQuery? = null
     private var rankingNextQuery: RankingQuery? = null
     private var rankingRetryExpiry: java.time.Instant? = null
+    private var nemesisState: NemesisState = NemesisState.NotRequested
+    private var nemesisFence: Pair<OwnerLease, Long>? = null
+    private var nemesisServerContext: Triple<String, Int, String>? = null
+    private var nemesisRetryQuery: NemesisQuery? = null
+    private var nemesisNextQuery: NemesisQuery.Listing? = null
     private var snapshotOperation: String? = null
     private val snapshots = snapshotProtocol?.let { ServerSnapshotStore(db, it) }
     private val snapshotProtocol = snapshotProtocol
@@ -89,9 +97,9 @@ class SessionController internal constructor(private val db: CalorieDatabase, pr
         } catch (error: CancellationException) { throw error }
         catch (_: Exception) { mutex.withLock {
             clearMotivation()
-            clearRanking()
+            clearRanking(); clearNemesis()
             mutable.value = mutable.value.copy(motivation = MotivationState.NotRequested, rankingConsent = RankingConsentState.NotRequested,
-                ranking = RankingState.NotRequested)
+                ranking = RankingState.NotRequested, nemesis = NemesisState.NotRequested)
         } }
     }
     private fun copyRecord() = JSONObject(record.toString())
@@ -128,6 +136,17 @@ class SessionController internal constructor(private val db: CalorieDatabase, pr
         clearRanking()
         try { publish() } catch (_: Exception) { mutable.value = mutable.value.copy(rankingBusy = false, ranking = RankingState.NotRequested) }
     }
+    private fun clearNemesis() {
+        nemesisState = NemesisState.NotRequested; nemesisFence = null; nemesisServerContext = null
+        nemesisRetryQuery = null; nemesisNextQuery = null
+    }
+    suspend fun clearNemesisPreview() = mutex.withLock {
+        if (privateReadKind == PrivateReadKind.NEMESIS) profileOperation = null
+        clearNemesis()
+        try { publish() } catch (_: Exception) {
+            mutable.value = mutable.value.copy(nemesisBusy = false, nemesis = NemesisState.NotRequested)
+        }
+    }
     private fun pendingConsent(current: SessionBinding, server: AccountBindingEntity?): RankingConsentAttempt? = try {
         record.optJSONObject("rankingConsentAttempt")?.let(RankingConsentAttempt::restore)?.takeIf {
             sessionFor(current) != null && current.owner.kind == "account" && server != null && !server.requiresRecovery &&
@@ -162,7 +181,13 @@ class SessionController internal constructor(private val db: CalorieDatabase, pr
             rankingFence != (current.lease to server.contextRevision) ||
             rankingServerContext != Triple(server.accountId, server.accountGeneration, server.syncEpoch))) {
             if (privateReadKind == PrivateReadKind.RANKING) profileOperation = null
-            clearRanking()
+            clearRanking(); clearNemesis()
+        }
+        if (nemesisFence != null && (session == null || server == null || server.requiresRecovery ||
+            nemesisFence != (current.lease to server.contextRevision) ||
+            nemesisServerContext != Triple(server.accountId, server.accountGeneration, server.syncEpoch))) {
+            if (privateReadKind == PrivateReadKind.NEMESIS) profileOperation = null
+            clearNemesis()
         }
         val pendingConsent = pendingConsent(current, server)
         val consentBusy = consentOperation != null || (profileOperation != null && privateReadKind == PrivateReadKind.CONSENTS)
@@ -179,7 +204,10 @@ class SessionController internal constructor(private val db: CalorieDatabase, pr
             rankingConsent = if (consentBusy) RankingConsentState.Loading else pendingConsent?.let { RankingConsentState.Pending(it.ranking) } ?: consentState,
             rankingConfigured = rankingGateway != null && motivationGateway != null,
             rankingBusy = profileOperation != null && privateReadKind == PrivateReadKind.RANKING,
-            ranking = if (profileOperation != null && privateReadKind == PrivateReadKind.RANKING) RankingState.Loading else rankingState)
+            ranking = if (profileOperation != null && privateReadKind == PrivateReadKind.RANKING) RankingState.Loading else rankingState,
+            nemesisConfigured = nemesisGateway != null && motivationGateway != null,
+            nemesisBusy = profileOperation != null && privateReadKind == PrivateReadKind.NEMESIS,
+            nemesis = if (profileOperation != null && privateReadKind == PrivateReadKind.NEMESIS) NemesisState.Loading else nemesisState)
     }
     suspend fun start() = mutex.withLock {
         if (mutable.value.binding != null) return@withLock
@@ -225,11 +253,12 @@ class SessionController internal constructor(private val db: CalorieDatabase, pr
             consentOperation = null
             serverProfile = null
             clearMotivation()
-            clearRanking()
+            clearRanking(); clearNemesis()
             operation = id
             mutable.value = mutable.value.copy(busy = true, bootstrapBusy = false, profileBusy = false, snapshotBusy = false, snapshot = null, serverProfile = null,
                 motivationBusy = false, motivation = MotivationState.NotRequested, rankingConsentBusy = false,
-                rankingConsent = RankingConsentState.NotRequested, rankingBusy = false, ranking = RankingState.NotRequested, message = null)
+                rankingConsent = RankingConsentState.NotRequested, rankingBusy = false, ranking = RankingState.NotRequested,
+                nemesisBusy = false, nemesis = NemesisState.NotRequested, message = null)
             lease
         } } catch (error: CancellationException) { throw error }
         catch (_: Exception) { mutable.value = mutable.value.copy(message = "Logowanie jest niedostępne. Dziennik działa offline."); return null }
@@ -323,7 +352,7 @@ class SessionController internal constructor(private val db: CalorieDatabase, pr
         consentOperation = null
         serverProfile = null
         clearMotivation()
-        clearRanking()
+        clearRanking(); clearNemesis()
         forget()
         mutable.value = mutable.value.copy(binding = null)
         owners.selectIfCurrent(captured, guest.id)
@@ -335,6 +364,7 @@ class SessionController internal constructor(private val db: CalorieDatabase, pr
             catch (_: Exception) { mutable.value = mutable.value.copy(binding = previous, busy = false, hasSession = false,
                 motivationBusy = false, motivation = MotivationState.NotRequested,
                 rankingBusy = false, ranking = RankingState.NotRequested,
+                nemesisBusy = false, nemesis = NemesisState.NotRequested,
                 message = "Pamięć dziennika jest niedostępna. Spróbuj ponownie.") }
         } }
     }
@@ -356,13 +386,15 @@ class SessionController internal constructor(private val db: CalorieDatabase, pr
                 serverProfile = null
                 clearMotivation()
                 // Manual renewal invalidates a held private read. Automatic renewal belongs to it.
-                if (expected == null) { profileOperation = null; consentOperation = null; clearRanking() }
+                if (expected == null) { profileOperation = null; consentOperation = null; clearRanking(); clearNemesis() }
                 mutable.value = mutable.value.copy(busy = true, profileBusy = profileOperation != null && privateReadKind == PrivateReadKind.PROFILE,
                     motivationBusy = profileOperation != null && privateReadKind == PrivateReadKind.MOTIVATION,
                     serverProfile = null, motivation = MotivationState.NotRequested, rankingConsent = RankingConsentState.NotRequested,
                     rankingConsentBusy = expected != null && (consentOperation != null || (profileOperation != null && privateReadKind == PrivateReadKind.CONSENTS)),
                     rankingBusy = expected != null && profileOperation != null && privateReadKind == PrivateReadKind.RANKING,
-                    ranking = if (expected != null && privateReadKind == PrivateReadKind.RANKING) RankingState.Loading else RankingState.NotRequested, message = null)
+                    ranking = if (expected != null && privateReadKind == PrivateReadKind.RANKING) RankingState.Loading else RankingState.NotRequested,
+                    nemesisBusy = expected != null && profileOperation != null && privateReadKind == PrivateReadKind.NEMESIS,
+                    nemesis = if (expected != null && privateReadKind == PrivateReadKind.NEMESIS) NemesisState.Loading else NemesisState.NotRequested, message = null)
                 Triple(current, state, SessionIdentity(session.getString("issuer"), session.getString("subject")))
             }
             val tokens = withTimeout(30_000) { gateway.tokens(captured.second.createTokenRefreshRequest()) }
@@ -527,11 +559,26 @@ class SessionController internal constructor(private val db: CalorieDatabase, pr
     suspend fun readRanking() = readPrivate(PrivateReadKind.RANKING, RankingStep.FIRST)
     suspend fun nextRankingPage() = readPrivate(PrivateReadKind.RANKING, RankingStep.NEXT)
     suspend fun retryRankingPage() = readPrivate(PrivateReadKind.RANKING, RankingStep.RETRY)
-    private suspend fun readPrivate(kind: PrivateReadKind, rankingStep: RankingStep? = null) {
-        val firstGateway: ProfileGateway = (if (kind in setOf(PrivateReadKind.MOTIVATION, PrivateReadKind.RANKING)) motivationGateway else profileGateway) ?: return
+    suspend fun readNemesis() = readPrivate(PrivateReadKind.NEMESIS, nemesisRequest = NemesisQuery.Listing())
+    suspend fun readNemesisChallenge(id: String) {
+        val query = try { NemesisQuery.Detail(id) } catch (_: Exception) { return }
+        readPrivate(PrivateReadKind.NEMESIS, nemesisRequest = query)
+    }
+    suspend fun nextNemesisPage() {
+        val query = mutex.withLock { if (nemesisState is NemesisState.ListReady) nemesisNextQuery else null } ?: return
+        readPrivate(PrivateReadKind.NEMESIS, nemesisRequest = query, nemesisContinuation = true)
+    }
+    suspend fun retryNemesis() {
+        val query = mutex.withLock { if ((nemesisState as? NemesisState.Failed)?.canRetry == true) nemesisRetryQuery else null } ?: return
+        readPrivate(PrivateReadKind.NEMESIS, nemesisRequest = query, nemesisContinuation = true)
+    }
+    private suspend fun readPrivate(kind: PrivateReadKind, rankingStep: RankingStep? = null,
+        nemesisRequest: NemesisQuery? = null, nemesisContinuation: Boolean = false) {
+        val firstGateway: ProfileGateway = (if (kind in setOf(PrivateReadKind.MOTIVATION, PrivateReadKind.RANKING, PrivateReadKind.NEMESIS)) motivationGateway else profileGateway) ?: return
         if (kind == PrivateReadKind.CONSENTS && (motivationGateway == null || rankingConsentGateway == null)) return
         if (kind == PrivateReadKind.RANKING && rankingGateway == null) return
-        val label = when (kind) { PrivateReadKind.PROFILE -> "profil"; PrivateReadKind.MOTIVATION -> "osiągnięcia"; PrivateReadKind.CONSENTS -> "zgody"; PrivateReadKind.RANKING -> "ranking" }
+        if (kind == PrivateReadKind.NEMESIS && (nemesisGateway == null || nemesisRequest == null)) return
+        val label = when (kind) { PrivateReadKind.PROFILE -> "profil"; PrivateReadKind.MOTIVATION -> "osiągnięcia"; PrivateReadKind.CONSENTS -> "zgody"; PrivateReadKind.RANKING -> "ranking"; PrivateReadKind.NEMESIS -> "Nemesis" }
         val id = UUID.randomUUID().toString()
         var capturedLease: OwnerLease? = null
         var rankingQuery: RankingQuery? = null
@@ -565,11 +612,23 @@ class SessionController internal constructor(private val db: CalorieDatabase, pr
                 }
                 rankingRetryExpiry = if (rankingStep == RankingStep.FIRST) null else expiry
             }
+            if (kind == PrivateReadKind.NEMESIS && nemesisContinuation &&
+                (nemesisFence != (current.lease to server.contextRevision) ||
+                    nemesisServerContext != Triple(server.accountId, server.accountGeneration, server.syncEpoch) ||
+                    (nemesisRequest !== nemesisRetryQuery && nemesisRequest !== nemesisNextQuery))) {
+                clearNemesis(); publish(); return
+            }
+            if (kind == PrivateReadKind.NEMESIS) {
+                nemesisFence = current.lease to server.contextRevision
+                nemesisServerContext = Triple(server.accountId, server.accountGeneration, server.syncEpoch)
+                nemesisRetryQuery = nemesisRequest; nemesisNextQuery = null
+            }
             val retryAt = sessionFor(current)!!.optLong("apiRetryAt")
             if (retryAt > now()) {
                 val message = "Serwer jest zajęty. Ponów za co najmniej ${(retryAt - now() + 999) / 1000} s."
                 if (kind == PrivateReadKind.MOTIVATION) motivationState = MotivationState.Failed(message)
                 if (kind == PrivateReadKind.CONSENTS) consentState = RankingConsentState.Failed(message)
+                if (kind == PrivateReadKind.NEMESIS) nemesisState = NemesisState.Failed(message, true)
                 if (kind == PrivateReadKind.RANKING) {
                     rankingRetryQuery = rankingQuery; rankingNextQuery = null
                     rankingFence = current.lease to server.contextRevision
@@ -582,6 +641,7 @@ class SessionController internal constructor(private val db: CalorieDatabase, pr
             privateReadKind = kind
             serverProfile = null
             clearMotivation()
+            if (kind != PrivateReadKind.NEMESIS) clearNemesis() else nemesisState = NemesisState.Loading
             if (kind != PrivateReadKind.RANKING) clearRanking()
             else {
                 rankingState = RankingState.Loading; rankingRetryQuery = rankingQuery; rankingNextQuery = null
@@ -612,6 +672,7 @@ class SessionController internal constructor(private val db: CalorieDatabase, pr
             var refreshed = false
             var stagedProfile: ProfileRead? = null
             var stagedMotivation: MotivationRead? = null
+            var stagedNemesis: NemesisChallenge? = null
             var readGateway = firstGateway
             while (true) {
                 val captured = ticket
@@ -625,8 +686,14 @@ class SessionController internal constructor(private val db: CalorieDatabase, pr
                     val profileStage = kind == PrivateReadKind.PROFILE || (kind == PrivateReadKind.CONSENTS && stagedProfile == null)
                     val response = if (profileStage) ProfileReadProtocol.parse(result.body) else null
                     val rankingStage = kind == PrivateReadKind.RANKING && stagedMotivation != null
-                    val motivation = if (!profileStage && !rankingStage) MotivationReadProtocol.parse(result.body) else null
+                    val nemesisStage = kind == PrivateReadKind.NEMESIS && stagedMotivation != null
+                    val motivation = if (!profileStage && !rankingStage && !nemesisStage) MotivationReadProtocol.parse(result.body) else null
                     val page = if (rankingStage) RankingReadProtocol.parse(result.body, checkNotNull(rankingQuery)) else null
+                    val (nemesisPage, nemesisDetail, statistics) = if (nemesisStage) withContext(Dispatchers.Default) {
+                        Triple(if (nemesisRequest is NemesisQuery.Listing) NemesisReadProtocol.page(result.body, nemesisRequest) else null,
+                            if (nemesisRequest is NemesisQuery.Detail && stagedNemesis == null) NemesisReadProtocol.detail(result.body, nemesisRequest.id) else null,
+                            stagedNemesis?.let { NemesisReadProtocol.statistics(result.body, it) })
+                    } else Triple(null, null, null)
                     var continueRead = false
                     withApiSession(captured) {
                         ready()
@@ -638,15 +705,30 @@ class SessionController internal constructor(private val db: CalorieDatabase, pr
                                 contextRevision = Math.addExact(server.contextRevision, 1)))
                             profileOperation = null
                             clearMotivation()
-                            clearRanking()
+                            clearRanking(); clearNemesis()
                             val message = "Stan serwera się zmienił. Lokalny dziennik zachowany; wymagane uzgodnienie danych."
                             if (kind == PrivateReadKind.MOTIVATION) motivationState = MotivationState.Failed(message)
                             if (kind == PrivateReadKind.CONSENTS) consentState = RankingConsentState.Failed(message)
                             if (kind == PrivateReadKind.RANKING) rankingState = RankingState.Failed(message, false)
+                            if (kind == PrivateReadKind.NEMESIS) nemesisState = NemesisState.Failed(message, false)
                             publish(message)
                         } else if (kind == PrivateReadKind.CONSENTS && response != null) {
                             stagedProfile = response
                             readGateway = checkNotNull(motivationGateway)
+                            continueRead = true
+                        } else if (kind == PrivateReadKind.NEMESIS && motivation != null) {
+                            stagedMotivation = motivation
+                            readGateway = object : ProfileGateway {
+                                override suspend fun get(session: ApiSession, beforeSend: suspend () -> Unit) =
+                                    checkNotNull(nemesisGateway).get(session, server.syncEpoch, checkNotNull(nemesisRequest), beforeSend)
+                            }
+                            continueRead = true
+                        } else if (nemesisDetail != null && nemesisDetail.status in setOf("active", "finished")) {
+                            stagedNemesis = nemesisDetail
+                            readGateway = object : ProfileGateway {
+                                override suspend fun get(session: ApiSession, beforeSend: suspend () -> Unit) =
+                                    checkNotNull(nemesisGateway).get(session, server.syncEpoch, NemesisQuery.Statistics(nemesisDetail.id), beforeSend)
+                            }
                             continueRead = true
                         } else if (kind == PrivateReadKind.RANKING && motivation != null) {
                             // Preflight each live page; no GET reaffirms ranking consent.
@@ -680,10 +762,17 @@ class SessionController internal constructor(private val db: CalorieDatabase, pr
                                 motivationState = MotivationState.Ready(checkNotNull(stagedMotivation))
                                 motivationFence = lease to server.contextRevision
                             }
+                            if (kind == PrivateReadKind.NEMESIS) {
+                                nemesisState = if (nemesisPage != null) NemesisState.ListReady(nemesisPage)
+                                    else NemesisState.DetailReady(checkNotNull(nemesisDetail ?: stagedNemesis), statistics)
+                                nemesisNextQuery = nemesisPage?.nextCursor?.let { NemesisQuery.Listing(it) }
+                                motivationState = MotivationState.Ready(checkNotNull(stagedMotivation)); motivationFence = lease to server.contextRevision
+                            }
                             profileOperation = null
                             publish(if (kind == PrivateReadKind.PROFILE) "Odczytano profil serwerowy. Lokalny profil i cel kalorii zachowane."
                                 else if (kind == PrivateReadKind.MOTIVATION) "Odczytano potwierdzenie serwerowe. Lokalny dziennik i zgoda rankingu zachowane."
                                 else if (kind == PrivateReadKind.RANKING) "Odczytano bieżącą stronę rankingu. Kolejne strony mogą się zmieniać."
+                                else if (kind == PrivateReadKind.NEMESIS) "Odczytano aktualne Nemesis. Lokalny dziennik i zgody zachowane."
                                 else "Odczytano aktualne zgody. Udział w rankingu wymaga osobnej decyzji.")
                         }
                     }
@@ -703,7 +792,9 @@ class SessionController internal constructor(private val db: CalorieDatabase, pr
                     401 -> "Sesja wymaga ponownego logowania. Dziennik działa offline."
                     403 -> if (code == "account_bootstrap_required") "Serwer wymaga ponownego połączenia konta."
                         else "Serwer nie pozwala odczytać danych tego konta."
-                    409 -> "Stan serwera wymaga ponownego sprawdzenia połączenia. Dane lokalne zachowane."
+                    409 -> if (kind == PrivateReadKind.NEMESIS && code == "nemesis_cursor_unavailable") "Strona Nemesis wygasła. Pobierz listę od początku."
+                        else "Stan serwera wymaga ponownego sprawdzenia połączenia. Dane lokalne zachowane."
+                    404 -> "Rywalizacja lub udostępnianie nie są już dostępne. Pobierz świeżą listę."
                     410 -> "Strona rankingu wygasła lub jest już niedostępna. Pobierz listę od początku."
                     429, 503 -> {
                         val seconds = BootstrapHttpProtocol.retrySeconds(result.retryAfter, now())
@@ -722,6 +813,11 @@ class SessionController internal constructor(private val db: CalorieDatabase, pr
                         owners.requireCurrent(lease); profileOperation = null
                         if (kind == PrivateReadKind.MOTIVATION) motivationState = MotivationState.Failed(message)
                         if (kind == PrivateReadKind.CONSENTS) consentState = RankingConsentState.Failed(message)
+                        if (kind == PrivateReadKind.NEMESIS) {
+                            val retry = result.status !in setOf(400, 403, 404, 409, 410, 422)
+                            if (!retry) clearNemesis()
+                            nemesisState = NemesisState.Failed(message, retry)
+                        }
                         if (kind == PrivateReadKind.RANKING) {
                             val retry = result.status !in setOf(400, 403, 404, 409, 410, 422)
                             if (!retry) clearRanking()
@@ -747,12 +843,14 @@ class SessionController internal constructor(private val db: CalorieDatabase, pr
                 if (kind == PrivateReadKind.MOTIVATION) motivationState = MotivationState.Failed(message)
                 if (kind == PrivateReadKind.CONSENTS) consentState = RankingConsentState.Failed(message)
                 if (kind == PrivateReadKind.RANKING) rankingState = RankingState.Failed(message, rankingRetryQuery != null)
+                if (kind == PrivateReadKind.NEMESIS) nemesisState = NemesisState.Failed(message, nemesisRetryQuery != null)
                 publish(message)
             }
             else publish()
         } catch (_: Exception) {
             mutable.value = mutable.value.copy(profileBusy = false, serverProfile = null, motivationBusy = false, motivation = MotivationState.NotRequested,
                 rankingConsentBusy = false, rankingConsent = RankingConsentState.NotRequested, rankingBusy = false, ranking = RankingState.NotRequested,
+                nemesisBusy = false, nemesis = NemesisState.NotRequested,
                 message = "Odczyt nie został potwierdzony. Dziennik pozostaje lokalny.")
         }
     }
@@ -794,7 +892,7 @@ class SessionController internal constructor(private val db: CalorieDatabase, pr
             consentOperation = id
             serverProfile = null
             clearMotivation()
-            clearRanking()
+            clearRanking(); clearNemesis()
             publish()
             attempt
         } } catch (error: CancellationException) { withContext(NonCancellable) { finishConsent(id) }; throw error }

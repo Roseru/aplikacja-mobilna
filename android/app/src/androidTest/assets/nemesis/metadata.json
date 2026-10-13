@@ -1,0 +1,27 @@
+{
+  "id": "12345678-1234-5678-9234-123456789abc",
+  "revision": 1,
+  "role": "invitee",
+  "status": "active",
+  "terms": {
+    "rule_version": "regularity_v1",
+    "duration_days": 7,
+    "time_zone": "Europe/Warsaw",
+    "scope": {
+      "regularity": true,
+      "weight_change": true,
+      "mean_deficit": true
+    }
+  },
+  "invited_at": "2026-10-12T08:00:00Z",
+  "expires_at": "2026-10-13T08:00:00Z",
+  "accepted_at": "2026-10-12T09:00:00Z",
+  "start_date": "2026-10-13",
+  "end_date": "2026-10-20",
+  "start_at": "2026-10-12T22:00:00Z",
+  "end_at": "2026-10-19T22:00:00Z",
+  "deadline": "2026-11-18T22:00:00Z",
+  "result_status": "provisional",
+  "cancel_reason": null,
+  "partner_pseudonym": "Nemesis fixture"
+}

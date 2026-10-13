@@ -84,7 +84,12 @@ class MainActivity : ComponentActivity() {
                 readRanking = { app.sessionScope.launch { app.sessions.readRanking() } },
                 nextRankingPage = { app.sessionScope.launch { app.sessions.nextRankingPage() } },
                 retryRankingPage = { app.sessionScope.launch { app.sessions.retryRankingPage() } },
-                clearRanking = { app.sessionScope.launch { app.sessions.clearRankingPreview() } })
+                clearRanking = { app.sessionScope.launch { app.sessions.clearRankingPreview() } },
+                readNemesis = { app.sessionScope.launch { app.sessions.readNemesis() } },
+                readNemesisChallenge = { id -> app.sessionScope.launch { app.sessions.readNemesisChallenge(id) } },
+                nextNemesisPage = { app.sessionScope.launch { app.sessions.nextNemesisPage() } },
+                retryNemesis = { app.sessionScope.launch { app.sessions.retryNemesis() } },
+                clearNemesis = { app.sessionScope.launch { app.sessions.clearNemesisPreview() } })
             CalorieTheme(dark) { CalorieApp(model, session, actions) }
             }
         }
