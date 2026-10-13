@@ -14,16 +14,17 @@ import pl.roseru.kalorie.core.*
 import pl.roseru.kalorie.session.*
 
 /** Reading and deciding are separate actions; composition never submits a consent. */
-@Composable internal fun RankingConsentScreen(view: SessionView, actions: SessionActions, onBack: () -> Unit, onAccount: () -> Unit) {
+@Composable internal fun RankingConsentScreen(view: SessionView, actions: SessionActions, onBack: () -> Unit, onAccount: () -> Unit, onRanking: () -> Unit = {}) {
     val account = view.binding?.owner?.kind == "account"
     val available = account && view.rankingConsentConfigured && view.serverLinked && !view.requiresRecovery && !view.pendingLogin
-    val busy = view.busy || view.bootstrapBusy || view.profileBusy || view.motivationBusy || view.snapshotBusy || view.rankingConsentBusy
+    val busy = view.busy || view.bootstrapBusy || view.profileBusy || view.motivationBusy || view.snapshotBusy || view.rankingConsentBusy || view.rankingBusy
     val state = if (available && !view.busy) view.rankingConsent else RankingConsentState.NotRequested
     Column(Modifier.fillMaxSize().verticalScroll(rememberScrollState()).padding(20.dp).testTag("ranking-consent-content"),
         verticalArrangement = Arrangement.spacedBy(16.dp)) {
         TextButton(onClick = onBack) { Text("Wróć do osiągnięć") }
         Text("Udział w rankingu", style = MaterialTheme.typography.headlineLarge)
         Text("Twoja decyzja. Twój postęp.", color = MaterialTheme.colorScheme.onSurfaceVariant)
+        TextButton(onClick = onRanking, modifier = Modifier.testTag("ranking-consent-list")) { Text("Zobacz ranking") }
         Card(Modifier.fillMaxWidth()) {
             Column(Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(10.dp)) {
                 Text("Co zobaczą inni", style = MaterialTheme.typography.titleMedium)
@@ -65,7 +66,9 @@ import pl.roseru.kalorie.session.*
                             source.consents.ranking -> "Zgoda zapisana; publikacja jeszcze niedostępna."
                             else -> "Udział wyłączony według ostatniego odczytu."
                         }, Modifier.testTag("ranking-consent-state"))
-                        Text("Automatyczna korekta zapotrzebowania pozostanie ${if (source.consents.automaticEnergyAdjustment) "włączona" else "wyłączona"}.",
+                        Text(if (source.consents.automaticEnergyAdjustment)
+                            "Zachowamy deklarację zgody na korekty zapotrzebowania. Zmiana zgód wymaga osobnego, ponownego potwierdzenia automatu; sam zapis rankingu go nie uruchamia."
+                            else "Deklaracja zgody na automatyczne korekty zapotrzebowania pozostanie wyłączona.",
                             Modifier.testTag("ranking-consent-energy"), style = MaterialTheme.typography.bodySmall)
                         Row(verticalAlignment = Alignment.CenterVertically) {
                             Checkbox(checked = accepted, onCheckedChange = { accepted = it }, enabled = !busy, modifier = Modifier.testTag("ranking-consent-ack"))
