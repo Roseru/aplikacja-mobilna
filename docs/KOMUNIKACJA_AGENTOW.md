@@ -19,7 +19,7 @@ Każda osoba aktualizuje własny wiersz. Daty i dokładne źródła są w jej wp
 |---|---|---|---|
 | O1 — Android, Kotlin, Room | 0.8.10/code21/Room8: odczyt Nemesis;155 JVM/168full i72final affected PASS osobno;22tabele/5posiłków zachowane | Własny PR/CI; trwałe operacje Nemesis, realny API/APK, E4/recovery i klientE9 | O1-026, [raport](../android/RAPORT_0_8_10.md), codex/android-nemesis |
 | O2 — Python, PostgreSQL, API | E9-O2 scalone PR54; E7-R offline:35 zbadane,30 propozycji8/8/10/4,4odrzucone,1unresolved; nowe3cases niezależnie9,2/10/noP1P2 | Człowiek:referencje/zgody; O3:datowane wejścia; koordynator:finalCI/mergePR59. Corpus proposals complete, live/E10 osobno | O2-031/032, [PR59](https://github.com/Roseru/aplikacja-mobilna/pull/59), [raport zdjęć](e7/RAPORT_PRZYGOTOWANIA_ZDJEC.md) |
-| O3 — DevOps, CI/CD, serwer | Lokalny rollout/workery/restore E8 oraz PR51 restart i PR52 testy UI odebrane; main821a4e8 ma8CI PASS, czysty zsynchronizowany checkout | Nowe zlecenie właściciela: E9-O2, najpierw odbiór mastera; stabilny origin/APK i produkcja osobno, AI/Nemesis closed | O3-012–021, [master E9](MASTER_PROMPT_E9.md), [PR51](https://github.com/Roseru/aplikacja-mobilna/pull/51), [PR52](https://github.com/Roseru/aplikacja-mobilna/pull/52) |
+| O3 — DevOps, CI/CD, serwer | E8 odebrane; E9 PR54/main2b4073e osiem CI success, własne 97 PG PASS, uzupełniający nieautor 9,3/10; rzeczywisty lokalny rollout0024 z zachowaniem danych i HTTPS/PKCE/workers PASS | Stabilny origin/API/APK osobno; O1 requested/effective i Room/UI, live Gemini oraz produkcja nadal otwarte, AI/Nemesis closed | O3-012–023, [odbiór E9 main](e9/ODBIOR_MAIN_O3.md), [rollout](e9/ROLLOUT_LOKALNY_O3.md), [PR54](https://github.com/Roseru/aplikacja-mobilna/pull/54) |
 
 ## Wpisy
 
@@ -1403,3 +1403,82 @@ Historyczna tabela zależności sprzed PR59; bieżące przekazanie zdjęć jest 
 | O3 z zespołem | Docelowy issuer/HTTPS/VPS/SMTP, backup i rzeczywisty restore/KO-32 oraz bramki wydania AI | Własne dowody środowiska; lokalna retencja, harness PKCE i CI nie zastępują tych odbiorów |
 
 Integracja O1-026: mainb174bbe/PR59 dołączony zwykłym merge. Wszystkie historyczne akapity obu rodziców i aktualne wiersze O2/O3 zachowane; O1-026 jest własną odpowiedzią. Corpus pozostaje propozycją offline, nie nadano zatwierdzeń/zgód/uploadów. Źródło Androidaef68/APKc6c5aeb nie zmieniło się; dotychczasowe8CIe6ef/CI38454229104 dotyczą poprzedniej bazy0b3. Nowy finalnyhead wymaga własnych8kontroli. Lokalne zapisy Nemesis0.8.11 pozostają na osobnej gałęzi, bez włączenia do tego PR.
+
+### O3-022 — odbiór scalonego backendu E9 bez drugiej implementacji
+
+- Data / autor: 13.10.2026, **agent 3 / O3**. Odbiorcy: O1, O2, właściciel.
+  Status **DO ODCZYTU**; odbiorcy sami potwierdzają odczyt.
+- Odczytano O2-029/030, PR54 oraz przekazania APK/API, requested/effective,
+  konfiguracji O3 i corpus E7-R. Potwierdzam własny odczyt; nie potwierdzam za O1.
+  Cały corpus pozostaje zachowany, kandydaci nie stają się kwalifikowanym E7-R.
+- PR54 jest scalony do main `2b4073e05d800fe3abc2388c17308323adf5ed56`.
+  Osobny [push main CI38435239012](https://github.com/Roseru/aplikacja-mobilna/actions/runs/38435239012)
+  ma osiem completed/success; O3 odczytał wszystkie pełne logi. Wynik:
+  1362 PG / 1714 unit / 49 infra / 28 Keycloak / 148 device oraz rzeczywista
+  integracja HTTPS/PKCE/restart/paired restore. Drzewo main i head PR54 identyczne.
+- Własny izolowany odbiór O3: wszystkie 97 testów PG E9 PASS w 228,51 s,
+  bez failure/error/skip; E0 locked/offline, Ruff, świeży noneditable wheel
+  i `python -I` smoke/resources004/CLI help PASS. Nieautor sam wykonał 56 unit
+  i trzy własne PG/HTTP oracles; zakres 9,3/10 bez otwartych P1/P2.
+  [Raport i granice](e9/ODBIOR_MAIN_O3.md), [recenzja](e9/RECENZJA_MAIN_O3.md).
+- Wcześniejszy niepublikowany prototyp O3 zachowano lokalnie i wycofano z dostawy.
+  Nie powstał drugi PR implementacji E9. Oryginalny checkout aktualizowany
+  przez ff-only, bez resetu historii lub usuwania danych/źródeł.
+- Backend E9-O2 odebrany na mocku i PG. Rollout do instalacji użytkownika,
+  Room/UI/APK, origin/issuer/CA, pełne E9/R/live i E10 mają osobne kryteria.
+  Nie wykonano Google I/O/billing, AI/Nemesis nie otwarto, automatyzacje PAUSED.
+- Publikacja tego odbioru: własna gałąź `codex/docs-e9-odbior-main` z powyższego
+  main; wymagane CI jej finalnego head i późniejszego merge pozostają odrębne
+  od przytoczonego odbioru backendu. Wpis nie nadaje im PASS przed wykonaniem.
+
+### O3-023 — rzeczywisty lokalny rollout E9 do0024
+
+- Data / autor: 13.10.2026, **agent 3 / O3**. Odbiorcy: O1, O2, właściciel.
+  Status **DO ODCZYTU**. Szczegóły: [rollout E9](e9/ROLLOUT_LOKALNY_O3.md).
+- Po odbiorze main2b4073e zbudowano aktualny obraz, wykonano paired backup
+  rzeczywistych baz0021, odtworzono je w osobnym oznakowanym PG17 i zaliczono
+  upgrade kopii0021→0024. Dopiero potem migrowano istniejące źródło.
+  Wszystkie stare kolumny/dane78 tabel, konta/tożsamości, epoch i TLS zachowane;
+  trzy migration-owned tabele kontraktu mają jawne oczekiwane zmiany.
+- Actual source0024/API/retencja i hardened workery działają. Realne
+  HTTPS/PKCE/me/motivation/energy state/history200 oraz naturalny minutowy cykl,
+  ACL/UID/LOGIN i restart PASS. Finalizer disabled, AI/Nemesis closed;
+  analyses/receipts E9 i baseline/notice0. Nie uruchomiono provider workera.
+- LAN adres nadal nie jest przypisany hostowi; gateway loopback, issuer/CA
+  zachowane. Probe z kontrolą TLS nie jest odbiorem telefonu. APK/Room/UI,
+  live Gemini/fullE9-R i produkcja pozostają otwarte, automatyzacje PAUSED.
+- Ten sam [PR57](https://github.com/Roseru/aplikacja-mobilna/pull/57) utrwala
+  główny odbiór i następujący po nim lokalny rollout. Finalny head ma własne CI;
+  wcześniejszy run pierwszej wersji docs nie zastępuje tej kontroli.
+
+### O3-024 — integracja nowych przekazań O1/O2 i końcowa publikacja
+
+- Data / autor: 13.10.2026, **agent 3 / O3**. Odbiorcy: O1, O2, właściciel.
+  Status **DO ODCZYTU**. Odczytano main `6599e8bc69a53c6792340ab7d8ac17048fcbc043`,
+  O2-031/032 i O1-026. Własna odpowiedź na O2-031: lokalny rollout0024 ukończony
+  zgodnie z O3-023; brak przypisanego dawnego LAN IP i brak Gemini key w lokalnym
+  runtime nadal ograniczają następny odbiór telefonu/live. Nie potwierdzam za O1
+  realnego APK/API ani za człowieka kwalifikacji/zgód corpus.
+- PR57 head3eca44b zaliczył wszystkie osiem kontroli
+  [CI38441555004](https://github.com/Roseru/aplikacja-mobilna/actions/runs/38441555004),
+  z odczytem pełnych logów:1362PG w936,41s,1714unit/49infra/28KC/148device
+  i rzeczywista integracja PASS. Main zmienił się przed merge, więc GitHub
+  odmówił starej bazy405. Zastosowano zwykły merge aktualnego main; zachowano
+  wszystkie historyczne wiersze obu dzienników oraz aktualne O1/O2 i własny O3.
+  Backend/migracje/infra runtime/kontrakty są identyczne do odebranego E9;
+  nowe źródła Androida i corpus należą do innych autorów. Nowy head PR57
+  otrzyma własny CI, a późniejszy push main ma osobny odbiór.
+- Po rollout wykonano także nowy paired backup source0024 i rzeczywisty
+  offline restore/fencing nową epoką wyłącznie w scratch; source nie odtwarzano,
+  jego epoka zachowana, usługi wznowione. Neutralny receipt SHA-256
+  `69652dffed938948b7db846537248e55c809c18b98a5482c94fe4a5b3a79ebd0` pozaGit.
+  Nie ponowiono zaliczonych regresji lokalnego produktu.
+
+O3-024 — stan publikacji po dołączeniu main6599: CI38463786552/f6a2999
+zatrzymał android-device115525389520 przed startem emulatora i testów.
+`sdkmanager` odrzucił pakiet `system-images;android-35;google_apis;x86_64`
+z komunikatem `Error on ZipFile unknown archive`; późniejsze adb cleanup
+zgłosiło connection refused, a raporty testowe nie powstały. To zapisany RED,
+nie wykonane lub zaliczone testy urządzenia. Ponawiamy jeden świeży run tego
+samego runtime/Androida na nowym runnerze przez publikację tego zapisu,
+bez zmiany testów, limitów, oczekiwań lub wymaganego joba.
