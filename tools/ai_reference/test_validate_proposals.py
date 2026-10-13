@@ -13,8 +13,8 @@ class ProposalChecks(unittest.TestCase):
         self.packet = validator.PACKET
         self.original_text = Path.read_text
         self.original_bytes = Path.read_bytes
-        self.doc = json.loads((self.packet / "reference_proposals.json").read_text())
-        self.index = json.loads((self.packet / "candidate_index.json").read_text())
+        self.doc = json.loads((self.packet / "reference_proposals.json").read_text(encoding="utf-8"))
+        self.index = json.loads((self.packet / "candidate_index.json").read_text(encoding="utf-8"))
 
     def check_mutation(self, mutate, change_index=False):
         doc, index = copy.deepcopy(self.doc), copy.deepcopy(self.index)
@@ -77,4 +77,3 @@ class ProposalChecks(unittest.TestCase):
 
 if __name__ == "__main__":
     unittest.main()
-
