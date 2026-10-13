@@ -35,6 +35,8 @@ def closed_dates(now: datetime, zone: str):
 
 def wire(value, lower=None, upper=None):
     """HALF_UP once; a boundary rounded outwards moves one wire quantum inward."""
+    if lower is not None and upper is not None and not wire_interval(lower, upper):
+        raise ValueError("empty wire interval")
     value = exact(value)
     scaled = value * SCALE
     units = scaled.numerator // scaled.denominator
@@ -47,6 +49,12 @@ def wire(value, lower=None, upper=None):
         units = scaled_upper.numerator // scaled_upper.denominator
     result = format(Decimal(units).scaleb(-12), "f").rstrip("0").rstrip(".")
     return result or "0"
+
+
+def wire_interval(lower, upper):
+    lo, hi = exact(lower) * SCALE, exact(upper) * SCALE
+    ceil_lo = -((-lo).numerator // (-lo).denominator)
+    return ceil_lo <= hi.numerator // hi.denominator
 
 
 @dataclass(frozen=True)
@@ -97,6 +105,8 @@ def evaluate(days, *, current, baseline=None, automatic=False):
         upper = min(upper, exact(baseline) * Fraction(11, 10))
         if lower > upper:
             return Result("baseline_range_conflict", len(complete), observed, m1, m2)
+    if not wire_interval(lower, upper):
+        return Result("baseline_range_conflict", len(complete), observed, m1, m2)
     candidate = sum(exact(day["kcal"]) for day in complete) / 14
     clamped = min(upper, max(lower, candidate))
     state = "no_change" if abs(clamped - current) * 100 < current else "ready"

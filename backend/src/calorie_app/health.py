@@ -5,7 +5,7 @@ from sqlalchemy.exc import SQLAlchemyError
 
 from calorie_app.core.errors import ApiError, error_response
 
-EXPECTED_REVISION = "0022_e9_energy"
+EXPECTED_REVISION = "0023_e9_qualification"
 router = APIRouter(tags=["health"])
 
 

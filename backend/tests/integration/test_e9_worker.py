@@ -13,7 +13,17 @@ from calorie_app.integrations.gemini.transport import execute
 from calorie_app.modules.profiles.schemas import ConsentInput
 from calorie_app.modules.profiles.service import put_consents
 from tests.integration.test_e7_runtime import e7 as e7_fixture
-from tests.integration.test_e9_energy import body, create, decision, owner, post, read, run, seed
+from tests.integration.test_e9_energy import (
+    body,
+    create,
+    create_photo,
+    decision,
+    owner,
+    post,
+    read,
+    run,
+    seed,
+)
 
 e7 = e7_fixture
 pytestmark = pytest.mark.integration
@@ -241,3 +251,50 @@ def test_minimal_receipt_retention_prevents_reexecution(e7):
     with e7["admin"].connect() as c:
         assert c.scalar(text("SELECT count(*) FROM app.energy_receipts")) == 1
         assert c.scalar(text("SELECT count(*) FROM app.energy_analyses")) == 1
+
+
+def test_oversized_auto_owner_does_not_block_photo_job(e7):
+    version, _, today = seed(e7)
+    affirm(e7, version)
+    # Populate only this disposable fixture without executing 100001 maturity
+    # hooks. Constraints stay active; replication mode is local to setup txn.
+    with e7["admin"].begin() as c:
+        c.execute(text("SET LOCAL session_replication_role=replica"))
+        c.execute(
+            text(
+                "INSERT INTO app.weights(id,owner_id,revision,weight_kg,occurred_at,"
+                "local_date,time_zone) SELECT gen_random_uuid(),:o,1,80,"
+                "CAST(:d AS date)+interval '12 hours',CAST(:d AS date),'UTC' "
+                "FROM generate_series(1,100001)"
+            ),
+            {"o": owner(e7), "d": today - timedelta(days=1)},
+        )
+    photo = create_photo(e7 | {"boots": [e7["boots"][1]], "principals": [e7["principals"][1]]})
+    assert run(e7) == 1
+    with e7["admin"].connect() as c:
+        assert (
+            c.scalar(
+                text("SELECT last_auto_state FROM app.energy_axes WHERE owner_id=:o"),
+                {"o": owner(e7)},
+            )
+            == "resource_exhausted"
+        )
+        assert (
+            c.scalar(
+                text("SELECT last_auto_checked_date FROM app.energy_axes WHERE owner_id=:o"),
+                {"o": owner(e7)},
+            )
+            == today
+        )
+        assert c.scalar(text("SELECT count(*) FROM app.energy_analyses")) == 0
+        assert (
+            c.scalar(
+                text("SELECT state FROM app.ai_analyses WHERE id=:id"), {"id": photo["analysis_id"]}
+            )
+            == "succeeded"
+        )
+        assert (
+            c.scalar(text("SELECT count(*) FROM app.ai_attempts WHERE purpose='energy_adjustment'"))
+            == 0
+        )
+    assert run(e7) == 0

@@ -111,3 +111,13 @@ def test_sql_exact_wire_clamp_bound_rounding(database):
         )
     assert result["proposed"] == "2100.000000000001"
     assert result["upper"] == "2100.00000000000105"
+
+
+def test_sql_empty_wire_quantum_intersection_has_no_proposal(database):
+    value = context() | {"current": "2200.000000000022", "baseline": "1900.000000000019"}
+    with database[0].connect() as c:
+        result = c.scalar(
+            text("SELECT app.e9_rules(CAST(:v AS jsonb),true)"), {"v": json.dumps(value)}
+        )
+    assert result["state"] == "baseline_range_conflict"
+    assert result["proposed"] is None

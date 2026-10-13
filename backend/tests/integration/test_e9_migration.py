@@ -89,7 +89,7 @@ def test_populated_upgrade_preserves_sources_epoch_and_bootstraps_without_affirm
 
 
 def test_real_published_legacy_snapshot_source_skips_new_marker():
-    with fresh_database("0022_e9_energy") as private:
+    with fresh_database("0023_e9_qualification") as private:
         admin, api = (private.engine(name) for name in ("admin", "api"))
         try:
             who = Principal("https://e9-legacy.test", str(uuid4()), frozenset({"user"}))
@@ -148,7 +148,7 @@ def test_real_published_legacy_snapshot_source_skips_new_marker():
 
 
 def test_empty_e9_downgrade_reupgrade_preserves_legacy_contract():
-    with fresh_database("0022_e9_energy") as private:
+    with fresh_database("0023_e9_qualification") as private:
         engine = private.engine()
         cfg = Config(str(ROOT / "backend/alembic.ini"))
         try:
@@ -162,7 +162,7 @@ def test_empty_e9_downgrade_reupgrade_preserves_legacy_contract():
             with engine.connect() as c:
                 assert (
                     c.scalar(text("SELECT version_num FROM app.alembic_version"))
-                    == "0022_e9_energy"
+                    == "0023_e9_qualification"
                 )
                 assert c.scalar(text("SELECT app.e8n_runtime_ready()")) is True
         finally:
@@ -232,5 +232,133 @@ def test_queued_photo_survives_upgrade_and_new_typed_runner(tmp_path):
                     c.exec_driver_sql(
                         sql.SQL("DROP ROLE {}").format(sql.Identifier(login)).as_string(pg)
                     )
+            admin.dispose()
+            api.dispose()
+
+
+def test_0023_qualifies_existing_duplicate_artifact_without_rewriting_history(tmp_path):
+    from datetime import timedelta
+
+    from calorie_app.core.config import Settings
+    from calorie_app.modules.jobs.runner import Runner
+    from calorie_app.modules.profiles.schemas import GoalPayload
+    from calorie_app.modules.profiles.service import create_goal
+    from tests.integration.test_e7_runtime import private_root, role_engine
+    from tests.integration.test_e9_energy import create, decision, post, read
+
+    with fresh_database("0022_e9_energy") as private:
+        admin, api = (private.engine(name) for name in ("admin", "api"))
+        worker, login = role_engine((admin, None, private.admin_url), "calorie_app_ai_worker")
+        try:
+            principal = Principal("https://e9-artifact.test", str(uuid4()), frozenset({"user"}))
+            with Session(api) as session, session.begin():
+                boot = bootstrap(session, principal, uuid4())
+            folder = private_root(tmp_path / "private-artifact")
+            settings = Settings(
+                database_url=private.api_url, environment="test", ai_photo_root=folder
+            )
+            rt = {
+                "admin": admin,
+                "api": api,
+                "boots": [boot],
+                "principals": [principal],
+                "root": folder,
+                "settings": settings,
+            }
+            _, goal, today = seed(rt)
+            with admin.begin() as c:
+                c.execute(
+                    text(
+                        "UPDATE app.ai_controls SET dispatch_open=true,sync_epoch="
+                        "(SELECT sync_epoch FROM app.installation_state WHERE id=1)"
+                    )
+                )
+                c.execute(
+                    text(
+                        "UPDATE app.ai_pools SET enabled=true,rpm=100,tpm=1000000,rpd=10000 "
+                        "WHERE provider='mock'"
+                    )
+                )
+                c.execute(
+                    text(
+                        "INSERT INTO app.ai_transport_permits(environment,slot) "
+                        "VALUES('local',1),('local',2) ON CONFLICT DO NOTHING"
+                    )
+                )
+            analysis = create(rt)
+            assert Runner(worker, lambda: Session(worker), settings).cycle() == 1
+            accepted = post(rt, "analyses/accept", decision(rt, read(rt, analysis["id"]).json()))
+            assert accepted.status_code == 200, accepted.text
+            clone = goal | {
+                "energy_kcal": "2300",
+                "timeline_base_revision": 1,
+                "effective_from": (today + timedelta(days=1)).isoformat(),
+                "decided_at": today.isoformat() + "T12:00:00Z",
+            }
+            with Session(api) as session, session.begin():
+                create_goal(session, owner(rt), uuid4(), GoalPayload.model_validate(clone))
+            with admin.connect() as c:
+                assert (
+                    c.scalar(
+                        text("SELECT (app.e9_resolve(:o,:d)).maintenance_kcal"),
+                        {"o": owner(rt), "d": today + timedelta(days=1)},
+                    )
+                    == 2595
+                )
+            names = (
+                "goal_versions",
+                "goal_timelines",
+                "energy_versions",
+                "energy_axes",
+                "energy_analyses",
+            )
+            before = row_snapshot(admin, names)
+            private.migrate("head")
+            assert row_snapshot(admin, names) == before
+            with admin.connect() as c:
+                assert (
+                    c.scalar(
+                        text("SELECT (app.e9_resolve(:o,:d)).maintenance_kcal"),
+                        {"o": owner(rt), "d": today + timedelta(days=1)},
+                    )
+                    == 2700
+                )
+                assert (
+                    c.scalar(
+                        text(
+                            "SELECT has_function_privilege('calorie_app_motivation_worker',"
+                            "'app.e8n_delete_helper(uuid,uuid,boolean)','EXECUTE')"
+                        )
+                    )
+                    is False
+                )
+            fresh = clone | {
+                "timeline_base_revision": 2,
+                "effective_from": (today + timedelta(days=2)).isoformat(),
+                "estimate": goal["estimate"] | {"estimated_at": today.isoformat() + "T12:00:00Z"},
+            }
+            with Session(api) as session, session.begin():
+                create_goal(session, owner(rt), uuid4(), GoalPayload.model_validate(fresh))
+            with admin.connect() as c:
+                assert c.scalar(text("SELECT count(*) FROM app.energy_versions")) == 4
+                assert (
+                    c.scalar(
+                        text("SELECT (app.e9_resolve(:o,:d)).maintenance_kcal"),
+                        {"o": owner(rt), "d": today + timedelta(days=2)},
+                    )
+                    == 2595
+                )
+        finally:
+            worker.dispose()
+            with admin.begin() as c:
+                pg = c.connection.driver_connection
+                from psycopg import sql
+
+                c.exec_driver_sql(
+                    sql.SQL("DROP OWNED BY {}").format(sql.Identifier(login)).as_string(pg)
+                )
+                c.exec_driver_sql(
+                    sql.SQL("DROP ROLE {}").format(sql.Identifier(login)).as_string(pg)
+                )
             admin.dispose()
             api.dispose()

@@ -380,6 +380,7 @@ def test_minimal_worker_cannot_reserve_or_write_sources(e7):
             "SELECT app.e7_reserve('mock:local:mock-food-v1:local','energy_adj"
             "ustment','generate',NULL,1,gen_random_uuid(),gen_random_uuid())"
         ),
+        "SELECT app.e8n_delete_helper(gen_random_uuid(),gen_random_uuid(),false)",
         "SELECT * FROM app.energy_versions",
         "SELECT * FROM app.weights",
         "UPDATE app.goal_versions SET energy_kcal=1",
@@ -659,3 +660,42 @@ def test_duplicate_keys_and_oversized_body_rejected_before_mutation(e7):
             headers={"Content-Type": "application/json", "Idempotency-Key": str(uuid4())},
         )
     assert dup.status_code == 422 and large.status_code == 413
+
+
+def test_goal_reusing_estimate_artifact_preserves_accepted_adjustment(e7):
+    _, goal, today = seed(e7)
+    analysis = create(e7)
+    run(e7)
+    accepted = post(e7, "analyses/accept", decision(e7, read(e7, analysis["id"]).json()))
+    assert accepted.status_code == 200, accepted.text
+    with e7["admin"].connect() as c:
+        adjusted = c.execute(
+            text("SELECT id,maintenance_kcal FROM app.energy_versions WHERE source='manual'")
+        ).one()
+        revision = c.scalar(
+            text("SELECT revision FROM app.energy_axes WHERE owner_id=:o"), {"o": owner(e7)}
+        )
+        goal_revision = c.scalar(
+            text("SELECT revision FROM app.goal_timelines WHERE owner_id=:o"), {"o": owner(e7)}
+        )
+    clone = goal | {
+        "energy_kcal": "2300",
+        "effective_from": (today + timedelta(days=1)).isoformat(),
+        "timeline_base_revision": goal_revision,
+        "decided_at": today.isoformat() + "T12:00:00Z",
+    }
+    with Session(e7["api"]) as session, session.begin():
+        create_goal(session, owner(e7), uuid4(), GoalPayload.model_validate(clone))
+    with e7["admin"].connect() as c:
+        resolved = c.execute(
+            text("SELECT (app.e9_resolve(:o,:d)).id,(app.e9_resolve(:o,:d)).maintenance_kcal"),
+            {"o": owner(e7), "d": today + timedelta(days=1)},
+        ).one()
+        assert resolved == adjusted
+        assert resolved.maintenance_kcal == 2700
+        assert (
+            c.scalar(
+                text("SELECT revision FROM app.energy_axes WHERE owner_id=:o"), {"o": owner(e7)}
+            )
+            == revision
+        )

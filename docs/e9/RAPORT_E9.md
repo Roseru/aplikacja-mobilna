@@ -13,8 +13,10 @@ Oszacowania mają własną właścicielską oś energy_versions i monotoniczną
 energy_axes.revision. Mifflin pozostaje prawdziwym artefaktem GoalPayload.estimate;
 źródłowy JSON nie jest nadpisywany. Adapter/backfill identyfikuje source goal/revision,
 zachowuje graf korekt i daty oraz odrzuca nieprawidłowy Mifflin. Cel bez estimate
-nie tworzy ani nie zeruje E. Każda nowa przyjęta decyzja źródłowa z oszacowaniem
-jest wersjonowana, nawet przy tej samej liczbie; nie resetuje baseline.
+nie tworzy ani nie zeruje E. Tożsamość oszacowania wyznacza pełny canonical estimate JSON, z input i estimated_at.
+Zmiana samego celu ze skopiowanym artefaktem nie tworzy E; nowe oszacowanie jest
+wersjonowane również przy tej samej liczbie i nie resetuje baseline.
+Forward0023 kwalifikuje istniejące duplikaty z0022 bez przepisywania immutable historii.
 
 Korekta/revert obowiązuje od następnego lokalnego dnia zegara DB. Zajęta data
 wymaga jawnego conflict/revert-ID; późniejsze plany pozostają. Revert nie przyjmuje
@@ -84,3 +86,29 @@ API/worker LOGINS. Dane syntetyczne; mock działa w tym samym procesowym transpo
 limiter/parser co E7. Usługi użytkownika nie były zatrzymywane ani modyfikowane.
 Sekrety/rawlogs/buildy/private review pozostają poza Git. Cleanup własnych usług
 i finalne SHA/CI/recenzja zostaną dopisane po rzeczywistym odbiorze.
+
+
+## Aktualny odbiór kwalifikacji 0023
+
+PR [54](https://github.com/Roseru/aplikacja-mobilna/pull/54) pozostaje draft.
+Head poprzedniego odbioru e9331a9/base6952c14: zdalne contracts/quality/Android
+build/device/PKCE GREEN, PostgreSQL/local-integration RED. Finalnego PASS brak.
+Niezależny recenzent:145PASS bez skip, trzy dodatkowe krytyczne RED:
+kopiowany estimate nadpisuje E9; pusty wire12 clamp; limit jednego auto konta
+przerywa shared runner. Potwierdzono także PUBLIC EXECUTE wewnętrznego helpera
+oraz nieaktualny whitelist provisionera. Poprawki SQL dodaje liniowa0023,
+bez edycji wypchniętej0022. Head/health i provisioning wskazują0023.
+
+Bieżące lokalne dowody:1714unit PASS;94 rules+infrastructure PASS;
+27PG migration/rules/clone PASS (osobny poprzedni błąd setup nowego photo oracle);
+realny oversized100001 source fixture i działający photo job PASS15.80s.
+Installed wheel Python-I: migracja/head/drift/manifest/rules PASS;
+rzeczywisty CLI--once obsłużył photo+energy,4 dispatched attempts, minimalny SCRAM
+LOGIN bez raw DML/API/migrator membership i bez SET ROLE. Mock, bez Google IO.
+Oczekujemy fullPG i ponownego odbioru tego samego PR na aktualnym freeze.
+
+Praktyki odbioru: krótki aktualny stan powyżej; stare RED zachowane osobno;
+reprodukcja→jedna korekta→regresja; krytyczne oracles najpierw wykryły błąd
+w poprzednim freeze. Powtarzalne przygotowanie używa istniejącego PostgreSQL CI,
+infra bootstrapu i installed smoke. Przepływ O1 klient→PKCE→API→E9→sync pozostaje
+następnym odbiorem O1 po przyjęciu backendu; testy backendu nie udają gotowego UI.

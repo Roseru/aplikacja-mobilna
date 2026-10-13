@@ -120,3 +120,13 @@ oraz [odbiór tekstu](e9/RECENZJA_MASTER_E9.md).
 Wskazanie tam Agenta3 dotyczy tamtej instrukcji przygotowania. Wykonawczy master
 przekazany do tego czatu ustala Agenta2 i jedną implementację; żadna ocena planu
 nie jest odbiorem naszego kodu. Nowe wpisy O3 i jego source/CI pozostają zachowane.
+
+
+### Odbiór naprawczy po pierwszym freeze
+
+Wypchnięta0022 pozostaje niezmienna. Potwierdzone uwagi odbioru rozwiązuje
+liniowa0023_e9_qualification: canonical tożsamość artefaktu Mifflin (nie goal),
+kwalifikacja wcześniej zaimportowanych duplikatów bez zmian immutable JSON,
+fail-closed pustego przedziału kwantów wire12, scoped54000 odmowa bounded auto
+producenta oraz wewnętrzny ACL helpera. Health/runtime/provisioning przyjmują
+aktualny head0023; brak automatycznej aktywacji live Nemesis.

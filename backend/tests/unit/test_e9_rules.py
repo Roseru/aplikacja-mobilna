@@ -167,3 +167,17 @@ def test_provider_has_no_binding_number():
                 "maintenance_kcal": "2200",
             }
         )
+
+
+def test_empty_wire_quantum_intersection_never_escapes_clamp():
+    result = evaluate(
+        window(), current="2200.000000000022", baseline="1900.000000000019", automatic=True
+    )
+    assert result.state == "baseline_range_conflict"
+    assert result.proposed is None
+    with pytest.raises(ValueError, match="empty wire interval"):
+        wire(
+            Fraction("2090.0000000000209"),
+            Fraction("2090.0000000000209"),
+            Fraction("2090.0000000000209"),
+        )

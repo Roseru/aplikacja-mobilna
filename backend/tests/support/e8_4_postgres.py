@@ -240,7 +240,7 @@ def finalizer_login(private):
 
 @contextmanager
 def runtime(*, now=datetime(2026, 10, 12, 12, tzinfo=UTC), zone="UTC"):
-    with fresh_database("0022_e9_energy") as private:
+    with fresh_database("0023_e9_qualification") as private:
         with _runtime(private, now=now, zone=zone) as rt:
             yield rt
 
@@ -253,6 +253,7 @@ def _runtime(private, *, now, zone):
         assert connection.scalar(text("SELECT version_num FROM app.alembic_version")) in {
             "0021_e8_nemesis_results",
             "0022_e9_energy",
+            "0023_e9_qualification",
         }
     for name in ("api", "migrator", "worker"):
         with engines[name].connect() as connection:
