@@ -248,6 +248,30 @@ z nową epoką oraz rejestrem usunięć należą do osobnego zadania; zwykły do
 
 ## Co sprawdza `verify`
 
+## Prywatna kopia i odizolowana próba odtworzenia
+
+Po lokalnym odbiorze workerów można wykonać spójną kopię własnego zestawu.
+Wskaż jego konkretny `--state` i nowy prywatny `--backup` poza Git. Przykład:
+
+```powershell
+uv run --project backend --locked python infra/integration/backup.py capture --state .tools/local-integration --backup .tools/paired-backup-1
+uv run --project backend --locked python infra/integration/backup.py verify --backup .tools/paired-backup-1
+uv run --project backend --locked python infra/integration/backup.py rehearse --backup .tools/paired-backup-1
+```
+
+Capture zatrzymuje ruch i wszystkich piszących klientów, włącznie z Keycloak;
+kopiuje obie bazy, role/SCRAM, konfigurację/TLS i katalog. Pozostawia źródło
+zatrzymane. Rehearse odtwarza nowy własny PG bez publicznego portu, nadaje nową
+epokę i wykonuje fence/cleanup z zamkniętym AI/Nemesis, sprawdza katalog oraz
+rzeczywisty LOGIN finalizera, po czym usuwa tylko własny kontener próby.
+Nie przywraca danych do istniejącej instalacji i nie otwiera API.
+
+Archiwa, konfiguracja, manifest i raw logs są prywatne i zawierają dane/sekrety.
+CI publikuje wyłącznie neutralny receipt. Wymagania przed rzeczywistym reopen,
+wykonane pomiary i granice RPO/RTO opisuje [raport](../../docs/e8/KOPIA_ODTWORZENIE_O3.md).
+
+### Podstawowy odbiór HTTPS/API
+
 Test wykonuje rzeczywiste żądania HTTPS, podpisane tokeny z Keycloak i API z PostgreSQL:
 
 - discovery/issuer/readiness oraz odrzucenie nieznanego CA;
