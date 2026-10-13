@@ -60,6 +60,11 @@ class MainActivity : ComponentActivity() {
                 extras = defaultViewModelCreationExtras, factory = viewModelFactory {
                 initializer { DiaryViewModel(DiaryRepository(app.database, app, binding.lease), app.preferences, createSavedStateHandle()) }
             })
+            val photoModel: pl.roseru.kalorie.photo.MealPhotoViewModel = viewModel(viewModelStoreOwner = store, key = "$ownerKey:photo",
+                extras = defaultViewModelCreationExtras, factory = viewModelFactory {
+                initializer { pl.roseru.kalorie.photo.MealPhotoViewModel(app,
+                    pl.roseru.kalorie.photo.MealPhotoStore(app, app.database, binding.lease), createSavedStateHandle()) }
+            })
             val mode by model.theme.collectAsStateWithLifecycle()
             val dark = when (mode) { ThemeMode.SYSTEM -> isSystemInDarkTheme(); ThemeMode.LIGHT -> false; ThemeMode.DARK -> true }
             SideEffect {
@@ -96,7 +101,7 @@ class MainActivity : ComponentActivity() {
                 acceptNemesis = { id,ack,weight,deficit -> app.sessionScope.launch { app.sessions.acceptNemesis(id,ack,weight,deficit) } },
                 cancelNemesis = { id -> app.sessionScope.launch { app.sessions.cancelNemesis(id) } },
                 retryNemesisMutation = { app.sessionScope.launch { app.sessions.retryNemesisMutation() } })
-            CalorieTheme(dark) { CalorieApp(model, session, actions) }
+            CalorieTheme(dark) { CalorieApp(model, session, actions, photoModel) }
             }
         }
     }

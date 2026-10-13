@@ -4,6 +4,7 @@ import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardOptions
+import androidx.compose.foundation.text.KeyboardActions
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.outlined.KeyboardArrowLeft
 import androidx.compose.material.icons.automirrored.outlined.KeyboardArrowRight
@@ -13,6 +14,10 @@ import androidx.compose.runtime.*
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.focus.FocusRequester
+import androidx.compose.ui.focus.focusRequester
+import androidx.compose.ui.platform.LocalFocusManager
+import androidx.compose.ui.platform.LocalSoftwareKeyboardController
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.semantics
@@ -170,14 +175,21 @@ private data class EditingItem(val meal: MealWithItems, val item: MealItemEntity
 @Composable private fun EditMealDialog(item: MealItemEntity, busy: Boolean, onDismiss: () -> Unit, onSave: (Double, String) -> Unit, onDelete: () -> Unit) {
     var grams by rememberSaveable(item.id) { mutableStateOf(quantityText(item.amountText)) }
     val amount = ContractDecimal.userQuantity(grams, 12)
+    val saveFocus = remember { FocusRequester() }
     AlertDialog(onDismissRequest = onDismiss, title = { Text(item.productName) }, text = {
+        val focus = LocalFocusManager.current
+        val keyboard = LocalSoftwareKeyboardController.current
         Column(verticalArrangement = Arrangement.spacedBy(14.dp)) {
             OutlinedTextField(grams, onValueChange = { grams = it }, label = { Text("Zjedzona ilość") }, suffix = { Text(item.unit) }, singleLine = true,
                 modifier = Modifier.testTag("edit-amount"), isError = amount == null,
-                keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal, imeAction = ImeAction.Done), keyboardActions = doneKeyboardActions())
+                keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal, imeAction = ImeAction.Done), keyboardActions = KeyboardActions(onDone = {
+                    // Keep focus in this dialog on a non-editable control. Done never saves the entry.
+                    if (amount != null && !busy) saveFocus.requestFocus() else focus.clearFocus(force = true)
+                    keyboard?.hide()
+                }))
             Text(amount?.let { "${item.withAmount(ContractDecimal.canonical(it)).consumed().energyText()} kcal" } ?: "Podaj dodatnią ilość, najwyżej 10 000 ${item.unit}.")
         }
     }, confirmButton = { TextButton(onClick = { amount?.let { onSave(it.toDouble(), ContractDecimal.canonical(it)) } },
-        enabled = amount != null && !busy, modifier = Modifier.testTag("confirm-edit-item")) { Text("Zapisz") } },
+        enabled = amount != null && !busy, modifier = Modifier.focusRequester(saveFocus).testTag("confirm-edit-item")) { Text("Zapisz") } },
         dismissButton = { Row { TextButton(onClick = onDelete, enabled = !busy) { Text("Usuń") }; TextButton(onClick = onDismiss) { Text("Anuluj") } } })
 }

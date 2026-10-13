@@ -163,13 +163,14 @@ interface CalorieDao {
     RationEntity::class, RationComponentEntity::class, ProfileEntity::class, WeightEntity::class, DiaryDayEntity::class,
     CatalogGenerationEntity::class, CatalogRecordEntity::class, CatalogMemberEntity::class, CatalogActiveEntity::class,
     LocalOwnerEntity::class, LocalActiveOwnerEntity::class, AccountBindingEntity::class,
-    BootstrapAttemptEntity::class, ServerSnapshotRun::class, ServerSnapshotPage::class, ServerSnapshotAccess::class, ServerSnapshotIdentity::class], version = 8, exportSchema = true)
+    BootstrapAttemptEntity::class, ServerSnapshotRun::class, ServerSnapshotPage::class, ServerSnapshotAccess::class, ServerSnapshotIdentity::class, pl.roseru.kalorie.photo.MealPhotoDraft::class], version = 9, exportSchema = true)
 abstract class CalorieDatabase : RoomDatabase() {
     abstract fun dao(): CalorieDao
     abstract fun catalogDao(): CatalogDao
     abstract fun ownerDao(): LocalOwnerDao
     abstract fun bootstrapDao(): AccountBootstrapDao
     abstract fun snapshotDao(): ServerSnapshotDao
+    abstract fun photoDao(): pl.roseru.kalorie.photo.MealPhotoDao
 }
 
 val MIGRATION_7_8 = object : Migration(7, 8) {
