@@ -1,6 +1,7 @@
 package pl.roseru.kalorie
 
 import androidx.activity.ComponentActivity
+import android.os.ParcelFileDescriptor
 import androidx.compose.foundation.layout.*
 import androidx.compose.material3.Surface
 import androidx.compose.runtime.*
@@ -29,6 +30,14 @@ class NemesisMutationScreenTest {
     private fun show(view:State<SessionView>,actions:SessionActions=actions(),busy:State<Boolean> = mutableStateOf(false)) {
         compose.setContent {CalorieTheme(false) {Surface {Column(Modifier.fillMaxSize()) {NemesisMutationPanel(view.value,actions,busy.value)} }}}
     }
+    private fun screenshot(name:String) {
+        val instrumentation=InstrumentationRegistry.getInstrumentation()
+        check(instrumentation.targetContext.packageName=="pl.roseru.kalorie.validation");check(name in setOf("create","accept"))
+        val path="/data/local/tmp/calorie-v0811-$name.png"
+        ParcelFileDescriptor.AutoCloseInputStream(instrumentation.uiAutomation.executeShellCommand("screencap -p $path")).use {it.readBytes()}
+        val bytes=ParcelFileDescriptor.AutoCloseInputStream(instrumentation.uiAutomation.executeShellCommand("head -c 8 $path")).use {it.readBytes()}
+        assertTrue(bytes.contentEquals(byteArrayOf(0x89.toByte(),0x50,0x4e,0x47,13,10,26,10)))
+    }
     @Test fun issuingCodeNeedsAnExplicitConfirmationAndNeverRunsFromComposition() {
         var issued=0;show(mutableStateOf(SessionView()),actions(issue={issued++}))
         compose.waitForIdle();assertEquals(0,issued)
@@ -46,7 +55,8 @@ class NemesisMutationScreenTest {
         compose.onNodeWithTag("nemesis-create-ack").performScrollTo().performClick()
         compose.onNodeWithTag("nemesis-days-7").performScrollTo().performClick()
         compose.onNodeWithTag("nemesis-create-ack").performScrollTo().assertIsOff();compose.onNodeWithTag("nemesis-confirm-create").assertIsNotEnabled()
-        compose.onNodeWithTag("nemesis-create-ack").performClick();compose.onNodeWithTag("nemesis-confirm-create").assertIsEnabled().performClick()
+        compose.onNodeWithTag("nemesis-create-ack").performClick();compose.onNodeWithTag("nemesis-confirm-create").assertIsEnabled();screenshot("create")
+        compose.onNodeWithTag("nemesis-confirm-create").performClick()
         assertEquals(listOf("A".repeat(43),7,"Europe/Warsaw",false,false,true),recorded)
     }
     @Test fun acceptRequiresEveryProposedScopeAndAChangedSourceDisablesTheOldDialog() {
@@ -58,6 +68,7 @@ class NemesisMutationScreenTest {
         compose.onNodeWithTag("nemesis-accept-ack").performScrollTo().performClick();compose.onNodeWithTag("nemesis-accept-weight").performScrollTo().performClick()
         compose.onNodeWithTag("nemesis-confirm-accept").assertIsNotEnabled()
         compose.onNodeWithTag("nemesis-accept-deficit").performScrollTo().performClick();compose.onNodeWithTag("nemesis-confirm-accept").assertIsEnabled()
+        screenshot("accept")
         compose.runOnIdle {view.value=SessionView(nemesisDecision=source("source-2"))}
         compose.onNodeWithTag("nemesis-confirm-accept").assertIsNotEnabled();assertEquals(0,accepted)
     }
