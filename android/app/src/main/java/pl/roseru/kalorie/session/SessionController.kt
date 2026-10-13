@@ -74,6 +74,7 @@ class SessionController internal constructor(private val db: CalorieDatabase, pr
     private var nemesisState: NemesisState = NemesisState.NotRequested
     private var nemesisFence: Pair<OwnerLease, Long>? = null
     private var nemesisServerContext: Triple<String, Int, String>? = null
+    private var nemesisVersion: Pair<String, Pair<Long, java.time.Instant>>? = null
     private var nemesisRetryQuery: NemesisQuery? = null
     private var nemesisNextQuery: NemesisQuery.Listing? = null
     private var snapshotOperation: String? = null
@@ -138,7 +139,7 @@ class SessionController internal constructor(private val db: CalorieDatabase, pr
     }
     private fun clearNemesis() {
         nemesisState = NemesisState.NotRequested; nemesisFence = null; nemesisServerContext = null
-        nemesisRetryQuery = null; nemesisNextQuery = null
+        nemesisRetryQuery = null; nemesisNextQuery = null; nemesisVersion = null
     }
     suspend fun clearNemesisPreview() = mutex.withLock {
         if (privateReadKind == PrivateReadKind.NEMESIS) profileOperation = null
@@ -619,6 +620,9 @@ class SessionController internal constructor(private val db: CalorieDatabase, pr
                 clearNemesis(); publish(); return
             }
             if (kind == PrivateReadKind.NEMESIS) {
+                if (nemesisFence != (current.lease to server.contextRevision) ||
+                    nemesisServerContext != Triple(server.accountId, server.accountGeneration, server.syncEpoch) ||
+                    nemesisRequest !is NemesisQuery.Detail || nemesisVersion?.first != nemesisRequest.id) nemesisVersion = null
                 nemesisFence = current.lease to server.contextRevision
                 nemesisServerContext = Triple(server.accountId, server.accountGeneration, server.syncEpoch)
                 nemesisRetryQuery = nemesisRequest; nemesisNextQuery = null
@@ -763,6 +767,11 @@ class SessionController internal constructor(private val db: CalorieDatabase, pr
                                 motivationFence = lease to server.contextRevision
                             }
                             if (kind == PrivateReadKind.NEMESIS) {
+                                if (statistics != null) {
+                                    val previous = nemesisVersion?.takeIf { it.first == checkNotNull(stagedNemesis).id }?.second
+                                    require(previous == null || (statistics.revision >= previous.first && statistics.asOf >= previous.second))
+                                    nemesisVersion = checkNotNull(stagedNemesis).id to (statistics.revision to statistics.asOf)
+                                } else nemesisVersion = null
                                 nemesisState = if (nemesisPage != null) NemesisState.ListReady(nemesisPage)
                                     else NemesisState.DetailReady(checkNotNull(nemesisDetail ?: stagedNemesis), statistics)
                                 nemesisNextQuery = nemesisPage?.nextCursor?.let { NemesisQuery.Listing(it) }

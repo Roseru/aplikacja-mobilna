@@ -1372,6 +1372,22 @@ class SessionSecurityTest {
             c.retryNemesis(); c.nextNemesisPage(); assertEquals(count, nemesis.calls.size)
         } finally { vault.clear(); db.close() }
     }
+    @Test fun nemesisRejectsOlderReadRevisionOrAsOfWithinTheSameVisibleChallenge() = runBlocking<Unit> {
+        for (older in listOf("revision", "clock")) {
+            val db = memory(); val vault = SessionVault(context, name()); val fixture = FixtureGateway(); val api = ApiFixture(); val motivation = MotivationFixture()
+            val nemesis = NemesisFixture()
+            try {
+                val c = client(db, vault, fixture, api, motivation = motivation, nemesis = nemesis); c.start(); login(c, fixture, "fixture-A"); c.bootstrap(); c.readNemesisChallenge(nemesisId)
+                assertTrue(c.view.value.nemesis is NemesisState.DetailReady)
+                nemesis.answer = { q -> if (q is NemesisQuery.Statistics) BootstrapHttpResult(200, nemesisJson("provisional")
+                    .also { if (older == "revision") it.put("revision", 7) else it.put("as_of", "2026-10-19T00:00:00Z") }.toString().toByteArray()) else nemesisAnswer(q) }
+                c.readNemesisChallenge(nemesisId); assertTrue((c.view.value.nemesis as NemesisState.Failed).canRetry)
+                nemesis.answer = { q -> if (q is NemesisQuery.Statistics) BootstrapHttpResult(200, nemesisJson("provisional").put("revision", 9).toString().toByteArray()) else nemesisAnswer(q) }
+                c.retryNemesis(); assertEquals(9L, (c.view.value.nemesis as NemesisState.DetailReady).statistics!!.revision)
+                assertFalse(vault.read().toString().contains(nemesisId))
+            } finally { vault.clear(); db.close() }
+        }
+    }
     @Test fun cancelledAutomaticRenewalReleasesSessionAndBootstrapForRetry() = runBlocking<Unit> {
         val db = memory(); val vault = SessionVault(context, name()); val fixture = FixtureGateway(); val api = ApiFixture()
         try {
