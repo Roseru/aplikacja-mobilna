@@ -1,5 +1,7 @@
 # Kontekst współpracy
 
+Android **0.8.10** dodaje odczyt Nemesis: listę rywalizacji, uzgodnione zasady, punkty oraz dozwolone porównania. Pending/hidden/null/zero są oddzielne, a powrót na ekran ponownie sprawdza udostępnianie. [Raport i podglądy](android/RAPORT_0_8_10.md):155 JVM/168 pełny device i końcowe72 affected osobno; Room8 bez migracji,5posiłków zachowane. Zaproszenia/accept/cancel i realny API mają dalsze odbiory.
+
 Android **0.8.9** zagęszcza ranking zgodnie z feedbackiem: wspólny wiersz pozycji/punktów i mniejsze odstępy, z czytelnym układem przy dużym tekście. Poprawia rozróżnienie deklaracji zgody i aktywnego automatu po przekazaniu E9. [Raport i podglądy](android/RAPORT_0_8_9.md):144 JVM i18 zmienionych testów urządzenia PASS, Room8 bez migracji,22tabele/5posiłków zachowane. Nemesis, klientE9 i rzeczywisty API mają dalsze etapy.
 
 ## Kontynuacja O1 — ranking0.8.8, 13 października2026
