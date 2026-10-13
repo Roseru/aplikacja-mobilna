@@ -325,6 +325,24 @@ Przypięte obrazy Python/PostgreSQL pobieramy z Docker Hub z tymi samymi SHA256
 co wcześniejszy mirror ECR. [Opis i faktyczny odbiór](REGISTRY.md) zachowuje
 historię błędów429; failure/skipped nie jest sukcesem kontroli.
 
+Odbiór restartu E8 używa jawnego `compose restart` trzech istniejących usług,
+po sprawdzeniu startup, naturalnego drugiego cyklu i ACL. Następny rzeczywisty
+cykl oraz niezmieniona epoka pozostają wymagane. Błąd CLI zapisuje wyłącznie
+allowlisted service/state/health/exit_code do `e8-operation-error.json` i
+utrzymuje exit1. CI zbiera ten neutralny receipt również przy failure, bez
+container logs/env/command/names lub prywatnego stanu.
+
+Historia: osobny main83eab/CI38377860200 po PR49 zakończył local-integration
+failure: po około68s od startup `motivation` nie działał, następne100s oczekiwania
+nie odtworzyły usługi. Sam PR49 miał8success; nie przypisano ich failed main.
+Timing odpowiada etapowi restartu; dokładna przyczyna wyjścia nie była zapisana.
+Nowa procedura zastępuje stop/up jawną operacją restart i poprawia diagnostykę,
+bez zmiany minute/deadline/ready/ACL lub zamkniętej capability. Nie twierdzimy,
+że sam lokalny PASS ustalił nieobecną przyczynę procesu na runnerze.
+Własny odizolowany PG/3realCLI/LOGIN/UID/minute/restart PASS, potem zatrzymany;
+49infra tests PASS6,79s, w tym5 nowych dotyczących stopped/disabled/error i
+nieujawniania przykładowych sekretów. Wymagane CI aktualnego PR/main są osobne.
+
 Źródła konfiguracji: [Keycloak containers](https://www.keycloak.org/server/containers),
 [Keycloak hostname](https://www.keycloak.org/server/hostname),
 [Caddy TLS](https://caddyserver.com/docs/caddyfile/directives/tls),
