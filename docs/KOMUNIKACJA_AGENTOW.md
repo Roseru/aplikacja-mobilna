@@ -18,7 +18,7 @@ Każda osoba aktualizuje własny wiersz. Daty i dokładne źródła są w jej wp
 | Rola | Ostatni znany rezultat | Następny krok / zależność | Źródło |
 |---|---|---|---|
 | O1 — Android, Kotlin, Room | 0.8.7/code18/Room8: świadome zgody i exact retry; nowy pełny135JVM/147device PASS po naprawie selektora; 22tabele/5posiłków zachowane | PR50 nowe CI; realne API/APK, lista rankingu, Nemesis i semantyczne E4 | O1-022–023, [raport](../android/RAPORT_0_8_7.md), codex/android-ranking-zgody |
-| O2 — Python, PostgreSQL, API | Backend E8/E8.5 odebrany; E9-O2 w toku w jednym wykonawczym czacie/gałęzi | Aktualny freeze/pełna regresja/nieautor/CI; O1/O3 własna integracja. Demo/live bez zmian | O2-028, [raport E9](e9/RAPORT_E9.md), codex/backend-e9-korekta-zapotrzebowania |
+| O2 — Python, PostgreSQL, API | Backend E9-O2 odebrany9,2/10/noP1P2; runtime dfaad8CI/1362PG PASS; PR54 niescalony | Finalny dokumentacyjny head/CI i merge koordynatora; O1/O3 własna integracja. Demo/live bez zmian | O2-028, [raport E9](e9/RAPORT_E9.md), codex/backend-e9-korekta-zapotrzebowania |
 | O3 — DevOps, CI/CD, serwer | Lokalny rollout/workery/restore E8 oraz PR51 restart i PR52 testy UI odebrane; main821a4e8 ma8CI PASS, czysty zsynchronizowany checkout | Nowe zlecenie właściciela: E9-O2, najpierw odbiór mastera; stabilny origin/APK i produkcja osobno, AI/Nemesis closed | O3-012–021, [master E9](MASTER_PROMPT_E9.md), [PR51](https://github.com/Roseru/aplikacja-mobilna/pull/51), [PR52](https://github.com/Roseru/aplikacja-mobilna/pull/52) |
 
 ## Wpisy
@@ -1200,3 +1200,33 @@ Poprawka pending004 obejmuje również limit drugiego contextu; conditional ACL
 statement pending003 umożliwia existing minimalny E3 bez opcjonalnych ról Nemesis
 (33E4 secret/SCRAM/log PASS), bez zmian003funkcji/0022/001–21 i bez nowych grantów.
 Odczytano koordynatora/O2-029; nie otwarto drugiego backendu lub watchera.
+
+
+Odbiór kodu O2-030: nieautor finalnego runtime dfaad1b/base2fc70f7 —9,2/10,
+zero otwartychP1/P2. [Recenzja](e9/RECENZJA_E9.md): własne156selectedbbae,
+16affecteddfaad i33E4dfaad PASS/0error/0skip, zakresów nie sumujemy.
+Własny rzeczywisty SCRAM/deniedSETROLE/rawdiary/productionACL recenzenta PASS.
+Autor1714unit/E0(10schemas545links)/Ruff;70E4columns/33secret/2finaledges PASS.
+Finalny installed-I wheel SHA256b6248f96fcab475bb65eb86b83b3f10df4df72fc7a2cce577e28592a0db830e6,
+head004/drift/manifest i realCLI--once handled4/8nowych attempts photo+energy PASS;
+pierwsza aktualna provision odmówiła przy równoległych own fixtures, bez osłabianiaACL;
+po stabilnychACL zrealizowano zachowaną kolejkę obu par. Stary expect2 oracle
+zobaczył4, supplementary actualDBassert ready3energy/succeeded3photo/12total/active0
+zamknął wynik. Nie sumujemy starych attempts jako nowych. Wszystko mock/private.
+CurrentCI38415645034 sześć success, PostgreSQL/ci-required oczekują; pełny autorski
+PG końcowego freeze w toku. Ten odbiór kodu nie jest merge/main/full E9/R/UI/prodPASS.
+
+
+Finalny runtime O2-030 / PR54: dfaad1b15b3d0d768f3edb3475da2240875b7762 do
+base2fc70f7ae612c031f63d53c04d3c81b4402b72c5, codex/backend-e9-korekta-zapotrzebowania.
+[CI38415645034](https://github.com/Roseru/aplikacja-mobilna/actions/runs/38415645034)
+osiem actualsuccess, PostgreSQL1362PASS974.52s/0failure/error/skip; quality1714unit,
+contracts, realDocker/export/installed, PKCE i lokaleintegration oraz Android
+faktycznie wykonane. Nieautor9,2/10/noopenP1P2; [raport](e9/RAPORT_E9.md) i
+[recenzja](e9/RECENZJA_E9.md). Dodatkowy końcowy WindowsfullPG w toku w chwili
+zapisu. Ten dopisek ma wyłącznie dokumentację i wymaga własnego final-headCI;
+nie zmienia kodu/testów/backend tree względem dfaad.
+Dalej: koordynator odczytuje finalhead/base/CI i scala; O1/O3 własne integracje,
+E9/R i E10 pozostają otwarte. Brak wdrożenia/Google/watcherów; własne usługi
+zostaną zatrzymane po ukończeniu prywatnych prób. E4 checkout i wszystkie wcześniejsze
+niezatwierdzone dane zachowane. O2-029 należy do oddzielnego pakietu koordynatora.

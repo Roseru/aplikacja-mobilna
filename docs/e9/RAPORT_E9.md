@@ -1,6 +1,17 @@
 # E9-O2 — raport wykonania
 
-Status: **W TOKU**, bez finalnego PASS kodu lub CI.
+Status: **kod odebrany9,2/10, bez otwartych P1/P2**;
+pełna zdalna regresja PostgreSQL1362PASS/0fail/0error/0skip,
+osiem CI success na runtime freeze dfaad1b/base2fc70f7. Niescalone.
+Dodatkowy końcowy przebieg Windows/PG17 jest jeszcze w toku w chwili zapisu;
+jego wynik nie jest potrzebny do zastąpienia rzeczywistego zdalnego pełnego PASS.
+Oceniany runtime freeze:`dfaad1b15b3d0d768f3edb3475da2240875b7762`;
+base:`2fc70f7ae612c031f63d53c04d3c81b4402b72c5`.
+PR:[54](https://github.com/Roseru/aplikacja-mobilna/pull/54).
+Recenzja:[niezależny odbiór](RECENZJA_E9.md).
+Bieżący head migracji:`0024_e9_history_graph`.
+Lokalnie1714unit/E0/Ruff/diff-check PASS; aktualny installed-I/migracja i realCLI
+PHOTO+ENERGY PASS. Wszystkie zakresy dowodów i wcześniejsze RED poniżej.
 Start: `a522471140150271d853d66aa06f11d868699e49`.
 Gałąź: `codex/backend-e9-korekta-zapotrzebowania`.
 Master: [MASTER_PROMPT_E9](../MASTER_PROMPT_E9.md).
@@ -154,3 +165,48 @@ konkretnym zakresem. Nowe SQL definicje pozostają w liniowych nowych migracjach
 Odczytano uwagę koordynatora o ranking PUT / energy boolean. Requested/effective
 oraz fresh notice są opisane w [przekazaniu O1](INTEGRACJA_O1.md); backendowa
 kwalifikacja zgód zachowana. Nowy publiczny PUT oracle w final_edges domyka seam.
+
+
+## Odbiór kompletnego runtime freeze
+
+Źródła `dfaad1b15b3d0d768f3edb3475da2240875b7762`, base
+`2fc70f7ae612c031f63d53c04d3c81b4402b72c5`, PR54:
+[CI38415645034](https://github.com/Roseru/aplikacja-mobilna/actions/runs/38415645034)
+ma actualsuccess contracts/quality/postgres/keycloak-pkce/local-integration/
+android-build/android-device/ci-required. PostgreSQL1362PASS974.52s, zero
+failure/error/skip. Zdalny Docker build/export/offlineimport i installed
+resource/health smoke również faktycznie wykonane. Nie przeniesiono wcześniejszego
+RED lub recenzji dokumentacji jako runtimePASS. Nie zmieniono oracles/timeoutów.
+
+Finalne dopiski dokumentacji nie zmieniają runtime/schema/testów. Ich własny
+head przechodzi ponownie osiem kontrolek PR, co będzie odczytane przed przekazaniem.
+Pełne E9/R, UI/Room O1 i rzeczywisty APK/API, konfiguracja live/EOG/Google,
+produkcja oraz E10 pozostają odrębne. AutomatyzacjePAUSED, livegateclosed.
+Koordynator wykonuje merge i późniejszy odbiór integracyjny, nie wykonawca.
+
+### Powtarzalne przygotowanie odbioru
+
+Używaj istniejącego izolowanego bootstrapu infra/local/init-db i fixture
+configured_servers/e8_4_services. Lokalny author PG wskazuje wyłącznie własne
+*_test i source/audit/operator credentials pozaGit. Własny test-cluster musi mieć
+oddzielne calorie_app/keycloak z właściwymi CONNECT ACL, jak init-db; nie dotykaj
+instalacji użytkownika. Przy PG17 na Windows wymagane są E4_SECRET_PG_BIN,
+E7_TEST_PG_BIN i E8_3_POSTGRES_BIN oraz prawdziwy TEST_WORKER_PASSWORD.
+Nie uruchamiaj globalnych role/other-database-ACL probes równolegle na tym samym
+klastrze z tworzeniem innych public-default baz; fail-closed odmowa nie jest
+błędem uzasadniającym poszerzenie grantów. Raw credentials/logs pozostają prywatne.
+
+```sh
+uv run --project backend --locked ruff check --config backend/pyproject.toml backend infra/local
+uv run --project backend --locked ruff format --check --config backend/pyproject.toml backend infra/local
+uv run --project backend --locked python -m pytest backend/tests/unit
+uv run --project tools/contracts --locked python tools/contracts/validate.py
+uv run --project backend --locked python -m pytest backend/tests/integration --tb=short
+uv build backend
+# Fresh noneditable environment; verify installed site-packages with -I.
+python -I backend/smoke_installed.py
+python -I -m calorie_app.worker --once
+```
+
+CLI--once wymaga oddzielnego provisionowanego AI LOGIN i prywatnego storage;
+nie używaj API/migratora/admina jako workera i nie otwieraj live mode.
