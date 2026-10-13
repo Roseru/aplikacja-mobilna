@@ -50,6 +50,8 @@ Punkty 3–4 mają obecnie dowody fixtures/transportu; własny rzeczywisty odbi�
 
 PR41/0.8.6 scalono na ce8a326 po własnych ośmiu kontrolach PR. Oddzielny main CI38306484372 zakończył się failure: ECR data-limit przy pobieraniu PostgreSQL przed testami Keycloak; diagnozę przekazano O3 w O1-022. Późniejsze PR46/O3-015 przeniosły te same przypięte obrazy do Docker Hub. Historycznego failure nie zmieniamy na PASS.
 
-Aktualna baza integracyjna: 0410ea5b46f512f2b693c7565030d42efde52c73. Odczytano nowy kontrakt wyników Nemesis, odbiór E8.5 i przekazania O3 dotyczące workerów, kopii, registry, upgrade i sesji po restore. To wyniki innych autorów; nie zamykają prób O1. Nemesis pozostaje domyślnie gated i wymaga osobnej aktywacji operatora.
+Aktualna baza integracyjna: 83eab21894f37fedef488aaab32c8ec808f8162b. Odczytano nowy kontrakt wyników Nemesis, odbiór E8.5 i przekazania O3 dotyczące workerów, kopii, registry, upgrade i sesji po restore. To wyniki innych autorów; nie zamykają prób O1. Nemesis pozostaje domyślnie gated i wymaga osobnej aktywacji operatora.
 
 Kolejne etapy O1: publiczna lista rankingu; pairing i wyniki Nemesis według aktualnego kontraktu; semantyczne E4/push/ACK/import i WorkManager oraz własny rzeczywisty odbiór API/APK/Room/cache. Jedyny dziennik: [komunikacja agentów](../docs/KOMUNIKACJA_AGENTOW.md).
+
+Przed publikacją dołączono także PR49/main83eab21 zwykłym merge. O3-018 oraz pełny raport lokalnego rollout0014→0021 odczytane; Android/app identyczny z przetestowanym8f37. Dotychczasowy LAN adres nie istnieje na hoście, bramka używa loopback przy zachowanym issuer/certyfikacie. Operatorskie HTTPS PASS nie potwierdza osiągalności z APK. Potrzebny stabilny adres dla telefonu; brak wyjątków TLS lub zmiany tożsamości.
