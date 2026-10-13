@@ -1,0 +1,271 @@
+[
+  {
+    "category": "single_ingredient_candidate",
+    "row": {
+      "id": "dish_1558723777",
+      "source": "dish_metadata_cafe1.csv",
+      "raw": "dish_1558723777,74.360001,143.000000,0.286000,20.020000,0.429000,ingr_0000000054,apple,143.000000,74.36,0.286,20.02,0.429",
+      "labels": [
+        "apple"
+      ],
+      "count": 1
+    },
+    "url": "https://storage.googleapis.com/nutrition5k_dataset/nutrition5k_dataset/imagery/realsense_overhead/dish_1558723777/rgb.png",
+    "size": 386800,
+    "last_modified": "Wed, 16 Jun 2021 06:20:57 GMT"
+  },
+  {
+    "category": "single_ingredient_candidate",
+    "row": {
+      "id": "dish_1558637393",
+      "source": "dish_metadata_cafe1.csv",
+      "raw": "dish_1558637393,739.968018,128.000000,63.360001,29.056000,28.672001,ingr_0000000077,almonds,128.000000,739.968,63.36,29.056,28.672",
+      "labels": [
+        "almonds"
+      ],
+      "count": 1
+    },
+    "url": "https://storage.googleapis.com/nutrition5k_dataset/nutrition5k_dataset/imagery/realsense_overhead/dish_1558637393/rgb.png",
+    "size": 534606,
+    "last_modified": "Wed, 16 Jun 2021 06:21:31 GMT"
+  },
+  {
+    "category": "single_ingredient_candidate",
+    "row": {
+      "id": "dish_1562862493",
+      "source": "dish_metadata_cafe1.csv",
+      "raw": "dish_1562862493,198.320007,134.000000,14.740000,2.144000,13.400001,ingr_0000000008,scrambled eggs,134.000000,198.32,14.74,2.144,13.4",
+      "labels": [
+        "scrambled eggs"
+      ],
+      "count": 1
+    },
+    "url": "https://storage.googleapis.com/nutrition5k_dataset/nutrition5k_dataset/imagery/realsense_overhead/dish_1562862493/rgb.png",
+    "size": 327032,
+    "last_modified": "Wed, 16 Jun 2021 06:20:56 GMT"
+  },
+  {
+    "category": "single_ingredient_candidate",
+    "row": {
+      "id": "dish_1558459276",
+      "source": "dish_metadata_cafe1.csv",
+      "raw": "dish_1558459276,102.699997,79.000000,0.237000,22.120001,2.133000,ingr_0000000026,white rice,79.000000,102.7,0.237,22.12,2.133",
+      "labels": [
+        "white rice"
+      ],
+      "count": 1
+    },
+    "url": "https://storage.googleapis.com/nutrition5k_dataset/nutrition5k_dataset/imagery/realsense_overhead/dish_1558459276/rgb.png",
+    "size": 431548,
+    "last_modified": "Wed, 16 Jun 2021 06:20:59 GMT"
+  },
+  {
+    "category": "single_ingredient_candidate",
+    "row": {
+      "id": "dish_1558725253",
+      "source": "dish_metadata_cafe1.csv",
+      "raw": "dish_1558725253,33.950001,97.000000,0.388000,6.790000,2.328000,ingr_0000000027,broccoli,97.000000,33.95,0.388,6.79,2.328",
+      "labels": [
+        "broccoli"
+      ],
+      "count": 1
+    },
+    "url": "https://storage.googleapis.com/nutrition5k_dataset/nutrition5k_dataset/imagery/realsense_overhead/dish_1558725253/rgb.png",
+    "size": 446114,
+    "last_modified": "Wed, 16 Jun 2021 06:21:00 GMT"
+  },
+  {
+    "category": "single_ingredient_candidate",
+    "row": {
+      "id": "dish_1558642089",
+      "source": "dish_metadata_cafe1.csv",
+      "raw": "dish_1558642089,39.360001,96.000000,0.192000,9.600000,0.864000,ingr_0000000045,carrot,96.000000,39.36,0.192,9.6,0.864",
+      "labels": [
+        "carrot"
+      ],
+      "count": 1
+    },
+    "url": "https://storage.googleapis.com/nutrition5k_dataset/nutrition5k_dataset/imagery/realsense_overhead/dish_1558642089/rgb.png",
+    "size": 432117,
+    "last_modified": "Wed, 16 Jun 2021 06:21:23 GMT"
+  },
+  {
+    "category": "single_ingredient_candidate",
+    "row": {
+      "id": "dish_1558457530",
+      "source": "dish_metadata_cafe1.csv",
+      "raw": "dish_1558457530,16.000000,64.000000,0.192000,3.200000,1.152000,ingr_0000000007,cauliflower,64.000000,16.0,0.192,3.2,1.152",
+      "labels": [
+        "cauliflower"
+      ],
+      "count": 1
+    },
+    "url": "https://storage.googleapis.com/nutrition5k_dataset/nutrition5k_dataset/imagery/realsense_overhead/dish_1558457530/rgb.png",
+    "size": 435226,
+    "last_modified": "Wed, 16 Jun 2021 06:21:22 GMT"
+  },
+  {
+    "category": "single_ingredient_candidate",
+    "row": {
+      "id": "dish_1558549008",
+      "source": "dish_metadata_cafe1.csv",
+      "raw": "dish_1558549008,20.700001,115.000000,0.230000,4.485000,1.035000,ingr_0000000471,cherry tomatoes,115.000000,20.7,0.23,4.485,1.035",
+      "labels": [
+        "cherry tomatoes"
+      ],
+      "count": 1
+    },
+    "url": "https://storage.googleapis.com/nutrition5k_dataset/nutrition5k_dataset/imagery/realsense_overhead/dish_1558549008/rgb.png",
+    "size": 422878,
+    "last_modified": "Wed, 16 Jun 2021 06:21:11 GMT"
+  },
+  {
+    "category": "mixed_candidate",
+    "row": {
+      "id": "dish_1560455030",
+      "source": "dish_metadata_cafe1.csv",
+      "raw": "dish_1560455030,20.590000,103.000000,0.148000,4.625000,0.956000,ingr_0000000471,cherry tomatoes,55.000000,9.9,0.11,2.145,0.495,ingr_0000000031,cucumbers,29.000000,2.9,0.0,0.58,0.29,ingr_0000000347,baby carrots,19.000000,7.79,0.038,1.9,0.171",
+      "labels": [
+        "cherry tomatoes",
+        "cucumbers",
+        "baby carrots"
+      ],
+      "count": 3
+    },
+    "url": "https://storage.googleapis.com/nutrition5k_dataset/nutrition5k_dataset/imagery/realsense_overhead/dish_1560455030/rgb.png",
+    "size": 403662,
+    "last_modified": "Wed, 16 Jun 2021 06:21:05 GMT"
+  },
+  {
+    "category": "mixed_candidate",
+    "row": {
+      "id": "dish_1563207364",
+      "source": "dish_metadata_cafe1.csv",
+      "raw": "dish_1563207364,309.269989,271.000000,13.774000,30.657000,15.010000,ingr_0000000008,scrambled eggs,68.000000,100.64,7.48,1.088,6.8,ingr_0000000192,yam,50.000000,62.05,0.1,14.7,0.8,ingr_0000000440,grapes,30.000000,20.7,0.06,5.4,0.21,ingr_0000000128,egg whites,67.000000,34.84,0.134,0.469,6.7,ingr_0000000161,olive oil,6.000000,53.04,6.0,0.0,0.0,ingr_0000000437,sweet potato,50.000000,38.0,0.0,9.0,0.5",
+      "labels": [
+        "scrambled eggs",
+        "yam",
+        "grapes",
+        "egg whites",
+        "olive oil",
+        "sweet potato"
+      ],
+      "count": 6
+    },
+    "url": "https://storage.googleapis.com/nutrition5k_dataset/nutrition5k_dataset/imagery/realsense_overhead/dish_1563207364/rgb.png",
+    "size": 392287,
+    "last_modified": "Wed, 16 Jun 2021 06:21:19 GMT"
+  },
+  {
+    "category": "mixed_candidate",
+    "row": {
+      "id": "dish_1561575474",
+      "source": "dish_metadata_cafe1.csv",
+      "raw": "dish_1561575474,120.058434,183.000000,4.966118,17.412746,2.990431,ingr_0000000291,salt,0.578431,0.0,0.0,0.0,0.0,ingr_0000000335,eggplant,57.843136,14.345097728,0.115686272,3.412745024,0.57843136,ingr_0000000433,roasted potatoes,60.000000,84.6,4.08,10.8,1.26,ingr_0000000007,cauliflower,64.000000,16.0,0.192,3.2,1.152,ingr_0000000161,olive oil,0.578431,5.11333004,0.578431,0.0,0.0",
+      "labels": [
+        "salt",
+        "eggplant",
+        "roasted potatoes",
+        "cauliflower",
+        "olive oil"
+      ],
+      "count": 5
+    },
+    "url": "https://storage.googleapis.com/nutrition5k_dataset/nutrition5k_dataset/imagery/realsense_overhead/dish_1561575474/rgb.png",
+    "size": 391742,
+    "last_modified": "Wed, 16 Jun 2021 06:21:20 GMT"
+  },
+  {
+    "category": "mixed_candidate",
+    "row": {
+      "id": "dish_1561739238",
+      "source": "dish_metadata_cafe1.csv",
+      "raw": "dish_1561739238,274.190002,257.000000,9.785000,37.556999,9.465000,ingr_0000000128,egg whites,71.000000,36.92,0.142,0.497,7.1,ingr_0000000015,hash browns,43.000000,140.18,9.46,13.76,1.118,ingr_0000000013,berries,61.000000,34.77,0.183,8.54,0.427,ingr_0000000437,sweet potato,82.000000,62.32,0.0,14.76,0.82",
+      "labels": [
+        "egg whites",
+        "hash browns",
+        "berries",
+        "sweet potato"
+      ],
+      "count": 4
+    },
+    "url": "https://storage.googleapis.com/nutrition5k_dataset/nutrition5k_dataset/imagery/realsense_overhead/dish_1561739238/rgb.png",
+    "size": 356282,
+    "last_modified": "Wed, 16 Jun 2021 06:21:13 GMT"
+  },
+  {
+    "category": "mixed_candidate",
+    "row": {
+      "id": "dish_1562691032",
+      "source": "dish_metadata_cafe1.csv",
+      "raw": "dish_1562691032,419.681702,415.000000,22.039829,39.058826,17.947340,ingr_0000000013,berries,85.000000,48.45,0.255,11.9,0.595,ingr_0000000161,olive oil,0.902439,7.97756076,0.902439,0.0,0.0,ingr_0000000038,pineapple,80.000000,40.0,0.08,10.4,0.4,ingr_0000000008,scrambled eggs,147.000000,217.56,16.17,2.352,14.7,ingr_0000000433,roasted potatoes,66.000000,93.06,4.488,11.88,1.386,ingr_0000000027,broccoli,36.097561,12.63414635,0.144390244,2.52682927,0.866341464",
+      "labels": [
+        "berries",
+        "olive oil",
+        "pineapple",
+        "scrambled eggs",
+        "roasted potatoes",
+        "broccoli"
+      ],
+      "count": 6
+    },
+    "url": "https://storage.googleapis.com/nutrition5k_dataset/nutrition5k_dataset/imagery/realsense_overhead/dish_1562691032/rgb.png",
+    "size": 403176,
+    "last_modified": "Wed, 16 Jun 2021 06:21:21 GMT"
+  },
+  {
+    "category": "mixed_candidate",
+    "row": {
+      "id": "dish_1563822597",
+      "source": "dish_metadata_cafe1.csv",
+      "raw": "dish_1563822597,59.400002,176.000000,2.170667,7.626667,4.106667,ingr_0000000027,broccoli,29.333334,10.2666669,0.117333336,2.05333338,0.704000016,ingr_0000000006,caesar salad,88.000000,38.72,1.848,3.784,2.816,ingr_0000000021,squash,29.333334,6.01333347,0.088000002,0.997333356,0.264000006,ingr_0000000485,zucchini,29.333334,4.4000001,0.117333336,0.792000018,0.322666674",
+      "labels": [
+        "broccoli",
+        "caesar salad",
+        "squash",
+        "zucchini"
+      ],
+      "count": 4
+    },
+    "url": "https://storage.googleapis.com/nutrition5k_dataset/nutrition5k_dataset/imagery/realsense_overhead/dish_1563822597/rgb.png",
+    "size": 351470,
+    "last_modified": "Wed, 16 Jun 2021 06:21:08 GMT"
+  },
+  {
+    "category": "mixed_candidate",
+    "row": {
+      "id": "dish_1563984242",
+      "source": "dish_metadata_cafe1.csv",
+      "raw": "dish_1563984242,402.117035,753.000000,3.302390,36.819611,49.407761,ingr_0000000437,sweet potato,80.975609,61.54146284,0.0,14.57560962,0.80975609,ingr_0000000128,egg whites,472.000000,245.44,0.944,3.304,47.2,ingr_0000000038,pineapple,62.000000,31.0,0.062,8.06,0.31,ingr_0000000161,olive oil,2.024390,17.8956076,2.02439,0.0,0.0,ingr_0000000037,cantaloupe,136.000000,46.24,0.272,10.88,1.088",
+      "labels": [
+        "sweet potato",
+        "egg whites",
+        "pineapple",
+        "olive oil",
+        "cantaloupe"
+      ],
+      "count": 5
+    },
+    "url": "https://storage.googleapis.com/nutrition5k_dataset/nutrition5k_dataset/imagery/realsense_overhead/dish_1563984242/rgb.png",
+    "size": 419730,
+    "last_modified": "Wed, 16 Jun 2021 06:20:47 GMT"
+  },
+  {
+    "category": "mixed_candidate",
+    "row": {
+      "id": "dish_1565119669",
+      "source": "dish_metadata_cafe1.csv",
+      "raw": "dish_1565119669,55.965000,229.000000,1.030500,10.842000,3.272500,ingr_0000000072,kale,39.000000,19.11,0.273,3.51,1.287,ingr_0000000485,zucchini,75.500000,11.325,0.302,2.0385,0.8305,ingr_0000000517,chard,39.000000,7.41,0.078,1.443,0.702,ingr_0000000529,chayote squash,75.500000,18.12,0.3775,3.8505,0.453",
+      "labels": [
+        "kale",
+        "zucchini",
+        "chard",
+        "chayote squash"
+      ],
+      "count": 4
+    },
+    "url": "https://storage.googleapis.com/nutrition5k_dataset/nutrition5k_dataset/imagery/realsense_overhead/dish_1565119669/rgb.png",
+    "size": 334398,
+    "last_modified": "Wed, 16 Jun 2021 06:21:22 GMT"
+  }
+]

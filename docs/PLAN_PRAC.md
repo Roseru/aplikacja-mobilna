@@ -155,3 +155,6 @@ E3 dostarcza wewnętrzną atomową blokadę active/deleting i zmianę generacji;
 ## Dostawa E4 O2 do osobnego odbioru
 
 Implementacja backendu, trwałego klienta i deletion znajduje się na codex/backend-e4-synchronizacja z aktualnego main po odebranym E3/0008. [Raport E4](e4/RAPORT_E4.md) wskazuje rzeczywiste testy, niezależny odbiór i CI końcowego head. Room/APK/KO-31 oraz produkcyjny restore są odrębne; E4 nie jest scalane w tym zadaniu i E5 nie rozpoczęto. Starszy zapis „E4 nie rozpoczęto” dotyczy historii przygotowania E3.
+
+
+Aktualizacja O2, 13.10.2026: osobne zlecenie uruchomiło E9-O2 w jednym czacie/PR54; dawne „niezlecone” pozostaje historią swojego checkpointu. Równolegle przygotowano [pierwszy rzeczywisty scenariusz APK/API](integracja/ODBIOR_APK_API_O2.md), [review zgód](integracja/RECENZJA_ZGOD_O2.md) i [30 kandydatów referencyjnych E7-R](<../Random Data/AI_REFERENCE_E7_R_2026-10-13/README.md>). O2-029 rozlicza własne dowody oraz wejścia O1/O3/człowieka. Dla obecnego demo właściciel odłożył potwierdzanie producentów/official E5-C; nie oznacza to weryfikacji katalogu. Przygotowanie, zdjęcia kandydackie i mock nie zamykają pełnych etapów lub live Gemini.

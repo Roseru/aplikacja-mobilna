@@ -1,0 +1,15 @@
+{
+  "document_type": "candidate-source-index-NOT-RUNNABLE",
+  "status": "CANDIDATE/PENDING_REVIEW",
+  "actual_downloaded": 16,
+  "qualified": 0,
+  "actual_ready": 0,
+  "source_annotation_categories": {
+    "single_ingredient_candidate": 8,
+    "mixed_candidate": 8
+  },
+  "total_rgb_bytes": 6469068,
+  "visual_precheck": "16/16 viewed by agent via view_image 2026-10-13, before any model output; independent human review still pending",
+  "human_consent": null,
+  "model_calls": 0
+}

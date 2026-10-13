@@ -1,0 +1,14 @@
+[
+  {
+    "name": "dish_metadata_cafe1.csv",
+    "url": "https://storage.googleapis.com/nutrition5k_dataset/nutrition5k_dataset/metadata/dish_metadata_cafe1.csv",
+    "source_last_modified": "Wed, 16 Jun 2021 05:48:01 GMT",
+    "bytes": 2206282
+  },
+  {
+    "name": "dish_metadata_cafe2.csv",
+    "url": "https://storage.googleapis.com/nutrition5k_dataset/nutrition5k_dataset/metadata/dish_metadata_cafe2.csv",
+    "source_last_modified": "Wed, 16 Jun 2021 05:48:01 GMT",
+    "bytes": 101817
+  }
+]
