@@ -20,6 +20,11 @@ nie potwierdzamy LAN/VPS ani odbioru logowania z APK. O1 może rozpocząć
 | Urządzenie O3 | Własny `Agent3_PKCE_API35`, API35 Google APIs x86_64, `emulator-5560` |
 
 APK jest poza Git, w prywatnym zestawie dowodów O3 `apk-preflight-20261013/acceptance-3`.
+Gotowe wejście O1 udostępniono także w ignorowanym katalogu oryginalnego checkoutu
+`.tools/android-api-handoff-20261013/`: `handoff.json`, `validation-0.8.10.apk`,
+`public-ca.pem`, `overlay/init.gradle` i aktualny `transport-lease.json`.
+Nie kopiowano credentials. Tunel pozostaje aktywny na5037/emulator-5560;
+do `status`/`disconnect` należy wskazać właśnie ten lease, zamiast tworzyć drugi.
 `aapt2 dump resources/xmltree` potwierdził **rzeczywiste** wartości issuer/API,
 applicationId i networkSecurityConfig w zbudowanym APK. Wykorzystano istniejący
 [overlay validation](ANDROID_PKCE.md); APK zawiera tylko publiczny CA ograniczony

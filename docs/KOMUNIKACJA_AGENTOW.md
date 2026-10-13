@@ -1544,3 +1544,16 @@ O2-033 — aktualizacja przed scaleniem: zwykły merge main `de97b80e899f6fb3d6c
   nadal ma własnego właściciela i nie jest zastąpiony tą próbą.
 - Własna gałąź `codex/devops-apk-polaczenie`; publikacja i finalny CI PR/main
   rozliczane oddzielnie. Historyczne wyniki E9/PR57 nie zastępują tych kontroli.
+
+Publikacja O3-025: [PR63](https://github.com/Roseru/aplikacja-mobilna/pull/63),
+pierwszy opublikowany head `c11ba0cf12181fbe02d3a942dd22525072756192`.
+O1 ma konkretne lokalne wejście w oryginalnym checkoutcie:
+`.tools/android-api-handoff-20261013/` — handoff.json/APK/publicCA/overlay/lease,
+bez credentials. Końcowy tunel5037/emulator-5560 ponownie zaliczył Android VM
+HTTPS200; własny tymczasowy daemon5063 zatrzymano. Aktualny preflight klucza
+Gemini: process/api.env/worker.env wszystkie false; nie uznajemy tego za
+konfigurację projektu Google. CI38472727226/c11 ma odczytane pięć success:
+contracts/quality/android-build/keycloak-pkce/local-integration (1714unit,
+61infra,28KC i realne HTTPS/PKCE/backup); PG/device w tym odczycie jeszcze
+w toku. Ten dopisek nie zmienia kodu/APK, ale finalny head oraz późniejszy
+push main wymagają własnych ośmiu kontroli; wynik będzie rozliczony w PR.
