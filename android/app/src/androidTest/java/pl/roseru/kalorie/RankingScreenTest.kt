@@ -39,8 +39,10 @@ class RankingScreenTest {
             CompositionLocalProvider(LocalDensity provides Density(density.density, if (compact) 1.5f else 1f)) {
                 CalorieTheme(compact) {
                     Surface(Modifier.fillMaxSize().windowInsetsPadding(WindowInsets.safeDrawing), color = MaterialTheme.colorScheme.background) {
+                        Box(Modifier.fillMaxSize()) {
                         Box((if (compact) Modifier.width(320.dp).fillMaxHeight() else Modifier.fillMaxSize()).testTag("ranking-preview")) {
                             if (visible.value) RankingScreen(state.value, actions, {}, {}, {})
+                        }
                         }
                     }
                 }
@@ -95,6 +97,7 @@ class RankingScreenTest {
         val ready = RankingPage(Instant.parse("2026-10-13T10:00:00Z"), listOf(RankingEntry(Long.MAX_VALUE, "🪖".repeat(80), Long.MAX_VALUE, "Sierżant", 4)), null, null)
         val state = mutableStateOf(view(RankingState.Ready(ready))); show(state, compact = true)
         val root = compose.onNodeWithTag("ranking-preview").fetchSemanticsNode()
+        assertEquals(with(compose.density) { 320.dp.toPx() }, root.boundsInRoot.width, 1f)
         val row = node("ranking-entry-0").assertIsDisplayed().fetchSemanticsNode()
         assertTrue(row.boundsInRoot.left >= root.boundsInRoot.left - 1f); assertTrue(row.boundsInRoot.right <= root.boundsInRoot.right + 1f)
         node("ranking-entry-0").assert(hasText(Long.MAX_VALUE.toString(), substring = true) or hasAnyDescendant(hasText(Long.MAX_VALUE.toString(), substring = true)))
