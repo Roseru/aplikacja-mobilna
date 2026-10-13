@@ -19,7 +19,7 @@ Każda osoba aktualizuje własny wiersz. Daty i dokładne źródła są w jej wp
 |---|---|---|---|
 | O1 — Android, Kotlin, Room | 0.8.7/code18/Room8: świadome zgody i exact retry; nowy pełny135JVM/147device PASS po naprawie selektora; 22tabele/5posiłków zachowane | PR50 nowe CI; realne API/APK, lista rankingu, Nemesis i semantyczne E4 | O1-022–023, [raport](../android/RAPORT_0_8_7.md), codex/android-ranking-zgody |
 | O2 — Python, PostgreSQL, API | Backend E9-O2 odebrany9,2/noP1P2, runtime dfaad8CI/1362PG PASS; PR54 niescalony. Pakiet APK/API i30 kandydatów E7-R odebrany w PR56 | Finalny head/base/CI PR54 i merge koordynatora; O3 origin/issuer/CA, O1 realny scenariusz/requested-effective, człowiek przyjmuje corpus. Full E9/R/live osobno | O2-028–030, [E9](e9/RAPORT_E9.md), [APK/API](integracja/ODBIOR_APK_API_O2.md), [corpus](<../Random Data/AI_REFERENCE_E7_R_2026-10-13/README.md>) |
-| O3 — DevOps, CI/CD, serwer | Lokalny rollout/workery/restore E8 oraz PR51 restart i PR52 testy UI odebrane; main821a4e8 ma8CI PASS, czysty zsynchronizowany checkout | Nowe zlecenie właściciela: E9-O2, najpierw odbiór mastera; stabilny origin/APK i produkcja osobno, AI/Nemesis closed | O3-012–021, [master E9](MASTER_PROMPT_E9.md), [PR51](https://github.com/Roseru/aplikacja-mobilna/pull/51), [PR52](https://github.com/Roseru/aplikacja-mobilna/pull/52) |
+| O3 — DevOps, CI/CD, serwer | E8 odebrane; dodatkowy odbiór scalonego E9 PR54/main2b4073e: osiem CI success z pełnymi logami, własne 97 PG PASS, uzupełniający nieautor 9,3/10 w swoim zakresie | Rollout E9 i stabilny origin/API/APK osobno; O1 requested/effective i Room/UI, live Gemini oraz produkcja nadal otwarte, AI/Nemesis closed | O3-012–022, [odbiór E9 main](e9/ODBIOR_MAIN_O3.md), [PR54](https://github.com/Roseru/aplikacja-mobilna/pull/54) |
 
 ## Wpisy
 
@@ -1255,3 +1255,30 @@ requested/effective i publiczny rank-only PUT/fresh affirmation są w
 [INTEGRACJA_O1](e9/INTEGRACJA_O1.md) i test_e9_final_edges, obaPASS; tekst/UI O1
 wskazany w O2-029 pozostaje osobnym otwartym stykiem, nie globalnym closedP2.
 Nowe końcowe head/base PR54 i osiem CI będą odczytane po publikacji tego merge.
+
+### O3-022 — odbiór scalonego backendu E9 bez drugiej implementacji
+
+- Data / autor: 13.10.2026, **agent 3 / O3**. Odbiorcy: O1, O2, właściciel.
+  Status **DO ODCZYTU**; odbiorcy sami potwierdzają odczyt.
+- Odczytano O2-029/030, PR54 oraz przekazania APK/API, requested/effective,
+  konfiguracji O3 i corpus E7-R. Potwierdzam własny odczyt; nie potwierdzam za O1.
+  Cały corpus pozostaje zachowany, kandydaci nie stają się kwalifikowanym E7-R.
+- PR54 jest scalony do main `2b4073e05d800fe3abc2388c17308323adf5ed56`.
+  Osobny [push main CI38435239012](https://github.com/Roseru/aplikacja-mobilna/actions/runs/38435239012)
+  ma osiem completed/success; O3 odczytał wszystkie pełne logi. Wynik:
+  1362 PG / 1714 unit / 49 infra / 28 Keycloak / 148 device oraz rzeczywista
+  integracja HTTPS/PKCE/restart/paired restore. Drzewo main i head PR54 identyczne.
+- Własny izolowany odbiór O3: wszystkie 97 testów PG E9 PASS w 228,51 s,
+  bez failure/error/skip; E0 locked/offline, Ruff, świeży noneditable wheel
+  i `python -I` smoke/resources004/CLI help PASS. Nieautor sam wykonał 56 unit
+  i trzy własne PG/HTTP oracles; zakres 9,3/10 bez otwartych P1/P2.
+  [Raport i granice](e9/ODBIOR_MAIN_O3.md), [recenzja](e9/RECENZJA_MAIN_O3.md).
+- Wcześniejszy niepublikowany prototyp O3 zachowano lokalnie i wycofano z dostawy.
+  Nie powstał drugi PR implementacji E9. Oryginalny checkout aktualizowany
+  przez ff-only, bez resetu historii lub usuwania danych/źródeł.
+- Backend E9-O2 odebrany na mocku i PG. Rollout do instalacji użytkownika,
+  Room/UI/APK, origin/issuer/CA, pełne E9/R/live i E10 mają osobne kryteria.
+  Nie wykonano Google I/O/billing, AI/Nemesis nie otwarto, automatyzacje PAUSED.
+- Publikacja tego odbioru: własna gałąź `codex/docs-e9-odbior-main` z powyższego
+  main; wymagane CI jej finalnego head i późniejszego merge pozostają odrębne
+  od przytoczonego odbioru backendu. Wpis nie nadaje im PASS przed wykonaniem.
