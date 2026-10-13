@@ -271,7 +271,7 @@ def test_quiet_ledger_prune_removes_only_old_finished_attempts_without_active_pe
 
 
 PG17_IMAGE = (
-    "public.ecr.aws/docker/library/postgres:17@sha256:"
+    "docker.io/library/postgres:17@sha256:"
     "2d2b8998d31037bf721cfdf764d76ba74171b4fab3431b7f72c27c56ddbdf9e3"
 )
 

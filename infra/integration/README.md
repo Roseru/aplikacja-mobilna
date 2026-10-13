@@ -305,6 +305,10 @@ O1 otrzymuje issuer/API, publiczny CA i konfigurację klienta; osobne próby ses
 APK O1/0.8.0 i ich ograniczenia dokumentuje [odbiór O3](ANDROID_PKCE.md).
 O2 zachowuje kontrakty i kod logiki. Publiczny deployment oraz kopie/restore są kolejnymi etapami.
 
+Przypięte obrazy Python/PostgreSQL pobieramy z Docker Hub z tymi samymi SHA256
+co wcześniejszy mirror ECR. [Opis i faktyczny odbiór](REGISTRY.md) zachowuje
+historię błędów429; failure/skipped nie jest sukcesem kontroli.
+
 Źródła konfiguracji: [Keycloak containers](https://www.keycloak.org/server/containers),
 [Keycloak hostname](https://www.keycloak.org/server/hostname),
 [Caddy TLS](https://caddyserver.com/docs/caddyfile/directives/tls),
