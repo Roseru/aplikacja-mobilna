@@ -1,5 +1,7 @@
 # Plan implementacji — osoba 1: Android i pamięć lokalna
 
+Android **0.8.9** zagęszcza ranking zgodnie z feedbackiem: wspólny wiersz pozycji/punktów i mniejsze odstępy, z czytelnym układem przy dużym tekście. Poprawia rozróżnienie deklaracji zgody i aktywnego automatu po przekazaniu E9. [Raport i podglądy](android/RAPORT_0_8_9.md):144 JVM i18 zmienionych testów urządzenia PASS, Room8 bez migracji,22tabele/5posiłków zachowane. Nemesis, klientE9 i rzeczywisty API mają dalsze etapy.
+
 ## Aktualizacja O1 — lista rankingu0.8.8, 13 października2026
 
 - Dostarczony live ranking:25osób/strona, rank/points/badges, cursor/410/expiry/exact retry, shared Retry-After i private preflight/fencing. Odczyt bez opt-in oraz bez zapisu peer/cursor doRoom/vault. [Raport](android/RAPORT_0_8_8.md), codex/android-ranking-lista.

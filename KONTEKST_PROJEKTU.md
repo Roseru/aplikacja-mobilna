@@ -1,5 +1,7 @@
 # Kontekst współpracy
 
+Android **0.8.9** zagęszcza ranking zgodnie z feedbackiem: wspólny wiersz pozycji/punktów i mniejsze odstępy, z czytelnym układem przy dużym tekście. Poprawia rozróżnienie deklaracji zgody i aktywnego automatu po przekazaniu E9. [Raport i podglądy](android/RAPORT_0_8_9.md):144 JVM i18 zmienionych testów urządzenia PASS, Room8 bez migracji,22tabele/5posiłków zachowane. Nemesis, klientE9 i rzeczywisty API mają dalsze etapy.
+
 ## Kontynuacja O1 — ranking0.8.8, 13 października2026
 
 - Agent1/O1; użytkownik osoba1. Branch codex/android-ranking-lista; źródło `62602ddf1b8f17796e44175d7642839cdb40396f`;0.8.8/code19/Room8, APK `11c708eaf2d6a781dca67298e83d135819caef0928669c0321c58c4d7492bb61` lokalnie. [Raport](android/RAPORT_0_8_8.md). Akceptowane Postępy i krótsze podsumowanie z odznakami przed serwerem zachowane.
