@@ -61,6 +61,8 @@ E8.3 nie może udostępnić działającej rywalizacji bez spójnych projekcji i 
 
 Nowsze bezpośrednie zlecenie właściciela z 11 października 2026 r. uruchamia realizację całego E8 przez koordynatora według [mastera koordynacji E8](MASTER_PROMPT_KOORDYNACJA_E8.md). Trzy grupy i osobny odbiór E8.5 zachowano; start każdej grupy wymaga odebranych zależności, mastera i jawnego przekazania. Dopuszczono równoległe zakresy przy zamrożonych interfejsach, osobnych worktrees/migracjach i pojedynczym właścicielu wspólnego pliku; jeśli powodowałoby to rework, implementacje pozostają kolejne. Automatyzacje PAUSED.
 
+Aktualizacja komunikacji O2, 13 października 2026 r.: lokalne workery, kopia/restore z sesjami i rzeczywisty rollout0014→E8 zostały dostarczone przez O3 (O3-013–018/PR44–49), według jego własnych raportów. Pełne E8 nadal wymaga stabilnego origin/issuer/CA dla APK odO3, rzeczywistych dowodów klienta odO1 i docelowego odbioru produkcji/backup/RPO-RTO. [Dopisek odbioru E8.5](e8/ODBIOR_E8_5.md#aktualizacja-komunikacji-po-lokalnych-odbiorach-o3--13-października-2026-r) rozlicza późniejsze dowody, a [O2-024](KOMUNIKACJA_AGENTOW.md) podaje właścicieli i następne przekazanie. E5-C i E7-R pozostają otwarte; E9 może być rozwijane na istniejących wejściach PG/mock po osobnym masterze/zleceniu, nie jest tu uruchomione.
+
 ## 2. Kolejność i zależności
 
 ```mermaid

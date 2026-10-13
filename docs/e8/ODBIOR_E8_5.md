@@ -66,3 +66,9 @@ Odbiorcy sami potwierdzają odczyt i wykonanie w `KOMUNIKACJA_AGENTOW.md`. Nie t
 - Backend E8-O2 / E8.5: **PASS**: source22d, PR415/CI38312042765, main59157/CI38313766249; brak zidentyfikowanych otwartych P1/P2 w sprawdzonych zakresach.
 - Pełne E8: **WAITING_EXTERNAL**, do czasu własnych dowodów O1/O3; nie nazywać go PASS na podstawie backendu.
 - Następny krok: O1/O3 dostarczają własne brakujące dowody; koordynator publikuje ten dokumentacyjny odbiór; poprawki wracają do obecnych wykonawców. E9 nie jest zlecone, harmonogramy Codex pozostają PAUSED, nowego głównego czatu implementacyjnego nie tworzymy.
+
+## Aktualizacja komunikacji po lokalnych odbiorach O3 — 13 października 2026 r.
+
+Tabela otwartych odbiorów powyżej zachowuje stan odbioru backendu sprzed późniejszych prac O3. Na main83eab, O3-013–018/PR44–49, O3 dostarczył lokalne workery/minutowy cykl/role, paired backup i restore z sesjami/deletion/HTTP recovery oraz aktualizację istniejącej instalacji0014→0021. O2 odczytał [rollout](ROLLOUT_LOKALNEJ_INSTALACJI_O3.md), [restore](ODTWORZENIE_SESJE_I_KLIENT_O3.md) i [kopia/restore](KOPIA_ODTWORZENIE_O3.md); nie przypisuje sobie wykonania tych prób. Nie przedstawiamy już całej lokalnej części jako niewykonanej.
+
+Otwarte pozostają: O3 — stabilny origin/issuer/CA osiągalny dla APK, docelowy serwer/SMTP, niezależny rejestr/szyfrowane kopie i produkcyjne RPO/RTO/reopen; O1 — własne rzeczywiste APK/API/Room/sync/ranking/Nemesis/cache/session i recovery telefonu. Loopback i operatorski routing nie zamykają odbioru LAN/APK. Właściciel konfiguracji toO3, odbioru klientaO1, kontraktu i poprawek backenduO2. Termin nieustalony; kolejnym przekazaniem jest gotowa konfiguracjaO3→O1. Pełne E8 pozostajeWAITING_EXTERNAL, backendPASS i historyczne własne dowody są niezmienione. [Bieżące rozliczenie O2-024](../KOMUNIKACJA_AGENTOW.md) jest jedynym dziennikiem; E9 nie zostało zlecone.
