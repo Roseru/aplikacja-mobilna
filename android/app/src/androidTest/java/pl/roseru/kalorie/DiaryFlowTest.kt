@@ -69,8 +69,11 @@ class DiaryFlowTest {
         val app = compose.activity.application as CalorieApplication
         val before = runBlocking { app.database.dao().operationCount(DiaryRepository.GUEST) }
         compose.onNodeWithTag("open-profile").performClick(); compose.onNodeWithTag("open-achievements").performClick()
+        // The server panel is also present while local achievements load. Wait for the
+        // completed local layout before scrolling and injecting a physical click.
+        compose.waitUntil(15_000) { compose.onAllNodesWithTag("achievement-count").fetchSemanticsNodes().isNotEmpty() }
         compose.onNodeWithTag("achievements-content").performScrollToNode(hasTestTag("achievement-ranking"))
-        compose.onNodeWithTag("achievement-ranking").performClick()
+        compose.onNodeWithTag("achievement-ranking").assertIsDisplayed().assertIsEnabled().performClick()
         compose.onNodeWithTag("ranking-consent-state").performScrollTo().assertTextContains("Zaloguj", substring = true)
         compose.onNodeWithTag("ranking-consent-enable").assertDoesNotExist()
         compose.onNodeWithTag("ranking-consent-list").performScrollTo().performClick()
