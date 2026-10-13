@@ -40,7 +40,7 @@ class Refusal(Exception):
         self.code, self.status, self.current, self.mapping = code, status, current, mapping
 
 
-def context(session, owner_id, data, secret, *, generation=None):
+def context(session, owner_id, data, secret, *, generation=None, installation_id="calorie-app"):
     account = lock_account(session, owner_id, generation)
     epoch = current_epoch(session)
     if data["sync_epoch"] != str(epoch) or any(
@@ -63,6 +63,7 @@ def context(session, owner_id, data, secret, *, generation=None):
         epoch=epoch,
         now=database_now(session),
         push=True,
+        installation_id=installation_id,
     )
     return account
 
@@ -376,6 +377,21 @@ def mutate(session, owner_id, op, counter, *, source_extensions=()):
             ),
             extensions=source_extensions,
         )
+    if (
+        kind == "goal"
+        and op["action"] == "upsert"
+        and session.scalar(
+            text(
+                "SELECT to_regprocedure('app.e9_append_legacy_change(uuid,uui"
+                "d,bigint)') IS NOT NULL"
+            )
+        )
+    ):
+        session.scalar(
+            text("SELECT app.e9_append_legacy_change(:owner,:id,:position)"),
+            {"owner": owner_id, "id": target_id, "position": counter.position},
+        )
+        session.refresh(counter)
     mapping = None
     if "recovery" in op:
         source = op["recovery"]
@@ -393,10 +409,12 @@ def mutate(session, owner_id, op, counter, *, source_extensions=()):
     return {"status": "accepted", "revision": row.revision, "recovery_mapping": mapping}
 
 
-def apply_operation(session, owner_id, data, op, secret, generation):
+def apply_operation(session, owner_id, data, op, secret, generation, installation_id="calorie-app"):
     lock_account(session, owner_id, generation)
     counter = lock_counter(session, owner_id)
-    account = context(session, owner_id, data, secret, generation=generation)
+    account = context(
+        session, owner_id, data, secret, generation=generation, installation_id=installation_id
+    )
     # Capture our immutable provenance from the locked DB context, never from a
     # body-supplied generation or an unverified epoch. A restore between reads
     # is a request context failure, not a durable rejection of its source.

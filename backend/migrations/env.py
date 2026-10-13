@@ -10,6 +10,7 @@ from calorie_app.modules.catalog import models as catalog_models  # noqa: F401
 from calorie_app.modules.catalog.community import models as community_models  # noqa: F401
 from calorie_app.modules.diary import models as diary_models  # noqa: F401
 from calorie_app.modules.diary import read_models  # noqa: F401
+from calorie_app.modules.energy import models as energy_models  # noqa: F401
 from calorie_app.modules.identity import deletion_models  # noqa: F401
 from calorie_app.modules.jobs import models as job_models  # noqa: F401
 from calorie_app.modules.nemesis import models as nemesis_models  # noqa: F401

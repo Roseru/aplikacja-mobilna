@@ -1,0 +1,3 @@
+Previous bounded probe: banana first4 records had no available qualifying overhead; no image downloaded.
+No qualifying overhead within first4 chicken records
+No qualifying overhead within first4 tofu records

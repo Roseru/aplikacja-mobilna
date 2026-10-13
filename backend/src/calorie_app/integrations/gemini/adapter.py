@@ -70,11 +70,12 @@ def build_generate_request(image: bytes) -> dict:
 def _endpoint(config: dict, call_kind: str) -> tuple[str, bool]:
     if call_kind not in ("countTokens", "generateContent"):
         raise ProviderResultError("provider_unavailable")
+    energy = config.get("purpose") == "energy_adjustment"
     for key, expected in (
         ("model", MODEL),
         ("model_id", MODEL),
-        ("prompt_version", PROMPT_VERSION),
-        ("schema_version", SCHEMA_VERSION),
+        ("prompt_version", "energy-explanation-v1" if energy else PROMPT_VERSION),
+        ("schema_version", "energy-explanation-v1" if energy else SCHEMA_VERSION),
         ("rest_profile_version", REST_PROFILE_VERSION),
     ):
         if key in config and config[key] != expected:
@@ -202,7 +203,12 @@ def rest_call(
             or re.fullmatch(r"[!-~]+", key) is None
         ):
             return ProviderOutcome("provider_unavailable", sent=False)
-        request = build_generate_request(image)
+        if config.get("purpose") == "energy_adjustment":
+            from calorie_app.integrations.gemini.energy import build_request
+
+            request = build_request(image, config["model"])
+        else:
+            request = build_generate_request(image)
         if call_kind == "countTokens":
             request = {"generateContentRequest": request}
         body = json.dumps(
@@ -250,7 +256,12 @@ def rest_call(
                 parser = (
                     parse_count_response if call_kind == "countTokens" else parse_generate_response
                 )
-                return parser(bytes(raw))
+                return (
+                    parse_generate_response(bytes(raw), purpose="energy_adjustment")
+                    if call_kind == "generateContent"
+                    and config.get("purpose") == "energy_adjustment"
+                    else parser(bytes(raw))
+                )
     except (httpx.ConnectError, httpx.ConnectTimeout):
         return ProviderOutcome("provider_unavailable", sent=False)
     except (httpx.HTTPError, OSError, ValueError):

@@ -1,0 +1,3204 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://calorie.invalid/schemas/energy.schema.json",
+  "description": "Generated E9 energy_adjustment_v1, immutable E and opt-in sync DTOs.",
+  "$defs": {
+    "AffirmRead": {
+      "properties": {
+        "baseline_id": {
+          "type": "string",
+          "format": "uuid",
+          "title": "Baseline Id"
+        },
+        "axis_revision": {
+          "type": "integer",
+          "maximum": 2147483647.0,
+          "minimum": 0.0,
+          "title": "Axis Revision"
+        }
+      },
+      "additionalProperties": false,
+      "type": "object",
+      "required": [
+        "baseline_id",
+        "axis_revision"
+      ],
+      "title": "AffirmRead"
+    },
+    "AffirmRequest": {
+      "properties": {
+        "sync_epoch": {
+          "type": "string",
+          "format": "uuid",
+          "title": "Sync Epoch"
+        },
+        "account_generation": {
+          "type": "integer",
+          "maximum": 2147483647.0,
+          "minimum": 1.0,
+          "title": "Account Generation"
+        },
+        "axis_revision": {
+          "type": "integer",
+          "maximum": 2147483647.0,
+          "minimum": 0.0,
+          "title": "Axis Revision"
+        },
+        "notice": {
+          "$ref": "#/$defs/AutomaticNotice"
+        },
+        "id": {
+          "type": "string",
+          "format": "uuid",
+          "title": "Id"
+        },
+        "consent_revision": {
+          "type": "integer",
+          "maximum": 2147483647.0,
+          "minimum": 1.0,
+          "title": "Consent Revision"
+        }
+      },
+      "additionalProperties": false,
+      "type": "object",
+      "required": [
+        "sync_epoch",
+        "account_generation",
+        "axis_revision",
+        "notice",
+        "id",
+        "consent_revision"
+      ],
+      "title": "AffirmRequest"
+    },
+    "AnalysisPage": {
+      "properties": {
+        "items": {
+          "items": {
+            "$ref": "#/$defs/AnalysisRead"
+          },
+          "type": "array",
+          "maxItems": 500,
+          "title": "Items"
+        }
+      },
+      "additionalProperties": false,
+      "type": "object",
+      "required": [
+        "items"
+      ],
+      "title": "AnalysisPage"
+    },
+    "AnalysisRead": {
+      "properties": {
+        "notice": {
+          "$ref": "#/$defs/NoticeRead"
+        },
+        "source_context": {
+          "$ref": "#/$defs/SnapshotContext"
+        },
+        "id": {
+          "type": "string",
+          "format": "uuid",
+          "title": "Id"
+        },
+        "revision": {
+          "type": "integer",
+          "maximum": 2147483647.0,
+          "minimum": 1.0,
+          "title": "Revision"
+        },
+        "state": {
+          "type": "string",
+          "enum": [
+            "queued",
+            "running",
+            "ready",
+            "manual_review_required",
+            "no_change",
+            "failed",
+            "accepted",
+            "rejected",
+            "expired",
+            "stale"
+          ],
+          "title": "State"
+        },
+        "automatic": {
+          "type": "boolean",
+          "title": "Automatic"
+        },
+        "accepted_at": {
+          "type": "string",
+          "pattern": "^\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}(\\.[0-9]{1,6})?Z$",
+          "format": "date-time",
+          "title": "Accepted At"
+        },
+        "created_at": {
+          "anyOf": [
+            {
+              "type": "string",
+              "pattern": "^\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}(\\.[0-9]{1,6})?Z$",
+              "format": "date-time"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "title": "Created At"
+        },
+        "expires_at": {
+          "anyOf": [
+            {
+              "type": "string",
+              "pattern": "^\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}(\\.[0-9]{1,6})?Z$",
+              "format": "date-time"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "title": "Expires At"
+        },
+        "date_from": {
+          "type": "string",
+          "format": "date",
+          "title": "Date From"
+        },
+        "date_to": {
+          "type": "string",
+          "format": "date",
+          "title": "Date To"
+        },
+        "result": {
+          "$ref": "#/$defs/RuleResult"
+        },
+        "explanation": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/Explanation"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "error_code": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "title": "Error Code"
+        }
+      },
+      "additionalProperties": false,
+      "type": "object",
+      "required": [
+        "notice",
+        "source_context",
+        "id",
+        "revision",
+        "state",
+        "automatic",
+        "accepted_at",
+        "created_at",
+        "expires_at",
+        "date_from",
+        "date_to",
+        "result",
+        "explanation",
+        "error_code"
+      ],
+      "title": "AnalysisRead"
+    },
+    "AnalysisRequest": {
+      "properties": {
+        "sync_epoch": {
+          "type": "string",
+          "format": "uuid",
+          "title": "Sync Epoch"
+        },
+        "account_generation": {
+          "type": "integer",
+          "maximum": 2147483647.0,
+          "minimum": 1.0,
+          "title": "Account Generation"
+        },
+        "axis_revision": {
+          "type": "integer",
+          "maximum": 2147483647.0,
+          "minimum": 0.0,
+          "title": "Axis Revision"
+        },
+        "notice": {
+          "$ref": "#/$defs/ManualNotice"
+        }
+      },
+      "additionalProperties": false,
+      "type": "object",
+      "required": [
+        "sync_epoch",
+        "account_generation",
+        "axis_revision",
+        "notice"
+      ],
+      "title": "AnalysisRequest"
+    },
+    "AutomaticNotice": {
+      "properties": {
+        "accepted": {
+          "type": "boolean",
+          "const": true,
+          "title": "Accepted"
+        },
+        "qualified_for_v1": {
+          "type": "boolean",
+          "const": true,
+          "title": "Qualified For V1"
+        },
+        "notice_version": {
+          "type": "string",
+          "const": "energy-aggregates-notice-v1",
+          "title": "Notice Version"
+        },
+        "aggregate_scope": {
+          "type": "string",
+          "const": "energy_adjustment_v1_minimal_aggregates",
+          "title": "Aggregate Scope"
+        },
+        "provider": {
+          "type": "string",
+          "enum": [
+            "mock",
+            "gemini"
+          ],
+          "title": "Provider"
+        },
+        "scope": {
+          "type": "string",
+          "const": "automatic_energy_adjustment",
+          "title": "Scope"
+        }
+      },
+      "additionalProperties": false,
+      "type": "object",
+      "required": [
+        "accepted",
+        "qualified_for_v1",
+        "notice_version",
+        "aggregate_scope",
+        "provider",
+        "scope"
+      ],
+      "title": "AutomaticNotice"
+    },
+    "DecisionRequest": {
+      "properties": {
+        "sync_epoch": {
+          "type": "string",
+          "format": "uuid",
+          "title": "Sync Epoch"
+        },
+        "account_generation": {
+          "type": "integer",
+          "maximum": 2147483647.0,
+          "minimum": 1.0,
+          "title": "Account Generation"
+        },
+        "axis_revision": {
+          "type": "integer",
+          "maximum": 2147483647.0,
+          "minimum": 0.0,
+          "title": "Axis Revision"
+        },
+        "id": {
+          "type": "string",
+          "format": "uuid",
+          "title": "Id"
+        },
+        "revision": {
+          "type": "integer",
+          "maximum": 2147483647.0,
+          "minimum": 1.0,
+          "title": "Revision"
+        }
+      },
+      "additionalProperties": false,
+      "type": "object",
+      "required": [
+        "sync_epoch",
+        "account_generation",
+        "axis_revision",
+        "id",
+        "revision"
+      ],
+      "title": "DecisionRequest"
+    },
+    "EnergyEntity": {
+      "properties": {
+        "entity_type": {
+          "type": "string",
+          "const": "energy_estimate",
+          "title": "Entity Type"
+        },
+        "entity_id": {
+          "type": "string",
+          "format": "uuid",
+          "title": "Entity Id"
+        },
+        "revision": {
+          "type": "integer",
+          "maximum": 2147483647.0,
+          "minimum": 1.0,
+          "title": "Revision"
+        },
+        "deleted": {
+          "type": "boolean",
+          "const": false,
+          "title": "Deleted"
+        },
+        "payload": {
+          "$ref": "#/$defs/EnergyPayload"
+        }
+      },
+      "additionalProperties": false,
+      "type": "object",
+      "required": [
+        "entity_type",
+        "entity_id",
+        "revision",
+        "deleted",
+        "payload"
+      ],
+      "title": "EnergyEntity"
+    },
+    "EnergyPayload": {
+      "properties": {
+        "effective_from": {
+          "type": "string",
+          "format": "date",
+          "title": "Effective From"
+        },
+        "maintenance_kcal": {
+          "type": "string",
+          "pattern": "^(0|[1-9][0-9]{0,5})(\\.[0-9]{0,11}[1-9])?(?![\\s\\S])",
+          "title": "Maintenance Kcal"
+        },
+        "method": {
+          "type": "string",
+          "enum": [
+            "mifflin_pal_v1",
+            "energy_adjustment_v1",
+            "energy_revert_v1"
+          ],
+          "title": "Method"
+        },
+        "source": {
+          "type": "string",
+          "enum": [
+            "legacy",
+            "manual",
+            "automatic",
+            "revert"
+          ],
+          "title": "Source"
+        },
+        "source_id": {
+          "type": "string",
+          "format": "uuid",
+          "title": "Source Id"
+        },
+        "supersedes": {
+          "anyOf": [
+            {
+              "type": "string",
+              "format": "uuid"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "title": "Supersedes"
+        },
+        "decided_at": {
+          "type": "string",
+          "pattern": "^\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}(\\.[0-9]{1,6})?Z$",
+          "format": "date-time",
+          "title": "Decided At"
+        },
+        "audit": {
+          "additionalProperties": true,
+          "type": "object",
+          "title": "Audit"
+        }
+      },
+      "additionalProperties": false,
+      "type": "object",
+      "required": [
+        "effective_from",
+        "maintenance_kcal",
+        "method",
+        "source",
+        "source_id",
+        "supersedes",
+        "decided_at",
+        "audit"
+      ],
+      "title": "EnergyPayload"
+    },
+    "EnergyPullResponse": {
+      "allOf": [
+        {
+          "if": {
+            "properties": {
+              "mode": {
+                "const": "snapshot"
+              }
+            }
+          },
+          "then": {
+            "properties": {
+              "snapshot_token": {
+                "allOf": [
+                  {
+                    "type": "string",
+                    "pattern": "^(?:[^\\u0000\\uD800-\\uDFFF]|[\\uD800-\\uDBFF][\\uDC00-\\uDFFF])*(?![\\s\\S])",
+                    "description": "Unicode bez NUL i samotnych surrogate; poprawne pary UTF-16/emoji są dozwolone."
+                  }
+                ],
+                "type": "string",
+                "maxLength": 4096,
+                "minLength": 1,
+                "description": "Opaque account/protocol/epoch-bound token; client must not parse or generate it."
+              }
+            }
+          },
+          "else": {
+            "properties": {
+              "snapshot_token": {
+                "type": "null"
+              }
+            }
+          }
+        },
+        {
+          "oneOf": [
+            {
+              "properties": {
+                "page_token": {
+                  "type": "null"
+                },
+                "checkpoint": {
+                  "allOf": [
+                    {
+                      "type": "string",
+                      "pattern": "^(?:[^\\u0000\\uD800-\\uDFFF]|[\\uD800-\\uDBFF][\\uDC00-\\uDFFF])*(?![\\s\\S])",
+                      "description": "Unicode bez NUL i samotnych surrogate; poprawne pary UTF-16/emoji są dozwolone."
+                    }
+                  ],
+                  "type": "string",
+                  "maxLength": 4096,
+                  "minLength": 1,
+                  "description": "Opaque account/protocol/epoch-bound token; client must not parse or generate it."
+                }
+              }
+            },
+            {
+              "properties": {
+                "page_token": {
+                  "allOf": [
+                    {
+                      "type": "string",
+                      "pattern": "^(?:[^\\u0000\\uD800-\\uDFFF]|[\\uD800-\\uDBFF][\\uDC00-\\uDFFF])*(?![\\s\\S])",
+                      "description": "Unicode bez NUL i samotnych surrogate; poprawne pary UTF-16/emoji są dozwolone."
+                    }
+                  ],
+                  "type": "string",
+                  "maxLength": 4096,
+                  "minLength": 1,
+                  "description": "Opaque account/protocol/epoch-bound token; client must not parse or generate it."
+                },
+                "checkpoint": {
+                  "type": "null"
+                }
+              }
+            }
+          ]
+        }
+      ],
+      "properties": {
+        "sync_epoch": {
+          "allOf": [
+            {
+              "type": "string",
+              "pattern": "^(?:[^\\u0000\\uD800-\\uDFFF]|[\\uD800-\\uDBFF][\\uDC00-\\uDFFF])*(?![\\s\\S])",
+              "description": "Unicode bez NUL i samotnych surrogate; poprawne pary UTF-16/emoji są dozwolone."
+            }
+          ],
+          "type": "string",
+          "pattern": "^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$",
+          "format": "uuid"
+        },
+        "mode": {
+          "enum": [
+            "snapshot",
+            "incremental"
+          ]
+        },
+        "snapshot_token": {
+          "anyOf": [
+            {
+              "allOf": [
+                {
+                  "type": "string",
+                  "pattern": "^(?:[^\\u0000\\uD800-\\uDFFF]|[\\uD800-\\uDBFF][\\uDC00-\\uDFFF])*(?![\\s\\S])",
+                  "description": "Unicode bez NUL i samotnych surrogate; poprawne pary UTF-16/emoji są dozwolone."
+                }
+              ],
+              "type": "string",
+              "maxLength": 4096,
+              "minLength": 1,
+              "description": "Opaque account/protocol/epoch-bound token; client must not parse or generate it."
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "page_token": {
+          "anyOf": [
+            {
+              "allOf": [
+                {
+                  "type": "string",
+                  "pattern": "^(?:[^\\u0000\\uD800-\\uDFFF]|[\\uD800-\\uDBFF][\\uDC00-\\uDFFF])*(?![\\s\\S])",
+                  "description": "Unicode bez NUL i samotnych surrogate; poprawne pary UTF-16/emoji są dozwolone."
+                }
+              ],
+              "type": "string",
+              "maxLength": 4096,
+              "minLength": 1,
+              "description": "Opaque account/protocol/epoch-bound token; client must not parse or generate it."
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "checkpoint": {
+          "anyOf": [
+            {
+              "allOf": [
+                {
+                  "type": "string",
+                  "pattern": "^(?:[^\\u0000\\uD800-\\uDFFF]|[\\uD800-\\uDBFF][\\uDC00-\\uDFFF])*(?![\\s\\S])",
+                  "description": "Unicode bez NUL i samotnych surrogate; poprawne pary UTF-16/emoji są dozwolone."
+                }
+              ],
+              "type": "string",
+              "maxLength": 4096,
+              "minLength": 1,
+              "description": "Opaque account/protocol/epoch-bound token; client must not parse or generate it."
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "server_time": {
+          "allOf": [
+            {
+              "type": "string",
+              "pattern": "^(?:[^\\u0000\\uD800-\\uDFFF]|[\\uD800-\\uDBFF][\\uDC00-\\uDFFF])*(?![\\s\\S])",
+              "description": "Unicode bez NUL i samotnych surrogate; poprawne pary UTF-16/emoji są dozwolone."
+            }
+          ],
+          "type": "string",
+          "pattern": "^\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}(\\.[0-9]{1,6})?Z$",
+          "format": "date-time"
+        },
+        "entities": {
+          "items": {
+            "oneOf": [
+              {
+                "properties": {
+                  "entity_type": {
+                    "const": "profile"
+                  },
+                  "entity_id": {
+                    "allOf": [
+                      {
+                        "type": "string",
+                        "pattern": "^(?:[^\\u0000\\uD800-\\uDFFF]|[\\uD800-\\uDBFF][\\uDC00-\\uDFFF])*(?![\\s\\S])",
+                        "description": "Unicode bez NUL i samotnych surrogate; poprawne pary UTF-16/emoji są dozwolone."
+                      }
+                    ],
+                    "type": "string",
+                    "pattern": "^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$",
+                    "format": "uuid"
+                  },
+                  "revision": {
+                    "type": "integer",
+                    "maximum": 2147483647.0,
+                    "minimum": 1.0
+                  },
+                  "deleted": {
+                    "const": false
+                  },
+                  "payload": {
+                    "properties": {
+                      "pseudonym": {
+                        "allOf": [
+                          {
+                            "type": "string",
+                            "pattern": "^(?:[^\\u0000\\uD800-\\uDFFF]|[\\uD800-\\uDBFF][\\uDC00-\\uDFFF])*(?![\\s\\S])",
+                            "description": "Unicode bez NUL i samotnych surrogate; poprawne pary UTF-16/emoji są dozwolone."
+                          }
+                        ],
+                        "type": "string",
+                        "maxLength": 80,
+                        "minLength": 1
+                      },
+                      "height_cm": {
+                        "anyOf": [
+                          {
+                            "allOf": [
+                              {
+                                "allOf": [
+                                  {
+                                    "type": "string",
+                                    "pattern": "^(?:[^\\u0000\\uD800-\\uDFFF]|[\\uD800-\\uDBFF][\\uDC00-\\uDFFF])*(?![\\s\\S])",
+                                    "description": "Unicode bez NUL i samotnych surrogate; poprawne pary UTF-16/emoji są dozwolone."
+                                  }
+                                ],
+                                "type": "string",
+                                "pattern": "^(0|[1-9][0-9]{0,5})(\\.[0-9]{0,5}[1-9])?(?![\\s\\S])",
+                                "description": "Kanoniczne 0..999999.999999, maksymalnie 6 miejsc; bez znaku, wykładnika i końcowych zer."
+                              },
+                              {
+                                "not": {
+                                  "const": "0"
+                                }
+                              }
+                            ]
+                          },
+                          {
+                            "type": "null"
+                          }
+                        ]
+                      },
+                      "activity_class": {
+                        "enum": [
+                          "stationary",
+                          "line",
+                          "commando"
+                        ]
+                      },
+                      "time_zone": {
+                        "allOf": [
+                          {
+                            "type": "string",
+                            "pattern": "^(?:[^\\u0000\\uD800-\\uDFFF]|[\\uD800-\\uDBFF][\\uDC00-\\uDFFF])*(?![\\s\\S])",
+                            "description": "Unicode bez NUL i samotnych surrogate; poprawne pary UTF-16/emoji są dozwolone."
+                          }
+                        ],
+                        "type": "string",
+                        "maxLength": 100,
+                        "format": "iana-time-zone"
+                      }
+                    },
+                    "additionalProperties": false,
+                    "type": "object",
+                    "required": [
+                      "pseudonym",
+                      "height_cm",
+                      "activity_class",
+                      "time_zone"
+                    ]
+                  }
+                },
+                "additionalProperties": false,
+                "type": "object",
+                "required": [
+                  "entity_type",
+                  "entity_id",
+                  "revision",
+                  "deleted",
+                  "payload"
+                ]
+              },
+              {
+                "properties": {
+                  "entity_type": {
+                    "const": "profile"
+                  },
+                  "entity_id": {
+                    "allOf": [
+                      {
+                        "type": "string",
+                        "pattern": "^(?:[^\\u0000\\uD800-\\uDFFF]|[\\uD800-\\uDBFF][\\uDC00-\\uDFFF])*(?![\\s\\S])",
+                        "description": "Unicode bez NUL i samotnych surrogate; poprawne pary UTF-16/emoji są dozwolone."
+                      }
+                    ],
+                    "type": "string",
+                    "pattern": "^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$",
+                    "format": "uuid"
+                  },
+                  "revision": {
+                    "type": "integer",
+                    "maximum": 2147483647.0,
+                    "minimum": 1.0
+                  },
+                  "deleted": {
+                    "const": true
+                  },
+                  "payload": {
+                    "type": "null"
+                  }
+                },
+                "additionalProperties": false,
+                "type": "object",
+                "required": [
+                  "entity_type",
+                  "entity_id",
+                  "revision",
+                  "deleted",
+                  "payload"
+                ]
+              },
+              {
+                "properties": {
+                  "entity_type": {
+                    "const": "goal"
+                  },
+                  "entity_id": {
+                    "allOf": [
+                      {
+                        "type": "string",
+                        "pattern": "^(?:[^\\u0000\\uD800-\\uDFFF]|[\\uD800-\\uDBFF][\\uDC00-\\uDFFF])*(?![\\s\\S])",
+                        "description": "Unicode bez NUL i samotnych surrogate; poprawne pary UTF-16/emoji są dozwolone."
+                      }
+                    ],
+                    "type": "string",
+                    "pattern": "^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$",
+                    "format": "uuid"
+                  },
+                  "revision": {
+                    "type": "integer",
+                    "maximum": 2147483647.0,
+                    "minimum": 1.0
+                  },
+                  "deleted": {
+                    "const": false
+                  },
+                  "payload": {
+                    "properties": {
+                      "effective_from": {
+                        "allOf": [
+                          {
+                            "type": "string",
+                            "pattern": "^(?:[^\\u0000\\uD800-\\uDFFF]|[\\uD800-\\uDBFF][\\uDC00-\\uDFFF])*(?![\\s\\S])",
+                            "description": "Unicode bez NUL i samotnych surrogate; poprawne pary UTF-16/emoji są dozwolone."
+                          }
+                        ],
+                        "type": "string",
+                        "format": "date"
+                      },
+                      "decided_at": {
+                        "allOf": [
+                          {
+                            "type": "string",
+                            "pattern": "^(?:[^\\u0000\\uD800-\\uDFFF]|[\\uD800-\\uDBFF][\\uDC00-\\uDFFF])*(?![\\s\\S])",
+                            "description": "Unicode bez NUL i samotnych surrogate; poprawne pary UTF-16/emoji są dozwolone."
+                          }
+                        ],
+                        "type": "string",
+                        "pattern": "^\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}(\\.[0-9]{1,6})?Z$",
+                        "format": "date-time"
+                      },
+                      "time_zone": {
+                        "allOf": [
+                          {
+                            "type": "string",
+                            "pattern": "^(?:[^\\u0000\\uD800-\\uDFFF]|[\\uD800-\\uDBFF][\\uDC00-\\uDFFF])*(?![\\s\\S])",
+                            "description": "Unicode bez NUL i samotnych surrogate; poprawne pary UTF-16/emoji są dozwolone."
+                          }
+                        ],
+                        "type": "string",
+                        "maxLength": 100,
+                        "format": "iana-time-zone"
+                      },
+                      "goal_type": {
+                        "enum": [
+                          "reduce",
+                          "maintain",
+                          "gain"
+                        ]
+                      },
+                      "energy_kcal": {
+                        "allOf": [
+                          {
+                            "allOf": [
+                              {
+                                "type": "string",
+                                "pattern": "^(?:[^\\u0000\\uD800-\\uDFFF]|[\\uD800-\\uDBFF][\\uDC00-\\uDFFF])*(?![\\s\\S])",
+                                "description": "Unicode bez NUL i samotnych surrogate; poprawne pary UTF-16/emoji są dozwolone."
+                              }
+                            ],
+                            "type": "string",
+                            "pattern": "^(0|[1-9][0-9]{0,5})(\\.[0-9]{0,5}[1-9])?(?![\\s\\S])",
+                            "description": "Kanoniczne 0..999999.999999, maksymalnie 6 miejsc; bez znaku, wykładnika i końcowych zer."
+                          },
+                          {
+                            "not": {
+                              "const": "0"
+                            }
+                          }
+                        ]
+                      },
+                      "protein_g": {
+                        "anyOf": [
+                          {
+                            "allOf": [
+                              {
+                                "type": "string",
+                                "pattern": "^(?:[^\\u0000\\uD800-\\uDFFF]|[\\uD800-\\uDBFF][\\uDC00-\\uDFFF])*(?![\\s\\S])",
+                                "description": "Unicode bez NUL i samotnych surrogate; poprawne pary UTF-16/emoji są dozwolone."
+                              }
+                            ],
+                            "type": "string",
+                            "pattern": "^(0|[1-9][0-9]{0,5})(\\.[0-9]{0,5}[1-9])?(?![\\s\\S])",
+                            "description": "Kanoniczne 0..999999.999999, maksymalnie 6 miejsc; bez znaku, wykładnika i końcowych zer."
+                          },
+                          {
+                            "type": "null"
+                          }
+                        ]
+                      },
+                      "fat_g": {
+                        "anyOf": [
+                          {
+                            "allOf": [
+                              {
+                                "type": "string",
+                                "pattern": "^(?:[^\\u0000\\uD800-\\uDFFF]|[\\uD800-\\uDBFF][\\uDC00-\\uDFFF])*(?![\\s\\S])",
+                                "description": "Unicode bez NUL i samotnych surrogate; poprawne pary UTF-16/emoji są dozwolone."
+                              }
+                            ],
+                            "type": "string",
+                            "pattern": "^(0|[1-9][0-9]{0,5})(\\.[0-9]{0,5}[1-9])?(?![\\s\\S])",
+                            "description": "Kanoniczne 0..999999.999999, maksymalnie 6 miejsc; bez znaku, wykładnika i końcowych zer."
+                          },
+                          {
+                            "type": "null"
+                          }
+                        ]
+                      },
+                      "carbs_g": {
+                        "anyOf": [
+                          {
+                            "allOf": [
+                              {
+                                "type": "string",
+                                "pattern": "^(?:[^\\u0000\\uD800-\\uDFFF]|[\\uD800-\\uDBFF][\\uDC00-\\uDFFF])*(?![\\s\\S])",
+                                "description": "Unicode bez NUL i samotnych surrogate; poprawne pary UTF-16/emoji są dozwolone."
+                              }
+                            ],
+                            "type": "string",
+                            "pattern": "^(0|[1-9][0-9]{0,5})(\\.[0-9]{0,5}[1-9])?(?![\\s\\S])",
+                            "description": "Kanoniczne 0..999999.999999, maksymalnie 6 miejsc; bez znaku, wykładnika i końcowych zer."
+                          },
+                          {
+                            "type": "null"
+                          }
+                        ]
+                      },
+                      "activity_class": {
+                        "enum": [
+                          "stationary",
+                          "line",
+                          "commando"
+                        ]
+                      },
+                      "estimate": {
+                        "anyOf": [
+                          {
+                            "properties": {
+                              "method": {
+                                "const": "mifflin_pal_v1"
+                              },
+                              "input": {
+                                "properties": {
+                                  "age_years": {
+                                    "type": "integer",
+                                    "maximum": 120.0,
+                                    "minimum": 18.0
+                                  },
+                                  "height_cm": {
+                                    "allOf": [
+                                      {
+                                        "allOf": [
+                                          {
+                                            "type": "string",
+                                            "pattern": "^(?:[^\\u0000\\uD800-\\uDFFF]|[\\uD800-\\uDBFF][\\uDC00-\\uDFFF])*(?![\\s\\S])",
+                                            "description": "Unicode bez NUL i samotnych surrogate; poprawne pary UTF-16/emoji są dozwolone."
+                                          }
+                                        ],
+                                        "type": "string",
+                                        "pattern": "^(0|[1-9][0-9]{0,5})(\\.[0-9]{0,5}[1-9])?(?![\\s\\S])",
+                                        "description": "Kanoniczne 0..999999.999999, maksymalnie 6 miejsc; bez znaku, wykładnika i końcowych zer."
+                                      },
+                                      {
+                                        "not": {
+                                          "const": "0"
+                                        }
+                                      }
+                                    ]
+                                  },
+                                  "weight_kg": {
+                                    "allOf": [
+                                      {
+                                        "allOf": [
+                                          {
+                                            "type": "string",
+                                            "pattern": "^(?:[^\\u0000\\uD800-\\uDFFF]|[\\uD800-\\uDBFF][\\uDC00-\\uDFFF])*(?![\\s\\S])",
+                                            "description": "Unicode bez NUL i samotnych surrogate; poprawne pary UTF-16/emoji są dozwolone."
+                                          }
+                                        ],
+                                        "type": "string",
+                                        "pattern": "^(0|[1-9][0-9]{0,5})(\\.[0-9]{0,5}[1-9])?(?![\\s\\S])",
+                                        "description": "Kanoniczne 0..999999.999999, maksymalnie 6 miejsc; bez znaku, wykładnika i końcowych zer."
+                                      },
+                                      {
+                                        "not": {
+                                          "const": "0"
+                                        }
+                                      }
+                                    ]
+                                  },
+                                  "equation_variant": {
+                                    "enum": [
+                                      "plus_5",
+                                      "minus_161"
+                                    ]
+                                  },
+                                  "activity_class": {
+                                    "enum": [
+                                      "stationary",
+                                      "line",
+                                      "commando"
+                                    ]
+                                  }
+                                },
+                                "additionalProperties": false,
+                                "type": "object",
+                                "required": [
+                                  "age_years",
+                                  "height_cm",
+                                  "weight_kg",
+                                  "equation_variant",
+                                  "activity_class"
+                                ]
+                              },
+                              "resting_kcal": {
+                                "allOf": [
+                                  {
+                                    "allOf": [
+                                      {
+                                        "type": "string",
+                                        "pattern": "^(?:[^\\u0000\\uD800-\\uDFFF]|[\\uD800-\\uDBFF][\\uDC00-\\uDFFF])*(?![\\s\\S])",
+                                        "description": "Unicode bez NUL i samotnych surrogate; poprawne pary UTF-16/emoji są dozwolone."
+                                      }
+                                    ],
+                                    "type": "string",
+                                    "pattern": "^(0|[1-9][0-9]{0,5})(\\.[0-9]{0,11}[1-9])?(?![\\s\\S])",
+                                    "description": "Dokładny wynik kalkulatora: do12 miejsc; kanonizacja jak Decimal, bez zaokrąglania do skali wejściowej6."
+                                  },
+                                  {
+                                    "not": {
+                                      "const": "0"
+                                    }
+                                  }
+                                ]
+                              },
+                              "pal": {
+                                "enum": [
+                                  "1.5",
+                                  "1.8",
+                                  "2.2"
+                                ]
+                              },
+                              "maintenance_kcal": {
+                                "allOf": [
+                                  {
+                                    "allOf": [
+                                      {
+                                        "type": "string",
+                                        "pattern": "^(?:[^\\u0000\\uD800-\\uDFFF]|[\\uD800-\\uDBFF][\\uDC00-\\uDFFF])*(?![\\s\\S])",
+                                        "description": "Unicode bez NUL i samotnych surrogate; poprawne pary UTF-16/emoji są dozwolone."
+                                      }
+                                    ],
+                                    "type": "string",
+                                    "pattern": "^(0|[1-9][0-9]{0,5})(\\.[0-9]{0,11}[1-9])?(?![\\s\\S])",
+                                    "description": "Dokładny wynik kalkulatora: do12 miejsc; kanonizacja jak Decimal, bez zaokrąglania do skali wejściowej6."
+                                  },
+                                  {
+                                    "not": {
+                                      "const": "0"
+                                    }
+                                  }
+                                ]
+                              },
+                              "estimated_at": {
+                                "allOf": [
+                                  {
+                                    "type": "string",
+                                    "pattern": "^(?:[^\\u0000\\uD800-\\uDFFF]|[\\uD800-\\uDBFF][\\uDC00-\\uDFFF])*(?![\\s\\S])",
+                                    "description": "Unicode bez NUL i samotnych surrogate; poprawne pary UTF-16/emoji są dozwolone."
+                                  }
+                                ],
+                                "type": "string",
+                                "pattern": "^\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}(\\.[0-9]{1,6})?Z$",
+                                "format": "date-time"
+                              }
+                            },
+                            "additionalProperties": false,
+                            "type": "object",
+                            "required": [
+                              "method",
+                              "input",
+                              "resting_kcal",
+                              "pal",
+                              "maintenance_kcal",
+                              "estimated_at"
+                            ]
+                          },
+                          {
+                            "type": "null"
+                          }
+                        ]
+                      },
+                      "timeline_base_revision": {
+                        "type": "integer",
+                        "maximum": 2147483647.0,
+                        "minimum": 0.0
+                      },
+                      "reason": {
+                        "enum": [
+                          "user_decision",
+                          "history_correction"
+                        ]
+                      },
+                      "correction_of": {
+                        "anyOf": [
+                          {
+                            "allOf": [
+                              {
+                                "type": "string",
+                                "pattern": "^(?:[^\\u0000\\uD800-\\uDFFF]|[\\uD800-\\uDBFF][\\uDC00-\\uDFFF])*(?![\\s\\S])",
+                                "description": "Unicode bez NUL i samotnych surrogate; poprawne pary UTF-16/emoji są dozwolone."
+                              }
+                            ],
+                            "type": "string",
+                            "pattern": "^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$",
+                            "format": "uuid"
+                          },
+                          {
+                            "type": "null"
+                          }
+                        ]
+                      }
+                    },
+                    "additionalProperties": false,
+                    "type": "object",
+                    "required": [
+                      "effective_from",
+                      "decided_at",
+                      "time_zone",
+                      "goal_type",
+                      "energy_kcal",
+                      "protein_g",
+                      "fat_g",
+                      "carbs_g",
+                      "activity_class",
+                      "estimate",
+                      "timeline_base_revision",
+                      "reason",
+                      "correction_of"
+                    ]
+                  }
+                },
+                "additionalProperties": false,
+                "type": "object",
+                "required": [
+                  "entity_type",
+                  "entity_id",
+                  "revision",
+                  "deleted",
+                  "payload"
+                ]
+              },
+              {
+                "properties": {
+                  "entity_type": {
+                    "const": "goal"
+                  },
+                  "entity_id": {
+                    "allOf": [
+                      {
+                        "type": "string",
+                        "pattern": "^(?:[^\\u0000\\uD800-\\uDFFF]|[\\uD800-\\uDBFF][\\uDC00-\\uDFFF])*(?![\\s\\S])",
+                        "description": "Unicode bez NUL i samotnych surrogate; poprawne pary UTF-16/emoji są dozwolone."
+                      }
+                    ],
+                    "type": "string",
+                    "pattern": "^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$",
+                    "format": "uuid"
+                  },
+                  "revision": {
+                    "type": "integer",
+                    "maximum": 2147483647.0,
+                    "minimum": 1.0
+                  },
+                  "deleted": {
+                    "const": true
+                  },
+                  "payload": {
+                    "type": "null"
+                  }
+                },
+                "additionalProperties": false,
+                "type": "object",
+                "required": [
+                  "entity_type",
+                  "entity_id",
+                  "revision",
+                  "deleted",
+                  "payload"
+                ]
+              },
+              {
+                "properties": {
+                  "entity_type": {
+                    "const": "meal"
+                  },
+                  "entity_id": {
+                    "allOf": [
+                      {
+                        "type": "string",
+                        "pattern": "^(?:[^\\u0000\\uD800-\\uDFFF]|[\\uD800-\\uDBFF][\\uDC00-\\uDFFF])*(?![\\s\\S])",
+                        "description": "Unicode bez NUL i samotnych surrogate; poprawne pary UTF-16/emoji są dozwolone."
+                      }
+                    ],
+                    "type": "string",
+                    "pattern": "^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$",
+                    "format": "uuid"
+                  },
+                  "revision": {
+                    "type": "integer",
+                    "maximum": 2147483647.0,
+                    "minimum": 1.0
+                  },
+                  "deleted": {
+                    "const": false
+                  },
+                  "payload": {
+                    "properties": {
+                      "title": {
+                        "allOf": [
+                          {
+                            "type": "string",
+                            "pattern": "^(?:[^\\u0000\\uD800-\\uDFFF]|[\\uD800-\\uDBFF][\\uDC00-\\uDFFF])*(?![\\s\\S])",
+                            "description": "Unicode bez NUL i samotnych surrogate; poprawne pary UTF-16/emoji są dozwolone."
+                          }
+                        ],
+                        "type": "string",
+                        "maxLength": 200,
+                        "minLength": 1
+                      },
+                      "occurred_at": {
+                        "allOf": [
+                          {
+                            "type": "string",
+                            "pattern": "^(?:[^\\u0000\\uD800-\\uDFFF]|[\\uD800-\\uDBFF][\\uDC00-\\uDFFF])*(?![\\s\\S])",
+                            "description": "Unicode bez NUL i samotnych surrogate; poprawne pary UTF-16/emoji są dozwolone."
+                          }
+                        ],
+                        "type": "string",
+                        "pattern": "^\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}(\\.[0-9]{1,6})?Z$",
+                        "format": "date-time"
+                      },
+                      "time_zone": {
+                        "allOf": [
+                          {
+                            "type": "string",
+                            "pattern": "^(?:[^\\u0000\\uD800-\\uDFFF]|[\\uD800-\\uDBFF][\\uDC00-\\uDFFF])*(?![\\s\\S])",
+                            "description": "Unicode bez NUL i samotnych surrogate; poprawne pary UTF-16/emoji są dozwolone."
+                          }
+                        ],
+                        "type": "string",
+                        "maxLength": 100,
+                        "format": "iana-time-zone"
+                      },
+                      "local_date": {
+                        "allOf": [
+                          {
+                            "type": "string",
+                            "pattern": "^(?:[^\\u0000\\uD800-\\uDFFF]|[\\uD800-\\uDBFF][\\uDC00-\\uDFFF])*(?![\\s\\S])",
+                            "description": "Unicode bez NUL i samotnych surrogate; poprawne pary UTF-16/emoji są dozwolone."
+                          }
+                        ],
+                        "type": "string",
+                        "format": "date"
+                      },
+                      "meal_type": {
+                        "anyOf": [
+                          {
+                            "enum": [
+                              "breakfast",
+                              "lunch",
+                              "dinner",
+                              "snack"
+                            ]
+                          },
+                          {
+                            "type": "null"
+                          }
+                        ]
+                      },
+                      "goal_id": {
+                        "anyOf": [
+                          {
+                            "allOf": [
+                              {
+                                "type": "string",
+                                "pattern": "^(?:[^\\u0000\\uD800-\\uDFFF]|[\\uD800-\\uDBFF][\\uDC00-\\uDFFF])*(?![\\s\\S])",
+                                "description": "Unicode bez NUL i samotnych surrogate; poprawne pary UTF-16/emoji są dozwolone."
+                              }
+                            ],
+                            "type": "string",
+                            "pattern": "^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$",
+                            "format": "uuid"
+                          },
+                          {
+                            "type": "null"
+                          }
+                        ]
+                      },
+                      "ration": {
+                        "anyOf": [
+                          {
+                            "properties": {
+                              "ration_id": {
+                                "allOf": [
+                                  {
+                                    "type": "string",
+                                    "pattern": "^(?:[^\\u0000\\uD800-\\uDFFF]|[\\uD800-\\uDBFF][\\uDC00-\\uDFFF])*(?![\\s\\S])",
+                                    "description": "Unicode bez NUL i samotnych surrogate; poprawne pary UTF-16/emoji są dozwolone."
+                                  }
+                                ],
+                                "type": "string",
+                                "pattern": "^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$",
+                                "format": "uuid"
+                              },
+                              "revision": {
+                                "type": "integer",
+                                "maximum": 2147483647.0,
+                                "minimum": 1.0
+                              },
+                              "name": {
+                                "allOf": [
+                                  {
+                                    "type": "string",
+                                    "pattern": "^(?:[^\\u0000\\uD800-\\uDFFF]|[\\uD800-\\uDBFF][\\uDC00-\\uDFFF])*(?![\\s\\S])",
+                                    "description": "Unicode bez NUL i samotnych surrogate; poprawne pary UTF-16/emoji są dozwolone."
+                                  }
+                                ],
+                                "type": "string",
+                                "maxLength": 200,
+                                "minLength": 1
+                              }
+                            },
+                            "additionalProperties": false,
+                            "type": "object",
+                            "required": [
+                              "ration_id",
+                              "revision",
+                              "name"
+                            ]
+                          },
+                          {
+                            "type": "null"
+                          }
+                        ]
+                      },
+                      "items": {
+                        "items": {
+                          "properties": {
+                            "item_id": {
+                              "allOf": [
+                                {
+                                  "type": "string",
+                                  "pattern": "^(?:[^\\u0000\\uD800-\\uDFFF]|[\\uD800-\\uDBFF][\\uDC00-\\uDFFF])*(?![\\s\\S])",
+                                  "description": "Unicode bez NUL i samotnych surrogate; poprawne pary UTF-16/emoji są dozwolone."
+                                }
+                              ],
+                              "type": "string",
+                              "pattern": "^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$",
+                              "format": "uuid"
+                            },
+                            "name": {
+                              "allOf": [
+                                {
+                                  "type": "string",
+                                  "pattern": "^(?:[^\\u0000\\uD800-\\uDFFF]|[\\uD800-\\uDBFF][\\uDC00-\\uDFFF])*(?![\\s\\S])",
+                                  "description": "Unicode bez NUL i samotnych surrogate; poprawne pary UTF-16/emoji są dozwolone."
+                                }
+                              ],
+                              "type": "string",
+                              "maxLength": 200,
+                              "minLength": 1
+                            },
+                            "product": {
+                              "anyOf": [
+                                {
+                                  "properties": {
+                                    "product_id": {
+                                      "allOf": [
+                                        {
+                                          "type": "string",
+                                          "pattern": "^(?:[^\\u0000\\uD800-\\uDFFF]|[\\uD800-\\uDBFF][\\uDC00-\\uDFFF])*(?![\\s\\S])",
+                                          "description": "Unicode bez NUL i samotnych surrogate; poprawne pary UTF-16/emoji są dozwolone."
+                                        }
+                                      ],
+                                      "type": "string",
+                                      "pattern": "^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$",
+                                      "format": "uuid"
+                                    },
+                                    "revision": {
+                                      "type": "integer",
+                                      "maximum": 2147483647.0,
+                                      "minimum": 1.0
+                                    }
+                                  },
+                                  "additionalProperties": false,
+                                  "type": "object",
+                                  "required": [
+                                    "product_id",
+                                    "revision"
+                                  ]
+                                },
+                                {
+                                  "type": "null"
+                                }
+                              ]
+                            },
+                            "quantity": {
+                              "properties": {
+                                "amount": {
+                                  "allOf": [
+                                    {
+                                      "allOf": [
+                                        {
+                                          "type": "string",
+                                          "pattern": "^(?:[^\\u0000\\uD800-\\uDFFF]|[\\uD800-\\uDBFF][\\uDC00-\\uDFFF])*(?![\\s\\S])",
+                                          "description": "Unicode bez NUL i samotnych surrogate; poprawne pary UTF-16/emoji są dozwolone."
+                                        }
+                                      ],
+                                      "type": "string",
+                                      "pattern": "^(0|[1-9][0-9]{0,5})(\\.[0-9]{0,5}[1-9])?(?![\\s\\S])",
+                                      "description": "Kanoniczne 0..999999.999999, maksymalnie 6 miejsc; bez znaku, wykładnika i końcowych zer."
+                                    },
+                                    {
+                                      "not": {
+                                        "const": "0"
+                                      }
+                                    }
+                                  ]
+                                },
+                                "unit": {
+                                  "enum": [
+                                    "g",
+                                    "ml"
+                                  ]
+                                }
+                              },
+                              "additionalProperties": false,
+                              "type": "object",
+                              "required": [
+                                "amount",
+                                "unit"
+                              ]
+                            },
+                            "basis_unit": {
+                              "enum": [
+                                "g",
+                                "ml"
+                              ]
+                            },
+                            "nutrition_per_100": {
+                              "properties": {
+                                "energy_kcal": {
+                                  "anyOf": [
+                                    {
+                                      "allOf": [
+                                        {
+                                          "type": "string",
+                                          "pattern": "^(?:[^\\u0000\\uD800-\\uDFFF]|[\\uD800-\\uDBFF][\\uDC00-\\uDFFF])*(?![\\s\\S])",
+                                          "description": "Unicode bez NUL i samotnych surrogate; poprawne pary UTF-16/emoji są dozwolone."
+                                        }
+                                      ],
+                                      "type": "string",
+                                      "pattern": "^(0|[1-9][0-9]{0,5})(\\.[0-9]{0,5}[1-9])?(?![\\s\\S])",
+                                      "description": "Kanoniczne 0..999999.999999, maksymalnie 6 miejsc; bez znaku, wykładnika i końcowych zer."
+                                    },
+                                    {
+                                      "type": "null"
+                                    }
+                                  ]
+                                },
+                                "protein_g": {
+                                  "anyOf": [
+                                    {
+                                      "allOf": [
+                                        {
+                                          "type": "string",
+                                          "pattern": "^(?:[^\\u0000\\uD800-\\uDFFF]|[\\uD800-\\uDBFF][\\uDC00-\\uDFFF])*(?![\\s\\S])",
+                                          "description": "Unicode bez NUL i samotnych surrogate; poprawne pary UTF-16/emoji są dozwolone."
+                                        }
+                                      ],
+                                      "type": "string",
+                                      "pattern": "^(0|[1-9][0-9]{0,5})(\\.[0-9]{0,5}[1-9])?(?![\\s\\S])",
+                                      "description": "Kanoniczne 0..999999.999999, maksymalnie 6 miejsc; bez znaku, wykładnika i końcowych zer."
+                                    },
+                                    {
+                                      "type": "null"
+                                    }
+                                  ]
+                                },
+                                "fat_g": {
+                                  "anyOf": [
+                                    {
+                                      "allOf": [
+                                        {
+                                          "type": "string",
+                                          "pattern": "^(?:[^\\u0000\\uD800-\\uDFFF]|[\\uD800-\\uDBFF][\\uDC00-\\uDFFF])*(?![\\s\\S])",
+                                          "description": "Unicode bez NUL i samotnych surrogate; poprawne pary UTF-16/emoji są dozwolone."
+                                        }
+                                      ],
+                                      "type": "string",
+                                      "pattern": "^(0|[1-9][0-9]{0,5})(\\.[0-9]{0,5}[1-9])?(?![\\s\\S])",
+                                      "description": "Kanoniczne 0..999999.999999, maksymalnie 6 miejsc; bez znaku, wykładnika i końcowych zer."
+                                    },
+                                    {
+                                      "type": "null"
+                                    }
+                                  ]
+                                },
+                                "carbs_g": {
+                                  "anyOf": [
+                                    {
+                                      "allOf": [
+                                        {
+                                          "type": "string",
+                                          "pattern": "^(?:[^\\u0000\\uD800-\\uDFFF]|[\\uD800-\\uDBFF][\\uDC00-\\uDFFF])*(?![\\s\\S])",
+                                          "description": "Unicode bez NUL i samotnych surrogate; poprawne pary UTF-16/emoji są dozwolone."
+                                        }
+                                      ],
+                                      "type": "string",
+                                      "pattern": "^(0|[1-9][0-9]{0,5})(\\.[0-9]{0,5}[1-9])?(?![\\s\\S])",
+                                      "description": "Kanoniczne 0..999999.999999, maksymalnie 6 miejsc; bez znaku, wykładnika i końcowych zer."
+                                    },
+                                    {
+                                      "type": "null"
+                                    }
+                                  ]
+                                }
+                              },
+                              "additionalProperties": false,
+                              "type": "object",
+                              "required": [
+                                "energy_kcal",
+                                "protein_g",
+                                "fat_g",
+                                "carbs_g"
+                              ]
+                            },
+                            "density_g_per_ml": {
+                              "anyOf": [
+                                {
+                                  "allOf": [
+                                    {
+                                      "allOf": [
+                                        {
+                                          "type": "string",
+                                          "pattern": "^(?:[^\\u0000\\uD800-\\uDFFF]|[\\uD800-\\uDBFF][\\uDC00-\\uDFFF])*(?![\\s\\S])",
+                                          "description": "Unicode bez NUL i samotnych surrogate; poprawne pary UTF-16/emoji są dozwolone."
+                                        }
+                                      ],
+                                      "type": "string",
+                                      "pattern": "^(0|[1-9][0-9]{0,5})(\\.[0-9]{0,5}[1-9])?(?![\\s\\S])",
+                                      "description": "Kanoniczne 0..999999.999999, maksymalnie 6 miejsc; bez znaku, wykładnika i końcowych zer."
+                                    },
+                                    {
+                                      "not": {
+                                        "const": "0"
+                                      }
+                                    }
+                                  ]
+                                },
+                                {
+                                  "type": "null"
+                                }
+                              ]
+                            },
+                            "density_source": {
+                              "anyOf": [
+                                {
+                                  "allOf": [
+                                    {
+                                      "type": "string",
+                                      "pattern": "^(?:[^\\u0000\\uD800-\\uDFFF]|[\\uD800-\\uDBFF][\\uDC00-\\uDFFF])*(?![\\s\\S])",
+                                      "description": "Unicode bez NUL i samotnych surrogate; poprawne pary UTF-16/emoji są dozwolone."
+                                    }
+                                  ],
+                                  "type": "string",
+                                  "maxLength": 500,
+                                  "minLength": 1
+                                },
+                                {
+                                  "type": "null"
+                                }
+                              ]
+                            },
+                            "nutrition_origin": {
+                              "enum": [
+                                "catalog_snapshot",
+                                "manual",
+                                "ai_estimate"
+                              ]
+                            },
+                            "formula_version": {
+                              "const": "nutrition_v1"
+                            },
+                            "ration_component_position": {
+                              "anyOf": [
+                                {
+                                  "type": "integer",
+                                  "maximum": 100000.0,
+                                  "minimum": 1.0
+                                },
+                                {
+                                  "type": "null"
+                                }
+                              ]
+                            }
+                          },
+                          "additionalProperties": false,
+                          "type": "object",
+                          "required": [
+                            "item_id",
+                            "name",
+                            "product",
+                            "quantity",
+                            "basis_unit",
+                            "nutrition_per_100",
+                            "density_g_per_ml",
+                            "density_source",
+                            "nutrition_origin",
+                            "formula_version",
+                            "ration_component_position"
+                          ]
+                        },
+                        "type": "array",
+                        "maxItems": 100,
+                        "minItems": 1
+                      }
+                    },
+                    "additionalProperties": false,
+                    "type": "object",
+                    "required": [
+                      "title",
+                      "occurred_at",
+                      "time_zone",
+                      "local_date",
+                      "meal_type",
+                      "goal_id",
+                      "ration",
+                      "items"
+                    ]
+                  }
+                },
+                "additionalProperties": false,
+                "type": "object",
+                "required": [
+                  "entity_type",
+                  "entity_id",
+                  "revision",
+                  "deleted",
+                  "payload"
+                ]
+              },
+              {
+                "properties": {
+                  "entity_type": {
+                    "const": "meal"
+                  },
+                  "entity_id": {
+                    "allOf": [
+                      {
+                        "type": "string",
+                        "pattern": "^(?:[^\\u0000\\uD800-\\uDFFF]|[\\uD800-\\uDBFF][\\uDC00-\\uDFFF])*(?![\\s\\S])",
+                        "description": "Unicode bez NUL i samotnych surrogate; poprawne pary UTF-16/emoji są dozwolone."
+                      }
+                    ],
+                    "type": "string",
+                    "pattern": "^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$",
+                    "format": "uuid"
+                  },
+                  "revision": {
+                    "type": "integer",
+                    "maximum": 2147483647.0,
+                    "minimum": 1.0
+                  },
+                  "deleted": {
+                    "const": true
+                  },
+                  "payload": {
+                    "type": "null"
+                  }
+                },
+                "additionalProperties": false,
+                "type": "object",
+                "required": [
+                  "entity_type",
+                  "entity_id",
+                  "revision",
+                  "deleted",
+                  "payload"
+                ]
+              },
+              {
+                "properties": {
+                  "entity_type": {
+                    "const": "weight"
+                  },
+                  "entity_id": {
+                    "allOf": [
+                      {
+                        "type": "string",
+                        "pattern": "^(?:[^\\u0000\\uD800-\\uDFFF]|[\\uD800-\\uDBFF][\\uDC00-\\uDFFF])*(?![\\s\\S])",
+                        "description": "Unicode bez NUL i samotnych surrogate; poprawne pary UTF-16/emoji są dozwolone."
+                      }
+                    ],
+                    "type": "string",
+                    "pattern": "^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$",
+                    "format": "uuid"
+                  },
+                  "revision": {
+                    "type": "integer",
+                    "maximum": 2147483647.0,
+                    "minimum": 1.0
+                  },
+                  "deleted": {
+                    "const": false
+                  },
+                  "payload": {
+                    "properties": {
+                      "weight_kg": {
+                        "allOf": [
+                          {
+                            "allOf": [
+                              {
+                                "type": "string",
+                                "pattern": "^(?:[^\\u0000\\uD800-\\uDFFF]|[\\uD800-\\uDBFF][\\uDC00-\\uDFFF])*(?![\\s\\S])",
+                                "description": "Unicode bez NUL i samotnych surrogate; poprawne pary UTF-16/emoji są dozwolone."
+                              }
+                            ],
+                            "type": "string",
+                            "pattern": "^(0|[1-9][0-9]{0,5})(\\.[0-9]{0,5}[1-9])?(?![\\s\\S])",
+                            "description": "Kanoniczne 0..999999.999999, maksymalnie 6 miejsc; bez znaku, wykładnika i końcowych zer."
+                          },
+                          {
+                            "not": {
+                              "const": "0"
+                            }
+                          }
+                        ]
+                      },
+                      "occurred_at": {
+                        "allOf": [
+                          {
+                            "type": "string",
+                            "pattern": "^(?:[^\\u0000\\uD800-\\uDFFF]|[\\uD800-\\uDBFF][\\uDC00-\\uDFFF])*(?![\\s\\S])",
+                            "description": "Unicode bez NUL i samotnych surrogate; poprawne pary UTF-16/emoji są dozwolone."
+                          }
+                        ],
+                        "type": "string",
+                        "pattern": "^\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}(\\.[0-9]{1,6})?Z$",
+                        "format": "date-time"
+                      },
+                      "time_zone": {
+                        "allOf": [
+                          {
+                            "type": "string",
+                            "pattern": "^(?:[^\\u0000\\uD800-\\uDFFF]|[\\uD800-\\uDBFF][\\uDC00-\\uDFFF])*(?![\\s\\S])",
+                            "description": "Unicode bez NUL i samotnych surrogate; poprawne pary UTF-16/emoji są dozwolone."
+                          }
+                        ],
+                        "type": "string",
+                        "maxLength": 100,
+                        "format": "iana-time-zone"
+                      },
+                      "local_date": {
+                        "allOf": [
+                          {
+                            "type": "string",
+                            "pattern": "^(?:[^\\u0000\\uD800-\\uDFFF]|[\\uD800-\\uDBFF][\\uDC00-\\uDFFF])*(?![\\s\\S])",
+                            "description": "Unicode bez NUL i samotnych surrogate; poprawne pary UTF-16/emoji są dozwolone."
+                          }
+                        ],
+                        "type": "string",
+                        "format": "date"
+                      }
+                    },
+                    "additionalProperties": false,
+                    "type": "object",
+                    "required": [
+                      "weight_kg",
+                      "occurred_at",
+                      "time_zone",
+                      "local_date"
+                    ]
+                  }
+                },
+                "additionalProperties": false,
+                "type": "object",
+                "required": [
+                  "entity_type",
+                  "entity_id",
+                  "revision",
+                  "deleted",
+                  "payload"
+                ]
+              },
+              {
+                "properties": {
+                  "entity_type": {
+                    "const": "weight"
+                  },
+                  "entity_id": {
+                    "allOf": [
+                      {
+                        "type": "string",
+                        "pattern": "^(?:[^\\u0000\\uD800-\\uDFFF]|[\\uD800-\\uDBFF][\\uDC00-\\uDFFF])*(?![\\s\\S])",
+                        "description": "Unicode bez NUL i samotnych surrogate; poprawne pary UTF-16/emoji są dozwolone."
+                      }
+                    ],
+                    "type": "string",
+                    "pattern": "^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$",
+                    "format": "uuid"
+                  },
+                  "revision": {
+                    "type": "integer",
+                    "maximum": 2147483647.0,
+                    "minimum": 1.0
+                  },
+                  "deleted": {
+                    "const": true
+                  },
+                  "payload": {
+                    "type": "null"
+                  }
+                },
+                "additionalProperties": false,
+                "type": "object",
+                "required": [
+                  "entity_type",
+                  "entity_id",
+                  "revision",
+                  "deleted",
+                  "payload"
+                ]
+              },
+              {
+                "properties": {
+                  "entity_type": {
+                    "const": "diary_day"
+                  },
+                  "entity_id": {
+                    "allOf": [
+                      {
+                        "type": "string",
+                        "pattern": "^(?:[^\\u0000\\uD800-\\uDFFF]|[\\uD800-\\uDBFF][\\uDC00-\\uDFFF])*(?![\\s\\S])",
+                        "description": "Unicode bez NUL i samotnych surrogate; poprawne pary UTF-16/emoji są dozwolone."
+                      }
+                    ],
+                    "type": "string",
+                    "pattern": "^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$",
+                    "format": "uuid"
+                  },
+                  "revision": {
+                    "type": "integer",
+                    "maximum": 2147483647.0,
+                    "minimum": 1.0
+                  },
+                  "deleted": {
+                    "const": false
+                  },
+                  "payload": {
+                    "properties": {
+                      "local_date": {
+                        "allOf": [
+                          {
+                            "type": "string",
+                            "pattern": "^(?:[^\\u0000\\uD800-\\uDFFF]|[\\uD800-\\uDBFF][\\uDC00-\\uDFFF])*(?![\\s\\S])",
+                            "description": "Unicode bez NUL i samotnych surrogate; poprawne pary UTF-16/emoji są dozwolone."
+                          }
+                        ],
+                        "type": "string",
+                        "format": "date"
+                      },
+                      "time_zone": {
+                        "allOf": [
+                          {
+                            "type": "string",
+                            "pattern": "^(?:[^\\u0000\\uD800-\\uDFFF]|[\\uD800-\\uDBFF][\\uDC00-\\uDFFF])*(?![\\s\\S])",
+                            "description": "Unicode bez NUL i samotnych surrogate; poprawne pary UTF-16/emoji są dozwolone."
+                          }
+                        ],
+                        "type": "string",
+                        "maxLength": 100,
+                        "format": "iana-time-zone"
+                      },
+                      "declared_complete": {
+                        "type": "boolean"
+                      }
+                    },
+                    "additionalProperties": false,
+                    "type": "object",
+                    "required": [
+                      "local_date",
+                      "time_zone",
+                      "declared_complete"
+                    ]
+                  }
+                },
+                "additionalProperties": false,
+                "type": "object",
+                "required": [
+                  "entity_type",
+                  "entity_id",
+                  "revision",
+                  "deleted",
+                  "payload"
+                ]
+              },
+              {
+                "properties": {
+                  "entity_type": {
+                    "const": "diary_day"
+                  },
+                  "entity_id": {
+                    "allOf": [
+                      {
+                        "type": "string",
+                        "pattern": "^(?:[^\\u0000\\uD800-\\uDFFF]|[\\uD800-\\uDBFF][\\uDC00-\\uDFFF])*(?![\\s\\S])",
+                        "description": "Unicode bez NUL i samotnych surrogate; poprawne pary UTF-16/emoji są dozwolone."
+                      }
+                    ],
+                    "type": "string",
+                    "pattern": "^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$",
+                    "format": "uuid"
+                  },
+                  "revision": {
+                    "type": "integer",
+                    "maximum": 2147483647.0,
+                    "minimum": 1.0
+                  },
+                  "deleted": {
+                    "const": true
+                  },
+                  "payload": {
+                    "type": "null"
+                  }
+                },
+                "additionalProperties": false,
+                "type": "object",
+                "required": [
+                  "entity_type",
+                  "entity_id",
+                  "revision",
+                  "deleted",
+                  "payload"
+                ]
+              },
+              {
+                "properties": {
+                  "entity_type": {
+                    "const": "product_draft"
+                  },
+                  "entity_id": {
+                    "allOf": [
+                      {
+                        "type": "string",
+                        "pattern": "^(?:[^\\u0000\\uD800-\\uDFFF]|[\\uD800-\\uDBFF][\\uDC00-\\uDFFF])*(?![\\s\\S])",
+                        "description": "Unicode bez NUL i samotnych surrogate; poprawne pary UTF-16/emoji są dozwolone."
+                      }
+                    ],
+                    "type": "string",
+                    "pattern": "^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$",
+                    "format": "uuid"
+                  },
+                  "revision": {
+                    "type": "integer",
+                    "maximum": 2147483647.0,
+                    "minimum": 1.0
+                  },
+                  "deleted": {
+                    "const": false
+                  },
+                  "payload": {
+                    "properties": {
+                      "name": {
+                        "allOf": [
+                          {
+                            "type": "string",
+                            "pattern": "^(?:[^\\u0000\\uD800-\\uDFFF]|[\\uD800-\\uDBFF][\\uDC00-\\uDFFF])*(?![\\s\\S])",
+                            "description": "Unicode bez NUL i samotnych surrogate; poprawne pary UTF-16/emoji są dozwolone."
+                          }
+                        ],
+                        "type": "string",
+                        "maxLength": 200,
+                        "minLength": 1
+                      },
+                      "brand": {
+                        "anyOf": [
+                          {
+                            "allOf": [
+                              {
+                                "type": "string",
+                                "pattern": "^(?:[^\\u0000\\uD800-\\uDFFF]|[\\uD800-\\uDBFF][\\uDC00-\\uDFFF])*(?![\\s\\S])",
+                                "description": "Unicode bez NUL i samotnych surrogate; poprawne pary UTF-16/emoji są dozwolone."
+                              }
+                            ],
+                            "type": "string",
+                            "maxLength": 200,
+                            "minLength": 1
+                          },
+                          {
+                            "type": "null"
+                          }
+                        ]
+                      },
+                      "variant": {
+                        "anyOf": [
+                          {
+                            "allOf": [
+                              {
+                                "type": "string",
+                                "pattern": "^(?:[^\\u0000\\uD800-\\uDFFF]|[\\uD800-\\uDBFF][\\uDC00-\\uDFFF])*(?![\\s\\S])",
+                                "description": "Unicode bez NUL i samotnych surrogate; poprawne pary UTF-16/emoji są dozwolone."
+                              }
+                            ],
+                            "type": "string",
+                            "maxLength": 200,
+                            "minLength": 1
+                          },
+                          {
+                            "type": "null"
+                          }
+                        ]
+                      },
+                      "basis_unit": {
+                        "enum": [
+                          "g",
+                          "ml"
+                        ]
+                      },
+                      "nutrition_per_100": {
+                        "properties": {
+                          "energy_kcal": {
+                            "anyOf": [
+                              {
+                                "allOf": [
+                                  {
+                                    "type": "string",
+                                    "pattern": "^(?:[^\\u0000\\uD800-\\uDFFF]|[\\uD800-\\uDBFF][\\uDC00-\\uDFFF])*(?![\\s\\S])",
+                                    "description": "Unicode bez NUL i samotnych surrogate; poprawne pary UTF-16/emoji są dozwolone."
+                                  }
+                                ],
+                                "type": "string",
+                                "pattern": "^(0|[1-9][0-9]{0,5})(\\.[0-9]{0,5}[1-9])?(?![\\s\\S])",
+                                "description": "Kanoniczne 0..999999.999999, maksymalnie 6 miejsc; bez znaku, wykładnika i końcowych zer."
+                              },
+                              {
+                                "type": "null"
+                              }
+                            ]
+                          },
+                          "protein_g": {
+                            "anyOf": [
+                              {
+                                "allOf": [
+                                  {
+                                    "type": "string",
+                                    "pattern": "^(?:[^\\u0000\\uD800-\\uDFFF]|[\\uD800-\\uDBFF][\\uDC00-\\uDFFF])*(?![\\s\\S])",
+                                    "description": "Unicode bez NUL i samotnych surrogate; poprawne pary UTF-16/emoji są dozwolone."
+                                  }
+                                ],
+                                "type": "string",
+                                "pattern": "^(0|[1-9][0-9]{0,5})(\\.[0-9]{0,5}[1-9])?(?![\\s\\S])",
+                                "description": "Kanoniczne 0..999999.999999, maksymalnie 6 miejsc; bez znaku, wykładnika i końcowych zer."
+                              },
+                              {
+                                "type": "null"
+                              }
+                            ]
+                          },
+                          "fat_g": {
+                            "anyOf": [
+                              {
+                                "allOf": [
+                                  {
+                                    "type": "string",
+                                    "pattern": "^(?:[^\\u0000\\uD800-\\uDFFF]|[\\uD800-\\uDBFF][\\uDC00-\\uDFFF])*(?![\\s\\S])",
+                                    "description": "Unicode bez NUL i samotnych surrogate; poprawne pary UTF-16/emoji są dozwolone."
+                                  }
+                                ],
+                                "type": "string",
+                                "pattern": "^(0|[1-9][0-9]{0,5})(\\.[0-9]{0,5}[1-9])?(?![\\s\\S])",
+                                "description": "Kanoniczne 0..999999.999999, maksymalnie 6 miejsc; bez znaku, wykładnika i końcowych zer."
+                              },
+                              {
+                                "type": "null"
+                              }
+                            ]
+                          },
+                          "carbs_g": {
+                            "anyOf": [
+                              {
+                                "allOf": [
+                                  {
+                                    "type": "string",
+                                    "pattern": "^(?:[^\\u0000\\uD800-\\uDFFF]|[\\uD800-\\uDBFF][\\uDC00-\\uDFFF])*(?![\\s\\S])",
+                                    "description": "Unicode bez NUL i samotnych surrogate; poprawne pary UTF-16/emoji są dozwolone."
+                                  }
+                                ],
+                                "type": "string",
+                                "pattern": "^(0|[1-9][0-9]{0,5})(\\.[0-9]{0,5}[1-9])?(?![\\s\\S])",
+                                "description": "Kanoniczne 0..999999.999999, maksymalnie 6 miejsc; bez znaku, wykładnika i końcowych zer."
+                              },
+                              {
+                                "type": "null"
+                              }
+                            ]
+                          }
+                        },
+                        "additionalProperties": false,
+                        "type": "object",
+                        "required": [
+                          "energy_kcal",
+                          "protein_g",
+                          "fat_g",
+                          "carbs_g"
+                        ]
+                      },
+                      "package_quantity": {
+                        "anyOf": [
+                          {
+                            "properties": {
+                              "amount": {
+                                "allOf": [
+                                  {
+                                    "allOf": [
+                                      {
+                                        "type": "string",
+                                        "pattern": "^(?:[^\\u0000\\uD800-\\uDFFF]|[\\uD800-\\uDBFF][\\uDC00-\\uDFFF])*(?![\\s\\S])",
+                                        "description": "Unicode bez NUL i samotnych surrogate; poprawne pary UTF-16/emoji są dozwolone."
+                                      }
+                                    ],
+                                    "type": "string",
+                                    "pattern": "^(0|[1-9][0-9]{0,5})(\\.[0-9]{0,5}[1-9])?(?![\\s\\S])",
+                                    "description": "Kanoniczne 0..999999.999999, maksymalnie 6 miejsc; bez znaku, wykładnika i końcowych zer."
+                                  },
+                                  {
+                                    "not": {
+                                      "const": "0"
+                                    }
+                                  }
+                                ]
+                              },
+                              "unit": {
+                                "enum": [
+                                  "g",
+                                  "ml"
+                                ]
+                              }
+                            },
+                            "additionalProperties": false,
+                            "type": "object",
+                            "required": [
+                              "amount",
+                              "unit"
+                            ]
+                          },
+                          {
+                            "type": "null"
+                          }
+                        ]
+                      },
+                      "density_g_per_ml": {
+                        "anyOf": [
+                          {
+                            "allOf": [
+                              {
+                                "allOf": [
+                                  {
+                                    "type": "string",
+                                    "pattern": "^(?:[^\\u0000\\uD800-\\uDFFF]|[\\uD800-\\uDBFF][\\uDC00-\\uDFFF])*(?![\\s\\S])",
+                                    "description": "Unicode bez NUL i samotnych surrogate; poprawne pary UTF-16/emoji są dozwolone."
+                                  }
+                                ],
+                                "type": "string",
+                                "pattern": "^(0|[1-9][0-9]{0,5})(\\.[0-9]{0,5}[1-9])?(?![\\s\\S])",
+                                "description": "Kanoniczne 0..999999.999999, maksymalnie 6 miejsc; bez znaku, wykładnika i końcowych zer."
+                              },
+                              {
+                                "not": {
+                                  "const": "0"
+                                }
+                              }
+                            ]
+                          },
+                          {
+                            "type": "null"
+                          }
+                        ]
+                      },
+                      "density_source": {
+                        "anyOf": [
+                          {
+                            "allOf": [
+                              {
+                                "type": "string",
+                                "pattern": "^(?:[^\\u0000\\uD800-\\uDFFF]|[\\uD800-\\uDBFF][\\uDC00-\\uDFFF])*(?![\\s\\S])",
+                                "description": "Unicode bez NUL i samotnych surrogate; poprawne pary UTF-16/emoji są dozwolone."
+                              }
+                            ],
+                            "type": "string",
+                            "maxLength": 500,
+                            "minLength": 1
+                          },
+                          {
+                            "type": "null"
+                          }
+                        ]
+                      },
+                      "source_description": {
+                        "allOf": [
+                          {
+                            "type": "string",
+                            "pattern": "^(?:[^\\u0000\\uD800-\\uDFFF]|[\\uD800-\\uDBFF][\\uDC00-\\uDFFF])*(?![\\s\\S])",
+                            "description": "Unicode bez NUL i samotnych surrogate; poprawne pary UTF-16/emoji są dozwolone."
+                          }
+                        ],
+                        "type": "string",
+                        "maxLength": 2000,
+                        "minLength": 1
+                      }
+                    },
+                    "additionalProperties": false,
+                    "type": "object",
+                    "required": [
+                      "name",
+                      "brand",
+                      "variant",
+                      "basis_unit",
+                      "nutrition_per_100",
+                      "package_quantity",
+                      "density_g_per_ml",
+                      "density_source",
+                      "source_description"
+                    ]
+                  }
+                },
+                "additionalProperties": false,
+                "type": "object",
+                "required": [
+                  "entity_type",
+                  "entity_id",
+                  "revision",
+                  "deleted",
+                  "payload"
+                ]
+              },
+              {
+                "properties": {
+                  "entity_type": {
+                    "const": "product_draft"
+                  },
+                  "entity_id": {
+                    "allOf": [
+                      {
+                        "type": "string",
+                        "pattern": "^(?:[^\\u0000\\uD800-\\uDFFF]|[\\uD800-\\uDBFF][\\uDC00-\\uDFFF])*(?![\\s\\S])",
+                        "description": "Unicode bez NUL i samotnych surrogate; poprawne pary UTF-16/emoji są dozwolone."
+                      }
+                    ],
+                    "type": "string",
+                    "pattern": "^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$",
+                    "format": "uuid"
+                  },
+                  "revision": {
+                    "type": "integer",
+                    "maximum": 2147483647.0,
+                    "minimum": 1.0
+                  },
+                  "deleted": {
+                    "const": true
+                  },
+                  "payload": {
+                    "type": "null"
+                  }
+                },
+                "additionalProperties": false,
+                "type": "object",
+                "required": [
+                  "entity_type",
+                  "entity_id",
+                  "revision",
+                  "deleted",
+                  "payload"
+                ]
+              },
+              {
+                "properties": {
+                  "entity_type": {
+                    "type": "string",
+                    "const": "energy_estimate",
+                    "title": "Entity Type"
+                  },
+                  "entity_id": {
+                    "type": "string",
+                    "format": "uuid",
+                    "title": "Entity Id"
+                  },
+                  "revision": {
+                    "type": "integer",
+                    "maximum": 2147483647.0,
+                    "minimum": 1.0,
+                    "title": "Revision"
+                  },
+                  "deleted": {
+                    "type": "boolean",
+                    "const": false,
+                    "title": "Deleted"
+                  },
+                  "payload": {
+                    "properties": {
+                      "effective_from": {
+                        "type": "string",
+                        "format": "date",
+                        "title": "Effective From"
+                      },
+                      "maintenance_kcal": {
+                        "type": "string",
+                        "pattern": "^(0|[1-9][0-9]{0,5})(\\.[0-9]{0,11}[1-9])?(?![\\s\\S])",
+                        "title": "Maintenance Kcal"
+                      },
+                      "method": {
+                        "type": "string",
+                        "enum": [
+                          "mifflin_pal_v1",
+                          "energy_adjustment_v1",
+                          "energy_revert_v1"
+                        ],
+                        "title": "Method"
+                      },
+                      "source": {
+                        "type": "string",
+                        "enum": [
+                          "legacy",
+                          "manual",
+                          "automatic",
+                          "revert"
+                        ],
+                        "title": "Source"
+                      },
+                      "source_id": {
+                        "type": "string",
+                        "format": "uuid",
+                        "title": "Source Id"
+                      },
+                      "supersedes": {
+                        "anyOf": [
+                          {
+                            "type": "string",
+                            "format": "uuid"
+                          },
+                          {
+                            "type": "null"
+                          }
+                        ],
+                        "title": "Supersedes"
+                      },
+                      "decided_at": {
+                        "type": "string",
+                        "pattern": "^\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}(\\.[0-9]{1,6})?Z$",
+                        "format": "date-time",
+                        "title": "Decided At"
+                      },
+                      "audit": {
+                        "additionalProperties": true,
+                        "type": "object",
+                        "title": "Audit"
+                      }
+                    },
+                    "additionalProperties": false,
+                    "type": "object",
+                    "required": [
+                      "effective_from",
+                      "maintenance_kcal",
+                      "method",
+                      "source",
+                      "source_id",
+                      "supersedes",
+                      "decided_at",
+                      "audit"
+                    ],
+                    "title": "EnergyPayload"
+                  }
+                },
+                "additionalProperties": false,
+                "type": "object",
+                "required": [
+                  "entity_type",
+                  "entity_id",
+                  "revision",
+                  "deleted",
+                  "payload"
+                ],
+                "title": "EnergyEntity"
+              }
+            ]
+          },
+          "type": "array",
+          "maxItems": 500
+        },
+        "goal_timeline_revision": {
+          "type": "integer",
+          "minimum": 0.0
+        },
+        "recovery_mappings": {
+          "items": {
+            "properties": {
+              "source_epoch": {
+                "allOf": [
+                  {
+                    "type": "string",
+                    "pattern": "^(?:[^\\u0000\\uD800-\\uDFFF]|[\\uD800-\\uDBFF][\\uDC00-\\uDFFF])*(?![\\s\\S])",
+                    "description": "Unicode bez NUL i samotnych surrogate; poprawne pary UTF-16/emoji są dozwolone."
+                  }
+                ],
+                "type": "string",
+                "pattern": "^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$",
+                "format": "uuid"
+              },
+              "source_entity_id": {
+                "allOf": [
+                  {
+                    "type": "string",
+                    "pattern": "^(?:[^\\u0000\\uD800-\\uDFFF]|[\\uD800-\\uDBFF][\\uDC00-\\uDFFF])*(?![\\s\\S])",
+                    "description": "Unicode bez NUL i samotnych surrogate; poprawne pary UTF-16/emoji są dozwolone."
+                  }
+                ],
+                "type": "string",
+                "pattern": "^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$",
+                "format": "uuid"
+              },
+              "target_entity_id": {
+                "allOf": [
+                  {
+                    "type": "string",
+                    "pattern": "^(?:[^\\u0000\\uD800-\\uDFFF]|[\\uD800-\\uDBFF][\\uDC00-\\uDFFF])*(?![\\s\\S])",
+                    "description": "Unicode bez NUL i samotnych surrogate; poprawne pary UTF-16/emoji są dozwolone."
+                  }
+                ],
+                "type": "string",
+                "pattern": "^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$",
+                "format": "uuid"
+              },
+              "target_revision": {
+                "type": "integer",
+                "maximum": 2147483647.0,
+                "minimum": 1.0
+              }
+            },
+            "additionalProperties": false,
+            "type": "object",
+            "required": [
+              "source_epoch",
+              "source_entity_id",
+              "target_entity_id",
+              "target_revision"
+            ]
+          },
+          "type": "array",
+          "maxItems": 500
+        },
+        "operation_receipts": {
+          "items": {
+            "oneOf": [
+              {
+                "properties": {
+                  "status": {
+                    "const": "accepted"
+                  },
+                  "revision": {
+                    "type": "integer",
+                    "maximum": 2147483647.0,
+                    "minimum": 1.0
+                  },
+                  "code": {
+                    "type": "null"
+                  }
+                }
+              },
+              {
+                "properties": {
+                  "status": {
+                    "enum": [
+                      "conflict",
+                      "rejected"
+                    ]
+                  },
+                  "revision": {
+                    "type": "null"
+                  },
+                  "code": {
+                    "allOf": [
+                      {
+                        "type": "string",
+                        "pattern": "^(?:[^\\u0000\\uD800-\\uDFFF]|[\\uD800-\\uDBFF][\\uDC00-\\uDFFF])*(?![\\s\\S])",
+                        "description": "Unicode bez NUL i samotnych surrogate; poprawne pary UTF-16/emoji są dozwolone."
+                      }
+                    ],
+                    "type": "string",
+                    "minLength": 1
+                  }
+                }
+              }
+            ],
+            "properties": {
+              "source_epoch": {
+                "allOf": [
+                  {
+                    "type": "string",
+                    "pattern": "^(?:[^\\u0000\\uD800-\\uDFFF]|[\\uD800-\\uDBFF][\\uDC00-\\uDFFF])*(?![\\s\\S])",
+                    "description": "Unicode bez NUL i samotnych surrogate; poprawne pary UTF-16/emoji są dozwolone."
+                  }
+                ],
+                "type": "string",
+                "pattern": "^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$",
+                "format": "uuid"
+              },
+              "operation_id": {
+                "allOf": [
+                  {
+                    "type": "string",
+                    "pattern": "^(?:[^\\u0000\\uD800-\\uDFFF]|[\\uD800-\\uDBFF][\\uDC00-\\uDFFF])*(?![\\s\\S])",
+                    "description": "Unicode bez NUL i samotnych surrogate; poprawne pary UTF-16/emoji są dozwolone."
+                  }
+                ],
+                "type": "string",
+                "pattern": "^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$",
+                "format": "uuid"
+              },
+              "entity_id": {
+                "allOf": [
+                  {
+                    "type": "string",
+                    "pattern": "^(?:[^\\u0000\\uD800-\\uDFFF]|[\\uD800-\\uDBFF][\\uDC00-\\uDFFF])*(?![\\s\\S])",
+                    "description": "Unicode bez NUL i samotnych surrogate; poprawne pary UTF-16/emoji są dozwolone."
+                  }
+                ],
+                "type": "string",
+                "pattern": "^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$",
+                "format": "uuid"
+              },
+              "status": {
+                "enum": [
+                  "accepted",
+                  "conflict",
+                  "rejected"
+                ]
+              },
+              "revision": {
+                "anyOf": [
+                  {
+                    "type": "integer",
+                    "maximum": 2147483647.0,
+                    "minimum": 1.0
+                  },
+                  {
+                    "type": "null"
+                  }
+                ]
+              },
+              "code": {
+                "anyOf": [
+                  {
+                    "allOf": [
+                      {
+                        "type": "string",
+                        "pattern": "^(?:[^\\u0000\\uD800-\\uDFFF]|[\\uD800-\\uDBFF][\\uDC00-\\uDFFF])*(?![\\s\\S])",
+                        "description": "Unicode bez NUL i samotnych surrogate; poprawne pary UTF-16/emoji są dozwolone."
+                      }
+                    ],
+                    "type": "string",
+                    "minLength": 1
+                  },
+                  {
+                    "type": "null"
+                  }
+                ]
+              }
+            },
+            "additionalProperties": false,
+            "type": "object",
+            "required": [
+              "source_epoch",
+              "operation_id",
+              "entity_id",
+              "status",
+              "revision",
+              "code"
+            ]
+          },
+          "type": "array",
+          "maxItems": 100
+        }
+      },
+      "additionalProperties": false,
+      "type": "object",
+      "required": [
+        "sync_epoch",
+        "mode",
+        "snapshot_token",
+        "page_token",
+        "checkpoint",
+        "server_time",
+        "entities",
+        "goal_timeline_revision",
+        "recovery_mappings",
+        "operation_receipts"
+      ]
+    },
+    "EnergyState": {
+      "properties": {
+        "sync_epoch": {
+          "type": "string",
+          "format": "uuid",
+          "title": "Sync Epoch"
+        },
+        "account_generation": {
+          "type": "integer",
+          "maximum": 2147483647.0,
+          "minimum": 1.0,
+          "title": "Account Generation"
+        },
+        "axis_revision": {
+          "type": "integer",
+          "maximum": 2147483647.0,
+          "minimum": 0.0,
+          "title": "Axis Revision"
+        },
+        "current_id": {
+          "anyOf": [
+            {
+              "type": "string",
+              "format": "uuid"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "title": "Current Id"
+        },
+        "baseline_id": {
+          "anyOf": [
+            {
+              "type": "string",
+              "format": "uuid"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "title": "Baseline Id"
+        },
+        "automatic_requested": {
+          "type": "boolean",
+          "title": "Automatic Requested"
+        },
+        "automatic_effective": {
+          "type": "boolean",
+          "title": "Automatic Effective"
+        },
+        "automatic_notice": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/NoticeRead"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "last_applied_at": {
+          "anyOf": [
+            {
+              "type": "string",
+              "pattern": "^\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}(\\.[0-9]{1,6})?Z$",
+              "format": "date-time"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "title": "Last Applied At"
+        },
+        "next_apply_at": {
+          "anyOf": [
+            {
+              "type": "string",
+              "pattern": "^\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}(\\.[0-9]{1,6})?Z$",
+              "format": "date-time"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "title": "Next Apply At"
+        }
+      },
+      "additionalProperties": false,
+      "type": "object",
+      "required": [
+        "sync_epoch",
+        "account_generation",
+        "axis_revision",
+        "current_id",
+        "baseline_id",
+        "automatic_requested",
+        "automatic_effective",
+        "automatic_notice",
+        "last_applied_at",
+        "next_apply_at"
+      ],
+      "title": "EnergyState"
+    },
+    "Explanation": {
+      "properties": {
+        "explanation": {
+          "type": "string",
+          "maxLength": 2000,
+          "minLength": 1,
+          "title": "Explanation"
+        },
+        "uncertainty": {
+          "type": "string",
+          "enum": [
+            "low",
+            "medium",
+            "high"
+          ],
+          "title": "Uncertainty"
+        },
+        "suggested_class": {
+          "anyOf": [
+            {
+              "type": "string",
+              "enum": [
+                "stationary",
+                "line",
+                "commando"
+              ]
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "title": "Suggested Class"
+        }
+      },
+      "additionalProperties": false,
+      "type": "object",
+      "required": [
+        "explanation",
+        "uncertainty",
+        "suggested_class"
+      ],
+      "title": "Explanation"
+    },
+    "HistoryPage": {
+      "properties": {
+        "items": {
+          "items": {
+            "$ref": "#/$defs/EnergyEntity"
+          },
+          "type": "array",
+          "maxItems": 500,
+          "title": "Items"
+        },
+        "next_revision": {
+          "type": "integer",
+          "maximum": 2147483647.0,
+          "minimum": 0.0,
+          "title": "Next Revision"
+        }
+      },
+      "additionalProperties": false,
+      "type": "object",
+      "required": [
+        "items",
+        "next_revision"
+      ],
+      "title": "HistoryPage"
+    },
+    "ManualNotice": {
+      "properties": {
+        "accepted": {
+          "type": "boolean",
+          "const": true,
+          "title": "Accepted"
+        },
+        "qualified_for_v1": {
+          "type": "boolean",
+          "const": true,
+          "title": "Qualified For V1"
+        },
+        "notice_version": {
+          "type": "string",
+          "const": "energy-aggregates-notice-v1",
+          "title": "Notice Version"
+        },
+        "aggregate_scope": {
+          "type": "string",
+          "const": "energy_adjustment_v1_minimal_aggregates",
+          "title": "Aggregate Scope"
+        },
+        "provider": {
+          "type": "string",
+          "enum": [
+            "mock",
+            "gemini"
+          ],
+          "title": "Provider"
+        },
+        "scope": {
+          "type": "string",
+          "const": "this_energy_analysis",
+          "title": "Scope"
+        }
+      },
+      "additionalProperties": false,
+      "type": "object",
+      "required": [
+        "accepted",
+        "qualified_for_v1",
+        "notice_version",
+        "aggregate_scope",
+        "provider",
+        "scope"
+      ],
+      "title": "ManualNotice"
+    },
+    "NoticeRead": {
+      "properties": {
+        "accepted": {
+          "type": "boolean",
+          "const": true,
+          "title": "Accepted"
+        },
+        "qualified_for_v1": {
+          "type": "boolean",
+          "const": true,
+          "title": "Qualified For V1"
+        },
+        "notice_version": {
+          "type": "string",
+          "const": "energy-aggregates-notice-v1",
+          "title": "Notice Version"
+        },
+        "aggregate_scope": {
+          "type": "string",
+          "const": "energy_adjustment_v1_minimal_aggregates",
+          "title": "Aggregate Scope"
+        },
+        "provider": {
+          "type": "string",
+          "enum": [
+            "mock",
+            "gemini"
+          ],
+          "title": "Provider"
+        },
+        "scope": {
+          "type": "string",
+          "enum": [
+            "this_energy_analysis",
+            "automatic_energy_adjustment"
+          ],
+          "title": "Scope"
+        },
+        "accepted_at": {
+          "type": "string",
+          "pattern": "^\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}(\\.[0-9]{1,6})?Z$",
+          "format": "date-time",
+          "title": "Accepted At"
+        },
+        "snapshot_at": {
+          "type": "string",
+          "pattern": "^\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}(\\.[0-9]{1,6})?Z$",
+          "format": "date-time",
+          "title": "Snapshot At"
+        },
+        "snapshot_hash": {
+          "type": "string",
+          "pattern": "^[0-9a-f]{64}$",
+          "title": "Snapshot Hash"
+        },
+        "sync_epoch": {
+          "type": "string",
+          "format": "uuid",
+          "title": "Sync Epoch"
+        },
+        "account_generation": {
+          "type": "integer",
+          "maximum": 2147483647.0,
+          "minimum": 1.0,
+          "title": "Account Generation"
+        },
+        "profile_revision": {
+          "type": "integer",
+          "maximum": 2147483647.0,
+          "minimum": 1.0,
+          "title": "Profile Revision"
+        },
+        "consent_revision": {
+          "type": "integer",
+          "maximum": 2147483647.0,
+          "minimum": 1.0,
+          "title": "Consent Revision"
+        },
+        "baseline_id": {
+          "anyOf": [
+            {
+              "type": "string",
+              "format": "uuid"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "title": "Baseline Id"
+        },
+        "revoked_at": {
+          "anyOf": [
+            {
+              "type": "string",
+              "pattern": "^\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}(\\.[0-9]{1,6})?Z$",
+              "format": "date-time"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "title": "Revoked At"
+        }
+      },
+      "additionalProperties": false,
+      "type": "object",
+      "required": [
+        "accepted",
+        "qualified_for_v1",
+        "notice_version",
+        "aggregate_scope",
+        "provider",
+        "scope",
+        "accepted_at",
+        "snapshot_at",
+        "snapshot_hash",
+        "sync_epoch",
+        "account_generation",
+        "profile_revision",
+        "consent_revision",
+        "baseline_id"
+      ],
+      "title": "NoticeRead"
+    },
+    "RevertRequest": {
+      "properties": {
+        "sync_epoch": {
+          "type": "string",
+          "format": "uuid",
+          "title": "Sync Epoch"
+        },
+        "account_generation": {
+          "type": "integer",
+          "maximum": 2147483647.0,
+          "minimum": 1.0,
+          "title": "Account Generation"
+        },
+        "axis_revision": {
+          "type": "integer",
+          "maximum": 2147483647.0,
+          "minimum": 0.0,
+          "title": "Axis Revision"
+        },
+        "id": {
+          "type": "string",
+          "format": "uuid",
+          "title": "Id"
+        },
+        "replace_id": {
+          "anyOf": [
+            {
+              "type": "string",
+              "format": "uuid"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "title": "Replace Id"
+        }
+      },
+      "additionalProperties": false,
+      "type": "object",
+      "required": [
+        "sync_epoch",
+        "account_generation",
+        "axis_revision",
+        "id",
+        "replace_id"
+      ],
+      "title": "RevertRequest"
+    },
+    "RuleResult": {
+      "properties": {
+        "rule_version": {
+          "type": "string",
+          "const": "energy_adjustment_v1",
+          "title": "Rule Version"
+        },
+        "state": {
+          "type": "string",
+          "enum": [
+            "insufficient_data",
+            "energy_history_unavailable",
+            "baseline_required",
+            "baseline_range_conflict",
+            "manual_review_required",
+            "no_change",
+            "ready"
+          ],
+          "title": "State"
+        },
+        "complete_days": {
+          "type": "integer",
+          "maximum": 14.0,
+          "minimum": 0.0,
+          "title": "Complete Days"
+        },
+        "weight_days": {
+          "type": "integer",
+          "maximum": 14.0,
+          "minimum": 0.0,
+          "title": "Weight Days"
+        },
+        "first_median": {
+          "anyOf": [
+            {
+              "type": "string",
+              "pattern": "^(0|[1-9][0-9]{0,5})(\\.[0-9]{0,11}[1-9])?(?![\\s\\S])"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "title": "First Median"
+        },
+        "second_median": {
+          "anyOf": [
+            {
+              "type": "string",
+              "pattern": "^(0|[1-9][0-9]{0,5})(\\.[0-9]{0,11}[1-9])?(?![\\s\\S])"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "title": "Second Median"
+        },
+        "proposed": {
+          "anyOf": [
+            {
+              "type": "string",
+              "pattern": "^(0|[1-9][0-9]{0,5})(\\.[0-9]{0,11}[1-9])?(?![\\s\\S])"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "title": "Proposed"
+        },
+        "lower": {
+          "anyOf": [
+            {
+              "type": "string",
+              "pattern": "^[0-9]{1,7}(\\.[0-9]{1,14})?$"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "title": "Lower"
+        },
+        "upper": {
+          "anyOf": [
+            {
+              "type": "string",
+              "pattern": "^[0-9]{1,7}(\\.[0-9]{1,14})?$"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "title": "Upper"
+        }
+      },
+      "additionalProperties": false,
+      "type": "object",
+      "required": [
+        "rule_version",
+        "state",
+        "complete_days",
+        "weight_days",
+        "first_median",
+        "second_median",
+        "proposed"
+      ],
+      "title": "RuleResult"
+    },
+    "SnapshotContext": {
+      "properties": {
+        "snapshot_hash": {
+          "type": "string",
+          "pattern": "^[0-9a-f]{64}$",
+          "title": "Snapshot Hash"
+        },
+        "sync_epoch": {
+          "type": "string",
+          "format": "uuid",
+          "title": "Sync Epoch"
+        },
+        "account_generation": {
+          "type": "integer",
+          "maximum": 2147483647.0,
+          "minimum": 1.0,
+          "title": "Account Generation"
+        },
+        "profile_revision": {
+          "type": "integer",
+          "maximum": 2147483647.0,
+          "minimum": 1.0,
+          "title": "Profile Revision"
+        },
+        "goal_timeline_revision": {
+          "type": "integer",
+          "maximum": 2147483647.0,
+          "minimum": 0.0,
+          "title": "Goal Timeline Revision"
+        },
+        "energy_axis_revision": {
+          "type": "integer",
+          "maximum": 2147483647.0,
+          "minimum": 0.0,
+          "title": "Energy Axis Revision"
+        },
+        "current_energy_id": {
+          "anyOf": [
+            {
+              "type": "string",
+              "format": "uuid"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "title": "Current Energy Id"
+        },
+        "consent_revision": {
+          "type": "integer",
+          "maximum": 2147483647.0,
+          "minimum": 1.0,
+          "title": "Consent Revision"
+        }
+      },
+      "additionalProperties": false,
+      "type": "object",
+      "required": [
+        "snapshot_hash",
+        "sync_epoch",
+        "account_generation",
+        "profile_revision",
+        "goal_timeline_revision",
+        "energy_axis_revision",
+        "current_energy_id",
+        "consent_revision"
+      ],
+      "title": "SnapshotContext"
+    },
+    "UnavailableRead": {
+      "properties": {
+        "id": {
+          "type": "null",
+          "title": "Id"
+        },
+        "revision": {
+          "type": "null",
+          "title": "Revision"
+        },
+        "state": {
+          "type": "string",
+          "enum": [
+            "insufficient_data",
+            "energy_history_unavailable",
+            "baseline_required",
+            "baseline_range_conflict"
+          ],
+          "title": "State"
+        },
+        "result": {
+          "$ref": "#/$defs/RuleResult"
+        }
+      },
+      "additionalProperties": false,
+      "type": "object",
+      "required": [
+        "id",
+        "revision",
+        "state",
+        "result"
+      ],
+      "title": "UnavailableRead"
+    }
+  }
+}

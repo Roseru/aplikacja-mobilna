@@ -1,0 +1,743 @@
+[
+  {
+    "source_id": "dish_1558723777",
+    "source_csv": "dish_metadata_cafe1.csv",
+    "source_record_utf8_no_eol_sha256": "04871d5c879ccdb48955a8c3a10f7844cd639b3d2f852d9156e69d9160684757",
+    "raw_record": "dish_1558723777,74.360001,143.000000,0.286000,20.020000,0.429000,ingr_0000000054,apple,143.000000,74.36,0.286,20.02,0.429",
+    "dataset_total_calories": "74.360001",
+    "dataset_total_mass_g": "143.000000",
+    "dataset_total_fat_g": "0.286000",
+    "dataset_total_carb_g": "20.020000",
+    "dataset_total_protein_g": "0.429000",
+    "source_components": [
+      {
+        "source_ingredient_id": "ingr_0000000054",
+        "source_name": "apple",
+        "source_mass_g": "143.000000",
+        "source_calories": "74.36",
+        "source_fat_g": "0.286",
+        "source_carb_g": "20.02",
+        "source_protein_g": "0.429"
+      }
+    ],
+    "reference_kind": "Original dataset annotation, independent of any model output; source LastModified 2021-06-16",
+    "human_reference_status": "PENDING_REVIEW",
+    "review_note": "Single original annotation; independent human review of identity/readability, alias granularity and nonsensitive status required.",
+    "readable": null,
+    "reference_main_components": null,
+    "accepted_aliases": null,
+    "reviewer": null,
+    "reviewed_at": null
+  },
+  {
+    "source_id": "dish_1558637393",
+    "source_csv": "dish_metadata_cafe1.csv",
+    "source_record_utf8_no_eol_sha256": "1f91c7ae739d0c6fe3489bc667ffe6160fa14b44161d4975d6e31ac817790dcc",
+    "raw_record": "dish_1558637393,739.968018,128.000000,63.360001,29.056000,28.672001,ingr_0000000077,almonds,128.000000,739.968,63.36,29.056,28.672",
+    "dataset_total_calories": "739.968018",
+    "dataset_total_mass_g": "128.000000",
+    "dataset_total_fat_g": "63.360001",
+    "dataset_total_carb_g": "29.056000",
+    "dataset_total_protein_g": "28.672001",
+    "source_components": [
+      {
+        "source_ingredient_id": "ingr_0000000077",
+        "source_name": "almonds",
+        "source_mass_g": "128.000000",
+        "source_calories": "739.968",
+        "source_fat_g": "63.36",
+        "source_carb_g": "29.056",
+        "source_protein_g": "28.672"
+      }
+    ],
+    "reference_kind": "Original dataset annotation, independent of any model output; source LastModified 2021-06-16",
+    "human_reference_status": "PENDING_REVIEW",
+    "review_note": "Single original annotation; independent human review of identity/readability, alias granularity and nonsensitive status required.",
+    "readable": null,
+    "reference_main_components": null,
+    "accepted_aliases": null,
+    "reviewer": null,
+    "reviewed_at": null
+  },
+  {
+    "source_id": "dish_1562862493",
+    "source_csv": "dish_metadata_cafe1.csv",
+    "source_record_utf8_no_eol_sha256": "15d0cb8945ef29275bc481f29f08a7a8292c4a127bcb5ebdf803e6bee70e0584",
+    "raw_record": "dish_1562862493,198.320007,134.000000,14.740000,2.144000,13.400001,ingr_0000000008,scrambled eggs,134.000000,198.32,14.74,2.144,13.4",
+    "dataset_total_calories": "198.320007",
+    "dataset_total_mass_g": "134.000000",
+    "dataset_total_fat_g": "14.740000",
+    "dataset_total_carb_g": "2.144000",
+    "dataset_total_protein_g": "13.400001",
+    "source_components": [
+      {
+        "source_ingredient_id": "ingr_0000000008",
+        "source_name": "scrambled eggs",
+        "source_mass_g": "134.000000",
+        "source_calories": "198.32",
+        "source_fat_g": "14.74",
+        "source_carb_g": "2.144",
+        "source_protein_g": "13.4"
+      }
+    ],
+    "reference_kind": "Original dataset annotation, independent of any model output; source LastModified 2021-06-16",
+    "human_reference_status": "PENDING_REVIEW",
+    "review_note": "Single original annotation; independent human review of identity/readability, alias granularity and nonsensitive status required.",
+    "readable": null,
+    "reference_main_components": null,
+    "accepted_aliases": null,
+    "reviewer": null,
+    "reviewed_at": null
+  },
+  {
+    "source_id": "dish_1558459276",
+    "source_csv": "dish_metadata_cafe1.csv",
+    "source_record_utf8_no_eol_sha256": "d28bf30a6ffe04ba08548b84525d203615d60059c865a731ea463e6013f724de",
+    "raw_record": "dish_1558459276,102.699997,79.000000,0.237000,22.120001,2.133000,ingr_0000000026,white rice,79.000000,102.7,0.237,22.12,2.133",
+    "dataset_total_calories": "102.699997",
+    "dataset_total_mass_g": "79.000000",
+    "dataset_total_fat_g": "0.237000",
+    "dataset_total_carb_g": "22.120001",
+    "dataset_total_protein_g": "2.133000",
+    "source_components": [
+      {
+        "source_ingredient_id": "ingr_0000000026",
+        "source_name": "white rice",
+        "source_mass_g": "79.000000",
+        "source_calories": "102.7",
+        "source_fat_g": "0.237",
+        "source_carb_g": "22.12",
+        "source_protein_g": "2.133"
+      }
+    ],
+    "reference_kind": "Original dataset annotation, independent of any model output; source LastModified 2021-06-16",
+    "human_reference_status": "PENDING_REVIEW",
+    "review_note": "Single original annotation; independent human review of identity/readability, alias granularity and nonsensitive status required.",
+    "readable": null,
+    "reference_main_components": null,
+    "accepted_aliases": null,
+    "reviewer": null,
+    "reviewed_at": null
+  },
+  {
+    "source_id": "dish_1558725253",
+    "source_csv": "dish_metadata_cafe1.csv",
+    "source_record_utf8_no_eol_sha256": "8d910b29fae3d65fac9ceb783dabb005aa72d0e404fae0c4d50e980f40262a83",
+    "raw_record": "dish_1558725253,33.950001,97.000000,0.388000,6.790000,2.328000,ingr_0000000027,broccoli,97.000000,33.95,0.388,6.79,2.328",
+    "dataset_total_calories": "33.950001",
+    "dataset_total_mass_g": "97.000000",
+    "dataset_total_fat_g": "0.388000",
+    "dataset_total_carb_g": "6.790000",
+    "dataset_total_protein_g": "2.328000",
+    "source_components": [
+      {
+        "source_ingredient_id": "ingr_0000000027",
+        "source_name": "broccoli",
+        "source_mass_g": "97.000000",
+        "source_calories": "33.95",
+        "source_fat_g": "0.388",
+        "source_carb_g": "6.79",
+        "source_protein_g": "2.328"
+      }
+    ],
+    "reference_kind": "Original dataset annotation, independent of any model output; source LastModified 2021-06-16",
+    "human_reference_status": "PENDING_REVIEW",
+    "review_note": "Single original annotation; independent human review of identity/readability, alias granularity and nonsensitive status required.",
+    "readable": null,
+    "reference_main_components": null,
+    "accepted_aliases": null,
+    "reviewer": null,
+    "reviewed_at": null
+  },
+  {
+    "source_id": "dish_1558642089",
+    "source_csv": "dish_metadata_cafe1.csv",
+    "source_record_utf8_no_eol_sha256": "f962435616462ad3f15b0df6a28c7b5482378298ad9e88ecd00687613308992a",
+    "raw_record": "dish_1558642089,39.360001,96.000000,0.192000,9.600000,0.864000,ingr_0000000045,carrot,96.000000,39.36,0.192,9.6,0.864",
+    "dataset_total_calories": "39.360001",
+    "dataset_total_mass_g": "96.000000",
+    "dataset_total_fat_g": "0.192000",
+    "dataset_total_carb_g": "9.600000",
+    "dataset_total_protein_g": "0.864000",
+    "source_components": [
+      {
+        "source_ingredient_id": "ingr_0000000045",
+        "source_name": "carrot",
+        "source_mass_g": "96.000000",
+        "source_calories": "39.36",
+        "source_fat_g": "0.192",
+        "source_carb_g": "9.6",
+        "source_protein_g": "0.864"
+      }
+    ],
+    "reference_kind": "Original dataset annotation, independent of any model output; source LastModified 2021-06-16",
+    "human_reference_status": "PENDING_REVIEW",
+    "review_note": "Single original annotation; independent human review of identity/readability, alias granularity and nonsensitive status required.",
+    "readable": null,
+    "reference_main_components": null,
+    "accepted_aliases": null,
+    "reviewer": null,
+    "reviewed_at": null
+  },
+  {
+    "source_id": "dish_1558457530",
+    "source_csv": "dish_metadata_cafe1.csv",
+    "source_record_utf8_no_eol_sha256": "c04ea181ad56a879586e9d6f929474368a0b6b36bcda51e786417357258c3c96",
+    "raw_record": "dish_1558457530,16.000000,64.000000,0.192000,3.200000,1.152000,ingr_0000000007,cauliflower,64.000000,16.0,0.192,3.2,1.152",
+    "dataset_total_calories": "16.000000",
+    "dataset_total_mass_g": "64.000000",
+    "dataset_total_fat_g": "0.192000",
+    "dataset_total_carb_g": "3.200000",
+    "dataset_total_protein_g": "1.152000",
+    "source_components": [
+      {
+        "source_ingredient_id": "ingr_0000000007",
+        "source_name": "cauliflower",
+        "source_mass_g": "64.000000",
+        "source_calories": "16.0",
+        "source_fat_g": "0.192",
+        "source_carb_g": "3.2",
+        "source_protein_g": "1.152"
+      }
+    ],
+    "reference_kind": "Original dataset annotation, independent of any model output; source LastModified 2021-06-16",
+    "human_reference_status": "PENDING_REVIEW",
+    "review_note": "Single original annotation; independent human review of identity/readability, alias granularity and nonsensitive status required.",
+    "readable": null,
+    "reference_main_components": null,
+    "accepted_aliases": null,
+    "reviewer": null,
+    "reviewed_at": null
+  },
+  {
+    "source_id": "dish_1558549008",
+    "source_csv": "dish_metadata_cafe1.csv",
+    "source_record_utf8_no_eol_sha256": "02ad0ffdd0a0e17f70098d2b6f63f2bdc913c7e9d04ef459b103911594b3d53b",
+    "raw_record": "dish_1558549008,20.700001,115.000000,0.230000,4.485000,1.035000,ingr_0000000471,cherry tomatoes,115.000000,20.7,0.23,4.485,1.035",
+    "dataset_total_calories": "20.700001",
+    "dataset_total_mass_g": "115.000000",
+    "dataset_total_fat_g": "0.230000",
+    "dataset_total_carb_g": "4.485000",
+    "dataset_total_protein_g": "1.035000",
+    "source_components": [
+      {
+        "source_ingredient_id": "ingr_0000000471",
+        "source_name": "cherry tomatoes",
+        "source_mass_g": "115.000000",
+        "source_calories": "20.7",
+        "source_fat_g": "0.23",
+        "source_carb_g": "4.485",
+        "source_protein_g": "1.035"
+      }
+    ],
+    "reference_kind": "Original dataset annotation, independent of any model output; source LastModified 2021-06-16",
+    "human_reference_status": "PENDING_REVIEW",
+    "review_note": "Single original annotation; independent human review of identity/readability, alias granularity and nonsensitive status required.",
+    "readable": null,
+    "reference_main_components": null,
+    "accepted_aliases": null,
+    "reviewer": null,
+    "reviewed_at": null
+  },
+  {
+    "source_id": "dish_1560455030",
+    "source_csv": "dish_metadata_cafe1.csv",
+    "source_record_utf8_no_eol_sha256": "179a3b90c0cdaf2082ca910263752dd969b768a488f703889600a7c978e84abe",
+    "raw_record": "dish_1560455030,20.590000,103.000000,0.148000,4.625000,0.956000,ingr_0000000471,cherry tomatoes,55.000000,9.9,0.11,2.145,0.495,ingr_0000000031,cucumbers,29.000000,2.9,0.0,0.58,0.29,ingr_0000000347,baby carrots,19.000000,7.79,0.038,1.9,0.171",
+    "dataset_total_calories": "20.590000",
+    "dataset_total_mass_g": "103.000000",
+    "dataset_total_fat_g": "0.148000",
+    "dataset_total_carb_g": "4.625000",
+    "dataset_total_protein_g": "0.956000",
+    "source_components": [
+      {
+        "source_ingredient_id": "ingr_0000000471",
+        "source_name": "cherry tomatoes",
+        "source_mass_g": "55.000000",
+        "source_calories": "9.9",
+        "source_fat_g": "0.11",
+        "source_carb_g": "2.145",
+        "source_protein_g": "0.495"
+      },
+      {
+        "source_ingredient_id": "ingr_0000000031",
+        "source_name": "cucumbers",
+        "source_mass_g": "29.000000",
+        "source_calories": "2.9",
+        "source_fat_g": "0.0",
+        "source_carb_g": "0.58",
+        "source_protein_g": "0.29"
+      },
+      {
+        "source_ingredient_id": "ingr_0000000347",
+        "source_name": "baby carrots",
+        "source_mass_g": "19.000000",
+        "source_calories": "7.79",
+        "source_fat_g": "0.038",
+        "source_carb_g": "1.9",
+        "source_protein_g": "0.171"
+      }
+    ],
+    "reference_kind": "Original dataset annotation, independent of any model output; source LastModified 2021-06-16",
+    "human_reference_status": "PENDING_REVIEW",
+    "review_note": "Carrot presentation is shredded; source label is baby carrots. Do not infer size/variety from image.",
+    "readable": null,
+    "reference_main_components": null,
+    "accepted_aliases": null,
+    "reviewer": null,
+    "reviewed_at": null
+  },
+  {
+    "source_id": "dish_1563207364",
+    "source_csv": "dish_metadata_cafe1.csv",
+    "source_record_utf8_no_eol_sha256": "b52188d2bd273a193d8e2919c2ab1dd6a7362379c53af7f76476a1d1aa10c86c",
+    "raw_record": "dish_1563207364,309.269989,271.000000,13.774000,30.657000,15.010000,ingr_0000000008,scrambled eggs,68.000000,100.64,7.48,1.088,6.8,ingr_0000000192,yam,50.000000,62.05,0.1,14.7,0.8,ingr_0000000440,grapes,30.000000,20.7,0.06,5.4,0.21,ingr_0000000128,egg whites,67.000000,34.84,0.134,0.469,6.7,ingr_0000000161,olive oil,6.000000,53.04,6.0,0.0,0.0,ingr_0000000437,sweet potato,50.000000,38.0,0.0,9.0,0.5",
+    "dataset_total_calories": "309.269989",
+    "dataset_total_mass_g": "271.000000",
+    "dataset_total_fat_g": "13.774000",
+    "dataset_total_carb_g": "30.657000",
+    "dataset_total_protein_g": "15.010000",
+    "source_components": [
+      {
+        "source_ingredient_id": "ingr_0000000008",
+        "source_name": "scrambled eggs",
+        "source_mass_g": "68.000000",
+        "source_calories": "100.64",
+        "source_fat_g": "7.48",
+        "source_carb_g": "1.088",
+        "source_protein_g": "6.8"
+      },
+      {
+        "source_ingredient_id": "ingr_0000000192",
+        "source_name": "yam",
+        "source_mass_g": "50.000000",
+        "source_calories": "62.05",
+        "source_fat_g": "0.1",
+        "source_carb_g": "14.7",
+        "source_protein_g": "0.8"
+      },
+      {
+        "source_ingredient_id": "ingr_0000000440",
+        "source_name": "grapes",
+        "source_mass_g": "30.000000",
+        "source_calories": "20.7",
+        "source_fat_g": "0.06",
+        "source_carb_g": "5.4",
+        "source_protein_g": "0.21"
+      },
+      {
+        "source_ingredient_id": "ingr_0000000128",
+        "source_name": "egg whites",
+        "source_mass_g": "67.000000",
+        "source_calories": "34.84",
+        "source_fat_g": "0.134",
+        "source_carb_g": "0.469",
+        "source_protein_g": "6.7"
+      },
+      {
+        "source_ingredient_id": "ingr_0000000161",
+        "source_name": "olive oil",
+        "source_mass_g": "6.000000",
+        "source_calories": "53.04",
+        "source_fat_g": "6.0",
+        "source_carb_g": "0.0",
+        "source_protein_g": "0.0"
+      },
+      {
+        "source_ingredient_id": "ingr_0000000437",
+        "source_name": "sweet potato",
+        "source_mass_g": "50.000000",
+        "source_calories": "38.0",
+        "source_fat_g": "0.0",
+        "source_carb_g": "9.0",
+        "source_protein_g": "0.5"
+      }
+    ],
+    "reference_kind": "Original dataset annotation, independent of any model output; source LastModified 2021-06-16",
+    "human_reference_status": "PENDING_REVIEW",
+    "review_note": "yam versus sweet potato and egg whites versus scrambled eggs need independent visible-component/alias decisions. Olive oil is a source ingredient, not separately identifiable from this view.",
+    "readable": null,
+    "reference_main_components": null,
+    "accepted_aliases": null,
+    "reviewer": null,
+    "reviewed_at": null
+  },
+  {
+    "source_id": "dish_1561575474",
+    "source_csv": "dish_metadata_cafe1.csv",
+    "source_record_utf8_no_eol_sha256": "0b14f05ca3d71c32a5a7259c33f5843d3db6b46d3434a307cfe666d84ebcfdd3",
+    "raw_record": "dish_1561575474,120.058434,183.000000,4.966118,17.412746,2.990431,ingr_0000000291,salt,0.578431,0.0,0.0,0.0,0.0,ingr_0000000335,eggplant,57.843136,14.345097728,0.115686272,3.412745024,0.57843136,ingr_0000000433,roasted potatoes,60.000000,84.6,4.08,10.8,1.26,ingr_0000000007,cauliflower,64.000000,16.0,0.192,3.2,1.152,ingr_0000000161,olive oil,0.578431,5.11333004,0.578431,0.0,0.0",
+    "dataset_total_calories": "120.058434",
+    "dataset_total_mass_g": "183.000000",
+    "dataset_total_fat_g": "4.966118",
+    "dataset_total_carb_g": "17.412746",
+    "dataset_total_protein_g": "2.990431",
+    "source_components": [
+      {
+        "source_ingredient_id": "ingr_0000000291",
+        "source_name": "salt",
+        "source_mass_g": "0.578431",
+        "source_calories": "0.0",
+        "source_fat_g": "0.0",
+        "source_carb_g": "0.0",
+        "source_protein_g": "0.0"
+      },
+      {
+        "source_ingredient_id": "ingr_0000000335",
+        "source_name": "eggplant",
+        "source_mass_g": "57.843136",
+        "source_calories": "14.345097728",
+        "source_fat_g": "0.115686272",
+        "source_carb_g": "3.412745024",
+        "source_protein_g": "0.57843136"
+      },
+      {
+        "source_ingredient_id": "ingr_0000000433",
+        "source_name": "roasted potatoes",
+        "source_mass_g": "60.000000",
+        "source_calories": "84.6",
+        "source_fat_g": "4.08",
+        "source_carb_g": "10.8",
+        "source_protein_g": "1.26"
+      },
+      {
+        "source_ingredient_id": "ingr_0000000007",
+        "source_name": "cauliflower",
+        "source_mass_g": "64.000000",
+        "source_calories": "16.0",
+        "source_fat_g": "0.192",
+        "source_carb_g": "3.2",
+        "source_protein_g": "1.152"
+      },
+      {
+        "source_ingredient_id": "ingr_0000000161",
+        "source_name": "olive oil",
+        "source_mass_g": "0.578431",
+        "source_calories": "5.11333004",
+        "source_fat_g": "0.578431",
+        "source_carb_g": "0.0",
+        "source_protein_g": "0.0"
+      }
+    ],
+    "reference_kind": "Original dataset annotation, independent of any model output; source LastModified 2021-06-16",
+    "human_reference_status": "PENDING_REVIEW",
+    "review_note": "Source includes salt and olive oil; do not make invisible seasonings required visual components. Resolve visible roasted potato/cauliflower/eggplant names.",
+    "readable": null,
+    "reference_main_components": null,
+    "accepted_aliases": null,
+    "reviewer": null,
+    "reviewed_at": null
+  },
+  {
+    "source_id": "dish_1561739238",
+    "source_csv": "dish_metadata_cafe1.csv",
+    "source_record_utf8_no_eol_sha256": "74e8eaacf7feb28df779e3caf9bcee34d0333b2e254d96a4d61acc97d3f67544",
+    "raw_record": "dish_1561739238,274.190002,257.000000,9.785000,37.556999,9.465000,ingr_0000000128,egg whites,71.000000,36.92,0.142,0.497,7.1,ingr_0000000015,hash browns,43.000000,140.18,9.46,13.76,1.118,ingr_0000000013,berries,61.000000,34.77,0.183,8.54,0.427,ingr_0000000437,sweet potato,82.000000,62.32,0.0,14.76,0.82",
+    "dataset_total_calories": "274.190002",
+    "dataset_total_mass_g": "257.000000",
+    "dataset_total_fat_g": "9.785000",
+    "dataset_total_carb_g": "37.556999",
+    "dataset_total_protein_g": "9.465000",
+    "source_components": [
+      {
+        "source_ingredient_id": "ingr_0000000128",
+        "source_name": "egg whites",
+        "source_mass_g": "71.000000",
+        "source_calories": "36.92",
+        "source_fat_g": "0.142",
+        "source_carb_g": "0.497",
+        "source_protein_g": "7.1"
+      },
+      {
+        "source_ingredient_id": "ingr_0000000015",
+        "source_name": "hash browns",
+        "source_mass_g": "43.000000",
+        "source_calories": "140.18",
+        "source_fat_g": "9.46",
+        "source_carb_g": "13.76",
+        "source_protein_g": "1.118"
+      },
+      {
+        "source_ingredient_id": "ingr_0000000013",
+        "source_name": "berries",
+        "source_mass_g": "61.000000",
+        "source_calories": "34.77",
+        "source_fat_g": "0.183",
+        "source_carb_g": "8.54",
+        "source_protein_g": "0.427"
+      },
+      {
+        "source_ingredient_id": "ingr_0000000437",
+        "source_name": "sweet potato",
+        "source_mass_g": "82.000000",
+        "source_calories": "62.32",
+        "source_fat_g": "0.0",
+        "source_carb_g": "14.76",
+        "source_protein_g": "0.82"
+      }
+    ],
+    "reference_kind": "Original dataset annotation, independent of any model output; source LastModified 2021-06-16",
+    "human_reference_status": "PENDING_REVIEW",
+    "review_note": "Source berries is an aggregate label; independent reviewer decides granularity. Distinguish hash browns and sweet potato.",
+    "readable": null,
+    "reference_main_components": null,
+    "accepted_aliases": null,
+    "reviewer": null,
+    "reviewed_at": null
+  },
+  {
+    "source_id": "dish_1562691032",
+    "source_csv": "dish_metadata_cafe1.csv",
+    "source_record_utf8_no_eol_sha256": "31e000106c567a8c17a1408fd28a5f3d65134b054962e0d50d50e56a9c47f72c",
+    "raw_record": "dish_1562691032,419.681702,415.000000,22.039829,39.058826,17.947340,ingr_0000000013,berries,85.000000,48.45,0.255,11.9,0.595,ingr_0000000161,olive oil,0.902439,7.97756076,0.902439,0.0,0.0,ingr_0000000038,pineapple,80.000000,40.0,0.08,10.4,0.4,ingr_0000000008,scrambled eggs,147.000000,217.56,16.17,2.352,14.7,ingr_0000000433,roasted potatoes,66.000000,93.06,4.488,11.88,1.386,ingr_0000000027,broccoli,36.097561,12.63414635,0.144390244,2.52682927,0.866341464",
+    "dataset_total_calories": "419.681702",
+    "dataset_total_mass_g": "415.000000",
+    "dataset_total_fat_g": "22.039829",
+    "dataset_total_carb_g": "39.058826",
+    "dataset_total_protein_g": "17.947340",
+    "source_components": [
+      {
+        "source_ingredient_id": "ingr_0000000013",
+        "source_name": "berries",
+        "source_mass_g": "85.000000",
+        "source_calories": "48.45",
+        "source_fat_g": "0.255",
+        "source_carb_g": "11.9",
+        "source_protein_g": "0.595"
+      },
+      {
+        "source_ingredient_id": "ingr_0000000161",
+        "source_name": "olive oil",
+        "source_mass_g": "0.902439",
+        "source_calories": "7.97756076",
+        "source_fat_g": "0.902439",
+        "source_carb_g": "0.0",
+        "source_protein_g": "0.0"
+      },
+      {
+        "source_ingredient_id": "ingr_0000000038",
+        "source_name": "pineapple",
+        "source_mass_g": "80.000000",
+        "source_calories": "40.0",
+        "source_fat_g": "0.08",
+        "source_carb_g": "10.4",
+        "source_protein_g": "0.4"
+      },
+      {
+        "source_ingredient_id": "ingr_0000000008",
+        "source_name": "scrambled eggs",
+        "source_mass_g": "147.000000",
+        "source_calories": "217.56",
+        "source_fat_g": "16.17",
+        "source_carb_g": "2.352",
+        "source_protein_g": "14.7"
+      },
+      {
+        "source_ingredient_id": "ingr_0000000433",
+        "source_name": "roasted potatoes",
+        "source_mass_g": "66.000000",
+        "source_calories": "93.06",
+        "source_fat_g": "4.488",
+        "source_carb_g": "11.88",
+        "source_protein_g": "1.386"
+      },
+      {
+        "source_ingredient_id": "ingr_0000000027",
+        "source_name": "broccoli",
+        "source_mass_g": "36.097561",
+        "source_calories": "12.63414635",
+        "source_fat_g": "0.144390244",
+        "source_carb_g": "2.52682927",
+        "source_protein_g": "0.866341464"
+      }
+    ],
+    "reference_kind": "Original dataset annotation, independent of any model output; source LastModified 2021-06-16",
+    "human_reference_status": "PENDING_REVIEW",
+    "review_note": "Olive oil not separately identifiable; source berries is aggregate. Main visible components need independent review.",
+    "readable": null,
+    "reference_main_components": null,
+    "accepted_aliases": null,
+    "reviewer": null,
+    "reviewed_at": null
+  },
+  {
+    "source_id": "dish_1563822597",
+    "source_csv": "dish_metadata_cafe1.csv",
+    "source_record_utf8_no_eol_sha256": "5a1721f4f37aa681c4ac1d0257f5a87355146a725be2eb2c6d2efc2c32daf299",
+    "raw_record": "dish_1563822597,59.400002,176.000000,2.170667,7.626667,4.106667,ingr_0000000027,broccoli,29.333334,10.2666669,0.117333336,2.05333338,0.704000016,ingr_0000000006,caesar salad,88.000000,38.72,1.848,3.784,2.816,ingr_0000000021,squash,29.333334,6.01333347,0.088000002,0.997333356,0.264000006,ingr_0000000485,zucchini,29.333334,4.4000001,0.117333336,0.792000018,0.322666674",
+    "dataset_total_calories": "59.400002",
+    "dataset_total_mass_g": "176.000000",
+    "dataset_total_fat_g": "2.170667",
+    "dataset_total_carb_g": "7.626667",
+    "dataset_total_protein_g": "4.106667",
+    "source_components": [
+      {
+        "source_ingredient_id": "ingr_0000000027",
+        "source_name": "broccoli",
+        "source_mass_g": "29.333334",
+        "source_calories": "10.2666669",
+        "source_fat_g": "0.117333336",
+        "source_carb_g": "2.05333338",
+        "source_protein_g": "0.704000016"
+      },
+      {
+        "source_ingredient_id": "ingr_0000000006",
+        "source_name": "caesar salad",
+        "source_mass_g": "88.000000",
+        "source_calories": "38.72",
+        "source_fat_g": "1.848",
+        "source_carb_g": "3.784",
+        "source_protein_g": "2.816"
+      },
+      {
+        "source_ingredient_id": "ingr_0000000021",
+        "source_name": "squash",
+        "source_mass_g": "29.333334",
+        "source_calories": "6.01333347",
+        "source_fat_g": "0.088000002",
+        "source_carb_g": "0.997333356",
+        "source_protein_g": "0.264000006"
+      },
+      {
+        "source_ingredient_id": "ingr_0000000485",
+        "source_name": "zucchini",
+        "source_mass_g": "29.333334",
+        "source_calories": "4.4000001",
+        "source_fat_g": "0.117333336",
+        "source_carb_g": "0.792000018",
+        "source_protein_g": "0.322666674"
+      }
+    ],
+    "reference_kind": "Original dataset annotation, independent of any model output; source LastModified 2021-06-16",
+    "human_reference_status": "PENDING_REVIEW",
+    "review_note": "Source caesar salad is a composite label; do not invent recipe subcomponents. Broccoli visibility is not separately confirmed here.",
+    "readable": null,
+    "reference_main_components": null,
+    "accepted_aliases": null,
+    "reviewer": null,
+    "reviewed_at": null
+  },
+  {
+    "source_id": "dish_1563984242",
+    "source_csv": "dish_metadata_cafe1.csv",
+    "source_record_utf8_no_eol_sha256": "dfa8dfcd97dda2a1c376a9a28fb8f2cbc2844a28f7d7546abaed8d0bd980de95",
+    "raw_record": "dish_1563984242,402.117035,753.000000,3.302390,36.819611,49.407761,ingr_0000000437,sweet potato,80.975609,61.54146284,0.0,14.57560962,0.80975609,ingr_0000000128,egg whites,472.000000,245.44,0.944,3.304,47.2,ingr_0000000038,pineapple,62.000000,31.0,0.062,8.06,0.31,ingr_0000000161,olive oil,2.024390,17.8956076,2.02439,0.0,0.0,ingr_0000000037,cantaloupe,136.000000,46.24,0.272,10.88,1.088",
+    "dataset_total_calories": "402.117035",
+    "dataset_total_mass_g": "753.000000",
+    "dataset_total_fat_g": "3.302390",
+    "dataset_total_carb_g": "36.819611",
+    "dataset_total_protein_g": "49.407761",
+    "source_components": [
+      {
+        "source_ingredient_id": "ingr_0000000437",
+        "source_name": "sweet potato",
+        "source_mass_g": "80.975609",
+        "source_calories": "61.54146284",
+        "source_fat_g": "0.0",
+        "source_carb_g": "14.57560962",
+        "source_protein_g": "0.80975609"
+      },
+      {
+        "source_ingredient_id": "ingr_0000000128",
+        "source_name": "egg whites",
+        "source_mass_g": "472.000000",
+        "source_calories": "245.44",
+        "source_fat_g": "0.944",
+        "source_carb_g": "3.304",
+        "source_protein_g": "47.2"
+      },
+      {
+        "source_ingredient_id": "ingr_0000000038",
+        "source_name": "pineapple",
+        "source_mass_g": "62.000000",
+        "source_calories": "31.0",
+        "source_fat_g": "0.062",
+        "source_carb_g": "8.06",
+        "source_protein_g": "0.31"
+      },
+      {
+        "source_ingredient_id": "ingr_0000000161",
+        "source_name": "olive oil",
+        "source_mass_g": "2.024390",
+        "source_calories": "17.8956076",
+        "source_fat_g": "2.02439",
+        "source_carb_g": "0.0",
+        "source_protein_g": "0.0"
+      },
+      {
+        "source_ingredient_id": "ingr_0000000037",
+        "source_name": "cantaloupe",
+        "source_mass_g": "136.000000",
+        "source_calories": "46.24",
+        "source_fat_g": "0.272",
+        "source_carb_g": "10.88",
+        "source_protein_g": "1.088"
+      }
+    ],
+    "reference_kind": "Original dataset annotation, independent of any model output; source LastModified 2021-06-16",
+    "human_reference_status": "PENDING_REVIEW",
+    "review_note": "Olive oil not separately identifiable; independently verify source sweet potato/egg whites/pineapple/cantaloupe against view.",
+    "readable": null,
+    "reference_main_components": null,
+    "accepted_aliases": null,
+    "reviewer": null,
+    "reviewed_at": null
+  },
+  {
+    "source_id": "dish_1565119669",
+    "source_csv": "dish_metadata_cafe1.csv",
+    "source_record_utf8_no_eol_sha256": "d1a03639816cb983716464106c2a5aaed03bb143efc729365270e4d8253a02c4",
+    "raw_record": "dish_1565119669,55.965000,229.000000,1.030500,10.842000,3.272500,ingr_0000000072,kale,39.000000,19.11,0.273,3.51,1.287,ingr_0000000485,zucchini,75.500000,11.325,0.302,2.0385,0.8305,ingr_0000000517,chard,39.000000,7.41,0.078,1.443,0.702,ingr_0000000529,chayote squash,75.500000,18.12,0.3775,3.8505,0.453",
+    "dataset_total_calories": "55.965000",
+    "dataset_total_mass_g": "229.000000",
+    "dataset_total_fat_g": "1.030500",
+    "dataset_total_carb_g": "10.842000",
+    "dataset_total_protein_g": "3.272500",
+    "source_components": [
+      {
+        "source_ingredient_id": "ingr_0000000072",
+        "source_name": "kale",
+        "source_mass_g": "39.000000",
+        "source_calories": "19.11",
+        "source_fat_g": "0.273",
+        "source_carb_g": "3.51",
+        "source_protein_g": "1.287"
+      },
+      {
+        "source_ingredient_id": "ingr_0000000485",
+        "source_name": "zucchini",
+        "source_mass_g": "75.500000",
+        "source_calories": "11.325",
+        "source_fat_g": "0.302",
+        "source_carb_g": "2.0385",
+        "source_protein_g": "0.8305"
+      },
+      {
+        "source_ingredient_id": "ingr_0000000517",
+        "source_name": "chard",
+        "source_mass_g": "39.000000",
+        "source_calories": "7.41",
+        "source_fat_g": "0.078",
+        "source_carb_g": "1.443",
+        "source_protein_g": "0.702"
+      },
+      {
+        "source_ingredient_id": "ingr_0000000529",
+        "source_name": "chayote squash",
+        "source_mass_g": "75.500000",
+        "source_calories": "18.12",
+        "source_fat_g": "0.3775",
+        "source_carb_g": "3.8505",
+        "source_protein_g": "0.453"
+      }
+    ],
+    "reference_kind": "Original dataset annotation, independent of any model output; source LastModified 2021-06-16",
+    "human_reference_status": "PENDING_REVIEW",
+    "review_note": "kale/chard and zucchini/chayote squash may be visually confusable; exact accepted aliases/main components remain pending.",
+    "readable": null,
+    "reference_main_components": null,
+    "accepted_aliases": null,
+    "reviewer": null,
+    "reviewed_at": null
+  }
+]

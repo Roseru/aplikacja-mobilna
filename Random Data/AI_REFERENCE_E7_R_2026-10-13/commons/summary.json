@@ -1,0 +1,18 @@
+{
+  "status": "CANDIDATES_REVIEW_REQUIRED",
+  "downloaded_unique_photo_count": 18,
+  "download_http_success_count": 20,
+  "redownloads_for_dimensions": 2,
+  "selected_count": 14,
+  "rations_candidates": 10,
+  "unreadable_candidates": 4,
+  "excluded_low_quality_candidates": 4,
+  "human_reference_qualified": 0,
+  "provider_consent_qualified": 0,
+  "actual_provider_uploads": 0,
+  "all_unique_hashes": true,
+  "all_images_max_dimension_1600": true,
+  "all_images_max_bytes_5mib": true,
+  "generated_or_locally_edited_images": 0,
+  "retrieved_at": "2026-10-13T14:40:57Z"
+}

@@ -17,6 +17,7 @@ def protected_mutation(path, method):
         path.rstrip("/") in {"/api/v1/products", "/api/v1/products/matches"}
         or re.fullmatch(r"/api/v1/products/[^/]+/(vote|reports)/?", path) is not None
         or path.startswith("/api/v1/moderation/")
+        or path.startswith("/api/v1/me/energy/")
     )
 
 
@@ -84,13 +85,14 @@ class E6BodyMiddleware:
         if headers.get(b"content-encoding", b"identity").lower() != b"identity":
             await reject(422, "invalid_request")
             return
+        limit = 8192 if scope["path"].startswith("/api/v1/me/energy/") else MAX_BODY
         body = bytearray()
         while True:
             message = await receive()
             if message["type"] == "http.disconnect":
                 return
             chunk = message.get("body", b"")
-            if len(body) + len(chunk) > MAX_BODY:
+            if len(body) + len(chunk) > limit:
                 await reject(413, "request_too_large")
                 return
             body.extend(chunk)

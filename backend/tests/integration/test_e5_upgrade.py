@@ -75,6 +75,11 @@ NEW_TABLES |= {
     "nemesis_day_projections",
     "nemesis_final_results",
     "nemesis_runtime_contract",
+    "energy_axes",
+    "energy_versions",
+    "energy_changes",
+    "energy_analyses",
+    "energy_receipts",
 }
 
 

@@ -17,6 +17,7 @@ from calorie_app.modules.ai.result import (
     parse_food_result,
 )
 from calorie_app.modules.catalog.schemas import CatalogDTO
+from calorie_app.modules.energy.schemas import Explanation
 
 ProviderCode = Literal[
     "ok",
@@ -46,7 +47,7 @@ ModelVersion = Annotated[
 
 class _OutcomeDTO(CatalogDTO):
     code: ProviderCode
-    result: ProviderFoodResult | None
+    result: ProviderFoodResult | Explanation | None
     input_tokens: Token | None
     output_tokens: Token | None
     thoughts_tokens: Token | None
@@ -61,7 +62,7 @@ class _OutcomeDTO(CatalogDTO):
 @dataclass(frozen=True, slots=True)
 class ProviderOutcome:
     code: ProviderCode
-    result: ProviderFoodResult | None = None
+    result: ProviderFoodResult | Explanation | None = None
     input_tokens: int | None = None
     output_tokens: int | None = None
     thoughts_tokens: int | None = None
@@ -201,7 +202,7 @@ def _final_text_part(part: object) -> str:
     return part["text"]
 
 
-def parse_generate_response(raw: bytes) -> ProviderOutcome:
+def parse_generate_response(raw: bytes, *, purpose="food_photo") -> ProviderOutcome:
     metadata = {}
     try:
         value = parse_bounded_json(raw)
@@ -262,7 +263,13 @@ def parse_generate_response(raw: bytes) -> ProviderOutcome:
         parts = content.get("parts")
         if not isinstance(parts, list) or len(parts) != 1:
             raise ProviderResultError("provider_parts_invalid")
-        result = parse_food_result(_final_text_part(parts[0]).encode("utf-8", errors="strict"))
+        raw_result = _final_text_part(parts[0]).encode("utf-8", errors="strict")
+        if purpose == "energy_adjustment":
+            from calorie_app.integrations.gemini.energy import parse_explanation
+
+            result = parse_explanation(raw_result)
+        else:
+            result = parse_food_result(raw_result)
         return ProviderOutcome("ok", result=result, **metadata)
     except ProviderResultError as error:
         return ProviderOutcome(error.code, **metadata)

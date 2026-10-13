@@ -11,6 +11,7 @@ from starlette.concurrency import run_in_threadpool
 from calorie_app.integrations.keycloak import AuthFailure, Principal
 from calorie_app.modules.catalog.pagination import database_now
 from calorie_app.modules.catalog.timestamps import utc_text
+from calorie_app.modules.energy.sync import EnergyPullResponse, scope
 from calorie_app.modules.identity.dependencies import current_principal
 from calorie_app.modules.identity.service import require_account
 from calorie_app.modules.sync.errors import SyncFailure
@@ -29,18 +30,20 @@ router = APIRouter(prefix="/api/v1/sync", tags=["sync"])
 ERRORS = {status: {"model": SyncError} for status in (401, 403, 409, 410, 413, 422, 429, 503)}
 
 
-def preflight(factory, principal, data, secret):
+def preflight(factory, principal, data, secret, installation_id="calorie-app"):
     with factory() as session, session.begin():
         account = require_account(session, principal)
-        context(session, account.id, data, secret)
+        context(session, account.id, data, secret, installation_id=installation_id)
         return account.id, account.generation
 
 
-def execute_one(factory, owner, generation, data, operation, secret):
+def execute_one(factory, owner, generation, data, operation, secret, installation_id="calorie-app"):
     for attempt in range(3):
         try:
             with factory() as session, session.begin():
-                result = apply_operation(session, owner, data, operation, secret, generation)
+                result = apply_operation(
+                    session, owner, data, operation, secret, generation, installation_id
+                )
                 now = database_now(session)
             return result, now
         except SQLAlchemyError as error:
@@ -55,19 +58,30 @@ def execute_one(factory, owner, generation, data, operation, secret):
     responses=ERRORS,
     operation_id="sync_push",
     openapi_extra={
+        "parameters": [
+            {
+                "name": "X-Sync-Capability",
+                "in": "header",
+                "required": False,
+                "schema": {"type": "string", "enum": ["energy_estimates_v1"]},
+            }
+        ],
         "requestBody": {
             "required": True,
             "content": {"application/json": {"schema": expanded_schema("PushRequest")}},
-        }
+        },
     },
     description="Full bounded preflight, then one commit per operation; ACK only after commit.",
 )
 async def push(request: Request, principal: Annotated[Principal, Depends(current_principal)]):
+    installation_id = scope(request.headers.get("X-Sync-Capability"))
     data = await read_push(request)
     preflight_structure(data)
     factory, secret = request.app.state.session_factory, request.app.state.catalog_page_token_secret
     try:
-        owner, generation = await run_in_threadpool(preflight, factory, principal, data, secret)
+        owner, generation = await run_in_threadpool(
+            preflight, factory, principal, data, secret, installation_id
+        )
         results, now = [], None
         for operation in data["operations"]:
             # A later provider/session failure does not undo the committed prefix.
@@ -82,7 +96,7 @@ async def push(request: Request, principal: Annotated[Principal, Depends(current
             if "user" not in verified.roles:
                 raise SyncFailure(403, "forbidden")
             result, now = await run_in_threadpool(
-                execute_one, factory, owner, generation, data, operation, secret
+                execute_one, factory, owner, generation, data, operation, secret, installation_id
             )
             results.append(result)
         return {"sync_epoch": data["sync_epoch"], "server_time": utc_text(now), "results": results}
@@ -92,13 +106,21 @@ async def push(request: Request, principal: Annotated[Principal, Depends(current
 
 @router.get(
     "/pull",
-    response_model=PullResponse,
+    response_model=PullResponse | EnergyPullResponse,
     responses=ERRORS,
     operation_id="sync_pull",
     openapi_extra={
         "parameters": [
             {"name": name, "in": "query", "required": False, "schema": {"type": "string"}}
             for name in ("sync_epoch", "checkpoint", "snapshot_token", "page_token")
+        ]
+        + [
+            {
+                "name": "X-Sync-Capability",
+                "in": "header",
+                "required": False,
+                "schema": {"type": "string", "enum": ["energy_estimates_v1"]},
+            }
         ]
         + [
             {
@@ -122,6 +144,7 @@ async def push(request: Request, principal: Annotated[Principal, Depends(current
     },
 )
 def pull(request: Request, principal: Annotated[Principal, Depends(current_principal)]):
+    installation_id = scope(request.headers.get("X-Sync-Capability"))
     query = {}
     for key, value in request.query_params.multi_items():
         if key == "recovery_operation_ids":
@@ -146,6 +169,7 @@ def pull(request: Request, principal: Annotated[Principal, Depends(current_princ
             owner,
             query,
             request.app.state.catalog_page_token_secret,
+            installation_id=installation_id,
         )
     except SQLAlchemyError:
         raise SyncFailure(503, "service_unavailable") from None

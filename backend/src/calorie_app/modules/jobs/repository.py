@@ -9,7 +9,7 @@ def candidates(session, batch):
     return list(
         session.scalars(
             text(
-                "SELECT id FROM app.ai_jobs WHERE purpose='food_photo' AND ("
+                "SELECT id FROM app.ai_jobs WHERE ("
                 "(state='queued' AND next_attempt_at<=clock_timestamp()) OR "
                 "(state='running' AND lease_until<=clock_timestamp()) "
                 ") ORDER BY next_attempt_at,id LIMIT :batch"

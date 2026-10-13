@@ -240,7 +240,7 @@ def finalizer_login(private):
 
 @contextmanager
 def runtime(*, now=datetime(2026, 10, 12, 12, tzinfo=UTC), zone="UTC"):
-    with fresh_database("0021_e8_nemesis_results") as private:
+    with fresh_database("0024_e9_history_graph") as private:
         with _runtime(private, now=now, zone=zone) as rt:
             yield rt
 
@@ -250,9 +250,12 @@ def _runtime(private, *, now, zone):
     engines = {name: private.engine(name) for name in ("admin", "migrator", "api", "worker")}
     with engines["admin"].connect() as connection:
         assert 170000 <= int(connection.scalar(text("SHOW server_version_num"))) < 180000
-        assert connection.scalar(text("SELECT version_num FROM app.alembic_version")) == (
-            "0021_e8_nemesis_results"
-        )
+        assert connection.scalar(text("SELECT version_num FROM app.alembic_version")) in {
+            "0021_e8_nemesis_results",
+            "0022_e9_energy",
+            "0023_e9_qualification",
+            "0024_e9_history_graph",
+        }
     for name in ("api", "migrator", "worker"):
         with engines[name].connect() as connection:
             assert connection.scalar(text("SELECT current_user=session_user"))
@@ -274,6 +277,15 @@ def _runtime(private, *, now, zone):
     app.state.oidc_verifier = signed.verifier
     with engines["admin"].begin() as connection:
         connection.execute(text("TRUNCATE app.user_accounts CASCADE"))
+        # The synthetic reset cascades through ai_jobs/attempts into physical
+        # permits. Restore the original two configured slots, never the limits.
+        connection.execute(
+            text(
+                "INSERT INTO app.ai_transport_permits(environment,slot) "
+                "SELECT DISTINCT p.environment,s FROM app.ai_pools p "
+                "CROSS JOIN generate_series(1,2) s ON CONFLICT DO NOTHING"
+            )
+        )
         connection.execute(text("UPDATE app.nemesis_control SET enabled=false"))
         epoch = connection.scalar(text("SELECT sync_epoch FROM app.installation_state WHERE id=1"))
     rt = engines | {"private": private, "signed": signed, "epoch": epoch, "actors": {}, "now": now}
