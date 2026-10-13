@@ -1153,3 +1153,6 @@ Integracja O3-019/020/021 w O1-023: main6952c1418b3a79e4da93803808d40c5097f3a40b
 
 
 O2-029 — odbiór przygotowania:nieautor9,3/10,brak nowych P1/P2 w pakiecie;30 plików/source IDs/hashów,8/8/10/4 i10 558 270B potwierdzone. Dwie P3 dokumentacji poprawione; produktowy P2 zgód/E9 pozostaje otwarty. Własny E0 locked/offline9schemas/95valid/35invalid/18scenarios/561links i staged diff-check PASS; kwalifikacje/zgody/uploady0. RuntimeAPK/Google nie wykonywano. Commit/PR i dokładne zdalne CI publikacji zostaną podane w wyniku tego samego spójnego PR.
+
+
+O2-029 — publikacja przygotowania: commit treści 8ab115bc8661eecb96d635671b3bb6cb11a75482, gałąź codex/docs-o2-przygotowanie-odbioru, baza2fc70f7. Końcowy head zawiera także ten metadopisek; dokładne wymagane CI/PR i wynik merge będą odczytane osobno. To przygotowanie odbioru i kandydackiego corpus, nie odbiór rzeczywistego APK/Google/E9.
