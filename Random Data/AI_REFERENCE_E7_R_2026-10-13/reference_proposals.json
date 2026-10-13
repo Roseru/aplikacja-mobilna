@@ -1,0 +1,1987 @@
+{
+  "document_type": "e7-reference-proposals-NOT-RUNNABLE",
+  "source_main": "28f70a59abb9f5d199f5a3e9fa6bb7f432a17be5",
+  "date": "2026-10-13",
+  "runnable": false,
+  "human_qualified": 0,
+  "provider_consents": 0,
+  "provider_uploads": 0,
+  "expected_profile": null,
+  "notice_version": null,
+  "o3_confirmation": null,
+  "statuses": [
+    "HUMAN_REVIEW_PENDING",
+    "O3_CONFIGURATION_PENDING"
+  ],
+  "summary": {
+    "examined": 35,
+    "technically_valid": 35,
+    "decisions": {
+      "PROPOSED": 30,
+      "UNRESOLVED": 1,
+      "REJECTED": 4
+    },
+    "proposed_groups": {
+      "products": 8,
+      "mixed": 8,
+      "rations": 10,
+      "unreadable": 4
+    },
+    "human_qualified": 0,
+    "provider_consents": 0,
+    "provider_uploads": 0,
+    "runnable": false,
+    "status": "OFFLINE_PACKET_VALID_NOT_RUNNABLE"
+  },
+  "cases": [
+    {
+      "case_id": "n5-01",
+      "group": "products",
+      "image": "nutrition5k/dish_1558723777.png",
+      "image_sha256": "8f444e62ec0d5473c7279380e351c3ee1e98a059f96b1a8bc19233ea49e37e42",
+      "decision": "PROPOSED",
+      "reason": "Widoczny główny składnik zgodny z dokładną anotacją źródła; bez wnioskowania marki/masy/makr.",
+      "visible_observation": "Całe czerwone jabłko na talerzu.",
+      "photo_source": {
+        "url": "https://storage.googleapis.com/nutrition5k_dataset/nutrition5k_dataset/imagery/realsense_overhead/dish_1558723777/rgb.png",
+        "license": "CC BY 4.0",
+        "attribution": "Nutrition5k — Thames, Karpur, Norris, Xia, Panait, Weyand, Sim; CVPR 2021; CC BY 4.0; unchanged RGB",
+        "evidence": "nutrition5k/images.json",
+        "license_url": "https://creativecommons.org/licenses/by/4.0/"
+      },
+      "reference_source": {
+        "evidence": "nutrition5k/annotations.json",
+        "locator": "dish_1558723777",
+        "record_sha256": "04871d5c879ccdb48955a8c3a10f7844cd639b3d2f852d9156e69d9160684757",
+        "kind": "original_dataset_annotation",
+        "url": "https://storage.googleapis.com/nutrition5k_dataset/nutrition5k_dataset/metadata/dish_metadata_cafe1.csv"
+      },
+      "uncertainties": [],
+      "proposal": {
+        "origin": "LLM_PROPOSAL_NOT_HUMAN_APPROVAL",
+        "readable": true,
+        "criterion": "All main components require exact NFKC/casefold/whitespace alias matches. Extra components do not affect this oracle and require manual review. No mass/kcal judgement.",
+        "main_components": [
+          {
+            "label": "apple",
+            "accepted_aliases": [
+              "apple",
+              "jabłko"
+            ]
+          }
+        ],
+        "reviewer": null,
+        "reviewed_at": null
+      },
+      "approval_status": "HUMAN_REVIEW_PENDING",
+      "human_reference": null,
+      "provider_consent": null,
+      "nonsensitive_approval": null,
+      "privacy_observation": "No private persons/faces/GPS observed; public manufacturer addresses/credits are source data, not personal identity. Human nonsensitive confirmation pending.",
+      "mass_g": null,
+      "calories": null
+    },
+    {
+      "case_id": "n5-02",
+      "group": "products",
+      "image": "nutrition5k/dish_1558637393.png",
+      "image_sha256": "760cd1881bfbd5b5a3e506ecb8c73f593f81f0cf0f695cda6d50abfb4da92a68",
+      "decision": "PROPOSED",
+      "reason": "Widoczny główny składnik zgodny z dokładną anotacją źródła; bez wnioskowania marki/masy/makr.",
+      "visible_observation": "Brązowe migdały, wyraźny kształt.",
+      "photo_source": {
+        "url": "https://storage.googleapis.com/nutrition5k_dataset/nutrition5k_dataset/imagery/realsense_overhead/dish_1558637393/rgb.png",
+        "license": "CC BY 4.0",
+        "attribution": "Nutrition5k — Thames, Karpur, Norris, Xia, Panait, Weyand, Sim; CVPR 2021; CC BY 4.0; unchanged RGB",
+        "evidence": "nutrition5k/images.json",
+        "license_url": "https://creativecommons.org/licenses/by/4.0/"
+      },
+      "reference_source": {
+        "evidence": "nutrition5k/annotations.json",
+        "locator": "dish_1558637393",
+        "record_sha256": "1f91c7ae739d0c6fe3489bc667ffe6160fa14b44161d4975d6e31ac817790dcc",
+        "kind": "original_dataset_annotation",
+        "url": "https://storage.googleapis.com/nutrition5k_dataset/nutrition5k_dataset/metadata/dish_metadata_cafe1.csv"
+      },
+      "uncertainties": [],
+      "proposal": {
+        "origin": "LLM_PROPOSAL_NOT_HUMAN_APPROVAL",
+        "readable": true,
+        "criterion": "All main components require exact NFKC/casefold/whitespace alias matches. Extra components do not affect this oracle and require manual review. No mass/kcal judgement.",
+        "main_components": [
+          {
+            "label": "almonds",
+            "accepted_aliases": [
+              "almonds",
+              "migdały"
+            ]
+          }
+        ],
+        "reviewer": null,
+        "reviewed_at": null
+      },
+      "approval_status": "HUMAN_REVIEW_PENDING",
+      "human_reference": null,
+      "provider_consent": null,
+      "nonsensitive_approval": null,
+      "privacy_observation": "No private persons/faces/GPS observed; public manufacturer addresses/credits are source data, not personal identity. Human nonsensitive confirmation pending.",
+      "mass_g": null,
+      "calories": null
+    },
+    {
+      "case_id": "n5-03",
+      "group": "products",
+      "image": "nutrition5k/dish_1562862493.png",
+      "image_sha256": "5191267eec40a52ae44396abd66d210f9e65d7207aad36647e171e3282f2ee5b",
+      "decision": "PROPOSED",
+      "reason": "Widoczny główny składnik zgodny z dokładną anotacją źródła; bez wnioskowania marki/masy/makr.",
+      "visible_observation": "Żółte kawałki jajecznicy; bez dodatkowej receptury.",
+      "photo_source": {
+        "url": "https://storage.googleapis.com/nutrition5k_dataset/nutrition5k_dataset/imagery/realsense_overhead/dish_1562862493/rgb.png",
+        "license": "CC BY 4.0",
+        "attribution": "Nutrition5k — Thames, Karpur, Norris, Xia, Panait, Weyand, Sim; CVPR 2021; CC BY 4.0; unchanged RGB",
+        "evidence": "nutrition5k/images.json",
+        "license_url": "https://creativecommons.org/licenses/by/4.0/"
+      },
+      "reference_source": {
+        "evidence": "nutrition5k/annotations.json",
+        "locator": "dish_1562862493",
+        "record_sha256": "15d0cb8945ef29275bc481f29f08a7a8292c4a127bcb5ebdf803e6bee70e0584",
+        "kind": "original_dataset_annotation",
+        "url": "https://storage.googleapis.com/nutrition5k_dataset/nutrition5k_dataset/metadata/dish_metadata_cafe1.csv"
+      },
+      "uncertainties": [],
+      "proposal": {
+        "origin": "LLM_PROPOSAL_NOT_HUMAN_APPROVAL",
+        "readable": true,
+        "criterion": "All main components require exact NFKC/casefold/whitespace alias matches. Extra components do not affect this oracle and require manual review. No mass/kcal judgement.",
+        "main_components": [
+          {
+            "label": "scrambled eggs",
+            "accepted_aliases": [
+              "scrambled eggs",
+              "jajecznica"
+            ]
+          }
+        ],
+        "reviewer": null,
+        "reviewed_at": null
+      },
+      "approval_status": "HUMAN_REVIEW_PENDING",
+      "human_reference": null,
+      "provider_consent": null,
+      "nonsensitive_approval": null,
+      "privacy_observation": "No private persons/faces/GPS observed; public manufacturer addresses/credits are source data, not personal identity. Human nonsensitive confirmation pending.",
+      "mass_g": null,
+      "calories": null
+    },
+    {
+      "case_id": "n5-04",
+      "group": "products",
+      "image": "nutrition5k/dish_1558459276.png",
+      "image_sha256": "7796c554e2dd169345dde9175fdbaa6edd56c4336593bcca9b2d683ff06b6feb",
+      "decision": "PROPOSED",
+      "reason": "Widoczny główny składnik zgodny z dokładną anotacją źródła; bez wnioskowania marki/masy/makr.",
+      "visible_observation": "Biały ugotowany ryż w miseczce.",
+      "photo_source": {
+        "url": "https://storage.googleapis.com/nutrition5k_dataset/nutrition5k_dataset/imagery/realsense_overhead/dish_1558459276/rgb.png",
+        "license": "CC BY 4.0",
+        "attribution": "Nutrition5k — Thames, Karpur, Norris, Xia, Panait, Weyand, Sim; CVPR 2021; CC BY 4.0; unchanged RGB",
+        "evidence": "nutrition5k/images.json",
+        "license_url": "https://creativecommons.org/licenses/by/4.0/"
+      },
+      "reference_source": {
+        "evidence": "nutrition5k/annotations.json",
+        "locator": "dish_1558459276",
+        "record_sha256": "d28bf30a6ffe04ba08548b84525d203615d60059c865a731ea463e6013f724de",
+        "kind": "original_dataset_annotation",
+        "url": "https://storage.googleapis.com/nutrition5k_dataset/nutrition5k_dataset/metadata/dish_metadata_cafe1.csv"
+      },
+      "uncertainties": [],
+      "proposal": {
+        "origin": "LLM_PROPOSAL_NOT_HUMAN_APPROVAL",
+        "readable": true,
+        "criterion": "All main components require exact NFKC/casefold/whitespace alias matches. Extra components do not affect this oracle and require manual review. No mass/kcal judgement.",
+        "main_components": [
+          {
+            "label": "white rice",
+            "accepted_aliases": [
+              "white rice",
+              "biały ryż",
+              "ryż"
+            ]
+          }
+        ],
+        "reviewer": null,
+        "reviewed_at": null
+      },
+      "approval_status": "HUMAN_REVIEW_PENDING",
+      "human_reference": null,
+      "provider_consent": null,
+      "nonsensitive_approval": null,
+      "privacy_observation": "No private persons/faces/GPS observed; public manufacturer addresses/credits are source data, not personal identity. Human nonsensitive confirmation pending.",
+      "mass_g": null,
+      "calories": null
+    },
+    {
+      "case_id": "n5-05",
+      "group": "products",
+      "image": "nutrition5k/dish_1558725253.png",
+      "image_sha256": "ef5de9319132d0b57c8e85872229168f85d2e57abe11cae33f97c0fd244410d9",
+      "decision": "PROPOSED",
+      "reason": "Widoczny główny składnik zgodny z dokładną anotacją źródła; bez wnioskowania marki/masy/makr.",
+      "visible_observation": "Zielone różyczki brokułu.",
+      "photo_source": {
+        "url": "https://storage.googleapis.com/nutrition5k_dataset/nutrition5k_dataset/imagery/realsense_overhead/dish_1558725253/rgb.png",
+        "license": "CC BY 4.0",
+        "attribution": "Nutrition5k — Thames, Karpur, Norris, Xia, Panait, Weyand, Sim; CVPR 2021; CC BY 4.0; unchanged RGB",
+        "evidence": "nutrition5k/images.json",
+        "license_url": "https://creativecommons.org/licenses/by/4.0/"
+      },
+      "reference_source": {
+        "evidence": "nutrition5k/annotations.json",
+        "locator": "dish_1558725253",
+        "record_sha256": "8d910b29fae3d65fac9ceb783dabb005aa72d0e404fae0c4d50e980f40262a83",
+        "kind": "original_dataset_annotation",
+        "url": "https://storage.googleapis.com/nutrition5k_dataset/nutrition5k_dataset/metadata/dish_metadata_cafe1.csv"
+      },
+      "uncertainties": [],
+      "proposal": {
+        "origin": "LLM_PROPOSAL_NOT_HUMAN_APPROVAL",
+        "readable": true,
+        "criterion": "All main components require exact NFKC/casefold/whitespace alias matches. Extra components do not affect this oracle and require manual review. No mass/kcal judgement.",
+        "main_components": [
+          {
+            "label": "broccoli",
+            "accepted_aliases": [
+              "broccoli",
+              "brokuł",
+              "brokuły"
+            ]
+          }
+        ],
+        "reviewer": null,
+        "reviewed_at": null
+      },
+      "approval_status": "HUMAN_REVIEW_PENDING",
+      "human_reference": null,
+      "provider_consent": null,
+      "nonsensitive_approval": null,
+      "privacy_observation": "No private persons/faces/GPS observed; public manufacturer addresses/credits are source data, not personal identity. Human nonsensitive confirmation pending.",
+      "mass_g": null,
+      "calories": null
+    },
+    {
+      "case_id": "n5-06",
+      "group": "products",
+      "image": "nutrition5k/dish_1558642089.png",
+      "image_sha256": "377af4bd1ba20f9cf4cc0f916bbbad546abfe1a3781f41dd28d744f822646324",
+      "decision": "PROPOSED",
+      "reason": "Widoczny główny składnik zgodny z dokładną anotacją źródła; bez wnioskowania marki/masy/makr.",
+      "visible_observation": "Pomarańczowe plasterki marchwi.",
+      "photo_source": {
+        "url": "https://storage.googleapis.com/nutrition5k_dataset/nutrition5k_dataset/imagery/realsense_overhead/dish_1558642089/rgb.png",
+        "license": "CC BY 4.0",
+        "attribution": "Nutrition5k — Thames, Karpur, Norris, Xia, Panait, Weyand, Sim; CVPR 2021; CC BY 4.0; unchanged RGB",
+        "evidence": "nutrition5k/images.json",
+        "license_url": "https://creativecommons.org/licenses/by/4.0/"
+      },
+      "reference_source": {
+        "evidence": "nutrition5k/annotations.json",
+        "locator": "dish_1558642089",
+        "record_sha256": "f962435616462ad3f15b0df6a28c7b5482378298ad9e88ecd00687613308992a",
+        "kind": "original_dataset_annotation",
+        "url": "https://storage.googleapis.com/nutrition5k_dataset/nutrition5k_dataset/metadata/dish_metadata_cafe1.csv"
+      },
+      "uncertainties": [],
+      "proposal": {
+        "origin": "LLM_PROPOSAL_NOT_HUMAN_APPROVAL",
+        "readable": true,
+        "criterion": "All main components require exact NFKC/casefold/whitespace alias matches. Extra components do not affect this oracle and require manual review. No mass/kcal judgement.",
+        "main_components": [
+          {
+            "label": "carrot",
+            "accepted_aliases": [
+              "carrot",
+              "marchew",
+              "marchewka"
+            ]
+          }
+        ],
+        "reviewer": null,
+        "reviewed_at": null
+      },
+      "approval_status": "HUMAN_REVIEW_PENDING",
+      "human_reference": null,
+      "provider_consent": null,
+      "nonsensitive_approval": null,
+      "privacy_observation": "No private persons/faces/GPS observed; public manufacturer addresses/credits are source data, not personal identity. Human nonsensitive confirmation pending.",
+      "mass_g": null,
+      "calories": null
+    },
+    {
+      "case_id": "n5-07",
+      "group": "products",
+      "image": "nutrition5k/dish_1558457530.png",
+      "image_sha256": "a6e5e933536e75c625a74bfb6c31b65aa2d606e412b3f1ce369c4c7256581751",
+      "decision": "PROPOSED",
+      "reason": "Widoczny główny składnik zgodny z dokładną anotacją źródła; bez wnioskowania marki/masy/makr.",
+      "visible_observation": "Jasne różyczki kalafiora; światło słabsze, kształt widoczny.",
+      "photo_source": {
+        "url": "https://storage.googleapis.com/nutrition5k_dataset/nutrition5k_dataset/imagery/realsense_overhead/dish_1558457530/rgb.png",
+        "license": "CC BY 4.0",
+        "attribution": "Nutrition5k — Thames, Karpur, Norris, Xia, Panait, Weyand, Sim; CVPR 2021; CC BY 4.0; unchanged RGB",
+        "evidence": "nutrition5k/images.json",
+        "license_url": "https://creativecommons.org/licenses/by/4.0/"
+      },
+      "reference_source": {
+        "evidence": "nutrition5k/annotations.json",
+        "locator": "dish_1558457530",
+        "record_sha256": "c04ea181ad56a879586e9d6f929474368a0b6b36bcda51e786417357258c3c96",
+        "kind": "original_dataset_annotation",
+        "url": "https://storage.googleapis.com/nutrition5k_dataset/nutrition5k_dataset/metadata/dish_metadata_cafe1.csv"
+      },
+      "uncertainties": [],
+      "proposal": {
+        "origin": "LLM_PROPOSAL_NOT_HUMAN_APPROVAL",
+        "readable": true,
+        "criterion": "All main components require exact NFKC/casefold/whitespace alias matches. Extra components do not affect this oracle and require manual review. No mass/kcal judgement.",
+        "main_components": [
+          {
+            "label": "cauliflower",
+            "accepted_aliases": [
+              "cauliflower",
+              "kalafior"
+            ]
+          }
+        ],
+        "reviewer": null,
+        "reviewed_at": null
+      },
+      "approval_status": "HUMAN_REVIEW_PENDING",
+      "human_reference": null,
+      "provider_consent": null,
+      "nonsensitive_approval": null,
+      "privacy_observation": "No private persons/faces/GPS observed; public manufacturer addresses/credits are source data, not personal identity. Human nonsensitive confirmation pending.",
+      "mass_g": null,
+      "calories": null
+    },
+    {
+      "case_id": "n5-08",
+      "group": "products",
+      "image": "nutrition5k/dish_1558549008.png",
+      "image_sha256": "735ceafe7e6c0c8339cb44bc65c7dc139cdb6ca474a2019755b7c8e33ae53381",
+      "decision": "PROPOSED",
+      "reason": "Widoczny główny składnik zgodny z dokładną anotacją źródła; bez wnioskowania marki/masy/makr.",
+      "visible_observation": "Czerwone małe pomidory.",
+      "photo_source": {
+        "url": "https://storage.googleapis.com/nutrition5k_dataset/nutrition5k_dataset/imagery/realsense_overhead/dish_1558549008/rgb.png",
+        "license": "CC BY 4.0",
+        "attribution": "Nutrition5k — Thames, Karpur, Norris, Xia, Panait, Weyand, Sim; CVPR 2021; CC BY 4.0; unchanged RGB",
+        "evidence": "nutrition5k/images.json",
+        "license_url": "https://creativecommons.org/licenses/by/4.0/"
+      },
+      "reference_source": {
+        "evidence": "nutrition5k/annotations.json",
+        "locator": "dish_1558549008",
+        "record_sha256": "02ad0ffdd0a0e17f70098d2b6f63f2bdc913c7e9d04ef459b103911594b3d53b",
+        "kind": "original_dataset_annotation",
+        "url": "https://storage.googleapis.com/nutrition5k_dataset/nutrition5k_dataset/metadata/dish_metadata_cafe1.csv"
+      },
+      "uncertainties": [],
+      "proposal": {
+        "origin": "LLM_PROPOSAL_NOT_HUMAN_APPROVAL",
+        "readable": true,
+        "criterion": "All main components require exact NFKC/casefold/whitespace alias matches. Extra components do not affect this oracle and require manual review. No mass/kcal judgement.",
+        "main_components": [
+          {
+            "label": "cherry tomatoes",
+            "accepted_aliases": [
+              "cherry tomatoes",
+              "pomidorki koktajlowe",
+              "pomidory koktajlowe"
+            ]
+          }
+        ],
+        "reviewer": null,
+        "reviewed_at": null
+      },
+      "approval_status": "HUMAN_REVIEW_PENDING",
+      "human_reference": null,
+      "provider_consent": null,
+      "nonsensitive_approval": null,
+      "privacy_observation": "No private persons/faces/GPS observed; public manufacturer addresses/credits are source data, not personal identity. Human nonsensitive confirmation pending.",
+      "mass_g": null,
+      "calories": null
+    },
+    {
+      "case_id": "n5-09",
+      "group": "mixed",
+      "image": "nutrition5k/dish_1560455030.png",
+      "image_sha256": "c43f6a4176dc56b921b4a7c106d8bf780a0dfd8810777c3a6892dc70be9c68b7",
+      "decision": "PROPOSED",
+      "reason": "Widoczny główny składnik zgodny z dokładną anotacją źródła; bez wnioskowania marki/masy/makr.",
+      "visible_observation": "Pomidory, plasterki ogórka i tarta marchew.",
+      "photo_source": {
+        "url": "https://storage.googleapis.com/nutrition5k_dataset/nutrition5k_dataset/imagery/realsense_overhead/dish_1560455030/rgb.png",
+        "license": "CC BY 4.0",
+        "attribution": "Nutrition5k — Thames, Karpur, Norris, Xia, Panait, Weyand, Sim; CVPR 2021; CC BY 4.0; unchanged RGB",
+        "evidence": "nutrition5k/images.json",
+        "license_url": "https://creativecommons.org/licenses/by/4.0/"
+      },
+      "reference_source": {
+        "evidence": "nutrition5k/annotations.json",
+        "locator": "dish_1560455030",
+        "record_sha256": "179a3b90c0cdaf2082ca910263752dd969b768a488f703889600a7c978e84abe",
+        "kind": "original_dataset_annotation",
+        "url": "https://storage.googleapis.com/nutrition5k_dataset/nutrition5k_dataset/metadata/dish_metadata_cafe1.csv"
+      },
+      "uncertainties": [],
+      "proposal": {
+        "origin": "LLM_PROPOSAL_NOT_HUMAN_APPROVAL",
+        "readable": true,
+        "criterion": "All main components require exact NFKC/casefold/whitespace alias matches. Extra components do not affect this oracle and require manual review. No mass/kcal judgement.",
+        "main_components": [
+          {
+            "label": "cherry tomatoes",
+            "accepted_aliases": [
+              "cherry tomatoes",
+              "pomidorki koktajlowe"
+            ]
+          },
+          {
+            "label": "cucumbers",
+            "accepted_aliases": [
+              "cucumbers",
+              "ogórek",
+              "ogórki"
+            ]
+          },
+          {
+            "label": "carrot",
+            "accepted_aliases": [
+              "carrot",
+              "marchew",
+              "marchewka"
+            ]
+          }
+        ],
+        "reviewer": null,
+        "reviewed_at": null
+      },
+      "approval_status": "HUMAN_REVIEW_PENDING",
+      "human_reference": null,
+      "provider_consent": null,
+      "nonsensitive_approval": null,
+      "privacy_observation": "No private persons/faces/GPS observed; public manufacturer addresses/credits are source data, not personal identity. Human nonsensitive confirmation pending.",
+      "mass_g": null,
+      "calories": null
+    },
+    {
+      "case_id": "n5-10",
+      "group": "mixed",
+      "image": "nutrition5k/dish_1563207364.png",
+      "image_sha256": "1215171aa64c9781b3bf8b83c9e18b083411ec6eca68653f0afa3a692201e24f",
+      "decision": "PROPOSED",
+      "reason": "Anotacja rozróżnia yam i sweet potato, lecz obraz nie rozstrzyga ich osobno. Proponowany agregat orange tubers wymaga jawnej ludzkiej decyzji o granularity; aliasy nie uznają samego batata za oba gatunki. Olej pominięty.",
+      "visible_observation": "Żółte i białe jajka, winogrona oraz pomarańczowe bulwy.",
+      "photo_source": {
+        "url": "https://storage.googleapis.com/nutrition5k_dataset/nutrition5k_dataset/imagery/realsense_overhead/dish_1563207364/rgb.png",
+        "license": "CC BY 4.0",
+        "attribution": "Nutrition5k — Thames, Karpur, Norris, Xia, Panait, Weyand, Sim; CVPR 2021; CC BY 4.0; unchanged RGB",
+        "evidence": "nutrition5k/images.json",
+        "license_url": "https://creativecommons.org/licenses/by/4.0/"
+      },
+      "reference_source": {
+        "evidence": "nutrition5k/annotations.json",
+        "locator": "dish_1563207364",
+        "record_sha256": "b52188d2bd273a193d8e2919c2ab1dd6a7362379c53af7f76476a1d1aa10c86c",
+        "kind": "original_dataset_annotation",
+        "url": "https://storage.googleapis.com/nutrition5k_dataset/nutrition5k_dataset/metadata/dish_metadata_cafe1.csv"
+      },
+      "uncertainties": [
+        "Anotacja rozróżnia yam i sweet potato, lecz obraz nie rozstrzyga ich osobno. Proponowany agregat orange tubers wymaga jawnej ludzkiej decyzji o granularity; aliasy nie uznają samego batata za oba gatunki. Olej pominięty."
+      ],
+      "proposal": {
+        "origin": "LLM_PROPOSAL_NOT_HUMAN_APPROVAL",
+        "readable": true,
+        "criterion": "All main components require exact NFKC/casefold/whitespace alias matches. Extra components do not affect this oracle and require manual review. No mass/kcal judgement.",
+        "main_components": [
+          {
+            "label": "scrambled eggs",
+            "accepted_aliases": [
+              "scrambled eggs",
+              "jajecznica"
+            ]
+          },
+          {
+            "label": "egg whites",
+            "accepted_aliases": [
+              "egg whites",
+              "białka jaj",
+              "białka jajek"
+            ]
+          },
+          {
+            "label": "grapes",
+            "accepted_aliases": [
+              "grapes",
+              "winogrona"
+            ]
+          },
+          {
+            "label": "orange tubers",
+            "accepted_aliases": [
+              "orange tubers",
+              "bataty i pochrzyn",
+              "sweet potato and yam"
+            ]
+          }
+        ],
+        "reviewer": null,
+        "reviewed_at": null
+      },
+      "approval_status": "HUMAN_REVIEW_PENDING",
+      "human_reference": null,
+      "provider_consent": null,
+      "nonsensitive_approval": null,
+      "privacy_observation": "No private persons/faces/GPS observed; public manufacturer addresses/credits are source data, not personal identity. Human nonsensitive confirmation pending.",
+      "mass_g": null,
+      "calories": null
+    },
+    {
+      "case_id": "n5-11",
+      "group": "mixed",
+      "image": "nutrition5k/dish_1561575474.png",
+      "image_sha256": "922ac39525856b250a80751870e718e05c1212f2ac9c0033652ce56ad3d8857b",
+      "decision": "PROPOSED",
+      "reason": "Niewidoczne sól i oliwa pominięte. Drobne pomarańczowe pasma nie mają udokumentowanej tożsamości, nie dodano marchwi do referencji.",
+      "visible_observation": "Fioletowoskóre kawałki bakłażana, ziemniaki i kalafior.",
+      "photo_source": {
+        "url": "https://storage.googleapis.com/nutrition5k_dataset/nutrition5k_dataset/imagery/realsense_overhead/dish_1561575474/rgb.png",
+        "license": "CC BY 4.0",
+        "attribution": "Nutrition5k — Thames, Karpur, Norris, Xia, Panait, Weyand, Sim; CVPR 2021; CC BY 4.0; unchanged RGB",
+        "evidence": "nutrition5k/images.json",
+        "license_url": "https://creativecommons.org/licenses/by/4.0/"
+      },
+      "reference_source": {
+        "evidence": "nutrition5k/annotations.json",
+        "locator": "dish_1561575474",
+        "record_sha256": "0b14f05ca3d71c32a5a7259c33f5843d3db6b46d3434a307cfe666d84ebcfdd3",
+        "kind": "original_dataset_annotation",
+        "url": "https://storage.googleapis.com/nutrition5k_dataset/nutrition5k_dataset/metadata/dish_metadata_cafe1.csv"
+      },
+      "uncertainties": [
+        "Niewidoczne sól i oliwa pominięte. Drobne pomarańczowe pasma nie mają udokumentowanej tożsamości, nie dodano marchwi do referencji."
+      ],
+      "proposal": {
+        "origin": "LLM_PROPOSAL_NOT_HUMAN_APPROVAL",
+        "readable": true,
+        "criterion": "All main components require exact NFKC/casefold/whitespace alias matches. Extra components do not affect this oracle and require manual review. No mass/kcal judgement.",
+        "main_components": [
+          {
+            "label": "eggplant",
+            "accepted_aliases": [
+              "eggplant",
+              "bakłażan"
+            ]
+          },
+          {
+            "label": "roasted potatoes",
+            "accepted_aliases": [
+              "roasted potatoes",
+              "pieczone ziemniaki"
+            ]
+          },
+          {
+            "label": "cauliflower",
+            "accepted_aliases": [
+              "cauliflower",
+              "kalafior"
+            ]
+          }
+        ],
+        "reviewer": null,
+        "reviewed_at": null
+      },
+      "approval_status": "HUMAN_REVIEW_PENDING",
+      "human_reference": null,
+      "provider_consent": null,
+      "nonsensitive_approval": null,
+      "privacy_observation": "No private persons/faces/GPS observed; public manufacturer addresses/credits are source data, not personal identity. Human nonsensitive confirmation pending.",
+      "mass_g": null,
+      "calories": null
+    },
+    {
+      "case_id": "n5-12",
+      "group": "mixed",
+      "image": "nutrition5k/dish_1561739238.png",
+      "image_sha256": "01a3f22ea7c045147ceb5ab15c1ed9fc33618835cf5bd295cec8c98d0161df92",
+      "decision": "PROPOSED",
+      "reason": "Berries jest zbiorczą etykietą źródła; nie wymuszamy gatunków z samego obrazu.",
+      "visible_observation": "Białka jaj, tarte ziemniaki, owoce jagodowe i pomarańczowe bataty.",
+      "photo_source": {
+        "url": "https://storage.googleapis.com/nutrition5k_dataset/nutrition5k_dataset/imagery/realsense_overhead/dish_1561739238/rgb.png",
+        "license": "CC BY 4.0",
+        "attribution": "Nutrition5k — Thames, Karpur, Norris, Xia, Panait, Weyand, Sim; CVPR 2021; CC BY 4.0; unchanged RGB",
+        "evidence": "nutrition5k/images.json",
+        "license_url": "https://creativecommons.org/licenses/by/4.0/"
+      },
+      "reference_source": {
+        "evidence": "nutrition5k/annotations.json",
+        "locator": "dish_1561739238",
+        "record_sha256": "74e8eaacf7feb28df779e3caf9bcee34d0333b2e254d96a4d61acc97d3f67544",
+        "kind": "original_dataset_annotation",
+        "url": "https://storage.googleapis.com/nutrition5k_dataset/nutrition5k_dataset/metadata/dish_metadata_cafe1.csv"
+      },
+      "uncertainties": [
+        "Berries jest zbiorczą etykietą źródła; nie wymuszamy gatunków z samego obrazu."
+      ],
+      "proposal": {
+        "origin": "LLM_PROPOSAL_NOT_HUMAN_APPROVAL",
+        "readable": true,
+        "criterion": "All main components require exact NFKC/casefold/whitespace alias matches. Extra components do not affect this oracle and require manual review. No mass/kcal judgement.",
+        "main_components": [
+          {
+            "label": "egg whites",
+            "accepted_aliases": [
+              "egg whites",
+              "białka jaj",
+              "białka jajek"
+            ]
+          },
+          {
+            "label": "hash browns",
+            "accepted_aliases": [
+              "hash browns",
+              "tarte smażone ziemniaki"
+            ]
+          },
+          {
+            "label": "berries",
+            "accepted_aliases": [
+              "berries",
+              "owoce jagodowe"
+            ]
+          },
+          {
+            "label": "sweet potato",
+            "accepted_aliases": [
+              "sweet potato",
+              "batat",
+              "bataty"
+            ]
+          }
+        ],
+        "reviewer": null,
+        "reviewed_at": null
+      },
+      "approval_status": "HUMAN_REVIEW_PENDING",
+      "human_reference": null,
+      "provider_consent": null,
+      "nonsensitive_approval": null,
+      "privacy_observation": "No private persons/faces/GPS observed; public manufacturer addresses/credits are source data, not personal identity. Human nonsensitive confirmation pending.",
+      "mass_g": null,
+      "calories": null
+    },
+    {
+      "case_id": "n5-13",
+      "group": "mixed",
+      "image": "nutrition5k/dish_1562691032.png",
+      "image_sha256": "3db9f973fb79d36d060a9c218bd83d3f91c9ab7f55dda87f6ec21faf34f91970",
+      "decision": "PROPOSED",
+      "reason": "Berries pozostaje agregatem źródłowym; niewidoczna oliwa pominięta.",
+      "visible_observation": "Jajecznica, ziemniaki, brokuły, ananas oraz truskawki i ciemne owoce.",
+      "photo_source": {
+        "url": "https://storage.googleapis.com/nutrition5k_dataset/nutrition5k_dataset/imagery/realsense_overhead/dish_1562691032/rgb.png",
+        "license": "CC BY 4.0",
+        "attribution": "Nutrition5k — Thames, Karpur, Norris, Xia, Panait, Weyand, Sim; CVPR 2021; CC BY 4.0; unchanged RGB",
+        "evidence": "nutrition5k/images.json",
+        "license_url": "https://creativecommons.org/licenses/by/4.0/"
+      },
+      "reference_source": {
+        "evidence": "nutrition5k/annotations.json",
+        "locator": "dish_1562691032",
+        "record_sha256": "31e000106c567a8c17a1408fd28a5f3d65134b054962e0d50d50e56a9c47f72c",
+        "kind": "original_dataset_annotation",
+        "url": "https://storage.googleapis.com/nutrition5k_dataset/nutrition5k_dataset/metadata/dish_metadata_cafe1.csv"
+      },
+      "uncertainties": [
+        "Berries pozostaje agregatem źródłowym; niewidoczna oliwa pominięta."
+      ],
+      "proposal": {
+        "origin": "LLM_PROPOSAL_NOT_HUMAN_APPROVAL",
+        "readable": true,
+        "criterion": "All main components require exact NFKC/casefold/whitespace alias matches. Extra components do not affect this oracle and require manual review. No mass/kcal judgement.",
+        "main_components": [
+          {
+            "label": "berries",
+            "accepted_aliases": [
+              "berries",
+              "owoce jagodowe"
+            ]
+          },
+          {
+            "label": "pineapple",
+            "accepted_aliases": [
+              "pineapple",
+              "ananas"
+            ]
+          },
+          {
+            "label": "scrambled eggs",
+            "accepted_aliases": [
+              "scrambled eggs",
+              "jajecznica"
+            ]
+          },
+          {
+            "label": "roasted potatoes",
+            "accepted_aliases": [
+              "roasted potatoes",
+              "pieczone ziemniaki"
+            ]
+          },
+          {
+            "label": "broccoli",
+            "accepted_aliases": [
+              "broccoli",
+              "brokuł",
+              "brokuły"
+            ]
+          }
+        ],
+        "reviewer": null,
+        "reviewed_at": null
+      },
+      "approval_status": "HUMAN_REVIEW_PENDING",
+      "human_reference": null,
+      "provider_consent": null,
+      "nonsensitive_approval": null,
+      "privacy_observation": "No private persons/faces/GPS observed; public manufacturer addresses/credits are source data, not personal identity. Human nonsensitive confirmation pending.",
+      "mass_g": null,
+      "calories": null
+    },
+    {
+      "case_id": "n5-14",
+      "group": "mixed",
+      "image": "nutrition5k/dish_1563822597.png",
+      "image_sha256": "886579bdbb20179b90dd8f426a56f63eb109702e63b1b07564a59058d4629c9c",
+      "decision": "PROPOSED",
+      "reason": "Caesar salad jest udokumentowaną nazwą całego elementu, bez osobnych ukrytych składników sosu. Brokuł częściowo zasłonięty; człowiek może zmienić zakres przed zamrożeniem.",
+      "visible_observation": "Sałatka z liśćmi i grzankami, zielone/żółte kawałki dyniowatych; brokuł częściowo zasłonięty.",
+      "photo_source": {
+        "url": "https://storage.googleapis.com/nutrition5k_dataset/nutrition5k_dataset/imagery/realsense_overhead/dish_1563822597/rgb.png",
+        "license": "CC BY 4.0",
+        "attribution": "Nutrition5k — Thames, Karpur, Norris, Xia, Panait, Weyand, Sim; CVPR 2021; CC BY 4.0; unchanged RGB",
+        "evidence": "nutrition5k/images.json",
+        "license_url": "https://creativecommons.org/licenses/by/4.0/"
+      },
+      "reference_source": {
+        "evidence": "nutrition5k/annotations.json",
+        "locator": "dish_1563822597",
+        "record_sha256": "5a1721f4f37aa681c4ac1d0257f5a87355146a725be2eb2c6d2efc2c32daf299",
+        "kind": "original_dataset_annotation",
+        "url": "https://storage.googleapis.com/nutrition5k_dataset/nutrition5k_dataset/metadata/dish_metadata_cafe1.csv"
+      },
+      "uncertainties": [
+        "Caesar salad jest udokumentowaną nazwą całego elementu, bez osobnych ukrytych składników sosu. Brokuł częściowo zasłonięty; człowiek może zmienić zakres przed zamrożeniem."
+      ],
+      "proposal": {
+        "origin": "LLM_PROPOSAL_NOT_HUMAN_APPROVAL",
+        "readable": true,
+        "criterion": "All main components require exact NFKC/casefold/whitespace alias matches. Extra components do not affect this oracle and require manual review. No mass/kcal judgement.",
+        "main_components": [
+          {
+            "label": "broccoli",
+            "accepted_aliases": [
+              "broccoli",
+              "brokuł",
+              "brokuły"
+            ]
+          },
+          {
+            "label": "caesar salad",
+            "accepted_aliases": [
+              "caesar salad",
+              "sałatka cezar",
+              "sałatka cesarska"
+            ]
+          },
+          {
+            "label": "yellow squash",
+            "accepted_aliases": [
+              "yellow squash",
+              "żółta dynia"
+            ]
+          },
+          {
+            "label": "zucchini",
+            "accepted_aliases": [
+              "zucchini",
+              "cukinia"
+            ]
+          }
+        ],
+        "reviewer": null,
+        "reviewed_at": null
+      },
+      "approval_status": "HUMAN_REVIEW_PENDING",
+      "human_reference": null,
+      "provider_consent": null,
+      "nonsensitive_approval": null,
+      "privacy_observation": "No private persons/faces/GPS observed; public manufacturer addresses/credits are source data, not personal identity. Human nonsensitive confirmation pending.",
+      "mass_g": null,
+      "calories": null
+    },
+    {
+      "case_id": "n5-15",
+      "group": "mixed",
+      "image": "nutrition5k/dish_1563984242.png",
+      "image_sha256": "5318b0f941025652cdf7d538590982c11b0b7d7aa396ba4caac9048597ee230c",
+      "decision": "PROPOSED",
+      "reason": "Pomarańczowy melon potwierdzony przez cantaloupe; oliwa pominięta. Ciemne bulwy są source sweet potato, widoczność słabsza niż n5-12.",
+      "visible_observation": "Białka jaj, ananas, pomarańczowy melon i pieczone kostki bulw.",
+      "photo_source": {
+        "url": "https://storage.googleapis.com/nutrition5k_dataset/nutrition5k_dataset/imagery/realsense_overhead/dish_1563984242/rgb.png",
+        "license": "CC BY 4.0",
+        "attribution": "Nutrition5k — Thames, Karpur, Norris, Xia, Panait, Weyand, Sim; CVPR 2021; CC BY 4.0; unchanged RGB",
+        "evidence": "nutrition5k/images.json",
+        "license_url": "https://creativecommons.org/licenses/by/4.0/"
+      },
+      "reference_source": {
+        "evidence": "nutrition5k/annotations.json",
+        "locator": "dish_1563984242",
+        "record_sha256": "dfa8dfcd97dda2a1c376a9a28fb8f2cbc2844a28f7d7546abaed8d0bd980de95",
+        "kind": "original_dataset_annotation",
+        "url": "https://storage.googleapis.com/nutrition5k_dataset/nutrition5k_dataset/metadata/dish_metadata_cafe1.csv"
+      },
+      "uncertainties": [
+        "Pomarańczowy melon potwierdzony przez cantaloupe; oliwa pominięta. Ciemne bulwy są source sweet potato, widoczność słabsza niż n5-12."
+      ],
+      "proposal": {
+        "origin": "LLM_PROPOSAL_NOT_HUMAN_APPROVAL",
+        "readable": true,
+        "criterion": "All main components require exact NFKC/casefold/whitespace alias matches. Extra components do not affect this oracle and require manual review. No mass/kcal judgement.",
+        "main_components": [
+          {
+            "label": "sweet potato",
+            "accepted_aliases": [
+              "sweet potato",
+              "batat",
+              "bataty"
+            ]
+          },
+          {
+            "label": "egg whites",
+            "accepted_aliases": [
+              "egg whites",
+              "białka jaj",
+              "białka jajek"
+            ]
+          },
+          {
+            "label": "pineapple",
+            "accepted_aliases": [
+              "pineapple",
+              "ananas"
+            ]
+          },
+          {
+            "label": "cantaloupe",
+            "accepted_aliases": [
+              "cantaloupe",
+              "melon kantalupa",
+              "melon"
+            ]
+          }
+        ],
+        "reviewer": null,
+        "reviewed_at": null
+      },
+      "approval_status": "HUMAN_REVIEW_PENDING",
+      "human_reference": null,
+      "provider_consent": null,
+      "nonsensitive_approval": null,
+      "privacy_observation": "No private persons/faces/GPS observed; public manufacturer addresses/credits are source data, not personal identity. Human nonsensitive confirmation pending.",
+      "mass_g": null,
+      "calories": null
+    },
+    {
+      "case_id": "n5-16",
+      "group": "mixed",
+      "image": "nutrition5k/dish_1565119669.png",
+      "image_sha256": "ef678a6638cc560bd174814a2dcbaaf1bd2af01ba467839dcda46f5fc20aae6d",
+      "decision": "UNRESOLVED",
+      "reason": "Rozbieżność wizualna/source: żółte kawałki wyglądają jak letnia dynia; source chayote nie ma jednoznacznego locatora. Wstrzymane do wyjaśnienia źródła lub wymiany, bez uznania ogólnego squash za wszystkie komponenty.",
+      "visible_observation": "Ciemne liście z czerwonymi łodygami oraz zielone i żółte dyniowate; chayote nie da się wiarygodnie przypisać.",
+      "photo_source": {
+        "url": "https://storage.googleapis.com/nutrition5k_dataset/nutrition5k_dataset/imagery/realsense_overhead/dish_1565119669/rgb.png",
+        "license": "CC BY 4.0",
+        "attribution": "Nutrition5k — Thames, Karpur, Norris, Xia, Panait, Weyand, Sim; CVPR 2021; CC BY 4.0; unchanged RGB",
+        "evidence": "nutrition5k/images.json",
+        "license_url": "https://creativecommons.org/licenses/by/4.0/"
+      },
+      "reference_source": {
+        "evidence": "nutrition5k/annotations.json",
+        "locator": "dish_1565119669",
+        "record_sha256": "d1a03639816cb983716464106c2a5aaed03bb143efc729365270e4d8253a02c4",
+        "kind": "original_dataset_annotation",
+        "url": "https://storage.googleapis.com/nutrition5k_dataset/nutrition5k_dataset/metadata/dish_metadata_cafe1.csv"
+      },
+      "uncertainties": [
+        "Rozbieżność wizualna/source: żółte kawałki wyglądają jak letnia dynia; source chayote nie ma jednoznacznego locatora. Wstrzymane do wyjaśnienia źródła lub wymiany, bez uznania ogólnego squash za wszystkie komponenty."
+      ],
+      "proposal": {
+        "origin": "LLM_PROPOSAL_NOT_HUMAN_APPROVAL",
+        "readable": true,
+        "criterion": "All main components require exact NFKC/casefold/whitespace alias matches. Extra components do not affect this oracle and require manual review. No mass/kcal judgement.",
+        "main_components": [
+          {
+            "label": "kale",
+            "accepted_aliases": [
+              "kale",
+              "jarmuż"
+            ]
+          },
+          {
+            "label": "zucchini",
+            "accepted_aliases": [
+              "zucchini",
+              "cukinia"
+            ]
+          },
+          {
+            "label": "chard",
+            "accepted_aliases": [
+              "chard",
+              "boćwina"
+            ]
+          },
+          {
+            "label": "chayote squash",
+            "accepted_aliases": [
+              "chayote squash",
+              "kolczoch"
+            ]
+          }
+        ],
+        "reviewer": null,
+        "reviewed_at": null
+      },
+      "approval_status": "HUMAN_REVIEW_PENDING",
+      "human_reference": null,
+      "provider_consent": null,
+      "nonsensitive_approval": null,
+      "privacy_observation": "No private persons/faces/GPS observed; public manufacturer addresses/credits are source data, not personal identity. Human nonsensitive confirmation pending.",
+      "mass_g": null,
+      "calories": null
+    },
+    {
+      "case_id": "commons-01",
+      "group": "rations",
+      "image": "commons/commons-01.jpg",
+      "image_sha256": "79202ff7beb81b9774020324401ff72ef61bd5faed6c2469b2da90d9824fd68a",
+      "decision": "PROPOSED",
+      "reason": "Opakowania/etykiety, nie otwarta porcja. Pomijamy akcesoria i małe przyprawy. Podpis źródła potwierdza menu 10; rocznik/menu nie mapuje się do MRE2026. Autor wcześniej kadrował; bez nowej lokalnej edycji.",
+      "visible_observation": "Opakowania/etykiety, nie otwarta porcja. Pomijamy akcesoria i małe przyprawy. Podpis źródła potwierdza menu 10; rocznik/menu nie mapuje się do MRE2026. Autor wcześniej kadrował; bez nowej lokalnej edycji.",
+      "photo_source": {
+        "url": "https://commons.wikimedia.org/wiki/File:MRE_contents.jpg",
+        "license": "CC BY-SA 3.0",
+        "attribution": "Christopherlin",
+        "evidence": "commons/commons-01-source.json",
+        "license_url": "http://creativecommons.org/licenses/by-sa/3.0/",
+        "variant": "Commons server thumbnail requested width=1280"
+      },
+      "reference_source": {
+        "evidence": "commons/index.json",
+        "locator": "commons-01",
+        "kind": "visible_label_and_source_description",
+        "url": "https://commons.wikimedia.org/wiki/File:MRE_contents.jpg"
+      },
+      "uncertainties": [
+        "Opakowania/etykiety, nie otwarta porcja. Pomijamy akcesoria i małe przyprawy. Podpis źródła potwierdza menu 10; rocznik/menu nie mapuje się do MRE2026. Autor wcześniej kadrował; bez nowej lokalnej edycji."
+      ],
+      "proposal": {
+        "origin": "LLM_PROPOSAL_NOT_HUMAN_APPROVAL",
+        "readable": true,
+        "criterion": "All main components require exact NFKC/casefold/whitespace alias matches. Extra components do not affect this oracle and require manual review. No mass/kcal judgement.",
+        "main_components": [
+          {
+            "label": "chili and macaroni",
+            "accepted_aliases": [
+              "chili and macaroni",
+              "chili z makaronem"
+            ]
+          },
+          {
+            "label": "wheat snack bread",
+            "accepted_aliases": [
+              "wheat snack bread",
+              "pszenne pieczywo przekąskowe"
+            ]
+          },
+          {
+            "label": "molasses cookie",
+            "accepted_aliases": [
+              "molasses cookie",
+              "ciastko z melasą"
+            ]
+          },
+          {
+            "label": "cheese spread with jalapenos",
+            "accepted_aliases": [
+              "cheese spread with jalapenos",
+              "ser do smarowania z jalapeno"
+            ]
+          },
+          {
+            "label": "Tootsie rolls",
+            "accepted_aliases": [
+              "Tootsie rolls",
+              "tootsie roll"
+            ]
+          },
+          {
+            "label": "cocoa beverage powder",
+            "accepted_aliases": [
+              "cocoa beverage powder",
+              "proszek kakaowy do napoju"
+            ]
+          },
+          {
+            "label": "coffee",
+            "accepted_aliases": [
+              "coffee",
+              "kawa"
+            ]
+          }
+        ],
+        "reviewer": null,
+        "reviewed_at": null
+      },
+      "approval_status": "HUMAN_REVIEW_PENDING",
+      "human_reference": null,
+      "provider_consent": null,
+      "nonsensitive_approval": null,
+      "privacy_observation": "No private persons/faces/GPS observed; public manufacturer addresses/credits are source data, not personal identity. Human nonsensitive confirmation pending.",
+      "mass_g": null,
+      "calories": null
+    },
+    {
+      "case_id": "commons-02",
+      "group": "rations",
+      "image": "commons/commons-02.jpg",
+      "image_sha256": "a8d8cbe5c8dafd62d76cf02ed26fe39f6ddb118faaefa1e3fbdec31c9fcc3b84",
+      "decision": "PROPOSED",
+      "reason": "Wszystkie główne etykiety widoczne. Opakowania, bez założenia zjedzenia zawartości; bez wartości odżywczych porcji.",
+      "visible_observation": "Wszystkie główne etykiety widoczne. Opakowania, bez założenia zjedzenia zawartości; bez wartości odżywczych porcji.",
+      "photo_source": {
+        "url": "https://commons.wikimedia.org/wiki/File:MRE_Menu_2_P8152664.jpg",
+        "license": "CC BY-SA 4.0",
+        "attribution": "Ashley Pomeroy",
+        "evidence": "commons/commons-02-source.json",
+        "license_url": "https://creativecommons.org/licenses/by-sa/4.0",
+        "variant": "Commons server thumbnail requested width=1280"
+      },
+      "reference_source": {
+        "evidence": "commons/index.json",
+        "locator": "commons-02",
+        "kind": "visible_label_and_source_description",
+        "url": "https://commons.wikimedia.org/wiki/File:MRE_Menu_2_P8152664.jpg"
+      },
+      "uncertainties": [
+        "Wszystkie główne etykiety widoczne. Opakowania, bez założenia zjedzenia zawartości; bez wartości odżywczych porcji."
+      ],
+      "proposal": {
+        "origin": "LLM_PROPOSAL_NOT_HUMAN_APPROVAL",
+        "readable": true,
+        "criterion": "All main components require exact NFKC/casefold/whitespace alias matches. Extra components do not affect this oracle and require manual review. No mass/kcal judgement.",
+        "main_components": [
+          {
+            "label": "shredded beef in barbecue sauce",
+            "accepted_aliases": [
+              "shredded beef in barbecue sauce",
+              "szarpana wołowina w sosie barbecue"
+            ]
+          },
+          {
+            "label": "plain tortillas",
+            "accepted_aliases": [
+              "plain tortillas",
+              "tortille pszenne"
+            ]
+          },
+          {
+            "label": "tropical punch beverage",
+            "accepted_aliases": [
+              "tropical punch beverage",
+              "napój tropical punch"
+            ]
+          },
+          {
+            "label": "oatmeal chocolate chunk cookie",
+            "accepted_aliases": [
+              "oatmeal chocolate chunk cookie",
+              "ciastko owsiane z kawałkami czekolady"
+            ]
+          },
+          {
+            "label": "cheese spread with jalapenos",
+            "accepted_aliases": [
+              "cheese spread with jalapenos",
+              "ser do smarowania z jalapeno"
+            ]
+          },
+          {
+            "label": "barbecue sauce",
+            "accepted_aliases": [
+              "barbecue sauce",
+              "sos barbecue"
+            ]
+          }
+        ],
+        "reviewer": null,
+        "reviewed_at": null
+      },
+      "approval_status": "HUMAN_REVIEW_PENDING",
+      "human_reference": null,
+      "provider_consent": null,
+      "nonsensitive_approval": null,
+      "privacy_observation": "No private persons/faces/GPS observed; public manufacturer addresses/credits are source data, not personal identity. Human nonsensitive confirmation pending.",
+      "mass_g": null,
+      "calories": null
+    },
+    {
+      "case_id": "commons-03",
+      "group": "rations",
+      "image": "commons/commons-03.jpg",
+      "image_sha256": "47dbc7329b466bec26254461017b0e957316a15605d54e2bfdc98d7533b6492d",
+      "decision": "REJECTED",
+      "reason": "Odrzucone: nazwa chicken tetrazzini pochodzi z podpisu; jednolity blok nie pozwala ustalić głównych składników i brak konkretnej receptury/etykiety porcji.",
+      "visible_observation": "Odrzucone: nazwa chicken tetrazzini pochodzi z podpisu; jednolity blok nie pozwala ustalić głównych składników i brak konkretnej receptury/etykiety porcji.",
+      "photo_source": {
+        "url": "https://commons.wikimedia.org/wiki/File:MRE_Chicken_Tetrizzini.jpg",
+        "license": "CC BY 2.0",
+        "attribution": "Infrogmation of New Orleans",
+        "evidence": "commons/commons-03-source.json",
+        "license_url": "https://creativecommons.org/licenses/by/2.0",
+        "variant": "Commons server thumbnail requested width=1280"
+      },
+      "reference_source": {
+        "evidence": "commons/index.json",
+        "locator": "commons-03",
+        "kind": "visible_label_and_source_description",
+        "url": "https://commons.wikimedia.org/wiki/File:MRE_Chicken_Tetrizzini.jpg"
+      },
+      "uncertainties": [
+        "Odrzucone: nazwa chicken tetrazzini pochodzi z podpisu; jednolity blok nie pozwala ustalić głównych składników i brak konkretnej receptury/etykiety porcji."
+      ],
+      "proposal": {
+        "origin": "LLM_PROPOSAL_NOT_HUMAN_APPROVAL",
+        "readable": null,
+        "criterion": "All main components require exact NFKC/casefold/whitespace alias matches. Extra components do not affect this oracle and require manual review. No mass/kcal judgement.",
+        "main_components": [],
+        "reviewer": null,
+        "reviewed_at": null
+      },
+      "approval_status": "HUMAN_REVIEW_PENDING",
+      "human_reference": null,
+      "provider_consent": null,
+      "nonsensitive_approval": null,
+      "privacy_observation": "No private persons/faces/GPS observed; public manufacturer addresses/credits are source data, not personal identity. Human nonsensitive confirmation pending.",
+      "mass_g": null,
+      "calories": null
+    },
+    {
+      "case_id": "commons-05",
+      "group": "rations",
+      "image": "commons/commons-05.jpg",
+      "image_sha256": "bbef39fa3c5c3c7c6b656fd1035789e2f7f6e78ed1c4ae8fda2ae49b1b15f07b",
+      "decision": "PROPOSED",
+      "reason": "Czytelna etykieta produktu; długopis jest skalą, nie składnikiem. Dane dodatków/masy z opakowania nie stają się oczekiwaną wizualną listą.",
+      "visible_observation": "Czytelna etykieta produktu; długopis jest skalą, nie składnikiem. Dane dodatków/masy z opakowania nie stają się oczekiwaną wizualną listą.",
+      "photo_source": {
+        "url": "https://commons.wikimedia.org/wiki/File:MRE_BEVERAGE_POWDER_2018.jpg",
+        "license": "CC BY-SA 4.0",
+        "attribution": "Lettuce in the Lattice",
+        "evidence": "commons/commons-05-source.json",
+        "license_url": "https://creativecommons.org/licenses/by-sa/4.0",
+        "variant": "Commons server thumbnail requested width=1280"
+      },
+      "reference_source": {
+        "evidence": "commons/index.json",
+        "locator": "commons-05",
+        "kind": "visible_label_and_source_description",
+        "url": "https://commons.wikimedia.org/wiki/File:MRE_BEVERAGE_POWDER_2018.jpg"
+      },
+      "uncertainties": [
+        "Czytelna etykieta produktu; długopis jest skalą, nie składnikiem. Dane dodatków/masy z opakowania nie stają się oczekiwaną wizualną listą."
+      ],
+      "proposal": {
+        "origin": "LLM_PROPOSAL_NOT_HUMAN_APPROVAL",
+        "readable": true,
+        "criterion": "All main components require exact NFKC/casefold/whitespace alias matches. Extra components do not affect this oracle and require manual review. No mass/kcal judgement.",
+        "main_components": [
+          {
+            "label": "sugar-free lemonade beverage powder",
+            "accepted_aliases": [
+              "sugar-free lemonade beverage powder",
+              "beverage base lemonade sugar free",
+              "bez cukru proszek do lemoniady"
+            ]
+          }
+        ],
+        "reviewer": null,
+        "reviewed_at": null
+      },
+      "approval_status": "HUMAN_REVIEW_PENDING",
+      "human_reference": null,
+      "provider_consent": null,
+      "nonsensitive_approval": null,
+      "privacy_observation": "No private persons/faces/GPS observed; public manufacturer addresses/credits are source data, not personal identity. Human nonsensitive confirmation pending.",
+      "mass_g": null,
+      "calories": null
+    },
+    {
+      "case_id": "commons-07",
+      "group": "rations",
+      "image": "commons/commons-07.png",
+      "image_sha256": "1911657595e466a0974c6054c0fbf50fda87e625912e00b0d4b42348ac4f777e",
+      "decision": "REJECTED",
+      "reason": "Odrzucone: oprócz jambalaya widoczne dodatki, napoje i przekąski. Źródło nazywa tylko menu; brak niezależnego przypisania całej głównej zawartości. Sam jambalaya zaniżałby trudność.",
+      "visible_observation": "Odrzucone: oprócz jambalaya widoczne dodatki, napoje i przekąski. Źródło nazywa tylko menu; brak niezależnego przypisania całej głównej zawartości. Sam jambalaya zaniżałby trudność.",
+      "photo_source": {
+        "url": "https://commons.wikimedia.org/wiki/File:MRE_Menu_22_JAMBALAYA20071124.PNG",
+        "license": "CC BY-SA 3.0",
+        "attribution": "Muttley",
+        "evidence": "commons/commons-07-source.json",
+        "license_url": "https://creativecommons.org/licenses/by-sa/3.0",
+        "variant": "original"
+      },
+      "reference_source": {
+        "evidence": "commons/index.json",
+        "locator": "commons-07",
+        "kind": "visible_label_and_source_description",
+        "url": "https://commons.wikimedia.org/wiki/File:MRE_Menu_22_JAMBALAYA20071124.PNG"
+      },
+      "uncertainties": [
+        "Odrzucone: oprócz jambalaya widoczne dodatki, napoje i przekąski. Źródło nazywa tylko menu; brak niezależnego przypisania całej głównej zawartości. Sam jambalaya zaniżałby trudność."
+      ],
+      "proposal": {
+        "origin": "LLM_PROPOSAL_NOT_HUMAN_APPROVAL",
+        "readable": null,
+        "criterion": "All main components require exact NFKC/casefold/whitespace alias matches. Extra components do not affect this oracle and require manual review. No mass/kcal judgement.",
+        "main_components": [],
+        "reviewer": null,
+        "reviewed_at": null
+      },
+      "approval_status": "HUMAN_REVIEW_PENDING",
+      "human_reference": null,
+      "provider_consent": null,
+      "nonsensitive_approval": null,
+      "privacy_observation": "No private persons/faces/GPS observed; public manufacturer addresses/credits are source data, not personal identity. Human nonsensitive confirmation pending.",
+      "mass_g": null,
+      "calories": null
+    },
+    {
+      "case_id": "commons-08",
+      "group": "rations",
+      "image": "commons/commons-08.jpg",
+      "image_sha256": "a467efb9bdb7913b7773b256559c2fe8d5d05e90d8f548f79fe1b3cbe5c75088",
+      "decision": "REJECTED",
+      "reason": "Odrzucone: etykieta kartonu 18 zestawów, bez widoku żywności lub pojedynczych opakowań. Nie jest zdjęciem konkretnej porcji; nie utożsamiamy treści listy z widocznymi składnikami.",
+      "visible_observation": "Odrzucone: etykieta kartonu 18 zestawów, bez widoku żywności lub pojedynczych opakowań. Nie jest zdjęciem konkretnej porcji; nie utożsamiamy treści listy z widocznymi składnikami.",
+      "photo_source": {
+        "url": "https://commons.wikimedia.org/wiki/File:FEMA_-_39888_-_Example_of_a_Meal_Ready_to_Eat,_or_MRE_Kit_that_contains_peanut_butter_packets..jpg",
+        "license": "Public domain",
+        "attribution": "FEMA News Photo",
+        "evidence": "commons/commons-08-source.json",
+        "license_url": null,
+        "variant": "original"
+      },
+      "reference_source": {
+        "evidence": "commons/index.json",
+        "locator": "commons-08",
+        "kind": "visible_label_and_source_description",
+        "url": "https://commons.wikimedia.org/wiki/File:FEMA_-_39888_-_Example_of_a_Meal_Ready_to_Eat,_or_MRE_Kit_that_contains_peanut_butter_packets..jpg"
+      },
+      "uncertainties": [
+        "Odrzucone: etykieta kartonu 18 zestawów, bez widoku żywności lub pojedynczych opakowań. Nie jest zdjęciem konkretnej porcji; nie utożsamiamy treści listy z widocznymi składnikami."
+      ],
+      "proposal": {
+        "origin": "LLM_PROPOSAL_NOT_HUMAN_APPROVAL",
+        "readable": null,
+        "criterion": "All main components require exact NFKC/casefold/whitespace alias matches. Extra components do not affect this oracle and require manual review. No mass/kcal judgement.",
+        "main_components": [],
+        "reviewer": null,
+        "reviewed_at": null
+      },
+      "approval_status": "HUMAN_REVIEW_PENDING",
+      "human_reference": null,
+      "provider_consent": null,
+      "nonsensitive_approval": null,
+      "privacy_observation": "No private persons/faces/GPS observed; public manufacturer addresses/credits are source data, not personal identity. Human nonsensitive confirmation pending.",
+      "mass_g": null,
+      "calories": null
+    },
+    {
+      "case_id": "commons-09",
+      "group": "rations",
+      "image": "commons/commons-09.jpg",
+      "image_sha256": "db05879b90577089613c38f1f26f5804c7cec5dbc8ec5e092a60e109d800aae4",
+      "decision": "PROPOSED",
+      "reason": "Dwa widoczne elementy, source title potwierdza makaron z czerwonym sosem i tortillę; nie dopisujemy mięsa lub konkretnej receptury sosu.",
+      "visible_observation": "Dwa widoczne elementy, source title potwierdza makaron z czerwonym sosem i tortillę; nie dopisujemy mięsa lub konkretnej receptury sosu.",
+      "photo_source": {
+        "url": "https://commons.wikimedia.org/wiki/File:Eating_at_MRE%27ils_-_2021_Edition_-_New_Orleans_after_Hurricane_Ida_-_pasta_with_red_sauce_and_tortilla.jpg",
+        "license": "CC BY 2.0",
+        "attribution": "Infrogmation of New Orleans",
+        "evidence": "commons/commons-09-source.json",
+        "license_url": "https://creativecommons.org/licenses/by/2.0",
+        "variant": "Commons server thumbnail requested width=1280"
+      },
+      "reference_source": {
+        "evidence": "commons/index.json",
+        "locator": "commons-09",
+        "kind": "visible_label_and_source_description",
+        "url": "https://commons.wikimedia.org/wiki/File:Eating_at_MRE%27ils_-_2021_Edition_-_New_Orleans_after_Hurricane_Ida_-_pasta_with_red_sauce_and_tortilla.jpg"
+      },
+      "uncertainties": [
+        "Dwa widoczne elementy, source title potwierdza makaron z czerwonym sosem i tortillę; nie dopisujemy mięsa lub konkretnej receptury sosu."
+      ],
+      "proposal": {
+        "origin": "LLM_PROPOSAL_NOT_HUMAN_APPROVAL",
+        "readable": true,
+        "criterion": "All main components require exact NFKC/casefold/whitespace alias matches. Extra components do not affect this oracle and require manual review. No mass/kcal judgement.",
+        "main_components": [
+          {
+            "label": "pasta with red sauce",
+            "accepted_aliases": [
+              "pasta with red sauce",
+              "makaron z czerwonym sosem"
+            ]
+          },
+          {
+            "label": "tortilla",
+            "accepted_aliases": [
+              "tortilla",
+              "tortille"
+            ]
+          }
+        ],
+        "reviewer": null,
+        "reviewed_at": null
+      },
+      "approval_status": "HUMAN_REVIEW_PENDING",
+      "human_reference": null,
+      "provider_consent": null,
+      "nonsensitive_approval": null,
+      "privacy_observation": "No private persons/faces/GPS observed; public manufacturer addresses/credits are source data, not personal identity. Human nonsensitive confirmation pending.",
+      "mass_g": null,
+      "calories": null
+    },
+    {
+      "case_id": "commons-10",
+      "group": "rations",
+      "image": "commons/commons-10.jpg",
+      "image_sha256": "1a07196c6de6de158cff4ff65e00abb3f5c33dff1223364257d72633ef8d517d",
+      "decision": "PROPOSED",
+      "reason": "Pięć osobnych przykładów owoców z czytelnymi etykietami. Referencja wieloobiektowego zdjęcia obejmuje wszystkie pięć, lecz nie tworzy jednej racji/porcji i nie sumuje mas ani makr.",
+      "visible_observation": "Pięć osobnych przykładów owoców z czytelnymi etykietami. Referencja wieloobiektowego zdjęcia obejmuje wszystkie pięć, lecz nie tworzy jednej racji/porcji i nie sumuje mas ani makr.",
+      "photo_source": {
+        "url": "https://commons.wikimedia.org/wiki/File:MRE_wetpack_fruits_-_commonwealth_x920gw36x.jpg",
+        "license": "Public domain",
+        "attribution": "U.S. Army Natick Soldier Systems Center",
+        "evidence": "commons/commons-10-source.json",
+        "license_url": null,
+        "variant": "Commons server thumbnail requested width=1280"
+      },
+      "reference_source": {
+        "evidence": "commons/index.json",
+        "locator": "commons-10",
+        "kind": "visible_label_and_source_description",
+        "url": "https://commons.wikimedia.org/wiki/File:MRE_wetpack_fruits_-_commonwealth_x920gw36x.jpg"
+      },
+      "uncertainties": [
+        "Pięć osobnych przykładów owoców z czytelnymi etykietami. Referencja wieloobiektowego zdjęcia obejmuje wszystkie pięć, lecz nie tworzy jednej racji/porcji i nie sumuje mas ani makr."
+      ],
+      "proposal": {
+        "origin": "LLM_PROPOSAL_NOT_HUMAN_APPROVAL",
+        "readable": true,
+        "criterion": "All main components require exact NFKC/casefold/whitespace alias matches. Extra components do not affect this oracle and require manual review. No mass/kcal judgement.",
+        "main_components": [
+          {
+            "label": "peaches",
+            "accepted_aliases": [
+              "peaches",
+              "brzoskwinie"
+            ]
+          },
+          {
+            "label": "pineapple",
+            "accepted_aliases": [
+              "pineapple",
+              "ananas"
+            ]
+          },
+          {
+            "label": "pears",
+            "accepted_aliases": [
+              "pears",
+              "gruszki"
+            ]
+          },
+          {
+            "label": "cherries",
+            "accepted_aliases": [
+              "cherries",
+              "wiśnie",
+              "czereśnie"
+            ]
+          },
+          {
+            "label": "fruit cocktail",
+            "accepted_aliases": [
+              "fruit cocktail",
+              "mieszanka owocowa"
+            ]
+          }
+        ],
+        "reviewer": null,
+        "reviewed_at": null
+      },
+      "approval_status": "HUMAN_REVIEW_PENDING",
+      "human_reference": null,
+      "provider_consent": null,
+      "nonsensitive_approval": null,
+      "privacy_observation": "No private persons/faces/GPS observed; public manufacturer addresses/credits are source data, not personal identity. Human nonsensitive confirmation pending.",
+      "mass_g": null,
+      "calories": null
+    },
+    {
+      "case_id": "commons-15",
+      "group": "unreadable",
+      "image": "commons/commons-15.jpg",
+      "image_sha256": "0b701eab280f8f532c2ee490a3a4c17e6c52ed641e7d16e4e048af8007f2c8ed",
+      "decision": "PROPOSED",
+      "reason": "Związana paczka w liściu; jedzenie niewidoczne. Source opisuje realne tradycyjne jedzenie; brak referencji do domyślnej zawartości.",
+      "visible_observation": "Związana paczka w liściu; jedzenie niewidoczne. Source opisuje realne tradycyjne jedzenie; brak referencji do domyślnej zawartości.",
+      "photo_source": {
+        "url": "https://commons.wikimedia.org/wiki/File:Banana_leaf_wrap.jpg",
+        "license": "CC BY-SA 4.0",
+        "attribution": "Sauvemel73",
+        "evidence": "commons/covered-sources.json",
+        "license_url": "https://creativecommons.org/licenses/by-sa/4.0",
+        "variant": "original"
+      },
+      "reference_source": {
+        "evidence": "commons/index.json",
+        "locator": "commons-15",
+        "kind": "visible_label_and_source_description",
+        "url": "https://commons.wikimedia.org/wiki/File:Banana_leaf_wrap.jpg"
+      },
+      "uncertainties": [
+        "Związana paczka w liściu; jedzenie niewidoczne. Source opisuje realne tradycyjne jedzenie; brak referencji do domyślnej zawartości."
+      ],
+      "proposal": {
+        "origin": "LLM_PROPOSAL_NOT_HUMAN_APPROVAL",
+        "readable": false,
+        "criterion": "All main components require exact NFKC/casefold/whitespace alias matches. Extra components do not affect this oracle and require manual review. No mass/kcal judgement.",
+        "main_components": [],
+        "reviewer": null,
+        "reviewed_at": null
+      },
+      "approval_status": "HUMAN_REVIEW_PENDING",
+      "human_reference": null,
+      "provider_consent": null,
+      "nonsensitive_approval": null,
+      "privacy_observation": "No private persons/faces/GPS observed; public manufacturer addresses/credits are source data, not personal identity. Human nonsensitive confirmation pending.",
+      "mass_g": null,
+      "calories": null
+    },
+    {
+      "case_id": "commons-16",
+      "group": "unreadable",
+      "image": "commons/commons-16.jpg",
+      "image_sha256": "fb02516f78bbb66a307b815c4701950b9abd6ba6851fdcc5c7af6075f6b178b8",
+      "decision": "PROPOSED",
+      "reason": "Paczki w naczyniach i na macie, widoczne wyłącznie liście. Source opisuje przygotowanie potraw; brak składników na podstawie tradycji.",
+      "visible_observation": "Paczki w naczyniach i na macie, widoczne wyłącznie liście. Source opisuje przygotowanie potraw; brak składników na podstawie tradycji.",
+      "photo_source": {
+        "url": "https://commons.wikimedia.org/wiki/File:Cooking_the_Traditional_Way.jpg",
+        "license": "CC BY 4.0",
+        "attribution": "Lillylove256",
+        "evidence": "commons/covered-sources.json",
+        "license_url": "https://creativecommons.org/licenses/by/4.0",
+        "variant": "original"
+      },
+      "reference_source": {
+        "evidence": "commons/index.json",
+        "locator": "commons-16",
+        "kind": "visible_label_and_source_description",
+        "url": "https://commons.wikimedia.org/wiki/File:Cooking_the_Traditional_Way.jpg"
+      },
+      "uncertainties": [
+        "Paczki w naczyniach i na macie, widoczne wyłącznie liście. Source opisuje przygotowanie potraw; brak składników na podstawie tradycji."
+      ],
+      "proposal": {
+        "origin": "LLM_PROPOSAL_NOT_HUMAN_APPROVAL",
+        "readable": false,
+        "criterion": "All main components require exact NFKC/casefold/whitespace alias matches. Extra components do not affect this oracle and require manual review. No mass/kcal judgement.",
+        "main_components": [],
+        "reviewer": null,
+        "reviewed_at": null
+      },
+      "approval_status": "HUMAN_REVIEW_PENDING",
+      "human_reference": null,
+      "provider_consent": null,
+      "nonsensitive_approval": null,
+      "privacy_observation": "No private persons/faces/GPS observed; public manufacturer addresses/credits are source data, not personal identity. Human nonsensitive confirmation pending.",
+      "mass_g": null,
+      "calories": null
+    },
+    {
+      "case_id": "commons-17",
+      "group": "unreadable",
+      "image": "commons/commons-17.jpg",
+      "image_sha256": "c71d54f181a8b6f311f337a2e2f23d3548544926a557c9412f8ceb3273049b9c",
+      "decision": "PROPOSED",
+      "reason": "Zamknięte pakunki botok; source typowa receptura nie ustala widocznych składników. Nie przypisujemy kokosa/ryby.",
+      "visible_observation": "Zamknięte pakunki botok; source typowa receptura nie ustala widocznych składników. Nie przypisujemy kokosa/ryby.",
+      "photo_source": {
+        "url": "https://commons.wikimedia.org/wiki/File:Botok,_wrapped_in_banana_leaf.jpg",
+        "license": "CC BY-SA 4.0",
+        "attribution": "Naval Scene",
+        "evidence": "commons/covered-sources.json",
+        "license_url": "https://creativecommons.org/licenses/by-sa/4.0",
+        "variant": "Commons server thumbnail requested width=960"
+      },
+      "reference_source": {
+        "evidence": "commons/index.json",
+        "locator": "commons-17",
+        "kind": "visible_label_and_source_description",
+        "url": "https://commons.wikimedia.org/wiki/File:Botok,_wrapped_in_banana_leaf.jpg"
+      },
+      "uncertainties": [
+        "Zamknięte pakunki botok; source typowa receptura nie ustala widocznych składników. Nie przypisujemy kokosa/ryby."
+      ],
+      "proposal": {
+        "origin": "LLM_PROPOSAL_NOT_HUMAN_APPROVAL",
+        "readable": false,
+        "criterion": "All main components require exact NFKC/casefold/whitespace alias matches. Extra components do not affect this oracle and require manual review. No mass/kcal judgement.",
+        "main_components": [],
+        "reviewer": null,
+        "reviewed_at": null
+      },
+      "approval_status": "HUMAN_REVIEW_PENDING",
+      "human_reference": null,
+      "provider_consent": null,
+      "nonsensitive_approval": null,
+      "privacy_observation": "No private persons/faces/GPS observed; public manufacturer addresses/credits are source data, not personal identity. Human nonsensitive confirmation pending.",
+      "mass_g": null,
+      "calories": null
+    },
+    {
+      "case_id": "commons-18",
+      "group": "unreadable",
+      "image": "commons/commons-18.jpg",
+      "image_sha256": "d84db46017fee481d790f813c16a3fc5c5f649cdda8b5b80115d9041f62f3293",
+      "decision": "PROPOSED",
+      "reason": "Zawiązane liście; ser nie jest widoczny. Nazwa źródła nie czyni zdjęcia czytelnym.",
+      "visible_observation": "Zawiązane liście; ser nie jest widoczny. Nazwa źródła nie czyni zdjęcia czytelnym.",
+      "photo_source": {
+        "url": "https://commons.wikimedia.org/wiki/File:Kesong_Puti_(unopened)_from_Laguna,_Feb_2024.jpg",
+        "license": "CC BY-SA 4.0",
+        "attribution": "Ralff Nestor Nacor",
+        "evidence": "commons/covered-sources.json",
+        "license_url": "https://creativecommons.org/licenses/by-sa/4.0",
+        "variant": "Commons server thumbnail requested width=960"
+      },
+      "reference_source": {
+        "evidence": "commons/index.json",
+        "locator": "commons-18",
+        "kind": "visible_label_and_source_description",
+        "url": "https://commons.wikimedia.org/wiki/File:Kesong_Puti_(unopened)_from_Laguna,_Feb_2024.jpg"
+      },
+      "uncertainties": [
+        "Zawiązane liście; ser nie jest widoczny. Nazwa źródła nie czyni zdjęcia czytelnym."
+      ],
+      "proposal": {
+        "origin": "LLM_PROPOSAL_NOT_HUMAN_APPROVAL",
+        "readable": false,
+        "criterion": "All main components require exact NFKC/casefold/whitespace alias matches. Extra components do not affect this oracle and require manual review. No mass/kcal judgement.",
+        "main_components": [],
+        "reviewer": null,
+        "reviewed_at": null
+      },
+      "approval_status": "HUMAN_REVIEW_PENDING",
+      "human_reference": null,
+      "provider_consent": null,
+      "nonsensitive_approval": null,
+      "privacy_observation": "No private persons/faces/GPS observed; public manufacturer addresses/credits are source data, not personal identity. Human nonsensitive confirmation pending.",
+      "mass_g": null,
+      "calories": null
+    },
+    {
+      "case_id": "commons-04",
+      "group": "rations",
+      "image": "commons/commons-04.jpg",
+      "image_sha256": "1508bb656a1b17c569aa3b9250d681b8695f996a63c2100bd9e48e15af3c4727",
+      "decision": "PROPOSED",
+      "reason": "Widoczne ziarna ryżu, brązowy ryż potwierdza opis autora. Bez identyfikacji wariantu menu, marki lub rocznika.",
+      "visible_observation": "Widoczne ziarna ryżu, brązowy ryż potwierdza opis autora. Bez identyfikacji wariantu menu, marki lub rocznika.",
+      "photo_source": {
+        "url": "https://commons.wikimedia.org/wiki/File:MRE_Brick_of_Rice.jpg",
+        "license": "CC BY 2.0",
+        "attribution": "Infrogmation of New Orleans",
+        "evidence": "commons/covered-sources.json",
+        "license_url": "https://creativecommons.org/licenses/by/2.0",
+        "variant": "Commons server thumbnail requested width=960"
+      },
+      "reference_source": {
+        "evidence": "commons/index.json",
+        "locator": "commons-04",
+        "kind": "visible_label_and_source_description",
+        "url": "https://commons.wikimedia.org/wiki/File:MRE_Brick_of_Rice.jpg"
+      },
+      "uncertainties": [
+        "Widoczne ziarna ryżu, brązowy ryż potwierdza opis autora. Bez identyfikacji wariantu menu, marki lub rocznika."
+      ],
+      "proposal": {
+        "origin": "LLM_PROPOSAL_NOT_HUMAN_APPROVAL",
+        "readable": true,
+        "criterion": "All main components require exact NFKC/casefold/whitespace alias matches. Extra components do not affect this oracle and require manual review. No mass/kcal judgement.",
+        "main_components": [
+          {
+            "label": "brown rice",
+            "accepted_aliases": [
+              "brown rice",
+              "brązowy ryż"
+            ]
+          }
+        ],
+        "reviewer": null,
+        "reviewed_at": null
+      },
+      "approval_status": "HUMAN_REVIEW_PENDING",
+      "human_reference": null,
+      "provider_consent": null,
+      "nonsensitive_approval": null,
+      "privacy_observation": "No private persons/faces/GPS observed; public manufacturer addresses/credits are source data, not personal identity. Human nonsensitive confirmation pending.",
+      "mass_g": null,
+      "calories": null
+    },
+    {
+      "case_id": "commons-06",
+      "group": "rations",
+      "image": "commons/commons-06.jpg",
+      "image_sha256": "48a5c4976bde780909f4e55cb228d1f377f529b62685474d1752ff84f80ab128",
+      "decision": "PROPOSED",
+      "reason": "Etykieta granoli z mlekiem i borówkami czytelna; proponujemy złożony produkt, bez wymagania rozpoznania składników niewidocznych wewnątrz.",
+      "visible_observation": "Etykieta granoli z mlekiem i borówkami czytelna; proponujemy złożony produkt, bez wymagania rozpoznania składników niewidocznych wewnątrz.",
+      "photo_source": {
+        "url": "https://commons.wikimedia.org/wiki/File:MRE_GRANOLA_2017update.jpg",
+        "license": "CC BY-SA 4.0",
+        "attribution": "Lettuce in the Lattice",
+        "evidence": "commons/covered-sources.json",
+        "license_url": "https://creativecommons.org/licenses/by-sa/4.0",
+        "variant": "Commons server thumbnail requested width=960"
+      },
+      "reference_source": {
+        "evidence": "commons/index.json",
+        "locator": "commons-06",
+        "kind": "visible_label_and_source_description",
+        "url": "https://commons.wikimedia.org/wiki/File:MRE_GRANOLA_2017update.jpg"
+      },
+      "uncertainties": [
+        "Etykieta granoli z mlekiem i borówkami czytelna; proponujemy złożony produkt, bez wymagania rozpoznania składników niewidocznych wewnątrz."
+      ],
+      "proposal": {
+        "origin": "LLM_PROPOSAL_NOT_HUMAN_APPROVAL",
+        "readable": true,
+        "criterion": "All main components require exact NFKC/casefold/whitespace alias matches. Extra components do not affect this oracle and require manual review. No mass/kcal judgement.",
+        "main_components": [
+          {
+            "label": "granola with milk and blueberries",
+            "accepted_aliases": [
+              "granola with milk and blueberries",
+              "granola z mlekiem i borówkami"
+            ]
+          }
+        ],
+        "reviewer": null,
+        "reviewed_at": null
+      },
+      "approval_status": "HUMAN_REVIEW_PENDING",
+      "human_reference": null,
+      "provider_consent": null,
+      "nonsensitive_approval": null,
+      "privacy_observation": "No private persons/faces/GPS observed; public manufacturer addresses/credits are source data, not personal identity. Human nonsensitive confirmation pending.",
+      "mass_g": null,
+      "calories": null
+    },
+    {
+      "case_id": "commons-19",
+      "group": "rations",
+      "image": "commons/commons-19.jpg",
+      "image_sha256": "2e41417ef0984351ba6221b97dbf68632e49c471037c3db8ca687eca9216f7ba",
+      "decision": "PROPOSED",
+      "reason": "Czytelna etykieta peanut butter i dokładny opis FEMA39890; pojedynczy składnik racji. Proponowany zamiennik commons-08, bez rozpisywania niewidocznych dodatków.",
+      "visible_observation": "Srebrna saszetka z powtarzającą się czytelną nazwą PEANUT BUTTER.",
+      "photo_source": {
+        "url": "https://commons.wikimedia.org/wiki/File:FEMA_-_39890_-_Peanut_butter_packet_inside_a_MRE.jpg",
+        "license": "Public domain",
+        "attribution": "FEMA News Photo",
+        "evidence": "commons/replacement-source-evidence.json",
+        "license_url": null,
+        "variant": "original"
+      },
+      "reference_source": {
+        "evidence": "commons/replacement-source-evidence.json",
+        "locator": "File:FEMA - 39890 - Peanut butter packet inside a MRE.jpg",
+        "kind": "visible_label_and_source_description",
+        "url": "https://commons.wikimedia.org/wiki/File:FEMA_-_39890_-_Peanut_butter_packet_inside_a_MRE.jpg"
+      },
+      "uncertainties": [
+        "Historical ration component; no current menu/producer verification."
+      ],
+      "proposal": {
+        "origin": "LLM_PROPOSAL_NOT_HUMAN_APPROVAL",
+        "readable": true,
+        "criterion": "All main components require exact NFKC/casefold/whitespace alias matches. Extra components require manual review. No mass/kcal judgement.",
+        "main_components": [
+          {
+            "label": "peanut butter",
+            "accepted_aliases": [
+              "peanut butter",
+              "masło orzechowe",
+              "masło z orzeszków ziemnych"
+            ]
+          }
+        ],
+        "reviewer": null,
+        "reviewed_at": null
+      },
+      "approval_status": "HUMAN_REVIEW_PENDING",
+      "human_reference": null,
+      "provider_consent": null,
+      "nonsensitive_approval": null,
+      "privacy_observation": "No face/GPS observed. Hand visible in rejected commons-20; human nonsensitive approval pending.",
+      "mass_g": null,
+      "calories": null,
+      "replaces": "commons-08"
+    },
+    {
+      "case_id": "commons-20",
+      "group": "rations",
+      "image": "commons/commons-20.jpg",
+      "image_sha256": "ef54f970bb5a216fc0bbef5052a7a91a8863d8bdfd6d1ef31471da05a52186ff",
+      "decision": "REJECTED",
+      "reason": "Odrzucone: widok zamkniętego zestawu First Strike Ration z dłonią autora. Źródło wylicza typowe składniki, lecz żadnego nie widać ani nie ma etykiety konkretnego wariantu.",
+      "visible_observation": "Dłoń trzyma zamkniętą rację, bez widoku składników.",
+      "photo_source": {
+        "url": "https://commons.wikimedia.org/wiki/File:First_Strike_Ration.jpg",
+        "license": "Public domain",
+        "attribution": "Juan R. Meléndez Jr.",
+        "evidence": "commons/replacement-source-evidence.json",
+        "license_url": null,
+        "variant": "original"
+      },
+      "reference_source": {
+        "evidence": "commons/replacement-source-evidence.json",
+        "locator": "File:First Strike Ration.jpg",
+        "kind": "visible_label_and_source_description",
+        "url": "https://commons.wikimedia.org/wiki/File:First_Strike_Ration.jpg"
+      },
+      "uncertainties": [
+        "Odrzucone: widok zamkniętego zestawu First Strike Ration z dłonią autora. Źródło wylicza typowe składniki, lecz żadnego nie widać ani nie ma etykiety konkretnego wariantu."
+      ],
+      "proposal": {
+        "origin": "LLM_PROPOSAL_NOT_HUMAN_APPROVAL",
+        "readable": null,
+        "criterion": "All main components require exact NFKC/casefold/whitespace alias matches. Extra components require manual review. No mass/kcal judgement.",
+        "main_components": [],
+        "reviewer": null,
+        "reviewed_at": null
+      },
+      "approval_status": "HUMAN_REVIEW_PENDING",
+      "human_reference": null,
+      "provider_consent": null,
+      "nonsensitive_approval": null,
+      "privacy_observation": "No face/GPS observed. Hand visible in rejected commons-20; human nonsensitive approval pending.",
+      "mass_g": null,
+      "calories": null,
+      "replaces": null
+    },
+    {
+      "case_id": "n5-17",
+      "group": "mixed",
+      "image": "nutrition5k/dish_1572278972.png",
+      "image_sha256": "fe9b3e6c09097410322200fdc2d9ab53770541eb5edb4f520a1716a842ba1d7e",
+      "decision": "PROPOSED",
+      "reason": "Trzy wyraźne komponenty odpowiadają dokładnej anotacji tej porcji: boczek, jajecznica i gotowany szpinak.",
+      "visible_observation": "Długie paski boczku, żółta jajecznica i zielony gotowany szpinak są rozdzielone na talerzu.",
+      "photo_source": {
+        "url": "https://storage.googleapis.com/nutrition5k_dataset/nutrition5k_dataset/imagery/realsense_overhead/dish_1572278972/rgb.png",
+        "license": "CC BY 4.0",
+        "attribution": "Nutrition5k — Thames, Karpur, Norris, Xia, Panait, Weyand, Sim; CVPR 2021; CC BY 4.0; unchanged RGB",
+        "evidence": "nutrition5k/completion-image.json",
+        "license_url": "https://creativecommons.org/licenses/by/4.0/"
+      },
+      "reference_source": {
+        "evidence": "nutrition5k/completion-annotations.json",
+        "locator": "dish_1572278972",
+        "record_sha256": "49fa389afa89f4efd08ad81353088741abb23cd82facccd1a66a81d1740eb16d",
+        "kind": "original_dataset_annotation",
+        "url": "https://storage.googleapis.com/nutrition5k_dataset/nutrition5k_dataset/metadata/dish_metadata_cafe2.csv"
+      },
+      "uncertainties": [
+        "Cienie w części talerza, ale kształty i trzy komponenty czytelne. Źródłowe total macros cafe2 mają placeholder0; bez ich użycia w referencji."
+      ],
+      "proposal": {
+        "origin": "LLM_PROPOSAL_NOT_HUMAN_APPROVAL",
+        "readable": true,
+        "criterion": "All main components require exact NFKC/casefold/whitespace alias matches. Extra components do not affect this oracle and require manual review. No mass/kcal judgement.",
+        "main_components": [
+          {
+            "label": "bacon",
+            "accepted_aliases": [
+              "bacon",
+              "boczek"
+            ]
+          },
+          {
+            "label": "scrambled eggs",
+            "accepted_aliases": [
+              "scrambled eggs",
+              "jajecznica"
+            ]
+          },
+          {
+            "label": "cooked spinach",
+            "accepted_aliases": [
+              "cooked spinach",
+              "spinach",
+              "gotowany szpinak",
+              "szpinak"
+            ]
+          }
+        ],
+        "reviewer": null,
+        "reviewed_at": null
+      },
+      "approval_status": "HUMAN_REVIEW_PENDING",
+      "human_reference": null,
+      "provider_consent": null,
+      "nonsensitive_approval": null,
+      "privacy_observation": "No private persons/faces/GPS observed; public manufacturer addresses/credits are source data, not personal identity. Human nonsensitive confirmation pending.",
+      "mass_g": null,
+      "calories": null
+    },
+    {
+      "case_id": "commons-21",
+      "group": "rations",
+      "image": "commons/commons-21.jpg",
+      "image_sha256": "3029db56d8abcfc0a07bbacbb6c32902580132b6f7b5334878cf4e36fdefa7c4",
+      "decision": "PROPOSED",
+      "reason": "Widoczne sześć kawałków pieczywa. Tytuł źródła identyfikuje MRE pouched bread, opis wiąże fotografię z Natick. To oddzielne próbki/widoki; nie ustalamy wariantów ani nie sumujemy porcji.",
+      "visible_observation": "Sześć kawałków jasnego/brązowego pieczywa, część przekrojów widoczna.",
+      "photo_source": {
+        "url": "https://commons.wikimedia.org/wiki/File:MRE_pouched_bread_-_commonwealth_zk51xh600.jpg",
+        "license": "Public domain",
+        "attribution": "U.S. Army Natick Soldier Systems Center",
+        "evidence": "commons/completion-source-evidence.json",
+        "license_url": null,
+        "variant": "Commons server thumbnail 1280"
+      },
+      "reference_source": {
+        "evidence": "commons/completion-source-evidence.json",
+        "locator": "File:MRE pouched bread - commonwealth zk51xh600.jpg",
+        "kind": "visible_food_or_label_and_exact_source_title_description",
+        "url": "https://commons.wikimedia.org/wiki/File:MRE_pouched_bread_-_commonwealth_zk51xh600.jpg"
+      },
+      "uncertainties": [
+        "Widoczne sześć kawałków pieczywa. Tytuł źródła identyfikuje MRE pouched bread, opis wiąże fotografię z Natick. To oddzielne próbki/widoki; nie ustalamy wariantów ani nie sumujemy porcji."
+      ],
+      "proposal": {
+        "origin": "LLM_PROPOSAL_NOT_HUMAN_APPROVAL",
+        "readable": true,
+        "criterion": "All main components require exact NFKC/casefold/whitespace alias matches. Extra components require manual review. No mass/kcal judgement.",
+        "main_components": [
+          {
+            "label": "MRE pouched bread",
+            "accepted_aliases": [
+              "MRE pouched bread",
+              "bread",
+              "pieczywo",
+              "chleb"
+            ]
+          }
+        ],
+        "reviewer": null,
+        "reviewed_at": null
+      },
+      "approval_status": "HUMAN_REVIEW_PENDING",
+      "human_reference": null,
+      "provider_consent": null,
+      "nonsensitive_approval": null,
+      "privacy_observation": "No private face/person/GPS observed; public product label/author attribution only. Human nonsensitive approval pending.",
+      "mass_g": null,
+      "calories": null
+    },
+    {
+      "case_id": "commons-22",
+      "group": "rations",
+      "image": "commons/commons-22.jpg",
+      "image_sha256": "c00c81055eb0d9c8b1a4b86d670720fcb2098d387a6ad0d90a042ad25b8ccce0",
+      "decision": "PROPOSED",
+      "reason": "Czytelna etykieta Tabasco Pepper Sauce; opis autora wskazuje konkretną buteleczkę MRE z2001roku. Zawartość wyschnięta; identyfikujemy historyczny składnik/produkt z etykiety, bez udawania świeżej porcji.",
+      "visible_observation": "Mała buteleczka z czerwoną zakrętką i czytelną etykietą TABASCO PEPPER SAUCE; zaschnięte resztki wewnątrz.",
+      "photo_source": {
+        "url": "https://commons.wikimedia.org/wiki/File:MRE_Tabasco_Sauce_DSCF0043.jpg",
+        "license": "CC BY-SA 4.0",
+        "attribution": "<a href=\"//commons.wikimedia.org/wiki/User:Ashley_Pomeroy\" title=\"User:Ashley Pomeroy\">Ashley Pomeroy</a>",
+        "evidence": "commons/completion-source-evidence.json",
+        "license_url": "https://creativecommons.org/licenses/by-sa/4.0",
+        "variant": "original"
+      },
+      "reference_source": {
+        "evidence": "commons/completion-source-evidence.json",
+        "locator": "File:MRE Tabasco Sauce DSCF0043.jpg",
+        "kind": "visible_food_or_label_and_exact_source_title_description",
+        "url": "https://commons.wikimedia.org/wiki/File:MRE_Tabasco_Sauce_DSCF0043.jpg"
+      },
+      "uncertainties": [
+        "Czytelna etykieta Tabasco Pepper Sauce; opis autora wskazuje konkretną buteleczkę MRE z2001roku. Zawartość wyschnięta; identyfikujemy historyczny składnik/produkt z etykiety, bez udawania świeżej porcji."
+      ],
+      "proposal": {
+        "origin": "LLM_PROPOSAL_NOT_HUMAN_APPROVAL",
+        "readable": true,
+        "criterion": "All main components require exact NFKC/casefold/whitespace alias matches. Extra components require manual review. No mass/kcal judgement.",
+        "main_components": [
+          {
+            "label": "Tabasco pepper sauce",
+            "accepted_aliases": [
+              "Tabasco pepper sauce",
+              "Tabasco",
+              "hot pepper sauce",
+              "sos Tabasco",
+              "ostry sos paprykowy"
+            ]
+          }
+        ],
+        "reviewer": null,
+        "reviewed_at": null
+      },
+      "approval_status": "HUMAN_REVIEW_PENDING",
+      "human_reference": null,
+      "provider_consent": null,
+      "nonsensitive_approval": null,
+      "privacy_observation": "No private face/person/GPS observed; public product label/author attribution only. Human nonsensitive approval pending.",
+      "mass_g": null,
+      "calories": null
+    }
+  ],
+  "preparation_status": "CORPUS_PROPOSALS_COMPLETE_NOT_QUALIFIED"
+}

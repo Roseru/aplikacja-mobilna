@@ -74,9 +74,9 @@ class SessionSecurityTest {
     }
     private fun client(db: CalorieDatabase, vault: SessionVault, fixture: FixtureGateway, api: BootstrapGateway? = null,
         profiles: ProfileGateway? = null, snapshots: SnapshotGateway? = null, motivation: MotivationGateway? = null,
-        consents: RankingConsentGateway? = null) = SessionController(
+        consents: RankingConsentGateway? = null, ranking: RankingGateway? = null, nemesis: NemesisGateway? = null) = SessionController(
         db, vault, fixture, issuer, context.packageName, now = { fixture.time }, bootstrapGateway = api, profileGateway = profiles, snapshotGateway = snapshots,
-        snapshotProtocol = snapshots?.let { snapshotProtocol() }, motivationGateway = motivation, rankingConsentGateway = consents)
+        snapshotProtocol = snapshots?.let { snapshotProtocol() }, motivationGateway = motivation, rankingConsentGateway = consents, rankingGateway = ranking, nemesisGateway = nemesis)
     private suspend fun login(client: SessionController, fixture: FixtureGateway, subject: String) {
         fixture.subject = subject
         assertNotNull(client.beginLogin())
@@ -1109,6 +1109,284 @@ class SessionSecurityTest {
             api.hold = null; controller.bootstrap()
             assertEquals(listOf(key, key), api.calls.map { it.key }); assertTrue(controller.view.value.serverLinked)
         } finally { api.hold?.complete(Unit); vault.clear(); db.close() }
+    }
+    private val rankingToken = "rk1." + "A".repeat(43)
+    private fun rankingAnswer(time: Long, more: Boolean = false): BootstrapHttpResult {
+        val now = java.time.Instant.ofEpochMilli(time)
+        val rows = JSONArray((0 until if (more) 25 else 3).map { index -> JSONObject().put("position", if (index < 2 || more) 1 else 3)
+            .put("pseudonym", "Ranking-fixture").put("points", if (index < 2 || more) 10 else 8).put("rank", "Rekrut").put("active_badges", 2) })
+        return BootstrapHttpResult(200, JSONObject().put("rule_version", "regularity_v1").put("pagination", "live_keyset_v1")
+            .put("as_of", now.toString()).put("items", rows).put("has_more", more).put("next_page_token", if (more) rankingToken else JSONObject.NULL)
+            .put("cursor_expires_at", if (more) now.plusSeconds(600).toString() else JSONObject.NULL).toString().toByteArray())
+    }
+    private class RankingFixture(var answer: (Int, RankingQuery) -> BootstrapHttpResult) : RankingGateway {
+        val calls = mutableListOf<Pair<ApiSession, RankingQuery>>()
+        var hold: CompletableDeferred<Unit>? = null
+        var before: suspend () -> Unit = {}
+        val started = CompletableDeferred<Unit>()
+        override suspend fun get(session: ApiSession, query: RankingQuery, beforeSend: suspend () -> Unit): BootstrapHttpResult {
+            before(); beforeSend(); calls.add(session to query); started.complete(Unit); hold?.await()
+            return answer(calls.size, query)
+        }
+    }
+    @Test fun rankingIsExplicitPreservesDuplicatesAndNeverPersistsPeersOrCursors() = runBlocking<Unit> {
+        val db = memory(); val vault = SessionVault(context, name()); val fixture = FixtureGateway(); val api = ApiFixture(); val motivation = MotivationFixture()
+        val ranking = RankingFixture { _, q -> rankingAnswer(fixture.time, q.pageToken == null) }
+        try {
+            val c = client(db, vault, fixture, api, motivation = motivation, ranking = ranking); c.start(); c.readRanking(); assertTrue(ranking.calls.isEmpty())
+            login(c, fixture, "fixture-A"); c.readRanking(); assertTrue(ranking.calls.isEmpty()); c.bootstrap()
+            val lease = c.view.value.binding!!.lease; val queue = db.dao().operationCount(lease.storageScope); val binding = db.bootstrapDao().binding(lease.storageScope)
+            c.readRanking(); val first = (c.view.value.ranking as RankingState.Ready).page
+            assertEquals(25, first.items.size); assertEquals(1, motivation.calls.size); assertEquals(1, ranking.calls.size)
+            c.nextRankingPage(); val next = (c.view.value.ranking as RankingState.Ready).page
+            assertEquals(listOf(1L, 1L, 3L), next.items.map { it.position }); assertEquals(3, next.items.size)
+            assertEquals(rankingToken, ranking.calls.last().second.pageToken); assertEquals(2, motivation.calls.size)
+            assertEquals(binding, db.bootstrapDao().binding(lease.storageScope)); assertEquals(queue, db.dao().operationCount(lease.storageScope))
+            assertFalse(vault.read().toString().contains("Ranking-fixture")); assertFalse(vault.read().toString().contains(rankingToken))
+            val restarted = client(db, vault, fixture, api, motivation = motivation, ranking = ranking); restarted.start()
+            assertEquals(RankingState.NotRequested, restarted.view.value.ranking); assertEquals(2, ranking.calls.size)
+            c.clearRankingPreview(); c.nextRankingPage(); c.retryRankingPage(); assertEquals(2, ranking.calls.size)
+        } finally { vault.clear(); db.close() }
+    }
+    @Test fun lostRankingPageResponseRetriesSameInputWhileGoneCursorRequiresRestart() = runBlocking<Unit> {
+        val db = memory(); val vault = SessionVault(context, name()); val fixture = FixtureGateway(); val api = ApiFixture(); val motivation = MotivationFixture()
+        val ranking = RankingFixture { call, q -> if (call == 2) throw java.io.IOException("fixture loss") else rankingAnswer(fixture.time, q.pageToken == null) }
+        try {
+            val c = client(db, vault, fixture, api, motivation = motivation, ranking = ranking); c.start(); login(c, fixture, "fixture-A"); c.bootstrap(); c.readRanking()
+            c.nextRankingPage(); assertTrue((c.view.value.ranking as RankingState.Failed).canRetry)
+            val lost = ranking.calls.last().second; c.retryRankingPage(); assertEquals(lost.encoded(), ranking.calls.last().second.encoded())
+            assertEquals(3, (c.view.value.ranking as RankingState.Ready).page.items.size)
+            ranking.answer = { _, q -> if (q.pageToken == null) rankingAnswer(fixture.time, true) else denied(410, "ranking_cursor_restart_required") }
+            c.readRanking(); c.nextRankingPage(); assertFalse((c.view.value.ranking as RankingState.Failed).canRetry)
+            val count = ranking.calls.size; c.retryRankingPage(); c.nextRankingPage(); assertEquals(count, ranking.calls.size)
+            c.readRanking(); fixture.time += 600_001; c.nextRankingPage()
+            assertFalse((c.view.value.ranking as RankingState.Failed).canRetry); assertEquals(count + 1, ranking.calls.size)
+        } finally { vault.clear(); db.close() }
+    }
+    @Test fun rankingRetryAfterIsSharedDurableAndRestartNeverFetchesAutomatically() = runBlocking<Unit> {
+        val db = memory(); val vault = SessionVault(context, name()); val fixture = FixtureGateway(); val api = ApiFixture(); val motivation = MotivationFixture()
+        val ranking = RankingFixture { _, _ -> BootstrapHttpResult(429, byteArrayOf(), "120") }
+        try {
+            val c = client(db, vault, fixture, api, motivation = motivation, ranking = ranking); c.start(); login(c, fixture, "fixture-A"); c.bootstrap(); c.readRanking()
+            assertTrue((c.view.value.ranking as RankingState.Failed).canRetry); val m = motivation.calls.size
+            c.retryRankingPage(); c.readMotivation(); assertEquals(1, ranking.calls.size); assertEquals(m, motivation.calls.size)
+            val restarted = client(db, vault, fixture, api, motivation = motivation, ranking = ranking); restarted.start(); restarted.readRanking()
+            assertEquals(1, ranking.calls.size); assertEquals(m, motivation.calls.size)
+            fixture.time += 121_000; ranking.answer = { _, _ -> rankingAnswer(fixture.time) }; restarted.readRanking()
+            assertTrue(restarted.view.value.ranking is RankingState.Ready); assertEquals(2, ranking.calls.size)
+        } finally { vault.clear(); db.close() }
+    }
+    @Test fun rankingUnauthorizedRenewsOnceWithoutChangingContinuationQuery() = runBlocking<Unit> {
+        val db = memory(); val vault = SessionVault(context, name()); val fixture = FixtureGateway(); val api = ApiFixture(); val motivation = MotivationFixture()
+        val ranking = RankingFixture { call, q -> if (call == 2) denied(401, "unauthorized") else rankingAnswer(fixture.time, q.pageToken == null) }
+        try {
+            val c = client(db, vault, fixture, api, motivation = motivation, ranking = ranking); c.start(); login(c, fixture, "fixture-A"); c.bootstrap(); c.readRanking(); c.nextRankingPage()
+            assertTrue(c.view.value.ranking is RankingState.Ready); assertEquals(3, ranking.calls.size); assertEquals(2, fixture.calls)
+            assertEquals(ranking.calls[1].second.encoded(), ranking.calls[2].second.encoded())
+            assertNotEquals(ranking.calls[1].first.accessToken, ranking.calls[2].first.accessToken)
+            assertEquals(2, motivation.calls.size); assertFalse(c.view.value.rankingBusy)
+        } finally { vault.clear(); db.close() }
+    }
+    @Test fun rankingPreflightAndPhysicalSendRejectChangedEpochOrBindingBeforeDisclosure() = runBlocking<Unit> {
+        for (mode in listOf("preflight", "before-send")) {
+            val db = memory(); val vault = SessionVault(context, name()); val fixture = FixtureGateway(); val api = ApiFixture()
+            val motivation = if (mode == "preflight") MotivationFixture { motivationAnswer { it.put("sync_epoch", newEpoch) } } else MotivationFixture()
+            val ranking = RankingFixture { _, _ -> rankingAnswer(fixture.time) }
+            try {
+                val c = client(db, vault, fixture, api, motivation = motivation, ranking = ranking); c.start(); login(c, fixture, "fixture-A"); c.bootstrap()
+                if (mode == "before-send") ranking.before = {
+                    val lease = c.view.value.binding!!.lease; val old = db.bootstrapDao().binding(lease.storageScope)!!
+                    db.bootstrapDao().update(old.copy(contextRevision = old.contextRevision + 1))
+                }
+                c.readRanking(); assertTrue(ranking.calls.isEmpty()); assertFalse(c.view.value.ranking is RankingState.Ready)
+                if (mode == "preflight") assertTrue(c.view.value.requiresRecovery)
+            } finally { vault.clear(); db.close() }
+        }
+    }
+    @Test fun heldRankingAndObserverCannotLeakAfterCloseLogoutOrGenerationChange() = runBlocking<Unit> {
+        for (mode in listOf("close", "logout", "generation")) {
+            val db = memory(); val vault = SessionVault(context, name()); val fixture = FixtureGateway(); val api = ApiFixture(); val motivation = MotivationFixture()
+            val ranking = RankingFixture { _, _ -> rankingAnswer(fixture.time) }.apply { hold = CompletableDeferred() }
+            var watch: Job? = null
+            try {
+                val c = client(db, vault, fixture, api, motivation = motivation, ranking = ranking); c.start(); login(c, fixture, "fixture-A"); c.bootstrap()
+                val read = async { c.readRanking() }; withTimeout(10_000) { ranking.started.await() }
+                c.readRanking(); assertEquals(1, ranking.calls.size)
+                when (mode) {
+                    "close" -> c.clearRankingPreview()
+                    "logout" -> { c.logout(); login(c, fixture, "fixture-B"); c.logout(); login(c, fixture, "fixture-A") }
+                    else -> {
+                        watch = launch { c.observeMotivationContext() }
+                        val lease = c.view.value.binding!!.lease; val old = db.bootstrapDao().binding(lease.storageScope)!!
+                        db.bootstrapDao().update(old.copy(accountGeneration = old.accountGeneration + 1))
+                        withTimeout(10_000) { while (c.view.value.rankingBusy) delay(10) }
+                    }
+                }
+                ranking.hold!!.complete(Unit); read.await(); assertEquals(RankingState.NotRequested, c.view.value.ranking); assertFalse(c.view.value.rankingBusy)
+            } finally { ranking.hold?.complete(Unit); watch?.cancelAndJoin(); vault.clear(); db.close() }
+        }
+    }
+
+    private val nemesisId = "12345678-1234-5678-9234-123456789abc"
+    private fun nemesisJson(name: String) = JSONObject(androidx.test.platform.app.InstrumentationRegistry.getInstrumentation().context.assets
+        .open("nemesis/$name.json").bufferedReader().use { it.readText() })
+    private fun nemesisAnswer(query: NemesisQuery): BootstrapHttpResult = BootstrapHttpResult(200, when (query) {
+        is NemesisQuery.Listing -> JSONObject().put("items", JSONArray(listOf(nemesisJson("metadata")))).put("next_cursor", JSONObject.NULL)
+        is NemesisQuery.Detail -> nemesisJson("metadata")
+        is NemesisQuery.Statistics -> nemesisJson("provisional")
+    }.toString().toByteArray())
+    private inner class NemesisFixture(var answer: (NemesisQuery) -> BootstrapHttpResult = ::nemesisAnswer) : NemesisGateway {
+        val calls = mutableListOf<Triple<ApiSession, String, NemesisQuery>>()
+        var hold: CompletableDeferred<Unit>? = null
+        var before: suspend () -> Unit = {}
+        val started = CompletableDeferred<Unit>()
+        override suspend fun get(session: ApiSession, epoch: String, query: NemesisQuery, beforeSend: suspend () -> Unit): BootstrapHttpResult {
+            before(); beforeSend(); calls.add(Triple(session, epoch, query))
+            if (query is NemesisQuery.Statistics && hold != null) { started.complete(Unit); hold!!.await() }
+            return answer(query)
+        }
+    }
+    @Test fun nemesisReadsRequireBootstrapPreserveDiaryAndNeverPersistPartnerOrSnapshots() = runBlocking<Unit> {
+        val db = memory(); val vault = SessionVault(context, name()); val fixture = FixtureGateway(); val api = ApiFixture()
+        val motivation = MotivationFixture(); val nemesis = NemesisFixture()
+        try {
+            val c = client(db, vault, fixture, api, motivation = motivation, nemesis = nemesis); c.start(); c.readNemesis(); assertTrue(nemesis.calls.isEmpty())
+            login(c, fixture, "fixture-A"); c.readNemesis(); assertTrue(nemesis.calls.isEmpty()); c.bootstrap(); assertTrue(nemesis.calls.isEmpty())
+            val lease = c.view.value.binding!!.lease; val day = LocalDate.now()
+            val repo = DiaryRepository(db, context, lease).apply { initialize() }
+            repo.setGoal(2400.0, 140.0, 70.0, 250.0); repo.add("basic-banana", 100.0, MealType.LUNCH, day, "nemesis-preserved")
+            val profile = db.dao().currentProfile(lease.storageScope); val goals = db.dao().goalsThrough(lease.storageScope, day.toString()).first()
+            val meals = db.dao().day(lease.storageScope, day.toString()).first(); val queue = db.dao().operationCount(lease.storageScope)
+            val server = db.bootstrapDao().binding(lease.storageScope)
+            c.readNemesis(); assertEquals(1, (c.view.value.nemesis as NemesisState.ListReady).page.items.size)
+            c.readNemesisChallenge(nemesisId); val detail = c.view.value.nemesis as NemesisState.DetailReady
+            assertEquals("provisional", detail.statistics!!.status); assertEquals(java.math.BigDecimal("-15"), (detail.statistics!!.self!!.deficit as NemesisMetric.Available).value)
+            assertEquals(listOf("/me/nemesis?limit=25", "/nemesis/$nemesisId", "/nemesis/$nemesisId/statistics"), nemesis.calls.map { it.third.path() })
+            assertTrue(nemesis.calls.all { it.second == epoch }); assertEquals(2, motivation.calls.size)
+            assertEquals(profile, db.dao().currentProfile(lease.storageScope)); assertEquals(goals, db.dao().goalsThrough(lease.storageScope, day.toString()).first())
+            assertEquals(meals, db.dao().day(lease.storageScope, day.toString()).first()); assertEquals(queue, db.dao().operationCount(lease.storageScope)); assertEquals(server, db.bootstrapDao().binding(lease.storageScope))
+            assertFalse(vault.read().toString().contains("Nemesis fixture")); assertFalse(vault.read().toString().contains(nemesisId))
+            val restarted = client(db, vault, fixture, api, motivation = motivation, nemesis = nemesis); restarted.start()
+            assertEquals(NemesisState.NotRequested, restarted.view.value.nemesis); assertEquals(3, nemesis.calls.size)
+        } finally { vault.clear(); db.close() }
+    }
+    @Test fun lostNemesisStatisticsAreRevalidatedWhile404AndCancelledMetadataRemovePartner() = runBlocking<Unit> {
+        val db = memory(); val vault = SessionVault(context, name()); val fixture = FixtureGateway(); val api = ApiFixture(); val motivation = MotivationFixture()
+        var lost = true; val nemesis = NemesisFixture { query -> if (query is NemesisQuery.Statistics && lost) { lost = false; throw java.io.IOException("fixture loss") } else nemesisAnswer(query) }
+        try {
+            val c = client(db, vault, fixture, api, motivation = motivation, nemesis = nemesis); c.start(); login(c, fixture, "fixture-A"); c.bootstrap()
+            c.readNemesisChallenge(nemesisId); assertTrue((c.view.value.nemesis as NemesisState.Failed).canRetry)
+            c.retryNemesis(); assertTrue(c.view.value.nemesis is NemesisState.DetailReady); assertEquals(4, nemesis.calls.size)
+            assertEquals(nemesis.calls[0].third.path(), nemesis.calls[2].third.path()); assertEquals(nemesis.calls[1].third.path(), nemesis.calls[3].third.path())
+            nemesis.answer = { q -> if (q is NemesisQuery.Statistics) denied(404, "nemesis_not_found") else nemesisAnswer(q) }
+            c.readNemesisChallenge(nemesisId); assertFalse((c.view.value.nemesis as NemesisState.Failed).canRetry)
+            val count = nemesis.calls.size; c.retryNemesis(); assertEquals(count, nemesis.calls.size)
+            nemesis.answer = { q -> if (q is NemesisQuery.Detail) BootstrapHttpResult(200, nemesisJson("metadata").put("status", "cancelled").put("cancel_reason", "sharing_revoked").toString().toByteArray()) else error("Cancelled challenge must not read statistics") }
+            c.readNemesisChallenge(nemesisId); val cancelled = c.view.value.nemesis as NemesisState.DetailReady
+            assertNull(cancelled.challenge.partner); assertNull(cancelled.statistics); assertEquals(count + 1, nemesis.calls.size)
+        } finally { vault.clear(); db.close() }
+    }
+    @Test fun nemesisRetryAfterIsSharedDurableAndNeverFetchesOnRestart() = runBlocking<Unit> {
+        val db = memory(); val vault = SessionVault(context, name()); val fixture = FixtureGateway(); val api = ApiFixture(); val motivation = MotivationFixture()
+        val nemesis = NemesisFixture { BootstrapHttpResult(503, byteArrayOf(), "120") }
+        try {
+            val c = client(db, vault, fixture, api, motivation = motivation, nemesis = nemesis); c.start(); login(c, fixture, "fixture-A"); c.bootstrap(); c.readNemesis()
+            assertTrue((c.view.value.nemesis as NemesisState.Failed).canRetry); c.retryNemesis(); c.readMotivation()
+            assertEquals(1, nemesis.calls.size); assertEquals(1, motivation.calls.size)
+            val restarted = client(db, vault, fixture, api, motivation = motivation, nemesis = nemesis); restarted.start(); restarted.readNemesis()
+            assertEquals(1, nemesis.calls.size); assertEquals(1, motivation.calls.size)
+            fixture.time += 121_000; nemesis.answer = ::nemesisAnswer; restarted.readNemesis()
+            assertTrue(restarted.view.value.nemesis is NemesisState.ListReady); assertEquals(2, nemesis.calls.size)
+        } finally { vault.clear(); db.close() }
+    }
+    @Test fun heldNemesisStatisticsCannotReturnAfterCloseLogoutGenerationOrEpochChanges() = runBlocking<Unit> {
+        for (mode in listOf("close", "logout", "generation", "epoch")) {
+            val db = memory(); val vault = SessionVault(context, name()); val fixture = FixtureGateway(); val api = ApiFixture(); val motivation = MotivationFixture()
+            val nemesis = NemesisFixture().apply { hold = CompletableDeferred() }; var watch: Job? = null
+            try {
+                val c = client(db, vault, fixture, api, motivation = motivation, nemesis = nemesis); c.start(); login(c, fixture, "fixture-A"); c.bootstrap()
+                val read = async { c.readNemesisChallenge(nemesisId) }; withTimeout(10_000) { nemesis.started.await() }
+                c.readNemesis(); assertEquals(2, nemesis.calls.size)
+                when (mode) {
+                    "close" -> c.clearNemesisPreview()
+                    "logout" -> { c.logout(); login(c, fixture, "fixture-B"); c.logout(); login(c, fixture, "fixture-A") }
+                    else -> {
+                        watch = launch { c.observeMotivationContext() }
+                        val lease = c.view.value.binding!!.lease; val old = db.bootstrapDao().binding(lease.storageScope)!!
+                        db.bootstrapDao().update(if (mode == "generation") old.copy(accountGeneration = old.accountGeneration + 1) else old.copy(syncEpoch = newEpoch))
+                        withTimeout(10_000) { while (c.view.value.nemesisBusy) delay(10) }
+                    }
+                }
+                nemesis.hold!!.complete(Unit); read.await(); assertEquals(NemesisState.NotRequested, c.view.value.nemesis); assertFalse(c.view.value.nemesisBusy)
+            } finally { nemesis.hold?.complete(Unit); watch?.cancelAndJoin(); vault.clear(); db.close() }
+        }
+    }
+    @Test fun nemesisPreflightAndPhysicalSendRejectChangedContextBeforeDisclosure() = runBlocking<Unit> {
+        for (mode in listOf("preflight", "before-send")) {
+            val db = memory(); val vault = SessionVault(context, name()); val fixture = FixtureGateway(); val api = ApiFixture()
+            val motivation = if (mode == "preflight") MotivationFixture { motivationAnswer { it.put("sync_epoch", newEpoch) } } else MotivationFixture()
+            val nemesis = NemesisFixture()
+            try {
+                val c = client(db, vault, fixture, api, motivation = motivation, nemesis = nemesis); c.start(); login(c, fixture, "fixture-A"); c.bootstrap()
+                if (mode == "before-send") nemesis.before = {
+                    val lease = c.view.value.binding!!.lease; val old = db.bootstrapDao().binding(lease.storageScope)!!
+                    db.bootstrapDao().update(old.copy(contextRevision = old.contextRevision + 1))
+                }
+                c.readNemesis(); assertTrue(nemesis.calls.isEmpty()); assertFalse(c.view.value.nemesis is NemesisState.ListReady)
+                if (mode == "preflight") assertTrue(c.view.value.requiresRecovery)
+            } finally { vault.clear(); db.close() }
+        }
+    }
+    @Test fun nemesis401RefreshesOnceAcrossMetadataAndStatistics() = runBlocking<Unit> {
+        for (twice in listOf(false, true)) {
+            val db = memory(); val vault = SessionVault(context, name()); val fixture = FixtureGateway(); val api = ApiFixture(); val motivation = MotivationFixture()
+            var attempts = 0
+            val nemesis = NemesisFixture { query -> attempts++; if (attempts == 1 || (twice && query is NemesisQuery.Statistics)) denied(401, "unauthorized") else nemesisAnswer(query) }
+            try {
+                val c = client(db, vault, fixture, api, motivation = motivation, nemesis = nemesis); c.start(); login(c, fixture, "fixture-A"); c.bootstrap()
+                c.readNemesisChallenge(nemesisId)
+                assertEquals(2, fixture.calls); assertEquals(3, nemesis.calls.size); assertEquals(1, motivation.calls.size)
+                assertEquals(nemesis.calls[0].third.path(), nemesis.calls[1].third.path()); assertNotEquals(nemesis.calls[0].first.accessToken, nemesis.calls[1].first.accessToken)
+                if (twice) assertTrue(c.view.value.nemesis is NemesisState.Failed) else assertTrue(c.view.value.nemesis is NemesisState.DetailReady)
+                assertFalse(c.view.value.nemesisBusy)
+            } finally { vault.clear(); db.close() }
+        }
+    }
+    @Test fun nemesisContinuationRetriesSameCursorAnd409RequiresAFreshList() = runBlocking<Unit> {
+        val db = memory(); val vault = SessionVault(context, name()); val fixture = FixtureGateway(); val api = ApiFixture(); val motivation = MotivationFixture()
+        val cursor = "32345678-1234-5678-9234-123456789abc"; var lost = true
+        val nemesis = NemesisFixture { query ->
+            check(query is NemesisQuery.Listing)
+            if (query.cursor != null && lost) { lost = false; throw java.io.IOException("fixture loss") }
+            val rows = if (query.cursor == null) JSONArray((0 until 25).map { nemesisJson("metadata").put("id", UUID(0, it.toLong()).toString()) }) else JSONArray(listOf(nemesisJson("metadata")))
+            BootstrapHttpResult(200, JSONObject().put("items", rows).put("next_cursor", if (query.cursor == null) cursor else JSONObject.NULL).toString().toByteArray())
+        }
+        try {
+            val c = client(db, vault, fixture, api, motivation = motivation, nemesis = nemesis); c.start(); login(c, fixture, "fixture-A"); c.bootstrap(); c.readNemesis()
+            c.nextNemesisPage(); assertTrue((c.view.value.nemesis as NemesisState.Failed).canRetry); c.retryNemesis()
+            assertEquals(cursor, (nemesis.calls[1].third as NemesisQuery.Listing).cursor); assertEquals(cursor, (nemesis.calls[2].third as NemesisQuery.Listing).cursor)
+            assertEquals(1, (c.view.value.nemesis as NemesisState.ListReady).page.items.size)
+            assertFalse(vault.read().toString().contains(cursor))
+            nemesis.answer = { denied(409, "nemesis_cursor_unavailable") }; c.readNemesis()
+            assertFalse((c.view.value.nemesis as NemesisState.Failed).canRetry); val count = nemesis.calls.size
+            c.retryNemesis(); c.nextNemesisPage(); assertEquals(count, nemesis.calls.size)
+        } finally { vault.clear(); db.close() }
+    }
+    @Test fun nemesisRejectsOlderReadRevisionOrAsOfWithinTheSameVisibleChallenge() = runBlocking<Unit> {
+        for (older in listOf("revision", "clock")) {
+            val db = memory(); val vault = SessionVault(context, name()); val fixture = FixtureGateway(); val api = ApiFixture(); val motivation = MotivationFixture()
+            val nemesis = NemesisFixture()
+            try {
+                val c = client(db, vault, fixture, api, motivation = motivation, nemesis = nemesis); c.start(); login(c, fixture, "fixture-A"); c.bootstrap(); c.readNemesisChallenge(nemesisId)
+                assertTrue(c.view.value.nemesis is NemesisState.DetailReady)
+                nemesis.answer = { q -> if (q is NemesisQuery.Statistics) BootstrapHttpResult(200, nemesisJson("provisional")
+                    .also { if (older == "revision") it.put("revision", 7) else it.put("as_of", "2026-10-19T00:00:00Z") }.toString().toByteArray()) else nemesisAnswer(q) }
+                c.readNemesisChallenge(nemesisId); assertTrue((c.view.value.nemesis as NemesisState.Failed).canRetry)
+                nemesis.answer = { q -> if (q is NemesisQuery.Statistics) BootstrapHttpResult(200, nemesisJson("provisional").put("revision", 9).toString().toByteArray()) else nemesisAnswer(q) }
+                c.retryNemesis(); assertEquals(9L, (c.view.value.nemesis as NemesisState.DetailReady).statistics!!.revision)
+                assertFalse(vault.read().toString().contains(nemesisId))
+            } finally { vault.clear(); db.close() }
+        }
     }
     @Test fun cancelledAutomaticRenewalReleasesSessionAndBootstrapForRetry() = runBlocking<Unit> {
         val db = memory(); val vault = SessionVault(context, name()); val fixture = FixtureGateway(); val api = ApiFixture()

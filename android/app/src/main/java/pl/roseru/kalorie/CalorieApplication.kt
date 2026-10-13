@@ -25,6 +25,10 @@ class CalorieApplication : Application() {
             try { HttpsMotivationGateway(it) } catch (_: Exception) { null }
         }, rankingConsentGateway = getString(R.string.api_base_url).takeIf { it.isNotEmpty() }?.let {
             try { HttpsRankingConsentGateway(it) } catch (_: Exception) { null }
+        }, rankingGateway = getString(R.string.api_base_url).takeIf { it.isNotEmpty() }?.let {
+            try { HttpsRankingGateway(it) } catch (_: Exception) { null }
+        }, nemesisGateway = getString(R.string.api_base_url).takeIf { it.isNotEmpty() }?.let {
+            try { HttpsNemesisGateway(it) } catch (_: Exception) { null }
         }, snapshotProtocol = SnapshotProtocol(SyncWireSchema(SyncWireSchema.FILES.associateWith { file ->
             assets.open("sync/$file").use { it.readBytes() }
         }))) }

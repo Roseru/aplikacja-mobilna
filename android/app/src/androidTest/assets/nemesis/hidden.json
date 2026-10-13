@@ -1,0 +1,40 @@
+{
+  "id": "12345678-1234-5678-9234-123456789abc",
+  "revision": 8,
+  "rule_version": "regularity_v1",
+  "as_of": "2026-10-20T00:00:00Z",
+  "time_zone": "Europe/Warsaw",
+  "start_date": "2026-10-13",
+  "end_date": "2026-10-20",
+  "deadline": "2026-11-18T22:00:00Z",
+  "status": "provisional",
+  "self": {
+    "regularity": {
+      "points": 4,
+      "closed_days": 7,
+      "complete_days": 3,
+      "days_in_goal": 1
+    },
+    "weight_change": {
+      "state": "hidden"
+    },
+    "mean_deficit": {
+      "state": "hidden"
+    }
+  },
+  "opponent": {
+    "regularity": {
+      "points": 1,
+      "closed_days": 7,
+      "complete_days": 1,
+      "days_in_goal": 0
+    },
+    "weight_change": {
+      "state": "hidden"
+    },
+    "mean_deficit": {
+      "state": "hidden"
+    }
+  },
+  "outcome": "self_wins"
+}

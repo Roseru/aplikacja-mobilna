@@ -25,7 +25,7 @@ import pl.roseru.kalorie.data.WeightEntity
 import java.time.*
 
 @OptIn(ExperimentalMaterial3Api::class)
-@Composable fun ProfileScreen(model: DiaryViewModel, onAccount: () -> Unit, onAchievements: () -> Unit = {}) {
+@Composable fun ProfileScreen(model: DiaryViewModel, onAccount: () -> Unit, onAchievements: () -> Unit = {}, onNemesis: () -> Unit = {}) {
     val profile by model.profile.collectAsStateWithLifecycle()
     val todayGoal by model.todayGoal.collectAsStateWithLifecycle()
     val weights by model.weights.collectAsStateWithLifecycle()
@@ -52,6 +52,9 @@ import java.time.*
         item(key = "achievements-entry") {
             FilledTonalButton(onClick = onAchievements, modifier = Modifier.fillMaxWidth().testTag("open-achievements")) {
                 Text("Osiągnięcia · sprawdź swoją regularność")
+            }
+            OutlinedButton(onClick = onNemesis, modifier = Modifier.fillMaxWidth().testTag("open-nemesis")) {
+                Text("Nemesis · regularność we dwoje")
             }
         }
         weights.firstOrNull()?.let { latest -> item(key = "latest-weight") {

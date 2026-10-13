@@ -1,0 +1,30 @@
+[
+  {
+    "source_id": "dish_1572278972",
+    "source_csv": "dish_metadata_cafe2.csv",
+    "source_url": "https://storage.googleapis.com/nutrition5k_dataset/nutrition5k_dataset/metadata/dish_metadata_cafe2.csv",
+    "source_last_modified": "Wed, 16 Jun 2021 05:48:01 GMT",
+    "retrieved_at": "2026-10-13T19:13:23.442091Z",
+    "raw_record": "dish_1572278972,0.000000,181.000000,0.000000,0.000000,0.000000,ingr_0000000004,bacon,61.000000,330.01,25.62,0.854,22.57,ingr_0000000008,scrambled eggs,35.000000,51.8,3.85,0.56,3.5,ingr_0000000511,spinach (cooked),85.000000,19.55,0.0,3.4,2.55",
+    "source_record_utf8_no_eol_sha256": "49fa389afa89f4efd08ad81353088741abb23cd82facccd1a66a81d1740eb16d",
+    "source_components": [
+      {
+        "source_ingredient_id": "ingr_0000000004",
+        "source_name": "bacon",
+        "source_mass_g": "61.000000"
+      },
+      {
+        "source_ingredient_id": "ingr_0000000008",
+        "source_name": "scrambled eggs",
+        "source_mass_g": "35.000000"
+      },
+      {
+        "source_ingredient_id": "ingr_0000000511",
+        "source_name": "spinach (cooked)",
+        "source_mass_g": "85.000000"
+      }
+    ],
+    "source_totals_caveat": "Cafe2 raw totals calories/fat/carb/protein are zero placeholders inconsistent with nonzero component records. Preserve raw evidence; never treat these zeros as reference macros. Proposed mass/calories remain null.",
+    "human_reference": null
+  }
+]

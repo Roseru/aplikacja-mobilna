@@ -1,5 +1,16 @@
 # Kontekst współpracy
 
+Android **0.8.10** dodaje odczyt Nemesis: listę rywalizacji, uzgodnione zasady, punkty oraz dozwolone porównania. Pending/hidden/null/zero są oddzielne, a powrót na ekran ponownie sprawdza udostępnianie. [Raport i podglądy](android/RAPORT_0_8_10.md):155 JVM/168 pełny device i końcowe72 affected osobno; Room8 bez migracji,5posiłków zachowane. Zaproszenia/accept/cancel i realny API mają dalsze odbiory.
+
+Android **0.8.9** zagęszcza ranking zgodnie z feedbackiem: wspólny wiersz pozycji/punktów i mniejsze odstępy, z czytelnym układem przy dużym tekście. Poprawia rozróżnienie deklaracji zgody i aktywnego automatu po przekazaniu E9. [Raport i podglądy](android/RAPORT_0_8_9.md):144 JVM i18 zmienionych testów urządzenia PASS, Room8 bez migracji,22tabele/5posiłków zachowane. Nemesis, klientE9 i rzeczywisty API mają dalsze etapy.
+
+## Kontynuacja O1 — ranking0.8.8, 13 października2026
+
+- Agent1/O1; użytkownik osoba1. Branch codex/android-ranking-lista; źródło `62602ddf1b8f17796e44175d7642839cdb40396f`;0.8.8/code19/Room8, APK `11c708eaf2d6a781dca67298e83d135819caef0928669c0321c58c4d7492bb61` lokalnie. [Raport](android/RAPORT_0_8_8.md). Akceptowane Postępy i krótsze podsumowanie z odznakami przed serwerem zachowane.
+- Live GET25/pseudonym/points/rank/active_badges; bez arbitralnegoowner/rawUUID, bez clientdedup lub przeliczania pozycji. Private preflight każdejstrony, generation/epoch/lease/ctx/op fences; clearing po leave/stop/logout, expiry/410 i exact-input retry. Odczyt nie afirmuje zgody ani ACK.
+-144JVM/156device/full na92ace79; finalne14UI po scroll-to-top oraz3QA rzeczywistego320dp/font150% osobno. Room8/22tabele/5posiłków/FK zachowane. SourceAPI fixtures nie są odbiorem realHTTPS.
+- Odczyt O2/PR30 i O3/PR51/52/E9; PR22 zamknięty jako zastąpiony z zachowaniem źródeł. Realny pierwszyklient:PKCE A/bootstrap/GETme+motivation bez zmiany dziennika/outbox/zgody, później logout/B→A/lateresponse i świadomyPUT/ranking. O3 stableorigin/issuer/publicCA nadal potrzebne; dalszeE4/Nemesis własnym etapem O1. Jedyny dziennik docs/KOMUNIKACJA_AGENTOW.md/O1-024.
+
 Aktualizacja PR50: source36a3b07/test-only selektor po recreation;135JVM/147device pełnyPASS, lint0error. CI ac403a5 miało146/147 przez brak mergednode; historiaRED zachowana w raporcie/O1-023. Runtime/APK5234edb bez zmian. Nowy final-head CI oddzielnie.
 
 ## Kontynuacja O1 — zgody rankingu 0.8.7, 13 października 2026

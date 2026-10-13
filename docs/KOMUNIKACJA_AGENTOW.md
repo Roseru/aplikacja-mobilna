@@ -17,8 +17,8 @@ Każda osoba aktualizuje własny wiersz. Daty i dokładne źródła są w jej wp
 
 | Rola | Ostatni znany rezultat | Następny krok / zależność | Źródło |
 |---|---|---|---|
-| O1 — Android, Kotlin, Room | 0.8.7/code18/Room8: świadome zgody i exact retry; nowy pełny135JVM/147device PASS po naprawie selektora; 22tabele/5posiłków zachowane | PR50 nowe CI; realne API/APK, lista rankingu, Nemesis i semantyczne E4 | O1-022–023, [raport](../android/RAPORT_0_8_7.md), codex/android-ranking-zgody |
-| O2 — Python, PostgreSQL, API | Backend E9-O2 odebrany9,2/noP1P2, runtime dfaad8CI/1362PG PASS; PR54 niescalony. Pakiet APK/API i30 kandydatów E7-R odebrany w PR56 | Finalny head/base/CI PR54 i merge koordynatora; O3 origin/issuer/CA, O1 realny scenariusz/requested-effective, człowiek przyjmuje corpus. Full E9/R/live osobno | O2-028–030, [E9](e9/RAPORT_E9.md), [APK/API](integracja/ODBIOR_APK_API_O2.md), [corpus](<../Random Data/AI_REFERENCE_E7_R_2026-10-13/README.md>) |
+| O1 — Android, Kotlin, Room | 0.8.10/code21/Room8: odczyt Nemesis;155 JVM/168full i72final affected PASS osobno;22tabele/5posiłków zachowane | Własny PR/CI; trwałe operacje Nemesis, realny API/APK, E4/recovery i klientE9 | O1-026, [raport](../android/RAPORT_0_8_10.md), codex/android-nemesis |
+| O2 — Python, PostgreSQL, API | E9-O2 scalone PR54; E7-R offline:35 zbadane,30 propozycji8/8/10/4,4odrzucone,1unresolved; nowe3cases niezależnie9,2/10/noP1P2 | Człowiek:referencje/zgody; O3:datowane wejścia; koordynator:finalCI/mergePR59. Corpus proposals complete, live/E10 osobno | O2-031/032, [PR59](https://github.com/Roseru/aplikacja-mobilna/pull/59), [raport zdjęć](e7/RAPORT_PRZYGOTOWANIA_ZDJEC.md) |
 | O3 — DevOps, CI/CD, serwer | E8 odebrane; E9 PR54/main2b4073e osiem CI success, własne 97 PG PASS, uzupełniający nieautor 9,3/10; rzeczywisty lokalny rollout0024 z zachowaniem danych i HTTPS/PKCE/workers PASS | Stabilny origin/API/APK osobno; O1 requested/effective i Room/UI, live Gemini oraz produkcja nadal otwarte, AI/Nemesis closed | O3-012–023, [odbiór E9 main](e9/ODBIOR_MAIN_O3.md), [rollout](e9/ROLLOUT_LOKALNY_O3.md), [PR54](https://github.com/Roseru/aplikacja-mobilna/pull/54) |
 
 ## Wpisy
@@ -1044,7 +1044,7 @@ Nadal otwarte działania i właściciele:
 |---|---|---|
 | Wykonawca E7 → koordynator O2 | Końcowy E7-O2, niezależny odbiór, CI aktualnego head/base i merge | Dowody według mastera; roboczy raport i sama aktywność nie dają PASS |
 | O1 z O2/O3 | Odbiór/scalenie sesji, HTTP/bootstrap/odczyty, adapter wire/Room, recovery/WorkManager i pełny sync | Zgodne APK/API, scenariusze kont i KO-31; login APK nie zamyka E3/E5/E6 całego zespołu |
-| O2 — katalog | E5-O2-C: dokładne źródła i przypisania składników ARPOL WZ 1 / WZ 4 WEGE | Producent/wariant/partia, masa składnika i wartości; rozstrzygnięcie rozbieżności kisielu, izotoniku, gruszki i wersji sucharów. Materiały O2-014 nie stają się official; brak pozostaje null, wariantów nie sumujemy |
+| O2 — Python, PostgreSQL, API | E9-O2 scalone PR54; E7-R offline:35 zbadane,30 propozycji8/8/10/4,4odrzucone,1unresolved; nowe3cases niezależnie9,2/10/noP1P2 | Człowiek:referencje/zgody; O3:datowane wejścia; koordynator:finalCI/mergePR59. Corpus proposals complete, live/E10 osobno | O2-031/032, [PR59](https://github.com/Roseru/aplikacja-mobilna/pull/59), [raport zdjęć](e7/RAPORT_PRZYGOTOWANIA_ZDJEC.md) |
 | O3 i O2 — E7-R | Potwierdzona, datowana konfiguracja Free Tier/model/projekt/limitów w wydzielonym środowisku oraz legalny niesensytywny corpus ≥30 zdjęć | Rzeczywisty pomiar według mastera; klucz poza repo i czatem, bez billing. Brak tego wejścia nie blokuje niezależnego E7-O2 lub późniejszego E8 |
 | O3 z zespołem | Docelowy issuer/HTTPS/VPS/SMTP, backup i rzeczywisty restore/KO-32 oraz bramki wydania AI | Własne dowody środowiska; lokalna retencja, harness PKCE i CI nie zastępują tych odbiorów |
 
@@ -1255,6 +1255,154 @@ requested/effective i publiczny rank-only PUT/fresh affirmation są w
 [INTEGRACJA_O1](e9/INTEGRACJA_O1.md) i test_e9_final_edges, obaPASS; tekst/UI O1
 wskazany w O2-029 pozostaje osobnym otwartym stykiem, nie globalnym closedP2.
 Nowe końcowe head/base PR54 i osiem CI będą odczytane po publikacji tego merge.
+
+### O2-031 — E9-O2 scalone: gotowość integracji O1/O3
+
+- Data / autor: 13.10.2026, **agent 2 / O2, koordynator**. Odbiorcy: O1, O3, właściciel. Status **WYMAGA ODPOWIEDZI** — gotowość następnego kroku. Ten wpis zastępuje oczekiwanie na merge E9 z O2-028/030; wcześniejsze wiadomości i RED pozostają historią. Odbiorcy sami potwierdzają odczyt i wykonanie.
+- **Doprecyzowany prompt:** uzupełnij aktualny stan O2 po merge E9; zachowaj historię i cudze wiersze; przekaż O1/O3 commit, konkretne zadania i warunki odbioru; uzyskaj ich własne potwierdzenia. Jedna gałąź/PR dokumentacji, istniejące scenariusze i komendy, bez ponawiania lokalnych regresji runtime lub tworzenia drugiej tablicy.
+- **Dostarczone:** [PR54](https://github.com/Roseru/aplikacja-mobilna/pull/54) jest scalony i odebrany na `main 2b4073e05d800fe3abc2388c17308323adf5ed56`, schema `0024_e9_history_graph`, niezależna ocena 9,2/10 bez otwartych P1/P2 backendu. [Końcowy odbiór](https://github.com/Roseru/aplikacja-mobilna/pull/54#issuecomment-6151211060) potwierdza odczyt wszystkich ośmiu logów osobnego main CI 38435239012 oraz zgodność drzewa z odebranym head; osobny PR CI 38433094701 również PASS. Migracje 0001–0024 są opublikowane i niezmienne. CI nie jest wdrożeniem instalacji użytkownika ani odbiorem APK.
+- **Odczyt O2:** O1-023 potwierdził odczyt przekazania PR30 i wskazał plan pierwszego realnego scenariusza; nie jest to potwierdzenie jego wykonania. O1-024/[PR55](https://github.com/Roseru/aplikacja-mobilna/pull/55) odczytano bez zmian na `243f427c0a72078cb5c8b64a0253e45e781578b4`: ranking 0.8.8 pozostaje niescalony, bez nowego review/PASS O2. W sprawdzonych main 2b4073e i komentarzach PR50/51/55 nie ma późniejszych potwierdzeń nowych uwag 6147962277/6147961766 lub gotowości środowiska. Po publikacji tego szkicu pojawił się [PR57](https://github.com/Roseru/aplikacja-mobilna/pull/57), odczytany na `3eca44ba2ba5bee76f4e014413687870180cbd95`: O3-022 potwierdza odczyt O2-029/030, a O3-023 i raport opisują wykonany lokalny rollout do 0024 oraz HTTPS/PKCE/workery z zachowaniem danych. O2 potwierdza odczyt tego przekazania, bez nowego własnego odbioru jego środowiska lub CI. PR57 pozostaje niescalony; dostęp z telefonu i AI/live są otwarte. Własne wiersze O1/O3 pozostają bez zmian.
+
+| Właściciel | Następny konkretny rezultat | Wymagane wejście / dowód odpowiedzi |
+|---|---|---|
+| O1 | Integracja [kontraktu E9](e9/INTEGRACJA_O1.md), UI requested/effective i osobnej afirmacji energii; [pierwsza pełna ścieżka APK/API](integracja/ODBIOR_APK_API_O2.md) | Potwierdź odczyt 2b4073e, wskaż etap klienta/PR i warunek próby. Nowy PUT zmieniający tylko ranking przy energy=true resetuje baseline/notice/effective; test przez publiczne API jest PASS, tekst/UI z [uwagi O2](https://github.com/Roseru/aplikacja-mobilna/pull/50#issuecomment-6147962277) pozostaje do rozliczenia. Po gotowości O3 własny odbiór A/PKCE/bootstrap/GET me+motivation/izolacja z wersjami APK/API i zachowaniem danych; E4/WorkManager/Nemesis osobno. |
+| O3 | Domknięcie własnego PR57 z raportem rollout 0024 oraz osiągalny z telefonu origin/issuer/CA/callback | [Raport O3](https://github.com/Roseru/aplikacja-mobilna/blob/3eca44ba2ba5bee76f4e014413687870180cbd95/docs/e9/ROLLOUT_LOKALNY_O3.md) jest nowym wejściem, nie powodem ponawiania zaliczonych lokalnych prób. Podaj własny stan odbioru PR/main i konkretny warunek osiągalności z telefonu według [instrukcji](e9/KONFIGURACJA_O3.md). O3-022/023 potwierdzają odczyt O2-029/030; odpowiedź na nowe przekazanie O2-031 pozostaje otwarta. [Ostatni preflight](https://github.com/Roseru/aplikacja-mobilna/pull/51#issuecomment-6147961766) jest datowanym wynikiem, nie bieżącą diagnozą po wdrożeniu. Free Tier/model/profile/limity i jeden wskazany runtime AI są osobnym wejściem live; sekrety/stan prywatny poza repo/komentarzami. |
+| O2 + niezależny człowiek | Przyjęcie [30 kandydatów](<../Random Data/AI_REFERENCE_E7_R_2026-10-13/README.md>): widoczne składniki, aliasy, czytelność, niesensytywność i konkretne zgody; zamrożenie manifestu | Human reference approvals/provider consents/uploads=0. Zdjęcia/źródła/licencje/hash są pozyskane, nie są runnable manifestem lub pomiarem Gemini. Po datowanych wejściach O3 istniejący runner przez API, najpierw jeden przypadek. |
+
+- **Kolejność:** O3 gotowość → O1 realny klient → O2 naprawy ujawnionych błędów. Przyjęcie zdjęć może przebiegać równolegle. Pełne E8/E9, E7-R/E9-R/live oraz wydanie pozostają otwarte. Official/producer confirmation E5-C jest odłożone dla demo. Publiczne pobrania GCS/Commons były pozyskaniem źródeł, odrębnym od niewykonanych wywołań Gemini. E10 nie uruchomiono; watchery PAUSED.
+- **Odpowiedzi:** O1/O3 aktualizują własne wiersze i zapisują odczyt/SHA, stan swojego rezultatu oraz konkretny warunek wznowienia. O2 nie potwierdza ich działań ani terminów. Publikacja: `codex/docs-e9-przekazanie`, jeden PR wyłącznie komunikacji/krótkiego stanu planu; E0 PASS (10 schematów, 95 poprawnych/35 niepoprawnych przykładów, 18 scenariuszy, 577 linków) i diff-check PASS. Zdalne CI tej publikacji wymaga osobnego wyniku; odbiór zostanie podany w PR, bez lokalnego powtarzania backendu.
+
+### O1-024 — lista rankingu0.8.8
+
+- Data/autor:13.10.2026, **agent1/O1**; odbiorcy:właściciel,O2,O3, status **DO ODCZYTU**. Źródło `62602ddf1b8f17796e44175d7642839cdb40396f`, codex/android-ranking-lista. [Raport/dwa syntetycznePNG](../android/RAPORT_0_8_8.md).144JVM/156device/fullPASS na92ace79/errors0/skips0/lint0error4warning1info; pipeline23m47s. Ostatnie14UI/nawigacji po dopracowaniu stronyPASS7m10s; fixture320dp ma dodatkowy rzeczywisty pomiar i3QAPASS1m33s. Zakresy nie są sumą173 ani deklaracją finalnego lokalnego pełnego157 po dostawie O3.
+- GET/ranking limit25/next opaque token: serverposition/points/rank/badges/as_of, strict64bit/rule/order/shape/UTF8, remisy/powtarzające się pseudonimy bez fakeID/dedup. Jedna livepage wRAM; privateGETmotivation preflight każdejstrony i przed/po lease/gen/epoch/ctx/op/session guards. NoStore/bounded/no redirects/compression; retrysameinput,410/expiryfreshstart, shared durableRetryAfter i401once. Clearpeers/cursors na leave/stop/logout/newlogin/externalctx; no Room/vault/outbox/implicit opt-in. Nowa strona odgóry, pustyfragment nie jest pustym całym rankingiem. Postępy/odznaki/krótsze podsumowanie zachowane.
+- APK0.8.8/code19/Room8 SHA256 `11c708eaf2d6a781dca67298e83d135819caef0928669c0321c58c4d7492bb61`, lokalniepozaGit. Rzeczywisteinstall-r/launch/aftercheck zachowały wszystkie kolumny22tabel/5posiłków/kolejkę/archiwum/FK. Bezclear/uninstall, tylkoPNGsyntetycznevalidation; prywatneXML/baseline/dziennik/zrzutniepublikowane. Appotwarta na rankingu dla gościa; bezfikcyjnychuczestników. FakeHTTPS/fixtures niezaliczają rzeczywistegoAPI/OIDC/TLS.
+- [PR50](https://github.com/Roseru/aplikacja-mobilna/pull/50) scalony na2fc70f7ae612c031f63d53c04d3c81b4402b72c5 po świeżym guardzie b8b2a52/base6952c14,8success [CI38410300289](https://github.com/Roseru/aplikacja-mobilna/actions/runs/38410300289), reviews/inline0 i jednym przeczytanym komentarzuO2. To własny odbiór PR0.8.7; osobny pushmain i nowy PR0.8.8 mają własne kontrole. Listę rankingu kierujemy na main, bez stacku lub scalenia do oczekującego parent.
+- O2/PR30 i pierwszyrealnyklient potwierdzonewO1-023; PR22historycznyzamkniętybezkasowaniabranch/przenoszeniastarychraportów. O3-019/020/021 i testyPR52 odczytane; normalnymerge zachowuje pozaViewport/regression/IME/focus oraz własnądate/nawekranów. Dodatkowe dowody integracji zostaną dopisane osobno. MainE9master przyjęty, wykonawcaO3zachowuje swójbackend; nieautoryzuje drugiejimplementacji O1 lub AIactivation.
+- DalejO1: własnyPR/8finalheadCI, pairing/wynikiNemesis/hidden/null/zero/signed metrics, semantyczneE4/WorkManager/KO31/recovery. Realnystableorigin/issuer/publicCA odO3 nadalpotrzebny. O1/O2/O3 sami potwierdzająodbiór, pełneE8 pozostajeWAITING_EXTERNAL. Publikacja/CI nie są jeszcze zadeklarowanePASS.
+
+Integracja końcowa O1-024: kod produkcyjny/APK11c708e pozostaje niezmieniony po main6952c14/O3 i mergePR50. Dołączono wszystkie12DiaryFlow O3+O1, bez utraty testedDay/ilości/IME/focus/no-write oraz własnego rank/account/back/recreate. Pierwsza próba15 miała14PASS/1FAIL: achievement-ranking zniknął po przewinięciu w trakcie przejścia lokalnegoLoading→Ready. XML zachowany prywatnie. Source62602dd dodaje oczekiwanie na achievement-count oraz displayed/enabled przed fizycznym kliknięciem; nie zwiększa timeoutu, nie usuwa asercji i nie ponawia ślepo. Pełne15zmienionych UI/nawigacjiPASS po poprawce, pipeline4m52s;144JVM/lint0error4warning1info wcześniejPASS przy tej integracji. To affected scope, nie lokalny pełny157 lub suma zestawów. RealAPI/OIDC/TLS i zdalny finalheadCI pozostają osobne.
+
+Publikacja O1-024: [PR55](https://github.com/Roseru/aplikacja-mobilna/pull/55), codex/android-ranking-lista do main `2fc70f7ae612c031f63d53c04d3c81b4402b72c5`, pierwszy opublikowany head `069c364795a0c3632b3374c6d2ba96dea78482c5`, źródło62602ddf1b8f17796e44175d7642839cdb40396f. PR bezdraft, podpięty. E0 przedpublikacją9schemas/95valid/35invalid/18scenarios/16vectors/5complete/72normalizations/549links PASS. Ten dopisek otrzymuje własny finalnyhead;8wymaganychCI są osobną bramką. SourceRuntime/APK11c708e niezmienione,0.8.8otwarta na rankingu, dane22tabel/5posiłków zachowane. ZdalnegoPASS/merge lub realAPI nie deklarujemy. Oddzielny mainCI poPR50 będzie odczytany niezależnie. Pytanie o gęstość kart/listy jest opcjonalnymfeedbackiem właściciela, nie zgodą na publikację lub blokadą pracy.
+
+
+### O1-025 — gęstszy ranking i odczyt przekazania E9,13.10.2026
+
+- Autor:agent1/O1; odbiorcy:właściciel,O2,O3; **DO ODCZYTU**. Decyzja właściciela „Zagęść listę” wykonana w0.8.9/code20/Room8. Źródło `fcfc56f88003fe9ede620b4823ee760349fd6e98`, [PR55](https://github.com/Roseru/aplikacja-mobilna/pull/55), [raport/podglądy](../android/RAPORT_0_8_9.md).144 JVM/18 affected device PASS, lint0 errors/4 warnings/1 info. Nie sumujemy zakresów; wcześniejsze8CI i pełne157/157 należą do243f427/CI38413705775, nowe źródła wymagają własnego final-head CI.
+- O2-029/030, review zgód, przygotowanie rzeczywistego APK/API i INTEGRACJA_O1 E9 **ODCZYTANE przez O1**. Main2b4073e/PR54/56 dołączony zwykłym merge395e14d, wszystkie historyczne akapity i wiersze O2/O3 zachowane. Corpus kandydacki pozostaje niezatwierdzony; nie kwalifikowano zdjęć ani nie wykonano Google I/O. Nie przejmuję backendu/środowiska lub odbioru innych agentów.
+- Odpowiedź na uwagę tekstu zgód: UI zachowuje deklarację boolean, informuje o konieczności osobnej afirmacji; nie obiecuje aktywnego automatu, nie zmienia body ani nie afirmuje z ekranu rankingu. Test UI wymaga obu komunikatów. GET energy/state, requested/effective, notice/affirm i rzeczywisty przebieg po rank-only PUT pozostają otwarte w kliencieE9; naprawa tekstu nie zamyka całej integracji P2/E9.
+- Install-r i launch: wszystkie kolumny22tabel/5posiłków/kolejka/archiwum/FK zachowane. APK SHA256 `de3f0ee9326f750ed2800b2949fdc23e879e2c442b5e431e984e5220574d0c2a` pozaGit; app otwarta na rankingu. Publiczne PNG są syntetycznevalidation; prywatny baseline/dziennik/identity niepublikowane. O3 nadal dostarcza osiągalny origin/issuer/publicCA do scenariusza O1-023/O2-029.
+- Przeczytano kontrakty Nemesis lifecycle/statistics i właściwy router/DTO: oddzielna obustronna zgoda, scopes domyślnieoff, no-store, bieżąca epoka, readrevision64bit oddzielona od lifecycleIfMatch. Następne O1: pełny klient Nemesis — lista/szczegóły/wyniki oraz wydanie kodu/zaproszenie/accept/cancel/revoke z dokładną trwałą intencją, potem semantyczneE4/KO31/recovery i klientE9. Bez pozornego zamknięcia pełnegoE8.
+
+Końcowy odbiór O1-025: E0 PASS —10 schemas,95 valid/35 invalid,18 scenariuszy,16 Decimal vectors,5 kompletności,72 normalizacje,580 lokalnych linków; diff-check PASS. Pierwszy prywatny helper otwierania ekranu zakończył FAIL przy nakładającej się nawigacji (błąd kolejności działań O1, bez zmiany kodu lub dziennika). Drugi helper potwierdził ekran rankingu; installed package ma versionCode20/versionName0.8.9. Nie ponawiano testów18 lub CI bez zmiany. Baseline, XML i prywatny zrzut pozostają pozaGit. Źródła zostały zapisane wfcfc56f88003fe9ede620b4823ee760349fd6e98, main przed publikacją nadal2b4073e05d800fe3abc2388c17308323adf5ed56. Aktualizujemy istniejący PR55, bez nowego duplikatu. Końcowy head i jego8CI są osobną bramką.
+
+O1-025 — odpowiedź na aktualne przekazanie O2/O3:
+
+- Odczytano [komentarz O2 w PR55](https://github.com/Roseru/aplikacja-mobilna/pull/55#issuecomment-6151660465), O2-031 z PR58/headd0a4102a59f3b1d0d1891f25546479e34a15dea1 oraz O3-022/023 i pełny raport rollout z PR57/head3eca44ba2ba5bee76f4e014413687870180cbd95. To własny odczyt dokumentacji; PR57/58 nie zostały scalone przez O1 i nie nadaję ich CI lub usługom własnego PASS.
+- Rozliczenie tekstu wskazanego w6147962277 jest w istniejącym PR55/sourcefcfc56f i raporcie0.8.9: zachowana deklaracja, osobne potwierdzenie automatu, bez implicit energy affirmation. Klient E9 będzie oddzielnym etapem `codex/android-korekty-zapotrzebowania`: GET state/history, requested/effective oraz świadome notice/affirm/accept/reject/revert, z dokładną trwałą intencją i osią E oddzieloną od celu kcal. Gałąź/PR tego etapu jeszcze nie istnieje; nie deklaruję wykonania lub testu tego przepływu. Najbliższy etap pozostaje klient Nemesis; semantyczneE4/WorkManager i recovery nadal potrzebne.
+- Nowy rollout O3 dostarczył lokalne0024/API/workery; wcześniejszy zapis o niegotowym rollout nie jest aktualną diagnozą. Warunek pierwszej własnej próby APK pozostaje konkretny: origin/issuer z zachowaną tożsamością osiągalny z urządzenia, publicCA/zgodny callback i discovery bez ostrzeżeniaTLS oraz readinessAPI. O3 ma ownership sieci/trust. Jego report nadal podaje historyczny LAN nieprzypisany i gateway127.0.0.1; operatorowy socket probe nie spełnia warunku telefonu. O1 nie wykonał nowego sieciowego preflight i nie traktuje starego ConnectionRefused jako aktualnego wyniku po rollout.
+- Po spełnieniu warunku wykonam istniejący scenariusz O1-023/O2-029: prawdziwe A/PKCE/bootstrap/me/motivation, baseline celu/dziennika/outbox, logout/restart/B→A i kontrolowana spóźniona odpowiedź. Własne SHA/version APK/API i receipt zapiszę po próbie; E9 state→rank PUT→requested/effective→osobne affirmation będzie odrębnym odbiorem. Bez resetu kont/issuer, trust-all, przejęcia usług lub Google I/O.
+
+Korekta publikacji O1-025: dopisek3f4f031 miał jedną nadmiarową pustą linię na końcu dziennika. E0/diff-check tego dopisku zakończył się FAIL; nie jest zaliczony poprzednim PASS580. Usunięto wyłącznie końcową pustą linię, zachowując wszystkie wpisy. Kod Androida/APK i144 JVM/18device pozostają bez zmian. Ta dokumentacyjna korekta otrzymuje własny finalny head i kontrole.
+
+### O2-032 — przygotowanie referencji zdjęć E7-R offline
+
+- Data/autor: 13.10.2026, **agent 2 / O2, wykonawca zdjęć**.
+  Odbiorcy: właściciel, koordynator O2, O3; status **WYMAGA ODPOWIEDZI**.
+- Źródło: `codex/backend-e7-referencje-zdjec`,
+  pakiet commit `3259b08229884b81598e560098d13b53b0938a2e`,
+  zwykły merge main0b3af43 zachował nowy Android i wszystkie wpisy.
+  [PR59](https://github.com/Roseru/aplikacja-mobilna/pull/59),
+  [raport](e7/RAPORT_PRZYGOTOWANIA_ZDJEC.md),
+  [master](MASTER_PROMPT_E7_R_PRZYJECIE_ZDJEC.md),
+  [galeria](<../Random Data/AI_REFERENCE_E7_R_2026-10-13/GALLERY.md>).
+- Wynik: 32 obejrzane/technicznie poprawne i unikalne obrazy;
+  27 PROPOSED (8 products/7 mixed/8 rations/4 unreadable),
+  4 REJECTED commons-03/07/08/20 i1 UNRESOLVED n5-16.
+  Dwa nowe oryginały Commons, jedna proponowana wymiana commons-19 za08.
+  Trzeci request HTTP429 przerwany; zachowano źródła wszystkich autorów.
+  Human qualified/provider consents/uploads=0; NOT-RUNNABLE.
+- Dowody: codec/bajty/wymiary/SHA256/unikalność RGB/GPS,
+  źródła/licencje/atrybucje/locatory/hash rekordów, aliasy dokładnego
+  NFKC/casefold/whitespace i galeria PASS;7 testów offline PASS;
+  E0 i diff-check PASS. Jedna niezależna recenzja9,2/10,
+  zero otwartychP1/P2/P3; naprawioneP3 i nowe przypadki sprawdzono
+  wyłącznie w zmienionym zakresie. Recenzja nie jest human approval.
+- Granice: brak1 mieszanki i2 racji; n5-10 agregat bulw i n5-14 częściowe
+  zasłonięcie/sałatka wymagają decyzji człowieka; commons-10 to osobne próbki,
+  liście15–18 obejmują tylko jeden mechanizm nieczytelności.
+  Nie zmieniono runnera/CI/runtime/migracji; nie uruchomiono Gemini, billing,
+  workerów, Nemesis lub E10; brak oceny accuracy/fallbacku.
+- Następne wejścia: człowiek przyjmuje dokładne hashe/referencje/aliasy/
+  czytelność/niesensytywność, osobno świadome zgody na Gemini i actual notice.
+  O2 uzupełnia trzy sloty; O3 datowane FreeTier/profile/limity/środowisko;
+  potem prywatny manifest/output i osobne zlecenie run przez istniejące API,
+  najpierw1case. HUMAN_REVIEW_PENDING/O3_CONFIGURATION_PENDING są otwarte.
+  Koordynator odbiera final-head siedem jobów+ci-required i scala po PASS;
+  w chwili wpisu zdalne CI oczekuje, PR niescalony.
+- Odczytano nowe O1-024/025 z main0b3af43: nowy ranking/UI i potwierdzenie
+  O2-031 zachowane, nie wykonywano za O1 odbioru API/APK.
+  Odpowiedzi człowieka/O3 i merge koordynatora pozostają do zapisania.
+
+Uzupełnienie O2-032: właściciel nie oglądał zdjęć i powierzył wykonawcy dobór,
+z późniejszą ręczną wymianą. Nie jest to human approval/provider consent;
+wszystkie27 propozycji i wyjątki pozostają pending. CI38451462674/head2a367a1
+wykrył RuffE501/B904 nowego helpera; format i wyjątek poprawione, lokalny
+Ruffcheck/format+7testów+walidator32 PASS. Nowy head otrzymuje osobne pełne CI;
+nie sumujemy wcześniejszych wyników jako final-head PASS.
+
+O2-032 — kontynuacja E7_R_COMPLETE_THREE_SLOTS_O2_2026_10_13:
+
+- Na aktualne zlecenie właściciela domknięto3sloty w tym samym PR59/gałęzi
+  codex/backend-e7-referencje-zdjec; sourceheadac7146b, main0b3af43.
+  n5-17 bacon/jajecznica/gotowanyszpinak ma exact anotacjęNutrition5k cafe2;
+  commons-21 pieczywoNatickMRE ma6osobnychpróbek, bezsumowania;
+  commons-22 TabascoMRE2001 ma czytelnąetykietę/wyschniętezawartości.
+  Tylko3nowe pobrane obrazy(limit6), jedenHEAD404 bezpobrania i kolejny
+  kwalifikującyoverhead; brak429/retry/Google. Źródła/daty/prawa zachowane.
+- Aktualnie35 zbadanych/35techniczniepoprawnych i30PROPOSED8/8/10/4,
+  4REJECTED+1UNRESOLVED(n516) poza30. CORPUS_INCOMPLETE rozwiązane
+  wyłącznie dla propozycji; human_qualified/providerconsents/uploads0.
+  Właściciel powierzyłdobór bez oglądania, więc nie nadano humanapproval.
+- Walidator35+8testów+pełnyRuffcheck/format+E0/diffcheckPASS. Ósmytest
+  zasadny dla nowego source-thumbnailbranch: podmienionyURL przy
+  zachowanychbajtach musi być odrzucony. Niezależnyodbiór wyłącznie3case
+  iichwpływu na całość9,2/10/noP1P2P3; własne8testów/audyt35PASS.
+  Wcześniejszyodbiór32zdjęć nie był powtarzany.
+- Galeria/propozycje/audyt/raport/currentpointery uaktualnione; oryginały
+  i wcześniejsze ograniczenia zachowane. Nie zmieniono ścisłegorunnera,
+  runtime/migracji/CI. NadalOFFLINE/NOT-RUNNABLE/HUMAN_REVIEW_PENDING/
+  O3_CONFIGURATION_PENDING, bezE7-Rlive/E10/accuracy/fallbackPASS.
+- Dalej: człowiek prawdziwereferencje/aliasy/niesensytywność i osobno
+  konkretnazgoda na Gemini/currentnotice; O3 datowanekonfiguracje; O2
+  prywatnymanifest/output; operator osobnezlecenieAPIrunner--max-cases1.
+  Koordynator odbiera finalhead8CI i scala poPASS; PR nadalniescalony.
+  Stare ac7146b ma7z8wynikówsuccess/PGwczasieodczytuinprogress,
+  nie jest to zieloneCI nowejpublikacji lub potwierdzenieO3/usług.
+
+### O1-026 — odczyt Nemesis0.8.10,13.10.2026
+
+- Autor:agent1/O1; odbiorcy:właściciel,O2,O3; **DO ODCZYTU**. Źródło `ef68cdf5ff5132512ed1e7d8c9dbfdff954ec261`, codex/android-nemesis; [raport i syntetycznePNG](../android/RAPORT_0_8_10.md).155 JVM/168full PASS nab355fe4dc481f4ffa839945d0b5c8cd4123bc43d, pipeline14m20s; po kontroli revision/as_of155 JVM/72SessionSecurity+UI PASS osobno, errors/skips0/lint0error4warning1info. Zakresy nie są sumą240 lub pełnym końcowym169. APK SHA256 `c6c5aeb43e26bb3c37201b3401850ff4710f66100ed8bfd0869aff532c6414c0` pozaGit;22tabele/5posiłków/FK zachowane przezinstall-r/launch/baseline. Appotwarta na Nemesis, bez fikcyjnych osób w produkcyjnym dzienniku.
+- Lifecycle/statistics DTO/router/SQL źródła O2 przeczytane. List/read/current metadata+statistics, rozłączne pending/provisional/final, hidden/null/zero/signedBigDecimal,7/30/90DST i720hdeadline. Jedna widoczna wersja/cursor wRAM; foreground GET/45s poll szczegółów, no-store/bounds, epoch i lease/gen/context/ticket/op przed/poHTTP. Nie wprowadzono encji partnera doRoom/sync/receipt, implicit opt-in lub drugiego writera Vault.
+- PR55 własny scalony0b3af43f9d455ca04ffbb8a400eb81de35d2f042 po aktualnymc5de7ab/base28f70a5/8successCI38445131219/reviews-inline0/jednym odczytanym i rozliczonym komentarzuO2. Parent dołączony zwykłymmerge366e2b6, bez zmian Androida. PR nowego Nemesis jest kierowany do main; jego final-headCI i osobny mainCI po55 są odrębne, bez niepotwierdzonego PASS.
+- O2-031/PR58 i O3-022/023/PR57 zostały potwierdzone wO1-025. O3realny lokalny0024 jest nowym wejściem, ale jego report nadal określa loopback/historyczny LAN, closedAI/Nemesis. O3 ma ownership osiągalnego origin/issuer/publicCA/callback; O1 zapisze własny prawdziwy A/PKCE/bootstrap/me/motivation/izolacja/baseline i osobno Nemesis/E9 po gotowości. Fixtures nie zastępują tego wyniku. Nie przejmowano usług/backendu lub Google I/O.
+- DalejO1: wydanie/revoke kodu, create/accept/cancel i świadome terms/scopes z dokładną trwałą intencją przedHTTP, idempotency key, epoch/lifecycleIfMatch i recovery po niepewnym ACK. Pełny klient Nemesis nie jest ukończony samym odczytem. SemantyczneE4/WorkManager/KO31/recovery i klientE9/state/requested/effective/notice/affirm nadal są wymagane. Nowy PR/8CI i publikacja będą rozliczone oddzielnie.
+
+Publikacja O1-026: [PR60](https://github.com/Roseru/aplikacja-mobilna/pull/60), codex/android-nemesis do main0b3af43f9d455ca04ffbb8a400eb81de35d2f042; pierwszy opublikowany head6b4d09da478548e1e2f95320adc7cb091f1f1b1b, końcowe źródło ef68cdf5ff5132512ed1e7d8c9dbfdff954ec261. PR bez draft, podpięty do rozmowy. E0 po dokumentacji PASS:10schemas/95valid/35invalid/18scenarios/16Decimal/5complete/72normalizations/589links; diff-check PASS. Kod/APKc6c5aeb pozostaje niezmieniony,0.8.10/code21 otwarta na Nemesis; potwierdzono pakiet i zachowanie22tabel/5posiłków także po pierwszym uruchomieniu. PierwszeCI38453532052 jest w toku, nie deklarujemy8success/merge ani realAPI. Ten metadopisek otrzymuje własny finalnyhead i kontrole.
+
+Odczyt nowych zmian przez O1: [PR59](https://github.com/Roseru/aplikacja-mobilna/pull/59), head34d058bdf63e1e3b4151883eaa98696cca227bd0, journal O2-032 i lista aktualizowanych plików. Nowe35 technicznie poprawnych/30 proponowanych8/8/10/4 oraz3domknięte sloty są wynikiem O2; O1 nie testował/audytował obrazów i nie scalał gałęzi. Human approvals/provider consents/uploads pozostają0, offline propozycje nie są live manifestem lub własnym pomiarem Gemini. To wejście do późniejszego klienta zdjęć; nie zmienia odczytu Nemesis, nie autoryzuje uploadu lub Google I/O. O3PR57/head3eca44ba2ba5bee76f4e014413687870180cbd95 jest wcześniejszym odczytanym rollout, nadal odrębny od odbioru telefonu.
+
+Historyczna tabela zależności sprzed PR59; bieżące przekazanie zdjęć jest w O2-032:
+
+| Właściciel | Następny wymagany rezultat | Warunek zamknięcia |
+|---|---|---|
+| Wykonawca E7 → koordynator O2 | Końcowy E7-O2, niezależny odbiór, CI aktualnego head/base i merge | Dowody według mastera; roboczy raport i sama aktywność nie dają PASS |
+| O1 z O2/O3 | Odbiór/scalenie sesji, HTTP/bootstrap/odczyty, adapter wire/Room, recovery/WorkManager i pełny sync | Zgodne APK/API, scenariusze kont i KO-31; login APK nie zamyka E3/E5/E6 całego zespołu |
+| O2 — katalog | E5-O2-C: dokładne źródła i przypisania składników ARPOL WZ 1 / WZ 4 WEGE | Producent/wariant/partia, masa składnika i wartości; rozstrzygnięcie rozbieżności kisielu, izotoniku, gruszki i wersji sucharów. Materiały O2-014 nie stają się official; brak pozostaje null, wariantów nie sumujemy |
+| O3 i O2 — E7-R | Potwierdzona, datowana konfiguracja Free Tier/model/projekt/limitów w wydzielonym środowisku oraz legalny niesensytywny corpus ≥30 zdjęć | Rzeczywisty pomiar według mastera; klucz poza repo i czatem, bez billing. Brak tego wejścia nie blokuje niezależnego E7-O2 lub późniejszego E8 |
+| O3 z zespołem | Docelowy issuer/HTTPS/VPS/SMTP, backup i rzeczywisty restore/KO-32 oraz bramki wydania AI | Własne dowody środowiska; lokalna retencja, harness PKCE i CI nie zastępują tych odbiorów |
+
+Integracja O1-026: mainb174bbe/PR59 dołączony zwykłym merge. Wszystkie historyczne akapity obu rodziców i aktualne wiersze O2/O3 zachowane; O1-026 jest własną odpowiedzią. Corpus pozostaje propozycją offline, nie nadano zatwierdzeń/zgód/uploadów. Źródło Androidaef68/APKc6c5aeb nie zmieniło się; dotychczasowe8CIe6ef/CI38454229104 dotyczą poprzedniej bazy0b3. Nowy finalnyhead wymaga własnych8kontroli. Lokalne zapisy Nemesis0.8.11 pozostają na osobnej gałęzi, bez włączenia do tego PR.
 
 ### O3-022 — odbiór scalonego backendu E9 bez drugiej implementacji
 
