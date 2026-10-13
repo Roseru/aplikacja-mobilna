@@ -18,7 +18,7 @@ Każda osoba aktualizuje własny wiersz. Daty i dokładne źródła są w jej wp
 | Rola | Ostatni znany rezultat | Następny krok / zależność | Źródło |
 |---|---|---|---|
 | O1 — Android, Kotlin, Room | 0.8.9/code20/Room8: gęstszy ranking i poprawiony tekst zgód/E9;144 JVM/18 affected device PASS;22tabele/5posiłków zachowane | Własne CI PR55; Nemesis, klientE9, realny APK/API, semantyczneE4/recovery | O1-025, [raport](../android/RAPORT_0_8_9.md), codex/android-ranking-lista |
-| O2 — Python, PostgreSQL, API | E9-O2 scalone i odebrane w PR54/main 2b4073e; schema 0024, ocena 9,2/10, osiem kontroli PR i main PASS. Pakiet APK/API i 30 kandydatów E7-R scalony w PR56 | O3: odbiór przekazanego rollout 0024 i osiągalne origin/issuer/CA; O1: realny scenariusz i requested/effective energii; niezależne przyjęcie zdjęć/zgód. Pełne E9/R i wydanie osobno | O2-031, [PR54](https://github.com/Roseru/aplikacja-mobilna/pull/54), [E9](e9/RAPORT_E9.md), [APK/API](integracja/ODBIOR_APK_API_O2.md), [corpus](<../Random Data/AI_REFERENCE_E7_R_2026-10-13/README.md>) |
+| O2 — Python, PostgreSQL, API | E9-O2 scalone PR54; E7-R offline:35 zbadane,30 propozycji8/8/10/4,4odrzucone,1unresolved; nowe3cases niezależnie9,2/10/noP1P2 | Człowiek:referencje/zgody; O3:datowane wejścia; koordynator:finalCI/mergePR59. Corpus proposals complete, live/E10 osobno | O2-031/032, [PR59](https://github.com/Roseru/aplikacja-mobilna/pull/59), [raport zdjęć](e7/RAPORT_PRZYGOTOWANIA_ZDJEC.md) |
 | O3 — DevOps, CI/CD, serwer | Lokalny rollout/workery/restore E8 oraz PR51 restart i PR52 testy UI odebrane; main821a4e8 ma8CI PASS, czysty zsynchronizowany checkout | Nowe zlecenie właściciela: E9-O2, najpierw odbiór mastera; stabilny origin/APK i produkcja osobno, AI/Nemesis closed | O3-012–021, [master E9](MASTER_PROMPT_E9.md), [PR51](https://github.com/Roseru/aplikacja-mobilna/pull/51), [PR52](https://github.com/Roseru/aplikacja-mobilna/pull/52) |
 
 ## Wpisy
@@ -1044,7 +1044,7 @@ Nadal otwarte działania i właściciele:
 |---|---|---|
 | Wykonawca E7 → koordynator O2 | Końcowy E7-O2, niezależny odbiór, CI aktualnego head/base i merge | Dowody według mastera; roboczy raport i sama aktywność nie dają PASS |
 | O1 z O2/O3 | Odbiór/scalenie sesji, HTTP/bootstrap/odczyty, adapter wire/Room, recovery/WorkManager i pełny sync | Zgodne APK/API, scenariusze kont i KO-31; login APK nie zamyka E3/E5/E6 całego zespołu |
-| O2 — katalog | E5-O2-C: dokładne źródła i przypisania składników ARPOL WZ 1 / WZ 4 WEGE | Producent/wariant/partia, masa składnika i wartości; rozstrzygnięcie rozbieżności kisielu, izotoniku, gruszki i wersji sucharów. Materiały O2-014 nie stają się official; brak pozostaje null, wariantów nie sumujemy |
+| O2 — Python, PostgreSQL, API | E9-O2 scalone PR54; E7-R offline:35 zbadane,30 propozycji8/8/10/4,4odrzucone,1unresolved; nowe3cases niezależnie9,2/10/noP1P2 | Człowiek:referencje/zgody; O3:datowane wejścia; koordynator:finalCI/mergePR59. Corpus proposals complete, live/E10 osobno | O2-031/032, [PR59](https://github.com/Roseru/aplikacja-mobilna/pull/59), [raport zdjęć](e7/RAPORT_PRZYGOTOWANIA_ZDJEC.md) |
 | O3 i O2 — E7-R | Potwierdzona, datowana konfiguracja Free Tier/model/projekt/limitów w wydzielonym środowisku oraz legalny niesensytywny corpus ≥30 zdjęć | Rzeczywisty pomiar według mastera; klucz poza repo i czatem, bez billing. Brak tego wejścia nie blokuje niezależnego E7-O2 lub późniejszego E8 |
 | O3 z zespołem | Docelowy issuer/HTTPS/VPS/SMTP, backup i rzeczywisty restore/KO-32 oraz bramki wydania AI | Własne dowody środowiska; lokalna retencja, harness PKCE i CI nie zastępują tych odbiorów |
 
@@ -1304,3 +1304,78 @@ O1-025 — odpowiedź na aktualne przekazanie O2/O3:
 - Po spełnieniu warunku wykonam istniejący scenariusz O1-023/O2-029: prawdziwe A/PKCE/bootstrap/me/motivation, baseline celu/dziennika/outbox, logout/restart/B→A i kontrolowana spóźniona odpowiedź. Własne SHA/version APK/API i receipt zapiszę po próbie; E9 state→rank PUT→requested/effective→osobne affirmation będzie odrębnym odbiorem. Bez resetu kont/issuer, trust-all, przejęcia usług lub Google I/O.
 
 Korekta publikacji O1-025: dopisek3f4f031 miał jedną nadmiarową pustą linię na końcu dziennika. E0/diff-check tego dopisku zakończył się FAIL; nie jest zaliczony poprzednim PASS580. Usunięto wyłącznie końcową pustą linię, zachowując wszystkie wpisy. Kod Androida/APK i144 JVM/18device pozostają bez zmian. Ta dokumentacyjna korekta otrzymuje własny finalny head i kontrole.
+
+### O2-032 — przygotowanie referencji zdjęć E7-R offline
+
+- Data/autor: 13.10.2026, **agent 2 / O2, wykonawca zdjęć**.
+  Odbiorcy: właściciel, koordynator O2, O3; status **WYMAGA ODPOWIEDZI**.
+- Źródło: `codex/backend-e7-referencje-zdjec`,
+  pakiet commit `3259b08229884b81598e560098d13b53b0938a2e`,
+  zwykły merge main0b3af43 zachował nowy Android i wszystkie wpisy.
+  [PR59](https://github.com/Roseru/aplikacja-mobilna/pull/59),
+  [raport](e7/RAPORT_PRZYGOTOWANIA_ZDJEC.md),
+  [master](MASTER_PROMPT_E7_R_PRZYJECIE_ZDJEC.md),
+  [galeria](<../Random Data/AI_REFERENCE_E7_R_2026-10-13/GALLERY.md>).
+- Wynik: 32 obejrzane/technicznie poprawne i unikalne obrazy;
+  27 PROPOSED (8 products/7 mixed/8 rations/4 unreadable),
+  4 REJECTED commons-03/07/08/20 i1 UNRESOLVED n5-16.
+  Dwa nowe oryginały Commons, jedna proponowana wymiana commons-19 za08.
+  Trzeci request HTTP429 przerwany; zachowano źródła wszystkich autorów.
+  Human qualified/provider consents/uploads=0; NOT-RUNNABLE.
+- Dowody: codec/bajty/wymiary/SHA256/unikalność RGB/GPS,
+  źródła/licencje/atrybucje/locatory/hash rekordów, aliasy dokładnego
+  NFKC/casefold/whitespace i galeria PASS;7 testów offline PASS;
+  E0 i diff-check PASS. Jedna niezależna recenzja9,2/10,
+  zero otwartychP1/P2/P3; naprawioneP3 i nowe przypadki sprawdzono
+  wyłącznie w zmienionym zakresie. Recenzja nie jest human approval.
+- Granice: brak1 mieszanki i2 racji; n5-10 agregat bulw i n5-14 częściowe
+  zasłonięcie/sałatka wymagają decyzji człowieka; commons-10 to osobne próbki,
+  liście15–18 obejmują tylko jeden mechanizm nieczytelności.
+  Nie zmieniono runnera/CI/runtime/migracji; nie uruchomiono Gemini, billing,
+  workerów, Nemesis lub E10; brak oceny accuracy/fallbacku.
+- Następne wejścia: człowiek przyjmuje dokładne hashe/referencje/aliasy/
+  czytelność/niesensytywność, osobno świadome zgody na Gemini i actual notice.
+  O2 uzupełnia trzy sloty; O3 datowane FreeTier/profile/limity/środowisko;
+  potem prywatny manifest/output i osobne zlecenie run przez istniejące API,
+  najpierw1case. HUMAN_REVIEW_PENDING/O3_CONFIGURATION_PENDING są otwarte.
+  Koordynator odbiera final-head siedem jobów+ci-required i scala po PASS;
+  w chwili wpisu zdalne CI oczekuje, PR niescalony.
+- Odczytano nowe O1-024/025 z main0b3af43: nowy ranking/UI i potwierdzenie
+  O2-031 zachowane, nie wykonywano za O1 odbioru API/APK.
+  Odpowiedzi człowieka/O3 i merge koordynatora pozostają do zapisania.
+
+Uzupełnienie O2-032: właściciel nie oglądał zdjęć i powierzył wykonawcy dobór,
+z późniejszą ręczną wymianą. Nie jest to human approval/provider consent;
+wszystkie27 propozycji i wyjątki pozostają pending. CI38451462674/head2a367a1
+wykrył RuffE501/B904 nowego helpera; format i wyjątek poprawione, lokalny
+Ruffcheck/format+7testów+walidator32 PASS. Nowy head otrzymuje osobne pełne CI;
+nie sumujemy wcześniejszych wyników jako final-head PASS.
+
+O2-032 — kontynuacja E7_R_COMPLETE_THREE_SLOTS_O2_2026_10_13:
+
+- Na aktualne zlecenie właściciela domknięto3sloty w tym samym PR59/gałęzi
+  codex/backend-e7-referencje-zdjec; sourceheadac7146b, main0b3af43.
+  n5-17 bacon/jajecznica/gotowanyszpinak ma exact anotacjęNutrition5k cafe2;
+  commons-21 pieczywoNatickMRE ma6osobnychpróbek, bezsumowania;
+  commons-22 TabascoMRE2001 ma czytelnąetykietę/wyschniętezawartości.
+  Tylko3nowe pobrane obrazy(limit6), jedenHEAD404 bezpobrania i kolejny
+  kwalifikującyoverhead; brak429/retry/Google. Źródła/daty/prawa zachowane.
+- Aktualnie35 zbadanych/35techniczniepoprawnych i30PROPOSED8/8/10/4,
+  4REJECTED+1UNRESOLVED(n516) poza30. CORPUS_INCOMPLETE rozwiązane
+  wyłącznie dla propozycji; human_qualified/providerconsents/uploads0.
+  Właściciel powierzyłdobór bez oglądania, więc nie nadano humanapproval.
+- Walidator35+8testów+pełnyRuffcheck/format+E0/diffcheckPASS. Ósmytest
+  zasadny dla nowego source-thumbnailbranch: podmienionyURL przy
+  zachowanychbajtach musi być odrzucony. Niezależnyodbiór wyłącznie3case
+  iichwpływu na całość9,2/10/noP1P2P3; własne8testów/audyt35PASS.
+  Wcześniejszyodbiór32zdjęć nie był powtarzany.
+- Galeria/propozycje/audyt/raport/currentpointery uaktualnione; oryginały
+  i wcześniejsze ograniczenia zachowane. Nie zmieniono ścisłegorunnera,
+  runtime/migracji/CI. NadalOFFLINE/NOT-RUNNABLE/HUMAN_REVIEW_PENDING/
+  O3_CONFIGURATION_PENDING, bezE7-Rlive/E10/accuracy/fallbackPASS.
+- Dalej: człowiek prawdziwereferencje/aliasy/niesensytywność i osobno
+  konkretnazgoda na Gemini/currentnotice; O3 datowanekonfiguracje; O2
+  prywatnymanifest/output; operator osobnezlecenieAPIrunner--max-cases1.
+  Koordynator odbiera finalhead8CI i scala poPASS; PR nadalniescalony.
+  Stare ac7146b ma7z8wynikówsuccess/PGwczasieodczytuinprogress,
+  nie jest to zieloneCI nowejpublikacji lub potwierdzenieO3/usług.

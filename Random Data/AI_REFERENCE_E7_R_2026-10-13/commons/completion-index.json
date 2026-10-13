@@ -1,0 +1,38 @@
+[
+  {
+    "candidate_id": "commons-21",
+    "proposed_group": "rations",
+    "source_id": "File:MRE pouched bread - commonwealth zk51xh600.jpg",
+    "image": "commons/commons-21.jpg",
+    "image_sha256": "3029db56d8abcfc0a07bbacbb6c32902580132b6f7b5334878cf4e36fdefa7c4",
+    "bytes": 182647,
+    "source_url": "https://commons.wikimedia.org/wiki/File:MRE_pouched_bread_-_commonwealth_zk51xh600.jpg",
+    "license": "Public domain",
+    "details": "commons/completion-source-evidence.json",
+    "human_reference": null,
+    "provider_consent": null,
+    "source_sha1": "6cebe0c1493e9e236173b0ecbc9914d48c0af134",
+    "downloaded_url": "https://thumb.wikimedia.org/wikipedia/commons/thumb/1/1d/MRE_pouched_bread_-_commonwealth_zk51xh600.jpg/1280px-MRE_pouched_bread_-_commonwealth_zk51xh600.jpg?utm_source=commons.wikimedia.org&utm_campaign=imageinfo&utm_content=thumbnail",
+    "downloaded_variant": "Commons server thumbnail 1280",
+    "retrieved_at": "2026-10-13T19:11:30.094775Z",
+    "last_modified": "Tue, 06 Oct 2026 01:45:35 GMT"
+  },
+  {
+    "candidate_id": "commons-22",
+    "proposed_group": "rations",
+    "source_id": "File:MRE Tabasco Sauce DSCF0043.jpg",
+    "image": "commons/commons-22.jpg",
+    "image_sha256": "c00c81055eb0d9c8b1a4b86d670720fcb2098d387a6ad0d90a042ad25b8ccce0",
+    "bytes": 516460,
+    "source_url": "https://commons.wikimedia.org/wiki/File:MRE_Tabasco_Sauce_DSCF0043.jpg",
+    "license": "CC BY-SA 4.0",
+    "details": "commons/completion-source-evidence.json",
+    "human_reference": null,
+    "provider_consent": null,
+    "source_sha1": "e293ccd1621897ba20ab261eb766cbf17d8dc148",
+    "downloaded_url": "https://upload.wikimedia.org/wikipedia/commons/8/84/MRE_Tabasco_Sauce_DSCF0043.jpg?utm_source=commons.wikimedia.org&utm_campaign=imageinfo&utm_content=original",
+    "downloaded_variant": "original",
+    "retrieved_at": "2026-10-13T19:11:30.567121Z",
+    "last_modified": "Sat, 15 Aug 2020 18:01:31 GMT"
+  }
+]

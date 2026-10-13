@@ -1,0 +1,278 @@
+{
+  "batchcomplete": "",
+  "query": {
+    "pages": {
+      "8077705": {
+        "pageid": 8077705,
+        "ns": 6,
+        "title": "File:FEMA - 39890 - Peanut butter packet inside a MRE.jpg",
+        "imagerepository": "local",
+        "imageinfo": [
+          {
+            "timestamp": "2009-10-15T08:38:27Z",
+            "size": 26325,
+            "width": 640,
+            "height": 480,
+            "url": "https://upload.wikimedia.org/wikipedia/commons/9/99/FEMA_-_39890_-_Peanut_butter_packet_inside_a_MRE.jpg?utm_source=commons.wikimedia.org&utm_campaign=imageinfo&utm_content=original",
+            "descriptionurl": "https://commons.wikimedia.org/wiki/File:FEMA_-_39890_-_Peanut_butter_packet_inside_a_MRE.jpg",
+            "descriptionshorturl": "https://commons.wikimedia.org/w/index.php?curid=8077705",
+            "sha1": "60adb7ecc57713beaa3ac9de20d362bd4c5c55cb",
+            "extmetadata": {
+              "DateTime": {
+                "value": "2009-10-15 08:38:27",
+                "source": "mediawiki-metadata",
+                "hidden": ""
+              },
+              "ObjectName": {
+                "value": "FEMA - 39890 - Peanut butter packet inside a MRE",
+                "source": "mediawiki-metadata"
+              },
+              "CommonsMetadataExtension": {
+                "value": 1.2,
+                "source": "extension",
+                "hidden": ""
+              },
+              "Categories": {
+                "value": "PD US FEMA|Images from FEMA, category Response|Peanut butter packets|Meal, Ready-to-Eat components",
+                "source": "commons-categories",
+                "hidden": ""
+              },
+              "Assessments": {
+                "value": "",
+                "source": "commons-categories",
+                "hidden": ""
+              },
+              "ImageDescription": {
+                "value": "Washington, DC, February 4, 2009 -- Peanut butter packet inside a MRE.  This was used in the following press release:  <a rel=\"nofollow\" class=\"external free\" href=\"http://www.fema.gov/news/newsrelease.fema?id=47461\">http://www.fema.gov/news/newsrelease.fema?id=47461</a>",
+                "source": "commons-desc-page"
+              },
+              "DateTimeOriginal": {
+                "value": "2009-02-04",
+                "source": "commons-desc-page"
+              },
+              "Credit": {
+                "value": "This image is from the <a rel=\"nofollow\" class=\"external text\" href=\"https://web.archive.org/web/*/www.fema.gov/media-library/search/39890\">FEMA Photo Library</a> (obsolete as of 2019).<br>An archived copy may be found at the <a rel=\"nofollow\" class=\"external text\" href=\"https://web.archive.org/web/*/http://www.fema.gov/media-library/assets/images/39890\">Wayback Machine</a> (note: link may be permanently dead, as not all photos were backed up in this way).<br>If the FEMA link is permanently dead, the photo can be found at <a rel=\"nofollow\" class=\"external text\" href=\"https://aad.archives.gov/aad/fielded-search.jsp?dt=1680&amp;bc=&amp;tf=I\">NARA Access to Archival Databases</a> (only works if photo was taken between 1989 and October 2004), or at <a rel=\"nofollow\" class=\"external text\" href=\"https://www.city-data.com/disaster-photos/39890.html\">City-data.com</a>.",
+                "source": "commons-desc-page"
+              },
+              "Artist": {
+                "value": "FEMA News Photo",
+                "source": "commons-desc-page"
+              },
+              "LicenseShortName": {
+                "value": "Public domain",
+                "source": "commons-desc-page",
+                "hidden": ""
+              },
+              "UsageTerms": {
+                "value": "Public domain",
+                "source": "commons-desc-page"
+              },
+              "AttributionRequired": {
+                "value": "false",
+                "source": "commons-desc-page",
+                "hidden": ""
+              },
+              "Copyrighted": {
+                "value": "False",
+                "source": "commons-desc-page",
+                "hidden": ""
+              },
+              "Restrictions": {
+                "value": "",
+                "source": "commons-desc-page",
+                "hidden": ""
+              },
+              "License": {
+                "value": "pd",
+                "source": "commons-templates",
+                "hidden": ""
+              }
+            }
+          }
+        ]
+      },
+      "3718587": {
+        "pageid": 3718587,
+        "ns": 6,
+        "title": "File:First Strike Ration.jpg",
+        "imagerepository": "local",
+        "imageinfo": [
+          {
+            "timestamp": "2008-03-16T10:20:00Z",
+            "size": 312292,
+            "width": 1000,
+            "height": 665,
+            "url": "https://upload.wikimedia.org/wikipedia/commons/2/21/First_Strike_Ration.jpg?utm_source=commons.wikimedia.org&utm_campaign=imageinfo&utm_content=original",
+            "descriptionurl": "https://commons.wikimedia.org/wiki/File:First_Strike_Ration.jpg",
+            "descriptionshorturl": "https://commons.wikimedia.org/w/index.php?curid=3718587",
+            "sha1": "ffcaf11c408d535c3a67afe7ca06d7964fc47ed0",
+            "extmetadata": {
+              "DateTime": {
+                "value": "2008-03-16 10:20:00",
+                "source": "mediawiki-metadata",
+                "hidden": ""
+              },
+              "ObjectName": {
+                "value": "First Strike Ration",
+                "source": "mediawiki-metadata"
+              },
+              "CommonsMetadataExtension": {
+                "value": 1.2,
+                "source": "extension",
+                "hidden": ""
+              },
+              "Categories": {
+                "value": "PD US Army|First Strike Ration",
+                "source": "commons-categories",
+                "hidden": ""
+              },
+              "Assessments": {
+                "value": "",
+                "source": "commons-categories",
+                "hidden": ""
+              },
+              "ImageDescription": {
+                "value": "The new First Strike Ration includes items such as the First Strike! Bar, beef jerky, nut and fruit mix, caffeinated gum, applesauce, tortillas, honey BBQ beef pocket sandwiches and filled French toast pockets. The ration is meant to provide Soldiers with three meals a day, is about the size of a single MRE, and contains only items that can be easily eaten with the hands. It is designed for Soldiers on the move. (original caption)",
+                "source": "commons-desc-page"
+              },
+              "DateTimeOriginal": {
+                "value": "2008-03-06",
+                "source": "commons-desc-page"
+              },
+              "Credit": {
+                "value": "<a rel=\"nofollow\" class=\"external text\" href=\"http://www.army.mil/-images/2008/03/06/13344/army.mil-2008-03-06-232651.jpg\">US Army images gallery</a>",
+                "source": "commons-desc-page"
+              },
+              "Artist": {
+                "value": "Juan R. Meléndez Jr.",
+                "source": "commons-desc-page"
+              },
+              "Permission": {
+                "value": "<i>This file is a work of a <a href=\"//commons.wikimedia.org/wiki/United_States_Army\" title=\"United States Army\">U.S. Army</a> soldier or employee, taken or made as part of that person's official duties. As a <a href=\"https://en.wikipedia.org/wiki/Work_of_the_United_States_Government\" class=\"extiw\" title=\"en:Work of the United States Government\">work</a> of the <a href=\"https://en.wikipedia.org/wiki/Federal_Government_of_the_United_States\" class=\"extiw\" title=\"en:Federal Government of the United States\">U.S. federal government</a>, it is in the <b><a href=\"https://en.wikipedia.org/wiki/public_domain\" class=\"extiw\" title=\"w:public domain\">public domain</a></b> in the United States.</i>",
+                "source": "commons-desc-page",
+                "hidden": ""
+              },
+              "LicenseShortName": {
+                "value": "Public domain",
+                "source": "commons-desc-page",
+                "hidden": ""
+              },
+              "UsageTerms": {
+                "value": "Public domain",
+                "source": "commons-desc-page"
+              },
+              "AttributionRequired": {
+                "value": "false",
+                "source": "commons-desc-page",
+                "hidden": ""
+              },
+              "Copyrighted": {
+                "value": "False",
+                "source": "commons-desc-page",
+                "hidden": ""
+              },
+              "Restrictions": {
+                "value": "",
+                "source": "commons-desc-page",
+                "hidden": ""
+              },
+              "License": {
+                "value": "pd",
+                "source": "commons-templates",
+                "hidden": ""
+              }
+            }
+          }
+        ]
+      },
+      "15839062": {
+        "pageid": 15839062,
+        "ns": 6,
+        "title": "File:MRE No. 23 (cropped).jpg",
+        "imagerepository": "local",
+        "imageinfo": [
+          {
+            "timestamp": "2011-07-19T08:49:35Z",
+            "size": 478214,
+            "width": 1012,
+            "height": 543,
+            "url": "https://upload.wikimedia.org/wikipedia/commons/2/2e/MRE_No._23_%28cropped%29.jpg?utm_source=commons.wikimedia.org&utm_campaign=imageinfo&utm_content=original",
+            "descriptionurl": "https://commons.wikimedia.org/wiki/File:MRE_No._23_(cropped).jpg",
+            "descriptionshorturl": "https://commons.wikimedia.org/w/index.php?curid=15839062",
+            "sha1": "f5fda227117f8a5cb0bcdc2e8b721c48b58e8eb0",
+            "extmetadata": {
+              "DateTime": {
+                "value": "2011-07-19 08:49:35",
+                "source": "mediawiki-metadata",
+                "hidden": ""
+              },
+              "ObjectName": {
+                "value": "MRE No. 23 (cropped)",
+                "source": "mediawiki-metadata"
+              },
+              "CommonsMetadataExtension": {
+                "value": 1.2,
+                "source": "extension",
+                "hidden": ""
+              },
+              "Categories": {
+                "value": "Peanut butter|Pretzels|GPL|Tabasco sauce|Images with annotations|Wet wipes|Files uploaded by User:Northamerica1000|Template Unknown (source)|Chicken meat|Meal, Ready-to-Eat (1996 tan bag)|Meal, Ready-to-Eat components|Flameless Ration Heater",
+                "source": "commons-categories",
+                "hidden": ""
+              },
+              "Assessments": {
+                "value": "",
+                "source": "commons-categories",
+                "hidden": ""
+              },
+              "ImageDescription": {
+                "value": "<b>MRE No. 23 -  Chicken Breast filled with rib meat</b>\n<p>Contents of a <a href=\"https://en.wikipedia.org/wiki/United_States_Army\" class=\"extiw\" title=\"w:United States Army\">United States Army</a> <a href=\"https://en.wikipedia.org/wiki/Meal,_Ready-to-Eat\" class=\"extiw\" title=\"w:Meal, Ready-to-Eat\">Meal, Ready-to-Eat</a>, from left to right:\n</p>\n<dl><dd>Chicken breast, pineapple pound cake, outer packaging,</dd></dl>\n<dl><dd>MRE Heater (to heat the main meal), wheat snack bread, spoon, Tabasco sauce, sugar, moist towelette, matches,</dd></dl>\n<dl><dd><a href=\"https://en.wikipedia.org/wiki/Pretzel\" class=\"extiw\" title=\"w:Pretzel\">Pretzels</a>, peanut butter, orange beverage base powder, salt, tea, coffee cream,</dd></dl>\n<dl><dd>toilet paper, chewing gum (Laxative)</dd></dl>",
+                "source": "commons-desc-page"
+              },
+              "DateTimeOriginal": {
+                "value": "2006-01",
+                "source": "commons-desc-page"
+              },
+              "Credit": {
+                "value": "Unknown source<span style=\"display: none;\">Unknown source</span>",
+                "source": "commons-desc-page"
+              },
+              "Artist": {
+                "value": "Heptarch",
+                "source": "commons-desc-page"
+              },
+              "LicenseShortName": {
+                "value": "GPL",
+                "source": "commons-desc-page",
+                "hidden": ""
+              },
+              "UsageTerms": {
+                "value": "GNU General Public License",
+                "source": "commons-desc-page"
+              },
+              "AttributionRequired": {
+                "value": "true",
+                "source": "commons-desc-page",
+                "hidden": ""
+              },
+              "LicenseUrl": {
+                "value": "http://www.gnu.org/licenses/gpl.html",
+                "source": "commons-desc-page"
+              },
+              "Copyrighted": {
+                "value": "True",
+                "source": "commons-desc-page",
+                "hidden": ""
+              },
+              "Restrictions": {
+                "value": "",
+                "source": "commons-desc-page",
+                "hidden": ""
+              }
+            }
+          }
+        ]
+      }
+    }
+  }
+}
