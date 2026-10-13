@@ -159,13 +159,12 @@ class DiaryFlowTest {
         compose.onNodeWithTag("ration-grams-demo-a-crackers").assertTextContains("22,5")
         compose.waitForIdle()
         compose.activityRule.scenario.recreate()
-        compose.waitUntil(10_000) { compose.onAllNodesWithTag("ration-grams-demo-a-crackers", useUnmergedTree = true).fetchSemanticsNodes().isNotEmpty() }
-        // Recreation restores the IME and lazy scroll asynchronously. Bring the field back
-        // into composition before checking its exact saved quantity; do not rely on a
-        // transient merged node from the preceding wait.
+        compose.waitUntil(10_000) { compose.onAllNodesWithTag("confirm-ration").fetchSemanticsNodes().isNotEmpty() }
+        // Wait for the restored editor, then recompose the exact field before checking it.
+        // O3's viewport/IME fix and O1's direct selector/date oracle remain combined.
         compose.onNodeWithTag("ration-content").performScrollToNode(hasTestTag("ration-grams-demo-a-crackers"))
         compose.onNodeWithTag("ration-grams-demo-a-crackers", useUnmergedTree = true).assertTextContains("22,5")
-        finishQuantityInput("ration-grams-demo-a-crackers", "confirm-ration")
+        finishQuantityInput("ration-grams-demo-a-crackers", "confirm-ration", "ration-content")
         compose.onNodeWithTag("confirm-ration").assertIsEnabled().performClick()
         val expected = (baseline + 222.0).roundToInt().toString()
         compose.waitUntil(10_000) { compose.onAllNodes(hasTestTag("daily-kcal") and hasText(expected)).fetchSemanticsNodes().isNotEmpty() }
@@ -294,9 +293,10 @@ class DiaryFlowTest {
         compose.onNodeWithTag("ration-grams-${part.id}").assertTextContains("12,123456789123")
         compose.waitForIdle()
         compose.activityRule.scenario.recreate()
-        compose.waitUntil(10_000) { compose.onAllNodesWithTag("ration-grams-${part.id}").fetchSemanticsNodes().isNotEmpty() }
+        compose.waitUntil(10_000) { compose.onAllNodesWithTag("confirm-ration").fetchSemanticsNodes().isNotEmpty() }
+        compose.onNodeWithTag("ration-content").performScrollToNode(hasTestTag("ration-grams-${part.id}"))
         compose.onNodeWithTag("ration-grams-${part.id}").assertTextContains("12,123456789123")
-        finishQuantityInput("ration-grams-${part.id}", "confirm-ration")
+        finishQuantityInput("ration-grams-${part.id}", "confirm-ration", "ration-content")
         compose.onNodeWithTag("confirm-ration").assertIsEnabled().performClick()
         compose.waitUntil(10_000) { runBlocking { app.database.dao().day(DiaryRepository.GUEST, LocalDate.now().toString()).first().any { it.meal.id !in previousIds } } }
         val meal = runBlocking { app.database.dao().day(DiaryRepository.GUEST, LocalDate.now().toString()).first().single { it.meal.id !in previousIds } }
@@ -314,6 +314,33 @@ class DiaryFlowTest {
         compose.onNodeWithTag("diary-content").performScrollToNode(hasTestTag("daily-kcal"))
         compose.onNodeWithTag("daily-kcal").assertIsDisplayed()
         assertEquals("130.5", runBlocking { app.database.dao().meal(meal.meal.id, DiaryRepository.GUEST)!!.items.single().consumed().asExact().energy.canonical })
+    }
+
+    @Test fun restoreRationQuantityOutsideInitialViewportWithoutSavingMeal() {
+        compose.waitUntil(15_000) { compose.onAllNodesWithTag("daily-kcal").fetchSemanticsNodes().isNotEmpty() }
+        val app = compose.activity.application as CalorieApplication
+        val ration = runBlocking { app.database.dao().rations().first().single { it.ration.catalogJson != null } }
+        val part = ration.components.maxBy { it.position }
+        val tag = "ration-grams-${part.id}"
+        val before = runBlocking { app.database.dao().operationCount(DiaryRepository.GUEST) }
+        compose.onNodeWithText("Dodaj posiłek").performClick()
+        compose.onNodeWithTag("open-rations").performClick()
+        compose.onNodeWithTag("ration-content").performScrollToNode(hasTestTag("ration-${ration.ration.id}"))
+        compose.onNodeWithTag("ration-${ration.ration.id}").performClick()
+        compose.onNodeWithTag("ration-content").performScrollToNode(hasTestTag("ration-check-${part.id}"))
+        compose.onNodeWithTag("ration-check-${part.id}").performClick()
+        compose.onNodeWithTag(tag).performTextReplacement("0,1")
+        finishQuantityInput(tag, "confirm-ration", "ration-content")
+        compose.activityRule.scenario.recreate()
+        compose.waitUntil(10_000) { compose.onAllNodesWithTag("confirm-ration").fetchSemanticsNodes().isNotEmpty() }
+        // A missing lazy node is not evidence that its saved value was lost. Exercise
+        // an actually offscreen component before locating it and checking its value.
+        compose.onNodeWithTag("ration-content").performScrollToIndex(0)
+        compose.onNodeWithTag(tag).assertDoesNotExist()
+        compose.onNodeWithTag("ration-content").performScrollToNode(hasTestTag(tag))
+        compose.onNodeWithTag(tag).assertTextContains("0,1")
+        finishQuantityInput(tag, "confirm-ration", "ration-content")
+        assertEquals(before, runBlocking { app.database.dao().operationCount(DiaryRepository.GUEST) })
     }
 
     @Test fun switchProductWhileEditingPortionWithoutSaving() {
@@ -336,15 +363,18 @@ class DiaryFlowTest {
         assertEquals(previousIds, runBlocking { app.database.dao().day(DiaryRepository.GUEST, LocalDate.now().toString()).first().map { it.meal.id }.toSet() })
     }
 
-    private fun finishQuantityInput(tag: String, buttonTag: String) {
+    private fun finishQuantityInput(tag: String, buttonTag: String, containerTag: String? = null) {
         compose.onNodeWithTag(tag).performClick().performImeAction()
-        // After Done the merged tree may absorb the field into its parent. Check the tagged
-        // field itself; the focus=false oracle and the separate IME visibility check stay intact.
-        compose.onNodeWithTag(tag, useUnmergedTree = true).assertIsNotFocused()
         compose.waitUntil(5_000) {
             ViewCompat.getRootWindowInsets(compose.activity.window.decorView)?.isVisible(WindowInsetsCompat.Type.ime()) != true
         }
         compose.waitForIdle()
+        // Done changes the IME inset and may move a lazy item out of composition. Bring
+        // that same field back after the inset settles, then assert the actual focus state.
+        if (containerTag != null) {
+            compose.onNodeWithTag(containerTag).performScrollToNode(hasTestTag(tag))
+        }
+        compose.onNodeWithTag(tag, useUnmergedTree = true).assertIsNotFocused()
         compose.onNodeWithTag(buttonTag).assertIsDisplayed().assertIsEnabled()
     }
 }
