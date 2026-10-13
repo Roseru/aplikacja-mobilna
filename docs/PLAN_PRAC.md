@@ -174,3 +174,11 @@ Aktualny odbiór backendu E9-O2: runtime dfaad1b, nieautor9,2/10/noopenP1P2,
 1362PG iosiemCI PASS; [raport](e9/RAPORT_E9.md). PR54 pozostaje niescalony,
 końcowy merge main7fd/PR56 wymaga własnego head/baseCI. Przygotowanie APK/API,
 corpus i UI requested/effective O1 pozostają odrębnymi odbiorami pełnej integracji.
+
+Aktualizacja O3 po scaleniu PR54: powyższy zapis dotyczy wcześniejszego checkpointu.
+Backend E9-O2 jest na main `2b4073e05d800fe3abc2388c17308323adf5ed56`;
+osobny push main CI38435239012 ma wszystkie osiem kontroli success, z odczytem
+pełnych logów. Własne 97 testów PG E9 O3 również PASS. Szczegóły i granice:
+[odbiór main O3](e9/ODBIOR_MAIN_O3.md). Rzeczywisty [lokalny rollout0024](e9/ROLLOUT_LOKALNY_O3.md)
+również wykonano po próbie upgrade kopii i z zachowaniem danych. Pełne E9/R, docelowy rollout, Room/UI/APK
+oraz live Gemini pozostają osobnymi odbiorami; nie rozpoczynamy drugiego backendu.
