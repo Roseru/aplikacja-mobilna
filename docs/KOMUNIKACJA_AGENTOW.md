@@ -18,7 +18,7 @@ Każda osoba aktualizuje własny wiersz. Daty i dokładne źródła są w jej wp
 | Rola | Ostatni znany rezultat | Następny krok / zależność | Źródło |
 |---|---|---|---|
 | O1 — Android, Kotlin, Room | 0.8.7/code18/Room8: świadome zgody i exact retry; nowy pełny135JVM/147device PASS po naprawie selektora; 22tabele/5posiłków zachowane | PR50 nowe CI; realne API/APK, lista rankingu, Nemesis i semantyczne E4 | O1-022–023, [raport](../android/RAPORT_0_8_7.md), codex/android-ranking-zgody |
-| O2 — Python, PostgreSQL, API | Backend E9-O2 odebrany9,2/10/noP1P2; runtime dfaad8CI/1362PG PASS; PR54 niescalony | Finalny dokumentacyjny head/CI i merge koordynatora; O1/O3 własna integracja. Demo/live bez zmian | O2-028, [raport E9](e9/RAPORT_E9.md), codex/backend-e9-korekta-zapotrzebowania |
+| O2 — Python, PostgreSQL, API | Backend E9-O2 odebrany9,2/noP1P2, runtime dfaad8CI/1362PG PASS; PR54 niescalony. Pakiet APK/API i30 kandydatów E7-R odebrany w PR56 | Finalny head/base/CI PR54 i merge koordynatora; O3 origin/issuer/CA, O1 realny scenariusz/requested-effective, człowiek przyjmuje corpus. Full E9/R/live osobno | O2-028–030, [E9](e9/RAPORT_E9.md), [APK/API](integracja/ODBIOR_APK_API_O2.md), [corpus](<../Random Data/AI_REFERENCE_E7_R_2026-10-13/README.md>) |
 | O3 — DevOps, CI/CD, serwer | Lokalny rollout/workery/restore E8 oraz PR51 restart i PR52 testy UI odebrane; main821a4e8 ma8CI PASS, czysty zsynchronizowany checkout | Nowe zlecenie właściciela: E9-O2, najpierw odbiór mastera; stabilny origin/APK i produkcja osobno, AI/Nemesis closed | O3-012–021, [master E9](MASTER_PROMPT_E9.md), [PR51](https://github.com/Roseru/aplikacja-mobilna/pull/51), [PR52](https://github.com/Roseru/aplikacja-mobilna/pull/52) |
 
 ## Wpisy
@@ -1142,6 +1142,21 @@ O1-023 — własne potwierdzenie przekazania O2 po PR30, 13.10.2026:
 
 Integracja O3-019/020/021 w O1-023: main6952c1418b3a79e4da93803808d40c5097f3a40b dołączony zwykłym merge3e1b195e7a48bfdbd36fcbc951f37d52bc386be2. Zachowano wszystkie testy PR52, nowy offscreen-restoration oraz własny testedDay, consentnavigation i bezpośredni selector. Po recreate oczekiwanie na gotowy edytor/confirm-ration, potem przewinięcie do tego samego pola; po Done czekanie na schowanie IME i powrót pola przed rzeczywistym focus=false. Bez zmian timeoutów/ilości/kcal/oracles. Własny odbiór dokładnego PR50 po merge:135JVM/lint0error4warning1info oraz12/12DiaryFlow PASS, pipeline9m25s. To affected scope po poprzednim pełnym135/147, nie nowy pełny148; zdalnyCI tego head wykona własny pełny zestaw. Android runtime/APK5234edb bez zmian. Odczytano restart/cadence/neutral diagnostics PR51 i odebrany masterE9; O3 zachowuje swój backend, O1 nie rozpoczyna drugiego. Publicorigin/API/APK i Nemesis nadal mają osobne odbiory. Wszystkie stare RED oraz historyczne akapity zachowane; O2/O3 sami potwierdzają odczyt.
 
+### O2-029 — przygotowanie pierwszej pełnej ścieżki i referencji równolegle z E9
+
+- Data / autor: 13.10.2026, **agent 2 / O2, koordynator**. Odbiorcy: O1, O3, właściciel, wykonawca E9. Status **DO ODCZYTU**; odbiorcy sami potwierdzają odczyt. Bezpośrednie zlecenie właściciela obejmuje trzy zadania równoległe, proporcjonalną delegację i publikację; później polecił znaleźć zdjęcia w internecie, ponieważ nie ma własnych. Baza odczytu: main `2fc70f7ae612c031f63d53c04d3c81b4402b72c5`; PR50 scalony, O1-023 i O3-019–021 odczytane. Historyczny brak zlecenia E9 z O2-024 został zastąpiony osobnym zleceniem i aktywnym PR54; nie zmieniamy historycznych akapitów.
+- **Scenariusz przygotowany:** [APK → PKCE → bootstrap → GET me/motivation → izolacja A/B](integracja/ODBIOR_APK_API_O2.md) korzysta z istniejących narzędzi i dokładnych DTO. Własny ograniczony preflight: loopback 18443 ConnectionRefused, historyczny LAN timeout 2500 ms, stary IP nieprzypisany. Pierwszy sandboxowy AccessDenied nie został uznany za awarię serwera. HTTPS/discovery/PKCE/APK nie wykonano; środowisko i pełna ścieżka **WAITING_EXTERNAL O3→O1**. [Przekazanie O3](https://github.com/Roseru/aplikacja-mobilna/pull/51#issuecomment-6147961766) prosi o gotowy wariant origin/issuer/CA i stan istniejącej instalacji, bez resetu kont lub osłabienia TLS.
+- **Review zgód:** [ograniczony niezależny raport](integracja/RECENZJA_ZGOD_O2.md), PR50/main2fc na jego obecnym kontrakcie 9,3/10, bez znalezionych P1/P2; własne 28 unit PASS, odwracalna mutacja usuwająca epoch z fingerprintu wykryta przez istniejącą regresję. Android/JVM/PG/realny HTTPS w tym review nie wykonane. Read-only styk E9 na `0c81fb7428bae783d7202e03dec1e1ab876f85cc` ujawnił **P2 przed pełną integracją E9**: rank-only PUT zachowuje energy boolean true, ale unieważnia nowy baseline/notice; komunikat „pozostanie włączona” wymaga requested/effective i osobnej afirmacji. [O1 otrzymał prompt](https://github.com/Roseru/aplikacja-mobilna/pull/50#issuecomment-6147962277); wykonawca E9 otrzymał tę samą uwagę. Nie zadeklarowano naprawy ani odbioru za adresatów.
+- **Corpus pozyskany:** [30 wybranych kandydatów](<../Random Data/AI_REFERENCE_E7_R_2026-10-13/README.md>), propozycja przekroju 8/8/10/4, rzeczywiste zdjęcia Nutrition5k/Commons. Dokładne pliki/źródła/licencje/atrybucje/anotacje/SHA-256 zachowane; 30 unikalnych hashów, 10 558 270B obrazów. Wszystkie obejrzane; 8 podobnych zdjęć pilota i 4 odrzucone nie zwiększają liczby przyjętych przypadków. **Qualified/reference approvals=0, provider consents=0, uploads=0**; galerie i checklistę przygotowano do niezależnego przyjęcia. Nie zgadywano kcal/mas/wersji racji, nie zmieniono demo w official. Pełne E7-R nadal wymaga człowieka/referencji/zgód oraz osobno konfiguracji O3. Nie wykonano Google I/O lub billing.
+- **Organizacja:** [master trzech ograniczonych zadań](MASTER_PROMPT_PRZYGOTOWANIE_ODBIORU_O2.md), jedna własna gałąź `codex/docs-o2-przygotowanie-odbioru` i jeden pakiet publikacji. Wspólne pliki utrzymał koordynator; E9 pozostaje jednym wykonawcą w PR54 z własnym O2-028, bez zmiany jego kodu/checkoutu. Nie przejmujemy Androida lub DevOps. E5-C/producer confirmation odłożone dla demo; wymagane dane i bramki nie są oznaczone jako spełnione. Watchery PAUSED, E10 nie uruchomiono.
+- **Weryfikacja/publikacja:** własne XML 28 PASS/errors0/skips0 oraz mutation 1 expected FAIL sprawdzone. Hash/size/group/source-id przyjętych kandydatów sprawdzono; dane są kandydackim przygotowaniem, nie manifestem live. Finalny E0/diff-check i wymagane CI będą podane z dokładnym commitem/PR; wcześniejsze runtime/CI innych osób pozostają ich własnymi dowodami. Kolejne kroki: O3 gotowość → O1 rzeczywisty scenariusz; O1/E9 rozliczenie P2; niezależny człowiek przyjmuje corpus → O3 gotowe API/worker/limity → O2 zatwierdzony runner. Sam pakiet przygotowania nie zamyka full E8/E9/E7-R.
+
+
+O2-029 — odbiór przygotowania:nieautor9,3/10,brak nowych P1/P2 w pakiecie;30 plików/source IDs/hashów,8/8/10/4 i10 558 270B potwierdzone. Dwie P3 dokumentacji poprawione; produktowy P2 zgód/E9 pozostaje otwarty. Własny E0 locked/offline9schemas/95valid/35invalid/18scenarios/561links i staged diff-check PASS; kwalifikacje/zgody/uploady0. RuntimeAPK/Google nie wykonywano. Commit/PR i dokładne zdalne CI publikacji zostaną podane w wyniku tego samego spójnego PR.
+
+
+O2-029 — publikacja przygotowania: commit treści 8ab115bc8661eecb96d635671b3bb6cb11a75482, gałąź codex/docs-o2-przygotowanie-odbioru, baza2fc70f7. Końcowy head zawiera także ten metadopisek; dokładne wymagane CI/PR i wynik merge będą odczytane osobno. To przygotowanie odbioru i kandydackiego corpus, nie odbiór rzeczywistego APK/Google/E9.
+
 ### O2-028 — E9: jeden wykonawca backendu, izolowany PG/mock
 
 - Data/autor:13.10.2026, Agent2/O2, jedyny wykonawczy czat E9
@@ -1230,3 +1245,13 @@ Dalej: koordynator odczytuje finalhead/base/CI i scala; O1/O3 własne integracje
 E9/R i E10 pozostają otwarte. Brak wdrożenia/Google/watcherów; własne usługi
 zostaną zatrzymane po ukończeniu prywatnych prób. E4 checkout i wszystkie wcześniejsze
 niezatwierdzone dane zachowane. O2-029 należy do oddzielnego pakietu koordynatora.
+
+
+O2-030 — odbiór nowego main7fd05d6/PR56: zachowano wszystkie wpisy O2-029,
+cały corpus30 kandydatów oraz dokumentację/licencje/hash/wersje. Brak kwalifikacji,
+providerconsents/uploads pozostaje0; bez Google/R/E10 wykonania. Zwykły merge
+nie zmienił backendu lub testów względem odebranego dfaad. Backendowy kontrakt
+requested/effective i publiczny rank-only PUT/fresh affirmation są w
+[INTEGRACJA_O1](e9/INTEGRACJA_O1.md) i test_e9_final_edges, obaPASS; tekst/UI O1
+wskazany w O2-029 pozostaje osobnym otwartym stykiem, nie globalnym closedP2.
+Nowe końcowe head/base PR54 i osiem CI będą odczytane po publikacji tego merge.

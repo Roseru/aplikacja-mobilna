@@ -1,0 +1,686 @@
+[
+  {
+    "case_id": "commons-01",
+    "requested_group": "rations",
+    "image": "commons-01.jpg",
+    "image_sha256": "79202ff7beb81b9774020324401ff72ef61bd5faed6c2469b2da90d9824fd68a",
+    "bytes": 302801,
+    "title": "File:MRE contents.jpg",
+    "source_page": "https://commons.wikimedia.org/wiki/File:MRE_contents.jpg",
+    "source_original_url": "https://upload.wikimedia.org/wikipedia/commons/a/ad/MRE_contents.jpg?utm_source=commons.wikimedia.org&utm_campaign=imageinfo&utm_content=original",
+    "downloaded_url": "https://thumb.wikimedia.org/wikipedia/commons/thumb/a/ad/MRE_contents.jpg/1280px-MRE_contents.jpg?utm_source=commons.wikimedia.org&utm_campaign=imageinfo&utm_content=thumbnail",
+    "requested_variant": "Commons server thumbnail requested width=1280",
+    "download_last_modified": "Wed, 26 Aug 2026 08:32:26 GMT",
+    "source_timestamp": "2006-03-09T08:49:12Z",
+    "source_sha1": "e005d743d2490ad34db46b1a9af2878ffe6ea904",
+    "source_width": 1935,
+    "source_height": 1092,
+    "author_html": "<a href=\"//commons.wikimedia.org/wiki/User:Christopherlin\" title=\"User:Christopherlin\">Christopherlin</a>",
+    "attribution_html": "<span class=\"int-own-work\" lang=\"en\">Own work</span>",
+    "license": "CC BY-SA 3.0",
+    "license_url": "http://creativecommons.org/licenses/by-sa/3.0/",
+    "usage_terms": "Creative Commons Attribution-Share Alike 3.0",
+    "restrictions": "",
+    "source_description_html": "An <a href=\"https://en.wikipedia.org/wiki/MRE\" class=\"extiw\" title=\"w:MRE\">MRE</a> contains a complete meal for use in the field. This was given out by <a href=\"https://en.wikipedia.org/wiki/United_States_National_Guard\" class=\"extiw\" title=\"w:United States National Guard\">United States National Guard</a> after <a href=\"https://en.wikipedia.org/wiki/Hurricane_Rita\" class=\"extiw\" title=\"w:Hurricane Rita\">Hurricane Rita</a>. Menu #10 \n<ul><li>Chili and <a href=\"//commons.wikimedia.org/wiki/Macaroni\" class=\"mw-redirect\" title=\"Macaroni\">Macaroni</a></li>\n<li>Wheat snack bread</li>\n<li>Molasses cookie</li>\n<li>Cheese spread with jalapenos</li>\n<li>Tootsie rolls</li>\n<li>salt</li>\n<li>sugar</li>\n<li>coco beverage powder</li>\n<li>ground coffee</li>\n<li>ground red pepper</li>\n<li>gum</li>\n<li><a href=\"//commons.wikimedia.org/w/index.php?title=Moist_towelette&amp;action=edit&amp;redlink=1\" class=\"new\" title=\"Moist towelette (page does not exist)\">moist towelette</a></li>\n<li>paper napkin</li>\n<li>matchbook</li>\n<li>spoon</li></ul>\nTaken next to the window on carpet, cropped in Adobe Photoshop. (Further post-processing is welcome if I don't get around to it.)",
+    "source_proof": "commons-01-source.json",
+    "retrieved_at": "2026-10-13T14:37:13Z",
+    "provider_consent": null,
+    "human_reference": null,
+    "selected_for_review": true,
+    "group": "rations",
+    "downloaded_width": 1280,
+    "downloaded_height": 722,
+    "author": "Christopherlin",
+    "ai_visual_inspection": "view_image inspected actual downloaded bytes; not human approval",
+    "classification_note": "Source lists menu 10 and packaged foods; labels partly legible. Salt, sugar and condiments remain visible but human must decide main-component scope. The Commons source states author cropped in Photoshop before upload; no local cropping or editing performed.",
+    "proposed_readable": true,
+    "proposed_main_components": [
+      {
+        "label": "chili and macaroni",
+        "accepted_aliases": [
+          "chili and macaroni"
+        ]
+      },
+      {
+        "label": "wheat snack bread",
+        "accepted_aliases": [
+          "wheat snack bread"
+        ]
+      },
+      {
+        "label": "molasses cookie",
+        "accepted_aliases": [
+          "molasses cookie"
+        ]
+      },
+      {
+        "label": "cheese spread with jalapenos",
+        "accepted_aliases": [
+          "cheese spread with jalapenos"
+        ]
+      },
+      {
+        "label": "Tootsie rolls",
+        "accepted_aliases": [
+          "Tootsie rolls"
+        ]
+      },
+      {
+        "label": "cocoa beverage powder",
+        "accepted_aliases": [
+          "cocoa beverage powder"
+        ]
+      },
+      {
+        "label": "coffee",
+        "accepted_aliases": [
+          "coffee"
+        ]
+      }
+    ]
+  },
+  {
+    "case_id": "commons-02",
+    "requested_group": "rations",
+    "image": "commons-02.jpg",
+    "image_sha256": "a8d8cbe5c8dafd62d76cf02ed26fe39f6ddb118faaefa1e3fbdec31c9fcc3b84",
+    "bytes": 261174,
+    "title": "File:MRE Menu 2 P8152664.jpg",
+    "source_page": "https://commons.wikimedia.org/wiki/File:MRE_Menu_2_P8152664.jpg",
+    "source_original_url": "https://upload.wikimedia.org/wikipedia/commons/0/07/MRE_Menu_2_P8152664.jpg?utm_source=commons.wikimedia.org&utm_campaign=imageinfo&utm_content=original",
+    "downloaded_url": "https://thumb.wikimedia.org/wikipedia/commons/thumb/0/07/MRE_Menu_2_P8152664.jpg/1280px-MRE_Menu_2_P8152664.jpg?utm_source=commons.wikimedia.org&utm_campaign=imageinfo&utm_content=thumbnail",
+    "requested_variant": "Commons server thumbnail requested width=1280",
+    "download_last_modified": "Sun, 23 Aug 2026 20:51:45 GMT",
+    "source_timestamp": "2020-08-15T17:39:59Z",
+    "source_sha1": "6f112c6d4d1262db9dc4341486a05292e6845f7c",
+    "source_width": 3000,
+    "source_height": 2250,
+    "author_html": "<a href=\"//commons.wikimedia.org/wiki/User:Ashley_Pomeroy\" title=\"User:Ashley Pomeroy\">Ashley Pomeroy</a>",
+    "attribution_html": "<span class=\"int-own-work\" lang=\"en\">Own work</span>",
+    "license": "CC BY-SA 4.0",
+    "license_url": "https://creativecommons.org/licenses/by-sa/4.0",
+    "usage_terms": "Creative Commons Attribution-Share Alike 4.0",
+    "restrictions": "",
+    "source_description_html": "The contents of MRE Menu 2, Beef Shredded",
+    "source_proof": "commons-02-source.json",
+    "retrieved_at": "2026-10-13T14:37:14Z",
+    "provider_consent": null,
+    "human_reference": null,
+    "selected_for_review": true,
+    "group": "rations",
+    "downloaded_width": 1280,
+    "downloaded_height": 960,
+    "author": "Ashley Pomeroy",
+    "ai_visual_inspection": "view_image inspected actual downloaded bytes; not human approval",
+    "classification_note": "Observed labels substantiate proposal. Do not infer ration manufacture/version from upload date. Entire menu component scope must be reviewed by human.",
+    "proposed_readable": true,
+    "proposed_main_components": [
+      {
+        "label": "shredded beef in barbecue sauce",
+        "accepted_aliases": [
+          "shredded beef in barbecue sauce"
+        ]
+      },
+      {
+        "label": "plain tortillas",
+        "accepted_aliases": [
+          "plain tortillas"
+        ]
+      },
+      {
+        "label": "tropical punch beverage",
+        "accepted_aliases": [
+          "tropical punch beverage"
+        ]
+      },
+      {
+        "label": "oatmeal chocolate chunk cookie",
+        "accepted_aliases": [
+          "oatmeal chocolate chunk cookie"
+        ]
+      },
+      {
+        "label": "cheese spread with jalapenos",
+        "accepted_aliases": [
+          "cheese spread with jalapenos"
+        ]
+      },
+      {
+        "label": "barbecue sauce",
+        "accepted_aliases": [
+          "barbecue sauce"
+        ]
+      }
+    ]
+  },
+  {
+    "case_id": "commons-03",
+    "requested_group": "rations",
+    "image": "commons-03.jpg",
+    "image_sha256": "47dbc7329b466bec26254461017b0e957316a15605d54e2bfdc98d7533b6492d",
+    "bytes": 151255,
+    "title": "File:MRE Chicken Tetrizzini.jpg",
+    "source_page": "https://commons.wikimedia.org/wiki/File:MRE_Chicken_Tetrizzini.jpg",
+    "source_original_url": "https://upload.wikimedia.org/wikipedia/commons/2/24/MRE_Chicken_Tetrizzini.jpg?utm_source=commons.wikimedia.org&utm_campaign=imageinfo&utm_content=original",
+    "downloaded_url": "https://thumb.wikimedia.org/wikipedia/commons/thumb/2/24/MRE_Chicken_Tetrizzini.jpg/1280px-MRE_Chicken_Tetrizzini.jpg?utm_source=commons.wikimedia.org&utm_campaign=imageinfo&utm_content=thumbnail",
+    "requested_variant": "Commons server thumbnail requested width=1280",
+    "download_last_modified": "",
+    "source_timestamp": "2020-01-15T18:29:03Z",
+    "source_sha1": "9735b5f51a2bbf5019f4c4ab8e158c773bbec652",
+    "source_width": 4000,
+    "source_height": 3000,
+    "author_html": "Infrogmation of New Orleans",
+    "attribution_html": "<a rel=\"nofollow\" class=\"external free\" href=\"https://www.flickr.com/photos/infrogmation/7933172638/\">https://www.flickr.com/photos/infrogmation/7933172638/</a>",
+    "license": "CC BY 2.0",
+    "license_url": "https://creativecommons.org/licenses/by/2.0",
+    "usage_terms": "Creative Commons Attribution 2.0",
+    "restrictions": "",
+    "source_description_html": "\"Chicken Tetrizzini\" MRE.  No points for presentation, but much more palatable than it looks.",
+    "source_proof": "commons-03-source.json",
+    "retrieved_at": "2026-10-13T14:37:16Z",
+    "provider_consent": null,
+    "human_reference": null,
+    "selected_for_review": true,
+    "group": "rations",
+    "downloaded_width": 1280,
+    "downloaded_height": 960,
+    "author": "Infrogmation of New Orleans",
+    "ai_visual_inspection": "view_image inspected actual downloaded bytes; not human approval",
+    "classification_note": "Source identifies MRE chicken tetrazzini; photograph shows pale prepared block without label. Exact internal ingredients cannot be independently identified from pixels; proposal uses whole named dish only.",
+    "proposed_readable": true,
+    "proposed_main_components": [
+      {
+        "label": "chicken tetrazzini",
+        "accepted_aliases": [
+          "chicken tetrazzini"
+        ]
+      }
+    ]
+  },
+  {
+    "case_id": "commons-05",
+    "requested_group": "rations",
+    "image": "commons-05.jpg",
+    "image_sha256": "bbef39fa3c5c3c7c6b656fd1035789e2f7f6e78ed1c4ae8fda2ae49b1b15f07b",
+    "bytes": 503552,
+    "title": "File:MRE BEVERAGE POWDER 2018.jpg",
+    "source_page": "https://commons.wikimedia.org/wiki/File:MRE_BEVERAGE_POWDER_2018.jpg",
+    "source_original_url": "https://upload.wikimedia.org/wikipedia/commons/8/84/MRE_BEVERAGE_POWDER_2018.jpg?utm_source=commons.wikimedia.org&utm_campaign=imageinfo&utm_content=original",
+    "downloaded_url": "https://thumb.wikimedia.org/wikipedia/commons/thumb/8/84/MRE_BEVERAGE_POWDER_2018.jpg/1280px-MRE_BEVERAGE_POWDER_2018.jpg?utm_source=commons.wikimedia.org&utm_campaign=imageinfo&utm_content=thumbnail",
+    "requested_variant": "Commons server thumbnail requested width=1280",
+    "download_last_modified": "Fri, 31 Jul 2026 13:53:12 GMT",
+    "source_timestamp": "2018-09-23T03:25:31Z",
+    "source_sha1": "fe6a3edca69c7e8c192103f53c9c3779f49bd956",
+    "source_width": 2016,
+    "source_height": 1512,
+    "author_html": "<a href=\"//commons.wikimedia.org/w/index.php?title=User:Lettuce_in_the_Lattice&amp;action=edit&amp;redlink=1\" class=\"new\" title=\"User:Lettuce in the Lattice (page does not exist)\">Lettuce in the Lattice</a>",
+    "attribution_html": "<span class=\"int-own-work\" lang=\"en\">Own work</span>",
+    "license": "CC BY-SA 4.0",
+    "license_url": "https://creativecommons.org/licenses/by-sa/4.0",
+    "usage_terms": "Creative Commons Attribution-Share Alike 4.0",
+    "restrictions": "",
+    "source_description_html": "2016年以降、アスパルテームを用いたビバレッジパウダーに順次変更が行われている。写真のようなスティックタイプ（4g）で20オンスの水に溶かす。",
+    "source_proof": "commons-05-source.json",
+    "retrieved_at": "2026-10-13T14:37:18Z",
+    "provider_consent": null,
+    "human_reference": null,
+    "selected_for_review": true,
+    "group": "rations",
+    "downloaded_width": 1280,
+    "downloaded_height": 960,
+    "author": "Lettuce in the Lattice",
+    "ai_visual_inspection": "view_image inspected actual downloaded bytes; not human approval",
+    "classification_note": "Visible packet text BEVERAGE BASE LEMONADE / SUGAR FREE. Pen is not a food component. No catalogue variant or nutrition values inferred.",
+    "proposed_readable": true,
+    "proposed_main_components": [
+      {
+        "label": "sugar-free lemonade beverage powder",
+        "accepted_aliases": [
+          "sugar-free lemonade beverage powder"
+        ]
+      }
+    ]
+  },
+  {
+    "case_id": "commons-07",
+    "requested_group": "rations",
+    "image": "commons-07.png",
+    "image_sha256": "1911657595e466a0974c6054c0fbf50fda87e625912e00b0d4b42348ac4f777e",
+    "bytes": 568617,
+    "title": "File:MRE Menu 22 JAMBALAYA20071124.PNG",
+    "source_page": "https://commons.wikimedia.org/wiki/File:MRE_Menu_22_JAMBALAYA20071124.PNG",
+    "source_original_url": "https://upload.wikimedia.org/wikipedia/commons/d/da/MRE_Menu_22_JAMBALAYA20071124.PNG?utm_source=commons.wikimedia.org&utm_campaign=imageinfo&utm_content=original",
+    "downloaded_url": "https://upload.wikimedia.org/wikipedia/commons/d/da/MRE_Menu_22_JAMBALAYA20071124.PNG?utm_source=commons.wikimedia.org&utm_campaign=imageinfo&utm_content=original",
+    "requested_variant": "original",
+    "download_last_modified": "Mon, 07 Oct 2013 10:53:34 GMT",
+    "source_timestamp": "2008-02-06T11:11:33Z",
+    "source_sha1": "42bb5807c4abb809dc9bc3e3c37ca6d3444f5893",
+    "source_width": 640,
+    "source_height": 480,
+    "author_html": "Muttley",
+    "attribution_html": "<span class=\"int-own-work\" lang=\"en\">Own work</span>",
+    "license": "CC BY-SA 3.0",
+    "license_url": "https://creativecommons.org/licenses/by-sa/3.0",
+    "usage_terms": "Creative Commons Attribution-Share Alike 3.0",
+    "restrictions": "",
+    "source_description_html": "MRE Menu.22 JAMBALAYA",
+    "source_proof": "commons-07-source.json",
+    "retrieved_at": "2026-10-13T14:37:20Z",
+    "provider_consent": null,
+    "human_reference": null,
+    "selected_for_review": true,
+    "group": "rations",
+    "downloaded_width": 640,
+    "downloaded_height": 480,
+    "author": "Muttley",
+    "ai_visual_inspection": "view_image inspected actual downloaded bytes; not human approval",
+    "classification_note": "Source identifies MRE menu22 jambalaya, center plate visible. Other visible sides/beverages require independent confirmation before adding bread, coffee, orange beverage or candy to ground truth.",
+    "proposed_readable": true,
+    "proposed_main_components": [
+      {
+        "label": "jambalaya",
+        "accepted_aliases": [
+          "jambalaya"
+        ]
+      }
+    ]
+  },
+  {
+    "case_id": "commons-08",
+    "requested_group": "rations",
+    "image": "commons-08.jpg",
+    "image_sha256": "a467efb9bdb7913b7773b256559c2fe8d5d05e90d8f548f79fe1b3cbe5c75088",
+    "bytes": 603890,
+    "title": "File:FEMA - 39888 - Example of a Meal Ready to Eat, or MRE Kit that contains peanut butter packets..jpg",
+    "source_page": "https://commons.wikimedia.org/wiki/File:FEMA_-_39888_-_Example_of_a_Meal_Ready_to_Eat,_or_MRE_Kit_that_contains_peanut_butter_packets..jpg",
+    "source_original_url": "https://upload.wikimedia.org/wikipedia/commons/e/eb/FEMA_-_39888_-_Example_of_a_Meal_Ready_to_Eat%2C_or_MRE_Kit_that_contains_peanut_butter_packets..jpg?utm_source=commons.wikimedia.org&utm_campaign=imageinfo&utm_content=original",
+    "downloaded_url": "https://upload.wikimedia.org/wikipedia/commons/e/eb/FEMA_-_39888_-_Example_of_a_Meal_Ready_to_Eat%2C_or_MRE_Kit_that_contains_peanut_butter_packets..jpg?utm_source=commons.wikimedia.org&utm_campaign=imageinfo&utm_content=original",
+    "requested_variant": "original",
+    "download_last_modified": "Mon, 07 Oct 2013 06:23:17 GMT",
+    "source_timestamp": "2009-10-15T08:38:21Z",
+    "source_sha1": "f305ab9f50a0b69ff5ed264d427f5ecdc715218b",
+    "source_width": 1280,
+    "source_height": 960,
+    "author_html": "FEMA News Photo",
+    "attribution_html": "This image is from the <a rel=\"nofollow\" class=\"external text\" href=\"https://web.archive.org/web/*/www.fema.gov/media-library/search/39888\">FEMA Photo Library</a> (obsolete as of 2019).<br>An archived copy may be found at the <a rel=\"nofollow\" class=\"external text\" href=\"https://web.archive.org/web/*/http://www.fema.gov/media-library/assets/images/39888\">Wayback Machine</a> (note: link may be permanently dead, as not all photos were backed up in this way).<br>If the FEMA link is permanently dead, the photo can be found at <a rel=\"nofollow\" class=\"external text\" href=\"https://aad.archives.gov/aad/fielded-search.jsp?dt=1680&amp;bc=&amp;tf=I\">NARA Access to Archival Databases</a> (only works if photo was taken between 1989 and October 2004), or at <a rel=\"nofollow\" class=\"external text\" href=\"https://www.city-data.com/disaster-photos/39888.html\">City-data.com</a>.",
+    "license": "Public domain",
+    "license_url": null,
+    "usage_terms": "Public domain",
+    "restrictions": "",
+    "source_description_html": "Washington, DC, February 4, 2009 --    Example of a Meal Ready to Eat, or MRE Kit that contains peanut butter packets.  This was used in the following press release:  <a rel=\"nofollow\" class=\"external free\" href=\"http://www.fema.gov/news/newsrelease.fema?id=47461\">http://www.fema.gov/news/newsrelease.fema?id=47461</a>",
+    "source_proof": "commons-08-source.json",
+    "retrieved_at": "2026-10-13T14:37:21Z",
+    "provider_consent": null,
+    "human_reference": null,
+    "selected_for_review": true,
+    "group": "rations",
+    "downloaded_width": 1280,
+    "downloaded_height": 960,
+    "author": "FEMA News Photo",
+    "ai_visual_inspection": "view_image inspected actual downloaded bytes; not human approval",
+    "classification_note": "This photo shows an actual commercial emergency meal-kit case label rather than opened food. Label lists noodles/chicken, cookies, crackers, saltines and peanut butter. Keep only if human accepts packaging as ration case; possible replacement if opened food required.",
+    "proposed_readable": true,
+    "proposed_main_components": [
+      {
+        "label": "noodles and chicken meal kit",
+        "accepted_aliases": [
+          "noodles and chicken meal kit"
+        ]
+      }
+    ]
+  },
+  {
+    "case_id": "commons-09",
+    "requested_group": "rations",
+    "image": "commons-09.jpg",
+    "image_sha256": "db05879b90577089613c38f1f26f5804c7cec5dbc8ec5e092a60e109d800aae4",
+    "bytes": 274044,
+    "title": "File:Eating at MRE'ils - 2021 Edition - New Orleans after Hurricane Ida - pasta with red sauce and tortilla.jpg",
+    "source_page": "https://commons.wikimedia.org/wiki/File:Eating_at_MRE%27ils_-_2021_Edition_-_New_Orleans_after_Hurricane_Ida_-_pasta_with_red_sauce_and_tortilla.jpg",
+    "source_original_url": "https://upload.wikimedia.org/wikipedia/commons/3/38/Eating_at_MRE%27ils_-_2021_Edition_-_New_Orleans_after_Hurricane_Ida_-_pasta_with_red_sauce_and_tortilla.jpg?utm_source=commons.wikimedia.org&utm_campaign=imageinfo&utm_content=original",
+    "downloaded_url": "https://thumb.wikimedia.org/wikipedia/commons/thumb/3/38/Eating_at_MRE%27ils_-_2021_Edition_-_New_Orleans_after_Hurricane_Ida_-_pasta_with_red_sauce_and_tortilla.jpg/1280px-Eating_at_MRE%27ils_-_2021_Edition_-_New_Orleans_after_Hurricane_Ida_-_pasta_with_red_sauce_and_tortilla.jpg?utm_source=commons.wikimedia.org&utm_campaign=imageinfo&utm_content=thumbnail",
+    "requested_variant": "Commons server thumbnail requested width=1280",
+    "download_last_modified": "Wed, 30 Sep 2026 04:09:57 GMT",
+    "source_timestamp": "2026-09-20T02:33:06Z",
+    "source_sha1": "501b4f3c1b9bfd4e0b1163ea14c77ccd387802a3",
+    "source_width": 5184,
+    "source_height": 3888,
+    "author_html": "Infrogmation of New Orleans",
+    "attribution_html": "<a rel=\"nofollow\" class=\"external free\" href=\"https://www.flickr.com/photos/infrogmation/51484342681/\">https://www.flickr.com/photos/infrogmation/51484342681/</a>",
+    "license": "CC BY 2.0",
+    "license_url": "https://creativecommons.org/licenses/by/2.0",
+    "usage_terms": "Creative Commons Attribution 2.0",
+    "restrictions": "",
+    "source_description_html": "I went to a few of the emergency supply sites hoping to get a tarp - no luck.  They had plenty of MRE type packaged meals, so at the last place I tried I accepted a few of those.  \n<p>A number of grocery stores were back, somewhere between half and 2/3rds supplied on the shelves.\n</p>\nConsensus seems to be that the meals are somewhat better than the MREs post Hurricane Katrina Federal Flood 16 years ago.  Bland but inoffensive.",
+    "source_proof": "commons-09-source.json",
+    "retrieved_at": "2026-10-13T14:37:23Z",
+    "provider_consent": null,
+    "human_reference": null,
+    "selected_for_review": true,
+    "group": "rations",
+    "downloaded_width": 1280,
+    "downloaded_height": 960,
+    "author": "Infrogmation of New Orleans",
+    "ai_visual_inspection": "view_image inspected actual downloaded bytes; not human approval",
+    "classification_note": "Visible pasta, red sauce and tortilla match filename and source emergency MRE-style meal narrative. Not confirmed as specific US military menu.",
+    "proposed_readable": true,
+    "proposed_main_components": [
+      {
+        "label": "pasta with red sauce",
+        "accepted_aliases": [
+          "pasta with red sauce"
+        ]
+      },
+      {
+        "label": "tortilla",
+        "accepted_aliases": [
+          "tortilla"
+        ]
+      }
+    ]
+  },
+  {
+    "case_id": "commons-10",
+    "requested_group": "rations",
+    "image": "commons-10.jpg",
+    "image_sha256": "1a07196c6de6de158cff4ff65e00abb3f5c33dff1223364257d72633ef8d517d",
+    "bytes": 298604,
+    "title": "File:MRE wetpack fruits - commonwealth x920gw36x.jpg",
+    "source_page": "https://commons.wikimedia.org/wiki/File:MRE_wetpack_fruits_-_commonwealth_x920gw36x.jpg",
+    "source_original_url": "https://upload.wikimedia.org/wikipedia/commons/e/e0/MRE_wetpack_fruits_-_commonwealth_x920gw36x.jpg?utm_source=commons.wikimedia.org&utm_campaign=imageinfo&utm_content=original",
+    "downloaded_url": "https://thumb.wikimedia.org/wikipedia/commons/thumb/e/e0/MRE_wetpack_fruits_-_commonwealth_x920gw36x.jpg/1280px-MRE_wetpack_fruits_-_commonwealth_x920gw36x.jpg?utm_source=commons.wikimedia.org&utm_campaign=imageinfo&utm_content=thumbnail",
+    "requested_variant": "Commons server thumbnail requested width=1280",
+    "download_last_modified": "Fri, 25 Sep 2026 11:50:29 GMT",
+    "source_timestamp": "2026-08-30T21:45:27Z",
+    "source_sha1": "9802ad5de3f5dc274bf05319e265c2dde2aebde2",
+    "source_width": 4116,
+    "source_height": 3234,
+    "author_html": "U.S. Army Natick Soldier Systems Center",
+    "attribution_html": "<a rel=\"nofollow\" class=\"external free\" href=\"https://ark.digitalcommonwealth.org/ark:/50959/x920gw36x\">https://ark.digitalcommonwealth.org/ark:/50959/x920gw36x</a>",
+    "license": "Public domain",
+    "license_url": null,
+    "usage_terms": "Public domain",
+    "restrictions": "",
+    "source_description_html": "Combat rations from the U.S. Army Natick Soldier Systems Center, which has developed military food for the US Army based on experimentation and inspection of rations from other countries.",
+    "source_proof": "commons-10-source.json",
+    "retrieved_at": "2026-10-13T14:37:24Z",
+    "provider_consent": null,
+    "human_reference": null,
+    "selected_for_review": true,
+    "group": "rations",
+    "downloaded_width": 1280,
+    "downloaded_height": 1006,
+    "author": "U.S. Army Natick Soldier Systems Center",
+    "ai_visual_inspection": "view_image inspected actual downloaded bytes; not human approval",
+    "classification_note": "Photographed U.S. Army Natick display has literal labels peaches/pineapple/pears/cherries/fruit cocktail. These are alternative fruit examples on separate plates; do not sum as one ration or infer current menu/version.",
+    "proposed_readable": true,
+    "proposed_main_components": [
+      {
+        "label": "peaches",
+        "accepted_aliases": [
+          "peaches"
+        ]
+      },
+      {
+        "label": "pineapple",
+        "accepted_aliases": [
+          "pineapple"
+        ]
+      },
+      {
+        "label": "pears",
+        "accepted_aliases": [
+          "pears"
+        ]
+      },
+      {
+        "label": "cherries",
+        "accepted_aliases": [
+          "cherries"
+        ]
+      },
+      {
+        "label": "fruit cocktail",
+        "accepted_aliases": [
+          "fruit cocktail"
+        ]
+      }
+    ]
+  },
+  {
+    "case_id": "commons-15",
+    "requested_group": "unreadable-candidate",
+    "image": "commons-15.jpg",
+    "image_sha256": "0b701eab280f8f532c2ee490a3a4c17e6c52ed641e7d16e4e048af8007f2c8ed",
+    "bytes": 54279,
+    "title": "File:Banana leaf wrap.jpg",
+    "source_page": "https://commons.wikimedia.org/wiki/File:Banana_leaf_wrap.jpg",
+    "source_original_url": "https://upload.wikimedia.org/wikipedia/commons/f/fe/Banana_leaf_wrap.jpg?utm_source=commons.wikimedia.org&utm_campaign=imageinfo&utm_content=original",
+    "downloaded_url": "https://upload.wikimedia.org/wikipedia/commons/f/fe/Banana_leaf_wrap.jpg?utm_source=commons.wikimedia.org&utm_campaign=imageinfo&utm_content=original",
+    "requested_variant": "original",
+    "download_last_modified": "Mon, 31 Jul 2017 20:32:34 GMT",
+    "source_timestamp": "2017-07-31T20:32:34Z",
+    "source_sha1": "762c1e631eeb73aa9b41fb0cfec61ed119d2b634",
+    "source_width": 720,
+    "source_height": 960,
+    "author_html": "<a href=\"//commons.wikimedia.org/w/index.php?title=User:Sauvemel73&amp;action=edit&amp;redlink=1\" class=\"new\" title=\"User:Sauvemel73 (page does not exist)\">Sauvemel73</a>",
+    "attribution_html": "<span class=\"int-own-work\" lang=\"en\">Own work</span>",
+    "license": "CC BY-SA 4.0",
+    "license_url": "https://creativecommons.org/licenses/by-sa/4.0",
+    "usage_terms": "Creative Commons Attribution-Share Alike 4.0",
+    "restrictions": "",
+    "source_description_html": "Traditional Quijos food is usually wrapped in banana leafs then cooked over the fire.",
+    "source_proof": "covered-sources.json",
+    "retrieved_at": "2026-10-13T14:39:25Z",
+    "provider_consent": null,
+    "human_reference": null,
+    "selected_for_review": true,
+    "group": "unreadable",
+    "downloaded_width": 720,
+    "downloaded_height": 960,
+    "author": "Sauvemel73",
+    "ai_visual_inspection": "view_image inspected actual downloaded bytes; not human approval",
+    "classification_note": "Natural opaque leaf wrapping fully conceals food. Source explicitly describes actual food; no visible contents or readable package label. Proposal readable=false with empty components; requires independent human approval.",
+    "proposed_readable": false,
+    "proposed_main_components": []
+  },
+  {
+    "case_id": "commons-16",
+    "requested_group": "unreadable-candidate",
+    "image": "commons-16.jpg",
+    "image_sha256": "fb02516f78bbb66a307b815c4701950b9abd6ba6851fdcc5c7af6075f6b178b8",
+    "bytes": 200099,
+    "title": "File:Cooking the Traditional Way.jpg",
+    "source_page": "https://commons.wikimedia.org/wiki/File:Cooking_the_Traditional_Way.jpg",
+    "source_original_url": "https://upload.wikimedia.org/wikipedia/commons/9/91/Cooking_the_Traditional_Way.jpg?utm_source=commons.wikimedia.org&utm_campaign=imageinfo&utm_content=original",
+    "downloaded_url": "https://upload.wikimedia.org/wikipedia/commons/9/91/Cooking_the_Traditional_Way.jpg?utm_source=commons.wikimedia.org&utm_campaign=imageinfo&utm_content=original",
+    "requested_variant": "original",
+    "download_last_modified": "Wed, 15 Apr 2026 11:05:47 GMT",
+    "source_timestamp": "2026-04-15T11:05:47Z",
+    "source_sha1": "b61a1a2c0c1824b766223cf78671f46dbc5cef5f",
+    "source_width": 810,
+    "source_height": 1080,
+    "author_html": "<a href=\"//commons.wikimedia.org/wiki/User:Lillylove256\" title=\"User:Lillylove256\">Lillylove256</a>",
+    "attribution_html": "<span class=\"int-own-work\" lang=\"en\">Own work</span>",
+    "license": "CC BY 4.0",
+    "license_url": "https://creativecommons.org/licenses/by/4.0",
+    "usage_terms": "Creative Commons Attribution 4.0",
+    "restrictions": "",
+    "source_description_html": "A meaningful moment of traditional food preparation, with banana leaf–wrapped bundles arranged on a woven mat and in a pot. The steamed leaves are often used for ceremonial or shared meals. Beyond cooking, this practice symbolizes cultural heritage, patience, and respect, highlighting ancestral knowledge and the use of natural materials.",
+    "source_proof": "covered-sources.json",
+    "retrieved_at": "2026-10-13T14:39:26Z",
+    "provider_consent": null,
+    "human_reference": null,
+    "selected_for_review": true,
+    "group": "unreadable",
+    "downloaded_width": 810,
+    "downloaded_height": 1080,
+    "author": "Lillylove256",
+    "ai_visual_inspection": "view_image inspected actual downloaded bytes; not human approval",
+    "classification_note": "Natural opaque leaf wrapping fully conceals food. Source explicitly describes actual food; no visible contents or readable package label. Proposal readable=false with empty components; requires independent human approval.",
+    "proposed_readable": false,
+    "proposed_main_components": []
+  },
+  {
+    "case_id": "commons-17",
+    "requested_group": "unreadable-candidate",
+    "image": "commons-17.jpg",
+    "image_sha256": "c71d54f181a8b6f311f337a2e2f23d3548544926a557c9412f8ceb3273049b9c",
+    "bytes": 94705,
+    "title": "File:Botok, wrapped in banana leaf.jpg",
+    "source_page": "https://commons.wikimedia.org/wiki/File:Botok,_wrapped_in_banana_leaf.jpg",
+    "source_original_url": "https://upload.wikimedia.org/wikipedia/commons/7/79/Botok%2C_wrapped_in_banana_leaf.jpg?utm_source=commons.wikimedia.org&utm_campaign=imageinfo&utm_content=original",
+    "downloaded_url": "https://thumb.wikimedia.org/wikipedia/commons/thumb/7/79/Botok%2C_wrapped_in_banana_leaf.jpg/960px-Botok%2C_wrapped_in_banana_leaf.jpg?utm_source=commons.wikimedia.org&utm_campaign=imageinfo&utm_content=thumbnail",
+    "requested_variant": "Commons server thumbnail requested width=960",
+    "download_last_modified": "Thu, 27 Aug 2026 00:06:10 GMT",
+    "source_timestamp": "2016-11-07T15:12:53Z",
+    "source_sha1": "e0aafa77f76bb064a3a2881ac648dd2e2dd2c8c1",
+    "source_width": 2560,
+    "source_height": 1920,
+    "author_html": "<a href=\"//commons.wikimedia.org/wiki/User:Naval_Scene\" title=\"User:Naval Scene\">Naval Scene</a>",
+    "attribution_html": "<span class=\"int-own-work\" lang=\"en\">Own work</span>",
+    "license": "CC BY-SA 4.0",
+    "license_url": "https://creativecommons.org/licenses/by-sa/4.0",
+    "usage_terms": "Creative Commons Attribution-Share Alike 4.0",
+    "restrictions": "",
+    "source_description_html": "Botok, traditional Javanese dish made from shredded coconut flesh mixed with vegetables or fish, wrapped in banana leaf and steamed",
+    "source_proof": "covered-sources.json",
+    "retrieved_at": "2026-10-13T14:39:26Z",
+    "provider_consent": null,
+    "human_reference": null,
+    "selected_for_review": true,
+    "group": "unreadable",
+    "downloaded_width": 960,
+    "downloaded_height": 720,
+    "author": "Naval Scene",
+    "ai_visual_inspection": "view_image inspected actual downloaded bytes; not human approval",
+    "classification_note": "Natural opaque leaf wrapping fully conceals food. Source explicitly describes actual food; no visible contents or readable package label. Proposal readable=false with empty components; requires independent human approval.",
+    "proposed_readable": false,
+    "proposed_main_components": []
+  },
+  {
+    "case_id": "commons-18",
+    "requested_group": "unreadable-candidate",
+    "image": "commons-18.jpg",
+    "image_sha256": "d84db46017fee481d790f813c16a3fc5c5f649cdda8b5b80115d9041f62f3293",
+    "bytes": 167465,
+    "title": "File:Kesong Puti (unopened) from Laguna, Feb 2024.jpg",
+    "source_page": "https://commons.wikimedia.org/wiki/File:Kesong_Puti_(unopened)_from_Laguna,_Feb_2024.jpg",
+    "source_original_url": "https://upload.wikimedia.org/wikipedia/commons/3/34/Kesong_Puti_%28unopened%29_from_Laguna%2C_Feb_2024.jpg?utm_source=commons.wikimedia.org&utm_campaign=imageinfo&utm_content=original",
+    "downloaded_url": "https://thumb.wikimedia.org/wikipedia/commons/thumb/3/34/Kesong_Puti_%28unopened%29_from_Laguna%2C_Feb_2024.jpg/960px-Kesong_Puti_%28unopened%29_from_Laguna%2C_Feb_2024.jpg?utm_source=commons.wikimedia.org&utm_campaign=imageinfo&utm_content=thumbnail",
+    "requested_variant": "Commons server thumbnail requested width=960",
+    "download_last_modified": "Fri, 14 Aug 2026 11:57:13 GMT",
+    "source_timestamp": "2024-02-09T13:20:52Z",
+    "source_sha1": "a52762a08a81a5c3b24b5324efbbe3cf0bb1ce20",
+    "source_width": 3733,
+    "source_height": 2940,
+    "author_html": "<a href=\"//commons.wikimedia.org/wiki/User:Ralffralff\" title=\"User:Ralffralff\">Ralff Nestor Nacor</a>",
+    "attribution_html": "<span class=\"int-own-work\" lang=\"en\">Own work</span>",
+    "license": "CC BY-SA 4.0",
+    "license_url": "https://creativecommons.org/licenses/by-sa/4.0",
+    "usage_terms": "Creative Commons Attribution-Share Alike 4.0",
+    "restrictions": "",
+    "source_description_html": "Kesong Puti (unopened) from Laguna, Feb 2024",
+    "source_proof": "covered-sources.json",
+    "retrieved_at": "2026-10-13T14:39:27Z",
+    "provider_consent": null,
+    "human_reference": null,
+    "selected_for_review": true,
+    "group": "unreadable",
+    "downloaded_width": 960,
+    "downloaded_height": 756,
+    "author": "Ralff Nestor Nacor",
+    "ai_visual_inspection": "view_image inspected actual downloaded bytes; not human approval",
+    "classification_note": "Natural opaque leaf wrapping fully conceals food. Source explicitly describes actual food; no visible contents or readable package label. Proposal readable=false with empty components; requires independent human approval.",
+    "proposed_readable": false,
+    "proposed_main_components": []
+  },
+  {
+    "case_id": "commons-04",
+    "requested_group": "rations",
+    "image": "commons-04.jpg",
+    "image_sha256": "1508bb656a1b17c569aa3b9250d681b8695f996a63c2100bd9e48e15af3c4727",
+    "bytes": 190850,
+    "title": "File:MRE Brick of Rice.jpg",
+    "source_page": "https://commons.wikimedia.org/wiki/File:MRE_Brick_of_Rice.jpg",
+    "source_original_url": "https://upload.wikimedia.org/wikipedia/commons/e/e6/MRE_Brick_of_Rice.jpg?utm_source=commons.wikimedia.org&utm_campaign=imageinfo&utm_content=original",
+    "downloaded_url": "https://thumb.wikimedia.org/wikipedia/commons/thumb/e/e6/MRE_Brick_of_Rice.jpg/960px-MRE_Brick_of_Rice.jpg?utm_source=commons.wikimedia.org&utm_campaign=imageinfo&utm_content=thumbnail",
+    "requested_variant": "Commons server thumbnail requested width=960",
+    "download_last_modified": "Sun, 27 Sep 2026 16:33:39 GMT",
+    "source_timestamp": "2020-01-15T18:29:03Z",
+    "source_sha1": "676800c2026ba3d0c3ada5703e39f7f973484de2",
+    "source_width": 3000,
+    "source_height": 4000,
+    "author_html": "Infrogmation of New Orleans",
+    "attribution_html": "<a rel=\"nofollow\" class=\"external free\" href=\"https://www.flickr.com/photos/infrogmation/7997123002/\">https://www.flickr.com/photos/infrogmation/7997123002/</a>",
+    "license": "CC BY 2.0",
+    "license_url": "https://creativecommons.org/licenses/by/2.0",
+    "usage_terms": "Creative Commons Attribution 2.0",
+    "restrictions": "",
+    "source_description_html": "MRE brown rice",
+    "source_proof": "covered-sources.json",
+    "retrieved_at": "2026-10-13T14:39:28Z",
+    "provider_consent": null,
+    "human_reference": null,
+    "selected_for_review": true,
+    "group": "rations",
+    "downloaded_width": 960,
+    "downloaded_height": 1280,
+    "author": "Infrogmation of New Orleans",
+    "ai_visual_inspection": "view_image inspected actual downloaded bytes; not human approval",
+    "classification_note": "Source identifies MRE brown rice; image shows an unlabelled compact block. Source-linked whole item only, no recipe invented.",
+    "proposed_readable": true,
+    "proposed_main_components": [
+      {
+        "label": "brown rice",
+        "accepted_aliases": [
+          "brown rice"
+        ]
+      }
+    ]
+  },
+  {
+    "case_id": "commons-06",
+    "requested_group": "rations",
+    "image": "commons-06.jpg",
+    "image_sha256": "48a5c4976bde780909f4e55cb228d1f377f529b62685474d1752ff84f80ab128",
+    "bytes": 417867,
+    "title": "File:MRE GRANOLA 2017update.jpg",
+    "source_page": "https://commons.wikimedia.org/wiki/File:MRE_GRANOLA_2017update.jpg",
+    "source_original_url": "https://upload.wikimedia.org/wikipedia/commons/0/09/MRE_GRANOLA_2017update.jpg?utm_source=commons.wikimedia.org&utm_campaign=imageinfo&utm_content=original",
+    "downloaded_url": "https://thumb.wikimedia.org/wikipedia/commons/thumb/0/09/MRE_GRANOLA_2017update.jpg/960px-MRE_GRANOLA_2017update.jpg?utm_source=commons.wikimedia.org&utm_campaign=imageinfo&utm_content=thumbnail",
+    "requested_variant": "Commons server thumbnail requested width=960",
+    "download_last_modified": "Wed, 09 Sep 2026 06:43:48 GMT",
+    "source_timestamp": "2018-09-26T14:35:09Z",
+    "source_sha1": "0c4c7a7f7f6980790ebe3b6048aa5caf871c332e",
+    "source_width": 2397,
+    "source_height": 3617,
+    "author_html": "<a href=\"//commons.wikimedia.org/w/index.php?title=User:Lettuce_in_the_Lattice&amp;action=edit&amp;redlink=1\" class=\"new\" title=\"User:Lettuce in the Lattice (page does not exist)\">Lettuce in the Lattice</a>",
+    "attribution_html": "<span class=\"int-own-work\" lang=\"en\">Own work</span>",
+    "license": "CC BY-SA 4.0",
+    "license_url": "https://creativecommons.org/licenses/by-sa/4.0",
+    "usage_terms": "Creative Commons Attribution-Share Alike 4.0",
+    "restrictions": "",
+    "source_description_html": "2017の変更点で粉末ミルク入りのグラノーラが追加された。",
+    "source_proof": "covered-sources.json",
+    "retrieved_at": "2026-10-13T14:39:28Z",
+    "provider_consent": null,
+    "human_reference": null,
+    "selected_for_review": true,
+    "group": "rations",
+    "downloaded_width": 960,
+    "downloaded_height": 1449,
+    "author": "Lettuce in the Lattice",
+    "ai_visual_inspection": "view_image inspected actual downloaded bytes; not human approval",
+    "classification_note": "Packet label directly identifies granola with milk and blueberries. No exact ration/menu version inferred.",
+    "proposed_readable": true,
+    "proposed_main_components": [
+      {
+        "label": "granola with milk and blueberries",
+        "accepted_aliases": [
+          "granola with milk and blueberries"
+        ]
+      }
+    ]
+  }
+]
