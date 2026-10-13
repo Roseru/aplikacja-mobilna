@@ -16,3 +16,6 @@ Exact source metadata is retained in adjacent JSON evidence files. Photographs a
 - [File:Kesong Puti (unopened) from Laguna, Feb 2024.jpg](https://commons.wikimedia.org/wiki/File:Kesong_Puti_(unopened)_from_Laguna,_Feb_2024.jpg) — Ralff Nestor Nacor; [CC BY-SA 4.0](https://creativecommons.org/licenses/by-sa/4.0). Variant: Commons server thumbnail requested width=960.
 - [File:MRE Brick of Rice.jpg](https://commons.wikimedia.org/wiki/File:MRE_Brick_of_Rice.jpg) — Infrogmation of New Orleans; [CC BY 2.0](https://creativecommons.org/licenses/by/2.0). Variant: Commons server thumbnail requested width=960.
 - [File:MRE GRANOLA 2017update.jpg](https://commons.wikimedia.org/wiki/File:MRE_GRANOLA_2017update.jpg) — Lettuce in the Lattice; [CC BY-SA 4.0](https://creativecommons.org/licenses/by-sa/4.0). Variant: Commons server thumbnail requested width=960.
+
+- [FEMA39890 peanut butter](https://commons.wikimedia.org/wiki/File:FEMA_-_39890_-_Peanut_butter_packet_inside_a_MRE.jpg) — FEMA News Photo; Public domain (PD US FEMA); original unchanged.
+- [First Strike Ration](https://commons.wikimedia.org/wiki/File:First_Strike_Ration.jpg) — Juan R. Meléndez Jr.; Public domain (PD US Army); original unchanged, rejected from proposed corpus.

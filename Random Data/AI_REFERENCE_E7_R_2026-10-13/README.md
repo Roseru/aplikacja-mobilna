@@ -1,5 +1,17 @@
 # Kandydaci zdjęć do E7-R - osoba 2
 
+## Aktualny wynik kwalifikacji offline (13.10.2026)
+
+[Propozycje referencji](reference_proposals.json) rozliczają wszystkie32 pliki (30 pierwotnych +2 nowe):
+27 PROPOSED (8/7/8/4),4 REJECTED (commons-03/07/08/20),1 UNRESOLVED (n5-16).
+To propozycje LLM do człowieka, human_qualified/consents/uploads=0.
+NOT-RUNNABLE; HUMAN_REVIEW_PENDING; O3_CONFIGURATION_PENDING; CORPUS_INCOMPLETE.
+Brakuje1 mieszanki i2 racji. Wszystkie oryginały pozostają zachowane; candidate_index
+z opisem8/8/10/4 jest historycznym wyborem kandydatów, nie przyjętym corpus.
+[Raport](../../docs/e7/RAPORT_PRZYGOTOWANIA_ZDJEC.md) podaje wyjątki, ograniczoną
+nieudaną próbę zamienników i przejście do istniejącego runnera.
+[Audyt](technical_audit.json) ponownie potwierdza bajty/codec/hash/wymiary/GPS.
+
 Stan 13 października 2026 r.: pobrano i wybrano **30 rzeczywistych zdjęć** z publicznych źródeł. Proponowany przekrój: 8 produktów/składników, 8 dań mieszanych, 10 racji/składników i 4 naturalnie zasłonięte ujęcia. **Zatwierdzonych przypadków: 0; zgód dla providera: 0; uploadów/wywołań Gemini: 0.** To przygotowanie materiałów, nie wynik trafności lub E7-R PASS.
 
 Właściciel podał, że nie ma własnych zdjęć, i zlecił poszukiwanie w internecie. [Galeria](GALLERY.md) pokazuje konkretne kandydatury. [candidate_index.json](candidate_index.json) podaje źródła, grupy, dokładne pliki i SHA-256; celowo nie jest runnable manifestem. Wszystkie 30 plików obejrzano i sprawdzono ich format/rozmiar/hash; żaden nie przekracza 5 MiB. Nie zmieniano lokalnie obrazów. Warianty thumbnail Commons mają opisaną drogę do oryginału; historyczne kadrowanie przez autora jest jawne w źródle commons-01.
