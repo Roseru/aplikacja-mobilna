@@ -1,5 +1,12 @@
 # Kontekst współpracy
 
+## Kontynuacja O1 — zgody rankingu 0.8.7, 13 października 2026
+
+- Agent1/O1; użytkownik osoba1. Branch codex/android-ranking-zgody; źródło `8f37f7a65da97e8f0bf4ccf46978700a9075b5a0`; 0.8.7/code18/Room8. [Raport](android/RAPORT_0_8_7.md). Mniejsze podsumowanie i większa widoczność odznak oraz Postępy zachowane.
+- Odczyt nie wyraża zgody; włączenie ręcznie, exact full-body PUT/If-Match/newkey/currentepoch z energy consent zachowanym. Trwały intent w szyfrowanym magazynie, bez auto replay/outbox; retry identyczny, 409 nowa decyzja, lease/gen/epoch/ctx/session fence i brak cache na dysku. Brak publicznej listy i gotowego Nemesis/ACK.
+- 135 JVM PASS/lint0error. Pełny 146/147 device (pozostały przypadek częściowej racji miał zmianę LocalDate.now po nocnej przerwie); test teraz sprawdza tę samą datę, finalne 11/11 DiaryFlow PASS. Bez sumowania lub deklaracji lokalnego finalnego pełnego147 PASS. Rzeczywisty install-r/launch zachował 22 tabele; APK SHA256 `5234edbe64a73fb25813cdfcc7f94b074c17de73bc9244a7b9b8b4e923996772` pozaGit.
+- Baza `0410ea5b46f512f2b693c7565030d42efde52c73`: PR42/43/E8.4/E8.5 i PR44–48/O3 odebrane w ich zakresach. O1 odczytał kontrakt Nemesis oraz raport E8.5 i restore; nie przypisuje sobie PG/O3 testów. Publiczne Nemesis default gated; aktualny APK/API/TLS, ranking list, Nemesis i E4 wymagają własnych dalszych prac. Jedyny dziennik docs/KOMUNIKACJA_AGENTOW.md/O1-022–023.
+
 ## Kontynuacja O1 — osiągnięcia0.8.6, 12 października2026
 
 - Agent1/O1; użytkownik osoba1. Branch codex/android-osiagniecia-serwer; finalne źródło `05847a06f6a62fa144dfcd8e78d8a4881c857978`;0.8.6/code17/Room8. Feedback: mniejsze podsumowanie, więcej odznak; panel serwera pod lokalnymi kartami, Postępy zachowane. [Raport](android/RAPORT_0_8_6.md).
