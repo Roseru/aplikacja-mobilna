@@ -73,9 +73,10 @@ class SessionSecurityTest {
             .setState(state).setAuthorizationCode("fixture-code").build().toIntent()
     }
     private fun client(db: CalorieDatabase, vault: SessionVault, fixture: FixtureGateway, api: BootstrapGateway? = null,
-        profiles: ProfileGateway? = null, snapshots: SnapshotGateway? = null, motivation: MotivationGateway? = null) = SessionController(
+        profiles: ProfileGateway? = null, snapshots: SnapshotGateway? = null, motivation: MotivationGateway? = null,
+        consents: RankingConsentGateway? = null) = SessionController(
         db, vault, fixture, issuer, context.packageName, now = { fixture.time }, bootstrapGateway = api, profileGateway = profiles, snapshotGateway = snapshots,
-        snapshotProtocol = snapshots?.let { snapshotProtocol() }, motivationGateway = motivation)
+        snapshotProtocol = snapshots?.let { snapshotProtocol() }, motivationGateway = motivation, rankingConsentGateway = consents)
     private suspend fun login(client: SessionController, fixture: FixtureGateway, subject: String) {
         fixture.subject = subject
         assertNotNull(client.beginLogin())
@@ -702,6 +703,230 @@ class SessionSecurityTest {
             assertTrue(controller.view.value.motivation is MotivationState.Failed); assertFalse(controller.view.value.motivationBusy)
         } finally { observer?.cancelAndJoin(); motivation.hold?.complete(Unit); vault.clear(); db.close() }
     }
+    private fun rankingProfileAnswer(ranking: Boolean = true, energy: Boolean = true, revision: Int = 1) = profileAnswer {
+        it.getJSONObject("consents").put("ranking", ranking).put("automatic_energy_adjustment", energy).put("revision", revision)
+    }
+    private fun rankingMotivationAnswer(ranking: Boolean = true) = motivationAnswer {
+        it.getJSONObject("ranking").put("requested", ranking).put("effective", false).put("pending_consent_refresh", ranking).put("consent_epoch", epoch)
+    }
+    private fun consentReceipt(request: RankingConsentAttempt) = BootstrapHttpResult(200,
+        JSONObject().put("ranking", request.ranking).put("automatic_energy_adjustment", request.automaticEnergyAdjustment)
+            .put("revision", request.baseRevision + 1).put("updated_at", "2026-10-12T12:00:00Z").toString().toByteArray(), etag = "\"${request.baseRevision + 1}\"")
+    private inner class ConsentFixture(var answer: suspend (Int, RankingConsentAttempt) -> BootstrapHttpResult = { _, request -> consentReceipt(request) }) : RankingConsentGateway {
+        val calls = mutableListOf<Pair<ApiSession, RankingConsentAttempt>>()
+        val preparing = CompletableDeferred<Unit>()
+        val started = CompletableDeferred<Unit>()
+        var hold: CompletableDeferred<Unit>? = null
+        var beforeHold: CompletableDeferred<Unit>? = null
+        var durableCheck: (() -> Unit)? = null
+        override suspend fun put(session: ApiSession, request: RankingConsentAttempt, beforeSend: suspend () -> Unit): BootstrapHttpResult {
+            preparing.complete(Unit); beforeHold?.await(); beforeSend(); durableCheck?.invoke()
+            calls.add(session to request); val index = calls.size
+            started.complete(Unit); hold?.await()
+            return answer(index, request)
+        }
+    }
+    private fun consentSource(controller: SessionController) = (controller.view.value.rankingConsent as RankingConsentState.Ready).source
+
+    @Test fun rankingConsentRequiresFreshReadsAndExplicitDecisionPreservingEnergyAndDiary() = runBlocking<Unit> {
+        val db = memory(); val vault = SessionVault(context, name()); val fixture = FixtureGateway()
+        val api = ApiFixture(); val profiles = ProfileFixture { rankingProfileAnswer() }; val motivation = MotivationFixture { rankingMotivationAnswer() }; val writes = ConsentFixture()
+        try {
+            val c = client(db, vault, fixture, api, profiles, motivation = motivation, consents = writes); c.start()
+            c.readRankingConsents(); c.confirmRankingConsent("stale", true); assertTrue(profiles.calls.isEmpty()); assertTrue(writes.calls.isEmpty())
+            login(c, fixture, "fixture-A"); c.readRankingConsents(); assertTrue(profiles.calls.isEmpty()); c.bootstrap()
+            val lease = c.view.value.binding!!.lease
+            val repo = DiaryRepository(db, context, lease).apply { initialize() }; repo.setGoal(2400.0, 140.0, 70.0, 250.0)
+            val queue = db.dao().operationCount(lease.storageScope); val goals = db.dao().goalsThrough(lease.storageScope, LocalDate.now().toString()).first()
+            val binding = db.bootstrapDao().binding(lease.storageScope)
+            c.readRankingConsents(); val source = consentSource(c)
+            assertEquals(1, profiles.calls.size); assertEquals(1, motivation.calls.size); assertTrue(writes.calls.isEmpty()); assertFalse(vault.read().has("rankingConsentAttempt"))
+            assertTrue(source.consents.automaticEnergyAdjustment); assertTrue(source.ranking.pendingConsentRefresh)
+            writes.durableCheck = { assertTrue(vault.read().has("rankingConsentAttempt")) }
+            c.confirmRankingConsent(source.id, true)
+            val sent = writes.calls.single().second
+            assertTrue(sent.ranking); assertTrue(sent.automaticEnergyAdjustment); assertEquals(epoch, sent.consentEpoch); assertNotEquals(source.id, sent.key)
+            assertTrue(c.view.value.rankingConsent is RankingConsentState.Confirmed); assertFalse(vault.read().has("rankingConsentAttempt"))
+            assertEquals(MotivationState.NotRequested, c.view.value.motivation); assertNull(c.view.value.serverProfile)
+            assertEquals(queue, db.dao().operationCount(lease.storageScope)); assertEquals(goals, db.dao().goalsThrough(lease.storageScope, LocalDate.now().toString()).first())
+            assertEquals(binding, db.bootstrapDao().binding(lease.storageScope))
+        } finally { vault.clear(); db.close() }
+    }
+    @Test fun lostConsentAckRestartsWithoutSendingAndRetryKeepsExactKeyThenOptOutGetsNewKey() = runBlocking<Unit> {
+        val db = memory(); val vault = SessionVault(context, name()); val fixture = FixtureGateway(); val api = ApiFixture()
+        val profiles = ProfileFixture { rankingProfileAnswer() }; val motivation = MotivationFixture { rankingMotivationAnswer() }
+        val writes = ConsentFixture { index, request -> if (index == 1) error("fixture lost ACK") else consentReceipt(request) }
+        try {
+            val first = client(db, vault, fixture, api, profiles, motivation = motivation, consents = writes); first.start(); login(first, fixture, "fixture-A"); first.bootstrap()
+            first.readRankingConsents(); first.confirmRankingConsent(consentSource(first).id, true)
+            assertEquals(RankingConsentState.Pending(true), first.view.value.rankingConsent)
+            val exact = writes.calls.single().second.journal().toString()
+            val restarted = client(db, vault, fixture, api, profiles, motivation = motivation, consents = writes); restarted.start()
+            assertEquals(1, writes.calls.size); assertEquals(RankingConsentState.Pending(true), restarted.view.value.rankingConsent)
+            restarted.confirmRankingConsent("stale", false); restarted.readRankingConsents(); assertEquals(1, writes.calls.size); assertEquals(1, profiles.calls.size)
+            restarted.retryRankingConsent(); assertEquals(exact, writes.calls[1].second.journal().toString()); assertTrue(restarted.view.value.rankingConsent is RankingConsentState.Confirmed)
+            profiles.answer = { rankingProfileAnswer(energy = false, revision = 2) }
+            restarted.readRankingConsents(); restarted.confirmRankingConsent(consentSource(restarted).id, false)
+            val optOut = writes.calls[2].second
+            assertNotEquals(writes.calls[0].second.key, optOut.key); assertFalse(optOut.ranking); assertFalse(optOut.automaticEnergyAdjustment); assertNull(optOut.consentEpoch); assertEquals(2, optOut.baseRevision)
+        } finally { vault.clear(); db.close() }
+    }
+    @Test fun consentConflictRequiresNewReadAndDecisionAndNeverReplaysDifferentEnergy() = runBlocking<Unit> {
+        val db = memory(); val vault = SessionVault(context, name()); val fixture = FixtureGateway(); val api = ApiFixture()
+        val profiles = ProfileFixture { rankingProfileAnswer() }; val motivation = MotivationFixture { rankingMotivationAnswer() }
+        val writes = ConsentFixture { index, request -> if (index == 1) denied(409, "version_conflict") else consentReceipt(request) }
+        try {
+            val c = client(db, vault, fixture, api, profiles, motivation = motivation, consents = writes); c.start(); login(c, fixture, "fixture-A"); c.bootstrap()
+            c.readRankingConsents(); val original = consentSource(c); c.confirmRankingConsent(original.id, true)
+            assertTrue(c.view.value.rankingConsent is RankingConsentState.Failed); assertFalse(vault.read().has("rankingConsentAttempt"))
+            c.retryRankingConsent(); c.confirmRankingConsent(original.id, true); assertEquals(1, writes.calls.size)
+            profiles.answer = { rankingProfileAnswer(energy = false, revision = 2) }; c.readRankingConsents(); val fresh = consentSource(c)
+            assertNotEquals(original.id, fresh.id); assertFalse(fresh.consents.automaticEnergyAdjustment)
+            c.confirmRankingConsent(fresh.id, true)
+            assertEquals(2, writes.calls.size); assertNotEquals(writes.calls[0].second.key, writes.calls[1].second.key)
+            assertEquals(2, writes.calls[1].second.baseRevision); assertFalse(writes.calls[1].second.automaticEnergyAdjustment)
+        } finally { vault.clear(); db.close() }
+    }
+    @Test fun consentRetryAfterSurvivesRestartAndBlocksOtherApiWithoutLosingDecision() = runBlocking<Unit> {
+        val db = memory(); val vault = SessionVault(context, name()); val fixture = FixtureGateway(); val api = ApiFixture()
+        val profiles = ProfileFixture { rankingProfileAnswer() }; val motivation = MotivationFixture { rankingMotivationAnswer() }
+        val writes = ConsentFixture { index, request -> if (index == 1) denied(503, "service_unavailable", "60") else consentReceipt(request) }
+        try {
+            val c = client(db, vault, fixture, api, profiles, motivation = motivation, consents = writes); c.start(); login(c, fixture, "fixture-A"); c.bootstrap()
+            c.readRankingConsents(); c.confirmRankingConsent(consentSource(c).id, true)
+            val restarted = client(db, vault, fixture, api, profiles, motivation = motivation, consents = writes); restarted.start()
+            restarted.retryRankingConsent(); restarted.readProfile(); restarted.bootstrap(); restarted.readRankingConsents()
+            assertEquals(1, writes.calls.size); assertEquals(1, api.calls.size); assertEquals(1, profiles.calls.size)
+            fixture.time += 59_000; restarted.retryRankingConsent(); assertEquals(1, writes.calls.size)
+            fixture.time += 1000; restarted.retryRankingConsent(); assertEquals(2, writes.calls.size)
+            assertEquals(writes.calls[0].second.journal().toString(), writes.calls[1].second.journal().toString()); assertTrue(restarted.view.value.rankingConsent is RankingConsentState.Confirmed)
+        } finally { vault.clear(); db.close() }
+    }
+    @Test fun consent401RenewsOnceAndUsesSameIntentWithNewToken() = runBlocking<Unit> {
+        val db = memory(); val vault = SessionVault(context, name()); val fixture = FixtureGateway(); val api = ApiFixture()
+        val profiles = ProfileFixture { rankingProfileAnswer() }; val motivation = MotivationFixture { rankingMotivationAnswer() }
+        val writes = ConsentFixture { index, request -> if (index == 1) denied(401, "unauthorized") else consentReceipt(request) }
+        try {
+            val c = client(db, vault, fixture, api, profiles, motivation = motivation, consents = writes); c.start(); login(c, fixture, "fixture-A"); c.bootstrap()
+            c.readRankingConsents(); c.confirmRankingConsent(consentSource(c).id, true)
+            assertEquals(2, fixture.calls); assertEquals(2, writes.calls.size)
+            assertNotEquals(writes.calls[0].first.accessToken, writes.calls[1].first.accessToken)
+            assertEquals(writes.calls[0].second.journal().toString(), writes.calls[1].second.journal().toString())
+            assertTrue(c.view.value.rankingConsent is RankingConsentState.Confirmed)
+        } finally { vault.clear(); db.close() }
+    }
+    @Test fun consentDoubleTapAndLateAckCannotLeakAfterLogoutAToBToA() = runBlocking<Unit> {
+        val db = memory(); val vault = SessionVault(context, name()); val fixture = FixtureGateway(); val api = ApiFixture()
+        val profiles = ProfileFixture { rankingProfileAnswer() }; val motivation = MotivationFixture { rankingMotivationAnswer() }; val writes = ConsentFixture().apply { hold = CompletableDeferred() }
+        try {
+            val c = client(db, vault, fixture, api, profiles, motivation = motivation, consents = writes); c.start(); login(c, fixture, "fixture-A"); c.bootstrap()
+            val original = c.view.value.binding!!.lease; c.readRankingConsents(); val source = consentSource(c)
+            val held = async { c.confirmRankingConsent(source.id, true) }; withTimeout(10_000) { writes.started.await() }
+            c.confirmRankingConsent(source.id, false); c.retryRankingConsent(); c.readRankingConsents(); c.readProfile(); c.bootstrap()
+            assertEquals(1, writes.calls.size); assertEquals(1, profiles.calls.size)
+            c.logout(); login(c, fixture, "fixture-B"); c.logout(); login(c, fixture, "fixture-A")
+            assertNotEquals(original, c.view.value.binding!!.lease); writes.hold!!.complete(Unit); held.await()
+            assertEquals(RankingConsentState.NotRequested, c.view.value.rankingConsent); assertFalse(vault.read().has("rankingConsentAttempt"))
+        } finally { writes.hold?.complete(Unit); vault.clear(); db.close() }
+    }
+    @Test fun cancelledConsentCanResumeButManualRefreshDiscardsItsLateAck() = runBlocking<Unit> {
+        val db = memory(); val vault = SessionVault(context, name()); val fixture = FixtureGateway(); val api = ApiFixture()
+        val profiles = ProfileFixture { rankingProfileAnswer() }; val motivation = MotivationFixture { rankingMotivationAnswer() }; val writes = ConsentFixture().apply { hold = CompletableDeferred() }
+        try {
+            val c = client(db, vault, fixture, api, profiles, motivation = motivation, consents = writes); c.start(); login(c, fixture, "fixture-A"); c.bootstrap()
+            c.readRankingConsents(); val held = async { c.confirmRankingConsent(consentSource(c).id, true) }; withTimeout(10_000) { writes.started.await() }
+            held.cancelAndJoin(); assertEquals(RankingConsentState.Pending(true), c.view.value.rankingConsent)
+            val old = async { c.retryRankingConsent() }; withTimeout(10_000) { while (writes.calls.size < 2) yield() }
+            val oldHold = writes.hold!!; c.refresh(); writes.hold = null; c.retryRankingConsent()
+            val fresh = c.view.value.rankingConsent; assertTrue(fresh is RankingConsentState.Confirmed)
+            oldHold.complete(Unit); old.await(); assertSame(fresh, c.view.value.rankingConsent)
+            assertEquals(3, writes.calls.size); assertTrue(writes.calls.map { it.second.key }.distinct().size == 1)
+        } finally { writes.hold?.complete(Unit); vault.clear(); db.close() }
+    }
+    @Test fun changedConsentContextBeforeSendCannotWriteOrPublishOldIntent() = runBlocking<Unit> {
+        val db = memory(); val vault = SessionVault(context, name()); val fixture = FixtureGateway(); val api = ApiFixture()
+        val profiles = ProfileFixture { rankingProfileAnswer() }; val motivation = MotivationFixture { rankingMotivationAnswer() }; val writes = ConsentFixture().apply { beforeHold = CompletableDeferred() }
+        try {
+            val c = client(db, vault, fixture, api, profiles, motivation = motivation, consents = writes); c.start(); login(c, fixture, "fixture-A"); c.bootstrap()
+            c.readRankingConsents(); val source = consentSource(c); val owner = c.view.value.binding!!.lease.storageScope
+            val task = async { c.confirmRankingConsent(source.id, true) }; withTimeout(10_000) { writes.preparing.await() }
+            val old = db.bootstrapDao().binding(owner)!!; db.bootstrapDao().update(old.copy(syncEpoch = newEpoch, contextRevision = old.contextRevision + 1, requiresRecovery = true))
+            writes.beforeHold!!.complete(Unit); task.await()
+            assertTrue(writes.calls.isEmpty()); assertTrue(c.view.value.requiresRecovery); assertEquals(RankingConsentState.NotRequested, c.view.value.rankingConsent)
+        } finally { writes.beforeHold?.complete(Unit); vault.clear(); db.close() }
+    }
+    @Test fun staleConsentProposalNonceAgeAndGenerationRequireFreshReadWithoutPut() = runBlocking<Unit> {
+        val db = memory(); val vault = SessionVault(context, name()); val fixture = FixtureGateway(); val api = ApiFixture()
+        val profiles = ProfileFixture { rankingProfileAnswer() }; val motivation = MotivationFixture { rankingMotivationAnswer() }; val writes = ConsentFixture()
+        try {
+            val c = client(db, vault, fixture, api, profiles, motivation = motivation, consents = writes); c.start(); login(c, fixture, "fixture-A"); c.bootstrap()
+            c.readRankingConsents(); val expired = consentSource(c); fixture.time += 300_001; c.confirmRankingConsent(expired.id, true); assertTrue(writes.calls.isEmpty())
+            c.readRankingConsents(); val fresh = consentSource(c); assertNotEquals(expired.id, fresh.id)
+            c.confirmRankingConsent(expired.id, true); assertTrue(writes.calls.isEmpty()); assertFalse(vault.read().has("rankingConsentAttempt"))
+            c.readRankingConsents(); val next = consentSource(c); val owner = c.view.value.binding!!.lease.storageScope
+            val binding = db.bootstrapDao().binding(owner)!!; db.bootstrapDao().update(binding.copy(accountGeneration = binding.accountGeneration + 1))
+            c.confirmRankingConsent(next.id, true); assertTrue(writes.calls.isEmpty()); assertFalse(vault.read().has("rankingConsentAttempt"))
+        } finally { vault.clear(); db.close() }
+    }
+    @Test fun inconsistentConsentPreflightAndLateSourceCannotCreateApproval() = runBlocking<Unit> {
+        val db = memory(); val vault = SessionVault(context, name()); val fixture = FixtureGateway(); val api = ApiFixture()
+        val profiles = ProfileFixture { rankingProfileAnswer(ranking = false) }; val motivation = MotivationFixture { rankingMotivationAnswer() }; val writes = ConsentFixture()
+        try {
+            val c = client(db, vault, fixture, api, profiles, motivation = motivation, consents = writes); c.start(); login(c, fixture, "fixture-A"); c.bootstrap()
+            c.readRankingConsents(); assertTrue(c.view.value.rankingConsent is RankingConsentState.Failed); assertTrue(writes.calls.isEmpty())
+            profiles.answer = { rankingProfileAnswer() }; profiles.hold = CompletableDeferred()
+            val read = async { c.readRankingConsents() }; withTimeout(10_000) { while (profiles.calls.size < 2) yield() }
+            c.logout(); login(c, fixture, "fixture-A"); profiles.hold!!.complete(Unit); read.await()
+            assertEquals(RankingConsentState.NotRequested, c.view.value.rankingConsent); assertEquals(1, motivation.calls.size); assertTrue(writes.calls.isEmpty())
+        } finally { profiles.hold?.complete(Unit); vault.clear(); db.close() }
+    }
+    @Test fun invalidReceiptOrMissingEtagKeepsExactPendingIntentForSafeRetry() = runBlocking<Unit> {
+        val db = memory(); val vault = SessionVault(context, name()); val fixture = FixtureGateway(); val api = ApiFixture()
+        val profiles = ProfileFixture { rankingProfileAnswer() }; val motivation = MotivationFixture { rankingMotivationAnswer() }
+        val writes = ConsentFixture { _, req -> BootstrapHttpResult(200, consentReceipt(req).body) }
+        try {
+            val c = client(db, vault, fixture, api, profiles, motivation = motivation, consents = writes); c.start(); login(c, fixture, "fixture-A"); c.bootstrap()
+            c.readRankingConsents(); c.confirmRankingConsent(consentSource(c).id, true); assertEquals(RankingConsentState.Pending(true), c.view.value.rankingConsent)
+            writes.answer = { _, req -> BootstrapHttpResult(200, JSONObject(String(consentReceipt(req).body)).put("automatic_energy_adjustment", false).toString().toByteArray(), etag = "\"2\"") }
+            c.retryRankingConsent(); assertEquals(RankingConsentState.Pending(true), c.view.value.rankingConsent)
+            writes.answer = { _, req -> consentReceipt(req) }; c.retryRankingConsent(); assertTrue(c.view.value.rankingConsent is RankingConsentState.Confirmed)
+            assertEquals(1, writes.calls.map { it.second.key }.distinct().size)
+        } finally { vault.clear(); db.close() }
+    }
+    @Test fun failedAtomicConsentPersistencePreventsAnyNetworkMutationAndKeepsDiary() = runBlocking<Unit> {
+        val db = memory(); val vaultName = name(); val vault = SessionVault(context, vaultName); val fixture = FixtureGateway(); val api = ApiFixture()
+        val profiles = ProfileFixture { rankingProfileAnswer() }; val motivation = MotivationFixture { rankingMotivationAnswer() }; val writes = ConsentFixture()
+        val base = File(context.noBackupFilesDir, vaultName); val sentinel = File(base, "fixture-blocked-rename")
+        try {
+            val c = client(db, vault, fixture, api, profiles, motivation = motivation, consents = writes); c.start(); login(c, fixture, "fixture-A"); c.bootstrap(); c.readRankingConsents()
+            val source = consentSource(c); val owner = c.view.value.binding!!.lease.storageScope; val queue = db.dao().operationCount(owner)
+            assertTrue(base.delete()); assertTrue(base.mkdir()); sentinel.writeText("synthetic fixture only")
+            c.confirmRankingConsent(source.id, true); assertTrue(writes.calls.isEmpty()); assertEquals(queue, db.dao().operationCount(owner))
+            c.retryRankingConsent(); assertTrue(writes.calls.isEmpty())
+        } finally { sentinel.delete(); base.delete(); vault.clear(); db.close() }
+    }
+
+    @Test fun privateRoomObserverClearsCachedProfileAndConsentAcrossContextAndOwnerChanges() = runBlocking<Unit> {
+        val db = memory(); val vault = SessionVault(context, name()); val fixture = FixtureGateway(); val api = ApiFixture()
+        val profiles = ProfileFixture { rankingProfileAnswer() }; val motivation = MotivationFixture { rankingMotivationAnswer() }; val writes = ConsentFixture()
+        var observer: Job? = null
+        try {
+            val c = client(db, vault, fixture, api, profiles, motivation = motivation, consents = writes); c.start(); login(c, fixture, "fixture-A"); c.bootstrap()
+            c.readProfile(); assertNotNull(c.view.value.serverProfile)
+            observer = launch(start = CoroutineStart.UNDISPATCHED) { c.observeMotivationContext() }
+            val owner = c.view.value.binding!!.lease.storageScope; val old = db.bootstrapDao().binding(owner)!!
+            db.bootstrapDao().update(old.copy(contextRevision = old.contextRevision + 1))
+            withTimeout(10_000) { while (c.view.value.serverProfile != null) yield() }
+            c.readRankingConsents(); assertTrue(c.view.value.rankingConsent is RankingConsentState.Ready)
+            val current = db.bootstrapDao().binding(owner)!!; db.bootstrapDao().update(current.copy(accountGeneration = current.accountGeneration + 1))
+            withTimeout(10_000) { while (c.view.value.rankingConsent !is RankingConsentState.NotRequested) yield() }
+            c.readProfile(); assertNotNull(c.view.value.serverProfile)
+            val other = LocalOwnerStore(db).registerIdentity(issuer, "fixture-B"); LocalOwnerStore(db).select(other.id)
+            withTimeout(10_000) { while (c.view.value.binding?.owner?.subject != "fixture-B") yield() }
+            assertNull(c.view.value.serverProfile); assertEquals(RankingConsentState.NotRequested, c.view.value.rankingConsent); assertTrue(writes.calls.isEmpty())
+        } finally { observer?.cancelAndJoin(); vault.clear(); db.close() }
+    }
+
     private inner class ApiFixture(var answer: suspend (Int) -> BootstrapHttpResult = { accepted() }) : BootstrapGateway {
         val calls = mutableListOf<ApiCall>()
         val started = CompletableDeferred<Unit>()

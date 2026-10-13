@@ -26,9 +26,9 @@ import java.time.ZoneId
 import java.time.format.DateTimeFormatter
 import java.util.Locale
 
-@Composable fun AchievementsScreen(model: DiaryViewModel, session: SessionView, actions: SessionActions, onAccount: () -> Unit, onBack: () -> Unit) {
+@Composable fun AchievementsScreen(model: DiaryViewModel, session: SessionView, actions: SessionActions, onAccount: () -> Unit, onBack: () -> Unit, onRanking: () -> Unit = {}) {
     val state by model.achievements.collectAsStateWithLifecycle()
-    AchievementsContent(state, onBack, model::retryAchievements) { ServerMotivationPanel(session, actions.readMotivation, onAccount) }
+    AchievementsContent(state, onBack, model::retryAchievements) { ServerMotivationPanel(session, actions.readMotivation, onAccount, onRanking) }
 }
 
 @Composable internal fun AchievementsContent(state: AchievementState, onBack: () -> Unit, onRetry: () -> Unit = {}, serverPanel: (@Composable () -> Unit)? = null) {

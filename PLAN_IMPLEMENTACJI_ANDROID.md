@@ -1,5 +1,13 @@
 # Plan implementacji — osoba 1: Android i pamięć lokalna
 
+Aktualizacja PR50: source36a3b07/test-only selektor po recreation;135JVM/147device pełnyPASS, lint0error. CI ac403a5 miało146/147 przez brak mergednode; historiaRED zachowana w raporcie/O1-023. Runtime/APK5234edb bez zmian. Nowy final-head CI oddzielnie.
+
+## Aktualizacja O1 — świadome zgody rankingu 0.8.7, 13 października 2026
+
+- Dostarczony ekran odczytu i decyzji; exact idempotent PUT zapisany w szyfrowanej sesji przed siecią, świeży source/revision/epoch, zachowany energy consent, konflikty i ochrona starego konta. [Raport](android/RAPORT_0_8_7.md), codex/android-ranking-zgody.
+- Układ 0.8.6 po feedbacku zachowany: krótsze podsumowanie i lokalne odznaki przed serwerem. Postępy bez zmian. 135 JVM/lint/build PASS; pełny 146/147 przez datę oracle po nocnym zawieszeniu, końcowe 11 DiaryFlow PASS. Room8 i wszystkie dane 22 tabel zachowane; źródła/manifest i APK zweryfikowane osobno.
+- Dołączono aktualny main z odebranym backendem E8.4/E8.5 oraz O3 workers/registry/backup/restore. Te odbiory nie zamykają O1 API/APK. Kolejne: publiczna lista rankingu, pairing/statystyki Nemesis i semantyczne E4/ACK/import/WorkManager; rzeczywisty odbiór na poprawnej konfiguracji API/OIDC/TLS.
+
 ## Aktualizacja O1 — potwierdzenie osiągnięć0.8.6, 12 października2026
 
 - Feedback właściciela: „Zmniejsz podsumowanie, pokaż więcej odznak”. Krótsza karta, wyjaśnienia rozwijane; lokalne odznaki przed potwierdzeniem serwera. Postępy0.8.4 zachowane.

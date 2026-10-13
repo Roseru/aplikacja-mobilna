@@ -6,6 +6,7 @@ import kotlinx.coroutines.withContext
 import org.json.JSONArray
 import pl.roseru.kalorie.core.BootstrapProtocol
 import pl.roseru.kalorie.core.SessionIdentity
+import pl.roseru.kalorie.core.RankingConsentAttempt
 import pl.roseru.kalorie.core.catalog.StrictJson
 import pl.roseru.kalorie.core.requireHttps
 import pl.roseru.kalorie.data.OwnerLease
@@ -24,7 +25,7 @@ internal class ApiSession(val identity: SessionIdentity, val lease: OwnerLease,
     override fun toString() = "ApiSession(redacted)"
 }
 
-internal class BootstrapHttpResult(val status: Int, val body: ByteArray, val retryAfter: String? = null) {
+internal class BootstrapHttpResult(val status: Int, val body: ByteArray, val retryAfter: String? = null, val etag: String? = null) {
     override fun toString() = "BootstrapHttpResult(status=$status)"
 }
 
@@ -36,6 +37,9 @@ internal interface ProfileGateway {
     suspend fun get(session: ApiSession, beforeSend: suspend () -> Unit): BootstrapHttpResult
 }
 internal interface MotivationGateway : ProfileGateway
+internal interface RankingConsentGateway {
+    suspend fun put(session: ApiSession, request: RankingConsentAttempt, beforeSend: suspend () -> Unit): BootstrapHttpResult
+}
 internal interface SnapshotGateway {
     suspend fun get(session: ApiSession, query: SnapshotQuery, beforeSend: suspend () -> Unit): BootstrapHttpResult
 }
@@ -118,11 +122,19 @@ internal class HttpsSnapshotGateway(base: String,
         HttpsJsonTransport.request(URL(endpoint + "?" + query.encoded()), "GET", session, null, open, beforeSend, SnapshotProtocol.MAX_BYTES)
 }
 
+internal class HttpsRankingConsentGateway(base: String,
+    private val open: (URL) -> HttpsURLConnection = { it.openConnection() as HttpsURLConnection }) : RankingConsentGateway {
+    private val url = URL(BootstrapHttpProtocol.endpoint(base).toString().removeSuffix("/bootstrap") + "/consents")
+    override suspend fun put(session: ApiSession, request: RankingConsentAttempt, beforeSend: suspend () -> Unit) =
+        HttpsJsonTransport.request(url, "PUT", session, request.key, open, beforeSend, requireNoStore = true, consent = request)
+}
+
 /** Shared bounded transport; callers cannot supply an arbitrary URL or extra headers. */
 private object HttpsJsonTransport {
     suspend fun request(url: URL, method: String, session: ApiSession, key: String?,
         open: (URL) -> HttpsURLConnection, beforeSend: suspend () -> Unit,
-        maxBytes: Int = BootstrapHttpProtocol.MAX_BYTES, requireNoStore: Boolean = false) = withContext(Dispatchers.IO) {
+        maxBytes: Int = BootstrapHttpProtocol.MAX_BYTES, requireNoStore: Boolean = false,
+        consent: RankingConsentAttempt? = null) = withContext(Dispatchers.IO) {
         require(session.accessToken.isNotBlank() && session.accessToken.length <= 65_536 &&
             session.accessToken.none { it.isWhitespace() || it.isISOControl() })
         val connection = open(url)
@@ -130,7 +142,7 @@ private object HttpsJsonTransport {
             connection.requestMethod = method
             connection.instanceFollowRedirects = false
             connection.useCaches = false
-            connection.doOutput = false
+            connection.doOutput = consent != null
             connection.connectTimeout = 15_000
             connection.readTimeout = 15_000
             connection.setRequestProperty("Authorization", "Bearer ${session.accessToken}")
@@ -138,9 +150,17 @@ private object HttpsJsonTransport {
             connection.setRequestProperty("Accept", "application/json")
             connection.setRequestProperty("Accept-Encoding", "identity")
             connection.setRequestProperty("Cache-Control", "no-store")
+            if (consent != null) {
+                require(method == "PUT" && key == consent.key)
+                connection.setRequestProperty("Content-Type", "application/json; charset=utf-8")
+                connection.setRequestProperty("If-Match", "\"${consent.baseRevision}\"")
+                consent.consentEpoch?.let { connection.setRequestProperty("X-Ranking-Consent-Epoch", it) }
+                connection.setFixedLengthStreamingMode(consent.body().size)
+            }
             coroutineContext.ensureActive()
             beforeSend()
             val deadline = System.nanoTime() + 30_000_000_000L
+            if (consent != null) connection.outputStream.use { it.write(consent.body()) }
             val status = connection.responseCode
             require(status in 200..599 && status !in 300..399)
             // A proxy may return HTML for overload. Honour its delay without reading/echoing the body.
@@ -161,7 +181,8 @@ private object HttpsJsonTransport {
                     connection.readTimeout = minOf(15_000, remaining.toInt())
                 }
             }
-            BootstrapHttpResult(status, bytes, connection.getHeaderField("Retry-After"))
+            val etag = if (consent != null) connection.getHeaderField("ETag")?.also { require(it.length <= 32) } else null
+            BootstrapHttpResult(status, bytes, connection.getHeaderField("Retry-After"), etag)
         } finally { connection.disconnect() }
     }
 }

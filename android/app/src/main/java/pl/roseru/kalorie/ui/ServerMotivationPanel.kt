@@ -15,10 +15,10 @@ import java.time.ZoneId
 import java.time.format.DateTimeFormatter
 
 /** Private, explicit GET. Rendering never changes ranking consent or the local diary. */
-@Composable internal fun ServerMotivationPanel(view: SessionView, onRead: () -> Unit, onAccount: () -> Unit) {
+@Composable internal fun ServerMotivationPanel(view: SessionView, onRead: () -> Unit, onAccount: () -> Unit, onRanking: (() -> Unit)? = null) {
     val account = view.binding?.owner?.kind == "account"
     val ready = account && view.motivationConfigured && view.serverLinked && !view.requiresRecovery && !view.pendingLogin
-    val canRead = ready && !view.busy && !view.bootstrapBusy && !view.profileBusy && !view.snapshotBusy && !view.motivationBusy
+    val canRead = ready && !view.busy && !view.bootstrapBusy && !view.profileBusy && !view.snapshotBusy && !view.motivationBusy && !view.rankingConsentBusy
     // The controller fences the result; this also hides it immediately during a visible transition.
     val state = if (ready && !view.busy) view.motivation else MotivationState.NotRequested
     Card(Modifier.fillMaxWidth(), shape = RoundedCornerShape(18.dp),
@@ -47,6 +47,7 @@ import java.time.format.DateTimeFormatter
                     Text(if (state is MotivationState.Ready) "Odśwież potwierdzenie" else "Pobierz z serwera")
                 }
             } else TextButton(onClick = onAccount, modifier = Modifier.testTag("achievement-server-account")) { Text("Konto i połączenie") }
+            onRanking?.let { TextButton(onClick = it, modifier = Modifier.testTag("achievement-ranking")) { Text("Udział w rankingu") } }
         }
     }
 }
@@ -92,5 +93,5 @@ import java.time.format.DateTimeFormatter
         }, Modifier.testTag("server-badge-${badge.code.wire}"), style = MaterialTheme.typography.bodySmall)
         if (badge.witnessDates.isNotEmpty()) Text(badge.witnessDates.joinToString(" · ") { it.format(DateTimeFormatter.ofPattern("dd.MM.yyyy")) }, style = MaterialTheme.typography.bodySmall)
     }
-    Text("Lokalne wpisy mogą jeszcze czekać na synchronizację. Ich podgląd poniżej może różnić się od wyniku serwera.", style = MaterialTheme.typography.bodySmall)
+    Text("Lokalne wpisy mogą jeszcze czekać na synchronizację. Lokalny podgląd może różnić się od wyniku serwera.", style = MaterialTheme.typography.bodySmall)
 }
