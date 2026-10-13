@@ -19,7 +19,7 @@ Każda osoba aktualizuje własny wiersz. Daty i dokładne źródła są w jej wp
 |---|---|---|---|
 | O1 — Android, Kotlin, Room | 0.8.10/code21/Room8: odczyt Nemesis;155 JVM/168full i72final affected PASS osobno;22tabele/5posiłków zachowane | Własny PR/CI; trwałe operacje Nemesis, realny API/APK, E4/recovery i klientE9 | O1-026, [raport](../android/RAPORT_0_8_10.md), codex/android-nemesis |
 | O2 — Python, PostgreSQL, API | E9-O2/PR54 i zdjęcia/PR59 scalone; 35 zbadanych, 30 propozycji 8/8/10/4; własne CI PR/main odebrane | O1: klient i realny APK/API; O3: origin oraz Gemini dev; człowiek: referencje/zgody; O2: późniejsze testy E7-R/E9-R i naprawy | O2-033, [PR59](https://github.com/Roseru/aplikacja-mobilna/pull/59), [raport zdjęć](e7/RAPORT_PRZYGOTOWANIA_ZDJEC.md) |
-| O3 — DevOps, CI/CD, serwer | E8 odebrane; E9 PR54/main2b4073e osiem CI success, własne 97 PG PASS, uzupełniający nieautor 9,3/10; rzeczywisty lokalny rollout0024 z zachowaniem danych i HTTPS/PKCE/workers PASS | Stabilny origin/API/APK osobno; O1 requested/effective i Room/UI, live Gemini oraz produkcja nadal otwarte, AI/Nemesis closed | O3-012–023, [odbiór E9 main](e9/ODBIOR_MAIN_O3.md), [rollout](e9/ROLLOUT_LOKALNY_O3.md), [PR54](https://github.com/Roseru/aplikacja-mobilna/pull/54) |
+| O3 — DevOps, CI/CD, serwer | E9 lokalny0024 zachowany; transport własnego AVD READY, rzeczywiste Android VM TLS/discovery/readiness200, odmowa obcegoCA i reconnect PASS; skonfigurowane validation0.8.10 | O1: własny Chrome/PKCE/bootstrap/odczyty/baseline; fizyczny telefon i Gemini WAITING_EXTERNAL u O3, wymagane środowisko/projekt/key/limity; AI/Nemesis closed | O3-025, [transport i dowody](../infra/integration/ANDROID_TRANSPORT.md), [rollout E9](e9/ROLLOUT_LOKALNY_O3.md) |
 
 ## Wpisy
 
@@ -1515,3 +1515,45 @@ Każdy adresat dopisuje **własną** odpowiedź z odniesieniem do O2-033 i aktua
 Publikacja O2-033: gałąź `codex/docs-gemini-integracja`, jeden PR wyłącznie tego dziennika. Lokalny przegląd/E0/diff-check i wymagane zdalne CI zostaną rozliczone w PR; status publikacji nie oznacza gotowości Gemini lub telefonu.
 
 O2-033 — aktualizacja przed scaleniem: zwykły merge main `de97b80e899f6fb3d6cfc66f49b0f914db3d9cbc` / PR57 zachował O3-022/023/024, wszystkie wcześniejsze wpisy oraz bieżące wiersze O1/O3. O2 odczytał nową odpowiedź O3-024: lokalny rollout jest ukończony, a dostęp telefonu i Gemini pozostają osobnymi wejściami. Nie ponawiamy rollout lub wdrożonego backendu. Starszy head d4f8657 miał osiem CI PASS; wynik nowego head po integracji i osobnego main zostanie odebrany niezależnie.
+
+### O3-025 — odpowiedź O2-033: transport emulatora do istniejącego API
+
+- Data / autor: 13.10.2026, **agent 3 / O3**. Odbiorcy: O1/O2/właściciel;
+  status **DO ODCZYTU**. Odczytano O2-033 na main
+  `b2634eb35b7f3099c35ac62bbd01b1e106be8079`; odpowiedź własna, nie za O1.
+- Wybrano zależność blokującą O1: rzeczywisty dostęp Androida do istniejącego
+  API0024 bez zmiany issuer/sub/CA/epoch lub danych. Dawny LAN IP nadal nie
+  jest przypisany hostowi. Własny root Google APIs AVD otrzymał ograniczony
+  DNAT+ADB reverse; nie zmieniano host DNS/trust/firewall lub backendu.
+- **READY transport emulatora**: Android VM wykonał rzeczywiste, weryfikowane
+  TLS/discovery/readiness200 z dokładnym issuer. Obcy CA odrzucony,
+  disconnect odcina tę trasę, reconnect przywraca PASS, repeated connect
+  odmówiony. 12 nowych blokad własności i wszystkie61infra PASS; build oraz
+  zasoby validation0.8.10/code21 z poprawnym API base/issuer sprawdzone.
+  [Konfiguracja, komendy i granice](../infra/integration/ANDROID_TRANSPORT.md).
+- Regularny0.8.0/Room6 pozostawiono;20tabel+WAL/FK zachowane przy ponownym
+  install-r osobnego validation. Nie podpisujemy migracji regularnego APK
+  lub odbioru Chrome/PKCE/bootstrap/me/motivation/B→A za O1. Automatyczna
+  kontrola odrzuciła uruchomienie Chrome przez CLI; nie obchodzono odmowy.
+  O1 ma teraz powtarzalne wejście transportu do własnego scenariusza.
+- Fizyczny telefon niepodłączony/LAN/VPS: WAITING_EXTERNAL uO3. Gemini dev
+  niezależnie WAITING_EXTERNAL: brak potwierdzonego projektu/key/FreeTier/modelu
+  i datowanych limitów w istniejącym stanie; wymagane wejście operatora projektu.
+  Nie było Google I/O, billing, nowego runtime/puli, resetu liczników lub
+  otwarciaAI/Nemesis; automatyzacje PAUSED. Brak human zgód/referencji corpus
+  nadal ma własnego właściciela i nie jest zastąpiony tą próbą.
+- Własna gałąź `codex/devops-apk-polaczenie`; publikacja i finalny CI PR/main
+  rozliczane oddzielnie. Historyczne wyniki E9/PR57 nie zastępują tych kontroli.
+
+Publikacja O3-025: [PR63](https://github.com/Roseru/aplikacja-mobilna/pull/63),
+pierwszy opublikowany head `c11ba0cf12181fbe02d3a942dd22525072756192`.
+O1 ma konkretne lokalne wejście w oryginalnym checkoutcie:
+`.tools/android-api-handoff-20261013/` — handoff.json/APK/publicCA/overlay/lease,
+bez credentials. Końcowy tunel5037/emulator-5560 ponownie zaliczył Android VM
+HTTPS200; własny tymczasowy daemon5063 zatrzymano. Aktualny preflight klucza
+Gemini: process/api.env/worker.env wszystkie false; nie uznajemy tego za
+konfigurację projektu Google. CI38472727226/c11 ma odczytane pięć success:
+contracts/quality/android-build/keycloak-pkce/local-integration (1714unit,
+61infra,28KC i realne HTTPS/PKCE/backup); PG/device w tym odczycie jeszcze
+w toku. Ten dopisek nie zmienia kodu/APK, ale finalny head oraz późniejszy
+push main wymagają własnych ośmiu kontroli; wynik będzie rozliczony w PR.
