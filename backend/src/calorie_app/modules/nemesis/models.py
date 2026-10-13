@@ -1,9 +1,21 @@
 """Metadata for the immutable lifecycle tables; privileged SQL owns their writes."""
 
 from datetime import date, datetime
+from decimal import Decimal
 from uuid import UUID
 
-from sqlalchemy import BigInteger, DateTime, ForeignKey, Index, String, Text, UniqueConstraint, text
+from sqlalchemy import (
+    BigInteger,
+    DateTime,
+    ForeignKey,
+    Index,
+    Numeric,
+    SmallInteger,
+    String,
+    Text,
+    UniqueConstraint,
+    text,
+)
 from sqlalchemy.dialects.postgresql import JSONB
 from sqlalchemy.orm import Mapped, mapped_column
 
@@ -15,12 +27,16 @@ class NemesisControl(Base):
     id: Mapped[int] = mapped_column(primary_key=True, autoincrement=False)
     sync_epoch: Mapped[UUID] = mapped_column()
     enabled: Mapped[bool] = mapped_column(server_default=text("false"))
+    schema_revision: Mapped[str | None] = mapped_column(Text)
+    initializer_revision: Mapped[str | None] = mapped_column(Text)
     projector_revision: Mapped[str | None] = mapped_column(Text)
     finalizer_revision: Mapped[str | None] = mapped_column(Text)
 
 
 class NemesisRelease(Base):
     __tablename__ = "nemesis_releases"
+    schema_revision: Mapped[str | None] = mapped_column(Text)
+    initializer_revision: Mapped[str | None] = mapped_column(Text)
     projector_revision: Mapped[str] = mapped_column(Text, primary_key=True)
     finalizer_revision: Mapped[str] = mapped_column(Text, primary_key=True)
 
@@ -67,6 +83,14 @@ Index(
     NemesisChallenge.end_at,
     NemesisChallenge.id,
     postgresql_where=text("status IN ('invited','active')"),
+)
+
+
+Index(
+    "ix_nemesis_finalization_due",
+    NemesisChallenge.deadline_at,
+    NemesisChallenge.id,
+    postgresql_where=text("status IN ('active','finished') AND result_status='provisional'"),
 )
 
 
@@ -152,3 +176,57 @@ class NemesisCursor(Base):
 
 
 Index("ix_nemesis_cursor_cleanup", NemesisCursor.expires_at, NemesisCursor.token)
+
+
+class NemesisProjectionSeed(Base):
+    __tablename__ = "nemesis_projection_seeds"
+    challenge_id: Mapped[UUID] = mapped_column(
+        ForeignKey("app.nemesis_challenges.id", ondelete="CASCADE"), primary_key=True
+    )
+    initializer_revision: Mapped[str] = mapped_column(Text)
+    resolver_revision: Mapped[str] = mapped_column(Text)
+    initialized_at: Mapped[datetime] = mapped_column(DateTime(timezone=True))
+    read_revision: Mapped[int] = mapped_column(BigInteger, server_default=text("1"))
+    final_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
+
+
+class NemesisDayProjection(Base):
+    __tablename__ = "nemesis_day_projections"
+    challenge_id: Mapped[UUID] = mapped_column(
+        ForeignKey("app.nemesis_challenges.id", ondelete="CASCADE"), primary_key=True
+    )
+    participant_role: Mapped[str] = mapped_column(Text, primary_key=True)
+    local_date: Mapped[date] = mapped_column(primary_key=True)
+    rule_version: Mapped[str] = mapped_column(Text, primary_key=True)
+    starts_at: Mapped[datetime] = mapped_column(DateTime(timezone=True))
+    matures_at: Mapped[datetime] = mapped_column(DateTime(timezone=True))
+    candidate_points: Mapped[int] = mapped_column(SmallInteger)
+    effective_complete: Mapped[bool] = mapped_column()
+    in_goal: Mapped[bool | None] = mapped_column()
+    intake_kcal: Mapped[Decimal | None] = mapped_column(Numeric)
+    maintenance_kcal: Mapped[Decimal | None] = mapped_column(Numeric)
+    weight_kg: Mapped[Decimal | None] = mapped_column(Numeric)
+    weight_occurred_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
+    weight_id: Mapped[UUID | None] = mapped_column()
+    weight_revision: Mapped[int | None] = mapped_column()
+    source_revisions: Mapped[dict] = mapped_column(JSONB)
+    source_position: Mapped[int] = mapped_column(BigInteger)
+    qualified_at: Mapped[datetime] = mapped_column(DateTime(timezone=True))
+    revision: Mapped[int] = mapped_column(BigInteger, server_default=text("1"))
+
+
+class NemesisFinalResult(Base):
+    __tablename__ = "nemesis_final_results"
+    challenge_id: Mapped[UUID] = mapped_column(
+        ForeignKey("app.nemesis_challenges.id", ondelete="CASCADE"), primary_key=True
+    )
+    participant_role: Mapped[str] = mapped_column(Text, primary_key=True)
+    aggregates: Mapped[dict] = mapped_column(JSONB)
+    read_revision: Mapped[int] = mapped_column(BigInteger)
+    finalized_at: Mapped[datetime] = mapped_column(DateTime(timezone=True))
+
+
+class NemesisRuntimeContract(Base):
+    __tablename__ = "nemesis_runtime_contract"
+    signature: Mapped[str] = mapped_column(Text, primary_key=True)
+    body_sha256: Mapped[str] = mapped_column(Text)

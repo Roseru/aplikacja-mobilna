@@ -2,6 +2,7 @@
 
 import asyncio
 from importlib.resources import files
+from pathlib import Path
 from zoneinfo import ZoneInfo, reset_tzpath
 
 from calorie_app.core.config import Settings
@@ -14,6 +15,9 @@ from calorie_app.modules.profiles.service import estimate_energy
 
 
 def main():
+    import calorie_app.core.config as installed_config
+
+    assert "site-packages" in Path(installed_config.__file__).parts
     # This checks the declared Python tzdata fallback even on a host with IANA files.
     reset_tzpath(())
     ZoneInfo.clear_cache()
@@ -25,6 +29,16 @@ def main():
     assert (
         files("calorie_app.modules.catalog.resources").joinpath("motivation.schema.json").is_file()
     )
+    assert files("calorie_app.modules.catalog.resources").joinpath("nemesis.schema.json").is_file()
+    assert files("calorie_app").joinpath("migrations/versions/e8_0021/source.sql").is_file()
+    assert files("calorie_app").joinpath("migrations/versions/e8_0021/finalizer.sql").is_file()
+    from decimal import Decimal
+
+    from calorie_app.modules.nemesis.finalization import finalize
+    from calorie_app.modules.nemesis.schemas import canonical_percent
+
+    assert canonical_percent(Decimal("-15")) == "-15" and canonical_percent(Decimal("0")) == "0"
+    assert callable(finalize)
     from datetime import date
 
     from calorie_app.modules.analytics.motivation.rules import rank_for_points
@@ -63,12 +77,15 @@ def main():
     assert "/api/v1/ai/food-analyses" in app.openapi()["paths"]
     assert "/api/v1/me/motivation" in app.openapi()["paths"]
     assert "/api/v1/ranking" in app.openapi()["paths"]
+    assert "/api/v1/nemesis/{challenge_id}/statistics" in app.openapi()["paths"]
     assert "/api/v1/ai/capabilities" in app.openapi()["paths"]
     for route in ("meals", "weights", "diary-days", "statistics"):
         assert "/api/v1/me/" + route in app.openapi()["paths"]
     app.state.engine.dispose()
     asyncio.run(app.state.oidc_verifier.close())
-    print("PASS installed E7 runtime: bundled schemas/prompts, codec, tzdata, OIDC and sync routes")
+    print(
+        "PASS installed E8.4 runtime: bundled schemas/prompts, codec, tzdata, OIDC and sync routes"
+    )
 
 
 if __name__ == "__main__":

@@ -329,8 +329,16 @@ def main():
 
     result = subprocess.run([sys.executable, str(ROOT / 'backend/export_motivation_schema.py'), '--check'], cwd=ROOT, capture_output=True, text=True)
     assert result.returncode == 0, result.stdout + result.stderr
+    result = subprocess.run([sys.executable, str(ROOT / 'backend/export_nemesis_schema.py'), '--check'], cwd=ROOT, capture_output=True, text=True)
+    assert result.returncode == 0, result.stdout + result.stderr
     generated = read(ROOT / 'backend/openapi.json')
     generated_ids, generated_examples = verify_generated_catalog(generated, api, validate, api_path)
+    response = generated['paths']['/api/v1/nemesis/{challenge_id}/statistics']['get']['responses']['200']['content']['application/json']['schema']
+    for name in ('pending', 'provisional', 'final', 'hidden'):
+        value = read(CONTRACTS / f'examples/nemesis-statistics-{name}.json')
+        Draft202012Validator(generated_expanded(response, generated), format_checker=FORMATS).validate(value)
+        generated_examples += 1
+
     assert not set(ids).intersection(generated_ids), 'Duplicate active operationId across documents'
     api_example_count += generated_examples
 

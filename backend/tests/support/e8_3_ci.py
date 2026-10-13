@@ -20,7 +20,7 @@ from sqlalchemy.engine import make_url
 from tests.support.e8_3_postgres import initialize_empty_cluster
 
 IMAGE = (
-    "public.ecr.aws/docker/library/postgres:17@sha256:"
+    "docker.io/library/postgres:17@sha256:"
     "2d2b8998d31037bf721cfdf764d76ba74171b4fab3431b7f72c27c56ddbdf9e3"
 )
 LABEL = "calorie.e8-3-evidence"

@@ -81,7 +81,7 @@ Regularity_v1 daje jeden punkt za efektywnie kompletny dzień: użytkownik zadek
 
 Candidate dojrzewa na następnej granicy daty w accepted zone. Do tego czasu nie zwiększa należnego wyniku. Dojrzewanie nie wymaga zapisu klienta ani nowej kwalifikacji z późniejszego dziennika. Finalizer używa dojrzałego candidate z własnych trwałych projekcji, niezależnie od opóźnienia general motivation worker.
 
-Nie kopiuj fallbacku aktualnej strefy profilu z `e8_day_facts` do historycznej maturity Nemesis. Po end_at zmiana strefy profilu jest legalna. Korekta przed deadline, usunięcie DiaryDay lub dzień wyłącznie z wagą nadal podlegają accepted zone. Test Warsaw → New York po end_at musi zachować wynik i maturity rywalizacji Warsaw.
+Nie korzystaj z późniejszej strefy profilu do historycznej maturity Nemesis. `e8_day_facts` zwraca zone/matures_at z DiaryDay lub null przy jego braku; maturity Nemesis pochodzi wyłącznie z utrwalonych accepted boundaries, także dla dnia bez DiaryDay i weight-only. Po end_at zmiana strefy profilu jest legalna. Korekta przed deadline, usunięcie DiaryDay lub dzień wyłącznie z wagą nadal podlegają accepted zone. Test Warsaw → New York po end_at musi zachować wynik i maturity rywalizacji Warsaw.
 
 Weight change wymaga co najmniej dwóch różnych dojrzałych dat okresu. Wybieraj pomiary przez occurred_at UTC w [start_at, end_at), klasyfikuj do accepted local_date, a reprezentanta daty wybieraj jako ostatni według (occurred_at UTC, UUID). Procent = (last - first) / first × 100. Użyj pierwszej i ostatniej dostępnej daty; nie dodawaj mediany lub algorytmu E9.
 

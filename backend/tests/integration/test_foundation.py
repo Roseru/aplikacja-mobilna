@@ -95,6 +95,10 @@ def test_migration_and_database_readiness(database):
         "nemesis_receipts",
         "nemesis_admissions",
         "nemesis_cursors",
+        "nemesis_projection_seeds",
+        "nemesis_day_projections",
+        "nemesis_final_results",
+        "nemesis_runtime_contract",
     }
     migrate("check")
     with TestClient(create_app(Settings(database_url=url), engine=engine)) as client:

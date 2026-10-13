@@ -1,4 +1,4 @@
-"""Production lifecycle routes; issuance and statistics remain DB-gated to E8.4."""
+"""Production lifecycle and private statistics routes with DB capability gating."""
 
 import re
 from typing import Annotated
@@ -20,6 +20,7 @@ from calorie_app.modules.nemesis.schemas import (
     CreateNemesis,
     NemesisMetadata,
     NemesisPage,
+    NemesisStatistics,
     RevokeCodeReceipt,
     ShareCodeReceipt,
 )
@@ -264,8 +265,7 @@ def cancel(request: Request, principal: Auth, challenge_id: UUID, body: CancelNe
 @router.get(
     "/nemesis/{challenge_id}/statistics",
     operation_id="read_nemesis_statistics",
-    status_code=503,
-    response_model=ApiError,
+    response_model=NemesisStatistics,
     openapi_extra=required_headers(),
 )
 def statistics(request: Request, principal: Auth, challenge_id: UUID):
