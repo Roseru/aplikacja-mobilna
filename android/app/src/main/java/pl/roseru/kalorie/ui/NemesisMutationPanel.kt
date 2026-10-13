@@ -7,11 +7,18 @@ import android.os.PersistableBundle
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
+import androidx.compose.foundation.text.KeyboardActions
+import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.LocalConfiguration
+import androidx.compose.ui.platform.LocalDensity
+import androidx.compose.ui.platform.LocalFocusManager
+import androidx.compose.ui.platform.LocalSoftwareKeyboardController
+import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.Lifecycle
@@ -90,15 +97,18 @@ import java.time.format.DateTimeFormatter
             modifier=Modifier.testTag("nemesis-confirm-cancel")) { Text("Potwierdź zakończenie") }},dismissButton={TextButton(onClick={dialog=null;decision=null}) { Text("Wróć") }}) }
 }
 @Composable private fun CreateNemesisDialog(actions: SessionActions,busy: Boolean,onDismiss:()->Unit) {
+    val focus=LocalFocusManager.current;val keyboard=LocalSoftwareKeyboardController.current
     var code by remember { mutableStateOf("") }; var days by remember { mutableIntStateOf(30) }
     var zone by remember { mutableStateOf(ZoneId.systemDefault().id.takeIf { it in ZoneId.getAvailableZoneIds() } ?: "Europe/Warsaw") }
     var weight by remember { mutableStateOf(false) }; var deficit by remember { mutableStateOf(false) }; var ack by remember { mutableStateOf(false) }
     val valid=runCatching { NemesisCommand.validateCode(code) }.isSuccess && zone in ZoneId.getAvailableZoneIds()
-    AlertDialog(onDismissRequest=onDismiss,title={Text("Warunki zaproszenia")},text={Column(Modifier.verticalScroll(rememberScrollState()),verticalArrangement=Arrangement.spacedBy(8.dp)) {
-        OutlinedTextField(code,{if(it.length<=43) code=it;ack=false},label={Text("Prywatny kod drugiej osoby")},singleLine=true,modifier=Modifier.testTag("nemesis-destination-code"))
+    AlertDialog(onDismissRequest=onDismiss,title={Text("Warunki zaproszenia")},text={Column(dialogBody(),verticalArrangement=Arrangement.spacedBy(8.dp)) {
+        OutlinedTextField(code,{if(it.length<=43) code=it;ack=false},label={Text("Prywatny kod drugiej osoby")},singleLine=true,
+            keyboardOptions=KeyboardOptions(imeAction=ImeAction.Done),keyboardActions=KeyboardActions(onDone={focus.clearFocus();keyboard?.hide()}),modifier=Modifier.testTag("nemesis-destination-code"))
         Text("Okres rywalizacji")
         Row(horizontalArrangement=Arrangement.spacedBy(6.dp)) { listOf(7,30,90).forEach { d -> FilterChip(selected=days==d,onClick={days=d;ack=false},label={Text("$d dni")},modifier=Modifier.testTag("nemesis-days-$d")) } }
-        OutlinedTextField(zone,{zone=it;ack=false},label={Text("Strefa czasu, np. Europe/Warsaw")},singleLine=true,modifier=Modifier.testTag("nemesis-time-zone"))
+        OutlinedTextField(zone,{zone=it;ack=false},label={Text("Strefa czasu, np. Europe/Warsaw")},singleLine=true,
+            keyboardOptions=KeyboardOptions(imeAction=ImeAction.Done),keyboardActions=KeyboardActions(onDone={focus.clearFocus();keyboard?.hide()}),modifier=Modifier.testTag("nemesis-time-zone"))
         Text("Regularność v1: 1 punkt za kompletny dzień i 1 za dzień w celu. Wynik zależy od regularności, nie wielkości deficytu.",style=MaterialTheme.typography.bodySmall)
         Choice("Udostępniaj procentową zmianę masy",weight,{weight=it;ack=false},"nemesis-create-weight")
         Choice("Udostępniaj średni szacowany deficyt",deficit,{deficit=it;ack=false},"nemesis-create-deficit")
@@ -110,7 +120,7 @@ import java.time.format.DateTimeFormatter
 @Composable private fun AcceptNemesisDialog(source: NemesisDecisionSource,actions: SessionActions,busy: Boolean,current: Boolean,onDismiss:()->Unit) {
     val terms=source.challenge.terms
     var regularity by remember(source.id) { mutableStateOf(false) }; var weight by remember(source.id) { mutableStateOf(false) }; var deficit by remember(source.id) { mutableStateOf(false) }
-    AlertDialog(onDismissRequest=onDismiss,title={Text("Akceptacja warunków")},text={Column(Modifier.verticalScroll(rememberScrollState()),verticalArrangement=Arrangement.spacedBy(8.dp)) {
+    AlertDialog(onDismissRequest=onDismiss,title={Text("Akceptacja warunków")},text={Column(dialogBody(),verticalArrangement=Arrangement.spacedBy(8.dp)) {
         Text("${terms.days} dni · ${terms.zone.id}")
         Text("Regularność v1: punkty za kompletne dni i realizację własnego celu. Rywalizacja zacznie się od następnej lokalnej daty.",style=MaterialTheme.typography.bodySmall)
         Choice("Akceptuję regularność, okres i strefę czasu",regularity,{regularity=it},"nemesis-accept-ack")
@@ -125,3 +135,9 @@ import java.time.format.DateTimeFormatter
     Row(verticalAlignment=Alignment.CenterVertically) { Checkbox(checked,onChange,modifier=Modifier.testTag(tag)); Text(label,Modifier.weight(1f),style=MaterialTheme.typography.bodySmall) }
 }
 private fun actionLabel(action: NemesisAction)=when(action) { NemesisAction.ISSUE->"Wydanie kodu";NemesisAction.REVOKE->"Unieważnienie kodu";NemesisAction.CREATE->"Zaproszenie";NemesisAction.ACCEPT->"Akceptacja";NemesisAction.CANCEL->"Zakończenie udostępniania" }
+@Composable private fun dialogBody():Modifier {
+    val density=LocalDensity.current
+    val ime=WindowInsets.ime.getBottom(density)/density.density
+    val maximum=(LocalConfiguration.current.screenHeightDp-ime-200f).coerceAtLeast(100f).dp
+    return Modifier.heightIn(max=maximum).verticalScroll(rememberScrollState())
+}

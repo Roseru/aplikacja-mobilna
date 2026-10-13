@@ -55,8 +55,10 @@ class NemesisMutationScreenTest {
         compose.onNodeWithTag("nemesis-create-ack").performScrollTo().performClick()
         compose.onNodeWithTag("nemesis-days-7").performScrollTo().performClick()
         compose.onNodeWithTag("nemesis-create-ack").performScrollTo().assertIsOff();compose.onNodeWithTag("nemesis-confirm-create").assertIsNotEnabled()
-        compose.onNodeWithTag("nemesis-create-ack").performClick();compose.onNodeWithTag("nemesis-confirm-create").assertIsEnabled();screenshot("create")
-        compose.onNodeWithTag("nemesis-confirm-create").performClick()
+        compose.onNodeWithTag("nemesis-create-ack").performClick();compose.onNodeWithTag("nemesis-confirm-create").assertIsEnabled().assertIsDisplayed()
+        compose.onNodeWithTag("nemesis-time-zone").performScrollTo().performImeAction()
+        compose.onNodeWithTag("nemesis-create-ack").performScrollTo();compose.onNodeWithTag("nemesis-confirm-create").assertIsDisplayed();screenshot("create")
+        compose.onNodeWithTag("nemesis-confirm-create").performTouchInput {click()}
         assertEquals(listOf("A".repeat(43),7,"Europe/Warsaw",false,false,true),recorded)
     }
     @Test fun acceptRequiresEveryProposedScopeAndAChangedSourceDisablesTheOldDialog() {
