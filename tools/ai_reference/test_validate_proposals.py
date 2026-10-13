@@ -1,4 +1,5 @@
 """Mutation checks for the read-only proposal validator, no network or file changes."""
+
 import copy
 import json
 import unittest
@@ -13,7 +14,9 @@ class ProposalChecks(unittest.TestCase):
         self.packet = validator.PACKET
         self.original_text = Path.read_text
         self.original_bytes = Path.read_bytes
-        self.doc = json.loads((self.packet / "reference_proposals.json").read_text(encoding="utf-8"))
+        self.doc = json.loads(
+            (self.packet / "reference_proposals.json").read_text(encoding="utf-8")
+        )
         self.index = json.loads((self.packet / "candidate_index.json").read_text(encoding="utf-8"))
 
     def check_mutation(self, mutate, change_index=False):
@@ -51,8 +54,9 @@ class ProposalChecks(unittest.TestCase):
 
     def test_normalized_alias_collision(self):
         self.check_mutation(
-            lambda d, i: d["cases"][8]["proposal"]["main_components"][1]
-            ["accepted_aliases"].append(" CHERRY   TOMATOES ")
+            lambda d, i: d["cases"][8]["proposal"]["main_components"][1]["accepted_aliases"].append(
+                " CHERRY   TOMATOES "
+            )
         )
 
     def test_missing_reference_locator(self):

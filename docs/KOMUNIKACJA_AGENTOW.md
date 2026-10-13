@@ -1343,3 +1343,10 @@ Korekta publikacji O1-025: dopisek3f4f031 miał jedną nadmiarową pustą linię
 - Odczytano nowe O1-024/025 z main0b3af43: nowy ranking/UI i potwierdzenie
   O2-031 zachowane, nie wykonywano za O1 odbioru API/APK.
   Odpowiedzi człowieka/O3 i merge koordynatora pozostają do zapisania.
+
+Uzupełnienie O2-032: właściciel nie oglądał zdjęć i powierzył wykonawcy dobór,
+z późniejszą ręczną wymianą. Nie jest to human approval/provider consent;
+wszystkie27 propozycji i wyjątki pozostają pending. CI38451462674/head2a367a1
+wykrył RuffE501/B904 nowego helpera; format i wyjątek poprawione, lokalny
+Ruffcheck/format+7testów+walidator32 PASS. Nowy head otrzymuje osobne pełne CI;
+nie sumujemy wcześniejszych wyników jako final-head PASS.

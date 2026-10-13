@@ -1,4 +1,5 @@
 """Read-only offline checks of the E7 photo proposal packet; never uploads."""
+
 import hashlib
 import json
 import sys
@@ -23,7 +24,9 @@ def validate(packet=PACKET):
     assert doc["runnable"] is False
     assert doc["human_qualified"] == doc["provider_consents"] == doc["provider_uploads"] == 0
     assert doc["expected_profile"] is doc["notice_version"] is doc["o3_confirmation"] is None
-    replacement = json.loads((packet / "commons/replacement-index.json").read_text(encoding="utf-8"))
+    replacement = json.loads(
+        (packet / "commons/replacement-index.json").read_text(encoding="utf-8")
+    )
     candidates = index["candidates"] + replacement
     assert len(doc["cases"]) == len(candidates)
     annotations = {
@@ -63,16 +66,28 @@ def validate(packet=PACKET):
             im.load()
             assert im.format in ("JPEG", "PNG", "WEBP")
             assert max(im.size) <= 4096 and im.width * im.height <= 16000000
-            pixel_hash = hashlib.sha256(str(im.size).encode() + im.convert("RGB").tobytes()).hexdigest()
+            pixel_hash = hashlib.sha256(
+                str(im.size).encode() + im.convert("RGB").tobytes()
+            ).hexdigest()
             assert pixel_hash not in pixels, cid
             pixels.add(pixel_hash)
             exif = im.getexif()
             gps = exif.get_ifd(34853) if 34853 in exif else {}
             assert not gps, cid
-            audit.append({"case_id": cid, "sha256": digest, "bytes": len(raw),
-                          "codec": im.format, "width": im.width, "height": im.height,
-                          "exif_tags": sorted(exif.keys()), "gps_present": False,
-                          "metadata_keys": sorted(im.info.keys()), "rgb_pixel_sha256": pixel_hash})
+            audit.append(
+                {
+                    "case_id": cid,
+                    "sha256": digest,
+                    "bytes": len(raw),
+                    "codec": im.format,
+                    "width": im.width,
+                    "height": im.height,
+                    "exif_tags": sorted(exif.keys()),
+                    "gps_present": False,
+                    "metadata_keys": sorted(im.info.keys()),
+                    "rgb_pixel_sha256": pixel_hash,
+                }
+            )
         assert c["photo_source"]["url"] == original["source_url"]
         assert c["photo_source"]["license"] == original["license"]
         assert (packet / c["photo_source"]["evidence"]).is_file()
@@ -82,15 +97,20 @@ def validate(packet=PACKET):
             annotation = annotations[original["source_id"]]
             assert ref["locator"] == annotation["source_id"]
             record_hash = hashlib.sha256(annotation["raw_record"].encode("utf-8")).hexdigest()
-            assert ref["record_sha256"] == annotation["source_record_utf8_no_eol_sha256"] == record_hash
+            assert (
+                ref["record_sha256"]
+                == annotation["source_record_utf8_no_eol_sha256"]
+                == record_hash
+            )
         elif cid in commons:
             assert ref["locator"] == cid
             assert c["photo_source"]["attribution"] == commons[cid]["author"]
             assert c["photo_source"]["url"] == commons[cid]["source_page"]
             assert c["photo_source"]["license"] == commons[cid]["license"]
         else:
-            page = next(x for x in replacement_proof.values()
-                        if x["title"] == original["source_id"])
+            page = next(
+                x for x in replacement_proof.values() if x["title"] == original["source_id"]
+            )
             info = page["imageinfo"][0]
             assert ref["locator"] == page["title"]
             assert hashlib.sha1(raw).hexdigest() == original["source_sha1"] == info["sha1"]
@@ -125,10 +145,17 @@ def validate(packet=PACKET):
         assert c["decision"] in gallery.split(f"### {cid} ", 1)[1].split("### ", 1)[0]
         decisions[c["decision"]] += 1
     assert ids == set(source)
-    summary = {"examined": len(ids), "technically_valid": len(audit),
-               "decisions": dict(decisions), "proposed_groups": dict(groups),
-               "human_qualified": 0, "provider_consents": 0, "provider_uploads": 0,
-               "runnable": False, "status": "OFFLINE_PACKET_VALID_NOT_RUNNABLE"}
+    summary = {
+        "examined": len(ids),
+        "technically_valid": len(audit),
+        "decisions": dict(decisions),
+        "proposed_groups": dict(groups),
+        "human_qualified": 0,
+        "provider_consents": 0,
+        "provider_uploads": 0,
+        "runnable": False,
+        "status": "OFFLINE_PACKET_VALID_NOT_RUNNABLE",
+    }
     assert summary == doc["summary"]
     return summary, audit
 
@@ -139,5 +166,4 @@ if __name__ == "__main__":
         print(json.dumps(summary, ensure_ascii=False))
     except (AssertionError, KeyError, ValueError, OSError) as exc:
         print("INVALID_OFFLINE_PACKET: " + str(exc), file=sys.stderr)
-        raise SystemExit(2)
-
+        raise SystemExit(2) from None

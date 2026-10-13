@@ -161,3 +161,10 @@ Lokalnie: walidator32 PASS,7 testów PASS,E0 PASS586linków,diff-check PASS.
 CI: siedem jobów +ci-required wymagane, wynik finalnego head do odczytu w PR.
 Koordynator odbiera finalny branch/SHA/PR/CI i decyduje o merge.
 
+Odpowiedź właściciela w tym zadaniu: nie obejrzał zdjęć i powierzył O2 dobór,
+z możliwością późniejszej ręcznej wymiany. Zachowano27 propozycji i wyjątki;
+nie nadano human approval ani zgody na Gemini.
+Pierwszy final-head2a367a1/CI38451462674 wykrył RuffE501/B904 w helperze.
+Poprawiono format dwóch nowych plików i jawne zakończenie wyjątku.
+Lokalnie pełny wymagany Ruff check/format, walidator32 i7testów PASS;
+nowy head wymaga osobnego CI, wcześniejszy RED pozostaje historią.
