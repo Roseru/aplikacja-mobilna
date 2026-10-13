@@ -3,6 +3,7 @@ package pl.roseru.kalorie.ui
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.itemsIndexed
+import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
@@ -29,7 +30,10 @@ import java.time.format.DateTimeFormatter
     val available = account && view.rankingConfigured && view.serverLinked && !view.requiresRecovery && !view.pendingLogin
     val busy = view.busy || view.bootstrapBusy || view.profileBusy || view.motivationBusy || view.snapshotBusy || view.rankingConsentBusy || view.rankingBusy
     val state = if (available && !view.busy) view.ranking else RankingState.NotRequested
-    LazyColumn(Modifier.fillMaxSize().testTag("ranking-content"), contentPadding = PaddingValues(20.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
+    val listState = rememberLazyListState()
+    val page = (state as? RankingState.Ready)?.page
+    LaunchedEffect(page) { if (page != null) listState.scrollToItem(0) }
+    LazyColumn(Modifier.fillMaxSize().testTag("ranking-content"), state = listState, contentPadding = PaddingValues(20.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
         item { TextButton(onClick = onBack) { Text("Wróć") } }
         item {
             Text("Ranking", style = MaterialTheme.typography.headlineLarge)
@@ -49,7 +53,7 @@ import java.time.format.DateTimeFormatter
             is RankingState.Ready -> {
                 Text("Odczyt: " + state.page.asOf.atZone(ZoneId.systemDefault()).format(DateTimeFormatter.ofPattern("dd.MM.yyyy HH:mm")), Modifier.testTag("ranking-state"), style = MaterialTheme.typography.labelLarge)
                 Text("Lista zmienia się na żywo. Między stronami możliwe powtórzenia lub pominięcia; pozycje i remisy wylicza serwer.", style = MaterialTheme.typography.bodySmall)
-                if (state.page.items.isEmpty()) Text("Nie ma jeszcze osób z potwierdzonym udziałem i punktami.", Modifier.testTag("ranking-empty"))
+                if (state.page.items.isEmpty()) Text("Na tej stronie nie ma osób do wyświetlenia. Możesz odświeżyć listę od początku.", Modifier.testTag("ranking-empty"))
             }
         } }
         if (state is RankingState.Ready) itemsIndexed(state.page.items, key = { index, _ -> index }) { index, entry ->

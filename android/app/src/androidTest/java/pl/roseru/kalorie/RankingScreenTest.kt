@@ -68,6 +68,11 @@ class RankingScreenTest {
         compose.onNodeWithTag("ranking-content").performScrollToIndex(0); screenshot("light")
         compose.runOnIdle { state.value = view(RankingState.Ready(page(true))) }
         node("ranking-next").performClick(); assertEquals(1, next)
+        compose.runOnIdle { state.value = view(RankingState.Ready(page())) }
+        compose.waitForIdle(); compose.onNodeWithTag("ranking-entry-0").assertIsDisplayed()
+        compose.runOnIdle { state.value = view(RankingState.Ready(RankingPage(Instant.parse("2026-10-13T10:00:00Z"), emptyList(), null, null))) }
+        node("ranking-empty").assertTextContains("Na tej stronie", substring = true)
+        compose.onNodeWithTag("ranking-entry-0").assertDoesNotExist()
         compose.runOnIdle { state.value = view(RankingState.Failed("Utrata odpowiedzi", true)) }
         node("ranking-retry").performClick(); assertEquals(1, retries)
         compose.runOnIdle { state.value = view(RankingState.Failed("Strona wygasła", false)) }
