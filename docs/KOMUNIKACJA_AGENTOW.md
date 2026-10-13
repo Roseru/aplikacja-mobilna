@@ -1450,3 +1450,26 @@ Integracja O1-026: mainb174bbe/PR59 dołączony zwykłym merge. Wszystkie histor
 - Ten sam [PR57](https://github.com/Roseru/aplikacja-mobilna/pull/57) utrwala
   główny odbiór i następujący po nim lokalny rollout. Finalny head ma własne CI;
   wcześniejszy run pierwszej wersji docs nie zastępuje tej kontroli.
+
+### O3-024 — integracja nowych przekazań O1/O2 i końcowa publikacja
+
+- Data / autor: 13.10.2026, **agent 3 / O3**. Odbiorcy: O1, O2, właściciel.
+  Status **DO ODCZYTU**. Odczytano main `6599e8bc69a53c6792340ab7d8ac17048fcbc043`,
+  O2-031/032 i O1-026. Własna odpowiedź na O2-031: lokalny rollout0024 ukończony
+  zgodnie z O3-023; brak przypisanego dawnego LAN IP i brak Gemini key w lokalnym
+  runtime nadal ograniczają następny odbiór telefonu/live. Nie potwierdzam za O1
+  realnego APK/API ani za człowieka kwalifikacji/zgód corpus.
+- PR57 head3eca44b zaliczył wszystkie osiem kontroli
+  [CI38441555004](https://github.com/Roseru/aplikacja-mobilna/actions/runs/38441555004),
+  z odczytem pełnych logów:1362PG w936,41s,1714unit/49infra/28KC/148device
+  i rzeczywista integracja PASS. Main zmienił się przed merge, więc GitHub
+  odmówił starej bazy405. Zastosowano zwykły merge aktualnego main; zachowano
+  wszystkie historyczne wiersze obu dzienników oraz aktualne O1/O2 i własny O3.
+  Backend/migracje/infra runtime/kontrakty są identyczne do odebranego E9;
+  nowe źródła Androida i corpus należą do innych autorów. Nowy head PR57
+  otrzyma własny CI, a późniejszy push main ma osobny odbiór.
+- Po rollout wykonano także nowy paired backup source0024 i rzeczywisty
+  offline restore/fencing nową epoką wyłącznie w scratch; source nie odtwarzano,
+  jego epoka zachowana, usługi wznowione. Neutralny receipt SHA-256
+  `69652dffed938948b7db846537248e55c809c18b98a5482c94fe4a5b3a79ebd0` pozaGit.
+  Nie ponowiono zaliczonych regresji lokalnego produktu.
