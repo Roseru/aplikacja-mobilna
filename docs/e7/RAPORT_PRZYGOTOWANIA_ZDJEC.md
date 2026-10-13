@@ -1,7 +1,7 @@
 # Przygotowanie referencji zdjęć E7-R - osoba 2
 
 Stan 13.10.2026: **OFFLINE / NOT-RUNNABLE / HUMAN_REVIEW_PENDING /
-O3_CONFIGURATION_PENDING / CORPUS_INCOMPLETE**. Baza: main
+O3_CONFIGURATION_PENDING / CORPUS_PROPOSALS_COMPLETE_NOT_QUALIFIED**. Baza: main
 `28f70a59abb9f5d199f5a3e9fa6bb7f432a17be5`.
 Gałąź: `codex/backend-e7-referencje-zdjec`.
 Nie uruchomiono E7-R, E10, Gemini, workerów, billing lub Nemesis.
@@ -18,17 +18,17 @@ oznacza pierwotnych kandydatów, nie zaakceptowany przekrój.
 
 | Licznik | Wynik |
 |---|---:|
-| Zbadane i obejrzane dokładne pliki | 32 |
-| Technicznie poprawne / unikalne hash i RGB | 32 |
-| Proponowane do człowieka | 27 |
+| Zbadane i obejrzane dokładne pliki | 35 |
+| Technicznie poprawne / unikalne hash i RGB | 35 |
+| Proponowane do człowieka | 30 |
 | Nierozstrzygnięte | 1 (n5-16) |
 | Odrzucone merytorycznie | 4 (commons-03/07/08/20) |
-| Nowe pobrane obrazy / zastąpione | 2 / 1 (proponowana) |
+| Nowe pobrane obrazy / zastąpione | 5 / 1 wymiana +3 nowe sloty (proponowane) |
 | Human qualified / provider consents / uploads | 0 / 0 / 0 |
 
-Proponowany przekrój to **8 produktów / 7 mieszanek / 8 racji / 4 nieczytelne**.
-Brakuje jednej mieszanki i dwóch racji, zanim da się zamrozić minimum 30.
-Wszystkie 32 przypadki rozliczono; odrzucone materiały pozostały w repo.
+Proponowany przekrój to **8 produktów / 8 mieszanek / 10 racji / 4 nieczytelne**.
+Przekrój30 propozycji jest kompletny; human qualification pozostaje0.
+Wszystkie35 przypadków rozliczono; odrzucone materiały pozostały w repo.
 
 ## Mały eksperyment i decyzje
 
@@ -78,12 +78,19 @@ dokończył się po błędzie; odzyskane bajty obu plików sprawdzono przez SHA1
 oryginału Commons i SHA256. retrieved_at=null; mtime zapisano jawnie
 jako obserwację filesystem, nie wymyślony czas pobrania.
 [Indeks nowych kandydatów](<../../Random Data/AI_REFERENCE_E7_R_2026-10-13/commons/replacement-index.json>).
-O2 po osobnym wznowieniu może sprawdzić brakujące sloty; obecny pakiet nie
-ukrywa braku trzech miejsc.
+Kontynuacja E7_R_COMPLETE_THREE_SLOTS_O2_2026_10_13 domknęła trzy miejsca:
+n5-17 bacon/scrambled eggs/cooked spinach z exact anotacją Nutrition5k cafe2,
+commons-21 pieczywo MRE ze źródła Natick i commons-22 TabascoMRE z2001roku.
+W tej iteracji pobrano3 kandydatów (limit6); N5pierwszyHEAD404, drugi dostępny.
+Nie ponawiano429 lub uploadów. Nowe Commons mają osobny completion-index/proof,
+Nutrition5k completion-image/annotations. Pieczywo to oddzielne próbki,
+Tabasco jest wyschnięte; oba ograniczenia jawne w referencjach.
+Cafe2 totalmakra0 to niewiarygodne placeholders, a nie energia0: raw zachowany,
+masa/kcal propozycji null. Źródłowy przepis nie jest wymyślony z nazwy dania.
 
 ## Kontrole offline
 
-Wszystkie 32 dokładne pliki obejrzano przez view_image.
+Wszystkie35 dokładnych plików obejrzano przez view_image.
 Audyt ponownie dekoduje obrazy i sprawdza bajty/SHA-256/wymiary/codec,
 unikalność hashów i identycznych RGB, brak GPS, licencje/locatory,
 atrybucję, pending/null i spójność galerii z obrazem/hash/ID.
@@ -114,7 +121,7 @@ Niezależny przegląd zakończony9,2/10, zero otwartychP1/P2/P3; final-head CI j
 
 1. Człowiek przegląda galerię i dokładne hashe, rozstrzyga wyjątki oraz
    zatwierdza czytelność/główne składniki/aliasy/źródła/niesensytywność.
-   O2 uzupełnia trzy brakujące sloty legalnymi zbadanymi zdjęciami.
+   Trzy brakujące sloty zostały uzupełnione legalnymi obejrzanymi zdjęciami.
    Propozycja LLM nie jest podpisem; prawdziwy reviewer i reviewed_at dopiero
    z datowanego dowodu człowieka przed wynikiem modelu.
 2. Osobno świadoma zgoda na każdy konkretny hash, Gemini, this_photo,
@@ -142,12 +149,12 @@ Niezależny przegląd zakończony9,2/10, zero otwartychP1/P2/P3; final-head CI j
    Bez direct Gemini, countTokens, automatycznych retry po unknown
    lub resetowania journalu. Aktualna walidacja nie wykonuje tych kroków.
 
-Właściciele braków: człowiek — referencje/zgody; O2 — trzy sloty i prywatny
+Właściciele braków: człowiek — referencje/zgody; O2 — prywatny
 manifest po dowodach; O3 — konfiguracja/środowisko; operator — osobne zlecenie
 pierwszego przypadku; O1/człowiek — późniejszy fallback, O3 — cleanup.
 Pozostaje development demo i blokada wydania z wymagań11.6.
 
-## Odbiór publikacji
+## Historia odbioru pierwszej publikacji32zdjęć
 
 Jedna niezależna recenzja gpt-6.1-sol/high: **9,2/10, zero otwartychP1/P2/P3**.
 Recenzent sprawdził wszystkie30 pierwotne hashe/audyty,16 rawrecords/hash/parse
@@ -155,8 +162,8 @@ Nutrition5k i14 Commons metadata/licencje, obejrzał wszystkie14 Commons
 oraz próbkę7 Nutrition5k z każdym spornym przypadkiem.
 Po wskazanych dwóchP3 sprawdził tylko zmieniony zakres: pointery dokumentów,
 locator/hash walidatora,7 własnych testów,2 nowe fotografie/metadane/hash/audyt.
-ObaP3 zamknięte; n516 unresolved i brak3slotów są uczciwymi brakami corpus,
-a nie pozorną akceptacją. Recenzja subagenta nie jest human approval.
+ObaP3 zamknięte; n516 unresolved pozostaje wyłączone z30PROPOSED; wcześniejszy brak3slotów
+został rozwiązany w kontynuacji. Recenzja subagenta nie jest human approval.
 Lokalnie: walidator32 PASS,7 testów PASS,E0 PASS586linków,diff-check PASS.
 CI: siedem jobów +ci-required wymagane, wynik finalnego head do odczytu w PR.
 Koordynator odbiera finalny branch/SHA/PR/CI i decyduje o merge.
@@ -168,3 +175,17 @@ Pierwszy final-head2a367a1/CI38451462674 wykrył RuffE501/B904 w helperze.
 Poprawiono format dwóch nowych plików i jawne zakończenie wyjątku.
 Lokalnie pełny wymagany Ruff check/format, walidator32 i7testów PASS;
 nowy head wymaga osobnego CI, wcześniejszy RED pozostaje historią.
+
+## Odbiór domknięcia trzech slotów
+
+Baza kontynuacji: main0b3af43, source headac7146b, ten samPR59/worktree.
+35zbadane/35techniczniepoprawne,30PROPOSED8/8/10/4,4REJECTED,1UNRESOLVED.
+Poprzednie32/27 i ograniczona próba429 są zachowaną historią.
+CORPUS_INCOMPLETE usunięto z aktualnego stanu dopiero po audycie i pełnych
+licznikach; nie nadaje to qualification/runnable/live.
+Niezależny odbiór wyłącznie3 nowych przypadków/helpera i wpływu na całość: **9,2/10, zero otwartychP1/P2/P3**.
+Dodano ósmy test: podmiana URL thumbnailu Commons przy zachowanych bajtach
+musi zostać wykryta. Wcześniejsze7 testów zachowane;8testów PASS.
+Recenzent wykonał własne8testówPASS, walidator35PASS i porównał cały audyt z ponownym dekodowaniem; nie oglądał ponownie32starych obrazów.
+Autorsko8testów,walidator35,Ruffcheck/format367files,E0(596linków),diffcheckPASS.
+Final-head CI zostanie odczytane po publikacji; stare wyniki nie są jego PASS.

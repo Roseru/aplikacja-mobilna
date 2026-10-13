@@ -458,20 +458,78 @@
         "jfif_version"
       ],
       "rgb_pixel_sha256": "5c994d5c74de692c6dbdc67ffe3e91e5d7ece09819665b6abc6766bead6d6710"
+    },
+    {
+      "case_id": "n5-17",
+      "sha256": "fe9b3e6c09097410322200fdc2d9ab53770541eb5edb4f520a1716a842ba1d7e",
+      "bytes": 605390,
+      "codec": "PNG",
+      "width": 640,
+      "height": 480,
+      "exif_tags": [],
+      "gps_present": false,
+      "metadata_keys": [],
+      "rgb_pixel_sha256": "63f26a306b99bf760bf7fb153d2a3076830a7d1135d82ef916db6e8474a206ee"
+    },
+    {
+      "case_id": "commons-21",
+      "sha256": "3029db56d8abcfc0a07bbacbb6c32902580132b6f7b5334878cf4e36fdefa7c4",
+      "bytes": 182647,
+      "codec": "JPEG",
+      "width": 1280,
+      "height": 1009,
+      "exif_tags": [],
+      "gps_present": false,
+      "metadata_keys": [],
+      "rgb_pixel_sha256": "184be55dd8f1382963a4f750d6d8320fd14a6e1fc39d2737f8bc08fa5ad6cd7d"
+    },
+    {
+      "case_id": "commons-22",
+      "sha256": "c00c81055eb0d9c8b1a4b86d670720fcb2098d387a6ad0d90a042ad25b8ccce0",
+      "bytes": 516460,
+      "codec": "JPEG",
+      "width": 1780,
+      "height": 2500,
+      "exif_tags": [
+        271,
+        272,
+        274,
+        282,
+        283,
+        296,
+        305,
+        306,
+        34665
+      ],
+      "gps_present": false,
+      "metadata_keys": [
+        "adobe",
+        "adobe_transform",
+        "dpi",
+        "exif",
+        "icc_profile",
+        "jfif",
+        "jfif_density",
+        "jfif_unit",
+        "jfif_version",
+        "photoshop",
+        "xmp"
+      ],
+      "rgb_pixel_sha256": "33225a51d83ae0394ca61a64f536264d41e2f791ee8b791a0ed42f72d5efae8b"
     }
   ],
   "summary": {
-    "examined": 32,
-    "technically_valid": 32,
+    "examined": 35,
+    "technically_valid": 35,
     "decisions": {
-      "PROPOSED": 27,
+      "PROPOSED": 30,
       "UNRESOLVED": 1,
       "REJECTED": 4
     },
     "proposed_groups": {
       "products": 8,
-      "mixed": 7,
-      "rations": 8,
+      "mixed": 8,
+      "rations": 10,
       "unreadable": 4
     },
     "human_qualified": 0,
@@ -480,5 +538,5 @@
     "runnable": false,
     "status": "OFFLINE_PACKET_VALID_NOT_RUNNABLE"
   },
-  "privacy_note": "No GPS/private identities in metadata. Public manufacturer labels/camera/date/ICC retained. Rejected commons-20 shows a hand, no face. Human nonsensitive approval pending."
+  "privacy_note": "35 exact images decoded. No GPS/private identity found in metadata. Public label/author/camera/ICC retained in source bytes; human nonsensitive approval pending."
 }

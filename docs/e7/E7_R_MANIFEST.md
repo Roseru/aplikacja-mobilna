@@ -168,8 +168,8 @@ Pełny E7 wymaga oddzielnego odbioru O1 Room/outbox/APK i O3 środowiska/restore
 
 [Raport przygotowania](RAPORT_PRZYGOTOWANIA_ZDJEC.md) i
 [galeria](<../../Random Data/AI_REFERENCE_E7_R_2026-10-13/GALLERY.md>) rozliczają
-32 zbadanych kandydatów:27 propozycji (8/7/8/4),4 odrzucone,1 nierozstrzygnięty.
-Minimum30 przyjętych i przekrój8/8/10/4 pozostają niespełnione.
+35 zbadanych kandydatów:30 propozycji (8/8/10/4),4 odrzucone,1 nierozstrzygnięty.
+Minimum30 propozycji i przekrój8/8/10/4 spełnione offline; przyjęcie człowieka nadal0.
 Human_qualified/provider_consents/uploads=0; HUMAN_REVIEW_PENDING i
 O3_CONFIGURATION_PENDING. Obecna propozycja LLM nie jest referencją człowieka
 ani ścisłym manifestem. Wcześniejszy wybór30 obrazów jest historią pozyskania,

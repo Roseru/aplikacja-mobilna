@@ -11,21 +11,20 @@
   "o3_confirmation": null,
   "statuses": [
     "HUMAN_REVIEW_PENDING",
-    "O3_CONFIGURATION_PENDING",
-    "CORPUS_INCOMPLETE"
+    "O3_CONFIGURATION_PENDING"
   ],
   "summary": {
-    "examined": 32,
-    "technically_valid": 32,
+    "examined": 35,
+    "technically_valid": 35,
     "decisions": {
-      "PROPOSED": 27,
+      "PROPOSED": 30,
       "UNRESOLVED": 1,
       "REJECTED": 4
     },
     "proposed_groups": {
       "products": 8,
-      "mixed": 7,
-      "rations": 8,
+      "mixed": 8,
+      "rations": 10,
       "unreadable": 4
     },
     "human_qualified": 0,
@@ -1814,6 +1813,175 @@
       "mass_g": null,
       "calories": null,
       "replaces": null
+    },
+    {
+      "case_id": "n5-17",
+      "group": "mixed",
+      "image": "nutrition5k/dish_1572278972.png",
+      "image_sha256": "fe9b3e6c09097410322200fdc2d9ab53770541eb5edb4f520a1716a842ba1d7e",
+      "decision": "PROPOSED",
+      "reason": "Trzy wyraźne komponenty odpowiadają dokładnej anotacji tej porcji: boczek, jajecznica i gotowany szpinak.",
+      "visible_observation": "Długie paski boczku, żółta jajecznica i zielony gotowany szpinak są rozdzielone na talerzu.",
+      "photo_source": {
+        "url": "https://storage.googleapis.com/nutrition5k_dataset/nutrition5k_dataset/imagery/realsense_overhead/dish_1572278972/rgb.png",
+        "license": "CC BY 4.0",
+        "attribution": "Nutrition5k — Thames, Karpur, Norris, Xia, Panait, Weyand, Sim; CVPR 2021; CC BY 4.0; unchanged RGB",
+        "evidence": "nutrition5k/completion-image.json",
+        "license_url": "https://creativecommons.org/licenses/by/4.0/"
+      },
+      "reference_source": {
+        "evidence": "nutrition5k/completion-annotations.json",
+        "locator": "dish_1572278972",
+        "record_sha256": "49fa389afa89f4efd08ad81353088741abb23cd82facccd1a66a81d1740eb16d",
+        "kind": "original_dataset_annotation",
+        "url": "https://storage.googleapis.com/nutrition5k_dataset/nutrition5k_dataset/metadata/dish_metadata_cafe2.csv"
+      },
+      "uncertainties": [
+        "Cienie w części talerza, ale kształty i trzy komponenty czytelne. Źródłowe total macros cafe2 mają placeholder0; bez ich użycia w referencji."
+      ],
+      "proposal": {
+        "origin": "LLM_PROPOSAL_NOT_HUMAN_APPROVAL",
+        "readable": true,
+        "criterion": "All main components require exact NFKC/casefold/whitespace alias matches. Extra components do not affect this oracle and require manual review. No mass/kcal judgement.",
+        "main_components": [
+          {
+            "label": "bacon",
+            "accepted_aliases": [
+              "bacon",
+              "boczek"
+            ]
+          },
+          {
+            "label": "scrambled eggs",
+            "accepted_aliases": [
+              "scrambled eggs",
+              "jajecznica"
+            ]
+          },
+          {
+            "label": "cooked spinach",
+            "accepted_aliases": [
+              "cooked spinach",
+              "spinach",
+              "gotowany szpinak",
+              "szpinak"
+            ]
+          }
+        ],
+        "reviewer": null,
+        "reviewed_at": null
+      },
+      "approval_status": "HUMAN_REVIEW_PENDING",
+      "human_reference": null,
+      "provider_consent": null,
+      "nonsensitive_approval": null,
+      "privacy_observation": "No private persons/faces/GPS observed; public manufacturer addresses/credits are source data, not personal identity. Human nonsensitive confirmation pending.",
+      "mass_g": null,
+      "calories": null
+    },
+    {
+      "case_id": "commons-21",
+      "group": "rations",
+      "image": "commons/commons-21.jpg",
+      "image_sha256": "3029db56d8abcfc0a07bbacbb6c32902580132b6f7b5334878cf4e36fdefa7c4",
+      "decision": "PROPOSED",
+      "reason": "Widoczne sześć kawałków pieczywa. Tytuł źródła identyfikuje MRE pouched bread, opis wiąże fotografię z Natick. To oddzielne próbki/widoki; nie ustalamy wariantów ani nie sumujemy porcji.",
+      "visible_observation": "Sześć kawałków jasnego/brązowego pieczywa, część przekrojów widoczna.",
+      "photo_source": {
+        "url": "https://commons.wikimedia.org/wiki/File:MRE_pouched_bread_-_commonwealth_zk51xh600.jpg",
+        "license": "Public domain",
+        "attribution": "U.S. Army Natick Soldier Systems Center",
+        "evidence": "commons/completion-source-evidence.json",
+        "license_url": null,
+        "variant": "Commons server thumbnail 1280"
+      },
+      "reference_source": {
+        "evidence": "commons/completion-source-evidence.json",
+        "locator": "File:MRE pouched bread - commonwealth zk51xh600.jpg",
+        "kind": "visible_food_or_label_and_exact_source_title_description",
+        "url": "https://commons.wikimedia.org/wiki/File:MRE_pouched_bread_-_commonwealth_zk51xh600.jpg"
+      },
+      "uncertainties": [
+        "Widoczne sześć kawałków pieczywa. Tytuł źródła identyfikuje MRE pouched bread, opis wiąże fotografię z Natick. To oddzielne próbki/widoki; nie ustalamy wariantów ani nie sumujemy porcji."
+      ],
+      "proposal": {
+        "origin": "LLM_PROPOSAL_NOT_HUMAN_APPROVAL",
+        "readable": true,
+        "criterion": "All main components require exact NFKC/casefold/whitespace alias matches. Extra components require manual review. No mass/kcal judgement.",
+        "main_components": [
+          {
+            "label": "MRE pouched bread",
+            "accepted_aliases": [
+              "MRE pouched bread",
+              "bread",
+              "pieczywo",
+              "chleb"
+            ]
+          }
+        ],
+        "reviewer": null,
+        "reviewed_at": null
+      },
+      "approval_status": "HUMAN_REVIEW_PENDING",
+      "human_reference": null,
+      "provider_consent": null,
+      "nonsensitive_approval": null,
+      "privacy_observation": "No private face/person/GPS observed; public product label/author attribution only. Human nonsensitive approval pending.",
+      "mass_g": null,
+      "calories": null
+    },
+    {
+      "case_id": "commons-22",
+      "group": "rations",
+      "image": "commons/commons-22.jpg",
+      "image_sha256": "c00c81055eb0d9c8b1a4b86d670720fcb2098d387a6ad0d90a042ad25b8ccce0",
+      "decision": "PROPOSED",
+      "reason": "Czytelna etykieta Tabasco Pepper Sauce; opis autora wskazuje konkretną buteleczkę MRE z2001roku. Zawartość wyschnięta; identyfikujemy historyczny składnik/produkt z etykiety, bez udawania świeżej porcji.",
+      "visible_observation": "Mała buteleczka z czerwoną zakrętką i czytelną etykietą TABASCO PEPPER SAUCE; zaschnięte resztki wewnątrz.",
+      "photo_source": {
+        "url": "https://commons.wikimedia.org/wiki/File:MRE_Tabasco_Sauce_DSCF0043.jpg",
+        "license": "CC BY-SA 4.0",
+        "attribution": "<a href=\"//commons.wikimedia.org/wiki/User:Ashley_Pomeroy\" title=\"User:Ashley Pomeroy\">Ashley Pomeroy</a>",
+        "evidence": "commons/completion-source-evidence.json",
+        "license_url": "https://creativecommons.org/licenses/by-sa/4.0",
+        "variant": "original"
+      },
+      "reference_source": {
+        "evidence": "commons/completion-source-evidence.json",
+        "locator": "File:MRE Tabasco Sauce DSCF0043.jpg",
+        "kind": "visible_food_or_label_and_exact_source_title_description",
+        "url": "https://commons.wikimedia.org/wiki/File:MRE_Tabasco_Sauce_DSCF0043.jpg"
+      },
+      "uncertainties": [
+        "Czytelna etykieta Tabasco Pepper Sauce; opis autora wskazuje konkretną buteleczkę MRE z2001roku. Zawartość wyschnięta; identyfikujemy historyczny składnik/produkt z etykiety, bez udawania świeżej porcji."
+      ],
+      "proposal": {
+        "origin": "LLM_PROPOSAL_NOT_HUMAN_APPROVAL",
+        "readable": true,
+        "criterion": "All main components require exact NFKC/casefold/whitespace alias matches. Extra components require manual review. No mass/kcal judgement.",
+        "main_components": [
+          {
+            "label": "Tabasco pepper sauce",
+            "accepted_aliases": [
+              "Tabasco pepper sauce",
+              "Tabasco",
+              "hot pepper sauce",
+              "sos Tabasco",
+              "ostry sos paprykowy"
+            ]
+          }
+        ],
+        "reviewer": null,
+        "reviewed_at": null
+      },
+      "approval_status": "HUMAN_REVIEW_PENDING",
+      "human_reference": null,
+      "provider_consent": null,
+      "nonsensitive_approval": null,
+      "privacy_observation": "No private face/person/GPS observed; public product label/author attribution only. Human nonsensitive approval pending.",
+      "mass_g": null,
+      "calories": null
     }
-  ]
+  ],
+  "preparation_status": "CORPUS_PROPOSALS_COMPLETE_NOT_QUALIFIED"
 }

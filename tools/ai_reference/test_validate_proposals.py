@@ -69,6 +69,20 @@ class ProposalChecks(unittest.TestCase):
             lambda d, i: d["cases"][0]["reference_source"].update(record_sha256="0" * 64)
         )
 
+    def test_changed_thumbnail_source_url(self):
+        # New completion includes a Commons thumbnail, unlike the earlier originals.
+        target = self.packet / "commons/completion-index.json"
+        entries = json.loads(target.read_text(encoding="utf-8"))
+        entries[0]["downloaded_url"] = "https://example.invalid/substituted.jpg"
+
+        def read_text(path, *args, **kwargs):
+            if path == target:
+                return json.dumps(entries)
+            return self.original_text(path, *args, **kwargs)
+
+        with patch.object(Path, "read_text", read_text), self.assertRaises(AssertionError):
+            validator.validate()
+
     def test_duplicate_image_with_consistent_index(self):
         def mutate(doc, index):
             for key in ("image", "image_sha256"):

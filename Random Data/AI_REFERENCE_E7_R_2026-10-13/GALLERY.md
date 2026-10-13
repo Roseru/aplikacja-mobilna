@@ -1,10 +1,10 @@
 # Galeria propozycji referencji E7-R — osoba 2
 
-**NOT-RUNNABLE · HUMAN_REVIEW_PENDING · O3_CONFIGURATION_PENDING · CORPUS_INCOMPLETE**
+**NOT-RUNNABLE · HUMAN_REVIEW_PENDING · O3_CONFIGURATION_PENDING**
 
-32 dokładne oryginały obejrzane przez O2;27 propozycji (8/7/8/4),4 odrzucenia,1 nierozstrzygnięty. Human qualified/zgody/uploads=0. To propozycje LLM, nie referencje człowieka lub pomiar Gemini.
+35 dokładnych oryginałów obejrzanych przez O2;30 propozycji (8/8/10/4),4 odrzucenia,1 nierozstrzygnięty. Human qualified/zgody/uploads=0. To propozycje LLM, nie referencje człowieka lub pomiar Gemini.
 
-[Propozycje](reference_proposals.json) · [indeks pierwotny](candidate_index.json) · [nowe źródła](commons/replacement-index.json) · [atrybucja](commons/ATTRIBUTION.md) · [raport](../../docs/e7/RAPORT_PRZYGOTOWANIA_ZDJEC.md)
+[Propozycje](reference_proposals.json) · [indeks pierwotny](candidate_index.json) · [nowe źródła](commons/replacement-index.json) · [uzupełnienie Commons](commons/completion-index.json) · [nowa anotacja](nutrition5k/completion-annotations.json) · [atrybucja](commons/ATTRIBUTION.md) · [raport](../../docs/e7/RAPORT_PRZYGOTOWANIA_ZDJEC.md)
 
 Wyjątki: n5-10 agregat bulw; n5-14 częściowo zasłonięty brokuł; n5-16 unresolved; commons-03/07/08/20 rejected; commons-19 proposed zamiast commons-08; commons-10 alternatywne przykłady, bez sumowania; commons-15–18 jeden mechanizm zasłonięcia.
 
@@ -583,3 +583,57 @@ SHA-256: `ef54f970bb5a216fc0bbef5052a7a91a8863d8bdfd6d1ef31471da05a52186ff`
 [Dowód składników](commons/replacement-source-evidence.json) · locator: `File:First Strike Ration.jpg` · visible_label_and_source_description
 
 **Zatwierdzenia:** human_reference=null, provider_consent=null, nonsensitive_approval=null; reviewer/reviewed_at=null.
+
+### n5-17 — mixed — PROPOSED
+
+![n5-17](nutrition5k/dish_1572278972.png)
+
+SHA-256: `fe9b3e6c09097410322200fdc2d9ab53770541eb5edb4f520a1716a842ba1d7e`
+
+**Widoczność:** Długie paski boczku, żółta jajecznica i zielony gotowany szpinak są rozdzielone na talerzu.
+
+**Propozycja składników → aliasy:** bacon → bacon, boczek; scrambled eggs → scrambled eggs, jajecznica; cooked spinach → cooked spinach, spinach, gotowany szpinak, szpinak
+
+**Decyzja/niepewność:** Trzy wyraźne komponenty odpowiadają dokładnej anotacji tej porcji: boczek, jajecznica i gotowany szpinak.
+
+[Źródło obrazu](https://storage.googleapis.com/nutrition5k_dataset/nutrition5k_dataset/imagery/realsense_overhead/dish_1572278972/rgb.png) · CC BY 4.0 · Nutrition5k — Thames, Karpur, Norris, Xia, Panait, Weyand, Sim; CVPR 2021; CC BY 4.0; unchanged RGB
+
+[Dowód składników](nutrition5k/completion-annotations.json) · locator: `dish_1572278972`
+
+**Zatwierdzenia:** human_reference=null,provider_consent=null,nonsensitive_approval=null;reviewer/reviewed_at=null.
+
+### commons-21 — rations — PROPOSED
+
+![commons-21](commons/commons-21.jpg)
+
+SHA-256: `3029db56d8abcfc0a07bbacbb6c32902580132b6f7b5334878cf4e36fdefa7c4`
+
+**Widoczność:** Sześć kawałków jasnego/brązowego pieczywa, część przekrojów widoczna.
+
+**Propozycja składników → aliasy:** MRE pouched bread → MRE pouched bread, bread, pieczywo, chleb
+
+**Decyzja/niepewność:** Widoczne sześć kawałków pieczywa. Tytuł źródła identyfikuje MRE pouched bread, opis wiąże fotografię z Natick. To oddzielne próbki/widoki; nie ustalamy wariantów ani nie sumujemy porcji.
+
+[Źródło obrazu](https://commons.wikimedia.org/wiki/File:MRE_pouched_bread_-_commonwealth_zk51xh600.jpg) · Public domain · U.S. Army Natick Soldier Systems Center
+
+[Dowód składników](commons/completion-source-evidence.json) · locator: `File:MRE pouched bread - commonwealth zk51xh600.jpg`
+
+**Zatwierdzenia:** human_reference=null,provider_consent=null,nonsensitive_approval=null;reviewer/reviewed_at=null.
+
+### commons-22 — rations — PROPOSED
+
+![commons-22](commons/commons-22.jpg)
+
+SHA-256: `c00c81055eb0d9c8b1a4b86d670720fcb2098d387a6ad0d90a042ad25b8ccce0`
+
+**Widoczność:** Mała buteleczka z czerwoną zakrętką i czytelną etykietą TABASCO PEPPER SAUCE; zaschnięte resztki wewnątrz.
+
+**Propozycja składników → aliasy:** Tabasco pepper sauce → Tabasco pepper sauce, Tabasco, hot pepper sauce, sos Tabasco, ostry sos paprykowy
+
+**Decyzja/niepewność:** Czytelna etykieta Tabasco Pepper Sauce; opis autora wskazuje konkretną buteleczkę MRE z2001roku. Zawartość wyschnięta; identyfikujemy historyczny składnik/produkt z etykiety, bez udawania świeżej porcji.
+
+[Źródło obrazu](https://commons.wikimedia.org/wiki/File:MRE_Tabasco_Sauce_DSCF0043.jpg) · CC BY-SA 4.0 · <a href="//commons.wikimedia.org/wiki/User:Ashley_Pomeroy" title="User:Ashley Pomeroy">Ashley Pomeroy</a>
+
+[Dowód składników](commons/completion-source-evidence.json) · locator: `File:MRE Tabasco Sauce DSCF0043.jpg`
+
+**Zatwierdzenia:** human_reference=null,provider_consent=null,nonsensitive_approval=null;reviewer/reviewed_at=null.

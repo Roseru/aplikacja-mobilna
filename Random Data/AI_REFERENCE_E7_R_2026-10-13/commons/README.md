@@ -5,7 +5,9 @@
 Pierwotne14 obrazy pozostają zachowane. Dodano2 oryginały z batch źródeł
 (commons-19/20); trzeci downloadHTTP429 przerwał próbę. commons-19 peanut butter
 proponowany zamiast commons-08; commons-20 zamknięty zestaw odrzucony.
-Łącznie Commons:12 PROPOSED (8rations/4unreadable),4REJECTED.
+Dodano commons-21 (pieczywo NatickMRE) i commons-22 (historyczny TabascoMRE).
+Łącznie Commons:14 PROPOSED (10rations/4unreadable),4REJECTED;18 zbadanych.
+Nowe źródła w completion-index.json i completion-source-evidence.json.
 [Propozycje](../reference_proposals.json) i [galeria](../GALLERY.md) są aktualne;
 niższy opis10/4 dotyczy pierwotnego pozyskania. Human/consents/uploads=0.
 

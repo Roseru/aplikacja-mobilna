@@ -19,3 +19,7 @@ Exact source metadata is retained in adjacent JSON evidence files. Photographs a
 
 - [FEMA39890 peanut butter](https://commons.wikimedia.org/wiki/File:FEMA_-_39890_-_Peanut_butter_packet_inside_a_MRE.jpg) — FEMA News Photo; Public domain (PD US FEMA); original unchanged.
 - [First Strike Ration](https://commons.wikimedia.org/wiki/File:First_Strike_Ration.jpg) — Juan R. Meléndez Jr.; Public domain (PD US Army); original unchanged, rejected from proposed corpus.
+
+- [commons-21](https://commons.wikimedia.org/wiki/File:MRE_pouched_bread_-_commonwealth_zk51xh600.jpg) — U.S. Army Natick Soldier Systems Center; Public domain; variant Commons server thumbnail 1280; source evidence completion-source-evidence.json.
+
+- [commons-22](https://commons.wikimedia.org/wiki/File:MRE_Tabasco_Sauce_DSCF0043.jpg) — <a href="//commons.wikimedia.org/wiki/User:Ashley_Pomeroy" title="User:Ashley Pomeroy">Ashley Pomeroy</a>; [CC BY-SA 4.0](https://creativecommons.org/licenses/by-sa/4.0/); variant original; source evidence completion-source-evidence.json.

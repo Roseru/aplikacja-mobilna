@@ -187,6 +187,10 @@ i [raport przejścia](../../docs/e7/RAPORT_PRZYGOTOWANIA_ZDJEC.md) pozostają
 NOT-RUNNABLE, bez human approval/consents/O3.
 `python tools/ai_reference/validate_proposals.py` (Pillow) kontroluje spójność
 publicznego pakietu; `python -m unittest discover -s tools/ai_reference -p
-test_validate_proposals.py` sprawdza7 negatywnych/pending reguł offline.
+test_validate_proposals.py` sprawdza8 negatywnych/pending reguł offline.
 Nie generuje manifestu, nie wywołuje API i nie daje E7-R PASS.
 Ścisły runner i bramki pozostają bez zmian.
+Nowy ósmy przypadek kontroluje podmieniony URL źródłowego wariantu thumbnail
+Commons (completion21); wcześniejsze siedem reguł pozostaje zachowane.
+Pakiet ma30PROPOSED8/8/10/4,35 zbadanych plików; to pełny przekrój
+propozycji offline, nadal human_qualified/consents/uploads0 i NOT-RUNNABLE.

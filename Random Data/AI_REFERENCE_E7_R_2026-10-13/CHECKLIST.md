@@ -2,14 +2,14 @@
 
 ## Aktualny wynik kwalifikacji offline (13.10.2026)
 
-[Propozycje referencji](reference_proposals.json) rozliczają wszystkie32 pliki (30 pierwotnych +2 nowe):
-27 PROPOSED (8/7/8/4),4 REJECTED (commons-03/07/08/20),1 UNRESOLVED (n5-16).
+[Propozycje referencji](reference_proposals.json) rozliczają wszystkie35 plików (30 pierwotnych +5 nowych):
+30 PROPOSED (8/8/10/4),4 REJECTED (commons-03/07/08/20),1 UNRESOLVED (n5-16).
 To propozycje LLM do człowieka, human_qualified/consents/uploads=0.
-NOT-RUNNABLE; HUMAN_REVIEW_PENDING; O3_CONFIGURATION_PENDING; CORPUS_INCOMPLETE.
-Brakuje1 mieszanki i2 racji. Wszystkie oryginały pozostają zachowane; candidate_index
+NOT-RUNNABLE; HUMAN_REVIEW_PENDING; O3_CONFIGURATION_PENDING.
+Przekrój30 propozycji jest kompletny. Wszystkie oryginały pozostają zachowane; candidate_index
 z opisem8/8/10/4 jest historycznym wyborem kandydatów, nie przyjętym corpus.
 [Raport](../../docs/e7/RAPORT_PRZYGOTOWANIA_ZDJEC.md) podaje wyjątki, ograniczoną
-nieudaną próbę zamienników i przejście do istniejącego runnera.
+próbę zamienników i domknięcie trzech slotów i przejście do istniejącego runnera.
 [Audyt](technical_audit.json) ponownie potwierdza bajty/codec/hash/wymiary/GPS.
 
 **Historia pozyskania:** pierwotnie wybrano30 kandydatów w [candidate_index.json](candidate_index.json), qualified=0. Przyjmujemy konkretne istniejące obrazy; odrzucone zastępujemy przed zamrożeniem. Dawne instrukcje dostarczenia P01 i początkowego braku zdjęć są historią przygotowania, a nie bieżącym brakiem wszystkich plików. [README](README.md) i [galeria](GALLERY.md) podają aktualny zakres.
@@ -19,7 +19,7 @@ Poniższe kroki dotyczą przyszłych prawdziwych wejść. Dokument i capture_pla
 ## Zdjęcia i niezależne referencje — właściciel/fotograf, O2, oceniający
 
 1. Wyznaczyć jawny prywatny folder poza Git i politykę przechowania corpus. Nie przesyłać zdjęć, etykiet zawierających dane osobowe ani dowodów zgód do repo. Źródłowe zdjęcia są dostępne; actual_ready=0 oznacza brak przyjęcia/zgód, nie brak plików.
-2. Małą próbę offline n5-01/n5-09/commons-03/commons-15 wykonano (raport). Uzupełnić brakujące trzy sloty i rozstrzygnąć wyjątki przed zamrożeniem30 różnych zdjęć:8/8/10/4. Nie liczyć wielokrotnych ujęć tej samej fotografii ani syntetycznych rozmyć jako nowe nieczytelne przypadki. U01–U04 muszą zostać uznane za nieczytelne przez człowieka przed odpowiedziami modelu; jeśli identyfikacja jest możliwa, zmienić slot przed zamrożeniem.
+2. Małą próbę offline n5-01/n5-09/commons-03/commons-15 wykonano (raport). Trzy brakujące sloty uzupełniono: n5-17,commons-21/22. Rozstrzygnąć wyjątki i zatwierdzić przed zamrożeniem30 różnych zdjęć:8/8/10/4. Nie liczyć wielokrotnych ujęć tej samej fotografii ani syntetycznych rozmyć jako nowe nieczytelne przypadki. U01–U04 muszą zostać uznane za nieczytelne przez człowieka przed odpowiedziami modelu; jeśli identyfikacja jest możliwa, zmienić slot przed zamrożeniem.
 3. Źródło każdej fotografii: autor/ID dowodu uprawnienia, kiedy wykonana, konkretny obiekt, prawo wykorzystania do tego testu; dla publicznej fotografii także URL pliku/ID, licencja i atrybucja. Sama karta producenta nie daje prawa do jego zdjęcia. Oddzielić źródło zdjęcia od źródła referencji składników.
 4. Dla obrazu dostarczyć świadomą zgodę accepted/reference_use_accepted/nonsensitive=true, provider=gemini, scope=this_photo, faktyczny notice_version, rzeczywiste approved_at UTC i evidence_ref. Nie wypełniać tych pól na podstawie istnienia pliku lub tego planu. Osobno uzgodnić ewentualną publikację; zgoda testowa jej nie zastępuje.
 5. Oceniający nie odczytuje wyników modelu przed referencją. Potwierdza readability i uzasadnienie; źródło to rzeczywista etykieta tego wariantu lub udokumentowana receptura/przygotowanie tej konkretnej porcji. Przy racjach zapisać opakowanie/menu/rocznik i faktycznie występujące komponenty; nie sumować alternatyw. Niepotwierdzona nazwa, producent lub dopasowanie wymaga wyjaśnienia przed kwalifikacją.

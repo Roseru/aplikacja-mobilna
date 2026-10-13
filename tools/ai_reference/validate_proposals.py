@@ -27,19 +27,32 @@ def validate(packet=PACKET):
     replacement = json.loads(
         (packet / "commons/replacement-index.json").read_text(encoding="utf-8")
     )
-    candidates = index["candidates"] + replacement
+    completion = json.loads((packet / "commons/completion-index.json").read_text(encoding="utf-8"))
+    n5_completion = json.loads(
+        (packet / "nutrition5k/completion-image.json").read_text(encoding="utf-8")
+    )
+    candidates = index["candidates"] + replacement + [n5_completion] + completion
     assert len(doc["cases"]) == len(candidates)
     annotations = {
         a["source_id"]: a
-        for a in json.loads((packet / "nutrition5k/annotations.json").read_text(encoding="utf-8"))
+        for a in (
+            json.loads((packet / "nutrition5k/annotations.json").read_text(encoding="utf-8"))
+            + json.loads(
+                (packet / "nutrition5k/completion-annotations.json").read_text(encoding="utf-8")
+            )
+        )
     }
     commons = {
         a["case_id"]: a
         for a in json.loads((packet / "commons/index.json").read_text(encoding="utf-8"))
     }
-    replacement_proof = json.loads(
-        (packet / "commons/replacement-source-evidence.json").read_text(encoding="utf-8")
-    )["query"]["pages"]
+    replacement_proof = {}
+    for proof_name in ("replacement-source-evidence.json", "completion-source-evidence.json"):
+        replacement_proof.update(
+            json.loads((packet / "commons" / proof_name).read_text(encoding="utf-8"))["query"][
+                "pages"
+            ]
+        )
     source = {c["candidate_id"]: c for c in candidates}
     assert len(source) == len(candidates)
     ids, hashes, pixels = set(), set(), set()
@@ -113,7 +126,13 @@ def validate(packet=PACKET):
             )
             info = page["imageinfo"][0]
             assert ref["locator"] == page["title"]
-            assert hashlib.sha1(raw).hexdigest() == original["source_sha1"] == info["sha1"]
+            assert original["source_sha1"] == info["sha1"]
+            if original["downloaded_variant"] == "original":
+                assert hashlib.sha1(raw).hexdigest() == info["sha1"]
+                assert original["downloaded_url"] == info["url"]
+            else:
+                assert original["downloaded_variant"] == "Commons server thumbnail 1280"
+                assert original["downloaded_url"] == info["thumburl"]
             assert c["photo_source"]["license"] == info["extmetadata"]["LicenseShortName"]["value"]
             assert c["photo_source"]["attribution"] == info["extmetadata"]["Artist"]["value"]
         assert c["human_reference"] is c["provider_consent"] is c["nonsensitive_approval"] is None
@@ -157,6 +176,11 @@ def validate(packet=PACKET):
         "status": "OFFLINE_PACKET_VALID_NOT_RUNNABLE",
     }
     assert summary == doc["summary"]
+    if doc.get("preparation_status") == "CORPUS_PROPOSALS_COMPLETE_NOT_QUALIFIED":
+        assert groups["products"] >= 8 and groups["mixed"] >= 8
+        assert groups["rations"] >= 10 and groups["unreadable"] >= 4
+        assert sum(groups.values()) >= 30
+        assert "CORPUS_INCOMPLETE" not in doc["statuses"]
     return summary, audit
 
 
