@@ -1,5 +1,7 @@
 # Wojskowy licznik kalorii
 
+Android **0.8.11** dodaje kody i zaproszenia Nemesis, świadomą akceptację zakresów oraz zakończenie udostępniania. Dokładna decyzja jest zapisana przed HTTP i ponawiana ręcznie tym samym kluczem po utracie odpowiedzi. [Raport i podglądy](android/RAPORT_0_8_11.md):165 JVM/179 pełny device dla pierwszego źródła, końcowe4 formularze po poprawce klawiatury osobno; Room8 bez migracji,22tabele/5posiłków zachowane. Gęstszy ranking, osiągnięcia i Postępy pozostają zachowane. Rzeczywisty pairing APK/API, E4/recovery i klientE9 wymagają dalszych odbiorów.
+
 Android **0.8.10** dodaje odczyt Nemesis: listę rywalizacji, uzgodnione zasady, punkty oraz dozwolone porównania. Pending/hidden/null/zero są oddzielne, a powrót na ekran ponownie sprawdza udostępnianie. [Raport i podglądy](android/RAPORT_0_8_10.md):155 JVM/168 pełny device i końcowe72 affected osobno; Room8 bez migracji,5posiłków zachowane. Zaproszenia/accept/cancel i realny API mają dalsze odbiory.
 
 Android **0.8.9** zagęszcza ranking zgodnie z feedbackiem: wspólny wiersz pozycji/punktów i mniejsze odstępy, z czytelnym układem przy dużym tekście. Poprawia rozróżnienie deklaracji zgody i aktywnego automatu po przekazaniu E9. [Raport i podglądy](android/RAPORT_0_8_9.md):144 JVM i18 zmienionych testów urządzenia PASS, Room8 bez migracji,22tabele/5posiłków zachowane. Nemesis, klientE9 i rzeczywisty API mają dalsze etapy.
