@@ -2,7 +2,7 @@
 
 Wersja 1, 13 października 2026 r. Autor przygotowania: agent 3, na bezpośrednie polecenie właściciela w tej rozmowie: po domknięciu obecnego zadania wykonać E9-O2 wskazane przez Agenta 2. To nowe zlecenie zastępuje wcześniejsze zapisy „E9 niezlecone” wyłącznie dla niniejszego zakresu. Nie zmienia roli/autora commitów na agenta 2.
 
-Podstawa: main `821a4e8a5d5bd019032651de05c5c8e76e834145`, migracja0021. PR51 i PR52 oraz ich osobne push main zaliczyły po osiem kontroli; odbiór821a4e8: CI38391897032,1658unit/49infra/1265PG/28Keycloak/126JVM/131device, rzeczywista integracja i restart. Ten dokument opisuje przyszłe wykonanie, nie potwierdza działania E9. Przed implementacją opublikuj/odbierz master przez docs PR, wymagane CI, zwykły merge i osobny main.
+Podstawa: main `821a4e8a5d5bd019032651de05c5c8e76e834145`, migracja0021. PR51 i PR52 oraz ich osobne push main zaliczyły po osiem kontroli; odbiór821a4e8: CI38391897032,1658unit/49infra/1265PG/28Keycloak/126JVM/131device, rzeczywista integracja i restart. Ten dokument opisuje przyszłe wykonanie, nie potwierdza działania E9. Przed implementacją opublikuj/odbierz master przez docs PR, wymagane CI, zwykły merge i osobny main. [Niezależny odbiór tekstu](e9/RECENZJA_MASTER_E9.md):9,3/10 po zamknięciu dwóch P2; CI publikacji pozostaje osobną bramką.
 
 ## 1. Rezultat, właściciel i zależności
 
