@@ -167,6 +167,11 @@ Odrębne, opcjonalne usługi E8 opisano poniżej; nie zmieniają roli retencji.
 
 ## Opcjonalne workery E8
 
+Istniejący wolumen sprzed E8 wymaga owner-only sprawdzenia/utworzenia brakujących
+bazowych ról przed upgrade. Sam nowy init-db.sh działa wyłącznie przy pierwszej
+inicjalizacji. [Odbiór aktualizacji E7→E8](../../docs/e8/AKTUALIZACJA_ISTNIEJACEJ_INSTALACJI_O3.md)
+podaje minimalne atrybuty i rzeczywisty test zachowania historii/receipts/zgód.
+
 Po aktualizacji własnego środowiska przez `run.py up` można przygotować i uruchomić
 trzy usługi z odebranego backendu E8. W przykładach należy wskazać ten sam prywatny
 `--state` co dla właściwego lokalnego zestawu. Polecenie `up` nie aktywuje Nemesis.
