@@ -236,3 +236,5 @@ Dobór rozwiązań bazuje na oficjalnej dokumentacji Androida:
 - ViewModel, repozytoria i przepływ stanu: [zalecenia architektury Android](https://developer.android.com/topic/architecture/recommendations).
 - Lokalna warstwa danych: [offline-first](https://developer.android.com/topic/architecture/data-layer/offline-first), [Room](https://developer.android.com/training/data-storage/room).
 - Trwałe zadania synchronizacji: [WorkManager](https://developer.android.com/develop/background-work/background-tasks/persistent).
+
+Przekazanie E9 odczytane na main2b4073e i PR57/58. Po kliencie Nemesis wydzielimy `codex/android-korekty-zapotrzebowania`: state/history/requested/effective, osobne świadome notice/affirm i decyzje analizy, oś E oddzielona od celu kcal. Ten etap nie jest wykonany ani opublikowany jako PR. Pierwszy rzeczywisty APK/API wymaga osiągalnego z urządzenia issuer/origin/publicCA i poprawnego discovery/readiness od O3; lokalny rollout0024 nie zastępuje tego warunku. SemantyczneE4/WorkManager/KO31/recovery pozostają otwarte.
