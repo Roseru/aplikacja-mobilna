@@ -84,3 +84,9 @@ pozostają historią; nie przypisano im PASS.
 Pełne zespołowe E8 wciąż wymaga rzeczywistych O1/API/APK i produkcyjnych O3
 registry deletion/sesji/reopen/RPO-RTO. Niniejszy lokalny upgrade nie rotuje
 epoki, nie afirmuje zgód i nie zastępuje procedury restore.
+
+Osobny [rollout rzeczywistej starszej instalacji0014](ROLLOUT_LOKALNEJ_INSTALACJI_O3.md)
+obejmuje nową próbę na kopii, parę rzeczywistych archiwów i aktualizację danych/API/
+workerów do0021. Wymaga też bazowej roli AI i jawnego zamknięcia AI po pierwszej
+migracji E7. Raport zachowuje granicę zmienionego LAN i rzeczywistego wewnętrznego
+HTTPS; nie przypisuje mu wcześniejszego source0015 lub odbioru APK.

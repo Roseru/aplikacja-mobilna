@@ -279,6 +279,11 @@ lokalny rejestr, odcięcie starego JWT/refresh i świadome recovery po zmianie e
 Nie zmienia zachowania `rehearse`: ta komenda nadal kończy się z zamkniętym ruchem.
 Produkcyjny rejestr, docelowe środowisko, RPO/RTO i Room/APK wymagają własnego odbioru.
 
+[Aktualizacja rzeczywistej starszej instalacji lokalnej](../../docs/e8/ROLLOUT_LOKALNEJ_INSTALACJI_O3.md)
+potwierdza0014→0021, parę sprawdzonych archiwów, zachowanie danych/epoki/TLS oraz
+trzy realne workery. Obecny bind to loopback, przy zachowanym dotychczasowym issuer;
+raport wyjaśnia brak dawnego adresu LAN i zakres rzeczywistego operatorskiego HTTPS.
+
 ## Co sprawdza `verify`
 
 Test wykonuje rzeczywiste żądania HTTPS, podpisane tokeny z Keycloak i API z PostgreSQL:
