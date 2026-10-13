@@ -97,6 +97,10 @@ class E8Stack(Stack):
             results[task] = json.loads(value)
         return results
 
+    def diagnostic(self):
+        """Only allowlisted operational fields; never container logs, names or environment."""
+        return diagnostic_services(self.e8("ps", "--all", "--format", "json"))
+
     def verify(self):
         if self.sql("calorie_app", "SELECT enabled FROM app.nemesis_control;") != "f":
             raise ValueError("Verification requires the default closed gate")
@@ -162,8 +166,7 @@ class E8Stack(Stack):
                 raise RuntimeError("Effective E8 LOGIN boundary failed")
         checks.append("UID10001 and three actual LOGINs; no DDL/raw source/identity/SET ROLE")
         epoch = self.sql("calorie_app", "SELECT sync_epoch FROM app.installation_state;")
-        self.e8("stop", *SERVICES.values())
-        self.e8("up", "--detach", "--no-deps", *SERVICES.values())
+        self.e8("restart", *SERVICES.values())
         wait_changed(second)
         if self.sql("calorie_app", "SELECT sync_epoch FROM app.installation_state;") != epoch:
             raise RuntimeError("Restart changed epoch")
@@ -187,6 +190,39 @@ class E8Stack(Stack):
         )
         for check in checks:
             print("PASS " + check, flush=True)
+
+
+def diagnostic_services(raw):
+    parsed = (
+        json.loads(raw)
+        if raw.lstrip().startswith("[")
+        else [json.loads(line) for line in raw.splitlines() if line.strip()]
+    )
+    states = {
+        "running",
+        "created",
+        "restarting",
+        "paused",
+        "exited",
+        "dead",
+        "removing",
+    }
+    health = {"healthy", "unhealthy", "starting"}
+    result = []
+    for value in parsed:
+        service = value.get("Service")
+        if service not in SERVICES.values():
+            continue
+        code = value.get("ExitCode")
+        result.append(
+            {
+                "service": service,
+                "state": value.get("State") if value.get("State") in states else "unknown",
+                "health": value.get("Health") if value.get("Health") in health else "unknown",
+                "exit_code": code if type(code) is int and 0 <= code <= 255 else None,
+            }
+        )
+    return sorted(result, key=lambda value: value["service"])
 
 
 def main():
@@ -217,7 +253,21 @@ def main():
         print(f"E8 {args.action}: OK")
         return 0
     except Exception:
-        print("E8 local operation failed; inspect private state/compose.log", file=sys.stderr)
+        try:
+            diagnostic = {"action": args.action, "services": stack.diagnostic()}
+            from run import private_write
+
+            private_write(
+                state / "e8-operation-error.json",
+                json.dumps(diagnostic, sort_keys=True),
+            )
+            print(json.dumps(diagnostic, sort_keys=True), file=sys.stderr)
+        except Exception:
+            pass  # Never replace the original failure or expose privileged diagnostics.
+        print(
+            "E8 local operation failed; inspect private state/compose.log",
+            file=sys.stderr,
+        )
         return 1
 
 

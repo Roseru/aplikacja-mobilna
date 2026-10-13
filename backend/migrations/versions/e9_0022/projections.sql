@@ -13,7 +13,7 @@ BEGIN
  SELECT f.*, (app.e9_resolve(p_owner,f.local_date)).maintenance_kcal AS maintenance,
   w.id AS weight_id,w.revision AS weight_revision,w.occurred_at,w.weight_kg
  FROM facts f JOIN app.nemesis_day_projections p ON p.challenge_id=p_id AND p.participant_role=p_role AND p.local_date=f.local_date
- 
+
  LEFT JOIN LATERAL(SELECT v.* FROM app.weights v WHERE v.owner_id=p_owner AND v.deleted_at IS NULL
   AND v.occurred_at>=p.starts_at AND v.occurred_at<p.matures_at ORDER BY v.occurred_at DESC,v.id DESC LIMIT 1) w ON true
  ) UPDATE app.nemesis_day_projections p SET candidate_points=f.effective_complete::integer+(f.in_goal IS TRUE)::integer,

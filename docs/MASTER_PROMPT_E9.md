@@ -113,3 +113,10 @@ Nie uruchamiamy kolejnego wykonawcy. W kodzie uwzględniono dodatkowe zabezpiecz
 jawny manual energy notice (provider/scope/kwalifikacja/serwerowy snapshot),
 osobny notice przyszłej automatyki oraz bounded/fair producent współdzielonego
 runnera. Odbiór mastera O3 nie jest odbiorem tego runtime.
+
+Odczytano i zachowano w historii Git przygotowanie O3:
+[pełny master6952c14](https://github.com/Roseru/aplikacja-mobilna/blob/6952c1418b3a79e4da93803808d40c5097f3a40b/docs/MASTER_PROMPT_E9.md)
+oraz [odbiór tekstu](e9/RECENZJA_MASTER_E9.md).
+Wskazanie tam Agenta3 dotyczy tamtej instrukcji przygotowania. Wykonawczy master
+przekazany do tego czatu ustala Agenta2 i jedną implementację; żadna ocena planu
+nie jest odbiorem naszego kodu. Nowe wpisy O3 i jego source/CI pozostają zachowane.
