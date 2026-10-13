@@ -276,8 +276,9 @@ pozostają obowiązkowe. Testy TLS obejmują prawdziwy lokalny serwer JWKS, nie 
 
 ## Granice odbioru
 
-To działająca infrastruktura lokalna. Jej `verify` nie potwierdza podłączenia obecnego APK,
-KO-31, kompletu official ARPOL, publicznego VPS/domeny/SMTP, harmonogramu workerów ani restore/RPO/RTO.
+To działająca infrastruktura lokalna. Podstawowy `verify` nie potwierdza podłączenia obecnego APK,
+KO-31, kompletu official ARPOL, publicznego VPS/domeny/SMTP ani restore/RPO/RTO.
+Minutowe workery E8 mają odrębny `run_e8.py verify` i lokalny odbiór opisany wyżej.
 O1 otrzymuje issuer/API, publiczny CA i konfigurację klienta; osobne próby sesji konkretnego
 APK O1/0.8.0 i ich ograniczenia dokumentuje [odbiór O3](ANDROID_PKCE.md).
 O2 zachowuje kontrakty i kod logiki. Publiczny deployment oraz kopie/restore są kolejnymi etapami.

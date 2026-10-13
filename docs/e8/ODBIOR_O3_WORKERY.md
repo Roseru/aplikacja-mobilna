@@ -6,6 +6,14 @@ Zakres: osobne procesy motywacji, lifecycle i projection-only finalizera,
 minimalne role, minutowe wywołania, zagregowany status i restart.
 Wymagania:11.7/KO-29, przekazania O3 E8.1–E8.4.
 
+Publikacja: [PR44](https://github.com/Roseru/aplikacja-mobilna/pull/44).
+Pierwszy head `1ba26dc` / [CI38344602419](https://github.com/Roseru/aplikacja-mobilna/actions/runs/38344602419)
+wykonał1658 unit i32 infra PASS4,11s, installed wheel-I PASS; późniejszy Docker build
+otrzymał rzeczywiste429/data-limit z publicznego registry ECR. Cały job quality
+pozostaje failure, bez nazywania go zielonym. Próba ponowienia tego jednego joba
+przez dostępne API dostała403. Niniejsze doprecyzowanie publikacji i granic
+odbioru uruchamia nowy wymagany zestaw CI; wcześniejsze wyniki pozostają historią.
+
 ## Wynik i dostawa
 
 Opcjonalny overlay Compose uruchamia trzy zainstalowane CLI z wheel przez
