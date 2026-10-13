@@ -14,7 +14,7 @@ Zachowuje dokładnie dotychczasowe pełne SHA256:
 - Python: `70729b46c69b4f1e97c4822c1af3df53a1476cf5ddc6c087c0c10bc3a5678c2f`.
 
 Nie aktualizujemy obrazu, tagu, wersji, platformy, bibliotek lub reguł testów.
-Nie zmieniamy migacji0001–0021, pakietu backendu albo istniejących kontenerów.
+Nie zmieniamy migracji0001–0021, pakietu backendu albo istniejących kontenerów.
 Rzeczywisty Docker Hub pull obu referencji potwierdził te same digests.
 Porównanie lokalnych referencji PG ECR/Hub dało identyczne Id2d2b;
 raw manifest Python z Hub ma SHA256 dokładnie70729b, identyczne z pinem ECR.
@@ -31,6 +31,9 @@ CI właściwego final-head/base i późniejszego main; nie są pomijane przy
 błędzie registry. Nie dodajemy sekretów logowania do registry lub płatnej usługi.
 
 Narzędzie kopii z odrębnego [PR45](https://github.com/Roseru/aplikacja-mobilna/pull/45)
-otrzyma ten sam alias PG po zwykłej integracji jego źródła; żaden niescalony
-zakres innego PR nie jest kopiowany do tej poprawki. Historia odbiorów E8.4
-i wcześniejszych ECR failures pozostaje zachowana.
+jest już scalone na10d346d po8success CI38346838325. Dołączono ten main zwykłym
+merge na czystym checkout, zachowano O3-014 i dołączono O3-015; wcześniejsza
+niepusta historia poza własnym wierszem O3 została sprawdzona jako zachowana.
+Narzędzie kopii otrzymuje ten sam alias PG. Nowa rzeczywista offline rehearsal
+tej samej pary archiwów z Docker Hub ma własne5 zakresów PASS, bez przypisywania
+sobie nowej unikalnej regresji. Historia E8.4 i ECR failures pozostaje zachowana.
