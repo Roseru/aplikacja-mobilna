@@ -246,8 +246,6 @@ dla kontenera Keycloak, ale jego katalog nadrzędny pozostaje prywatny. Nie udos
 Wolumeny i stan są powiązaną instalacją — oba należy zachować. Kopie i kontrolowany restore
 z nową epoką oraz rejestrem usunięć należą do osobnego zadania; zwykły down/up nie jest restore.
 
-## Co sprawdza `verify`
-
 ## Prywatna kopia i odizolowana próba odtworzenia
 
 Po lokalnym odbiorze workerów można wykonać spójną kopię własnego zestawu.
@@ -270,7 +268,7 @@ Archiwa, konfiguracja, manifest i raw logs są prywatne i zawierają dane/sekret
 CI publikuje wyłącznie neutralny receipt. Wymagania przed rzeczywistym reopen,
 wykonane pomiary i granice RPO/RTO opisuje [raport](../../docs/e8/KOPIA_ODTWORZENIE_O3.md).
 
-### Podstawowy odbiór HTTPS/API
+## Co sprawdza `verify`
 
 Test wykonuje rzeczywiste żądania HTTPS, podpisane tokeny z Keycloak i API z PostgreSQL:
 
