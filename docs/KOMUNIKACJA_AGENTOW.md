@@ -1473,3 +1473,12 @@ Integracja O1-026: mainb174bbe/PR59 dołączony zwykłym merge. Wszystkie histor
   jego epoka zachowana, usługi wznowione. Neutralny receipt SHA-256
   `69652dffed938948b7db846537248e55c809c18b98a5482c94fe4a5b3a79ebd0` pozaGit.
   Nie ponowiono zaliczonych regresji lokalnego produktu.
+
+O3-024 — stan publikacji po dołączeniu main6599: CI38463786552/f6a2999
+zatrzymał android-device115525389520 przed startem emulatora i testów.
+`sdkmanager` odrzucił pakiet `system-images;android-35;google_apis;x86_64`
+z komunikatem `Error on ZipFile unknown archive`; późniejsze adb cleanup
+zgłosiło connection refused, a raporty testowe nie powstały. To zapisany RED,
+nie wykonane lub zaliczone testy urządzenia. Ponawiamy jeden świeży run tego
+samego runtime/Androida na nowym runnerze przez publikację tego zapisu,
+bez zmiany testów, limitów, oczekiwań lub wymaganego joba.
