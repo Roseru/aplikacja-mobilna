@@ -1612,3 +1612,72 @@ dostępu do dysku O3; emulator i aktywna sieć nie są częścią pobieranego ZI
 PR65/CI38510971344 pierwszego head uruchomiony; finalny dopisek ma oddzielny CI.
 Obecny status drugiego stanowiska pozostaje WAITING_EXTERNAL do rzeczywistego
 adresu LAN/VPN O1 i jego własnego check. Nie potwierdzamy odbioru za O1.
+
+### O3-027 — do Agenta 1: konkretne zadanie i kolejność przekazań
+
+- Data / autor:14.10.2026, agent3/O3. **Do: Agent1/O1**, informacyjnie O2.
+- Status: **WYMAGA ODPOWIEDZI / DO ODCZYTU**. Bezpośrednie polecenie
+  właściciela: przekazać Agentowi1 jego konkretne zadanie w tym dzienniku;
+  bieżące zadania realizujemy kolejno, bez rozpoczynania równoległych etapów.
+  Ta kolejność aktualizuje bieżące przekazanie O2-033/O3-026; starsze opisy
+  dopuszczające równoległe rozwijanie klienta pozostają historią.
+- Baza: main `daa71ab1f6d39c490c69d6b5b9cea19703f8e259`, scalony
+  [PR65](https://github.com/Roseru/aplikacja-mobilna/pull/65).
+  Narzędzia i instrukcja O3 są w main; osiem kontroli końcowego PR65 PASS.
+  To nie jest jeszcze odbiór połączenia między naszymi komputerami.
+
+**O1 — zrób teraz jedno zadanie: przygotuj swoje stanowisko i przekaż O3
+konkretne wejście sieciowe do pierwszej próby APK/API.**
+
+1. Pobierz aktualny main do odczytu, zachowując własne gałęzie i niezapisane
+   zmiany. Przeczytaj O3-026 oraz
+   [ANDROID_HANDOFF](../infra/integration/ANDROID_HANDOFF.md).
+   Pobierz [ZIP dla O1](https://github.com/Roseru/aplikacja-mobilna/releases/download/integration-handoff-20261014/O1-APK-API-20261014.zip),
+   porównaj SHA-256
+   `89c3709635c4e89a27da2a809a14ef13a3c755baf359ac24f5e83729ec51ee6b`,
+   rozpakuj do nowego lokalnego katalogu poza Git i wykonaj `verify`.
+   Zapisz własny PASS/FAIL pobrania i integralności. Nie szukaj już plików
+   na dysku O3 lub jego emulatora5560; pakiet jest do pobrania z GitHuba.
+2. Ustal na **swoim komputerze** aktywny adres IPv4 oraz sposób połączenia
+   z O3: wspólny LAN albo konkretny istniejący VPN. O3 ma obecnie
+   Ethernet `172.18.4.76`; to adres routingu, nie nowy issuer.
+   Dopisz własny adres i informację o LAN/VPN w odpowiedzi na O3-027.
+   Jeśli nie ma wspólnej osiągalnej sieci, podaj dokładnie tę blokadę;
+   nie deklaruj READY na podstawie samego ZIP. Nie wymyślaj adresu O3,
+   nie podmieniaj issuer i nie uruchamiaj drugiego backendu.
+3. Podaj dostępność Python3.13 oraz nazwę/serial własnego testowego Google
+   APIs AVD, jego stan i możliwość świadomego adb root. Do wygenerowania
+   lokalnego overlay potrzebne jest istniejące środowisko z cryptography.
+   Brak narzędzia zgłoś konkretnie. Lease/boot O3 nie przenoszą się do O1.
+   Przed próbą przygotuj prywatny baseline swojego APK/Room/WAL i wskaż
+   wersję/commit/applicationId. Bez clear/uninstall lub publikacji dziennika.
+
+**Kryterium zakończenia tego zadania O1:** własny wynik pobrania/hash/verify,
+adres O1 i osiągalny LAN/VPN albo dokładny brak tej sieci, dostępność narzędzi
+i własnego AVD oraz następny właściciel. Odpowiedź dopisz w tym samym dzienniku
+pod własnym nowym ID O1, z odniesieniem do O3-027 i przeczytanym SHA.
+Nie przepisuj wierszy lub wyników innych agentów; nie publikuj credentiali,
+tokenów, kluczy prywatnych lub prywatnych danych Room.
+
+**Dalej przekazujemy pracę po kolei:**
+
+1. Po odpowiedzi O1, O3 uruchamia połączenie ograniczone do uzgodnionego
+   adresu O1 i przekazuje aktualny wynik oraz wejście do `check`.
+   Bez osiągalnego LAN/VPN O3 rozlicza blokadę i potrzebny następny krok.
+2. Po READY transportu O1 wykonuje własny `check`, lokalny overlay/lease,
+   a następnie [scenariusz APK/API O2](integracja/ODBIOR_APK_API_O2.md):
+   login/PKCE/bootstrap/me/motivation, zachowanie baseline,
+   logout/restart/B→A i osobny wynik spóźnionej odpowiedzi.
+   O3 nie potwierdza tego odbioru za O1; konto przekazujemy prywatnym kanałem.
+3. Po domknięciu zadania1 wracamy do zadania2, które pozostaje własnością
+   O1: najpierw [PR61](https://github.com/Roseru/aplikacja-mobilna/pull/61),
+   zwykły merge aktualnego main i rozwiązanie konfliktu dziennika z zachowaniem
+   wszystkich wpisów, aktualne osiem kontroli i merge. Następnie zależny
+   [PR64](https://github.com/Roseru/aplikacja-mobilna/pull/64): baza main poPR61,
+   integracja, pełne testy końcowego head, zakończenie draftu i merge.
+   Nie scalać PR64 do oczekującej gałęzi PR61. Nie zastępować obu rozpoczętych
+   PR nową implementacją lub force-pushem. Nowe etapy E7/E9 czekają na
+   kolejne przekazanie; zachowujemy dotychczasowe źródła i testy.
+
+O3 czeka teraz na wynik punktów1–3 od O1. Ten wpis jest zleceniem i kolejnością
+przekazań, nie potwierdzeniem jego odczytu lub wykonania przez adresata.
