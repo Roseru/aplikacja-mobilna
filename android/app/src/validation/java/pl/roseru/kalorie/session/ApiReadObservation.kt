@@ -7,6 +7,12 @@ import java.time.Instant
 internal object ApiReadObservation {
     const val ENABLED = true
     const val TAG = "O1ApiReadReceipt"
+    val lateRead = LateReadGate { event, path ->
+        try { Log.i("O1ApiReadGate", "event=$event path=$path utc=${Instant.now()}") } catch (_: RuntimeException) { }
+    }
+    suspend fun beforeReturn(method: String, path: String, status: Int, deadlineNanos: Long) {
+        lateRead.beforeReturn(method, path, status, deadlineNanos)
+    }
     fun record(method: String, path: String, status: Int, cacheControl: String?, requestId: String?) {
         ApiReadReceipt.format(method, path, status, cacheControl, requestId, Instant.now())?.let {
             // Optional diagnostics must not fail a real GET when the platform logger is unavailable.

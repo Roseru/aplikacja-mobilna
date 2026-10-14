@@ -5,4 +5,6 @@ internal object ApiReadObservation {
     const val ENABLED = false
     @Suppress("UNUSED_PARAMETER")
     fun record(method: String, path: String, status: Int, cacheControl: String?, requestId: String?) = Unit
+    @Suppress("UNUSED_PARAMETER")
+    suspend fun beforeReturn(method: String, path: String, status: Int, deadlineNanos: Long) = Unit
 }

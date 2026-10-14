@@ -23,12 +23,13 @@ w zwykłym APK. To samo versionCode23/Room9 umożliwia install-r testowej aplika
 z zachowaniem istniejących dzienników; SHA/source każdego artefaktu są odrębne.
 Zwykłego APK użytkownika nie instalujemy w ramach tego odbioru.
 
-## Punkt zatrzymania rzeczywistej odpowiedzi — propozycja dla O2
+## Punkt zatrzymania rzeczywistej odpowiedzi — przygotowany driver dla O2
 
 O3-035 proponuje zatrzymanie pojedynczego rzeczywistego wyniku200 GET A po
 odebraniu ograniczonego body, a przed zwrotem z gateway do istniejącego kontrolera.
 O2 ma potwierdzić, czy spełnia to punkt8, czy wymagane jest opóźnienie strumienia
-HTTP. **Bramka opóźnienia nie jest zaimplementowana ani zaliczona w tym etapie.**
+HTTP. Bramka jest teraz zaimplementowana wyłącznie w validation. Wykonanie na
+prawdziwym serwerze pozostaje **NOT_RUN**, a końcowy oracle do odbioru O2.
 
 Jeżeli O2 zaakceptuje granicę gateway, kolejne wykonanie powinno zachować:
 
@@ -43,6 +44,37 @@ Jeżeli O2 zaakceptuje granicę gateway, kolejne wykonanie powinno zachować:
 Jeżeli wymagane jest opóźnienie strumienia, osobny transport przygotowuje O3;
 O1 nie podmienia usług wspólnej instalacji. Sam fixture, anulowany request bez
 odebranego wyniku lub log szyfrowanego TCP nie jest tym dowodem.
+
+`LateReadGate` wstrzymuje jedynie pierwszy faktycznie odebrany200 wybranej
+ścieżki po ograniczonym odczycie body. Nie otrzymuje DTO lub identity i nie
+może ich podmienić. AtomicReference zużywa jednorazowe uzbrojenie; oczekiwanie
+nie utrzymuje mutexa/transakcji. Limit to mniejsza z wartości:10s i pozostały deadline
+HTTP, z propagacją cancellation/timeout i bez NonCancellable. Kolejne GET oraz
+błędy HTTP nie są wstrzymywane.
+
+`LiveApiLateReceiptTest` używa rzeczywistego Application/SessionController/Vault
+po uprzednim browser PKCE konta A. Bez fixture tokenów lub gateway. Driver
+czeka na odebrany wynik, wykonuje istniejący logout, sprawdza gościa, uwalnia
+ten sam wynik i weryfikuje brak powrotu prywatnego podglądu oraz niezmienione
+15 tabel danych lokalnych. Wartości wierszy nigdy nie trafiają do asercji/logów.
+Neutralne zdarzenia: held → logout → released → guest_preserved.
+
+Driver jest poza domyślnymi źródłami androidTest. Dodaje się go tylko przez
+`-PO1_LIVE_API_RECEIPT_TEST=true` przy budowie. Samo dodanie źródła nie uruchamia
+próby: runner wymaga też `-e live_api_receipt true` oraz istniejącej sesji/powiązania
+konta. Pominięcie lub cancellation nie jest realnym PASS.
+
+Próbę O1 wykonuje wyłącznie na swoim testowym AVD, po nowym uzgodnionym oknie O3,
+check TLS/issuer, własnym lease, prywatnym baseline i logowaniu A. APK testu i
+aplikacji muszą pochodzić z tego samego źródła. Dokładna klasa uruchomienia:
+
+```text
+adb -s OWNED_TEST_SERIAL shell am instrument -w -r -e class pl.roseru.kalorie.LiveApiLateReceiptTest -e live_api_receipt true pl.roseru.kalorie.validation.test/androidx.test.runner.AndroidJUnitRunner
+```
+
+To celowo kończy sesję A i pozostawia gościa. Nie używać na zwykłej aplikacji lub
+urządzeniu użytkownika. Surowy wynik runnera, Room/Vault i XML pozostają prywatne.
+Do publikacji trafia dopiero rzeczywisty wynik, neutralne zdarzenia i equality.
 
 ## Odbiór i publikacja
 
@@ -78,3 +110,11 @@ zachowane. Po próbie zamknięto wyłącznie własny lease/klienta przed17:25 CE
 Pełny rozszerzony odbiór kont nadal **PARTIAL**: rzeczywista spóźniona odpowiedź
 pozostaje NOT_RUN do uzgodnienia oracle O2. Kolejność merge: PR61 → PR64 →
 ten zależny PR po retarget do aktualnego main i wymaganych kontrolach.
+
+Nowe przygotowanie bramki: 165 JVM debug/174 JVM validation (w tym6testów bramki),
+build obu wariantów i opt-in drivera oraz lint0error PASS. DEX zwykłego debug
+nie zawiera bramki/loggera; validation zawiera. Osobny build bez właściwości
+opt-in potwierdził brak drivera w domyślnym testowym APK. APK bramki ma odrębny
+SHA256 `5706387aa603c2632ebd6051619ad2c55c436f94729bdbe994af340d9acaa86d`.
+Historyczny receipt HTTP powyżej dotyczy wcześniejszego APK4bad317 i pozostaje
+odrębnym dowodem; nie opisujemy go jako wykonania nowej bramki.

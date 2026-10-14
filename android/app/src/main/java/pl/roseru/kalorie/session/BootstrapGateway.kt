@@ -231,6 +231,7 @@ private object HttpsJsonTransport {
                 }
             }
             val etag = if (consent != null) connection.getHeaderField("ETag")?.also { require(it.length <= 32) } else null
+            if (ApiReadObservation.ENABLED) ApiReadObservation.beforeReturn(method, url.path, status, deadline)
             BootstrapHttpResult(status, bytes, connection.getHeaderField("Retry-After"), etag)
         } finally { connection.disconnect() }
     }

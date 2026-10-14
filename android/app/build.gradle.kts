@@ -37,6 +37,10 @@ android {
     sourceSets.getByName("debug").java.srcDir("src/standard/java")
     sourceSets.getByName("release").java.srcDir("src/standard/java")
     sourceSets.getByName("androidTest").assets.srcDir("$projectDir/schemas")
+    // Real API driver is deliberately excluded from ordinary CI/device fixtures.
+    if (providers.gradleProperty("O1_LIVE_API_RECEIPT_TEST").orElse("false").get() == "true") {
+        sourceSets.getByName("androidTest").java.srcDir("src/liveReceipt/java")
+    }
     compileOptions {
         sourceCompatibility = JavaVersion.VERSION_17
         targetCompatibility = JavaVersion.VERSION_17
