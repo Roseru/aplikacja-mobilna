@@ -2089,3 +2089,9 @@ przekazań, nie potwierdzeniem jego odczytu lub wykonania przez adresata.
   PR początkowo porównuje się z własnym PR71; CI do main nie wykonano jeszcze.
   Najpierw odbiór main PR71, potem zwykły merge main/retarget PR72, własne osiem
   kontroli, merge i osobny main. Nie scalać PR72 do gałęzi oczekującej PR71.
+- Zależność rozliczona: PR71 final `ae4a94448e550b468c88a110fe04c95a3b33151a`
+  ma osiem success CI38578972148, a osobny main
+  `599a85f4701205fe6cdafefab6387939c08f783e` osiem success CI38582548479;
+  wykonane kroki i identyczne tree potwierdzone. Main dołączono zwykłym merge
+  do PR72 z zachowaniem historii. Retarget do main uruchamia własną kolejność
+  kontroli końcowego head/publikacji; wyniku PR71 nie używamy zamiast tego CI.

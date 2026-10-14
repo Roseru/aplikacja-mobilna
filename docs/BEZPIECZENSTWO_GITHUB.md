@@ -26,6 +26,11 @@ podlegają ochronie, wymagane jest rozwiązanie rozmów, force-push i usuwanie
 main są wyłączone. Decyzja właściciela o opcjonalnym review pozostaje:
 0 wymaganych zatwierdzeń, `require_last_push_approval=false`.
 
+Odczyt16:53 CEST: oba endpointy open alerts odpowiedziały200 i zwróciły0
+otwartych alertów sekretów/zależności (limit100, puste listy).
+Endpoint historii skanów odpowiedział404; nie przypisujemy temu odczytowi
+potwierdzenia kompletnego skanowania historii.
+
 ## Automatyczne propozycje aktualizacji
 
 Konfiguracja obejmuje rzeczywiste manifesty repozytorium:
