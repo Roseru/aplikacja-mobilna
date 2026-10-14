@@ -19,7 +19,7 @@ Każda osoba aktualizuje własny wiersz. Daty i dokładne źródła są w jej wp
 |---|---|---|---|
 | O1 — Android, Kotlin, Room | 0.8.10/code21/Room8: odczyt Nemesis;155 JVM/168full i72final affected PASS osobno;22tabele/5posiłków zachowane | Własny PR/CI; trwałe operacje Nemesis, realny API/APK, E4/recovery i klientE9 | O1-026, [raport](../android/RAPORT_0_8_10.md), codex/android-nemesis |
 | O2 — Python, PostgreSQL, API | E9-O2/PR54 i zdjęcia/PR59 scalone; 35 zbadanych, 30 propozycji 8/8/10/4; własne CI PR/main odebrane | O1: klient i realny APK/API; O3: origin oraz Gemini dev; człowiek: referencje/zgody; O2: późniejsze testy E7-R/E9-R i naprawy | O2-033, [PR59](https://github.com/Roseru/aplikacja-mobilna/pull/59), [raport zdjęć](e7/RAPORT_PRZYGOTOWANIA_ZDJEC.md) |
-| O3 — DevOps, CI/CD, serwer | PR72 i PR84/source/main osiem success; Dependabot realne joby success. Monitoring lokalny/alert83/recovery/harmonogram odebrane; cztery wersjonowane obrazy dostarczone jako szkic wydania | O1: late-response po oracle O2, potem Gemini project/key prywatnie; O3: własny odbiór przekazania PR85. Kroki z brakującymi dostępami pominięte na polecenie właściciela | O3-037/038, [PR85](https://github.com/Roseru/aplikacja-mobilna/pull/85), [kandydat](KANDYDAT_SERWERA_O3.md) |
+| O3 — DevOps, CI/CD, serwer | PR85/main 5edb5f6 osiem success. Naprawiono wyskakujące konsole monitora; Docker i lokalne usługi przywrócone, finalizer celowo disabled | O1/O2: oracle i rzeczywista late-response, nowe okno O3; Gemini: project/environment/limity i prywatne przekazanie; przegląd 9 aktualizacji zależności, w tym 4 z błędami CI | O3-039, codex/devops-monitor-bez-okien, [kandydat](KANDYDAT_SERWERA_O3.md) |
 
 ## Wpisy
 
@@ -2114,3 +2114,48 @@ przekazań, nie potwierdzeniem jego odczytu lub wykonania przez adresata.
 - Szczegóły i sumy w [raporcie kandydata](KANDYDAT_SERWERA_O3.md). Wydzielona publikacja dokumentacji codex/docs-serwer-kandydat ma własne PR/CI/main, nie dziedziczy sourceCI72 ani84. PR84monitoring final0e2cf8f52831433435423b6658ad47b6e9a52477 przeszedł8success38597154235 i został scalony do cd2cfec1f2d0bd9c6b42a006b639ae1530f496be; osobny mainCI38599922635 w toku. Rzeczywisty monitoring/alert83/recovery pozostają dowodami z037, bez rozszerzania starego okna API.
 - Odbiór rodzica zakończony14.10.2026,18:59CEST: exact maincd2cfec1f2d0bd9c6b42a006b639ae1530f496be/CI38599922635 ma8success i wykonane kroki, tree zgodne z final0e2cf8f/sourceCI38597154235. [PR85](https://github.com/Roseru/aplikacja-mobilna/pull/85) opublikowano najpierw z head15f172b451fef18c1dbd613bc94461a0ef195db7, jako wydzielone porównanie do własnego rodzica; teraz kierujemy go na aktualny main, z własnymi kontrolami końcowego head. Po korekcie nazwy pola repo_digests manifest ma osobno cztery source_base_images z wersjonowanych źródeł; poprawiony załącznik GitHub ponownie odczytano z właściwym SHA-256, bez zmiany obu archiwów.
 - Retarget PR85 do main potwierdzony na headc138cacdefafe768e3945b90cc5905a3973c0ee8 i basecd2. Sama zmiana bazy nie uruchomiła workflow (brak run dla tego SHA); ten wpis po retarget uruchamia synchronize i własne kontrole końcowego head, bez przypisywania kontroli poprzednich commitów.
+
+
+### O3-039 — naprawa konsoli Minicondy i bieżący audyt projektu
+
+- Data/autor: 14.10.2026, agent 3/O3; do O1/O2 i właściciela.
+  Na polecenie właściciela wykonano fetch/pull --ff-only: main b72fe42 →
+  5edb5f63e14a73287bd730d8fd3abf2d452113f1, bez utraty lokalnych zmian.
+  Osobny main CI38607369346 ma wszystkie osiem completed/success;
+  PR85 jest scalony. Nowa naprawa ma własną gałąź i osobne CI.
+- Priorytetowa usterka: zadanie O3-Calorie-Integration-Monitor uruchamiało
+  co60s konsolowy Python Minicondy. Instalator wybiera teraz pythonw.exe
+  i odmawia instalacji bez niego; wszystkie wywołania Git/Docker monitora
+  dostają na Windows CREATE_NO_WINDOW. Naprawa wdrożona również w prywatnym
+  runtime i rzeczywistym harmonogramie. Zachowano prywatną kopię definicji
+  zadania. Harmonogram nadal monitoruje i dostarcza alerty; nie wyciszono awarii.
+- Źródło naprawy: 7313a75, codex/devops-monitor-bez-okien. Lokalne89testów
+  infrastruktury PASS, w tym10monitoringu; rzeczywisty proces potomny Windows
+  zwrócił GetConsoleWindow=0. Ruff lint/format, E0 (10schematów,
+  95valid/35invalid/18scenariuszy/639linków) i diff-check PASS. Rzeczywisty
+  przebieg pythonw: LastTaskResult0 i świeży heartbeat delivery=ok.
+- Audyt wykrył wyłączony silnik Docker Desktop i osiem incydentów86–93.
+  Uruchomiono istniejący Docker Desktop: istniejące kontenery wznowiły pracę.
+  Świeży pomiar: API/Keycloak/PostgreSQL/retention/motivation/lifecycle/TLS/dysk
+  OK; finalizer expected_disabled ze świeżą próbą, bez zmiany capability.
+  Nie odtwarzano baz, nie resetowano kont/epoki ani nie otwierano starego relay.
+  AI pozostaje not_deployed, backup offsite not_configured.
+- Odczytano osobno O1-042/043 z origin/codex/android-odbior-api/4b54b10.
+  Driver spóźnionego GET jest przygotowany, rzeczywista próba nadal NOT_RUN:
+  potrzebne oracle O2 i nowe konkretne okno O3; poprzednie17:25 wygasło.
+  PR61 ma osiem success; zależne PR64/73 są draft i nie mają kontroli swojego
+  bieżącego head. Odbiór i kolejność scalenia pozostają własnym zadaniem O1.
+- O1-043 potwierdza wyłącznie GET metadanych modelu Gemini HTTP200,
+  bez generowania. Project ID/environment ID, rzeczywiste limity i potwierdzenie
+  Free Tier/billing-disabled oraz prywatne przekazanie do O3 nadal wymagane.
+  To nie jest wdrożenie E7/E9. Nie uruchamiano Google ani nowego transferu.
+- Otwarte9PR Dependabot:74/75/77/78/80 mają osiem success na własnych head;
+  76/79/81/82 mają failure. PR76 proponuje PG18 przy wymaganymPG17;
+  PR79 zawodzi w postgres/keycloak-pkce/local-integration. O1-042 rozpoznał
+  w81 KSP wymagający nowszegoAGP, w82 Compose wymagający SDK37/AGP9.1.
+  Nie scalać tych aktualizacji jako sprawdzonych kompatybilnych zmian.
+  Zielone kontrole pięciu propozycji nie zastępują przeglądu i aktualizacji bazy.
+- Następne zakresy: domknąć rzeczywistą late-response i odbiór Androida,
+  następnie prywatne wejście/konfigurację Gemini i osobny przegląd aktualizacji.
+  Offsite/VPS/domena/SMTP oraz produkcyjna dostawa/podpisanyAPK nadal wymagają
+  istniejącego celu/dostępów; wcześniejsze przygotowania nie zaliczają produkcji.
