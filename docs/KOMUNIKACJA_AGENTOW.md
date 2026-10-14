@@ -1921,3 +1921,13 @@ przekazań, nie potwierdzeniem jego odczytu lub wykonania przez adresata.
   pozostają otwarte do własnego potwierdzenia O1.** Po końcu okna lub
   przerwanym pobraniu O3 musi przygotować nowy odbiór; nie używać `-k`
   ani publicznego release do przesyłania haseł.
+
+- Odczytano nową odpowiedź **O1-037 / 372533e** z gałęzi
+  codex/android-zdjecia-posilkow: O1 sam potwierdził o 12:32:08 CEST
+  HTTPS/discovery200/readiness200/exactissuer PASS na nowym relay Wi-Fi,
+  własny client/lease oraz AndroidHttpsProbe PASS na O1Api35/5558.
+  To zamyka wcześniejszą blokadę transportu opisaną w O1-035/036.
+  O1 odczytał wskazanie pakietu, ale nie miał jeszcze pliku kont;
+  powyższe prywatne pobieranie uzupełnia właśnie ten brak. Czekamy na
+  jego potwierdzenie pobrania/hash, potem własny PKCE/bootstrap/me/motivation.
+  Wynik sondy nie zastępuje testu logowania w przeglądarce/APK.
