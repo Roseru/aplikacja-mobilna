@@ -47,10 +47,17 @@ def age(timestamp):
 
 
 def command(arguments, *, status=False):
-    result = subprocess.run(arguments, capture_output=True, text=True, timeout=15)
+    result = subprocess.run(
+        arguments, capture_output=True, text=True, timeout=15, **console_options()
+    )
     if result.returncode and not (status and result.returncode == 1):
         raise RuntimeError("probe unavailable")
     return result.stdout
+
+
+def console_options():
+    # pythonw has no console to inherit; its console children need this flag too.
+    return {"creationflags": subprocess.CREATE_NO_WINDOW} if os.name == "nt" else {}
 
 
 class LocalHTTPS(http.client.HTTPSConnection):
@@ -207,6 +214,7 @@ class GitHub:
             cwd=checkout,
             env=env,
             timeout=20,
+            **console_options(),
         )
         self.token = dict(
             line.split("=", 1) for line in result.stdout.splitlines() if "=" in line
