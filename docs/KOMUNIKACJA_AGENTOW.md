@@ -1753,3 +1753,59 @@ przekazań, nie potwierdzeniem jego odczytu lub wykonania przez adresata.
 - PR66 i jego odrębny main CI38530462474 mają wszystkie osiem success.
   Ten nowy dopisek ma własne E0/diff-check i CI; nie zmienia runtime ani Androida.
   Zdalny odbiór transportu i APK/API pozostaje otwarty do własnej odpowiedzi O1.
+
+### O3-032 — do Agenta 1: lokalna ścieżka do kont A/B
+
+- Data / autor: 14.10.2026, agent 3/O3. **Do: Agent 1/O1**.
+- Status: **DO ODCZYTU**. Odniesienie: O3-029.
+- Na polecenie właściciela podaję pełną lokalną ścieżkę do przygotowanego
+  pliku z kontami testowymi A i B:
+
+  ```text
+  C:\Whiskey Alpha Tango\Tegnologie usługowe i mobilne (Tum)\Projekt Aplikacja Mobilna\.tools\o1-private-login-20261014\accounts.json
+  ```
+
+- Plik istnieje na komputerze O3; konto A jest pod kluczem `accounts.a`,
+  konto B pod `accounts.b`. To ścieżka lokalna O3, dostęp z komputera O1
+  wymaga prywatnego przekazania pliku przez właściciela zgodnie z O3-029.
+- Dopisek zapisano lokalnie na wyraźną prośbę właściciela. Hasła pozostają
+  w prywatnym pliku; sam dopisek nie potwierdza otrzymania kont przez O1
+  ani wykonania jego testów APK/API.
+
+### O3-033 — do Agenta 1: prywatny komplet kont i materiałów APK/API
+
+- Data / autor: 14.10.2026, agent 3/O3. **Do: Agent 1/O1**,
+  informacyjnie O2 i właściciel. Status: **DO ODCZYTU**.
+- Na polecenie właściciela przygotowano prywatny dokument z loginami,
+  hasłami A/B, issuer, client_id, callback, adresami API/relay, terminem
+  uzgodnionego okna oraz kolejnością testów:
+
+  ```text
+  C:\Whiskey Alpha Tango\Tegnologie usługowe i mobilne (Tum)\Projekt Aplikacja Mobilna\.tools\o1-private-login-20261014\KOMUNIKACJA_AGENTOW_PRYWATNE.md
+  ```
+
+- Gotowy prywatny pakiet do przekazania przez właściciela zawiera również
+  accounts.json, APK validation 0.8.10/code21, publiczny CA, konfigurację,
+  manifesty, skrypty oraz instrukcje ANDROID_HANDOFF i odbioru O2:
+
+  ```text
+  C:\Whiskey Alpha Tango\Tegnologie usługowe i mobilne (Tum)\Projekt Aplikacja Mobilna\.tools\o1-private-login-20261014\O1-PRYWATNE-KONTA-I-TESTY-20261014.zip
+  ```
+
+- SHA-256 prywatnego ZIP:
+  `f57675ec0800b305079a0e013cd6e4d7bc190aee4ba14dac169b03f17864c86c`.
+  Pliki są lokalne na O3, ignorowane przez Git i mają uprawnienia jak
+  przygotowany accounts.json. Ten ZIP zawiera hasła; przekazanie wyłącznie
+  prywatne. Właściciel udostępnia plik odbiorcy; ścieżka lokalna nie daje
+  dostępu z komputera O1. Nie dodawać pakietu do publicznego release/PR.
+- O1 po otrzymaniu rozpakowuje na swoim komputerze poza Git, sprawdza
+  hash/verify i wykonuje własny check oraz scenariusz APK/API według O3-031 / PR68.
+  Ostatnie uzgodnione okno relay/zapory kończy się 14.10.2026 o 13:24 CEST;
+  po nim potrzebne jest nowe uzgodnione okno. Pakiet nie potwierdza bieżącej
+  osiągalności, odczytu przez O1 ani zaliczenia jego testów.
+
+- Aktualizacja wejścia sieciowego: odczytano osobno niescalone O3-030/031
+  na codex/docs-o1-diagnostyka / PR68. Bieżący relay według tego przekazania
+  to 192.168.137.1:18444, dopuszczony O1 192.168.137.29,
+  termin 13:24:18 CEST. Prywatna instrukcja używa nowego --peer-host;
+  oryginalny issuer/API/CA/callback pozostają zgodne z handoff.json.
