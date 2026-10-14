@@ -33,6 +33,9 @@ android {
         }
     }
     testBuildType = "validation"
+    // The regular APK has a no-op observer; HTTP receipts exist only in validation.
+    sourceSets.getByName("debug").java.srcDir("src/standard/java")
+    sourceSets.getByName("release").java.srcDir("src/standard/java")
     sourceSets.getByName("androidTest").assets.srcDir("$projectDir/schemas")
     compileOptions {
         sourceCompatibility = JavaVersion.VERSION_17

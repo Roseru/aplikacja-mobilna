@@ -209,6 +209,9 @@ private object HttpsJsonTransport {
             if (payload != null) connection.outputStream.use { it.write(payload) }
             val status = connection.responseCode
             require(status in 200..599 && status !in 300..399)
+            if (ApiReadObservation.ENABLED && method == "GET" &&
+                url.path in setOf("/api/v1/me", "/api/v1/me/motivation")) ApiReadObservation.record(method, url.path, status,
+                connection.getHeaderField("Cache-Control"), connection.getHeaderField("X-Request-ID"))
             // A proxy may return HTML for overload. Honour its delay without reading/echoing the body.
             if (status == 429 || status == 503) return@withContext BootstrapHttpResult(status, ByteArray(0), connection.getHeaderField("Retry-After"))
             if ((status == 200 || privateErrors) && requireNoStore) require(connection.getHeaderField("Cache-Control")
