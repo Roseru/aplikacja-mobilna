@@ -37,6 +37,12 @@ kont `(issuer, sub)`. Przy DHCP utrzymuj ten adres przez rezerwację. `localhost
 w emulatorze oznacza emulator, nie komputer. Nie zastępuj issuer adresem `10.0.2.2` tylko po
 stronie Androida — musi być identyczny w discovery, JWT, API i aplikacji.
 
+Gdy istniejący issuer ma nieprzypisany już adres LAN, własny testowy AVD może
+skorzystać z [ograniczonego transportu ADB](ANDROID_TRANSPORT.md). Zachowuje
+issuer i TLS oraz sprawdzono go z Android VM; nie zastępuje odbioru APK/telefonu.
+Na oddzielnym komputerze O1 potrzebne jest także [przenośne przekazanie LAN/VPN](ANDROID_HANDOFF.md).
+Lokalne ścieżki, serial i lease emulatora O3 nie są wspólnym dostępem.
+
 Inny niezależny zestaw wymaga **innego stanu i innej nazwy projektu**:
 
 ```text
