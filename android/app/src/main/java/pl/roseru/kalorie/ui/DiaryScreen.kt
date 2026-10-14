@@ -184,7 +184,7 @@ private data class EditingItem(val meal: MealWithItems, val item: MealItemEntity
                 modifier = Modifier.testTag("edit-amount"), isError = amount == null,
                 keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal, imeAction = ImeAction.Done), keyboardActions = KeyboardActions(onDone = {
                     // Keep focus in this dialog on a non-editable control. Done never saves the entry.
-                    if (amount != null && !busy) saveFocus.requestFocus() else focus.clearFocus(force = true)
+                    if (amount == null || busy || !saveFocus.requestFocus()) focus.clearFocus(force = true)
                     keyboard?.hide()
                 }))
             Text(amount?.let { "${item.withAmount(ContractDecimal.canonical(it)).consumed().energyText()} kcal" } ?: "Podaj dodatnią ilość, najwyżej 10 000 ${item.unit}.")
