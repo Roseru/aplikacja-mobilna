@@ -1,5 +1,13 @@
 # Transport Android → istniejące API — O3
 
+Aktualizacja14.10.2026: lokalny AVD O3 nie jest urządzeniem na komputerze O1.
+Stary init.gradle ma absolutną ścieżkę O3, a lease wiąże jego konkretny boot.
+Do przekazania na drugi komputer służy [przenośny pakiet i połączenie LAN/VPN](ANDROID_HANDOFF.md).
+`android_handoff.py` eksportuje wyłącznie oznakowane APK/publicCA/public config
+i skrypty; pomija prywatny stan, stare ścieżki i lease. O1 generuje overlay
+oraz lease lokalnie. Połączenie O1/O3 wymaga rzeczywiście osiągalnych adresów
+obu komputerów; wynik lokalnego AVD poniżej nie oznacza takiego dostępu.
+
 Wynik 13.10.2026, 23:38 CEST: **READY dla transportu testowego emulatora**.
 To odpowiedź O3 na część sieciową O2-033. Fizyczny telefon nie jest podłączony;
 nie potwierdzamy LAN/VPS ani odbioru logowania z APK. O1 może rozpocząć

@@ -1557,3 +1557,46 @@ contracts/quality/android-build/keycloak-pkce/local-integration (1714unit,
 61infra,28KC i realne HTTPS/PKCE/backup); PG/device w tym odczycie jeszcze
 w toku. Ten dopisek nie zmienia kodu/APK, ale finalny head oraz późniejszy
 push main wymagają własnych ośmiu kontroli; wynik będzie rozliczony w PR.
+
+### O3-026 — przenośne przekazanie na drugi komputer O1
+
+- Data / autor:14.10.2026, agent3/O3. Odbiorcy:O1/O2/właściciel.
+  Status DO ODCZYTU / IN_PROGRESS; sieć między stanowiskami WAITING_EXTERNAL.
+  Bezpośrednie zlecenie właściciela: zadanie1, rzeczywiste udostępnienie wejścia O1.
+  Odczytano main76fcdbf i O1-028/PR64/head2573521, w tym brak lokalnego
+  handoff/AVD5560 na stanowisku O1. Instancje są na odrębnych komputerach.
+- Poprzednia lokalna ścieżka/serial nie wystarczała do przekazania. Nowy
+  [pakiet i instrukcja](../infra/integration/ANDROID_HANDOFF.md) eksportują
+  tylko validation0.8.10/code21/sourceb2634eb/publicCA/public config/skrypty/hash.
+  Bez credentiali, baz, prywatnych kluczy, danych użytkownika lub lease O3.
+  Overlay generuje się pod lokalną ścieżką O1, a lease na jego własnym AVD.
+- Dostarczono ograniczony relay przez istniejący LAN/VPN: O3 binding na jednym
+  dokładnym adresie i jeden dopuszczony peer O1, O1 binding tylko loopback.
+  Oryginalny TLS/hostname/issuer pozostają; brak nowego backendu/CA/epoki lub
+  udostępnienia ADB. Preflight sprawdza discovery/readiness i dokładny issuer;
+  relay nie kończy TLS ani nie zapisuje payload. Czas życia1h, ograniczenia
+  liczby połączeń, bufora i idle; brak automatycznych zmian zapory/routera.
+- Własne testy:18 nowych +61 dotychczasowych infra =79PASS, w tym realny TLS
+  przez dwa lokalne relay, odmowa obcegoCA/peer, zachowanie istniejących
+  artefaktów, wykrywanie podmienionych bajtów i relokacja bez prywatnego stanu.
+  To testy własne O3, nie próba z drugiego komputera. Świeża sonda Android VM
+  na własnym5560: TLS/discovery/readiness200/exactissuer PASS, browser/APK
+  NOT_TESTED. API/Keycloak na istniejącej instalacji zachowano.
+- Blokada połączenia stanowisk: właściciel/O1 muszą podać osiągalny LAN/VPN
+  oraz adres O1; O3 ma obecnie Ethernet172.18.4.76. Nie otwarto portu na
+  wszystkich interfejsach ani do internetu. Sam ZIP nie jest READY sieci.
+  Po uzgodnieniu: uruchomienie na dokładnych adresach, preflight z komputera
+  O1 i jego własny APK/baseline/PKCE/bootstrap/me/motivation/B→A/late response.
+  Konta przekazuje się prywatnym kanałem, nie w Git/ZIP.
+- Własna gałąź codex/devops-handoff-zdalny z main76fcdbf. Artefakt/link/hash,
+  finalny head CI PR oraz późniejszy odbiór main rozliczane osobno.
+  Cudzych PR61/64, kodu Androida, Gemini i zamkniętych capabilities nie zmieniano.
+
+Pakiet O3-026 zbudowany i rozpakowany do nowej lokalizacji: integralność PASS,
+lokalny overlay PASS, rzeczywisty aapt2 validation/code21/0.8.10 zgodny.
+ZIP `O1-APK-API-20261014.zip`, SHA-256
+`89c3709635c4e89a27da2a809a14ef13a3c755baf359ac24f5e83729ec51ee6b`.
+Publikacja planowana jako oddzielny oznakowany artefakt testowy
+`integration-handoff-20261014`; nie jest wydaniem produktu lub READY sieci.
+Ruff lint/format, E0 (10schemas/95valid/35invalid/18scenarios/627links)
+i diff-check PASS. Żaden test nie wymagał credentiali lub danych O1.
