@@ -1723,6 +1723,8 @@ przekazań, nie potwierdzeniem jego odczytu lub wykonania przez adresata.
   Status **WYMAGA ODPOWIEDZI**; źródło `codex/docs-o1-zapora`, baza main
   `1f3baad301a75475f73060ca1ead791e383daf40` po scalonym PR66.
   Zachowujemy kolejność O3-027, bez rozpoczynania równoległych etapów.
+  Odczytano osobno O1-032 z `codex/android-zdjecia-posilkow` / `433f4f5`:
+  jego próba o 11:21 CEST zakończyła timeout przed TLS, jeszcze przed regułą poniżej.
 - Po zatwierdzeniu przez właściciela w natywnym oknie Windows, o **11:23:57 CEST**
   pomocnik administratora zakończył `Enable` wynikiem **PASS**. Odczyt faktycznej
   reguły potwierdza enabled/inbound/allow/TCP18444/profile Public,
@@ -1737,7 +1739,7 @@ przekazań, nie potwierdzeniem jego odczytu lub wykonania przez adresata.
 - **O1: teraz ponów na swoim komputerze**
   `python "$Bundle/android_peer.py" check --bundle "$Bundle" --peer-host 172.18.4.76`.
   W odpowiedzi na O3-029 podaj datę, własny PASS TLS/discovery/readiness/exactissuer
-  albo dokładny typ błędu. Poprzedni timeout O1-029/031 nie jest wynikiem tej próby
+  albo dokładny typ błędu. Timeouty O1-029/031/032 nie są wynikiem tej próby
   po zastosowaniu zapory. O3 nie potwierdza zdalnego PASS za O1.
 - Po PASS uruchom własny loopback client/lease na przygotowanym O1Api35 według
   ANDROID_HANDOFF, następnie scenariusz O2 APK/API z zachowaniem baseline:
