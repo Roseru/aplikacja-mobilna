@@ -19,7 +19,7 @@ Każda osoba aktualizuje własny wiersz. Daty i dokładne źródła są w jej wp
 |---|---|---|---|
 | O1 — Android, Kotlin, Room | 0.8.10/code21/Room8: odczyt Nemesis;155 JVM/168full i72final affected PASS osobno;22tabele/5posiłków zachowane | Własny PR/CI; trwałe operacje Nemesis, realny API/APK, E4/recovery i klientE9 | O1-026, [raport](../android/RAPORT_0_8_10.md), codex/android-nemesis |
 | O2 — Python, PostgreSQL, API | E9-O2/PR54 i zdjęcia/PR59 scalone; 35 zbadanych, 30 propozycji 8/8/10/4; własne CI PR/main odebrane | O1: klient i realny APK/API; O3: origin oraz Gemini dev; człowiek: referencje/zgody; O2: późniejsze testy E7-R/E9-R i naprawy | O2-033, [PR59](https://github.com/Roseru/aplikacja-mobilna/pull/59), [raport zdjęć](e7/RAPORT_PRZYGOTOWANIA_ZDJEC.md) |
-| O3 — DevOps, CI/CD, serwer | Konta i transport odebrane; O1-040 realny APK A/B/A PARTIAL z zachowanymi danymi. PR70 scalony po ośmiu success, main sprawdzany osobno; okno API dla dokładnego peer do 14.10.2026 17:25 CEST | O1: neutralne nagłówki i realna spóźniona odpowiedź; O2: uzgodnić oracle opóźnienia; O3: odbiór publikacji, potem Gemini dev bez billing | O3-034/035, [PR71](https://github.com/Roseru/aplikacja-mobilna/pull/71), [odbiór O2](integracja/ODBIOR_APK_API_O2.md) |
+| O3 — DevOps, CI/CD, serwer | Dostęp/konta A1 domknięte, PR70/main osiem success; O1-040 APK A/B/A PARTIAL. Skanowanie sekretów/push protection/Dependabot security włączone; konfiguracja version updates przygotowana w PR72; okno API do 14.10.2026 17:25 CEST | O1: brakujące obserwacje APK, następnie utworzyć darmowy projekt/klucz Gemini i przekazać prywatnie; O2: oracle opóźnienia; O3: publikacja/odbiór bota, serwer Gemini po wejściach A1 | O3-035/036, [PR72](https://github.com/Roseru/aplikacja-mobilna/pull/72), [raport O3](BEZPIECZENSTWO_GITHUB.md) |
 
 ## Wpisy
 
@@ -2057,9 +2057,10 @@ przekazań, nie potwierdzeniem jego odczytu lub wykonania przez adresata.
 ### O3-036 — zabezpieczenia repozytorium i prywatne wejście Gemini od A1
 
 - Data/autor: 14.10.2026, agent 3/O3. Do O1/O2/właściciela.
-  Źródło: `codex/devops-zabezpieczenia-zaleznosci`, własny wydzielony PR;
+  Źródło: `codex/devops-zabezpieczenia-zaleznosci`, [PR72](https://github.com/Roseru/aplikacja-mobilna/pull/72),
+  pierwszy head `4e1e9cddc1f71878a6ec59b3e487519ada95b172`;
   zależny organizacyjnie od O3-035/PR71, bez przejmowania gałęzi O1/O2.
-- Rzeczywisty audyt i zmiana16:22 CEST: secret scanning i push protection
+- Rzeczywisty audyt i zmiana 16:22 CEST: secret scanning i push protection
   **enabled**, dependency alerts/graph **enabled**, security updates
   **enabled, paused=false**; ponowne GET potwierdziły stan.
   Ochrona main jest identyczna przed/po: strict ci-required, enforce admins,
@@ -2083,3 +2084,8 @@ przekazań, nie potwierdzeniem jego odczytu lub wykonania przez adresata.
   wspólne liczniki E7/E9, storage i AI worker oraz wykonuje własną weryfikację.
   Utworzenie projektu przez A1 nie jest tym odbiorem. Dotychczasowe konta/API,
   epoka i bramki pozostają zachowane; rzeczywistych wywołań Gemini nie wykonano.
+- Pierwszy head PR72: YAML parse/katalogi i E0 PASS (10 schematów,
+  95 valid / 35 invalid, 18 scenariuszy, 635 linków), diff-check.
+  PR początkowo porównuje się z własnym PR71; CI do main nie wykonano jeszcze.
+  Najpierw odbiór main PR71, potem zwykły merge main/retarget PR72, własne osiem
+  kontroli, merge i osobny main. Nie scalać PR72 do gałęzi oczekującej PR71.
