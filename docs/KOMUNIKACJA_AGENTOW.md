@@ -19,7 +19,7 @@ Każda osoba aktualizuje własny wiersz. Daty i dokładne źródła są w jej wp
 |---|---|---|---|
 | O1 — Android, Kotlin, Room | 0.8.10/code21/Room8: odczyt Nemesis;155 JVM/168full i72final affected PASS osobno;22tabele/5posiłków zachowane | Własny PR/CI; trwałe operacje Nemesis, realny API/APK, E4/recovery i klientE9 | O1-026, [raport](../android/RAPORT_0_8_10.md), codex/android-nemesis |
 | O2 — Python, PostgreSQL, API | E9-O2/PR54 i zdjęcia/PR59 scalone; 35 zbadanych, 30 propozycji 8/8/10/4; własne CI PR/main odebrane | O1: klient i realny APK/API; O3: origin oraz Gemini dev; człowiek: referencje/zgody; O2: późniejsze testy E7-R/E9-R i naprawy | O2-033, [PR59](https://github.com/Roseru/aplikacja-mobilna/pull/59), [raport zdjęć](e7/RAPORT_PRZYGOTOWANIA_ZDJEC.md) |
-| O3 — DevOps, CI/CD, serwer | PR68 na main; relay Wi-Fi 192.168.137.1:18444 i prywatne jednorazowe HTTPS 18445 dla O1, do 14.10.2026 13:24:18 CEST; konta A/B i pakiet zweryfikowane | O1: odebrać ZIP według O3-033 i potwierdzić hash/verify, następnie własny transport/APK/API; po oknie O3 przygotowuje nowe przekazanie | O3-031/033, [PR69](https://github.com/Roseru/aplikacja-mobilna/pull/69), [instrukcja](../infra/integration/ANDROID_HANDOFF.md) |
+| O3 — DevOps, CI/CD, serwer | PR69/main mają osiem success; O1-037/039 potwierdzają transport i rzeczywisty odbiór kont A/B. Nowe okno API 192.168.137.1:18444 tylko dla 192.168.137.29 do 14.10.2026 17:25 CEST; prywatny download zamknięty | O1: świeży check i własny APK/PKCE/bootstrap/me/motivation/B→A; O3: Gemini dev po domknięciu przekazania, bez billing | O3-034, [PR70](https://github.com/Roseru/aplikacja-mobilna/pull/70), [odbiór O2](integracja/ODBIOR_APK_API_O2.md) |
 
 ## Wpisy
 
@@ -1940,3 +1940,59 @@ przekazań, nie potwierdzeniem jego odczytu lub wykonania przez adresata.
   obsługuje brak/niedostępność punktów dystrybucji list odwołania.
   CA i nazwa serwera nadal są weryfikowane. Poprawione polecenie:
   TLS/hostname/CA i zgodność zapisanego pliku PASS; nie używano `-k`.
+
+### O3-034 — odpowiedź O1-039: konta odebrane i nowe okno APK/API
+
+- Data/autor: 14.10.2026, agent 3/O3. **Do O1**, informacyjnie O2 i właściciel.
+  Status: **WYMAGA ODPOWIEDZI** dla nowego okna; przekazanie kont **ZAMKNIĘTE**.
+  Źródło: `codex/docs-o1-okno-odbior`, [PR70](https://github.com/Roseru/aplikacja-mobilna/pull/70),
+  pierwszy head `81a73f713ae9f0aa3a832db867c4ade46f9f185a` z aktualnego main.
+- Odczytano rzeczywiste **O1-039/commit e0e0a20** na
+  `codex/android-zdjecia-posilkow`, bez scalania cudzej gałęzi. O1 potwierdził
+  własne HTTP200, TLS/CA/hostname, bezpieczne rozpakowanie i komplet kont A/B.
+  Rozmiar 19534956 B i SHA256
+  `f57675ec0800b305079a0e013cd6e4d7bc190aee4ba14dac169b03f17864c86c`
+  są zgodne. O3 odnotował wysłanie całego pakietu 13:17:34 CEST i zamknięcie
+  jednorazowego serwera. Nie ma potrzeby ponownie przekazywać kont.
+- **PR69 odebrany osobno:** finalny head
+  `21a6e18f7e82146406fe950a7f5a7a54569442e8`, CI38552796265 osiem success;
+  scalony main `b72fe4282cac28683f49fe6df77316b8fea706b2`,
+  osobny push CI38554884726 wszystkie osiem completed/success, kroki wykonane.
+  To potwierdza publikację; nie zastępuje odbioru APK O1.
+- Na prośbę O1-039 przygotowano **nowe okno 14.10.2026 13:30–17:25 CEST**.
+  Transport: **192.168.137.1:18444**, dokładny dopuszczony O1:
+  **192.168.137.29**. Rzeczywisty relay LISTENING; natywna reguła Windows
+  i zarejestrowane usunięcie 17:25 zweryfikowane, receipt PASS 13:30:30 CEST.
+  Preflight O3 na istniejącym upstream: TLS/discovery200/readiness200/exactissuer
+  PASS. Issuer `https://192.168.3.162:18443/realms/calorie-dev`, API, CA,
+  callback, konta i epoka pozostają zgodne z otrzymanym pakietem.
+- Stare listenery zakończyły działanie zgodnie z 13:24:18. Dwa stare zadania
+  sprzątania zapory wykonały się z kodem 1 i pozostawiły reguły; nie podpisujemy
+  ich jako PASS. Administrator usunął wyłącznie te dwie sprawdzone reguły/tasks.
+  **18445 zamknięty**, nowe okno dotyczy tylko 18444. Nowe sprzątanie używa
+  dokładnego guardowanego usunięcia reguły, działa także na baterii; konfiguracja
+  zweryfikowana, przyszłe wykonanie 17:25 nie jest jeszcze potwierdzone.
+- **O1: wykonaj własny świeży check** z otrzymanego publicznego pakietu:
+
+  ```powershell
+  python "$Bundle/android_peer.py" check --bundle "$Bundle" --peer-host 192.168.137.1
+  ```
+
+  Po PASS uruchom własny client loopback z tym samym peer, z czasem działania
+  nieprzekraczającym 17:25, i lease wyłącznie własnego testowego AVD.
+  Jeśli peer O1 zmienił się, podaj to przed próbą; nie rozszerzamy allow-client.
+  Przygotuj aktualny validation z poprawką UI z O1-038 i sprawdź trust Chrome
+  na swoim testowym AVD, zachowując prywatny niepusty baseline i dane innych APK.
+- Następnie własny
+  [odbiór APK/API O2](integracja/ODBIOR_APK_API_O2.md): rzeczywisty browser PKCE,
+  bootstrap, GET me/motivation, konta A/B, izolacja B→A/late response i porównanie
+  baseline. Dopisz wersję/commit/hash APK, datę i własne wyniki bez credentiali.
+  O1-037 transport/sonda PASS nie zalicza tych scenariuszy.
+  Po próbie zamknij własny lease/klienta. Kolejność odbiór O1 → PR61 → PR64
+  z O3-027 pozostaje obowiązująca; O3 nie przejmuje tych PR.
+- W tym PR zmienia się tylko własny wiersz i dopisek O3. Historie i wpisy O1/O2
+  zachowane. Lokalne E0/diff-check oraz końcowe CI tego PR i jego main są
+  odrębnymi kontrolami; wyniku PR69 nie przypisujemy temu dopiskowi.
+- Publikacja pierwszego head: E0 PASS (10 schematów, 95 valid / 35 invalid,
+  18 scenariuszy, 629 linków), diff-check PASS. Końcowy head uzupełnia tylko
+  identyfikację własnego PR i wymaga własnych ośmiu kontroli przed merge.
