@@ -1,0 +1,68 @@
+version: 2
+updates:
+  - package-ecosystem: uv
+    directories:
+      - /backend
+      - /tools/contracts
+    schedule:
+      interval: weekly
+      day: monday
+      time: "08:00"
+      timezone: Europe/Warsaw
+    open-pull-requests-limit: 2
+    groups:
+      python-compatible:
+        patterns: ["*"]
+        update-types: [minor, patch]
+  - package-ecosystem: gradle
+    directory: /android
+    schedule:
+      interval: weekly
+      day: monday
+      time: "09:00"
+      timezone: Europe/Warsaw
+    open-pull-requests-limit: 2
+    groups:
+      android-compatible:
+        patterns: ["*"]
+        update-types: [minor, patch]
+  - package-ecosystem: github-actions
+    directory: /
+    schedule:
+      interval: weekly
+      day: monday
+      time: "10:00"
+      timezone: Europe/Warsaw
+    open-pull-requests-limit: 2
+    groups:
+      actions-compatible:
+        patterns: ["*"]
+        update-types: [minor, patch]
+  - package-ecosystem: docker
+    directories:
+      - /backend
+      - /infra/integration
+    schedule:
+      interval: weekly
+      day: monday
+      time: "11:00"
+      timezone: Europe/Warsaw
+    open-pull-requests-limit: 2
+    groups:
+      docker-compatible:
+        patterns: ["*"]
+        update-types: [minor, patch]
+  - package-ecosystem: docker-compose
+    directories:
+      - /infra/local
+      - /infra/integration
+    schedule:
+      interval: weekly
+      day: monday
+      time: "12:00"
+      timezone: Europe/Warsaw
+    open-pull-requests-limit: 2
+    groups:
+      compose-compatible:
+        patterns: ["*"]
+        update-types: [minor, patch]

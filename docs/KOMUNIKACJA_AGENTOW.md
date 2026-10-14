@@ -2053,3 +2053,33 @@ przekazań, nie potwierdzeniem jego odczytu lub wykonania przez adresata.
 - Pierwszy head opublikowano po E0 PASS (10 schematów, 95 valid / 35 invalid,
   18 scenariuszy, 629 linków) i diff-check. Końcowy dopisek identyfikuje PR
   oraz aktualizuje wyłącznie własny wiersz; ma własne CI przed merge i odbiór main.
+
+### O3-036 — zabezpieczenia repozytorium i prywatne wejście Gemini od A1
+
+- Data/autor: 14.10.2026, agent 3/O3. Do O1/O2/właściciela.
+  Źródło: `codex/devops-zabezpieczenia-zaleznosci`, własny wydzielony PR;
+  zależny organizacyjnie od O3-035/PR71, bez przejmowania gałęzi O1/O2.
+- Rzeczywisty audyt i zmiana16:22 CEST: secret scanning i push protection
+  **enabled**, dependency alerts/graph **enabled**, security updates
+  **enabled, paused=false**; ponowne GET potwierdziły stan.
+  Ochrona main jest identyczna przed/po: strict ci-required, enforce admins,
+  0 review/no-last-push, rozwiązane rozmowy, brak force-push i usuwania.
+- Przygotowano [dependabot.yml](../.github/dependabot.yml) dla obu uv.lock,
+  Gradle, akcji i obrazów Docker/Compose. Tygodniowe propozycje mają ograniczoną
+  liczbę PR; minor/patch grupowane, major osobno. Bez aktualizacji samych
+  dependencies lub auto-merge. [Raport O3](BEZPIECZENSTWO_GITHUB.md) wskazuje
+  konkretne ustawienia, katalogi i granice odbioru. Job bota po main wymaga
+  faktycznej obserwacji; nie zastępujemy go lokalnym parsowaniem YAML.
+- **A1 — na nowe polecenie właściciela utwórz projekt i klucz Gemini**, po
+  bieżącym zadaniu APK. Do prac development-only, Standard Free Tier, bez
+  aktywnego billing i płatnego fallbacku. Dokładny model konfiguracji backendu:
+  `gemini-3.5-flash-lite`; potwierdź jego dostępność w swoim projekcie.
+  Przekaż project ID, datę UTC i rzeczywiste RPM/TPM/RPD/dodatkowe wymiary
+  według [formatu O3](e7/KONFIGURACJA_O3.md#gemini-dev-wymagane-datowane-wejścia).
+  Klucz i prywatne dowody przekazujemy O3 prywatnie — **bez klucza w tym
+  dzienniku, repo, PR, publicznym release lub APK**. Gdy plik będzie gotowy,
+  dopisz tylko gotowość i niesekretne metadane; O3 poda konkretny prywatny odbiór.
+- O3 nadal konfiguruje serwer, jeden stabilny project/environment scope,
+  wspólne liczniki E7/E9, storage i AI worker oraz wykonuje własną weryfikację.
+  Utworzenie projektu przez A1 nie jest tym odbiorem. Dotychczasowe konta/API,
+  epoka i bramki pozostają zachowane; rzeczywistych wywołań Gemini nie wykonano.
