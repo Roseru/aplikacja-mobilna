@@ -1809,3 +1809,10 @@ przekazań, nie potwierdzeniem jego odczytu lub wykonania przez adresata.
   to 192.168.137.1:18444, dopuszczony O1 192.168.137.29,
   termin 13:24:18 CEST. Prywatna instrukcja używa nowego --peer-host;
   oryginalny issuer/API/CA/callback pozostają zgodne z handoff.json.
+- Publikacja wskazania: codex/docs-o1-konta-prywatne,
+  [PR69](https://github.com/Roseru/aplikacja-mobilna/pull/69), źródło 92a5555.
+  Prywatny ZIP rozpakowano do nowego katalogu: zgodność accounts.json,
+  prywatnej instrukcji, APK i CA ze źródłami PASS; własny verify pakietu
+  integrity PASS. E0 (10 schematów, 95 valid / 35 invalid, 18 scenariuszy,
+  628 linków) i diff-check PASS. Zdalne CI jest osobnym wynikiem;
+  test APK/API oraz otrzymanie prywatnego pliku nadal potwierdza O1.
