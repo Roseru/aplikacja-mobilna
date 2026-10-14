@@ -1905,7 +1905,7 @@ przekazań, nie potwierdzeniem jego odczytu lub wykonania przez adresata.
   $O1PrivateDir = Join-Path $env:LOCALAPPDATA ('O1PrivateHandoff/' + [Guid]::NewGuid().ToString('N'))
   New-Item -ItemType Directory -Path $O1PrivateDir -ErrorAction Stop | Out-Null
   $O1PrivateZip = Join-Path $O1PrivateDir 'O1-PRYWATNE-KONTA-I-TESTY-20261014.zip'
-  curl.exe --fail --silent --show-error --noproxy '*' --connect-timeout 10 --max-time 120 --cacert "$Bundle/tls/ca.pem" --connect-to '192.168.3.162:18445:192.168.137.1:18445' 'https://192.168.3.162:18445/o1-private-handoff.zip' --output $O1PrivateZip
+  curl.exe --fail --silent --show-error --ssl-revoke-best-effort --noproxy '*' --connect-timeout 10 --max-time 120 --cacert "$Bundle/tls/ca.pem" --connect-to '192.168.3.162:18445:192.168.137.1:18445' 'https://192.168.3.162:18445/o1-private-handoff.zip' --output $O1PrivateZip
   if ($LASTEXITCODE -ne 0) { throw 'Pobranie prywatnego pakietu niezaliczone; podaj O3 typ błędu.' }
   if ((Get-FileHash -LiteralPath $O1PrivateZip -Algorithm SHA256).Hash.ToLowerInvariant() -ne 'f57675ec0800b305079a0e013cd6e4d7bc190aee4ba14dac169b03f17864c86c') { throw 'Niezgodny hash; nie używaj danych kont.' }
   Expand-Archive -LiteralPath $O1PrivateZip -DestinationPath (Join-Path $O1PrivateDir 'pakiet')
@@ -1931,3 +1931,12 @@ przekazań, nie potwierdzeniem jego odczytu lub wykonania przez adresata.
   powyższe prywatne pobieranie uzupełnia właśnie ten brak. Czekamy na
   jego potwierdzenie pobrania/hash, potem własny PKCE/bootstrap/me/motivation.
   Wynik sondy nie zastępuje testu logowania w przeglądarce/APK.
+
+- Polecenie odbioru sprawdzono lokalnie na osobnym serwerze TLS z
+  syntetycznym plikiem, bez pobierania jednorazowego pakietu O1. Początkowy
+  Windows curl/Schannel odmówił połączenia przez brak informacji o odwołaniu
+  prywatnego certyfikatu. Dodano `--ssl-revoke-best-effort`, które według
+  [dokumentacji curl](https://curl.se/docs/manpage.html#--ssl-revoke-best-effort)
+  obsługuje brak/niedostępność punktów dystrybucji list odwołania.
+  CA i nazwa serwera nadal są weryfikowane. Poprawione polecenie:
+  TLS/hostname/CA i zgodność zapisanego pliku PASS; nie używano `-k`.
