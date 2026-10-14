@@ -19,7 +19,7 @@ Każda osoba aktualizuje własny wiersz. Daty i dokładne źródła są w jej wp
 |---|---|---|---|
 | O1 — Android, Kotlin, Room | 0.8.10/code21/Room8: odczyt Nemesis;155 JVM/168full i72final affected PASS osobno;22tabele/5posiłków zachowane | Własny PR/CI; trwałe operacje Nemesis, realny API/APK, E4/recovery i klientE9 | O1-026, [raport](../android/RAPORT_0_8_10.md), codex/android-nemesis |
 | O2 — Python, PostgreSQL, API | E9-O2/PR54 i zdjęcia/PR59 scalone; 35 zbadanych, 30 propozycji 8/8/10/4; własne CI PR/main odebrane | O1: klient i realny APK/API; O3: origin oraz Gemini dev; człowiek: referencje/zgody; O2: późniejsze testy E7-R/E9-R i naprawy | O2-033, [PR59](https://github.com/Roseru/aplikacja-mobilna/pull/59), [raport zdjęć](e7/RAPORT_PRZYGOTOWANIA_ZDJEC.md) |
-| O3 — DevOps, CI/CD, serwer | E9 lokalny0024 zachowany; transport własnego AVD READY, rzeczywiste Android VM TLS/discovery/readiness200, odmowa obcegoCA i reconnect PASS; skonfigurowane validation0.8.10 | O1: własny Chrome/PKCE/bootstrap/odczyty/baseline; fizyczny telefon i Gemini WAITING_EXTERNAL u O3, wymagane środowisko/projekt/key/limity; AI/Nemesis closed | O3-025, [transport i dowody](../infra/integration/ANDROID_TRANSPORT.md), [rollout E9](e9/ROLLOUT_LOKALNY_O3.md) |
+| O3 — DevOps, CI/CD, serwer | E9 lokalny0024 zachowany; własny AVD TLS200; przenośny ZIP APK/publicCA/config/skrypty opublikowany i pobrany z GitHuba ze zgodnym SHA256 | O1/O3: osiągalny LAN/VPN i dokładny adres O1 do uruchomienia relay; własny APK/PKCE/baseline O1; fizyczny telefon/Gemini nadal WAITING_EXTERNAL | O3-026/[PR65](https://github.com/Roseru/aplikacja-mobilna/pull/65), [pakiet](https://github.com/Roseru/aplikacja-mobilna/releases/tag/integration-handoff-20261014), [instrukcja](../infra/integration/ANDROID_HANDOFF.md) |
 
 ## Wpisy
 
@@ -1596,7 +1596,19 @@ Pakiet O3-026 zbudowany i rozpakowany do nowej lokalizacji: integralność PASS,
 lokalny overlay PASS, rzeczywisty aapt2 validation/code21/0.8.10 zgodny.
 ZIP `O1-APK-API-20261014.zip`, SHA-256
 `89c3709635c4e89a27da2a809a14ef13a3c755baf359ac24f5e83729ec51ee6b`.
-Publikacja planowana jako oddzielny oznakowany artefakt testowy
-`integration-handoff-20261014`; nie jest wydaniem produktu lub READY sieci.
+Pakiet opublikowany jako oddzielny oznakowany artefakt testowy
+[integration-handoff-20261014](https://github.com/Roseru/aplikacja-mobilna/releases/tag/integration-handoff-20261014);
+nie jest wydaniem produktu lub READY sieci.
 Ruff lint/format, E0 (10schemas/95valid/35invalid/18scenarios/627links)
 i diff-check PASS. Żaden test nie wymagał credentiali lub danych O1.
+
+Publikacja O3-026: [PR65](https://github.com/Roseru/aplikacja-mobilna/pull/65),
+head źródeł narzędzi49441e2c35737b893ac073c5407897e284344f88.
+[Bezpośrednie pobranie ZIP](https://github.com/Roseru/aplikacja-mobilna/releases/download/integration-handoff-20261014/O1-APK-API-20261014.zip):
+19 497 599B, publiczny download bez auth oraz ponowny SHA256 powyżej PASS.
+Digest assetu GitHuba jest identyczny. Brak lokalnych ścieżek lub credentials
+w paczce; istniejący pakiet/lease O3-025 zachowany. O1 może pobrać pliki bez
+dostępu do dysku O3; emulator i aktywna sieć nie są częścią pobieranego ZIP.
+PR65/CI38510971344 pierwszego head uruchomiony; finalny dopisek ma oddzielny CI.
+Obecny status drugiego stanowiska pozostaje WAITING_EXTERNAL do rzeczywistego
+adresu LAN/VPN O1 i jego własnego check. Nie potwierdzamy odbioru za O1.
