@@ -19,7 +19,7 @@ Każda osoba aktualizuje własny wiersz. Daty i dokładne źródła są w jej wp
 |---|---|---|---|
 | O1 — Android, Kotlin, Room | 0.8.10/code21/Room8: odczyt Nemesis;155 JVM/168full i72final affected PASS osobno;22tabele/5posiłków zachowane | Własny PR/CI; trwałe operacje Nemesis, realny API/APK, E4/recovery i klientE9 | O1-026, [raport](../android/RAPORT_0_8_10.md), codex/android-nemesis |
 | O2 — Python, PostgreSQL, API | E9-O2/PR54 i zdjęcia/PR59 scalone; 35 zbadanych, 30 propozycji 8/8/10/4; własne CI PR/main odebrane | O1: klient i realny APK/API; O3: origin oraz Gemini dev; człowiek: referencje/zgody; O2: późniejsze testy E7-R/E9-R i naprawy | O2-033, [PR59](https://github.com/Roseru/aplikacja-mobilna/pull/59), [raport zdjęć](e7/RAPORT_PRZYGOTOWANIA_ZDJEC.md) |
-| O3 — DevOps, CI/CD, serwer | E9 lokalny0024 zachowany; transport własnego AVD READY, rzeczywiste Android VM TLS/discovery/readiness200, odmowa obcegoCA i reconnect PASS; skonfigurowane validation0.8.10 | O1: własny Chrome/PKCE/bootstrap/odczyty/baseline; fizyczny telefon i Gemini WAITING_EXTERNAL u O3, wymagane środowisko/projekt/key/limity; AI/Nemesis closed | O3-025, [transport i dowody](../infra/integration/ANDROID_TRANSPORT.md), [rollout E9](e9/ROLLOUT_LOKALNY_O3.md) |
+| O3 — DevOps, CI/CD, serwer | E9 lokalny0024 zachowany; własny AVD TLS200; przenośny ZIP APK/publicCA/config/skrypty opublikowany i pobrany z GitHuba ze zgodnym SHA256 | O1/O3: osiągalny LAN/VPN i dokładny adres O1 do uruchomienia relay; własny APK/PKCE/baseline O1; fizyczny telefon/Gemini nadal WAITING_EXTERNAL | O3-026/[PR65](https://github.com/Roseru/aplikacja-mobilna/pull/65), [pakiet](https://github.com/Roseru/aplikacja-mobilna/releases/tag/integration-handoff-20261014), [instrukcja](../infra/integration/ANDROID_HANDOFF.md) |
 
 ## Wpisy
 
@@ -1557,3 +1557,58 @@ contracts/quality/android-build/keycloak-pkce/local-integration (1714unit,
 61infra,28KC i realne HTTPS/PKCE/backup); PG/device w tym odczycie jeszcze
 w toku. Ten dopisek nie zmienia kodu/APK, ale finalny head oraz późniejszy
 push main wymagają własnych ośmiu kontroli; wynik będzie rozliczony w PR.
+
+### O3-026 — przenośne przekazanie na drugi komputer O1
+
+- Data / autor:14.10.2026, agent3/O3. Odbiorcy:O1/O2/właściciel.
+  Status DO ODCZYTU / IN_PROGRESS; sieć między stanowiskami WAITING_EXTERNAL.
+  Bezpośrednie zlecenie właściciela: zadanie1, rzeczywiste udostępnienie wejścia O1.
+  Odczytano main76fcdbf i O1-028/PR64/head2573521, w tym brak lokalnego
+  handoff/AVD5560 na stanowisku O1. Instancje są na odrębnych komputerach.
+- Poprzednia lokalna ścieżka/serial nie wystarczała do przekazania. Nowy
+  [pakiet i instrukcja](../infra/integration/ANDROID_HANDOFF.md) eksportują
+  tylko validation0.8.10/code21/sourceb2634eb/publicCA/public config/skrypty/hash.
+  Bez credentiali, baz, prywatnych kluczy, danych użytkownika lub lease O3.
+  Overlay generuje się pod lokalną ścieżką O1, a lease na jego własnym AVD.
+- Dostarczono ograniczony relay przez istniejący LAN/VPN: O3 binding na jednym
+  dokładnym adresie i jeden dopuszczony peer O1, O1 binding tylko loopback.
+  Oryginalny TLS/hostname/issuer pozostają; brak nowego backendu/CA/epoki lub
+  udostępnienia ADB. Preflight sprawdza discovery/readiness i dokładny issuer;
+  relay nie kończy TLS ani nie zapisuje payload. Czas życia1h, ograniczenia
+  liczby połączeń, bufora i idle; brak automatycznych zmian zapory/routera.
+- Własne testy:18 nowych +61 dotychczasowych infra =79PASS, w tym realny TLS
+  przez dwa lokalne relay, odmowa obcegoCA/peer, zachowanie istniejących
+  artefaktów, wykrywanie podmienionych bajtów i relokacja bez prywatnego stanu.
+  To testy własne O3, nie próba z drugiego komputera. Świeża sonda Android VM
+  na własnym5560: TLS/discovery/readiness200/exactissuer PASS, browser/APK
+  NOT_TESTED. API/Keycloak na istniejącej instalacji zachowano.
+- Blokada połączenia stanowisk: właściciel/O1 muszą podać osiągalny LAN/VPN
+  oraz adres O1; O3 ma obecnie Ethernet172.18.4.76. Nie otwarto portu na
+  wszystkich interfejsach ani do internetu. Sam ZIP nie jest READY sieci.
+  Po uzgodnieniu: uruchomienie na dokładnych adresach, preflight z komputera
+  O1 i jego własny APK/baseline/PKCE/bootstrap/me/motivation/B→A/late response.
+  Konta przekazuje się prywatnym kanałem, nie w Git/ZIP.
+- Własna gałąź codex/devops-handoff-zdalny z main76fcdbf. Artefakt/link/hash,
+  finalny head CI PR oraz późniejszy odbiór main rozliczane osobno.
+  Cudzych PR61/64, kodu Androida, Gemini i zamkniętych capabilities nie zmieniano.
+
+Pakiet O3-026 zbudowany i rozpakowany do nowej lokalizacji: integralność PASS,
+lokalny overlay PASS, rzeczywisty aapt2 validation/code21/0.8.10 zgodny.
+ZIP `O1-APK-API-20261014.zip`, SHA-256
+`89c3709635c4e89a27da2a809a14ef13a3c755baf359ac24f5e83729ec51ee6b`.
+Pakiet opublikowany jako oddzielny oznakowany artefakt testowy
+[integration-handoff-20261014](https://github.com/Roseru/aplikacja-mobilna/releases/tag/integration-handoff-20261014);
+nie jest wydaniem produktu lub READY sieci.
+Ruff lint/format, E0 (10schemas/95valid/35invalid/18scenarios/627links)
+i diff-check PASS. Żaden test nie wymagał credentiali lub danych O1.
+
+Publikacja O3-026: [PR65](https://github.com/Roseru/aplikacja-mobilna/pull/65),
+head źródeł narzędzi49441e2c35737b893ac073c5407897e284344f88.
+[Bezpośrednie pobranie ZIP](https://github.com/Roseru/aplikacja-mobilna/releases/download/integration-handoff-20261014/O1-APK-API-20261014.zip):
+19 497 599B, publiczny download bez auth oraz ponowny SHA256 powyżej PASS.
+Digest assetu GitHuba jest identyczny. Brak lokalnych ścieżek lub credentials
+w paczce; istniejący pakiet/lease O3-025 zachowany. O1 może pobrać pliki bez
+dostępu do dysku O3; emulator i aktywna sieć nie są częścią pobieranego ZIP.
+PR65/CI38510971344 pierwszego head uruchomiony; finalny dopisek ma oddzielny CI.
+Obecny status drugiego stanowiska pozostaje WAITING_EXTERNAL do rzeczywistego
+adresu LAN/VPN O1 i jego własnego check. Nie potwierdzamy odbioru za O1.
