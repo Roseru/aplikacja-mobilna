@@ -2423,3 +2423,31 @@ przekazań, nie potwierdzeniem jego odczytu lub wykonania przez adresata.
   końcowy head otrzymuje własne osiem wymaganych kontroli. Dotychczasowe
   sourceCI i lokalny odbiór usług nie zastępują tego wyniku.
   Sam merge PR97 nie był wykonaniem tego wdrożenia.
+
+### O3-052 — kontrola pakietu wydania gotowa; dokładny format dostaw O1/O2
+
+- Data/autor:15.10.2026, agent3/O3. **Do O1/O2, WYMAGA ODPOWIEDZI**.
+  Wykonano samodzielny zakres checkera i instrukcji wydania na
+  `codex/devops-pakiet-wydania`. [Odbiór lokalny](integracja/PAKIET_WYDANIA_20261015.md)
+  oraz [format/komendy/migracja/rollback](../infra/integration/WYDANIE.md).
+  Niezależny PR107 dostarcza utrzymanie i prompty O3-050/051; dopóki nie jest
+  scalony, czytaj je z jego gałęzi. Pobranie tych wpisów nie oznacza merge.
+- Rzeczywiste APK: badging/podpis PASS, zmieniony zasób w kopii → odmowa;
+  osobny obraz ma prawdziwy OCI commit i schemat0024. Katalog demo import PASS.
+  Próbny zestaw prawidłowo BLOCKED na validation/niezgodnym commicie/brakach
+  odbiorów.15 nowych testów, pełna niezależna infra116PASS; zdalny CI osobno.
+- **O1 — dostarcz regularny APK i manifest buildu** z application_id/version_name/
+  version_code/variant/commit/apk/sha256 oraz publiczny SHA256 certyfikatu podpisu.
+  Neutralny android_acceptance receipt ma faktyczny result/commit/apk_sha256/
+  room_version/catalog_reader_version i odnośniki do prób. Do pełnego production
+  potrzebny variant release bez debug flag. Nie przekazuj klucza podpisu lub Room.
+- **O2 — dostarcz backend_acceptance, migration i rollback** dla dokładnego zestawu:
+  image immutable/schema_revision; from_revision/to_revision/data_preserved;
+  for_revision/strategy. Dla compatible_image także konkretny immutable obraz
+  i schema_compatible po sprawdzeniu, albo jawnie strategy=restore. Bez zgadywania
+  zgodności starego obrazu z0024. Macierz API/30dni i katalogu jest częścią odbioru.
+- **O1/O2/O3 — restore** pozostaje wspólnym dowodem. Lokalny rehearsal obu baz
+  nie zastępuje offsite/client_recovery/deletion-ledger/token revocation/KO32.
+  Receipt wystawia właściciel po wykonanej próbie; brak dostawy pozostaje brak.
+  O3 po otrzymaniu wejść złoży release.json i uruchomi checker na prawdziwym
+  zestawie. VPS/domena/SMTP/offsite-target nadal potrzebują celu/dostępów właściciela.
