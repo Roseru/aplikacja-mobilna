@@ -243,7 +243,7 @@ jobs:
         run: python -m unittest discover -s tools/tests -p 'test_android_ci.py' -v
       - name: Build APK, run JVM tests and lint
         working-directory: android
-        run: ./gradlew --no-daemon --max-workers=2 --stacktrace :app:assembleDebug :app:testDebugUnitTest :app:lintDebug
+        run: bash ../tools/android_build.sh
       - name: Require real JVM and lint results
         run: |
           python tools/android_ci.py check \
@@ -278,6 +278,7 @@ jobs:
             android/app/build/test-results/testDebugUnitTest/
             android/app/build/reports/lint-results-debug.*
             android/app/build/ci/jvm-summary.json
+            android/app/build/ci/gradle-build.log
           if-no-files-found: error
           retention-days: 14
   android-device:
@@ -340,6 +341,7 @@ jobs:
             android/app/build/ci/offline-*.txt
             android/app/build/ci/startup-services.txt
             android/app/build/ci/setup-*.txt
+            android/app/build/ci/gradle-device.log
           if-no-files-found: error
           retention-days: 14
   local-integration:

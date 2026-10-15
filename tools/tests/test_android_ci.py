@@ -48,33 +48,85 @@ class AndroidCiTest(unittest.TestCase):
                 "variantName": "debug",
                 "applicationId": "pl.roseru.kalorie",
                 "elements": [
-                    {"outputFile": "app-debug.apk", "versionCode": 8, "versionName": "0.7.1"}
+                    {
+                        "outputFile": "app-debug.apk",
+                        "versionCode": 8,
+                        "versionName": "0.7.1",
+                    }
                 ],
             }
-            (directory / "output-metadata.json").write_text(json.dumps(metadata), "utf-8")
+            (directory / "output-metadata.json").write_text(
+                json.dumps(metadata), "utf-8"
+            )
             (directory / "app-debug.apk").write_bytes(b"built APK fixture")
             badging = (
                 "package: name='pl.roseru.kalorie' versionCode='8' versionName='0.7.1'\n"
                 "application-debuggable\n"
             )
-            with patch("tools.android_ci.subprocess.check_output", return_value=badging):
+            with patch(
+                "tools.android_ci.subprocess.check_output", return_value=badging
+            ):
                 destination = directory / "delivery"
                 manifest = package_apk(directory, destination, "a" * 40, Path("aapt"))
                 self.assertEqual(manifest["version_code"], 8)
                 self.assertEqual(manifest["commit"], "a" * 40)
-                self.assertEqual((destination / manifest["apk"]).read_bytes(), b"built APK fixture")
-                self.assertIn(manifest["sha256"], (destination / "SHA256SUMS").read_text())
+                self.assertEqual(
+                    (destination / manifest["apk"]).read_bytes(), b"built APK fixture"
+                )
+                self.assertIn(
+                    manifest["sha256"], (destination / "SHA256SUMS").read_text()
+                )
                 metadata["elements"][0]["versionName"] = "0.7.2"
-                (directory / "output-metadata.json").write_text(json.dumps(metadata), "utf-8")
+                (directory / "output-metadata.json").write_text(
+                    json.dumps(metadata), "utf-8"
+                )
                 with self.assertRaises(ValueError):
                     package_apk(directory, destination, "a" * 40, Path("aapt"))
                 with self.assertRaises(ValueError):
                     package_apk(directory, destination, "main", Path("aapt"))
 
 
-@unittest.skipUnless(os.name != "nt" and shutil.which("bash"), "Linux CI shell regression")
+@unittest.skipUnless(
+    os.name != "nt" and shutil.which("bash"), "Linux CI shell regression"
+)
+class AndroidBuildDiagnosticsTest(unittest.TestCase):
+    def test_configuration_failure_keeps_log_and_nonzero_status_without_xml(self):
+        self.run_build_script(23)
+
+    def test_success_keeps_both_output_streams_without_creating_test_evidence(self):
+        self.run_build_script(0)
+
+    def run_build_script(self, status):
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            wrapper = root / "gradlew"
+            wrapper.write_text(
+                "#!/bin/sh\necho fixture-stdout\necho fixture-stderr >&2\n"
+                "echo call >> calls\nexit " + str(status) + "\n"
+            )
+            wrapper.chmod(0o755)
+            script = Path(__file__).resolve().parents[1] / "android_build.sh"
+            result = subprocess.run(
+                ["bash", str(script)],
+                cwd=root,
+                capture_output=True,
+                text=True,
+                timeout=10,
+                check=False,
+            )
+            self.assertEqual(result.returncode, status, result.stderr)
+            log = (root / "app/build/ci/gradle-build.log").read_text()
+            self.assertIn("fixture-stdout", log)
+            self.assertIn("fixture-stderr", log)
+            self.assertEqual((root / "calls").read_text().splitlines(), ["call"])
+            self.assertFalse(list(root.rglob("TEST-*.xml")))
+
+
+@unittest.skipUnless(
+    os.name != "nt" and shutil.which("bash"), "Linux CI shell regression"
+)
 class AndroidDeviceStartupTest(unittest.TestCase):
-    def run_device_script(self, ready_after, command_failure="none"):
+    def run_device_script(self, ready_after, command_failure="none", gradle_status=0):
         with tempfile.TemporaryDirectory() as temporary:
             root = Path(temporary)
             device = root / "android"
@@ -123,11 +175,15 @@ class AndroidDeviceStartupTest(unittest.TestCase):
             (binaries / "adb").chmod(0o755)
             (binaries / "sleep").write_text("#!/bin/sh\nexit 0\n")
             (binaries / "sleep").chmod(0o755)
-            (device / "gradlew").write_text("#!/bin/sh\ntouch test-executed\n")
+            (device / "gradlew").write_text(
+                "#!/bin/sh\ntouch test-executed\necho fixture-gradle-diagnostic >&2\n"
+                "exit " + str(gradle_status) + "\n"
+            )
             (device / "gradlew").chmod(0o755)
             script = Path(__file__).resolve().parents[1] / "android_device_test.sh"
             result = subprocess.run(
                 ["bash", str(script)],
+                check=False,
                 cwd=device,
                 capture_output=True,
                 text=True,
@@ -145,8 +201,16 @@ class AndroidDeviceStartupTest(unittest.TestCase):
                 result,
                 (device / "test-executed").exists(),
                 (device / "app/build/ci/startup-services.txt").read_text()
-                + (device / "app/build/ci/setup-status.txt").read_text(),
-                [json.loads(line) for line in (root / "commands.jsonl").read_text().splitlines()],
+                + (device / "app/build/ci/setup-status.txt").read_text()
+                + (
+                    (device / "app/build/ci/gradle-device.log").read_text()
+                    if (device / "app/build/ci/gradle-device.log").exists()
+                    else ""
+                ),
+                [
+                    json.loads(line)
+                    for line in (root / "commands.jsonl").read_text().splitlines()
+                ],
             )
 
     def test_boot_completed_before_phone_waits_then_runs_real_script(self):
@@ -154,9 +218,13 @@ class AndroidDeviceStartupTest(unittest.TestCase):
         self.assertEqual(result.returncode, 0, result.stderr)
         self.assertTrue(executed)
         self.assertIn("Service phone: found", diagnostics)
-        policy_index = commands.index(["shell", "cmd", "connectivity", "airplane-mode", "disable"])
+        policy_index = commands.index(
+            ["shell", "cmd", "connectivity", "airplane-mode", "disable"]
+        )
         phone_probes = [
-            c for c in commands[:policy_index] if c == ["shell", "service", "check", "phone"]
+            c
+            for c in commands[:policy_index]
+            if c == ["shell", "service", "check", "phone"]
         ]
         self.assertGreaterEqual(len(phone_probes), 3)
 
@@ -165,7 +233,9 @@ class AndroidDeviceStartupTest(unittest.TestCase):
         self.assertEqual(result.returncode, 20, result.stderr)
         self.assertFalse(executed)
         self.assertIn("Service phone: not found", diagnostics)
-        self.assertNotIn(["shell", "cmd", "connectivity", "airplane-mode", "disable"], commands)
+        self.assertNotIn(
+            ["shell", "cmd", "connectivity", "airplane-mode", "disable"], commands
+        )
 
     def test_registered_service_with_transient_command_failure_waits_before_tests(self):
         result, executed, diagnostics, commands = self.run_device_script(1, "once")
@@ -180,6 +250,15 @@ class AndroidDeviceStartupTest(unittest.TestCase):
         self.assertFalse(executed)
         self.assertEqual(commands.count(["shell", "svc", "data", "disable"]), 30)
         self.assertIn("stage=data_disable", diagnostics)
+
+    def test_gradle_failure_keeps_dependency_error_and_is_not_a_pass(self):
+        result, executed, diagnostics, _ = self.run_device_script(1, gradle_status=23)
+        self.assertEqual(result.returncode, 23, result.stderr)
+        self.assertTrue(executed)
+        self.assertIn("fixture-gradle-diagnostic", diagnostics)
+        self.assertIn("stage=application_tests", diagnostics)
+        self.assertIn("exit_code=23", diagnostics)
+        self.assertNotIn("stage=complete", diagnostics)
 
 
 if __name__ == "__main__":
