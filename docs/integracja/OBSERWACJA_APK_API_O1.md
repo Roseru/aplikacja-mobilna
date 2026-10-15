@@ -174,3 +174,13 @@ Domyślny testowy APK nie zawiera LiveApiLateReceiptTest (DEX sprawdzony).
 Aktualny check relay O3-040 zakończył się timeout przed TLS; adres O1 wrócił do
 wcześniej uzgodnionego172.18.4.123. Bez nowego dopasowania peer nie uruchamiamy
 lease/klienta ani próby live. Szczegóły w O1-046.
+
+Uzupełnienie O1-046 — gotowy build API/CA ze źródła `e319e53130020b3bbcdb50588ef4a2205a241118`:
+validation0.8.12.validation/code1023/Room9 SHA256 `89164efd5199c8e1329f4fc833107a4045d034533ded6ef0e93f00996c50efcb`;
+opt-in driver SHA256 `91b788998c3aa20b928e65e3f4d63a5ff3ad9048cc3de8c70f5ba8b86ecc231f`. Zweryfikowano w gotowym APK
+issuer/API z zasobów, dokładny publiczny CA oraz obecność nowych markerów/drivera.
+Build PASS; nie instalowano tego artefaktu na regularnym APK ani nie wykonano
+live. Artefakty pozostają poza Git; native79 dotyczy wariantu fixtures z tego
+samego źródła, nie dowodzi połączenia z API. O3 może uzgodnić okno i dokładny
+peer na podstawie gotowego artefaktu. E0 PASS:10schematów/95valid/35invalid/
+18scenariuszy/636linków; zdalne CI i merge nadal niepotwierdzone.

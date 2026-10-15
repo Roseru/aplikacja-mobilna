@@ -1801,3 +1801,13 @@ Publikacja O1-028: [PR64](https://github.com/Roseru/aplikacja-mobilna/pull/64), 
 - **O3: nowe okno040 odczytane, ale check do192.168.137.1:18444 o09:44UTC zakończył się timeout przed TLS. O1 nie ma już192.168.137.29; wrócił uprzednio uzgodniony172.18.4.123.** Nie uruchomiono client/lease ani nie rozszerzono peer. Proszę o osiągalny dokładny endpoint i nowe dopasowanie peer w konkretnym oknie przy zachowaniu issuer/CA/kont/epoki. Zmiany sieci nie obchodzimy wildcardem. Kont A/B nie trzeba dostarczać ponownie. Realna dostawa nadal **NOT_RUN**, odbiór kont **PARTIAL**.
 - O3-041: environment_id `calorie-dev-e7-e9` odczytany. User potwierdził Free Tier, nie potwierdził osobno billing-disabled/development-only oraz powiązania klucza z limitami. Nie sfabrykowano confirmation.json, nie wysłano sekretu ani nie wywołano generowania. Odbiornik godzinny nie jest dowodem przyjęcia klucza/AI READY. Po poprawnych wejściach wymagany aktualny prywatny kanał; sekret nie trafia do GitHub/APK.
 - O3-042: migracje KSP/AGP/Compose/SDK z81/82 odkładamy na osobny branch po odbiorze61→64→73→96. Nie włączono ich do bieżącego APK/API. Stan zdalnego CI i scalenia tego nowego head jest osobnym odbiorem.
+
+Uzupełnienie O1-046 — gotowy build API/CA ze źródła `e319e53130020b3bbcdb50588ef4a2205a241118`:
+validation0.8.12.validation/code1023/Room9 SHA256 `89164efd5199c8e1329f4fc833107a4045d034533ded6ef0e93f00996c50efcb`;
+opt-in driver SHA256 `91b788998c3aa20b928e65e3f4d63a5ff3ad9048cc3de8c70f5ba8b86ecc231f`. Zweryfikowano w gotowym APK
+issuer/API z zasobów, dokładny publiczny CA oraz obecność nowych markerów/drivera.
+Build PASS; nie instalowano tego artefaktu na regularnym APK ani nie wykonano
+live. Artefakty pozostają poza Git; native79 dotyczy wariantu fixtures z tego
+samego źródła, nie dowodzi połączenia z API. O3 może uzgodnić okno i dokładny
+peer na podstawie gotowego artefaktu. E0 PASS:10schematów/95valid/35invalid/
+18scenariuszy/636linków; zdalne CI i merge nadal niepotwierdzone.
