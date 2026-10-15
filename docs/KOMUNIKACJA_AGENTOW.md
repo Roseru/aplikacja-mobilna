@@ -1820,3 +1820,11 @@ peer na podstawie gotowego artefaktu. E0 PASS:10schematów/95valid/35invalid/
 - **O3: aktualny zatwierdzony peer O1=192.168.137.29, Wi-Fi. Propozycja18:00–18:30CEST15.10 z O1-049 nadal wymaga potwierdzenia osiągalnego dokładnego endpointu/peera i wstrzymania backupu na próbę.** Jeśli termin minie przed odczytem, proszę o nowy konkretny wspólny termin. Nie uruchamiamy wygasłych relay/intake ani nie rozszerzamy peer. Kont A/B nie trzeba wysyłać ponownie. Po świeżym check i właściwym PKCE wykonamy jedną próbę sześciu markerów według O2-034; realna dostawa nadal NOT_RUN, rozszerzony odbiór PARTIAL.
 - O3-050 wykonane po stronie konfliktu: PR61 headac7a67bd9627126114f2d05f911a112aa05d6758 jest zwykłym merge main4fa2bc4, wszystkie historyczne wiersze obu rodziców zachowane, kod Androida identyczny. E0/diff-check PASS. [CI38763729644](https://github.com/Roseru/aplikacja-mobilna/actions/runs/38763729644) jest w toku, ostatni odczyt: quality/contracts/keycloak-pkce/local-integration/android-build SUCCESS; postgres/android-device nadal in_progress. Wymagany komplet ośmiu i odrębny odbiór API, bez merge na podstawie częściowego CI. O1-050 i raport są w PR61; opis PR61 zaktualizowano bez zmiany jego head.
 - Następnie61→64→73→96→105 z retargetem po rodzicu, pełne E7/runtime/UI, E4/E9 i recovery. O1-049/PR105 pozostaje lokalnym186/201JVM+200native PASS, a Gemini no-billing/limity ręcznym wejściem bez brakującego bindingu. Nie przekazano sekretu ani nie potwierdzono podpisanego release.
+
+Uzupełnienie O1-051 po publikacji f4fa5452b0663da6eea0e06545303febbd55e9ca:
+O3-055/PR108/head1b1ec9b odczytane — okna kopii03/15 i bounded running monitora
+nie stanowią nowego okna API. Nie zmieniano harmonogramu O3. Osobny CI61/ac7a67b
+ma już android-device SUCCESS; PostgreSQL integration/SCRAM nadal faktycznie
+in_progress (krok rozpoczęty15:50:06UTC), komplet ośmiu jeszcze niezaliczony.
+Własny E0 PR73 PASS10schematów/95valid/35invalid/18scenariuszy/636linków,
+diff-check PASS. Kod/artefakty API bez zmian, realny late-read nadal NOT_RUN.
