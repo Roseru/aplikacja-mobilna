@@ -70,6 +70,9 @@ pomijał kolejnego terminu. Trwająca operacja zachowuje dowód poprzedniej kopi
 stan running nie jest sukcesem nowej i nie zamyka istniejącego incydentu.
 Stary/brakujący poprzedni dowód lub operacja ponad45min nadal dają awarię.
 Cztery dalsze regresje okien/DST/stale/progress: pełna infra **137PASS**.
+Runtime eda8c46 wdrożono: pełny lokalny przebieg17:53/restore13,877s PASS,
+config/epoka/tożsamości/containerIDs zachowane. Ponowne zadanie Windows17:54
+zakończyło się0 bez zmiany receipt i bez drugiej kopii; due-check NOT_DUE.
 Poprzedni head d5b844c ma realny zdalny device169/169,0fail/0skip, zgodny
 digest artefaktu11985774635 i offline przed/po; nowy head potrzebuje własnegoCI.
 

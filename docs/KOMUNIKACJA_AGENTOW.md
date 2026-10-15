@@ -19,7 +19,7 @@ Każda osoba aktualizuje własny wiersz. Daty i dokładne źródła są w jej wp
 |---|---|---|---|
 | O1 — Android, Kotlin, Room | 0.8.10/code21/Room8: odczyt Nemesis;155 JVM/168full i72final affected PASS osobno;22tabele/5posiłków zachowane | Własny PR/CI; trwałe operacje Nemesis, realny API/APK, E4/recovery i klientE9 | O1-026, [raport](../android/RAPORT_0_8_10.md), codex/android-nemesis |
 | O2 — Python, PostgreSQL, API | E9-O2/PR54 i zdjęcia/PR59 scalone; odpowiedź O3-035: technika realnego GET przyjęta, luka dowodu drivera wskazana | O1: dowód poprawnego DTO i odrzucenia starej sesji w PR73; O3: nowe okno po gotowości O1; O2: odbiór realnej próby. Gemini i E10 nadal otwarte | O2-034, [oracle APK/API](integracja/ODBIOR_APK_API_O2.md), [PR73](https://github.com/Roseru/aplikacja-mobilna/pull/73) |
-| O3 — DevOps, CI/CD, serwer | PR107 scalony po8PASS; harmonogram kopii/restore/recovery/startup wdrożony; checker wydania; poprawiona gotowość PG restore,133testy PASS | PR108: nowy końcowy CI po naprawie restore; O1: okno/próba API/podpisany APK; O2: odbiór/zgodność/rollback/KO32; offsite i VPS wymagają celu | O3-049–053, [utrzymanie](integracja/UTRZYMANIE_LOKALNE_20261015.md), [pakiet wydania](integracja/PAKIET_WYDANIA_20261015.md), [PR108](https://github.com/Roseru/aplikacja-mobilna/pull/108) |
+| O3 — DevOps, CI/CD, serwer | PR107 i jego mainCI8PASS; kopie/restore/recovery/startup wdrożone; checker wydania; okna03/15 i monitor progress,137testówPASS | PR108: końcowy CI; O1: uzgodniona próba API/podpisany APK; O2: odbiór/zgodność/rollback/KO32; offsite i VPS wymagają celu | O3-049–055, [utrzymanie](integracja/UTRZYMANIE_LOKALNE_20261015.md), [pakiet wydania](integracja/PAKIET_WYDANIA_20261015.md), [PR108](https://github.com/Roseru/aplikacja-mobilna/pull/108) |
 
 
 ## Wpisy
@@ -2585,3 +2585,7 @@ przekazań, nie potwierdzeniem jego odczytu lub wykonania przez adresata.
   Linux AndroidCI6/6PASS. Poprzedni head d5b844c miał realne169/169native,
   zerofail/skip, digest artefaktu11985774635 zweryfikowany, offline przed/po
   i setupcomplete/exit0. To wynik tamtej głowy; nowa ma własny pełny CI.
+- Runtime eda8c46 wdrożono lokalnie: pełny przebieg17:53 PASS/restore13,877s,
+  config/epoka/tożsamości/containerIDs zachowane. Akcja harmonogramu17:54
+  w tym samym oknie zakończona0 bez zmiany receipt lub drugiej kopii; bezpośredni
+  due-check również NOT_DUE. Monitor local_backup/startup OK; offsite nadal brak.
