@@ -56,3 +56,15 @@ Zgody rankingu nie zastępują zgody na zdjęcie. Dostępność nie rezerwuje li
 Nie dodano sekretu, wywołania Google, migracji Room, zapisu dziennika,
 automatycznej publikacji produktu lub workerów. Mock nie jest pomiarem Gemini.
 Priorytet sieciowego odbioru PR61/64/73 pozostaje oddzielny od tego modułu.
+
+## Wynik lokalnego sprawdzenia
+
+Źródło `cb20e0dad2eaa12a6f2c3ddcf8bb4ba0e41e5df4`:186JVM debug/201JVM validation PASS,
+lint0error, build obu wariantów/testAPK PASS. Native83/83 API35 bez pominięć PASS
+na O1Tests35 (78sesji,2panelu,2zdjęć,1adaptacyjny). Szesnaście nowych testów JVM
+obejmuje wire/ACK/HTTP; natywne sprawdzają integrację dotychczasowego klienta.
+Pierwszy build zatrzymał błąd escapowania regexu; pełny wynik pochodzi z poprawki.
+APK validation SHA256 `bfd53af49b1a57980ac2ca757bf8b3714f73dfac65c2c04e2b1a70558b34a0c5`.
+Zwykły debug bez znaczników bramki, domyślny testAPK bez drivera live.
+Rzeczywiste API/Gemini i pełny klient E7 nadal nieodebrane; nie aktualizowano
+regularnej instalacji użytkownika. Zdalne CI/scalenie to oddzielne warunki.
