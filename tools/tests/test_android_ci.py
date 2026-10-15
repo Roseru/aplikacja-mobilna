@@ -112,7 +112,9 @@ class AndroidBuildDiagnosticsTest(unittest.TestCase):
 
 @unittest.skipUnless(os.name != "nt" and shutil.which("bash"), "Linux CI shell regression")
 class AndroidDeviceStartupTest(unittest.TestCase):
-    def run_device_script(self, ready_after, command_failure="none", gradle_status=0):
+    def run_device_script(
+        self, ready_after, command_failure="none", gradle_status=0, offline_glitch="none"
+    ):
         with tempfile.TemporaryDirectory() as temporary:
             root = Path(temporary)
             device = root / "android"
@@ -155,7 +157,14 @@ class AndroidDeviceStartupTest(unittest.TestCase):
                 elif args == ["shell", "cmd", "wifi", "status"]:
                     print("Wifi is disabled")
                 elif args == ["shell", "dumpsys", "connectivity"]:
-                    print("Active default network: none")
+                    counter = state / "connectivity-probes"
+                    attempt = int(counter.read_text()) + 1 if counter.exists() else 1
+                    counter.write_text(str(attempt))
+                    mode = os.environ["DEVICE_OFFLINE_GLITCH"]
+                    glitch = ((mode == "once" and attempt == 2)
+                              or (mode == "permanent" and attempt % 2 == 0)
+                              or (mode == "after" and (state / "android/test-executed").exists()))
+                    print("Active default network: " + ("123" if glitch else "none"))
                 """)
             (binaries / "adb").write_text(stub)
             (binaries / "adb").chmod(0o755)
@@ -163,6 +172,7 @@ class AndroidDeviceStartupTest(unittest.TestCase):
             (binaries / "sleep").chmod(0o755)
             (device / "gradlew").write_text(
                 "#!/bin/sh\ntouch test-executed\necho fixture-gradle-diagnostic >&2\n"
+                'printf \'["gradle"]\\n\' >> "$DEVICE_STUB_STATE/commands.jsonl"\n'
                 "exit " + str(gradle_status) + "\n"
             )
             (device / "gradlew").chmod(0o755)
@@ -180,6 +190,7 @@ class AndroidDeviceStartupTest(unittest.TestCase):
                     "DEVICE_STUB_STATE": str(root),
                     "DEVICE_READY_AFTER": str(ready_after),
                     "DEVICE_COMMAND_FAILURE": command_failure,
+                    "DEVICE_OFFLINE_GLITCH": offline_glitch,
                 },
                 timeout=30,
             )
@@ -188,6 +199,11 @@ class AndroidDeviceStartupTest(unittest.TestCase):
                 (device / "test-executed").exists(),
                 (device / "app/build/ci/startup-services.txt").read_text()
                 + (device / "app/build/ci/setup-status.txt").read_text()
+                + (
+                    (device / "app/build/ci/setup-attempts.txt").read_text()
+                    if (device / "app/build/ci/setup-attempts.txt").exists()
+                    else ""
+                )
                 + (
                     (device / "app/build/ci/gradle-device.log").read_text()
                     if (device / "app/build/ci/gradle-device.log").exists()
@@ -236,6 +252,33 @@ class AndroidDeviceStartupTest(unittest.TestCase):
         self.assertIn("stage=application_tests", diagnostics)
         self.assertIn("exit_code=23", diagnostics)
         self.assertNotIn("stage=complete", diagnostics)
+
+    def test_connectivity_change_after_first_pass_retries_setup_before_one_test_run(self):
+        result, executed, diagnostics, commands = self.run_device_script(1, offline_glitch="once")
+        self.assertEqual(result.returncode, 0, result.stderr)
+        self.assertTrue(executed)
+        self.assertIn("stage=offline_settling result=not_ready", diagnostics)
+        self.assertEqual(commands.count(["shell", "svc", "data", "disable"]), 2)
+        self.assertEqual(commands.count(["gradle"]), 1)
+        self.assertIn("stage=complete", diagnostics)
+
+    def test_permanently_unstable_offline_state_never_runs_gradle(self):
+        result, executed, diagnostics, commands = self.run_device_script(
+            1, offline_glitch="permanent"
+        )
+        self.assertEqual(result.returncode, 21, result.stderr)
+        self.assertFalse(executed)
+        self.assertEqual(commands.count(["shell", "svc", "data", "disable"]), 30)
+        self.assertEqual(commands.count(["gradle"]), 0)
+        self.assertIn("stage=offline_settling", diagnostics)
+
+    def test_network_restored_by_tests_fails_immediately_without_repeating_them(self):
+        result, executed, diagnostics, commands = self.run_device_script(1, offline_glitch="after")
+        self.assertEqual(result.returncode, 1, result.stderr)
+        self.assertTrue(executed)
+        self.assertEqual(commands.count(["gradle"]), 1)
+        self.assertEqual(commands.count(["shell", "svc", "data", "disable"]), 1)
+        self.assertIn("stage=offline_after_tests", diagnostics)
 
 
 if __name__ == "__main__":
