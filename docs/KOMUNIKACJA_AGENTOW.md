@@ -1841,3 +1841,11 @@ peer na podstawie gotowego artefaktu. E0 PASS:10schematów/95valid/35invalid/
 - Numer projektu i powiązanie klucza nie są widoczne na zrzucie; wcześniejszy numer181003336626 pochodzi z deklaracji użytkownika. Nie opisujemy tego jako automatycznej weryfikacji IAM. Poproszono o aktualny wiersz limitów modelu po zmianie planu; wcześniejszych15/250000/500 nie przepisano jako świeżego odczytu nowego tier.
 - Computer Use i podgląd przeglądarki nie uruchamiają środowiska wykonawczego (brak lokalnej ścieżki kernel assets), również po jednym resecie. Nie obchodzono tego automatyzacją terminala/przeglądarki ani nie zamykano konta rozliczeniowego. Potwierdzenie oparto na obrazie dostarczonym przez użytkownika. Obrazu i danych konta rozliczeniowego nie publikujemy.
 - Bez nowych wywołań Google, transferu sekretu lub deklaracji Gemini READY. Przekazanie nadal wymaga kompletnego prawdziwego manifestu i aktualnego prywatnego kanału O3. Prace nad trwałą kolejką klienta E7 mogą postępować niezależnie. Moduł transportu jest opublikowany w PR105; źródło/testy O1-047 pozostają odrębnym wynikiem.
+
+Uzupełnienie O1-048: użytkownik dostarczył kolejny zrzut Rate Limit po pokazaniu
+braku billingu. Wiersz Gemini3.5FlashLite:15RPM/250000TPM/500RPD, aktualnie0użytych
+w każdym wymiarze. To świeży ręczny odczyt panelu; identyfikator projektu i nagłówki
+kolumn są poza kadrem, skojarzenie wynika z kolejności ekranów/rozmowy, nie z IAM.
+Nie wykonano ponownego GET modeli lub generowania. O3 ma aktualne wejście limitów
+i widocznego Free Tier/no billing; pełny manifest, binding i prywatny odbiór są
+osobnym krokiem. Nie stosujemy nieaktualnego kanału18446.
