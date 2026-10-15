@@ -1,7 +1,7 @@
 name: calorie-local
 services:
   postgres:
-    image: postgres:17
+    image: postgres:18
     environment:
       POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?Set local admin password}
       APP_MIGRATOR_PASSWORD: ${APP_MIGRATOR_PASSWORD:?Set migrator password}
