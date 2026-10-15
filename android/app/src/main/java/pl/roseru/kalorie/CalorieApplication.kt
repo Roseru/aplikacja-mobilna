@@ -36,6 +36,7 @@ class CalorieApplication : Application() {
         }))) }
     override fun onCreate() {
         super.onCreate()
-        sessionScope.launch { sessions.start(); sessions.observeMotivationContext() }
+        // Finish process attachment before lazy Room construction.
+        sessionScope.launch(Dispatchers.Main) { sessions.start(); sessions.observeMotivationContext() }
     }
 }

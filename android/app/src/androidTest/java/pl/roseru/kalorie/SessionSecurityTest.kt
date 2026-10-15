@@ -1526,4 +1526,55 @@ class SessionSecurityTest {
             assertNull(db.ownerDao().byIdentity(issuer, "fixture-B"))
         } finally { vault.clear(); db.close() }
     }
+
+    @Test fun lateProofConfirmsActualProfileParserAndExistingOwnerGuard() = runBlocking<Unit> {
+        val db = memory(); val vault = SessionVault(context, name()); val fixture = FixtureGateway(); val api = ApiFixture()
+        val profiles = object : ProfileGateway {
+            override suspend fun get(session: ApiSession, beforeSend: suspend () -> Unit): BootstrapHttpResult {
+                beforeSend(); val response = profileAnswer()
+                ApiReadObservation.lateRead.beforeReturn("GET", "/api/v1/me", 200, System.nanoTime() + 30_000_000_000)
+                return response
+            }
+        }
+        var ticket: LateReadGate.Ticket? = null
+        try {
+            val c = client(db,vault,fixture,api,profiles); c.start(); login(c,fixture,"fixture-A"); c.bootstrap()
+            val guestOps = db.dao().operationCount("guest")
+            val armed = ApiReadObservation.lateRead.arm("/api/v1/me"); ticket = armed
+            val read = async { c.readProfile() }
+            withTimeout(10_000) { armed.held.await() }
+            c.logout(); assertEquals("guest",c.view.value.binding!!.owner.kind); armed.logoutCompleted()
+            armed.release.complete(Unit); read.await()
+            assertTrue(armed.parsed.isCompleted); assertTrue(armed.rejected.isCompleted)
+            assertFalse(c.view.value.hasSession); assertNull(c.view.value.serverProfile)
+            assertEquals(guestOps,db.dao().operationCount("guest"))
+            armed.guestPreserved()
+            assertEquals(listOf("held","logout","released","dto_parsed","stale_owner_rejected","guest_preserved"),armed.events())
+        } finally { ticket?.let { it.release.complete(Unit); ApiReadObservation.lateRead.disarm(it) }; vault.clear(); db.close() }
+    }
+
+    @Test fun lateProofRejectsMalformedDtoBeforeClaimingOwnerRejection() = runBlocking<Unit> {
+        val db = memory(); val vault = SessionVault(context, name()); val fixture = FixtureGateway(); val api = ApiFixture()
+        val profiles = object : ProfileGateway {
+            override suspend fun get(session: ApiSession, beforeSend: suspend () -> Unit): BootstrapHttpResult {
+                beforeSend()
+                ApiReadObservation.lateRead.beforeReturn("GET", "/api/v1/me", 200, System.nanoTime() + 30_000_000_000)
+                return BootstrapHttpResult(200,"{}".toByteArray())
+            }
+        }
+        var ticket: LateReadGate.Ticket? = null
+        try {
+            val c = client(db,vault,fixture,api,profiles); c.start(); login(c,fixture,"fixture-A"); c.bootstrap()
+            val armed = ApiReadObservation.lateRead.arm("/api/v1/me"); ticket = armed
+            val read = async { c.readProfile() }
+            withTimeout(10_000) { armed.held.await() }
+            c.logout(); armed.logoutCompleted(); armed.release.complete(Unit)
+            read.await() // Unit completion alone was the old false-positive condition.
+            assertEquals("released",armed.outcome.await())
+            assertFalse(armed.parsed.isCompleted); assertFalse(armed.rejected.isCompleted)
+            assertEquals(listOf("held","logout","released"),armed.events())
+            assertEquals("guest",c.view.value.binding!!.owner.kind); assertNull(c.view.value.serverProfile)
+        } finally { ticket?.let { it.release.complete(Unit); ApiReadObservation.lateRead.disarm(it) }; vault.clear(); db.close() }
+    }
+
 }

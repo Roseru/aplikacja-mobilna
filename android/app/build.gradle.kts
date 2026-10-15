@@ -33,7 +33,14 @@ android {
         }
     }
     testBuildType = "validation"
+    // The regular APK has a no-op observer; HTTP receipts exist only in validation.
+    sourceSets.getByName("debug").java.srcDir("src/standard/java")
+    sourceSets.getByName("release").java.srcDir("src/standard/java")
     sourceSets.getByName("androidTest").assets.srcDir("$projectDir/schemas")
+    // Real API driver is deliberately excluded from ordinary CI/device fixtures.
+    if (providers.gradleProperty("O1_LIVE_API_RECEIPT_TEST").orElse("false").get() == "true") {
+        sourceSets.getByName("androidTest").java.srcDir("src/liveReceipt/java")
+    }
     compileOptions {
         sourceCompatibility = JavaVersion.VERSION_17
         targetCompatibility = JavaVersion.VERSION_17
@@ -70,4 +77,14 @@ dependencies {
     androidTestImplementation(libs.compose.ui.test)
     androidTestImplementation(libs.android.test.runner)
     androidTestImplementation(libs.android.test.junit)
+}
+
+// Independent validation version channel prevents downgrading shared test data.
+androidComponents {
+    onVariants(selector().withBuildType("validation")) { variant ->
+        variant.outputs.forEach { output ->
+            output.versionCode.set(1000 + checkNotNull(android.defaultConfig.versionCode))
+            output.versionName.set(checkNotNull(android.defaultConfig.versionName) + ".validation")
+        }
+    }
 }
