@@ -284,7 +284,6 @@ class DiaryFlowTest {
         val app = compose.activity.application as CalorieApplication
         val ration = runBlocking { app.database.dao().rations().first().single { it.ration.catalogJson != null } }
         val part = ration.components.minBy { it.position }
-        val product = runBlocking { app.database.dao().product(part.productId)!! }
         val previousIds = runBlocking { app.database.dao().day(DiaryRepository.GUEST, LocalDate.now().toString()).first().map { it.meal.id }.toSet() }
         compose.onNodeWithText("Dodaj posiłek").performClick()
         compose.onNodeWithTag("open-rations").performClick()
@@ -305,8 +304,9 @@ class DiaryFlowTest {
         compose.waitUntil(10_000) { runBlocking { app.database.dao().day(DiaryRepository.GUEST, LocalDate.now().toString()).first().any { it.meal.id !in previousIds } } }
         val meal = runBlocking { app.database.dao().day(DiaryRepository.GUEST, LocalDate.now().toString()).first().single { it.meal.id !in previousIds } }
         assertEquals(1, meal.items.size); assertEquals("12.123456789123", meal.items.single().amountText)
-        compose.onNodeWithTag("diary-content").performScrollToNode(hasContentDescription("Popraw ${product.name}"))
-        compose.onNodeWithContentDescription("Popraw ${product.name}").performClick()
+        val itemTag = "diary-item-${meal.items.single().id}"
+        compose.onNodeWithTag("diary-content").performScrollToNode(hasTestTag(itemTag))
+        compose.onNodeWithTag(itemTag).performClick()
         compose.onNodeWithTag("edit-amount").assertTextContains("12,123456789123").performTextReplacement("150")
         finishQuantityInput("edit-amount", "confirm-edit-item")
         compose.onNodeWithText("131 kcal").assertIsDisplayed()

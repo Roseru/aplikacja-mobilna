@@ -125,7 +125,7 @@ import java.util.Locale
                                 }
                             }
                             meal.items.forEach { product ->
-                            TextButton(onClick = { editing = EditingItem(meal, product) }, enabled = !busy, contentPadding = PaddingValues(vertical = 8.dp, horizontal = 0.dp)) {
+                            TextButton(onClick = { editing = EditingItem(meal, product) }, enabled = !busy, modifier = Modifier.testTag("diary-item-${product.id}"), contentPadding = PaddingValues(vertical = 8.dp, horizontal = 0.dp)) {
                                 Column(Modifier.weight(1f), horizontalAlignment = Alignment.Start) {
                                     Text(product.productName, color = MaterialTheme.colorScheme.onSurface)
                                     Text("${quantityText(product.amountText)} ${product.unit} · ${product.consumed().energyText()} kcal", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
