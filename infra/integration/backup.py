@@ -10,6 +10,7 @@ import shutil
 import subprocess
 import sys
 import time
+import traceback
 from datetime import UTC, datetime
 from pathlib import Path
 from uuid import UUID, uuid4
@@ -31,6 +32,34 @@ FINGERPRINTS = {
     "keycloak": "SELECT coalesce(jsonb_agg(jsonb_build_array(id,realm_id,username,enabled) "
     "ORDER BY id),'[]'::jsonb)::text FROM user_entity;",
 }
+
+
+class RehearsalFailure(RuntimeError):
+    def __init__(self, stage, error):
+        self.receipt = {
+            "result": "FAIL",
+            "stage": stage,
+            "error_kind": type(error).__name__,
+            "exit_code": error.returncode
+            if isinstance(error, subprocess.CalledProcessError)
+            else None,
+        }
+        super().__init__("Offline restore rehearsal failed")
+
+
+def wait_postgres(container, timeout=60):
+    deadline = time.monotonic() + timeout
+    while time.monotonic() < deadline:
+        ready = subprocess.run(
+            ["docker", "exec", container, "pg_isready", "-h", "127.0.0.1", "-U", "postgres"],
+            capture_output=True,
+            timeout=15,
+            **console_options(),
+        )
+        if ready.returncode == 0:
+            return
+        time.sleep(1)
+    raise RuntimeError("Rehearsal PostgreSQL TCP listener did not start")
 
 
 def private_directory(path):
@@ -241,6 +270,8 @@ def rehearse(directory):
     container = "calorie-restore-rehearsal-" + uuid4().hex[:12]
     started = time.monotonic()
     checks = []
+    stage = "start_postgres"
+    failure = None
 
     def sql(statement, database="calorie_app"):
         path = scratch / "query.sql"
@@ -287,19 +318,9 @@ def rehearse(directory):
             ],
             environment=environment,
         )
-        deadline = time.monotonic() + 60
-        while time.monotonic() < deadline:
-            ready = subprocess.run(
-                ["docker", "exec", container, "pg_isready", "-U", "postgres"],
-                capture_output=True,
-                timeout=15,
-                **console_options(),
-            )
-            if ready.returncode == 0:
-                break
-            time.sleep(1)
-        else:
-            raise RuntimeError("Rehearsal PostgreSQL did not start")
+        stage = "postgres_tcp_ready"
+        wait_postgres(container)
+        stage = "restore_roles"
         execute(
             scratch,
             [
@@ -319,6 +340,7 @@ def rehearse(directory):
             output_path=scratch / "roles-private.log",
         )
         for database in ("calorie_app", "keycloak"):
+            stage = "restore_" + database
             execute(
                 scratch,
                 [
@@ -337,6 +359,7 @@ def rehearse(directory):
                 input_path=directory / (database + ".dump"),
                 output_path=scratch / (database + "-private.log"),
             )
+        stage = "verify_identity_epoch"
         if (
             int(sql("SELECT count(*) FROM app.user_accounts;")) != manifest["accounts"]
             or int(sql("SELECT count(*) FROM user_entity;", "keycloak")) != manifest["identities"]
@@ -356,6 +379,7 @@ def rehearse(directory):
             if restored != manifest["fingerprints"][database]:
                 raise ValueError("Restored account/identity fingerprint mismatch")
         checks.append("Subjects/generation/state and Keycloak identities match fingerprints")
+        stage = "fence_restored_copy"
         sql(
             "BEGIN; UPDATE app.nemesis_control SET enabled=false; "
             f"UPDATE app.installation_state SET sync_epoch='{new_epoch}'; "
@@ -380,12 +404,14 @@ def rehearse(directory):
         checks.append(
             "New committed epoch; old snapshots cancelled, Nemesis closed/cleanup and AI fenced"
         )
+        stage = "restore_catalog"
         restore_catalog(directory / "catalog.tar", scratch / "catalog")
         checks.append(
             "Catalog safely extracted and content verified in a private scratch directory"
         )
         worker_configuration = directory / "config/e8-finalizer.env"
         if worker_configuration.exists():
+            stage = "verify_scram_closed_gate"
             from sqlalchemy.engine import make_url
 
             values = dict(
@@ -434,22 +460,32 @@ def rehearse(directory):
         }
         private_write(scratch / "receipt.json", json.dumps(receipt, indent=2))
         return receipt
+    except Exception as error:
+        failure = RehearsalFailure(stage, error)
+        private_write(scratch / "failure-private.log", traceback.format_exc())
+        private_write(scratch / "receipt.json", json.dumps(failure.receipt, indent=2))
+        raise failure from None
     finally:
-        inspected = subprocess.run(
-            [
-                "docker",
-                "inspect",
-                "--format",
-                '{{index .Config.Labels "' + LABEL + '"}}',
-                container,
-            ],
-            capture_output=True,
-            text=True,
-            timeout=15,
-            **console_options(),
-        )
-        if inspected.returncode == 0 and inspected.stdout.strip() == "owned":
-            execute(scratch, ["docker", "rm", "--force", "--volumes", container])
+        try:
+            inspected = subprocess.run(
+                [
+                    "docker",
+                    "inspect",
+                    "--format",
+                    '{{index .Config.Labels "' + LABEL + '"}}',
+                    container,
+                ],
+                capture_output=True,
+                text=True,
+                timeout=15,
+                **console_options(),
+            )
+            if inspected.returncode == 0 and inspected.stdout.strip() == "owned":
+                execute(scratch, ["docker", "rm", "--force", "--volumes", container])
+        except Exception as error:
+            if failure is None:
+                raise RehearsalFailure("cleanup", error) from None
+            failure.receipt["cleanup_failed"] = True
 
 
 def restore_catalog(archive, destination):
@@ -496,7 +532,20 @@ def main():
             result = rehearse(directory)
         print(json.dumps(result, sort_keys=True))
         return 0
-    except Exception:
+    except RehearsalFailure as error:
+        print(json.dumps(error.receipt, sort_keys=True))
+        return 1
+    except Exception as error:
+        print(
+            json.dumps(
+                {
+                    "result": "FAIL",
+                    "stage": "prepare_or_validate_archive",
+                    "error_kind": type(error).__name__,
+                },
+                sort_keys=True,
+            )
+        )
         print("Local backup operation failed; inspect private backup/state logs", file=sys.stderr)
         return 1
 
