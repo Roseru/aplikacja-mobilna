@@ -310,7 +310,7 @@ class DiaryFlowTest {
         compose.waitUntil(10_000) {
             compose.onAllNodes(hasTestTag(itemTag) and isEnabled()).fetchSemanticsNodes().size == 1
         }
-        compose.onNodeWithTag(itemTag).assertIsDisplayed().assertIsEnabled().performClick()
+        compose.onNodeWithTag(itemTag).performScrollTo().assertIsDisplayed().assertIsEnabled().performClick()
         compose.waitUntil(10_000) { compose.onAllNodesWithTag("edit-amount").fetchSemanticsNodes().size == 1 }
         compose.onNodeWithTag("edit-amount").assertTextContains("12,123456789123").performTextReplacement("150")
         finishQuantityInput("edit-amount", "confirm-edit-item")
