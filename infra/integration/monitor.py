@@ -28,6 +28,8 @@ CHECKS = (
     "disk",
     "tls",
     "backup",
+    "local_backup",
+    "startup",
     "ai",
 )
 
@@ -104,6 +106,25 @@ def worker_ok(status, *, disabled=False):
         )
     except (KeyError, TypeError, ValueError):
         return False
+
+
+def operation_reading(path, *, backup=False):
+    if not path:
+        return {"state": "not_configured"}
+    try:
+        receipt = json.loads(Path(path).read_text(encoding="utf-8"))
+        valid = receipt["result"] == "PASS"
+        if backup:
+            valid = (
+                valid
+                and 0 <= age(receipt["verified_at"]) <= 86400
+                and receipt.get("archive_integrity") is True
+                and receipt.get("restore_rehearsal") is True
+                and receipt.get("services_resumed") is True
+            )
+        return {"state": "ok" if valid else "failed"}
+    except (OSError, ValueError, KeyError, TypeError):
+        return {"state": "failed"}
 
 
 def sample(state, settings):
@@ -200,6 +221,8 @@ def sample(state, settings):
         except Exception:
             readings["backup"] = {"state": "failed"}
     readings["ai"] = {"state": "not_deployed"}
+    readings["local_backup"] = operation_reading(settings.get("local_backup_receipt"), backup=True)
+    readings["startup"] = operation_reading(settings.get("startup_receipt"))
     return {"observed_at": utc(), "checks": readings}
 
 
