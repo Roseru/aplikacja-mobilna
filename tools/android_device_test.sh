@@ -2,6 +2,38 @@
 # Run from android/. The emulator action supplies ANDROID_SERIAL.
 set -euo pipefail
 
+mkdir -p app/build/ci
+record_framework_state() {
+    {
+        adb shell getprop sys.boot_completed
+        for service in phone connectivity wifi settings package; do
+            adb shell service check "$service"
+        done
+    } >app/build/ci/startup-services.txt 2>&1 || true
+}
+trap 'device_test_status=$?; if (( device_test_status != 0 )); then record_framework_state; fi; exit "$device_test_status"' EXIT
+
+# sys.boot_completed may be set before telephony/ConnectivityService register.
+# Wait before changing airplane mode; do not retry or skip application tests.
+framework_ready() {
+    test "$(adb shell getprop sys.boot_completed | tr -d '\r')" = 1 || return 1
+    for service in phone connectivity wifi settings package; do
+        adb shell service check "$service" | tr -d '\r' |
+            grep -Fx "Service $service: found" >/dev/null || return 1
+    done
+}
+for attempt in $(seq 1 60); do
+    if framework_ready; then
+        break
+    fi
+    sleep 2
+done
+if ! framework_ready; then
+    echo 'Android framework services unavailable after bounded startup wait' >&2
+    exit 20
+fi
+record_framework_state
+
 # Configure only the ephemeral test device. Android 15 otherwise permits Wi-Fi
 # overrides in airplane mode; a delayed system callback can restore a network.
 # Establish the policy before toggling airplane mode, including saved APM state.

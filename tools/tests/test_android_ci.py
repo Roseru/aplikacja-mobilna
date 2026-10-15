@@ -1,7 +1,11 @@
 """Regression checks for missing/skipped evidence and incorrectly labelled APKs."""
 
 import json
+import os
+import shutil
+import subprocess
 import tempfile
+import textwrap
 import unittest
 from pathlib import Path
 from unittest.mock import patch
@@ -66,6 +70,93 @@ class AndroidCiTest(unittest.TestCase):
                     package_apk(directory, destination, "a" * 40, Path("aapt"))
                 with self.assertRaises(ValueError):
                     package_apk(directory, destination, "main", Path("aapt"))
+
+
+@unittest.skipUnless(os.name != "nt" and shutil.which("bash"), "Linux CI shell regression")
+class AndroidDeviceStartupTest(unittest.TestCase):
+    def run_device_script(self, ready_after):
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            device = root / "android"
+            device.mkdir()
+            binaries = root / "bin"
+            binaries.mkdir()
+            stub = textwrap.dedent("""\
+                #!/usr/bin/env python3
+                import json, os, sys
+                from pathlib import Path
+                state = Path(os.environ["DEVICE_STUB_STATE"])
+                args = sys.argv[1:]
+                with (state / "commands.jsonl").open("a") as output:
+                    output.write(json.dumps(args) + "\\n")
+                if args[:3] == ["shell", "service", "check"]:
+                    service = args[3]
+                    count_file = state / "phone-attempts"
+                    count = int(count_file.read_text()) if count_file.exists() else 0
+                    if service == "phone":
+                        count += 1
+                        count_file.write_text(str(count))
+                    found = service != "phone" or count >= int(os.environ["DEVICE_READY_AFTER"])
+                    print("Service " + service + (": found" if found else ": not found"))
+                elif args == ["shell", "getprop", "sys.boot_completed"]:
+                    print("1")
+                elif args == ["shell", "cmd", "connectivity", "airplane-mode", "disable"]:
+                    count = int((state / "phone-attempts").read_text())
+                    if count < int(os.environ["DEVICE_READY_AFTER"]):
+                        print("cmd: Can't find service: phone", file=sys.stderr)
+                        raise SystemExit(20)
+                elif args[:4] == ["shell", "settings", "get", "global"]:
+                    print("1" if args[-1] == "airplane_mode_on" else "0")
+                elif args == ["shell", "cmd", "wifi", "status"]:
+                    print("Wifi is disabled")
+                elif args == ["shell", "dumpsys", "connectivity"]:
+                    print("Active default network: none")
+                """)
+            (binaries / "adb").write_text(stub)
+            (binaries / "adb").chmod(0o755)
+            (binaries / "sleep").write_text("#!/bin/sh\nexit 0\n")
+            (binaries / "sleep").chmod(0o755)
+            (device / "gradlew").write_text("#!/bin/sh\ntouch test-executed\n")
+            (device / "gradlew").chmod(0o755)
+            script = Path(__file__).resolve().parents[1] / "android_device_test.sh"
+            result = subprocess.run(
+                ["bash", str(script)],
+                cwd=device,
+                capture_output=True,
+                text=True,
+                env=os.environ
+                | {
+                    "PATH": str(binaries) + os.pathsep + os.environ["PATH"],
+                    "ANDROID_SERIAL": "emulator-5554",
+                    "DEVICE_STUB_STATE": str(root),
+                    "DEVICE_READY_AFTER": str(ready_after),
+                },
+                timeout=30,
+            )
+            return (
+                result,
+                (device / "test-executed").exists(),
+                (device / "app/build/ci/startup-services.txt").read_text(),
+                [json.loads(line) for line in (root / "commands.jsonl").read_text().splitlines()],
+            )
+
+    def test_boot_completed_before_phone_waits_then_runs_real_script(self):
+        result, executed, diagnostics, commands = self.run_device_script(3)
+        self.assertEqual(result.returncode, 0, result.stderr)
+        self.assertTrue(executed)
+        self.assertIn("Service phone: found", diagnostics)
+        policy_index = commands.index(["shell", "cmd", "connectivity", "airplane-mode", "disable"])
+        phone_probes = [
+            c for c in commands[:policy_index] if c == ["shell", "service", "check", "phone"]
+        ]
+        self.assertGreaterEqual(len(phone_probes), 3)
+
+    def test_missing_phone_fails_without_running_tests_and_keeps_diagnostics(self):
+        result, executed, diagnostics, commands = self.run_device_script(100000)
+        self.assertEqual(result.returncode, 20, result.stderr)
+        self.assertFalse(executed)
+        self.assertIn("Service phone: not found", diagnostics)
+        self.assertNotIn(["shell", "cmd", "connectivity", "airplane-mode", "disable"], commands)
 
 
 if __name__ == "__main__":

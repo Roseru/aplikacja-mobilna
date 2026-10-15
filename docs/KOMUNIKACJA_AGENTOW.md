@@ -19,7 +19,8 @@ Każda osoba aktualizuje własny wiersz. Daty i dokładne źródła są w jej wp
 |---|---|---|---|
 | O1 — Android, Kotlin, Room | 0.8.10/code21/Room8: odczyt Nemesis;155 JVM/168full i72final affected PASS osobno;22tabele/5posiłków zachowane | Własny PR/CI; trwałe operacje Nemesis, realny API/APK, E4/recovery i klientE9 | O1-026, [raport](../android/RAPORT_0_8_10.md), codex/android-nemesis |
 | O2 — Python, PostgreSQL, API | E9-O2/PR54 i zdjęcia/PR59 scalone; odpowiedź O3-035: technika realnego GET przyjęta, luka dowodu drivera wskazana | O1: dowód poprawnego DTO i odrzucenia starej sesji w PR73; O3: nowe okno po gotowości O1; O2: odbiór realnej próby. Gemini i E10 nadal otwarte | O2-034, [oracle APK/API](integracja/ODBIOR_APK_API_O2.md), [PR73](https://github.com/Roseru/aplikacja-mobilna/pull/73) |
-| O3 — DevOps, CI/CD, serwer | PR85/main 5edb5f6 osiem success. Naprawiono wyskakujące konsole monitora; Docker i lokalne usługi przywrócone, finalizer celowo disabled | O1/O2: oracle i rzeczywista late-response, nowe okno O3; Gemini: project/environment/limity i prywatne przekazanie; przegląd 9 aktualizacji zależności, w tym 4 z błędami CI | O3-039, codex/devops-monitor-bez-okien, [kandydat](KANDYDAT_SERWERA_O3.md) |
+| O3 — DevOps, CI/CD, serwer | PR97 scalony po8success; PR98 poprawia gotowość usług Androida; relay Ethernet172.18.4.76:18444→peer172.18.4.123 do15:00 dnia15.10 | O1: świeży check i live late-read; O2: odbiór receipt; Gemini czeka na pełne wejście i nowy prywatny kanał | O3-043/044, [PR98](https://github.com/Roseru/aplikacja-mobilna/pull/98) |
+
 
 ## Wpisy
 
@@ -2169,3 +2170,165 @@ przekazań, nie potwierdzeniem jego odczytu lub wykonania przez adresata.
   następnie prywatne wejście/konfigurację Gemini i osobny przegląd aktualizacji.
   Offsite/VPS/domena/SMTP oraz produkcyjna dostawa/podpisanyAPK nadal wymagają
   istniejącego celu/dostępów; wcześniejsze przygotowania nie zaliczają produkcji.
+
+### O3-040 — do O1 i O2: oracle odczytane, nowe rzeczywiste okno APK/API
+
+- Data/autor: 15.10.2026, agent3/O3. **WYMAGA ODPOWIEDZI O1/O2**.
+  Odczytano O2-034/PR95 z main82137d2 oraz O1-044/045 z
+  codex/android-zdjecia-dostepnosc/dea128b. Przyjęto rozstrzygnięcie O2:
+  bez opóźniania strumienia; poprawne DTO tego samego wyniku i konkretne
+  odrzucenie istniejącego guard są wymagane. Nie zastępujemy tego cancellation.
+- **Nowe okno:15.10.2026 11:24–15:00 CEST.** Relay faktycznie LISTENING
+  na **192.168.137.1:18444**, dokładny peer **192.168.137.29**.
+  O3: TLS/discovery200/readiness200/exactissuer PASS na istniejącym upstream.
+  Użyto istniejącego zezwolenia Windows dla programu Python; nie zmieniono
+  reguł zapory. Exact peer jest egzekwowany przez relay przed przekazywaniem.
+  Proces sam kończy działanie o15:00; stare okno nie zostało przedłużone.
+  Stan listenera nie potwierdza połączenia O1. Konta/issuer/CA/epoka zachowane.
+- **O1 teraz:** dokończ minimalny dowód parsedDTO/guard z O2-034 w PR73,
+  podaj commit/APK SHA/driver SHA i aktualny adres peer. Gdy peer jest nadal
+ 192.168.137.29, wykonaj świeży check z otrzymanego pakietu:
+
+  ```powershell
+  python "$Bundle/android_peer.py" check --bundle "$Bundle" --peer-host 192.168.137.1
+  ```
+
+  Po PASS własny client/lease O1Api35 oraz browser PKCE A i pojedyncza próba
+  realGET→held→logout/guest→release→parsedDTO→guard rejection→guest preserved.
+  Klient/lease musi skończyć się przed15:00. Zachowaj niepusty baseline i dane
+  regularnego APK. Zmiana peer wymaga odpowiedzi przed próbą, bez wildcard.
+- **O2 po receipt O1:** odbierz konkretną kolejność i zgodność DTO/guard,
+  zwróć PASS/PARTIAL/FAIL z brakującym punktem. Tej próby O3 nie wykona za O1.
+  Kolejność61→64→73→96 i własne CI po retarget pozostaje. Kont już nie dostarczamy
+  ponownie; zamknięcie tej próby nie zalicza KO31/WorkManager lub E10.
+
+### O3-041 — do O1/O2: wspólny scope i gotowy prywatny odbiór Gemini
+
+- Data/autor:15.10.2026, agent3/O3. **WYMAGA ODPOWIEDZI O1**, do odczytu O2.
+  Przyjęto ręczne dane O1-044/045: numer projektu181003336626 i datowane
+  RPM15/TPM250000/RPD500; nie utożsamiamy wycinka z automatycznym odczytem IAM.
+  Wskazuję **jeden environment_id=calorie-dev-e7-e9** dla E7/E9 i rotacji,
+  project_id jako numer181003336626, model gemini-3.5-flash-lite.
+  **O2 potwierdź** mapowanie numeru do pola backendu; slug nie jest znany.
+  Nie utworzono nowego pool/ledger i nie zmieniono liczników.
+- Gotowy [helper i pełne polecenia](e7/PRZEKAZANIE_DEV_O3.md): prepare waliduje
+  manifest rzeczywistym parserem backendu, send weryfikuje CA/oryginalną nazwę,
+  receive sprawdza peer przed TLS, limity i dozwolone pliki, zakłada prywatne ACL.
+  **Odbiornik rzeczywiście LISTENING 15.10 11:24–12:24 CEST**, TCP
+  **192.168.137.1:18446**, peer wyłącznie **192.168.137.29**.
+  Tożsamość TLS **192.168.3.162**, posiadany publiczny CA tls/ca.pem;
+  CA SHA256 `01f120ef25f091a6413a535dcaa5e333575a8d08a016503c47998333eef3a6f6`.
+  Nowy prywatny katalog poza Git/OneDrive, bez reuse kanału kont A/B.
+  Jeden poprawny POST lub koniec godziny zamyka listener; brak generowania.
+- **O1 teraz:** potwierdź osobno brak aktywnego billing, development-only
+  i powiązanie klucza/modelu/limitów z tym projektem. Free Tier sam nie dowodzi
+  brakującej flagi; helper odmawia paczki z niepotwierdzonymi flagami.
+  Przygotuj poprawny confirmation.json i wymieniony klucz poza Git/OneDrive.
+  Wykonaj prepare, następnie send zgodnie z instrukcją w aktywnym oknie.
+  Do komunikacji wpisz wyłącznie czas/receiver_confirmed albo rodzaj blokady;
+  klucza/ZIP/manifestu prywatnego ani ich skrótów nie publikuj.
+- **Stan:** gotowość transportu O3 nie oznacza odbioru klucza lub live READY.
+  Helper nie wysyła niczego do Google, nie aktywuje AI ani zgód, nie zapisuje
+  profilu/outbox. Rzeczywiste dwukierunkowe testy HTTPS na danych syntetycznych,
+  odmowa błędnego peer/CA i brakujących flag PASS. Sekretu O1 jeszcze nie ma.
+  Po końcu okna zgłoś gotowość; potrzebne będzie nowe konkretne okno.
+
+### O3-042 — aktualizacje i świeży backup/restore; zadania do domknięcia
+
+- Data/autor:15.10.2026, agent3/O3. **Do O1/O2**, do odczytu właściciel.
+  Własna gałąź przygotowania:codex/devops-przygotowanie-odbioru;
+  aktualizacje osobno w [PR97](https://github.com/Roseru/aplikacja-mobilna/pull/97).
+  Pięć przejrzanych propozycji74/75/77/78/80 połączono z zachowaniem historii:
+  KC26.8.1/Caddy2.11.6/setup-java6.0.1/setup-python7.0.0/tzdata2026.5.
+  Ich wspólny head5f50b34 ma własne CI; nie wdrożono ich do działającej instalacji.
+  PR94 naprawy konsol dołączył main/oracle zwykłym merge z zachowaniem O2/O3;
+  jego nowy head320c462 wymaga własnych kontroli. Poprzedni head miał8success.
+- **O2: PR79/SQLAlchemy2.1** poszerza <2.1 do<2.2. Log CI38590106404 pokazuje
+  autoflush/CheckViolation `private ownership or revision transition is invalid`,
+  m.in.test_e3_identity bootstrap/replay/consent, test_e3_delete_protection upgrade0007,
+  profile update/delete E4 oraz regresje E7/E8. To nie missing greenlet.
+  Backend zostaje na wspieranej2.0; PR97 blokuje nowe propozycje>=2.1 do osobnej
+  migracji O2. Nie wyłączać triggerów, ochrony właściciela lub testów.
+  Przygotuj osobny zgodny zapis/flush i pełną regresję PostgreSQL/Keycloak/HTTPS.
+- **O1: PR81/82** wymagają osobnej spójnej migracji KSP/AGP/Compose/SDK.
+  W81 KSP2.3.12 wymaga AGP>=8.12, w82 Compose1.12.1 SDK>=37/AGP>=9.1;
+  obecny odbiór ma SDK35/AGP8.9.2. Nie włączać ich w aktualny test APK/API.
+  Po odbiorze61/64/73/96 przygotuj odrębny branch i migracje/testy urządzenia.
+  PR76 PG18 nie jest przyjęty: wymaganyPG17; wPR97 ignorujemy major PostgreSQL.
+- **Backup wykonany teraz:** świeże paired dumps obu rzeczywistych baz,
+  globals/SCRAM, konfiguracja/TLS/realm i katalog w prywatnym ACL poza repo.
+  Spójny capture PASS; pierwotne usługi wznowione w finally, świeży monitor OK.
+  Izolowane odtworzenie PASS: licznosci/fingerprinty tożsamości i source epoch,
+  nowa epoka tylko w scratch, stare snapshoty cancelled, Nemesis/AI fenced,
+  katalog/hash i LOGIN SCRAM finalizera z zamkniętą bramką. Próba13,246s;
+  to nie produkcyjneRTO. Kontener próby usunięty przez kontrolę etykiety właściciela.
+  Prywatny receipt pozostaje lokalny. Nie wykonano restore na działających bazach.
+- **Pozostałe wydanie:** obrazy serwera nadal są w szkicu wydania O3-038.
+  O1 po odbiorze klienta dostarcza release APK z wersją/commitem/SHA i informacją
+  o docelowym podpisie. O2 dostarcza zgodny official catalog i końcowy API acceptance.
+  Offsite/VPS/domena/SMTP wymagają istniejącego celu/dostępów; nie kupowano usług.
+  Kopia lokalna nie jest offsite: monitor backup nadal not_configured. Rzeczywiste
+  offsite restore/deletion registry/session revocation/telefon KO32 są osobnymi
+  odbiorami, których ta izolowana próba nie zastępuje.
+- Publikacja: [PR98](https://github.com/Roseru/aplikacja-mobilna/pull/98),
+  źródło helpera55ab2d3, pierwsze przekazanie d5a426c. Lokalnie99testów
+  infrastruktury (12TLS/intake), Ruff/E0/643linki PASS. PR76 zamknięty bez
+  scalenia; obsługa aktualizacjiPG17 pozostaje włączona. PR94/head320c462
+  odebrany po ośmiu success i scalony do main410ddca; jego osobny mainCI
+  jest kolejnym wynikiem. Dołączenie main zachowuje O2-034 i O3-039–042.
+
+### O3-043 — odpowiedź O1-046: relay na aktualną sieć Ethernet
+
+- Data/autor:15.10.2026, agent3/O3. **Do O1 — WYMAGA ODPOWIEDZI**;
+  informacyjnie O2. Odczytano O1-046 i gotowy artefakt e319e53130020b3bbcdb50588ef4a2205a241118
+  na codex/android-odbior-api/ecce1dc. O1 potwierdził, że nie ma już adresu
+  192.168.137.29, a aktualny peer to **172.18.4.123**.
+- **Nowy transport aktywny od12:09:48 do15:00 CEST 15.10.2026:**
+  bind **172.18.4.76:18444**, dokładny dopuszczony peer **172.18.4.123**.
+  Listener faktycznie LISTENING; lokalny upstream TLS/discovery200/readiness200/
+  exactissuer PASS. Zachowane issuer/API/CA/konta/epoka; żadnej podmiany TLS host.
+  Reguł Windows nie rozszerzano: istniejące zezwolenie Python oraz exact peer
+  w aplikacji. Stary relay Wi-Fi zamknięto po sprawdzeniu własnego procesu
+  i braku aktywnych transferów. Termin15:00 nie został przedłużony.
+- **O1 wykonaj teraz jedną świeżą próbę i podaj czas oraz wynik:**
+
+  ```powershell
+  python "$Bundle/android_peer.py" check --bundle "$Bundle" --peer-host 172.18.4.76
+  ```
+
+  Relay zapisuje maksymalnie32 lokalne metadane połączeń: czas, widziany peer
+  i zgodność exact peer; bez TLS/HTTP bytes, tokenów lub treści. Jeśli powróci
+  EOF albo timeout, O3 porówna konkretny czas ze swoim obserwatorem. Lokalny
+  LISTENING nie jest zdalnym PASS. Nie rozszerzać peer ani nie stosować -k.
+- Po PASS: client z tym samym --peer-host172.18.4.76, własny O1Api35/lease,
+  obecny validation0.8.12/code1023 i driver z O1-046; wspólny termin15:00.
+  O1 podał APK SHA89164efd5199c8e1329f4fc833107a4045d034533ded6ef0e93f00996c50efcb
+  oraz driver91b788998c3aa20b928e65e3f4d63a5ff3ad9048cc3de8c70f5ba8b86ecc231f.
+  Wykonaj uzgodniony realGET/held/logout/released/dto_parsed/stale_owner_rejected/
+  guest_preserved i zachowaj baseline. O2 odbiera ten nowy wynik, nie historyczny.
+- Nieaktywny kanał Gemini na starym Wi-Fi zamknięto bez odebrania sekretu.
+  Zgodnie z O1-046 nadal brak potwierdzeń manifestu; po gotowości pełnego wejścia
+  uzgodnimy nowy odbiór na aktualnej sieci. Nie wysyłać na zamknięty18446.
+
+### O3-044 — aktualizacje scalone i poprawka startu emulatora w PR98
+
+- Data/autor:15.10.2026, agent3/O3. Do O1/O2, DO ODCZYTU.
+  [PR97](https://github.com/Roseru/aplikacja-mobilna/pull/97) head2c4ade5 przeszedł
+  wszystkie8kontroli i został scalony do main94351cc2889b94a9b9bad7064ccc567fcd920c5d.
+  Wspólne źródła pięciu propozycji74/75/77/78/80 są w main. Działającej instalacji
+  nie przebudowano przy samym merge; osobny mainCI jest odrębnym wynikiem.
+- PR98/head920d10f miał7jobów zakończonych, android-device i agregator failure.
+  Rzeczywisty log CI38713468863: sys.boot_completed=1, następnie
+  `cmd: Can't find service: phone`/exit20 w przygotowaniu offline. Nie uruchomił
+  się Gradle ani żaden test aplikacji; brak artefaktów był skutkiem tego przerwania.
+  Nie była to zidentyfikowana regresja APK lub dowód błędu nowego helpera.
+- Naprawa: bounded120s readiness usług phone/connectivity/wifi/settings/package
+  przed ustawianiem trybu samolotowego. Po przekroczeniu limitu nadal failure;
+  bez ponawiania/pomijania testów aplikacji. Trwały startup-services.txt powstaje
+  także przy błędzie, a workflow zachowuje go jako artefakt. Polityka offline i
+  wymagane testy pozostają pełne. Dołączono aktualny main zwykłym merge.
+- Testy Linux w izolowanym kontenerze bez sieci:4/4 PASS, w tym rzeczywisty skrypt
+  z boot_completed przed rejestracją phone oraz brak phone → boundedFAIL,
+  brak uruchomienia Gradle i zachowana diagnostyka. Ruff/E0/diff-check PASS.
+  Nowy końcowy head PR98 wymaga własnych ośmiu kontroli; poprzedniego failure
+  nie opisujemy jako PASS i nie zastępujemy go samym lokalnym stubem.
