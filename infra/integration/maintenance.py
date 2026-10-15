@@ -8,6 +8,7 @@ import shutil
 import subprocess
 import sys
 import time
+import traceback
 from contextlib import contextmanager
 from datetime import UTC, datetime
 from pathlib import Path
@@ -322,6 +323,7 @@ def main():
     except BlockingIOError:
         return 0  # Another backup/startup/recovery owns the installation.
     except Exception:
+        (directory / "operation-private.log").write_text(traceback.format_exc(), encoding="utf-8")
         if args.action == "backup":
             write(directory / "backup-receipt.json", {"result": "FAIL", "failed_at": now()})
         elif args.action == "startup":

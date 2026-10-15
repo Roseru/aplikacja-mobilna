@@ -34,6 +34,10 @@ foreach ($directory in @($operations, $backupRoot)) {
     & icacls $directory '/inheritance:r' '/grant:r' "*${sid}:(OI)(CI)F" '*S-1-5-18:(OI)(CI)F' | Out-Null
     if ($LASTEXITCODE -ne 0) { throw 'Private ACL setup failed.' }
 }
+# Store the physical path: packaged desktop callers may virtualize LocalAppData,
+# while Task Scheduler runs outside that package's filesystem view.
+$backupRoot = (& $pythonPath -I -c 'import pathlib,sys; print(pathlib.Path(sys.argv[1]).resolve(strict=True))' $backupRoot).Trim()
+if ($LASTEXITCODE -ne 0 -or -not [IO.Path]::IsPathFullyQualified($backupRoot)) { throw 'Cannot resolve the physical backup root.' }
 $ownerPath = Join-Path $backupRoot 'owner.json'
 if (Test-Path -LiteralPath $ownerPath) {
     $owner = Get-Content -LiteralPath $ownerPath -Raw | ConvertFrom-Json
