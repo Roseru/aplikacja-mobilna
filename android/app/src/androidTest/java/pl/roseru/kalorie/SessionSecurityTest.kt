@@ -74,9 +74,9 @@ class SessionSecurityTest {
     }
     private fun client(db: CalorieDatabase, vault: SessionVault, fixture: FixtureGateway, api: BootstrapGateway? = null,
         profiles: ProfileGateway? = null, snapshots: SnapshotGateway? = null, motivation: MotivationGateway? = null,
-        consents: RankingConsentGateway? = null, ranking: RankingGateway? = null, nemesis: NemesisGateway? = null, nemesisWrites: NemesisWriteGateway? = null) = SessionController(
+        consents: RankingConsentGateway? = null, ranking: RankingGateway? = null, nemesis: NemesisGateway? = null, nemesisWrites: NemesisWriteGateway? = null, photos: PhotoCapabilitiesGateway? = null) = SessionController(
         db, vault, fixture, issuer, context.packageName, now = { fixture.time }, bootstrapGateway = api, profileGateway = profiles, snapshotGateway = snapshots,
-        snapshotProtocol = snapshots?.let { snapshotProtocol() }, motivationGateway = motivation, rankingConsentGateway = consents, rankingGateway = ranking, nemesisGateway = nemesis, nemesisWriteGateway = nemesisWrites)
+        snapshotProtocol = snapshots?.let { snapshotProtocol() }, motivationGateway = motivation, rankingConsentGateway = consents, rankingGateway = ranking, nemesisGateway = nemesis, nemesisWriteGateway = nemesisWrites, photoCapabilitiesGateway = photos)
     private suspend fun login(client: SessionController, fixture: FixtureGateway, subject: String) {
         fixture.subject = subject
         assertNotNull(client.beginLogin())
@@ -1526,4 +1526,69 @@ class SessionSecurityTest {
             assertNull(db.ownerDao().byIdentity(issuer, "fixture-B"))
         } finally { vault.clear(); db.close() }
     }
+
+    private fun photoAnswer() = BootstrapHttpResult(200,
+        androidx.test.platform.app.InstrumentationRegistry.getInstrumentation().context.assets.open("photo-capabilities.json").use { it.readBytes() })
+
+    @Test fun photoCapabilitiesReadIsFencedAcrossLogoutAndAtoBtoAWithoutChangingDiary() = runBlocking<Unit> {
+        val db = memory(); val vault = SessionVault(context, name()); val fixture = FixtureGateway(); val api = ApiFixture()
+        val entered = CompletableDeferred<Unit>(); val release = CompletableDeferred<Unit>(); var calls = 0
+        val photos = object : PhotoCapabilitiesGateway {
+            override suspend fun get(session: ApiSession, beforeSend: suspend () -> Unit): BootstrapHttpResult {
+                beforeSend(); calls++
+                if (calls == 2) { entered.complete(Unit); release.await() }
+                return photoAnswer()
+            }
+        }
+        try {
+            val c = client(db, vault, fixture, api, photos = photos); c.start()
+            val guest = DiaryRepository(db, context).apply { initialize() }
+            guest.add("basic-banana", 100.0, MealType.LUNCH, LocalDate.now(), "photo-capabilities-guest")
+            c.readPhotoCapabilities(); assertEquals(0, calls)
+            login(c, fixture, "fixture-A"); c.bootstrap()
+            val lease = c.view.value.binding!!.lease
+            val before = db.dao().operationCount(lease.storageScope); val beforeProfile = db.dao().currentProfile(lease.storageScope)
+            c.readPhotoCapabilities(); assertTrue(c.view.value.photoCapabilities is PhotoCapabilitiesState.Ready)
+            assertEquals(before, db.dao().operationCount(lease.storageScope)); assertEquals(beforeProfile, db.dao().currentProfile(lease.storageScope))
+            val old = async { c.readPhotoCapabilities() }
+            withTimeout(10_000) { entered.await() }
+            assertTrue(c.view.value.photoCapabilitiesBusy)
+            c.logout(); assertEquals(PhotoCapabilitiesState.NotRequested, c.view.value.photoCapabilities)
+            login(c, fixture, "fixture-B"); login(c, fixture, "fixture-A")
+            assertNotEquals(lease, c.view.value.binding!!.lease)
+            release.complete(Unit); old.await()
+            assertEquals(PhotoCapabilitiesState.NotRequested, c.view.value.photoCapabilities)
+            assertFalse(c.view.value.photoCapabilitiesBusy)
+            assertEquals(1, db.dao().operationCount("guest")); assertEquals(before, db.dao().operationCount(lease.storageScope))
+        } finally { release.complete(Unit); vault.clear(); db.close() }
+    }
+
+    @Test fun photoCapabilitiesRetryAfterCancellationAndRecoveryFailClosed() = runBlocking<Unit> {
+        val db = memory(); val vault = SessionVault(context, name()); val fixture = FixtureGateway(); val api = ApiFixture()
+        var calls = 0; var held: CompletableDeferred<Unit>? = null; val entered = CompletableDeferred<Unit>()
+        val photos = object : PhotoCapabilitiesGateway {
+            override suspend fun get(session: ApiSession, beforeSend: suspend () -> Unit): BootstrapHttpResult {
+                beforeSend(); calls++
+                if (held != null) { entered.complete(Unit); held!!.await() }
+                return if (calls == 1) denied(503, "service_unavailable", "60") else photoAnswer()
+            }
+        }
+        try {
+            val c = client(db, vault, fixture, api, photos = photos); c.start(); login(c, fixture, "fixture-A"); c.bootstrap()
+            val lease = c.view.value.binding!!.lease
+            c.readPhotoCapabilities(); assertTrue(c.view.value.photoCapabilities is PhotoCapabilitiesState.Failed)
+            c.readPhotoCapabilities(); assertEquals(1, calls)
+            fixture.time += 60_000
+            held = CompletableDeferred(); val cancelled = async { c.readPhotoCapabilities() }
+            withTimeout(10_000) { entered.await() }; cancelled.cancelAndJoin()
+            assertFalse(c.view.value.photoCapabilitiesBusy); assertFalse(c.view.value.photoCapabilities is PhotoCapabilitiesState.Ready)
+            held = null; c.readPhotoCapabilities(); assertTrue(c.view.value.photoCapabilities is PhotoCapabilitiesState.Ready)
+            val mapping = db.bootstrapDao().binding(lease.storageScope)!!
+            db.bootstrapDao().update(mapping.copy(requiresRecovery = true, contextRevision = mapping.contextRevision + 1))
+            c.readPhotoCapabilities(); assertEquals(3, calls)
+            assertEquals(PhotoCapabilitiesState.NotRequested, c.view.value.photoCapabilities)
+            assertEquals(0, db.dao().operationCount(lease.storageScope))
+        } finally { held?.complete(Unit); vault.clear(); db.close() }
+    }
+
 }

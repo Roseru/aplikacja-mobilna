@@ -31,11 +31,15 @@ class CalorieApplication : Application() {
             try { HttpsNemesisGateway(it) } catch (_: Exception) { null }
         }, nemesisWriteGateway = getString(R.string.api_base_url).takeIf { it.isNotEmpty() }?.let {
             try { HttpsNemesisWriteGateway(it) } catch (_: Exception) { null }
+        }, photoCapabilitiesGateway = getString(R.string.api_base_url).takeIf { it.isNotEmpty() }?.let {
+            try { HttpsPhotoCapabilitiesGateway(it) } catch (_: Exception) { null }
         }, snapshotProtocol = SnapshotProtocol(SyncWireSchema(SyncWireSchema.FILES.associateWith { file ->
             assets.open("sync/$file").use { it.readBytes() }
         }))) }
     override fun onCreate() {
         super.onCreate()
-        sessionScope.launch { sessions.start(); sessions.observeMotivationContext() }
+        // Finish process attachment before lazy Room initialization; Main.immediate
+        // would perform it inline inside Application.onCreate on a cold process.
+        sessionScope.launch(Dispatchers.Main) { sessions.start(); sessions.observeMotivationContext() }
     }
 }
