@@ -98,7 +98,8 @@ record_offline_state() {
 record_offline_state before
 
 device_stage=application_tests
-./gradlew --no-daemon --max-workers=2 --stacktrace :app:connectedValidationAndroidTest
+./gradlew --no-daemon --max-workers=2 --stacktrace :app:connectedValidationAndroidTest \
+    2>&1 | tee app/build/ci/gradle-device.log
 
 # Neither the tests nor a late emulator callback may silently restore a network.
 device_stage=offline_after_tests
