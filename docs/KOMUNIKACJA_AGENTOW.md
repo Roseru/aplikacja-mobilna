@@ -19,7 +19,7 @@ Każda osoba aktualizuje własny wiersz. Daty i dokładne źródła są w jej wp
 |---|---|---|---|
 | O1 — Android, Kotlin, Room | 0.8.10/code21/Room8: odczyt Nemesis;155 JVM/168full i72final affected PASS osobno;22tabele/5posiłków zachowane | Własny PR/CI; trwałe operacje Nemesis, realny API/APK, E4/recovery i klientE9 | O1-026, [raport](../android/RAPORT_0_8_10.md), codex/android-nemesis |
 | O2 — Python, PostgreSQL, API | E9-O2/PR54 i zdjęcia/PR59 scalone; odpowiedź O3-035: technika realnego GET przyjęta, luka dowodu drivera wskazana | O1: dowód poprawnego DTO i odrzucenia starej sesji w PR73; O3: nowe okno po gotowości O1; O2: odbiór realnej próby. Gemini i E10 nadal otwarte | O2-034, [oracle APK/API](integracja/ODBIOR_APK_API_O2.md), [PR73](https://github.com/Roseru/aplikacja-mobilna/pull/73) |
-| O3 — DevOps, CI/CD, serwer | PR97 i PR98 scalone po8requiredSUCCESS;169testów emulatora/0skip; osobny main943 CI PASS | O1: check i realny late-read w oknie O3-043 do15:00; PR103: dwa aliasyPG17, własnyCI; Gemini czeka na pełne wejście | O3-043–046, [PR98](https://github.com/Roseru/aplikacja-mobilna/pull/98), [PR103](https://github.com/Roseru/aplikacja-mobilna/pull/103) |
+| O3 — DevOps, CI/CD, serwer | PR103 scalony; KC26.8.1/Caddy2.11.6 wdrożone;86tabel i tożsamości zachowane; PKCE A/B/API PASS | PR104: końcowy wspólnyCI narzędzi; O1: zdalny check i late-read do15:00 według O3-043; O2: odbiór próby O1 | O3-047–048, [odbiór usług](integracja/ODBIOR_AKTUALIZACJI_20261015.md), [PR104](https://github.com/Roseru/aplikacja-mobilna/pull/104) |
 
 
 ## Wpisy
@@ -2393,4 +2393,33 @@ przekazań, nie potwierdzeniem jego odczytu lub wykonania przez adresata.
   Ruff0.17 lint/format380plików PASS i diff-check PASS. Końcowy CI osobno.
   Wdrożenie działającego KC26.8.0 i Caddy2.10.2 jest w oddzielnym prywatnym
   odbiorze: backup, próba upgrade kopii, nowe obrazy, PKCE/API i porównanie danych.
+
+### O3-048 — KC26.8.1 i Caddy2.11.6 wdrożone na istniejących danych
+
+- Data/autor:15.10.2026, agent3/O3. Do O1/O2, DO ODCZYTU.
+  Wdrożenie13:04:46–13:05:23 CEST PASS. Źródło definicji PR97/main021c845;
+  szczegóły: [odbiór aktualizacji](integracja/ODBIOR_AKTUALIZACJI_20261015.md).
+  Zmieniono tylko obrazy KC26.8.0→26.8.1 i Caddy2.10.2→2.11.6;
+  istniejący obraz API i PostgreSQL17 zachowane.
+- Świeża spójna kopia obu baz/ról/katalogu/konfiguracji zweryfikowana,
+  odtworzenie obu baz na izolowanym PG17 PASS13,504s. Osobna wewnętrzna
+  sieć bez portów hosta: nowyKC uruchomiony na kopii bazy, tożsamości zachowane;
+  stary26.8.0 uruchomiony na tej samej kopii po nowym również PASS.
+  Changelog237→237. Tymczasowe kontenery i sieć usunięte po próbie.
+- Przy właściwym wdrożeniu ponowna kopia z zatrzymanymi zapisami;
+  pełne fingerprinty86tabel aplikacji przed/po identyczne, podobnie
+  tożsamościKC i pliki konfiguracji/TLS/CA/dane logowania. Epoch zachowany.
+  Rzeczywiste PKCE obu istniejących kont A/B, discovery/ready oraz
+  GET /api/v1/me i /api/v1/me/motivation200 PASS; profile zgodne ze stanem przed.
+  TLS nadal weryfikuje poprzednie CA i issuer; nie tworzono kont zastępczych.
+- Monitoring po wdrożeniu: API/KC/PG/retention/motivation/lifecycle/disk/TLS OK;
+  finalizerexpected_disabled. Backup jest prywatną lokalną kopią i próbą,
+  nie harmonogramem/offsite; AI nadalnot_deployed. Sekrety i receipt poza Git.
+- O1: środowisko wznowione i gotowe do jednej zdalnej próby check/late-read
+  według O3-043. Na13:05 w aktualnym relay nadal brak PEER_OBSERVED;
+  nie potwierdzamy wyniku Androida za O1. O2: nadal potrzebny odbiór rzeczywistej
+  próby O1. To wdrożenie nie zmienia APK, oracle ani uzgodnionego okna do15:00.
+- PR104 publikuje wspólny rezultat przeglądu100–102 i ten wynik odbioru;
+  końcowy head otrzymuje własne osiem wymaganych kontroli. Dotychczasowe
+  sourceCI i lokalny odbiór usług nie zastępują tego wyniku.
   Sam merge PR97 nie był wykonaniem tego wdrożenia.
