@@ -192,4 +192,23 @@ class PhotoAnalysisStorageTest {
             } finally {migrated.close()}
         } finally {source.close();context.deleteDatabase(name);scope?.let(::clean)}
     }
+    @Test fun preparedReceiptCommitsWithoutImageIoAndStillRejectsChangedContext()=runBlocking<Unit> {
+        val db=Room.inMemoryDatabaseBuilder(context,CalorieDatabase::class.java).build();var scope:String?=null
+        try {
+            val lease=account(db,"prepared-ack");scope=lease.storageScope;val store=PhotoAnalysisStore(context,db,lease)
+            val row=store.prepare(photo(db,lease).id,caps,true);val sent=store.request(row.operationId);store.markAttempted(row.operationId,0)
+            val different=PhotoHttpRequest.Create.prepare(row.operationId,checkNotNull(sent.epoch),caps,true,image().also {it[it.lastIndex]=(it.last()+1).toByte()},"image/jpeg")
+            rejected {store.prepareReceipt(row.operationId,ack(),different)}
+            assertNull(store.pending()!!.receiptJson)
+            val prepared=store.prepareReceipt(row.operationId,ack(),sent)
+            assertEquals("PreparedPhotoReceipt(redacted)",prepared.toString())
+            assertTrue(File(context.filesDir,"photo-analysis-inputs/${lease.storageScope}/${row.operationId}.jpg").delete())
+            val original=db.bootstrapDao().binding(lease.storageScope)!!
+            db.bootstrapDao().update(original.copy(contextRevision=original.contextRevision+1))
+            rejected {store.acceptPrepared(prepared)};assertNull(store.pending()!!.receiptJson)
+            db.bootstrapDao().update(original)
+            store.acceptPrepared(prepared);assertNotNull(store.pending()!!.receiptJson)
+        } finally {db.close();scope?.let(::clean)}
+    }
+
 }

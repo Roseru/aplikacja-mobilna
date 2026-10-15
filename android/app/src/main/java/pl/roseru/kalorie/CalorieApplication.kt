@@ -33,7 +33,9 @@ class CalorieApplication : Application() {
             try { HttpsNemesisWriteGateway(it) } catch (_: Exception) { null }
         }, photoCapabilitiesGateway = getString(R.string.api_base_url).takeIf { it.isNotEmpty() }?.let {
             try { HttpsPhotoCapabilitiesGateway(it) } catch (_: Exception) { null }
-        }, snapshotProtocol = SnapshotProtocol(SyncWireSchema(SyncWireSchema.FILES.associateWith { file ->
+        }, photoAnalysisGateway = getString(R.string.api_base_url).takeIf { it.isNotEmpty() }?.let {
+            try { HttpsPhotoAnalysisGateway(it) } catch (_: Exception) { null }
+        }, photoAnalysisStores = { lease -> pl.roseru.kalorie.photo.PhotoAnalysisStore(this,database,lease) }, snapshotProtocol = SnapshotProtocol(SyncWireSchema(SyncWireSchema.FILES.associateWith { file ->
             assets.open("sync/$file").use { it.readBytes() }
         }))) }
     override fun onCreate() {

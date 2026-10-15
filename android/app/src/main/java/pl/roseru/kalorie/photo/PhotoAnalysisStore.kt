@@ -120,19 +120,28 @@ internal class PhotoAnalysisStore(private val context:Context,private val db:Cal
         check(dao.markAttempted(lease.storageScope,id)==1)
         row.copy(attempted=true)
     }
-    suspend fun accept(id:String,body:ByteArray):PhotoCreateReceipt {
+    /** Validate outside the session/Room guard, using the exact request that was sent. */
+    suspend fun prepareReceipt(id:String,body:ByteArray,sent:PhotoHttpRequest.Create):PreparedPhotoReceipt {
         require(body.size in 1..65_536)
+        val row=db.withTransaction { checked(id).also { check(it.attempted && it.blockedCode==null) } }
+        require(sent.key==row.operationId && sent.epoch==row.syncEpoch && sent.provider==row.provider &&
+            sent.noticeVersion==row.noticeVersion && sent.imageSha256==row.imageSha256)
         val exact=body.copyOf()
-        val request=request(id)
-        val receipt=PhotoAnalysisProtocol.create(exact,request)
-        val canonical=StrictJson.canonical(StrictJson.read(exact))
-        db.withTransaction {
-            val row=checked(id);check(row.attempted)
-            check(row.receiptJson==null || row.receiptJson==canonical)
-            check(dao.accept(lease.storageScope,id,canonical)==1)
-        }
-        return receipt
+        return PreparedPhotoReceipt(row,StrictJson.canonical(StrictJson.read(exact)),PhotoAnalysisProtocol.create(exact,sent))
     }
+    /** DB-only commit: safe inside SessionController.withApiSession, no image read/hash/codec. */
+    suspend fun acceptPrepared(prepared:PreparedPhotoReceipt):PhotoCreateReceipt=db.withTransaction {
+        val row=checked(prepared.source.operationId)
+        val original=prepared.source
+        check(row.copy(attempted=original.attempted,receiptJson=original.receiptJson,
+            retryAtMillis=original.retryAtMillis,blockedCode=original.blockedCode)==original)
+        check(row.attempted && row.blockedCode==null)
+        check(row.receiptJson==null || row.receiptJson==prepared.canonical)
+        check(dao.accept(lease.storageScope,row.operationId,prepared.canonical)==1)
+        prepared.receipt
+    }
+    suspend fun accept(id:String,body:ByteArray):PhotoCreateReceipt =
+        acceptPrepared(prepareReceipt(id,body,request(id)))
     suspend fun defer(id:String,retryAtMillis:Long)=db.withTransaction {
         require(retryAtMillis>=0);check(checked(id).receiptJson==null);check(dao.defer(lease.storageScope,id,retryAtMillis)==1)
     }
@@ -147,4 +156,10 @@ internal class PhotoAnalysisStore(private val context:Context,private val db:Cal
         }
         AtomicFile(file(id)).delete()
     }
+}
+
+/** Internal validated receipt, never an alternative parser or a permission to bypass the session guard. */
+internal class PreparedPhotoReceipt internal constructor(internal val source:PhotoAnalysisRequestEntity,
+    internal val canonical:String,internal val receipt:PhotoCreateReceipt) {
+    override fun toString()="PreparedPhotoReceipt(redacted)"
 }

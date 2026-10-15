@@ -2,7 +2,7 @@
 
 Branch `codex/android-analiza-zdjec`, [PR105](https://github.com/Roseru/aplikacja-mobilna/pull/105), zależny od PR96/merge8d96aa7.
 Wejścia: [integracja O2](../docs/e7/INTEGRACJA_O1.md), [DTO](../backend/src/calorie_app/modules/ai/schemas.py) i [przykład create](../contracts/examples/e7/create-accepted.json).
-Gotowe są transport i trwałe przygotowanie zlecenia. SessionController, ekran zgody/wysyłki oraz pełny przepływ wyniku pozostają do podłączenia.
+Gotowe są transport, trwała kolejka, SessionController oraz ekran zgody/wysyłki i jawnego ponowienia. Pełny przepływ odczytu wyniku, korekty i zatwierdzenia pozostaje do podłączenia. Ten etap nie jest odbiorem pełnego E7.
 
 ## Trwała kolejka
 
@@ -12,7 +12,24 @@ Przygotowanie wymaga jawnego accepted=true, dostępnego capabilities, konta i go
 
 Retry odczytuje i sprawdza zachowaną kopię, bez ponownego pobierania z galerii lub kodowania. Ten sam key/image/metadata odtwarzają te same bajty multipart po restarcie i lost ACK. B ani stary lease A nie mają dostępu do kolejki A. Powrót A wymaga aktualnego lease i zgodnego kontekstu serwera. Zmiana account ID/generacji/epoki/context revision lub recovery blokuje wysyłkę i zachowuje dane. Nigdy niewysłaną operację można jawnie odrzucić lokalnie, również po zmianie kontekstu; attempted nie oznacza pewnego braku wysyłki.
 
-ACK jest ściśle parsowany i zapisywany atomowo. Identyczne potwierdzenie jest idempotentne; inne ID/treść nie zastępują ACK. Późny błąd lub Retry-After nie cofają przyjęcia. Kolejka nie zapisuje Meal, ProductDraft, celu ani outbox. Autoryzacja tokenu, wspólny backoff i guard operacji sieciowej wymagają jeszcze integracji. Odczyt pliku/parsowanie oraz commit trzeba rozdzielić — całego request/accept nie wolno otoczyć transakcją/mutexem SessionController.
+ACK jest ściśle parsowany i zapisywany atomowo. Identyczne potwierdzenie jest idempotentne; inne ID/treść nie zastępują ACK. Późny błąd lub Retry-After nie cofają przyjęcia. Kolejka nie zapisuje Meal, ProductDraft, celu ani outbox. Autoryzację tokenu, wspólny backoff i guard operacji sieciowej obsługuje SessionController. Odczyt pliku/hash/encoding multipart i parsowanie ACK są poza jego mutexem/transakcją. `prepareReceipt` wiąże ACK z dokładnym wysłanym key/epoką/providerem/notice/hashem obrazu. `acceptPrepared` wykonuje tylko walidację i commit w Room, pod aktualnym guardem sesji.
+
+## Zgoda i wysyłka z aktywnej sesji
+
+Ekran zapisanych zdjęć udostępnia „Analizuj to zdjęcie” po zalogowaniu, bootstrapie i aktualnym odczycie dostępnego providera. Okno pokazuje dostawcę/model, cel, retencję backendu do24h, zasady dostawcy i szacunkowy charakter wyniku. Checkbox zgody jest wyłączony na początku. Anulowanie, zmiana zdjęcia/konta/providera/modelu/notice oraz wyjście aplikacji w tło resetują zgodę. Potwierdzenie obejmuje jedno zdjęcie; wybór z galerii/aparatu nie uruchamia sieci.
+
+UI przekazuje captured lease oraz dokładny provider/model/notice. Kontroler ponownie sprawdza sesję, bootstrap, kontekst i tę samą wersję dostępności; najpierw utrwala wejście, potem rozpoczyna POST. Nie uruchamia wysyłki przy starcie lub powrocie aplikacji. Jedna operacja online nie pokrywa się z inną operacją konta. Logout/logowanie/odnowienie ręczne unieważniają wcześniejszą operację; spóźniony ACK po A→B→A nie zapisuje potwierdzenia ani wiadomości w nowym zakresie.
+
+Wygaśnięty token jest odświeżany przed próbą;401 pozwala na jedno odnowienie, bez zmiany key/body.429/503 i409`ai_operation_busy` zachowują operację oraz trwały wspólny backoff. Przy409busy bez Retry-After domyślna przerwa wynosi30s. Konflikty `sync_epoch_changed`, `account_generation_changed` i `analysis_context_changed` oznaczają wymagane uzgodnienie stanu; nie odtwarzamy starej próby automatycznie. Niepewna odpowiedź/timeout/cancellation zachowuje wejście do jawnego retry. Retry nie potrzebuje ponownego otwierania galerii i korzysta z uprzednio zapisanej zgody na ten obraz/provider/notice.
+
+Panel rozróżnia zlecenie niewysłane, próbę bez potwierdzenia, przyjęcie202 i blokadę. Tylko operację nigdy niepróbowaną można usunąć lokalnie; próby niepewnej nie traktujemy jako bezpiecznie niewysłanej.202 nie oznacza rozpoznania ani zapisu posiłku. ACK pozostaje w kolejce do dalszego odczytu/rozstrzygnięcia; w tej części nie dodajemy kolejnego zlecenia obok nierozstrzygniętego.
+
+Wersja wewnętrzna0.8.15/code26, validation1026. Room nadal10, bez nowej migracji. Checkpoint przed przerwaniem pracy: **186JVM debug/201JVM validation, oba APK/testAPK i lint0error PASS. Nowe testy urządzenia: NOT_RUN. Rzeczywiste APK/API i Google: NOT_RUN.** Pakiet testowy kompiluje osiem nowych regresji SessionController, dwa testy Compose zgody/kolejki i dodatkowy przypadek commit ACK bez IO. Są przygotowane do wykonania na O1Tests35; nie dziedziczą poprzedniego native200PASS.
+
+Validation0.8.15.validation/code1026/Room10 SHA256 `9d220bc4435f579bc94a3bead205c7962e4593880ac484d9afdb41c1d8c947ee`.
+TestAPK SHA256 `d6a8277126aeb30c215d7fc631c1caa942d4bfa163eb3d30501a6cb9b5050d6c`. Domyślny testAPK wyklucza driver live, debug wyklucza bramkę obserwacji. Regularna instalacja użytkownika i osobny kandydat rzeczywistego API nie zostały podmienione. Po checkpointcie zamknięto wyłącznie własny bezczynny O1Tests35 z zachowaniem danych; nie rozpoczęto instrumentacji.
+
+Pierwszy build przerwany bez wyniku. Kolejne dwie próby wykazały dwa wygenerowane metadata JSON wypełnione zerami. Zachowano ich kopie i logi, sprawdzono pozostałe JSON-y pod build, usunięto wyłącznie te dwa potwierdzone uszkodzone artefakty; Gradle odtworzył je ze źródeł. Końcowy pełny build zakończył się sukcesem. Bez clean/uninstall/wipe i bez zmiany źródeł w celu ominięcia błędu środowiska. Historyczny wynik poniżej dotyczy poprzedniego checkpointu kolejki.
 
 ## Transport
 
@@ -20,7 +37,7 @@ ACK jest ściśle parsowany i zapisywany atomowo. Identyczne potwierdzenie jest 
 
 Wspólny HTTPS ma bounded JSON/no-store, bez redirects/cache/automatycznego retry. Mutacje mają key/epokę, GET ich nie dostaje. Multipart o znanej długości jest zapisywany w blokach4KiB, z cancellation/deadline między blokami; systemowy write może blokować. Callback sprawdza autoryzację przed wysyłką. Proxy429/503 zachowuje Retry-After bez parsowania HTML. Pełny decoder propozycji i polling nie są jeszcze dostarczone.
 
-## Walidacja
+## Walidacja poprzedniego checkpointu kolejki
 
 Końcowe źródło `0a6667a1ee856ba27f0264f0710765e673965995`; checkpoint kolejki `95e9a180280a2aaf32ae9246fc264044f9676c34`.
 **186JVM debug/201JVM validation, build obu APK/testAPK i lint0error PASS. Końcowy pełny native200/200 API35 PASS, bez pominięć.** Sześć nowych przypadków Room/plików obejmuje restart/lost ACK/usunięcie oryginału, zgodę/guest, ABA/kontekst serwera, race, uszkodzenie/backoff/ACK i migrację9→10. Migracja zachowuje wartości wszystkich23 wcześniejszych tabel, zdjęcie/dziennik i FK, dodając pustą24.tabelę. Starsze ścieżki migracji zachowują swoje asercje i dochodzą do10.
@@ -41,10 +58,8 @@ TestAPK SHA256 `62a23387f990f39bc6e65911e56e1e1f35e2c6f310345e47e41d1ec7a3c5ec0a
 
 ## Kolejne części pełnego E7
 
-1. SessionController: token/captured operation, wspólny backoff/401, IO poza guardem i jawne wznowienie.
-2. UI notice/zgody, wybór zdjęcia, kolejka i create; brak zgody domyślnej.
-3. Pełny decoder propozycji, ograniczony polling/deadline/cancel, korekty do30 składników, Decimal/null/B/T/W/g/ml i referencje katalogu.
-4. Confirm ze stabilnymi ID/provenance, atomowy Room+outbox i jedyny zapis serwera przez kanoniczny E4 push, bez duplikatu po replay.
-5. Retencja pozostałości po crash, rzeczywisty APK/API oraz E7-R i odbiór wydania.
+1. Pełny decoder propozycji, ograniczony polling/deadline/cancel, korekty do30 składników, Decimal/null/B/T/W/g/ml i referencje katalogu.
+2. Confirm ze stabilnymi ID/provenance, atomowy Room+outbox i jedyny zapis serwera przez kanoniczny E4 push, bez duplikatu po replay.
+3. Retencja pozostałości po crash, rzeczywisty APK/API oraz E7-R i odbiór wydania.
 
 Nie wywołano Google, nie umieszczono sekretu w APK i nie opublikowano produktu.

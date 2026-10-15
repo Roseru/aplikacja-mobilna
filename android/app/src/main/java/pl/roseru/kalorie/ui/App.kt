@@ -61,7 +61,9 @@ import pl.roseru.kalorie.session.*
             composable("photo") {
                 val day by model.day.collectAsStateWithLifecycle()
                 MealPhotoScreen(photoModel, day.date, onBack = { nav.popBackStack() }, onManual = { nav.navigate("custom") },
-                    session = session, onReadCapabilities = actions.readPhotoCapabilities)
+                    session = session, onReadCapabilities = actions.readPhotoCapabilities,
+                    onUpload = actions.uploadPhoto,onRetryUpload = actions.retryPhotoUpload,
+                    onDiscardUpload = actions.discardUnsentPhotoUpload)
             }
             composable("custom") { CustomFoodScreen(model, onBack = { nav.popBackStack() }) }
             composable("settings") { SettingsScreen(model) }

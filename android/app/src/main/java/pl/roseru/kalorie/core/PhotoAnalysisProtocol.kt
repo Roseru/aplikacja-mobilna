@@ -13,7 +13,7 @@ internal sealed class PhotoHttpRequest(val key: String?, val epoch: String?, val
     final override fun toString() = "PhotoHttpRequest(redacted)"
 
     class Create private constructor(key: String, epoch: String, val provider: String,
-        val noticeVersion: String, private val wire: ByteArray, contentType: String) :
+        val noticeVersion: String, val imageSha256: String, private val wire: ByteArray, contentType: String) :
         PhotoHttpRequest(key, epoch, "/ai/food-analyses", "POST", contentType) {
         override fun body() = wire.copyOf()
         companion object {
@@ -47,7 +47,8 @@ internal sealed class PhotoHttpRequest(val key: String?, val epoch: String?, val
                 text("\r\n--$boundary--\r\n")
                 val wire = output.toByteArray()
                 require(wire.size <= BODY_BYTES)
-                return Create(key,epoch,capabilities.provider,capabilities.noticeVersion,wire,"multipart/form-data; boundary=$boundary")
+                val imageSha = java.security.MessageDigest.getInstance("SHA-256").digest(image).joinToString("") { "%02x".format(it) }
+                return Create(key,epoch,capabilities.provider,capabilities.noticeVersion,imageSha,wire,"multipart/form-data; boundary=$boundary")
             }
         }
     }

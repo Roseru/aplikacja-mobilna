@@ -19,6 +19,7 @@ import pl.roseru.kalorie.core.*
 import pl.roseru.kalorie.core.sync.SnapshotProtocol
 import pl.roseru.kalorie.core.catalog.StrictJson
 import pl.roseru.kalorie.data.*
+import pl.roseru.kalorie.photo.*
 import java.util.UUID
 
 data class SessionBinding(val owner: LocalOwnerEntity, val lease: OwnerLease)
@@ -40,7 +41,9 @@ data class SessionView(val binding: SessionBinding? = null, val busy: Boolean = 
     val nemesisMutationConfigured: Boolean = false, val nemesisMutationBusy: Boolean = false,
     val nemesisMutation: NemesisMutationState = NemesisMutationState.Idle,
     val photoCapabilitiesConfigured: Boolean = false, val photoCapabilitiesBusy: Boolean = false,
-    val photoCapabilities: PhotoCapabilitiesState = PhotoCapabilitiesState.NotRequested)
+    val photoCapabilities: PhotoCapabilitiesState = PhotoCapabilitiesState.NotRequested,
+    val photoUploadConfigured:Boolean=false,val photoUploadBusy:Boolean=false,
+    val photoUpload:PhotoUploadStatus?=null,val photoUploadMessage:String?=null)
 
 /** Serializes durable decisions, not network waits. A callback/refresh is fenced by a captured
  * owner lease AND an operation ID, so logout and A→B→A cannot apply an old response.
@@ -56,7 +59,9 @@ class SessionController internal constructor(private val db: CalorieDatabase, pr
     private val rankingGateway: RankingGateway? = null,
     private val nemesisGateway: NemesisGateway? = null,
     private val nemesisWriteGateway: NemesisWriteGateway? = null,
-    private val photoCapabilitiesGateway: PhotoCapabilitiesGateway? = null) {
+    private val photoCapabilitiesGateway: PhotoCapabilitiesGateway? = null,
+    private val photoAnalysisGateway:PhotoAnalysisGateway?=null,
+    private val photoAnalysisStores:((OwnerLease)->PhotoAnalysisStore)?=null) {
     private val owners = LocalOwnerStore(db)
     private val mutex = Mutex()
     private var record = JSONObject()
@@ -64,6 +69,14 @@ class SessionController internal constructor(private val db: CalorieDatabase, pr
     private var bootstrapOperation: String? = null
     private var profileOperation: String? = null
     private enum class PrivateReadKind { PROFILE, MOTIVATION, CONSENTS, RANKING, NEMESIS, PHOTO }
+    private var photoUploadOperation:String?=null
+    private var photoUploadMessage:String?=null
+    private var photoUploadFence:Pair<OwnerLease,Long>?=null
+    private var photoUploadContext:Triple<String,Int,String>?=null
+    private fun clearPhotoUpload() {
+        photoUploadOperation=null;photoUploadMessage=null;photoUploadFence=null;photoUploadContext=null
+        mutable.value=mutable.value.copy(photoUploadBusy=false,photoUpload=null,photoUploadMessage=null)
+    }
     private var photoCapabilitiesState: PhotoCapabilitiesState = PhotoCapabilitiesState.NotRequested
     private var photoCapabilitiesFence: Pair<OwnerLease, Long>? = null
     private var photoCapabilitiesContext: Triple<String, Int, String>? = null
@@ -105,13 +118,14 @@ class SessionController internal constructor(private val db: CalorieDatabase, pr
     /** In-memory confirmation is invalidated also by an external Room context update. */
     suspend fun observeMotivationContext() {
         try {
-            db.invalidationTracker.createFlow("account_bindings", "local_active_owner", "local_owners").collect {
+            db.invalidationTracker.createFlow("account_bindings", "local_active_owner", "local_owners", "photo_analysis_requests").collect {
                 mutex.withLock {
                     if (mutable.value.binding != null) publish(mutable.value.message)
                 }
             }
         } catch (error: CancellationException) { throw error }
         catch (_: Exception) { mutex.withLock {
+            clearPhotoUpload()
             clearMotivation()
             clearRanking(); clearNemesis()
             nemesisMutationOperation = null
@@ -234,6 +248,15 @@ class SessionController internal constructor(private val db: CalorieDatabase, pr
             nemesisMutationOperation = null
             persist(copyRecord().also { it.remove("nemesisAttempt") }); clearNemesis()
         }
+        if(photoUploadFence!=null && (session==null || server==null || server.requiresRecovery ||
+            photoUploadFence!=(current.lease to server.contextRevision) ||
+            photoUploadContext!=Triple(server.accountId,server.accountGeneration,server.syncEpoch))) clearPhotoUpload()
+        val photoRow=if(current.owner.kind=="account" && session!=null && photoAnalysisStores!=null)
+            db.photoAnalysisDao().get(current.lease.storageScope) else null
+        owners.requireCurrent(current.lease)
+        val photoStatus=photoRow?.let { row->PhotoUploadStatus(row.operationId,row.sourcePhotoId,row.provider,row.model,
+            row.attempted,row.receiptJson!=null,maxOf(row.retryAtMillis,session?.optLong("apiRetryAt")?:0),
+            row.blockedCode!=null || server==null || server.requiresRecovery || !photoMatches(row,server)) }
         val pendingNemesis = currentNemesisAttempt(current,server)
         val pendingConsent = pendingConsent(current, server)
         val consentBusy = consentOperation != null || (profileOperation != null && privateReadKind == PrivateReadKind.CONSENTS)
@@ -245,6 +268,8 @@ class SessionController internal constructor(private val db: CalorieDatabase, pr
             photoCapabilitiesConfigured = photoCapabilitiesGateway != null,
             photoCapabilitiesBusy = profileOperation != null && privateReadKind == PrivateReadKind.PHOTO,
             photoCapabilities = photoCapabilitiesState,
+            photoUploadConfigured=photoAnalysisGateway!=null && photoAnalysisStores!=null,
+            photoUploadBusy=photoUploadOperation!=null,photoUpload=photoStatus,photoUploadMessage=photoUploadMessage,
             motivationConfigured = motivationGateway != null,
             motivationBusy = profileOperation != null && privateReadKind == PrivateReadKind.MOTIVATION,
             motivation = if (profileOperation != null && privateReadKind == PrivateReadKind.MOTIVATION) MotivationState.Loading else motivationState,
@@ -307,6 +332,7 @@ class SessionController internal constructor(private val db: CalorieDatabase, pr
             profileOperation = null
             snapshotOperation = null
             consentOperation = null
+            clearPhotoUpload()
             nemesisMutationOperation = null
             if (record.has("nemesisAttempt")) persist(copyRecord().also { it.remove("nemesisAttempt") })
             serverProfile = null
@@ -408,6 +434,7 @@ class SessionController internal constructor(private val db: CalorieDatabase, pr
         profileOperation = null
         snapshotOperation = null
         consentOperation = null
+        clearPhotoUpload()
         nemesisMutationOperation = null
         serverProfile = null
         clearMotivation()
@@ -446,7 +473,7 @@ class SessionController internal constructor(private val db: CalorieDatabase, pr
                 serverProfile = null
                 clearMotivation()
                 // Manual renewal invalidates a held private read. Automatic renewal belongs to it.
-                if (expected == null) { profileOperation = null; consentOperation = null; nemesisMutationOperation = null; clearRanking(); clearNemesis() }
+                if (expected == null) { clearPhotoUpload(); profileOperation = null; consentOperation = null; nemesisMutationOperation = null; clearRanking(); clearNemesis() }
                 mutable.value = mutable.value.copy(busy = true, profileBusy = profileOperation != null && privateReadKind == PrivateReadKind.PROFILE,
                     motivationBusy = profileOperation != null && privateReadKind == PrivateReadKind.MOTIVATION,
                     serverProfile = null, motivation = MotivationState.NotRequested, rankingConsent = RankingConsentState.NotRequested,
@@ -521,7 +548,7 @@ class SessionController internal constructor(private val db: CalorieDatabase, pr
         val id = UUID.randomUUID().toString()
         val lease = try { mutex.withLock {
             if (bootstrapOperation != null || operation != null || record.has("pending")) return
-            if (profileOperation != null || snapshotOperation != null || consentOperation != null || nemesisMutationOperation != null) return
+            if (profileOperation != null || snapshotOperation != null || consentOperation != null || photoUploadOperation != null || nemesisMutationOperation != null) return
             val current = binding()
             if (current.owner.kind != "account" || sessionFor(current) == null) {
                 publish("Zaloguj się, aby połączyć konto z serwerem. Dziennik działa offline."); return
@@ -654,7 +681,7 @@ class SessionController internal constructor(private val db: CalorieDatabase, pr
         var capturedLease: OwnerLease? = null
         var rankingQuery: RankingQuery? = null
         val capturedBinding = try { mutex.withLock {
-            if (profileOperation != null || consentOperation != null || snapshotOperation != null || bootstrapOperation != null || operation != null || nemesisMutationOperation != null || record.has("pending")) return
+            if (profileOperation != null || consentOperation != null || snapshotOperation != null || bootstrapOperation != null || operation != null || photoUploadOperation != null || nemesisMutationOperation != null || record.has("pending")) return
             val current = binding()
             capturedLease = current.lease
             if (current.owner.kind != "account" || sessionFor(current) == null) {
@@ -969,7 +996,7 @@ class SessionController internal constructor(private val db: CalorieDatabase, pr
         val id = UUID.randomUUID().toString()
         var lease: OwnerLease? = null
         val request = try { mutex.withLock {
-            if (consentOperation != null || profileOperation != null || snapshotOperation != null || bootstrapOperation != null || operation != null || nemesisMutationOperation != null || record.has("pending")) return
+            if (consentOperation != null || profileOperation != null || snapshotOperation != null || bootstrapOperation != null || operation != null || photoUploadOperation != null || nemesisMutationOperation != null || record.has("pending")) return
             val current = binding()
             lease = current.lease
             check(current.owner.kind == "account" && sessionFor(current) != null)
@@ -1127,7 +1154,7 @@ class SessionController internal constructor(private val db: CalorieDatabase, pr
         val id = UUID.randomUUID().toString()
         var lease: OwnerLease? = null
         val request = try { mutex.withLock {
-            if (nemesisMutationOperation != null || consentOperation != null || profileOperation != null || snapshotOperation != null || bootstrapOperation != null || operation != null || record.has("pending")) return
+            if (photoUploadOperation != null || nemesisMutationOperation != null || consentOperation != null || profileOperation != null || snapshotOperation != null || bootstrapOperation != null || operation != null || record.has("pending")) return
             val current = binding(); lease = current.lease
             check(current.owner.kind == "account" && sessionFor(current) != null)
             val server = checkNotNull(db.bootstrapDao().binding(current.lease.storageScope)); check(!server.requiresRecovery)
@@ -1246,6 +1273,159 @@ class SessionController internal constructor(private val db: CalorieDatabase, pr
     }
 
 
+    private fun photoMatches(row:PhotoAnalysisRequestEntity,server:AccountBindingEntity)=
+        row.ownerScope==server.ownerScope && row.accountId==server.accountId && row.accountGeneration==server.accountGeneration &&
+            row.syncEpoch==server.syncEpoch && row.contextRevision==server.contextRevision
+    private class PhotoCapture(val lease:OwnerLease,val server:AccountBindingEntity,val store:PhotoAnalysisStore,
+        val capabilities:PhotoCapabilitiesRead?)
+    private suspend fun beginPhotoUpload(id:String,consent:PhotoUploadConsent?,expectedLease:OwnerLease):PhotoCapture?=mutex.withLock {
+        owners.requireCurrent(expectedLease)
+        if(photoAnalysisGateway==null || photoAnalysisStores==null || photoUploadOperation!=null ||
+            profileOperation!=null || bootstrapOperation!=null || snapshotOperation!=null || consentOperation!=null ||
+            nemesisMutationOperation!=null || operation!=null || record.has("pending")) return@withLock null
+        val current=binding()
+        val session=sessionFor(current)
+        if(current.owner.kind!="account" || session==null) {publish("Zaloguj się, aby wysłać zdjęcie. Ręczny dziennik działa offline.");return@withLock null}
+        val known=db.bootstrapDao().binding(current.lease.storageScope)
+        if(known==null || known.requiresRecovery){publish("Połącz konto lub uzgodnij stan serwera przed wysyłką zdjęcia.");return@withLock null}
+        val server=bootstraps.requireReady(current.lease,known.contextRevision)
+        if(session.optLong("apiRetryAt")>now()) {publish("Serwer jest zajęty. Poczekaj przed ponowieniem.");return@withLock null}
+        photoUploadOperation=id;photoUploadMessage=null
+        photoUploadFence=current.lease to server.contextRevision
+        photoUploadContext=Triple(server.accountId,server.accountGeneration,server.syncEpoch)
+        val store=photoAnalysisStores.invoke(current.lease)
+        val caps=if(consent!=null) {
+            val value=(photoCapabilitiesState as? PhotoCapabilitiesState.Ready)?.read
+                ?: throw IllegalStateException("Capabilities required")
+            require(photoCapabilitiesFence==(current.lease to server.contextRevision) &&
+                photoCapabilitiesContext==Triple(server.accountId,server.accountGeneration,server.syncEpoch))
+            require(value.available && value.provider==consent.provider && value.model==consent.model && value.noticeVersion==consent.noticeVersion)
+            check(store.pending()==null)
+            value
+        } else {
+            val row=checkNotNull(store.pending())
+            check(photoMatches(row,server) && row.receiptJson==null && row.blockedCode==null && row.retryAtMillis<=now())
+            null
+        }
+        publish();PhotoCapture(current.lease,server,store,caps)
+    }
+    /** One explicit consent persists the input before the first POST; no startup/background replay. */
+    suspend fun uploadPhoto(expectedLease:OwnerLease,photoId:String,consent:PhotoUploadConsent,accepted:Boolean) {
+        if(!accepted) return
+        val id=UUID.randomUUID().toString()
+        try {
+            val captured=beginPhotoUpload(id,consent,expectedLease)?:return
+            val row=captured.store.prepare(photoId,checkNotNull(captured.capabilities),true)
+            sendPhotoUpload(id,captured,row)
+        } catch(error:CancellationException){withContext(NonCancellable){finishPhotoUpload(id)};throw error}
+        catch(_:Exception){finishPhotoUpload(id)}
+    }
+    suspend fun retryPhotoUpload(expectedLease:OwnerLease) {
+        val id=UUID.randomUUID().toString()
+        try {
+            val captured=beginPhotoUpload(id,null,expectedLease)?:return
+            sendPhotoUpload(id,captured,checkNotNull(captured.store.pending()))
+        } catch(error:CancellationException){withContext(NonCancellable){finishPhotoUpload(id)};throw error}
+        catch(_:Exception){finishPhotoUpload(id)}
+    }
+    private suspend fun sendPhotoUpload(id:String,captured:PhotoCapture,row:PhotoAnalysisRequestEntity) {
+        val fresh=mutex.withLock {
+            owners.requireCurrent(captured.lease);check(photoUploadOperation==id)
+            val state=AuthState.jsonDeserialize(checkNotNull(sessionFor(binding())).getString("authState"))
+            (state.accessTokenExpirationTime?:0)>now()+30_000
+        }
+        if(!fresh) check(refreshFor(captured.lease))
+        var ticket=apiSession(captured.lease);var refreshed=false
+        // Private image IO and wire encoding are outside withApiSession/Room/mutex.
+        val request=captured.store.request(row.operationId)
+        suspend fun ready() {
+            check(photoUploadOperation==id)
+            val current=bootstraps.requireReady(captured.lease,captured.server.contextRevision)
+            check(photoMatches(row,current))
+            check(checkNotNull(captured.store.pending()).operationId==row.operationId)
+            check(checkNotNull(sessionFor(binding())).optLong("apiRetryAt")<=now())
+        }
+        while(true) {
+            val current=ticket
+            withApiSession(current){ready();captured.store.markAttempted(row.operationId,now())}
+            val answer=withTimeout(45_000) {
+                checkNotNull(photoAnalysisGateway).send(current,request){withApiSession(current){ready()}}
+            }
+            if(answer.status==202) {
+                val receipt=captured.store.prepareReceipt(row.operationId,answer.body,request)
+                withApiSession(current) {
+                    ready();captured.store.acceptPrepared(receipt)
+                    photoUploadOperation=null;photoUploadMessage="Serwer przyjął zdjęcie do analizy. Posiłek nie został jeszcze zapisany."
+                    publish()
+                }
+                return
+            }
+            val code=if(answer.status in setOf(429,503)) "" else BootstrapHttpProtocol.errorCode(answer.body)
+            withApiSession(current){ready()}
+            if(answer.status==401 && code=="unauthorized" && !refreshed) {
+                refreshed=true;check(refreshFor(captured.lease));ticket=apiSession(captured.lease);continue
+            }
+            if(answer.status in setOf(429,503) || (answer.status==409 && code=="ai_operation_busy")) {
+                val seconds=BootstrapHttpProtocol.retrySeconds(answer.retryAfter,now())
+                val retryAt=Math.addExact(now(),Math.multiplyExact(seconds,1000))
+                withApiSession(current) {
+                    ready()
+                    val session=checkNotNull(sessionFor(binding()))
+                    val until=maxOf(retryAt,session.optLong("apiRetryAt"),checkNotNull(captured.store.pending()).retryAtMillis)
+                    captured.store.defer(row.operationId,until)
+                    persist(copyRecord().put("session",JSONObject(session.toString()).put("apiRetryAt",until)))
+                    photoUploadOperation=null;photoUploadMessage="Serwer jest zajęty. Zlecenie zachowano; ponów po przerwie."
+                    publish()
+                }
+                return
+            }
+            if(answer.status in setOf(400,403,404,409,410,413,415,422)) {
+                withApiSession(current) {
+                    ready();captured.store.block(row.operationId,"photo_request_rejected")
+                    if(answer.status==409 && code in setOf("sync_epoch_changed","account_generation_changed","analysis_context_changed")) {
+                        val mapping=checkNotNull(db.bootstrapDao().binding(captured.lease.storageScope))
+                        db.bootstrapDao().update(mapping.copy(requiresRecovery=true,contextRevision=Math.addExact(mapping.contextRevision,1)))
+                    }
+                    photoUploadOperation=null;photoUploadMessage="Serwer odrzucił zlecenie. Zdjęcie zachowano; możesz dodać posiłek ręcznie."
+                    publish()
+                }
+                return
+            }
+            finishPhotoUpload(id);return
+        }
+    }
+    private suspend fun finishPhotoUpload(id:String)=mutex.withLock {
+        if(photoUploadOperation!=id) return@withLock
+        photoUploadOperation=null
+        try {
+            val lease=owners.currentLease()
+            if(photoUploadFence?.first!=lease){clearPhotoUpload();publish();return@withLock}
+            photoUploadMessage=if(db.photoAnalysisDao().get(lease.storageScope)==null)
+                "Nie utworzono zlecenia. Sprawdź dostępność i potwierdź zgodę dla tego zdjęcia."
+                else "Nie potwierdzono przyjęcia zdjęcia. Ponów zachowane zlecenie bez zmiany zdjęcia lub klucza."
+            publish()
+        } catch(_:Exception){clearPhotoUpload()}
+    }
+    /** Explicit local discard only if no network attempt could have happened; never deletes a journal entry. */
+    suspend fun discardUnsentPhotoUpload(expectedLease:OwnerLease) {
+        var lease:OwnerLease?=null
+        try {
+            val saved=mutex.withLock {
+                owners.requireCurrent(expectedLease)
+                if(photoUploadOperation!=null) return
+                val current=binding();if(current.owner.kind!="account") return
+                lease=current.lease
+                val store=photoAnalysisStores?.invoke(current.lease)?:return
+                val row=store.pending()?:return
+                check(!row.attempted)
+                store to row.operationId
+            }
+            saved.first.dropNeverAttempted(saved.second)
+            mutex.withLock {owners.requireCurrent(checkNotNull(lease));photoUploadMessage="Niewysłane zlecenie usunięte. Zdjęcie źródłowe zachowane.";publish()}
+        } catch(error:CancellationException){throw error}
+        catch(_:Exception){/* Keep an attempted/changed-owner operation intact. */}
+    }
+
     /** Full server archive. The local diary remains editable, and no queue entry is acknowledged. */
     suspend fun downloadSnapshot() {
         val transport = snapshotGateway ?: return
@@ -1253,7 +1433,7 @@ class SessionController internal constructor(private val db: CalorieDatabase, pr
         val protocol = snapshotProtocol ?: return
         val id = UUID.randomUUID().toString()
         val lease = try { mutex.withLock {
-            if (snapshotOperation != null || profileOperation != null || consentOperation != null || bootstrapOperation != null || operation != null || nemesisMutationOperation != null || record.has("pending")) return
+            if (snapshotOperation != null || profileOperation != null || consentOperation != null || bootstrapOperation != null || operation != null || photoUploadOperation != null || nemesisMutationOperation != null || record.has("pending")) return
             val current = binding()
             if (current.owner.kind != "account" || sessionFor(current) == null || !mutable.value.serverLinked) {
                 publish("Zaloguj się i połącz konto, aby pobrać kopię serwera."); return

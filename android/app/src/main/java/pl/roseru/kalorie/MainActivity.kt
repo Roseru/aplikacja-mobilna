@@ -104,7 +104,10 @@ class MainActivity : ComponentActivity() {
                 acceptNemesis = { id,ack,weight,deficit -> app.sessionScope.launch { app.sessions.acceptNemesis(id,ack,weight,deficit) } },
                 cancelNemesis = { id -> app.sessionScope.launch { app.sessions.cancelNemesis(id) } },
                 retryNemesisMutation = { app.sessionScope.launch { app.sessions.retryNemesisMutation() } },
-                readPhotoCapabilities = { app.sessionScope.launch { app.sessions.readPhotoCapabilities() } })
+                readPhotoCapabilities = { app.sessionScope.launch { app.sessions.readPhotoCapabilities() } },
+                uploadPhoto = { id,consent,accepted -> app.sessionScope.launch { app.sessions.uploadPhoto(binding.lease,id,consent,accepted) } },
+                retryPhotoUpload = { app.sessionScope.launch { app.sessions.retryPhotoUpload(binding.lease) } },
+                discardUnsentPhotoUpload = { app.sessionScope.launch { app.sessions.discardUnsentPhotoUpload(binding.lease) } })
             CalorieTheme(dark) { CalorieApp(model, session, actions, photoModel) }
             }
         }
