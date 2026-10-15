@@ -507,8 +507,12 @@ class SessionController internal constructor(private val db: CalorieDatabase, pr
         check(current.identity == ticket.identity && current.authState == ticket.authState && current.revision == ticket.revision)
     }
     internal suspend fun apiSession(lease: OwnerLease): ApiSession = mutex.withLock { captureApi(lease) }
-    internal suspend fun <T> withApiSession(ticket: ApiSession, block: suspend () -> T): T = mutex.withLock {
-        db.withTransaction { requireApi(ticket); block() }
+    internal suspend fun <T> withApiSession(ticket: ApiSession, proof: ApiReadProof? = null, block: suspend () -> T): T = mutex.withLock {
+        db.withTransaction {
+            try { requireApi(ticket) }
+            catch (error: StaleOwnerException) { proof?.staleOwnerRejected(); throw error }
+            block()
+        }
     }
 
     /** Explicit E3 connection, never a diary sync or an implicit guest import. */
@@ -757,6 +761,8 @@ class SessionController internal constructor(private val db: CalorieDatabase, pr
                     val active = bootstraps.requireReady(lease, server.contextRevision)
                     require(active.accountId == server.accountId && active.accountGeneration == server.accountGeneration && active.syncEpoch == server.syncEpoch)
                 }
+                val readProof = if (ApiReadObservation.ENABLED && kind == PrivateReadKind.PROFILE)
+                    ApiReadObservation.proof("/api/v1/me") else null
                 val result = readGateway.get(captured) { withApiSession(captured) { ready() } }
                 if (result.status == 200) {
                     if (kind == PrivateReadKind.PHOTO) {
@@ -773,6 +779,7 @@ class SessionController internal constructor(private val db: CalorieDatabase, pr
                     }
                     val profileStage = kind == PrivateReadKind.PROFILE || (kind == PrivateReadKind.CONSENTS && stagedProfile == null)
                     val response = if (profileStage) ProfileReadProtocol.parse(result.body) else null
+                    if (kind == PrivateReadKind.PROFILE && response != null) readProof?.dtoParsed()
                     val rankingStage = kind == PrivateReadKind.RANKING && stagedMotivation != null
                     val nemesisStage = kind == PrivateReadKind.NEMESIS && stagedMotivation != null
                     val motivation = if (!profileStage && !rankingStage && !nemesisStage) MotivationReadProtocol.parse(result.body) else null
@@ -783,7 +790,7 @@ class SessionController internal constructor(private val db: CalorieDatabase, pr
                             stagedNemesis?.let { NemesisReadProtocol.statistics(result.body, it) })
                     } else Triple(null, null, null)
                     var continueRead = false
-                    withApiSession(captured) {
+                    withApiSession(captured, readProof) {
                         ready()
                         // GET me has no account_generation; it cannot replace the bootstrap mapping.
                         require(response == null || response.accountId == server.accountId)

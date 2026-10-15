@@ -7,9 +7,10 @@ import java.time.Instant
 internal object ApiReadObservation {
     const val ENABLED = true
     const val TAG = "O1ApiReadReceipt"
-    val lateRead = LateReadGate { event, path ->
-        try { Log.i("O1ApiReadGate", "event=$event path=$path utc=${Instant.now()}") } catch (_: RuntimeException) { }
+    val lateRead = LateReadGate { event, path, run ->
+        try { Log.i("O1ApiReadGate", "event=$event path=$path run=$run utc=${Instant.now()}") } catch (_: RuntimeException) { }
     }
+    fun proof(path: String): ApiReadProof? = lateRead.proof(path)
     suspend fun beforeReturn(method: String, path: String, status: Int, deadlineNanos: Long) {
         lateRead.beforeReturn(method, path, status, deadlineNanos)
     }

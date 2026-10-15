@@ -1,6 +1,5 @@
 package pl.roseru.kalorie
 
-import android.util.Log
 import androidx.test.core.app.ApplicationProvider
 import androidx.test.platform.app.InstrumentationRegistry
 import androidx.test.ext.junit.runners.AndroidJUnit4
@@ -13,12 +12,10 @@ import org.junit.Test
 import org.junit.runner.RunWith
 import pl.roseru.kalorie.core.MotivationState
 import pl.roseru.kalorie.session.ApiReadObservation
-import java.time.Instant
 
 /** Opt-in driver only: real existing APK session, no credentials/DTO/transport fixtures. */
 @RunWith(AndroidJUnit4::class)
 class LiveApiLateReceiptTest {
-    private fun mark(event: String) { Log.i("O1ApiReadGate", "event=$event path=/api/v1/me utc=${Instant.now()}") }
     @Test fun actualReceivedGetIsReleasedAfterRealLogout() = runBlocking {
         assumeTrue(InstrumentationRegistry.getArguments().getString("live_api_receipt") == "true")
         val app = ApplicationProvider.getApplicationContext<CalorieApplication>()
@@ -43,15 +40,17 @@ class LiveApiLateReceiptTest {
             withContext(Dispatchers.Main) { sessions.logout() }
             val guest = sessions.view.value
             assertTrue("Logout did not select guest", guest.binding?.owner?.kind == "guest" && !guest.hasSession)
-            mark("logout")
+            ticket.logoutCompleted()
             ticket.release.complete(Unit)
             withTimeout(10_000) { read.await() }
             assertTrue("Response did not leave gateway", ticket.outcome.await() == "released")
+            withTimeout(10_000) { ticket.parsed.await(); ticket.rejected.await() }
             val after = sessions.view.value
             assertTrue("Late response restored a private account", after.binding?.owner?.kind == "guest" && !after.hasSession)
             assertTrue("Late profile became visible", after.serverProfile == null && after.motivation == MotivationState.NotRequested)
             assertTrue("Local data changed; values suppressed", before == snapshot())
-            mark("guest_preserved")
+            ticket.guestPreserved()
+            assertEquals(listOf("held", "logout", "released", "dto_parsed", "stale_owner_rejected", "guest_preserved"), ticket.events())
         } finally {
             ticket.release.complete(Unit)
             ApiReadObservation.lateRead.disarm(ticket)

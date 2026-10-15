@@ -79,3 +79,13 @@ dependencies {
     androidTestImplementation(libs.android.test.runner)
     androidTestImplementation(libs.android.test.junit)
 }
+
+// Independent validation version channel prevents downgrading shared test data.
+androidComponents {
+    onVariants(selector().withBuildType("validation")) { variant ->
+        variant.outputs.forEach { output ->
+            output.versionCode.set(1000 + checkNotNull(android.defaultConfig.versionCode))
+            output.versionName.set(checkNotNull(android.defaultConfig.versionName) + ".validation")
+        }
+    }
+}

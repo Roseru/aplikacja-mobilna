@@ -9,7 +9,7 @@ class LateReadGateTest {
     private fun deadline() = System.nanoTime() + 5_000_000_000
     @Test fun gateIsOneShotAndDoesNotAlterTheReturnedValue() = runBlocking {
         val events = mutableListOf<String>()
-        val gate = LateReadGate(event = { name, _ -> events.add(name) })
+        val gate = LateReadGate(event = { name, _, _ -> events.add(name) })
         val ticket = gate.arm(path)
         val read = async { gate.beforeReturn("GET", path, 200, deadline()); "original result" }
         ticket.held.await(); assertFalse(read.isCompleted)
