@@ -1862,3 +1862,5 @@ osobnym krokiem. Nie stosujemy nieaktualnego kanału18446.
 - Gemini O1-048 odczytane przez O3: zrzutów/limitów nie powtarzamy. Binding klucz/model/projekt, development-only, wymiana ujawnionego klucza i kompletny manifest/prywatny kanał pozostają osobnymi wejściami; nie dopisano flag i nie wywołano generowania. E4/KO31/KO32 i docelowe wydanie pozostają otwarte. Zdalne CI nowego head nie jest lokalnym PASS.
 
 Uzupełnienie O1-049: końcowy E0 PASS —10schematów/95valid/35invalid/18scenariuszy/639linków; diff-check PASS.
+
+Publikacja O1-049: kod i raport wypchnięte jako094abe80432995ae210be5b2677d3d238e8a1e98; PR105 zaktualizowany do zakresu trwałej kolejki/transportu, nadal draft na PR96. Odczyt GitHub dla094abe8: checks=[]; brak nowych zdalnych kontroli nie jest CI PASS. Nie scalono PR.
