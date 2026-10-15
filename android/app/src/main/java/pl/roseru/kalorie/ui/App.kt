@@ -60,7 +60,8 @@ import pl.roseru.kalorie.session.*
             composable("rations") { RationScreen(model, onBack = { nav.popBackStack() }) }
             composable("photo") {
                 val day by model.day.collectAsStateWithLifecycle()
-                MealPhotoScreen(photoModel, day.date, onBack = { nav.popBackStack() }, onManual = { nav.navigate("custom") })
+                MealPhotoScreen(photoModel, day.date, onBack = { nav.popBackStack() }, onManual = { nav.navigate("custom") },
+                    session = session, onReadCapabilities = actions.readPhotoCapabilities)
             }
             composable("custom") { CustomFoodScreen(model, onBack = { nav.popBackStack() }) }
             composable("settings") { SettingsScreen(model) }
