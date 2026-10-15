@@ -70,6 +70,8 @@ updates:
       # PostgreSQL 17 is a project requirement, not an unattended major upgrade.
       - dependency-name: library/postgres
         update-types: ["version-update:semver-major"]
+      - dependency-name: postgres
+        update-types: ["version-update:semver-major"]
     groups:
       compose-compatible:
         patterns: ["*"]

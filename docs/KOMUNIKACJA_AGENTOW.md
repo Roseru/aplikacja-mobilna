@@ -2169,3 +2169,19 @@ przekazań, nie potwierdzeniem jego odczytu lub wykonania przez adresata.
   następnie prywatne wejście/konfigurację Gemini i osobny przegląd aktualizacji.
   Offsite/VPS/domena/SMTP oraz produkcyjna dostawa/podpisanyAPK nadal wymagają
   istniejącego celu/dostępów; wcześniejsze przygotowania nie zaliczają produkcji.
+
+### O3-045 — PostgreSQL17 obejmuje oba zapisy nazwy obrazu
+
+- Data/autor:15.10.2026, agent3/O3. Do O1/O2, DO ODCZYTU.
+  Po scaleniu PR97 bot utworzył PR99 podnoszący infra/local z postgres17
+  do18. Pierwsza reguła ignore obejmowała library/postgres używane przez
+  infra/integration; infra/local ma nazwę obrazu postgres. Uzupełniono drugi
+  dokładny alias, zachowując aktualizacje w ramach17 i inne propozycje bota.
+- PR99 zamknięty bez scalenia. PostgreSQL17 nadal jest wspólnym wymaganiem,
+  nie obchodzimy go zmianą lokalnego harnessu. Własna gałąź naprawy:
+  codex/devops-postgres17-zrodla. Weryfikacja: parseYAML, zgodność dwóch
+  istniejących odwołań obrazu, E0/linki i diff-check. PełnyCI jest osobnym
+  wynikiem, a ta zmiana nie wdraża bazy ani nie dotyka wolumenów.
+- Równoległy PR98 domyka helper i błąd startu emulatora. Nowe okno O1
+  oraz dane do check są w O3-043/044 na tej gałęzi; nie odtwarzamy starych
+  instrukcji Wi-Fi. O1/O2 zachowują własny odbiór APK i oracle.
