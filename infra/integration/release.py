@@ -54,9 +54,11 @@ def artifact(root, relative):
     return resolved
 
 
-def command(arguments):
+def command(arguments, *, cwd=None):
     options = {"creationflags": subprocess.CREATE_NO_WINDOW} if os.name == "nt" else {}
-    result = subprocess.run(arguments, capture_output=True, text=True, timeout=60, **options)
+    result = subprocess.run(
+        arguments, cwd=cwd, capture_output=True, text=True, timeout=60, **options
+    )
     if result.returncode or len(result.stdout) > 1024**2:
         raise InvalidCandidate("Artifact inspection failed")
     return result.stdout
@@ -65,19 +67,25 @@ def command(arguments):
 class Inspector:
     def __init__(self, *, docker, aapt, java, apksigner):
         self.docker = docker
-        self.aapt = aapt
-        self.java = java
-        self.apksigner = apksigner
+        # Resolve package-virtualized SDK locations before invoking external Java.
+        self.aapt = str(Path(aapt).resolve(strict=True)) if Path(aapt).exists() else aapt
+        self.java = str(Path(java).resolve(strict=True)) if Path(java).exists() else java
+        self.apksigner = (
+            str(Path(apksigner).resolve(strict=True)) if Path(apksigner).exists() else apksigner
+        )
 
     def apk(self, path):
-        badging = command([self.aapt, "dump", "badging", str(path)])
+        # Legacy aapt on Windows cannot open an absolute path with Polish characters.
+        # A Unicode working directory and the original filename avoid lossy conversion.
+        badging = command([self.aapt, "dump", "badging", path.name], cwd=path.parent)
         package = re.search(
             r"^package: name='([^']+)' versionCode='([0-9]+)' versionName='([^']*)'",
             badging,
             re.MULTILINE,
         )
         signature = command(
-            [self.java, "-jar", self.apksigner, "verify", "--verbose", "--print-certs", str(path)]
+            [self.java, "-jar", self.apksigner, "verify", "--verbose", "--print-certs", path.name],
+            cwd=path.parent,
         )
         certificates = re.findall(
             r"^Signer #[0-9]+ certificate SHA-256 digest: ([0-9a-f]{64})$", signature, re.MULTILINE

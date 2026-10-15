@@ -200,3 +200,26 @@ def test_wrong_reader_rejected_before_import(candidate):
     write(manifest_path, manifest)
     report = release.validate(path, inspector)
     assert any("newer Android reader" in b["reason"] for b in report["blockers"])
+
+
+def test_apk_inspector_preserves_unicode_directory_and_verifies_signature(tmp_path, monkeypatch):
+    directory = tmp_path / "Zażółć gęślą jaźń"
+    directory.mkdir()
+    apk = directory / "regular.apk"
+    apk.write_bytes(b"fixture")
+    calls = []
+
+    def run(arguments, *, cwd=None):
+        calls.append((arguments, cwd))
+        if arguments[0] == "aapt":
+            assert arguments[-1] == "regular.apk" and cwd == directory
+            return "package: name='pl.roseru.kalorie' versionCode='21' versionName='0.8.10'\n"
+        assert arguments[:5] == ["java", "-jar", "apksigner.jar", "verify", "--verbose"]
+        return "Signer #1 certificate SHA-256 digest: " + SIGNER + "\n"
+
+    monkeypatch.setattr(release, "command", run)
+    inspector = release.Inspector(
+        docker="docker", aapt="aapt", java="java", apksigner="apksigner.jar"
+    )
+    assert inspector.apk(apk)["signer_sha256"] == SIGNER
+    assert len(calls) == 2
