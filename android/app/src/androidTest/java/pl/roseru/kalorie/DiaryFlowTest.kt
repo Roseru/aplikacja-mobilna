@@ -306,7 +306,12 @@ class DiaryFlowTest {
         assertEquals(1, meal.items.size); assertEquals("12.123456789123", meal.items.single().amountText)
         val itemTag = "diary-item-${meal.items.single().id}"
         compose.onNodeWithTag("diary-content").performScrollToNode(hasTestTag(itemTag))
-        compose.onNodeWithTag(itemTag).performClick()
+        // The Room row can be visible before the save operation releases the UI busy flag.
+        compose.waitUntil(10_000) {
+            compose.onAllNodes(hasTestTag(itemTag) and isEnabled()).fetchSemanticsNodes().size == 1
+        }
+        compose.onNodeWithTag(itemTag).assertIsDisplayed().assertIsEnabled().performClick()
+        compose.waitUntil(10_000) { compose.onAllNodesWithTag("edit-amount").fetchSemanticsNodes().size == 1 }
         compose.onNodeWithTag("edit-amount").assertTextContains("12,123456789123").performTextReplacement("150")
         finishQuantityInput("edit-amount", "confirm-edit-item")
         compose.onNodeWithText("131 kcal").assertIsDisplayed()
