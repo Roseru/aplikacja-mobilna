@@ -19,7 +19,7 @@ Każda osoba aktualizuje własny wiersz. Daty i dokładne źródła są w jej wp
 |---|---|---|---|
 | O1 — Android, Kotlin, Room | 0.8.10/code21/Room8: odczyt Nemesis;155 JVM/168full i72final affected PASS osobno;22tabele/5posiłków zachowane | Własny PR/CI; trwałe operacje Nemesis, realny API/APK, E4/recovery i klientE9 | O1-026, [raport](../android/RAPORT_0_8_10.md), codex/android-nemesis |
 | O2 — Python, PostgreSQL, API | E9-O2/PR54 i zdjęcia/PR59 scalone; odpowiedź O3-035: technika realnego GET przyjęta, luka dowodu drivera wskazana | O1: dowód poprawnego DTO i odrzucenia starej sesji w PR73; O3: nowe okno po gotowości O1; O2: odbiór realnej próby. Gemini i E10 nadal otwarte | O2-034, [oracle APK/API](integracja/ODBIOR_APK_API_O2.md), [PR73](https://github.com/Roseru/aplikacja-mobilna/pull/73) |
-| O3 — DevOps, CI/CD, serwer | PR107 scalony po8PASS; harmonogram kopii/restore/recovery/startup wdrożony; checker wydania i129testów wspólnej infra PASS | PR108: końcowy CI po aktualnym main; O1: okno/próba API/podpisany APK; O2: odbiór/zgodność/rollback/KO32; offsite i VPS wymagają celu | O3-049–052, [utrzymanie](integracja/UTRZYMANIE_LOKALNE_20261015.md), [pakiet wydania](integracja/PAKIET_WYDANIA_20261015.md), [PR108](https://github.com/Roseru/aplikacja-mobilna/pull/108) |
+| O3 — DevOps, CI/CD, serwer | PR107 scalony po8PASS; harmonogram kopii/restore/recovery/startup wdrożony; checker wydania; poprawiona gotowość PG restore,133testy PASS | PR108: nowy końcowy CI po naprawie restore; O1: okno/próba API/podpisany APK; O2: odbiór/zgodność/rollback/KO32; offsite i VPS wymagają celu | O3-049–053, [utrzymanie](integracja/UTRZYMANIE_LOKALNE_20261015.md), [pakiet wydania](integracja/PAKIET_WYDANIA_20261015.md), [PR108](https://github.com/Roseru/aplikacja-mobilna/pull/108) |
 
 
 ## Wpisy
@@ -2532,3 +2532,20 @@ przekazań, nie potwierdzeniem jego odczytu lub wykonania przez adresata.
   Receipt wystawia właściciel po wykonanej próbie; brak dostawy pozostaje brak.
   O3 po otrzymaniu wejść złoży release.json i uruchomi checker na prawdziwym
   zestawie. VPS/domena/SMTP/offsite-target nadal potrzebują celu/dostępów właściciela.
+
+### O3-053 — gotowość PostgreSQL restore i diagnostyka nieudanego CI
+
+- Data/autor:15.10.2026, agent3/O3. Do O1/O2, DO ODCZYTU. PR108/head88160da
+  miał failure rehearse w CI38759312001 po poprawnym capture; wnętrze błędu nie
+  było zapisane w publicznym receipt. To pozostaje failure, nie wynik zaliczony.
+- W d81d27a dodano gotowość docelowego TCP oraz neutralny etap/typ/exitcode
+  przy błędzie. Oficjalny entrypoint PG i realny kontrolowany PG17 potwierdziły
+  socket-only temporary server; wcześniejsza sonda mogła wejść za wcześnie.
+  Dowód tego warunku nie dowodzi nieobecnej szczegółowej przyczyny starego CI.
+- Realny test init-only→permanentTCP PASS, pełny restore istniejącej kopii nowym
+  kodem PASS16,879s, wspólna infra133PASS. Nowy runtime d81d27a zainstalowano;
+  świeży pełny przebieg harmonogramu17:29–17:30 PASS, restore18,709s,
+  config/epoka/tożsamości/containerIDs zachowane. Końcowy CI PR108
+  wymaga własnych ośmiu success. Bez zmiany APK/API, epoki lub bramekAI/Nemesis.
+- Prompty O3-050/051/052 i format dostaw pozostają aktualne. Gotowość O1 należy
+  potwierdzić przed nowym oknem; na czas próby O3 wstrzyma automatyczne kopie.

@@ -30,6 +30,25 @@ Dockerfile wspiera etykietę źródła; CI przekazuje rzeczywisty checkout SHA
 i weryfikuje ją po buildzie. To źródło buildów, nie publikacja registry/CD.
 Zdalne CI końcowego PR i scalenie są odrębnymi warunkami.
 
+## Naprawa gotowości restore po błędzie CI
+
+CI38759312001/head88160da zakończył local-integration failure w kroku rehearse
+po poprawnym capture. Log nie zawierał przyczyny wewnętrznej; nie przypisujemy
+jej automatycznie do później znalezionego wyścigu. Źródło oficjalnego obrazu
+PostgreSQL potwierdza tymczasowy serwer inicjalizacyjny z listen_addresses=''.
+Kontrolowany realny PG17 z opóźnionym init pokazał socket-ready/TCP-not-ready.
+Poprzednia sonda socketowa mogła uruchomić restore przed końcem inicjalizacji.
+
+W d81d27a sonda oczekuje na docelowy TCP127.0.0.1. Rzeczywista próba tego
+warunku PASS; odtworzenie istniejącej kopii nowym kodem PASS16,879s, bez
+zatrzymywania oryginalnej instalacji. Dołożono4regresje: init-only, bounded
+timeout, redakcja błędu i neutralny JSON błędu z CLI. Wspólny zestaw **133PASS**.
+Runtime d81d27a wdrożono lokalnie: pełne zadanie Windows17:29–17:30 PASS,
+restore18,709s, stan konfiguracji/epoki/tożsamości i kontenerów zachowany.
+Przy błędzie CI dostaje etap/klasę/exitcode, a komenda/SQL/traceback zostają
+w prywatnym stanie. Nie pomijamy restore i nie zastępujemy failure wynikiem PASS.
+Nowy końcowy head musi przejść własny pełny CI.
+
 ## Dostawy niezbędne do rzeczywistego wydania
 
 [Instrukcja i format](../../infra/integration/WYDANIE.md) podają pola manifestu,
