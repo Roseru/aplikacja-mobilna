@@ -22,6 +22,12 @@ muszą być prawdziwe. Brak pliku, niekompletny lub nieudany przebieg alarmuje.
 `startup_receipt` sprawdza wynik ostatniej akcji startowej. Te sensory nie zmieniają
 statusu offsite/AI i nie uruchamiają samodzielnie napraw.
 
+W trakcie kopii `local_backup=running` jest dopuszczalne wyłącznie przy świeżym,
+poprawnym poprzednim receipt i wieku operacji do45min. Nie jest to PASS nowej
+kopii i nie zamyka istniejącego alarmu. Stara poprzednia kopia, brak jej dowodu
+lub przekroczony limit operacji nadal dają failed. Dopiero rzeczywisty nowy PASS
+przywraca stan ok i zamyka incydent.
+
 ## Uruchomienie
 
 Prywatne settings.json w katalogu monitoring pod chronionym katalogiem integracji

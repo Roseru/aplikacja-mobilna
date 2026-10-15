@@ -10,7 +10,7 @@ import sys
 import time
 import traceback
 from contextlib import contextmanager
-from datetime import UTC, datetime
+from datetime import UTC, datetime, timedelta
 from pathlib import Path
 from uuid import uuid4
 
@@ -165,12 +165,38 @@ def recover(installation, directory):
     return True
 
 
+def schedule_slot(moment=None):
+    local = (moment or datetime.now().astimezone()).replace(tzinfo=None)
+    # Calendar slots match the Task Scheduler triggers, including DST changes.
+    shifted = local - timedelta(hours=3)
+    return shifted.date().isoformat() + (":03" if shifted.hour < 12 else ":15")
+
+
 def backup_due(receipt, interval_hours=12):
     try:
         age = (datetime.now(UTC) - datetime.fromisoformat(receipt["verified_at"])).total_seconds()
-        return receipt["result"] != "PASS" or not 0 <= age < interval_hours * 3600
+        if receipt["result"] != "PASS" or not 0 <= age < 86400:
+            return True
+        if "schedule_slot" in receipt:
+            return receipt["schedule_slot"] != schedule_slot()
+        return age >= interval_hours * 3600  # Older receipts migrate on the next due run.
     except (KeyError, ValueError, TypeError):
         return True
+
+
+def last_success(receipt):
+    if receipt.get("result") == "PASS":
+        return {
+            key: receipt[key]
+            for key in (
+                "result",
+                "verified_at",
+                "archive_integrity",
+                "restore_rehearsal",
+                "services_resumed",
+            )
+        }
+    return receipt.get("last_good")
 
 
 def prune(root, keep):
@@ -209,6 +235,7 @@ def perform_backup(settings, directory, *, due_only=False, installation=None):
     receipt_path = directory / "backup-receipt.json"
     if due_only and receipt_path.exists() and not backup_due(read(receipt_path)):
         return {"result": "NOT_DUE"}
+    previous = last_success(read(receipt_path)) if receipt_path.exists() else None
     requested = Path(settings["backups"])
     if requested.is_symlink() or requested.is_junction():
         raise ValueError("Backup root must not be redirected")
@@ -226,9 +253,13 @@ def perform_backup(settings, directory, *, due_only=False, installation=None):
         "containers": original,
         "resume_pending": True,
         "started_at": now(),
+        "schedule_slot": schedule_slot(),
     }
     write(directory / "transaction.json", journal)
-    write(receipt_path, {"result": "RUNNING", "started_at": journal["started_at"]})
+    write(
+        receipt_path,
+        {"result": "RUNNING", "started_at": journal["started_at"], "last_good": previous},
+    )
     try:
         try:
             capture(installation.state, destination)
@@ -243,6 +274,7 @@ def perform_backup(settings, directory, *, due_only=False, installation=None):
         receipt = {
             "result": "PASS",
             "verified_at": now(),
+            "schedule_slot": journal["schedule_slot"],
             "backup": str(destination),
             "archive_integrity": True,
             "restore_rehearsal": True,
@@ -260,6 +292,7 @@ def perform_backup(settings, directory, *, due_only=False, installation=None):
                 "result": "FAIL",
                 "failed_at": now(),
                 "resume_pending": read(directory / "transaction.json")["resume_pending"],
+                "last_good": previous,
             },
         )
         raise
@@ -325,7 +358,12 @@ def main():
     except Exception:
         (directory / "operation-private.log").write_text(traceback.format_exc(), encoding="utf-8")
         if args.action == "backup":
-            write(directory / "backup-receipt.json", {"result": "FAIL", "failed_at": now()})
+            path = directory / "backup-receipt.json"
+            try:
+                previous = last_success(read(path))
+            except (OSError, ValueError, KeyError, TypeError):
+                previous = None
+            write(path, {"result": "FAIL", "failed_at": now(), "last_good": previous})
         elif args.action == "startup":
             write(directory / "startup-receipt.json", {"result": "FAIL", "failed_at": now()})
         return 1  # Exceptions may contain private paths/credentials; never print them.

@@ -92,6 +92,19 @@ def test_notification_failure_is_retried():
     assert ledger["api"]["active"] is True
 
 
+def test_running_backup_does_not_clear_an_existing_incident():
+    sender, ledger = Sender(), {}
+    value = measurement()
+    value["checks"]["local_backup"]["state"] = "failed"
+    deliver(value, ledger, sender)
+    deliver(value, ledger, sender)
+    assert ledger["local_backup"]["active"] is True
+    count = len(sender.calls)
+    value["checks"]["local_backup"]["state"] = "running"
+    deliver(value, ledger, sender)
+    assert len(sender.calls) == count and ledger["local_backup"]["active"] is True
+
+
 @pytest.mark.parametrize("seconds,expected", [(0, True), (181, False), (-60, False)])
 def test_disabled_finalizer_still_requires_fresh_attempt(seconds, expected):
     status = {

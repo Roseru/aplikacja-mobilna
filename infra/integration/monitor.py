@@ -113,15 +113,21 @@ def operation_reading(path, *, backup=False):
         return {"state": "not_configured"}
     try:
         receipt = json.loads(Path(path).read_text(encoding="utf-8"))
-        valid = receipt["result"] == "PASS"
+        running = backup and receipt.get("result") == "RUNNING"
+        current = receipt["last_good"] if running else receipt
+        valid = current["result"] == "PASS"
         if backup:
             valid = (
                 valid
-                and 0 <= age(receipt["verified_at"]) <= 86400
-                and receipt.get("archive_integrity") is True
-                and receipt.get("restore_rehearsal") is True
-                and receipt.get("services_resumed") is True
+                and 0 <= age(current["verified_at"]) <= 86400
+                and current.get("archive_integrity") is True
+                and current.get("restore_rehearsal") is True
+                and current.get("services_resumed") is True
             )
+        if running and valid and 0 <= age(receipt["started_at"]) <= 45 * 60:
+            return {"state": "running"}
+        if running:
+            return {"state": "failed"}
         return {"state": "ok" if valid else "failed"}
     except (OSError, ValueError, KeyError, TypeError):
         return {"state": "failed"}
@@ -304,7 +310,7 @@ def deliver(measurement, ledger, sender, *, threshold=2, test=False):
     for key in CHECKS:
         current = ledger.setdefault(key, {"failures": 0, "active": False, "issue": None})
         state = measurement["checks"][key]["state"]
-        if state in {"not_configured", "not_deployed"}:
+        if state in {"not_configured", "not_deployed", "running"}:
             continue
         failed = state == "failed"
         current["failures"] = current["failures"] + 1 if failed else 0
