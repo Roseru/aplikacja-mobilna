@@ -52,7 +52,10 @@ jobs:
             --manifest "$GITHUB_WORKSPACE/backend/data/demo/export/manifest.json" \
             --package "$GITHUB_WORKSPACE/backend/data/demo/export/base-pl.1.json.gz" \
             --expected-package-id 47bdff67-e58b-5437-919b-ec00159afbc5 --expected-kind demo
-      - run: docker build --build-arg PYTHON_IMAGE=docker.io/library/python:3.13-slim@sha256:70729b46c69b4f1e97c4822c1af3df53a1476cf5ddc6c087c0c10bc3a5678c2f -t calorie-backend:test backend
+      - run: docker build --build-arg VCS_REF=${{ github.sha }} --build-arg PYTHON_IMAGE=docker.io/library/python:3.13-slim@sha256:70729b46c69b4f1e97c4822c1af3df53a1476cf5ddc6c087c0c10bc3a5678c2f -t calorie-backend:test backend
+      - name: Verify the image identifies the actual checkout
+        run: |
+          test "$(docker image inspect --format '{{ index .Config.Labels "org.opencontainers.image.revision" }}' calorie-backend:test)" = "$(git rev-parse HEAD)"
       - name: Smoke test built API image
         run: |
           docker run --rm -v "$GITHUB_WORKSPACE/backend/smoke_installed.py:/tmp/e3-smoke.py:ro" \
@@ -103,7 +106,7 @@ jobs:
         run: docker info > /dev/null
       - name: PostgreSQL integration and isolated SCRAM/server-log regression
         run: uv run --project backend --locked python -m pytest backend/tests/integration --tb=short
-      - run: docker build --build-arg PYTHON_IMAGE=docker.io/library/python:3.13-slim@sha256:70729b46c69b4f1e97c4822c1af3df53a1476cf5ddc6c087c0c10bc3a5678c2f -t calorie-backend:e2 backend
+      - run: docker build --build-arg VCS_REF=${{ github.sha }} --build-arg PYTHON_IMAGE=docker.io/library/python:3.13-slim@sha256:70729b46c69b4f1e97c4822c1af3df53a1476cf5ddc6c087c0c10bc3a5678c2f -t calorie-backend:e2 backend
       - name: Real PostgreSQL export and offline import in the built image
         run: |
           storage="$RUNNER_TEMP/e2-artifacts"
