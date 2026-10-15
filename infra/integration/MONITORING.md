@@ -30,7 +30,10 @@ python infra/integration/monitor.py once --state <private-state> --settings <pri
 infra/integration/install_monitor.ps1 -Python <python.exe> -State <private-state> -Settings <private-settings>
 ```
 
-Windows kopiuje runtime do prywatnego stanu. Zadanie `O3-Calorie-Integration-Monitor`
+Windows wymaga `pythonw.exe` obok wskazanego Pythona i używa go w harmonogramie,
+aby pomiar co minutę nie otwierał konsoli Minicondy. Procesy Git i Docker również
+uruchamiają się bez okien konsoli. Brak `pythonw.exe` przerywa instalację przed
+zmianą zadania. Windows kopiuje runtime do prywatnego stanu. Zadanie `O3-Calorie-Integration-Monitor`
 działa dla bieżącego zalogowanego użytkownika bez podwyższenia uprawnień, co60s,
 IgnoreNew, limit3min, również na baterii. Instalator nie nadpisuje zadania innego
 właściciela. `LastTaskResult=0` i świeży heartbeat delivery=ok potwierdzają przebieg;
