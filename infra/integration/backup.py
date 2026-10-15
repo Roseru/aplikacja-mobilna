@@ -14,6 +14,7 @@ from datetime import UTC, datetime
 from pathlib import Path
 from uuid import UUID, uuid4
 
+from monitor import console_options
 from run import HERE, ROOT, host_address, private_write
 from run_e8 import SERVICES, E8Stack
 
@@ -35,7 +36,9 @@ FINGERPRINTS = {
 def private_directory(path):
     path.mkdir(mode=0o700, parents=True)
     if os.name == "nt":
-        identity = subprocess.check_output(["whoami", "/user", "/fo", "csv", "/nh"], text=True)
+        identity = subprocess.check_output(
+            ["whoami", "/user", "/fo", "csv", "/nh"], text=True, **console_options()
+        )
         sid = next(csv.reader([identity.strip()]))[1]
         if not re.fullmatch(r"S-1-[0-9-]+", sid):
             raise ValueError("Invalid local identity")
@@ -50,6 +53,7 @@ def private_directory(path):
             ],
             check=True,
             capture_output=True,
+            **console_options(),
         )
 
 
@@ -72,6 +76,7 @@ def execute(directory, command, *, input_path=None, output_path=None, environmen
                 env=environment,
                 check=True,
                 timeout=300,
+                **console_options(),
             )
             return result.stdout
         finally:
@@ -270,6 +275,8 @@ def rehearse(directory):
                 "docker",
                 "run",
                 "--detach",
+                "--network",
+                "none",
                 "--name",
                 container,
                 "--label",
@@ -283,7 +290,10 @@ def rehearse(directory):
         deadline = time.monotonic() + 60
         while time.monotonic() < deadline:
             ready = subprocess.run(
-                ["docker", "exec", container, "pg_isready", "-U", "postgres"], capture_output=True
+                ["docker", "exec", container, "pg_isready", "-U", "postgres"],
+                capture_output=True,
+                timeout=15,
+                **console_options(),
             )
             if ready.returncode == 0:
                 break
@@ -435,6 +445,8 @@ def rehearse(directory):
             ],
             capture_output=True,
             text=True,
+            timeout=15,
+            **console_options(),
         )
         if inspected.returncode == 0 and inspected.stdout.strip() == "owned":
             execute(scratch, ["docker", "rm", "--force", "--volumes", container])

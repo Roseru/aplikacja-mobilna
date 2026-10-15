@@ -321,6 +321,10 @@ pozostają obowiązkowe. Testy TLS obejmują prawdziwy lokalny serwer JWKS, nie 
 
 ## Granice odbioru
 
+[Monitoring lokalnej integracji](MONITORING.md) opisuje odczyty, prywatny harmonogram,
+deduplikację issues i rzeczywistą próbę awarii/przywrócenia API. AI oraz kopie offsite
+bez wdrożenia pozostają jawnie nieodebrane.
+
 To działająca infrastruktura lokalna. Podstawowy `verify` nie potwierdza podłączenia obecnego APK,
 KO-31, kompletu official ARPOL, publicznego VPS/domeny/SMTP ani restore/RPO/RTO.
 Minutowe workery E8 mają odrębny `run_e8.py verify` i lokalny odbiór opisany wyżej.
