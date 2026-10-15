@@ -1,4 +1,5 @@
 import json
+import os
 import sys
 from datetime import UTC, datetime, timedelta
 from pathlib import Path
@@ -8,6 +9,38 @@ import pytest
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 import monitor  # noqa: E402
 from monitor import CHECKS, GitHub, deliver, worker_ok  # noqa: E402
+
+
+@pytest.mark.skipif(os.name != "nt", reason="Windows console allocation regression")
+def test_probe_child_has_no_console():
+    result = monitor.command(
+        [
+            sys.executable,
+            "-I",
+            "-c",
+            "import ctypes; print(ctypes.windll.kernel32.GetConsoleWindow())",
+        ]
+    )
+    assert result.strip() == "0"
+
+
+def test_credential_child_uses_same_console_policy(monkeypatch, tmp_path):
+    calls = []
+
+    def run(arguments, **kwargs):
+        calls.append((arguments, kwargs))
+        return type("Result", (), {"returncode": 0, "stdout": "password=synthetic-test-token\n"})()
+
+    monkeypatch.setattr(monitor.subprocess, "run", run)
+    github = GitHub(tmp_path)
+    assert github.token == "synthetic-test-token"
+    arguments, options = calls[0]
+    assert arguments == ["git", "credential", "fill"]
+    assert options["env"]["GCM_INTERACTIVE"] == "Never"
+    if os.name == "nt":
+        assert options["creationflags"] == monitor.subprocess.CREATE_NO_WINDOW
+    else:
+        assert "creationflags" not in options
 
 
 def measurement(api="ok"):
