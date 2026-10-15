@@ -63,6 +63,16 @@ Neutralny setup-status/setup-attempts trafia do artefaktów także przy błędzi
 6/6 lokalnych testów Linux bez sieci PASS: również chwilowa odmowa polecenia
 oraz trwała odmowa z boundedFAIL/Gradle NOT_RUN. Końcowy CI sprawdza realny AVD.
 
+## Granice harmonogramu
+
+Poprawiono rozpoznawanie wykonanych okien03/15, aby czas kończenia kopii nie
+pomijał kolejnego terminu. Trwająca operacja zachowuje dowód poprzedniej kopii;
+stan running nie jest sukcesem nowej i nie zamyka istniejącego incydentu.
+Stary/brakujący poprzedni dowód lub operacja ponad45min nadal dają awarię.
+Cztery dalsze regresje okien/DST/stale/progress: pełna infra **137PASS**.
+Poprzedni head d5b844c ma realny zdalny device169/169,0fail/0skip, zgodny
+digest artefaktu11985774635 i offline przed/po; nowy head potrzebuje własnegoCI.
+
 ## Dostawy niezbędne do rzeczywistego wydania
 
 [Instrukcja i format](../../infra/integration/WYDANIE.md) podają pola manifestu,

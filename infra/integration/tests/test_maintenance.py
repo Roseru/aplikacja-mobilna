@@ -170,6 +170,60 @@ def test_backup_due_does_not_trust_future_or_failed_receipts(hours, result, expe
     assert maintenance.backup_due(receipt) is expected
 
 
+def test_next_calendar_slot_is_due_even_if_previous_backup_finished_late(monkeypatch):
+    from zoneinfo import ZoneInfo
+
+    zone = ZoneInfo("Europe/Warsaw")
+    previous = datetime(2026, 10, 15, 15, 0, tzinfo=zone)
+    current = datetime(2026, 10, 16, 3, 0, tzinfo=zone)
+    assert maintenance.schedule_slot(previous) != maintenance.schedule_slot(current)
+    monkeypatch.setattr(maintenance, "schedule_slot", lambda: "2026-10-16:03")
+    receipt = {
+        "result": "PASS",
+        "verified_at": datetime.now(UTC).isoformat(),
+        "schedule_slot": "2026-10-15:15",
+    }
+    assert maintenance.backup_due(receipt)
+    receipt["schedule_slot"] = "2026-10-16:03"
+    assert not maintenance.backup_due(receipt)
+
+
+def test_calendar_slots_cover_midnight_and_dst():
+    from zoneinfo import ZoneInfo
+
+    zone = ZoneInfo("Europe/Warsaw")
+    assert maintenance.schedule_slot(datetime(2026, 10, 16, 2, 59, tzinfo=zone)) == "2026-10-15:15"
+    assert maintenance.schedule_slot(datetime(2026, 10, 16, 3, 0, tzinfo=zone)) == "2026-10-16:03"
+    # Daylight saving changes wall-clock spacing to 11h/13h. Both slots must execute.
+    assert maintenance.schedule_slot(datetime(2026, 3, 29, 3, 0, tzinfo=zone)) == "2026-03-29:03"
+    assert maintenance.schedule_slot(datetime(2026, 10, 25, 3, 0, tzinfo=zone)) == "2026-10-25:03"
+
+
+def test_in_progress_does_not_hide_stale_backup_or_claim_completion(tmp_path):
+    path = tmp_path / "receipt.json"
+    previous = {
+        "result": "PASS",
+        "verified_at": datetime.now(UTC).isoformat(),
+        "archive_integrity": True,
+        "restore_rehearsal": True,
+        "services_resumed": True,
+    }
+    receipt = {
+        "result": "RUNNING",
+        "started_at": datetime.now(UTC).isoformat(),
+        "last_good": previous,
+    }
+    path.write_text(json.dumps(receipt))
+    assert operation_reading(path, backup=True)["state"] == "running"
+    previous["verified_at"] = (datetime.now(UTC) - timedelta(hours=25)).isoformat()
+    path.write_text(json.dumps(receipt))
+    assert operation_reading(path, backup=True)["state"] == "failed"
+    previous["verified_at"] = datetime.now(UTC).isoformat()
+    receipt["started_at"] = (datetime.now(UTC) - timedelta(minutes=46)).isoformat()
+    path.write_text(json.dumps(receipt))
+    assert operation_reading(path, backup=True)["state"] == "failed"
+
+
 def test_monitor_rejects_stale_partial_and_missing_local_receipts(tmp_path):
     path = tmp_path / "receipt.json"
     assert operation_reading(path, backup=True)["state"] == "failed"

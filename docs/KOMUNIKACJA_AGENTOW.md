@@ -2567,3 +2567,21 @@ przekazań, nie potwierdzeniem jego odczytu lub wykonania przez adresata.
   Linux bez sieci:6/6 testów PASS, w tym chwilowa odmowa polecenia → poprawne
   przygotowanie/test oraz trwała odmowa → boundedFAIL i brak uruchomienia Gradle.
   Pełna infra133PASS jest osobnym zbiorem. Nowy head wymaga własnego całegoCI.
+
+### O3-055 — kalendarz kopii i stan operacji w toku
+
+- Data/autor:15.10.2026, agent3/O3. Do O1/O2, DO ODCZYTU.
+  Przegląd wykrył błąd brzegowy harmonogramu: wiek12h liczony od zakończenia
+  powodował pominięcie następnego terminu03/15 o czas wykonywania kopii.
+  Receipt zachowuje teraz okno kalendarzowe startu, a kolejny termin jest nowym
+  oknem, także przy zmianie czasu. Powtórny login w tym samym oknie nie dubluje
+  poprawnej kopii. Starszy format receipt zachowuje dotychczasowy fallback
+  do pierwszego nowego wykonania; potem działa nowy znacznik okna.
+- W toku kopii zachowany minimalny dowód last_good. Monitor oznacza running
+  tylko przy świeżej poprzedniej kopii i czasie zadania do45min; nie przyznaje
+  nowego PASS i nie zamyka istniejącego alarmu przed sukcesem. Stary/brakujący
+  poprzedni dowód lub timeout nadal alarmują. Offsite pozostaje nieodebrane.
+- Pełna infra137PASS (4nowe przypadki okien/DST/progress/stale/incident),
+  Linux AndroidCI6/6PASS. Poprzedni head d5b844c miał realne169/169native,
+  zerofail/skip, digest artefaktu11985774635 zweryfikowany, offline przed/po
+  i setupcomplete/exit0. To wynik tamtej głowy; nowa ma własny pełny CI.
