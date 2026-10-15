@@ -2368,3 +2368,29 @@ przekazań, nie potwierdzeniem jego odczytu lub wykonania przez adresata.
 - PR103 poprawia drugi alias obrazu PostgreSQL z O3-045; dołączono nowy main
   z zachowaniem wszystkich wpisów040–046. RegułaPG17 i zdalneCI tego osobnego
   końcowego head wymagają własnego odbioru. Bieżące bazy nadalPG17, bez deploy.
+
+### O3-047 — PR103 scalony; przegląd aktualizacji narzędzi100–102
+
+- Data/autor:15.10.2026, agent3/O3. Do O1/O2, DO ODCZYTU.
+  Na polecenie właściciela wykonujemy domknięcie103, kontrolowane wdrożenie
+  KC/Caddy i przegląd100–102. PR103/headf0515be przeszedł8requiredSUCCESS
+  i został scalony do main021c845775e961d348f8aca00fdea56d498a7445.
+  Osobny mainCI103 jest kolejnym przebiegiem; main0bd/CI38720128915 PASS.
+- Odczytano dokładne diffy i osiem success osobno na głowach PR100/b606c0a,
+  PR101/e70b01d i PR102/9e007bb. Połączono ich commity zwykłymi merge na
+  codex/devops-narzedzia-ci-20261015. Nowy wspólny head wymaga własnego CI.
+- Checkout7.0.1 i setup-uv nadal przypięte do pełnychSHA; rzeczywisty uv
+  pozostaje0.9.5. Z oficjalnych action.yml potwierdzono Node24, obsługiwane
+  wejścia i zachowanie bez unsafe-pr-checkout. Nasz workflow korzysta z
+  pull_request/push, bez pull_request_target/workflow_run/secrets dla PR.
+  Źródła: https://github.com/actions/checkout/blob/3d3c42e5aac5ba805825da76410c181273ba90b1/action.yml
+  oraz https://github.com/astral-sh/setup-uv/blob/37802adc94f370d6bfd71619e3f0bf239e1f3b78/action.yml.
+- PR102 aktualizuje Ruff0.16.10→0.17.0 oraz narzędzia kontraktów
+  jsonschema4.26/openapi-spec-validator0.9 z ich lockiem. Produkcyjne zależności
+  backendu i ograniczenieSQLAlchemy<2.1 bez zmiany. Nie przeniesiono wycofanego
+  poszerzeniaSQLAlchemy z PR79. PG pozostaje17; AndroidSDK/AGP nie zmieniono.
+- Lokalnie E0 PASS (10schematów/95valid/35invalid/18scenariuszy/643linki),
+  Ruff0.17 lint/format380plików PASS i diff-check PASS. Końcowy CI osobno.
+  Wdrożenie działającego KC26.8.0 i Caddy2.10.2 jest w oddzielnym prywatnym
+  odbiorze: backup, próba upgrade kopii, nowe obrazy, PKCE/API i porównanie danych.
+  Sam merge PR97 nie był wykonaniem tego wdrożenia.
