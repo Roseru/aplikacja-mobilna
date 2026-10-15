@@ -15,6 +15,13 @@ i `offsite_verified=true`. Wiek ponad24h, brak lub błędny receipt alarmuje. Re
 jest wejściem z procesu zweryfikowanej dostawy; monitor nie sprawdza ponownie magazynu.
 Lokalny plik backupu nie jest dowodem offsite.
 
+[Automatyczne utrzymanie](UTRZYMANIE_LOKALNE.md) dostarcza oddzielne sensory
+`local_backup` i `startup`. Opcjonalne `local_backup_receipt` wskazuje prywatny
+wynik kopii lokalnej: PASS, wiek do24h, integrity/restore_rehearsal/services_resumed
+muszą być prawdziwe. Brak pliku, niekompletny lub nieudany przebieg alarmuje.
+`startup_receipt` sprawdza wynik ostatniej akcji startowej. Te sensory nie zmieniają
+statusu offsite/AI i nie uruchamiają samodzielnie napraw.
+
 ## Uruchomienie
 
 Prywatne settings.json w katalogu monitoring pod chronionym katalogiem integracji

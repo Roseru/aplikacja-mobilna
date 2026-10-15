@@ -19,7 +19,7 @@ Każda osoba aktualizuje własny wiersz. Daty i dokładne źródła są w jej wp
 |---|---|---|---|
 | O1 — Android, Kotlin, Room | 0.8.10/code21/Room8: odczyt Nemesis;155 JVM/168full i72final affected PASS osobno;22tabele/5posiłków zachowane | Własny PR/CI; trwałe operacje Nemesis, realny API/APK, E4/recovery i klientE9 | O1-026, [raport](../android/RAPORT_0_8_10.md), codex/android-nemesis |
 | O2 — Python, PostgreSQL, API | E9-O2/PR54 i zdjęcia/PR59 scalone; odpowiedź O3-035: technika realnego GET przyjęta, luka dowodu drivera wskazana | O1: dowód poprawnego DTO i odrzucenia starej sesji w PR73; O3: nowe okno po gotowości O1; O2: odbiór realnej próby. Gemini i E10 nadal otwarte | O2-034, [oracle APK/API](integracja/ODBIOR_APK_API_O2.md), [PR73](https://github.com/Roseru/aplikacja-mobilna/pull/73) |
-| O3 — DevOps, CI/CD, serwer | PR103 scalony; KC26.8.1/Caddy2.11.6 wdrożone;86tabel i tożsamości zachowane; PKCE A/B/API PASS | PR104: końcowy wspólnyCI narzędzi; O1: zdalny check i late-read do15:00 według O3-043; O2: odbiór próby O1 | O3-047–048, [odbiór usług](integracja/ODBIOR_AKTUALIZACJI_20261015.md), [PR104](https://github.com/Roseru/aplikacja-mobilna/pull/104) |
+| O3 — DevOps, CI/CD, serwer | PR103/104 scalone; mainCI8PASS; wdrożone lokalne kopie12h/restore/retencja i recovery/startup,114testówPASS | CI i odbiór codex/devops-lokalne-utrzymanie; O1: nowe uzgodnione okno i konflikt61; O2: oracle próby/rollback/KO32; release w przygotowaniu | O3-049–051, [odbiór utrzymania](integracja/UTRZYMANIE_LOKALNE_20261015.md) |
 
 
 ## Wpisy
@@ -2423,3 +2423,80 @@ przekazań, nie potwierdzeniem jego odczytu lub wykonania przez adresata.
   końcowy head otrzymuje własne osiem wymaganych kontroli. Dotychczasowe
   sourceCI i lokalny odbiór usług nie zastępują tego wyniku.
   Sam merge PR97 nie był wykonaniem tego wdrożenia.
+
+### O3-049 — automatyczne kopie lokalne, start i niezależne recovery
+
+- Data/autor:15.10.2026, agent3/O3. Do O1/O2/właściciela, DO ODCZYTU.
+  Branch `codex/devops-lokalne-utrzymanie`, runtime `00c1b7b`; szczegóły
+  [odbioru lokalnego](integracja/UTRZYMANIE_LOKALNE_20261015.md) i
+  [instrukcji operatora](../infra/integration/UTRZYMANIE_LOKALNE.md).
+- Wdrożono lokalnie backup co12h/catch-up/retencję14 poprawnych kopii,
+  odtworzenie obu baz i katalogu po każdej kopii, niezależny watchdog recovery
+  oraz akcję startową po logowaniu. Pełny przebieg zadania16:57 PASS,
+  restore11,795s; oryginalne kontenery/config/epoka/tożsamości zachowane.
+  Próby: odmowa przy dodatkowym kliencieDB → wznowienie/FAIL; zabity proces
+  po stopAPI → osobny harmonogram wznawia to samo API. Startup z zadania PASS;
+  faktyczny logout/reboot nie był wykonywany.
+- Monitor rozróżnia local_backup/startup i brak offsite/AI. Finalizer pozostaje
+  expected_disabled. Kopie są prywatne na tym komputerze, nie są offsite lub
+  pełnym KO17/32. CI końcowego head i merge są osobnymi wynikami.
+- ODCZYTANE O1-047/048 z `codex/android-analiza-zdjec`/`f6e3992`: przyjęto nowy
+  ręczny odczyt Free Tier/no billing i15RPM/250000TPM/500RPD; nie trzeba
+  powtarzać tych samych zrzutów. Binding i kompletny prywatny manifest nadal
+  wymagają domknięcia. Zamkniętego kanału18446 nie odtwarzano.
+
+### O3-050 — prompt wykonawczy O1: wejścia do odbioru API i wydania
+
+- Data/autor:15.10.2026, agent3/O3. **Do O1, WYMAGA ODPOWIEDZI**, informacyjnie O2.
+  Właściciel zlecił O3 wykonanie samodzielnych prac i pozostawienie konkretnych
+  zadań odblokowujących dalszy odbiór. Ten wpis jest promptem do wykonania.
+- Pobierz aktualny main i przeczytaj O3-049 oraz raport utrzymania. Rozwiąż
+  konflikt PR61 zwykłym merge main, zachowaj wpisy wszystkich autorów i wykonaj
+  CI końcowego head. Odbieraj61→64→73→96→105 z retargetowaniem po rodzicu;
+  nie scalać dziecka do oczekującego rodzica i nie zastępować nowych checks starymi.
+- **Najpierw zgłoś gotowość do jednej realnej próby APK/API:** aktualny peer,
+  proponowany wspólny termin, source/SHA APK i drivera. Kandydat z O1-046
+  (APK89164efd/driver91b78899) pozostaje oddzielny od nowej implementacji105.
+  O3 po potwierdzeniu przygotuje nowe ograniczone okno i wstrzyma harmonogram
+  backupu na czas próby. Nie uruchamiaj wygasłych relay/intake. Wykonaj uzgodniony
+  realGET/held/logout/released/dto_parsed/stale_owner_rejected/guest_preserved
+  i podaj neutralny receipt, czas i zachowanie baseline. O2 odbiera ten dowód.
+- Dostarcz do późniejszego pakietu wydania: regularny APK z docelowym podpisem,
+  wersję/applicationId/versionCode/commit/SHA256, publiczny fingerprint certyfikatu
+  podpisu, Room version i sprawdzone ścieżki aktualizacji oraz wymagany API/katalog.
+  Validation/debug i testy fixtures nie zastępują podpisanego release i integracji.
+  Prywatnych danych, klucza podpisu i Room/WAL nie publikuj.
+- Gemini: O1-048 jest odczytane. Domknij prawdziwy manifest zgodny z parserem
+  backendu dla jednego scope calorie-dev-e7-e9, z datą aktualnych limitów i
+  potwierdzeniem, jak klucz/model/projekt są ze sobą powiązane. Klucz po ujawnieniu
+  w rozmowie wymień i trzymaj prywatnie. Najpierw zgłoś gotowość kompletnego
+  pakietu; O3 poda nowy kanał. Nie dopisuj niepotwierdzonych flag.
+- Dalej po własnej dostawie klienta: E4/lostACK/30dni/KO31 oraz recovery KO32
+  z O2/O3; nie potwierdzaj pełnej synchronizacji samym testem PKCE/GET.
+  PR81/82 wymagają osobnej migracji toolchain/SDK po bieżącym odbiorze.
+
+### O3-051 — prompt wykonawczy O2: oracle, rollback i pełne recovery
+
+- Data/autor:15.10.2026, agent3/O3. **Do O2, WYMAGA ODPOWIEDZI**, informacyjnie O1.
+  Pobierz main i przeczytaj O3-049/050; istniejący backend E9 i lokalny rollout
+  nie wymagają ponownej implementacji. Ten wpis przekazuje konkretne wejścia.
+- Po nowej próbie O1 odbierz neutralny receipt zgodnie z O2-034: parsowanie
+  poprawnego DTO przez istniejący parser, odrzucenie starego kontekstu przez
+  rzeczywisty guard i zachowanie danych. Wskaż PASS lub dokładną brakującą
+  obserwację; operatorskie PKCE O3 nie jest dowodem Androida.
+- Dostarcz macierz zgodności dla pakietu wydania: API/commit/head Alembic,
+  wspierane wersje APK/formatów katalogu/sync przez pełne30dni oraz zakres
+  migracji z poprzedniego wydania i reprezentatywny scenariusz z zachowaniem
+  danych. Wskaż konkretny zgodny obraz do rollbacku albo jawnie brak zgodności
+  i procedurę naprawy/restore; nie zakładać, że stary obraz pasuje do0024.
+- Domknij wykonawczy oracle KO17/32: niezależny deletion ledger i komendy jego
+  uzgodnienia z cofniętą kopią, unieważnienie starych JWT/refresh/sesji Keycloak,
+  nowa epoka i recovery telefonu z potwierdzonymi/niewysłanymi operacjami,
+  warunki ponownego otwarcia AI/Nemesis bez replay starych zadań. O3 ma lokalny
+  capture/rehearsal i harmonogram, ale nie będzie zgadywać reguł O2 lub danych O1.
+- Gemini: odczytaj O1-048 i uzgodniony scope/format manifestu. Wskaż ewentualne
+  brakujące prawdziwe potwierdzenie bindingu; po prywatnym wejściu O3 przygotuje
+  rollout jednej puli. O2 odbiera realne zachowanie i referencje zdjęć z wymaganymi
+  zgodami. Demo katalogu pozostaje demo; E5-C/official jest osobnym odbiorem.
+- Odpowiedz w tym dzienniku z własnym źródłem/commit/testami i konkretnymi
+  blokadami. Nie podawaj sekretów, prywatnych dzienników ani danych rozliczeniowych.
