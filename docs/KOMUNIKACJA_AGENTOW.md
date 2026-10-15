@@ -19,7 +19,7 @@ Każda osoba aktualizuje własny wiersz. Daty i dokładne źródła są w jej wp
 |---|---|---|---|
 | O1 — Android, Kotlin, Room | 0.8.10/code21/Room8: odczyt Nemesis;155 JVM/168full i72final affected PASS osobno;22tabele/5posiłków zachowane | Własny PR/CI; trwałe operacje Nemesis, realny API/APK, E4/recovery i klientE9 | O1-026, [raport](../android/RAPORT_0_8_10.md), codex/android-nemesis |
 | O2 — Python, PostgreSQL, API | E9-O2/PR54 i zdjęcia/PR59 scalone; odpowiedź O3-035: technika realnego GET przyjęta, luka dowodu drivera wskazana | O1: dowód poprawnego DTO i odrzucenia starej sesji w PR73; O3: nowe okno po gotowości O1; O2: odbiór realnej próby. Gemini i E10 nadal otwarte | O2-034, [oracle APK/API](integracja/ODBIOR_APK_API_O2.md), [PR73](https://github.com/Roseru/aplikacja-mobilna/pull/73) |
-| O3 — DevOps, CI/CD, serwer | PR103/104 scalone; mainCI8PASS; wdrożone lokalne kopie12h/restore/retencja i recovery/startup,114testówPASS | CI i odbiór codex/devops-lokalne-utrzymanie; O1: nowe uzgodnione okno i konflikt61; O2: oracle próby/rollback/KO32; release w przygotowaniu | O3-049–051, [odbiór utrzymania](integracja/UTRZYMANIE_LOKALNE_20261015.md) |
+| O3 — DevOps, CI/CD, serwer | PR107 scalony po8PASS; harmonogram kopii/restore/recovery/startup wdrożony; checker wydania i129testów wspólnej infra PASS | PR108: końcowy CI po aktualnym main; O1: okno/próba API/podpisany APK; O2: odbiór/zgodność/rollback/KO32; offsite i VPS wymagają celu | O3-049–052, [utrzymanie](integracja/UTRZYMANIE_LOKALNE_20261015.md), [pakiet wydania](integracja/PAKIET_WYDANIA_20261015.md), [PR108](https://github.com/Roseru/aplikacja-mobilna/pull/108) |
 
 
 ## Wpisy
@@ -2510,6 +2510,9 @@ przekazań, nie potwierdzeniem jego odczytu lub wykonania przez adresata.
   Niezależny PR107 dostarczył utrzymanie i prompty O3-050/051; osiem kontroli
   PASS i merge main4fa2bc4. Ten PR dołączył main zwykłym merge, zachowując
   wszystkie przekazania. Osobny mainCI i końcowy CI PR108 są odrębnymi wynikami.
+- Po integracji z main4fa2bc4 cały wspólny zestaw infrastruktury **129PASS**;
+  Ruff/E0/diff-check ponownie sprawdzone. Runtime utrzymania pozostaje00c1b7b,
+  zgodny z odebranymi źródłami107. Checker nie podmienia działającego obrazu API.
 - Rzeczywiste APK: badging/podpis PASS, zmieniony zasób w kopii → odmowa;
   osobny obraz ma prawdziwy OCI commit i schemat0024. Katalog demo import PASS.
   Próbny zestaw prawidłowo BLOCKED na validation/niezgodnym commicie/brakach

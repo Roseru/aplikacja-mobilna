@@ -24,7 +24,7 @@ artefaktów; nie przeprowadzono produkcyjnego wdrożenia lub publikacji.
   receipt PASS w celu zamknięcia tych braków.
 -15 nowych przypadków regresji; pełny zestaw infrastruktury tej niezależnej
   gałęzi116PASS, Ruff lint/format i E0 PASS. Po dołączeniu lokalnego utrzymania
-  suma przypadków jest innym przebiegiem i wymaga własnego wyniku.
+  z main4fa2bc4 wykonano osobny wspólny przebieg: **129PASS**.
 
 Dockerfile wspiera etykietę źródła; CI przekazuje rzeczywisty checkout SHA
 i weryfikuje ją po buildzie. To źródło buildów, nie publikacja registry/CD.
