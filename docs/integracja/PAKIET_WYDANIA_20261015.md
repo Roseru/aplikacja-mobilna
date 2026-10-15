@@ -49,6 +49,20 @@ Przy błędzie CI dostaje etap/klasę/exitcode, a komenda/SQL/traceback zostają
 w prywatnym stanie. Nie pomijamy restore i nie zastępujemy failure wynikiem PASS.
 Nowy końcowy head musi przejść własny pełny CI.
 
+## Przygotowanie emulatora po kolejnym błędzie CI
+
+Headf4c7428 zaliczył zdalny local-integration/restore, lecz android-device
+przerwał przygotowanie offline z exit1 przed Gradle. Zweryfikowany artefakt
+11985692815 zawierał wyłącznie boot1 i pięć zarejestrowanych usług; nie zachowano
+etapu konkretnego polecenia. To nie był wykonany test APK ani jego regresja.
+
+Przygotowanie idempotentnych ustawień sieci czeka teraz maksymalnie30prób
+na poprawne wykonanie wszystkich poleceń i rzeczywistą utratę łączności.
+Nie zmieniono wymagań offline ani nie dodano powtarzania testów aplikacji.
+Neutralny setup-status/setup-attempts trafia do artefaktów także przy błędzie.
+6/6 lokalnych testów Linux bez sieci PASS: również chwilowa odmowa polecenia
+oraz trwała odmowa z boundedFAIL/Gradle NOT_RUN. Końcowy CI sprawdza realny AVD.
+
 ## Dostawy niezbędne do rzeczywistego wydania
 
 [Instrukcja i format](../../infra/integration/WYDANIE.md) podają pola manifestu,

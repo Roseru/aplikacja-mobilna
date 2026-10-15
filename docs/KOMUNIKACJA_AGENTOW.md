@@ -2549,3 +2549,21 @@ przekazań, nie potwierdzeniem jego odczytu lub wykonania przez adresata.
   wymaga własnych ośmiu success. Bez zmiany APK/API, epoki lub bramekAI/Nemesis.
 - Prompty O3-050/051/052 i format dostaw pozostają aktualne. Gotowość O1 należy
   potwierdzić przed nowym oknem; na czas próby O3 wstrzyma automatyczne kopie.
+
+### O3-054 — przygotowanie offline emulatora czeka na wykonanie ustawień
+
+- Data/autor:15.10.2026, agent3/O3. Do O1/O2, DO ODCZYTU. Headf4c7428:
+  local-integration/restore w zdalnym CI38761033382 PASS po O3-053.
+  Android-device przerwał się przed Gradle z exit1; nie uruchomiono testów APK.
+  Pobrany artefakt11985692815 ma zgodne SHA i tylko startup-services.txt:
+  boot1 oraz phone/connectivity/wifi/settings/package found. Nie wskazuje
+  dokładnego polecenia, które odmówiło wykonania konfiguracji offline.
+- Idempotentne przygotowanie trybu offline ma teraz bounded30prób. Każde
+  polecenie musi się wykonać, a faktyczny brak Wi-Fi/default network pozostaje
+  wymagany przed i po pełnym zestawie. Trwały błąd daje exit21 i testy NOT_RUN.
+  Nie ponawiamy testów aplikacji i nie omijamy fail/skipped.
+- Trwały setup-status.txt/setup-attempts.txt zapisuje neutralny etap/exitcode
+  również przy awarii; workflow publikuje je obok dotychczasowych dowodów.
+  Linux bez sieci:6/6 testów PASS, w tym chwilowa odmowa polecenia → poprawne
+  przygotowanie/test oraz trwała odmowa → boundedFAIL i brak uruchomienia Gradle.
+  Pełna infra133PASS jest osobnym zbiorem. Nowy head wymaga własnego całegoCI.

@@ -339,6 +339,7 @@ jobs:
             android/app/build/ci/device-summary.json
             android/app/build/ci/offline-*.txt
             android/app/build/ci/startup-services.txt
+            android/app/build/ci/setup-*.txt
           if-no-files-found: error
           retention-days: 14
   local-integration:
