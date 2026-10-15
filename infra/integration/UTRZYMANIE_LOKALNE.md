@@ -23,8 +23,11 @@ i projektu, archiwizuje zatwierdzone źródła w prywatnym runtime i rejestruje:
 | O3-Calorie-Local-Backup | 03:00 i 15:00 oraz 3 min po zalogowaniu | Kopia, weryfikacja, wznowienie usług, odtworzenie na osobnym PG |
 | O3-Calorie-Backup-Recovery | Co minutę | Wznowienie usług po przerwanym własnym backupie |
 
-Backup jest pomijany, gdy poprzedni poprawny ma mniej niż12h. Działa catch-up
-po pominiętym terminie. Zadania wymagają zalogowanego użytkownika i włączonego
+Backup jest pomijany po sukcesie w tym samym oknie kalendarzowym03:00–15:00
+lub15:00–03:00. Następny termin jest nowym oknem, także przy zmianie czasu.
+Liczymy okno startu, a nie12h od zakończenia kopii: jej czas wykonania nie może
+spowodować pominięcia kolejnego terminu. Działa catch-up po pominiętym terminie.
+Zadania wymagają zalogowanego użytkownika i włączonego
 komputera, działają bez podwyższenia uprawnień i okien konsoli, także na baterii.
 Startup nie wylogowuje ani nie restartuje komputera. Można sprawdzić tę samą
 akcję przez `Start-ScheduledTask`; pełny test po rzeczywistym ponownym logowaniu
@@ -65,6 +68,9 @@ FAIL lub receipt starszy niż24h alarmuje przez sensor `local_backup` istniejąc
 monitora. `backup` nadal pozostaje `not_configured` do rzeczywistej dostawy offsite.
 `startup` sygnalizuje nieudany przebieg akcji startowej. Reguły deduplikacji
 i potwierdzania issues pozostają z monitoringu; żaden alert nie zawiera sekretów.
+RUNNING zachowuje minimalny dowód poprzedniej poprawnej kopii. Monitor pokazuje
+running tylko gdy ta kopia nadal mieści się w24h i operacja nie przekroczyła45min;
+nie zalicza nowej kopii ani nie zamyka wcześniej otwartego incydentu.
 
 ## Obsługa operatora
 

@@ -74,7 +74,7 @@ class AndroidCiTest(unittest.TestCase):
 
 @unittest.skipUnless(os.name != "nt" and shutil.which("bash"), "Linux CI shell regression")
 class AndroidDeviceStartupTest(unittest.TestCase):
-    def run_device_script(self, ready_after):
+    def run_device_script(self, ready_after, command_failure="none"):
         with tempfile.TemporaryDirectory() as temporary:
             root = Path(temporary)
             device = root / "android"
@@ -105,6 +105,13 @@ class AndroidDeviceStartupTest(unittest.TestCase):
                     if count < int(os.environ["DEVICE_READY_AFTER"]):
                         print("cmd: Can't find service: phone", file=sys.stderr)
                         raise SystemExit(20)
+                elif args == ["shell", "svc", "data", "disable"]:
+                    counter = state / "data-attempts"
+                    attempt = int(counter.read_text()) + 1 if counter.exists() else 1
+                    counter.write_text(str(attempt))
+                    mode = os.environ["DEVICE_COMMAND_FAILURE"]
+                    if mode == "permanent" or (mode == "once" and attempt == 1):
+                        raise SystemExit(1)
                 elif args[:4] == ["shell", "settings", "get", "global"]:
                     print("1" if args[-1] == "airplane_mode_on" else "0")
                 elif args == ["shell", "cmd", "wifi", "status"]:
@@ -130,13 +137,15 @@ class AndroidDeviceStartupTest(unittest.TestCase):
                     "ANDROID_SERIAL": "emulator-5554",
                     "DEVICE_STUB_STATE": str(root),
                     "DEVICE_READY_AFTER": str(ready_after),
+                    "DEVICE_COMMAND_FAILURE": command_failure,
                 },
                 timeout=30,
             )
             return (
                 result,
                 (device / "test-executed").exists(),
-                (device / "app/build/ci/startup-services.txt").read_text(),
+                (device / "app/build/ci/startup-services.txt").read_text()
+                + (device / "app/build/ci/setup-status.txt").read_text(),
                 [json.loads(line) for line in (root / "commands.jsonl").read_text().splitlines()],
             )
 
@@ -157,6 +166,20 @@ class AndroidDeviceStartupTest(unittest.TestCase):
         self.assertFalse(executed)
         self.assertIn("Service phone: not found", diagnostics)
         self.assertNotIn(["shell", "cmd", "connectivity", "airplane-mode", "disable"], commands)
+
+    def test_registered_service_with_transient_command_failure_waits_before_tests(self):
+        result, executed, diagnostics, commands = self.run_device_script(1, "once")
+        self.assertEqual(result.returncode, 0, result.stderr)
+        self.assertTrue(executed)
+        self.assertEqual(commands.count(["shell", "svc", "data", "disable"]), 2)
+        self.assertIn("stage=complete", diagnostics)
+
+    def test_permanent_offline_setup_failure_never_runs_application_tests(self):
+        result, executed, diagnostics, commands = self.run_device_script(1, "permanent")
+        self.assertEqual(result.returncode, 21, result.stderr)
+        self.assertFalse(executed)
+        self.assertEqual(commands.count(["shell", "svc", "data", "disable"]), 30)
+        self.assertIn("stage=data_disable", diagnostics)
 
 
 if __name__ == "__main__":
