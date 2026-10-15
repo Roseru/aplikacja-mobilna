@@ -181,6 +181,7 @@ class DiaryFlowTest {
     @Test fun createPrivateProductAndDeclareDayComplete() {
         compose.waitUntil(15_000) { compose.onAllNodesWithTag("daily-kcal").fetchSemanticsNodes().isNotEmpty() }
         val app = compose.activity.application as CalorieApplication
+        val beforeProductIds = runBlocking { app.database.dao().products(DiaryRepository.GUEST).first().map { it.id }.toSet() }
         val baseline = runBlocking { app.database.dao().day(DiaryRepository.GUEST, LocalDate.now().toString()).first()
             .flatMap { it.items }.sumOf { it.consumed().kcal } }
         compose.onNodeWithText("Dodaj posiłek").performClick()
@@ -201,7 +202,7 @@ class DiaryFlowTest {
         compose.activityRule.scenario.recreate()
         compose.waitUntil(10_000) { compose.onAllNodesWithTag("daily-kcal").fetchSemanticsNodes().isNotEmpty() }
         runBlocking {
-            val privateProduct = app.database.dao().products().first().single { it.name == "Kasza własna" }
+            val privateProduct = app.database.dao().products(DiaryRepository.GUEST).first().single { it.id !in beforeProductIds && it.name == "Kasza własna" }
             assertEquals(DiaryRepository.GUEST, privateProduct.ownerScope)
             assertNull(privateProduct.protein)
             assertTrue(app.database.dao().diaryDay(DiaryRepository.GUEST, LocalDate.now().toString()).first()!!.declaredComplete)
