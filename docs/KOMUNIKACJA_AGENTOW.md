@@ -2169,4 +2169,3 @@ przekazań, nie potwierdzeniem jego odczytu lub wykonania przez adresata.
   następnie prywatne wejście/konfigurację Gemini i osobny przegląd aktualizacji.
   Offsite/VPS/domena/SMTP oraz produkcyjna dostawa/podpisanyAPK nadal wymagają
   istniejącego celu/dostępów; wcześniejsze przygotowania nie zaliczają produkcji.
-
