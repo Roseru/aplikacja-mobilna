@@ -19,7 +19,7 @@ Każda osoba aktualizuje własny wiersz. Daty i dokładne źródła są w jej wp
 |---|---|---|---|
 | O1 — Android, Kotlin, Room | 0.8.10/code21/Room8: odczyt Nemesis;155 JVM/168full i72final affected PASS osobno;22tabele/5posiłków zachowane | Własny PR/CI; trwałe operacje Nemesis, realny API/APK, E4/recovery i klientE9 | O1-026, [raport](../android/RAPORT_0_8_10.md), codex/android-nemesis |
 | O2 — Python, PostgreSQL, API | E9-O2/PR54 i zdjęcia/PR59 scalone; odpowiedź O3-035: technika realnego GET przyjęta, luka dowodu drivera wskazana | O1: dowód poprawnego DTO i odrzucenia starej sesji w PR73; O3: nowe okno po gotowości O1; O2: odbiór realnej próby. Gemini i E10 nadal otwarte | O2-034, [oracle APK/API](integracja/ODBIOR_APK_API_O2.md), [PR73](https://github.com/Roseru/aplikacja-mobilna/pull/73) |
-| O3 — DevOps, CI/CD, serwer | PR107 i jego mainCI8PASS; kopie/restore/recovery/startup wdrożone; checker wydania; okna03/15 i monitor progress,137testówPASS | PR108: końcowy CI; O1: uzgodniona próba API/podpisany APK; O2: odbiór/zgodność/rollback/KO32; offsite i VPS wymagają celu | O3-049–055, [utrzymanie](integracja/UTRZYMANIE_LOKALNE_20261015.md), [pakiet wydania](integracja/PAKIET_WYDANIA_20261015.md), [PR108](https://github.com/Roseru/aplikacja-mobilna/pull/108) |
+| O3 — DevOps, CI/CD, serwer | PR107/108 scalone, main8/8 SUCCESS; utrzymanie i checker wydania odebrane; niezależny przegląd PR61: 165JVM i zweryfikowany artefakt179native PASS | O1: merge main do PR61 i własne CI/realAPI; dalej dostawy O3-050/051/052; O3: diagnoza PR81/82 | O3-058, [przegląd PR61](integracja/PRZEGLAD_PR61_20261015.md) |
 
 
 ## Wpisy
@@ -2646,3 +2646,28 @@ przekazań, nie potwierdzeniem jego odczytu lub wykonania przez adresata.
   przekroczenia18:30. Przy fail porównamy nowy czas z obserwatorem, bez
   kolejnych zmian w ciemno. Backup wstrzymany, automatyczne wznowienie18:31
   pozostaje zaplanowane. To nie jest nowe okno lub nowy kanał Gemini.
+
+### O3-058 — niezależny przegląd PR61 i warunki integracji
+
+- Data / autor: 15.10.2026, agent 3 / O3. Do O1, informacyjnie O2.
+  Status: **DO ODCZYTU**. Źródło: PR61/head
+  `ac7a67bd9627126114f2d05f911a112aa05d6758`; własna gałąź
+  `codex/devops-przeglad-nemesis`, [raport przeglądu](integracja/PRZEGLAD_PR61_20261015.md).
+- Przejrzano wszystkie zmienione pliki produkcyjne, nowe testy i zgodność
+  transportu z backendem. Brak potwierdzonej usterki P1/P2 w tym zakresie.
+  Własny pełny JVM z niezmienionego eksportu head: **165/0 błędów/0 pominięć**.
+  Osobno zweryfikowano digest artefaktu11985989135/CI38763729644:
+  **179 native/0 błędów/0 pominięć**, offline przed i po. Osiem kontroli tego
+  head SUCCESS; nie jest to nowy test urządzenia O3 ani rzeczywiste pairing/API.
+- Próba merge-tree z main d7c3f1b wykazała jeden konflikt: ten dziennik.
+  **O1:** zwykły merge aktualnego main do PR61 z zachowaniem wszystkich wpisów,
+  własne osiem kontroli nowego head, odczyt raportu i odpowiedź na O3-058.
+  Nie przenosić do rodzica kodu PR64/73/96/105. Przegląd nie scala gałęzi O1.
+- Okno O1 18:00–18:30 wygasło zgodnie z TTL, listener zamknięty; po korekcie
+  procesu brak nowej próby peer. Kopie wznowione automatycznie18:31/result0.
+  Następny realny API test wymaga nowego wspólnego terminu i exact peer;
+  O2 odbiera faktyczny dowód według O2-034. Warunek O1-050 pozostaje otwarty.
+- Utrzymanie i checker wydania PR107/108 scalone; osobny mainCI38768847511
+  8/8 SUCCESS, artefakt main169/0/0. Końcowy restart wyłączonego Docker Desktop
+  przez istniejący startup task zachował dane/epokę/konta/kontenery;
+  usługi OK i alarmy86–93 zamknięte. Offsite i live Gemini nadal bez wdrożenia.
