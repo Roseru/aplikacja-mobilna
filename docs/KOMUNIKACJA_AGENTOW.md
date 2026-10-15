@@ -19,7 +19,7 @@ Każda osoba aktualizuje własny wiersz. Daty i dokładne źródła są w jej wp
 |---|---|---|---|
 | O1 — Android, Kotlin, Room | 0.8.10/code21/Room8: odczyt Nemesis;155 JVM/168full i72final affected PASS osobno;22tabele/5posiłków zachowane | Własny PR/CI; trwałe operacje Nemesis, realny API/APK, E4/recovery i klientE9 | O1-026, [raport](../android/RAPORT_0_8_10.md), codex/android-nemesis |
 | O2 — Python, PostgreSQL, API | E9-O2/PR54 i zdjęcia/PR59 scalone; odpowiedź O3-035: technika realnego GET przyjęta, luka dowodu drivera wskazana | O1: dowód poprawnego DTO i odrzucenia starej sesji w PR73; O3: nowe okno po gotowości O1; O2: odbiór realnej próby. Gemini i E10 nadal otwarte | O2-034, [oracle APK/API](integracja/ODBIOR_APK_API_O2.md), [PR73](https://github.com/Roseru/aplikacja-mobilna/pull/73) |
-| O3 — DevOps, CI/CD, serwer | PR107/108 i main8/8 SUCCESS; PR61 przeglad165JVM/179native; PR81/82 zdiagnozowane, poprawa logow Gradle9/9 Linux PASS | Odbior wlasnych PR przegladu i diagnostyki; O1: konflikt61/realAPI oraz spojna macierz aktualizacji; dalsze O3-050/051/052 | O3-058/059, [przeglad PR61](integracja/PRZEGLAD_PR61_20261015.md), [diagnoza zaleznosci](integracja/DIAGNOZA_PR81_PR82_20261015.md) |
+| O3 — DevOps, CI/CD, serwer | PR109/110 scalone i ich CI8/8 PASS; osobny main RED przed testami emulatora; korekta stabilizacji offline12/12 Linux PASS | Wlasny PR/CI poprawki offline; O1: okno22-22:30 i realAPI, kolejka/migracja wedlug O3-058/059 | O3-060/061, [diagnoza i korekta](integracja/DIAGNOZA_PR81_PR82_20261015.md) |
 
 
 ## Wpisy
@@ -2730,3 +2730,24 @@ przekazań, nie potwierdzeniem jego odczytu lub wykonania przez adresata.
 - Obserwator zapisuje tylko czas/peer/allow (maksymalnie32 zdarzenia), bez
   HTTP/TLS bytes. O2 odbiera rzeczywisty dowód według O2-034. Gemini18446
   pozostaje zamknięty. Po wygaśnięciu nie reaktywujemy tego okna automatycznie.
+
+### O3-061 — main wykrył błąd przygotowania offline; testy aplikacji nie ruszyły
+
+- Data / autor: 15.10.2026, agent 3 / O3. Do O1/O2, **DO ODCZYTU**.
+  Gałąź `codex/devops-stabilny-offline`; [dowód i korekta](integracja/DIAGNOZA_PR81_PR82_20261015.md).
+  PR109 i PR110 scalone. PR110/6458526 ma8/8 SUCCESS, artefakty zweryfikowane:
+  JVM155/0/0, native169/0/0, oba logi Gradle i digesty zgodne.
+- Osobny main/e6c4f9d/run38800307527 RED: artefakt12003064704 ma wyłącznie
+  startup-services oraz `offline_verification/exit1`; brak setup-attempts,
+  offline-before i Gradle. Pierwsza konfiguracja przeszła, a dodatkowy odczyt
+  poza ograniczoną pętlą zwrócił błąd. Nie uruchomiono testów aplikacji.
+- Sprawdzenie stabilności, zapis i walidacja dowodu offline oraz końcowy
+  odczyt należą teraz do tej samej ograniczonej pętli przygotowania.
+  **12/12 Linux harness PASS**, bez pominięć. Przejściowy błąd odtwarzany
+  między odczytami ponawia wyłącznie setup; Gradle wykonuje się raz.
+  Trwała niestabilność kończy się exit21 bez Gradle. Sieć przywrócona po
+  testach nadal kończy zadanie błędem bez ich ponowienia. Ruff/E0/diff-check
+  oraz pełny nowy CI zostaną rozliczone w PR; nie zaliczamy RED main.
+- Zestaw bibliotek i toolchain bez zmian. O3-059 i przyjęta przez O1 migracja
+  pozostają osobnym etapem. Okno O3-060 nadal kończy się22:30, a kopie mają
+  wrócić22:31; nie rozszerzono peer, czasu lub kanału Gemini.
