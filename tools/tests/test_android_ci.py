@@ -55,40 +55,28 @@ class AndroidCiTest(unittest.TestCase):
                     }
                 ],
             }
-            (directory / "output-metadata.json").write_text(
-                json.dumps(metadata), "utf-8"
-            )
+            (directory / "output-metadata.json").write_text(json.dumps(metadata), "utf-8")
             (directory / "app-debug.apk").write_bytes(b"built APK fixture")
             badging = (
                 "package: name='pl.roseru.kalorie' versionCode='8' versionName='0.7.1'\n"
                 "application-debuggable\n"
             )
-            with patch(
-                "tools.android_ci.subprocess.check_output", return_value=badging
-            ):
+            with patch("tools.android_ci.subprocess.check_output", return_value=badging):
                 destination = directory / "delivery"
                 manifest = package_apk(directory, destination, "a" * 40, Path("aapt"))
                 self.assertEqual(manifest["version_code"], 8)
                 self.assertEqual(manifest["commit"], "a" * 40)
-                self.assertEqual(
-                    (destination / manifest["apk"]).read_bytes(), b"built APK fixture"
-                )
-                self.assertIn(
-                    manifest["sha256"], (destination / "SHA256SUMS").read_text()
-                )
+                self.assertEqual((destination / manifest["apk"]).read_bytes(), b"built APK fixture")
+                self.assertIn(manifest["sha256"], (destination / "SHA256SUMS").read_text())
                 metadata["elements"][0]["versionName"] = "0.7.2"
-                (directory / "output-metadata.json").write_text(
-                    json.dumps(metadata), "utf-8"
-                )
+                (directory / "output-metadata.json").write_text(json.dumps(metadata), "utf-8")
                 with self.assertRaises(ValueError):
                     package_apk(directory, destination, "a" * 40, Path("aapt"))
                 with self.assertRaises(ValueError):
                     package_apk(directory, destination, "main", Path("aapt"))
 
 
-@unittest.skipUnless(
-    os.name != "nt" and shutil.which("bash"), "Linux CI shell regression"
-)
+@unittest.skipUnless(os.name != "nt" and shutil.which("bash"), "Linux CI shell regression")
 class AndroidBuildDiagnosticsTest(unittest.TestCase):
     def test_configuration_failure_keeps_log_and_nonzero_status_without_xml(self):
         self.run_build_script(23)
@@ -122,9 +110,7 @@ class AndroidBuildDiagnosticsTest(unittest.TestCase):
             self.assertFalse(list(root.rglob("TEST-*.xml")))
 
 
-@unittest.skipUnless(
-    os.name != "nt" and shutil.which("bash"), "Linux CI shell regression"
-)
+@unittest.skipUnless(os.name != "nt" and shutil.which("bash"), "Linux CI shell regression")
 class AndroidDeviceStartupTest(unittest.TestCase):
     def run_device_script(self, ready_after, command_failure="none", gradle_status=0):
         with tempfile.TemporaryDirectory() as temporary:
@@ -207,10 +193,7 @@ class AndroidDeviceStartupTest(unittest.TestCase):
                     if (device / "app/build/ci/gradle-device.log").exists()
                     else ""
                 ),
-                [
-                    json.loads(line)
-                    for line in (root / "commands.jsonl").read_text().splitlines()
-                ],
+                [json.loads(line) for line in (root / "commands.jsonl").read_text().splitlines()],
             )
 
     def test_boot_completed_before_phone_waits_then_runs_real_script(self):
@@ -218,13 +201,9 @@ class AndroidDeviceStartupTest(unittest.TestCase):
         self.assertEqual(result.returncode, 0, result.stderr)
         self.assertTrue(executed)
         self.assertIn("Service phone: found", diagnostics)
-        policy_index = commands.index(
-            ["shell", "cmd", "connectivity", "airplane-mode", "disable"]
-        )
+        policy_index = commands.index(["shell", "cmd", "connectivity", "airplane-mode", "disable"])
         phone_probes = [
-            c
-            for c in commands[:policy_index]
-            if c == ["shell", "service", "check", "phone"]
+            c for c in commands[:policy_index] if c == ["shell", "service", "check", "phone"]
         ]
         self.assertGreaterEqual(len(phone_probes), 3)
 
@@ -233,9 +212,7 @@ class AndroidDeviceStartupTest(unittest.TestCase):
         self.assertEqual(result.returncode, 20, result.stderr)
         self.assertFalse(executed)
         self.assertIn("Service phone: not found", diagnostics)
-        self.assertNotIn(
-            ["shell", "cmd", "connectivity", "airplane-mode", "disable"], commands
-        )
+        self.assertNotIn(["shell", "cmd", "connectivity", "airplane-mode", "disable"], commands)
 
     def test_registered_service_with_transient_command_failure_waits_before_tests(self):
         result, executed, diagnostics, commands = self.run_device_script(1, "once")
