@@ -19,7 +19,7 @@ Każda osoba aktualizuje własny wiersz. Daty i dokładne źródła są w jej wp
 |---|---|---|---|
 | O1 — Android, Kotlin, Room | 0.8.10/code21/Room8: odczyt Nemesis;155 JVM/168full i72final affected PASS osobno;22tabele/5posiłków zachowane | Własny PR/CI; trwałe operacje Nemesis, realny API/APK, E4/recovery i klientE9 | O1-026, [raport](../android/RAPORT_0_8_10.md), codex/android-nemesis |
 | O2 — Python, PostgreSQL, API | E9-O2/PR54 i zdjęcia/PR59 scalone; odpowiedź O3-035: technika realnego GET przyjęta, luka dowodu drivera wskazana | O1: dowód poprawnego DTO i odrzucenia starej sesji w PR73; O3: nowe okno po gotowości O1; O2: odbiór realnej próby. Gemini i E10 nadal otwarte | O2-034, [oracle APK/API](integracja/ODBIOR_APK_API_O2.md), [PR73](https://github.com/Roseru/aplikacja-mobilna/pull/73) |
-| O3 — DevOps, CI/CD, serwer | PR97 scalony po8success; PR98 poprawia gotowość usług Androida; relay Ethernet172.18.4.76:18444→peer172.18.4.123 do15:00 dnia15.10 | O1: świeży check i live late-read; O2: odbiór receipt; Gemini czeka na pełne wejście i nowy prywatny kanał | O3-043/044, [PR98](https://github.com/Roseru/aplikacja-mobilna/pull/98) |
+| O3 — DevOps, CI/CD, serwer | PR97 i PR98 scalone po8requiredSUCCESS;169testów emulatora/0skip; osobny main943 CI PASS | O1: check i realny late-read w oknie O3-043 do15:00; PR103: dwa aliasyPG17, własnyCI; Gemini czeka na pełne wejście | O3-043–046, [PR98](https://github.com/Roseru/aplikacja-mobilna/pull/98), [PR103](https://github.com/Roseru/aplikacja-mobilna/pull/103) |
 
 
 ## Wpisy
@@ -2332,3 +2332,39 @@ przekazań, nie potwierdzeniem jego odczytu lub wykonania przez adresata.
   brak uruchomienia Gradle i zachowana diagnostyka. Ruff/E0/diff-check PASS.
   Nowy końcowy head PR98 wymaga własnych ośmiu kontroli; poprzedniego failure
   nie opisujemy jako PASS i nie zastępujemy go samym lokalnym stubem.
+
+### O3-045 — PostgreSQL17 obejmuje oba zapisy nazwy obrazu
+
+- Data/autor:15.10.2026, agent3/O3. Do O1/O2, DO ODCZYTU.
+  Po scaleniu PR97 bot utworzył PR99 podnoszący infra/local z postgres17
+  do18. Pierwsza reguła ignore obejmowała library/postgres używane przez
+  infra/integration; infra/local ma nazwę obrazu postgres. Uzupełniono drugi
+  dokładny alias, zachowując aktualizacje w ramach17 i inne propozycje bota.
+- PR99 zamknięty bez scalenia. PostgreSQL17 nadal jest wspólnym wymaganiem,
+  nie obchodzimy go zmianą lokalnego harnessu. Własna gałąź naprawy:
+  codex/devops-postgres17-zrodla. Weryfikacja: parseYAML, zgodność dwóch
+  istniejących odwołań obrazu, E0/linki i diff-check. PełnyCI jest osobnym
+  wynikiem, a ta zmiana nie wdraża bazy ani nie dotyka wolumenów.
+- Równoległy PR98 domyka helper i błąd startu emulatora. Nowe okno O1
+  oraz dane do check są w O3-043/044 na tej gałęzi; nie odtwarzamy starych
+  instrukcji Wi-Fi. O1/O2 zachowują własny odbiór APK i oracle.
+
+### O3-046 — odebrane aktualizacje i naprawa CI; test O1 oczekuje na próbę
+
+- Data/autor:15.10.2026, agent3/O3. Do O1/O2 i właściciela, DO ODCZYTU.
+  PR97/head2c4ade5 ma8requiredSUCCESS; main94351cc ma osobny
+  ProjectCI38717873463 completed/success, tree zgodne ze źródłem.
+  Pięć oryginalnych propozycji74/75/77/78/80 GitHub oznaczył closed/merged.
+- PR98/head d9dbb617e6d47ce35e50936cdd10ca39f9b000b1 ma własne8requiredSUCCESS
+  w CI38718477626 i został scalony do main0bd2ad86396e6553642a8215f0b1c8190f45ea93.
+  Faktyczny emulator:169tests/0failures/0skipped; artefakt11964566728 pobrany,
+  SHA256 zgodne z GitHub. Offline przed/po:airplane1/wifi0/brak aktywnej sieci;
+  startup:boot1 i phone/connectivity/wifi/settings/package found.
+  To odbiór poprawki z O3-044, bez maskowania wcześniejszego exit20.
+  Osobny mainCI0bd jest kolejnym przebiegiem, nie wynikiem przejętym ze źródła.
+- O1: O3-043 i aktualny endpoint172.18.4.76:18444/exactpeer172.18.4.123 do15:00
+  są już w main. Na12:25 brak PEER_OBSERVED; zdalny check i live-read pozostają
+  oczekiwanym wejściem O1, nie potwierdzonym wynikiem O3. Podaj czas jednej próby.
+- PR103 poprawia drugi alias obrazu PostgreSQL z O3-045; dołączono nowy main
+  z zachowaniem wszystkich wpisów040–046. RegułaPG17 i zdalneCI tego osobnego
+  końcowego head wymagają własnego odbioru. Bieżące bazy nadalPG17, bez deploy.
