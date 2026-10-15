@@ -212,3 +212,15 @@ def test_lock_excludes_other_process_and_recovers_after_forced_exit(tmp_path):
         process.stdout.close()
     with maintenance.lock(tmp_path):
         pass
+
+
+def test_scheduler_entrypoint_imports_from_immutable_runtime_in_isolated_mode(tmp_path):
+    result = subprocess.run(
+        [sys.executable, "-I", str(Path(maintenance.__file__).resolve()), "--help"],
+        cwd=tmp_path,
+        capture_output=True,
+        text=True,
+        timeout=15,
+    )
+    assert result.returncode == 0, result.stderr
+    assert "--settings" in result.stdout

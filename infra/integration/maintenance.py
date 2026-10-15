@@ -6,11 +6,15 @@ import os
 import re
 import shutil
 import subprocess
+import sys
 import time
 from contextlib import contextmanager
 from datetime import UTC, datetime
 from pathlib import Path
 from uuid import uuid4
+
+if __package__ in (None, ""):
+    sys.path.insert(0, str(Path(__file__).resolve().parent))
 
 from backup import capture, rehearse, verify_archive
 from monitor import console_options, sample, write
