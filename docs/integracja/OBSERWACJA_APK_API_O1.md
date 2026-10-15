@@ -118,3 +118,59 @@ opt-in potwierdził brak drivera w domyślnym testowym APK. APK bramki ma odręb
 SHA256 `5706387aa603c2632ebd6051619ad2c55c436f94729bdbe994af340d9acaa86d`.
 Historyczny receipt HTTP powyżej dotyczy wcześniejszego APK4bad317 i pozostaje
 odrębnym dowodem; nie opisujemy go jako wykonania nowej bramki.
+
+## Uzupełnienie O2-034 — dowód parsowania i rzeczywistego odrzucenia
+
+Odczytano rozstrzygnięcie [O2/PR95](https://github.com/Roseru/aplikacja-mobilna/pull/95)
+na main `82137d20bbbf0420237bdc109256c1e17f45c7b1`. Technika gateway jest
+przyjęta; nie potrzeba opóźniania strumienia lub nowego proxy. Dodatkowy dowód
+został zaimplementowany w istniejącym PR73. Wynik live nadal **NOT_RUN**.
+
+Ticket bramki otrzymuje losowy neutralny `run` UUID. Kontroler przechwytuje
+nieprzezroczysty obserwator dla tego ticket przed własnym GET me. Dopiero po
+udanym istniejącym `ProfileReadProtocol.parse` emituje `dto_parsed`. Nie ma
+drugiego parsera ani DTO przekazanego do obserwatora. W istniejącym
+`withApiSession` wyłącznie `StaleOwnerException` po `requireApi(ticket)`
+emituje `stale_owner_rejected`; oryginalny wyjątek jest dalej rzucany.
+Błąd bazy, parsera lub zwykłe zakończenie `read.await(): Unit` nie stanowią
+takiego dowodu. Catch nie obejmuje bloku aplikacji po guardzie.
+
+Driver wymaga dokładnej kolejności jednego ticket/run:
+
+`held → logout → released → dto_parsed → stale_owner_rejected → guest_preserved`.
+
+`logout` jest emitowane po faktycznym wybraniu gościa; ostatni znacznik dopiero
+po sprawdzeniu braku sesji/podglądu i równości 15 tabel danych. Nie opisujemy tego
+jako identyczności wszystkich 23 tabel po celowym logout. Ticket nie zalicza
+markerów parsowania/odrzucenia przed wymaganą kolejnością. Każdy event ma tylko
+stałą nazwę, allowlisted path, neutralny run UUID i UTC. Bez body, identity,
+tokenów lub exception message. Debug/release korzysta z nieaktywnej implementacji.
+
+Regresje obejmują prawdziwy parser i guard kontrolera na deterministycznym
+gateway oraz HTTP200 z `{}`: stary warunek Unit/guest przechodzi, ale nowy dowód
+parsed/rejected pozostaje niekompletny. To test fixtures, nie rzeczywiste HTTPS.
+Cancellation/expiry nadal oznacza bezpieczne przerwanie i live delivery NOT_RUN.
+Nie zmieniono limitu10s, deadline, TLS, parsera, reguł właściciela ani cancellation.
+
+Do PR73 przeniesiono tylko naprawę cold startu z PR96 (zakolejkowany start
+Application oraz callbacku logowania). Nie przeniesiono panelu E7 lub jego
+pozostałego kodu. Wariant validation ma osobny licznik `1000 + defaultConfig.versionCode`
+i nazwę z `.validation`, korzystając z publicznego [VariantOutput API AGP8.9](https://developer.android.com/reference/tools/gradle-api/8.9/com/android/build/api/variant/VariantOutput).
+Dzięki temu kolejne testowe APK aktualizuje istniejący pakiet bez downgrade,
+uninstall/clear lub zmiany applicationId/callback. Debug/release zachowuje swój
+licznik. Nie cofamy Room9 ani danych emulatora.
+
+Lokalny build/test i gotowy nowy driver mają oddzielne wyniki od live. Nowy run
+wymaga aktualnego okna O3 oraz fresh check/lease/PKCE; okna14.10 do17:25 nie
+przedłużamy. Konta A/B zostały odebrane i nie trzeba dostarczać ich ponownie.
+
+Weryfikacja poprawki O2-034:165JVM debug/180JVM validation bez błędów/pominięć,
+lint0error, build obu wariantów i opt-in drivera PASS. Native79/79 PASS na
+O1Tests35/API35 obejmuje dwa nowe testy kontrolera/parsera i trzy testy ekranów
+zdjęć. Pierwszy start instrumentacji zakończył się ANR podczas ładowania klas
+przy równoległych ANR systemowych; log zachowano. Po uruchomieniu tej samej
+maszyny79testów przeszło bez resetu danych. Nie utożsamiamy tego z realnym API.
+Domyślny testowy APK nie zawiera LiveApiLateReceiptTest (DEX sprawdzony).
+Aktualny check relay O3-040 zakończył się timeout przed TLS; adres O1 wrócił do
+wcześniej uzgodnionego172.18.4.123. Bez nowego dopasowania peer nie uruchamiamy
+lease/klienta ani próby live. Szczegóły w O1-046.
