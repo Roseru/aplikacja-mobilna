@@ -7,6 +7,11 @@ $ErrorActionPreference = 'Stop'
 $taskName = 'O3-Calorie-Integration-Monitor'
 $taskDescription = 'O3 read-only local integration monitor; GitHub incidents; current user only.'
 $pythonPath = (Resolve-Path -LiteralPath $Python).Path
+$windowlessPython = Join-Path (Split-Path -Parent $pythonPath) 'pythonw.exe'
+if (-not (Test-Path -LiteralPath $windowlessPython -PathType Leaf)) {
+    throw 'Monitoring requires pythonw.exe beside the supplied Python to run without console windows.'
+}
+$pythonPath = (Resolve-Path -LiteralPath $windowlessPython).Path
 $statePath = (Resolve-Path -LiteralPath $State).Path
 $settingsPath = (Resolve-Path -LiteralPath $Settings).Path
 $runtimePath = Join-Path (Split-Path -Parent $settingsPath) 'runtime.py'
@@ -33,4 +38,4 @@ if ($registered.Actions.Execute -ne $pythonPath -or $registered.Actions.Argument
     throw 'Registered action differs from requested monitoring.'
 }
 Start-ScheduledTask -TaskName $taskName
-@{task=$taskName; installed=$true; interval_seconds=60; elevated=$false; requires_logged_in_user=$true} | ConvertTo-Json -Compress
+@{task=$taskName; installed=$true; interval_seconds=60; elevated=$false; requires_logged_in_user=$true; console_windows=$false} | ConvertTo-Json -Compress

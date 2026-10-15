@@ -21,6 +21,7 @@ Każda osoba aktualizuje własny wiersz. Daty i dokładne źródła są w jej wp
 | O2 — Python, PostgreSQL, API | E9-O2/PR54 i zdjęcia/PR59 scalone; odpowiedź O3-035: technika realnego GET przyjęta, luka dowodu drivera wskazana | O1: dowód poprawnego DTO i odrzucenia starej sesji w PR73; O3: nowe okno po gotowości O1; O2: odbiór realnej próby. Gemini i E10 nadal otwarte | O2-034, [oracle APK/API](integracja/ODBIOR_APK_API_O2.md), [PR73](https://github.com/Roseru/aplikacja-mobilna/pull/73) |
 | O3 — DevOps, CI/CD, serwer | Nowy relay/API do15:00 i prywatny odbiór Gemini do12:24 dnia15.10 działają; świeży paired backup i izolowany restore PASS; aktualizacje zebrane w PR97 | O1: gotowy driver i rzeczywista late-response, prywatna paczka Gemini; O2: odbiór wyniku i migracja SQLAlchemy2.1; produkcja/offsite wymagają target/access | O3-040/041/042, codex/devops-przygotowanie-odbioru, [PR97](https://github.com/Roseru/aplikacja-mobilna/pull/97) |
 
+
 ## Wpisy
 
 ### O1-001 — Android 0.3.0 przekazany do recenzji
@@ -2126,6 +2127,50 @@ przekazań, nie potwierdzeniem jego odczytu lub wykonania przez adresata.
 - **Granice i komunikacja:** to rozstrzygnięcie oracle, nie akceptacja całego PR73, KO-31/WorkManager, opóźnionego code-exchange/refresh ani wszystkich danych A/B. Odczytano osobno postęp monitoringu/obrazów O3; nie zmienia on stanu AI. Projekt/klucz Gemini przygotowuje O1 zgodnie z O3-036, prywatną konfigurację i limity O3; nie ma tu dowodu Gemini READY ani zgody na wywołanie dostawcy/E10. O1/O3 proszeni o potwierdzenie przeczytanego commita oraz swojego następnego kroku; O2 nie potwierdza odczytu za nich.
 - **Weryfikacja tej decyzji:** przegląd rzeczywistych źródeł transportu/bramki/drivera/kontrolera i niezależny przegląd subagenta dały zgodny wynik, bez istotnych uwag do dokumentacji. E0 PASS: 10 schematów, 95 valid / 35 invalid, 18 scenariuszy i 641 linków; diff-check PASS, wcześniejsza historia i cudze wiersze zachowane. Nie uruchamiano Androida, transportu O3 lub modelu. Zdalne CI dokumentacji jest osobnym warunkiem merge, bez deklarowania live PASS.
 
+### O3-039 — naprawa konsoli Minicondy i bieżący audyt projektu
+
+- Data/autor: 14.10.2026, agent 3/O3; do O1/O2 i właściciela.
+  Na polecenie właściciela wykonano fetch/pull --ff-only: main b72fe42 →
+  5edb5f63e14a73287bd730d8fd3abf2d452113f1, bez utraty lokalnych zmian.
+  Osobny main CI38607369346 ma wszystkie osiem completed/success;
+  PR85 jest scalony. Nowa naprawa ma własną gałąź i osobne CI.
+- Priorytetowa usterka: zadanie O3-Calorie-Integration-Monitor uruchamiało
+  co60s konsolowy Python Minicondy. Instalator wybiera teraz pythonw.exe
+  i odmawia instalacji bez niego; wszystkie wywołania Git/Docker monitora
+  dostają na Windows CREATE_NO_WINDOW. Naprawa wdrożona również w prywatnym
+  runtime i rzeczywistym harmonogramie. Zachowano prywatną kopię definicji
+  zadania. Harmonogram nadal monitoruje i dostarcza alerty; nie wyciszono awarii.
+- Źródło naprawy: 7313a75, codex/devops-monitor-bez-okien. Lokalne89testów
+  infrastruktury PASS, w tym10monitoringu; rzeczywisty proces potomny Windows
+  zwrócił GetConsoleWindow=0. Ruff lint/format, E0 (10schematów,
+  95valid/35invalid/18scenariuszy/639linków) i diff-check PASS. Rzeczywisty
+  przebieg pythonw: LastTaskResult0 i świeży heartbeat delivery=ok.
+- Audyt wykrył wyłączony silnik Docker Desktop i osiem incydentów86–93.
+  Uruchomiono istniejący Docker Desktop: istniejące kontenery wznowiły pracę.
+  Świeży pomiar: API/Keycloak/PostgreSQL/retention/motivation/lifecycle/TLS/dysk
+  OK; finalizer expected_disabled ze świeżą próbą, bez zmiany capability.
+  Nie odtwarzano baz, nie resetowano kont/epoki ani nie otwierano starego relay.
+  AI pozostaje not_deployed, backup offsite not_configured.
+- Odczytano osobno O1-042/043 z origin/codex/android-odbior-api/4b54b10.
+  Driver spóźnionego GET jest przygotowany, rzeczywista próba nadal NOT_RUN:
+  potrzebne oracle O2 i nowe konkretne okno O3; poprzednie17:25 wygasło.
+  PR61 ma osiem success; zależne PR64/73 są draft i nie mają kontroli swojego
+  bieżącego head. Odbiór i kolejność scalenia pozostają własnym zadaniem O1.
+- O1-043 potwierdza wyłącznie GET metadanych modelu Gemini HTTP200,
+  bez generowania. Project ID/environment ID, rzeczywiste limity i potwierdzenie
+  Free Tier/billing-disabled oraz prywatne przekazanie do O3 nadal wymagane.
+  To nie jest wdrożenie E7/E9. Nie uruchamiano Google ani nowego transferu.
+- Otwarte9PR Dependabot:74/75/77/78/80 mają osiem success na własnych head;
+  76/79/81/82 mają failure. PR76 proponuje PG18 przy wymaganymPG17;
+  PR79 zawodzi w postgres/keycloak-pkce/local-integration. O1-042 rozpoznał
+  w81 KSP wymagający nowszegoAGP, w82 Compose wymagający SDK37/AGP9.1.
+  Nie scalać tych aktualizacji jako sprawdzonych kompatybilnych zmian.
+  Zielone kontrole pięciu propozycji nie zastępują przeglądu i aktualizacji bazy.
+- Następne zakresy: domknąć rzeczywistą late-response i odbiór Androida,
+  następnie prywatne wejście/konfigurację Gemini i osobny przegląd aktualizacji.
+  Offsite/VPS/domena/SMTP oraz produkcyjna dostawa/podpisanyAPK nadal wymagają
+  istniejącego celu/dostępów; wcześniejsze przygotowania nie zaliczają produkcji.
+
 ### O3-040 — do O1 i O2: oracle odczytane, nowe rzeczywiste okno APK/API
 
 - Data/autor: 15.10.2026, agent3/O3. **WYMAGA ODPOWIEDZI O1/O2**.
@@ -2225,3 +2270,9 @@ przekazań, nie potwierdzeniem jego odczytu lub wykonania przez adresata.
   Kopia lokalna nie jest offsite: monitor backup nadal not_configured. Rzeczywiste
   offsite restore/deletion registry/session revocation/telefon KO32 są osobnymi
   odbiorami, których ta izolowana próba nie zastępuje.
+- Publikacja: [PR98](https://github.com/Roseru/aplikacja-mobilna/pull/98),
+  źródło helpera55ab2d3, pierwsze przekazanie d5a426c. Lokalnie99testów
+  infrastruktury (12TLS/intake), Ruff/E0/643linki PASS. PR76 zamknięty bez
+  scalenia; obsługa aktualizacjiPG17 pozostaje włączona. PR94/head320c462
+  odebrany po ośmiu success i scalony do main410ddca; jego osobny mainCI
+  jest kolejnym wynikiem. Dołączenie main zachowuje O2-034 i O3-039–042.
