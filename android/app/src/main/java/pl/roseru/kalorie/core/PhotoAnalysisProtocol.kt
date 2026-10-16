@@ -88,6 +88,11 @@ internal class PhotoCreateReceipt(val analysisId: String, val revision: Long, va
 /** Only create/cancel ACKs here. Full proposals require the separate strict proposal decoder. */
 internal object PhotoAnalysisProtocol {
     fun create(bytes: ByteArray, request: PhotoHttpRequest.Create): PhotoCreateReceipt {
+        return storedCreate(bytes, request.provider)
+    }
+    /** Decode the immutable saved ACK without reopening or reconstructing the image request. */
+    fun storedCreate(bytes: ByteArray, expectedProvider: String): PhotoCreateReceipt {
+        require(expectedProvider in setOf("mock", "gemini"))
         val json = read(bytes)
         exact(json,setOf("analysis_id","revision","state","queue_deadline","profile"))
         val id = PhotoHttpRequest.uuid(text(json,"analysis_id"))
@@ -99,7 +104,7 @@ internal object PhotoAnalysisProtocol {
         }.let(Instant::parse)
         val profile = json.getJSONObject("profile")
         exact(profile,setOf("provider","model","prompt_version","schema_version","preparation_version","rest_profile_version","mock_scenario"))
-        val provider = text(profile,"provider").also { require(it == request.provider) }
+        val provider = text(profile,"provider").also { require(it == expectedProvider) }
         val scenario = if (profile.get("mock_scenario") === JSONObject.NULL) null else text(profile,"mock_scenario")
         require(provider != "gemini" || scenario == null)
         return PhotoCreateReceipt(id,revision,state,deadline,PhotoAnalysisProfile(provider,text(profile,"model"),

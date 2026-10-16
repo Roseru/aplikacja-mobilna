@@ -127,6 +127,7 @@ internal class PhotoAnalysisStore(private val context:Context,private val db:Cal
         require(sent.key==row.operationId && sent.epoch==row.syncEpoch && sent.provider==row.provider &&
             sent.noticeVersion==row.noticeVersion && sent.imageSha256==row.imageSha256)
         val exact=body.copyOf()
+        row.receiptJson?.let { PhotoAnalysisSnapshot.read(it,row.provider).requireSameReceipt(exact) }
         return PreparedPhotoReceipt(row,StrictJson.canonical(StrictJson.read(exact)),PhotoAnalysisProtocol.create(exact,sent))
     }
     /** DB-only commit: safe inside SessionController.withApiSession, no image read/hash/codec. */
@@ -136,12 +137,44 @@ internal class PhotoAnalysisStore(private val context:Context,private val db:Cal
         check(row.copy(attempted=original.attempted,receiptJson=original.receiptJson,
             retryAtMillis=original.retryAtMillis,blockedCode=original.blockedCode)==original)
         check(row.attempted && row.blockedCode==null)
-        check(row.receiptJson==null || row.receiptJson==prepared.canonical)
-        check(dao.accept(lease.storageScope,row.operationId,prepared.canonical)==1)
+        if(row.receiptJson==null) {
+            check(original.receiptJson==null)
+            check(dao.accept(lease.storageScope,row.operationId,prepared.canonical)==1)
+        } else {
+            // An identical ACK is a no-op. A wrapper was validated before entering this guard;
+            // if it changed since preparation, reject rather than erasing a newer GET.
+            check(row.receiptJson==prepared.canonical ||
+                (original.receiptJson!=null && row.receiptJson==original.receiptJson))
+        }
         prepared.receipt
     }
     suspend fun accept(id:String,body:ByteArray):PhotoCreateReceipt =
         acceptPrepared(prepareReceipt(id,body,request(id)))
+
+    /** Decode outside the session guard. No input image is required after an accepted POST. */
+    suspend fun stored(id:String):PhotoAnalysisSnapshot {
+        val source=db.withTransaction { checked(id).also { check(it.attempted && it.blockedCode==null) } }
+        val snapshot=PhotoAnalysisSnapshot.read(checkNotNull(source.receiptJson),source.provider)
+        db.withTransaction { check(checked(id)==source) }
+        return snapshot
+    }
+
+    /** Parse and reconcile a GET outside the Room/session guard, against its captured source row. */
+    suspend fun prepareRead(id:String,body:ByteArray):PreparedPhotoRead {
+        val source=db.withTransaction { checked(id).also { check(it.attempted && it.blockedCode==null) } }
+        val snapshot=PhotoAnalysisSnapshot.read(checkNotNull(source.receiptJson),source.provider).withRead(body)
+        return PreparedPhotoRead(source,snapshot)
+    }
+
+    /** DB-only CAS. A concurrent read, retry state or owner/context change must be prepared anew. */
+    suspend fun acceptReadPrepared(prepared:PreparedPhotoRead):PhotoAnalysisSnapshot=db.withTransaction {
+        val row=checked(prepared.source.operationId)
+        check(row==prepared.source && row.attempted && row.blockedCode==null && row.receiptJson!=null)
+        if(row.receiptJson!=prepared.snapshot.serialized) {
+            check(dao.accept(lease.storageScope,row.operationId,prepared.snapshot.serialized)==1)
+        }
+        prepared.snapshot
+    }
     suspend fun defer(id:String,retryAtMillis:Long)=db.withTransaction {
         require(retryAtMillis>=0);check(checked(id).receiptJson==null);check(dao.defer(lease.storageScope,id,retryAtMillis)==1)
     }
@@ -162,4 +195,10 @@ internal class PhotoAnalysisStore(private val context:Context,private val db:Cal
 internal class PreparedPhotoReceipt internal constructor(internal val source:PhotoAnalysisRequestEntity,
     internal val canonical:String,internal val receipt:PhotoCreateReceipt) {
     override fun toString()="PreparedPhotoReceipt(redacted)"
+}
+
+/** Captured state plus a fully validated replacement; never a permission to bypass withApiSession. */
+internal class PreparedPhotoRead internal constructor(internal val source:PhotoAnalysisRequestEntity,
+    internal val snapshot:PhotoAnalysisSnapshot) {
+    override fun toString()="PreparedPhotoRead(redacted)"
 }

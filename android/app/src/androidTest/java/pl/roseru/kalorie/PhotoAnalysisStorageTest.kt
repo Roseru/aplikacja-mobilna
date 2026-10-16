@@ -211,4 +211,65 @@ class PhotoAnalysisStorageTest {
         } finally {db.close();scope?.let(::clean)}
     }
 
+    private fun readResult()=JSONObject(InstrumentationRegistry.getInstrumentation().context.assets
+        .open("analysis-read-succeeded.json").bufferedReader().use {it.readText()})
+    private fun workingRead(revision:Int)=readResult().put("state","running").put("proposal",JSONObject.NULL)
+        .put("revision",revision).toString().toByteArray(Charsets.UTF_8)
+
+    @Test fun savedReadSurvivesRoomRestartWithoutImageAndAckReplayCannotEraseIt()=runBlocking<Unit> {
+        val name="read-${UUID.randomUUID()}";var db=Room.databaseBuilder(context,CalorieDatabase::class.java,name).build()
+        var scope:String?=null
+        try {
+            val lease=account(db,"read-restart");scope=lease.storageScope;var store=PhotoAnalysisStore(context,db,lease)
+            val row=store.prepare(photo(db,lease).id,caps,true);val sent=store.request(row.operationId)
+            store.markAttempted(row.operationId,0);store.acceptPrepared(store.prepareReceipt(row.operationId,ack(),sent))
+            val lateAck=store.prepareReceipt(row.operationId,ack(),sent)
+            val prepared=store.prepareRead(row.operationId,readResult().toString().toByteArray(Charsets.UTF_8))
+            val meals=db.dao().achievementMeals(lease.storageScope);val ops=db.dao().operationCount(lease.storageScope)
+            assertEquals("PreparedPhotoRead(redacted)",prepared.toString())
+            assertTrue(File(context.filesDir,"photo-analysis-inputs/${lease.storageScope}/${row.operationId}.jpg").delete())
+            store.acceptReadPrepared(prepared);val saved=store.pending()!!.receiptJson
+            rejected {store.acceptPrepared(lateAck)}
+            store.acceptPrepared(store.prepareReceipt(row.operationId,ack(),sent))
+            assertEquals(saved,store.pending()!!.receiptJson)
+            db.close();db=Room.databaseBuilder(context,CalorieDatabase::class.java,name).build()
+            store=PhotoAnalysisStore(context,db,LocalOwnerStore(db).currentLease())
+            val restored=store.stored(row.operationId)
+            assertEquals(1L,restored.receipt.revision);assertEquals(2L,restored.latest!!.revision)
+            assertEquals("Banan",restored.latest.proposal!!.items.single().name)
+            assertEquals(meals,db.dao().achievementMeals(lease.storageScope));assertEquals(ops,db.dao().operationCount(lease.storageScope))
+        } finally {db.close();context.deleteDatabase(name);scope?.let(::clean)}
+    }
+    @Test fun preparedReadCasPreservesTheNewerRevisionAndConcurrentRetryState()=runBlocking<Unit> {
+        val db=Room.inMemoryDatabaseBuilder(context,CalorieDatabase::class.java).build();var scope:String?=null
+        try {
+            val lease=account(db,"read-cas");scope=lease.storageScope;val store=PhotoAnalysisStore(context,db,lease)
+            val row=store.prepare(photo(db,lease).id,caps,true);store.markAttempted(row.operationId,0);store.accept(row.operationId,ack())
+            val older=store.prepareRead(row.operationId,workingRead(2));val newer=store.prepareRead(row.operationId,workingRead(3))
+            store.acceptReadPrepared(newer);rejected {store.acceptReadPrepared(older)}
+            assertEquals(3L,store.stored(row.operationId).latest!!.revision)
+            val stale=store.prepareRead(row.operationId,workingRead(2));val before=store.pending()
+            store.acceptReadPrepared(stale);assertEquals(before,store.pending())
+            val next=store.prepareRead(row.operationId,workingRead(4))
+            db.photoAnalysisDao().defer(lease.storageScope,row.operationId,90_000)
+            rejected {store.acceptReadPrepared(next)}
+            assertEquals(90_000L,store.pending()!!.retryAtMillis);assertEquals(3L,store.stored(row.operationId).latest!!.revision)
+        } finally {db.close();scope?.let(::clean)}
+    }
+    @Test fun preparedReadCannotCommitAcrossContextChangeOrOwnerAba()=runBlocking<Unit> {
+        val db=Room.inMemoryDatabaseBuilder(context,CalorieDatabase::class.java).build();val scopes=mutableListOf<String>()
+        try {
+            val a=account(db,"read-A");scopes+=a.storageScope;val store=PhotoAnalysisStore(context,db,a)
+            val row=store.prepare(photo(db,a).id,caps,true);store.markAttempted(row.operationId,0);store.accept(row.operationId,ack())
+            val prepared=store.prepareRead(row.operationId,workingRead(2));val before=store.pending()
+            val original=db.bootstrapDao().binding(a.storageScope)!!
+            db.bootstrapDao().update(original.copy(contextRevision=original.contextRevision+1))
+            rejected {store.acceptReadPrepared(prepared)};db.bootstrapDao().update(original)
+            val b=account(db,"read-B");scopes+=b.storageScope
+            rejected {store.acceptReadPrepared(prepared)};assertNull(PhotoAnalysisStore(context,db,b).pending())
+            val resumed=LocalOwnerStore(db).select(a.storageScope)
+            rejected {store.acceptReadPrepared(prepared)}
+            assertEquals(before,PhotoAnalysisStore(context,db,resumed).pending())
+        } finally {db.close();scopes.forEach(::clean)}
+    }
 }

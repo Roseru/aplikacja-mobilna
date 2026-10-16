@@ -57,7 +57,19 @@ Gateway stosuje2MiB dla GET i dotychczasowe1MiB dla mutacji. Mock HTTPS potwierd
 
 **Walidacja:47/47 standalone JVM PASS** —16 decoder,13 progress/budget,9 multipart/ACK i9 HTTP (w tym2 nowe). Kompilowano bieżący kod tych klas Kotlin2.1.20/JUnit przeciw niezmienionym klasom bazowym e633ace. Jeden procesor/heap384MiB/niski priorytet, bez Gradle/emulatora i rzeczywistej sieci. Kompilator JBR zgłosił wyłącznie deprecation istniejącego użycia URL(String); nie zmieniano narzędzi. Nie zaliczamy pełnego Android build/lint/native ani realnego API tego źródła.
 
-Pętla odczytu i integracja SessionController/Room/UI nie są jeszcze podłączone. Następny krok to trwały ostatni snapshot/CAS oraz guard konta i operacji, a następnie bounded polling/cancel i edycja/confirm. Sam budżet nie uruchamia żądań po starcie aplikacji, nie powtarza analizy i nie zapisuje posiłku. APK e633ace pozostaje wcześniejszym checkpointem, bez tych nowych klas.
+Pętla odczytu i integracja SessionController/UI nie są jeszcze podłączone. Trwały ostatni snapshot/CAS w Room opisano poniżej; pozostaje guard sesji i bounded polling/cancel oraz edycja/confirm. Sam budżet nie uruchamia żądań po starcie aplikacji, nie powtarza analizy i nie zapisuje posiłku. APK e633ace pozostaje wcześniejszym checkpointem, bez tych nowych klas.
+
+## Trwały wynik i zapis warunkowy
+
+`PhotoAnalysisSnapshot` wersjonuje wartość istniejącej kolumny receiptJson jako `photo-analysis-state-v1`: niezmienny create ACK i ostatni zwalidowany GET. Czyta także starszy format samego ACK; aktualizuje go dopiero przy przyjęciu GET. Room pozostaje w wersji10, bez nowej tabeli/migracji. Odtworzenie ACK nie wymaga obrazu ani rekonstrukcji żądania multipart. Parser ponownie sprawdza provider, powiązanie GET z ACK, stan/revision/propozycję i limity. Zapis ma limit2MiB+64KiB, dodatkowo1024 bajty obudowy; pierwotne limity GET/ACK pozostają obowiązujące. Błędy i toString nie zawierają prywatnej treści.
+
+Pierwszy GET nie może cofnąć stanu znanego z ACK. Kolejne odczyty używają PhotoAnalysisProgress; stare/identyczne pozostawiają ten sam zapis. Ponowny POST ACK musi odpowiadać oryginalnemu i nie usuwa ostatniego GET, również po restarcie. Format nie nadaje uprawnień do zapisu dziennika.
+
+`PhotoAnalysisStore.stored` dekoduje zapis bez pliku zdjęcia; po parsowaniu ponownie sprawdza bieżący wiersz i lease. `prepareRead` przeprowadza parsowanie/uzgodnienie poza transakcją. `acceptReadPrepared` jest wyłącznie DB: porównuje cały przechwycony wiersz, aktualny owner/lease i kontekst serwera, następnie atomowo zapisuje przygotowaną wartość. Zmiana rewizji, backoffu, właściciela lub kontekstu od czasu przygotowania odrzuca commit; wywołujący musi ponownie przygotować odczyt. Spóźniony ACK przygotowany przed nowym GET jest odrzucany, a poprawne ponowienie ACK przygotowane z aktualnego zapisu jest no-op. Nie ma parsowania, hashowania ani IO obrazu pod guardem commit.
+
+**59/59 standalone JVM PASS**:16 decoder+13 progress/budget+9 create/ACK+9 HTTP+12 snapshot. Drugi przebieg skompilował także bieżący PhotoAnalysisStore oraz cały PhotoAnalysisStorageTest przeciw przypiętym Android35/Room2.7.2 i klasom checkpointu; testy Room nie zostały wykonane. Jedyny procesor/heap384MiB/niski priorytet, bez Gradle/emulatora/rzeczywistego HTTP. Kompilacja ręczna nie uruchamia KSP ani Android packaging/lint i nie zastępuje pełnego builda.
+
+Trzy dodatkowe przypadki urządzenia obejmują restart Room z usuniętym obrazem i replay ACK, wyścig dwóch GET/backoff oraz kontekst/A→B→A. **Ich wykonanie native: NOT_RUN**; pełny Android build/lint/JVM/native aktualnych źródeł i rzeczywisty APK/API pozostają NOT_RUN. SessionController nie wywołuje jeszcze nowych metod odczytu; podłączenie GET/budżetu/sesji/UI jest następnym krokiem, bez automatycznego POST i bez zapisu posiłku.
 
 ## Walidacja poprzedniego checkpointu kolejki
 
