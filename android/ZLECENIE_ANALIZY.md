@@ -35,7 +35,17 @@ Pierwszy build przerwany bez wyniku. Kolejne dwie próby wykazały dwa wygenerow
 
 `PhotoHttpRequest` buduje typed create/read/cancel. Jeden multipart ma metadata JSON/consent i niezmienne image. Waliduje rozmiary, sygnaturę/MIME, UUID i wstrzyknięcie granicy; filename jest stały, bez ścieżki użytkownika. ACK create/cancel odrzucają nieznane/brakujące pola, duplikaty, nieprawidłowy UTF-8/UUID/UTC/revision/provider. Replay ACK queued nie jest bieżącym stanem zadania.
 
-Wspólny HTTPS ma bounded JSON/no-store, bez redirects/cache/automatycznego retry. Mutacje mają key/epokę, GET ich nie dostaje. Multipart o znanej długości jest zapisywany w blokach4KiB, z cancellation/deadline między blokami; systemowy write może blokować. Callback sprawdza autoryzację przed wysyłką. Proxy429/503 zachowuje Retry-After bez parsowania HTML. Pełny decoder propozycji i polling nie są jeszcze dostarczone.
+Wspólny HTTPS ma bounded JSON/no-store, bez redirects/cache/automatycznego retry. Mutacje mają key/epokę, GET ich nie dostaje. Multipart o znanej długości jest zapisywany w blokach4KiB, z cancellation/deadline między blokami; systemowy write może blokować. Callback sprawdza autoryzację przed wysyłką. Proxy429/503 zachowuje Retry-After bez parsowania HTML. Parser pełnego odczytu/propozycji opisano poniżej; pobieranie i polling nie są jeszcze podłączone do sesji.
+
+## Parser wyniku — etap16.10
+
+`PhotoAnalysisReadProtocol` dekoduje pełny GET i propozycję jako odczyt bez IO, zapisu, publikacji produktu lub planowania sieci. Wymaga ID z zapisanego ACK, rewizji nie starszej od ACK, niezmiennego deadline i dokładnego profilu analizy. Waliduje zgodność state/decision/proposal/error, UTC, wymagane nullable pola oraz odrzuca dodatkowe/zdublowane klucze, błędny UTF-8 i głębokość ponad20. Cała odpowiedź ma limit2MiB, sama propozycja1MiB; limit całego GET uwzględnia obudowę wokół maksymalnej propozycji.
+
+Wynik ma1–30 składników o unikalnych component ID, kanoniczne dodatnie ilości i wartości Decimal, g/ml zgodne z basis oraz density=null. Stany brand/variant/composition zachowują znaczenie known/unknown/not_applicable i nullable wartości; skład może być tekstem receptury lub listą. Matching przechowuje exact product ID/revision, powody/provenance i niepewność, bez automatycznej decyzji lub utworzenia produktu. Brak składnika odżywczego pozostaje null. Sumy i zaokrąglony display każdego pola są porównywane z niezależnym przeliczeniem istniejącego NutritionV1: known_sum, missing_count i complete muszą odpowiadać składnikom. Kolekcje są niemodyfikowalne; DTO i błędy mają neutralny tekst bez prywatnej treści.
+
+**Walidacja tego parsera:25 testów JVM PASS —16 nowych+9 istniejącego protokołu.** Uruchomiono osobny kompilator Kotlin2.1.20 i JUnit na klasach bazowego checkpointu e633ace, z jednym procesorem, heap384MiB i obniżonym priorytetem, bez Gradle/emulatora. [Syntetyczny GET](app/src/test/resources/photo/analysis-read-succeeded.json), zbudowany z normatywnych create/provider examples, przeszedł także przypięty `ai.schema.json#/$defs/AnalysisResponse`. Pierwszy lekki przebieg23/23, po dodaniu granicy rozmiaru24/24, po pozytywnych gałęziach matching25/25. Nie było błędnych prób ani pominięć.
+
+To nie jest pełny build/test/lint Androida bieżącego źródła. APK i wyniki186/201JVM z poprzedniej części dotyczą checkpointu e633ace; APK z parserem jeszcze nie zbudowano. Native nowego runtime/UI i rzeczywisty APK/API pozostają NOT_RUN. Przed integracją GET trzeba również zwiększyć limit jego transportu do2MiB; obecny gateway ma1MiB. Pozostają owner/session guard odczytu, trwały monotoniczny stan odpowiedzi, bounded polling/deadline/cancel, prezentacja/korekta i confirm/E4. Parser sam nie uprawnia do zapisu posiłku.
 
 ## Walidacja poprzedniego checkpointu kolejki
 
@@ -58,7 +68,7 @@ TestAPK SHA256 `62a23387f990f39bc6e65911e56e1e1f35e2c6f310345e47e41d1ec7a3c5ec0a
 
 ## Kolejne części pełnego E7
 
-1. Pełny decoder propozycji, ograniczony polling/deadline/cancel, korekty do30 składników, Decimal/null/B/T/W/g/ml i referencje katalogu.
+1. Integracja gotowego parsera GET z trwałym stanem i guardem sesji, limit2MiB transportu GET, ograniczony polling/deadline/cancel oraz prezentacja i korekty do30 składników.
 2. Confirm ze stabilnymi ID/provenance, atomowy Room+outbox i jedyny zapis serwera przez kanoniczny E4 push, bez duplikatu po replay.
 3. Retencja pozostałości po crash, rzeczywisty APK/API oraz E7-R i odbiór wydania.
 
