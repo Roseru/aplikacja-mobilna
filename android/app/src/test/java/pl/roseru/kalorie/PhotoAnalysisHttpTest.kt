@@ -97,4 +97,21 @@ class PhotoAnalysisHttpTest {
         assertThrows(Exception::class.java){runBlocking {HttpsPhotoAnalysisGateway("https://api.example/api/v1"){opened=true;Connection()}.send(session("bad\r\nInjected: yes"),request()){}}}
         assertFalse(opened)
     }
+    @Test fun fullReadAllowsTheEnvelopeAroundAOneMiBProposalWithoutMutationHeaders()=runBlocking<Unit> {
+        val payload=("{\"fixture\":\""+"x".repeat(1_048_576)+"\"}").toByteArray()
+        assertTrue(payload.size>1_048_576)
+        val connection=Connection(200,payload=payload)
+        val result=HttpsPhotoAnalysisGateway("https://api.example/api/v1"){connection}.send(session(),PhotoHttpRequest.Read(id)){}
+        assertArrayEquals(payload,result.body);assertTrue(connection.read);assertTrue(connection.closed)
+        assertNull(connection.getRequestProperty("Idempotency-Key"));assertNull(connection.getRequestProperty("X-Sync-Epoch"))
+        assertEquals(0,connection.sent.size())
+    }
+    @Test fun fullReadRejectsBodiesLargerThanItsTwoMiBLimitBeforeReading() {
+        val connection=Connection(200,payload=ByteArray(PhotoAnalysisReadProtocol.MAX_BYTES+1))
+        assertThrows(Exception::class.java){runBlocking {
+            HttpsPhotoAnalysisGateway("https://api.example/api/v1"){connection}.send(session(),PhotoHttpRequest.Read(id)){}
+        }}
+        assertFalse(connection.read);assertTrue(connection.closed)
+    }
+
 }

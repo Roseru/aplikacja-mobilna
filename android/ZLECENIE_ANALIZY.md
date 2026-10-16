@@ -45,7 +45,19 @@ Wynik ma1–30 składników o unikalnych component ID, kanoniczne dodatnie iloś
 
 **Walidacja tego parsera:25 testów JVM PASS —16 nowych+9 istniejącego protokołu.** Uruchomiono osobny kompilator Kotlin2.1.20 i JUnit na klasach bazowego checkpointu e633ace, z jednym procesorem, heap384MiB i obniżonym priorytetem, bez Gradle/emulatora. [Syntetyczny GET](app/src/test/resources/photo/analysis-read-succeeded.json), zbudowany z normatywnych create/provider examples, przeszedł także przypięty `ai.schema.json#/$defs/AnalysisResponse`. Pierwszy lekki przebieg23/23, po dodaniu granicy rozmiaru24/24, po pozytywnych gałęziach matching25/25. Nie było błędnych prób ani pominięć.
 
-To nie jest pełny build/test/lint Androida bieżącego źródła. APK i wyniki186/201JVM z poprzedniej części dotyczą checkpointu e633ace; APK z parserem jeszcze nie zbudowano. Native nowego runtime/UI i rzeczywisty APK/API pozostają NOT_RUN. Przed integracją GET trzeba również zwiększyć limit jego transportu do2MiB; obecny gateway ma1MiB. Pozostają owner/session guard odczytu, trwały monotoniczny stan odpowiedzi, bounded polling/deadline/cancel, prezentacja/korekta i confirm/E4. Parser sam nie uprawnia do zapisu posiłku.
+To nie jest pełny build/test/lint Androida bieżącego źródła. APK i wyniki186/201JVM z poprzedniej części dotyczą checkpointu e633ace; APK z parserem jeszcze nie zbudowano. Native nowego runtime/UI i rzeczywisty APK/API pozostają NOT_RUN. Limit transportu GET jest już zwiększony do2MiB w kolejnym etapie opisanym poniżej; mutacje zachowują1MiB. Pozostają owner/session guard odczytu, trwały monotoniczny stan odpowiedzi, bounded polling/deadline/cancel, prezentacja/korekta i confirm/E4. Parser sam nie uprawnia do zapisu posiłku.
+
+## Postęp i budżet odczytu
+
+`PhotoAnalysisProgress` porównuje zwalidowane odczyty tej samej analizy, niezmiennego profilu, deadline i wygaśnięcia obrazu. Starsza rewizja pozostawia bieżący snapshot. Identyczny replay jest idempotentny, sprzeczne treści tej samej rewizji są odrzucane; fingerprinty powstają z kanonicznego JSON i nie trafiają do logów. Wynik sukcesu nie może zmienić propozycji przy późniejszej rewizji. Pending może przejść do confirm lub cancel, ale potwierdzona/anulowana decyzja nie wraca do pending. Można pominąć obserwację pośrednich stanów. Backend ponawia wewnętrzny job, pozostawiając AnalysisResponse.state=running; analiza running→queued jest więc cofnięciem, a nie prawidłowym retry.
+
+`PhotoPollBudget` jest niemutowalnym budżetem przyszłej pętli foreground, bez harmonogramu/HTTP. Przed każdą próbą zwraca nową rezerwację, oczekiwanie lub stop. Maksimum12 prób/120s według zegara monotonicznego, timeout pojedynczej próby do45s i nie dłużej niż pozostałe okno. Odstępy2/4/8/15/30s respektują wspólny Retry-After, bez skracania go lub wydłużania okna. Granica serwera to minimum photo_expires_at i queue_deadline+120s, aby nie uciąć pracy rozpoczętej tuż przed końcem kolejki. Terminalny wynik zatrzymuje automatyczne odczyty. Zmiana zegara/overflow kończy budżet bez wysłania. Budżet nie nadaje autoryzacji i nie zastępuje captured lease ani trwałego zapisu rewizji.
+
+Gateway stosuje2MiB dla GET i dotychczasowe1MiB dla mutacji. Mock HTTPS potwierdza przyjęcie odpowiedzi ponad1MiB dla GET, odrzucenie ponad2MiB przed czytaniem, brak mutation headers GET oraz zachowanie wcześniejszych zasad no-store/redirect/cancellation.
+
+**Walidacja:47/47 standalone JVM PASS** —16 decoder,13 progress/budget,9 multipart/ACK i9 HTTP (w tym2 nowe). Kompilowano bieżący kod tych klas Kotlin2.1.20/JUnit przeciw niezmienionym klasom bazowym e633ace. Jeden procesor/heap384MiB/niski priorytet, bez Gradle/emulatora i rzeczywistej sieci. Kompilator JBR zgłosił wyłącznie deprecation istniejącego użycia URL(String); nie zmieniano narzędzi. Nie zaliczamy pełnego Android build/lint/native ani realnego API tego źródła.
+
+Pętla odczytu i integracja SessionController/Room/UI nie są jeszcze podłączone. Następny krok to trwały ostatni snapshot/CAS oraz guard konta i operacji, a następnie bounded polling/cancel i edycja/confirm. Sam budżet nie uruchamia żądań po starcie aplikacji, nie powtarza analizy i nie zapisuje posiłku. APK e633ace pozostaje wcześniejszym checkpointem, bez tych nowych klas.
 
 ## Walidacja poprzedniego checkpointu kolejki
 
@@ -68,7 +80,7 @@ TestAPK SHA256 `62a23387f990f39bc6e65911e56e1e1f35e2c6f310345e47e41d1ec7a3c5ec0a
 
 ## Kolejne części pełnego E7
 
-1. Integracja gotowego parsera GET z trwałym stanem i guardem sesji, limit2MiB transportu GET, ograniczony polling/deadline/cancel oraz prezentacja i korekty do30 składników.
+1. Integracja gotowego parsera GET z trwałym stanem i guardem sesji, ograniczony polling/deadline/cancel oraz prezentacja i korekty do30 składników.
 2. Confirm ze stabilnymi ID/provenance, atomowy Room+outbox i jedyny zapis serwera przez kanoniczny E4 push, bez duplikatu po replay.
 3. Retencja pozostałości po crash, rzeczywisty APK/API oraz E7-R i odbiór wydania.
 

@@ -6,13 +6,14 @@ import pl.roseru.kalorie.core.catalog.StrictJson
 import java.time.Instant
 import java.time.LocalDateTime
 import java.util.Collections
+import java.security.MessageDigest
 
 internal class PhotoAnalysisReadException : IllegalArgumentException("Niepoprawny wynik analizy zdjęcia")
 
 /** Read-only proposals. Nothing in these objects authorizes a diary or product write. */
 internal class PhotoAnalysisRead(val analysisId:String,val revision:Long,val state:String,val decision:String,
     val queueDeadline:Instant,val photoExpiresAt:Instant,val profile:PhotoAnalysisProfile,
-    val proposal:PhotoProposal?,val errorCode:String?) {
+    val proposal:PhotoProposal?,val errorCode:String?,internal val wireFingerprint:String,internal val proposalFingerprint:String?) {
     override fun toString()="PhotoAnalysisRead(redacted)"
 }
 internal class PhotoProposal(val items:List<PhotoProposalItem>,val notes:List<String>,val totals:ExactTotals,val modelVersion:String?) {
@@ -71,7 +72,8 @@ internal object PhotoAnalysisReadProtocol {
             }
             if(decision=="cancelled") require(error=="analysis_cancelled")
             if(error=="analysis_cancelled") require(decision=="cancelled")
-            return PhotoAnalysisRead(id,revision,state,decision,deadline,expires,expected.profile,proposal,error)
+            return PhotoAnalysisRead(id,revision,state,decision,deadline,expires,expected.profile,proposal,error,
+                fingerprint(value),if(proposal==null) null else fingerprint(value.getJSONObject("proposal")))
         } catch(_:Exception) {
             // JSONObject and numeric errors can include the rejected private value: do not retain their cause.
             throw PhotoAnalysisReadException()
@@ -168,6 +170,8 @@ internal object PhotoAnalysisReadProtocol {
         return PhotoProductReference(PhotoHttpRequest.uuid(text(json.get("product_id"),36)),revision(json.get("revision")))
     }
     private fun exact(json:JSONObject,names:Set<String>) {require(json.keys().asSequence().toSet()==names)}
+    private fun fingerprint(json:JSONObject)=MessageDigest.getInstance("SHA-256")
+        .digest(StrictJson.canonical(json).toByteArray(Charsets.UTF_8)).joinToString(""){"%02x".format(it)}
     private fun text(value:Any,max:Int,min:Int=1,nonblank:Boolean=true):String {
         require(value is String && '\u0000' !in value)
         require(value.codePointCount(0,value.length) in min..max && (!nonblank || value.isNotBlank()))
