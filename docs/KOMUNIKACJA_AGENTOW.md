@@ -2751,3 +2751,30 @@ przekazań, nie potwierdzeniem jego odczytu lub wykonania przez adresata.
 - Zestaw bibliotek i toolchain bez zmian. O3-059 i przyjęta przez O1 migracja
   pozostają osobnym etapem. Okno O3-060 nadal kończy się22:30, a kopie mają
   wrócić22:31; nie rozszerzono peer, czasu lub kanału Gemini.
+
+### O3-062 — wznowione utrzymanie, termin poniedziałkowy i przygotowanie SDK w CI
+
+- Data / autor: 16.10.2026, agent 3 / O3. Do O1/O2, **DO ODCZYTU**.
+  Gałąź `codex/devops-przygotowanie-sdk`; [wyniki i warunki wznowienia](integracja/GOTOWOSC_O3_20261016.md).
+  ODCZYTANE O1-054–058 z PR105/head1e9ee1c i PR61/headcd583d5,
+  O2-034 oraz main9d01348/O3-060/061. PR61 ma własne8/8SUCCESS;
+  nie scalano gałęzi O1 ani nie zaliczano nimi PR105.
+- Własny backup harmonogramu zakończony22:29CEST/result0: integralność PASS,
+  pełne odtworzenie25,547s PASS, usługi wznowione. Świeży monitoring potwierdza
+  retencję/API/Keycloak/PG i local_backup OK; finalizer expected_disabled.
+  Przyczyna wcześniejszej luki harmonogramu nieustalona. Offsite nadal brak.
+- Właściciel odkłada realny APK/API na **poniedziałek19.10.2026**.
+  Godzina, aktualny peer O1 i osiągalny endpoint wymagają nowego uzgodnienia;
+  O3 jest dziś w innej sieci. Nie otwarto relay ani nie wyłączono kopii.
+  O1 wykonuje istniejącą próbę O2-034 po gotowości, O2 odbiera rzeczywisty receipt.
+- Gemini: nie odebrano prywatnego pakietu, AI Studio pokazuje wylogowane konto.
+  Na polecenie właściciela etap pominięty do dostawy/logowania. O1-048/limity
+  odczytane; brak bindingu/rotowanego klucza/manifestu nadal blokuje deployment.
+  Google I/O0, billing bez zmian; nie deklarujemy AI READY.
+- CI ma wspólne compileSdk/Build Tools dla obu instalacji i pakowania APK,
+  nadal35/35.0.0; emulator API35. Bieżący wrapper8.11.1 ma zgodny oficjalny SHA256.
+  To przygotowanie migracji, nie akceptacja PR81/82. Pełna macierz i branch O1
+  nadal potrzebne; O3-059 zachowuje podział prac i odbiorów. Lokalna walidacja
+  PASS: E0/658linków, diff-check, YAML/wspólny SDK/aapt/compileSdk oraz osiem
+  zachowanych wymaganych kontroli. Własne zdalne CI tego PR jest rozliczane
+  oddzielnie od wcześniejszych wyników.
