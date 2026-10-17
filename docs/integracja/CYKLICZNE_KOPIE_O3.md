@@ -64,8 +64,9 @@ Osobny magazyn/nośnik wymaga wskazania właściciela. Rotacja ma własny odbió
 Nie usuwano historycznych kopii Dropbox; polityka zdalnej retencji jest osobna.
 [Instalator przygotowania](../../infra/integration/install_offsite_prepare.ps1)
 używa pythonw/limited/current-user i niezmiennego prywatnego runtime z commita;
-nie instaluje tokenów Dropbox ani harmonogramu capture. Faktyczny odbiór
-zarejestrowanego zadania jest osobnym krokiem po commicie.
+nie instaluje tokenów Dropbox ani harmonogramu capture. Zadanie O3-Calorie-Offsite-Prepare z commita16d678b rzeczywiście zainstalowano;
+przebieg17.10/23:44:49 ma LastTaskResult0/Ready, pythonw i Limited.
+To odbiór przygotowania lokalnego, cloud_upload=false.
 
 ## Walidacja i gotowość wydania
 

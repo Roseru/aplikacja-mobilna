@@ -2838,6 +2838,36 @@ przekazań, nie potwierdzeniem jego odczytu lub wykonania przez adresata.
 - Dostawa O3: `.tools/o2-zgodnosc-recovery-delivery/39031423976`, cztery JSON/dwa obrazy/manifest6SHA256, artefakty12101191829/12100882806. C2image sha256:3b803488e0cdfc99bd5398a00f5e0f9f92386b7a90a546300ba58e2aaa24b7e7/schema24; predecessor sha256:bdea93cae9918a4a30c425d31e838a8649316903dbcc014ab87ee7a39b9c90cd/OCIa522471/schema21. RollbackreceiptPASS dotyczy wyłącznie własnej strategii restore.
 - Niezależny odbiór FIX1 kodu/runtime/pakietu:9,4/10, bez otwartychP1/P2; sześć hashy i oba obrazy/OCI sprawdzone niezależnie. Następny krok: wymagane8CI dokumentacyjnegoD2, następnie ponowny odbiór koordynatora. O1:telefon/Room/UI; O3:offsite,autorytatywnyledger/repliki/RPO-RTO oraz odebrany obraz/kopie wdrożenia — WAITING_EXTERNAL. BezGoogle/telefonu/usługzespołu; AI/Nemesis zamknięte. Nie przepisujemy receiptówC2 naD2.
 
+### O3-064 — SDK gotowe; propozycja próby19.10,08:00–08:10
+
+- Data/autor:17.10.2026, agent3/O3. Do O1/O2, **WYMAGA ODPOWIEDZI O1**
+  dla terminu i peera, DO ODCZYTU dla przygotowania narzędzi. Gałąź
+  `codex/devops-sdk37-proba-api`; [dowody i instrukcja](integracja/PRZYGOTOWANIE_O3_20261019.md).
+  ODCZYTANE O1-060/061/064/PR117/3e30a6f oraz O2-034 i mainfaee91f.
+- Narzędzia O3 gotowe: rzeczywiście zainstalowane API37revision2/extension22
+  oraz Build Tools36.0.0; kompilacja Java przeciw android.jar, aapt2 i D8 PASS.
+  **Korekta macierzy O1:** producent publikuje `platforms;android-37.0`,
+  nie `platforms;android-37`. Bez aliasu lub modyfikacji metadanych; docelowy
+  wybór platformy w AGP wymaga build gałęzi migracji O1. Gradle9.3.1bin
+  pobrany, cały oficjalny SHA256 zgodny z PR117, wersja binarna PASS.
+  Smoke na JDK21/Java release17; CI nadal Temurin17. Workflow35/35.0.0,
+  wrapper8.11.1 i API35 AVD zachowane. Zmiana CI razem z gotowym kodem O1
+  po kolejce61→64→73→96→105; nie zaliczamy nowej macierzy starym CI.
+- **Właściciel proponuje poniedziałek19.10.2026,08:00–08:10CEST
+  (06:00–06:10UTC). O1: potwierdź gotowość/termin, aktualny osiągalny peer,
+  dokładny kandydat APK/driver/hashe i baseline.** Przygotowanie przed08:00;
+  o08:10 bezwarunkowy koniec, bez automatycznego przedłużenia. Adres O3 dziś
+  Wi-Fi192.168.3.162, wymaga potwierdzenia tego dnia; nie używać dawnych peerów.
+- Świeży lokalny HTTPS18:07CEST: readiness200/discovery200/exactissuer/TLS PASS,
+  usługi i monitor OK, finalizer expected_disabled. Kopia16:12CEST z próbą
+  restore9,75s PASS. Przenośny pakiet14.10 zweryfikowany; referencyjny APK0.8.10
+  nie zastępuje API/Room9 O1. Konta/CA/issuer/epoka zachowane. Relay nieotwarty,
+  kopie aktywne. Prywatna akcja z absolutnym deadlinem odmawia startu przed
+  oknem; faktyczny preflight PASS, wcześniejszy start REFUSED i brak listenera.
+- O1 wykonuje jeden check i po PASS scenariusz O2-034 z poprawnym DTO,
+  odrzuceniem starego ownera i baseline gościa; O2 odbiera neutralny receipt.
+  Sam lokalny preflight nie jest wynikiem O1. **Live APK/API NOT_RUN**, termin
+  WAITING_O1_CONFIRMATION. Gemini pominięte; offsite/recovery poza tym zadaniem.
 
 ### O2-039 — PR116 scalony i odebrany zakres O2; dalsze wejścia O1/O3
 
@@ -2976,9 +3006,30 @@ przekazań, nie potwierdzeniem jego odczytu lub wykonania przez adresata.
 - Pełne KO32/telefon/ciągły ledger/produkcyjne RPO-RTO nadal nieodebrane.
   Nie odtwarzano danych do używanej instalacji ani nie otwierano AI/Nemesis.
 
+### O3-067 — odczyt odpowiedzi O1 i utrzymanie terminu19.10
+
+- Data/autor:17.10.2026 agent3/O3. Do O1/O2, DO ODCZYTU. PR119,
+  codex/devops-sdk37-proba-api. Odczytano odpowiedź O1 z PR117/head4f10652:
+  identyfikator platforms;android-37.0 poprawiony, propozycja19.10/08:00–08:10
+  przyjęta do przygotowania technicznego. Nie zmieniamy działającego workflow
+  bez kwalifikacji kodu migracji. Faktyczny peer/APK/driver/baseline i gotowość
+  nadal wymagają potwierdzenia przed oknem; nie otwarto relay.
+- Main615fb6b po scalonym PR120 dołączony zwykłym merge z zachowaniem historii
+  obu rodziców. Historyczne8/8 PR119 dotyczy38c88ca; nowy head ma własne CI.
+  O3-065/PR120 ma przyjętą poprawkę O2,26checker PASS i8/8SUCCESS;
+  kopia oraz kontrakt ciągłego ledger mają osobny PR123/O3-066.
+
+### O3-068 — scalona kopia i integracja przygotowania SDK
+
+- Data/autor:17.10.2026 agent3/O3. Do O1/O2, DO ODCZYTU. PR123 scalony do main0ac8e16 z odebranego dd39050 po ośmiu SUCCESS; bez otwartych uwag. Jednorazowy Dropbox i granice cykliczności/klucza z O3-066 zachowane.
+- PR119 dołącza ten main zwykłym merge; konflikt wyłącznie dziennika rozwiązany przez zachowanie obu pełnych wpisów O3-066/067. Własny CI tego nowego head jest odrębny.
+- Właściciel zlecił kolejno domknięcie PR119/123, odbiór magazynu rejestru O2 i cykliczne kopie. Próba APK/API pozostaje na poniedziałek19.10; dziś nie otwieramy relay. Pełne KO32/E10 i hosting wymagają własnych dowodów.
+
 ### O3-070 — przygotowanie cyklicznych kopii i sprawdzenie klucza
 
 - Data/autor:17.10.2026 agent3/O3. Do O1/O2, DO ODCZYTU. Branch codex/devops-cykliczne-kopie, baza main0ac8e16 po PR123. O3-066/kontrakt O2-041 odczytane; źródło O2 z czerwonym PG i odbiornik HTTPS są opisane w osobnym PR125/O3-069.
 - Dostarczono idempotentne przygotowanie szyfrogramu najnowszej własnej odebranej kopii, kontrolę capture24h, odrębny download+SHA+odszyfrowanie+restore przed receipt oraz zestaw klucza do przeniesienia na USB.216infra PASS, Ruff/format/E0 i składnia PowerShell PASS. Nowy lokalny szyfrogram+klucz zestawu rzeczywiście restore12,151s PASS, bez nowego offsite PASS. [Raport](integracja/CYKLICZNE_KOPIE_O3.md).
 - Lokalny instalator pythonw przygotowuje pliki03:20/15:20 z niezmiennego commita; rzeczywiste zadanie wymaga osobnego odbioru po commicie. Stały transport Dropbox03:30/15:30 czeka na potwierdzenie dokładnej paczki i schematu nazw, a niezależny klucz na drugi nośnik. Nie zmieniono używanej konfiguracji monitora na podstawie samego przygotowania.
 - Checker rzeczywistego C2 ponownie BLOCKED brakującym android_acceptance; APK/API/catalog zgodne. Pełne KO32 wymaga telefonu, niezależnego ledger/fencing/cutoff i odbioru źródła O2; hosting/SMTP/RPO-RTO nadal potrzebują celu. Próba Android–API pozostaje na poniedziałek, bez relay dziś.
+
+Uzupełnienie O3-070: przygotowanie z commita16d678b jest rzeczywiście zainstalowane jako O3-Calorie-Offsite-Prepare, pythonw/Limited/03:20+15:20. Rzeczywisty przebieg17.10/23:44:49 zakończony LastTaskResult0 i Ready, bez okna konsoli. To przygotowanie lokalne, cloud_upload=false. PR119 scalony do main8c422a6 po8/8SUCCESS; własny mainCI jest osobny. O2 opublikował nowe poprawki na9b76156; historyczny RED71ca4fdf pozostaje w przekazaniu, a nowy CI wymaga własnego odbioru.
