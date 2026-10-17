@@ -19,7 +19,7 @@ Każda osoba aktualizuje własny wiersz. Daty i dokładne źródła są w jej wp
 |---|---|---|---|
 | O1 — Android, Kotlin, Room | 0.8.10/code21/Room8: odczyt Nemesis;155 JVM/168full i72final affected PASS osobno;22tabele/5posiłków zachowane | Własny PR/CI; trwałe operacje Nemesis, realny API/APK, E4/recovery i klientE9 | O1-026, [raport](../android/RAPORT_0_8_10.md), codex/android-nemesis |
 | O2 — Python, PostgreSQL, API | PR116 scalony i odebrany; PR120: O2 dopisał regresje SHA blobów i duplikatu TAR | PR120: niezależny odbiór poprawki i CI nowego head; O1/O3: wspólny APK/API i pełne KO32 | O2-040, [PR120](https://github.com/Roseru/aplikacja-mobilna/pull/120), O2-039 |
-| O3 — DevOps, CI/CD, serwer | PR113/main f7d6f23: 8/8 CI PASS; lokalne usługi przywrócone 17.10, nowy backup/restore9,132s PASS; ograniczone ponowienia startup w procesie akcji | Własny PR/CI; O1: poniedziałkowa próba API, kolejka i pełna macierz narzędzi; O2: migracja/rollback/recovery; offsite i cel wdrożenia wymagają wejść | O3-063, [odbiór utrzymania](integracja/UTRZYMANIE_O3_20261017.md) |
+| O3 — DevOps, CI/CD, serwer | PR123 scalony; odbiornik w PR125/26testów i Linux PASS; przygotowanie cyklicznej kopii216infra PASS | Transport Dropbox wymaga potwierdzenia zakresu, klucz osobnego nośnika; PR124 czerwony; telefon w poniedziałek | O3-069/070, [cykliczne kopie](integracja/CYKLICZNE_KOPIE_O3.md) |
 
 
 ## Wpisy
@@ -3024,3 +3024,14 @@ przekazań, nie potwierdzeniem jego odczytu lub wykonania przez adresata.
 - Data/autor:17.10.2026 agent3/O3. Do O1/O2, DO ODCZYTU. PR123 scalony do main0ac8e16 z odebranego dd39050 po ośmiu SUCCESS; bez otwartych uwag. Jednorazowy Dropbox i granice cykliczności/klucza z O3-066 zachowane.
 - PR119 dołącza ten main zwykłym merge; konflikt wyłącznie dziennika rozwiązany przez zachowanie obu pełnych wpisów O3-066/067. Własny CI tego nowego head jest odrębny.
 - Właściciel zlecił kolejno domknięcie PR119/123, odbiór magazynu rejestru O2 i cykliczne kopie. Próba APK/API pozostaje na poniedziałek19.10; dziś nie otwieramy relay. Pełne KO32/E10 i hosting wymagają własnych dowodów.
+
+### O3-070 — przygotowanie cyklicznych kopii i sprawdzenie klucza
+
+- Data/autor:17.10.2026 agent3/O3. Do O1/O2, DO ODCZYTU. Branch codex/devops-cykliczne-kopie, baza main0ac8e16 po PR123. O3-066/kontrakt O2-041 odczytane; źródło O2 z czerwonym PG i odbiornik HTTPS są opisane w osobnym PR125/O3-069.
+- Dostarczono idempotentne przygotowanie szyfrogramu najnowszej własnej odebranej kopii, kontrolę capture24h, odrębny download+SHA+odszyfrowanie+restore przed receipt oraz zestaw klucza do przeniesienia na USB.216infra PASS, Ruff/format/E0 i składnia PowerShell PASS. Nowy lokalny szyfrogram+klucz zestawu rzeczywiście restore12,151s PASS, bez nowego offsite PASS. [Raport](integracja/CYKLICZNE_KOPIE_O3.md).
+- Lokalny instalator pythonw przygotowuje pliki03:20/15:20 z niezmiennego commita; rzeczywiste zadanie wymaga osobnego odbioru po commicie. Stały transport Dropbox03:30/15:30 czeka na potwierdzenie dokładnej paczki i schematu nazw, a niezależny klucz na drugi nośnik. Nie zmieniono używanej konfiguracji monitora na podstawie samego przygotowania.
+- Checker rzeczywistego C2 ponownie BLOCKED brakującym android_acceptance; APK/API/catalog zgodne. Pełne KO32 wymaga telefonu, niezależnego ledger/fencing/cutoff i odbioru źródła O2; hosting/SMTP/RPO-RTO nadal potrzebują celu. Próba Android–API pozostaje na poniedziałek, bez relay dziś.
+
+Uzupełnienie O3-070: przygotowanie z commita16d678b jest rzeczywiście zainstalowane jako O3-Calorie-Offsite-Prepare, pythonw/Limited/03:20+15:20. Rzeczywisty przebieg17.10/23:44:49 zakończony LastTaskResult0 i Ready, bez okna konsoli. To przygotowanie lokalne, cloud_upload=false. PR119 scalony do main8c422a6 po8/8SUCCESS; własny mainCI jest osobny. O2 opublikował nowe poprawki na9b76156; historyczny RED71ca4fdf pozostaje w przekazaniu, a nowy CI wymaga własnego odbioru.
+
+Korekta harmonogramu O3-070: finalne przygotowanie03:50/15:50, proponowany transport04:00/16:00. Istniejący capture/rehearsal ma limit45min, więc przygotowanie po20min mogło kolidować z jego blokadą. Nie zmieniamy harmonogramu capture ani zasad odmowy; źródła Pythona i wynik216testów pozostają te same. Zmiana dotyczy tylko terminów instalatora.
