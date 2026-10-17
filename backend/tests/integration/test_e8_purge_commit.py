@@ -29,9 +29,9 @@ from calorie_app.integrations.keycloak import Principal
 from calorie_app.modules.ai.service import create_analysis
 from calorie_app.modules.analytics.motivation.ranking import ranking_page
 from calorie_app.modules.diary.service import save_weight
-from calorie_app.modules.identity.deletion import begin, resume
 from calorie_app.modules.profiles.schemas import ConsentInput, ProfilePayload
 from calorie_app.modules.profiles.service import put_consents, save_profile
+from tests.support.deletion_regression import begin, resume
 
 pytestmark = pytest.mark.integration
 ROOT = Path(__file__).resolve().parents[3]

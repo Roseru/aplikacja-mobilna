@@ -16,9 +16,9 @@ from sqlalchemy.engine import make_url
 
 from calorie_app.core.config import Settings
 from calorie_app.main import create_app
-from calorie_app.modules.identity.deletion import begin, resume
 from tests.integration.test_e8_4_migration import snapshot
 from tests.integration.test_e8_4_projections import instant
+from tests.support.deletion_regression import begin, resume
 from tests.support.e8_3_archive import archive_environment, pg_command
 from tests.support.e8_3_ci import provision_operator
 from tests.support.e8_3_jwt import ISSUER

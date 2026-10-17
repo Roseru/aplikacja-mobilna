@@ -59,6 +59,12 @@ def test_migration_and_database_readiness(database):
         "sync_sessions",
         "sync_session_items",
         "account_deletion_jobs",
+        "deletion_ledger_source",
+        "deletion_ledger_events",
+        "deletion_ledger_operations",
+        "deletion_ledger_receipts",
+        "deletion_ledger_restore_receipts",
+        "_ledger_account_context",
         "deleted_subjects",
         "_deletion_context",
         "read_admissions",
@@ -109,7 +115,9 @@ def test_migration_and_database_readiness(database):
     with TestClient(create_app(Settings(database_url=url), engine=engine)) as client:
         assert client.get("/health/ready").status_code == 200
         with engine.begin() as connection:
-            connection.execute(text("UPDATE app.alembic_version SET version_num='wrong_revision'"))
+            connection.execute(
+                text("UPDATE app.alembic_version SET version_num='0024_e9_history_graph'")
+            )
         assert client.get("/health/ready").status_code == 503
         with engine.begin() as connection:
             connection.execute(

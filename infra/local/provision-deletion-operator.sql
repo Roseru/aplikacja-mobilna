@@ -8,11 +8,14 @@ SELECT pg_advisory_xact_lock(hashtextextended('calorie-app-deletion-provision', 
 DO $$
 DECLARE login_name text := current_setting('calorie.operator_login');
 BEGIN
+  IF NOT EXISTS (SELECT FROM pg_roles WHERE rolname='calorie_app_deletion_exporter') THEN
+    CREATE ROLE calorie_app_deletion_exporter NOLOGIN NOSUPERUSER NOCREATEDB NOCREATEROLE NOINHERIT NOREPLICATION NOBYPASSRLS;
+  END IF;
   IF NOT EXISTS (SELECT 1 FROM pg_roles WHERE rolname='calorie_app_deletion_operator') THEN
     CREATE ROLE calorie_app_deletion_operator NOLOGIN NOSUPERUSER
       NOCREATEDB NOCREATEROLE NOINHERIT NOREPLICATION NOBYPASSRLS;
   END IF;
-  IF login_name IN ('calorie_app_deletion_operator', 'calorie_app_api',
+  IF login_name LIKE 'calorie_app_%' OR login_name IN ('calorie_app_deletion_operator', 'calorie_app_api',
                     'calorie_app_worker', 'calorie_app_migrator', 'keycloak')
      OR login_name ~ '^pg_' THEN
     RAISE EXCEPTION 'An independent operator login is required';
@@ -50,7 +53,7 @@ END $$;
 
 DO $$
 DECLARE login_name text := current_setting('calorie.operator_login');
-        function_name text;
+        function_name text; ledger boolean := to_regprocedure('app.ledger_status(uuid)') IS NOT NULL;
 BEGIN
   IF NOT has_database_privilege(login_name,current_database(),'CONNECT')
      OR has_database_privilege(login_name,current_database(),'CREATE,TEMP') THEN
@@ -66,15 +69,30 @@ BEGIN
                        'INSERT,UPDATE,DELETE,TRUNCATE,REFERENCES,TRIGGER,MAINTAIN')
                       OR has_any_column_privilege(login_name,c.oid,
                            'INSERT,UPDATE,REFERENCES')
-                      OR (c.relname<>'account_deletion_jobs'
+                      OR ((ledger OR c.relname<>'account_deletion_jobs')
                           AND (has_table_privilege(login_name,c.oid,'SELECT')
                                OR has_any_column_privilege(login_name,c.oid,'SELECT'))))) THEN
       RAISE EXCEPTION 'Operator has unexpected effective table privileges';
     END IF;
     IF to_regprocedure('app.begin_account_deletion(uuid,uuid,integer)') IS NOT NULL THEN
-      IF NOT has_table_privilege(login_name,'app.account_deletion_jobs','SELECT')
+      IF (NOT ledger AND NOT has_table_privilege(login_name,'app.account_deletion_jobs','SELECT'))
          OR NOT has_schema_privilege(login_name,'app','USAGE') THEN
         RAISE EXCEPTION 'Operator deletion job read privileges are incomplete';
+      END IF;
+      IF ledger AND (has_table_privilege(login_name,'app.account_deletion_jobs','SELECT')
+        OR has_any_column_privilege(login_name,'app.account_deletion_jobs','SELECT')
+        OR NOT has_function_privilege(login_name,'app.ledger_status(uuid)','EXECUTE')
+        OR has_function_privilege(login_name,'app.ledger_ack(uuid,uuid,uuid,uuid,bigint,text,text)','EXECUTE')
+        OR has_function_privilege(login_name,'app.ledger_batch(bigint,integer)','EXECUTE')
+        OR pg_has_role(login_name,'calorie_app_deletion_exporter','MEMBER')) THEN
+        RAISE EXCEPTION 'Ledger operator fencing or role separation invalid';
+      END IF;
+      IF ledger AND EXISTS(SELECT FROM pg_proc p JOIN pg_namespace n ON n.oid=p.pronamespace
+        WHERE n.nspname='app' AND (p.proname LIKE '_ledger_%'
+          OR p.proname LIKE '%pre25' OR p.proname LIKE 'purge_deleted_account_e%'
+          OR p.proname LIKE 'begin_account_deletion_e%' OR p.proname LIKE 'e8n_delete_helper%')
+        AND has_function_privilege(login_name,p.oid,'EXECUTE')) THEN
+        RAISE EXCEPTION 'Operator can execute an internal deletion parent';
       END IF;
       FOREACH function_name IN ARRAY ARRAY[
         'app.begin_account_deletion(uuid,uuid,integer)',
