@@ -120,9 +120,25 @@ BEGIN snapshotu daje1FAIL; pliki źródeł nie były zmieniane przez mutację.
 Testy wykonano na lokalnym Windows i dokładnym kontrakcie rodzica.
 Obraz backendu i pochodny obraz odbiornika zbudowano lokalnie; rzeczywisty
 Linux UID10001/read-only/no-network przeszedł init→ACK→restart→replay→freeze.
-SHA256 źródła wykonawczego6fc3824b4ec4c9292002557058ce926aea3185e8f604649dbe3858117d77dd10. Nie są
-dowodem niezależności hostów, pełnego PG→HTTPS→ACK źródła ani produkcyjnego
-KO32/RPO/RTO. Test SQLite nie zastępuje testów źródłowego PostgreSQL.
+SHA256 źródła wykonawczego6fc3824b4ec4c9292002557058ce926aea3185e8f604649dbe3858117d77dd10. Nie są dowodem niezależności hostów ani produkcyjnego KO32/RPO/RTO.
+
+Dodatkowy [test PG/HTTPS](../../backend/tests/integration/test_o3_ledger_https.py)
+przeszedł na własnym izolowanym PG17: prawdziwe migracje0025/SQL/MAC, TLS,
+utrata ACK po rzeczywistym zapisie, ponowienia, zatrzymanie pierwszego serwera
+i świeży odbiornik na tym samym SQLite/kluczach/certyfikacie. Źródło miało
+ACK0 mimo2trwałych eventów; provider nie był wywołany. Następnie SQL przyjął
+ACK i dokładne7etapów anchor/begin/provider-intent/provider-confirm/confirm/
+purge-intent/purge-confirm, właściwy cel i jedno fikcyjne wywołanie providera.
+Własne konto testowe zniknęło dopiero po właściwych barierach.1PG PASS3,48s.
+Eksporter używa rzeczywistej roli przez SET ROLE testowego harnessu; osobne
+LOGIN/provisioning należą do odbioru źródła O2. Provider jest jawnie syntetyczny,
+bez żądań Keycloak i bez zmian czynnej instalacji.
+
+Pierwszy bootstrap próby poprawiono do NOINHERIT zgodnie z odrzuconym guardem;
+początkowy oracle8zdarzeń skorygowano na normatywne7 i dokładną listę etapów.
+Nie osłabiono SQL lub barier. Końcowy wynik dotyczy poprawnej próby.
+Receipt wskazuje wykonawczy receiver SHA6fc3824b, Cb1e564f i osobny hash
+testu; nie przepisujemy go na późniejszy commit dokumentacyjny. Test SQLite nie zastępuje testów źródłowego PostgreSQL.
 
 Pozostałe: zielony PR124/odbiór koordynatora; drugi host/adres/dostęp;
 klucze poza źródłem i ich niezależne odzyskanie; rzeczywisty eksport PG,
