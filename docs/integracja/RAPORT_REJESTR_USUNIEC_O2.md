@@ -3,7 +3,9 @@
 Zlecenie O2_LEDGER_20261017_V1, 17.10.2026, agent2.
 Gałąź `codex/backend-ciagly-rejestr-usuniec`, baza `615fb6b3f875bef8a0c04c95a1a87e32af20e9e3`.
 Migracja `0024_e9_history_graph` → `0025_deletion_ledger`.
-PR/head i rzeczywisty wynik CI zostaną przypięte w dzienniku po publikacji;
+[PR124](https://github.com/Roseru/aplikacja-mobilna/pull/124), implementacja
+`04c76ed8144bc582b8a25321e101025556aef22d`; bieżący head i rzeczywiste CI
+będą przypięte w aktualizowanym opisie PR/odbiorze koordynatora;
 poniższe liczby są lokalnymi dowodami, nie potwierdzeniem zdalnego CI.
 
 ## Wynik i granica
@@ -90,5 +92,5 @@ Pełne testy runnerów180PASS/0skip; Ruff/format i uv build PASS.
 Lokalny Docker/Keycloak/full Compose nieuruchomiony; rzeczywista pełna macierz
 PostgreSQL/Keycloak/Android/Compose jest obowiązkiem zdalnego CI tego PR.
 
-Najbliższe kroki: jeden PR, rzeczywiste8kontroli
+Najbliższe kroki: rzeczywiste8kontroli
 aktualnego head/base, potem osobny odbiór koordynatora. Bez merge/wdrożenia.
