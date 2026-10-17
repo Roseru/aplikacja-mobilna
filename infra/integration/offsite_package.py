@@ -6,9 +6,11 @@ import io
 import json
 import os
 import tarfile
+from datetime import datetime
 from pathlib import Path, PurePosixPath
+from uuid import UUID
 
-from backup import private_directory, verify_archive
+from backup import ARCHIVES, private_directory, verify_archive
 from cryptography.exceptions import InvalidTag
 from cryptography.hazmat.primitives.ciphers.aead import AESGCM
 
@@ -30,6 +32,13 @@ def safe_name(name):
     path = PurePosixPath(name)
     if path.is_absolute() or ".." in path.parts or path.as_posix() != name or name == ".":
         raise ValueError("Package member escaped backup")
+    devices = {"CON", "PRN", "AUX", "NUL"} | {
+        f"{prefix}{i}" for prefix in ("COM", "LPT") for i in range(1, 10)
+    }
+    if any(
+        part.endswith((".", " ")) or part.split(".")[0].upper() in devices for part in path.parts
+    ):
+        raise ValueError("Nonportable backup member")
     return path
 
 
@@ -71,9 +80,15 @@ def validate_members(members):
     if "manifest.json" not in members or len(members["manifest.json"]) > 1024**2:
         raise ValueError("Missing or oversized backup manifest")
     manifest = json.loads(members["manifest.json"], object_pairs_hook=unique)
+    if manifest.get("format") != 1 or manifest.get("writers_stopped") is not True:
+        raise ValueError("Incomplete paired backup")
+    UUID(manifest["source_epoch"])
+    datetime.fromisoformat(manifest["captured_at"])
     files = manifest["files"]
     if not isinstance(files, dict) or set(members) != set(files) | {"manifest.json"}:
         raise ValueError("Backup package member set differs from manifest")
+    if not ARCHIVES <= set(files):
+        raise ValueError("Missing paired archive")
     if "manifest.json" in files or len(members) > MAX_FILES:
         raise ValueError("Invalid backup member set")
     for name, expected in files.items():

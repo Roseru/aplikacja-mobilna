@@ -2959,7 +2959,7 @@ przekazań, nie potwierdzeniem jego odczytu lub wykonania przez adresata.
   lub Dropbox. Niezależna kopia odzyskiwania klucza i cykliczny nadawca nadal
   potrzebne; nie ustawiono statusu stałej usługi na podstawie jednego uploadu.
 - Dodano offsite_package.py: AES256GCM, losowy nonce, zweryfikowany manifest,
-  limit256MiB/4096plików, brak nadpisania/linków/traversal/duplikatów.11testów
+  limit256MiB/4096plików, brak nadpisania/linków/traversal/duplikatów.16testów
   PASS, rzeczywisty lokalny restore12,435s; wspólna infra187PASS z PR120,
   własny zdalny CI tej niezależnej zmiany osobno. Oryginalne usługi/epoka zachowane.
 - O2-040/PR120/9f32a2d odczytany: trzy dodatkowe skuteczne regresje poprawiają

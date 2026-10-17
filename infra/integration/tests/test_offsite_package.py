@@ -86,7 +86,14 @@ def test_changed_source_and_existing_package_are_refused(prepared):
 
 
 @pytest.mark.parametrize(
-    "name,kind", [("../escaped", "file"), ("link", "link"), ("roles.sql", "duplicate")]
+    "name,kind",
+    [
+        ("../escaped", "file"),
+        ("link", "link"),
+        ("roles.sql", "duplicate"),
+        ("NUL", "file"),
+        ("config/key.", "file"),
+    ],
 )
 def test_authenticated_unsafe_tar_is_still_refused(prepared, tmp_path, name, kind):
     backup, key, encrypted = prepared
@@ -120,3 +127,32 @@ def test_existing_restore_destination_is_preserved(prepared, tmp_path):
     with pytest.raises(FileExistsError):
         package.unpack(encrypted, output, key)
     assert list(output.iterdir()) == [output / "keep"]
+
+
+@pytest.mark.parametrize("damage", ["format", "writers", "missing_pair"])
+def test_invalid_paired_manifest_creates_no_restore_directory(prepared, tmp_path, damage):
+    backup, key, encrypted = prepared
+    package.pack(backup, encrypted, key)
+    members = package.decrypt(encrypted, key)
+    manifest = json.loads(members["manifest.json"])
+    if damage == "format":
+        manifest["format"] = 99
+    elif damage == "writers":
+        manifest["writers_stopped"] = False
+    else:
+        del manifest["files"]["keycloak.dump"]
+        del members["keycloak.dump"]
+    members["manifest.json"] = json.dumps(manifest).encode()
+    archive = io.BytesIO()
+    with tarfile.open(fileobj=archive, mode="w") as stream:
+        for name, data in members.items():
+            info = tarfile.TarInfo(name)
+            info.size = len(data)
+            stream.addfile(info, io.BytesIO(data))
+    nonce = b"\x02" * 12
+    ciphertext = AESGCM(key.read_bytes()).encrypt(nonce, archive.getvalue(), package.MAGIC)
+    encrypted.write_bytes(package.MAGIC + nonce + ciphertext)
+    output = tmp_path / "refused"
+    with pytest.raises(ValueError):
+        package.unpack(encrypted, output, key)
+    assert not output.exists()

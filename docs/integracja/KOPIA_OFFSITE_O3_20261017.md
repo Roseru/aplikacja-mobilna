@@ -66,9 +66,11 @@ Ostatnia komenda używa istniejącego narzędzia odtworzenia. Samo pack/verify/u
 zwraca `offsite_verified=false`. Dowodem zewnętrznej dostawy jest oddzielny
 receipt po rzeczywistym upload/download/restore z danego magazynu.
 
-**11testów PASS:** zgodny pełny roundtrip i wykluczenie dodatkowego pliku,
+**16testów PASS:** zgodny pełny roundtrip i wykluczenie dodatkowego pliku,
 odmowy uszkodzonego ciphertext/nonce/header/truncation/błędnego klucza,
-zmienionego źródła, nadpisania, traversal, linku i duplikatu TAR. Ponadto
+zmienionego źródła, nadpisania, traversal, linku, duplikatu TAR i nazw urządzeń Windows.
+Trzy przypadki niespójnego manifestu (format/writers/brak pary) odmawiają
+utworzenia katalogu odszyfrowanego wyniku. Ponadto
 rzeczywista lokalna próba zaszyfrowanej kopii przeszła restore12,435s, a próba
 pliku pobranego z Dropbox11,83s. Wspólny zestaw z osobną zmianą checkera
 PR120:187PASS; lint/format PASS. Zdalny CI własnego PR jest osobny.
