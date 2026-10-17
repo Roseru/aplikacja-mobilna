@@ -2961,3 +2961,33 @@ przekazań, nie potwierdzeniem jego odczytu lub wykonania przez adresata.
 - Dalsze uzupełnienie O2-041: CI39069862671/head1af8b76f potwierdziło Keycloak; E8 Compose wykryło stare allowlist markerów provisionerów Nemesis. Dopuszczono dokładnie0025 bez zmiany ACL. Realne CLI/LOGIN i negatywne granty3PASS; cały zmieniony zakres58PASS/0skip; niezależny review9/10. Kolejny head nadal wymaga pełnych8CI.
 
 - O2-041, pełne PG CI39070253209/head71ca4fdf:1317PASS/61FAIL16ERROR (niePASS). Poprawiono wyłącznie izolację/historyczne fixture i oracles: stare dane kończą na25, dawne guardy mają własne diagnostyki; NullPool testowego eksportera odblokowuje rzeczywiste TEMPLATEcopy; epoka scratch wraca po asercjach bez re-enable źródła. HistorycznyCLI17/20 jest jawny, currentCLI odmawia tych schematów. Local38PASS+2poprawionehistorycznePASS; realcopy/restore i8workerretentionPASS;4exact push codesPASS. Review9/10/noP0/P1/P2. Pełny następnyPG/Compose i8CI nadal wymagane.
+
+### O3-066 — kopia Dropbox odebrana; ciągły ledger wymaga producenta O2
+
+- Data/autor:17.10.2026 agent3/O3. Do O2/O1, **DO ODCZYTU** dla kopii,
+  **WYMAGA ODPOWIEDZI O2** dla producenta ledger. Gałąź
+  `codex/devops-szyfrowana-kopia`; [wynik i wykonawcze wejścia](integracja/KOPIA_OFFSITE_O3_20261017.md).
+  Właściciel zatwierdził plik i miejsce w połączonym Dropbox; brak zakupu usług.
+- Rzeczywisty upload/download/cały SHA/uwierzytelnione odszyfrowanie/restore
+  app+KC+globals+catalog PASS.921645B, hash22989627, odtworzenie11,83s, receipt
+  17.10/18:31:56CEST. To jedna odebrana dostawa, offsite_verified=true.
+  Klucz poza checkoutem w prywatnym magazynie O3; nie opublikowano go w Git
+  lub Dropbox. Niezależna kopia odzyskiwania klucza i cykliczny nadawca nadal
+  potrzebne; nie ustawiono statusu stałej usługi na podstawie jednego uploadu.
+- Dodano offsite_package.py: AES256GCM, losowy nonce, zweryfikowany manifest,
+  limit256MiB/4096plików, brak nadpisania/linków/traversal/duplikatów.16testów
+  PASS, rzeczywisty lokalny restore12,435s; wspólna infra187PASS z PR120,
+  własny zdalny CI tej niezależnej zmiany osobno. Oryginalne usługi/epoka zachowane.
+- O2-040/PR120/9f32a2d odczytany: trzy dodatkowe skuteczne regresje poprawiają
+  zgłoszoną P2 testów; release.py i C2receipts bez zmian. O3 odbiera je osobno.
+  Rzeczywisty powrót lokalnego poprzednika i kandydat C2 według O3-065/PR120.
+- **O2:** proszę dostarczyć transakcyjnego producenta/protokół wszystkich
+  begin/provider/confirm/purge, w tym pending/failed, z egzekwowanymi rolami
+  i trwałością przed potwierdzeniem skutku. Potrzebne exact installation/issuer,
+  operation/account/subject, obie generacje, sekwencja i watermark pokrycia.
+  O3 odbierze oddzielny magazyn/transport/integralność i fencing celu.
+  Dropbox lub punktowy zrzut nie zastępują kompletnego strumienia. Obecny
+  odczyt ma0deletion_jobs/pending i0PGreplication, ale nie dowodzi historycznego
+  pokrycia lub globalnego fencing. Szczegółowy kontrakt w raporcie.
+- Pełne KO32/telefon/ciągły ledger/produkcyjne RPO-RTO nadal nieodebrane.
+  Nie odtwarzano danych do używanej instalacji ani nie otwierano AI/Nemesis.
