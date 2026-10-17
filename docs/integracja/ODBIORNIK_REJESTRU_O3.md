@@ -129,7 +129,11 @@ i świeży odbiornik na tym samym SQLite/kluczach/certyfikacie. Źródło miało
 ACK0 mimo2trwałych eventów; provider nie był wywołany. Następnie SQL przyjął
 ACK i dokładne7etapów anchor/begin/provider-intent/provider-confirm/confirm/
 purge-intent/purge-confirm, właściwy cel i jedno fikcyjne wywołanie providera.
-Własne konto testowe zniknęło dopiero po właściwych barierach.1PG PASS3,48s.
+Własne konto testowe zniknęło dopiero po właściwych barierach.
+Końcowy test używa osobnej bazy utworzonej przez historyczny fixture
+i jawnego upgrade0025, aby nie zerować wspólnego już potwierdzonego prefiksu
+innych testów. Własny test oraz poprzedzający istniejący przypadek O2:
+**2PG PASS7,83s**. Pierwsza oddzielna próba1PASS3,48s zachowana jako checkpoint.
 Eksporter używa rzeczywistej roli przez SET ROLE testowego harnessu; osobne
 LOGIN/provisioning należą do odbioru źródła O2. Provider jest jawnie syntetyczny,
 bez żądań Keycloak i bez zmian czynnej instalacji.
@@ -137,7 +141,7 @@ bez żądań Keycloak i bez zmian czynnej instalacji.
 Pierwszy bootstrap próby poprawiono do NOINHERIT zgodnie z odrzuconym guardem;
 początkowy oracle8zdarzeń skorygowano na normatywne7 i dokładną listę etapów.
 Nie osłabiono SQL lub barier. Końcowy wynik dotyczy poprawnej próby.
-Receipt wskazuje wykonawczy receiver SHA6fc3824b, Cb1e564f i osobny hash
+Receipt wskazuje wykonawczy receiver SHA6fc3824b, C72715f3 i osobny hash
 testu; nie przepisujemy go na późniejszy commit dokumentacyjny. Test SQLite nie zastępuje testów źródłowego PostgreSQL.
 
 Pozostałe: zielony PR124/odbiór koordynatora; drugi host/adres/dostęp;
