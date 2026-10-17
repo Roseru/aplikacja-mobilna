@@ -278,3 +278,85 @@ def test_scheduler_entrypoint_imports_from_immutable_runtime_in_isolated_mode(tm
     )
     assert result.returncode == 0, result.stderr
     assert "--settings" in result.stdout
+
+
+@pytest.mark.parametrize(
+    "failure", [RuntimeError("private detail"), subprocess.TimeoutExpired("private detail", 1)]
+)
+def test_startup_retries_transient_failure_and_requires_real_success(
+    environment, monkeypatch, failure
+):
+    settings, directory, installation = environment
+    calls, sleeps = [], []
+    path = directory / "startup-receipt.json"
+
+    def once(_settings, _directory, original):
+        assert original is installation
+        calls.append("attempt")
+        if len(calls) == 1:
+            raise failure
+        return {"existing_services_only": True}
+
+    def pause(seconds):
+        sleeps.append(seconds)
+        assert maintenance.read(path)["result"] == "RETRYING"
+        assert operation_reading(path)["state"] == "failed"
+        assert "private detail" not in path.read_text()
+
+    monkeypatch.setattr(maintenance, "_startup_once", once)
+    monkeypatch.setattr(maintenance.time, "sleep", pause)
+    receipt = maintenance.startup(settings, directory, installation)
+    assert calls == ["attempt", "attempt"] and sleeps == [60]
+    assert receipt["result"] == "PASS" and receipt["startup_attempts"] == 2
+    assert receipt["existing_services_only"] is True
+
+
+def test_startup_stops_after_three_failures_without_pass(environment, monkeypatch):
+    settings, directory, installation = environment
+    calls, sleeps = [], []
+
+    def fail(*_):
+        calls.append("attempt")
+        raise RuntimeError("private detail")
+
+    monkeypatch.setattr(maintenance, "_startup_once", fail)
+    monkeypatch.setattr(maintenance.time, "sleep", sleeps.append)
+    with pytest.raises(maintenance.StartupFailure) as error:
+        maintenance.startup(settings, directory, installation)
+    assert error.value.attempts == 3
+    assert len(calls) == 3 and sleeps == [60, 60]
+    path = directory / "startup-receipt.json"
+    assert maintenance.read(path)["result"] == "FAIL"
+    assert maintenance.read(path)["startup_attempts"] == 3
+    assert "private detail" not in path.read_text()
+
+
+def test_startup_does_not_retry_ownership_or_configuration_errors(environment, monkeypatch):
+    settings, directory, installation = environment
+    calls, sleeps = [], []
+
+    def wrong_owner(*_):
+        calls.append("attempt")
+        raise ValueError("Container is not the requested installation service")
+
+    monkeypatch.setattr(maintenance, "_startup_once", wrong_owner)
+    monkeypatch.setattr(maintenance.time, "sleep", sleeps.append)
+    with pytest.raises(ValueError, match="not the requested"):
+        maintenance.startup(settings, directory, installation)
+    assert len(calls) == 1 and sleeps == []
+    assert not (directory / "startup-receipt.json").exists()
+
+
+def test_startup_success_does_not_repeat(environment, monkeypatch):
+    settings, directory, installation = environment
+    calls, sleeps = [], []
+
+    def success(*_):
+        calls.append("attempt")
+        return {"existing_services_only": True}
+
+    monkeypatch.setattr(maintenance, "_startup_once", success)
+    monkeypatch.setattr(maintenance.time, "sleep", sleeps.append)
+    receipt = maintenance.startup(settings, directory, installation)
+    assert receipt["result"] == "PASS" and receipt["startup_attempts"] == 1
+    assert len(calls) == 1 and sleeps == []
