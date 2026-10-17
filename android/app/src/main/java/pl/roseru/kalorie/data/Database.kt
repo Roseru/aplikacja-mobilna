@@ -29,32 +29,38 @@ data class MealEntity(
     @PrimaryKey val id: String, val ownerScope: String, val localDate: String,
     val occurredAt: String, val zoneId: String, val mealType: String,
     val serverRevision: Int = 0, val localRevision: Int = 1, val deleted: Boolean = false,
-    val rationId: String? = null, val rationName: String? = null
-)
+    val rationId: String? = null, val rationName: String? = null,
+    val wirePayload:String?=null, val wireContext:String?=null
+) {override fun toString()="MealEntity(redacted)"}
 
 @Entity(tableName = "meal_items", foreignKeys = [ForeignKey(
     entity = MealEntity::class, parentColumns = ["id"], childColumns = ["mealId"], onDelete = ForeignKey.RESTRICT
 )], indices = [Index("mealId")])
 data class MealItemEntity(
-    @PrimaryKey val id: String, val mealId: String, val productId: String,
-    val productName: String, val grams: Double, val kcalPer100: Double,
+    @PrimaryKey val id: String, val mealId: String, val productId: String?,
+    val productName: String, val grams: Double, val kcalPer100: Double?,
     val proteinPer100: Double?, val fatPer100: Double?, val carbsPer100: Double?,
     val rationComponentId: String? = null, val snapshotJson: String? = null,
-    val rationComponentPosition: Int? = null
+    val rationComponentPosition: Int? = null, val wirePayload:String?=null
 ) {
-    val unit: String get() = snapshotJson?.let { JSONObject(it).getJSONObject("quantity").getString("unit") } ?: "g"
-    val amountText: String get() = snapshotJson?.let { JSONObject(it).getJSONObject("quantity").getString("amount") } ?: grams.toBigDecimal().stripTrailingZeros().toPlainString()
+    override fun toString()="MealItemEntity(redacted)"
+    val unit: String get() = wirePayload?.let {JSONObject(it).getJSONObject("quantity").getString("unit")} ?: snapshotJson?.let { JSONObject(it).getJSONObject("quantity").getString("unit") } ?: "g"
+    val amountText: String get() = wirePayload?.let {JSONObject(it).getJSONObject("quantity").getString("amount")} ?: snapshotJson?.let { JSONObject(it).getJSONObject("quantity").getString("amount") } ?: grams.toBigDecimal().stripTrailingZeros().toPlainString()
     fun withAmount(text: String): MealItemEntity {
-        val amount = ContractDecimal.userQuantity(text, 12) ?: throw NutritionError("quantity_range")
+        val amount = ContractDecimal.userQuantity(text, if(wirePayload!=null)6 else 12) ?: throw NutritionError("quantity_range")
+        if(wirePayload!=null) {
+            val item=StrictJson.read(wirePayload.toByteArray(Charsets.UTF_8));item.getJSONObject("quantity").put("amount",ContractDecimal.canonical(amount))
+            return copy(grams=amount.toDouble(),wirePayload=StrictJson.canonical(item))
+        }
         val snapshot = snapshotJson?.let { JSONObject(it).apply {
             getJSONObject("quantity").put("amount", ContractDecimal.canonical(amount))
         }.let(StrictJson::canonical) }
         return copy(grams = amount.toDouble(), snapshotJson = snapshot)
     }
-    fun consumed(): Nutrients = snapshotJson?.let {
+    fun consumed(): Nutrients = wirePayload?.let {pl.roseru.kalorie.core.sync.MealWire.consumed(it)} ?: snapshotJson?.let {
         val snapshot = JSONObject(it); val quantity = snapshot.getJSONObject("quantity")
         exactProductNutrients(snapshot.getJSONObject("product").toString(), quantity.getString("amount"), quantity.getString("unit"))
-    } ?: Nutrients(kcalPer100, proteinPer100, fatPer100, carbsPer100).portion(grams)
+    } ?: Nutrients(checkNotNull(kcalPer100), proteinPer100, fatPer100, carbsPer100).portion(grams)
 }
 
 data class MealWithItems(@Embedded val meal: MealEntity, @Relation(parentColumn = "id", entityColumn = "mealId") val items: List<MealItemEntity>)
@@ -87,7 +93,9 @@ data class GoalEntity(@PrimaryKey val id: String, val ownerScope: String, val va
 @Entity(tableName = "outbox", indices = [Index("ownerScope"), Index("entityId")])
 data class OutboxEntity(@PrimaryKey val operationId: String, val ownerScope: String, val entityType: String,
     val entityId: String, val action: String, val baseRevision: Int?, val payload: String,
-    val createdAt: String, val status: String = "pending")
+    val createdAt: String, val status: String = "pending",
+    @ColumnInfo(defaultValue="'legacy'") val wireFormat:String="legacy",val wireJson:String?=null,val wireContext:String?=null,
+    @ColumnInfo(defaultValue="0") val attempted:Boolean=false) {override fun toString()="OutboxEntity(redacted)"}
 
 @Entity(tableName = "profiles", indices = [Index(value = ["ownerScope"], unique = true)])
 data class ProfileEntity(@PrimaryKey val id: String, val ownerScope: String, val nickname: String,
@@ -143,9 +151,14 @@ interface CalorieDao {
     @Insert(onConflict = OnConflictStrategy.IGNORE) suspend fun seedGoal(goal: GoalEntity)
     @Insert suspend fun saveGoal(goal: GoalEntity)
     @Insert suspend fun enqueue(operation: OutboxEntity)
-    @Query("SELECT COUNT(*) FROM outbox WHERE ownerScope = :owner AND status = 'pending'") fun pending(owner: String): Flow<Int>
+    @Query("SELECT * FROM outbox WHERE ownerScope=:owner AND entityType='meal' AND entityId=:id AND wireFormat='sync-v1' AND status NOT IN ('acked','superseded','local_only') ORDER BY rowid")
+    suspend fun canonicalMealOperations(owner:String,id:String):List<OutboxEntity>
+    @Query("SELECT * FROM outbox WHERE operationId=:id") suspend fun operation(id:String):OutboxEntity?
+    @Update suspend fun updateOperation(row:OutboxEntity)
+
+    @Query("SELECT COUNT(*) FROM outbox WHERE ownerScope = :owner AND status IN ('pending','waiting_revision','waiting_recovery')") fun pending(owner: String): Flow<Int>
     @Query("SELECT COUNT(*) FROM outbox WHERE ownerScope = :owner") suspend fun operationCount(owner: String): Int
-    @Query("SELECT DISTINCT productId FROM meal_items JOIN meals ON meals.id = meal_items.mealId WHERE meals.ownerScope = :owner AND meals.deleted = 0 ORDER BY meals.occurredAt DESC LIMIT 12")
+    @Query("SELECT DISTINCT productId FROM meal_items JOIN meals ON meals.id = meal_items.mealId WHERE meals.ownerScope = :owner AND meals.deleted = 0 AND meal_items.productId IS NOT NULL ORDER BY meals.occurredAt DESC LIMIT 12")
     fun recent(owner: String): Flow<List<String>>
     @Query("SELECT * FROM profiles WHERE ownerScope = :owner LIMIT 1") fun profile(owner: String): Flow<ProfileEntity?>
     @Query("SELECT * FROM profiles WHERE ownerScope = :owner LIMIT 1") suspend fun currentProfile(owner: String): ProfileEntity?
@@ -163,8 +176,9 @@ interface CalorieDao {
     RationEntity::class, RationComponentEntity::class, ProfileEntity::class, WeightEntity::class, DiaryDayEntity::class,
     CatalogGenerationEntity::class, CatalogRecordEntity::class, CatalogMemberEntity::class, CatalogActiveEntity::class,
     LocalOwnerEntity::class, LocalActiveOwnerEntity::class, AccountBindingEntity::class,
-    BootstrapAttemptEntity::class, ServerSnapshotRun::class, ServerSnapshotPage::class, ServerSnapshotAccess::class, ServerSnapshotIdentity::class, pl.roseru.kalorie.photo.MealPhotoDraft::class, pl.roseru.kalorie.photo.PhotoAnalysisRequestEntity::class], version = 10, exportSchema = true)
+    BootstrapAttemptEntity::class, ServerSnapshotRun::class, ServerSnapshotPage::class, ServerSnapshotAccess::class, ServerSnapshotIdentity::class, pl.roseru.kalorie.photo.MealPhotoDraft::class, pl.roseru.kalorie.photo.PhotoAnalysisRequestEntity::class, PhotoMaterialization::class], version = 11, exportSchema = true)
 abstract class CalorieDatabase : RoomDatabase() {
+    abstract fun materializationDao():PhotoMaterializationDao
     abstract fun dao(): CalorieDao
     abstract fun catalogDao(): CatalogDao
     abstract fun ownerDao(): LocalOwnerDao

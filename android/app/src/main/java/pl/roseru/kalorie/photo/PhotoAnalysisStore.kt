@@ -277,9 +277,50 @@ internal class PhotoAnalysisStore(private val context:Context,private val db:Cal
         require(sent.key==expected.key && sent.epoch==expected.epoch && sent.expectedRevision==expected.expectedRevision &&
             sent.path==expected.path && sent.body().contentEquals(expected.body()))
     }
-    suspend fun prepareConfirmationReceipt(id:String,bytes:ByteArray,sent:PhotoHttpRequest.Confirm):PreparedPhotoConfirmationReceipt {
+    suspend fun prepareConfirmationReceipt(id:String,bytes:ByteArray,sent:PhotoHttpRequest.Confirm):PreparedPhotoConfirmationReceipt=withContext(Dispatchers.IO) {
         val (source,snapshot)=cancellationSource(id);confirmationRequestMatches(source,snapshot,sent)
-        return PreparedPhotoConfirmationReceipt(source,snapshot.withConfirmationReceipt(bytes),lease)
+        val accepted=snapshot.withConfirmationReceipt(bytes)
+        val receipt=StrictJson.read(checkNotNull(accepted.confirmation!!.receiptJson).toByteArray(Charsets.UTF_8))
+        check(receipt.getJSONArray("drafts").length()==0) // current editor explicitly chooses no product drafts
+        val mealValue=receipt.getJSONObject("meal");val schema=CanonicalMealRows.schema(context)
+        val wire=pl.roseru.kalorie.core.sync.MealWire.read(StrictJson.canonical(mealValue.getJSONObject("payload")),schema)
+        val mealId=mealValue.getString("meal_id");val operationId=UUID.randomUUID().toString();val createdAt=Instant.now().toString()
+        val wireContext=CanonicalMealRows.context(source.accountId,source.accountGeneration,source.syncEpoch,source.contextRevision)
+        val meal=CanonicalMealRows.meal(mealId,source.ownerScope,wire,wireContext)
+        val items=CanonicalMealRows.items(mealId,wire)
+        val operation=pl.roseru.kalorie.core.sync.MealWire.operation(operationId,mealId,source.syncEpoch,null,wire.canonical,schema)
+        val outbox=OutboxEntity(operationId,source.ownerScope,"meal",mealId,"upsert",null,wire.canonical,createdAt,
+            wireFormat="sync-v1",wireJson=operation,wireContext=wireContext)
+        val record=PhotoMaterialization(source.ownerScope,accepted.receipt.analysisId,mealId,source.operationId,
+            source.sourcePhotoId,checkNotNull(accepted.confirmation.key),StrictJson.canonical(receipt),accepted.serialized,
+            StrictJson.canonical(receipt.getJSONObject("provenance")),wireContext,operationId,createdAt)
+        PreparedPhotoConfirmationReceipt(source,accepted,lease,PreparedPhotoMealMaterialization(meal,items,outbox,record))
+    }
+    /** DB-only transaction: ledger, exact diary, canonical outbox and queue release are inseparable.
+     * Replaying the same receipt never restores a later edited/deleted diary or allocates another operation.
+     */
+    suspend fun materializeConfirmationPrepared(prepared:PreparedPhotoConfirmationReceipt):PhotoMaterialization=db.withTransaction {
+        check(prepared.lease==lease)
+        val binding=account();sameContext(prepared.source,binding)
+        val plan=prepared.plan;val record=plan.record
+        check(record.ownerScope==lease.storageScope && plan.meal.ownerScope==lease.storageScope && plan.outbox.ownerScope==lease.storageScope)
+        check(record.analysisId==prepared.snapshot.receipt.analysisId && record.sourceOperationId==prepared.source.operationId &&
+            record.receiptJson==prepared.snapshot.confirmation?.receiptJson && record.snapshotJson==prepared.snapshot.serialized &&
+            record.mealId==plan.meal.id && plan.outbox.entityId==plan.meal.id && record.firstOutboxId==plan.outbox.operationId)
+        check(plan.items.all {it.mealId==plan.meal.id})
+        val existing=db.materializationDao().get(lease.storageScope,record.analysisId)
+        if(existing!=null) {
+            check(existing.receiptJson==record.receiptJson && existing.confirmationKey==record.confirmationKey &&
+                existing.sourceOperationId==record.sourceOperationId && existing.mealId==record.mealId && existing.wireContext==record.wireContext)
+            return@withTransaction existing
+        }
+        val row=checked(prepared.source.operationId);check(row==prepared.source && row.attempted && row.blockedCode==null)
+        db.dao().insertMeal(plan.meal)
+        plan.items.forEach {db.dao().insertItem(it)}
+        db.dao().enqueue(plan.outbox)
+        db.materializationDao().insert(record)
+        check(dao.dropCancelled(lease.storageScope,row.operationId)==1)
+        record
     }
     suspend fun prepareConfirmationRejection(id:String,code:String,sent:PhotoHttpRequest.Confirm):PreparedPhotoConfirmation {
         val (source,snapshot)=cancellationSource(id);confirmationRequestMatches(source,snapshot,sent)
@@ -346,6 +387,12 @@ internal class PreparedPhotoConfirmation internal constructor(internal val sourc
 }
 /** Validated bytes only; not committed until canonical Meal/outbox/provenance can be atomic. */
 internal class PreparedPhotoConfirmationReceipt internal constructor(internal val source:PhotoAnalysisRequestEntity,
-    internal val snapshot:PhotoAnalysisSnapshot,internal val lease:OwnerLease) {
+    internal val snapshot:PhotoAnalysisSnapshot,internal val lease:OwnerLease,internal val plan:PreparedPhotoMealMaterialization) {
     override fun toString()="PreparedPhotoConfirmationReceipt(redacted)"
+}
+
+internal class PreparedPhotoMealMaterialization internal constructor(internal val meal:MealEntity,items:List<MealItemEntity>,
+    internal val outbox:OutboxEntity,internal val record:PhotoMaterialization) {
+    internal val items:List<MealItemEntity> = java.util.Collections.unmodifiableList(ArrayList(items))
+    override fun toString()="PreparedPhotoMealMaterialization(redacted)"
 }

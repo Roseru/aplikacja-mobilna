@@ -136,7 +136,7 @@ class RationStorageTest {
             old.execSQL("INSERT INTO outbox VALUES ('old-operation', 'guest', 'meal', 'old-meal', 'create', NULL, '{}', '2026-10-01T10:00:00Z', 'pending')")
             old.version = 1
         }
-        val db = Room.databaseBuilder(context, CalorieDatabase::class.java, name).addMigrations(MIGRATION_1_2, MIGRATION_2_3, MIGRATION_3_4, MIGRATION_4_5, MIGRATION_5_6, MIGRATION_6_7, MIGRATION_7_8, pl.roseru.kalorie.photo.MIGRATION_8_9, pl.roseru.kalorie.photo.MIGRATION_9_10).addCallback(DATABASE_GUARDS).build()
+        val db = Room.databaseBuilder(context, CalorieDatabase::class.java, name).addMigrations(MIGRATION_1_2, MIGRATION_2_3, MIGRATION_3_4, MIGRATION_4_5, MIGRATION_5_6, MIGRATION_6_7, MIGRATION_7_8, pl.roseru.kalorie.photo.MIGRATION_8_9, pl.roseru.kalorie.photo.MIGRATION_9_10, pl.roseru.kalorie.data.MIGRATION_10_11).addCallback(DATABASE_GUARDS).build()
         try {
             val repo = DiaryRepository(db, context)
             repo.initialize()

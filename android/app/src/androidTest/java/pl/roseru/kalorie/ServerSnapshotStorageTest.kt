@@ -200,9 +200,9 @@ class ServerSnapshotStorageTest {
             }
             expected = originalTables(fixture); assertEquals(18, expected.size)
         } finally { fixture.close() }
-        val migrated = Room.databaseBuilder(context, CalorieDatabase::class.java, name).addMigrations(MIGRATION_6_7, MIGRATION_7_8, pl.roseru.kalorie.photo.MIGRATION_8_9, pl.roseru.kalorie.photo.MIGRATION_9_10).addCallback(DATABASE_GUARDS).build()
+        val migrated = Room.databaseBuilder(context, CalorieDatabase::class.java, name).addMigrations(MIGRATION_6_7, MIGRATION_7_8, pl.roseru.kalorie.photo.MIGRATION_8_9, pl.roseru.kalorie.photo.MIGRATION_9_10, pl.roseru.kalorie.data.MIGRATION_10_11).addCallback(DATABASE_GUARDS).build()
         try {
-            assertEquals(expected, originalTables(migrated)); assertEquals(10, migrated.openHelper.readableDatabase.version)
+            assertEquals(expected, originalTables(migrated)); assertEquals(11, migrated.openHelper.readableDatabase.version)
             assertTrue(migrated.snapshotDao().runs("guest").isEmpty())
             assertFalse(migrated.openHelper.readableDatabase.query("PRAGMA foreign_key_check").use { it.moveToFirst() })
         } finally { migrated.close(); context.deleteDatabase(name) }
@@ -243,7 +243,9 @@ class ServerSnapshotStorageTest {
         val entities = schema.getJSONArray("entities")
         return (0 until entities.length()).associate { i ->
             val table = entities.getJSONObject(i).getString("tableName")
-            table to db.openHelper.readableDatabase.query("SELECT * FROM `$table` ORDER BY rowid").use { cursor -> buildList {
+            val fields=entities.getJSONObject(i).getJSONArray("fields")
+            val columns=(0 until fields.length()).joinToString(","){"`"+fields.getJSONObject(it).getString("columnName")+"`"}
+            table to db.openHelper.readableDatabase.query("SELECT $columns FROM `$table` ORDER BY rowid").use { cursor -> buildList {
                 while (cursor.moveToNext()) add((0 until cursor.columnCount).map { if (cursor.isNull(it)) null else cursor.getString(it) })
             } }
         }

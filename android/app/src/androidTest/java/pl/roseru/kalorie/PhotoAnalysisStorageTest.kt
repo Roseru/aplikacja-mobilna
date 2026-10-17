@@ -149,13 +149,17 @@ class PhotoAnalysisStorageTest {
             assertEquals(accepted,store.pending());assertTrue(file.exists())
         } finally {db.close();scope?.let(::clean)}
     }
-    @Test fun migrationNineToTenPreservesAllTwentyThreeTablesPhotoDiaryAndForeignKeys()=runBlocking<Unit> {
-        val schema=JSONObject(InstrumentationRegistry.getInstrumentation().context.assets.open("pl.roseru.kalorie.data.CalorieDatabase/9.json").bufferedReader().use {it.readText()}).getJSONObject("database")
+    @Test fun migrationNineToElevenPreservesEveryOldColumnPhotoDiaryAndForeignKeys()=runBlocking<Unit> {migrationOldSchema(9)}
+    @Test fun migrationTenToElevenPreservesPendingDecisionAndAllTwentyFourTables()=runBlocking<Unit> {migrationOldSchema(10)}
+    private suspend fun migrationOldSchema(from:Int) {
+        val schema=JSONObject(InstrumentationRegistry.getInstrumentation().context.assets.open("pl.roseru.kalorie.data.CalorieDatabase/$from.json").bufferedReader().use {it.readText()}).getJSONObject("database")
         val entities=schema.getJSONArray("entities")
         fun snapshot(db:SupportSQLiteDatabase)=buildMap<String,List<List<String?>>>{
             for(index in 0 until entities.length()) {
                 val table=entities.getJSONObject(index).getString("tableName")
-                put(table,db.query("SELECT * FROM \"$table\" ORDER BY rowid").use {cursor->buildList {
+                val fields=entities.getJSONObject(index).getJSONArray("fields")
+                val columns=(0 until fields.length()).joinToString(","){"`"+fields.getJSONObject(it).getString("columnName")+"`"}
+                put(table,db.query("SELECT $columns FROM \"$table\" ORDER BY rowid").use {cursor->buildList {
                     while(cursor.moveToNext()) add((0 until cursor.columnCount).map {if(cursor.isNull(it))null else cursor.getString(it)})
                 }})
             }
@@ -167,7 +171,11 @@ class PhotoAnalysisStorageTest {
             val repository=DiaryRepository(source,context,lease);repository.initialize()
             repository.add(source.dao().products(lease.storageScope).first().first().id,120.0,MealType.LUNCH,LocalDate.now())
             repository.addWeight(80.0,LocalDate.now());val storedPhoto=photo(source,lease)
-            val before=snapshot(source.openHelper.readableDatabase);assertEquals(23,before.size)
+            if(from==10) {
+                val (store,row)=cancellationQueue(source,lease);confirmationDraft(store,row.operationId)
+                store.acceptConfirmationPrepared(store.prepareConfirmation(row.operationId,UUID.randomUUID().toString(),2,1))
+            }
+            val before=snapshot(source.openHelper.readableDatabase);assertEquals(if(from==9)23 else 24,before.size)
             SQLiteDatabase.openOrCreateDatabase(context.getDatabasePath(name),null).use {old->
                 old.execSQL("PRAGMA foreign_keys=OFF")
                 for(index in 0 until entities.length()) {
@@ -182,12 +190,14 @@ class PhotoAnalysisStorageTest {
                     }
                 }
                 old.execSQL("CREATE TABLE room_master_table (id INTEGER PRIMARY KEY,identity_hash TEXT)")
-                old.execSQL("INSERT INTO room_master_table VALUES (42,?)",arrayOf(schema.getString("identityHash")));old.version=9
+                old.execSQL("INSERT INTO room_master_table VALUES (42,?)",arrayOf(schema.getString("identityHash")));old.version=from
             }
-            val migrated=Room.databaseBuilder(context,CalorieDatabase::class.java,name).addMigrations(MIGRATION_9_10).addCallback(DATABASE_GUARDS).build()
+            val migrated=Room.databaseBuilder(context,CalorieDatabase::class.java,name).addMigrations(MIGRATION_9_10, pl.roseru.kalorie.data.MIGRATION_10_11).addCallback(DATABASE_GUARDS).build()
             try {
-                assertEquals(10,migrated.openHelper.readableDatabase.version)
-                assertEquals(before,snapshot(migrated.openHelper.readableDatabase));assertNull(migrated.photoAnalysisDao().get(lease.storageScope))
+                assertEquals(11,migrated.openHelper.readableDatabase.version)
+                assertEquals(before,snapshot(migrated.openHelper.readableDatabase))
+                if(from==9)assertNull(migrated.photoAnalysisDao().get(lease.storageScope)) else
+                    assertNotNull(PhotoAnalysisStore(context,migrated,LocalOwnerStore(migrated).currentLease()).stored(migrated.photoAnalysisDao().get(lease.storageScope)!!.operationId).confirmation)
                 assertFalse(migrated.openHelper.readableDatabase.query("PRAGMA foreign_key_check").use {it.moveToFirst()})
                 MealPhotoStore(context,migrated,LocalOwnerStore(migrated).currentLease()).preview(storedPhoto.id).let {assertEquals(48,it.width);it.recycle()}
             } finally {migrated.close()}
@@ -510,6 +520,131 @@ class PhotoAnalysisStorageTest {
             store.acceptReadPrepared(store.prepareRead(row.operationId,cancelled.toString().toByteArray()))
             val saved=store.stored(row.operationId);assertTrue(saved.cancelled);assertNotNull(saved.confirmation);assertFalse(saved.canEditProposal)
             rejected{store.prepareConfirmationAttempted(row.operationId,0)};assertEquals(0,db.dao().operationCount(lease.storageScope))
+        } finally {db.close();scope?.let(::clean)}
+    }
+
+    private suspend fun materializationReceipt(db:CalorieDatabase,lease:OwnerLease,unknownMl:Boolean=false):Pair<PhotoAnalysisStore,PreparedPhotoConfirmationReceipt> {
+        val (store,row)=cancellationQueue(db,lease);confirmationDraft(store,row.operationId)
+        if(unknownMl) {
+            val item=store.stored(row.operationId).mealDraft!!.items.single().id
+            store.acceptMealDraftPrepared(store.prepareMealDraftEdit(row.operationId,1){it.replace(item,PhotoDraftInput("Napój","150.5","ml","","0","","22.8"))})
+        }
+        val draft=store.stored(row.operationId).mealDraft!!
+        store.acceptConfirmationPrepared(store.prepareConfirmation(row.operationId,UUID.randomUUID().toString(),2,draft.editRevision))
+        store.acceptConfirmationPrepared(store.prepareConfirmationAttempted(row.operationId,0))
+        val snapshot=store.stored(row.operationId);val sent=snapshot.confirmation!!.request(row.syncEpoch)
+        val value=JSONObject(sent.body().toString(Charsets.UTF_8));val source=readResult()
+        val provenance=source.getJSONObject("profile").put("analysis_id",source.getString("analysis_id"))
+            .put("model_version",source.getJSONObject("proposal").get("model_version"))
+            .put("uncertainty",org.json.JSONArray().put(JSONObject().put("component_id","d7777777-7777-4777-8777-777777777777").put("uncertainty","medium")))
+        val ack=JSONObject().put("analysis_id",source.getString("analysis_id")).put("meal",value.getJSONObject("meal"))
+            .put("drafts",value.getJSONArray("drafts")).put("provenance",provenance).toString().toByteArray()
+        return store to store.prepareConfirmationReceipt(row.operationId,ack,sent)
+    }
+    @Test fun confirmedMealProvenanceAndCanonicalOutboxCommitTogetherWithHonestMissingValues()=runBlocking<Unit> {
+        val db=Room.inMemoryDatabaseBuilder(context,CalorieDatabase::class.java).build();var scope:String?=null
+        try {
+            val lease=account(db,"materialize-values");scope=lease.storageScope;val(store,prepared)=materializationReceipt(db,lease,true)
+            val record=store.materializeConfirmationPrepared(prepared);val saved=db.dao().meal(record.mealId,lease.storageScope)!!
+            assertNull(store.pending());assertNotNull(db.photoDao().get(lease.storageScope,record.sourcePhotoId))
+            val item=saved.items.single();assertNull(item.productId);assertNull(item.kcalPer100);assertEquals("ml",item.unit);assertEquals("150.5",item.amountText)
+            assertFalse(item.consumed().asExact().energy.complete);assertEquals(0,item.consumed().asExact().protein.knownSum.signum())
+            assertEquals("UNSPECIFIED",saved.meal.mealType);assertTrue(db.dao().recent(lease.storageScope).first().isEmpty())
+            val outbox=db.dao().operation(record.firstOutboxId)!!;assertEquals("sync-v1",outbox.wireFormat);assertNull(outbox.baseRevision)
+            val wire=JSONObject(outbox.wireJson!!);assertEquals("upsert",wire.getString("action"));assertTrue(wire.isNull("base_revision"))
+            assertFalse(wire.getJSONObject("payload").has("provenance"));assertEquals(record.mealId,wire.getString("entity_id"))
+            assertEquals(record,db.materializationDao().get(lease.storageScope,record.analysisId));assertEquals(1,db.dao().operationCount(lease.storageScope))
+            assertFalse(db.openHelper.readableDatabase.query("PRAGMA foreign_key_check").use {it.moveToFirst()})
+        } finally {db.close();scope?.let(::clean)}
+    }
+    @Test fun materializationFailureRollsBackMealItemsOutboxLedgerAndQueueRelease()=runBlocking<Unit> {
+        val db=Room.inMemoryDatabaseBuilder(context,CalorieDatabase::class.java).build();var scope:String?=null
+        try {
+            val lease=account(db,"materialize-failure");scope=lease.storageScope;val(store,prepared)=materializationReceipt(db,lease)
+            val before=store.pending();db.openHelper.writableDatabase.execSQL("CREATE TRIGGER fail_materialization BEFORE INSERT ON photo_materializations BEGIN SELECT RAISE(ABORT,'Synthetic commit failure'); END")
+            rejected{store.materializeConfirmationPrepared(prepared)}
+            assertEquals(before,store.pending());assertTrue(db.dao().achievementMeals(lease.storageScope).isEmpty());assertEquals(0,db.dao().operationCount(lease.storageScope))
+            assertNull(db.materializationDao().get(lease.storageScope,prepared.snapshot.receipt.analysisId))
+            db.openHelper.writableDatabase.execSQL("DROP TRIGGER fail_materialization")
+            assertNotNull(store.materializeConfirmationPrepared(prepared));assertEquals(1,db.dao().operationCount(lease.storageScope))
+        } finally {db.close();scope?.let(::clean)}
+    }
+    @Test fun replayAfterRestartAndLocalEditOrDeleteNeverResurrectsOriginalMealOrAddsAnOperation()=runBlocking<Unit> {
+        val name="materialize-replay-${UUID.randomUUID()}";var db=Room.databaseBuilder(context,CalorieDatabase::class.java,name).build();var scope:String?=null
+        try {
+            val lease=account(db,"materialize-replay");scope=lease.storageScope;var(store,prepared)=materializationReceipt(db,lease)
+            val record=store.materializeConfirmationPrepared(prepared);val repository=DiaryRepository(db,context,lease)
+            val item=db.dao().meal(record.mealId,lease.storageScope)!!.items.single().id
+            repository.editItem(record.mealId,item,175.5,"175.5");val operations=db.dao().operationCount(lease.storageScope)
+            assertEquals(record,store.materializeConfirmationPrepared(prepared));assertEquals("175.5",db.dao().meal(record.mealId,lease.storageScope)!!.items.single().amountText)
+            assertEquals(operations,db.dao().operationCount(lease.storageScope))
+            repository.delete(record.mealId);val afterDelete=db.dao().operationCount(lease.storageScope)
+            db.close();db=Room.databaseBuilder(context,CalorieDatabase::class.java,name).build();store=PhotoAnalysisStore(context,db,LocalOwnerStore(db).currentLease())
+            assertEquals(record,store.materializeConfirmationPrepared(prepared));assertTrue(db.dao().meal(record.mealId,lease.storageScope)!!.meal.deleted)
+            assertEquals(afterDelete,db.dao().operationCount(lease.storageScope));assertTrue(db.dao().canonicalMealOperations(lease.storageScope,record.mealId).isEmpty())
+        } finally {db.close();context.deleteDatabase(name);scope?.let(::clean)}
+    }
+    @Test fun oldReceiptReplayCannotReleaseTheNextPhotoQueue()=runBlocking<Unit> {
+        val db=Room.inMemoryDatabaseBuilder(context,CalorieDatabase::class.java).build();var scope:String?=null
+        try {
+            val lease=account(db,"materialize-next");scope=lease.storageScope;val(store,prepared)=materializationReceipt(db,lease)
+            val record=store.materializeConfirmationPrepared(prepared);val next=store.prepare(photo(db,lease).id,caps,true)
+            assertEquals(record,store.materializeConfirmationPrepared(prepared));assertEquals(next,store.pending());assertEquals(1,db.dao().operationCount(lease.storageScope))
+        } finally {db.close();scope?.let(::clean)}
+    }
+    @Test fun materializationContextRecoveryAndAbaFencesPreserveAllPendingState()=runBlocking<Unit> {
+        val db=Room.inMemoryDatabaseBuilder(context,CalorieDatabase::class.java).build();val scopes=mutableListOf<String>()
+        try {
+            val lease=account(db,"materialize-A");scopes+=lease.storageScope;val(store,prepared)=materializationReceipt(db,lease);val before=store.pending()
+            val binding=db.bootstrapDao().binding(lease.storageScope)!!;db.bootstrapDao().update(binding.copy(requiresRecovery=true))
+            rejected{store.materializeConfirmationPrepared(prepared)};db.bootstrapDao().update(binding.copy(contextRevision=2))
+            rejected{store.materializeConfirmationPrepared(prepared)};db.bootstrapDao().update(binding)
+            scopes+=account(db,"materialize-B").storageScope;rejected{store.materializeConfirmationPrepared(prepared)}
+            val resumed=LocalOwnerStore(db).select(lease.storageScope);rejected{PhotoAnalysisStore(context,db,resumed).materializeConfirmationPrepared(prepared)}
+            assertEquals(before,db.photoAnalysisDao().get(lease.storageScope));assertEquals(0,db.dao().operationCount(lease.storageScope))
+        } finally {db.close();scopes.forEach(::clean)}
+    }
+    @Test fun foreignMealOrItemCollisionCannotOverwriteHistoryOrPartiallyCommit()=runBlocking<Unit> {
+        for(itemCollision in listOf(false,true)) {
+            val db=Room.inMemoryDatabaseBuilder(context,CalorieDatabase::class.java).build();var scope:String?=null
+            try {
+                val lease=account(db,"materialize-collision");scope=lease.storageScope;val(store,prepared)=materializationReceipt(db,lease)
+                val target=prepared.plan.meal.id;val other=if(itemCollision)UUID.randomUUID().toString() else target
+                db.dao().insertMeal(MealEntity(other,"guest","2026-10-17","2026-10-17T12:00:00Z","Europe/Warsaw","LUNCH"))
+                if(itemCollision)db.dao().insertItem(MealItemEntity(prepared.plan.items.single().id,other,"legacy-product","Zachowany",100.0,80.0,null,null,null))
+                val before=db.dao().meal(other,"guest");rejected{store.materializeConfirmationPrepared(prepared)}
+                assertEquals(before,db.dao().meal(other,"guest"));assertNull(db.dao().meal(target,lease.storageScope))
+                assertNotNull(store.pending());assertEquals(0,db.dao().operationCount(lease.storageScope))
+            } finally {db.close();scope?.let(::clean)}
+        }
+    }
+    @Test fun unattemptedEditsCoalesceButInFlightPayloadRemainsImmutableAndNewEditsWaitForRevision()=runBlocking<Unit> {
+        val db=Room.inMemoryDatabaseBuilder(context,CalorieDatabase::class.java).build();var scope:String?=null
+        try {
+            val lease=account(db,"materialize-chain");scope=lease.storageScope;val(store,prepared)=materializationReceipt(db,lease)
+            val record=store.materializeConfirmationPrepared(prepared);val repository=DiaryRepository(db,context,lease);val item=db.dao().meal(record.mealId,lease.storageScope)!!.items.single().id
+            repository.editItem(record.mealId,item,150.5,"150.5");assertEquals("superseded",db.dao().operation(record.firstOutboxId)!!.status)
+            val first=db.dao().canonicalMealOperations(lease.storageScope,record.mealId).single();assertNotNull(first.wireJson)
+            db.dao().updateOperation(first.copy(attempted=true));repository.editItem(record.mealId,item,160.5,"160.5")
+            val active=db.dao().canonicalMealOperations(lease.storageScope,record.mealId)
+            assertEquals(first.wireJson,db.dao().operation(first.operationId)!!.wireJson)
+            assertEquals("waiting_revision",active.last().status);assertNull(active.last().wireJson)
+            assertEquals("160.5",db.dao().meal(record.mealId,lease.storageScope)!!.items.single().amountText)
+        } finally {db.close();scope?.let(::clean)}
+    }
+    @Test fun recoveryKeepsLocalEditsWithoutExportingOldContextAndKnownServerRevisionPermitsDelete()=runBlocking<Unit> {
+        val db=Room.inMemoryDatabaseBuilder(context,CalorieDatabase::class.java).build();var scope:String?=null
+        try {
+            val lease=account(db,"materialize-recovery");scope=lease.storageScope;val(store,prepared)=materializationReceipt(db,lease)
+            val record=store.materializeConfirmationPrepared(prepared);val repository=DiaryRepository(db,context,lease)
+            val binding=db.bootstrapDao().binding(lease.storageScope)!!;db.bootstrapDao().update(binding.copy(requiresRecovery=true))
+            val saved=db.dao().meal(record.mealId,lease.storageScope)!!;repository.editItem(record.mealId,saved.items.single().id,100.5,"100.5")
+            val queued=db.dao().canonicalMealOperations(lease.storageScope,record.mealId).single()
+            assertEquals("waiting_recovery",queued.status);assertNull(queued.wireJson);assertEquals("100.5",db.dao().meal(record.mealId,lease.storageScope)!!.items.single().amountText)
+            db.bootstrapDao().update(binding);db.dao().updateMeal(db.dao().meal(record.mealId,lease.storageScope)!!.meal.copy(serverRevision=3))
+            db.dao().updateOperation(queued.copy(status="acked",attempted=true));repository.delete(record.mealId)
+            val deletion=db.dao().canonicalMealOperations(lease.storageScope,record.mealId).single();val wire=JSONObject(deletion.wireJson!!)
+            assertEquals("delete",wire.getString("action"));assertEquals(3,wire.getInt("base_revision"));assertTrue(wire.isNull("payload"))
         } finally {db.close();scope?.let(::clean)}
     }
 }

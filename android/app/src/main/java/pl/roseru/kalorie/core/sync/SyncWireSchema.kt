@@ -24,6 +24,11 @@ class SyncWireSchema(documents: Map<String, ByteArray>) {
         val value = try { StrictJson.read(bytes) } catch (_: Exception) { fail() }
         check(value, documents.getValue("sync.schema.json").getJSONObject("\$defs").getJSONObject(definition), "sync.schema.json", 0)
     }
+    fun validateMeal(bytes:ByteArray) {
+        if(bytes.size !in 1..1_048_576)fail()
+        val value=try{StrictJson.read(bytes)}catch(_:Exception){fail()}
+        check(value,documents.getValue("domain.schema.json").getJSONObject("\$defs").getJSONObject("Meal"),"domain.schema.json",0)
+    }
     private fun check(value: Any?, schema: JSONObject, file: String, depth: Int) {
         if (depth > 128 || schema.keys().asSequence().any { it !in KEYWORDS }) fail()
         fun branch(part: JSONObject) = check(value, part, file, depth + 1)
@@ -109,7 +114,7 @@ class SyncWireSchema(documents: Map<String, ByteArray>) {
     private fun fail(): Nothing = throw SyncWireException()
     companion object {
         val FILES = listOf("common.schema.json", "domain.schema.json", "sync.schema.json")
-        private val DEFINITIONS = setOf("PullRequest", "PullResponse", "PushRequest", "PushResponse", "SyncError")
+        private val DEFINITIONS = setOf("PullRequest", "PullResponse", "PushRequest", "PushResponse", "SyncError", "Operation")
         private val KEYWORDS = setOf("\$ref", "\$schema", "\$defs", "description", "title", "default", "type", "properties",
             "required", "additionalProperties", "allOf", "anyOf", "oneOf", "not", "if", "then", "else", "const", "enum",
             "minimum", "maximum", "minLength", "maxLength", "pattern", "format", "items", "minItems", "maxItems", "uniqueItems")
