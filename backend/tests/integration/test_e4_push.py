@@ -408,3 +408,156 @@ def test_missing_exact_product_dependency_has_durable_receipt_and_no_automatic_d
             )
             == 0
         )
+
+
+def test_o2_return_after_61_days_reconciles_without_duplicate_create_or_resurrection(synced):
+    """Old operations keep their IDs/body/hash across a new full snapshot."""
+    from copy import deepcopy
+
+    from calorie_app.modules.sync.retention import prune
+
+    engine, factory, who, owner, boot, _, _ = synced
+    created = operation(boot, "meal")
+    removed = operation(boot)
+    assert send(synced, [created, removed])[0]["status"] == "accepted"
+    delete = operation(boot, entity_id=removed["entity_id"], action="delete", base=1)
+    assert send(synced, [delete])[0]["status"] == "accepted"
+    old_operations = deepcopy([created, removed, delete])
+    with Session(engine) as s:
+        now = database_now(s)
+    old = sign_checkpoint(
+        SECRET,
+        owner_id=owner,
+        generation=1,
+        epoch=boot["sync_epoch"],
+        position=0,
+        now=now - timedelta(days=61),
+    )
+    with engine.begin() as c:
+        c.execute(
+            text(
+                "UPDATE app.sync_receipts SET created_at=clock_timestamp()-interval '61 days' "
+                "WHERE owner_id=:o"
+            ),
+            {"o": owner},
+        )
+        c.execute(
+            text(
+                "UPDATE app.sync_changes SET created_at=clock_timestamp()-interval '61 days' "
+                "WHERE owner_id=:o"
+            ),
+            {"o": owner},
+        )
+    import hashlib
+
+    def durable_receipts(connection):
+        return list(
+            connection.execute(
+                text(
+                    "SELECT operation_id,request_hash,status,revision,entity_id,"
+                    "source_epoch,action "
+                    "FROM app.sync_receipts WHERE owner_id=:o ORDER BY operation_id"
+                ),
+                {"o": owner},
+            )
+        )
+
+    with engine.connect() as c:
+        before = durable_receipts(c)
+        expected_hashes = {
+            UUID(op["operation_id"]): hashlib.sha256(
+                (
+                    json.dumps(
+                        op,
+                        ensure_ascii=False,
+                        sort_keys=True,
+                        separators=(",", ":"),
+                        allow_nan=False,
+                    )
+                    + "\n"
+                ).encode()
+            ).hexdigest()
+            for op in old_operations
+        }
+        assert {row.operation_id: row.request_hash for row in before} == expected_hashes
+        assert {row.status for row in before} == {"accepted"}
+        assert {row.operation_id: row.revision for row in before} == {
+            UUID(created["operation_id"]): 1,
+            UUID(removed["operation_id"]): 1,
+            UUID(delete["operation_id"]): 2,
+        }
+        changes_before = list(
+            c.execute(
+                text(
+                    "SELECT position,entity FROM app.sync_changes "
+                    "WHERE owner_id=:o ORDER BY position"
+                ),
+                {"o": owner},
+            )
+        )
+        assert len(changes_before) == 4  # automatic diary day, meal, weight, tombstone
+        assert changes_before[-1].entity["deleted"] is True
+        assert (
+            c.scalar(
+                text(
+                    "SELECT count(*) FROM app.sync_receipts "
+                    "WHERE owner_id=:o AND response IS NOT NULL"
+                ),
+                {"o": owner},
+            )
+            == 3
+        )
+        tombstone = c.execute(
+            text("SELECT id,owner_id,revision,deleted_at FROM app.weights WHERE id=:id"),
+            {"id": removed["entity_id"]},
+        ).one()
+        assert tombstone.revision == 2 and tombstone.deleted_at is not None
+    with Session(engine) as s, s.begin():
+        s.execute(text("SET LOCAL ROLE calorie_app_worker"))
+        result = prune(s, owner, 1000)
+        assert result["changes"] == 4 and result["receipts"] == 3
+    # These independent DB oracles precede snapshot/replay; a no-op prune must fail.
+    with engine.connect() as c:
+        assert (
+            c.scalar(text("SELECT count(*) FROM app.sync_changes WHERE owner_id=:o"), {"o": owner})
+            == 0
+        )
+        assert (
+            c.scalar(
+                text(
+                    "SELECT count(*) FROM app.sync_receipts WHERE owner_id=:o AND response IS NULL"
+                ),
+                {"o": owner},
+            )
+            == 3
+        )
+        assert durable_receipts(c) == before
+        assert (
+            c.execute(
+                text("SELECT id,owner_id,revision,deleted_at FROM app.weights WHERE id=:id"),
+                {"id": removed["entity_id"]},
+            ).one()
+            == tombstone
+        )
+    with pytest.raises(SyncFailure, match="sync_reconciliation_required"):
+        preflight(factory, who, request(boot, old, old_operations), SECRET)
+    page = pull(factory, owner, {}, SECRET)
+    assert page["mode"] == "snapshot" and page["checkpoint"]
+    assert [
+        send(synced, [op], checkpoint=page["checkpoint"])[0]["status"] for op in old_operations
+    ] == ["already_applied"] * 3
+    assert old_operations == [created, removed, delete]
+    with engine.connect() as c:
+        assert (
+            c.scalar(
+                text("SELECT count(*) FROM app.meals WHERE id=:id"), {"id": created["entity_id"]}
+            )
+            == 1
+        )
+        assert (
+            c.scalar(
+                text("SELECT deleted_at IS NOT NULL FROM app.weights WHERE id=:id"),
+                {"id": removed["entity_id"]},
+            )
+            is True
+        )
