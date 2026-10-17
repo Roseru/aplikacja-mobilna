@@ -12,7 +12,7 @@ from test_real_pkce import auth, decoded, tokens
 from calorie_app.core.config import Settings
 from calorie_app.main import create_app
 from calorie_app.modules.identity.models import UserAccount
-from calorie_app.modules.identity.service import begin_deleting
+from tests.support.deletion_regression import begin_deleting
 
 api = api_fixture
 

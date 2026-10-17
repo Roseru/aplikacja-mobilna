@@ -16,7 +16,6 @@ from sqlalchemy.exc import DBAPIError
 from calorie_app.core.config import Settings
 from calorie_app.integrations.keycloak.admin import AdminFailure
 from calorie_app.modules.ai.service import create_analysis
-from calorie_app.modules.identity.deletion import begin, resume
 from tests.integration.test_e7_runtime import METADATA, image, private_root
 from tests.integration.test_e8_3_chain import (
     ROOT,
@@ -29,6 +28,7 @@ from tests.integration.test_e8_3_chain import (
     chain_database as chain_database,
 )
 from tests.integration.test_e8_3_database import accept, execute, invite
+from tests.support.deletion_regression import begin, resume
 from tests.support.e8_3_archive import archive_environment, pg_command
 
 pytestmark = pytest.mark.integration

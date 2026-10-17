@@ -17,7 +17,7 @@ from calorie_app.integrations.keycloak import AuthFailure, Principal
 from calorie_app.main import create_app
 from calorie_app.modules.catalog.pagination import database_now
 from calorie_app.modules.identity.models import UserAccount
-from calorie_app.modules.identity.service import begin_deleting, bootstrap
+from calorie_app.modules.identity.service import bootstrap
 from calorie_app.modules.sync.errors import SyncFailure
 from calorie_app.modules.sync.models import RecoveryMapping, SyncChange, SyncCounter, SyncReceipt
 from calorie_app.modules.sync.repository import entity
@@ -26,6 +26,7 @@ from calorie_app.modules.sync.schemas import preflight_structure, validate_wire
 from calorie_app.modules.sync.service import apply_operation
 from calorie_app.modules.sync.snapshots import pull
 from calorie_app.modules.sync.tokens import sign_checkpoint
+from tests.support.deletion_regression import begin_deleting
 
 ROOT = Path(__file__).resolve().parents[3]
 SECRET = SecretStr("e4" * 32)

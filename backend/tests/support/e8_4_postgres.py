@@ -240,7 +240,7 @@ def finalizer_login(private):
 
 @contextmanager
 def runtime(*, now=datetime(2026, 10, 12, 12, tzinfo=UTC), zone="UTC"):
-    with fresh_database("0024_e9_history_graph") as private:
+    with fresh_database("0025_deletion_ledger") as private:
         with _runtime(private, now=now, zone=zone) as rt:
             yield rt
 
@@ -255,6 +255,7 @@ def _runtime(private, *, now, zone):
             "0022_e9_energy",
             "0023_e9_qualification",
             "0024_e9_history_graph",
+            "0025_deletion_ledger",
         }
     for name in ("api", "migrator", "worker"):
         with engines[name].connect() as connection:
@@ -262,6 +263,14 @@ def _runtime(private, *, now, zone):
             assert not connection.scalar(
                 text("SELECT rolsuper FROM pg_roles WHERE rolname=current_user")
             )
+    with engines["admin"].connect() as connection:
+        ledger_present = connection.scalar(
+            text("SELECT to_regclass('app.deletion_ledger_source') IS NOT NULL")
+        )
+    if ledger_present:
+        from tests.support.deletion_regression import harness
+
+        harness(engines["admin"])
     signed = SignedTokens()
     app = create_app(
         Settings(

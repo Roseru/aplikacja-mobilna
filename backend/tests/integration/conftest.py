@@ -15,7 +15,7 @@ def cursor_secret(monkeypatch):
 
 
 @pytest.fixture(scope="session")
-def database():
+def database(tmp_path_factory):
     url = os.environ.get("TEST_DATABASE_URL")
     if not url:
         pytest.fail(
@@ -26,6 +26,12 @@ def database():
         pytest.fail("Refusing destructive tests outside a dedicated PostgreSQL *_test database")
     engine = create_engine(url, hide_parameters=True)
     with engine.begin() as connection:
+        connection.exec_driver_sql(
+            "DO $$ BEGIN IF NOT EXISTS(SELECT FROM pg_roles WHERE "
+            "rolname='calorie_app_deletion_exporter') THEN CREATE ROLE "
+            "calorie_app_deletion_exporter NOLOGIN NOSUPERUSER NOCREATEDB "
+            "NOCREATEROLE NOINHERIT; END IF; END $$"
+        )
         version = int(connection.scalar(text("SHOW server_version_num")))
         assert 170000 <= version < 180000, "Tests must run on PostgreSQL 17"
         connection.exec_driver_sql("DROP SCHEMA IF EXISTS app CASCADE")
@@ -51,6 +57,9 @@ def database():
                 config.attributes.pop("connection", None)
 
     migrate("upgrade", "head")
+    from tests.support.deletion_regression import harness
+
+    harness(engine)
     yield engine, migrate, url
     with engine.begin() as connection:
         connection.exec_driver_sql("DROP SCHEMA app CASCADE")
@@ -78,3 +87,11 @@ def nemesis_evidence_servers(tmp_path_factory, request):
         pytest.fail("Nemesis integration requires complete owned source/audit/deletion credentials")
     with configured_servers(tmp_path_factory.mktemp("nemesis-postgres")):
         yield
+
+
+@pytest.fixture
+def historical_database(database):
+    from tests.support.historical_database import historical_database_fixture
+
+    with historical_database_fixture(database) as private:
+        yield private

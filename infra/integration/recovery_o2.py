@@ -61,10 +61,19 @@ def verify_recovery_result(result, operation, target, status):
     }
     check(operation["entity_type"] == "meal", "Unexpected recovery entity type")
     check(result.get("status") == status, "Unexpected recovery status")
-    check(result.get("operation_id") == operation["operation_id"], "Recovery operation mismatch")
+    check(
+        result.get("operation_id") == operation["operation_id"],
+        "Recovery operation mismatch",
+    )
     # The response retains the requested ID; mapping carries the canonical target.
-    check(result.get("entity_id") == operation["entity_id"], "Requested recovery ID mismatch")
-    check(result.get("recovery_mapping") == expected, "Missing or incorrect recovery mapping")
+    check(
+        result.get("entity_id") == operation["entity_id"],
+        "Requested recovery ID mismatch",
+    )
+    check(
+        result.get("recovery_mapping") == expected,
+        "Missing or incorrect recovery mapping",
+    )
 
 
 def verify_recovered_state(recovery, second, baseline, owner, entities, stored):
@@ -78,7 +87,10 @@ def verify_recovered_state(recovery, second, baseline, owner, entities, stored):
         == sorted(expected_rows, key=lambda row: row["id"]),
         "Duplicate, missing or foreign recovered meal",
     )
-    check(second["entity_id"] not in {row["id"] for row in stored["meals"]}, "Second target exists")
+    check(
+        second["entity_id"] not in {row["id"] for row in stored["meals"]},
+        "Second target exists",
+    )
     check(
         stored["mappings"]
         == [
@@ -119,7 +131,11 @@ def admin(probe, method, path, *, expected=200):
         token = expect(
             client.post(
                 probe.stack.origin + "/realms/master/protocol/openid-connect/token",
-                data={"grant_type": "password", "client_id": "admin-cli", **credentials["admin"]},
+                data={
+                    "grant_type": "password",
+                    "client_id": "admin-cli",
+                    **credentials["admin"],
+                },
             ),
             200,
         ).json()["access_token"]
@@ -154,7 +170,7 @@ def sql_uuid(value):
     return str(UUID(str(value)))
 
 
-def deletion(stack, probe, target, operation):
+def deletion(stack, probe, target, operation, contract):
     account = sql_uuid(target["account_id"])
     operation = sql_uuid(operation)
     subject = sql_uuid(target["subject"])
@@ -172,7 +188,12 @@ def deletion(stack, probe, target, operation):
     )
     check(
         actual
-        == {"id": account, "issuer": probe.issuer, "subject": subject, "generation": generation},
+        == {
+            "id": account,
+            "issuer": probe.issuer,
+            "subject": subject,
+            "generation": generation,
+        },
         "Deletion identity/generation mismatch",
     )
     quiet_sql(
@@ -181,15 +202,74 @@ def deletion(stack, probe, target, operation):
         "SET ROLE calorie_app_deletion_operator; "
         f"SELECT app.begin_account_deletion('{account}','{operation}',{generation});",
     )
-    admin(probe, "DELETE", "/users/" + subject, expected=204)
-    admin(probe, "GET", "/users/" + subject, expected=404)
+    contract.deliver()
+    attempt = sql_uuid(
+        quiet_sql(
+            stack,
+            "calorie_app",
+            "SET ROLE calorie_app_deletion_operator; "
+            f"SELECT app.ledger_prepare_provider('{operation}');",
+        )
+    )
+    contract.deliver()
+    durable = json.loads(
+        quiet_sql(
+            stack,
+            "calorie_app",
+            "SET ROLE calorie_app_deletion_operator; "
+            f"SELECT app.ledger_provider_target('{operation}','{attempt}');",
+        )
+    )
+    check(
+        durable == {"issuer": probe.issuer, "subject": subject},
+        "Provider target mismatch",
+    )
+    try:
+        admin(probe, "DELETE", "/users/" + subject, expected=204)
+        admin(probe, "GET", "/users/" + subject, expected=404)
+    except Exception:
+        quiet_sql(
+            stack,
+            "calorie_app",
+            "SET ROLE calorie_app_deletion_operator; "
+            f"SELECT app.ledger_provider_result('{operation}','{attempt}','uncertain');",
+        )
+        contract.deliver()
+        raise
     quiet_sql(
         stack,
         "calorie_app",
         "SET ROLE calorie_app_deletion_operator; "
-        f"SELECT app.confirm_account_deletion('{operation}'); "
-        f"SELECT app.purge_deleted_account('{operation}');",
+        f"SELECT app.ledger_provider_result('{operation}','{attempt}','confirmed');",
     )
+    contract.deliver()
+    quiet_sql(
+        stack,
+        "calorie_app",
+        "SET ROLE calorie_app_deletion_operator; "
+        f"SELECT app.confirm_account_deletion('{operation}');",
+    )
+    contract.deliver()
+    quiet_sql(
+        stack,
+        "calorie_app",
+        f"SET ROLE calorie_app_deletion_operator; SELECT app.ledger_prepare_purge('{operation}');",
+    )
+    contract.deliver()
+    quiet_sql(
+        stack,
+        "calorie_app",
+        f"SET ROLE calorie_app_deletion_operator; SELECT app.purge_deleted_account('{operation}');",
+    )
+    contract.deliver()
+    completed = json.loads(
+        quiet_sql(
+            stack,
+            "calorie_app",
+            f"SET ROLE calorie_app_deletion_operator; SELECT app.ledger_status('{operation}');",
+        )
+    )
+    check(completed["ledger_complete"] is True, "External deletion completion ACK missing")
     check(
         quiet_sql(
             stack,
@@ -202,14 +282,18 @@ def deletion(stack, probe, target, operation):
     )
     check(
         quiet_sql(
-            stack, "calorie_app", f"SELECT count(*) FROM app.user_accounts WHERE id='{account}';"
+            stack,
+            "calorie_app",
+            f"SELECT count(*) FROM app.user_accounts WHERE id='{account}';",
         )
         == "0",
         "Deleted app account remains",
     )
     check(
         quiet_sql(
-            stack, "calorie_app", f"SELECT app.subject_blocked('{probe.issuer}','{subject}');"
+            stack,
+            "calorie_app",
+            f"SELECT app.subject_blocked('{probe.issuer}','{subject}');",
         )
         == "t",
         "Permanent subject fence missing",
@@ -225,7 +309,10 @@ def verify_fixture_ledger(path, pinned_hash, *, expected, cutoff):
     check(path.is_file() and not path.is_symlink(), "Missing independent ledger")
     check(digest(path) == pinned_hash, "Ledger integrity mismatch")
     entry = json.loads(path.read_text(encoding="utf-8"))
-    check(entry["source"] == "owned-live-deletion-observation-v1", "Ledger origin mismatch")
+    check(
+        entry["source"] == "owned-live-deletion-observation-v1",
+        "Ledger origin mismatch",
+    )
     check(entry["target"] == expected, "Ledger target mismatch")
     check(entry["complete_through"] >= cutoff, "Ledger stale coverage")
     check(entry["completed"] is True, "Ledger incomplete")
@@ -311,7 +398,15 @@ https://:8443 {
             }
         ),
     )
-    stack.compose("-f", str(override), "up", "--detach", "--no-deps", "--force-recreate", "gateway")
+    stack.compose(
+        "-f",
+        str(override),
+        "up",
+        "--detach",
+        "--no-deps",
+        "--force-recreate",
+        "gateway",
+    )
 
 
 def wait_maintenance(probe, timeout=30):
@@ -333,7 +428,9 @@ def run(state, port):
     commit = subprocess.check_output(["git", "rev-parse", "HEAD"], cwd=ROOT, text=True).strip()
     check(
         not subprocess.check_output(
-            ["git", "status", "--porcelain", "--untracked-files=all"], cwd=ROOT, text=True
+            ["git", "status", "--porcelain", "--untracked-files=all"],
+            cwd=ROOT,
+            text=True,
         ).strip(),
         "Committed source required",
     )
@@ -402,6 +499,10 @@ def run(state, port):
             200,
         ).json()
         check(accepted["results"][0]["status"] == "accepted", "Initial meal not accepted")
+        from ledger_contract_o2 import OwnedContractLedger
+
+        contract = OwnedContractLedger(stack, probe.issuer, quiet_sql)
+        ledger_backup_point = contract.checkpoint()
         capture(stack.state, state / "paired-backup")
         rehearsal = rehearse(state / "paired-backup")
         check(rehearsal["result"] == "PASS", "Existing paired rehearsal failed")
@@ -425,7 +526,10 @@ def run(state, port):
             ),
             200,
         ).json()
-        check(acknowledgement["results"][0]["status"] == "accepted", "Post-backup meal rejected")
+        check(
+            acknowledgement["results"][0]["status"] == "accepted",
+            "Post-backup meal rejected",
+        )
         after = expect(probe.api("GET", "/api/v1/sync/pull", token=token), 200).json()
         entity = next(e for e in after["entities"] if e["entity_id"] == lost["entity_id"])
         check(entity["payload"] == lost["payload"], "Post-backup meal read-back differs")
@@ -440,7 +544,8 @@ def run(state, port):
             )
         )
         deletion_id = str(uuid4())
-        deletion(stack, probe, target, deletion_id)
+        deletion(stack, probe, target, deletion_id, contract)
+        ledger_cutoff, ledger_fence_pin = contract.cutoff_checkpoint()
         cutoff = datetime.now(UTC).isoformat()
         ledger = state / "external-deletions.json"
         private_write(
@@ -516,13 +621,36 @@ def run(state, port):
         wait_maintenance(probe)
         receipt["stage"] = "reconcile_external_fixture"
         entry = verify_fixture_ledger(ledger, pinned, expected=target, cutoff=cutoff)
-        deletion(stack, probe, target, entry["operation_id"])
+        check(entry["operation_id"] == deletion_id, "Fixture operation mismatch")
+        contract.close()
+        contract = OwnedContractLedger(stack, probe.issuer, quiet_sql)
+        contract.reconcile(ledger_backup_point, ledger_cutoff, fence_pin=ledger_fence_pin)
+        check(
+            quiet_sql(stack, "calorie_app", "SELECT enabled FROM app.deletion_ledger_source;")
+            == "f",
+            "Restored source is not frozen",
+        )
+        check(
+            quiet_sql(
+                stack,
+                "calorie_app",
+                f"SELECT state FROM app.user_accounts WHERE id='{sql_uuid(target['account_id'])}';",
+            )
+            == "deleting",
+            "Restored target is not blocked",
+        )
+        checks.append(
+            "authenticated contract prefix reconciled; restored target "
+            "blocked and source frozen; no automatic provider/purge/reopen"
+        )
         logout = admin(probe, "POST", "/logout-all", expected=200).json()
         check(
             isinstance(logout, dict) and not logout.get("failedRequests"),
             "Provider logout-all partially failed",
         )
-        admin(probe, "GET", "/users/" + target["subject"], expected=404)
+        # The restored provider identity still needs its own authorized recovery
+        # protocol/cutover. A source freeze never authorizes an out-of-band DELETE.
+        admin(probe, "GET", "/users/" + target["subject"], expected=200)
         # Since restore, user issuance has been inaccessible. Observe the full conservative
         # unknown-token bound; no fake clocks, skew changes or shortened lifetime.
         receipt["stage"] = "real_issuance_wait"
@@ -552,11 +680,23 @@ def run(state, port):
                     ),
                     400,
                 )
-                check(refresh.json()["error"] == "invalid_grant", "Refresh unexpectedly valid")
+                check(
+                    refresh.json()["error"] == "invalid_grant",
+                    "Refresh unexpectedly valid",
+                )
+        blocked_token = probe.login("b")["access_token"]
+        blocked = expect(probe.api("GET", "/api/v1/me", token=blocked_token), 403)
+        check(
+            blocked.json()["code"] == "account_deleting",
+            "Restored deleted target reopened",
+        )
         token = probe.login("a")["access_token"]
         expect(
             probe.api(
-                "POST", "/api/v1/me/bootstrap", token=token, headers={"Idempotency-Key": keys["a"]}
+                "POST",
+                "/api/v1/me/bootstrap",
+                token=token,
+                headers={"Idempotency-Key": keys["a"]},
             ),
             409,
         )
@@ -574,10 +714,16 @@ def run(state, port):
             "Fresh PKCE/bootstrap changed ownership",
         )
         for path, kwargs in (
-            ("/api/v1/sync/pull", {"params": {"sync_epoch": epoch, "checkpoint": checkpoint}}),
+            (
+                "/api/v1/sync/pull",
+                {"params": {"sync_epoch": epoch, "checkpoint": checkpoint}},
+            ),
         ):
             response = expect(probe.api("GET", path, token=token, **kwargs), 409)
-            check(response.json()["code"] == "sync_epoch_changed", "Old checkpoint not fenced")
+            check(
+                response.json()["code"] == "sync_epoch_changed",
+                "Old checkpoint not fenced",
+            )
         rewritten = lost | {"sync_epoch": epoch}
         expect(
             probe.api(
@@ -589,7 +735,10 @@ def run(state, port):
             409,
         )
         page = expect(probe.api("GET", "/api/v1/sync/pull", token=token), 200).json()
-        check(lost["entity_id"] not in {e["entity_id"] for e in page["entities"]}, "Silent replay")
+        check(
+            lost["entity_id"] not in {e["entity_id"] for e in page["entities"]},
+            "Silent replay",
+        )
         recovery = meal(boot, lost["payload"]["title"])
         recovery["payload"] = lost["payload"]
         recovery["recovery"] = {
@@ -621,7 +770,10 @@ def run(state, port):
         ).json()["results"][0]
         verify_recovery_result(replay, second, recovery["entity_id"], "already_applied")
         final_page = expect(probe.api("GET", "/api/v1/sync/pull", token=token), 200).json()
-        check(final_page["page_token"] is None, "Expected complete small recovery snapshot")
+        check(
+            final_page["page_token"] is None,
+            "Expected complete small recovery snapshot",
+        )
         stored = json.loads(
             quiet_sql(
                 stack,
@@ -650,7 +802,14 @@ def run(state, port):
             "meal recovery mapping"
         )
         image = subprocess.check_output(
-            ["docker", "image", "inspect", project + "-backend:local", "--format", "{{.Id}}"],
+            [
+                "docker",
+                "image",
+                "inspect",
+                project + "-backend:local",
+                "--format",
+                "{{.Id}}",
+            ],
             text=True,
         ).strip()
         revision = subprocess.check_output(
@@ -666,7 +825,14 @@ def run(state, port):
         ).strip()
         check(revision == commit, "Image OCI revision does not match tested clean source")
         subprocess.run(
-            ["docker", "image", "save", "--output", str(state / "backend-image.tar"), image],
+            [
+                "docker",
+                "image",
+                "save",
+                "--output",
+                str(state / "backend-image.tar"),
+                image,
+            ],
             check=True,
             capture_output=True,
             timeout=120,
@@ -676,7 +842,8 @@ def run(state, port):
 
         rollback = rehearse_predecessor(state / "rollback-experiment", commit, image)
         checks.append(
-            "synthetic exact-source0021 image, upgrade0024, paired restore0021 and real API passed"
+            "synthetic exact-source0021 image, upgrade current schema, paired "
+            "restore0021 and real API passed"
         )
         for name, extra in {
             "backend_acceptance": {
@@ -704,6 +871,9 @@ def run(state, port):
             schema_revision=EXPECTED_REVISION,
             checks=checks,
             production_ledger=False,
+            deletion_restore="blocked_from_authenticated_contract_prefix",
+            deletion_provider_reconciliation="WAITING_EXTERNAL O3 fenced restore cutover",
+            deletion_source_frozen=True,
             client_recovery=False,
             offsite_verified=False,
             traffic_reopened="owned_scratch_only",
@@ -718,7 +888,11 @@ def run(state, port):
         if http_failure:
             receipt["http_expected"], receipt["http_actual"] = map(int, http_failure.groups())
         receipt["failure_locations"] = [
-            {"file": Path(frame.filename).name, "line": frame.lineno, "function": frame.name}
+            {
+                "file": Path(frame.filename).name,
+                "line": frame.lineno,
+                "function": frame.name,
+            }
             for frame in traceback.extract_tb(error.__traceback__)
         ]
         private_write(state / "failure-private.log", traceback.format_exc())
