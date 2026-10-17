@@ -429,4 +429,87 @@ class PhotoAnalysisStorageTest {
             assertEquals(before,PhotoAnalysisStore(context,db,resumed).pending())
         } finally {db.close();scopes.forEach(::clean)}
     }
+
+    private suspend fun confirmationDraft(store:PhotoAnalysisStore,id:String) {
+        store.acceptMealDraftPrepared(store.prepareMealDraft(id,2,java.time.Instant.parse("2026-10-17T12:00:00Z"),java.time.ZoneId.of("Europe/Warsaw")))
+    }
+    @Test fun confirmationIntentSurvivesRoomRestartNoImagesAndBackoffWithoutDiaryWrites()=runBlocking<Unit> {
+        val name="confirm-${UUID.randomUUID()}";var db=Room.databaseBuilder(context,CalorieDatabase::class.java,name).build();var scope:String?=null
+        try {
+            val lease=account(db,"confirm-restart");scope=lease.storageScope;var(store,row)=cancellationQueue(db,lease)
+            confirmationDraft(store,row.operationId);store.deferRead(row.operationId,8000)
+            val key=UUID.randomUUID().toString();store.acceptConfirmationPrepared(store.prepareConfirmation(row.operationId,key,2,1))
+            assertEquals(8000L,store.pending()!!.retryAtMillis);rejected{store.prepareConfirmationAttempted(row.operationId,7999)}
+            store.acceptConfirmationPrepared(store.prepareConfirmationAttempted(row.operationId,8000))
+            val first=store.stored(row.operationId).confirmation!!.request(row.syncEpoch)
+            File(context.filesDir,"photo-analysis-inputs/${lease.storageScope}/${row.operationId}.jpg").delete()
+            db.close();db=Room.databaseBuilder(context,CalorieDatabase::class.java,name).build()
+            store=PhotoAnalysisStore(context,db,LocalOwnerStore(db).currentLease())
+            val restored=store.stored(row.operationId);val retry=restored.confirmation!!.request(row.syncEpoch)
+            assertTrue(restored.confirmation.attempted);assertEquals(key,retry.key);assertArrayEquals(first.body(),retry.body())
+            assertEquals(8000L,store.pending()!!.retryAtMillis);assertFalse(restored.canEditProposal)
+            assertEquals(0,db.dao().operationCount(lease.storageScope));assertTrue(db.dao().achievementMeals(lease.storageScope).isEmpty())
+        } finally {db.close();context.deleteDatabase(name);scope?.let(::clean)}
+    }
+    @Test fun confirmationCasFencesCompetingDecisionOldEditNewGetAndLateAttempt()=runBlocking<Unit> {
+        val db=Room.inMemoryDatabaseBuilder(context,CalorieDatabase::class.java).build();var scope:String?=null
+        try {
+            val lease=account(db,"confirm-cas");scope=lease.storageScope;val(store,row)=cancellationQueue(db,lease);confirmationDraft(store,row.operationId)
+            val edit=store.prepareMealDraftEdit(row.operationId,1){it.rename("Late")}
+            val first=store.prepareConfirmation(row.operationId,UUID.randomUUID().toString(),2,1)
+            val competing=store.prepareConfirmation(row.operationId,UUID.randomUUID().toString(),2,1)
+            store.acceptConfirmationPrepared(first);rejected{store.acceptConfirmationPrepared(competing)};rejected{store.acceptMealDraftPrepared(edit)}
+            val attempt=store.prepareConfirmationAttempted(row.operationId,0)
+            store.acceptReadPrepared(store.prepareRead(row.operationId,readResult().put("revision",3).toString().toByteArray()))
+            rejected{store.acceptConfirmationPrepared(attempt)}
+            val saved=store.stored(row.operationId);assertFalse(saved.confirmation!!.attempted);assertEquals(2L,saved.confirmation.expectedRevision)
+            assertEquals("Posiłek ze zdjęcia",saved.mealDraft!!.title);assertEquals(0,db.dao().operationCount(lease.storageScope))
+        } finally {db.close();scope?.let(::clean)}
+    }
+    @Test fun confirmationPreparationCannotBypassContextOrAbaOrChangeTheOriginalAccount()=runBlocking<Unit> {
+        val db=Room.inMemoryDatabaseBuilder(context,CalorieDatabase::class.java).build();val scopes=mutableListOf<String>()
+        try {
+            val lease=account(db,"confirm-A");scopes+=lease.storageScope;val(store,row)=cancellationQueue(db,lease);confirmationDraft(store,row.operationId)
+            val prepared=store.prepareConfirmation(row.operationId,UUID.randomUUID().toString(),2,1);val before=store.pending()
+            val mapping=db.bootstrapDao().binding(lease.storageScope)!!;db.bootstrapDao().update(mapping.copy(contextRevision=mapping.contextRevision+1))
+            rejected{store.acceptConfirmationPrepared(prepared)};db.bootstrapDao().update(mapping)
+            scopes+=account(db,"confirm-B").storageScope;rejected{store.acceptConfirmationPrepared(prepared)}
+            val resumed=LocalOwnerStore(db).select(lease.storageScope);rejected{store.acceptConfirmationPrepared(prepared)}
+            rejected{PhotoAnalysisStore(context,db,resumed).acceptConfirmationPrepared(prepared)};assertEquals(before,PhotoAnalysisStore(context,db,resumed).pending());assertEquals(0,db.dao().operationCount(lease.storageScope))
+        } finally {db.close();scopes.forEach(::clean)}
+    }
+    @Test fun confirmationReceiptOnlyPreparesValidatedBytesAndNeverCommitsAnIncompleteDiary()=runBlocking<Unit> {
+        val db=Room.inMemoryDatabaseBuilder(context,CalorieDatabase::class.java).build();var scope:String?=null
+        try {
+            val lease=account(db,"confirm-ack");scope=lease.storageScope;val(store,row)=cancellationQueue(db,lease);confirmationDraft(store,row.operationId)
+            store.acceptConfirmationPrepared(store.prepareConfirmation(row.operationId,UUID.randomUUID().toString(),2,1))
+            store.acceptConfirmationPrepared(store.prepareConfirmationAttempted(row.operationId,0))
+            val snapshot=store.stored(row.operationId);val sent=snapshot.confirmation!!.request(row.syncEpoch)
+            val body=JSONObject(sent.body().toString(Charsets.UTF_8));val source=readResult()
+            val provenance=source.getJSONObject("profile").put("analysis_id",source.getString("analysis_id"))
+                .put("model_version",source.getJSONObject("proposal").get("model_version"))
+                .put("uncertainty",org.json.JSONArray().put(JSONObject().put("component_id","d7777777-7777-4777-8777-777777777777").put("uncertainty","medium")))
+            val ack=JSONObject().put("analysis_id",source.getString("analysis_id")).put("meal",body.getJSONObject("meal"))
+                .put("drafts",body.getJSONArray("drafts")).put("provenance",provenance).toString().toByteArray()
+            val before=store.pending();val prepared=store.prepareConfirmationReceipt(row.operationId,ack,sent)
+            assertTrue(prepared.snapshot.confirmation!!.confirmed);assertEquals(before,store.pending())
+            assertNull(store.stored(row.operationId).confirmation!!.receiptJson)
+            val wrong=PhotoHttpRequest.Confirm(UUID.randomUUID().toString(),row.syncEpoch,snapshot.receipt.analysisId,2,sent.body())
+            rejected{store.prepareConfirmationReceipt(row.operationId,ack,wrong)}
+            assertEquals(0,db.dao().operationCount(lease.storageScope));assertTrue(db.dao().achievementMeals(lease.storageScope).isEmpty())
+        } finally {db.close();scope?.let(::clean)}
+    }
+    @Test fun serverCancellationRetainsPendingConfirmationReadOnlyAndRefusesLateAck()=runBlocking<Unit> {
+        val db=Room.inMemoryDatabaseBuilder(context,CalorieDatabase::class.java).build();var scope:String?=null
+        try {
+            val lease=account(db,"confirm-cancelled");scope=lease.storageScope;val(store,row)=cancellationQueue(db,lease);confirmationDraft(store,row.operationId)
+            store.acceptConfirmationPrepared(store.prepareConfirmation(row.operationId,UUID.randomUUID().toString(),2,1))
+            store.acceptConfirmationPrepared(store.prepareConfirmationAttempted(row.operationId,0))
+            val cancelled=readResult().put("revision",3).put("state","failed").put("decision_state","cancelled")
+                .put("proposal",JSONObject.NULL).put("error_code","analysis_cancelled")
+            store.acceptReadPrepared(store.prepareRead(row.operationId,cancelled.toString().toByteArray()))
+            val saved=store.stored(row.operationId);assertTrue(saved.cancelled);assertNotNull(saved.confirmation);assertFalse(saved.canEditProposal)
+            rejected{store.prepareConfirmationAttempted(row.operationId,0)};assertEquals(0,db.dao().operationCount(lease.storageScope))
+        } finally {db.close();scope?.let(::clean)}
+    }
 }

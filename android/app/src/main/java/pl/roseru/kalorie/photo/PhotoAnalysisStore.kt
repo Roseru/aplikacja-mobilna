@@ -263,6 +263,39 @@ internal class PhotoAnalysisStore(private val context:Context,private val db:Cal
         prepared.snapshot
     }
 
+    /** Freeze a full decision outside the guard; no network or diary write. */
+    suspend fun prepareConfirmation(id:String,key:String,revision:Long,editRevision:Long):PreparedPhotoConfirmation {
+        val (source,snapshot)=cancellationSource(id);require(key!=source.operationId)
+        return PreparedPhotoConfirmation(source,snapshot.prepareConfirmation(key,revision,editRevision),lease)
+    }
+    suspend fun prepareConfirmationAttempted(id:String,nowMillis:Long):PreparedPhotoConfirmation {
+        val (source,snapshot)=cancellationSource(id);check(source.retryAtMillis<=nowMillis)
+        return PreparedPhotoConfirmation(source,snapshot.markConfirmationAttempted(),lease)
+    }
+    private fun confirmationRequestMatches(source:PhotoAnalysisRequestEntity,snapshot:PhotoAnalysisSnapshot,sent:PhotoHttpRequest.Confirm) {
+        val expected=checkNotNull(snapshot.confirmation).request(source.syncEpoch)
+        require(sent.key==expected.key && sent.epoch==expected.epoch && sent.expectedRevision==expected.expectedRevision &&
+            sent.path==expected.path && sent.body().contentEquals(expected.body()))
+    }
+    suspend fun prepareConfirmationReceipt(id:String,bytes:ByteArray,sent:PhotoHttpRequest.Confirm):PreparedPhotoConfirmationReceipt {
+        val (source,snapshot)=cancellationSource(id);confirmationRequestMatches(source,snapshot,sent)
+        return PreparedPhotoConfirmationReceipt(source,snapshot.withConfirmationReceipt(bytes),lease)
+    }
+    suspend fun prepareConfirmationRejection(id:String,code:String,sent:PhotoHttpRequest.Confirm):PreparedPhotoConfirmation {
+        val (source,snapshot)=cancellationSource(id);confirmationRequestMatches(source,snapshot,sent)
+        return PreparedPhotoConfirmation(source,snapshot.rejectConfirmation(code),lease)
+    }
+    /** Intent/attempt/rejection CAS only. There is deliberately no standalone receipt commit.
+     * An accepted template requires the future atomic Meal/E4/provenance transaction.
+     */
+    suspend fun acceptConfirmationPrepared(prepared:PreparedPhotoConfirmation):PhotoAnalysisSnapshot=db.withTransaction {
+        check(prepared.lease==lease && checkNotNull(prepared.snapshot.confirmation).receiptJson==null)
+        val row=checked(prepared.source.operationId)
+        check(row==prepared.source && row.attempted && row.receiptJson!=null && row.blockedCode==null)
+        if(row.receiptJson!=prepared.snapshot.serialized)check(dao.replaceSnapshot(lease.storageScope,row.operationId,prepared.snapshot.serialized)==1)
+        prepared.snapshot
+    }
+
     suspend fun deferRead(id:String,retryAtMillis:Long)=db.withTransaction {
         require(retryAtMillis>=0)
         val row=checked(id);check(row.receiptJson!=null && row.attempted && row.blockedCode==null)
@@ -305,4 +338,14 @@ internal class PreparedPhotoCancellation internal constructor(internal val sourc
 internal class PreparedPhotoMealDraft internal constructor(internal val source:PhotoAnalysisRequestEntity,
     internal val snapshot:PhotoAnalysisSnapshot) {
     override fun toString()="PreparedPhotoMealDraft(redacted)"
+}
+
+internal class PreparedPhotoConfirmation internal constructor(internal val source:PhotoAnalysisRequestEntity,
+    internal val snapshot:PhotoAnalysisSnapshot,internal val lease:OwnerLease) {
+    override fun toString()="PreparedPhotoConfirmation(redacted)"
+}
+/** Validated bytes only; not committed until canonical Meal/outbox/provenance can be atomic. */
+internal class PreparedPhotoConfirmationReceipt internal constructor(internal val source:PhotoAnalysisRequestEntity,
+    internal val snapshot:PhotoAnalysisSnapshot,internal val lease:OwnerLease) {
+    override fun toString()="PreparedPhotoConfirmationReceipt(redacted)"
 }
