@@ -61,3 +61,20 @@ def test_missing_conflicting_stale_ledger_keeps_recovery_closed(tmp_path, change
             pinned = digest(path)
     with pytest.raises(RuntimeError):
         verify_fixture_ledger(path, pinned, expected=target, cutoff=cutoff)
+
+
+def test_existing_state_is_refused_without_any_write(tmp_path):
+    import subprocess
+    import sys
+
+    state = tmp_path / "existing"
+    state.mkdir()
+    original = state / "owned-by-someone-else.txt"
+    original.write_text("preserve")
+    script = Path(__file__).resolve().parents[1] / "recovery_o2.py"
+    result = subprocess.run(
+        [sys.executable, str(script), "--state", str(state)], capture_output=True, timeout=15
+    )
+    assert result.returncode == 1
+    assert list(state.iterdir()) == [original]
+    assert original.read_text() == "preserve"

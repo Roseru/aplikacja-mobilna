@@ -138,6 +138,20 @@ def deletion(stack, probe, target, operation):
         == "t",
         "Deletion not completed",
     )
+    check(
+        quiet_sql(
+            stack, "calorie_app", f"SELECT count(*) FROM app.user_accounts WHERE id='{account}';"
+        )
+        == "0",
+        "Deleted app account remains",
+    )
+    check(
+        quiet_sql(
+            stack, "calorie_app", f"SELECT app.subject_blocked('{probe.issuer}','{subject}');"
+        )
+        == "t",
+        "Permanent subject fence missing",
+    )
 
 
 def verify_fixture_ledger(path, pinned_hash, *, expected, cutoff):
@@ -397,6 +411,7 @@ def run(state, port):
             "Confirmed baseline meal corrupted",
         )
         checks.append("actual pg_restore reproduces resurrection and lost acknowledged meal")
+        receipt["stage"] = "commit_epoch_and_cleanup"
         epoch = str(uuid4())
         quiet_sql(
             stack,
@@ -418,17 +433,21 @@ def run(state, port):
                 break
         else:
             raise RuntimeError("Bounded cleanup incomplete")
+        receipt["stage"] = "start_restored_keycloak"
         stack.compose("up", "--detach", "--no-deps", "--wait", "keycloak")
+        receipt["stage"] = "maintenance_gateway"
         maintenance(stack)
         with probe.client() as client:
             expect(client.get(stack.origin + "/api/v1/me"), 503)
             expect(client.post(probe.issuer + "/protocol/openid-connect/token"), 503)
+        receipt["stage"] = "reconcile_external_fixture"
         entry = verify_fixture_ledger(ledger, pinned, expected=target, cutoff=cutoff)
         deletion(stack, probe, target, entry["operation_id"])
         admin(probe, "POST", "/logout-all", expected=204)
         admin(probe, "GET", "/users/" + target["subject"], expected=404)
         # Since restore, user issuance has been inaccessible. Observe the full conservative
         # unknown-token bound; no fake clocks, skew changes or shortened lifetime.
+        receipt["stage"] = "real_issuance_wait"
         closed = time.monotonic()
         deadline = closed + 421
         while time.monotonic() < deadline:
@@ -437,6 +456,7 @@ def run(state, port):
         checks.append(
             "independent pinned fixture reconciled; API/issuance 503 for >=420 real seconds"
         )
+        receipt["stage"] = "old_token_and_meal_recovery_checks"
         stack.compose("up", "--detach", "--no-deps", "--wait", "api")
         stack.compose("up", "--detach", "--no-deps", "--force-recreate", "gateway")
         probe.ready()
@@ -550,6 +570,12 @@ def run(state, port):
             text=True,
         ).strip()
         check(revision == commit, "Image OCI revision does not match tested clean source")
+        subprocess.run(
+            ["docker", "image", "save", "--output", str(state / "backend-image.tar"), image],
+            check=True,
+            capture_output=True,
+            timeout=120,
+        )
         for name, extra in {
             "backend_acceptance": {
                 "image": image,
@@ -589,10 +615,23 @@ def run(state, port):
             ai_nemesis_reopened=False,
         )
         return receipt
+    except Exception as error:
+        receipt["error_kind"] = type(error).__name__
+        receipt["failure_locations"] = [
+            {"file": Path(frame.filename).name, "line": frame.lineno, "function": frame.name}
+            for frame in traceback.extract_tb(error.__traceback__)
+        ]
+        private_write(state / "failure-private.log", traceback.format_exc())
+        raise
     finally:
-        private_write(state / "recovery-o2.json", json.dumps(receipt, indent=2))
-        # Only resources created by this invocation; preserve private archives and logs.
-        stack.compose("down")
+        # Only resources created by this invocation. A cleanup error is also FAIL.
+        try:
+            stack.compose("down")
+        except Exception:
+            receipt.update(result="FAIL", cleanup_failed=True)
+            raise
+        finally:
+            private_write(state / "recovery-o2.json", json.dumps(receipt, indent=2))
 
 
 def main():
@@ -603,8 +642,6 @@ def main():
     try:
         receipt = run(args.state.resolve(), args.port)
     except Exception:
-        if args.state.is_dir():
-            private_write(args.state / "failure-private.log", traceback.format_exc())
         parser.exit(1, "Owned O2 recovery failed; inspect private logs; no production reopen\n")
     print(json.dumps(receipt, indent=2))
 
