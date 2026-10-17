@@ -7,7 +7,86 @@ Kontrakt: [integracja E7](../docs/e7/INTEGRACJA_O1.md),
 [server confirm](../backend/src/calorie_app/modules/ai/decisions.py),
 [ai.schema](../contracts/schemas/ai.schema.json).
 
-## Dostarczony fundament
+## Bieżący etap0.8.19 — atomowy dziennik i kolejka
+
+Kod `97fff241bfbaaa1b5e59bd393d3ebac1ce95ddaf`,0.8.19/code30,
+validation1030, Room11. Po zweryfikowaniu ACK jedna transakcja zapisuje
+posiłek i składniki, rejestr materializacji z provenance oraz kanoniczną
+operację E4, a następnie zwalnia wyłącznie pierwotną kolejkę zdjęcia.
+Nie ma osobnego trwałego ACK bez danych dziennika. Niepowodzenie dowolnego
+zapisu wycofuje całość. Obraz źródłowy pozostaje; sprzątanie przygotowanego
+wejścia jest osobnym krokiem poza transakcją.
+
+Rejestr wskazuje właściciela, analizę, klucz decyzji, pierwotne zlecenie,
+meal_id i pierwszą operację outbox. Identyczny replay zwraca istniejący rekord,
+nie przywraca starej porcji po edycji/usunięciu i nie zwalnia kolejnego zlecenia.
+Captured lease, kontekst i wiersz źródłowy chronią pierwszy zapis przed
+spóźnioną odpowiedzią, recovery, A→B→A oraz kolizją Meal/Item innego właściciela.
+
+Pełny kanoniczny Meal i MealItem pozostają przy projekcji Room. Produkt i kcal
+mogą być null; ilość, jednostka i odżywianie zachowują dokładne Decimal.
+Nie powstaje fikcyjny produkt. W dzienniku pojawia się tytuł i grupa Pozostałe
+dla meal_type=null. Brak energii uniemożliwia oznaczenie dnia jako kompletnego.
+Edycja ilości, usunięcie składnika i usunięcie posiłku zachowują wire oraz
+oddzielone dane pochodzenia, które dokumentują pierwotne potwierdzenie.
+
+Nowy outbox jest jawnie oznaczony sync-v1. Operacja nowego Meal ma
+base_revision=null; stare robocze wiersze pozostają legacy. Przed wysłaniem
+edycja zastępuje niepróbowaną operację nowym UUID, zachowując stary rekord jako
+superseded. Gdy poprzednią operację już próbowano wysłać, jej body pozostaje
+niezmienne, a kolejna intencja czeka na rewizję. Recovery zachowuje lokalne
+poprawki jako waiting_recovery. Usunięcie niewysłanego nowego posiłku pozostaje
+local_only; właściwy delete serwera wymaga dodatniej potwierdzonej rewizji.
+
+Migracja10→11 zachowuje wszystkie stare wartości oraz rowid składników,
+dodaje pola wire, uczciwą nullable referencję/energię i25.tabelę rejestru.
+Domyślne pola outbox nie zmieniają historycznych żądań. Eksporty1…10 pozostają
+niezmienne; Room wygenerował nowy11. Włączono migrację do wszystkich istniejących
+ścieżek otwarcia, a testy porównują historyczne kolumny według starego eksportu.
+
+Pełny assemble debug/validation/testAPK **PASS**, **291 JVM debug /306 JVM
+validation i lint0error PASS**. Nowe10 testów MealWire obejmuje niezależny
+fixture operacji, null/0, g/ml/gęstość, dokładne edycje, datę/strefę, duplikaty
+oraz delete wymagający dodatniej rewizji. Fixture przeszedł również normatywny
+sync.schema/Operation; base_revision=0 odrzucono. Brak rzeczywistego push.
+
+**36/36 native focus**, następnie **260/260 pełnego API35 PASS**, bez pominięć
+lub błędów i bez aktywnej sieci przed/po. Pełny przebieg427.966s instrumentation /
+431.906s wall, limit1800s. Nowe przypadki obejmują8 testów materializacji/kolejki,
+migrację10→11 wszystkich24 historycznych tabel z oczekującą decyzją, oraz
+rzeczywisty przepływ Room→UI→edycja ilości przy320dp i czcionce150%.
+Dotychczasowe migracje prowadzą teraz do11. Sprawdzono też trigger wymuszający
+rollback po zapisach Meal/Items/outbox, kolizję obcego Meal/Item, context/recovery,
+A→B→A, replay po restarcie i edycji/usunięciu oraz zachowanie kolejnej kolejki.
+Wszystkie241 wejścia źródłowe zgodne bitowo przed/po buildzie i przy odbiorze.
+
+| Artefakt0.8.19, kod97fff24 | SHA-256 |
+|---|---|
+| Debug/code30 | `6a9bcc092acfc44b0c492088be4b1071e19ca62eccc15db809ac1d126be49372` |
+| Validation/code1030 | `b79a76cb34a5059435f785678c3ddf4f0da865834f66fbf3dbbb6a49bcec0972` |
+| Domyślny testAPK, bez drivera live | `f4e3283445584ec2f1161c233b34fd2c972c03b009b9665f711b6b69bc07cc9c` |
+
+Regularny emulator zaktualizowano przez install-r. Zainstalowany SHA porównano
+z debug powyżej; rzeczywista migracja10→11 zakończyła się poprawnie. Wszystkie
+stare kolumny24 tabel i rowid składników identyczne przed/po, FK clean,
+nowa25.tabela pusta, pola wire zachowały wartości domyślne. Prywatny baseline
+pozostaje poza Git/OneDrive. Pierwszy dump UI nie zwrócił korzenia hierarchii;
+potwierdzono działający proces/resumed Activity i ponowiono wyłącznie obserwację.
+Świeży widok potwierdza właściwy pakiet, brak ANR i główne kontrolki. Aplikacja
+otwarta do testów manualnych. Nie zmieniono oddzielnego kandydata API/Room9.
+
+
+
+HTTP confirm, przycisk w SessionController/UI i wysyłka standardowego push
+pozostają niepodłączone. Następne wymagane kroki: atomowy odbiór ACK E4 z rewizją
+i uruchomieniem oczekującej intencji, przygotowanie trwałej partii z checkpointem,
+transport/retry, a także konwersja historycznego lokalnego outbox do jednego
+kontraktu. Dopiero te kroki pozwolą rozliczyć pełną synchronizację. Nie dodajemy
+provenance do starego payloadu sync-v1. Rzeczywiste E7-R/KO32/Gemini wymagają
+osobnego odbioru. [Podglądy UI](../propozycje-ui/analiza-0.8.19/README.md)
+uzupełniają brak wizualnej kontroli dialogu zgłoszony dla0.8.18.
+
+## Historyczny fundament — a7bb7dd
 
 Pełna decyzja przechowuje klucz UUID, analizę, rewizję propozycji, rewizję
 poprawek i całe kanoniczne żądanie, z niezmiennymi meal_id/item_id.
@@ -35,7 +114,7 @@ PreparedPhotoConfirmationReceipt jest osobnym typem: **nie ma samodzielnej
 metody zapisującej ACK bez posiłku/outbox/provenance**. To zabezpieczenie przed
 podłączeniem niepełnej ścieżki do SessionController.
 
-## Granica etapu i dalsza implementacja
+## Historyczna granica fundamentu
 
 HTTP confirm i przycisk SessionController/UI nie są jeszcze podłączone.
 Nie zapisano Meal, ProductDraft ani outbox i nie wysłano synchronizacji.
@@ -58,7 +137,7 @@ nie odblokowujemy ani nie nadajemy nowego klucza automatycznie.
 Konieczne są także retencja niepowiązanych plików i brakujący wizualny odbiór
 dialogu edytora zgłoszony w [raporcie0.8.18](ZLECENIE_ANALIZY.md).
 
-## Walidacja
+## Historyczna walidacja fundamentu
 
 Kod `a7bb7dde374a606e9399a205d64e7fcce69781b2`. Pełne assemble debug/validation/testAPK, **281 JVM debug,
 296 JVM validation i lint0error PASS**. Wszystkie234 wejścia Androida porównano
