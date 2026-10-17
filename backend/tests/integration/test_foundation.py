@@ -194,14 +194,14 @@ def test_runtime_role_has_no_ddl_and_can_read_health(database):
             connection.exec_driver_sql("DROP ROLE e1_runtime_probe")
 
 
-def test_initial_downgrade_then_upgrade(database):
-    engine, migrate, url = database
+def test_initial_downgrade_then_upgrade(historical_database):
+    engine, migrate, url = historical_database
     # E4 retains durable evidence and supports a compatible E3 image rollback;
     # dropping the foundation underneath those FKs is no longer a valid rollback.
     migrate("downgrade", "0008_diary_delete")
     with TestClient(create_app(Settings(database_url=url), engine=engine)) as client:
         assert client.get("/health/ready").status_code == 503
-    migrate("upgrade", "head")
+    migrate("upgrade", EXPECTED_REVISION)
     migrate("check")
     with TestClient(create_app(Settings(database_url=url), engine=engine)) as client:
         assert client.get("/health/ready").status_code == 200

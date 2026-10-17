@@ -466,7 +466,9 @@ def run(state, port):
                 check=True,
                 timeout=300,
             )
-        checks.append("populated 0021 to 0024 migration and legacy replay passed on owned PG17")
+        checks.append(
+            "populated 0021 to current0025 migration and legacy replay passed on owned PG17"
+        )
         # Compose does not currently forward VCS_REF. Build this exact clean source explicitly.
         stack.compose("build", "--build-arg", "VCS_REF=" + commit)
         stack.compose("up", "--detach", "--wait", "--wait-timeout", "360")

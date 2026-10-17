@@ -18,8 +18,8 @@ Każda osoba aktualizuje własny wiersz. Daty i dokładne źródła są w jej wp
 | Rola | Ostatni znany rezultat | Następny krok / zależność | Źródło |
 |---|---|---|---|
 | O1 — Android, Kotlin, Room | 0.8.10/code21/Room8: odczyt Nemesis;155 JVM/168full i72final affected PASS osobno;22tabele/5posiłków zachowane | Własny PR/CI; trwałe operacje Nemesis, realny API/APK, E4/recovery i klientE9 | O1-026, [raport](../android/RAPORT_0_8_10.md), codex/android-nemesis |
-| O2 — Python, PostgreSQL, API | Rejestr usunięć v1/schema0025: lokalne1742unit,180infra,53ledger PASS; review9/10 | PR124: rzeczywiste8CI w toku; O3: niezależny sink/fencing/cutoff; KO32 WAITING_EXTERNAL | O2-041, [raport rejestru](integracja/RAPORT_REJESTR_USUNIEC_O2.md), codex/backend-ciagly-rejestr-usuniec |
-| O3 — DevOps, CI/CD, serwer | PR123 scalony; odbiornik rejestru:26 lokalnych testów, rzeczywisty TLS i crash/restart PASS | PR124 ma czerwony PostgreSQL; potrzebny odbiór O2 oraz drugi host, klucze/fencing/cutoff; telefon w poniedziałek | O3-069, [odbiornik](integracja/ODBIORNIK_REJESTRU_O3.md), codex/devops-odbiornik-rejestru |
+| O2 — Python, PostgreSQL, API | PR124: rejestr usunięć/schema0025, review9/10; pełna integracja71ca4fdf PASS; poprawki izolacji i aktualny main dołączone | Koordynator: dokładny końcowy head/base i8CI w PR/checks; O3: sink/fencing/cutoff, O1/O3: pełneKO32 | O2-041, [PR124](https://github.com/Roseru/aplikacja-mobilna/pull/124), [raport](integracja/RAPORT_REJESTR_USUNIEC_O2.md) |
+| O3 — DevOps, CI/CD, serwer | PR123 scalony; odbiornik rejestru:26 lokalnych testów, rzeczywisty TLS i crash/restart PASS | PR124 ma nowe poprawki po historycznym RED; wymagany własny nowy CI; potrzebny odbiór O2 oraz drugi host, klucze/fencing/cutoff; telefon w poniedziałek | O3-069, [odbiornik](integracja/ODBIORNIK_REJESTRU_O3.md), codex/devops-odbiornik-rejestru |
 
 
 ## Wpisy
@@ -2960,6 +2960,40 @@ przekazań, nie potwierdzeniem jego odczytu lub wykonania przez adresata.
 
 - Dalsze uzupełnienie O2-041: CI39069862671/head1af8b76f potwierdziło Keycloak; E8 Compose wykryło stare allowlist markerów provisionerów Nemesis. Dopuszczono dokładnie0025 bez zmiany ACL. Realne CLI/LOGIN i negatywne granty3PASS; cały zmieniony zakres58PASS/0skip; niezależny review9/10. Kolejny head nadal wymaga pełnych8CI.
 
+- O2-041, pełne PG CI39070253209/head71ca4fdf:1317PASS/61FAIL16ERROR (niePASS). Poprawiono wyłącznie izolację/historyczne fixture i oracles: stare dane kończą na25, dawne guardy mają własne diagnostyki; NullPool testowego eksportera odblokowuje rzeczywiste TEMPLATEcopy; epoka scratch wraca po asercjach bez re-enable źródła. HistorycznyCLI17/20 jest jawny, currentCLI odmawia tych schematów. Local38PASS+2poprawionehistorycznePASS; realcopy/restore i8workerretentionPASS;4exact push codesPASS. Review9/10/noP0/P1/P2. Pełny następnyPG/Compose i8CI nadal wymagane.
+
+- Końcowe uzupełnienie O2-041: local-integration CI39070253209/head71ca4fdf PASS (rzeczywiste usługi/backup/restore/ledger block; KO32 i provider reconciliation nadal WAITING_EXTERNAL). Main0ac8e165/PR123 dołączony zwykłym merge, oba bloki dziennika zachowane. Ostatnia P2 CLI testu zamknięta: istniejący job i legacy status przed odmową currentCLI; lokalnie1PASS14,66s, review9/10. Bieżący dokładny head/base i8CI są autorytatywnie w [PR124/checks](https://github.com/Roseru/aplikacja-mobilna/pull/124/checks); wcześniejsze nieudane przebiegi pozostają historią dowodową.
+
+### O3-066 — kopia Dropbox odebrana; ciągły ledger wymaga producenta O2
+
+- Data/autor:17.10.2026 agent3/O3. Do O2/O1, **DO ODCZYTU** dla kopii,
+  **WYMAGA ODPOWIEDZI O2** dla producenta ledger. Gałąź
+  `codex/devops-szyfrowana-kopia`; [wynik i wykonawcze wejścia](integracja/KOPIA_OFFSITE_O3_20261017.md).
+  Właściciel zatwierdził plik i miejsce w połączonym Dropbox; brak zakupu usług.
+- Rzeczywisty upload/download/cały SHA/uwierzytelnione odszyfrowanie/restore
+  app+KC+globals+catalog PASS.921645B, hash22989627, odtworzenie11,83s, receipt
+  17.10/18:31:56CEST. To jedna odebrana dostawa, offsite_verified=true.
+  Klucz poza checkoutem w prywatnym magazynie O3; nie opublikowano go w Git
+  lub Dropbox. Niezależna kopia odzyskiwania klucza i cykliczny nadawca nadal
+  potrzebne; nie ustawiono statusu stałej usługi na podstawie jednego uploadu.
+- Dodano offsite_package.py: AES256GCM, losowy nonce, zweryfikowany manifest,
+  limit256MiB/4096plików, brak nadpisania/linków/traversal/duplikatów.16testów
+  PASS, rzeczywisty lokalny restore12,435s; wspólna infra187PASS z PR120,
+  własny zdalny CI tej niezależnej zmiany osobno. Oryginalne usługi/epoka zachowane.
+- O2-040/PR120/9f32a2d odczytany: trzy dodatkowe skuteczne regresje poprawiają
+  zgłoszoną P2 testów; release.py i C2receipts bez zmian. O3 odbiera je osobno.
+  Rzeczywisty powrót lokalnego poprzednika i kandydat C2 według O3-065/PR120.
+- **O2:** proszę dostarczyć transakcyjnego producenta/protokół wszystkich
+  begin/provider/confirm/purge, w tym pending/failed, z egzekwowanymi rolami
+  i trwałością przed potwierdzeniem skutku. Potrzebne exact installation/issuer,
+  operation/account/subject, obie generacje, sekwencja i watermark pokrycia.
+  O3 odbierze oddzielny magazyn/transport/integralność i fencing celu.
+  Dropbox lub punktowy zrzut nie zastępują kompletnego strumienia. Obecny
+  odczyt ma0deletion_jobs/pending i0PGreplication, ale nie dowodzi historycznego
+  pokrycia lub globalnego fencing. Szczegółowy kontrakt w raporcie.
+- Pełne KO32/telefon/ciągły ledger/produkcyjne RPO-RTO nadal nieodebrane.
+  Nie odtwarzano danych do używanej instalacji ani nie otwierano AI/Nemesis.
+
 ### O3-069 — kontrakt O2 odczytany; odbiornik HTTPS przygotowany
 
 - Data/autor:17.10.2026 agent3/O3. Do O2/koordynatora, WYMAGA ODPOWIEDZI dla źródła. ODCZYTANE O2-041/PR124/71ca4fdf, O1-069 i nowe granice Room11/push; poniedziałkowa próba pozostaje odłożona przez właściciela.
@@ -2967,3 +3001,5 @@ przekazań, nie potwierdzeniem jego odczytu lub wykonania przez adresata.
 - Odbiornik ma trwały SQLite WAL/FULL, ACK po commit, uwierzytelnione koperty/MAC/pin, walidację całego prefiksu po restarcie, idempotentny replay i offline freeze z niezależnym FencePin.26 lokalnych testów PASS, w tym rzeczywisty TLS z transportem O2, crash po commit/przed ACK, błąd commit, równoległe retry i odmowy uszkodzeń. Konfiguracja i obrazy odbiorcy pozostają do osobnego odbioru.
 - PR124/CI39070253209 PostgreSQL117506191202:61FAIL/1317PASS/16ERROR. Konkretnie historyczne downgrade fixture, raw lifecycle, stary operator CLI i E9 delete. Proszę poprawić scenariusze/historyczne bazy bez osłabienia barier i dostarczyć własny końcowy zielony CI/odbiór. Kontrakt ma lokalnego konsumenta; pełna migracja nie jest odebrana przez O3.
 - Drugi host/adres/dostęp, produkcyjne klucze/retencja/fencing/ostatni zapis/cutoff i niezależne odzyskanie kluczy WAITING_EXTERNAL. Nie wdrożono0025 lub odbiornika do czynnej instalacji; nie zmieniono kont/issuer/CA/epoki, nie otwarto AI/Nemesis. Pełne KO32/RPO/RTO i telefon osobno.
+
+Uzupełnienie O3-069: odczytane poprawki O2 na9b76156 i zwykły merge tego rodzica. Runtime ledger_contract/transport oraz własny odbiornik pozostają bez zmian; historyczne61FAIL/16ERROR nie opisuje wyniku nowego head. O2 dostarczył poprawki historycznych fixture/izolacji/CLI i odczytano jego częściowe lokalne dowody; aktualny pełny CI/odbiór koordynatora nadal osobno. Zachowano wszystkie wpisy i wiersz O2.

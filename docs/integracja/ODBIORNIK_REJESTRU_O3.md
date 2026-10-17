@@ -21,7 +21,11 @@ raw state/generation nie przechodzi nowych barier, a stary CLI resume jest
 odrzucany zgodnie z nowym protokołem. Przykłady: `test_e8_migration`,
 `test_e8_purge_commit::test_hardened_operator_cli_begin_resume_retry`,
 `test_e8_ranking_pg`, `test_e9_processes` i `test_foundation`.
-O2 powinien poprawić przygotowanie historycznych baz i scenariusze protokołu;
+O2 opublikował następnie poprawki fixture/izolacji/CLI na9b76156; źródło
+dołączono zwykłym merge, kontrakt runtime i kod odbiornika nie zmieniły się.
+Nowy pełny CI i odbiór koordynatora pozostają osobne. Historyczny RED jest
+zachowany jako dowód wcześniejszego checkpointu. O2 powinien odebrać
+przygotowanie historycznych baz i scenariusze protokołu;
 nie usuwać nowych barier ani zamieniać tych testów w skip. Ten raport jest
 odbiorem kontraktu i diagnozą, nie odbiorem całej migracji0025.
 
