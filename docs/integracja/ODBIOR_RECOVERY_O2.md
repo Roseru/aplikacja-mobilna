@@ -1,11 +1,45 @@
 # Odbiór migracji i recovery — O2
 
-Stan 17.10.2026: **serwerowy KO17/32 PASS**: runner HTTPS/Keycloak/paired restore
+Stan historycznej próby C z17.10.2026: **serwerowy KO17/32 PASS według dawnego oracle**: runner HTTPS/Keycloak/paired restore
 oraz pełne regresje E4/E7/E8/E9 zakończyły się sukcesem w CI39026906997.
 Migracja0021→0024 i regresja61dni PASS również na własnym PG17.11/SCRAM.
 **Pełne KO32 WAITING_EXTERNAL**: O1 telefon/Room/UI, O3 offsite, ciągły autorytatywny
 rejestr, issuer/repliki i rzeczywiste RPO/RTO. Nie wykonano Google ani zmian usług zespołu.
-Bieżący krok: dokumentacyjny commit D i jego osiem CI, następnie odbiór koordynatora; bez merge.
+Bieżący krok: FIX1 poniżej, nowy C2/obraz/próba i niezależny odbiór; bez merge.
+
+## FIX1 — odbiór koordynatora i nowe źródło C2
+
+Marker `O2_RECOVERY_PR116_FIX1_2866c69d`. Koordynator ocenił wcześniejszy
+head2866c69d na8,5/10: **trzy P2, wymaga poprawek**. Historyczne8/8 i pliki C
+pozostają prawdziwe; słabsze asercje nie wystarczały do odebrania całego zakresu.
+Aktualny wynik C2: **W TOKU**, bez nowego runtime PASS przed wykonaniem CI.
+
+1. Porównanie `null == null` przepuszczało dwie różne encje. Nowy oracle wymaga
+   pełnego mappingu ze źródła wejściowego do pierwszego target, statusów
+   accepted/already_applied i zachowuje kontraktowe requested entity_id drugiej
+   odpowiedzi. Pełny snapshot HTTP porównuje oba oczekiwane payloady, składniki
+   i wartości z kanonicznym fixture, SQL sprawdza dokładnie baseline+jedną
+   odzyskaną encję z właściwym owner/revision oraz jeden mapping; brak drugiego ID.
+2. Retencja61dni: przed prune dokładne4changes/3pełne receipts i niezależne
+   hashe SHA256 canonical JSON z końcowym newline. Po prune4/3: baza ma0changes,
+   3NULL response i identyczne trwałe ID/hash/status/revision/source/action oraz
+   niezmieniony tombstone. Wszystko przed snapshot/replay oryginalnych operacji.
+3. Nowy [eksperyment rollbacku](../../infra/integration/rollback_o2.py) pobiera
+   exacta522471 przez gitarchive, buduje jego niezmieniony Dockerfile z uczciwym
+   OCI revision tego źródła i własnym immutable imageID. Własny PG17/KC26.8.0,
+   A/B/posiłki, historyczny capture/rehearse (app/KC/globals/catalog/config),
+   rzeczywisty upgrade0024, odmowa readiness starego obrazu na0024, paired
+   restore0021 i nowa epoka, cleanup, logout-all/421s, odmowa starych sesji,
+   świeżePKCE i HTTP read/write/replay. Obraz0021 jest oddzielny od C2/image0024.
+   Brak biznesowych zapisów między kopią i restore jest jawnym ograniczeniem RPO;
+   dwa świeże zapisy po restore służą odbiorowi scratch. Produkcja nadal O3.
+
+Affected GREEN:26pure runner i1nativePG61dni. Kontrolowane kopie RED:
+wyłączony helper walidacji odpowiedzi6FAIL (w tym historyczny null/null);
+no-op prune z kłamliwymi counts4/3 FAIL na rzeczywistym DB4!=0. Kod roboczy
+pozostał poprawny. Pierwsza nowa próba hash pokazała brak końcowego newline
+w testowym oczekiwaniu; poprawiono oracle według canonical wire, nie produkt.
+Niezależny przegląd kodu FIX1:9,2/10, bez pewnych P1/P2; runtime pozostaje NOT_RUN.
 
 ## Odebrany zestaw wykonawczy C
 

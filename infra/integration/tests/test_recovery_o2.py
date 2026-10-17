@@ -126,3 +126,106 @@ def test_maintenance_waits_only_for_transport_then_requires_both_closed(monkeypa
     recovery_o2.wait_maintenance(probe)
     assert len(calls) == 3
     assert calls[-1].method == "POST" and calls[-1].url.path.endswith("/token")
+
+
+def recovery_case():
+    from copy import deepcopy
+
+    from recovery_o2 import meal
+
+    boot = {"sync_epoch": "new"}
+    baseline = meal(boot, "baseline")
+    recovery = meal(boot, "lost")
+    recovery["recovery"] = {"source_epoch": "old", "source_entity_id": "source"}
+    second = recovery | {"operation_id": "second-op", "entity_id": "second-target"}
+    mapping = {
+        "source_epoch": "old",
+        "source_entity_id": "source",
+        "target_entity_id": recovery["entity_id"],
+        "target_revision": 1,
+    }
+    first = {
+        "operation_id": recovery["operation_id"],
+        "entity_id": recovery["entity_id"],
+        "status": "accepted",
+        "recovery_mapping": deepcopy(mapping),
+    }
+    replay = {
+        "operation_id": second["operation_id"],
+        "entity_id": second["entity_id"],
+        "status": "already_applied",
+        "recovery_mapping": deepcopy(mapping),
+    }
+    entities = [
+        {
+            "entity_type": "meal",
+            "entity_id": op["entity_id"],
+            "revision": 1,
+            "deleted": False,
+            "payload": deepcopy(op["payload"]),
+        }
+        for op in (baseline, recovery)
+    ]
+    stored = {
+        "meals": [
+            {"id": op["entity_id"], "owner": "A", "revision": 1, "deleted": False}
+            for op in (baseline, recovery)
+        ],
+        "mappings": [mapping | {"owner": "A", "entity_type": "meal"}],
+    }
+    return baseline, recovery, second, first, replay, entities, stored
+
+
+def test_recovery_oracle_accepts_one_owned_meal_and_requested_second_response_id():
+    from recovery_o2 import verify_recovered_state, verify_recovery_result
+
+    base, recovery, second, first, replay, entities, stored = recovery_case()
+    verify_recovery_result(first, recovery, recovery["entity_id"], "accepted")
+    verify_recovery_result(replay, second, recovery["entity_id"], "already_applied")
+    verify_recovered_state(recovery, second, base, "A", entities, stored)
+
+
+@pytest.mark.parametrize(
+    "fault",
+    ["null", "source_epoch", "source_entity_id", "target_entity_id", "target_revision", "status"],
+)
+def test_recovery_response_oracle_rejects_null_wrong_source_target_or_second_status(fault):
+    from recovery_o2 import verify_recovery_result
+
+    _, recovery, second, first, replay, _, _ = recovery_case()
+    if fault == "null":
+        first["recovery_mapping"] = replay["recovery_mapping"] = None
+    elif fault == "status":
+        replay["status"] = "accepted"
+    else:
+        replay["recovery_mapping"][fault] = "wrong"
+    with pytest.raises(RuntimeError):
+        verify_recovery_result(first, recovery, recovery["entity_id"], "accepted")
+        verify_recovery_result(replay, second, recovery["entity_id"], "already_applied")
+
+
+@pytest.mark.parametrize(
+    "fault", ["duplicate", "mapping", "owner", "content", "item", "nutrition", "missing"]
+)
+def test_recovery_storage_oracle_rejects_duplicate_foreign_or_corrupt_meal(fault):
+    from copy import deepcopy
+
+    from recovery_o2 import verify_recovered_state
+
+    base, recovery, second, _, _, entities, stored = recovery_case()
+    if fault == "duplicate":
+        stored["meals"].append(stored["meals"][-1] | {"id": second["entity_id"]})
+    elif fault == "mapping":
+        stored["mappings"].append(deepcopy(stored["mappings"][0]))
+    elif fault == "owner":
+        stored["meals"][-1]["owner"] = "B"
+    elif fault == "content":
+        entities[-1]["payload"]["title"] = "corrupt"
+    elif fault == "item":
+        entities[-1]["payload"]["items"] = []
+    elif fault == "nutrition":
+        entities[-1]["payload"]["items"][0]["nutrition_per_100"]["energy_kcal"] = "0"
+    else:
+        stored["meals"].pop()
+    with pytest.raises(RuntimeError):
+        verify_recovered_state(recovery, second, base, "A", entities, stored)

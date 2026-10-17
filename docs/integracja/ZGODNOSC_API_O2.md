@@ -1,6 +1,8 @@
 # Zgodność API, katalogu i synchronizacji — O2
 
-Stan 17.10.2026: macierz, migracja i serwerowy KO17/32 **PASS**.
+Stan17.10.2026: **FIX1 W TOKU** po trzech P2 koordynatora (8,5/10).
+Macierz/migracja i wcześniejszy runtime C zachowane; nowy oracle/rollback wymagają C2.
+[Zmiany, mutacje RED/GREEN i zakres eksperymentu](ODBIOR_RECOVERY_O2.md#fix1--odbiór-koordynatora-i-nowe-źródło-c2).
 [Dowody C/image/schema oraz 8/8 CI39026906997](ODBIOR_RECOVERY_O2.md#odebrany-zestaw-wykonawczy-c).
 Lokalnie PASS dwóch nowych regresji PG17 i73 affected unit; pełny CI1364PG PASS.
 Nie jest to odbiór APK. Pełne KO32: **WAITING_EXTERNAL**, O1/O3.

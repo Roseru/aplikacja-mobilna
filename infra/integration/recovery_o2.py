@@ -52,6 +52,66 @@ def envelope(boot, checkpoint, operations):
     }
 
 
+def verify_recovery_result(result, operation, target, status):
+    expected = {
+        "source_epoch": operation["recovery"]["source_epoch"],
+        "source_entity_id": operation["recovery"]["source_entity_id"],
+        "target_entity_id": target,
+        "target_revision": 1,
+    }
+    check(operation["entity_type"] == "meal", "Unexpected recovery entity type")
+    check(result.get("status") == status, "Unexpected recovery status")
+    check(result.get("operation_id") == operation["operation_id"], "Recovery operation mismatch")
+    # The response retains the requested ID; mapping carries the canonical target.
+    check(result.get("entity_id") == operation["entity_id"], "Requested recovery ID mismatch")
+    check(result.get("recovery_mapping") == expected, "Missing or incorrect recovery mapping")
+
+
+def verify_recovered_state(recovery, second, baseline, owner, entities, stored):
+    target = recovery["entity_id"]
+    expected_rows = [
+        {"id": key, "owner": owner, "revision": 1, "deleted": False}
+        for key in (baseline["entity_id"], target)
+    ]
+    check(
+        sorted(stored["meals"], key=lambda row: row["id"])
+        == sorted(expected_rows, key=lambda row: row["id"]),
+        "Duplicate, missing or foreign recovered meal",
+    )
+    check(second["entity_id"] not in {row["id"] for row in stored["meals"]}, "Second target exists")
+    check(
+        stored["mappings"]
+        == [
+            {
+                "owner": owner,
+                "source_epoch": recovery["recovery"]["source_epoch"],
+                "source_entity_id": recovery["recovery"]["source_entity_id"],
+                "entity_type": "meal",
+                "target_entity_id": target,
+                "target_revision": 1,
+            }
+        ],
+        "Recovery mapping storage mismatch",
+    )
+    # Expected payloads originate in canonical wire fixtures, never in API replies.
+    expected = [
+        {
+            "entity_type": "meal",
+            "entity_id": op["entity_id"],
+            "revision": 1,
+            "deleted": False,
+            "payload": op["payload"],
+        }
+        for op in (baseline, recovery)
+    ]
+    actual = [entry for entry in entities if entry["entity_type"] == "meal"]
+    check(
+        sorted(actual, key=lambda row: row["entity_id"])
+        == sorted(expected, key=lambda row: row["entity_id"]),
+        "Recovered meal content mismatch",
+    )
+
+
 def admin(probe, method, path, *, expected=200):
     # Short-lived admin token in memory only. Actual provider admin API, never its DB.
     credentials = json.loads((probe.stack.state / "credentials.json").read_text())
@@ -548,7 +608,7 @@ def run(state, port):
             ),
             200,
         ).json()["results"][0]
-        check(result["status"] == "accepted", "Conscious recovery failed")
+        verify_recovery_result(result, recovery, recovery["entity_id"], "accepted")
         second = recovery | {"operation_id": str(uuid4()), "entity_id": str(uuid4())}
         replay = expect(
             probe.api(
@@ -559,9 +619,26 @@ def run(state, port):
             ),
             200,
         ).json()["results"][0]
-        check(
-            replay["recovery_mapping"] == result["recovery_mapping"],
-            "Second device duplicated recovery",
+        verify_recovery_result(replay, second, recovery["entity_id"], "already_applied")
+        final_page = expect(probe.api("GET", "/api/v1/sync/pull", token=token), 200).json()
+        check(final_page["page_token"] is None, "Expected complete small recovery snapshot")
+        stored = json.loads(
+            quiet_sql(
+                stack,
+                "calorie_app",
+                """
+            SELECT json_build_object('meals',
+              (SELECT coalesce(json_agg(json_build_object('id',id,'owner',owner_id,
+                 'revision',revision,'deleted',deleted_at IS NOT NULL)), '[]') FROM app.meals),
+              'mappings', (SELECT coalesce(json_agg(json_build_object('owner',owner_id,
+                 'source_epoch',source_epoch,'source_entity_id',source_entity_id,
+                 'entity_type',entity_type,'target_entity_id',target_entity_id,
+                 'target_revision',target_revision)), '[]') FROM app.sync_recovery_mappings));
+        """,
+            )
+        )
+        verify_recovered_state(
+            recovery, second, first, boot["account_id"], final_page["entities"], stored
         )
         check(
             quiet_sql(stack, "calorie_app", "SELECT dispatch_open FROM app.ai_controls;") == "f"
@@ -594,6 +671,13 @@ def run(state, port):
             capture_output=True,
             timeout=120,
         )
+        receipt["stage"] = "synthetic_predecessor_rollback"
+        from rollback_o2 import rehearse_predecessor
+
+        rollback = rehearse_predecessor(state / "rollback-experiment", commit, image)
+        checks.append(
+            "synthetic exact-source0021 image, upgrade0024, paired restore0021 and real API passed"
+        )
         for name, extra in {
             "backend_acceptance": {
                 "image": image,
@@ -608,14 +692,7 @@ def run(state, port):
                 "data_preserved": True,
                 "predecessor_commit": "a522471140150271d853d66aa06f11d868699e49",
             },
-            "rollback": {
-                "for_revision": EXPECTED_REVISION,
-                "strategy": "restore",
-                "scope": "actual paired own 0024->0024 pg_restore only",
-                "result": "BLOCKED",
-                "waiting_external": "O3/O2: accepted 0021 image and coherent predecessor backup",
-                "predecessor_rollback": "NOT_RUN",
-            },
+            "rollback": rollback,
         }.items():
             private_write(
                 state / (name + ".json"),
