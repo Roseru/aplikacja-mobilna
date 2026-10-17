@@ -31,12 +31,12 @@ import pl.roseru.kalorie.session.SessionView
                             Text(if (read.available) "Usługa jest dostępna." else "Usługa jest chwilowo niedostępna. Dodaj posiłek ręcznie.", Modifier.testTag("photo-availability"))
                             Text("Limit: ${read.dailyPhotos} zdjęć dziennie · obraz do ${read.imageBytes / 1024} KB. Sprawdzenie nie rezerwuje miejsca.")
                             Text("Przed analizą poprosimy o osobną zgodę na wybrane zdjęcie. Wynik będzie szacunkiem do poprawienia; obraz na serwerze jest przechowywany do zakończenia zadania, maksymalnie 24 godziny. Dostawca stosuje własne zasady przetwarzania.")
-                            Text("Przesyłanie zdjęć jest jeszcze niedostępne w tej wersji aplikacji.", style = MaterialTheme.typography.bodySmall)
+                            Text("Wybierz zapisane zdjęcie i potwierdź zgodę przed wysłaniem.", style = MaterialTheme.typography.bodySmall)
                         }
                     }
                     OutlinedButton(onClick = onRead, enabled = !session.photoCapabilitiesBusy && !session.bootstrapBusy &&
                         !session.profileBusy && !session.snapshotBusy && !session.motivationBusy && !session.rankingConsentBusy &&
-                        !session.rankingBusy && !session.nemesisBusy && !session.nemesisMutationBusy,
+                        !session.rankingBusy && !session.nemesisBusy && !session.nemesisMutationBusy && !session.photoUploadBusy,
                         modifier = Modifier.fillMaxWidth().testTag("photo-check-capabilities")) { Text("Sprawdź dostępność") }
                 }
             }
