@@ -350,7 +350,7 @@ jobs:
           retention-days: 14
   local-integration:
     runs-on: ubuntu-latest
-    timeout-minutes: 20
+    timeout-minutes: 35
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
       - uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7.0.0
@@ -387,12 +387,20 @@ jobs:
           uv run --project backend --locked python infra/integration/backup.py rehearse \
             --backup "${{ runner.temp }}/calorie-paired-backup" > \
             "${{ runner.temp }}/calorie-integration/restore-verification.json"
+      - name: O2 owned meal recovery, real sessions and conservative issuance fence
+        run: >-
+          uv run --project backend --locked python infra/integration/recovery_o2.py
+          --state "${{ runner.temp }}/o2-recovery" --port 19443
       - name: Upload secret-free infrastructure receipt
         if: always()
         uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
         with:
           name: local-integration-receipt
           path: |
+            ${{ runner.temp }}/o2-recovery/recovery-o2.json
+            ${{ runner.temp }}/o2-recovery/backend_acceptance.json
+            ${{ runner.temp }}/o2-recovery/migration.json
+            ${{ runner.temp }}/o2-recovery/rollback.json
             ${{ runner.temp }}/calorie-integration/verification.json
             ${{ runner.temp }}/calorie-integration/e8-verification.json
             ${{ runner.temp }}/calorie-integration/restore-verification.json

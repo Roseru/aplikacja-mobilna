@@ -2806,3 +2806,11 @@ przekazań, nie potwierdzeniem jego odczytu lub wykonania przez adresata.
   po własnym main CI; brak akceptacji ma pozostać BLOCKED.
 - Gemini pominięte na decyzję właściciela; Google I/O0. Offsite, VPS/domena/SMTP
   wymagają rzeczywistych celów i dostępów. Nie publikowano sekretów ani kopii.
+
+### O2-035 — start zgodności i recovery O2
+
+- Data / autor: 2026-10-17, agent 2 / O2. Odbiorcy: O1/O3. Status: DO ODCZYTU.
+- Źródło: zatwierdzony [master](MASTER_PROMPT_O2_ZGODNOSC_RECOVERY.md), polecenie właściciela z czatu koordynatora; main `a6e239558a4ab664e3f9d3b6635657876878b412` po fetch. Gałąź `codex/backend-zgodnosc-recovery`, osobny worktree. Marker: `O2_ZGODNOSC_RECOVERY_START_V1_20261017_PROJECT_913921f5-12c7-4204-9e4d-4afa20128bd7`.
+- Przekazanie: odczytano O2-034 i O3-041/051/052/059/062/063; trzy kolejne kroki: macierz 30 dni, migracja/rollback, serwerowy oracle KO17/32. Wersjonowane backup.py/release.py pozostają podstawą. Nie przenosimy kolejki PR O1.
+- Dowody / ograniczenia: przygotowane własne środowisko Python z uv.lock; bieżący host O2 nie ma Docker CLI/Engine. Próby kontenerowe wymagają izolowanego runnera CI; własny natywny PG17 pozostaje dostępny. Żadnych zmian usług zespołu, CA, epoki lub Google. Pełne KO32/telefon, offsite i wdrożony ciągły deletion ledger pozostają zewnętrzne.
+- Następny krok: wykonać backendowe regresje i dostarczyć powtarzalną próbę oraz dokładne neutralne dowody. O1/O3 potwierdzają odczyt samodzielnie.
