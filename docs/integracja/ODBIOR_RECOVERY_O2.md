@@ -31,7 +31,9 @@ publikacji macierzy/migracji i odebranego recovery serwera.
 
 Nowy `test_o2_populated_0021_to_current_graph_and_legacy_replay` wykonuje Alembic
 na niepustym0021: dwa konta/role DB API, profil/wersję celu/14dni historii, pomiary,
-kompletność, g/ml/null, katalog i ration definitions, kolejkę zdjęcia/zgodę AI,
+kompletność, g/ml/null, snapshot zjedzonej pozycji racji i referencję produktu, zaakceptowany
+Nemesis z niepustymi projekcjami, kolejkę zdjęcia/zgodę AI i legalną rezerwację
+10240 tokenów mocka (claim/dispatch przez prawdziwy LOGIN workera, bez provider I/O),
 sync ACK i tombstone. Payload posiłku reprezentuje import lokalnego gościa do A;
 nie tworzy konta gościa. Porównanie wszystkich dawnych wartości/kolumn jest
 oddzielone od przewidzianych metadanych migracji (4 releases, aktualny runtime
@@ -128,7 +130,9 @@ Wymagany kontrakt magazynu i odbiór O3 pozostają WAITING_EXTERNAL.
 
 Po sukcesie runner zapisuje neutralne `backend_acceptance.json`, `migration.json`
 i `rollback.json` z jednym pełnym **C**. Ten ostatni pozostaje BLOCKED dla
-cofnięcia migracji poprzednika, nawet gdy recovery0024 uzyska PASS. Wspólny obraz/schema są sprawdzane, rollback
+cofnięcia migracji poprzednika, nawet gdy recovery0024 uzyska PASS. Testowany obraz jest osobnym CI artefaktem `o2-backend-image-<C>`;
+`docker image load -i backend-image.tar` pozwala O3 otrzymać ten sam imageID.
+Obraz nie zawiera runtime credentials. Wspólny obraz/schema są sprawdzane, rollback
 ma strategy=restore z jawnym brakującym odbiorem poprzednika. Nie tworzy brakujących android_acceptance/restore receiptów
 ani kompletu CANDIDATE_VALIDATED. [Checker wydania](../../infra/integration/WYDANIE.md)
 pozostaje niezmieniony; release na przyszłym wspólnym M wymaga świeżych dowodów M.
@@ -149,3 +153,15 @@ harness i niezależne oracles. Końcowe nowe testy PG:2PASS; pełny właściwy z
 Windows odmówił dostępu do zastanego katalogu; dalsze próby miały własny basetemp.
 Własny PG uruchamiany i zatrzymywany w jednym procesie; cudzy checkout i untracked
 pozostały zachowane. Dalsze wyniki/CI i niezależna ocena zostaną dopisane po wykonaniu.
+
+Dalsze RED runnera: pierwszy przebieg39025612716 potwierdził backup i reprodukcję
+po pg_restore, drugi39026099713 wskazał ConnectError pierwszego GET maintenance
+przed startem listenera. Ograniczone oczekiwanie naprawia wyłącznie transport;
+HTTP200/401/502 pozostają natychmiastowym FAIL (12affectedPASS). Przebieg
+39026471041 doszedł do logout-all; poprawiono oczekiwanie204 na dokumentowane
+200/GlobalRequestResult z kontrolą failedRequests według
+[Keycloak26.8](https://www.keycloak.org/docs-api/26.8.0/rest-api/index.html#_post_adminrealmsrealmlogout_all).
+Pełne421s oczekiwania i stareJWT/refresh nadal wymagają rzeczywistego PASS.
+Regresję istniejącego state sprawdzono kontrolowaną mutacją w izolowanej kopii:
+przywrócony dawny zapis do odrzuconego katalogu → oczekiwany testFAIL;
+normalne12przypadkówPASS. Prywatne raw logs i neutralne wcześniejszeFAIL zachowane.

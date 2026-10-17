@@ -6,6 +6,7 @@ All identities, ledger and archives stay in a newly created private directory.
 
 import argparse
 import json
+import re
 import subprocess
 import sys
 import time
@@ -456,7 +457,11 @@ def run(state, port):
         receipt["stage"] = "reconcile_external_fixture"
         entry = verify_fixture_ledger(ledger, pinned, expected=target, cutoff=cutoff)
         deletion(stack, probe, target, entry["operation_id"])
-        admin(probe, "POST", "/logout-all", expected=204)
+        logout = admin(probe, "POST", "/logout-all", expected=200).json()
+        check(
+            isinstance(logout, dict) and not logout.get("failedRequests"),
+            "Provider logout-all partially failed",
+        )
         admin(probe, "GET", "/users/" + target["subject"], expected=404)
         # Since restore, user issuance has been inaccessible. Observe the full conservative
         # unknown-token bound; no fake clocks, skew changes or shortened lifetime.
@@ -464,7 +469,7 @@ def run(state, port):
         closed = time.monotonic()
         deadline = closed + 421
         while time.monotonic() < deadline:
-            time.sleep(min(1, deadline - time.monotonic()))
+            time.sleep(max(0, min(1, deadline - time.monotonic())))
         receipt["issuance_closed_wait_seconds"] = round(time.monotonic() - closed, 3)
         checks.append(
             "independent pinned fixture reconciled; API/issuance 503 for >=420 real seconds"
@@ -630,6 +635,11 @@ def run(state, port):
         return receipt
     except Exception as error:
         receipt["error_kind"] = type(error).__name__
+        http_failure = re.fullmatch(
+            r"Integration HTTP check expected (\d{3}), got (\d{3})", str(error)
+        )
+        if http_failure:
+            receipt["http_expected"], receipt["http_actual"] = map(int, http_failure.groups())
         receipt["failure_locations"] = [
             {"file": Path(frame.filename).name, "line": frame.lineno, "function": frame.name}
             for frame in traceback.extract_tb(error.__traceback__)
