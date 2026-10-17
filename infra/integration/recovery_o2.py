@@ -14,6 +14,7 @@ from datetime import UTC, datetime
 from pathlib import Path
 from uuid import UUID, uuid4
 
+import httpx
 from backup import capture, digest, execute, private_write, rehearse, verify_archive
 from run import ROOT, Stack, initialize
 from verify import Probe, expect
@@ -252,6 +253,20 @@ https://:8443 {
     stack.compose("-f", str(override), "up", "--detach", "--no-deps", "--force-recreate", "gateway")
 
 
+def wait_maintenance(probe, timeout=30):
+    """Bounded listener startup; an open route is an immediate failure, never retried."""
+    deadline = time.monotonic() + timeout
+    while time.monotonic() < deadline:
+        try:
+            with probe.client() as client:
+                expect(client.get(probe.stack.origin + "/api/v1/me"), 503)
+                expect(client.post(probe.issuer + "/protocol/openid-connect/token"), 503)
+            return
+        except httpx.TransportError:
+            time.sleep(0.25)
+    raise RuntimeError("Maintenance HTTPS listener did not start within bound")
+
+
 def run(state, port):
     check(not state.exists(), "Refusing existing state; fresh owned scratch required")
     commit = subprocess.check_output(["git", "rev-parse", "HEAD"], cwd=ROOT, text=True).strip()
@@ -437,9 +452,7 @@ def run(state, port):
         stack.compose("up", "--detach", "--no-deps", "--wait", "keycloak")
         receipt["stage"] = "maintenance_gateway"
         maintenance(stack)
-        with probe.client() as client:
-            expect(client.get(stack.origin + "/api/v1/me"), 503)
-            expect(client.post(probe.issuer + "/protocol/openid-connect/token"), 503)
+        wait_maintenance(probe)
         receipt["stage"] = "reconcile_external_fixture"
         entry = verify_fixture_ledger(ledger, pinned, expected=target, cutoff=cutoff)
         deletion(stack, probe, target, entry["operation_id"])

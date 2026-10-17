@@ -78,3 +78,51 @@ def test_existing_state_is_refused_without_any_write(tmp_path):
     assert result.returncode == 1
     assert list(state.iterdir()) == [original]
     assert original.read_text() == "preserve"
+
+
+@pytest.mark.parametrize("status", [200, 401, 502])
+def test_maintenance_open_or_wrong_route_is_immediate_failure(status):
+    from types import SimpleNamespace
+
+    import httpx
+    from recovery_o2 import wait_maintenance
+
+    calls = []
+
+    def reply(request):
+        calls.append(request)
+        return httpx.Response(status)
+
+    probe = SimpleNamespace(
+        stack=SimpleNamespace(origin="https://owned.example"),
+        issuer="https://owned.example/realms/calorie-dev",
+        client=lambda: httpx.Client(transport=httpx.MockTransport(reply)),
+    )
+    with pytest.raises(RuntimeError, match="expected 503"):
+        wait_maintenance(probe)
+    assert len(calls) == 1
+
+
+def test_maintenance_waits_only_for_transport_then_requires_both_closed(monkeypatch):
+    from types import SimpleNamespace
+
+    import httpx
+    import recovery_o2
+
+    calls = []
+
+    def reply(request):
+        calls.append(request)
+        if len(calls) == 1:
+            raise httpx.ConnectError("owned listener not ready", request=request)
+        return httpx.Response(503)
+
+    probe = SimpleNamespace(
+        stack=SimpleNamespace(origin="https://owned.example"),
+        issuer="https://owned.example/realms/calorie-dev",
+        client=lambda: httpx.Client(transport=httpx.MockTransport(reply)),
+    )
+    monkeypatch.setattr(recovery_o2.time, "sleep", lambda _: None)
+    recovery_o2.wait_maintenance(probe)
+    assert len(calls) == 3
+    assert calls[-1].method == "POST" and calls[-1].url.path.endswith("/token")
