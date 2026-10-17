@@ -19,7 +19,7 @@ Każda osoba aktualizuje własny wiersz. Daty i dokładne źródła są w jej wp
 |---|---|---|---|
 | O1 — Android, Kotlin, Room | 0.8.10/code21/Room8: odczyt Nemesis;155 JVM/168full i72final affected PASS osobno;22tabele/5posiłków zachowane | Własny PR/CI; trwałe operacje Nemesis, realny API/APK, E4/recovery i klientE9 | O1-026, [raport](../android/RAPORT_0_8_10.md), codex/android-nemesis |
 | O2 — Python, PostgreSQL, API | PR124: rejestr usunięć/schema0025, review9/10; pełna integracja71ca4fdf PASS; poprawki izolacji i aktualny main dołączone | Koordynator: dokładny końcowy head/base i8CI w PR/checks; O3: sink/fencing/cutoff, O1/O3: pełneKO32 | O2-041, [PR124](https://github.com/Roseru/aplikacja-mobilna/pull/124), [raport](integracja/RAPORT_REJESTR_USUNIEC_O2.md) |
-| O3 — DevOps, CI/CD, serwer | PR123 scalony; odbiornik rejestru:26 lokalnych testów, rzeczywisty TLS i crash/restart PASS | PR124 ma nowe poprawki po historycznym RED; wymagany własny nowy CI; potrzebny odbiór O2 oraz drugi host, klucze/fencing/cutoff; telefon w poniedziałek | O3-069, [odbiornik](integracja/ODBIORNIK_REJESTRU_O3.md), codex/devops-odbiornik-rejestru |
+| O3 — DevOps, CI/CD, serwer | PR123 scalony; odbiornik rejestru:30 lokalnych testów, rzeczywisty TLS i crash/restart PASS | PR124 ma nowe poprawki po historycznym RED; wymagany własny nowy CI; potrzebny odbiór O2 oraz drugi host, klucze/fencing/cutoff; telefon w poniedziałek | O3-069, [odbiornik](integracja/ODBIORNIK_REJESTRU_O3.md), codex/devops-odbiornik-rejestru |
 
 
 ## Wpisy
@@ -3003,3 +3003,5 @@ przekazań, nie potwierdzeniem jego odczytu lub wykonania przez adresata.
 - Drugi host/adres/dostęp, produkcyjne klucze/retencja/fencing/ostatni zapis/cutoff i niezależne odzyskanie kluczy WAITING_EXTERNAL. Nie wdrożono0025 lub odbiornika do czynnej instalacji; nie zmieniono kont/issuer/CA/epoki, nie otwarto AI/Nemesis. Pełne KO32/RPO/RTO i telefon osobno.
 
 Uzupełnienie O3-069: odczytane poprawki O2 na9b76156 i zwykły merge tego rodzica. Runtime ledger_contract/transport oraz własny odbiornik pozostają bez zmian; historyczne61FAIL/16ERROR nie opisuje wyniku nowego head. O2 dostarczył poprawki historycznych fixture/izolacji/CLI i odczytano jego częściowe lokalne dowody; aktualny pełny CI/odbiór koordynatora nadal osobno. Zachowano wszystkie wpisy i wiersz O2.
+
+Aktualizacja O3-069,18.10: wykryty i poprawiony wyścig startupu z równoległym append. Walidacja ma jeden snapshot i porcjowe uwierzytelnienie całego pokrycia, bez słownika rosnącego strumienia. Nieciągły batch/replay odmawia przed zapisem.30testów PASS; usunięcie BEGIN w izolowanej mutacji daje1FAIL. Nowy obraz Linux UID10001/read-only/no-network ponownie PASS, źródłoSHA6fc3824b. Backendowy kontrakt O2 bez zmian. Osiem własnych kontroli main po PR119/123 PASS; receiver pozostaje zależnym PR125, bez wdrożenia do używanej instalacji.

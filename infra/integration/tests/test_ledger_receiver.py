@@ -363,3 +363,59 @@ def test_real_tls_o2_transport_delivery_and_restart(prepared, tmp_path):
             server.should_exit = True
             thread.join(timeout=10)
             assert not thread.is_alive()
+
+
+def test_overlapping_authenticated_batches_keep_complete_coverage(prepared):
+    receiver, trust, anchor, second = prepared
+    third = event(trust, 3, second["chain_hash"])
+    receiver.deliver(envelope(trust, [anchor]))
+    receiver.deliver(envelope(trust, [anchor, second]))
+    receiver.deliver(envelope(trust, [second, third]))
+    reopened = Receiver(receiver.database, trust)
+    assert reopened.deliver(envelope(trust, [anchor, second, third]))["sequence"] == 3
+
+
+def test_authenticated_noncontiguous_replay_is_not_stored(prepared):
+    receiver, trust, anchor, second = prepared
+    third = event(trust, 3, second["chain_hash"])
+    receiver.deliver(envelope(trust, [anchor, second, third]))
+    with pytest.raises(LedgerInvalid, match="invalid_batch_order"):
+        receiver.deliver(envelope(trust, [anchor, third]))
+    assert len(receiver.export()) == 1
+
+
+def test_valid_event_without_authenticated_envelope_cannot_extend_coverage(prepared):
+    receiver, trust, anchor, second = prepared
+    receiver.deliver(envelope(trust, [anchor]))
+    with sqlite3.connect(receiver.database) as db:
+        db.execute("INSERT INTO events VALUES(?,?)", (2, receiver_module.encoded(second)))
+    with pytest.raises(LedgerInvalid, match="persisted_events_missing"):
+        Receiver(receiver.database, trust)
+
+
+def test_restart_uses_one_snapshot_during_concurrent_delivery(prepared, monkeypatch):
+    receiver, trust, anchor, second = prepared
+    receiver.deliver(envelope(trust, [anchor]))
+    original = sqlite3.connect
+    triggered = False
+
+    class ConcurrentWrite(sqlite3.Connection):
+        def execute(self, sql, *args, **kwargs):
+            nonlocal triggered
+            if sql == "SELECT value FROM batches ORDER BY id" and not triggered:
+                triggered = True
+                assert receiver.deliver(envelope(trust, [second]))["sequence"] == 2
+            return super().execute(sql, *args, **kwargs)
+
+    monkeypatch.setattr(
+        receiver_module.sqlite3,
+        "connect",
+        lambda *args, **kwargs: original(*args, **kwargs, factory=ConcurrentWrite),
+    )
+    Receiver(receiver.database, trust)
+    assert triggered
+    monkeypatch.setattr(receiver_module.sqlite3, "connect", original)
+    assert (
+        Receiver(receiver.database, trust).deliver(envelope(trust, [anchor, second]))["sequence"]
+        == 2
+    )

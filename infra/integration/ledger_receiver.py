@@ -45,6 +45,24 @@ def encoded(value):
     return json.dumps(value, sort_keys=True, separators=(",", ":"))
 
 
+def verified_batch(trust, envelope):
+    events = authenticated_batch(trust, envelope)
+    unique_json(envelope["body"])
+    first = events[0].get("sequence") if isinstance(events[0], dict) else None
+    require(type(first) is int and 1 <= first < 2**63, "invalid_batch_order")
+    require(
+        first + len(events) - 1 < 2**63
+        and all(
+            isinstance(event, dict)
+            and type(event.get("sequence")) is int
+            and event["sequence"] == first + index
+            for index, event in enumerate(events)
+        ),
+        "invalid_batch_order",
+    )
+    return events
+
+
 class Receiver:
     """One pinned stream. ACK follows the FULL-synchronous commit, including on replay.
 
@@ -58,6 +76,7 @@ class Receiver:
         require(self.database.is_file() and not self.database.is_symlink(), "store_missing")
         self.guard = threading.Lock()
         with self.connection() as db:
+            db.execute("BEGIN")
             self.validate(db)
 
     @classmethod
@@ -113,25 +132,28 @@ class Receiver:
             db.execute("SELECT value FROM pin WHERE id=1").fetchone() == (self.pin(),),
             "pin_mismatch",
         )
-        authenticated = {}
-        for (value,) in db.execute("SELECT value FROM batches ORDER BY id"):
-            envelope = unique_json(value)
-            unique_json(envelope["body"])
-            for event in authenticated_batch(self.trust, envelope):
-                number = event["sequence"]
-                require(
-                    number not in authenticated or authenticated[number] == event, "persisted_fork"
-                )
-                authenticated[number] = event
         sequence, previous = 1, ZERO
         for number, value in db.execute("SELECT sequence,value FROM events ORDER BY sequence"):
             event = unique_json(value)
-            require(
-                number == sequence and authenticated.pop(number, None) == event, "persisted_gap"
-            )
+            require(number == sequence, "persisted_gap")
             verify_event(self.trust, event, sequence, previous)
             sequence, previous = sequence + 1, event["chain_hash"]
-        require(not authenticated, "persisted_events_missing")
+        # Check complete authenticated coverage in ingestion order with bounded
+        # memory. Keep one <=128-event envelope, never the entire growing stream.
+        covered = 0
+        for (value,) in db.execute("SELECT value FROM batches ORDER BY id"):
+            events = verified_batch(self.trust, unique_json(value))
+            require(events[0]["sequence"] <= covered + 1, "persisted_source_gap")
+            for event in events:
+                require(
+                    db.execute(
+                        "SELECT value FROM events WHERE sequence=?", (event["sequence"],)
+                    ).fetchone()
+                    == (encoded(event),),
+                    "persisted_source_mismatch",
+                )
+            covered = max(covered, events[-1]["sequence"])
+        require(covered == sequence - 1, "persisted_events_missing")
         row = db.execute("SELECT cutoff FROM control WHERE id=1").fetchone()
         require(row is not None, "control_missing")
         if row[0]:
@@ -146,8 +168,7 @@ class Receiver:
             )
 
     def deliver(self, envelope):
-        events = authenticated_batch(self.trust, envelope)
-        unique_json(envelope["body"])
+        events = verified_batch(self.trust, envelope)
         with self.guard, self.connection() as db:
             db.execute("BEGIN IMMEDIATE")
             require(

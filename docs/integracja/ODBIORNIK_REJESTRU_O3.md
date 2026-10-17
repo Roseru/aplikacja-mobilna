@@ -1,13 +1,13 @@
 # Odbiornik ciągłego rejestru usunięć — O3
 
-17.10.2026. Kod przygotowany; zewnętrzny host, fizyczne odcięcie starego źródła
+18.10.2026 (pierwszy checkpoint17.10). Kod przygotowany; zewnętrzny host, fizyczne odcięcie starego źródła
 i produkcyjny cutover **WAITING_EXTERNAL**. Nie zmieniono używanej instalacji,
 kont, CA, epoki, usług ani bramek AI/Nemesis. Próba APK/API pozostaje na poniedziałek.
 
 ## Zależność i rzeczywisty odbiór źródła
 
 Ten etap wymaga kontraktu runtime z PR124, dokładny parent
-`71ca4fdf47ba49ede95b3999a99df6764d486e58`, branch
+`9b761561bc01cd90deb048499948541c0bfe1cfa`, branch
 `codex/backend-ciagly-rejestr-usuniec`. Własna gałąź O3 to
 `codex/devops-odbiornik-rejestru`; zależny PR porównuje się z rodzicem.
 Najpierw A2/koordynator poprawia i odbiera PR124, potem zmieniamy bazę tego
@@ -44,6 +44,9 @@ transakcji BEGIN IMMEDIATE. ACK powstaje **po** zakończonym commit. Utracona
 odpowiedź i identyczny replay nie tworzą drugiego eventu. Luka, fork, zmiana
 tożsamości, kluczy, treści lub MAC są odrzucane. Restart uwierzytelnia cały
 zapisany prefiks i sprawdza dokładne mapowanie kopert do eventów oraz pin.
+Walidacja pracuje porcjami, bez słownika całej rosnącej historii. Każdy batch
+musi być ciągły także przy replay. Restart czyta jeden snapshot transakcyjny;
+równoległy poprawny zapis nie powoduje fałszywego alarmu uszkodzenia.
 Brak bazy nie tworzy automatycznie nowego pustego strumienia.
 
 HTTP ma limit8MiB+4096B na kopertę (wewnętrzny batch A2 nadal1MiB),10s
@@ -105,16 +108,19 @@ Snapshot plików bazy musi uwzględniać WAL albo używać SQLite backup API.
 
 ## Dowody lokalne i pozostałe wejścia
 
-26testów PASS: prawdziwy TLS i transport HTTPS A2, restart, replay,
+30testów PASS: prawdziwy TLS i transport HTTPS A2, restart, replay,
 wielu nadawców,7zmian pin/kluczy,4uszkodzenia batcha,6uszkodzeń trwałego
 stanu, odmowa brakującej bazy, awaria commit bez ACK oraz rzeczywisty proces
 przerwany po commit/przed ACK. Cutoff/freeze zachowane po restarcie,
-autoryzacja i błędy HTTP bez ujawnienia treści.
+autoryzacja i błędy HTTP bez ujawnienia treści. Cztery nowe regresje pokrywają
+nakładające się batchy, brak uwierzytelnionego pokrycia, nieciągły replay i
+rzeczywisty równoległy commit podczas restartu. Izolowana mutacja usuwająca
+BEGIN snapshotu daje1FAIL; pliki źródeł nie były zmieniane przez mutację.
 
 Testy wykonano na lokalnym Windows i dokładnym kontrakcie rodzica.
 Obraz backendu i pochodny obraz odbiornika zbudowano lokalnie; rzeczywisty
 Linux UID10001/read-only/no-network przeszedł init→ACK→restart→replay→freeze.
-SHA256 źródła wykonawczego70c36e7f35eeac9eea6b3d50a5ba35efb03f91a7769131dbc66d5d10e86d6d5f. Nie są
+SHA256 źródła wykonawczego6fc3824b4ec4c9292002557058ce926aea3185e8f604649dbe3858117d77dd10. Nie są
 dowodem niezależności hostów, pełnego PG→HTTPS→ACK źródła ani produkcyjnego
 KO32/RPO/RTO. Test SQLite nie zastępuje testów źródłowego PostgreSQL.
 
