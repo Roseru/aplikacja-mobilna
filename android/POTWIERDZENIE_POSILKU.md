@@ -86,6 +86,10 @@ provenance do starego payloadu sync-v1. Rzeczywiste E7-R/KO32/Gemini wymagają
 osobnego odbioru. [Podglądy UI](../propozycje-ui/analiza-0.8.19/README.md)
 uzupełniają brak wizualnej kontroli dialogu zgłoszony dla0.8.18.
 
+Kolejny kod protokołu i jego oddzielne dowody opisuje
+[przygotowanie push E4](SYNCHRONIZACJA_PUSH.md). Nie jest to jeszcze odbiór ACK
+w bazie lub wysyłka. Powyższy receipt APK nadal wskazuje kod97fff24.
+
 ## Historyczny fundament — a7bb7dd
 
 Pełna decyzja przechowuje klucz UUID, analizę, rewizję propozycji, rewizję

@@ -8,6 +8,9 @@ nieokreślony typ posiłku i dokładne ilości g/ml; brak energii pozostaje niep
 lint0error PASS,24 stare tabele i rowid zachowane po aktualizacji. HTTP confirm,
 przycisk zatwierdzania i standardowy push nadal wymagają podłączenia; to nie
 odbiór pełnego E4/E7. [Podglądy](../propozycje-ui/analiza-0.8.19/README.md).
+Kolejny etap ma [bibliotekę paczek i odpowiedzi push E4](SYNCHRONIZACJA_PUSH.md):
+308/323 JVM i lint0error PASS, bez podmiany zainstalowanego APK. Trwały odbiór
+ACK w Room, transport i uruchomienie oczekujących intencji są do podłączenia.
 Poniższe opisy konkretnych wcześniejszych wydań zachowują ich historyczny zakres.
 
 
