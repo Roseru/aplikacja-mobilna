@@ -5,7 +5,12 @@ Rzeczywisty scratch rollback0021→upgrade0024→paired restore0021 również **
 **Pełne KO32 WAITING_EXTERNAL**: O1 telefon/Room/UI; O3 offsite, autorytatywny
 ciągły ledger, issuer/repliki i produkcyjne RPO/RTO/rollback wdrożenia.
 Google I/O0; AI/Nemesis zamknięte; usługi zespołu nietknięte.
-Bieżący krok: D2 dokumentacji, jego wymagane CI i ponowny odbiór koordynatora; bez merge.
+Koordynator odebrał FIX1: **9,4/10, trzy P2 zamknięte, brak nowych P1/P2**.
+[PR116](https://github.com/Roseru/aplikacja-mobilna/pull/116) scalono do main
+jako `faee91f771d9dcf0e5155d64984bc3f042ad394f`; wymagane CI dokładnego D2:8/8 SUCCESS.
+Bieżący krok: osobny odbiór merge oraz wspólny kandydat APK/API i brakujące
+dowody O1/O3 według [przekazania O2-039](../KOMUNIKACJA_AGENTOW.md).
+Receipts i obrazy C2 zachowują źródło C2; merge nie oznacza odbioru pełnego KO32.
 
 ## FIX1 — odbiór koordynatora i nowe źródło C2
 

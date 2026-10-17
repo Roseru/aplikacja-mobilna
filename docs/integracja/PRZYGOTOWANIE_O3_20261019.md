@@ -62,7 +62,9 @@ i `--list_installed` 17 października.
 
 **Właściciel proponuje poniedziałek 19.10.2026, 08:00–08:10 Europe/Warsaw
 (06:00–06:10 UTC). A1 ma potwierdzić termin i aktualny osiągalny peer.**
-To propozycja, nie potwierdzona rezerwacja ani wykonana próba. Dziesięć minut
+O1 przyjął propozycję do przygotowania technicznego w PR117/head4f10652;
+faktyczny peer i gotowość nadal wymagają potwierdzenia przed uruchomieniem.
+To nie jest wykonana próba. Dziesięć minut
 przeznaczamy na istniejący scenariusz O2-034, po wcześniejszym przygotowaniu
 obu stanowisk. Brak gotowości nie przedłuża automatycznie okna.
 
