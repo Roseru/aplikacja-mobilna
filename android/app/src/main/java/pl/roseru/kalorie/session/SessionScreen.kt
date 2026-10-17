@@ -14,7 +14,11 @@ data class SessionActions(val login: () -> Unit, val logout: () -> Unit, val ref
     val readRankingConsents: () -> Unit = {}, val confirmRankingConsent: (String, Boolean) -> Unit = { _, _ -> }, val retryRankingConsent: () -> Unit = {},
     val readRanking: () -> Unit = {}, val nextRankingPage: () -> Unit = {}, val retryRankingPage: () -> Unit = {}, val clearRanking: () -> Unit = {},
     val readNemesis: () -> Unit = {}, val readNemesisChallenge: (String) -> Unit = {}, val nextNemesisPage: () -> Unit = {},
-    val retryNemesis: () -> Unit = {}, val clearNemesis: () -> Unit = {})
+    val retryNemesis: () -> Unit = {}, val clearNemesis: () -> Unit = {},
+    val issueNemesisCode: () -> Unit = {}, val revokeNemesisCode: () -> Unit = {},
+    val createNemesis: (String,Int,String,Boolean,Boolean,Boolean) -> Unit = { _,_,_,_,_,_ -> },
+    val acceptNemesis: (String,Boolean,Boolean,Boolean) -> Unit = { _,_,_,_ -> },
+    val cancelNemesis: (String) -> Unit = {}, val retryNemesisMutation: () -> Unit = {})
 
 @Composable fun SessionScreen(view: SessionView, actions: SessionActions, back: () -> Unit, backLabel: String = "Wróć do profilu") {
     val account = view.binding?.owner?.kind == "account"
