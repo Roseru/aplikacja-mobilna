@@ -2083,6 +2083,7 @@ class SessionSecurityTest {
                 return when(request) {
                     is PhotoHttpRequest.Create->{posts++;BootstrapHttpResult(202,uploadAck())}
                     is PhotoHttpRequest.Read->{reads++;BootstrapHttpResult(200,analysisRead())}
+                    is PhotoHttpRequest.Confirm->error("Unexpected confirm in cancellation fixture")
                     is PhotoHttpRequest.Cancel->{calls+=UploadCall(request.key,request.body());if(calls.size==1)throw java.io.IOException("Synthetic lost ACK");BootstrapHttpResult(200,cancellationAck())}
                 }
             }
@@ -2120,6 +2121,7 @@ class SessionSecurityTest {
                 return when(request) {
                     is PhotoHttpRequest.Create->BootstrapHttpResult(202,uploadAck())
                     is PhotoHttpRequest.Read->BootstrapHttpResult(200,analysisRead())
+                    is PhotoHttpRequest.Confirm->error("Unexpected confirm in cancellation fixture")
                     is PhotoHttpRequest.Cancel->{calls+=request;denied(401,"unauthorized")}
                 }
             }
@@ -2145,6 +2147,7 @@ class SessionSecurityTest {
                 return when(request) {
                     is PhotoHttpRequest.Create->BootstrapHttpResult(202,uploadAck())
                     is PhotoHttpRequest.Read->BootstrapHttpResult(200,analysisRead())
+                    is PhotoHttpRequest.Confirm->error("Unexpected confirm in cancellation fixture")
                     is PhotoHttpRequest.Cancel->{calls+=UploadCall(request.key,request.body());if(calls.size==1)denied(429,"rate_limit_exceeded","60")else BootstrapHttpResult(200,cancellationAck())}
                 }
             }
@@ -2176,6 +2179,7 @@ class SessionSecurityTest {
                     return when(request) {
                         is PhotoHttpRequest.Create->BootstrapHttpResult(202,uploadAck())
                         is PhotoHttpRequest.Read->BootstrapHttpResult(200,analysisRead())
+                        is PhotoHttpRequest.Confirm->error("Unexpected confirm in cancellation fixture")
                         is PhotoHttpRequest.Cancel->{cancels++;entered.complete(Unit);release.await();BootstrapHttpResult(200,cancellationAck())}
                     }
                 }
@@ -2211,6 +2215,7 @@ class SessionSecurityTest {
                 return when(request) {
                     is PhotoHttpRequest.Create->BootstrapHttpResult(202,uploadAck())
                     is PhotoHttpRequest.Read->BootstrapHttpResult(200,analysisRead(revision=revision))
+                    is PhotoHttpRequest.Confirm->error("Unexpected confirm in cancellation fixture")
                     is PhotoHttpRequest.Cancel->{calls+=request;if(calls.size==1)denied(409,"proposal_revision_conflict")else BootstrapHttpResult(200,cancellationAck(4))}
                 }
             }
@@ -2242,6 +2247,7 @@ class SessionSecurityTest {
                 return when(request) {
                     is PhotoHttpRequest.Create->BootstrapHttpResult(202,uploadAck())
                     is PhotoHttpRequest.Read->BootstrapHttpResult(200,analysisRead())
+                    is PhotoHttpRequest.Confirm->error("Unexpected confirm in cancellation fixture")
                     is PhotoHttpRequest.Cancel->{cancels++;if(cancels==1)BootstrapHttpResult(200,cancellationAck().let {JSONObject(String(it)).put("analysis_id",UUID.randomUUID().toString()).toString().toByteArray()})else denied(409,"sync_epoch_changed")}
                 }
             }
@@ -2301,6 +2307,7 @@ class SessionSecurityTest {
                 return when(request) {
                     is PhotoHttpRequest.Create->BootstrapHttpResult(202,uploadAck())
                     is PhotoHttpRequest.Read->BootstrapHttpResult(200,analysisRead())
+                    is PhotoHttpRequest.Confirm->error("Unexpected confirm in cancellation fixture")
                     is PhotoHttpRequest.Cancel->{cancels++;throw java.io.IOException("Synthetic uncertainty")}
                 }
             }

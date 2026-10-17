@@ -28,6 +28,10 @@ class DiaryRepository(private val db: CalorieDatabase, private val context: Cont
         owners.requireCurrent(expected)
         action()
     }
+    private suspend fun canonicalEditor():CanonicalMealEditor {
+        val lease=boundLease?:owners.currentLease().also {check(it.storageScope==owner);boundLease=it}
+        return CanonicalMealEditor(db,context,lease)
+    }
     suspend fun initialize() = withContext(Dispatchers.IO) {
         val catalog = readCatalog("products-v1.json")
         val rationCatalog = readCatalog("rations-v1.json")
@@ -88,10 +92,10 @@ class DiaryRepository(private val db: CalorieDatabase, private val context: Cont
         enqueue(meal, listOf(item), "create")
     }
 
-    suspend fun edit(id: String, grams: Double) = ownerTransaction {
-        val current = requireNotNull(dao.meal(id, owner))
-        require(!current.meal.deleted && current.items.size == 1)
-        editItem(id, current.items.single().id, grams)
+    suspend fun edit(id:String,grams:Double) {
+        val current=ownerTransaction {requireNotNull(dao.meal(id,owner))}
+        require(!current.meal.deleted && current.items.size==1)
+        editItem(id,current.items.single().id,grams)
     }
 
     suspend fun addRation(rationId: String, quantities: Map<String, Double>, type: MealType, date: LocalDate,
@@ -121,7 +125,11 @@ class DiaryRepository(private val db: CalorieDatabase, private val context: Cont
         enqueue(meal, items, "create")
     }
 
-    suspend fun editItem(id: String, itemId: String, grams: Double, amountText: String? = null) = ownerTransaction {
+    suspend fun editItem(id:String,itemId:String,grams:Double,amountText:String?=null) {
+        require(grams.isFinite() && grams>0 && grams<=Nutrients.MAX_GRAMS)
+        val text=checkedAmount(grams,amountText)
+        if(canonicalEditor().change(id,itemId,text))return
+        ownerTransaction {
         require(grams.isFinite() && grams > 0 && grams <= Nutrients.MAX_GRAMS)
         val current = requireNotNull(dao.meal(id, owner))
         require(!current.meal.deleted)
@@ -131,9 +139,12 @@ class DiaryRepository(private val db: CalorieDatabase, private val context: Cont
         dao.updateMeal(meal)
         dao.updateItem(item)
         enqueue(meal, current.items.map { if (it.id == itemId) item else it }, "update")
+        }
     }
 
-    suspend fun removeItem(id: String, itemId: String) = ownerTransaction {
+    suspend fun removeItem(id:String,itemId:String) {
+        if(canonicalEditor().change(id,itemId,remove=true))return
+        ownerTransaction {
         val current = requireNotNull(dao.meal(id, owner))
         require(!current.meal.deleted)
         val item = current.items.single { it.id == itemId }
@@ -142,14 +153,18 @@ class DiaryRepository(private val db: CalorieDatabase, private val context: Cont
         dao.updateMeal(meal)
         dao.removeItem(item)
         enqueue(meal, current.items.filterNot { it.id == itemId }, "update")
+        }
     }
 
-    suspend fun delete(id: String) = ownerTransaction {
+    suspend fun delete(id:String) {
+        if(canonicalEditor().change(id))return
+        ownerTransaction {
         val current = requireNotNull(dao.meal(id, owner))
         if (current.meal.deleted) return@ownerTransaction
         val meal = current.meal.copy(deleted = true, localRevision = current.meal.localRevision + 1)
         dao.updateMeal(meal)
         enqueue(meal, current.items, "delete")
+        }
     }
 
     suspend fun setGoal(kcal: Double, protein: Double?, fat: Double?, carbs: Double?, id: String = UUID.randomUUID().toString()) = ownerTransaction {

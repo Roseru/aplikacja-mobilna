@@ -42,7 +42,9 @@ class PhotoMealDraftScreenTest {
         photoUpload=PhotoUploadStatus(op,"photo","mock","mock-food-v1",true,true,0,false),
         photoAnalysis=PhotoAnalysisPreview.from(source().latest!!),photoMealDraft=value?.let {PhotoMealDraftPreview.from(op,source().withMealDraft(it,0))})
     private fun snapshot(name:String) {
+        compose.waitForIdle()
         val instrumentation=InstrumentationRegistry.getInstrumentation()
+        instrumentation.waitForIdleSync()
         check(instrumentation.targetContext.packageName=="pl.roseru.kalorie.validation")
         check(name in setOf("corrections-dark-large-text","edit-dialog-dark-large-text"))
         val path="/data/local/tmp/calorie-v0818-$name.png"

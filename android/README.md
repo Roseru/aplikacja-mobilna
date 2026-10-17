@@ -1,5 +1,19 @@
 # Android — Racje i kalorie
 
+Android **0.8.19/code30/Room11** dodaje atomowy zapis zweryfikowanego wyniku
+confirm jako Meal/Items, provenance i kanonicznej kolejki E4, ze stabilnym replay
+po edycji/usunięciu i odzyskaniem przy błędzie transakcji. Dziennik pokazuje
+nieokreślony typ posiłku i dokładne ilości g/ml; brak energii pozostaje niepełny.
+[Raport i ograniczenia](POTWIERDZENIE_POSILKU.md):291/306JVM,260native API35,
+lint0error PASS,24 stare tabele i rowid zachowane po aktualizacji. HTTP confirm,
+przycisk zatwierdzania i standardowy push nadal wymagają podłączenia; to nie
+odbiór pełnego E4/E7. [Podglądy](../propozycje-ui/analiza-0.8.19/README.md).
+Kolejny etap ma [bibliotekę paczek i odpowiedzi push E4](SYNCHRONIZACJA_PUSH.md):
+308/323 JVM i lint0error PASS, bez podmiany zainstalowanego APK. Trwały odbiór
+ACK w Room, transport i uruchomienie oczekujących intencji są do podłączenia.
+Poniższe opisy konkretnych wcześniejszych wydań zachowują ich historyczny zakres.
+
+
 Android **0.8.16** dodaje świadomą wysyłkę zdjęcia, trwałe ponowienie i pobieranie wyniku z lokalnym podglądem składników/kcal/B/T/W. Wejście na ekran odtwarza zapis bez sieci; GET wymaga przycisku, działa w ograniczonym budżecie i respektuje sesję oraz wspólny backoff. [Stan i dowody](ZLECENIE_ANALIZY.md):235/250 JVM,223 native API35 i lint0error PASS. Room9→10 dodaje kolejkę analizy. Anulowanie serwerowe, korekty/confirm/E4 i rzeczywisty Gemini nadal wymagają dalszych etapów. PR105 jest draft zależnym od PR96, bez własnego pełnego zdalnego CI.
 
 Android **0.8.13** dodaje jawne sprawdzanie dostępności analizy zdjęć dla własnego konta: dostawcę/model, limity i stan usługi, z obsługą utraty sesji i czasu ponowienia. Zdjęcia nadal pozostają lokalne; odczyt nie przyznaje zgody i nie wysyła obrazu. [Raport](RAPORT_0_8_13.md) opisuje walidację, zachowanie danych i zależność od PR73. Room9 bez migracji. Multipart/Gemini/confirm i zapis przez E4 wymagają dalszych etapów.

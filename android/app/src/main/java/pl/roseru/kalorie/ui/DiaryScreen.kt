@@ -104,16 +104,18 @@ import java.util.Locale
                 }
             }
         }
-        MealType.entries.forEach { type ->
-            val meals = day.meals.filter { it.meal.mealType == type.name }
-            if (meals.isNotEmpty()) item(key = type.name) {
+        val mealGroups=MealType.entries.map {it.name to it.label}+("UNSPECIFIED" to "Pozostałe")
+        mealGroups.forEach { (type,label) ->
+            val meals = day.meals.filter { it.meal.mealType == type }
+            if (meals.isNotEmpty()) item(key = type) {
                 Card(colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface), shape = RoundedCornerShape(18.dp)) {
                     Column(Modifier.fillMaxWidth().padding(16.dp), verticalArrangement = Arrangement.spacedBy(6.dp)) {
                         Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
-                            Text(type.label, Modifier.weight(1f), fontWeight = FontWeight.SemiBold)
+                            Text(label, Modifier.weight(1f), fontWeight = FontWeight.SemiBold)
                             Text("${meals.flatMap { it.items }.map { it.consumed() }.total().energyText()} kcal", fontWeight = FontWeight.SemiBold)
                         }
                         meals.forEach { meal ->
+                            meal.meal.wirePayload?.let {Text(org.json.JSONObject(it).getString("title"),style=MaterialTheme.typography.titleSmall)}
                             meal.meal.rationName?.let { name ->
                                 HorizontalDivider(Modifier.padding(top = 8.dp))
                                 Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
@@ -174,7 +176,7 @@ private data class EditingItem(val meal: MealWithItems, val item: MealItemEntity
 
 @Composable private fun EditMealDialog(item: MealItemEntity, busy: Boolean, onDismiss: () -> Unit, onSave: (Double, String) -> Unit, onDelete: () -> Unit) {
     var grams by rememberSaveable(item.id) { mutableStateOf(quantityText(item.amountText)) }
-    val amount = ContractDecimal.userQuantity(grams, 12)
+    val amount = ContractDecimal.userQuantity(grams, if(item.wirePayload!=null)6 else 12)
     val saveFocus = remember { FocusRequester() }
     AlertDialog(onDismissRequest = onDismiss, title = { Text(item.productName) }, text = {
         val focus = LocalFocusManager.current

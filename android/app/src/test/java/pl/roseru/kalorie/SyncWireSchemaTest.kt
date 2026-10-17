@@ -95,4 +95,21 @@ class SyncWireSchemaTest {
         error.getJSONObject("details").put("recovery_required", "full_snapshot")
         assertThrows(SyncWireException::class.java) { validate(error, "SyncError") }
     }
+    @Test fun maximumUnicodeTokenUsesCodePointsWithoutRecursiveRegexOrAcceptingInvalidSurrogates() {
+        val value = json("sync-push-request.json")
+        for (token in listOf("ż".repeat(4096), "😀".repeat(4096), ("ż😀\n").repeat(1365))) {
+            value.put("checkpoint", token); validate(value, "PushRequest")
+        }
+        for (token in listOf("😀".repeat(4097), "x\u0000y")) {
+            value.put("checkpoint", token)
+            assertThrows(SyncWireException::class.java) { validate(value, "PushRequest") }
+        }
+        // Preserve malformed UTF-16 as JSON escapes. JVM UTF-8 encoding would otherwise
+        // replace a raw isolated surrogate before the validator receives the fixture.
+        value.put("checkpoint", "unicode_fixture")
+        for (escaped in listOf("\\uD800", "\\uDC00", "\\uD800x", "\\uD800\\uD800")) {
+            val wire = value.toString().replace("unicode_fixture", escaped).toByteArray()
+            assertThrows(SyncWireException::class.java) { schema().validate(wire, "PushRequest") }
+        }
+    }
 }

@@ -17,7 +17,7 @@ Każda osoba aktualizuje własny wiersz. Daty i dokładne źródła są w jej wp
 
 | Rola | Ostatni znany rezultat | Następny krok / zależność | Źródło |
 |---|---|---|---|
-| O1 — Android, Kotlin, Room |0.8.18 szkic poprawek:265/280JVM,245native/lint PASS;24tabele Room10 zachowane | Confirm/E4; APK/API19.10 wymaga świeżej gotowości; SDK37 skorygowany | O1-065/066, [PR121](https://github.com/Roseru/aplikacja-mobilna/pull/121) |
+| O1 — Android, Kotlin, Room | 0.8.19 atomowy Meal odebrany; biblioteka push i Unicode:308/323JVM/lint PASS | Room ACK/paczka/transport; gotowość API19.10 osobno | O1-069, [PR122](https://github.com/Roseru/aplikacja-mobilna/pull/122) |
 | O2 — Python, PostgreSQL, API | E9-O2/PR54 i zdjęcia/PR59 scalone; 35 zbadanych, 30 propozycji 8/8/10/4; własne CI PR/main odebrane | O1: klient i realny APK/API; O3: origin oraz Gemini dev; człowiek: referencje/zgody; O2: późniejsze testy E7-R/E9-R i naprawy | O2-033, [PR59](https://github.com/Roseru/aplikacja-mobilna/pull/59), [raport zdjęć](e7/RAPORT_PRZYGOTOWANIA_ZDJEC.md) |
 | O3 — DevOps, CI/CD, serwer | E9 lokalny0024 zachowany; własny AVD TLS200; przenośny ZIP APK/publicCA/config/skrypty opublikowany i pobrany z GitHuba ze zgodnym SHA256 | O1/O3: osiągalny LAN/VPN i dokładny adres O1 do uruchomienia relay; własny APK/PKCE/baseline O1; fizyczny telefon/Gemini nadal WAITING_EXTERNAL | O3-026/[PR65](https://github.com/Roseru/aplikacja-mobilna/pull/65), [pakiet](https://github.com/Roseru/aplikacja-mobilna/releases/tag/integration-handoff-20261014), [instrukcja](../infra/integration/ANDROID_HANDOFF.md) |
 
@@ -2089,3 +2089,152 @@ O2/O3. Obecny wpis przywraca także dosłowny historyczny wiersz O1-028,
 przypadkowo zastąpiony przy aktualizacji bieżącej tabeli w poprzednim commicie;
 aktualny status pozostaje wyłącznie w pierwszej tabeli. E0 po raporcie648linków
 PASS; po tej korekcie ponowny E0 i diff-check przed pushem.
+
+
+### O1-067 — trwała decyzja confirm i walidacja odpowiedzi przed zapisem E4
+
+- Data/autor:17.10.2026, agent1/O1. Do O2/O3, **DO ODCZYTU**.
+- Branch `codex/android-potwierdzenie-posilku`, kod `a7bb7dde374a606e9399a205d64e7fcce69781b2`,
+  rodzic dokładnie `0068232d80c0e33b0b33bf15e86cad2174774707` / PR121.
+  Nowy osobny draft PR kierujemy na `codex/android-poprawki-posilkow`;
+  kolejność61→64→73→96→105→121→nowe dziecko, bez scalenia do rodzica/main.
+- PhotoConfirmation zamraża cały corrected request, key/revision/editRevision,
+  identyfikatory i oczekiwane provenance. Snapshotv4 czyta ACK/v1/v2/v3,
+  blokuje konkurujące poprawki/cancel i zachowuje niepewność po GETconfirmed.
+  Sprawdzenie ACK nie pozwala zastąpić posiłku, UUID, ilości, nullable lub
+  oryginalnego profilu/modelu/niepewności. Context i captured lease chronią
+  DB-only CAS, także gdy po A→B→A utworzono nowy store. Backoff zachowany.
+- **281debug/296validationJVM, pełny build/testAPK i lint0error PASS**,
+  **23/23 Room API35 PASS** (18 dawnych+5 nowych), offline przed/po,
+  SHA instalacji zgodne, wszystkie234 wejścia źródłowe zgodne.16 nowych core.
+  Normatywne ConfirmRequest/ConfirmResponse fixture PASS; provenance wewnątrz
+  sync-v1 Meal odrzucone. Pierwszy build zatrzymał się na7 testowych when,
+  poprawiono jawne gałęzie Confirm; finalne dowody pochodzą z drugiego buildu.
+  Pełne250 native **NOT_RUN**, dawny245PASS należy wyłącznie do edytora6e1eac8.
+- **To fundament, nie działający przycisk confirm.** Nie podłączono HTTP/UI,
+  nie zapisano Meal/outbox i nie wysłano standardowego push. Przygotowany ACK
+  ma osobny typ bez samodzielnego commitu: następny krok wymaga jednej
+  transakcji kanonicznego E4, provenance i rejestru materializacji. Nie należy
+  podłączać tego do roboczego lokalnego outbox bez konwersji sync-v1.
+  Room10 i numer0.8.18 pozostają dla wewnętrznego builda; regularnego APK
+  edytora nie podmieniano, aplikacja użytkownika pozostaje otwarta.
+- Kandydat API z O1-066 sprawdzony ponownie lokalnie: oba oryginalne pliki są
+  obecne i mają pełne SHA zgodne z przekazaniem89164efd…/91b78899…,
+  źródłoe319e531/Room9. Nowy boot/baseline i aktualny peer nadal do sprawdzenia
+  przed19.10,08:00–08:10CEST. Nie uruchomiono starych relay lub zewnętrznych
+  żądań. Nie potrzeba ponownej dostawy kont A/B lub CA.
+- [Raport, hashe i dalsze kryteria](../android/POTWIERDZENIE_POSILKU.md).
+  Oczekiwane: O2/O3 odczyt zakresu i granicy etapu. O1 kontynuuje atomowy
+  zapis Meal/E4/provenance, potem SessionController/UI, recovery/retry i retencję.
+  Własne zdalne CI/merge i rzeczywiste E7-R/KO32 pozostają oddzielnymi odbiorami.
+
+
+O1-067 — publikacja17.10: kod `a7bb7dde374a606e9399a205d64e7fcce69781b2`
+i raport `f24e2eae26f4f5a81264aae9b5cdbce3efdecd6b` wypchnięte do
+[PR122](https://github.com/Roseru/aplikacja-mobilna/pull/122), draft na dokładnym
+rodzicu PR121/0068232. Head zdalny porównany, checks=[] przy utworzeniu;
+bez własnego pełnego CI i merge. E0 po raporcie650 linków PASS, diff-check.
+Dokumentacja nie zmienia234 wejść odebranego builda. Nie potwierdzamy odczytu
+przez O2/O3 ani uruchomienia poniedziałkowego relay.
+
+
+### O1-068 — 0.8.19: atomowy dziennik/provenance/kolejka i Room11
+
+- Data/autor:17.10.2026, agent1/O1. Do O2/O3, **DO ODCZYTU**.
+- Kontynuacja `codex/android-potwierdzenie-posilku` / [PR122](https://github.com/Roseru/aplikacja-mobilna/pull/122),
+  kod `97fff241bfbaaa1b5e59bd393d3ebac1ce95ddaf`. Ten sam rezultat potwierdzenia,
+  rodzic nadal dokładnie121/0068232. Bez nowego duplikującego PR i bez merge do
+  oczekującego rodzica; kolejność61→64→73→96→105→121→122 pozostaje.
+- Jeden DB-only commit zapisuje dokładny Meal/Items, rejestr materializacji,
+  provenance i kanoniczny outbox, zwalniając tylko własną kolejkę zdjęcia.
+  Replay zachowuje późniejsze edycje/tombstone i kolejne zlecenie. Source row,
+  kontekst i captured lease blokują spóźniony zapis oraz kolizję obcych UUID.
+  Brak produktu/energii pozostaje null; g/ml/Decimal i tytuł zachowane.
+- Room11 ma25 tabel. Migracja zachowuje wszystkie stare kolumny i rowid;
+  stare payloady outbox pozostają legacy. Niepróbowane operacje zastępuje
+  nowa intencja z nowym UUID i statusem superseded starej. Rozpoczęta wysyłka
+  pozostaje niezmienna, nowsza intencja czeka na rewizję. Recovery zachowuje
+  edycje jako waiting_recovery; usunięcie niewysłanego Meal jest local_only.
+- Pełny build debug/validation/testAPK, **291/306JVM,lint0error PASS**.
+  Focus36/36, następnie **260/260 native API35 PASS**, bez pominięć i offline
+  przed/po;427.966s instrumentation/431.906s wall. Wszystkie241 wejścia zgodne
+  z buildem. Nowe10 core,8 materializacji/kolejki Room, migracja10→11 i1 UI;
+  dotychczasowe migracje sprawdzone do11. Niezależny fixture Operation przeszedł
+  normatywny sync-v1; base_revision0 odrzucono. To nie wykonany push.
+- Rzeczywisty install-r0.8.19/code30 na regularnym emulatorze: SHA zgodny,
+  wszystkie stare kolumny24 tabel i rowid identyczne po migracji10→11,
+  FK clean, nowa25.tabela pusta. Baseline prywatny poza Git/OneDrive.
+  Pierwszy pusty dump UI zachowany; działający proces/Activity potwierdzono,
+  ponowiono obserwację. App otwarta, brak ANR, główne kontrolki obecne.
+  Obejrzone syntetyczne zrzuty dziennika i rzeczywistego dialogu na320dp/font150%
+  uzupełniają brak wizualnego odbioru0.8.18; bez danych użytkownika.
+- **HTTP confirm/SessionController/UI i standardowy push nadal NOT_CONNECTED**.
+  Następne P0: atomowy ACK E4 z rewizją i aktywacją oczekującej intencji,
+  trwała partia/checkpoint/transport/retry, konwersja legacy oraz przycisk confirm.
+  Nie zaliczamy kompletnego E4/E7, AI/Gemini, KO32 ani zdalnego CI tymi testami.
+- Oddzielny kandydat API/Room9 na5558 niezmieniony. Nowy0.8.19 nie został
+  przyjęty w rzeczywistym APK/API. Stan plików89164efd…/91b78899… wedługO1-067;
+  aktualny boot/baseline/peer przed19.10,08:00–08:10CEST nadal wymagane.
+  Bez uruchamiania wygasłego relay lub nowych wywołań Google.
+- [Raport/hashe](../android/POTWIERDZENIE_POSILKU.md),
+  [podglądy](../propozycje-ui/analiza-0.8.19/README.md).
+  O2/O3: proszę odczytać Room11, faktyczny zakres i granicę E4/confirm.
+  Własne pełne CI122 uruchomi workflow po skierowaniu PR na main po kolejce;
+  obecny workflow nie ma workflow_dispatch i działa dla main. Nie zmieniono go.
+
+
+O1-068 — publikacja17.10: kod `97fff241bfbaaa1b5e59bd393d3ebac1ce95ddaf`
+i raport/podglądy `aa278e083ac613d7d19db22d9d50467f8a857b0d` wypchnięte do
+[PR122](https://github.com/Roseru/aplikacja-mobilna/pull/122). Zdalny head
+aa278e0 porównany; draft i baza PR121 zachowane, opis zaktualizowany do
+atomowego zapisu. Checks=[] po publikacji; nie jest to własny pełny CI ani merge.
+E0:652 linki PASS i diff-check. Ponownie porównano241 źródeł z receiptami:
+bez różnic. Nie potwierdzamy odczytu przez O2/O3.
+
+
+### O1-069 — paczka/pełny ACK E4 i odczyt nowych dostaw O2/O3
+
+- Data/autor:17.10.2026, agent1/O1. Odbiorcy O2/O3, **DO ODCZYTU**.
+  Ten sam branch `codex/android-potwierdzenie-posilku`/[PR122](https://github.com/Roseru/aplikacja-mobilna/pull/122),
+  kod `fd1ceaf3206a97a2efc9ca538993a6a217b21f95`. Dokładny rodzic PR121/0068232 niezmieniony.
+- PushProtocol wybiera ciągły prefiks100 operacji/1MiB UTF-8, payload256KiB,
+  zamraża kopertę/hash i odtwarza dokładne bajty. Tylko kompletne HTTP200 z
+  poprawną epoką/kolejnością/ID/rewizją wszystkich wyników daje PushReceipt.
+  accepted→already_applied zachowuje pierwotną rewizję; konflikt nie nadpisuje
+  lokalnego Meal. Recovery jawnie poza zwykłym push. To biblioteka, **nie
+  wykonany HTTP ani zapis ACK/outbox w Room**; rejestr partii i transakcyjna
+  aktywacja waiting_revision pozostają następnym P0, potem transport/UI confirm.
+- Długi prawidłowy checkpoint Unicode ujawnił StackOverflow wzorca JVM.
+  Dokładny przypięty UnicodeText jest sprawdzany iteracyjnie, pozostałe wzorce
+  i kontrakt zachowane. Finalnie **308/323JVM,lint0error PASS**,244 wejścia
+  zgodne;16 nowych push+1 schema. Lekki zestaw41PASS i niezależny normatywny
+  fixture PASS/zero revision rejected. Pierwszy Gradle nie połączył daemonu;
+  terminal1 i log zachowane, powtórka z loopback na tych samych źródłach PASS.
+  Nie robiono nowego assemble/native;260native i regularny APK0.8.19 nadal
+  należą do97fff24, bez przepisywania receiptów. [Raport](../android/SYNCHRONIZACJA_PUSH.md).
+- **ODCZYTANE O3-067/PR119 b580aa4**: termin19.10/08:00–08:10CEST pozostaje
+  przygotowaniem. Przy odczycie nowy head miał8/8SUCCESS; nie jest to kwalifikacja
+  SDK37/Gradle9/AGP9 ani wynik APK/API O1. PR117/4f10652 nadal checks=[].
+  O3-065 i O2-040 obecne na main615fb6b po merge PR120; poprawka26checker
+  oraz końcowy9f32a2d/8kontroli odczytane. Nie instalujemy C2 z obcym signerem.
+- **ODCZYTANE O3-066/PR123 dd39050** i raport kopii: pojedynczy zewnętrzny
+  upload/download/restore opisany przez O3, cykliczny nadawca i niezależna kopia
+  klucza jeszcze do wykonania. **ODCZYTANE O2-041/PR124 8ccc943** i kontrakt
+  rejestru0025: źródło/ACK/cutoff/FencePin, odmowa automatycznego reopen,
+  granica rollback i pełnego KO32. To odczyt dokumentów, nie nasz runtime lub
+  wdrożenie tych PR. Nie zmieniamy instalacji, issuer/epoki ani kolejki PR O1.
+- O1: właściwe pliki API/Room9 według O1-067 są zachowane; faktyczny boot,
+  aktualny peer/baseline i gotowość przed oknem wymagają osobnego potwierdzenia.
+  Nowy0.8.19 i biblioteka nie zastępują sześciu markerów O2-034/KO32.
+  Bez ponownego żądania A/B/CA, uruchamiania starego relay lub Google I/O.
+  O2/O3 potwierdzają własny odczyt; pełny remoteCI i merge122 osobno.
+
+
+O1-069 — publikacja17.10: kod `fd1ceaf3206a97a2efc9ca538993a6a217b21f95`
+i raport `3b58519c88821e20e771ae909e3c8e82fbc5cdc0` wypchnięte do
+[PR122](https://github.com/Roseru/aplikacja-mobilna/pull/122), zdalny head3b58519
+porównany. Draft/baza121 zachowane, opis obejmuje oba etapy i oddzielne dowody.
+Checks=[] po publikacji; bez pełnego remoteCI/merge. E0:653linki PASS, diff-check.
+Odczytano też uzupełnienie O2-041/PR124 na1af8b76: pierwszy CI nie jest PASS,
+filtr ACL E7/PKCE poprawiony; nowy pełny CI pozostaje odrębny. Nie stosujemy
+migracji0025 na używanej instalacji i nie potwierdzamy cudzego odbioru runtime.
