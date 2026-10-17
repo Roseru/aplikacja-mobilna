@@ -115,3 +115,28 @@ Trzy realne CLI/SCRAM/LOGIN nahead przechodzą; każdy odmawia raw ledger SELECT
 oraz ponownego provisioningu po hostile grancie jednej kolumny ledgeru.
 Pełny zmieniony zakres ledger/kontrakt/E6head58PASS w15,29s, bez skipów.
 Celowany niezależny review provisionerów9/10 bez P0/P1/P2.
+
+
+## Izolacja regresji po pełnym PostgreSQL CI
+
+CI39070253209/head71ca4fdf:1317PASS,61FAIL/16ERROR,622,45s. Nie jest PASS.
+Przyczyny obejmowały historyczne downgrade baz zawierających ledger, surowe
+mutacje lifecycle w starych fixture, zachowane połączenie testowego eksportera
+blokujące rzeczywisty TEMPLATE copy i wyciek testowej epoki. Poprawki dotyczą
+przygotowania testów; produkcyjne bariery pozostają aktywne.
+
+Stare schematy powstają w osobnych bazach; odbiór starych tokenów/bytes i
+readiness nadal kończy na25. Dawne bariery mają osobną konkretną diagnostykę
+na24. Bieżący CLI odmawia schemas17/20; historyczne parent-regresje używają
+jawnego zamrożonego drivera testowego. CurrentCLI/realLOGIN25 sprawdza E4/ledger.
+Testowy eksporter ma NullPool, a test scratch przywraca po asercjach wyłącznie
+własną epokę wejściową (bez source_epoch/enabled/eventów/reopen). Każdy fixture
+retention ma świeży uporządkowany zakres UUID, zachowując trwałe subject fences.
+
+Lokalnie po zmianach:38PASS i1 błąd porównania nowych tabel w Unicode; ten
+przypadek oraz historyczny CLI17 ponownie2PASS/15,99s po zachowaniu porównania
+wszystkich poprzednich tabel. Prawdziwe TEMPLATE copy/restore i8testów realnego
+workera retention przeszły. E4push wymaga teraz dokładnych kodów dla wszystkich
+4przypadków — przypadkowe503 nie zalicza już generation drift. Historyczne
+E7/E8 oraz E1finite przeszły w dotkniętej macierzy; dalszy pełny przebieg nadal
+wymagany. Niezależny review tego zakresu9/10 bez otwartychP0/P1/P2.

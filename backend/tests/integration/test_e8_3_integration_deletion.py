@@ -339,7 +339,7 @@ def test_production_raw_operator_cannot_bypass_fences_parents_context_or_restore
     assert metadata_for_partner(state)["response"]["status"] == "active"
 
 
-def test_real_operator_cli_uses_production_begin_resume_and_durable_retry(production, tmp_path):
+def test_historical_operator_cli_uses_actual_parent_and_durable_retry(production, tmp_path):
     state = production
     operation = uuid4()
     config = tmp_path / "no-provider.json"
@@ -347,14 +347,33 @@ def test_real_operator_cli_uses_production_begin_resume_and_durable_retry(produc
     environment = os.environ | {
         "DELETION_DATABASE_URL": state["operator"].url.render_as_string(hide_password=False),
         "KEYCLOAK_ADMIN_CONFIG": str(config),
+        "PYTHONPATH": os.pathsep.join([str(ROOT / "backend"), str(ROOT / "backend/src")]),
     }
 
+    # The current CLI deliberately refuses this pre-ledger schema.
+    unsupported = subprocess.run(
+        [
+            sys.executable,
+            "-m",
+            "calorie_app.modules.identity.deletion",
+            "status",
+            "--operation-id",
+            str(operation),
+        ],
+        env=environment,
+        capture_output=True,
+        text=True,
+        timeout=30,
+    )
+    assert unsupported.returncode != 0 and not unsupported.stdout
+
+    # Frozen pre-ledger CLI for this historical migration scope.
     def cli(action, *arguments):
         result = subprocess.run(
             [
                 sys.executable,
                 "-m",
-                "calorie_app.modules.identity.deletion",
+                "tests.support.legacy_deletion",
                 action,
                 "--operation-id",
                 str(operation),

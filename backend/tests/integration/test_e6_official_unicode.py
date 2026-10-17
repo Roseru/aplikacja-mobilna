@@ -180,13 +180,17 @@ def test_official_limit21_truncation_deterministic_and_indexed(request, tmp_path
     assert "ix_product_search_metadata_trgm" in details, details
 
 
-def frozen_table_rows(connection):
-    tables = [
-        name
-        for name in inspect(connection).get_table_names(schema="app")
-        if name not in ({"alembic_version", "product_search_metadata"} | E8_TABLES)
-        and not name.startswith("ai_")
-    ]
+def frozen_table_rows(connection, tables=None):
+    tables = (
+        tables
+        if tables is not None
+        else [
+            name
+            for name in inspect(connection).get_table_names(schema="app")
+            if name not in ({"alembic_version", "product_search_metadata"} | E8_TABLES)
+            and not name.startswith("ai_")
+        ]
+    )
     return {
         name: list(
             connection.scalars(
@@ -199,9 +203,8 @@ def frozen_table_rows(connection):
     }
 
 
-def test_upgrade0013_backfill_down_reup_bytes_hash_history_readiness(request, tmp_path):
-    engine = request.getfixturevalue("community_db")
-    _, migrate, url = request.getfixturevalue("database")
+def test_upgrade0013_backfill_down_reup_bytes_hash_history_readiness(historical_database, tmp_path):
+    engine, migrate, url = historical_database
     migrate("downgrade", "0013_e6_community")
     try:
         value = package(
@@ -290,14 +293,14 @@ def test_upgrade0013_backfill_down_reup_bytes_hash_history_readiness(request, tm
         migrate("downgrade", "0013_e6_community")
         with engine.connect() as connection:
             assert frozen_table_rows(connection) == before
-        migrate("upgrade", "head")
+        migrate("upgrade", EXPECTED_REVISION)
         with engine.connect() as connection:
-            assert frozen_table_rows(connection) == before
+            assert frozen_table_rows(connection, before) == before
         with TestClient(create_app(settings, engine=engine)) as client:
             assert client.get("/health/ready").status_code == 200
         assert EXPECTED_REVISION == "0025_deletion_ledger"
     finally:
-        migrate("upgrade", "head")
+        migrate("upgrade", EXPECTED_REVISION)
 
 
 @pytest.mark.parametrize(

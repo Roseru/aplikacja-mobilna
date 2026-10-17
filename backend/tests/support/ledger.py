@@ -5,6 +5,7 @@ from pathlib import Path
 from uuid import uuid4
 
 from sqlalchemy import create_engine, text
+from sqlalchemy.pool import NullPool
 
 from calorie_app.modules.identity.ledger_contract import FencePin, Trust, digest
 from calorie_app.modules.identity.ledger_transport import export_once
@@ -47,7 +48,7 @@ class LedgerHarness:
             bytes(existing["ack_key"]),
         )
         self.sink = ContractSink(folder / "sink.sqlite", self.trust)
-        self.exporter = create_engine(engine.url, hide_parameters=True)
+        self.exporter = create_engine(engine.url, hide_parameters=True, poolclass=NullPool)
         from sqlalchemy import event
 
         @event.listens_for(self.exporter, "connect")

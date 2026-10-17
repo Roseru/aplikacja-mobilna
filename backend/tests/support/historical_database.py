@@ -1,12 +1,13 @@
 """Dedicated pre-ledger migration regression DB, never a downgrade of live evidence."""
 
+import os
 from contextlib import contextmanager
 from pathlib import Path
 from uuid import uuid4
 
 from alembic import command
 from alembic.config import Config
-from sqlalchemy import create_engine
+from sqlalchemy import create_engine, text
 
 
 @contextmanager
@@ -33,7 +34,9 @@ def historical_database_fixture(base):
         # downgrade/reupgrade are verified separately by deletion-ledger tests.
         args = tuple("0024_e9_history_graph" if value == "head" else value for value in args)
         with engine.begin() as connection:
-            if action == "check":
+            if action == "check" and not connection.scalar(
+                text("SELECT to_regprocedure('app.ledger_status(uuid)') IS NOT NULL")
+            ):
                 from alembic.autogenerate import compare_metadata
                 from alembic.migration import MigrationContext
 
@@ -62,10 +65,16 @@ def historical_database_fixture(base):
             "SELECT,INSERT,UPDATE,DELETE ON TABLES TO "
             "calorie_app_api,calorie_app_worker"
         )
+    previous_url = os.environ.get("DATABASE_URL")
     try:
         migrate("upgrade", "head")
+        os.environ["DATABASE_URL"] = engine.url.render_as_string(hide_password=False)
         yield engine, migrate, engine.url.render_as_string(hide_password=False)
     finally:
+        if previous_url is None:
+            os.environ.pop("DATABASE_URL", None)
+        else:
+            os.environ["DATABASE_URL"] = previous_url
         engine.dispose()
         with admin.connect() as connection:
             connection.exec_driver_sql(f'DROP DATABASE "{name}" WITH(FORCE)')

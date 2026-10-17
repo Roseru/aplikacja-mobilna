@@ -63,9 +63,18 @@ def test_owned_http_page_token_context_change409_no_payload(request, endpoint, c
                     {"e": uuid4()},
                 )
             else:
-                connection.execute(
-                    text("UPDATE app.user_accounts SET generation=generation+1 WHERE id=:a"),
-                    {"a": actor[1]},
+                # A correctly signed token from a different generation must fail
+                # without granting a raw lifecycle mutation to the test actor.
+                import json
+
+                from calorie_app.modules.catalog.community.tokens import encode_page
+                from calorie_app.modules.catalog.pagination import _decode
+
+                claims = json.loads(_decode(token.split(".")[1]))
+                token = encode_page(
+                    claims | {"generation": claims["generation"] + 1},
+                    app.state.catalog_page_token_secret,
+                    kind="reports" if endpoint == "reports" else "community",
                 )
         continuation = client.get(path, params={"limit": 1, "page_token": token})
         assert continuation.status_code == 409
@@ -74,3 +83,15 @@ def test_owned_http_page_token_context_change409_no_payload(request, endpoint, c
         )
         assert continuation.headers["Cache-Control"] == "no-store"
         assert "items" not in continuation.json()
+
+
+@pytest.fixture(autouse=True)
+def restore_test_epoch(request):
+    owned_db = request.getfixturevalue("community_db")
+    with owned_db.connect() as connection:
+        epoch = connection.scalar(text("SELECT sync_epoch FROM app.installation_state WHERE id=1"))
+    yield
+    with owned_db.begin() as connection:
+        connection.execute(
+            text("UPDATE app.installation_state SET sync_epoch=:epoch WHERE id=1"), {"epoch": epoch}
+        )

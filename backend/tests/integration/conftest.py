@@ -95,3 +95,30 @@ def historical_database(database):
 
     with historical_database_fixture(database) as private:
         yield private
+
+
+@pytest.fixture
+def historical_catalog_db(historical_database):
+    from tests.integration.test_catalog_delivery import catalog_db
+
+    yield from catalog_db.__wrapped__(historical_database)
+
+
+@pytest.fixture(autouse=True)
+def preserve_owned_database_epoch(request):
+    """Restore only this test's shared scratch input after assertions.
+
+    Source epoch/config/evidence are never changed or re-enabled. Private
+    restore databases remain under their scenario's own fencing procedure.
+    """
+    if "database" not in request.fixturenames:
+        yield
+        return
+    engine, _, _ = request.getfixturevalue("database")
+    with engine.connect() as connection:
+        epoch = connection.scalar(text("SELECT sync_epoch FROM app.installation_state WHERE id=1"))
+    yield
+    with engine.begin() as connection:
+        connection.execute(
+            text("UPDATE app.installation_state SET sync_epoch=:epoch WHERE id=1"), {"epoch": epoch}
+        )

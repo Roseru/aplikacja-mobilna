@@ -584,7 +584,7 @@ def test_empty_downgrade_retains_repair_and_reupgrade_is_idempotent(purge_databa
             assert checker(state["admin"]) == original and snapshot(state["admin"]) == rows
 
 
-def test_hardened_operator_cli_begin_resume_retry(purge_database, tmp_path):
+def test_historical_hardened_operator_cli_begin_resume_retry(purge_database, tmp_path):
     with purge_database() as state:
         _, (owner, partner) = source_accounts(state)
         operator = state["operator"]()
@@ -595,14 +595,33 @@ def test_hardened_operator_cli_begin_resume_retry(purge_database, tmp_path):
         environment = os.environ | {
             "DELETION_DATABASE_URL": operator.url.render_as_string(hide_password=False),
             "KEYCLOAK_ADMIN_CONFIG": str(configuration),
+            "PYTHONPATH": os.pathsep.join([str(ROOT / "backend"), str(ROOT / "backend/src")]),
         }
 
+        # The current CLI deliberately refuses this pre-ledger schema.
+        unsupported = subprocess.run(
+            [
+                sys.executable,
+                "-m",
+                "calorie_app.modules.identity.deletion",
+                "status",
+                "--operation-id",
+                str(operation),
+            ],
+            env=environment,
+            capture_output=True,
+            text=True,
+            timeout=30,
+        )
+        assert unsupported.returncode != 0 and not unsupported.stdout
+
+        # Frozen pre-ledger CLI for this historical migration scope.
         def cli(action, *extra):
             result = subprocess.run(
                 [
                     sys.executable,
                     "-m",
-                    "calorie_app.modules.identity.deletion",
+                    "tests.support.legacy_deletion",
                     action,
                     "--operation-id",
                     str(operation),
