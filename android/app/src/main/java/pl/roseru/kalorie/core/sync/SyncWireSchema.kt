@@ -76,7 +76,22 @@ class SyncWireSchema(documents: Map<String, ByteArray>) {
             if ('\u0000' in value) fail()
             val length = value.codePointCount(0, value.length)
             if (length < schema.optInt("minLength", 0) || length > schema.optInt("maxLength", Int.MAX_VALUE)) fail()
-            if (schema.has("pattern") && !Regex(schema.getString("pattern")).matches(value)) fail()
+            if (schema.has("pattern")) {
+                val pattern = schema.getString("pattern")
+                // The pinned UnicodeText regex has a repeated alternation. Java's regex engine
+                // can overflow its stack on a valid 4096-character token. Check the exact same
+                // UTF-16 language iteratively; other schema patterns retain their own semantics.
+                if (pattern == UNICODE_TEXT_PATTERN) {
+                    var index = 0
+                    while (index < value.length) {
+                        val char = value[index++]
+                        if (char == '\u0000' || Character.isLowSurrogate(char)) fail()
+                        if (Character.isHighSurrogate(char)) {
+                            if (index == value.length || !Character.isLowSurrogate(value[index++])) fail()
+                        }
+                    }
+                } else if (!Regex(pattern).matches(value)) fail()
+            }
             try {
                 when (schema.optString("format")) {
                     "" -> Unit
@@ -113,6 +128,7 @@ class SyncWireSchema(documents: Map<String, ByteArray>) {
     }
     private fun fail(): Nothing = throw SyncWireException()
     companion object {
+        private const val UNICODE_TEXT_PATTERN = "^(?:[^\\u0000\\uD800-\\uDFFF]|[\\uD800-\\uDBFF][\\uDC00-\\uDFFF])*(?![\\s\\S])"
         val FILES = listOf("common.schema.json", "domain.schema.json", "sync.schema.json")
         private val DEFINITIONS = setOf("PullRequest", "PullResponse", "PushRequest", "PushResponse", "SyncError", "Operation")
         private val KEYWORDS = setOf("\$ref", "\$schema", "\$defs", "description", "title", "default", "type", "properties",
