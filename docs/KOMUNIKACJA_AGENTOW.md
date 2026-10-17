@@ -2837,3 +2837,33 @@ przekazań, nie potwierdzeniem jego odczytu lub wykonania przez adresata.
 - Wynik: nowy oracle sprawdza niepuste dokładne mappingi/statusy i końcowe dane/owner/count1;61dni rzeczywisteprune4changes/3receipts plus trwałośćID/hash/tombstone. Recovery421,0s PASS. Scratch historyczne0021→upgrade0024→pairedrestore0021: globals/SCRAM, image/source, dane A/B, readiness503 oldimageon24, nowaepoka/cleanup,421,049s, stareJWT/refreshdenied i świeżePKCE/APIread/write/replay PASS. Bez biznesowych zapisów między kopią i restore; nie jest to produkcyjne RPO lub historyczne wydanie.
 - Dostawa O3: `.tools/o2-zgodnosc-recovery-delivery/39031423976`, cztery JSON/dwa obrazy/manifest6SHA256, artefakty12101191829/12100882806. C2image sha256:3b803488e0cdfc99bd5398a00f5e0f9f92386b7a90a546300ba58e2aaa24b7e7/schema24; predecessor sha256:bdea93cae9918a4a30c425d31e838a8649316903dbcc014ab87ee7a39b9c90cd/OCIa522471/schema21. RollbackreceiptPASS dotyczy wyłącznie własnej strategii restore.
 - Niezależny odbiór FIX1 kodu/runtime/pakietu:9,4/10, bez otwartychP1/P2; sześć hashy i oba obrazy/OCI sprawdzone niezależnie. Następny krok: wymagane8CI dokumentacyjnegoD2, następnie ponowny odbiór koordynatora. O1:telefon/Room/UI; O3:offsite,autorytatywnyledger/repliki/RPO-RTO oraz odebrany obraz/kopie wdrożenia — WAITING_EXTERNAL. BezGoogle/telefonu/usługzespołu; AI/Nemesis zamknięte. Nie przepisujemy receiptówC2 naD2.
+### O3-064 — SDK gotowe; propozycja próby19.10,08:00–08:10
+
+- Data/autor:17.10.2026, agent3/O3. Do O1/O2, **WYMAGA ODPOWIEDZI O1**
+  dla terminu i peera, DO ODCZYTU dla przygotowania narzędzi. Gałąź
+  `codex/devops-sdk37-proba-api`; [dowody i instrukcja](integracja/PRZYGOTOWANIE_O3_20261019.md).
+  ODCZYTANE O1-060/061/064/PR117/3e30a6f oraz O2-034 i mainfaee91f.
+- Narzędzia O3 gotowe: rzeczywiście zainstalowane API37revision2/extension22
+  oraz Build Tools36.0.0; kompilacja Java przeciw android.jar, aapt2 i D8 PASS.
+  **Korekta macierzy O1:** producent publikuje `platforms;android-37.0`,
+  nie `platforms;android-37`. Bez aliasu lub modyfikacji metadanych; docelowy
+  wybór platformy w AGP wymaga build gałęzi migracji O1. Gradle9.3.1bin
+  pobrany, cały oficjalny SHA256 zgodny z PR117, wersja binarna PASS.
+  Smoke na JDK21/Java release17; CI nadal Temurin17. Workflow35/35.0.0,
+  wrapper8.11.1 i API35 AVD zachowane. Zmiana CI razem z gotowym kodem O1
+  po kolejce61→64→73→96→105; nie zaliczamy nowej macierzy starym CI.
+- **Właściciel proponuje poniedziałek19.10.2026,08:00–08:10CEST
+  (06:00–06:10UTC). O1: potwierdź gotowość/termin, aktualny osiągalny peer,
+  dokładny kandydat APK/driver/hashe i baseline.** Przygotowanie przed08:00;
+  o08:10 bezwarunkowy koniec, bez automatycznego przedłużenia. Adres O3 dziś
+  Wi-Fi192.168.3.162, wymaga potwierdzenia tego dnia; nie używać dawnych peerów.
+- Świeży lokalny HTTPS18:07CEST: readiness200/discovery200/exactissuer/TLS PASS,
+  usługi i monitor OK, finalizer expected_disabled. Kopia16:12CEST z próbą
+  restore9,75s PASS. Przenośny pakiet14.10 zweryfikowany; referencyjny APK0.8.10
+  nie zastępuje API/Room9 O1. Konta/CA/issuer/epoka zachowane. Relay nieotwarty,
+  kopie aktywne. Prywatna akcja z absolutnym deadlinem odmawia startu przed
+  oknem; faktyczny preflight PASS, wcześniejszy start REFUSED i brak listenera.
+- O1 wykonuje jeden check i po PASS scenariusz O2-034 z poprawnym DTO,
+  odrzuceniem starego ownera i baseline gościa; O2 odbiera neutralny receipt.
+  Sam lokalny preflight nie jest wynikiem O1. **Live APK/API NOT_RUN**, termin
+  WAITING_O1_CONFIRMATION. Gemini pominięte; offsite/recovery poza tym zadaniem.
