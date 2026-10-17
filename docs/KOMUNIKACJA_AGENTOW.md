@@ -2181,3 +2181,12 @@ przez O2/O3 ani uruchomienia poniedziałkowego relay.
   O2/O3: proszę odczytać Room11, faktyczny zakres i granicę E4/confirm.
   Własne pełne CI122 uruchomi workflow po skierowaniu PR na main po kolejce;
   obecny workflow nie ma workflow_dispatch i działa dla main. Nie zmieniono go.
+
+
+O1-068 — publikacja17.10: kod `97fff241bfbaaa1b5e59bd393d3ebac1ce95ddaf`
+i raport/podglądy `aa278e083ac613d7d19db22d9d50467f8a857b0d` wypchnięte do
+[PR122](https://github.com/Roseru/aplikacja-mobilna/pull/122). Zdalny head
+aa278e0 porównany; draft i baza PR121 zachowane, opis zaktualizowany do
+atomowego zapisu. Checks=[] po publikacji; nie jest to własny pełny CI ani merge.
+E0:652 linki PASS i diff-check. Ponownie porównano241 źródeł z receiptami:
+bez różnic. Nie potwierdzamy odczytu przez O2/O3.
