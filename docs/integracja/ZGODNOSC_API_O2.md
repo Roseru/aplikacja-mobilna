@@ -1,7 +1,8 @@
 # Zgodność API, katalogu i synchronizacji — O2
 
-Stan 17.10.2026: lokalnie PASS dwóch nowych regresji PG17 i 73 affected unit.
-Wykonawczy commit C, obraz i końcowe CI zostaną przypisane po zamrożeniu źródła.
+Stan 17.10.2026: macierz, migracja i serwerowy KO17/32 **PASS**.
+[Dowody C/image/schema oraz 8/8 CI39026906997](ODBIOR_RECOVERY_O2.md#odebrany-zestaw-wykonawczy-c).
+Lokalnie PASS dwóch nowych regresji PG17 i73 affected unit; pełny CI1364PG PASS.
 Nie jest to odbiór APK. Pełne KO32: **WAITING_EXTERNAL**, O1/O3.
 Dostawa odpowiada [masterowi](../MASTER_PROMPT_O2_ZGODNOSC_RECOVERY.md);
 aktualny wspólny stan pozostaje w [dzienniku](../KOMUNIKACJA_AGENTOW.md).
@@ -42,8 +43,9 @@ pozostaje osobnym zakresem O1; żadnego jej kodu nie przeniesiono do backendu.
 
 30 dni oznacza gwarancję **przyrostowej synchronizacji**, nie retencję historii,
 limit pierwszego importu gościa, wykresów lub Nemesis90dni. Po 61 dniach lokalne
-dane i niewysłana kolejka nadal istnieją; backend nie zamienia braku w kopii na
-usunięcie. Zbiór gościa jest przypisywany świadomie do konta, nie ma serwerowego
+dane i niewysłana kolejka nadal istnieją; po restore do nowej epoki backend nie zamienia braku w kopii na
+usunięcie. W tej samej epoce obowiązuje istniejąca semantyka tombstone/snapshot;
+recovery po restore wymaga jawnego uzgodnienia i nowego UUID. Zbiór gościa jest przypisywany świadomie do konta, nie ma serwerowego
 konta gościa. Próbę uwierzytelnienia A/B zapewnia prawdziwy Keycloak w runnerze;
 `Principal` w lokalnych testach PG jest fixture i nie dowodzi logowania telefonu.
 

@@ -1,10 +1,40 @@
 # Odbiór migracji i recovery — O2
 
-Stan 17.10.2026: migracja 0021→0024 i regresja61dni PASS na własnym PG17.11/SCRAM.
-Runner HTTPS/Keycloak/paired restore przygotowany; jego wynik wymaga własnego CI.
+Stan 17.10.2026: **serwerowy KO17/32 PASS**: runner HTTPS/Keycloak/paired restore
+oraz pełne regresje E4/E7/E8/E9 zakończyły się sukcesem w CI39026906997.
+Migracja0021→0024 i regresja61dni PASS również na własnym PG17.11/SCRAM.
 **Pełne KO32 WAITING_EXTERNAL**: O1 telefon/Room/UI, O3 offsite, ciągły autorytatywny
 rejestr, issuer/repliki i rzeczywiste RPO/RTO. Nie wykonano Google ani zmian usług zespołu.
-Bieżący krok: zamrożenie źródła C, wykonanie runnera w CI, niezależny odbiór.
+Bieżący krok: dokumentacyjny commit D i jego osiem CI, następnie odbiór koordynatora; bez merge.
+
+## Odebrany zestaw wykonawczy C
+
+[CI39026906997](https://github.com/Roseru/aplikacja-mobilna/actions/runs/39026906997)
+ma **8/8 SUCCESS** dla head `243bdc0d45199da33c2e229e9516bbd40f8728a7`
+i base `a6e239558a4ab664e3f9d3b6635657876878b412`.
+Rzeczywisty checkout wykonania **C**: `3c62ee65b28a415572073d0474501fa609268b65`.
+Obraz: `sha256:c130717b5687f63172eed736097fc894de9ce841b5c62c8496e50fca29193679`;
+OCI revision=C, schema=`0024_e9_history_graph`.
+
+- Quality:1714 unit PASS; infra153 PASS i jeden istniejący Linux skip testu konsoli Windows.
+- PostgreSQL:1364 PASS, bez pominięć; Keycloak/PKCE:28 PASS.
+- Android z main:155 JVM PASS,169/169 device PASS, lint29warnings/1info; to CI, nie odbiór telefonu O1.
+- Contracts i local-integration PASS; ci-required SUCCESS. Issuance zamknięte przez421,0s;
+  stare access401 i refresh400/invalid_grant, świeże PKCE i recovery mapowania PASS.
+
+Pobrano lokalny pakiet `.tools/o2-zgodnosc-recovery-delivery/39026906997`:
+cztery JSON, obraz i `delivery-manifest.json` z SHA256 wszystkich pięciu plików.
+Artefakt neutralny12098714670 ma digest
+`sha256:3d83f7946d98444538abaa09d22ec1dbcb5a9ca1f98c0536bd54b628013b0d87`;
+artefakt obrazu12098704603 ma digest
+`sha256:5816565801dd2abaafee75ff7b9a897b92dbcf85ebfdd446d0dd1e15f386f871`.
+SHA256 samego `backend-image.tar`:
+`f93cedcb7385dacfb423c77dedcd46d94233ba739f7989fa4426dd59a967639a`.
+Backend/migration/recovery mają PASS; rollback ma BLOCKED. Pakiet nie autoryzuje deploymentu.
+Niezależny odbiór kodu/runtime/pakietu: **9,4/10, bez otwartych P1/P2**;
+przeliczono pięć SHA256 i odczytano config obrazu/OCI revision z tar.
+Źródła i dokumentacja są w [PR116](https://github.com/Roseru/aplikacja-mobilna/pull/116).
+Końcowy head D/CI jest raportowany w PR i callbacku; receipts C pozostają niezmienne.
 
 ## Mapa dowodów i decyzja rollbacku
 
@@ -141,7 +171,7 @@ Późniejszy commit dokumentacji D nie przepisuje receiptów C.
 Repo zawiera kod/formaty/raport, a prywatny lokalny katalog zawiera archiwa,
 credentials/identity/tokeny i raw logs. CI publikuje wyłącznie neutralne receipts;
 surowego stanu, kopii, CA keys lub rejestru nie publikujemy. Lokalną paczkę O3
-należy złożyć z odebranych neutralnych JSON i SHA256; brak zewnętrznych dostaw
+złożono z odebranych neutralnych JSON i SHA256 jak wyżej; brak zewnętrznych dostaw
 nie jest naprawiany fikcyjnym PASS. Czas scratch restore nie jest produkcyjnym RTO.
 
 ## Historia prób
@@ -152,7 +182,7 @@ operacji tej samej encji w jednej kopercie niedopuszczalnej v1. Naprawiono wył�
 harness i niezależne oracles. Końcowe nowe testy PG:2PASS; pełny właściwy zestaw E4 push/snapshots/restore i E9 migration/sync:47PASS w184,25s. Pierwszy pytest temp
 Windows odmówił dostępu do zastanego katalogu; dalsze próby miały własny basetemp.
 Własny PG uruchamiany i zatrzymywany w jednym procesie; cudzy checkout i untracked
-pozostały zachowane. Dalsze wyniki/CI i niezależna ocena zostaną dopisane po wykonaniu.
+pozostały zachowane. Pełny wynik CI jest zapisany powyżej; końcowy niezależny odbiór wskazuje PR.
 
 Dalsze RED runnera: pierwszy przebieg39025612716 potwierdził backup i reprodukcję
 po pg_restore, drugi39026099713 wskazał ConnectError pierwszego GET maintenance
@@ -161,7 +191,7 @@ HTTP200/401/502 pozostają natychmiastowym FAIL (12affectedPASS). Przebieg
 39026471041 doszedł do logout-all; poprawiono oczekiwanie204 na dokumentowane
 200/GlobalRequestResult z kontrolą failedRequests według
 [Keycloak26.8](https://www.keycloak.org/docs-api/26.8.0/rest-api/index.html#_post_adminrealmsrealmlogout_all).
-Pełne421s oczekiwania i stareJWT/refresh nadal wymagają rzeczywistego PASS.
+Następny przebieg39026906997 potwierdził rzeczywiste421s i odmowę starychJWT/refresh.
 Regresję istniejącego state sprawdzono kontrolowaną mutacją w izolowanej kopii:
 przywrócony dawny zapis do odrzuconego katalogu → oczekiwany testFAIL;
 normalne12przypadkówPASS. Prywatne raw logs i neutralne wcześniejszeFAIL zachowane.
