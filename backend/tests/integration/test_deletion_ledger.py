@@ -705,3 +705,10 @@ def test_begin_state_and_exact_outbox_event_commit_atomically(ledger):
             c.scalar(text("SELECT state FROM app.user_accounts WHERE id=:id"), {"id": owner})
             == "deleting"
         )
+
+
+def test_current_head_keeps_existing_e7_worker_maintenance_permission(ledger):
+    engine, _, _ = ledger
+    with engine.begin() as connection:
+        connection.exec_driver_sql("SET LOCAL ROLE calorie_app_ai_worker")
+        assert connection.scalar(text("SELECT app.e7_prune_ledger(1)")) == 0

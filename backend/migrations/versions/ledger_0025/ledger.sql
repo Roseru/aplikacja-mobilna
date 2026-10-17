@@ -357,7 +357,7 @@ DO $$ DECLARE c record; BEGIN
 END $$;
 DO $$ DECLARE item record; r record; BEGIN
  FOR item IN SELECT p.oid::regprocedure AS signature FROM pg_proc p JOIN pg_namespace n ON n.oid=p.pronamespace
- WHERE n.nspname='app' AND (p.proname LIKE '%ledger%' OR p.proname IN
+ WHERE n.nspname='app' AND (p.proname ~ '^_?ledger_' OR p.proname IN
  ('begin_account_deletion','confirm_account_deletion','purge_deleted_account',
   'begin_account_deletion_pre25','confirm_account_deletion_pre25','purge_deleted_account_pre25')) LOOP
   EXECUTE format('REVOKE ALL ON FUNCTION %s FROM PUBLIC',item.signature);

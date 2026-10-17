@@ -5,12 +5,14 @@ from uuid import UUID, uuid4
 import pytest
 from fastapi.testclient import TestClient
 from pydantic import SecretStr
+from sqlalchemy import select
 from sqlalchemy.orm import Session
 from test_real_pkce import api as api_fixture
 from test_real_pkce import auth, decoded, tokens
 
 from calorie_app.core.config import Settings
 from calorie_app.main import create_app
+from calorie_app.modules.catalog.community.models import CommunityReceipt
 from calorie_app.modules.identity.models import UserAccount
 from tests.support.deletion_regression import begin_deleting
 
@@ -170,12 +172,21 @@ def test_real_e6_replay_checks_current_generation_and_deleting_before_receipt(
     with Session(database[0]) as session, session.begin():
         row = session.get(UserAccount, account_id)
         previous = row.generation
-        row.generation += 1
+        # Inject a historical receipt from another generation. The current
+        # account lifecycle must only change through the ledger producer.
+        receipt = session.scalar(
+            select(CommunityReceipt).where(
+                CommunityReceipt.owner_id == account_id,
+                CommunityReceipt.operation_id == UUID(headers["Idempotency-Key"]),
+            )
+        )
+        assert receipt is not None
+        receipt.generation = previous + 1
     replay = api.patch(path, headers=headers, json=body)
     assert replay.status_code == 409 and replay.json()["code"] == "account_generation_changed"
     with Session(database[0]) as session, session.begin():
         row = begin_deleting(session, account_id)
-        assert row.generation == previous + 2
+        assert row.generation == previous + 1
     deleting_replay = api.patch(path, headers=headers, json=body)
     assert (
         deleting_replay.status_code == 403 and deleting_replay.json()["code"] == "account_deleting"

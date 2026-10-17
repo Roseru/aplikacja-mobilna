@@ -86,7 +86,7 @@ provider DELETE/purge po restore. B pozostaje zablokowane, source zamrożony.
 
 Niezależny końcowy przegląd:9/10, brak otwartych P0/P1/P2; reviewer osobno
 uruchomił28unit kontraktu i1restart pin, diff--check PASS. SQL ledger SHA256:
-`8f7ced9ba3df2558b422d76c06f163ed2b5c5a8f882b1d2d13af63318a1e76de`.
+`e2a8d5033eb914693df8138c2b26383ccd304ebdde596d64cfed00253b0bcd4a`.
 Dodatkowy head/historyczny E6 graph2/2PASS, zachowane bytes i kontoB.
 Pełne testy runnerów180PASS/0skip; Ruff/format i uv build PASS.
 Lokalny Docker/Keycloak/full Compose nieuruchomiony; rzeczywista pełna macierz
@@ -94,3 +94,15 @@ PostgreSQL/Keycloak/Android/Compose jest obowiązkiem zdalnego CI tego PR.
 
 Najbliższe kroki: rzeczywiste8kontroli
 aktualnego head/base, potem osobny odbiór koordynatora. Bez merge/wdrożenia.
+
+
+## Poprawka po pierwszym CI
+
+Przebieg39069448034/head8ccc943d wykrył zbyt szeroki filtr nazw `%ledger%`,
+który odebrał także wcześniejsze `e7_prune_ledger` roli AI. Zawężono go do
+własnych prefiksów `ledger_`/`_ledger_`, zachowując dotychczasowy ACL E7.
+Nowy test wykonuje prawdziwe sprzątanie pod rolą AI worker; ledger+E7runtime
+37PASS lokalnie. Keycloak E6 testuje teraz celowo niespójny historyczny receipt,
+bez zakazanej surowej zmiany generacji konta; HTTP409/403 są zachowane.
+Reviewer ponownie ocenił zmieniony zakres9/10, bez P0/P1/P2; wcześniejszy
+przegląd nie wykrył filtra. Pełne CI kolejnego head pozostaje do odczytu.
