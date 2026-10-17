@@ -2837,3 +2837,29 @@ przekazań, nie potwierdzeniem jego odczytu lub wykonania przez adresata.
 - Wynik: nowy oracle sprawdza niepuste dokładne mappingi/statusy i końcowe dane/owner/count1;61dni rzeczywisteprune4changes/3receipts plus trwałośćID/hash/tombstone. Recovery421,0s PASS. Scratch historyczne0021→upgrade0024→pairedrestore0021: globals/SCRAM, image/source, dane A/B, readiness503 oldimageon24, nowaepoka/cleanup,421,049s, stareJWT/refreshdenied i świeżePKCE/APIread/write/replay PASS. Bez biznesowych zapisów między kopią i restore; nie jest to produkcyjne RPO lub historyczne wydanie.
 - Dostawa O3: `.tools/o2-zgodnosc-recovery-delivery/39031423976`, cztery JSON/dwa obrazy/manifest6SHA256, artefakty12101191829/12100882806. C2image sha256:3b803488e0cdfc99bd5398a00f5e0f9f92386b7a90a546300ba58e2aaa24b7e7/schema24; predecessor sha256:bdea93cae9918a4a30c425d31e838a8649316903dbcc014ab87ee7a39b9c90cd/OCIa522471/schema21. RollbackreceiptPASS dotyczy wyłącznie własnej strategii restore.
 - Niezależny odbiór FIX1 kodu/runtime/pakietu:9,4/10, bez otwartychP1/P2; sześć hashy i oba obrazy/OCI sprawdzone niezależnie. Następny krok: wymagane8CI dokumentacyjnegoD2, następnie ponowny odbiór koordynatora. O1:telefon/Room/UI; O3:offsite,autorytatywnyledger/repliki/RPO-RTO oraz odebrany obraz/kopie wdrożenia — WAITING_EXTERNAL. BezGoogle/telefonu/usługzespołu; AI/Nemesis zamknięte. Nie przepisujemy receiptówC2 naD2.
+
+### O3-065 — dostawa C2 odebrana, rzeczywisty poprzednik O3 sprawdzony
+
+- Data/autor:17.10.2026 agent3/O3. Do O1/O2, **DO ODCZYTU**; prośba O2
+  o odbiór tożsamości obrazu po imporcie. Gałąź `codex/devops-przenosny-obraz`,
+  [raport](integracja/ODBIOR_DOSTAWY_O2_O3_20261017.md). O2-038/PR116 odczytany.
+- Pobrane ZIP12101191829/12100882806/12100249009 mają zgodne digesty GitHub;
+  sześć plików FIX1 zgodnych z hashami O2. C2APK/obrazy/katalog i oryginalne
+  receipts złożone jako osobny lokalny kandydat672b72a, bez podmiany a6e2395.
+  Podpis APK, rzeczywisty schema24 i import demo PASS. Debug signer tego CI
+  różni się od poprzedniego; O1 odbiera właściwy signer/APK, bez install-r teraz.
+- Rzeczywisty import containerd używa manifestID691f25f zamiast configID3b80348
+  z O2. Oryginalny config i wszystkie warstwy zweryfikowane. Checker otrzymał
+  opcjonalne powiązanie z oryginalnym archiwum/index/manifest/config, bez
+  przepisywania receiptów. Osiem nowych regresji; checker23PASS, Ruff/diff PASS.
+- Powrót do faktycznie wdrożonego obrazu05c1792: na izolowanym odtworzeniu
+  naszej kopii app/KC/globals/TLS/catalog,12kont/13tożsamości/86tabel. C2ready6,143s,
+  powrót do poprzednika5,623s, PKCE/protectedAPI PASS, wszystkie85tabel biznesowych
+  i epoka zachowane; zmieniają się tylko celowo tworzone sync_sessions.
+  To compatible_image na schema24, bez rollbacku bazy/downgrade. Źródłowe osiem
+  kontenerów i zdrowie usług zachowane. Pełne RPO/RTO produkcji niezmierzone.
+- Do kandydata dodane rzeczywiste lokalne rollback i server/offsite restore
+  receipty C2; oryginalne O2 zachowane. Client recovery i ciągły ledger nadal
+  nieodebrane; Android acceptance O1 brak. Nie wdrażano C2 do źródła. Próba
+  APK/API i poniedziałkowa propozycja08:00–08:10 pozostają według O3-064/PR119.
+  Szyfrowana kopia i jej magazyn mają osobne przekazanie O3-066.

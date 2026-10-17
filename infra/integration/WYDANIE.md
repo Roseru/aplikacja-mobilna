@@ -63,6 +63,24 @@ obrazu nowszym commitem przez samą zmianę tagu. Katalog przechodzi rzeczywisty
 import do osobnego tymczasowego SQLite: limity, gzip, hash, kontrakt, referencje
 i aktywacja generacji. Production wymaga official; demo pozostaje jawnie demo.
 
+### Ten sam eksport w Docker classic i containerd
+
+Docker classic może identyfikować obraz hashem config, a lokalny containerd
+hashem manifestu OCI. Przy odbiorze takiego eksportu zachowujemy oryginalny
+receipt O2. W `backend.image` zapisujemy rzeczywisty lokalny immutable ID.
+Opcjonalny `backend.image_archive` ma dokładnie pola `path`, `sha256`,
+`config_digest`: względne oryginalne archiwum obrazu, SHA-256 całego pliku
+oraz oryginalną tożsamość config z receipt O2.
+
+Checker sprawdza hash archiwum, jedyny descriptor indexu równy runtime ID,
+hash manifestu, jego referencję do config i hash tego config. Porównuje także
+warstwy RootFS, etykiety, OS i architekturę z rzeczywiście załadowanym obrazem.
+Dopiero to powiązanie pozwala zachować `backend_acceptance.image` z oryginalnym
+config digest. Nie wystarcza zgodny tag lub napisany ręcznie plik mapowania.
+Nie zmienia to reguł registry digest dla produkcji ani kompletu pięciu odbiorów.
+Obsługiwany jest pojedynczy manifest OCI w nieskompresowanym TAR do2GiB;
+niejednoznaczny eksport lub zmienione metadata blokują odbiór.
+
 ## Dowody odbioru O1/O2/O3
 
 Każdy receipt zawiera `result=PASS` i ten sam `commit`, wyłącznie po wykonaniu
