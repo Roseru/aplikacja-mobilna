@@ -1,17 +1,23 @@
 # Odbiornik ciągłego rejestru usunięć — O3
 
-18.10.2026 (pierwszy checkpoint17.10). Kod przygotowany; zewnętrzny host, fizyczne odcięcie starego źródła
-i produkcyjny cutover **WAITING_EXTERNAL**. Nie zmieniono używanej instalacji,
+18.10.2026 (pierwszy checkpoint17.10). Kod i integracja są odbierane w PR125.
+Właściciel **odłożył drugi host na później** z powodu braku wskazanego serwera.
+Zewnętrzny magazyn, fizyczne odcięcie starego źródła i produkcyjny cutover
+pozostają **DEFERRED_BY_OWNER / WAITING_EXTERNAL**. Nie zmieniono używanej instalacji,
 kont, CA, epoki, usług ani bramek AI/Nemesis. Próba APK/API pozostaje na poniedziałek.
 
 ## Zależność i rzeczywisty odbiór źródła
 
 Ten etap wymaga kontraktu runtime z PR124, dokładny parent
-`9b761561bc01cd90deb048499948541c0bfe1cfa`, branch
+`483dcfa95a1b27bcbdcf1b04ebb22ca7c46f49a9`, branch
 `codex/backend-ciagly-rejestr-usuniec`. Własna gałąź O3 to
 `codex/devops-odbiornik-rejestru`; zależny PR porównuje się z rodzicem.
-Najpierw A2/koordynator poprawia i odbiera PR124, potem zmieniamy bazę tego
-PR na main i odbieramy własny pełny CI. Nie scalać dziecka do rodzica.
+Kolejność odbioru: aktualny PR124 po integracji main, jego merge do main,
+zmiana bazy PR125 na main i własny pełny CI. Nie scalać dziecka do rodzica.
+Parent483dcfa łączy zwykłym merge poprawki O2/9b76156 i mainbe9c1f6;
+konflikt dotyczył wyłącznie dziennika. Kod kontraktu, transportu i migracji
+O2 nie zmienił się w tym kroku. Dokładne zakończone CI i merge są w opisach
+PR124/125; starsze wyniki poniżej pozostają historycznymi checkpointami.
 
 Odczyt O2-041 obejmuje źródło/MAC/ACK/cutoff, egzekwowane bariery oraz jawny
 brak ponownego otwarcia po restore. CI39070253209 źródła nie jest PASS:
@@ -144,7 +150,16 @@ Nie osłabiono SQL lub barier. Końcowy wynik dotyczy poprawnej próby.
 Receipt wskazuje wykonawczy receiver SHA6fc3824b, C72715f3 i osobny hash
 testu; nie przepisujemy go na późniejszy commit dokumentacyjny. Test SQLite nie zastępuje testów źródłowego PostgreSQL.
 
-Pozostałe: zielony PR124/odbiór koordynatora; drugi host/adres/dostęp;
+Nowy odbiór na czystym commicie b4b2943 po połączeniu aktualnego rodzica:
+**34 PASS / 0 FAIL / 0 SKIP** w 10,54 s: 28 przypadków kontraktu i sześć
+rzeczywistych przypadków PostgreSQL, w tym własny PG→HTTPS→ACK. Wykonano
+również osobne rzeczywiste LOGIN eksportera/operatora, konkurencję dwóch
+eksporterów, rollback bez luki i crash/restart etapu providera. Lokalne
+30 testów odbiornika ponownie PASS; Ruff i format trzech plików PASS.
+Prywatny receipt zachowuje exact commit i hashe wykonanych źródeł;
+nie przypisujemy go późniejszemu commitowi dokumentacyjnemu.
+
+Pozostałe wejścia wdrożeniowe (drugi host odłożony przez właściciela): adres/dostęp;
 klucze poza źródłem i ich niezależne odzyskanie; rzeczywisty eksport PG,
 przerwa sieci/restart odbiorcy/odmowa efektu bez ACK; fizyczny fencing
 API/workerów/provider credentials/issuance/replik i podpisany cutoff;

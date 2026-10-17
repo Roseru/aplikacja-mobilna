@@ -19,7 +19,7 @@ Każda osoba aktualizuje własny wiersz. Daty i dokładne źródła są w jej wp
 |---|---|---|---|
 | O1 — Android, Kotlin, Room | 0.8.10/code21/Room8: odczyt Nemesis;155 JVM/168full i72final affected PASS osobno;22tabele/5posiłków zachowane | Własny PR/CI; trwałe operacje Nemesis, realny API/APK, E4/recovery i klientE9 | O1-026, [raport](../android/RAPORT_0_8_10.md), codex/android-nemesis |
 | O2 — Python, PostgreSQL, API | PR124: rejestr usunięć/schema0025, review9/10; pełna integracja71ca4fdf PASS; poprawki izolacji i aktualny main dołączone | Koordynator: dokładny końcowy head/base i8CI w PR/checks; O3: sink/fencing/cutoff, O1/O3: pełneKO32 | O2-041, [PR124](https://github.com/Roseru/aplikacja-mobilna/pull/124), [raport](integracja/RAPORT_REJESTR_USUNIEC_O2.md) |
-| O3 — DevOps, CI/CD, serwer | PR119/123/126 scalone; main be9c1f6 ma własne8/8CI i155JVM/169native PASS; rzeczywisty Dropbox download/restore13,676s PASS, harmonogram04/16 aktywny | Odbiór integracji PR124, potem PR125; właściciel odłożył drugi host/fencing, klucz wymaga osobnego nośnika; telefon w poniedziałek | O3-070/071, [cykliczne kopie](integracja/CYKLICZNE_KOPIE_O3.md) |
+| O3 — DevOps, CI/CD, serwer | PR119/123/126 scalone; cykliczny Dropbox aktywny; PR125 po integracji rodzica:30 testów odbiornika oraz28 kontraktu/6PG PASS, w tym rzeczywiste LOGIN i HTTPS | Pełny CI PR124, potem PR125 i osobny main; drugi host/fencing odłożone przez właściciela, klucz wymaga osobnego nośnika; telefon w poniedziałek | O3-071/072, [odbiornik](integracja/ODBIORNIK_REJESTRU_O3.md) |
 
 
 ## Wpisy
@@ -3092,3 +3092,22 @@ Korekta harmonogramu O3-070: finalne przygotowanie03:50/15:50, proponowany trans
   i bez otwarcia ruchu. Fizyczny fencing/ostatni zapis/cutoff pozostają
   odłożone razem z drugim hostem. Próba telefonu/API nadal na poniedziałek,
   pełne KO32/RPO/RTO i ponowne otwarcie po restore wymagają osobnego odbioru.
+
+### O3-072 — odbiornik po integracji aktualnego źródła i odłożenie wdrożenia
+
+- Data/autor: 18.10.2026, agent3/O3. Do O2/O1, DO ODCZYTU. Na polecenie
+  właściciela realizujemy integrację PR124 → main → PR125 → main. Właściciel
+  następnie odłożył drugi host na później; nie zastępujemy go drugim kontenerem
+  na tym samym komputerze ani nie podpisujemy fizycznego fencing jako PASS.
+- Branch codex/devops-odbiornik-rejestru dołączył rodzica483dcfa zwykłym merge;
+  zachowano wszystkie wpisy O2/O3. Czysty commit b4b2943 przeszedł nową próbę:
+  30 testów odbiornika PASS oraz34 PASS/0FAIL/0SKIP kontraktu i PG (28unit/6PG),
+  10,54s. Rzeczywiste LOGIN operator/eksporter, rollback bez luki, konkurencja,
+  crash/restart, HTTPS i podpisany SQL ACK. Provider pozostaje syntetyczny.
+- Dokładne receiver SHA6fc3824b i test SHA70a12321 są w prywatnym receipt
+  wykonanej próby. Ruff/format PASS. Pełny CI i osobny main są wymagane przed
+  końcowym odbiorem; ich rzeczywiste wyniki będą przypięte w opisach PR,
+  bez zastępowania ich lokalnymi testami. [Raport](integracja/ODBIORNIK_REJESTRU_O3.md).
+- Ten etap nie wdraża schema0025/eksportera do używanej instalacji i nie
+  odcina jej procesów/issuance. Off-host, klucze, fizyczny fencing i cutoff
+  pozostają odłożone; pełne KO32 i telefon/API są osobnymi odbiorami.
