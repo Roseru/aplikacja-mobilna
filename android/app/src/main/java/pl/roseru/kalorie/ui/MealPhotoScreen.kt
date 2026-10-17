@@ -33,7 +33,8 @@ import androidx.lifecycle.compose.LocalLifecycleOwner
 
 @Composable fun MealPhotoScreen(model: MealPhotoViewModel, date: LocalDate, onBack: () -> Unit, onManual: () -> Unit,
     session: pl.roseru.kalorie.session.SessionView = pl.roseru.kalorie.session.SessionView(), onReadCapabilities: () -> Unit = {},
-    onUpload:(String,PhotoUploadConsent,Boolean)->Unit={_,_,_->},onRetryUpload:()->Unit={},onDiscardUpload:()->Unit={}) {
+    onUpload:(String,PhotoUploadConsent,Boolean)->Unit={_,_,_->},onRetryUpload:()->Unit={},onDiscardUpload:()->Unit={},
+    onReadAnalysis:()->Unit={},onRestoreAnalysis:()->Unit={},onStopAnalysis:()->Unit={},onClearAnalysis:()->Unit={}) {
     val drafts by model.drafts.collectAsStateWithLifecycle()
     val busy by model.busy.collectAsStateWithLifecycle()
     val message by model.message.collectAsStateWithLifecycle()
@@ -44,10 +45,18 @@ import androidx.lifecycle.compose.LocalLifecycleOwner
     var approval by remember(model,session.binding?.lease,caps?.provider,caps?.model,caps?.noticeVersion) { mutableStateOf<String?>(null) }
     var acknowledged by remember(approval) { mutableStateOf(false) }
     val lifecycle=LocalLifecycleOwner.current
-    DisposableEffect(lifecycle,model) {
-        val observer=LifecycleEventObserver { _,event -> if(event==Lifecycle.Event.ON_STOP){approval=null;acknowledged=false} }
+    val restoreEligible=rememberUpdatedState(session.photoUpload?.let {it.acknowledged && !it.blocked}==true)
+    LaunchedEffect(model,session.binding?.lease,session.photoUpload?.operationId,session.photoUpload?.acknowledged,session.photoUpload?.blocked) {
+        if(session.photoUpload?.let {it.acknowledged && !it.blocked}==true) onRestoreAnalysis()
+    }
+    DisposableEffect(lifecycle,model,session.binding?.lease) {
+        val clearThisOwner=onClearAnalysis;val restoreThisOwner=onRestoreAnalysis
+        val observer=LifecycleEventObserver { _,event ->
+            if(event==Lifecycle.Event.ON_STOP){approval=null;acknowledged=false;clearThisOwner()}
+            if(event==Lifecycle.Event.ON_START && restoreEligible.value) restoreThisOwner()
+        }
         lifecycle.lifecycle.addObserver(observer)
-        onDispose { lifecycle.lifecycle.removeObserver(observer) }
+        onDispose { lifecycle.lifecycle.removeObserver(observer);clearThisOwner() }
     }
     val canCreate=session.photoUploadConfigured && session.binding?.owner?.kind=="account" && session.hasSession &&
         session.serverLinked && !session.requiresRecovery && !session.pendingLogin && !session.busy &&
@@ -90,7 +99,8 @@ import androidx.lifecycle.compose.LocalLifecycleOwner
             TextButton(onClick=onManual, modifier=Modifier.testTag("photo-manual")) { Text("Dodaj posiłek ręcznie") }
         }
         item { PhotoCapabilitiesPanel(session, onReadCapabilities) }
-        item { PhotoUploadPanel(session,onRetryUpload,onDiscardUpload) }
+        item { PhotoUploadPanel(session,onRetryUpload,onDiscardUpload,onReadAnalysis,onStopAnalysis) }
+        item { PhotoAnalysisPanel(session.photoAnalysis) }
         item { Text("Zapisane zdjęcia · ${drafts.size}", style=MaterialTheme.typography.titleMedium, modifier=Modifier.testTag("photo-count")) }
         if (drafts.isEmpty()) item { Text("Nie ma jeszcze zapisanych zdjęć.", Modifier.testTag("photo-empty")) }
         items(drafts,key={it.id}) { row ->

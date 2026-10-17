@@ -107,7 +107,11 @@ class MainActivity : ComponentActivity() {
                 readPhotoCapabilities = { app.sessionScope.launch { app.sessions.readPhotoCapabilities() } },
                 uploadPhoto = { id,consent,accepted -> app.sessionScope.launch { app.sessions.uploadPhoto(binding.lease,id,consent,accepted) } },
                 retryPhotoUpload = { app.sessionScope.launch { app.sessions.retryPhotoUpload(binding.lease) } },
-                discardUnsentPhotoUpload = { app.sessionScope.launch { app.sessions.discardUnsentPhotoUpload(binding.lease) } })
+                discardUnsentPhotoUpload = { app.sessionScope.launch { app.sessions.discardUnsentPhotoUpload(binding.lease) } },
+                readPhotoAnalysis = { app.sessionScope.launch { app.sessions.readPhotoAnalysis(binding.lease) } },
+                restorePhotoAnalysis = { app.sessionScope.launch { app.sessions.loadPhotoAnalysis(binding.lease) } },
+                stopPhotoAnalysis = { app.sessionScope.launch { app.sessions.stopPhotoAnalysis(binding.lease) } },
+                clearPhotoAnalysis = { app.sessionScope.launch { app.sessions.stopPhotoAnalysis(binding.lease,clearPreview=true) } })
             CalorieTheme(dark) { CalorieApp(model, session, actions, photoModel) }
             }
         }

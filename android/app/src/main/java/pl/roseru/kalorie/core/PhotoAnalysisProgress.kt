@@ -49,15 +49,26 @@ internal sealed class PhotoPollStep {
 internal class PhotoPollBudget private constructor(val attempts:Int,private val startedNanos:Long,private val nextNanos:Long) {
     fun reserve(current:PhotoAnalysisRead,now:Instant,nowNanos:Long,sharedRetryAtMillis:Long=0):PhotoPollStep {
         if(current.state in setOf("succeeded","failed") || current.decision!="pending") return PhotoPollStep.Stop(PhotoPollStep.Reason.TERMINAL)
+        return try {
+            // A worker may start just before queue_deadline and then run for another120s.
+            val deadline=minOf(current.photoExpiresAt,current.queueDeadline.plusSeconds(120))
+            reserve(now,nowNanos,sharedRetryAtMillis,Duration.between(now,deadline).toMillis())
+        } catch(_:ArithmeticException) {PhotoPollStep.Stop(PhotoPollStep.Reason.CLOCK)}
+    }
+    /** Before the first valid GET, its current state/expiry is unknown. A completed proposal
+     * remains readable after image deletion; never suppress that explicit initial fetch.
+     * The same local window, attempts and backoff still apply, including401 retries.
+     */
+    fun reserveInitial(now:Instant,nowNanos:Long,sharedRetryAtMillis:Long=0):PhotoPollStep =
+        reserve(now,nowNanos,sharedRetryAtMillis,Long.MAX_VALUE)
+
+    private fun reserve(now:Instant,nowNanos:Long,sharedRetryAtMillis:Long,serverMillis:Long):PhotoPollStep {
         if(attempts>=MAX_READS) return PhotoPollStep.Stop(PhotoPollStep.Reason.ATTEMPTS)
         try {
             val elapsed=Math.subtractExact(nowNanos,startedNanos)
             if(elapsed<0) return PhotoPollStep.Stop(PhotoPollStep.Reason.CLOCK)
             val remainingNanos=Math.subtractExact(WINDOW_NANOS,elapsed)
             if(remainingNanos<=0) return PhotoPollStep.Stop(PhotoPollStep.Reason.LOCAL_DEADLINE)
-            // A worker may start just before queue_deadline and then run for another120s.
-            val serverDeadline=minOf(current.photoExpiresAt,current.queueDeadline.plusSeconds(120))
-            val serverMillis=Duration.between(now,serverDeadline).toMillis()
             if(serverMillis<=0) return PhotoPollStep.Stop(PhotoPollStep.Reason.SERVER_DEADLINE)
             val remainingMillis=minOf(remainingNanos/1_000_000,serverMillis)
             if(remainingMillis<=0) return PhotoPollStep.Stop(PhotoPollStep.Reason.LOCAL_DEADLINE)

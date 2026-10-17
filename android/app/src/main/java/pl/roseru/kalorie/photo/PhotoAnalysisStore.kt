@@ -178,6 +178,15 @@ internal class PhotoAnalysisStore(private val context:Context,private val db:Cal
     suspend fun defer(id:String,retryAtMillis:Long)=db.withTransaction {
         require(retryAtMillis>=0);check(checked(id).receiptJson==null);check(dao.defer(lease.storageScope,id,retryAtMillis)==1)
     }
+    suspend fun deferRead(id:String,retryAtMillis:Long)=db.withTransaction {
+        require(retryAtMillis>=0)
+        val row=checked(id);check(row.receiptJson!=null && row.attempted && row.blockedCode==null)
+        check(dao.defer(lease.storageScope,id,maxOf(row.retryAtMillis,retryAtMillis))==1)
+    }
+    suspend fun blockRead(id:String)=db.withTransaction {
+        val row=checked(id);check(row.receiptJson!=null && row.attempted)
+        check(dao.block(lease.storageScope,id,"photo_read_rejected")==1)
+    }
     suspend fun block(id:String,code:String)=db.withTransaction {
         require(Regex("[a-z][a-z0-9_]{0,99}").matches(code));check(checked(id).receiptJson==null);check(dao.block(lease.storageScope,id,code)==1)
     }

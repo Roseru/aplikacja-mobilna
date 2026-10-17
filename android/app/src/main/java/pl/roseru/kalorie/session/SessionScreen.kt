@@ -21,7 +21,8 @@ data class SessionActions(val login: () -> Unit, val logout: () -> Unit, val ref
     val cancelNemesis: (String) -> Unit = {}, val retryNemesisMutation: () -> Unit = {},
     val readPhotoCapabilities: () -> Unit = {},
     val uploadPhoto:(String,PhotoUploadConsent,Boolean)->Unit={_,_,_->},
-    val retryPhotoUpload:()->Unit={},val discardUnsentPhotoUpload:()->Unit={})
+    val retryPhotoUpload:()->Unit={},val discardUnsentPhotoUpload:()->Unit={},
+    val readPhotoAnalysis:()->Unit={},val restorePhotoAnalysis:()->Unit={},val stopPhotoAnalysis:()->Unit={},val clearPhotoAnalysis:()->Unit={})
 
 @Composable fun SessionScreen(view: SessionView, actions: SessionActions, back: () -> Unit, backLabel: String = "Wróć do profilu") {
     val account = view.binding?.owner?.kind == "account"

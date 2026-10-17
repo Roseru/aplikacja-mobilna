@@ -119,4 +119,19 @@ class PhotoAnalysisProgressTest {
         assertTrue(stop);assertTrue(reads in 1..PhotoPollBudget.MAX_READS);assertTrue(elapsed<=120_000)
         assertEquals(reads,budget.attempts);assertEquals("PhotoPollBudget(redacted)",budget.toString())
     }
+    @Test fun explicitInitialGetRemainsPossibleAfterImageRetentionButStillUsesTheLocalBudget() {
+        val later=start.plusSeconds(7*86_400)
+        val first=PhotoPollBudget.start(0).reserveInitial(later,0) as PhotoPollStep.Ready
+        assertEquals(1,first.reserved.attempts);assertEquals(45_000L,first.timeoutMillis)
+        assertTrue(first.reserved.reserveInitial(later,0) is PhotoPollStep.Wait)
+        stopped(first.reserved.reserveInitial(later,120_000_000_000),PhotoPollStep.Reason.LOCAL_DEADLINE)
+    }
+    @Test fun initialAuthenticationRetrySharesTheSameAttemptsPausesAndBackoff() {
+        val first=PhotoPollBudget.start(0).reserveInitial(start,0) as PhotoPollStep.Ready
+        val pause=first.reserved.reserveInitial(start,0,start.plusSeconds(8).toEpochMilli()) as PhotoPollStep.Wait
+        assertEquals(8_000L,pause.delayMillis)
+        val second=first.reserved.reserveInitial(start.plusSeconds(8),8_000_000_000) as PhotoPollStep.Ready
+        assertEquals(2,second.reserved.attempts)
+        stopped(second.reserved.reserveInitial(start.plusSeconds(8),8_000_000_000,start.plusSeconds(120).toEpochMilli()),PhotoPollStep.Reason.BACKOFF_OUTSIDE_WINDOW)
+    }
 }
