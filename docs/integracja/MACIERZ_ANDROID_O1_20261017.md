@@ -84,11 +84,22 @@ b266d5ff6b90eada6dc3b20cb090e3731302e553a27c5d3e4df1f0d76beaff06
 
 ## Dostawa O3 i kryteria odbioru
 
-O3 może przygotować instalację `platforms;android-37` oraz
+O3 może przygotować instalację `platforms;android-37.0` oraz
 `build-tools;36.0.0` i kontrolę SHA wrappera. Zmianę wspólnych zmiennych
 `ANDROID_COMPILE_SDK`/`ANDROID_BUILD_TOOLS` w obu jobach łączymy z gotowym
 kodem migracji O1. Do tego czasu działający workflow zachowuje35/35.0.0.
 Nie zmieniamy obrazu emulatora na37 tylko dlatego, że kompilujemy przeciw37.
+
+Odczytano przygotowanie O3-064 z [PR119](https://github.com/Roseru/aplikacja-mobilna/pull/119),
+head `38c88ca713d8a1d4a37c6adb246de84941d67d4c`. Pakiet platformy to
+API37 revision2, extension22, stable. Identyfikator instalacji powyżej został
+skorygowany według rzeczywistego sdkmanager O3. Nie tworzymy aliasu katalogu
+lub podmienionych metadanych. Zapis compileSdk37 w tabeli pozostaje celem;
+wybór tej konkretnej platformy w AGP9.1.1 wymaga dopiero prawdziwego build O1.
+O3 potwierdził pobranie całego Gradle9.3.1 o podanym SHA, jego uruchomienie
+oraz smoke Java/aapt2/D8 platformy. Smoke używał JDK21, CI pozostaje JDK17.
+To odczyt dowodów O3, bez własnego build/KSP/JVM/native nowej macierzy O1.
+
 
 Odbiór docelowego head obejmuje:
 
