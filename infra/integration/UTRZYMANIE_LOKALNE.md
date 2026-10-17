@@ -33,13 +33,6 @@ Startup nie wylogowuje ani nie restartuje komputera. Można sprawdzić tę samą
 akcję przez `Start-ScheduledTask`; pełny test po rzeczywistym ponownym logowaniu
 pozostaje osobnym wynikiem. Istniejący wpis autostartu Dockera jest zachowany.
 
-Nieudana akcja startup jest ponawiana przez Windows najwyżej dwa razy,
-z odstępem jednej minuty. Pomyślny start kończy sekwencję. Dotyczy to również
-błędu gotowości po chwilowym pojawieniu się silnika podczas aktualizacji Dockera.
-Backup i recovery zachowują własne harmonogramy, bez nowych automatycznych retry.
-Nie jest to stały watchdog: poprawny start nie uprawnia do ponownego uruchamiania
-Dockera po jego późniejszym świadomym zamknięciu przez użytkownika.
-
 Instalator nie zmienia istniejącego monitora. Po pierwszym poprawnym backupie
 dopisz do jego prywatnego settings.json `local_backup_receipt` wskazujące
 `operations/backup-receipt.json` oraz `startup_receipt` wskazujące

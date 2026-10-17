@@ -68,9 +68,6 @@ $settingsPath = Join-Path $operations 'settings.json'
 $identity = [System.Security.Principal.WindowsIdentity]::GetCurrent().Name
 $principal = New-ScheduledTaskPrincipal -UserId $identity -LogonType Interactive -RunLevel Limited
 $common = New-ScheduledTaskSettingsSet -MultipleInstances IgnoreNew -StartWhenAvailable -AllowStartIfOnBatteries -DontStopIfGoingOnBatteries -ExecutionTimeLimit (New-TimeSpan -Minutes 45)
-# Docker can exit while its updater is running at login. Retry only a failed
-# startup action; never turn a successful startup into a permanent watchdog.
-$startupSettings = New-ScheduledTaskSettingsSet -MultipleInstances IgnoreNew -StartWhenAvailable -AllowStartIfOnBatteries -DontStopIfGoingOnBatteries -ExecutionTimeLimit (New-TimeSpan -Minutes 45) -RestartCount 2 -RestartInterval (New-TimeSpan -Minutes 1)
 $atLogin = New-ScheduledTaskTrigger -AtLogOn -User $identity
 $backupLogin = New-ScheduledTaskTrigger -AtLogOn -User $identity
 $backupLogin.Delay = 'PT3M'
@@ -83,16 +80,11 @@ $commands = @('backup --due', 'recover', 'startup')
 for ($index = 0; $index -lt $taskNames.Count; $index++) {
     $arguments = '-I "{0}" {1} --settings "{2}"' -f $script, $commands[$index], $settingsPath
     $action = New-ScheduledTaskAction -Execute $pythonw -Argument $arguments -WorkingDirectory $runtime
-    $taskSettings = if ($index -eq 2) { $startupSettings } else { $common }
-    Register-ScheduledTask -TaskName $taskNames[$index] -Description $description -Action $action -Trigger $triggers[$index] -Settings $taskSettings -Principal $principal -Force | Out-Null
+    Register-ScheduledTask -TaskName $taskNames[$index] -Description $description -Action $action -Trigger $triggers[$index] -Settings $common -Principal $principal -Force | Out-Null
     $registered = Get-ScheduledTask -TaskName $taskNames[$index]
     if ($registered.Actions.Execute -ne $pythonw -or $registered.Actions.Arguments -ne $arguments -or $registered.Principal.RunLevel -ne 'Limited') {
         throw 'Registered task differs from requested maintenance.'
     }
-    if ($index -eq 2 -and ($registered.Settings.RestartCount -ne 2 -or $registered.Settings.RestartInterval -ne 'PT1M')) {
-        throw 'Registered startup retry policy differs from requested maintenance.'
-    }
 }
 @{installed=$true; tasks=$taskNames; source_commit=$revision; backup_interval_hours=12;
-  retained_verified_copies=14; startup_retries=2; startup_retry_seconds=60;
-  offsite=$false; requires_logged_in_user=$true; console_windows=$false} | ConvertTo-Json -Compress
+  retained_verified_copies=14; offsite=$false; requires_logged_in_user=$true; console_windows=$false} | ConvertTo-Json -Compress
