@@ -237,6 +237,32 @@ internal class PhotoAnalysisStore(private val context:Context,private val db:Cal
         db.withTransaction {owners.requireCurrent(lease);check(dao.get(lease.storageScope)?.operationId!=id)}
         AtomicFile(file(id)).delete()
     }
+    /** Local corrections only. No image, HTTP, diary or outbox write; preparation is outside the guard. */
+    suspend fun prepareMealDraft(id:String,revision:Long,moment:java.time.Instant,zone:java.time.ZoneId):PreparedPhotoMealDraft {
+        val (source,snapshot)=cancellationSource(id)
+        check(snapshot.canEditProposal && snapshot.latest!!.revision==revision)
+        if(snapshot.mealDraft!=null)return PreparedPhotoMealDraft(source,snapshot)
+        val read=checkNotNull(snapshot.latest)
+        val draft=PhotoMealDraft.create(read,UUID.randomUUID().toString(),checkNotNull(read.proposal).items.map {UUID.randomUUID().toString()},moment,zone)
+        return PreparedPhotoMealDraft(source,snapshot.withMealDraft(draft,0))
+    }
+    suspend fun prepareMealDraftEdit(id:String,revision:Long,action:(PhotoMealDraft)->PhotoMealDraft):PreparedPhotoMealDraft {
+        val (source,snapshot)=cancellationSource(id);val draft=checkNotNull(snapshot.mealDraft)
+        check(draft.editRevision==revision)
+        return PreparedPhotoMealDraft(source,snapshot.withMealDraft(action(draft),revision))
+    }
+    suspend fun prepareMealDraftDiscard(id:String,revision:Long):PreparedPhotoMealDraft {
+        val (source,snapshot)=cancellationSource(id)
+        return PreparedPhotoMealDraft(source,snapshot.withoutMealDraft(revision))
+    }
+    /** DB-only CAS retains backoff and all other queue metadata. */
+    suspend fun acceptMealDraftPrepared(prepared:PreparedPhotoMealDraft):PhotoAnalysisSnapshot=db.withTransaction {
+        val row=checked(prepared.source.operationId)
+        check(row==prepared.source && row.attempted && row.receiptJson!=null && row.blockedCode==null)
+        if(row.receiptJson!=prepared.snapshot.serialized)check(dao.replaceSnapshot(lease.storageScope,row.operationId,prepared.snapshot.serialized)==1)
+        prepared.snapshot
+    }
+
     suspend fun deferRead(id:String,retryAtMillis:Long)=db.withTransaction {
         require(retryAtMillis>=0)
         val row=checked(id);check(row.receiptJson!=null && row.attempted && row.blockedCode==null)
@@ -274,4 +300,9 @@ internal class PreparedPhotoRead internal constructor(internal val source:PhotoA
 internal class PreparedPhotoCancellation internal constructor(internal val source:PhotoAnalysisRequestEntity,
     internal val snapshot:PhotoAnalysisSnapshot) {
     override fun toString()="PreparedPhotoCancellation(redacted)"
+}
+
+internal class PreparedPhotoMealDraft internal constructor(internal val source:PhotoAnalysisRequestEntity,
+    internal val snapshot:PhotoAnalysisSnapshot) {
+    override fun toString()="PreparedPhotoMealDraft(redacted)"
 }

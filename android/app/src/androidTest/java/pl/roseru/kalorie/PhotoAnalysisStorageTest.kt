@@ -364,4 +364,69 @@ class PhotoAnalysisStorageTest {
             assertEquals(before,PhotoAnalysisStore(context,db,resumed).pending())
         } finally {db.close();scopes.forEach(::clean)}
     }
+
+    private fun correctionInput(name:String="Rosół",amount:String="250")=PhotoDraftInput(name,amount,"ml","40","2","1","")
+    @Test fun mealCorrectionsSurviveRoomRestartWithoutEitherImageAndPreservePauseAndDiary()=runBlocking<Unit> {
+        val name="meal-draft-${UUID.randomUUID()}";var db=Room.databaseBuilder(context,CalorieDatabase::class.java,name).build();var scope:String?=null
+        try {
+            val lease=account(db,"draft-restart");scope=lease.storageScope;var(store,row)=cancellationQueue(db,lease)
+            db.photoAnalysisDao().defer(lease.storageScope,row.operationId,900_000)
+            val prepared=store.prepareMealDraft(row.operationId,2,java.time.Instant.parse("2026-10-17T12:00:00Z"),java.time.ZoneId.of("Europe/Warsaw"))
+            db.withTransaction{store.acceptMealDraftPrepared(prepared)}
+            val first=store.stored(row.operationId).mealDraft!!
+            store.acceptMealDraftPrepared(store.prepareMealDraftEdit(row.operationId,1){it.replace(first.items.single().id,correctionInput())})
+            val before=store.pending()!!;assertEquals(900_000L,before.retryAtMillis)
+            MealPhotoStore(context,db,lease).delete(row.sourcePhotoId)
+            assertTrue(File(context.filesDir,"photo-analysis-inputs/${lease.storageScope}/${row.operationId}.jpg").delete())
+            db.close();db=Room.databaseBuilder(context,CalorieDatabase::class.java,name).build()
+            store=PhotoAnalysisStore(context,db,LocalOwnerStore(db).currentLease())
+            val restored=store.stored(row.operationId).mealDraft!!
+            assertEquals(first.mealId,restored.mealId);assertEquals(first.items.single().id,restored.items.single().id)
+            assertEquals("Rosół",restored.items.single().name);assertEquals("100",restored.totals.energy.canonical)
+            assertEquals(before,store.pending());assertEquals(0,db.dao().operationCount(lease.storageScope))
+            assertTrue(db.dao().achievementMeals(lease.storageScope).isEmpty())
+        } finally {db.close();context.deleteDatabase(name);scope?.let(::clean)}
+    }
+    @Test fun correctionCasRejectsCompetingEditsAndStaleDiscardWithoutLosingTheAcceptedChanges()=runBlocking<Unit> {
+        val db=Room.inMemoryDatabaseBuilder(context,CalorieDatabase::class.java).build();var scope:String?=null
+        try {
+            val lease=account(db,"draft-cas");scope=lease.storageScope;val(store,row)=cancellationQueue(db,lease)
+            store.acceptMealDraftPrepared(store.prepareMealDraft(row.operationId,2,java.time.Instant.now(),java.time.ZoneId.of("UTC")))
+            val id=store.stored(row.operationId).mealDraft!!.items.single().id
+            val first=store.prepareMealDraftEdit(row.operationId,1){it.replace(id,correctionInput("Pierwszy"))}
+            val second=store.prepareMealDraftEdit(row.operationId,1){it.replace(id,correctionInput("Drugi"))}
+            val discard=store.prepareMealDraftDiscard(row.operationId,1)
+            store.acceptMealDraftPrepared(first);rejected{store.acceptMealDraftPrepared(second)};rejected{store.acceptMealDraftPrepared(discard)}
+            assertEquals("Pierwszy",store.stored(row.operationId).mealDraft!!.items.single().name)
+            rejected{store.prepareMealDraftEdit(row.operationId,1){it.rename("Stale")}}
+            assertEquals(0,db.dao().operationCount(lease.storageScope))
+        } finally {db.close();scope?.let(::clean)}
+    }
+    @Test fun newerGetAndCancelDecisionInvalidatePreparedCorrectionCommits()=runBlocking<Unit> {
+        val db=Room.inMemoryDatabaseBuilder(context,CalorieDatabase::class.java).build();var scope:String?=null
+        try {
+            val lease=account(db,"draft-newer");scope=lease.storageScope;val(store,row)=cancellationQueue(db,lease)
+            store.acceptMealDraftPrepared(store.prepareMealDraft(row.operationId,2,java.time.Instant.now(),java.time.ZoneId.of("UTC")))
+            val edit=store.prepareMealDraftEdit(row.operationId,1){it.rename("Old")}
+            store.acceptReadPrepared(store.prepareRead(row.operationId,readResult().put("revision",3).toString().toByteArray()))
+            rejected{store.acceptMealDraftPrepared(edit)}
+            val next=store.prepareMealDraftEdit(row.operationId,1){it.rename("Not after cancel")}
+            store.acceptCancellationPrepared(store.prepareCancellation(row.operationId,UUID.randomUUID().toString(),3))
+            rejected{store.acceptMealDraftPrepared(next)};rejected{store.prepareMealDraftEdit(row.operationId,1){it.rename("Frozen")}}
+            assertEquals("Posiłek ze zdjęcia",store.stored(row.operationId).mealDraft!!.title)
+        } finally {db.close();scope?.let(::clean)}
+    }
+    @Test fun preparedCorrectionsAreFencedByContextAndAbaButTheOriginalAccountRetainsItsDraft()=runBlocking<Unit> {
+        val db=Room.inMemoryDatabaseBuilder(context,CalorieDatabase::class.java).build();val scopes=mutableListOf<String>()
+        try {
+            val lease=account(db,"draft-A");scopes+=lease.storageScope;val(store,row)=cancellationQueue(db,lease)
+            store.acceptMealDraftPrepared(store.prepareMealDraft(row.operationId,2,java.time.Instant.now(),java.time.ZoneId.of("UTC")))
+            val prepared=store.prepareMealDraftEdit(row.operationId,1){it.rename("Late")};val before=store.pending()
+            val mapping=db.bootstrapDao().binding(lease.storageScope)!!
+            db.bootstrapDao().update(mapping.copy(contextRevision=mapping.contextRevision+1));rejected{store.acceptMealDraftPrepared(prepared)}
+            db.bootstrapDao().update(mapping);scopes+=account(db,"draft-B").storageScope;rejected{store.acceptMealDraftPrepared(prepared)}
+            val resumed=LocalOwnerStore(db).select(lease.storageScope);rejected{store.acceptMealDraftPrepared(prepared)}
+            assertEquals(before,PhotoAnalysisStore(context,db,resumed).pending())
+        } finally {db.close();scopes.forEach(::clean)}
+    }
 }

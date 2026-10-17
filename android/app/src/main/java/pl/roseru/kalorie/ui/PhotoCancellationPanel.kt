@@ -35,6 +35,7 @@ import pl.roseru.kalorie.session.SessionView
             if(status.cancelled) {
                 Text("Anulowanie potwierdzone",style=MaterialTheme.typography.titleMedium)
                 Text("Zamknij to zlecenie, aby móc wysłać kolejne zdjęcie. Zdjęcie źródłowe i dziennik pozostaną na telefonie.")
+                if(session.photoMealDraft!=null)Text("Zamknięcie usunie również szkic poprawek tego anulowanego zlecenia.")
                 OutlinedButton(onClick={onRelease(status.operationId)},enabled=idle,
                     modifier=Modifier.fillMaxWidth().testTag("photo-cancellation-release")){Text("Zamknij anulowane zlecenie")}
             } else {

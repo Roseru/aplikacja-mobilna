@@ -23,6 +23,7 @@ import kotlinx.coroutines.launch
 import kotlinx.coroutines.Dispatchers
 import pl.roseru.kalorie.data.DiaryRepository
 import pl.roseru.kalorie.session.SessionActions
+import pl.roseru.kalorie.session.PhotoDraftActions
 import pl.roseru.kalorie.data.ThemeMode
 import pl.roseru.kalorie.ui.CalorieApp
 import pl.roseru.kalorie.ui.CalorieTheme
@@ -114,7 +115,14 @@ class MainActivity : ComponentActivity() {
                 clearPhotoAnalysis = { app.sessionScope.launch { app.sessions.stopPhotoAnalysis(binding.lease,clearPreview=true) } },
                 cancelPhotoAnalysis = { id,revision -> app.sessionScope.launch { app.sessions.cancelPhotoAnalysis(binding.lease,id,revision) } },
                 retryPhotoCancellation = { id -> app.sessionScope.launch { app.sessions.retryPhotoCancellation(binding.lease,id) } },
-                releaseCancelledPhoto = { id -> app.sessionScope.launch { app.sessions.releaseCancelledPhoto(binding.lease,id) } })
+                releaseCancelledPhoto = { id -> app.sessionScope.launch { app.sessions.releaseCancelledPhoto(binding.lease,id) } },
+                photoDraft = PhotoDraftActions(
+                    start={id,revision,date->app.sessionScope.launch {app.sessions.startPhotoMealDraft(binding.lease,id,revision,date)}},
+                    replace={id,revision,item,input->app.sessionScope.launch {app.sessions.replacePhotoMealDraftItem(binding.lease,id,revision,item,input)}},
+                    add={id,revision,input->app.sessionScope.launch {app.sessions.addPhotoMealDraftItem(binding.lease,id,revision,input)}},
+                    remove={id,revision,item->app.sessionScope.launch {app.sessions.removePhotoMealDraftItem(binding.lease,id,revision,item)}},
+                    rename={id,revision,title->app.sessionScope.launch {app.sessions.renamePhotoMealDraft(binding.lease,id,revision,title)}},
+                    discard={id,revision->app.sessionScope.launch {app.sessions.discardPhotoMealDraft(binding.lease,id,revision)}}))
             CalorieTheme(dark) { CalorieApp(model, session, actions, photoModel) }
             }
         }
