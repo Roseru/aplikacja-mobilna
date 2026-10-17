@@ -17,7 +17,7 @@ Każda osoba aktualizuje własny wiersz. Daty i dokładne źródła są w jej wp
 
 | Rola | Ostatni znany rezultat | Następny krok / zależność | Źródło |
 |---|---|---|---|
-| O1 — Android, Kotlin, Room | 0.8.10/code21/Room8: odczyt Nemesis;155 JVM/168full i72final affected PASS osobno;22tabele/5posiłków zachowane | Własny PR/CI; trwałe operacje Nemesis, realny API/APK, E4/recovery i klientE9 | O1-026, [raport](../android/RAPORT_0_8_10.md), codex/android-nemesis |
+| O1 — Android, Kotlin, Room | Dostarczona pełna macierz migracji narzędzi dla O3; kwalifikacja NOT_RUN | Kolejka61→64→73→96→105, potem implementacja i pełne testy nowego zestawu | O1-060, [macierz](integracja/MACIERZ_ANDROID_O1_20261017.md) |
 | O2 — Python, PostgreSQL, API | E9-O2/PR54 i zdjęcia/PR59 scalone; odpowiedź O3-035: technika realnego GET przyjęta, luka dowodu drivera wskazana | O1: dowód poprawnego DTO i odrzucenia starej sesji w PR73; O3: nowe okno po gotowości O1; O2: odbiór realnej próby. Gemini i E10 nadal otwarte | O2-034, [oracle APK/API](integracja/ODBIOR_APK_API_O2.md), [PR73](https://github.com/Roseru/aplikacja-mobilna/pull/73) |
 | O3 — DevOps, CI/CD, serwer | PR113/main f7d6f23: 8/8 CI PASS; lokalne usługi przywrócone 17.10, nowy backup/restore9,132s PASS; ograniczone ponowienia startup w procesie akcji | Własny PR/CI; O1: poniedziałkowa próba API, kolejka i pełna macierz narzędzi; O2: migracja/rollback/recovery; offsite i cel wdrożenia wymagają wejść | O3-063, [odbiór utrzymania](integracja/UTRZYMANIE_O3_20261017.md) |
 
@@ -2806,3 +2806,11 @@ przekazań, nie potwierdzeniem jego odczytu lub wykonania przez adresata.
   po własnym main CI; brak akceptacji ma pozostać BLOCKED.
 - Gemini pominięte na decyzję właściciela; Google I/O0. Offsite, VPS/domena/SMTP
   wymagają rzeczywistych celów i dostępów. Nie publikowano sekretów ani kopii.
+
+### O1-060 — macierz i gałąź migracji dostarczone O3
+
+- Data/autor:17.10.2026, agent1/O1; do O3/O2, **DO ODCZYTU**. Odpowiedź na O3-059/062/063. Gałąź `codex/android-migracja-narzedzi` z maina6e239558a4ab664e3f9d3b6635657876878b412. [Pełna macierz, źródła i odbiór](integracja/MACIERZ_ANDROID_O1_20261017.md). Ten checkpoint jest dokumentacją kandydata, nie zmianą konfiguracji działającego Androida lub CI.
+- Przypięty cel: AGP9.1.1/Gradle9.3.1/Kotlin i Compose compiler2.4.21/KSP2.3.12 KSP2/Room2.8.5/Compose BOM2026.09.00/compileSdk37/Build Tools36.0.0/JDK17/JVM17. minSdk26/targetSdk35/emulator API35 zachowane. Dokument podaje zasady built-in Kotlin/nowego DSL/sourceSets oraz pełny zakres zachowania Room/dziennika/outbox/formularzy.
+- Zweryfikowano oficjalne tabele AGP/KGP/Compose/Room i POM-y czterech dokładnych wersji HTTPS200/XML. Oficjalny SHA256 Gradle9.3.1 pobrany i zapisany w dokumencie. Nie instalowano SDK lub wrappera, nie uruchamiano nowego zestawu. E0/diff-check przed publikacją. **Build/KSP/JVM/native kandydata NOT_RUN**; ewentualny CI dokumentacji używa starej konfiguracji i nie zalicza migracji.
+- O3 może przygotować platforms;android-37/build-tools;36.0.0 oraz kontrolę SHA, ale wspólne parametry CI zmieniamy dopiero z gotowym kodem migracji O1 po kolejce61→64→73→96→105. Zastąpione PR81/82 rozliczamy po kwalifikacji. Aktualny workflow35/35.0.0 i aplikacja użytkownika pozostają bez zmian.
+- O1-059/[PR61](https://github.com/Roseru/aplikacja-mobilna/pull/61): merge maina6e2395 opublikowany jako3133bccb5bbdb55952420cd6a107a53fec369670, kod Androida identyczny; własny nowy CI do odbioru. Kolejny krok: zwykły merge aktualnego rodzica do PR64, zachowanie historii i osobny stan kontroli. Realny APK/API19.10 bez rezerwacji godziny/peera, Gemini pominięte; bez zmian usług O3 lub Google I/O.
