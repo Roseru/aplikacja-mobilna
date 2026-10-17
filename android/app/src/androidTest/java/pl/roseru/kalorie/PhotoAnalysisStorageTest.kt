@@ -5,6 +5,7 @@ import android.database.sqlite.SQLiteDatabase
 import android.graphics.Bitmap
 import android.graphics.Color
 import androidx.room.Room
+import androidx.room.withTransaction
 import androidx.sqlite.db.SupportSQLiteDatabase
 import androidx.test.platform.app.InstrumentationRegistry
 import kotlinx.coroutines.*
@@ -256,6 +257,97 @@ class PhotoAnalysisStorageTest {
             assertEquals(90_000L,store.pending()!!.retryAtMillis);assertEquals(3L,store.stored(row.operationId).latest!!.revision)
         } finally {db.close();scope?.let(::clean)}
     }
+    private suspend fun cancellationQueue(db:CalorieDatabase,lease:OwnerLease):Pair<PhotoAnalysisStore,PhotoAnalysisRequestEntity> {
+        val store=PhotoAnalysisStore(context,db,lease)
+        val row=store.prepare(photo(db,lease).id,caps,true)
+        store.markAttempted(row.operationId,0);store.accept(row.operationId,ack())
+        store.acceptReadPrepared(store.prepareRead(row.operationId,readResult().toString().toByteArray()))
+        return store to row
+    }
+    private fun cancelAck(id:String,revision:Int=3)=JSONObject().put("analysis_id",id).put("revision",revision)
+        .put("state","failed").put("decision_state","cancelled").put("error_code","analysis_cancelled").toString().toByteArray()
+
+    @Test fun cancellationIntentAndAttemptSurviveRoomRestartWithoutImageOrJournalWrites()=runBlocking<Unit> {
+        val name="cancel-${UUID.randomUUID()}";var db=Room.databaseBuilder(context,CalorieDatabase::class.java,name).build();var scope:String?=null
+        try {
+            val lease=account(db,"cancel-restart");scope=lease.storageScope
+            var (store,row)=cancellationQueue(db,lease);val key=UUID.randomUUID().toString()
+            val meals=db.dao().achievementMeals(lease.storageScope);val ops=db.dao().operationCount(lease.storageScope)
+            rejected {store.prepareCancellation(row.operationId,row.operationId,2)}
+            store.acceptCancellationPrepared(store.prepareCancellation(row.operationId,key,2))
+            store.acceptCancellationPrepared(store.prepareCancellationAttempted(row.operationId,0))
+            val first=store.stored(row.operationId).cancellation!!.request(row.syncEpoch,store.stored(row.operationId).receipt.analysisId)
+            assertTrue(File(context.filesDir,"photo-analysis-inputs/${lease.storageScope}/${row.operationId}.jpg").delete())
+            db.close();db=Room.databaseBuilder(context,CalorieDatabase::class.java,name).build()
+            store=PhotoAnalysisStore(context,db,LocalOwnerStore(db).currentLease())
+            val restored=store.stored(row.operationId);val replay=restored.cancellation!!.request(row.syncEpoch,restored.receipt.analysisId)
+            assertTrue(restored.cancellation.attempted);assertEquals(first.key,replay.key);assertArrayEquals(first.body(),replay.body())
+            assertEquals(meals,db.dao().achievementMeals(lease.storageScope));assertEquals(ops,db.dao().operationCount(lease.storageScope))
+        } finally {db.close();context.deleteDatabase(name);scope?.let(::clean)}
+    }
+    @Test fun cancellationCasRejectsParallelDecisionGetAndBackoffWithoutResettingPause()=runBlocking<Unit> {
+        val db=Room.inMemoryDatabaseBuilder(context,CalorieDatabase::class.java).build();var scope:String?=null
+        try {
+            val lease=account(db,"cancel-cas");scope=lease.storageScope;val (store,row)=cancellationQueue(db,lease)
+            val key=UUID.randomUUID().toString();val first=store.prepareCancellation(row.operationId,key,2)
+            val second=store.prepareCancellation(row.operationId,UUID.randomUUID().toString(),2)
+            db.withTransaction {store.acceptCancellationPrepared(first)};rejected {store.acceptCancellationPrepared(second)}
+            val attempted=store.prepareCancellationAttempted(row.operationId,0)
+            store.acceptReadPrepared(store.prepareRead(row.operationId,readResult().put("revision",3).toString().toByteArray()))
+            rejected {store.acceptCancellationPrepared(attempted)}
+            assertEquals(key,store.stored(row.operationId).cancellation!!.key)
+            val next=store.prepareCancellationAttempted(row.operationId,0)
+            db.photoAnalysisDao().defer(lease.storageScope,row.operationId,5_000)
+            rejected {store.acceptCancellationPrepared(next)};rejected {store.prepareCancellationAttempted(row.operationId,0)}
+            store.acceptCancellationPrepared(store.prepareCancellationAttempted(row.operationId,5_000))
+            assertEquals(5_000L,store.pending()!!.retryAtMillis)
+            assertEquals(2L,store.stored(row.operationId).cancellation!!.expectedRevision)
+        } finally {db.close();scope?.let(::clean)}
+    }
+    @Test fun cancellationReceiptIsBoundToExactRequestAndRejectedAcrossAbaOrContextChange()=runBlocking<Unit> {
+        val db=Room.inMemoryDatabaseBuilder(context,CalorieDatabase::class.java).build();val scopes=mutableListOf<String>()
+        try {
+            val lease=account(db,"cancel-A");scopes+=lease.storageScope;val (store,row)=cancellationQueue(db,lease)
+            store.acceptCancellationPrepared(store.prepareCancellation(row.operationId,UUID.randomUUID().toString(),2))
+            store.acceptCancellationPrepared(store.prepareCancellationAttempted(row.operationId,0))
+            val saved=store.stored(row.operationId);val request=saved.cancellation!!.request(row.syncEpoch,saved.receipt.analysisId)
+            val other=UUID.randomUUID().toString();val body=cancelAck(saved.receipt.analysisId);val key=checkNotNull(request.key)
+            for(wrong in listOf(PhotoHttpRequest.Cancel(other,row.syncEpoch,saved.receipt.analysisId,2),
+                PhotoHttpRequest.Cancel(key,other,saved.receipt.analysisId,2),
+                PhotoHttpRequest.Cancel(key,row.syncEpoch,other,2),PhotoHttpRequest.Cancel(key,row.syncEpoch,saved.receipt.analysisId,3)))
+                rejected {store.prepareCancellationReceipt(row.operationId,body,wrong)}
+            val prepared=store.prepareCancellationReceipt(row.operationId,body,request);val before=store.pending()
+            val original=db.bootstrapDao().binding(lease.storageScope)!!
+            db.bootstrapDao().update(original.copy(contextRevision=original.contextRevision+1))
+            rejected {store.acceptCancellationPrepared(prepared)};db.bootstrapDao().update(original)
+            val b=account(db,"cancel-B");scopes+=b.storageScope;rejected {store.acceptCancellationPrepared(prepared)}
+            val resumed=LocalOwnerStore(db).select(lease.storageScope);rejected {store.acceptCancellationPrepared(prepared)}
+            assertEquals(before,PhotoAnalysisStore(context,db,resumed).pending())
+        } finally {db.close();scopes.forEach(::clean)}
+    }
+    @Test fun onlyVerifiedCancellationReleasesQueueAndDeletesItsInputWithoutTouchingSourcePhoto()=runBlocking<Unit> {
+        val db=Room.inMemoryDatabaseBuilder(context,CalorieDatabase::class.java).build();var scope:String?=null
+        try {
+            val lease=account(db,"cancel-release");scope=lease.storageScope;val (store,row)=cancellationQueue(db,lease)
+            val meals=db.dao().achievementMeals(lease.storageScope);val ops=db.dao().operationCount(lease.storageScope)
+            rejected {store.prepareCancelledRelease(row.operationId)}
+            store.acceptCancellationPrepared(store.prepareCancellation(row.operationId,UUID.randomUUID().toString(),2))
+            store.acceptCancellationPrepared(store.prepareCancellationAttempted(row.operationId,0))
+            val saved=store.stored(row.operationId);val sent=saved.cancellation!!.request(row.syncEpoch,saved.receipt.analysisId)
+            val prepared=store.prepareCancellationReceipt(row.operationId,cancelAck(saved.receipt.analysisId),sent)
+            assertEquals("PreparedPhotoCancellation(redacted)",prepared.toString())
+            db.withTransaction {store.acceptCancellationPrepared(prepared)}
+            val input=File(context.filesDir,"photo-analysis-inputs/${lease.storageScope}/${row.operationId}.jpg");assertTrue(input.exists())
+            val released=store.prepareCancelledRelease(row.operationId);db.withTransaction {store.releaseCancelledPrepared(released)}
+            assertNull(store.pending());assertTrue(input.exists()) // IO is a separate step outside the guard.
+            store.cleanupReleasedInput(row.operationId);assertFalse(input.exists())
+            MealPhotoStore(context,db,lease).preview(row.sourcePhotoId).let {assertEquals(48,it.width);it.recycle()}
+            val next=store.prepare(row.sourcePhotoId,caps,true);rejected {store.releaseCancelledPrepared(released)}
+            assertEquals(next.operationId,store.pending()!!.operationId)
+            assertEquals(meals,db.dao().achievementMeals(lease.storageScope));assertEquals(ops,db.dao().operationCount(lease.storageScope))
+        } finally {db.close();scope?.let(::clean)}
+    }
+
     @Test fun preparedReadCannotCommitAcrossContextChangeOrOwnerAba()=runBlocking<Unit> {
         val db=Room.inMemoryDatabaseBuilder(context,CalorieDatabase::class.java).build();val scopes=mutableListOf<String>()
         try {

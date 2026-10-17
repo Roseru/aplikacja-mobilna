@@ -39,6 +39,10 @@ data class PhotoAnalysisRequestEntity(@PrimaryKey val ownerScope:String,val oper
     suspend fun defer(scope:String,id:String,until:Long):Int
     @Query("UPDATE photo_analysis_requests SET blockedCode=:code WHERE ownerScope=:scope AND operationId=:id")
     suspend fun block(scope:String,id:String,code:String):Int
+    @Query("UPDATE photo_analysis_requests SET receiptJson=:receipt WHERE ownerScope=:scope AND operationId=:id")
+    suspend fun replaceSnapshot(scope:String,id:String,receipt:String):Int
+    @Query("DELETE FROM photo_analysis_requests WHERE ownerScope=:scope AND operationId=:id")
+    suspend fun dropCancelled(scope:String,id:String):Int
     @Query("DELETE FROM photo_analysis_requests WHERE ownerScope=:scope AND operationId=:id AND attempted=0")
     suspend fun dropUnsent(scope:String,id:String):Int
 }
@@ -178,6 +182,61 @@ internal class PhotoAnalysisStore(private val context:Context,private val db:Cal
     suspend fun defer(id:String,retryAtMillis:Long)=db.withTransaction {
         require(retryAtMillis>=0);check(checked(id).receiptJson==null);check(dao.defer(lease.storageScope,id,retryAtMillis)==1)
     }
+
+    /** Snapshot preparation stays outside the session/Room guard, also for tiny cancel receipts. */
+    private suspend fun cancellationSource(id:String):Pair<PhotoAnalysisRequestEntity,PhotoAnalysisSnapshot> {
+        val source=db.withTransaction {checked(id).also {check(it.attempted && it.blockedCode==null && it.receiptJson!=null)}}
+        return source to PhotoAnalysisSnapshot.read(checkNotNull(source.receiptJson),source.provider)
+    }
+    suspend fun prepareCancellation(id:String,key:String,revision:Long):PreparedPhotoCancellation {
+        val (source,snapshot)=cancellationSource(id)
+        require(key!=source.operationId)
+        return PreparedPhotoCancellation(source,snapshot.prepareCancellation(key,revision))
+    }
+    suspend fun prepareCancellationAttempted(id:String,nowMillis:Long):PreparedPhotoCancellation {
+        val (source,snapshot)=cancellationSource(id)
+        check(source.retryAtMillis<=nowMillis)
+        return PreparedPhotoCancellation(source,snapshot.markCancellationAttempted())
+    }
+    private fun cancellationRequestMatches(source:PhotoAnalysisRequestEntity,snapshot:PhotoAnalysisSnapshot,sent:PhotoHttpRequest.Cancel) {
+        val intent=checkNotNull(snapshot.cancellation)
+        require(sent.key==intent.key && sent.epoch==source.syncEpoch && sent.expectedRevision==intent.expectedRevision &&
+            sent.path=="/ai/food-analyses/${snapshot.receipt.analysisId}/cancel")
+    }
+    suspend fun prepareCancellationReceipt(id:String,body:ByteArray,sent:PhotoHttpRequest.Cancel):PreparedPhotoCancellation {
+        val (source,snapshot)=cancellationSource(id)
+        cancellationRequestMatches(source,snapshot,sent)
+        return PreparedPhotoCancellation(source,snapshot.withCancellationReceipt(body))
+    }
+    suspend fun prepareCancellationRejection(id:String,code:String,sent:PhotoHttpRequest.Cancel):PreparedPhotoCancellation {
+        val (source,snapshot)=cancellationSource(id)
+        cancellationRequestMatches(source,snapshot,sent)
+        return PreparedPhotoCancellation(source,snapshot.rejectCancellation(code))
+    }
+    /** DB-only whole-row CAS; unlike a successful GET, preparation never resets shared backoff. */
+    suspend fun acceptCancellationPrepared(prepared:PreparedPhotoCancellation):PhotoAnalysisSnapshot=db.withTransaction {
+        val row=checked(prepared.source.operationId)
+        check(row==prepared.source && row.attempted && row.receiptJson!=null && row.blockedCode==null)
+        if(row.receiptJson!=prepared.snapshot.serialized)
+            check(dao.replaceSnapshot(lease.storageScope,row.operationId,prepared.snapshot.serialized)==1)
+        prepared.snapshot
+    }
+    suspend fun prepareCancelledRelease(id:String):PreparedPhotoCancellation {
+        val (source,snapshot)=cancellationSource(id)
+        check(snapshot.cancelled)
+        return PreparedPhotoCancellation(source,snapshot)
+    }
+    /** Only a verified cancel ACK/GET permits an explicit local release. Source photo stays. */
+    suspend fun releaseCancelledPrepared(prepared:PreparedPhotoCancellation)=db.withTransaction {
+        check(prepared.snapshot.cancelled)
+        check(checked(prepared.source.operationId)==prepared.source)
+        check(dao.dropCancelled(lease.storageScope,prepared.source.operationId)==1)
+    }
+    /** Call after release commit and outside the session guard; an orphan is safe if interrupted. */
+    suspend fun cleanupReleasedInput(id:String)=withContext(Dispatchers.IO+NonCancellable) {
+        db.withTransaction {owners.requireCurrent(lease);check(dao.get(lease.storageScope)?.operationId!=id)}
+        AtomicFile(file(id)).delete()
+    }
     suspend fun deferRead(id:String,retryAtMillis:Long)=db.withTransaction {
         require(retryAtMillis>=0)
         val row=checked(id);check(row.receiptJson!=null && row.attempted && row.blockedCode==null)
@@ -210,4 +269,9 @@ internal class PreparedPhotoReceipt internal constructor(internal val source:Pho
 internal class PreparedPhotoRead internal constructor(internal val source:PhotoAnalysisRequestEntity,
     internal val snapshot:PhotoAnalysisSnapshot) {
     override fun toString()="PreparedPhotoRead(redacted)"
+}
+
+internal class PreparedPhotoCancellation internal constructor(internal val source:PhotoAnalysisRequestEntity,
+    internal val snapshot:PhotoAnalysisSnapshot) {
+    override fun toString()="PreparedPhotoCancellation(redacted)"
 }
