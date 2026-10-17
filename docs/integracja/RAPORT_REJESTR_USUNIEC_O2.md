@@ -106,3 +106,12 @@ Nowy test wykonuje prawdziwe sprzątanie pod rolą AI worker; ledger+E7runtime
 bez zakazanej surowej zmiany generacji konta; HTTP409/403 są zachowane.
 Reviewer ponownie ocenił zmieniony zakres9/10, bez P0/P1/P2; wcześniejszy
 przegląd nie wykrył filtra. Pełne CI kolejnego head pozostaje do odczytu.
+
+
+Drugi przebieg39069862671/head1af8b76f potwierdził Keycloak/quality/contracts,
+ale E8 Compose odmówiło przy starych allowlist markerów Nemesis worker/finalizer.
+Dodano dokładnie0025 obok dotychczasowych wersji, bez zmian VERIFY_ACL_SQL.
+Trzy realne CLI/SCRAM/LOGIN nahead przechodzą; każdy odmawia raw ledger SELECT
+oraz ponownego provisioningu po hostile grancie jednej kolumny ledgeru.
+Pełny zmieniony zakres ledger/kontrakt/E6head58PASS w15,29s, bez skipów.
+Celowany niezależny review provisionerów9/10 bez P0/P1/P2.

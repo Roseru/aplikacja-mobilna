@@ -712,3 +712,64 @@ def test_current_head_keeps_existing_e7_worker_maintenance_permission(ledger):
     with engine.begin() as connection:
         connection.exec_driver_sql("SET LOCAL ROLE calorie_app_ai_worker")
         assert connection.scalar(text("SELECT app.e7_prune_ledger(1)")) == 0
+
+
+@pytest.mark.parametrize(
+    "profile,prefix,base",
+    [
+        ("motivation_worker", "MOTIVATION_WORKER", "calorie_app_motivation_worker"),
+        ("nemesis_worker", "NEMESIS_WORKER", "calorie_app_nemesis_worker"),
+        ("nemesis_finalizer", "NEMESIS_FINALIZER", "calorie_app_nemesis_finalizer"),
+    ],
+)
+def test_current_head_real_e8_provisioners_keep_minimal_acl(ledger, profile, prefix, base):
+    import subprocess
+    import sys
+
+    engine, _, _ = ledger
+    parsed = engine.url
+    login, password = "ledger_e8_" + uuid4().hex[:12], secrets.token_urlsafe(32)
+    environment = os.environ | {
+        "PGHOST": parsed.host,
+        "PGPORT": str(parsed.port),
+        "PGUSER": parsed.username,
+        "PGDATABASE": parsed.database,
+        "PGPASSWORD": parsed.password,
+        prefix + "_LOGIN": login,
+        prefix + "_PASSWORD": password,
+    }
+    root = Path(__file__).resolve().parents[3]
+
+    def provision():
+        result = subprocess.run(
+            [sys.executable, str(root / "infra/local" / ("provision_" + profile + ".py"))],
+            env=environment,
+            capture_output=True,
+            text=True,
+            timeout=30,
+        )
+        assert password not in result.stdout + result.stderr
+        return result.returncode
+
+    runtime = None
+    try:
+        assert provision() == 0, "head E8 provisioning failed; diagnostics withheld"
+        runtime = create_engine(parsed.set(username=login, password=password), hide_parameters=True)
+        assert value(runtime, "SELECT current_user") == login
+        assert value(runtime, "SELECT pg_has_role(current_user,:base,'MEMBER')", base=base)
+        with pytest.raises(DBAPIError), runtime.connect() as c:
+            c.exec_driver_sql("SELECT * FROM app.deletion_ledger_source")
+        with engine.begin() as c:
+            c.exec_driver_sql(
+                f'GRANT SELECT(installation_id) ON app.deletion_ledger_source TO "{login}"'
+            )
+        assert provision() != 0, "hostile ledger column grant must remain refused"
+    finally:
+        if runtime:
+            runtime.dispose()
+        with engine.begin() as c:
+            if c.scalar(
+                text("SELECT EXISTS(SELECT FROM pg_roles WHERE rolname=:login)"), {"login": login}
+            ):
+                c.exec_driver_sql(f'DROP OWNED BY "{login}"')
+                c.exec_driver_sql(f'DROP ROLE "{login}"')

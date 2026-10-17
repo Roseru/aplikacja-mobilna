@@ -2957,3 +2957,5 @@ przekazań, nie potwierdzeniem jego odczytu lub wykonania przez adresata.
 - Oczekiwana odpowiedź: koordynator odbiera dokładny PR/head/CI; O3 potwierdza kontrakt i dostarcza niezależne artefakty. Brak potwierdzenia odczytu za odbiorców.
 
 - Uzupełnienie O2-041 po pierwszym CI39069448034/head8ccc943d: contracts/quality/android-build PASS; Keycloak/Compose wykryły filtr ACL obejmujący E7 maintenance, a PKCE E6 nadal wykonywał raw generation++. Zawężono filtr wyłącznie do własnych prefiksów ledger; nowa realna regresja AI worker i ledger+E7runtime37PASS, review zmienionego zakresu9/10 bez P0/P1/P2. Test receipt zachowuje409/403 bez obchodzenia lifecycle. Pełne CI nowego head wymagane; pierwszy przebieg nie jest PASS.
+
+- Dalsze uzupełnienie O2-041: CI39069862671/head1af8b76f potwierdziło Keycloak; E8 Compose wykryło stare allowlist markerów provisionerów Nemesis. Dopuszczono dokładnie0025 bez zmiany ACL. Realne CLI/LOGIN i negatywne granty3PASS; cały zmieniony zakres58PASS/0skip; niezależny review9/10. Kolejny head nadal wymaga pełnych8CI.
