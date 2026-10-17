@@ -14,11 +14,12 @@ import pl.roseru.kalorie.session.SessionView
     Card(Modifier.fillMaxWidth().testTag("photo-upload-panel")) {
         Column(Modifier.padding(16.dp),verticalArrangement=Arrangement.spacedBy(8.dp)) {
             Text("Zlecenie analizy",style=MaterialTheme.typography.titleMedium)
-            if(session.photoUploadBusy){LinearProgressIndicator(Modifier.fillMaxWidth());Text(if(session.photoReadBusy) "Sprawdzanie wyniku analizy…" else "Przygotowanie lub wysyłanie zdjęcia…")}
+            if(session.photoUploadBusy){LinearProgressIndicator(Modifier.fillMaxWidth());Text(if(session.photoCancelBusy) "Potwierdzanie anulowania…" else if(session.photoReadBusy) "Sprawdzanie wyniku analizy…" else "Przygotowanie lub wysyłanie zdjęcia…")}
             if(session.photoReadBusy) TextButton(onClick=onStop,modifier=Modifier.testTag("photo-analysis-stop")){Text("Zatrzymaj sprawdzanie")}
             session.photoUploadMessage?.let { Text(it,Modifier.testTag("photo-upload-message")) }
             session.photoUpload?.let { row->
                 Text(when {
+                    session.photoCancellation?.cancelled==true->"Analiza anulowana. Możesz zamknąć zlecenie."
                     row.acknowledged->"Zdjęcie przyjęte do analizy. Posiłek nie został jeszcze zapisany."
                     row.blocked->"To zlecenie wymaga sprawdzenia stanu serwera. Zdjęcie i lokalny dziennik są zachowane."
                     row.attempted->"Próba wysyłki nie ma potwierdzenia. Ponowienie użyje tego samego zdjęcia i zlecenia."

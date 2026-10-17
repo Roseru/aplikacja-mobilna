@@ -2069,4 +2069,194 @@ class SessionSecurityTest {
             c.readPhotoAnalysis(lease);assertEquals(1,reads);assertEquals(0,db.dao().operationCount(lease.storageScope))
         } finally {vault.clear();db.close();cleanUpload(scope)}
     }
+
+    private fun cancellationAck(revision:Int=3)=JSONObject().put("analysis_id",JSONObject(String(uploadAck())).getString("analysis_id"))
+        .put("revision",revision).put("state","failed").put("decision_state","cancelled")
+        .put("error_code","analysis_cancelled").toString().toByteArray()
+
+    @Test fun photoCancellationLostAckRestoresSameDecisionWithoutNetworkThenExplicitlyReleasesOnlyItsInput()=runBlocking<Unit> {
+        val db=memory();val vault=SessionVault(context,name());val fixture=FixtureGateway();var scope:String?=null
+        val calls=mutableListOf<UploadCall>();var posts=0;var reads=0
+        val transport=object:PhotoAnalysisGateway {
+            override suspend fun send(session:ApiSession,request:PhotoHttpRequest,beforeSend:suspend()->Unit):BootstrapHttpResult {
+                assertFalse(db.inTransaction());beforeSend()
+                return when(request) {
+                    is PhotoHttpRequest.Create->{posts++;BootstrapHttpResult(202,uploadAck())}
+                    is PhotoHttpRequest.Read->{reads++;BootstrapHttpResult(200,analysisRead())}
+                    is PhotoHttpRequest.Cancel->{calls+=UploadCall(request.key,request.body());if(calls.size==1)throw java.io.IOException("Synthetic lost ACK");BootstrapHttpResult(200,cancellationAck())}
+                }
+            }
+        }
+        try {
+            val api=ApiFixture();val c=client(db,vault,fixture,api,photos=uploadReader(),photoWrites=transport)
+            c.start();login(c,fixture,"fixture-A");c.bootstrap();c.readPhotoCapabilities()
+            val lease=c.view.value.binding!!.lease;scope=lease.storageScope;val image=uploadImage(db,lease)
+            c.uploadPhoto(lease,image,uploadConsent(c),true);c.readPhotoAnalysis(lease)
+            val row=db.photoAnalysisDao().get(lease.storageScope)!!
+            c.releaseCancelledPhoto(lease,row.operationId);assertEquals(row,db.photoAnalysisDao().get(lease.storageScope))
+            c.cancelPhotoAnalysis(lease,row.operationId,2)
+            assertEquals(1,calls.size);assertTrue(c.view.value.photoCancellation!!.canRetry);assertFalse(c.view.value.photoCancelBusy)
+            val restarted=client(db,vault,fixture,api,photos=uploadReader(),photoWrites=transport);restarted.start();restarted.loadPhotoAnalysis(lease)
+            assertEquals(1,calls.size);assertEquals(1,reads);assertEquals(1,posts);assertTrue(restarted.view.value.photoCancellation!!.canRetry)
+            restarted.retryPhotoCancellation(lease,row.operationId)
+            assertEquals(2,calls.size);assertEquals(calls[0].key,calls[1].key);assertNotEquals(row.operationId,calls[0].key)
+            assertArrayEquals(calls[0].bytes,calls[1].bytes);assertTrue(restarted.view.value.photoCancellation!!.cancelled)
+            assertNull(restarted.view.value.photoAnalysis);assertNotNull(db.photoAnalysisDao().get(lease.storageScope))
+            fixture.time+=400_000 // local release must work with expired access, without HTTP
+            restarted.releaseCancelledPhoto(lease,row.operationId)
+            assertNull(db.photoAnalysisDao().get(lease.storageScope));assertEquals(2,calls.size)
+            assertFalse(File(context.filesDir,"photo-analysis-inputs/${lease.storageScope}/${row.operationId}.jpg").exists())
+            assertTrue(MealPhotoStore(context,db,lease).uploadBytes(image).isNotEmpty())
+            assertTrue(db.dao().achievementMeals(lease.storageScope).isEmpty());assertEquals(0,db.dao().operationCount(lease.storageScope))
+        } finally {vault.clear();db.close();cleanUpload(scope)}
+    }
+
+    @Test fun photoCancellation401RefreshesOnlyOnceAndKeepsExactMutationKeyEpochAndBody()=runBlocking<Unit> {
+        val db=memory();val vault=SessionVault(context,name());val fixture=FixtureGateway();var scope:String?=null
+        val calls=mutableListOf<PhotoHttpRequest.Cancel>()
+        val transport=object:PhotoAnalysisGateway {
+            override suspend fun send(session:ApiSession,request:PhotoHttpRequest,beforeSend:suspend()->Unit):BootstrapHttpResult {
+                beforeSend()
+                return when(request) {
+                    is PhotoHttpRequest.Create->BootstrapHttpResult(202,uploadAck())
+                    is PhotoHttpRequest.Read->BootstrapHttpResult(200,analysisRead())
+                    is PhotoHttpRequest.Cancel->{calls+=request;denied(401,"unauthorized")}
+                }
+            }
+        }
+        try {
+            val c=client(db,vault,fixture,ApiFixture(),photos=uploadReader(),photoWrites=transport)
+            c.start();login(c,fixture,"fixture-A");c.bootstrap();c.readPhotoCapabilities()
+            val lease=c.view.value.binding!!.lease;scope=lease.storageScope
+            c.uploadPhoto(lease,uploadImage(db,lease),uploadConsent(c),true);c.readPhotoAnalysis(lease)
+            val row=db.photoAnalysisDao().get(lease.storageScope)!!;c.cancelPhotoAnalysis(lease,row.operationId,2)
+            assertEquals(2,calls.size);assertEquals(2,fixture.calls);assertSame(calls[0],calls[1])
+            assertEquals(row.syncEpoch,calls[0].epoch);assertArrayEquals(calls[0].body(),calls[1].body())
+            assertTrue(c.view.value.photoCancellation!!.canRetry);assertFalse(c.view.value.photoCancellation!!.cancelled)
+        } finally {vault.clear();db.close();cleanUpload(scope)}
+    }
+
+    @Test fun photoCancellationBackoffSurvivesRestartAndGuardsAllApiUntilExplicitRetry()=runBlocking<Unit> {
+        val db=memory();val vault=SessionVault(context,name());val fixture=FixtureGateway();var scope:String?=null
+        val calls=mutableListOf<UploadCall>()
+        val transport=object:PhotoAnalysisGateway {
+            override suspend fun send(session:ApiSession,request:PhotoHttpRequest,beforeSend:suspend()->Unit):BootstrapHttpResult {
+                beforeSend()
+                return when(request) {
+                    is PhotoHttpRequest.Create->BootstrapHttpResult(202,uploadAck())
+                    is PhotoHttpRequest.Read->BootstrapHttpResult(200,analysisRead())
+                    is PhotoHttpRequest.Cancel->{calls+=UploadCall(request.key,request.body());if(calls.size==1)denied(429,"rate_limit_exceeded","60")else BootstrapHttpResult(200,cancellationAck())}
+                }
+            }
+        }
+        try {
+            val api=ApiFixture();val c=client(db,vault,fixture,api,photos=uploadReader(),photoWrites=transport)
+            c.start();login(c,fixture,"fixture-A");c.bootstrap();c.readPhotoCapabilities()
+            val lease=c.view.value.binding!!.lease;scope=lease.storageScope
+            c.uploadPhoto(lease,uploadImage(db,lease),uploadConsent(c),true);c.readPhotoAnalysis(lease)
+            val row=db.photoAnalysisDao().get(lease.storageScope)!!;c.cancelPhotoAnalysis(lease,row.operationId,2)
+            assertEquals(fixture.time+60_000,db.photoAnalysisDao().get(lease.storageScope)!!.retryAtMillis)
+            assertEquals(fixture.time+60_000,vault.read().getJSONObject("session").getLong("apiRetryAt"))
+            val restarted=client(db,vault,fixture,api,photos=uploadReader(),photoWrites=transport);restarted.start();restarted.loadPhotoAnalysis(lease)
+            restarted.retryPhotoCancellation(lease,row.operationId);assertEquals(1,calls.size)
+            assertTrue(restarted.view.value.photoCancellation!!.canRetry)
+            fixture.time+=60_001;restarted.retryPhotoCancellation(lease,row.operationId)
+            assertEquals(2,calls.size);assertEquals(calls[0].key,calls[1].key);assertArrayEquals(calls[0].bytes,calls[1].bytes)
+            assertTrue(restarted.view.value.photoCancellation!!.cancelled)
+        } finally {vault.clear();db.close();cleanUpload(scope)}
+    }
+
+    @Test fun photoCancellationHeldAckCannotApplyAfterLeavingContextChangeOrOwnerAba()=runBlocking<Unit> {
+        for(change in listOf("leave","context","aba")) {
+            val db=memory();val vault=SessionVault(context,name());val fixture=FixtureGateway();var scope:String?=null
+            val entered=CompletableDeferred<Unit>();val release=CompletableDeferred<Unit>();var cancels=0
+            val transport=object:PhotoAnalysisGateway {
+                override suspend fun send(session:ApiSession,request:PhotoHttpRequest,beforeSend:suspend()->Unit):BootstrapHttpResult {
+                    beforeSend()
+                    return when(request) {
+                        is PhotoHttpRequest.Create->BootstrapHttpResult(202,uploadAck())
+                        is PhotoHttpRequest.Read->BootstrapHttpResult(200,analysisRead())
+                        is PhotoHttpRequest.Cancel->{cancels++;entered.complete(Unit);release.await();BootstrapHttpResult(200,cancellationAck())}
+                    }
+                }
+            }
+            try {
+                val c=client(db,vault,fixture,ApiFixture(),photos=uploadReader(),photoWrites=transport)
+                c.start();login(c,fixture,"fixture-A");c.bootstrap();c.readPhotoCapabilities()
+                val lease=c.view.value.binding!!.lease;scope=lease.storageScope
+                c.uploadPhoto(lease,uploadImage(db,lease),uploadConsent(c),true);c.readPhotoAnalysis(lease)
+                val row=db.photoAnalysisDao().get(lease.storageScope)!!
+                val work=async {c.cancelPhotoAnalysis(lease,row.operationId,2)};withTimeout(10_000){entered.await()}
+                val attempted=db.photoAnalysisDao().get(lease.storageScope)
+                when(change) {
+                    "leave"->c.stopPhotoAnalysis(lease,clearPreview=true)
+                    "context"->{val mapping=db.bootstrapDao().binding(lease.storageScope)!!;db.bootstrapDao().update(mapping.copy(contextRevision=mapping.contextRevision+1))}
+                    else->{c.logout();login(c,fixture,"fixture-B");c.logout();login(c,fixture,"fixture-A");c.bootstrap()}
+                }
+                release.complete(Unit);work.await()
+                assertEquals(attempted,db.photoAnalysisDao().get(lease.storageScope));assertFalse(c.view.value.photoCancelBusy)
+                assertNull(c.view.value.photoAnalysis);assertNull(c.view.value.photoCancellation)
+                c.cancelPhotoAnalysis(lease,row.operationId,2);assertEquals(1,cancels)
+                assertEquals(0,db.dao().operationCount(lease.storageScope))
+            } finally {release.complete(Unit);vault.clear();db.close();cleanUpload(scope)}
+        }
+    }
+
+    @Test fun photoCancellationRevisionConflictNeedsFreshGetAndAnotherExplicitDecision()=runBlocking<Unit> {
+        val db=memory();val vault=SessionVault(context,name());val fixture=FixtureGateway();var scope:String?=null
+        var revision=2;val calls=mutableListOf<PhotoHttpRequest.Cancel>()
+        val transport=object:PhotoAnalysisGateway {
+            override suspend fun send(session:ApiSession,request:PhotoHttpRequest,beforeSend:suspend()->Unit):BootstrapHttpResult {
+                beforeSend()
+                return when(request) {
+                    is PhotoHttpRequest.Create->BootstrapHttpResult(202,uploadAck())
+                    is PhotoHttpRequest.Read->BootstrapHttpResult(200,analysisRead(revision=revision))
+                    is PhotoHttpRequest.Cancel->{calls+=request;if(calls.size==1)denied(409,"proposal_revision_conflict")else BootstrapHttpResult(200,cancellationAck(4))}
+                }
+            }
+        }
+        try {
+            val c=client(db,vault,fixture,ApiFixture(),photos=uploadReader(),photoWrites=transport)
+            c.start();login(c,fixture,"fixture-A");c.bootstrap();c.readPhotoCapabilities()
+            val lease=c.view.value.binding!!.lease;scope=lease.storageScope
+            c.uploadPhoto(lease,uploadImage(db,lease),uploadConsent(c),true);c.readPhotoAnalysis(lease)
+            val row=db.photoAnalysisDao().get(lease.storageScope)!!
+            c.cancelPhotoAnalysis(lease,row.operationId,1);assertEquals(0,calls.size)
+            c.cancelPhotoAnalysis(lease,row.operationId,2)
+            assertTrue(c.view.value.photoCancellation!!.revisionConflict);assertFalse(c.view.value.photoCancellation!!.canStart)
+            c.retryPhotoCancellation(lease,row.operationId);c.cancelPhotoAnalysis(lease,row.operationId,2);assertEquals(1,calls.size)
+            revision=3;c.readPhotoAnalysis(lease);assertEquals(1,calls.size);assertTrue(c.view.value.photoCancellation!!.canStart)
+            c.cancelPhotoAnalysis(lease,row.operationId,2);assertEquals(1,calls.size)
+            c.cancelPhotoAnalysis(lease,row.operationId,3)
+            assertEquals(2,calls.size);assertNotEquals(calls[0].key,calls[1].key)
+            assertEquals(2L,calls[0].expectedRevision);assertEquals(3L,calls[1].expectedRevision)
+            assertTrue(c.view.value.photoCancellation!!.cancelled)
+        } finally {vault.clear();db.close();cleanUpload(scope)}
+    }
+
+    @Test fun photoCancellationRejectsMalformedAckAndRequiresRecoveryOnChangedServerEpoch()=runBlocking<Unit> {
+        val db=memory();val vault=SessionVault(context,name());val fixture=FixtureGateway();var scope:String?=null;var cancels=0
+        val transport=object:PhotoAnalysisGateway {
+            override suspend fun send(session:ApiSession,request:PhotoHttpRequest,beforeSend:suspend()->Unit):BootstrapHttpResult {
+                beforeSend()
+                return when(request) {
+                    is PhotoHttpRequest.Create->BootstrapHttpResult(202,uploadAck())
+                    is PhotoHttpRequest.Read->BootstrapHttpResult(200,analysisRead())
+                    is PhotoHttpRequest.Cancel->{cancels++;if(cancels==1)BootstrapHttpResult(200,cancellationAck().let {JSONObject(String(it)).put("analysis_id",UUID.randomUUID().toString()).toString().toByteArray()})else denied(409,"sync_epoch_changed")}
+                }
+            }
+        }
+        try {
+            val c=client(db,vault,fixture,ApiFixture(),photos=uploadReader(),photoWrites=transport)
+            c.start();login(c,fixture,"fixture-A");c.bootstrap();c.readPhotoCapabilities()
+            val lease=c.view.value.binding!!.lease;scope=lease.storageScope
+            c.uploadPhoto(lease,uploadImage(db,lease),uploadConsent(c),true);c.readPhotoAnalysis(lease)
+            val row=db.photoAnalysisDao().get(lease.storageScope)!!;c.cancelPhotoAnalysis(lease,row.operationId,2)
+            assertTrue(c.view.value.photoCancellation!!.canRetry);assertFalse(c.view.value.photoCancellation!!.cancelled)
+            c.retryPhotoCancellation(lease,row.operationId);assertTrue(db.bootstrapDao().binding(lease.storageScope)!!.requiresRecovery)
+            assertTrue(c.view.value.photoUpload!!.blocked);assertNull(c.view.value.photoCancellation)
+            c.retryPhotoCancellation(lease,row.operationId);assertEquals(2,cancels)
+            assertEquals(0,db.dao().operationCount(lease.storageScope))
+        } finally {vault.clear();db.close();cleanUpload(scope)}
+    }
 }

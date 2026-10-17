@@ -45,7 +45,8 @@ data class SessionView(val binding: SessionBinding? = null, val busy: Boolean = 
     val photoCapabilities: PhotoCapabilitiesState = PhotoCapabilitiesState.NotRequested,
     val photoUploadConfigured:Boolean=false,val photoUploadBusy:Boolean=false,
     val photoUpload:PhotoUploadStatus?=null,val photoUploadMessage:String?=null,
-    val photoReadBusy:Boolean=false,val photoAnalysis:PhotoAnalysisPreview?=null)
+    val photoReadBusy:Boolean=false,val photoAnalysis:PhotoAnalysisPreview?=null,
+    val photoCancelBusy:Boolean=false,val photoCancellation:PhotoCancellationStatus?=null)
 
 /** Serializes durable decisions, not network waits. A callback/refresh is fenced by a captured
  * owner lease AND an operation ID, so logout and A→B→A cannot apply an old response.
@@ -76,13 +77,15 @@ class SessionController internal constructor(private val db: CalorieDatabase, pr
     private var photoUploadFence:Pair<OwnerLease,Long>?=null
     private var photoUploadContext:Triple<String,Int,String>?=null
     private var photoReadMode=false
+    private var photoCancelMode=false
+    private var photoCancellationStatus:PhotoCancellationStatus?=null
     private var photoAnalysisPreview:PhotoAnalysisPreview?=null
     private var photoPreviewSource:String?=null
     private fun clearPhotoUpload() {
         photoUploadOperation=null;photoUploadMessage=null;photoUploadFence=null;photoUploadContext=null
-        photoReadMode=false;photoAnalysisPreview=null;photoPreviewSource=null
+        photoReadMode=false;photoCancelMode=false;photoCancellationStatus=null;photoAnalysisPreview=null;photoPreviewSource=null
         mutable.value=mutable.value.copy(photoUploadBusy=false,photoUpload=null,photoUploadMessage=null,
-            photoReadBusy=false,photoAnalysis=null)
+            photoReadBusy=false,photoAnalysis=null,photoCancelBusy=false,photoCancellation=null)
     }
     private var photoCapabilitiesState: PhotoCapabilitiesState = PhotoCapabilitiesState.NotRequested
     private var photoCapabilitiesFence: Pair<OwnerLease, Long>? = null
@@ -261,7 +264,7 @@ class SessionController internal constructor(private val db: CalorieDatabase, pr
         val photoRow=if(current.owner.kind=="account" && session!=null && photoAnalysisStores!=null)
             db.photoAnalysisDao().get(current.lease.storageScope) else null
         if(photoPreviewSource!=photoRow?.receiptJson || photoRow?.blockedCode!=null) {
-            photoAnalysisPreview=null;photoPreviewSource=null
+            photoAnalysisPreview=null;photoCancellationStatus=null;photoPreviewSource=null
         }
         owners.requireCurrent(current.lease)
         val photoStatus=photoRow?.let { row->PhotoUploadStatus(row.operationId,row.sourcePhotoId,row.provider,row.model,
@@ -281,6 +284,7 @@ class SessionController internal constructor(private val db: CalorieDatabase, pr
             photoUploadConfigured=photoAnalysisGateway!=null && photoAnalysisStores!=null,
             photoUploadBusy=photoUploadOperation!=null,photoUpload=photoStatus,photoUploadMessage=photoUploadMessage,
             photoReadBusy=photoUploadOperation!=null && photoReadMode,photoAnalysis=photoAnalysisPreview,
+            photoCancelBusy=photoUploadOperation!=null && photoCancelMode,photoCancellation=photoCancellationStatus,
             motivationConfigured = motivationGateway != null,
             motivationBusy = profileOperation != null && privateReadKind == PrivateReadKind.MOTIVATION,
             motivation = if (profileOperation != null && privateReadKind == PrivateReadKind.MOTIVATION) MotivationState.Loading else motivationState,
@@ -1290,7 +1294,7 @@ class SessionController internal constructor(private val db: CalorieDatabase, pr
     private class PhotoCapture(val lease:OwnerLease,val server:AccountBindingEntity,val store:PhotoAnalysisStore,
         val capabilities:PhotoCapabilitiesRead?)
     private suspend fun beginPhotoUpload(id:String,consent:PhotoUploadConsent?,expectedLease:OwnerLease,
-        read:Boolean=false,local:Boolean=false):PhotoCapture?=mutex.withLock {
+        read:Boolean=false,local:Boolean=false,cancel:Boolean=false):PhotoCapture?=mutex.withLock {
         owners.requireCurrent(expectedLease)
         if(photoAnalysisGateway==null || photoAnalysisStores==null || photoUploadOperation!=null ||
             profileOperation!=null || bootstrapOperation!=null || snapshotOperation!=null || consentOperation!=null ||
@@ -1301,9 +1305,9 @@ class SessionController internal constructor(private val db: CalorieDatabase, pr
         val known=db.bootstrapDao().binding(current.lease.storageScope)
         if(known==null || known.requiresRecovery){publish("Połącz konto lub uzgodnij stan serwera przed wysyłką zdjęcia.");return@withLock null}
         val server=bootstraps.requireReady(current.lease,known.contextRevision)
-        if(!local && session.optLong("apiRetryAt")>now()) {publish("Serwer jest zajęty. Poczekaj przed ponowieniem.");return@withLock null}
+        if(!local && session.optLong("apiRetryAt")>now()) {photoUploadMessage="Serwer jest zajęty. Poczekaj przed ponowieniem.";publish();return@withLock null}
         photoUploadOperation=id;photoUploadMessage=null
-        photoReadMode=read
+        photoReadMode=read;photoCancelMode=cancel
         photoUploadFence=current.lease to server.contextRevision
         photoUploadContext=Triple(server.accountId,server.accountGeneration,server.syncEpoch)
         val store=photoAnalysisStores.invoke(current.lease)
@@ -1317,7 +1321,7 @@ class SessionController internal constructor(private val db: CalorieDatabase, pr
             value
         } else {
             val row=checkNotNull(store.pending())
-            check(photoMatches(row,server) && (row.receiptJson!=null)==read && row.blockedCode==null && (local || row.retryAtMillis<=now()))
+            check(photoMatches(row,server) && (row.receiptJson!=null)==(read || cancel) && row.blockedCode==null && (local || row.retryAtMillis<=now()))
             null
         }
         publish();PhotoCapture(current.lease,server,store,caps)
@@ -1427,12 +1431,13 @@ class SessionController internal constructor(private val db: CalorieDatabase, pr
             val captured=beginPhotoUpload(id,null,expectedLease,read=true,local=true)?:return
             val row=checkNotNull(captured.store.pending())
             val saved=withContext(Dispatchers.Default){captured.store.stored(row.operationId)}
-            val preview=withContext(Dispatchers.Default){saved.latest?.let(PhotoAnalysisPreview::from)}
+            val preview=withContext(Dispatchers.Default){if(saved.cancelled)null else saved.latest?.let(PhotoAnalysisPreview::from)}
+            val cancellation=PhotoCancellationStatus.from(row.operationId,saved)
             mutex.withLock {
                 db.withTransaction {
                     readyPhotoRead(id,captured,row)
                     check(captured.store.pending()!!.receiptJson==saved.serialized)
-                    photoAnalysisPreview=preview;photoPreviewSource=saved.serialized
+                    photoAnalysisPreview=preview;photoCancellationStatus=cancellation;photoPreviewSource=saved.serialized
                     photoUploadOperation=null;photoReadMode=false;publish()
                 }
             }
@@ -1442,7 +1447,7 @@ class SessionController internal constructor(private val db: CalorieDatabase, pr
 
     /** Requires the caller's mutex/Room guard; no parsing, image access or network. */
     private suspend fun readyPhotoRead(id:String,captured:PhotoCapture,row:PhotoAnalysisRequestEntity) {
-        check(photoUploadOperation==id && photoReadMode)
+        check(photoUploadOperation==id && (photoReadMode || photoCancelMode))
         val current=bootstraps.requireReady(captured.lease,captured.server.contextRevision)
         check(photoMatches(row,current) && sessionFor(binding())!=null)
         val actual=checkNotNull(captured.store.pending())
@@ -1470,11 +1475,12 @@ class SessionController internal constructor(private val db: CalorieDatabase, pr
         if(!fresh) check(refreshFor(captured.lease))
         var ticket=apiSession(captured.lease);var refreshed=false
         val saved=withContext(Dispatchers.Default){captured.store.stored(row.operationId)}
-        val cached=withContext(Dispatchers.Default){saved.latest?.let(PhotoAnalysisPreview::from)}
+        val cached=withContext(Dispatchers.Default){if(saved.cancelled)null else saved.latest?.let(PhotoAnalysisPreview::from)}
+        val cancellation=PhotoCancellationStatus.from(row.operationId,saved)
         withApiSession(ticket) {
             readyPhotoRead(id,captured,row)
             check(captured.store.pending()!!.receiptJson==saved.serialized)
-            photoAnalysisPreview=cached;photoPreviewSource=saved.serialized;publish()
+            photoAnalysisPreview=cached;photoCancellationStatus=cancellation;photoPreviewSource=saved.serialized;publish()
         }
         val request=PhotoHttpRequest.Read(saved.receipt.analysisId)
         // A cached terminal state still permits this explicit GET to reconcile a later decision.
@@ -1506,14 +1512,16 @@ class SessionController internal constructor(private val db: CalorieDatabase, pr
                         val prepared=withContext(Dispatchers.Default){captured.store.prepareRead(row.operationId,answer.body)}
                         val snapshot=prepared.snapshot
                         val read=checkNotNull(snapshot.latest)
-                        val preview=withContext(Dispatchers.Default){PhotoAnalysisPreview.from(read)}
+                        val preview=withContext(Dispatchers.Default){if(snapshot.cancelled)null else PhotoAnalysisPreview.from(read)}
+                        val cancellation=PhotoCancellationStatus.from(row.operationId,snapshot)
                         withApiSession(current) {
                             readyPhotoRead(id,captured,row);captured.store.acceptReadPrepared(prepared)
-                            photoAnalysisPreview=preview;photoPreviewSource=snapshot.serialized;publish()
+                            photoAnalysisPreview=preview;photoCancellationStatus=cancellation;photoPreviewSource=snapshot.serialized;publish()
                         }
                         currentRead=read
-                        if(read.state in setOf("succeeded","failed") || read.decision!="pending") {
-                            finishPhotoRead(id,if(read.state=="succeeded") "Wynik zapisany na telefonie. Sam odczyt nie dodaje posiłku."
+                        if(snapshot.cancelled || read.state in setOf("succeeded","failed") || read.decision!="pending") {
+                            finishPhotoRead(id,if(snapshot.cancelled) "Anulowanie potwierdzone. Możesz zamknąć zlecenie i wybrać kolejne zdjęcie."
+                                else if(read.state=="succeeded") "Wynik zapisany na telefonie. Sam odczyt nie dodaje posiłku."
                                 else "Analiza zakończona bez propozycji. Możesz dodać posiłek ręcznie.")
                             return
                         }
@@ -1567,13 +1575,161 @@ class SessionController internal constructor(private val db: CalorieDatabase, pr
         } catch(_:Exception){clearPhotoUpload()}
     }
 
+    /** Captured operation/revision are the exact decision shown in the confirmation dialog. */
+    suspend fun cancelPhotoAnalysis(expectedLease:OwnerLease,operationId:String,revision:Long) =
+        changePhotoCancellation(expectedLease,operationId,revision)
+
+    /** Explicit replay of the durable decision, never an implicit new mutation key. */
+    suspend fun retryPhotoCancellation(expectedLease:OwnerLease,operationId:String) =
+        changePhotoCancellation(expectedLease,operationId,null)
+
+    private suspend fun changePhotoCancellation(expectedLease:OwnerLease,operationId:String,revision:Long?) {
+        val id=UUID.randomUUID().toString()
+        try {
+            val captured=beginPhotoUpload(id,null,expectedLease,cancel=true)?:return
+            val row=checkNotNull(captured.store.pending());check(row.operationId==operationId)
+            val initial=withContext(Dispatchers.Default){captured.store.stored(row.operationId)}
+            if(revision!=null) {
+                // Persist approval before token refresh or any attempt at network IO.
+                val prepared=withContext(Dispatchers.Default){captured.store.prepareCancellation(row.operationId,UUID.randomUUID().toString(),revision)}
+                val status=PhotoCancellationStatus.from(row.operationId,prepared.snapshot)
+                mutex.withLock {db.withTransaction {
+                    readyPhotoCancellation(id,captured,row)
+                    captured.store.acceptCancellationPrepared(prepared)
+                    photoCancellationStatus=status;photoPreviewSource=prepared.snapshot.serialized;publish()
+                }}
+            } else check(!initial.cancelled && initial.latest?.decision=="pending" && initial.cancellation?.pending==true)
+            val fresh=mutex.withLock {
+                readyPhotoCancellation(id,captured,row)
+                val state=AuthState.jsonDeserialize(checkNotNull(sessionFor(binding())).getString("authState"))
+                (state.accessTokenExpirationTime?:0)>now()+30_000
+            }
+            if(!fresh) check(refreshFor(captured.lease))
+            var ticket=apiSession(captured.lease);var refreshed=false
+            val attempted=withContext(Dispatchers.Default){captured.store.prepareCancellationAttempted(row.operationId,now())}
+            val snapshot=attempted.snapshot
+            val request=checkNotNull(snapshot.cancellation).request(row.syncEpoch,snapshot.receipt.analysisId)
+            val status=PhotoCancellationStatus.from(row.operationId,snapshot)
+            val preview=withContext(Dispatchers.Default){snapshot.latest?.let(PhotoAnalysisPreview::from)}
+            withApiSession(ticket) {
+                readyPhotoCancellation(id,captured,row)
+                captured.store.acceptCancellationPrepared(attempted)
+                photoCancellationStatus=status;photoAnalysisPreview=preview;photoPreviewSource=snapshot.serialized;publish()
+            }
+            suspend fun ready() {
+                readyPhotoCancellation(id,captured,row)
+                val actual=checkNotNull(captured.store.pending())
+                check(actual.receiptJson==snapshot.serialized && actual.retryAtMillis<=now())
+                check(checkNotNull(sessionFor(binding())).optLong("apiRetryAt")<=now())
+            }
+            while(true) {
+                val current=ticket
+                val answer=withTimeout(45_000) {
+                    checkNotNull(photoAnalysisGateway).send(current,request){withApiSession(current){ready()}}
+                }
+                if(answer.status==200) {
+                    val prepared=withContext(Dispatchers.Default){captured.store.prepareCancellationReceipt(row.operationId,answer.body,request)}
+                    val accepted=PhotoCancellationStatus.from(row.operationId,prepared.snapshot)
+                    withApiSession(current) {
+                        ready();captured.store.acceptCancellationPrepared(prepared)
+                        photoCancellationStatus=accepted;photoAnalysisPreview=null;photoPreviewSource=prepared.snapshot.serialized
+                        photoUploadOperation=null;photoCancelMode=false
+                        photoUploadMessage="Anulowanie potwierdzone. Zamknij zlecenie, aby wybrać kolejne zdjęcie."
+                        publish()
+                    }
+                    return
+                }
+                val code=if(answer.status in setOf(429,503)) "" else BootstrapHttpProtocol.errorCode(answer.body)
+                withApiSession(current){ready()}
+                if(answer.status==401 && code=="unauthorized" && !refreshed) {
+                    refreshed=true;check(refreshFor(captured.lease));ticket=apiSession(captured.lease);continue
+                }
+                if(answer.status in setOf(429,503)) {
+                    val retry=Math.addExact(now(),Math.multiplyExact(BootstrapHttpProtocol.retrySeconds(answer.retryAfter,now()),1000))
+                    withApiSession(current) {
+                        ready()
+                        val session=checkNotNull(sessionFor(binding()))
+                        val until=maxOf(retry,session.optLong("apiRetryAt"),captured.store.pending()!!.retryAtMillis)
+                        captured.store.deferRead(row.operationId,until)
+                        persist(copyRecord().put("session",JSONObject(session.toString()).put("apiRetryAt",until)))
+                        photoUploadOperation=null;photoCancelMode=false
+                        photoUploadMessage="Serwer jest zajęty. Decyzja anulowania jest zapisana; ponów po przerwie."
+                        publish()
+                    }
+                    return
+                }
+                if(answer.status==409 && code in setOf("proposal_revision_conflict","idempotency_key_reused","analysis_already_confirmed","photo_cancel_rejected")) {
+                    val prepared=withContext(Dispatchers.Default){captured.store.prepareCancellationRejection(row.operationId,code,request)}
+                    val rejected=PhotoCancellationStatus.from(row.operationId,prepared.snapshot)
+                    withApiSession(current) {
+                        ready();captured.store.acceptCancellationPrepared(prepared)
+                        photoCancellationStatus=rejected;photoPreviewSource=prepared.snapshot.serialized
+                        photoUploadOperation=null;photoCancelMode=false
+                        photoUploadMessage="Stan analizy zmienił się. Sprawdź wynik przed kolejną decyzją."
+                        publish()
+                    }
+                    return
+                }
+                if(answer.status in setOf(403,404,410) || (answer.status==409 && code in
+                    setOf("sync_epoch_changed","account_generation_changed","analysis_context_changed"))) {
+                    withApiSession(current) {
+                        ready();captured.store.blockRead(row.operationId)
+                        if(answer.status==409) {
+                            val mapping=checkNotNull(db.bootstrapDao().binding(captured.lease.storageScope))
+                            db.bootstrapDao().update(mapping.copy(requiresRecovery=true,contextRevision=Math.addExact(mapping.contextRevision,1)))
+                        }
+                        photoAnalysisPreview=null;photoCancellationStatus=null;photoPreviewSource=null
+                        photoUploadOperation=null;photoCancelMode=false
+                        photoUploadMessage="Nie można potwierdzić anulowania. Uzgodnij stan konta; dziennik zachowano."
+                        publish()
+                    }
+                    return
+                }
+                finishPhotoCancellation(id);return
+            }
+        } catch(error:CancellationException){withContext(NonCancellable){finishPhotoCancellation(id)};throw error}
+        catch(_:Exception){finishPhotoCancellation(id)}
+    }
+
+    private suspend fun readyPhotoCancellation(id:String,captured:PhotoCapture,row:PhotoAnalysisRequestEntity) {
+        check(photoCancelMode)
+        readyPhotoRead(id,captured,row)
+    }
+    private suspend fun finishPhotoCancellation(id:String)=mutex.withLock {
+        if(photoUploadOperation!=id || !photoCancelMode)return@withLock
+        photoUploadOperation=null;photoCancelMode=false
+        try {
+            if(photoUploadFence?.first!=owners.currentLease()){clearPhotoUpload();publish();return@withLock}
+            photoUploadMessage="Anulowanie nie zostało potwierdzone. Sprawdź wynik lub ponów zapisaną decyzję."
+            publish()
+        } catch(_:Exception){clearPhotoUpload()}
+    }
+
+    /** Local explicit release only after server proof; no HTTP, no deletion of the source photo. */
+    suspend fun releaseCancelledPhoto(expectedLease:OwnerLease,operationId:String) {
+        val id=UUID.randomUUID().toString()
+        try {
+            val captured=beginPhotoUpload(id,null,expectedLease,local=true,cancel=true)?:return
+            val row=checkNotNull(captured.store.pending());check(row.operationId==operationId)
+            val prepared=withContext(Dispatchers.Default){captured.store.prepareCancelledRelease(row.operationId)}
+            mutex.withLock {db.withTransaction {
+                readyPhotoCancellation(id,captured,row);captured.store.releaseCancelledPrepared(prepared)
+                photoUploadOperation=null;photoCancelMode=false;photoAnalysisPreview=null;photoCancellationStatus=null;photoPreviewSource=null
+                photoUploadMessage="Anulowane zlecenie zamknięte. Zdjęcie źródłowe i dziennik zachowano.";publish()
+            }}
+            // Failed cleanup leaves an unreferenced private file; it cannot undo the durable release.
+            try {captured.store.cleanupReleasedInput(row.operationId)}catch(_:Exception){/* Later orphan retention. */}
+        } catch(error:CancellationException){withContext(NonCancellable){finishPhotoCancellation(id)};throw error}
+        catch(_:Exception){finishPhotoCancellation(id)}
+    }
+
     /** Invalidates subsequent requests and any held response; never cancels the server analysis. */
     suspend fun stopPhotoAnalysis(expectedLease:OwnerLease,clearPreview:Boolean=false)=mutex.withLock {
         try {
             owners.requireCurrent(expectedLease)
             if(photoUploadFence?.first!=expectedLease) return@withLock
-            if(photoReadMode){photoUploadOperation=null;photoReadMode=false;photoUploadMessage="Sprawdzanie zatrzymane. Zapisany wynik zachowano."}
-            if(clearPreview){photoAnalysisPreview=null;photoPreviewSource=null;photoUploadMessage=null}
+            if(photoReadMode || (clearPreview && photoCancelMode)){photoUploadOperation=null;photoReadMode=false;photoCancelMode=false;photoUploadMessage="Sprawdzanie zatrzymane. Zapisany stan zachowano."}
+            if(clearPreview){photoAnalysisPreview=null;photoCancellationStatus=null;photoPreviewSource=null;photoUploadMessage=null}
             publish()
         } catch(error:CancellationException){throw error}
         catch(_:Exception){/* A stale UI callback must not clear a newer owner's preview. */}

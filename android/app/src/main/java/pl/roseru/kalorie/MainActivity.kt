@@ -111,7 +111,10 @@ class MainActivity : ComponentActivity() {
                 readPhotoAnalysis = { app.sessionScope.launch { app.sessions.readPhotoAnalysis(binding.lease) } },
                 restorePhotoAnalysis = { app.sessionScope.launch { app.sessions.loadPhotoAnalysis(binding.lease) } },
                 stopPhotoAnalysis = { app.sessionScope.launch { app.sessions.stopPhotoAnalysis(binding.lease) } },
-                clearPhotoAnalysis = { app.sessionScope.launch { app.sessions.stopPhotoAnalysis(binding.lease,clearPreview=true) } })
+                clearPhotoAnalysis = { app.sessionScope.launch { app.sessions.stopPhotoAnalysis(binding.lease,clearPreview=true) } },
+                cancelPhotoAnalysis = { id,revision -> app.sessionScope.launch { app.sessions.cancelPhotoAnalysis(binding.lease,id,revision) } },
+                retryPhotoCancellation = { id -> app.sessionScope.launch { app.sessions.retryPhotoCancellation(binding.lease,id) } },
+                releaseCancelledPhoto = { id -> app.sessionScope.launch { app.sessions.releaseCancelledPhoto(binding.lease,id) } })
             CalorieTheme(dark) { CalorieApp(model, session, actions, photoModel) }
             }
         }
