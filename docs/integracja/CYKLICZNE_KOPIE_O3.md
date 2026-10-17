@@ -51,9 +51,10 @@ plików i schematu nazw. Przygotowano paczkę
 Nie jest to ponowny odbiór wcześniej wysłanego pliku2026-10-17T141200Z.enc;
 nowa paczka ma osobny losowy nonce, chociaż zawiera ten sam odebrany manifest.
 Zlecenie stałej wysyłki pozostaje do wykonania po potwierdzeniu zakresu zapisu.
-Lokalne przygotowanie ma pory03:20 i15:20; transport połączonego magazynu
-proponuje03:30 i15:30 po istniejących kopiach; nie tworzymy drugiego
-harmonogramu capture. Wykonawca używa niezmiennego, zatwierdzonego runtime,
+Lokalne przygotowanie ma pory03:50 i15:50; transport połączonego magazynu
+proponuje04:00 i16:00 po istniejących kopiach; nie tworzymy drugiego
+harmonogramu capture. Przygotowanie jest po45-minutowym limicie istniejącej
+kopii, aby nie kolidować z jej blokadą podczas wolniejszego odtworzenia. Wykonawca używa niezmiennego, zatwierdzonego runtime,
 pozostaje cichy przy braku nowej kopii i zgłasza błąd lub potrzebę działania.
 
 Przygotowano prywatny lokalny zestaw `recovery-kit` z dokładnym kluczem

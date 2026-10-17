@@ -50,7 +50,7 @@ if (-not (Test-Path -LiteralPath $script -PathType Leaf)) { throw 'Runtime scrip
 $arguments = '-I "{0}" prepare --settings "{1}"' -f $script, $settingsPath
 $action = New-ScheduledTaskAction -Execute $pythonw -Argument $arguments -WorkingDirectory $runtime
 $principal = New-ScheduledTaskPrincipal -UserId $identity.Name -LogonType Interactive -RunLevel Limited
-$triggers = @((New-ScheduledTaskTrigger -Daily -At '03:20'), (New-ScheduledTaskTrigger -Daily -At '15:20'))
+$triggers = @((New-ScheduledTaskTrigger -Daily -At '03:50'), (New-ScheduledTaskTrigger -Daily -At '15:50'))
 $common = New-ScheduledTaskSettingsSet -MultipleInstances IgnoreNew -StartWhenAvailable -AllowStartIfOnBatteries -DontStopIfGoingOnBatteries -ExecutionTimeLimit (New-TimeSpan -Minutes 10)
 Register-ScheduledTask -TaskName $taskName -Description $description -Action $action -Trigger $triggers -Settings $common -Principal $principal -Force | Out-Null
 $registered = Get-ScheduledTask -TaskName $taskName
