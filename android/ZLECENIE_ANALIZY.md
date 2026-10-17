@@ -4,7 +4,27 @@ Branch `codex/android-analiza-zdjec`, [PR105](https://github.com/Roseru/aplikacj
 Wejścia: [integracja O2](../docs/e7/INTEGRACJA_O1.md), [DTO](../backend/src/calorie_app/modules/ai/schemas.py) i [przykład create](../contracts/examples/e7/create-accepted.json).
 Gotowe są transport, trwała kolejka, zgoda/wysyłka i jawne ponowienie oraz pobieranie/polling wyniku z podglądem lokalnym. Korekta i zatwierdzenie posiłku pozostają do wykonania. Ten etap nie jest odbiorem pełnego E7.
 
-## Aktualny odbiór0.8.16 — sesja, GET i podgląd
+## Aktualny etap — trwała decyzja anulowania, 17.10.2026
+
+Kod `22cccb22125eddef3cfcb6dd9caa2f01d8bbfe64` dodaje fundament anulowania: klucz i rewizja jednej decyzji pozostają niezmienne przy niepewnym ponowieniu. Snapshot `photo-analysis-state-v2` czyta również wcześniejsze ACK i v1, zachowuje dotychczasowy wynik oraz zapisuje próbę, potwierdzenie albo rozpoznane odrzucenie. Utrata odpowiedzi nie tworzy nowego klucza; nowa decyzja po konflikcie rewizji wymaga nowszego GET i osobnego klucza. Potwierdzenie jest walidowane na prywatnej kopii bajtów. Starszy odczyt nie cofa zweryfikowanego anulowania.
+
+Room nadal10, bez nowej migracji. Parser i przygotowanie zapisu działają poza guardem; transakcja sprawdza cały poprzedni wiersz, właściciela/lease/kontekst i dokładne żądanie. Zapis nie skraca Retry-After. Zwolnienie kolejki wymaga potwierdzonego anulowania przez ACK lub GET i osobnego jawnego kroku. Usunięcie przygotowanego wejścia jest oddzielone od transakcji; nie usuwa oryginalnego zdjęcia, posiłków ani outbox. Przerwane sprzątanie może pozostawić plik do późniejszej retencji.
+
+**To fundament danych, jeszcze bez wywołania CANCEL z SessionController i bez przycisku w UI.** Przyciski obecnego ekranu nadal realizują odbiór GET opisany poniżej. Nie deklarujemy wykonanego anulowania na serwerze ani zamknięcia E7. Następny krok: sesja, jawne potwierdzenie użytkownika, ponowienie tej samej decyzji oraz regresje utraty odpowiedzi i zmiany konta.
+
+Walidacja tego commita: pełne assemble debug/validation/testAPK, **247 JVM debug i262 JVM validation PASS, lint0error**. Na API35 wykonano **14/14 PhotoAnalysisStorageTest PASS**, bez pominięć, z trybem offline sprawdzonym przed/po i zgodnością zainstalowanych APK. Cztery nowe przypadki obejmują odtworzenie decyzji po ponownym otwarciu Room, konflikt CAS i backoff, przypięcie do żądania/kontekstu/A→B→A oraz zwolnienie kolejki przed sprzątaniem pliku. Poprzedziło to77/77 lekkich testów JVM. Pełny nowy zestaw urządzenia227: **NOT_RUN**; runtime/UI anulowania: **NOT_CONNECTED**; rzeczywiste APK/API i Gemini: **NOT_RUN**. Historyczny223PASS poniżej dotyczy kodu GET `a4447e4`, nie tego etapu.
+
+Zestaw techniczny nadal0.8.16/code27, validation1027; nie jest nowym wydaniem do testów użytkownika. Nowe validation/testAPK uruchomiono wyłącznie na O1Tests35. Regularny emulator zachowuje poprzedni debug `cb1f7003…` z odbiorem danych23tabel, a osobny kandydat API/Room9 pozostaje bez zmian.
+
+| Artefakt fundamentu anulowania | SHA-256 |
+|---|---|
+| Debug0.8.16/code27, kod22cccb2 | `39793e884d4f08b762dc009691981b7422ee33aa9ae2744def1dfc99594dc0de` |
+| Validation0.8.16/code1027, kod22cccb2 | `2174292d897f04fc969880de8a568e5ce05cdb880da21c7c3e8b4bf47f8942a3` |
+| TestAPK fundamentu,14 testów Room | `36512f489333f2b1c8682d4aa340ef85f5af9c0ccf57cac6cc56f05192a03397` |
+
+Archiwalne APK/logi i dowód222 wejść kompilacji zachowano poza Git. To inne bajty niż zestaw GET poniżej; równa nazwa wersji nie oznacza tej samej aplikacji. Własny pełny CI105 oraz odbiór serwera pozostają osobnymi krokami.
+
+## Odbiór GET0.8.16 — kod a4447e4, sesja i podgląd
 
 Wersja0.8.16/code27, validation1027, Room10. Ekran zdjęć odtwarza zapisany wynik lokalnie, również bez obrazu i po wygaśnięciu tokenu. Wejście/powrót na ekran nie uruchamia HTTP. „Sprawdź wynik” rozpoczyna jawny GET; „Zatrzymaj sprawdzanie” unieważnia dalsze żądania i spóźnione odpowiedzi, ale nie anuluje analizy na serwerze. Wyjście w tło/opuszczenie ekranu usuwa prywatny podgląd z UI i zatrzymuje dalsze sprawdzanie.
 
@@ -12,7 +32,7 @@ Odczyt używa captured owner/lease/operacji/kontekstu i wspólnego guardu operac
 
 Prezentacja pokazuje źródło/mock, stan/decyzję, składniki g/ml, kcal/B/T/W, niepewność i notatki. Sumy są liczone przez NutritionV1; null pozostaje brakiem danych, nie zerem. Niepełna suma jest jawnie opisana. Projekcja jest niemutowalna, redagowana w logach i powstaje poza mutexem/Room. Ten odczyt nie zapisuje Meal/ProductDraft/celu/outbox.
 
-**Pełna walidacja aktualnego źródła:235 JVM debug/250 JVM validation, assemble debug/validation/testAPK, lint0error i223/223 native API35 PASS, bez pominięć.** Native wykonano na zachowanym O1Tests35, offline przed/po (tryb samolotowy1, Wi-Fi wyłączone, brak aktywnej sieci). Pierwszy pełny przebieg221PASS/2FAIL ujawnił dwa testowe selektory Compose, które porównywały fragment jako cały napis. Poprawiono wyłącznie `substring=true`, bez zmiany tekstu produktu i bez osłabienia oczekiwanych wartości. Oba APK aplikacji pozostały identyczne; przebudowano testAPK i ponowiono cały zestaw. Oddzielna nieudana próba Gradle nie połączyła się z lokalnym daemonem, zanim ruszyły zadania; log zachowano. Bez wipe/uninstall/clear lub restartu komputera przez O1. Drugi przebieg223PASS objął długą przerwę sesji (96798s); zachowano go osobno. Końcowy nowy przebieg17.10 miał ograniczenie1800s i zakończył się po1187.391s; to on stanowi bieżący odbiór.
+**Pełna walidacja źródła GET a4447e4:235 JVM debug/250 JVM validation, assemble debug/validation/testAPK, lint0error i223/223 native API35 PASS, bez pominięć.** Native wykonano na zachowanym O1Tests35, offline przed/po (tryb samolotowy1, Wi-Fi wyłączone, brak aktywnej sieci). Pierwszy pełny przebieg221PASS/2FAIL ujawnił dwa testowe selektory Compose, które porównywały fragment jako cały napis. Poprawiono wyłącznie `substring=true`, bez zmiany tekstu produktu i bez osłabienia oczekiwanych wartości. Oba APK aplikacji pozostały identyczne; przebudowano testAPK i ponowiono cały zestaw. Oddzielna nieudana próba Gradle nie połączyła się z lokalnym daemonem, zanim ruszyły zadania; log zachowano. Bez wipe/uninstall/clear lub restartu komputera przez O1. Drugi przebieg223PASS objął długą przerwę sesji (96798s); zachowano go osobno. Końcowy nowy przebieg17.10 miał ograniczenie1800s i zakończył się po1187.391s; to on stanowi bieżący odbiór.
 
 | Artefakt | SHA-256 |
 |---|---|
