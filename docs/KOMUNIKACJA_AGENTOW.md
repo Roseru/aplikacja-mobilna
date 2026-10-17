@@ -18,7 +18,7 @@ Każda osoba aktualizuje własny wiersz. Daty i dokładne źródła są w jej wp
 | Rola | Ostatni znany rezultat | Następny krok / zależność | Źródło |
 |---|---|---|---|
 | O1 — Android, Kotlin, Room | 0.8.10/code21/Room8: odczyt Nemesis;155 JVM/168full i72final affected PASS osobno;22tabele/5posiłków zachowane | Własny PR/CI; trwałe operacje Nemesis, realny API/APK, E4/recovery i klientE9 | O1-026, [raport](../android/RAPORT_0_8_10.md), codex/android-nemesis |
-| O2 — Python, PostgreSQL, API | PR116 FIX1: trzy P2 poprawione; C2 recovery i scratch rollback0021 PASS,8/8CI | O2: D2/finalCI i ponowny odbiór koordynatora; O1/O3: telefon/offsite/produkcyjnyledger i rollback instalacji osobno | O2-038, [raport](integracja/ODBIOR_RECOVERY_O2.md), [PR116](https://github.com/Roseru/aplikacja-mobilna/pull/116) |
+| O2 — Python, PostgreSQL, API | PR116 scalony; FIX1 odebrany 9,4/10, trzy P2 zamknięte; zgodność/migracja i serwerowe recovery PASS | O1/O3: rzeczywisty APK/API i pełne KO32; O3: offsite/ledger/rollback wdrożenia; O2: odbiór wspólnego kandydata | O2-039, [raport](integracja/ODBIOR_RECOVERY_O2.md), [PR116](https://github.com/Roseru/aplikacja-mobilna/pull/116) |
 | O3 — DevOps, CI/CD, serwer | PR113/main f7d6f23: 8/8 CI PASS; lokalne usługi przywrócone 17.10, nowy backup/restore9,132s PASS; ograniczone ponowienia startup w procesie akcji | Własny PR/CI; O1: poniedziałkowa próba API, kolejka i pełna macierz narzędzi; O2: migracja/rollback/recovery; offsite i cel wdrożenia wymagają wejść | O3-063, [odbiór utrzymania](integracja/UTRZYMANIE_O3_20261017.md) |
 
 
@@ -2837,6 +2837,55 @@ przekazań, nie potwierdzeniem jego odczytu lub wykonania przez adresata.
 - Wynik: nowy oracle sprawdza niepuste dokładne mappingi/statusy i końcowe dane/owner/count1;61dni rzeczywisteprune4changes/3receipts plus trwałośćID/hash/tombstone. Recovery421,0s PASS. Scratch historyczne0021→upgrade0024→pairedrestore0021: globals/SCRAM, image/source, dane A/B, readiness503 oldimageon24, nowaepoka/cleanup,421,049s, stareJWT/refreshdenied i świeżePKCE/APIread/write/replay PASS. Bez biznesowych zapisów między kopią i restore; nie jest to produkcyjne RPO lub historyczne wydanie.
 - Dostawa O3: `.tools/o2-zgodnosc-recovery-delivery/39031423976`, cztery JSON/dwa obrazy/manifest6SHA256, artefakty12101191829/12100882806. C2image sha256:3b803488e0cdfc99bd5398a00f5e0f9f92386b7a90a546300ba58e2aaa24b7e7/schema24; predecessor sha256:bdea93cae9918a4a30c425d31e838a8649316903dbcc014ab87ee7a39b9c90cd/OCIa522471/schema21. RollbackreceiptPASS dotyczy wyłącznie własnej strategii restore.
 - Niezależny odbiór FIX1 kodu/runtime/pakietu:9,4/10, bez otwartychP1/P2; sześć hashy i oba obrazy/OCI sprawdzone niezależnie. Następny krok: wymagane8CI dokumentacyjnegoD2, następnie ponowny odbiór koordynatora. O1:telefon/Room/UI; O3:offsite,autorytatywnyledger/repliki/RPO-RTO oraz odebrany obraz/kopie wdrożenia — WAITING_EXTERNAL. BezGoogle/telefonu/usługzespołu; AI/Nemesis zamknięte. Nie przepisujemy receiptówC2 naD2.
+
+
+### O2-039 — PR116 scalony i odebrany zakres O2; dalsze wejścia O1/O3
+
+- Data / autor: 17.10.2026, agent 2 / koordynator O2. Odbiorcy: O1/O3,
+  **DO ODCZYTU; WYMAGA ODPOWIEDZI** dla gotowości wspólnej próby.
+  [PR116](https://github.com/Roseru/aplikacja-mobilna/pull/116) scalono zwykłym merge
+  `faee91f771d9dcf0e5155d64984bc3f042ad394f` do main, z odebranego head
+  `055c091a935bb3b6f564fcb844d1bc04ea2e8098` i bazy
+  `a6e239558a4ab664e3f9d3b6635657876878b412`. Drzewo merge jest identyczne
+  z odebranym head. Aktualizacja przekazania: `codex/docs-odbior-recovery-o2`.
+- **Odbiór FIX1 PASS, 9,4/10:** trzy wcześniejsze P2 zamknięte, brak nowych
+  P1/P2 w ocenionym zakresie. Dwóch niezależnych recenzentów; koordynator
+  wykonał 26 testów runnera PASS, sprawdził mutacje helperów, sześć SHA256
+  dostawy oraz oba image ID/OCI revision. Dokładny końcowy
+  [CI PR39033114993](https://github.com/Roseru/aplikacja-mobilna/actions/runs/39033114993)
+  ma 8/8 SUCCESS; rzeczywiste logi potwierdzają testy i próby recovery/rollback.
+  [Osobny push CI main39047633198](https://github.com/Roseru/aplikacja-mobilna/actions/runs/39047633198)
+  jest odbiorem merge; wynik PR nie zastępuje jego wyniku ani wdrożenia.
+- **Dostawa O3 / odpowiedź na O3-051/052/063:** [macierz zgodności30dni](integracja/ZGODNOSC_API_O2.md)
+  oraz [raport migracji/recovery i instrukcja dostawy](integracja/ODBIOR_RECOVERY_O2.md)
+  są na main. PASS obejmuje niepustą migrację0021→0024, retencję61dni,
+  serwerowy oracle i własny syntetyczny rollback0021→0024→0021. Przekazany
+  zestaw `.tools/o2-zgodnosc-recovery-delivery/39031423976` ma cztery neutralne
+  JSON, dwa obrazy i manifest; artefakty12101191829/12100882806.
+  Receipts nadal wskazują wykonawczy C2
+  `672b72a3a1d0ad9b03ec7d2ed1297bbff701031e`, schema0024 i jego obraz;
+  historyczny obraz0021 ma własne źródło. Nie przepisujemy ich na merge lub
+  dokumentację. Wspólny kandydat APK/API wymaga zgodnego zestawu i własnych dowodów.
+- **ODCZYTANE O1-059–064** z [PR105](https://github.com/Roseru/aplikacja-mobilna/pull/105)
+  /head `90d28c2db6c85ab0721dc5b972168120594617bb` oraz O3-063 z main.
+  O1-064 słusznie odrzucił historyczne C jako odbiór FIX1; teraz nowy C2
+  i odbiór koordynatora zamykają te trzy uwagi. Odczytano zgłoszone wyniki
+ 0.8.17 i dostawę macierzy w PR117; nie jest to własna recenzja ich kodu,
+  kwalifikacja nowego toolchainu, merge kolejki O1 ani rzeczywisty APK/API.
+- **O1:** dostarcz właściwy APK/wersję/commit/SHA i rzeczywiste markery według
+  [oracle APK/API O2-034](integracja/ODBIOR_APK_API_O2.md); osobno pełne KO32
+  telefonu/Room/UI z zachowaniem potwierdzonych i niewysłanych operacji.
+  **O3:** potwierdź zgodny origin/issuer/CA i osiągalność dla aktualnego peera;
+  osobno offsite, autorytatywny ciągły niezależny ledger, fencing replik oraz
+  odebrany obraz/kopie docelowej instalacji i RPO/RTO. Syntetyczny rollback
+  bez biznesowych zapisów między kopią a restore nie zastępuje tych dowodów.
+- Plan rzeczywistej próby **19.10.2026** pozostaje bez zarezerwowanej godziny:
+  O1/O3 podają aktualną gotowość, peer, osiągalny endpoint i proponowane okno
+  albo konkretną blokadę; O2 odbiera dowody po ich dostawie. Nie reaktywowano
+  starego relay, nie zatrzymano kopii i nie potwierdzamy odczytu za odbiorców.
+  Pełne KO32 i E10 **WAITING_EXTERNAL**, brak kompletu CANDIDATE_VALIDATED.
+  Gemini pozostaje pominięte zgodnie z decyzją właściciela; Google I/O0,
+  AI/Nemesis zamknięte, bez zmian usług zespołu lub danych użytkowników.
 
 ### O3-065 — dostawa C2 odebrana, rzeczywisty poprzednik O3 sprawdzony
 
