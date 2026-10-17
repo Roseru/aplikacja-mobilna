@@ -18,7 +18,7 @@ Każda osoba aktualizuje własny wiersz. Daty i dokładne źródła są w jej wp
 | Rola | Ostatni znany rezultat | Następny krok / zależność | Źródło |
 |---|---|---|---|
 | O1 — Android, Kotlin, Room | 0.8.10/code21/Room8: odczyt Nemesis;155 JVM/168full i72final affected PASS osobno;22tabele/5posiłków zachowane | Własny PR/CI; trwałe operacje Nemesis, realny API/APK, E4/recovery i klientE9 | O1-026, [raport](../android/RAPORT_0_8_10.md), codex/android-nemesis |
-| O2 — Python, PostgreSQL, API | PR116 scalony; FIX1 odebrany 9,4/10, trzy P2 zamknięte; zgodność/migracja i serwerowe recovery PASS | O1/O3: rzeczywisty APK/API i pełne KO32; O3: offsite/ledger/rollback wdrożenia; O2: odbiór wspólnego kandydata | O2-039, [raport](integracja/ODBIOR_RECOVERY_O2.md), [PR116](https://github.com/Roseru/aplikacja-mobilna/pull/116) |
+| O2 — Python, PostgreSQL, API | PR116 scalony i odebrany; PR120: O2 dopisał regresje SHA blobów i duplikatu TAR | PR120: niezależny odbiór poprawki i CI nowego head; O1/O3: wspólny APK/API i pełne KO32 | O2-040, [PR120](https://github.com/Roseru/aplikacja-mobilna/pull/120), O2-039 |
 | O3 — DevOps, CI/CD, serwer | PR113/main f7d6f23: 8/8 CI PASS; lokalne usługi przywrócone 17.10, nowy backup/restore9,132s PASS; ograniczone ponowienia startup w procesie akcji | Własny PR/CI; O1: poniedziałkowa próba API, kolejka i pełna macierz narzędzi; O2: migracja/rollback/recovery; offsite i cel wdrożenia wymagają wejść | O3-063, [odbiór utrzymania](integracja/UTRZYMANIE_O3_20261017.md) |
 
 
@@ -2912,3 +2912,36 @@ przekazań, nie potwierdzeniem jego odczytu lub wykonania przez adresata.
   nieodebrane; Android acceptance O1 brak. Nie wdrażano C2 do źródła. Próba
   APK/API i poniedziałkowa propozycja08:00–08:10 pozostają według O3-064/PR119.
   Szyfrowana kopia i jej magazyn mają osobne przekazanie O3-066.
+
+
+### O2-040 — odbiór O3-065 i poprawka regresji PR120
+
+- Data / autor: 17.10.2026, agent2/O2. Do O3/O1, **DO ODCZYTU**.
+  ODCZYTANE O3-065 z `codex/devops-przenosny-obraz` /
+  [PR120](https://github.com/Roseru/aplikacja-mobilna/pull/120), head
+  `04e57b138f4e2a1ec2b670ddc1e5abb6dfcfa6e4`, baza main0e878bfb.
+  [Review O2](https://github.com/Roseru/aplikacja-mobilna/pull/120#pullrequestreview-5558998887)
+  potwierdził powiązanie tożsamości, a zgłosił jedną P2 do regresji.
+- Na obu oryginalnych TAR C2 niezależnie sprawdzono SHA całych plików i most
+  manifest→config:691f25f→3b80348 oraz4e0532e→bdea93c PASS. Obecny kod
+  poprawnie odrzucał podmienione bloby; brakowało testów wykrywających usunięcie
+  tej kontroli. Pierwotne23testy przechodziły również po takiej mutacji.
+  To odbiór plików i powiązania ID, nie nowa inspekcja działającego containerd O3.
+- Na bezpośrednie polecenie właściciela O2 dopisał w tym samym PR120 dwa
+  przypadki podmiany bajtów manifestu/configu po przeliczeniu SHA całego TAR,
+  ze stałymi descriptorami/runtimeID/receiptami; dodał też duplikat członka TAR.
+  Każdy wymaga BLOCKED, braku autoryzacji wdrożenia i właściwej przyczyny.
+  Kod release.py, oryginalne C2/receipts i usługi O3 pozostają bez zmian.
+  Własny lokalny branch O2: `codex/backend-pr120-regresje-sha`; zwykły push
+  trafia do istniejącej gałęzi PR120, bez przełączania checkoutu O3.
+- Dowody lokalne:26testów checkera PASS. Izolowane mutacje wyłącznie w pamięci:
+  usunięcie SHA blobów wykrywa2FAIL, usunięcie odmowy duplikatu wykrywa1FAIL.
+  Ruff/format, E0/linki i diff-check rozliczane przed pushem; niezależny przegląd
+  poprawki i osiem wymaganych kontroli nowego head pozostają osobnymi wynikami
+  w PR. Odczytane historyczne8/8CI39050264942 dotyczy04e57b13, nie tej poprawki.
+- O3: zachowaj własne receipty i ograniczenia compatible_image/schema24,
+  debug signer oraz częściowego restore/offsite. O1 nadal odbiera signer/APK,
+  telefon/Room/UI i pełne KO32; O2 odbiera wspólną próbę po gotowości.
+  Plan19.10/08:00–08:10 z O3-064/PR119 wymaga potwierdzeń O1/O3;
+  ten wpis nie rezerwuje okna. Ciągły ledger i produkcyjne RPO/RTO oraz E10
+  pozostają odrębne. Google I/O0, AI/Nemesis zamknięte; nie wdrażano kandydata.

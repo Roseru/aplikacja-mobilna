@@ -103,6 +103,63 @@ def test_imported_identity_mismatch_blocks_release(candidate, damage):
     assert result["deployment_authorized"] is False
 
 
+def write_image_archive(path, entries):
+    with tarfile.open(path, "w") as stream:
+        for name, raw in entries:
+            member = tarfile.TarInfo(name)
+            member.size = len(raw)
+            stream.addfile(member, io.BytesIO(raw))
+
+
+@pytest.mark.parametrize("blob", ["manifest", "config"])
+def test_rehashed_archive_rejects_changed_blob(candidate, blob):
+    path, spec, inspector, _ = imported_candidate(candidate)
+    archive = path.parent / spec["backend"]["image_archive"]["path"]
+    digest = (
+        spec["backend"]["image"]
+        if blob == "manifest"
+        else spec["backend"]["image_archive"]["config_digest"]
+    )
+    target = "blobs/sha256/" + digest[7:]
+    with tarfile.open(archive, "r:") as stream:
+        entries = [(member.name, stream.extractfile(member).read()) for member in stream]
+    changed = []
+    for name, raw in entries:
+        if name == target:
+            value = json.loads(raw)
+            if blob == "manifest":
+                value["annotations"] = {"review": "changed manifest bytes"}
+            else:
+                value["config"]["Env"] = ["REVIEW_CHANGED=1"]
+            raw = json.dumps(value).encode()
+        changed.append((name, raw))
+    # Keep descriptor names, runtime ID and receipts pinned; only rehash the TAR.
+    write_image_archive(archive, changed)
+    spec["backend"]["image_archive"]["sha256"] = release.file_digest(archive)
+    write(path, spec)
+    report = release.validate(path, inspector)
+    assert report["result"] == "BLOCKED"
+    assert report["deployment_authorized"] is False
+    assert report["blockers"] == [
+        {"component": "backend", "reason": "Image metadata digest mismatch"}
+    ]
+
+
+def test_rehashed_archive_rejects_duplicate_member(candidate):
+    path, spec, inspector, _ = imported_candidate(candidate)
+    archive = path.parent / spec["backend"]["image_archive"]["path"]
+    with tarfile.open(archive, "r:") as stream:
+        entries = [(member.name, stream.extractfile(member).read()) for member in stream]
+    # Duplicate identical bytes so only ambiguity, rather than a hash mismatch, fails.
+    write_image_archive(archive, [*entries, entries[-1]])
+    spec["backend"]["image_archive"]["sha256"] = release.file_digest(archive)
+    write(path, spec)
+    report = release.validate(path, inspector)
+    assert report["result"] == "BLOCKED"
+    assert report["deployment_authorized"] is False
+    assert report["blockers"] == [{"component": "backend", "reason": "Ambiguous image archive"}]
+
+
 class Inspector:
     def __init__(self):
         self.debuggable = True
