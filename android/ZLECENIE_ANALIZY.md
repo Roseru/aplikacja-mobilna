@@ -1,6 +1,6 @@
 # Zlecenie analizy zdjęcia — stan implementacji Androida
 
-Branch `codex/android-poprawki-posilkow`, zależny od dokładnego head `90d28c2db6c85ab0721dc5b972168120594617bb` / [PR105](https://github.com/Roseru/aplikacja-mobilna/pull/105). Osobny PR tego etapu kierujemy na `codex/android-analiza-zdjec`; najpierw integrujemy rodzica, następnie zmieniamy bazę dziecka na main i sprawdzamy integrację.
+Branch `codex/android-poprawki-posilkow`, zależny od dokładnego head `90d28c2db6c85ab0721dc5b972168120594617bb` / [PR105](https://github.com/Roseru/aplikacja-mobilna/pull/105). [PR121](https://github.com/Roseru/aplikacja-mobilna/pull/121) kierujemy na `codex/android-analiza-zdjec`; najpierw integrujemy rodzica, następnie zmieniamy bazę dziecka na main i sprawdzamy integrację.
 Wejścia: [integracja O2](../docs/e7/INTEGRACJA_O1.md), [DTO](../backend/src/calorie_app/modules/ai/schemas.py) i [przykład create](../contracts/examples/e7/create-accepted.json).
 Gotowe są transport, trwała kolejka, zgoda/wysyłka i jawne ponowienie oraz pobieranie/polling wyniku z podglądem lokalnym. Dostępne jest również świadome anulowanie i zamknięcie anulowanego zlecenia. Dostępny jest trwały lokalny szkic korekt. Zatwierdzenie na serwerze i zapis posiłku pozostają do wykonania. Ten etap nie jest odbiorem pełnego E7.
 

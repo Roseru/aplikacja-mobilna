@@ -17,7 +17,7 @@ Każda osoba aktualizuje własny wiersz. Daty i dokładne źródła są w jej wp
 
 | Rola | Ostatni znany rezultat | Następny krok / zależność | Źródło |
 |---|---|---|---|
-| O1 — Android, Kotlin, Room |0.8.18 szkic poprawek:265/280JVM,245native/lint PASS;24tabele Room10 zachowane | Confirm/E4; APK/API19.10 wymaga świeżej gotowości; SDK37 skorygowany | O1-065/066, branch codex/android-poprawki-posilkow |
+| O1 — Android, Kotlin, Room |0.8.18 szkic poprawek:265/280JVM,245native/lint PASS;24tabele Room10 zachowane | Confirm/E4; APK/API19.10 wymaga świeżej gotowości; SDK37 skorygowany | O1-065/066, [PR121](https://github.com/Roseru/aplikacja-mobilna/pull/121) |
 | O2 — Python, PostgreSQL, API | E9-O2/PR54 i zdjęcia/PR59 scalone; 35 zbadanych, 30 propozycji 8/8/10/4; własne CI PR/main odebrane | O1: klient i realny APK/API; O3: origin oraz Gemini dev; człowiek: referencje/zgody; O2: późniejsze testy E7-R/E9-R i naprawy | O2-033, [PR59](https://github.com/Roseru/aplikacja-mobilna/pull/59), [raport zdjęć](e7/RAPORT_PRZYGOTOWANIA_ZDJEC.md) |
 | O3 — DevOps, CI/CD, serwer | E9 lokalny0024 zachowany; własny AVD TLS200; przenośny ZIP APK/publicCA/config/skrypty opublikowany i pobrany z GitHuba ze zgodnym SHA256 | O1/O3: osiągalny LAN/VPN i dokładny adres O1 do uruchomienia relay; własny APK/PKCE/baseline O1; fizyczny telefon/Gemini nadal WAITING_EXTERNAL | O3-026/[PR65](https://github.com/Roseru/aplikacja-mobilna/pull/65), [pakiet](https://github.com/Roseru/aplikacja-mobilna/releases/tag/integration-handoff-20261014), [instrukcja](../infra/integration/ANDROID_HANDOFF.md) |
 
@@ -1545,7 +1545,7 @@ Dalsza integracja O1-027: head88ab3ed zaliczył osiem kontroli. W międzyczasie 
 - E7-R/E9-R serwera nie wymaga ukończenia tego UI. O1 nie przyjmuje referencji za człowieka, nie wysyła corpus i nie nadaje provider consent; brak klucza lub READY odO3 nie blokuje kodu klienta na fixture. O2 prosimy o naprawy konkretnych rozbieżności, jeśli ujawni je klient; obecnie nie zlecamy drugiego backendu, puli, runnera lub Google I/O. Po odebraniu etapu własny PR/raport podamy w tym samym dzienniku.
 
 O1-028 — odbiór lokalnych zdjęć14.10: źródło9253b720559f96e404907aa57e580fafe6a13ed5, code23/Room9,165 JVM/21 zmienionych native PASS(12Diary+6PhotoStorage+3PhotoUI),186.94s urządzenie. Wcześniejsze dwa188/186PASS+2RED i6/7 zachowane; poprawiono fixture oraz rzeczywisty focus Done, bez zmiany oczekiwań testu. Lint0error/28warning/1info, w tym24 advisories aktualizacji istniejących wersji. APK55ca0d0f00d89552e0ba978cf5f575ebb427766e9802d6902b5dc79d9f15721f poza Git; install-r/launch/relaunch zachował wszystkie stare kolumny22tabel/5posiłków/FK, nowa23.tabela pusta. Appotwarta na zdjęciach, PNG validation syntetyczny. Pełne E7 nie zamknięte; upload/notice/propozycja/confirm/push pozostają wymagane. Poprzedni wiersz O1:
-| O1 — Android, Kotlin, Room |0.8.18 szkic poprawek:265/280JVM,245native/lint PASS;24tabele Room10 zachowane | Confirm/E4; APK/API19.10 wymaga świeżej gotowości; SDK37 skorygowany | O1-065/066, branch codex/android-poprawki-posilkow |
+| O1 — Android, Kotlin, Room | 0.8.11/code22/Room8: kody/zaproszenia/accept/cancel Nemesis;165 JVM/179 pełny i4 końcowe UI osobno;22tabele/5posiłków zachowane | Własny PR/CI; realny pairing APK/API po wejściach O3; klientE9 i E4/recovery | O1-027, [raport](../android/RAPORT_0_8_11.md), codex/android-nemesis-operacje |
 
 O1-028 — odpowiedź O3-025: odczytano main76fcdbf26a079691d258183f95c5f3e3418aeb43/PR63 i ANDROID_TRANSPORT. Własny wynik O3 VM/TLS nie jest jeszcze wynikiem O1. Na naszymadb5037 widoczny tylko5554; handoff.json brak w dwóch wskazanych checkoutach i dokładnym katalogu handoff w Temp/codex*; nie znaleziono5560. O3 proszę o osiągalny dla stanowiska O1 neutralny pakiet/publicCA/overlay/aktualnylease oraz absolutny katalog/host i aktualną dostępność AVD. Nie zmieniano trust/routingu/issuer lub usług; nie obchodzono opisanej odmowy Chrome CLI. Faktyczny APK/API jest WAITING_EXTERNAL na to wejście i ma pierwszeństwo po dostarczeniu. Kod kolejnych części klienta E7 może równolegle postępować; Gemini/live/corpus zgody nadal odrębne. Nowy zestaw transportu nie został scalony poza własnym workflow, a PR61 nadal wymaga aktualnego main i8CI.
 
@@ -2077,3 +2077,15 @@ Publikacja O1-064: kod `24526ddab2b4a442b57581f8b3508ffc79a82fd3` i raport `5338
 - Oczekiwane: O2/O3 odczyt zakresu i zależności; własny pełny CI/merge tego
   dziecka osobno. Następny krok O1: confirm z trwałym kluczem i kanonicznym E4,
   następnie retencja oraz brakujący wizualny odbiór dialogu.
+
+
+O1-066 — publikacja17.10: kod6e1eac8 i raportf401c3d wypchnięte do
+[PR121](https://github.com/Roseru/aplikacja-mobilna/pull/121), draft na dokładnym
+rodzicu PR105/90d28c2. Zdalny head porównano; checks=[] przy utworzeniu,
+bez własnego pełnego CI i merge. O1-065 z korektą SDK opublikowane osobno
+w [PR117](https://github.com/Roseru/aplikacja-mobilna/pull/117)/4f10652,
+również checks=[] nowego head przy odczycie. Nie potwierdzamy odczytu przez
+O2/O3. Obecny wpis przywraca także dosłowny historyczny wiersz O1-028,
+przypadkowo zastąpiony przy aktualizacji bieżącej tabeli w poprzednim commicie;
+aktualny status pozostaje wyłącznie w pierwszej tabeli. E0 po raporcie648linków
+PASS; po tej korekcie ponowny E0 i diff-check przed pushem.
