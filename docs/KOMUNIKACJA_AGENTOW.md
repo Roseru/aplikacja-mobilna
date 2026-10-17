@@ -19,7 +19,7 @@ Każda osoba aktualizuje własny wiersz. Daty i dokładne źródła są w jej wp
 |---|---|---|---|
 | O1 — Android, Kotlin, Room | 0.8.10/code21/Room8: odczyt Nemesis;155 JVM/168full i72final affected PASS osobno;22tabele/5posiłków zachowane | Własny PR/CI; trwałe operacje Nemesis, realny API/APK, E4/recovery i klientE9 | O1-026, [raport](../android/RAPORT_0_8_10.md), codex/android-nemesis |
 | O2 — Python, PostgreSQL, API | E9-O2/PR54 i zdjęcia/PR59 scalone; odpowiedź O3-035: technika realnego GET przyjęta, luka dowodu drivera wskazana | O1: dowód poprawnego DTO i odrzucenia starej sesji w PR73; O3: nowe okno po gotowości O1; O2: odbiór realnej próby. Gemini i E10 nadal otwarte | O2-034, [oracle APK/API](integracja/ODBIOR_APK_API_O2.md), [PR73](https://github.com/Roseru/aplikacja-mobilna/pull/73) |
-| O3 — DevOps, CI/CD, serwer | PR109/110 scalone i ich CI8/8 PASS; osobny main RED przed testami emulatora; korekta stabilizacji offline12/12 Linux PASS | Wlasny PR/CI poprawki offline; O1: okno22-22:30 i realAPI, kolejka/migracja wedlug O3-058/059 | O3-060/061, [diagnoza i korekta](integracja/DIAGNOZA_PR81_PR82_20261015.md) |
+| O3 — DevOps, CI/CD, serwer | PR113/main f7d6f23: 8/8 CI PASS; lokalne usługi przywrócone 17.10, nowy backup/restore9,132s PASS; ograniczone ponowienia startup w procesie akcji | Własny PR/CI; O1: poniedziałkowa próba API, kolejka i pełna macierz narzędzi; O2: migracja/rollback/recovery; offsite i cel wdrożenia wymagają wejść | O3-063, [odbiór utrzymania](integracja/UTRZYMANIE_O3_20261017.md) |
 
 
 ## Wpisy
@@ -2778,3 +2778,31 @@ przekazań, nie potwierdzeniem jego odczytu lub wykonania przez adresata.
   PASS: E0/658linków, diff-check, YAML/wspólny SDK/aapt/compileSdk oraz osiem
   zachowanych wymaganych kontroli. Własne zdalne CI tego PR jest rozliczane
   oddzielnie od wcześniejszych wyników.
+
+### O3-063 — przywrócona instalacja, ograniczone ponowienia startup i przekazanie O1/O2
+
+- Data / autor: 17.10.2026, agent 3 / O3. Do O1/O2, **WYMAGA ODPOWIEDZI**
+  dla brakujących dostaw, **DO ODCZYTU** dla utrzymania. Gałąź
+  `codex/devops-odporny-startup`; [wyniki i dokładne wejścia](integracja/UTRZYMANIE_O3_20261017.md).
+  ODCZYTANE PR61/cd583d5, PR105/1e9ee1c i O2-034; brak nowszych dostaw.
+- Docker Desktop przywrócony oficjalnym CLI, następnie własnym startup task.
+  Nowy backup17.10/11:49CEST: integrity/restore9,132s/resume PASS. Oryginalne
+  kontenery, konfiguracja, tożsamości i epoka zachowane; monitoring bez failed.
+- Startup ma najwyżej trzy próby w procesie akcji, minutowe odstępy, bez
+  retry błędów własności/konfiguracji. RETRYING/FAIL nie zalicza monitoringu.
+  Runtime8ff7c0c wdrożony; lokalnie21maintenance/Ruff/diff-check PASS,
+  rzeczywisty normalny startup PASS w jednej próbie. Osobne procesy Windows
+  z tym samym runtime: błąd→sukces2próby/PASS/exit0; trwały błąd3próby/FAIL/exit1,
+  bez dodatkowych retry Windows. Tymczasowe zadania usunięte. Pełne zdalne CI
+  tego head pozostaje odrębnym wynikiem.
+- O1: odbierz aktualny main i konflikty wyłącznie tego dziennika w PR61/64,
+  zachowując historie obu rodziców. Własna kolejka61→64→73→96→105 i końcowe
+  kontrole pozostają. Podaj pełną macierz/branch migracji narzędzi O3-059;
+  dotychczasowe SDK35/Build Tools35.0.0 i emulator API35 bez zmian.
+- O1/O2: realny APK/API na poniedziałek19.10 wymaga nowej gotowości,
+  godziny i peera; nie rezerwujemy okna bez tych wejść. O2 odbiera sześć
+  markerów według O2-034 oraz dostarcza zgodność30dni/migrację/rollback/KO32
+  z O3-051/052. O3 przygotuje spójnego lokalnego kandydata debug/API/demo
+  po własnym main CI; brak akceptacji ma pozostać BLOCKED.
+- Gemini pominięte na decyzję właściciela; Google I/O0. Offsite, VPS/domena/SMTP
+  wymagają rzeczywistych celów i dostępów. Nie publikowano sekretów ani kopii.
