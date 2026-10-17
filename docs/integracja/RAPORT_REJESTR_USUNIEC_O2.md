@@ -1,12 +1,14 @@
 # O2 — odbiór ciągłego rejestru usunięć v1
 
 Zlecenie O2_LEDGER_20261017_V1, 17.10.2026, agent2.
-Gałąź `codex/backend-ciagly-rejestr-usuniec`, baza `615fb6b3f875bef8a0c04c95a1a87e32af20e9e3`.
+Gałąź `codex/backend-ciagly-rejestr-usuniec`, baza startowa `615fb6b3f875bef8a0c04c95a1a87e32af20e9e3`.
 Migracja `0024_e9_history_graph` → `0025_deletion_ledger`.
 [PR124](https://github.com/Roseru/aplikacja-mobilna/pull/124), implementacja
 `04c76ed8144bc582b8a25321e101025556aef22d`; bieżący head i rzeczywiste CI
 będą przypięte w aktualizowanym opisie PR/odbiorze koordynatora;
-poniższe liczby są lokalnymi dowodami, nie potwierdzeniem zdalnego CI.
+poniższe liczby mają jawnie podany zakres i źródło.
+Aktualny head/base i komplet ośmiu kontroli: [PR124/checks](https://github.com/Roseru/aplikacja-mobilna/pull/124/checks).
+Aktualny main po zwykłym merge: `0ac8e165ecda4312887c956027d007016572ee34`.
 
 ## Wynik i granica
 
@@ -140,3 +142,15 @@ workera retention przeszły. E4push wymaga teraz dokładnych kodów dla wszystki
 4przypadków — przypadkowe503 nie zalicza już generation drift. Historyczne
 E7/E8 oraz E1finite przeszły w dotkniętej macierzy; dalszy pełny przebieg nadal
 wymagany. Niezależny review tego zakresu9/10 bez otwartychP0/P1/P2.
+
+
+CI39070253209/head71ca4fdf potwierdziło pełne **local-integration PASS**:
+usługi E8, faktyczne backup/restore i kontrolowany ledger reconcile; receipt
+nadal wyraźnie wskazuje pełneKO32 i provider reconciliation WAITING_EXTERNAL.
+Nie przenosimy tego PASS na późniejszy head bez jego własnego CI.
+Po poprawkach izolacji:38PASS obejmowało prawdziwe TEMPLATEcopy/restore i8O3
+worker tests; Unicode i CLI17 ponownie2PASS. Ostatnia regresja CLI17 z istniejącym
+jobem, działającym historycznym status i odmową CURRENT status:1PASS14,66s.
+Oba historyczne CLI testy17/20 wykonują ten sam mocny oracle; review9/10,
+ostatnia P2 nieznanego operation_id zamknięta. Natywna szeroka macierz i pełne
+CI końcowego head mają osobne receipty; bieżący wynik jest w PR/checks.

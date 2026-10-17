@@ -598,23 +598,6 @@ def test_historical_hardened_operator_cli_begin_resume_retry(purge_database, tmp
             "PYTHONPATH": os.pathsep.join([str(ROOT / "backend"), str(ROOT / "backend/src")]),
         }
 
-        # The current CLI deliberately refuses this pre-ledger schema.
-        unsupported = subprocess.run(
-            [
-                sys.executable,
-                "-m",
-                "calorie_app.modules.identity.deletion",
-                "status",
-                "--operation-id",
-                str(operation),
-            ],
-            env=environment,
-            capture_output=True,
-            text=True,
-            timeout=30,
-        )
-        assert unsupported.returncode != 0 and not unsupported.stdout
-
         # Frozen pre-ledger CLI for this historical migration scope.
         def cli(action, *extra):
             result = subprocess.run(
@@ -639,6 +622,23 @@ def test_historical_hardened_operator_cli_begin_resume_retry(purge_database, tmp
             cli("begin", "--account-id", str(owner), "--expected-generation", "1")["purged_at"]
             is None
         )
+        assert cli("status")["operation_id"] == str(operation)
+        # The current CLI deliberately refuses this pre-ledger schema.
+        unsupported = subprocess.run(
+            [
+                sys.executable,
+                "-m",
+                "calorie_app.modules.identity.deletion",
+                "status",
+                "--operation-id",
+                str(operation),
+            ],
+            env=environment,
+            capture_output=True,
+            text=True,
+            timeout=30,
+        )
+        assert unsupported.returncode != 0 and not unsupported.stdout
         with operator.begin() as connection:
             execute(connection, "SELECT app.confirm_account_deletion(:op)", op=operation)
         job = cli("resume")

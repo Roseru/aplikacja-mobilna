@@ -350,23 +350,6 @@ def test_historical_operator_cli_uses_actual_parent_and_durable_retry(production
         "PYTHONPATH": os.pathsep.join([str(ROOT / "backend"), str(ROOT / "backend/src")]),
     }
 
-    # The current CLI deliberately refuses this pre-ledger schema.
-    unsupported = subprocess.run(
-        [
-            sys.executable,
-            "-m",
-            "calorie_app.modules.identity.deletion",
-            "status",
-            "--operation-id",
-            str(operation),
-        ],
-        env=environment,
-        capture_output=True,
-        text=True,
-        timeout=30,
-    )
-    assert unsupported.returncode != 0 and not unsupported.stdout
-
     # Frozen pre-ledger CLI for this historical migration scope.
     def cli(action, *arguments):
         result = subprocess.run(
@@ -388,6 +371,23 @@ def test_historical_operator_cli_uses_actual_parent_and_durable_retry(production
         return json.loads(result.stdout)
 
     cli("begin", "--account-id", str(state["owners"][0]), "--expected-generation", "1")
+    assert cli("status")["operation_id"] == str(operation)
+    # The current CLI deliberately refuses this pre-ledger schema.
+    unsupported = subprocess.run(
+        [
+            sys.executable,
+            "-m",
+            "calorie_app.modules.identity.deletion",
+            "status",
+            "--operation-id",
+            str(operation),
+        ],
+        env=environment,
+        capture_output=True,
+        text=True,
+        timeout=30,
+    )
+    assert unsupported.returncode != 0 and not unsupported.stdout
     assert metadata_for_partner(state)["code"] == "nemesis_not_found"
     with state["operator"].begin() as conn:
         conn.execute(text("SELECT app.confirm_account_deletion(:op)"), {"op": operation})

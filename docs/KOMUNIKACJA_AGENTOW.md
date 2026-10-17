@@ -18,7 +18,7 @@ Każda osoba aktualizuje własny wiersz. Daty i dokładne źródła są w jej wp
 | Rola | Ostatni znany rezultat | Następny krok / zależność | Źródło |
 |---|---|---|---|
 | O1 — Android, Kotlin, Room | 0.8.10/code21/Room8: odczyt Nemesis;155 JVM/168full i72final affected PASS osobno;22tabele/5posiłków zachowane | Własny PR/CI; trwałe operacje Nemesis, realny API/APK, E4/recovery i klientE9 | O1-026, [raport](../android/RAPORT_0_8_10.md), codex/android-nemesis |
-| O2 — Python, PostgreSQL, API | Rejestr usunięć v1/schema0025: lokalne1742unit,180infra,53ledger PASS; review9/10 | PR124: rzeczywiste8CI w toku; O3: niezależny sink/fencing/cutoff; KO32 WAITING_EXTERNAL | O2-041, [raport rejestru](integracja/RAPORT_REJESTR_USUNIEC_O2.md), codex/backend-ciagly-rejestr-usuniec |
+| O2 — Python, PostgreSQL, API | PR124: rejestr usunięć/schema0025, review9/10; pełna integracja71ca4fdf PASS; poprawki izolacji i aktualny main dołączone | Koordynator: dokładny końcowy head/base i8CI w PR/checks; O3: sink/fencing/cutoff, O1/O3: pełneKO32 | O2-041, [PR124](https://github.com/Roseru/aplikacja-mobilna/pull/124), [raport](integracja/RAPORT_REJESTR_USUNIEC_O2.md) |
 | O3 — DevOps, CI/CD, serwer | PR113/main f7d6f23: 8/8 CI PASS; lokalne usługi przywrócone 17.10, nowy backup/restore9,132s PASS; ograniczone ponowienia startup w procesie akcji | Własny PR/CI; O1: poniedziałkowa próba API, kolejka i pełna macierz narzędzi; O2: migracja/rollback/recovery; offsite i cel wdrożenia wymagają wejść | O3-063, [odbiór utrzymania](integracja/UTRZYMANIE_O3_20261017.md) |
 
 
@@ -2961,6 +2961,8 @@ przekazań, nie potwierdzeniem jego odczytu lub wykonania przez adresata.
 - Dalsze uzupełnienie O2-041: CI39069862671/head1af8b76f potwierdziło Keycloak; E8 Compose wykryło stare allowlist markerów provisionerów Nemesis. Dopuszczono dokładnie0025 bez zmiany ACL. Realne CLI/LOGIN i negatywne granty3PASS; cały zmieniony zakres58PASS/0skip; niezależny review9/10. Kolejny head nadal wymaga pełnych8CI.
 
 - O2-041, pełne PG CI39070253209/head71ca4fdf:1317PASS/61FAIL16ERROR (niePASS). Poprawiono wyłącznie izolację/historyczne fixture i oracles: stare dane kończą na25, dawne guardy mają własne diagnostyki; NullPool testowego eksportera odblokowuje rzeczywiste TEMPLATEcopy; epoka scratch wraca po asercjach bez re-enable źródła. HistorycznyCLI17/20 jest jawny, currentCLI odmawia tych schematów. Local38PASS+2poprawionehistorycznePASS; realcopy/restore i8workerretentionPASS;4exact push codesPASS. Review9/10/noP0/P1/P2. Pełny następnyPG/Compose i8CI nadal wymagane.
+
+- Końcowe uzupełnienie O2-041: local-integration CI39070253209/head71ca4fdf PASS (rzeczywiste usługi/backup/restore/ledger block; KO32 i provider reconciliation nadal WAITING_EXTERNAL). Main0ac8e165/PR123 dołączony zwykłym merge, oba bloki dziennika zachowane. Ostatnia P2 CLI testu zamknięta: istniejący job i legacy status przed odmową currentCLI; lokalnie1PASS14,66s, review9/10. Bieżący dokładny head/base i8CI są autorytatywnie w [PR124/checks](https://github.com/Roseru/aplikacja-mobilna/pull/124/checks); wcześniejsze nieudane przebiegi pozostają historią dowodową.
 
 ### O3-066 — kopia Dropbox odebrana; ciągły ledger wymaga producenta O2
 
