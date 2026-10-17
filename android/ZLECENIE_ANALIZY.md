@@ -2,7 +2,29 @@
 
 Branch `codex/android-analiza-zdjec`, [PR105](https://github.com/Roseru/aplikacja-mobilna/pull/105), zależny od PR96/merge8d96aa7.
 Wejścia: [integracja O2](../docs/e7/INTEGRACJA_O1.md), [DTO](../backend/src/calorie_app/modules/ai/schemas.py) i [przykład create](../contracts/examples/e7/create-accepted.json).
-Gotowe są transport, trwała kolejka, SessionController oraz ekran zgody/wysyłki i jawnego ponowienia. Pełny przepływ odczytu wyniku, korekty i zatwierdzenia pozostaje do podłączenia. Ten etap nie jest odbiorem pełnego E7.
+Gotowe są transport, trwała kolejka, zgoda/wysyłka i jawne ponowienie oraz pobieranie/polling wyniku z podglądem lokalnym. Korekta i zatwierdzenie posiłku pozostają do wykonania. Ten etap nie jest odbiorem pełnego E7.
+
+## Aktualny odbiór0.8.16 — sesja, GET i podgląd
+
+Wersja0.8.16/code27, validation1027, Room10. Ekran zdjęć odtwarza zapisany wynik lokalnie, również bez obrazu i po wygaśnięciu tokenu. Wejście/powrót na ekran nie uruchamia HTTP. „Sprawdź wynik” rozpoczyna jawny GET; „Zatrzymaj sprawdzanie” unieważnia dalsze żądania i spóźnione odpowiedzi, ale nie anuluje analizy na serwerze. Wyjście w tło/opuszczenie ekranu usuwa prywatny podgląd z UI i zatrzymuje dalsze sprawdzanie.
+
+Odczyt używa captured owner/lease/operacji/kontekstu i wspólnego guardu operacji konta. Pierwszy jawny GET może odzyskać gotową propozycję po terminie obrazu; dopiero zwalidowana odpowiedź working wyznacza granice automatycznego pollingu. Każda próba, także ponowienie po401, zużywa budżet12 prób/120s z timeoutem≤45s i odstępami2/4/8/15/30s.429/503 utrwala maksymalny wspólny Retry-After i kończy pętlę do jawnego ponowienia.403/404/410 blokuje niedostępny wynik,409 zmiany epoki/generacji/kontekstu wymaga recovery. Błędny JSON/timeout/stop nie uruchamia POST i zachowuje ACK oraz dziennik.
+
+Prezentacja pokazuje źródło/mock, stan/decyzję, składniki g/ml, kcal/B/T/W, niepewność i notatki. Sumy są liczone przez NutritionV1; null pozostaje brakiem danych, nie zerem. Niepełna suma jest jawnie opisana. Projekcja jest niemutowalna, redagowana w logach i powstaje poza mutexem/Room. Ten odczyt nie zapisuje Meal/ProductDraft/celu/outbox.
+
+**Pełna walidacja aktualnego źródła:235 JVM debug/250 JVM validation, assemble debug/validation/testAPK, lint0error i223/223 native API35 PASS, bez pominięć.** Native wykonano na zachowanym O1Tests35, offline przed/po (tryb samolotowy1, Wi-Fi wyłączone, brak aktywnej sieci). Pierwszy pełny przebieg221PASS/2FAIL ujawnił dwa testowe selektory Compose, które porównywały fragment jako cały napis. Poprawiono wyłącznie `substring=true`, bez zmiany tekstu produktu i bez osłabienia oczekiwanych wartości. Oba APK aplikacji pozostały identyczne; przebudowano testAPK i ponowiono cały zestaw. Oddzielna nieudana próba Gradle nie połączyła się z lokalnym daemonem, zanim ruszyły zadania; log zachowano. Bez wipe/uninstall/clear lub restartu komputera przez O1. Drugi przebieg223PASS objął długą przerwę sesji (96798s); zachowano go osobno. Końcowy nowy przebieg17.10 miał ograniczenie1800s i zakończył się po1187.391s; to on stanowi bieżący odbiór.
+
+| Artefakt | SHA-256 |
+|---|---|
+| Debug0.8.16/code27 | `cb1f7003aebbbfef6a522bc53272df8768fe339118b7fc1ab8097b77d839b88d` |
+| Validation0.8.16/code1027 | `71837a090776bfe760eb0d3fb5398b1a6df72366d9e386d28aca184eb67fc9e7` |
+| TestAPK końcowego pełnego przebiegu | `c2d84b98391efb1c8a5bda84582a02e866d7a6e83faefd59a32d64f0f977986f` |
+
+Domyślny testAPK wyklucza driver rzeczywistego API; debug wyklucza bramkę obserwacji. Testy używają syntetycznych fixture i transportu testowego. **Rzeczywiste APK/API, Gemini i E7-R: NOT_RUN.** Nie dodano sekretów ani wywołań Google. Pełny zdalny CI PR105 nie uruchamia się dla obecnej bazy dziecka; ewentualna kontrola konfiguracji Dependabot nie zastępuje Android CI. Lokalny PASS nie oznacza zielonego CI lub merge. Kolejność61→64→73→96→105 pozostaje obowiązująca.
+
+## Opis i historyczne checkpointy implementacji
+
+Poniższe mniejsze odbiory pokazują stan w chwili ich publikacji. Ich dawne NOT_RUN/„do podłączenia” nie zastępują aktualnego odbioru powyżej; ograniczenia pełnego E7 nadal obowiązują.
 
 ## Trwała kolejka
 
@@ -92,8 +114,28 @@ TestAPK SHA256 `62a23387f990f39bc6e65911e56e1e1f35e2c6f310345e47e41d1ec7a3c5ec0a
 
 ## Kolejne części pełnego E7
 
-1. Integracja gotowego parsera GET z trwałym stanem i guardem sesji, ograniczony polling/deadline/cancel oraz prezentacja i korekty do30 składników.
+1. Anulowanie analizy na serwerze oraz edycja propozycji do30 składników (GET/polling i podgląd są już podłączone).
 2. Confirm ze stabilnymi ID/provenance, atomowy Room+outbox i jedyny zapis serwera przez kanoniczny E4 push, bez duplikatu po replay.
 3. Retencja pozostałości po crash, rzeczywisty APK/API oraz E7-R i odbiór wydania.
 
 Nie wywołano Google, nie umieszczono sekretu w APK i nie opublikowano produktu.
+
+## Końcowy podgląd i zwykła instalacja17.10
+
+Pierwsze zrzuty mimo223 poprawnych asercji zasłaniało okno ANR **System UI**
+emulatora. Zachowano je prywatnie i nie przyjęto jako odbioru wizualnego.
+Po pojedynczym wyborze widocznego Wait świeża hierarchia nie zawierała okna;
+powtórzono wyłącznie trzy właściwe testy UI na identycznych APK: **3/3PASS**,
+offline po przebiegu. Wszystkie trzy nowe PNG obejrzano, bez ANR/retuszu.
+[Podglądy syntetyczne](../propozycje-ui/analiza-0.8.16/README.md) pokazują zgodę,
+niepewną próbę i wynik przy wąskim viewport/dużym tekście.
+
+Regularny APK0.8.16/code27 zainstalowano jako install-r na zachowanym
+CodexCalories. Prywatny baseline poza Git/OneDrive przed instalacją,
+po instalacji przed startem i po uruchomieniu migracji potwierdza wszystkie
+stare wartości23tabel identyczne, Room9→10, FK clean i pustą nową tabelę.
+SHA zainstalowanego base.apk odpowiada debug z tabeli wyżej.
+Polecenie oczekiwania startu zwróciło timeout; nie ponawiano instalacji.
+Późniejszy świeży UI dump potwierdził rzeczywistą aplikację, brak ANR oraz
+widoczne Dodaj posiłek/Dziennik/Postępy/Profil/Ustawienia. Aplikacja otwarta
+do testów ręcznych. Osobnego kandydata API/CA/Room9 nie aktualizowano.
