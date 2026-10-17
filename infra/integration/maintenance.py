@@ -34,6 +34,12 @@ WRITERS = tuple(name for name in SERVICES if name != "postgres")
 OWNER = "calorie-o3-scheduled-backup-v1"
 
 
+class StartupFailure(RuntimeError):
+    def __init__(self, attempts):
+        self.attempts = attempts
+        super().__init__("Existing installation startup exhausted retries")
+
+
 def now():
     return datetime.now(UTC).isoformat()
 
@@ -298,8 +304,7 @@ def perform_backup(settings, directory, *, due_only=False, installation=None):
         raise
 
 
-def startup(settings, directory, installation=None):
-    installation = installation or Installation(settings)
+def _startup_once(settings, directory, installation):
     try:
         installation.docker("info", "--format", "{{.ServerVersion}}")
     except RuntimeError:
@@ -329,9 +334,35 @@ def startup(settings, directory, installation=None):
     original = installation.snapshot(require_running=False)
     installation.resume(original)
     installation.ready()
-    receipt = {"result": "PASS", "verified_at": now(), "existing_services_only": True}
-    write(directory / "startup-receipt.json", receipt)
-    return receipt
+    return {"existing_services_only": True}
+
+
+def startup(settings, directory, installation=None):
+    installation = installation or Installation(settings)
+    for attempt in range(1, 4):
+        try:
+            result = _startup_once(settings, directory, installation)
+        except (RuntimeError, subprocess.TimeoutExpired) as error:
+            write(
+                directory / "startup-receipt.json",
+                {
+                    "result": "FAIL" if attempt == 3 else "RETRYING",
+                    "failed_at": now(),
+                    "startup_attempts": attempt,
+                },
+            )
+            if attempt == 3:
+                raise StartupFailure(attempt) from error
+            time.sleep(60)
+        else:
+            receipt = {
+                "result": "PASS",
+                "verified_at": now(),
+                "startup_attempts": attempt,
+                **result,
+            }
+            write(directory / "startup-receipt.json", receipt)
+            return receipt
 
 
 def main():
@@ -355,7 +386,7 @@ def main():
         return 0
     except BlockingIOError:
         return 0  # Another backup/startup/recovery owns the installation.
-    except Exception:
+    except Exception as error:
         (directory / "operation-private.log").write_text(traceback.format_exc(), encoding="utf-8")
         if args.action == "backup":
             path = directory / "backup-receipt.json"
@@ -365,7 +396,10 @@ def main():
                 previous = None
             write(path, {"result": "FAIL", "failed_at": now(), "last_good": previous})
         elif args.action == "startup":
-            write(directory / "startup-receipt.json", {"result": "FAIL", "failed_at": now()})
+            receipt = {"result": "FAIL", "failed_at": now()}
+            if isinstance(error, StartupFailure):
+                receipt["startup_attempts"] = error.attempts
+            write(directory / "startup-receipt.json", receipt)
         return 1  # Exceptions may contain private paths/credentials; never print them.
 
 

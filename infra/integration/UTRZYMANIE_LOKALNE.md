@@ -33,6 +33,15 @@ Startup nie wylogowuje ani nie restartuje komputera. Można sprawdzić tę samą
 akcję przez `Start-ScheduledTask`; pełny test po rzeczywistym ponownym logowaniu
 pozostaje osobnym wynikiem. Istniejący wpis autostartu Dockera jest zachowany.
 
+Akcja startup wykonuje najwyżej trzy próby po błędzie dostępności silnika lub
+gotowości usług, z odstępem jednej minuty. Ponowienia należą do procesu akcji,
+również przy ręcznym uruchomieniu zadania. Nie zależą od interpretacji kodu
+wyjścia przez harmonogram Windows. Poprawny start kończy sekwencję. Błąd
+własności kontenera, niepoprawna konfiguracja lub ścieżka nie są ponawiane.
+Receipt zachowuje liczbę prób; `RETRYING` i `FAIL` nie są sukcesem monitora.
+Blokada instalacji pozostaje zajęta przez całą sekwencję, także w przerwie.
+Backup i recovery zachowują własne harmonogramy, bez dodatkowych retry.
+
 Instalator nie zmienia istniejącego monitora. Po pierwszym poprawnym backupie
 dopisz do jego prywatnego settings.json `local_backup_receipt` wskazujące
 `operations/backup-receipt.json` oraz `startup_receipt` wskazujące
