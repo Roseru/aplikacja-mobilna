@@ -4,6 +4,9 @@ Branch `codex/android-poprawki-posilkow`, zależny od dokładnego head `90d28c2d
 Wejścia: [integracja O2](../docs/e7/INTEGRACJA_O1.md), [DTO](../backend/src/calorie_app/modules/ai/schemas.py) i [przykład create](../contracts/examples/e7/create-accepted.json).
 Gotowe są transport, trwała kolejka, zgoda/wysyłka i jawne ponowienie oraz pobieranie/polling wyniku z podglądem lokalnym. Dostępne jest również świadome anulowanie i zamknięcie anulowanego zlecenia. Dostępny jest trwały lokalny szkic korekt. Zatwierdzenie na serwerze i zapis posiłku pozostają do wykonania. Ten etap nie jest odbiorem pełnego E7.
 
+Następny etap ma osobny [fundament potwierdzenia](POTWIERDZENIE_POSILKU.md).
+Nie zmienia on jeszcze dostępnych przycisków ani odebranego APK użytkownika.
+
 ## Aktualny odbiór0.8.18 — trwałe poprawki składników
 
 Kod `6e1eac8128de2a2036878de380c19817c369dbb5`, wersja0.8.18/code29,

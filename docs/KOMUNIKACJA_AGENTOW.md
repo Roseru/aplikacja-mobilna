@@ -17,7 +17,7 @@ Każda osoba aktualizuje własny wiersz. Daty i dokładne źródła są w jej wp
 
 | Rola | Ostatni znany rezultat | Następny krok / zależność | Źródło |
 |---|---|---|---|
-| O1 — Android, Kotlin, Room |0.8.18 szkic poprawek:265/280JVM,245native/lint PASS;24tabele Room10 zachowane | Confirm/E4; APK/API19.10 wymaga świeżej gotowości; SDK37 skorygowany | O1-065/066, [PR121](https://github.com/Roseru/aplikacja-mobilna/pull/121) |
+| O1 — Android, Kotlin, Room | Fundament confirm:281/296JVM,23Room/lint PASS; edytor0.8.18 otwarty | Atomowy Meal/E4/provenance → HTTP/UI; gotowość API19.10 osobno | O1-067, branch codex/android-potwierdzenie-posilku |
 | O2 — Python, PostgreSQL, API | E9-O2/PR54 i zdjęcia/PR59 scalone; 35 zbadanych, 30 propozycji 8/8/10/4; własne CI PR/main odebrane | O1: klient i realny APK/API; O3: origin oraz Gemini dev; człowiek: referencje/zgody; O2: późniejsze testy E7-R/E9-R i naprawy | O2-033, [PR59](https://github.com/Roseru/aplikacja-mobilna/pull/59), [raport zdjęć](e7/RAPORT_PRZYGOTOWANIA_ZDJEC.md) |
 | O3 — DevOps, CI/CD, serwer | E9 lokalny0024 zachowany; własny AVD TLS200; przenośny ZIP APK/publicCA/config/skrypty opublikowany i pobrany z GitHuba ze zgodnym SHA256 | O1/O3: osiągalny LAN/VPN i dokładny adres O1 do uruchomienia relay; własny APK/PKCE/baseline O1; fizyczny telefon/Gemini nadal WAITING_EXTERNAL | O3-026/[PR65](https://github.com/Roseru/aplikacja-mobilna/pull/65), [pakiet](https://github.com/Roseru/aplikacja-mobilna/releases/tag/integration-handoff-20261014), [instrukcja](../infra/integration/ANDROID_HANDOFF.md) |
 
@@ -2089,3 +2089,41 @@ O2/O3. Obecny wpis przywraca także dosłowny historyczny wiersz O1-028,
 przypadkowo zastąpiony przy aktualizacji bieżącej tabeli w poprzednim commicie;
 aktualny status pozostaje wyłącznie w pierwszej tabeli. E0 po raporcie648linków
 PASS; po tej korekcie ponowny E0 i diff-check przed pushem.
+
+
+### O1-067 — trwała decyzja confirm i walidacja odpowiedzi przed zapisem E4
+
+- Data/autor:17.10.2026, agent1/O1. Do O2/O3, **DO ODCZYTU**.
+- Branch `codex/android-potwierdzenie-posilku`, kod `a7bb7dde374a606e9399a205d64e7fcce69781b2`,
+  rodzic dokładnie `0068232d80c0e33b0b33bf15e86cad2174774707` / PR121.
+  Nowy osobny draft PR kierujemy na `codex/android-poprawki-posilkow`;
+  kolejność61→64→73→96→105→121→nowe dziecko, bez scalenia do rodzica/main.
+- PhotoConfirmation zamraża cały corrected request, key/revision/editRevision,
+  identyfikatory i oczekiwane provenance. Snapshotv4 czyta ACK/v1/v2/v3,
+  blokuje konkurujące poprawki/cancel i zachowuje niepewność po GETconfirmed.
+  Sprawdzenie ACK nie pozwala zastąpić posiłku, UUID, ilości, nullable lub
+  oryginalnego profilu/modelu/niepewności. Context i captured lease chronią
+  DB-only CAS, także gdy po A→B→A utworzono nowy store. Backoff zachowany.
+- **281debug/296validationJVM, pełny build/testAPK i lint0error PASS**,
+  **23/23 Room API35 PASS** (18 dawnych+5 nowych), offline przed/po,
+  SHA instalacji zgodne, wszystkie234 wejścia źródłowe zgodne.16 nowych core.
+  Normatywne ConfirmRequest/ConfirmResponse fixture PASS; provenance wewnątrz
+  sync-v1 Meal odrzucone. Pierwszy build zatrzymał się na7 testowych when,
+  poprawiono jawne gałęzie Confirm; finalne dowody pochodzą z drugiego buildu.
+  Pełne250 native **NOT_RUN**, dawny245PASS należy wyłącznie do edytora6e1eac8.
+- **To fundament, nie działający przycisk confirm.** Nie podłączono HTTP/UI,
+  nie zapisano Meal/outbox i nie wysłano standardowego push. Przygotowany ACK
+  ma osobny typ bez samodzielnego commitu: następny krok wymaga jednej
+  transakcji kanonicznego E4, provenance i rejestru materializacji. Nie należy
+  podłączać tego do roboczego lokalnego outbox bez konwersji sync-v1.
+  Room10 i numer0.8.18 pozostają dla wewnętrznego builda; regularnego APK
+  edytora nie podmieniano, aplikacja użytkownika pozostaje otwarta.
+- Kandydat API z O1-066 sprawdzony ponownie lokalnie: oba oryginalne pliki są
+  obecne i mają pełne SHA zgodne z przekazaniem89164efd…/91b78899…,
+  źródłoe319e531/Room9. Nowy boot/baseline i aktualny peer nadal do sprawdzenia
+  przed19.10,08:00–08:10CEST. Nie uruchomiono starych relay lub zewnętrznych
+  żądań. Nie potrzeba ponownej dostawy kont A/B lub CA.
+- [Raport, hashe i dalsze kryteria](../android/POTWIERDZENIE_POSILKU.md).
+  Oczekiwane: O2/O3 odczyt zakresu i granicy etapu. O1 kontynuuje atomowy
+  zapis Meal/E4/provenance, potem SessionController/UI, recovery/retry i retencję.
+  Własne zdalne CI/merge i rzeczywiste E7-R/KO32 pozostają oddzielnymi odbiorami.
