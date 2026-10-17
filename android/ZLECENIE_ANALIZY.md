@@ -2,9 +2,31 @@
 
 Branch `codex/android-analiza-zdjec`, [PR105](https://github.com/Roseru/aplikacja-mobilna/pull/105), zależny od PR96/merge8d96aa7.
 Wejścia: [integracja O2](../docs/e7/INTEGRACJA_O1.md), [DTO](../backend/src/calorie_app/modules/ai/schemas.py) i [przykład create](../contracts/examples/e7/create-accepted.json).
-Gotowe są transport, trwała kolejka, zgoda/wysyłka i jawne ponowienie oraz pobieranie/polling wyniku z podglądem lokalnym. Korekta i zatwierdzenie posiłku pozostają do wykonania. Ten etap nie jest odbiorem pełnego E7.
+Gotowe są transport, trwała kolejka, zgoda/wysyłka i jawne ponowienie oraz pobieranie/polling wyniku z podglądem lokalnym. Dostępne jest również świadome anulowanie i zamknięcie anulowanego zlecenia. Korekta i zatwierdzenie posiłku pozostają do wykonania. Ten etap nie jest odbiorem pełnego E7.
 
-## Aktualny etap — trwała decyzja anulowania, 17.10.2026
+## Aktualny odbiór0.8.17 — świadome anulowanie analizy
+
+Kod `24526ddab2b4a442b57581f8b3508ffc79a82fd3`, wersja0.8.17/code28, validation1028, Room10. Po jawnym pobraniu stanu można wybrać „Anuluj analizę na serwerze”. Dialog wyjaśnia zachowanie zdjęcia i dziennika oraz to, że anulowanie nie cofa przetwarzania wykonanego już przez dostawcę. Dopiero potwierdzenie utrwala i wysyła jedną decyzję. Zmiana konta, zlecenia lub pokazanej rewizji oraz przejście w tło unieważniają otwarty dialog.
+
+SessionController zapisuje klucz i rewizję decyzji przed siecią. „Ponów anulowanie” zachowuje dokładnie tę samą operację, również po utracie odpowiedzi lub ponownym uruchomieniu. Nie ma automatycznego CANCEL przy wejściu na ekran, starcie lub odzyskaniu internetu. Jedna próba ma limit45s,401 pozwala na jedno odnowienie bez zmiany żądania;429/503 utrwala wspólny Retry-After. Konflikt rewizji wymaga nowszego GET i kolejnego świadomego potwierdzenia. Zmiana epoki/generacji/kontekstu wymaga recovery, a403/404/410 blokują niedostępne zlecenie.
+
+Każda wysyłka i zapis odpowiedzi wymagają zgodnej sesji, captured lease/operacji/kontekstu i dokładnego snapshotu. Zmiana konta A→B→A, wyjście w tło lub zmiana mapowania odrzuca spóźniony ACK i zachowuje trwałą decyzję do uzgodnienia. Parsowanie i IO obrazu pozostają poza mutexem/Room. Po zweryfikowanym ACK albo GET cancelled stary podgląd propozycji znika; starszy GET nie cofa anulowania ani nie uruchamia dalszego pollingu.
+
+„Zamknij anulowane zlecenie” jest osobnym lokalnym krokiem, dostępnym również z wygasłym tokenem. Wymaga zapisanego dowodu anulowania, zwalnia kolejkę w transakcji i dopiero potem usuwa jej przygotowaną kopię obrazu. Zdjęcie źródłowe i dziennik pozostają. Przerwanie sprzątania może pozostawić niepowiązany plik do późniejszej retencji. Samo anulowanie nie zapisuje Meal/ProductDraft/celu/outbox i nie anuluje już zatwierdzonego posiłku.
+
+**Pełne assemble debug/validation/testAPK,247 JVM debug/262 JVM validation, lint0error PASS. Nowe8/8 regresji sesji i Compose PASS, następnie pełne235/235 native API35 PASS**, bez pominięć, offline przed/po i ze zgodnością SHA zainstalowanych APK. Pełny przebieg trwał247.75s przy limicie1800s. Nowe scenariusze obejmują lost ACK/restart, dokładne ponowienie,401 tylko raz, wspólny429, held ACK po wyjściu/zmianie kontekstu/A→B→A,409 z nową rewizją i decyzją, błędny ACK/recovery oraz dialog i retry/release na320dp przy czcionce150%. Wcześniejszy223PASS i14Room pozostają oddzielnymi dowodami swoich commitów. Dowód225 wejść źródłowych sprawdzono przed odbiorem i po buildzie; bez zmian kodu podczas przebiegów.
+
+| Artefakt0.8.17, kod24526dd | SHA-256 |
+|---|---|
+| Debug/code28 | `94b6bc00309375dbc170baa123f686c0ad65261662e145679b1d56deaf4974bf` |
+| Validation/code1028 | `f2a1fda9e3b2eb58001eb943d359ae8a9d9bb437dcf505b06a4e821dca203b26` |
+| Domyślny testAPK | `170ae5529ace40ddb5eef7de05cba87acdf45d51225544c6c4ec79d8f48c81bf` |
+
+Regularny emulator zaktualizowano przez install-r i porównano z debug SHA; wszystkie24 tabele Room10 identyczne przed/po, FK clean. Prywatne snapshoty pozostają poza repozytorium/OneDrive. Nie zmieniono oddzielnego kandydata API/Room9, nie wykonano wipe/clear/uninstall ani restartu komputera. Aplikacja jest otwarta do testów manualnych: świeża hierarchia potwierdza właściwy pakiet, brak ANR i główne kontrolki. Pierwszy odczyt tuż po starcie zwrócił brak korzenia hierarchii; aplikacja działała jako resumed Activity. Ponowiono wyłącznie obserwację, zachowując pierwszy log, bez ponownej instalacji lub restartu.
+
+**Rzeczywiste APK/API, Gemini i E7-R: NOT_RUN.** Testy używają syntetycznych odpowiedzi, nie dowodzą anulowania na prawdziwym serwerze. Pełny zdalny CI105 i merge pozostają osobnymi krokami. Nadal potrzebne są korekty składników/porcji, confirm/provenance/kanoniczny E4 i retencja plików osieroconych. Ten odbiór nie zamyka całego E7.
+
+## Historyczny fundament — trwała decyzja anulowania, 17.10.2026
 
 Kod `22cccb22125eddef3cfcb6dd9caa2f01d8bbfe64` dodaje fundament anulowania: klucz i rewizja jednej decyzji pozostają niezmienne przy niepewnym ponowieniu. Snapshot `photo-analysis-state-v2` czyta również wcześniejsze ACK i v1, zachowuje dotychczasowy wynik oraz zapisuje próbę, potwierdzenie albo rozpoznane odrzucenie. Utrata odpowiedzi nie tworzy nowego klucza; nowa decyzja po konflikcie rewizji wymaga nowszego GET i osobnego klucza. Potwierdzenie jest walidowane na prywatnej kopii bajtów. Starszy odczyt nie cofa zweryfikowanego anulowania.
 
