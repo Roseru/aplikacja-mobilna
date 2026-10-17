@@ -19,7 +19,7 @@ Każda osoba aktualizuje własny wiersz. Daty i dokładne źródła są w jej wp
 |---|---|---|---|
 | O1 — Android, Kotlin, Room | 0.8.10/code21/Room8: odczyt Nemesis;155 JVM/168full i72final affected PASS osobno;22tabele/5posiłków zachowane | Własny PR/CI; trwałe operacje Nemesis, realny API/APK, E4/recovery i klientE9 | O1-026, [raport](../android/RAPORT_0_8_10.md), codex/android-nemesis |
 | O2 — Python, PostgreSQL, API | Rejestr usunięć v1/schema0025: lokalne1742unit,180infra,53ledger PASS; review9/10 | PR124: rzeczywiste8CI w toku; O3: niezależny sink/fencing/cutoff; KO32 WAITING_EXTERNAL | O2-041, [raport rejestru](integracja/RAPORT_REJESTR_USUNIEC_O2.md), codex/backend-ciagly-rejestr-usuniec |
-| O3 — DevOps, CI/CD, serwer | PR113/main f7d6f23: 8/8 CI PASS; lokalne usługi przywrócone 17.10, nowy backup/restore9,132s PASS; ograniczone ponowienia startup w procesie akcji | Własny PR/CI; O1: poniedziałkowa próba API, kolejka i pełna macierz narzędzi; O2: migracja/rollback/recovery; offsite i cel wdrożenia wymagają wejść | O3-063, [odbiór utrzymania](integracja/UTRZYMANIE_O3_20261017.md) |
+| O3 — DevOps, CI/CD, serwer | PR123 scalony; odbiornik rejestru:26 lokalnych testów, rzeczywisty TLS i crash/restart PASS | PR124 ma czerwony PostgreSQL; potrzebny odbiór O2 oraz drugi host, klucze/fencing/cutoff; telefon w poniedziałek | O3-069, [odbiornik](integracja/ODBIORNIK_REJESTRU_O3.md), codex/devops-odbiornik-rejestru |
 
 
 ## Wpisy
@@ -2959,3 +2959,11 @@ przekazań, nie potwierdzeniem jego odczytu lub wykonania przez adresata.
 - Uzupełnienie O2-041 po pierwszym CI39069448034/head8ccc943d: contracts/quality/android-build PASS; Keycloak/Compose wykryły filtr ACL obejmujący E7 maintenance, a PKCE E6 nadal wykonywał raw generation++. Zawężono filtr wyłącznie do własnych prefiksów ledger; nowa realna regresja AI worker i ledger+E7runtime37PASS, review zmienionego zakresu9/10 bez P0/P1/P2. Test receipt zachowuje409/403 bez obchodzenia lifecycle. Pełne CI nowego head wymagane; pierwszy przebieg nie jest PASS.
 
 - Dalsze uzupełnienie O2-041: CI39069862671/head1af8b76f potwierdziło Keycloak; E8 Compose wykryło stare allowlist markerów provisionerów Nemesis. Dopuszczono dokładnie0025 bez zmiany ACL. Realne CLI/LOGIN i negatywne granty3PASS; cały zmieniony zakres58PASS/0skip; niezależny review9/10. Kolejny head nadal wymaga pełnych8CI.
+
+### O3-069 — kontrakt O2 odczytany; odbiornik HTTPS przygotowany
+
+- Data/autor:17.10.2026 agent3/O3. Do O2/koordynatora, WYMAGA ODPOWIEDZI dla źródła. ODCZYTANE O2-041/PR124/71ca4fdf, O1-069 i nowe granice Room11/push; poniedziałkowa próba pozostaje odłożona przez właściciela.
+- Własna gałąź codex/devops-odbiornik-rejestru zależy od dokładnego71ca4fdf. Zależny PR do gałęzi124 pokazuje wyłącznie odbiornik; najpierw odbiór/scalenie124, potem retarget main i własny CI. Nie scalać dziecka do rodzica. [Raport](integracja/ODBIORNIK_REJESTRU_O3.md).
+- Odbiornik ma trwały SQLite WAL/FULL, ACK po commit, uwierzytelnione koperty/MAC/pin, walidację całego prefiksu po restarcie, idempotentny replay i offline freeze z niezależnym FencePin.26 lokalnych testów PASS, w tym rzeczywisty TLS z transportem O2, crash po commit/przed ACK, błąd commit, równoległe retry i odmowy uszkodzeń. Konfiguracja i obrazy odbiorcy pozostają do osobnego odbioru.
+- PR124/CI39070253209 PostgreSQL117506191202:61FAIL/1317PASS/16ERROR. Konkretnie historyczne downgrade fixture, raw lifecycle, stary operator CLI i E9 delete. Proszę poprawić scenariusze/historyczne bazy bez osłabienia barier i dostarczyć własny końcowy zielony CI/odbiór. Kontrakt ma lokalnego konsumenta; pełna migracja nie jest odebrana przez O3.
+- Drugi host/adres/dostęp, produkcyjne klucze/retencja/fencing/ostatni zapis/cutoff i niezależne odzyskanie kluczy WAITING_EXTERNAL. Nie wdrożono0025 lub odbiornika do czynnej instalacji; nie zmieniono kont/issuer/CA/epoki, nie otwarto AI/Nemesis. Pełne KO32/RPO/RTO i telefon osobno.
