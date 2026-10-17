@@ -1,10 +1,9 @@
 # Zgodność API, katalogu i synchronizacji — O2
 
-Stan17.10.2026: **FIX1 W TOKU** po trzech P2 koordynatora (8,5/10).
-Macierz/migracja i wcześniejszy runtime C zachowane; nowy oracle/rollback wymagają C2.
-[Zmiany, mutacje RED/GREEN i zakres eksperymentu](ODBIOR_RECOVERY_O2.md#fix1--odbiór-koordynatora-i-nowe-źródło-c2).
-[Dowody C/image/schema oraz 8/8 CI39026906997](ODBIOR_RECOVERY_O2.md#odebrany-zestaw-wykonawczy-c).
-Lokalnie PASS dwóch nowych regresji PG17 i73 affected unit; pełny CI1364PG PASS.
+Stan17.10.2026: **FIX1 PASS** po trzech poprawionych P2 koordynatora.
+[Nowy C2/image/schema, scratch rollback i8/8CI39031423976](ODBIOR_RECOVERY_O2.md#odebrany-zestaw-wykonawczy-c2).
+[Zmiany oraz mutacje RED/GREEN](ODBIOR_RECOVERY_O2.md#fix1--odbiór-koordynatora-i-nowe-źródło-c2).
+Lokalnie92unit/runner i36PG E4 PASS; pełny CI1364PG/167infra PASS.
 Nie jest to odbiór APK. Pełne KO32: **WAITING_EXTERNAL**, O1/O3.
 Dostawa odpowiada [masterowi](../MASTER_PROMPT_O2_ZGODNOSC_RECOVERY.md);
 aktualny wspólny stan pozostaje w [dzienniku](../KOMUNIKACJA_AGENTOW.md).
@@ -40,7 +39,8 @@ pozostaje osobnym zakresem O1; żadnego jej kodu nie przeniesiono do backendu.
 | Nieznane pola | Wejściowe DTO i wersjonowane JSON Schema odrzucają nieznane pola; klient nie wysyła nieznanego payloadu automatycznie | Serwer nie obiecuje tolerowania dowolnych rozszerzeń v1; E9 ma opt-in |
 | E9 legacy/opt-in | `test_e9_sync.py`: legacy pomija energy i przesuwa checkpoint, opt-in wymaga nowego snapshotu, mieszanie kontynuacji odmówione | Bez reinterpretacji dawnych goal payloadów; stare operacje pozostają historyczne |
 | Epoka i generacja | `test_e4_tokens.py`, `test_e4_client.py`, `test_e4_restore.py`: podpis/owner/install/protocol, epoch przed generation/age; bootstrap nie kasuje recovery | Stary checkpoint jest odrzucany także z nową epoką nagłówka/operacji |
-| Odtworzenie posiłku | [Runner i runbook recovery](ODBIOR_RECOVERY_O2.md) | Osobno od pełnego KO32 telefonu |
+| Odtworzenie posiłku | Nonnull mapping accepted/already_applied, jeden SQLtarget/mapping i dokładny HTTPpayload; [dowód C2](ODBIOR_RECOVERY_O2.md#odebrany-zestaw-wykonawczy-c2) | PASS serwera; mutacje null6FAIL/duplikat7FAIL, telefon osobno |
+| Scratch rollback0021 | Obraz exacta522471, backup21→upgrade24→restore21, readiness/API/dane/nowaepoka/sesje | PASS C2; produkcyjny zestaw O3 WAITING_EXTERNAL |
 | Rzeczywisty APK/API | [Istniejący oracle O2-034](ODBIOR_APK_API_O2.md), poprawny DTO→logout→release→odrzucenie przez guard | WAITING_EXTERNAL O1/O3, po uzgodnieniu nowego okna 19.10 lub później |
 
 30 dni oznacza gwarancję **przyrostowej synchronizacji**, nie retencję historii,

@@ -1,18 +1,19 @@
 # Odbiór migracji i recovery — O2
 
-Stan historycznej próby C z17.10.2026: **serwerowy KO17/32 PASS według dawnego oracle**: runner HTTPS/Keycloak/paired restore
-oraz pełne regresje E4/E7/E8/E9 zakończyły się sukcesem w CI39026906997.
-Migracja0021→0024 i regresja61dni PASS również na własnym PG17.11/SCRAM.
-**Pełne KO32 WAITING_EXTERNAL**: O1 telefon/Room/UI, O3 offsite, ciągły autorytatywny
-rejestr, issuer/repliki i rzeczywiste RPO/RTO. Nie wykonano Google ani zmian usług zespołu.
-Bieżący krok: FIX1 poniżej, nowy C2/obraz/próba i niezależny odbiór; bez merge.
+Stan17.10.2026: **FIX1 i serwerowy KO17/32 PASS** na nowym C2.
+Rzeczywisty scratch rollback0021→upgrade0024→paired restore0021 również **PASS**.
+**Pełne KO32 WAITING_EXTERNAL**: O1 telefon/Room/UI; O3 offsite, autorytatywny
+ciągły ledger, issuer/repliki i produkcyjne RPO/RTO/rollback wdrożenia.
+Google I/O0; AI/Nemesis zamknięte; usługi zespołu nietknięte.
+Bieżący krok: D2 dokumentacji, jego wymagane CI i ponowny odbiór koordynatora; bez merge.
 
 ## FIX1 — odbiór koordynatora i nowe źródło C2
 
 Marker `O2_RECOVERY_PR116_FIX1_2866c69d`. Koordynator ocenił wcześniejszy
 head2866c69d na8,5/10: **trzy P2, wymaga poprawek**. Historyczne8/8 i pliki C
 pozostają prawdziwe; słabsze asercje nie wystarczały do odebrania całego zakresu.
-Aktualny wynik C2: **W TOKU**, bez nowego runtime PASS przed wykonaniem CI.
+Aktualny wynik C2: **8/8 CI SUCCESS**, rzeczywisty recovery i scratch rollback PASS.
+Historyczna ocena9,4/10 została zastąpiona uwagami koordynatora; odbiór FIX1 jest osobny.
 
 1. Porównanie `null == null` przepuszczało dwie różne encje. Nowy oracle wymaga
    pełnego mappingu ze źródła wejściowego do pierwszego target, statusów
@@ -34,14 +35,60 @@ Aktualny wynik C2: **W TOKU**, bez nowego runtime PASS przed wykonaniem CI.
    Brak biznesowych zapisów między kopią i restore jest jawnym ograniczeniem RPO;
    dwa świeże zapisy po restore służą odbiorowi scratch. Produkcja nadal O3.
 
-Affected GREEN:26pure runner i1nativePG61dni. Kontrolowane kopie RED:
+Affected GREEN:92unit/runner (w tym26oracle) oraz36PG E4 push/snapshots/restore.
+Test61dni przeszedł także osobno na własnym PG17. Kontrolowane kopie RED:
 wyłączony helper walidacji odpowiedzi6FAIL (w tym historyczny null/null);
+wyłączony oracle końcowego stanu7FAIL (duplikat, mapping, owner, treść/składniki/wartości);
 no-op prune z kłamliwymi counts4/3 FAIL na rzeczywistym DB4!=0. Kod roboczy
 pozostał poprawny. Pierwsza nowa próba hash pokazała brak końcowego newline
 w testowym oczekiwaniu; poprawiono oracle według canonical wire, nie produkt.
-Niezależny przegląd kodu FIX1:9,2/10, bez pewnych P1/P2; runtime pozostaje NOT_RUN.
+Niezależny odbiór kodu/runtime/pakietu FIX1: **9,4/10, bez otwartych P1/P2**.
+Sprawdzono ponownie CI, sześć SHA256/rozmiarów i oba configi obrazów/OCI revision;
+trzy P2 koordynatora zamknięte. Końcowy odczyt dokumentacji wskazuje PR.
+
+## Odebrany zestaw wykonawczy C2
+
+[CI39031423976](https://github.com/Roseru/aplikacja-mobilna/actions/runs/39031423976):
+**8/8 SUCCESS**, head `1abd43753031b974029213542563bcb490e51449`,
+base `a6e239558a4ab664e3f9d3b6635657876878b412`.
+Actual checkout **C2**: `672b72a3a1d0ad9b03ec7d2ed1297bbff701031e`; schema0024.
+Current image/OCI revision=C2: `sha256:3b803488e0cdfc99bd5398a00f5e0f9f92386b7a90a546300ba58e2aaa24b7e7`.
+Predecessor image: `sha256:bdea93cae9918a4a30c425d31e838a8649316903dbcc014ab87ee7a39b9c90cd`;
+OCI revision=`a522471140150271d853d66aa06f11d868699e49`, schema0021.
+Nie podmieniono etykiety bieżącego obrazu; zbudowano rzeczywisty historyczny context.
+
+1714unit/167infra(+1istniejącyLinuxskip)/1364PG/28PKCE/155JVM/169device PASS.
+Ruff/format, contracts, local-integration i ci-required SUCCESS. Local-integration
+wykonał nowy oracle nonnull mapping/status/payload/SQL oraz obie prawdziwe próby:
+recovery wait421,0s; rollback wait421,049s, stareJWT401/refresh400, świeżePKCE.
+Stary obraz na0024 dał readiness503; dopiero powrót spójnego zestawu0021
+przywrócił readiness/API. Zachowano oba posiłki i właścicieli, wykonano dwa świeże
+zapisy i ich replay po restore; AI/Nemesis zamknięte. Rehearsal globals/SCRAM,
+archiwa app/KC i katalog/config wykonane narzędziami historycznego źródła.
+
+Dostawa lokalna `.tools/o2-zgodnosc-recovery-delivery/39031423976`:
+cztery neutralne JSON, dwa obrazy i `delivery-manifest.json` z sześcioma hashami.
+Artefakty neutralny12101191829 i obrazy12100882806 pochodzą wyłącznie z tego run.
+Ich digesty: `sha256:5cd76ed7ce875f13b24a501c8c6729ae4e677354582a409f091939eafa461de8`
+oraz `sha256:8ce3df97203443f660baa7fb6e37e6083c01424ea48dc29783036283d55ea4bf`.
+
+| Plik | SHA256 |
+|---|---|
+| `recovery-o2.json` | `88797aadeea78826c7044c94fefe92664f988b0bd3afb83107afb6220900a251` |
+| `backend_acceptance.json` | `291f1bb010debf1af25d71511feac4b403dea78c11889ea708900234a696820d` |
+| `migration.json` | `df701b28155894e9434fb294ba3e42b4fe97d2de2d4821a2bdc574579ae5ca36` |
+| `rollback.json` | `445114a84d4c0dd0ec4050958758804ed5fe56725075a1faef966ea287631c0b` |
+| `backend-image.tar` | `561b23c533253eb7c9d5be1fdad5f74c6b9ee015403eb1a6d3a31104dd3bf519` |
+| `predecessor-image.tar` | `f9cfce96b1bb705227dc129b3d29c09521a3589f9376e7bbb2a73e51f795cd71` |
+
+Receipts C2 pozostają niezmienne po dokumentacyjnym D2; exact D2/head/base/CI
+podaje opis PR i callback. Deployment nie jest autoryzowany. Brakujące dowody
+O1/offsite/produkcyjnego rejestru nadal blokują komplet CANDIDATE_VALIDATED.
 
 ## Odebrany zestaw wykonawczy C
+
+**Historia sprzed FIX1**: dawne wyniki/receipts są zachowane; słabe asercje i brak
+scratch rollbacku wykryte przez koordynatora są poprawione wyłącznie w nowym C2.
 
 [CI39026906997](https://github.com/Roseru/aplikacja-mobilna/actions/runs/39026906997)
 ma **8/8 SUCCESS** dla head `243bdc0d45199da33c2e229e9516bbd40f8728a7`
@@ -77,21 +124,20 @@ Końcowy head D/CI jest raportowany w PR i callbacku; receipts C pozostają niez
 Istniejący [restore O3](../e8/ODTWORZENIE_SESJE_I_KLIENT_O3.md) dotyczył0021 i wagi;
 nowy [runner](../../infra/integration/recovery_o2.py) uzupełnia aktualny head i posiłek.
 
-Poprzednik: main E8 `a522471140150271d853d66aa06f11d868699e49`, schema0021;
-nie twierdzimy, że to istniejący wydany APK/API. Nie mamy odebranego immutable
-obrazu tego poprzednika. Strategia **restore**, `for_revision=0024_e9_history_graph`.
-`compatible_image/schema_compatible=true` nie są deklarowane. Obraz z aktualnego C
-jest budowany z prawdziwym OCI revision i zapisany jako immutable sha256 imageID.
-Dla produkcji O3 musi dostarczyć repo digest i właściwe kopie/sekrety docelowego zestawu.
-Nie stosujemy dowolnego Alembic downgrade jako rollbacku danych.
+Poprzednik: main E8 `a522471140150271d853d66aa06f11d868699e49`, schema0021.
+W C2 odebrano własny immutable obraz z tego źródła i syntetyczny spójny zestaw
+kopii. Strategia **restore**, `for_revision=0024_e9_history_graph`; rzeczywista
+próba wróciła z upgrade0024 do0021 i potwierdziła startup/readiness/API/dane.
+`compatible_image/schema_compatible=true` nie są deklarowane: ten obraz odmówił
+readiness na0024. Nie stosujemy Alembic downgrade ani retagowania nowego obrazu.
 
-**Rollback poprzednika0021: BLOCKED**, O3/O2: potrzebny konkretny odebrany obraz
-0021 oraz spójny zestaw kopii tego poprzednika do próby startup/readiness/API.
-Nowe pg_restore wykonuje0024→0024, więc daje PASS recovery obecnego schematu,
-a nie dowód cofnięcia migracji0021→0024. Receipt rollback ma `result=BLOCKED`
-i jawny zakres wykonanej próby; checker poprawnie odrzuci go jako brak pełnego
-odbioru rollbacku. O2 wznowi ten zakres po dostawie O3. Brak nie blokuje
-publikacji macierzy/migracji i odebranego recovery serwera.
+**Scratch rollback0021 PASS** w opisanym zakresie. Nie było biznesowych zapisów
+między kopią a restore; próba nie dowodzi utraty zerowej dla późniejszych zapisów
+ani produkcyjnego RPO. **Rollback wdrożenia WAITING_EXTERNAL O3/O2**: potrzebny
+konkretny odebrany obraz wdrożonego poprzednika oraz jego spójne kopie/konfiguracja,
+repo digest i docelowe dowody. Własny build a522471 nie dowodzi historycznego
+wydania APK/API ani odbioru instalacji zespołu. Historyczny receipt C miał BLOCKED;
+nowy receipt C2 ma PASS wyłącznie dla wskazanego scratch restore.
 
 Nowy `test_o2_populated_0021_to_current_graph_and_legacy_replay` wykonuje Alembic
 na niepustym0021: dwa konta/role DB API, profil/wersję celu/14dni historii, pomiary,
@@ -146,8 +192,9 @@ Kolejność i oracles:
    i nowym entity/operation UUID tworzy mapowanie source→target. Ponowienie z
    drugiego urządzenia trafia do tego samego target. AI/Nemesis pozostają zamknięte.
 
-Runner sprawdza zakres posiłku i sesji. Pełny **serwerowy** oracle składamy dopiero
-z tego wyniku oraz aktualnie wykonanych regresji E4/E7/E8/E9 na tym samym C:
+Runner sprawdza posiłek i sesje oraz wywołuje osobny własny rehearsal poprzednika.
+Pełny **serwerowy** oracle C2 składa się z tego wyniku i wykonanych regresji
+E4/E7/E8/E9 na tym samym C2:
 
 | Zakres | Istniejący wykonywalny dowód | Co musi przejść |
 |---|---|---|
@@ -193,14 +240,15 @@ Wymagany kontrakt magazynu i odbiór O3 pozostają WAITING_EXTERNAL.
 ## Receipts i odbiór O3
 
 Po sukcesie runner zapisuje neutralne `backend_acceptance.json`, `migration.json`
-i `rollback.json` z jednym pełnym **C**. Ten ostatni pozostaje BLOCKED dla
-cofnięcia migracji poprzednika, nawet gdy recovery0024 uzyska PASS. Testowany obraz jest osobnym CI artefaktem `o2-backend-image-<C>`;
+i `rollback.json` z jednym pełnym **C2**. Ten ostatni ma PASS wyłącznie dla
+wykonanego synthetic predecessor restore, z osobnym predecessor_commit/image/schema. Testowany obraz jest osobnym CI artefaktem `o2-backend-image-<C2>`;
 `docker image load -i backend-image.tar` pozwala O3 otrzymać ten sam imageID.
-Obraz nie zawiera runtime credentials. Wspólny obraz/schema są sprawdzane, rollback
-ma strategy=restore z jawnym brakującym odbiorem poprzednika. Nie tworzy brakujących android_acceptance/restore receiptów
+Drugi plik `predecessor-image.tar` ładuje historyczny obraz0021 o osobnym OCI revision.
+Obrazy nie zawierają runtime credentials. Wspólny obraz/schema są sprawdzane, rollback
+ma strategy=restore z odebranym scratch poprzednikiem i jawnym brakiem odbioru produkcji. Nie tworzy brakujących android_acceptance/restore receiptów
 ani kompletu CANDIDATE_VALIDATED. [Checker wydania](../../infra/integration/WYDANIE.md)
 pozostaje niezmieniony; release na przyszłym wspólnym M wymaga świeżych dowodów M.
-Późniejszy commit dokumentacji D nie przepisuje receiptów C.
+Późniejszy commit dokumentacji D2 nie przepisuje receiptów C2.
 
 Repo zawiera kod/formaty/raport, a prywatny lokalny katalog zawiera archiwa,
 credentials/identity/tokeny i raw logs. CI publikuje wyłącznie neutralne receipts;
