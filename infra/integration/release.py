@@ -6,6 +6,7 @@ import json
 import os
 import re
 import subprocess
+import tarfile
 import tempfile
 from datetime import UTC, datetime
 from pathlib import Path
@@ -160,7 +161,54 @@ def validate_android(root, spec, commit, inspector, production):
     return actual | {"sha256": file_digest(apk), "commit": commit}
 
 
-def validate_backend(spec, commit, inspector, production):
+def archive_config(root, spec, image):
+    """Bind a containerd manifest ID to the original Docker config digest receipt."""
+    source = spec["image_archive"]
+    if set(source) != {"path", "sha256", "config_digest"}:
+        raise InvalidCandidate("Incomplete image archive identity")
+    archive = artifact(root, source["path"])
+    if archive.stat().st_size > 2 * 1024**3 or file_digest(archive) != source["sha256"]:
+        raise InvalidCandidate("Image archive checksum mismatch")
+
+    with tarfile.open(archive, mode="r:") as stream:
+        names = [member.name for member in stream]
+        if len(names) > 4096 or len(names) != len(set(names)):
+            raise InvalidCandidate("Ambiguous image archive")
+
+        def metadata(name, digest=None):
+            member = stream.getmember(name)
+            if not member.isfile() or member.size > 1024**2:
+                raise InvalidCandidate("Invalid image metadata")
+            raw = stream.extractfile(member).read(1024**2 + 1)
+            if digest is not None and "sha256:" + hashlib.sha256(raw).hexdigest() != digest:
+                raise InvalidCandidate("Image metadata digest mismatch")
+            return json.loads(raw, object_pairs_hook=unique)
+
+        def blob(digest):
+            if not isinstance(digest, str) or not re.fullmatch(r"sha256:[0-9a-f]{64}", digest):
+                raise InvalidCandidate("Invalid image descriptor digest")
+            return metadata("blobs/sha256/" + digest.split(":")[1], digest)
+
+        index = metadata("index.json")
+        descriptors = index["manifests"]
+        if len(descriptors) != 1 or descriptors[0]["digest"] != spec["image"]:
+            raise InvalidCandidate("Imported runtime ID differs from archived manifest")
+        manifest = blob(descriptors[0]["digest"])
+        digest = manifest["config"]["digest"]
+        if digest != source["config_digest"]:
+            raise InvalidCandidate("Image config differs from receipt identity")
+        config = blob(digest)
+        if (
+            config["rootfs"]["diff_ids"] != image["RootFS"]["Layers"]
+            or config["config"].get("Labels") != image["Config"].get("Labels")
+            or config["os"] != image["Os"]
+            or config["architecture"] != image["Architecture"]
+        ):
+            raise InvalidCandidate("Imported runtime differs from archived config")
+    return digest
+
+
+def validate_backend(spec, commit, inspector, production, *, root=None):
     reference = spec["image"]
     image = inspector.image(reference)
     if (image["Config"].get("Labels") or {}).get("org.opencontainers.image.revision") != commit:
@@ -170,9 +218,15 @@ def validate_backend(spec, commit, inspector, production):
             raise InvalidCandidate("Production requires a published registry digest")
     elif reference not in image.get("RepoDigests", []):
         raise InvalidCandidate("Registry digest does not identify this local image")
+    config_digest = archive_config(root, spec, image) if "image_archive" in spec else None
     if inspector.schema(reference) != spec["schema_revision"]:
         raise InvalidCandidate("Backend schema differs from release specification")
-    return {"image": reference, "commit": commit, "schema_revision": spec["schema_revision"]}
+    return {
+        "image": reference,
+        "commit": commit,
+        "schema_revision": spec["schema_revision"],
+        "receipt_config_digest": config_digest,
+    }
 
 
 def validate_catalog(root, spec, reader, production):
@@ -219,7 +273,13 @@ def validate_evidence(root, entries, spec, production):
         ):
             raise InvalidCandidate("Android acceptance does not identify APK/Room/catalog reader")
         if name == "backend_acceptance" and (
-            receipt.get("image") != spec["backend"]["image"]
+            receipt.get("image")
+            not in {
+                spec["backend"]["image"],
+                spec["backend"]
+                .get("image_archive", {})
+                .get("config_digest", spec["backend"]["image"]),
+            }
             or receipt.get("schema_revision") != revision
         ):
             raise InvalidCandidate("Backend acceptance does not identify image/schema")
@@ -275,7 +335,9 @@ def validate(manifest, inspector):
         "android": lambda: validate_android(
             root, spec["android"], spec["commit"], inspector, production
         ),
-        "backend": lambda: validate_backend(spec["backend"], spec["commit"], inspector, production),
+        "backend": lambda: validate_backend(
+            spec["backend"], spec["commit"], inspector, production, root=root
+        ),
         "catalog": lambda: validate_catalog(
             root, spec["catalog"], spec["android"]["catalog_reader_version"], production
         ),
@@ -286,7 +348,14 @@ def validate(manifest, inspector):
             checks[name] = operation()
         except InvalidCandidate as error:
             failures.append({"component": name, "reason": str(error)})
-        except (OSError, ValueError, KeyError, TypeError, subprocess.SubprocessError):
+        except (
+            OSError,
+            ValueError,
+            KeyError,
+            TypeError,
+            tarfile.TarError,
+            subprocess.SubprocessError,
+        ):
             failures.append(
                 {"component": name, "reason": "Missing, invalid or inconsistent artifact"}
             )
