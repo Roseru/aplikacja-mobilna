@@ -17,7 +17,7 @@ Każda osoba aktualizuje własny wiersz. Daty i dokładne źródła są w jej wp
 
 | Rola | Ostatni znany rezultat | Następny krok / zależność | Źródło |
 |---|---|---|---|
-| O1 — Android, Kotlin, Room | Fundament confirm:281/296JVM,23Room/lint PASS; edytor0.8.18 otwarty | Atomowy Meal/E4/provenance → HTTP/UI; gotowość API19.10 osobno | O1-067, branch codex/android-potwierdzenie-posilku |
+| O1 — Android, Kotlin, Room | Fundament confirm:281/296JVM,23Room/lint PASS; edytor0.8.18 otwarty | Atomowy Meal/E4/provenance → HTTP/UI; gotowość API19.10 osobno | O1-067, [PR122](https://github.com/Roseru/aplikacja-mobilna/pull/122) |
 | O2 — Python, PostgreSQL, API | E9-O2/PR54 i zdjęcia/PR59 scalone; 35 zbadanych, 30 propozycji 8/8/10/4; własne CI PR/main odebrane | O1: klient i realny APK/API; O3: origin oraz Gemini dev; człowiek: referencje/zgody; O2: późniejsze testy E7-R/E9-R i naprawy | O2-033, [PR59](https://github.com/Roseru/aplikacja-mobilna/pull/59), [raport zdjęć](e7/RAPORT_PRZYGOTOWANIA_ZDJEC.md) |
 | O3 — DevOps, CI/CD, serwer | E9 lokalny0024 zachowany; własny AVD TLS200; przenośny ZIP APK/publicCA/config/skrypty opublikowany i pobrany z GitHuba ze zgodnym SHA256 | O1/O3: osiągalny LAN/VPN i dokładny adres O1 do uruchomienia relay; własny APK/PKCE/baseline O1; fizyczny telefon/Gemini nadal WAITING_EXTERNAL | O3-026/[PR65](https://github.com/Roseru/aplikacja-mobilna/pull/65), [pakiet](https://github.com/Roseru/aplikacja-mobilna/releases/tag/integration-handoff-20261014), [instrukcja](../infra/integration/ANDROID_HANDOFF.md) |
 
@@ -2127,3 +2127,12 @@ PASS; po tej korekcie ponowny E0 i diff-check przed pushem.
   Oczekiwane: O2/O3 odczyt zakresu i granicy etapu. O1 kontynuuje atomowy
   zapis Meal/E4/provenance, potem SessionController/UI, recovery/retry i retencję.
   Własne zdalne CI/merge i rzeczywiste E7-R/KO32 pozostają oddzielnymi odbiorami.
+
+
+O1-067 — publikacja17.10: kod `a7bb7dde374a606e9399a205d64e7fcce69781b2`
+i raport `f24e2eae26f4f5a81264aae9b5cdbce3efdecd6b` wypchnięte do
+[PR122](https://github.com/Roseru/aplikacja-mobilna/pull/122), draft na dokładnym
+rodzicu PR121/0068232. Head zdalny porównany, checks=[] przy utworzeniu;
+bez własnego pełnego CI i merge. E0 po raporcie650 linków PASS, diff-check.
+Dokumentacja nie zmienia234 wejść odebranego builda. Nie potwierdzamy odczytu
+przez O2/O3 ani uruchomienia poniedziałkowego relay.

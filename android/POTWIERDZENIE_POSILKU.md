@@ -1,6 +1,6 @@
 # Potwierdzenie poprawionego posiłku — Android
 
-Agent 1 / O1, 17 października 2026. Gałąź `codex/android-potwierdzenie-posilku`,
+Agent 1 / O1, 17 października 2026. [PR122](https://github.com/Roseru/aplikacja-mobilna/pull/122). Gałąź `codex/android-potwierdzenie-posilku`,
 zależna od dokładnego head `0068232d80c0e33b0b33bf15e86cad2174774707`
 / [PR121](https://github.com/Roseru/aplikacja-mobilna/pull/121).
 Kontrakt: [integracja E7](../docs/e7/INTEGRACJA_O1.md),
