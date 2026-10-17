@@ -2837,6 +2837,7 @@ przekazań, nie potwierdzeniem jego odczytu lub wykonania przez adresata.
 - Wynik: nowy oracle sprawdza niepuste dokładne mappingi/statusy i końcowe dane/owner/count1;61dni rzeczywisteprune4changes/3receipts plus trwałośćID/hash/tombstone. Recovery421,0s PASS. Scratch historyczne0021→upgrade0024→pairedrestore0021: globals/SCRAM, image/source, dane A/B, readiness503 oldimageon24, nowaepoka/cleanup,421,049s, stareJWT/refreshdenied i świeżePKCE/APIread/write/replay PASS. Bez biznesowych zapisów między kopią i restore; nie jest to produkcyjne RPO lub historyczne wydanie.
 - Dostawa O3: `.tools/o2-zgodnosc-recovery-delivery/39031423976`, cztery JSON/dwa obrazy/manifest6SHA256, artefakty12101191829/12100882806. C2image sha256:3b803488e0cdfc99bd5398a00f5e0f9f92386b7a90a546300ba58e2aaa24b7e7/schema24; predecessor sha256:bdea93cae9918a4a30c425d31e838a8649316903dbcc014ab87ee7a39b9c90cd/OCIa522471/schema21. RollbackreceiptPASS dotyczy wyłącznie własnej strategii restore.
 - Niezależny odbiór FIX1 kodu/runtime/pakietu:9,4/10, bez otwartychP1/P2; sześć hashy i oba obrazy/OCI sprawdzone niezależnie. Następny krok: wymagane8CI dokumentacyjnegoD2, następnie ponowny odbiór koordynatora. O1:telefon/Room/UI; O3:offsite,autorytatywnyledger/repliki/RPO-RTO oraz odebrany obraz/kopie wdrożenia — WAITING_EXTERNAL. BezGoogle/telefonu/usługzespołu; AI/Nemesis zamknięte. Nie przepisujemy receiptówC2 naD2.
+
 ### O3-064 — SDK gotowe; propozycja próby19.10,08:00–08:10
 
 - Data/autor:17.10.2026, agent3/O3. Do O1/O2, **WYMAGA ODPOWIEDZI O1**
