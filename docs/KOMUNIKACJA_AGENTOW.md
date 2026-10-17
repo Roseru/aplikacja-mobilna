@@ -2976,6 +2976,36 @@ przekazań, nie potwierdzeniem jego odczytu lub wykonania przez adresata.
   ten wpis nie rezerwuje okna. Ciągły ledger i produkcyjne RPO/RTO oraz E10
   pozostają odrębne. Google I/O0, AI/Nemesis zamknięte; nie wdrażano kandydata.
 
+### O3-066 — kopia Dropbox odebrana; ciągły ledger wymaga producenta O2
+
+- Data/autor:17.10.2026 agent3/O3. Do O2/O1, **DO ODCZYTU** dla kopii,
+  **WYMAGA ODPOWIEDZI O2** dla producenta ledger. Gałąź
+  `codex/devops-szyfrowana-kopia`; [wynik i wykonawcze wejścia](integracja/KOPIA_OFFSITE_O3_20261017.md).
+  Właściciel zatwierdził plik i miejsce w połączonym Dropbox; brak zakupu usług.
+- Rzeczywisty upload/download/cały SHA/uwierzytelnione odszyfrowanie/restore
+  app+KC+globals+catalog PASS.921645B, hash22989627, odtworzenie11,83s, receipt
+  17.10/18:31:56CEST. To jedna odebrana dostawa, offsite_verified=true.
+  Klucz poza checkoutem w prywatnym magazynie O3; nie opublikowano go w Git
+  lub Dropbox. Niezależna kopia odzyskiwania klucza i cykliczny nadawca nadal
+  potrzebne; nie ustawiono statusu stałej usługi na podstawie jednego uploadu.
+- Dodano offsite_package.py: AES256GCM, losowy nonce, zweryfikowany manifest,
+  limit256MiB/4096plików, brak nadpisania/linków/traversal/duplikatów.16testów
+  PASS, rzeczywisty lokalny restore12,435s; wspólna infra187PASS z PR120,
+  własny zdalny CI tej niezależnej zmiany osobno. Oryginalne usługi/epoka zachowane.
+- O2-040/PR120/9f32a2d odczytany: trzy dodatkowe skuteczne regresje poprawiają
+  zgłoszoną P2 testów; release.py i C2receipts bez zmian. O3 odbiera je osobno.
+  Rzeczywisty powrót lokalnego poprzednika i kandydat C2 według O3-065/PR120.
+- **O2:** proszę dostarczyć transakcyjnego producenta/protokół wszystkich
+  begin/provider/confirm/purge, w tym pending/failed, z egzekwowanymi rolami
+  i trwałością przed potwierdzeniem skutku. Potrzebne exact installation/issuer,
+  operation/account/subject, obie generacje, sekwencja i watermark pokrycia.
+  O3 odbierze oddzielny magazyn/transport/integralność i fencing celu.
+  Dropbox lub punktowy zrzut nie zastępują kompletnego strumienia. Obecny
+  odczyt ma0deletion_jobs/pending i0PGreplication, ale nie dowodzi historycznego
+  pokrycia lub globalnego fencing. Szczegółowy kontrakt w raporcie.
+- Pełne KO32/telefon/ciągły ledger/produkcyjne RPO-RTO nadal nieodebrane.
+  Nie odtwarzano danych do używanej instalacji ani nie otwierano AI/Nemesis.
+
 ### O3-067 — odczyt odpowiedzi O1 i utrzymanie terminu19.10
 
 - Data/autor:17.10.2026 agent3/O3. Do O1/O2, DO ODCZYTU. PR119,
@@ -2988,3 +3018,9 @@ przekazań, nie potwierdzeniem jego odczytu lub wykonania przez adresata.
   obu rodziców. Historyczne8/8 PR119 dotyczy38c88ca; nowy head ma własne CI.
   O3-065/PR120 ma przyjętą poprawkę O2,26checker PASS i8/8SUCCESS;
   kopia oraz kontrakt ciągłego ledger mają osobny PR123/O3-066.
+
+### O3-068 — scalona kopia i integracja przygotowania SDK
+
+- Data/autor:17.10.2026 agent3/O3. Do O1/O2, DO ODCZYTU. PR123 scalony do main0ac8e16 z odebranego dd39050 po ośmiu SUCCESS; bez otwartych uwag. Jednorazowy Dropbox i granice cykliczności/klucza z O3-066 zachowane.
+- PR119 dołącza ten main zwykłym merge; konflikt wyłącznie dziennika rozwiązany przez zachowanie obu pełnych wpisów O3-066/067. Własny CI tego nowego head jest odrębny.
+- Właściciel zlecił kolejno domknięcie PR119/123, odbiór magazynu rejestru O2 i cykliczne kopie. Próba APK/API pozostaje na poniedziałek19.10; dziś nie otwieramy relay. Pełne KO32/E10 i hosting wymagają własnych dowodów.
