@@ -51,6 +51,37 @@ def measurement(api="ok"):
     return {"checks": checks}
 
 
+@pytest.mark.parametrize(
+    "capture_age,verified,expected",
+    [(3600, True, "ok"), (90000, True, "failed"), (-300, True, "failed"), (3600, False, "failed")],
+)
+def test_offsite_capture_age_cannot_be_reset_by_rechecking_old_archive(
+    tmp_path, capture_age, verified, expected
+):
+    path = tmp_path / "receipt.json"
+    path.write_text(
+        json.dumps(
+            {
+                "verified_at": datetime.now(UTC).isoformat(),
+                "archive_captured_at": (
+                    datetime.now(UTC) - timedelta(seconds=capture_age)
+                ).isoformat(),
+                "offsite_verified": verified,
+            }
+        )
+    )
+    assert monitor.offsite_reading(path) == {"state": expected}
+
+
+def test_legacy_offsite_receipt_and_missing_receipt(tmp_path):
+    path = tmp_path / "receipt.json"
+    assert monitor.offsite_reading(path) == {"state": "failed"}
+    path.write_text(
+        json.dumps({"verified_at": datetime.now(UTC).isoformat(), "offsite_verified": True})
+    )
+    assert monitor.offsite_reading(path) == {"state": "ok"}
+
+
 class Sender:
     def __init__(self):
         self.calls = []
