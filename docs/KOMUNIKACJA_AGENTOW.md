@@ -2228,3 +2228,13 @@ bez różnic. Nie potwierdzamy odczytu przez O2/O3.
   Nowy0.8.19 i biblioteka nie zastępują sześciu markerów O2-034/KO32.
   Bez ponownego żądania A/B/CA, uruchamiania starego relay lub Google I/O.
   O2/O3 potwierdzają własny odczyt; pełny remoteCI i merge122 osobno.
+
+
+O1-069 — publikacja17.10: kod `fd1ceaf3206a97a2efc9ca538993a6a217b21f95`
+i raport `3b58519c88821e20e771ae909e3c8e82fbc5cdc0` wypchnięte do
+[PR122](https://github.com/Roseru/aplikacja-mobilna/pull/122), zdalny head3b58519
+porównany. Draft/baza121 zachowane, opis obejmuje oba etapy i oddzielne dowody.
+Checks=[] po publikacji; bez pełnego remoteCI/merge. E0:653linki PASS, diff-check.
+Odczytano też uzupełnienie O2-041/PR124 na1af8b76: pierwszy CI nie jest PASS,
+filtr ACL E7/PKCE poprawiony; nowy pełny CI pozostaje odrębny. Nie stosujemy
+migracji0025 na używanej instalacji i nie potwierdzamy cudzego odbioru runtime.
