@@ -19,7 +19,7 @@ Każda osoba aktualizuje własny wiersz. Daty i dokładne źródła są w jej wp
 |---|---|---|---|
 | O1 — Android, Kotlin, Room | 0.8.10/code21/Room8: odczyt Nemesis;155 JVM/168full i72final affected PASS osobno;22tabele/5posiłków zachowane | Własny PR/CI; trwałe operacje Nemesis, realny API/APK, E4/recovery i klientE9 | O1-026, [raport](../android/RAPORT_0_8_10.md), codex/android-nemesis |
 | O2 — Python, PostgreSQL, API | PR116 scalony i odebrany; PR120: O2 dopisał regresje SHA blobów i duplikatu TAR | PR120: niezależny odbiór poprawki i CI nowego head; O1/O3: wspólny APK/API i pełne KO32 | O2-040, [PR120](https://github.com/Roseru/aplikacja-mobilna/pull/120), O2-039 |
-| O3 — DevOps, CI/CD, serwer | PR113/main f7d6f23: 8/8 CI PASS; lokalne usługi przywrócone 17.10, nowy backup/restore9,132s PASS; ograniczone ponowienia startup w procesie akcji | Własny PR/CI; O1: poniedziałkowa próba API, kolejka i pełna macierz narzędzi; O2: migracja/rollback/recovery; offsite i cel wdrożenia wymagają wejść | O3-063, [odbiór utrzymania](integracja/UTRZYMANIE_O3_20261017.md) |
+| O3 — DevOps, CI/CD, serwer | PR123 scalony; odbiornik w PR125/26testów i Linux PASS; przygotowanie cyklicznej kopii216infra PASS | Transport Dropbox wymaga potwierdzenia zakresu, klucz osobnego nośnika; PR124 czerwony; telefon w poniedziałek | O3-069/070, [cykliczne kopie](integracja/CYKLICZNE_KOPIE_O3.md) |
 
 
 ## Wpisy
@@ -2975,3 +2975,10 @@ przekazań, nie potwierdzeniem jego odczytu lub wykonania przez adresata.
   pokrycia lub globalnego fencing. Szczegółowy kontrakt w raporcie.
 - Pełne KO32/telefon/ciągły ledger/produkcyjne RPO-RTO nadal nieodebrane.
   Nie odtwarzano danych do używanej instalacji ani nie otwierano AI/Nemesis.
+
+### O3-070 — przygotowanie cyklicznych kopii i sprawdzenie klucza
+
+- Data/autor:17.10.2026 agent3/O3. Do O1/O2, DO ODCZYTU. Branch codex/devops-cykliczne-kopie, baza main0ac8e16 po PR123. O3-066/kontrakt O2-041 odczytane; źródło O2 z czerwonym PG i odbiornik HTTPS są opisane w osobnym PR125/O3-069.
+- Dostarczono idempotentne przygotowanie szyfrogramu najnowszej własnej odebranej kopii, kontrolę capture24h, odrębny download+SHA+odszyfrowanie+restore przed receipt oraz zestaw klucza do przeniesienia na USB.216infra PASS, Ruff/format/E0 i składnia PowerShell PASS. Nowy lokalny szyfrogram+klucz zestawu rzeczywiście restore12,151s PASS, bez nowego offsite PASS. [Raport](integracja/CYKLICZNE_KOPIE_O3.md).
+- Lokalny instalator pythonw przygotowuje pliki03:20/15:20 z niezmiennego commita; rzeczywiste zadanie wymaga osobnego odbioru po commicie. Stały transport Dropbox03:30/15:30 czeka na potwierdzenie dokładnej paczki i schematu nazw, a niezależny klucz na drugi nośnik. Nie zmieniono używanej konfiguracji monitora na podstawie samego przygotowania.
+- Checker rzeczywistego C2 ponownie BLOCKED brakującym android_acceptance; APK/API/catalog zgodne. Pełne KO32 wymaga telefonu, niezależnego ledger/fencing/cutoff i odbioru źródła O2; hosting/SMTP/RPO-RTO nadal potrzebują celu. Próba Android–API pozostaje na poniedziałek, bez relay dziś.
