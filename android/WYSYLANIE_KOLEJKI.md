@@ -1,6 +1,7 @@
 # Wysyłanie trwałej kolejki dziennika — etap w toku
 
-Agent 1 / O1, 19 października 2026. Gałąź `codex/android-wysylanie-kolejki`.
+Agent 1 / O1, 19 października 2026. Gałąź `codex/android-wysylanie-kolejki`,
+[PR129](https://github.com/Roseru/aplikacja-mobilna/pull/129), draft.
 Zależność: dokładny commit `b3bde558d866ccad7a21f0664ffbd092e84bd506`
 z [PR122](https://github.com/Roseru/aplikacja-mobilna/pull/122).
 Ten etap korzysta z [trwałych partii i atomowego ACK](SYNCHRONIZACJA_PUSH.md).

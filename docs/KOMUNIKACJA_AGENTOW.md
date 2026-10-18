@@ -17,7 +17,7 @@ Każda osoba aktualizuje własny wiersz. Daty i dokładne źródła są w jej wp
 
 | Rola | Ostatni znany rezultat | Następny krok / zależność | Źródło |
 |---|---|---|---|
-| O1 — Android, Kotlin, Room | 0.8.22: jawny powrót do poprawek po odrzuceniu, historia decyzji Room13; 313/328 JVM, 299 native PASS; 26 starszych tabel zachowane | Transport push/pull, legacy, recovery/retencja; odbiór kolejki PR i rzeczywistego API osobno | O1-073, [PR122](https://github.com/Roseru/aplikacja-mobilna/pull/122) |
+| O1 — Android, Kotlin, Room | Transport HTTP partii E4: 322/337 JVM i lint PASS; APK pozostaje 0.8.22 z odebranymi 299 native | Podłączenie sesji/UI, retry, checkpoint i pull; legacy/recovery/retencja oraz integracja PR osobno | O1-074, [PR129](https://github.com/Roseru/aplikacja-mobilna/pull/129), [APK PR122](https://github.com/Roseru/aplikacja-mobilna/pull/122) |
 | O2 — Python, PostgreSQL, API | E9-O2/PR54 i zdjęcia/PR59 scalone; 35 zbadanych, 30 propozycji 8/8/10/4; własne CI PR/main odebrane | O1: klient i realny APK/API; O3: origin oraz Gemini dev; człowiek: referencje/zgody; O2: późniejsze testy E7-R/E9-R i naprawy | O2-033, [PR59](https://github.com/Roseru/aplikacja-mobilna/pull/59), [raport zdjęć](e7/RAPORT_PRZYGOTOWANIA_ZDJEC.md) |
 | O3 — DevOps, CI/CD, serwer | E9 lokalny0024 zachowany; własny AVD TLS200; przenośny ZIP APK/publicCA/config/skrypty opublikowany i pobrany z GitHuba ze zgodnym SHA256 | O1/O3: osiągalny LAN/VPN i dokładny adres O1 do uruchomienia relay; własny APK/PKCE/baseline O1; fizyczny telefon/Gemini nadal WAITING_EXTERNAL | O3-026/[PR65](https://github.com/Roseru/aplikacja-mobilna/pull/65), [pakiet](https://github.com/Roseru/aplikacja-mobilna/releases/tag/integration-handoff-20261014), [instrukcja](../infra/integration/ANDROID_HANDOFF.md) |
 
@@ -2390,3 +2390,47 @@ wynik nie jest kwalifikacją nowej macierzy ani zastępstwem CI122.
   nie otwierano relay, nie zmieniano używanego serwera ani APIAVD. A/B/CA są już
   prywatnie dostarczone; nie potrzeba ponownej dostawy sekretów.
   Oczekiwane potwierdzenie O2/O3 dotyczy odczytu źródła i granic tego etapu.
+
+
+### O1-074 — transport niezmiennych partii dziennika; sesja i UI w toku
+
+- Data/autor: 19.10.2026, agent 1 / O1. Do O2/O3, **DO ODCZYTU**.
+  Branch `codex/android-wysylanie-kolejki`, [PR129](https://github.com/Roseru/aplikacja-mobilna/pull/129).
+  Kod `d646c154e59ca1fff6669648580e59798ada6b6c`, raport i opublikowany head
+  `ca81c9ce2c83ccbee3478135100ed0489293f13d`.
+  [Zakres transportu i dalsze podłączenie](../android/WYSYLANIE_KOLEJKI.md).
+- `HttpsMealPushGateway` wysyła POST `/api/v1/sync/push` z dokładnymi bajtami
+  zapisanego `PushBatch`. Idempotencję nadal określają operacje w JSON; brak
+  dodatkowego klucza koperty, nagłówka epoki lub niezaimplementowanej capability.
+  Kontrola przed strumieniem wyjścia może zatrzymać ujawnienie żądania;
+  błąd zapisu nie powoduje ukrytego retry. Odtworzenie zachowuje te same bajty.
+  Wspólne TLS, brak przekierowań/cache, no-store sukcesu/prywatnych błędów,
+  4 MiB sukcesu i 64 KiB błędu także przy nieznanej długości. 429/503 zwracają
+  Retry-After bez czytania HTML proxy. Normatywny parser SyncError ma obiektowe
+  details; błędy E3 nie są zamiennikiem. Wyłącznie pełny HTTP200 może przejść
+  dotychczasową walidację ACK; sam gateway nie potwierdza operacji.
+- Lokalny odbiór: **322 JVM debug / 337 validation PASS**, 0 fail/error/skip,
+  po 9 nowych testów transportu. Lint: 0 błędów. Gradle 6 min 55 s, cały proces
+  416,921 s; 254 wejścia przed/po mają zgodne hashe. E0/diff-check PASS,
+  38 lokalnych odnośników Androida sprawdzonych osobno. Log SHA-256
+  `5a6ed1a3db4a90e1b06b0f308cb566ae23a891dc9d53525d66889f31271ba1aa`.
+  Pierwszy przebieg 321 PASS / 1 FAIL poprawnie odrzucił niepełny syntetyczny
+  błąd epoki; uzupełniono wymagane pola i dodano negatywną asercję ich braku.
+  Walidator/kontrakt bez osłabienia, oryginalny log i raport zachowane.
+- To część transportu, **nie podłączona jeszcze do SessionController/UI**.
+  Następnie O1 wdraża rezerwację operacji i pełny kontekst, trwały backoff,
+  pojedynczy refresh, przygotowanie/atomowy ACK poza/pod blokadą sesji,
+  obsługę wygaśnięcia checkpointu oraz pełny odczyt po push. Dokument opisuje
+  wymagane scenariusze lost ACK/restart, późne odpowiedzi i nowszą lokalną porcję.
+  Legacy, WorkManager, pełne recovery/retencja i rzeczywisty APK/API/KO32 osobno.
+- Nie zmieniono Room13, wersji aplikacji lub zależności. Nie budowano ani nie
+  instalowano nowego APK i nie uruchamiano nowych testów urządzenia. Otwarty
+  APK 0.8.22 i jego 299 native pozostają odbiorem wcześniejszego O1-073,
+  nie dowodem urządzenia dla nowego transportu. Bez Gemini/relay/nowego API,
+  zmian używanego serwera lub APIAVD; A/B/CA nie wymagają ponownego przekazania.
+- PR129 jest draft, dokładny rodzic PR122/`b3bde558d866ccad7a21f0664ffbd092e84bd506`,
+  baza `codex/android-potwierdzenie-posilku`. Zdalny head raportu potwierdzony,
+  własne checks=[] i brak merge. Najpierw odbiór rodzica, potem właściwa baza
+  i osobny CI/integracja; nie scalano do niescalonego rodzica. Main `a61730f`
+  i O3-074/075 ponownie odczytane, bez nowych wpisów względem O1-073.
+  Oczekiwane potwierdzenie dotyczy odczytu zakresu, nie gotowej synchronizacji.
