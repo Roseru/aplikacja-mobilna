@@ -186,16 +186,22 @@ def test_http_context_binding(state, change):
                     text("UPDATE app.installation_state SET sync_epoch=:epoch WHERE id=1"),
                     {"epoch": uuid4()},
                 )
+            elif change == "generation":
+                from calorie_app.modules.diary import read_tokens
+
+                claims = read_tokens.verify(
+                    first["next_page_token"],
+                    SECRET,
+                    owner_id=owners["a"],
+                    generation=1,
+                    epoch=UUID(first["sync_epoch"]),
+                )
+                first["next_page_token"] = read_tokens.sign(claims | {"generation": 2}, SECRET)
             else:
-                clause = (
-                    "generation=generation+1"
-                    if change == "generation"
-                    else "state='deleting',generation=generation+1"
-                )
-                connection.execute(
-                    text(f"UPDATE app.user_accounts SET {clause} WHERE id=:owner"),
-                    {"owner": owners["a"]},
-                )
+                from tests.support.deletion_regression import begin_deleting
+
+                with Session(bind=connection) as session:
+                    begin_deleting(session, owners["a"])
         response = follow(client, first)
         if change == "epoch":
             with engine.begin() as connection:
@@ -348,17 +354,10 @@ def test_existing_account_purge_cascades_private_copies(state):
     write(engine, owners["a"])
     get(client)
     operation = uuid4()
+    from tests.support.deletion_regression import purge
+
+    purge(engine, owners["a"], operation)
     with engine.begin() as connection:
-        connection.execute(
-            text("SELECT app.begin_account_deletion(:owner,:operation,1)"),
-            {"owner": owners["a"], "operation": operation},
-        )
-        connection.execute(
-            text("SELECT app.confirm_account_deletion(:operation)"), {"operation": operation}
-        )
-        connection.execute(
-            text("SELECT app.purge_deleted_account(:operation)"), {"operation": operation}
-        )
         assert (
             connection.scalar(
                 text("SELECT count(*) FROM app.read_sessions WHERE owner_id=:owner"),
@@ -469,8 +468,8 @@ def test_roles_never_grant_other_owner_diary(state, roles):
     assert response.headers["Cache-Control"] == "no-store"
 
 
-def test_upgrade_downgrade_retains_e4_domain_data(state):
-    engine, _, _, owners, client, migrate = state
+def test_upgrade_downgrade_retains_e4_domain_data(historical_state):
+    engine, _, _, owners, client, migrate = historical_state
     identifier = write(engine, owners["a"])
     write(engine, owners["a"])
     assert get(client).status_code == 200
@@ -567,3 +566,8 @@ def test_discard_acl_and_wrong_owner_paged_context_denied(state):
                         {"owner": owner, "session": identifier},
                     )
     assert follow(client, response.json()).status_code == 200
+
+
+@pytest.fixture
+def historical_state(historical_database):
+    yield from state.__wrapped__(historical_database)

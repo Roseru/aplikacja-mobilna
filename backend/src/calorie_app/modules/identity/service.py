@@ -57,13 +57,9 @@ def require_unblocked_subject(session, principal):
 
 
 def begin_deleting(session, account_id: UUID, expected_generation: int | None = None):
-    account = lock_account(session, account_id, expected_generation)
-    if account.generation == 2147483647:
-        raise DomainError(409, "revision_exhausted")
-    account.state = "deleting"
-    account.generation += 1
-    session.flush()
-    return account
+    # Lifecycle changes belong exclusively to the durable operator protocol.
+    # This legacy helper must fail even when called with privileged test code.
+    raise DomainError(403, "deletion_operator_required")
 
 
 def check_receipt_context(receipt, account, epoch):

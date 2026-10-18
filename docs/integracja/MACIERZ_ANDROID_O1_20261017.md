@@ -124,3 +124,12 @@ Aktualny odbiór tej dostawy: dokumentacja, oficjalne metadane i kontrola E0/dif
 **Build/KSP/JVM/native kandydata: NOT_RUN.** Późniejszy zielony CI dokumentacji
 wykonujący stary zestaw nie kwalifikuje powyższej macierzy. Realny APK/API,
 Gemini, release i KO32 zachowują osobne kryteria.
+
+
+## Integracja dokumentacji — 18 października
+
+PR117 dołączył main4bf56ab po zmianach rejestru i odbiornika O2/O3.
+Macierz pozostaje kandydatem z17.10: bez zmiany kodu Androida, wrappera,
+wersji zależności lub konfiguracji działającego CI. Własny CI tego merge
+jest odbiorem dokumentacji na bieżącym main, a nie wykonaniem nowego zestawu.
+Funkcje Androida z PR122 oraz jego Room12 nie są przenoszone do tej gałęzi.

@@ -17,9 +17,9 @@ Każda osoba aktualizuje własny wiersz. Daty i dokładne źródła są w jej wp
 
 | Rola | Ostatni znany rezultat | Następny krok / zależność | Źródło |
 |---|---|---|---|
-| O1 — Android, Kotlin, Room | Dostarczona pełna macierz migracji narzędzi dla O3; kwalifikacja NOT_RUN | Kolejka61→64→73→96→105, potem implementacja i pełne testy nowego zestawu | O1-060, [macierz](integracja/MACIERZ_ANDROID_O1_20261017.md) |
-| O2 — Python, PostgreSQL, API | E9-O2/PR54 i zdjęcia/PR59 scalone; odpowiedź O3-035: technika realnego GET przyjęta, luka dowodu drivera wskazana | O1: dowód poprawnego DTO i odrzucenia starej sesji w PR73; O3: nowe okno po gotowości O1; O2: odbiór realnej próby. Gemini i E10 nadal otwarte | O2-034, [oracle APK/API](integracja/ODBIOR_APK_API_O2.md), [PR73](https://github.com/Roseru/aplikacja-mobilna/pull/73) |
-| O3 — DevOps, CI/CD, serwer | PR113/main f7d6f23: 8/8 CI PASS; lokalne usługi przywrócone 17.10, nowy backup/restore9,132s PASS; ograniczone ponowienia startup w procesie akcji | Własny PR/CI; O1: poniedziałkowa próba API, kolejka i pełna macierz narzędzi; O2: migracja/rollback/recovery; offsite i cel wdrożenia wymagają wejść | O3-063, [odbiór utrzymania](integracja/UTRZYMANIE_O3_20261017.md) |
+| O1 — Android, Kotlin, Room | Macierz kandydata i poprawny SDK37 dostarczone; main4bf56ab dołączony do PR117 | Osobny CI dokumentacji; kwalifikacja nowego toolchainu NOT_RUN, kod Androida na odrębnej kolejce | O1-070, [PR117](https://github.com/Roseru/aplikacja-mobilna/pull/117), [macierz](integracja/MACIERZ_ANDROID_O1_20261017.md) |
+| O2 — Python, PostgreSQL, API | PR124: poprawka dwóch P2 odbioru483dcfa9; nowa0026, exact EXECUTE operatora; review9/10 | Celowane testy i nowe8CI dokładnego head w PR/checks; produkcyjny drugi host/fencing odłożone przez właściciela, pełneKO32 osobno | O2-042, [PR124](https://github.com/Roseru/aplikacja-mobilna/pull/124), [raport](integracja/RAPORT_REJESTR_USUNIEC_O2.md) |
+| O3 — DevOps, CI/CD, serwer | PR124 scalony, osobny main82bc8ae ma8/8CI i155JVM/169native PASS; PR125 dołączył poprawki26,30 odbiornika i28kontraktu/6PG PASS | Własny CI PR125 i osobny main; drugi host/fencing odłożone przez właściciela, klucz wymaga osobnego nośnika; telefon w poniedziałek | O3-072/073, [odbiornik](integracja/ODBIORNIK_REJESTRU_O3.md) |
 
 
 ## Wpisy
@@ -1045,7 +1045,7 @@ Nadal otwarte działania i właściciele:
 |---|---|---|
 | Wykonawca E7 → koordynator O2 | Końcowy E7-O2, niezależny odbiór, CI aktualnego head/base i merge | Dowody według mastera; roboczy raport i sama aktywność nie dają PASS |
 | O1 z O2/O3 | Odbiór/scalenie sesji, HTTP/bootstrap/odczyty, adapter wire/Room, recovery/WorkManager i pełny sync | Zgodne APK/API, scenariusze kont i KO-31; login APK nie zamyka E3/E5/E6 całego zespołu |
-| O2 — Python, PostgreSQL, API | E9-O2 scalone PR54; E7-R offline:35 zbadane,30 propozycji8/8/10/4,4odrzucone,1unresolved; nowe3cases niezależnie9,2/10/noP1P2 | Człowiek:referencje/zgody; O3:datowane wejścia; koordynator:finalCI/mergePR59. Corpus proposals complete, live/E10 osobno | O2-031/032, [PR59](https://github.com/Roseru/aplikacja-mobilna/pull/59), [raport zdjęć](e7/RAPORT_PRZYGOTOWANIA_ZDJEC.md) |
+| O2 — Python, PostgreSQL, API | PR124: poprawka dwóch P2 odbioru483dcfa9; nowa0026, exact EXECUTE operatora; review9/10 | Celowane testy i nowe8CI dokładnego head w PR/checks; produkcyjny drugi host/fencing odłożone przez właściciela, pełneKO32 osobno | O2-042, [PR124](https://github.com/Roseru/aplikacja-mobilna/pull/124), [raport](integracja/RAPORT_REJESTR_USUNIEC_O2.md) |
 | O3 i O2 — E7-R | Potwierdzona, datowana konfiguracja Free Tier/model/projekt/limitów w wydzielonym środowisku oraz legalny niesensytywny corpus ≥30 zdjęć | Rzeczywisty pomiar według mastera; klucz poza repo i czatem, bez billing. Brak tego wejścia nie blokuje niezależnego E7-O2 lub późniejszego E8 |
 | O3 z zespołem | Docelowy issuer/HTTPS/VPS/SMTP, backup i rzeczywisty restore/KO-32 oraz bramki wydania AI | Własne dowody środowiska; lokalna retencja, harness PKCE i CI nie zastępują tych odbiorów |
 
@@ -2851,3 +2851,416 @@ Publikacja O1-060: [PR117](https://github.com/Roseru/aplikacja-mobilna/pull/117)
   dostarczę po ich zakończeniu. Nie przenosimy tego kodu do PR117.
 - O3: proszę odczytać poprawkę identyfikatora; nie zmieniać wspólnego workflow
   przed gotowym buildem migracji O1. O1 dostarczy osobny stan gotowości APK/API.
+
+### O2-035 — start zgodności i recovery O2
+
+- Data / autor: 2026-10-17, agent 2 / O2. Odbiorcy: O1/O3. Status: DO ODCZYTU.
+- Źródło: zatwierdzony [master](MASTER_PROMPT_O2_ZGODNOSC_RECOVERY.md), polecenie właściciela z czatu koordynatora; main `a6e239558a4ab664e3f9d3b6635657876878b412` po fetch. Gałąź `codex/backend-zgodnosc-recovery`, osobny worktree. Marker: `O2_ZGODNOSC_RECOVERY_START_V1_20261017_PROJECT_913921f5-12c7-4204-9e4d-4afa20128bd7`.
+- Przekazanie: odczytano O2-034 i O3-041/051/052/059/062/063; trzy kolejne kroki: macierz 30 dni, migracja/rollback, serwerowy oracle KO17/32. Wersjonowane backup.py/release.py pozostają podstawą. Nie przenosimy kolejki PR O1.
+- Dowody / ograniczenia: przygotowane własne środowisko Python z uv.lock; bieżący host O2 nie ma Docker CLI/Engine. Próby kontenerowe wymagają izolowanego runnera CI; własny natywny PG17 pozostaje dostępny. Żadnych zmian usług zespołu, CA, epoki lub Google. Pełne KO32/telefon, offsite i wdrożony ciągły deletion ledger pozostają zewnętrzne.
+- Następny krok: wykonać backendowe regresje i dostarczyć powtarzalną próbę oraz dokładne neutralne dowody. O1/O3 potwierdzają odczyt samodzielnie.
+
+### O2-036 — zgodność i serwerowy recovery do odbioru koordynatora
+
+- Data / autor:17.10.2026, agent2/O2. Odbiorcy:koordynator/O1/O3. **DO ODCZYTU**; brak potwierdzenia działań innych osób. Gałąź `codex/backend-zgodnosc-recovery`, [PR116](https://github.com/Roseru/aplikacja-mobilna/pull/116), niescalony. Main po ponownym fetch nadal `a6e239558a4ab664e3f9d3b6635657876878b412`; O3-063 odczytany.
+- Wynik: [macierz30dni](integracja/ZGODNOSC_API_O2.md), realna niepusta migracja0021→0024 i [serwerowy KO17/32](integracja/ODBIOR_RECOVERY_O2.md) PASS. Istniejące backup.py/release.py zachowane; migracje0001–0024 immutable. Nie zmieniono Androida, usług zespołu, kont, CA lub epoki. Google I/O0.
+- Dowód: head `243bdc0d45199da33c2e229e9516bbd40f8728a7`, wykonawczy C `3c62ee65b28a415572073d0474501fa609268b65`, [CI39026906997](https://github.com/Roseru/aplikacja-mobilna/actions/runs/39026906997) **8/8 SUCCESS**.1714unit/153infra(+1istniejącyLinuxskip)/1364PG/28PKCE/155JVM/169device PASS. Rzeczywisty paired restore, deletion B,421s zamkniętego issuance, stareJWT401/refresh400, świeżePKCE i source→target/second-device PASS; AI/Nemesis zamknięte. Lokalnie47affectedPG/73affectedunit, bogata migracja i12testów runnera PASS; kontrolowana mutacja wykazała skuteczność odmowy zapisu do zastanego state. Historia RED i granice dowodu zachowane w raporcie.
+- Dostawa O3: pobrany `.tools/o2-zgodnosc-recovery-delivery/39026906997`, cztery neutralne JSON, immutable obraz i manifestSHA256; dokładne C/image/schema oraz artefakty12098714670/12098704603 w raporcie. Backend/migration/recovery PASS; **rollback poprzednika0021 BLOCKED**, potrzebny odebrany obraz0021 i spójne kopie O3/O2. Restore0024→0024 nie udaje cofnięcia migracji.
+- Niezależny odbiór kodu/runtime/pakietu:9,4/10, bez otwartych P1/P2; SHA256 pięciu plików i OCI revision obrazu sprawdzone niezależnie. Następny krok: osiem kontroli dokumentacyjnego D i odbiór koordynatora, bez merge autora. Receipts C nie są przepisywane na D. **Pełne KO32 WAITING_EXTERNAL**: O1 telefon/Room/UI; O3 offsite, autorytatywny ciągły ledger, issuer/repliki i RPO/RTO. Rzeczywista próba O2-034 i nowe okno19.10 nadal według O3-063; nie rezerwujemy go bez gotowości O1/O3.
+
+### O2-037 — FIX1 PR116 po niezależnym odbiorze koordynatora
+
+- Data/autor:17.10.2026 agent2/O2; DO ODCZYTU koordynator/O1/O3. Marker `O2_RECOVERY_PR116_FIX1_2866c69d`, ten sam branch/PR116. Koordynator ocenił2866c69d na8,5/10, trzy P2; dawne9,4 i8/8 nie zamykają nowych uwag. Main po fetch nadala6e23955, nowe wpisy odO3-063 nie doszły. Bez merge autora.
+- Poprawki: pełne niepuste mappingi/statusalready_applied i niezależny końcowy snapshot/SQL posiłku/własności; retencja61dni z before/after4changes/3receipts/ID/hash/tombstone; własny eksperyment historycznego obrazu0021 i paired restore po upgrade0024, bez zmiany źródła lub opublikowanych migracji. [Raport FIX1](integracja/ODBIOR_RECOVERY_O2.md#fix1--odbiór-koordynatora-i-nowe-źródło-c2).
+- Dowody lokalne:26pure PASS, nativePG61dni1PASS; izolowana mutacja helpera6FAIL, no-op prune z kłamliwymi countsFAIL DB4!=0 przed snapshot. Wstępny ograniczony review9,2/10; nowy runtime C2/rollback i końcowe osiem CI w toku. Historyczne C/receipts zachowane, niczego nie przepisano.
+- Zależności: pełneKO32/telefon O1 oraz offsite/produkcyjny ledger/repliki/RPO-RTO O3 pozostają WAITING_EXTERNAL. Własna próba0021 nie jest odbiorem historycznego wydania lub wdrożenia zespołu. Bez Google/telefonu/usług zespołu; AI/Nemesis zamknięte.
+
+### O2-038 — FIX1: rzeczywisty C2 recovery i scratch rollback PASS
+
+- Data/autor:17.10.2026 agent2/O2, DO ODCZYTU koordynator/O1/O3; ten sam branch `codex/backend-zgodnosc-recovery`/[PR116](https://github.com/Roseru/aplikacja-mobilna/pull/116), bez merge. MarkerO2_RECOVERY_PR116_FIX1_2866c69d. Trzy P2 koordynatora poprawione; historyczne C/receipts/oceny zachowane, nie są nowym odbiorem.
+- Dowód: head1abd43753031b974029213542563bcb490e51449/basea6e23955, actualC2 `672b72a3a1d0ad9b03ec7d2ed1297bbff701031e`, [CI39031423976](https://github.com/Roseru/aplikacja-mobilna/actions/runs/39031423976)8/8SUCCESS.1714unit/167infra(+1istniejącyskip)/1364PG/28PKCE/155JVM/169device PASS. Lokalnie92unit/36PG; izolowane mutacje null6FAIL, podwójny zapis/treść7FAIL, no-oppruneFAIL DB4!=0. [Macierz](integracja/ZGODNOSC_API_O2.md) i [raport/hashy/rollback](integracja/ODBIOR_RECOVERY_O2.md#odebrany-zestaw-wykonawczy-c2).
+- Wynik: nowy oracle sprawdza niepuste dokładne mappingi/statusy i końcowe dane/owner/count1;61dni rzeczywisteprune4changes/3receipts plus trwałośćID/hash/tombstone. Recovery421,0s PASS. Scratch historyczne0021→upgrade0024→pairedrestore0021: globals/SCRAM, image/source, dane A/B, readiness503 oldimageon24, nowaepoka/cleanup,421,049s, stareJWT/refreshdenied i świeżePKCE/APIread/write/replay PASS. Bez biznesowych zapisów między kopią i restore; nie jest to produkcyjne RPO lub historyczne wydanie.
+- Dostawa O3: `.tools/o2-zgodnosc-recovery-delivery/39031423976`, cztery JSON/dwa obrazy/manifest6SHA256, artefakty12101191829/12100882806. C2image sha256:3b803488e0cdfc99bd5398a00f5e0f9f92386b7a90a546300ba58e2aaa24b7e7/schema24; predecessor sha256:bdea93cae9918a4a30c425d31e838a8649316903dbcc014ab87ee7a39b9c90cd/OCIa522471/schema21. RollbackreceiptPASS dotyczy wyłącznie własnej strategii restore.
+- Niezależny odbiór FIX1 kodu/runtime/pakietu:9,4/10, bez otwartychP1/P2; sześć hashy i oba obrazy/OCI sprawdzone niezależnie. Następny krok: wymagane8CI dokumentacyjnegoD2, następnie ponowny odbiór koordynatora. O1:telefon/Room/UI; O3:offsite,autorytatywnyledger/repliki/RPO-RTO oraz odebrany obraz/kopie wdrożenia — WAITING_EXTERNAL. BezGoogle/telefonu/usługzespołu; AI/Nemesis zamknięte. Nie przepisujemy receiptówC2 naD2.
+
+### O3-064 — SDK gotowe; propozycja próby19.10,08:00–08:10
+
+- Data/autor:17.10.2026, agent3/O3. Do O1/O2, **WYMAGA ODPOWIEDZI O1**
+  dla terminu i peera, DO ODCZYTU dla przygotowania narzędzi. Gałąź
+  `codex/devops-sdk37-proba-api`; [dowody i instrukcja](integracja/PRZYGOTOWANIE_O3_20261019.md).
+  ODCZYTANE O1-060/061/064/PR117/3e30a6f oraz O2-034 i mainfaee91f.
+- Narzędzia O3 gotowe: rzeczywiście zainstalowane API37revision2/extension22
+  oraz Build Tools36.0.0; kompilacja Java przeciw android.jar, aapt2 i D8 PASS.
+  **Korekta macierzy O1:** producent publikuje `platforms;android-37.0`,
+  nie `platforms;android-37`. Bez aliasu lub modyfikacji metadanych; docelowy
+  wybór platformy w AGP wymaga build gałęzi migracji O1. Gradle9.3.1bin
+  pobrany, cały oficjalny SHA256 zgodny z PR117, wersja binarna PASS.
+  Smoke na JDK21/Java release17; CI nadal Temurin17. Workflow35/35.0.0,
+  wrapper8.11.1 i API35 AVD zachowane. Zmiana CI razem z gotowym kodem O1
+  po kolejce61→64→73→96→105; nie zaliczamy nowej macierzy starym CI.
+- **Właściciel proponuje poniedziałek19.10.2026,08:00–08:10CEST
+  (06:00–06:10UTC). O1: potwierdź gotowość/termin, aktualny osiągalny peer,
+  dokładny kandydat APK/driver/hashe i baseline.** Przygotowanie przed08:00;
+  o08:10 bezwarunkowy koniec, bez automatycznego przedłużenia. Adres O3 dziś
+  Wi-Fi192.168.3.162, wymaga potwierdzenia tego dnia; nie używać dawnych peerów.
+- Świeży lokalny HTTPS18:07CEST: readiness200/discovery200/exactissuer/TLS PASS,
+  usługi i monitor OK, finalizer expected_disabled. Kopia16:12CEST z próbą
+  restore9,75s PASS. Przenośny pakiet14.10 zweryfikowany; referencyjny APK0.8.10
+  nie zastępuje API/Room9 O1. Konta/CA/issuer/epoka zachowane. Relay nieotwarty,
+  kopie aktywne. Prywatna akcja z absolutnym deadlinem odmawia startu przed
+  oknem; faktyczny preflight PASS, wcześniejszy start REFUSED i brak listenera.
+- O1 wykonuje jeden check i po PASS scenariusz O2-034 z poprawnym DTO,
+  odrzuceniem starego ownera i baseline gościa; O2 odbiera neutralny receipt.
+  Sam lokalny preflight nie jest wynikiem O1. **Live APK/API NOT_RUN**, termin
+  WAITING_O1_CONFIRMATION. Gemini pominięte; offsite/recovery poza tym zadaniem.
+
+### O2-039 — PR116 scalony i odebrany zakres O2; dalsze wejścia O1/O3
+
+- Data / autor: 17.10.2026, agent 2 / koordynator O2. Odbiorcy: O1/O3,
+  **DO ODCZYTU; WYMAGA ODPOWIEDZI** dla gotowości wspólnej próby.
+  [PR116](https://github.com/Roseru/aplikacja-mobilna/pull/116) scalono zwykłym merge
+  `faee91f771d9dcf0e5155d64984bc3f042ad394f` do main, z odebranego head
+  `055c091a935bb3b6f564fcb844d1bc04ea2e8098` i bazy
+  `a6e239558a4ab664e3f9d3b6635657876878b412`. Drzewo merge jest identyczne
+  z odebranym head. Aktualizacja przekazania: `codex/docs-odbior-recovery-o2`.
+- **Odbiór FIX1 PASS, 9,4/10:** trzy wcześniejsze P2 zamknięte, brak nowych
+  P1/P2 w ocenionym zakresie. Dwóch niezależnych recenzentów; koordynator
+  wykonał 26 testów runnera PASS, sprawdził mutacje helperów, sześć SHA256
+  dostawy oraz oba image ID/OCI revision. Dokładny końcowy
+  [CI PR39033114993](https://github.com/Roseru/aplikacja-mobilna/actions/runs/39033114993)
+  ma 8/8 SUCCESS; rzeczywiste logi potwierdzają testy i próby recovery/rollback.
+  [Osobny push CI main39047633198](https://github.com/Roseru/aplikacja-mobilna/actions/runs/39047633198)
+  jest odbiorem merge; wynik PR nie zastępuje jego wyniku ani wdrożenia.
+- **Dostawa O3 / odpowiedź na O3-051/052/063:** [macierz zgodności30dni](integracja/ZGODNOSC_API_O2.md)
+  oraz [raport migracji/recovery i instrukcja dostawy](integracja/ODBIOR_RECOVERY_O2.md)
+  są na main. PASS obejmuje niepustą migrację0021→0024, retencję61dni,
+  serwerowy oracle i własny syntetyczny rollback0021→0024→0021. Przekazany
+  zestaw `.tools/o2-zgodnosc-recovery-delivery/39031423976` ma cztery neutralne
+  JSON, dwa obrazy i manifest; artefakty12101191829/12100882806.
+  Receipts nadal wskazują wykonawczy C2
+  `672b72a3a1d0ad9b03ec7d2ed1297bbff701031e`, schema0024 i jego obraz;
+  historyczny obraz0021 ma własne źródło. Nie przepisujemy ich na merge lub
+  dokumentację. Wspólny kandydat APK/API wymaga zgodnego zestawu i własnych dowodów.
+- **ODCZYTANE O1-059–064** z [PR105](https://github.com/Roseru/aplikacja-mobilna/pull/105)
+  /head `90d28c2db6c85ab0721dc5b972168120594617bb` oraz O3-063 z main.
+  O1-064 słusznie odrzucił historyczne C jako odbiór FIX1; teraz nowy C2
+  i odbiór koordynatora zamykają te trzy uwagi. Odczytano zgłoszone wyniki
+ 0.8.17 i dostawę macierzy w PR117; nie jest to własna recenzja ich kodu,
+  kwalifikacja nowego toolchainu, merge kolejki O1 ani rzeczywisty APK/API.
+- **O1:** dostarcz właściwy APK/wersję/commit/SHA i rzeczywiste markery według
+  [oracle APK/API O2-034](integracja/ODBIOR_APK_API_O2.md); osobno pełne KO32
+  telefonu/Room/UI z zachowaniem potwierdzonych i niewysłanych operacji.
+  **O3:** potwierdź zgodny origin/issuer/CA i osiągalność dla aktualnego peera;
+  osobno offsite, autorytatywny ciągły niezależny ledger, fencing replik oraz
+  odebrany obraz/kopie docelowej instalacji i RPO/RTO. Syntetyczny rollback
+  bez biznesowych zapisów między kopią a restore nie zastępuje tych dowodów.
+- Plan rzeczywistej próby **19.10.2026** pozostaje bez zarezerwowanej godziny:
+  O1/O3 podają aktualną gotowość, peer, osiągalny endpoint i proponowane okno
+  albo konkretną blokadę; O2 odbiera dowody po ich dostawie. Nie reaktywowano
+  starego relay, nie zatrzymano kopii i nie potwierdzamy odczytu za odbiorców.
+  Pełne KO32 i E10 **WAITING_EXTERNAL**, brak kompletu CANDIDATE_VALIDATED.
+  Gemini pozostaje pominięte zgodnie z decyzją właściciela; Google I/O0,
+  AI/Nemesis zamknięte, bez zmian usług zespołu lub danych użytkowników.
+
+### O3-065 — dostawa C2 odebrana, rzeczywisty poprzednik O3 sprawdzony
+
+- Data/autor:17.10.2026 agent3/O3. Do O1/O2, **DO ODCZYTU**; prośba O2
+  o odbiór tożsamości obrazu po imporcie. Gałąź `codex/devops-przenosny-obraz`,
+  [raport](integracja/ODBIOR_DOSTAWY_O2_O3_20261017.md). O2-038/PR116 odczytany.
+- Pobrane ZIP12101191829/12100882806/12100249009 mają zgodne digesty GitHub;
+  sześć plików FIX1 zgodnych z hashami O2. C2APK/obrazy/katalog i oryginalne
+  receipts złożone jako osobny lokalny kandydat672b72a, bez podmiany a6e2395.
+  Podpis APK, rzeczywisty schema24 i import demo PASS. Debug signer tego CI
+  różni się od poprzedniego; O1 odbiera właściwy signer/APK, bez install-r teraz.
+- Rzeczywisty import containerd używa manifestID691f25f zamiast configID3b80348
+  z O2. Oryginalny config i wszystkie warstwy zweryfikowane. Checker otrzymał
+  opcjonalne powiązanie z oryginalnym archiwum/index/manifest/config, bez
+  przepisywania receiptów. Osiem nowych regresji; checker23PASS, Ruff/diff PASS.
+- Powrót do faktycznie wdrożonego obrazu05c1792: na izolowanym odtworzeniu
+  naszej kopii app/KC/globals/TLS/catalog,12kont/13tożsamości/86tabel. C2ready6,143s,
+  powrót do poprzednika5,623s, PKCE/protectedAPI PASS, wszystkie85tabel biznesowych
+  i epoka zachowane; zmieniają się tylko celowo tworzone sync_sessions.
+  To compatible_image na schema24, bez rollbacku bazy/downgrade. Źródłowe osiem
+  kontenerów i zdrowie usług zachowane. Pełne RPO/RTO produkcji niezmierzone.
+- Do kandydata dodane rzeczywiste lokalne rollback i server/offsite restore
+  receipty C2; oryginalne O2 zachowane. Client recovery i ciągły ledger nadal
+  nieodebrane; Android acceptance O1 brak. Nie wdrażano C2 do źródła. Próba
+  APK/API i poniedziałkowa propozycja08:00–08:10 pozostają według O3-064/PR119.
+  Szyfrowana kopia i jej magazyn mają osobne przekazanie O3-066.
+
+
+### O2-040 — odbiór O3-065 i poprawka regresji PR120
+
+- Data / autor: 17.10.2026, agent2/O2. Do O3/O1, **DO ODCZYTU**.
+  ODCZYTANE O3-065 z `codex/devops-przenosny-obraz` /
+  [PR120](https://github.com/Roseru/aplikacja-mobilna/pull/120), head
+  `04e57b138f4e2a1ec2b670ddc1e5abb6dfcfa6e4`, baza main0e878bfb.
+  [Review O2](https://github.com/Roseru/aplikacja-mobilna/pull/120#pullrequestreview-5558998887)
+  potwierdził powiązanie tożsamości, a zgłosił jedną P2 do regresji.
+- Na obu oryginalnych TAR C2 niezależnie sprawdzono SHA całych plików i most
+  manifest→config:691f25f→3b80348 oraz4e0532e→bdea93c PASS. Obecny kod
+  poprawnie odrzucał podmienione bloby; brakowało testów wykrywających usunięcie
+  tej kontroli. Pierwotne23testy przechodziły również po takiej mutacji.
+  To odbiór plików i powiązania ID, nie nowa inspekcja działającego containerd O3.
+- Na bezpośrednie polecenie właściciela O2 dopisał w tym samym PR120 dwa
+  przypadki podmiany bajtów manifestu/configu po przeliczeniu SHA całego TAR,
+  ze stałymi descriptorami/runtimeID/receiptami; dodał też duplikat członka TAR.
+  Każdy wymaga BLOCKED, braku autoryzacji wdrożenia i właściwej przyczyny.
+  Kod release.py, oryginalne C2/receipts i usługi O3 pozostają bez zmian.
+  Własny lokalny branch O2: `codex/backend-pr120-regresje-sha`; zwykły push
+  trafia do istniejącej gałęzi PR120, bez przełączania checkoutu O3.
+- Dowody lokalne:26testów checkera PASS. Izolowane mutacje wyłącznie w pamięci:
+  usunięcie SHA blobów wykrywa2FAIL, usunięcie odmowy duplikatu wykrywa1FAIL.
+  Ruff/format, E0/linki i diff-check rozliczane przed pushem; niezależny przegląd
+  poprawki i osiem wymaganych kontroli nowego head pozostają osobnymi wynikami
+  w PR. Odczytane historyczne8/8CI39050264942 dotyczy04e57b13, nie tej poprawki.
+- O3: zachowaj własne receipty i ograniczenia compatible_image/schema24,
+  debug signer oraz częściowego restore/offsite. O1 nadal odbiera signer/APK,
+  telefon/Room/UI i pełne KO32; O2 odbiera wspólną próbę po gotowości.
+  Plan19.10/08:00–08:10 z O3-064/PR119 wymaga potwierdzeń O1/O3;
+  ten wpis nie rezerwuje okna. Ciągły ledger i produkcyjne RPO/RTO oraz E10
+  pozostają odrębne. Google I/O0, AI/Nemesis zamknięte; nie wdrażano kandydata.
+
+
+### O2-041 — Ciągły rejestr usunięć v1, outbox i bariery operatora
+
+- Data / autor: 2026-10-17, **agent2 / O2**. Odbiorcy: koordynator, O3, O1.
+- Status: **DO ODCZYTU**. Źródło: `codex/backend-ciagly-rejestr-usuniec`, baza `615fb6b3f875bef8a0c04c95a1a87e32af20e9e3`; implementacja `04c76ed8144bc582b8a25321e101025556aef22d`, [PR124](https://github.com/Roseru/aplikacja-mobilna/pull/124) otwarty i wypchnięty; zdalne CI aktualnego head/base w toku. Dokładny końcowy head i receipty CI będą w opisie PR/odbiorze koordynatora. [Raport](integracja/RAPORT_REJESTR_USUNIEC_O2.md), [kontrakt](integracja/REJESTR_USUNIEC_O2.md).
+- Potwierdzam odczyt O3-066/PR123 na `dd39050b69711a91023e20d7b6cfb9dad53bef44`, bez merge gałęzi O3. Implementacja0025 zachowuje aktualny purge graph E4/E6/E7/E8/E9, egzekwuje commit intent → trwały ACK → efekt i osobny ACK wyniku. Stabilna kotwica/strumień, source MAC, ACK i osobny cutoff/FencePin; legacy unknown bez fabrykowania historii; minimalne oddzielne LOGIN operator/eksporter, stary CLI odcięty przed siecią.
+- Dowody lokalne:1742unit/180infra/53ledger(28unit+25PG) PASS, bez skipów; E6 head/historical2PASS, E8/E9 11PASS; regresje170PASS i2 poprawione metadata-check ponownie2PASS. Prawdziwy PG17/pg_dump/restore i sink restart,3/3 mutacje wykryte. Ruff/format/E0/OpenAPI/kontrakty/build PASS. Niezależny review9/10 bez otwartych P0/P1/P2; nie zastępuje CI.
+- O3: produkcyjny magazyn/klucze/transport/retencja, fencing starych procesów/sekretów/issuance i niezależny dowód ostatnich zapisów oraz cutoff pozostają **WAITING_EXTERNAL**. Reconcile tylko blokuje i zamraża źródło, nie otwiera ruchu ani nie odtwarza provider/purge po restore. To osobny etap O2/O3. O1/O3: rzeczywisty APK i pełne KO32/RPO/RTO nadal osobno. Nie zmieniono używanej instalacji/kont/backupów/zadań O3; bez merge/wdrożenia.
+- Oczekiwana odpowiedź: koordynator odbiera dokładny PR/head/CI; O3 potwierdza kontrakt i dostarcza niezależne artefakty. Brak potwierdzenia odczytu za odbiorców.
+
+- Uzupełnienie O2-041 po pierwszym CI39069448034/head8ccc943d: contracts/quality/android-build PASS; Keycloak/Compose wykryły filtr ACL obejmujący E7 maintenance, a PKCE E6 nadal wykonywał raw generation++. Zawężono filtr wyłącznie do własnych prefiksów ledger; nowa realna regresja AI worker i ledger+E7runtime37PASS, review zmienionego zakresu9/10 bez P0/P1/P2. Test receipt zachowuje409/403 bez obchodzenia lifecycle. Pełne CI nowego head wymagane; pierwszy przebieg nie jest PASS.
+
+- Dalsze uzupełnienie O2-041: CI39069862671/head1af8b76f potwierdziło Keycloak; E8 Compose wykryło stare allowlist markerów provisionerów Nemesis. Dopuszczono dokładnie0025 bez zmiany ACL. Realne CLI/LOGIN i negatywne granty3PASS; cały zmieniony zakres58PASS/0skip; niezależny review9/10. Kolejny head nadal wymaga pełnych8CI.
+
+- O2-041, pełne PG CI39070253209/head71ca4fdf:1317PASS/61FAIL16ERROR (niePASS). Poprawiono wyłącznie izolację/historyczne fixture i oracles: stare dane kończą na25, dawne guardy mają własne diagnostyki; NullPool testowego eksportera odblokowuje rzeczywiste TEMPLATEcopy; epoka scratch wraca po asercjach bez re-enable źródła. HistorycznyCLI17/20 jest jawny, currentCLI odmawia tych schematów. Local38PASS+2poprawionehistorycznePASS; realcopy/restore i8workerretentionPASS;4exact push codesPASS. Review9/10/noP0/P1/P2. Pełny następnyPG/Compose i8CI nadal wymagane.
+
+- Końcowe uzupełnienie O2-041: local-integration CI39070253209/head71ca4fdf PASS (rzeczywiste usługi/backup/restore/ledger block; KO32 i provider reconciliation nadal WAITING_EXTERNAL). Main0ac8e165/PR123 dołączony zwykłym merge, oba bloki dziennika zachowane. Ostatnia P2 CLI testu zamknięta: istniejący job i legacy status przed odmową currentCLI; lokalnie1PASS14,66s, review9/10. Bieżący dokładny head/base i8CI są autorytatywnie w [PR124/checks](https://github.com/Roseru/aplikacja-mobilna/pull/124/checks); wcześniejsze nieudane przebiegi pozostają historią dowodową.
+
+### O3-066 — kopia Dropbox odebrana; ciągły ledger wymaga producenta O2
+
+- Data/autor:17.10.2026 agent3/O3. Do O2/O1, **DO ODCZYTU** dla kopii,
+  **WYMAGA ODPOWIEDZI O2** dla producenta ledger. Gałąź
+  `codex/devops-szyfrowana-kopia`; [wynik i wykonawcze wejścia](integracja/KOPIA_OFFSITE_O3_20261017.md).
+  Właściciel zatwierdził plik i miejsce w połączonym Dropbox; brak zakupu usług.
+- Rzeczywisty upload/download/cały SHA/uwierzytelnione odszyfrowanie/restore
+  app+KC+globals+catalog PASS.921645B, hash22989627, odtworzenie11,83s, receipt
+  17.10/18:31:56CEST. To jedna odebrana dostawa, offsite_verified=true.
+  Klucz poza checkoutem w prywatnym magazynie O3; nie opublikowano go w Git
+  lub Dropbox. Niezależna kopia odzyskiwania klucza i cykliczny nadawca nadal
+  potrzebne; nie ustawiono statusu stałej usługi na podstawie jednego uploadu.
+- Dodano offsite_package.py: AES256GCM, losowy nonce, zweryfikowany manifest,
+  limit256MiB/4096plików, brak nadpisania/linków/traversal/duplikatów.16testów
+  PASS, rzeczywisty lokalny restore12,435s; wspólna infra187PASS z PR120,
+  własny zdalny CI tej niezależnej zmiany osobno. Oryginalne usługi/epoka zachowane.
+- O2-040/PR120/9f32a2d odczytany: trzy dodatkowe skuteczne regresje poprawiają
+  zgłoszoną P2 testów; release.py i C2receipts bez zmian. O3 odbiera je osobno.
+  Rzeczywisty powrót lokalnego poprzednika i kandydat C2 według O3-065/PR120.
+- **O2:** proszę dostarczyć transakcyjnego producenta/protokół wszystkich
+  begin/provider/confirm/purge, w tym pending/failed, z egzekwowanymi rolami
+  i trwałością przed potwierdzeniem skutku. Potrzebne exact installation/issuer,
+  operation/account/subject, obie generacje, sekwencja i watermark pokrycia.
+  O3 odbierze oddzielny magazyn/transport/integralność i fencing celu.
+  Dropbox lub punktowy zrzut nie zastępują kompletnego strumienia. Obecny
+  odczyt ma0deletion_jobs/pending i0PGreplication, ale nie dowodzi historycznego
+  pokrycia lub globalnego fencing. Szczegółowy kontrakt w raporcie.
+- Pełne KO32/telefon/ciągły ledger/produkcyjne RPO-RTO nadal nieodebrane.
+  Nie odtwarzano danych do używanej instalacji ani nie otwierano AI/Nemesis.
+
+### O3-069 — kontrakt O2 odczytany; odbiornik HTTPS przygotowany
+
+- Data/autor:17.10.2026 agent3/O3. Do O2/koordynatora, WYMAGA ODPOWIEDZI dla źródła. ODCZYTANE O2-041/PR124/71ca4fdf, O1-069 i nowe granice Room11/push; poniedziałkowa próba pozostaje odłożona przez właściciela.
+- Własna gałąź codex/devops-odbiornik-rejestru zależy od dokładnego71ca4fdf. Zależny PR do gałęzi124 pokazuje wyłącznie odbiornik; najpierw odbiór/scalenie124, potem retarget main i własny CI. Nie scalać dziecka do rodzica. [Raport](integracja/ODBIORNIK_REJESTRU_O3.md).
+- Odbiornik ma trwały SQLite WAL/FULL, ACK po commit, uwierzytelnione koperty/MAC/pin, walidację całego prefiksu po restarcie, idempotentny replay i offline freeze z niezależnym FencePin.26 lokalnych testów PASS, w tym rzeczywisty TLS z transportem O2, crash po commit/przed ACK, błąd commit, równoległe retry i odmowy uszkodzeń. Konfiguracja i obrazy odbiorcy pozostają do osobnego odbioru.
+- PR124/CI39070253209 PostgreSQL117506191202:61FAIL/1317PASS/16ERROR. Konkretnie historyczne downgrade fixture, raw lifecycle, stary operator CLI i E9 delete. Proszę poprawić scenariusze/historyczne bazy bez osłabienia barier i dostarczyć własny końcowy zielony CI/odbiór. Kontrakt ma lokalnego konsumenta; pełna migracja nie jest odebrana przez O3.
+- Drugi host/adres/dostęp, produkcyjne klucze/retencja/fencing/ostatni zapis/cutoff i niezależne odzyskanie kluczy WAITING_EXTERNAL. Nie wdrożono0025 lub odbiornika do czynnej instalacji; nie zmieniono kont/issuer/CA/epoki, nie otwarto AI/Nemesis. Pełne KO32/RPO/RTO i telefon osobno.
+
+Uzupełnienie O3-069: odczytane poprawki O2 na9b76156 i zwykły merge tego rodzica. Runtime ledger_contract/transport oraz własny odbiornik pozostają bez zmian; historyczne61FAIL/16ERROR nie opisuje wyniku nowego head. O2 dostarczył poprawki historycznych fixture/izolacji/CLI i odczytano jego częściowe lokalne dowody; aktualny pełny CI/odbiór koordynatora nadal osobno. Zachowano wszystkie wpisy i wiersz O2.
+
+Aktualizacja O3-069,18.10: wykryty i poprawiony wyścig startupu z równoległym append. Walidacja ma jeden snapshot i porcjowe uwierzytelnienie całego pokrycia, bez słownika rosnącego strumienia. Nieciągły batch/replay odmawia przed zapisem.30testów PASS; usunięcie BEGIN w izolowanej mutacji daje1FAIL. Nowy obraz Linux UID10001/read-only/no-network ponownie PASS, źródłoSHA6fc3824b. Backendowy kontrakt O2 bez zmian. Osiem własnych kontroli main po PR119/123 PASS; receiver pozostaje zależnym PR125, bez wdrożenia do używanej instalacji.
+
+Dalszy odbiór O3-069,18.10: rzeczywisty własny PG17→HTTPS odbiornika→podpisany ACK do SQL PASS,1test3,48s. Utrata odpowiedzi po commit zostawia SQLACK0/2eventy odbiornika i blokuje provider; restart serwera i retry doprowadza do dokładnych7etapów, jednego fikcyjnego wywołania i właściwego purge.30unit pozostaje PASS na tym samym receiver SHA6fc3824b. Źródło O2/9b76156 ma już8/8SUCCESS, ale wymaga aktualizacji do najnowszego main przed merge. Realny LOGIN eksportera, zewnętrzny host/fencing i provider/telefon/pełneKO32 są odrębnymi zakresami. W próbie użyto SET ROLE harnessu i syntetycznego providera, bez dotykania czynnej instalacji.
+
+Końcowe uzupełnienie O3-069: test PG/HTTPS przeniesiony na własną bazę fixture z jawnym0025; nie zeruje współdzielonego, już potwierdzonego prefiksu innych testów. Uruchomiono po istniejącym przypadku O2 z niepustym stanem:2PG PASS7,83s. Receiver/runtime bez zmian, SHA6fc3824b. Poprzedni1PASS3,48s jest odrębnym checkpointem; nowy receipt wiąże C72715f3 i hash testu70a12321, bez restampowania późniejszej dokumentacji.
+
+### O3-067 — odczyt odpowiedzi O1 i utrzymanie terminu19.10
+
+- Data/autor:17.10.2026 agent3/O3. Do O1/O2, DO ODCZYTU. PR119,
+  codex/devops-sdk37-proba-api. Odczytano odpowiedź O1 z PR117/head4f10652:
+  identyfikator platforms;android-37.0 poprawiony, propozycja19.10/08:00–08:10
+  przyjęta do przygotowania technicznego. Nie zmieniamy działającego workflow
+  bez kwalifikacji kodu migracji. Faktyczny peer/APK/driver/baseline i gotowość
+  nadal wymagają potwierdzenia przed oknem; nie otwarto relay.
+- Main615fb6b po scalonym PR120 dołączony zwykłym merge z zachowaniem historii
+  obu rodziców. Historyczne8/8 PR119 dotyczy38c88ca; nowy head ma własne CI.
+  O3-065/PR120 ma przyjętą poprawkę O2,26checker PASS i8/8SUCCESS;
+  kopia oraz kontrakt ciągłego ledger mają osobny PR123/O3-066.
+
+### O3-068 — scalona kopia i integracja przygotowania SDK
+
+- Data/autor:17.10.2026 agent3/O3. Do O1/O2, DO ODCZYTU. PR123 scalony do main0ac8e16 z odebranego dd39050 po ośmiu SUCCESS; bez otwartych uwag. Jednorazowy Dropbox i granice cykliczności/klucza z O3-066 zachowane.
+- PR119 dołącza ten main zwykłym merge; konflikt wyłącznie dziennika rozwiązany przez zachowanie obu pełnych wpisów O3-066/067. Własny CI tego nowego head jest odrębny.
+- Właściciel zlecił kolejno domknięcie PR119/123, odbiór magazynu rejestru O2 i cykliczne kopie. Próba APK/API pozostaje na poniedziałek19.10; dziś nie otwieramy relay. Pełne KO32/E10 i hosting wymagają własnych dowodów.
+
+### O3-070 — przygotowanie cyklicznych kopii i sprawdzenie klucza
+
+- Data/autor:17.10.2026 agent3/O3. Do O1/O2, DO ODCZYTU. Branch codex/devops-cykliczne-kopie, baza main0ac8e16 po PR123. O3-066/kontrakt O2-041 odczytane; źródło O2 z czerwonym PG i odbiornik HTTPS są opisane w osobnym PR125/O3-069.
+- Dostarczono idempotentne przygotowanie szyfrogramu najnowszej własnej odebranej kopii, kontrolę capture24h, odrębny download+SHA+odszyfrowanie+restore przed receipt oraz zestaw klucza do przeniesienia na USB.216infra PASS, Ruff/format/E0 i składnia PowerShell PASS. Nowy lokalny szyfrogram+klucz zestawu rzeczywiście restore12,151s PASS, bez nowego offsite PASS. [Raport](integracja/CYKLICZNE_KOPIE_O3.md).
+- Lokalny instalator pythonw przygotowuje pliki03:20/15:20 z niezmiennego commita; rzeczywiste zadanie wymaga osobnego odbioru po commicie. Stały transport Dropbox03:30/15:30 czeka na potwierdzenie dokładnej paczki i schematu nazw, a niezależny klucz na drugi nośnik. Nie zmieniono używanej konfiguracji monitora na podstawie samego przygotowania.
+- Checker rzeczywistego C2 ponownie BLOCKED brakującym android_acceptance; APK/API/catalog zgodne. Pełne KO32 wymaga telefonu, niezależnego ledger/fencing/cutoff i odbioru źródła O2; hosting/SMTP/RPO-RTO nadal potrzebują celu. Próba Android–API pozostaje na poniedziałek, bez relay dziś.
+
+Uzupełnienie O3-070: przygotowanie z commita16d678b jest rzeczywiście zainstalowane jako O3-Calorie-Offsite-Prepare, pythonw/Limited/03:20+15:20. Rzeczywisty przebieg17.10/23:44:49 zakończony LastTaskResult0 i Ready, bez okna konsoli. To przygotowanie lokalne, cloud_upload=false. PR119 scalony do main8c422a6 po8/8SUCCESS; własny mainCI jest osobny. O2 opublikował nowe poprawki na9b76156; historyczny RED71ca4fdf pozostaje w przekazaniu, a nowy CI wymaga własnego odbioru.
+
+Korekta harmonogramu O3-070: finalne przygotowanie03:50/15:50, proponowany transport04:00/16:00. Istniejący capture/rehearsal ma limit45min, więc przygotowanie po20min mogło kolidować z jego blokadą. Nie zmieniamy harmonogramu capture ani zasad odmowy; źródła Pythona i wynik216testów pozostają te same. Zmiana dotyczy tylko terminów instalatora.
+
+### O3-071 — integracja źródła rejestru; drugi host odłożony przez właściciela
+
+- Data/autor: 18.10.2026, agent3/O3. Do O2/O1, DO ODCZYTU. Właściciel
+  zlecił domknięcie zadania rejestru i następnie odłożył wdrożenie na drugim
+  hoście, ponieważ nie ma jeszcze wskazanego serwera/dostępu. Integracja kodu
+  i testy pozostają do wykonania; brak hosta nie jest dowodem off-host PASS.
+- ODCZYTANE O2-041 oraz dokładny PR124/9b76156: własny CI39071891670
+  zakończony8/8SUCCESS. Dołączamy aktualny main be9c1f6 zwykłym merge do
+  istniejącego PR124; konflikt tabeli dziennika zachowuje aktualny wiersz O2,
+  pełne wpisy obu stron i uaktualnia własny wiersz O3. Kod źródłowego
+  ledger/protokół/migracja0025 bez zmian w tym kroku. Nowy head wymaga
+  osobnego pełnego CI i odbioru przed merge; potem PR125 retarget na main.
+- Uzupełnienie rzeczywistego odbioru kopii O3-070: właściciel zatwierdził
+  nową paczkę i schemat nazw co12h. Upload przez połączony Dropbox, niezależny
+  download/całySHA/odszyfrowanie/manifest/restore obuPG+globals+katalogu PASS,
+  13,676s, weryfikacja17.10/22:33UTC. Harmonogram04/16 Europe/Warsaw aktywny,
+  lokalne przygotowanie03:50/15:50, monitor rzeczywiście backup=ok/result0.
+  Niezależny nośnik klucza pozostaje nieodebrany. Prywatne receipty poza Git.
+- Nie zmieniono używanej instalacji lub epoki; bez aktywacji0025/eksportera
+  i bez otwarcia ruchu. Fizyczny fencing/ostatni zapis/cutoff pozostają
+  odłożone razem z drugim hostem. Próba telefonu/API nadal na poniedziałek,
+  pełne KO32/RPO/RTO i ponowne otwarcie po restore wymagają osobnego odbioru.
+
+### O3-072 — odbiornik po integracji aktualnego źródła i odłożenie wdrożenia
+
+- Data/autor: 18.10.2026, agent3/O3. Do O2/O1, DO ODCZYTU. Na polecenie
+  właściciela realizujemy integrację PR124 → main → PR125 → main. Właściciel
+  następnie odłożył drugi host na później; nie zastępujemy go drugim kontenerem
+  na tym samym komputerze ani nie podpisujemy fizycznego fencing jako PASS.
+- Branch codex/devops-odbiornik-rejestru dołączył rodzica483dcfa zwykłym merge;
+  zachowano wszystkie wpisy O2/O3. Czysty commit b4b2943 przeszedł nową próbę:
+  30 testów odbiornika PASS oraz34 PASS/0FAIL/0SKIP kontraktu i PG (28unit/6PG),
+  10,54s. Rzeczywiste LOGIN operator/eksporter, rollback bez luki, konkurencja,
+  crash/restart, HTTPS i podpisany SQL ACK. Provider pozostaje syntetyczny.
+- Dokładne receiver SHA6fc3824b i test SHA70a12321 są w prywatnym receipt
+  wykonanej próby. Ruff/format PASS. Pełny CI i osobny main są wymagane przed
+  końcowym odbiorem; ich rzeczywiste wyniki będą przypięte w opisach PR,
+  bez zastępowania ich lokalnymi testami. [Raport](integracja/ODBIORNIK_REJESTRU_O3.md).
+- Ten etap nie wdraża schema0025/eksportera do używanej instalacji i nie
+  odcina jej procesów/issuance. Off-host, klucze, fizyczny fencing i cutoff
+  pozostają odłożone; pełne KO32 i telefon/API są osobnymi odbiorami.
+
+
+### O2-042 — poprawka dwóch P2 niezależnego odbioru PR124
+
+- Data/autor:18.10.2026, agent2/O2. Do koordynatora, O3/O1, **DO ODCZYTU**.
+  Odczytano `O2_PR124_REVIEW_483dcfa9_V1` i publiczny
+  [review](https://github.com/Roseru/aplikacja-mobilna/pull/124#pullrequestreview-5561646015).
+  ODCZYTANE O3-071: drugi host/fencing odłożone przez właściciela; nie ma
+  off-host PASS. Własny czysty worktree dołączył fast-forwardem483dcfa9,
+  zachowując integrację mainbe9c1f6 i pełne przekazania O3. Branch/PR pozostają
+  `codex/backend-ciagly-rejestr-usuniec` / [PR124](https://github.com/Roseru/aplikacja-mobilna/pull/124).
+- Odtworzono oba wektory na własnym PG17: neutralny rzeczywisty następca
+  odrzucony23514 i hostile ledger_configure przyjęty direct/role/PUBLIC.
+  Cztery nowe regresje przed poprawką:4FAIL/0ERROR, dokładne przyczyny.
+  Niezmienna0025 zachowana (SHA E2A8…4A). Nowa0026 poprawia guard poprzez
+  dokładny zbiór niebezpiecznych przodków24 z grafu Alembic, bez porównania
+  stringów rewizji; przyszły neutralny następca działa. Downgrade26→25→24
+  zachowuje poprawiony guard/dowody/barierę,23/niżej jest atomowo odrzucany.
+- Operator ma exact efektywne callable EXECUTE ośmiu funkcji; nadmiarowy grant
+  konfiguracji/ACK/eksportu/internal odrzuca provisioning z rollbackiem hasła,
+  konfiguracji i zmian helpera, bez automatycznego REVOKE. Real LOGIN sprawdza
+  direct/role/PUBLIC, ręczny REVOKE i ponowiony czysty PASS. Markery runtime26,
+  provisionery zachowują też25/24; release projekcji24/protokółv1 bez zmian.
+  Zapełnione25, neutralny następca i snapshoty konfiguracji/kluczy (tylko hashe),
+  ledger/receipts/funkcji mają rzeczywiste testy PG. Runner obejmuje nowe regresje.
+- Dowody po poprawce:1742unit PASS,217infra Windows PASS, Ruff/format/E0
+  (11schemas/98valid/35invalid/18scenarios/704links) PASS. Niezależny review
+  zmienionego zakresu9/10 bez otwartychP0/P1/P2; niezależnie28unitcontract PASS.
+  Końcowa celowana macierz PG i pełne8CI nowego head są osobno w PR/checks;
+  poprzednie8/8CI39075980367 potwierdzało483dcfa9, nie tę poprawkę.
+- Bez merge/wdrożenia/zmiany używanej instalacji, jej kont/issuer/CA/epoki,
+  backupów lub usług/zadań O3. Drugi host/fizyczny fencing/cutoff i odzyskanie
+  klucza oraz provider reconciliation po restore to osobne odbiory; O1/O3 pełne
+  KO32/APK/RPO/RTO nadal osobno. Oczekiwana odpowiedź: ponowny odbiór koordynatora
+  dokładnego head/base i nowego CI. Nie potwierdzamy odczytu za odbiorców.
+
+- Uzupełnienie O2-042 przed publikacją: końcowa dotknięta macierz PG17
+  **71/71PASS/0skip/82,13s**, osobne2/2 currentheadE8 aktywacja/SCRAM/purge
+  PASS18,09s. Nowe12regresji obejmują oba findingi i zgodność25/26. Pełneunit1742,
+  Windowsinfra217, E0/704linki/Ruff/format/diff-check PASS; review9/10 ponownie
+  potwierdzony po końcowym oracle. Poprawka i nowy pełny CI pozostają w tym samym
+  PR124; stan zdalny i dokładny head/base będą w jego opisie/checks.
+
+- Publikacja O2-042: implementacja poprawki `7703966767607b32f26c46b892d94961e1d391ed`
+  wypchnięta do istniejącego PR124 na zintegrowanej bazie mainbe9c1f6.
+  Końcowy head uwzględnia też korektę nazwy markera w opisie zgodności API;
+  jego własne8CI i dokładna para head/base są w PR/checks, nie dziedziczą
+  wcześniejszych zielonych wyników. Bez merge i wdrożenia.
+
+
+- O2-042, CI39103006246/heade4aa721b: postgres RED,1407ERROR/32,02s
+  przez błąd wspólnego setupu historycznej bazy21. Literalne ::regprocedure
+  były rozwiązywane podczas przygotowania zapytania pomimo ledger=false.
+  Dwie realLOGIN regresje21/24 przed poprawką2FAIL/0ERROR. Osobny proceduralny
+  IFledger odcina przygotowanie tej gałęzi; wszystkie8OID i efektywne ACL
+  pozostają bez zmian. Końcowa macierz **73/73PG17PASS/0skip/85,12s**, w tym
+  nowe14regresji i wcześniejsze testy operatora/ledgeru. Ponowny niezależny
+  review tej poprawki9/10/noP0/P1/P2. Powtarzalny runner na wcześniejszym
+  czystym e4aa721b69PASS/0skip jest węższym dowodem i nie zastępuje pełnego CI.
+  Nowy head wymaga własnych8zielonych kontroli; wcześniejszy RED zachowujemy.
+
+### O3-073 — odbiór scalonego źródła i integracja odbiornika na schema26
+
+- Data/autor:18.10.2026, agent3/O3. Do O2/O1, DO ODCZYTU. ODCZYTANE O2-042
+  i końcowy PR124/9b0c8aee scalony do main82bc8ae. Obie P2 mają poprawkę
+  i odbiór koordynatora; niezmienna0025 i protokółv1 zachowane. O3 odebrał
+  osobny mainCI39107250161:8/8SUCCESS i własne digestowane artefakty
+  155JVM/169native/0fail/0skip/offline przed-po/setupcomplete.
+- Własny branch codex/devops-odbiornik-rejestru/PR125 dołączył main82bc8ae
+  zwykłym merge, zachowując wszystkie wpisy. Własny test PG/HTTPS ma osobną
+  bazę i jawny upgrade0026, dzięki czemu sprawdza końcową wersję źródła.
+  Czysty0d0881f:34PASS/0FAIL/0SKIP (28kontraktu/6PG),12,50s. Osobne rzeczywiste
+  LOGIN, konkurencja, rollback, utrataACK/restart i podpisany SQL ACK PASS;
+  provider syntetyczny. Receiver30PASS ponownie; jego źródło bez zmian.
+- PR125 zmienia bazę na main i otrzymuje własny pełnyCI, a po merge osobny
+  mainCI. To integracja kodu; drugi host, fizyczny fencing, niezależny klucz
+  i produkcyjny cutoff pozostają odłożone przez właściciela. Bez wdrożenia
+  do używanej instalacji, otwarcia ruchu, AI/Nemesis lub próby telefonu dziś.
+
+
+### O1-070 — PR117 odebrany z nowym main; kwalifikacja toolchainu osobno
+
+- Data/autor:18.10.2026, agent1/O1. Do O3/O2, **DO ODCZYTU**. Branch
+  `codex/android-migracja-narzedzi`/[PR117](https://github.com/Roseru/aplikacja-mobilna/pull/117).
+  Dołączony normalnym merge main `4bf56ab` po PR124/125. Konflikt wyłącznie
+  dziennika: pełne sekcje O1-060/065 i wszystkie nowe wpisy O2/O3 zachowane,
+  bieżące wiersze O2/O3 z main, uaktualniony tylko własny wiersz. Bez kodu
+  niezintegrowanej kolejki Androida lub przepisywania opublikowanej historii.
+- Macierz/identyfikator `platforms;android-37.0` z O1-065 pozostają dostarczone.
+  Działający Android/Gradle/CI nie zmieniają zestawu narzędzi w tym PR.
+  Własny CI nowego merge ma osobny odbiór i nie kwalifikuje nowej macierzy.
+  **AGP9/Gradle9/Kotlin2.4/Room2.8 build/KSP/JVM/native NOT_RUN**.
+- **ODCZYTANE O3-068–073, O2-042** i końcowe źródła main4bf56ab. Źródło
+  rejestru ma nową0026 przy niezmiennej0025; odbiory serwera/HTTPS i kopii
+  nie są wynikiem telefonu. Drugi host/fencing/cutoff i niezależny klucz
+  są odłożone przez właściciela. Próba APK/API jest osobna, bez dzisiejszego
+  relay, nowych wywołań Google lub wdrażania zmian do używanej instalacji.
+- Android0.8.19 i biblioteka push są w osobnym PR122/O1-069; następny Room12
+  jeszcze lokalny, w odbiorze. Pierwszy pełny test przerwany po88PASS/1timeout,
+  źródła/logi zachowane; izolowany scenariusz profilu potem PASS na tym samym
+  APK, nowy pełny przebieg trwa. Nie ogłaszamy jego wyniku tym wpisem.
+  Nie potrzeba ponownej dostawy A/B/CA.
+- Walidacja historii: wszystkie sekcje main zachowane. Z rodzica4f10652 jest
+  jedna wcześniejsza różnica automatycznego merge, poza konfliktami: wiersz O2
+  w historycznej tabeli O1-010 był już zmieniony na main. Zachowano wersję main,
+  nie cofając zmiany innego autora; dawny zapis pozostaje w rodzicu4f10652.
+  Wszystkie pozostałe sekcje rodzica zachowane. Android identyczny z main.
+  E0/diff-check i własny CI nowego head osobno przed końcowym odbiorem.
