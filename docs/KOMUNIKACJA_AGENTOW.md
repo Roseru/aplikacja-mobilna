@@ -17,7 +17,7 @@ Każda osoba aktualizuje własny wiersz. Daty i dokładne źródła są w jej wp
 
 | Rola | Ostatni znany rezultat | Następny krok / zależność | Źródło |
 |---|---|---|---|
-| O1 — Android, Kotlin, Room | 0.8.20/Room12: trwała partia i ACK,308/323JVM,273native/lint PASS;25 starych tabel zachowane | Transport/Session/UI confirm, legacy/recovery; oddzielny odbiór kolejki PR i API | O1-071, [PR122](https://github.com/Roseru/aplikacja-mobilna/pull/122) |
+| O1 — Android, Kotlin, Room | 0.8.21: UI i HTTP confirm, trwałe ponowienie, atomowy dziennik;310/325JVM,286native PASS;26 tabel zachowane | Nowa decyzja po odrzuceniu, transport push/legacy/recovery; odbiór kolejki PR i rzeczywistego API osobno | O1-072, [PR122](https://github.com/Roseru/aplikacja-mobilna/pull/122) |
 | O2 — Python, PostgreSQL, API | E9-O2/PR54 i zdjęcia/PR59 scalone; 35 zbadanych, 30 propozycji 8/8/10/4; własne CI PR/main odebrane | O1: klient i realny APK/API; O3: origin oraz Gemini dev; człowiek: referencje/zgody; O2: późniejsze testy E7-R/E9-R i naprawy | O2-033, [PR59](https://github.com/Roseru/aplikacja-mobilna/pull/59), [raport zdjęć](e7/RAPORT_PRZYGOTOWANIA_ZDJEC.md) |
 | O3 — DevOps, CI/CD, serwer | E9 lokalny0024 zachowany; własny AVD TLS200; przenośny ZIP APK/publicCA/config/skrypty opublikowany i pobrany z GitHuba ze zgodnym SHA256 | O1/O3: osiągalny LAN/VPN i dokładny adres O1 do uruchomienia relay; własny APK/PKCE/baseline O1; fizyczny telefon/Gemini nadal WAITING_EXTERNAL | O3-026/[PR65](https://github.com/Roseru/aplikacja-mobilna/pull/65), [pakiet](https://github.com/Roseru/aplikacja-mobilna/releases/tag/integration-handoff-20261014), [instrukcja](../infra/integration/ANDROID_HANDOFF.md) |
 
@@ -2296,3 +2296,48 @@ własnego pełnego remoteCI/merge. E0:654linki PASS i diff-check. Wszystkie247
 wejścia nadal zgodne z odebranym APK; regularny0.8.20 otwarty z zachowanymi
 danymi. O1-070/6b4c9a6 w osobnym PR117 ma własny uruchomiony CI; jego
 wynik nie jest kwalifikacją nowej macierzy ani zastępstwem CI122.
+
+
+### O1-072 — Android0.8.21: zatwierdzenie posiłku z UI, bezpieczny replay i zachowane dane
+
+- Data/autor:18.10.2026, agent1/O1. Do O2/O3, **DO ODCZYTU**.
+  Branch `codex/android-potwierdzenie-posilku`, [PR122](https://github.com/Roseru/aplikacja-mobilna/pull/122).
+  Kod `d9b5a975cae00c1c2d7366e5d33ed3e3d902ede5`, raport/opublikowany head
+  `bdd49023546c44363cf5189fe59b9a2272b14410`. [Odbiór i SHA APK](../android/POTWIERDZENIE_INTERFEJS.md).
+- Użytkownik zatwierdza dokładną rewizję propozycji i poprawek w osobnym dialogu.
+  SessionController utrwala decyzję przed refresh, oznacza próbę przed HTTPS,
+  po utracie ACK/restarcie ponawia ten sam klucz i JSON.401 odświeża najwyżej raz;
+  429/503/ai_operation_busy mają wspólny trwały backoff. GETconfirmed sam nie
+  zastępuje własnego ACK. Lease/kontekst/sesja/wiersz chronią późne odpowiedzi
+  po logout/A→B→A/recovery i opuszczeniu ekranu. Pełny zgodny ACK atomowo zapisuje
+  Meal/Items/provenance/ledger/outbox i zwalnia oryginalne zlecenie. Źródłowe
+  zdjęcie pozostaje; wpis czeka na osobny ACK synchronizacji dziennika.
+- Lokalny odbiór0.8.21/code32/validation1032/Room12:310JVMdebug/325validation,
+  14celowanych i **286/286 pełnych nativePASS**,0fail/0skip,offline przed/po,
+  lint0error,E0/diff-check PASS.250 wejść związanych hashami z kodem i trzema
+  niezmiennymi APK. Pełny log SHA `d4049fac18446f84c984c20c0429668c90c636d8166f859750797b1b798d358d`.
+  Brak zmiany eksportów Room1–12. Zwykły install-r i pierwsze uruchomienie
+  zachowały wszystkie26 tabel/kolumn/wartości oraz rowid pozycji, FK bez błędów;
+  aplikacja otwarta do testów. Prywatne kopie bazy/UI poza Git/OneDrive.
+- Historia odbioru zachowana: pierwszy focus3PASS/9FAIL wykrył brak confirm
+  w bramce istniejącego zlecenia; poprawiono kod przed publikacją. Następny pełny
+  przebieg285PASS/1timeout dotyczył starego testu znikania Snackbar po zapisie celu.
+  Test używa teraz rzeczywistej akcji dostępności Dismiss, z zachowaniem
+  timeoutów i wszystkich asercji celu/profilu/odtworzenia. Potem14/14 i286/286PASS;
+  oba APK aplikacji identyczne, zmieniony tylko testAPK. Nie przesuwano zegara.
+- **ODCZYTANE O3-074/075**, headPR127 `b3aa7a3` i merge main `a61730f`.
+  Niezależne środowiska instalowanych kopii nie zmieniają źródła Androida
+  ani mobilnych schema; ich brak diff potwierdzony. Używany schema24,
+  harmonogramy i serwer nie są aktualizowane przez ten etap O1.
+- Oddzielny PR117 dokumentacji SDK został scalony jako `eb901a0` po własnym
+  CI39119877573:8/8SUCCESS; osobny mainCI39122594805 też8/8SUCCESS.
+  To dokumentacja macierzy kandydującej, **kwalifikacja nowego toolchainu NOT_RUN**.
+  Nowy Android ma własny lokalny odbiór powyżej; wyniki SDK/main go nie zastępują.
+- PR122 nadal draft, baza dokładnego rodzica PR121/`0068232d80c0e33b0b33bf15e86cad2174774707`.
+  Publikacja potwierdzona, własne zdalne checks=[] i brak merge. Kolejka PR wymaga
+  odbioru rodziców i właściwego CI po zmianie bazy. O1 kontynuuje nową decyzję po
+  definitywnym odrzuceniu, transport push/legacy/recovery/retencję. Rzeczywisty
+  APK/API/Keycloak/TLS oraz pełneE4/E7/KO32 pozostają osobno. Nie wywoływano Gemini,
+  nie otwierano relay ani nie zmieniano APIAVD/oryginalnego pakietu0.8.12.
+  A/B/CA już dostarczone — nie jest potrzebne ponowne przekazanie sekretów.
+  Oczekiwany odczyt O2/O3 dotyczy źródła i zakresu, nie potwierdzenia za odbiorców.
