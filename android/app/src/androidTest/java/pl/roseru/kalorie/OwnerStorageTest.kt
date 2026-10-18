@@ -297,7 +297,7 @@ class OwnerStorageTest {
                 old.version = 4
             }
         } finally { fixture.close() }
-        val db = Room.databaseBuilder(context, CalorieDatabase::class.java, name).addMigrations(MIGRATION_4_5, MIGRATION_5_6, MIGRATION_6_7, MIGRATION_7_8, pl.roseru.kalorie.photo.MIGRATION_8_9, pl.roseru.kalorie.photo.MIGRATION_9_10, pl.roseru.kalorie.data.MIGRATION_10_11).addCallback(DATABASE_GUARDS).build()
+        val db = Room.databaseBuilder(context, CalorieDatabase::class.java, name).addMigrations(MIGRATION_4_5, MIGRATION_5_6, MIGRATION_6_7, MIGRATION_7_8, pl.roseru.kalorie.photo.MIGRATION_8_9, pl.roseru.kalorie.photo.MIGRATION_9_10, pl.roseru.kalorie.data.MIGRATION_10_11, pl.roseru.kalorie.data.MIGRATION_11_12).addCallback(DATABASE_GUARDS).build()
         try {
             val sql = db.openHelper.readableDatabase
             queries.forEach { (table, query) -> assertEquals(table, expected.getValue(table), sql.query(query).use(::rows)) }
@@ -308,7 +308,7 @@ class OwnerStorageTest {
             assertNotNull(db.dao().meal("exact-meal", "guest")!!.items.single().snapshotJson)
             assertTrue(db.dao().meal("tombstone", "guest")!!.meal.deleted)
             assertTrue(db.dao().weight("deleted-weight", "guest")!!.deleted)
-            assertEquals(11, sql.version)
+            assertEquals(12, sql.version)
             assertFalse(sql.query("PRAGMA foreign_key_check").use { it.moveToFirst() })
             DiaryRepository(db, context).initialize()
             assertEquals(expected.getValue("outbox"), sql.query(queries.getValue("outbox")).use(::rows))

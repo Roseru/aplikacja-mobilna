@@ -8,7 +8,7 @@ import pl.roseru.kalorie.session.*
 import pl.roseru.kalorie.core.sync.*
 
 class CalorieApplication : Application() {
-    val database by lazy { Room.databaseBuilder(this, CalorieDatabase::class.java, "calorie-diary.db").addMigrations(MIGRATION_1_2, MIGRATION_2_3, MIGRATION_3_4, MIGRATION_4_5, MIGRATION_5_6, MIGRATION_6_7, MIGRATION_7_8, pl.roseru.kalorie.photo.MIGRATION_8_9, pl.roseru.kalorie.photo.MIGRATION_9_10, pl.roseru.kalorie.data.MIGRATION_10_11).addCallback(DATABASE_GUARDS).build() }
+    val database by lazy { Room.databaseBuilder(this, CalorieDatabase::class.java, "calorie-diary.db").addMigrations(MIGRATION_1_2, MIGRATION_2_3, MIGRATION_3_4, MIGRATION_4_5, MIGRATION_5_6, MIGRATION_6_7, MIGRATION_7_8, pl.roseru.kalorie.photo.MIGRATION_8_9, pl.roseru.kalorie.photo.MIGRATION_9_10, pl.roseru.kalorie.data.MIGRATION_10_11, pl.roseru.kalorie.data.MIGRATION_11_12).addCallback(DATABASE_GUARDS).build() }
     // Legacy guest setup API. UI repositories always use the active, captured lease.
     val repository get() = DiaryRepository(database, this)
     val preferences by lazy { Preferences(this) }

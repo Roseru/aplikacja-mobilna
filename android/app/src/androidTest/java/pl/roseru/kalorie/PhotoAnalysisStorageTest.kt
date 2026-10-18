@@ -149,8 +149,9 @@ class PhotoAnalysisStorageTest {
             assertEquals(accepted,store.pending());assertTrue(file.exists())
         } finally {db.close();scope?.let(::clean)}
     }
-    @Test fun migrationNineToElevenPreservesEveryOldColumnPhotoDiaryAndForeignKeys()=runBlocking<Unit> {migrationOldSchema(9)}
-    @Test fun migrationTenToElevenPreservesPendingDecisionAndAllTwentyFourTables()=runBlocking<Unit> {migrationOldSchema(10)}
+    @Test fun migrationNineToLatestPreservesEveryOldColumnPhotoDiaryAndForeignKeys()=runBlocking<Unit> {migrationOldSchema(9)}
+    @Test fun migrationTenToLatestPreservesPendingDecisionAndAllTwentyFourTables()=runBlocking<Unit> {migrationOldSchema(10)}
+    @Test fun migrationElevenToTwelvePreservesMaterializationPendingDecisionAndAllTwentyFiveTables()=runBlocking<Unit> {migrationOldSchema(11)}
     private suspend fun migrationOldSchema(from:Int) {
         val schema=JSONObject(InstrumentationRegistry.getInstrumentation().context.assets.open("pl.roseru.kalorie.data.CalorieDatabase/$from.json").bufferedReader().use {it.readText()}).getJSONObject("database")
         val entities=schema.getJSONArray("entities")
@@ -171,11 +172,15 @@ class PhotoAnalysisStorageTest {
             val repository=DiaryRepository(source,context,lease);repository.initialize()
             repository.add(source.dao().products(lease.storageScope).first().first().id,120.0,MealType.LUNCH,LocalDate.now())
             repository.addWeight(80.0,LocalDate.now());val storedPhoto=photo(source,lease)
-            if(from==10) {
+            if(from==11) {
+                val(store,prepared)=materializationReceipt(source,lease)
+                store.materializeConfirmationPrepared(prepared)
+            }
+            if(from>=10) {
                 val (store,row)=cancellationQueue(source,lease);confirmationDraft(store,row.operationId)
                 store.acceptConfirmationPrepared(store.prepareConfirmation(row.operationId,UUID.randomUUID().toString(),2,1))
             }
-            val before=snapshot(source.openHelper.readableDatabase);assertEquals(if(from==9)23 else 24,before.size)
+            val before=snapshot(source.openHelper.readableDatabase);assertEquals(from+14,before.size)
             SQLiteDatabase.openOrCreateDatabase(context.getDatabasePath(name),null).use {old->
                 old.execSQL("PRAGMA foreign_keys=OFF")
                 for(index in 0 until entities.length()) {
@@ -192,13 +197,14 @@ class PhotoAnalysisStorageTest {
                 old.execSQL("CREATE TABLE room_master_table (id INTEGER PRIMARY KEY,identity_hash TEXT)")
                 old.execSQL("INSERT INTO room_master_table VALUES (42,?)",arrayOf(schema.getString("identityHash")));old.version=from
             }
-            val migrated=Room.databaseBuilder(context,CalorieDatabase::class.java,name).addMigrations(MIGRATION_9_10, pl.roseru.kalorie.data.MIGRATION_10_11).addCallback(DATABASE_GUARDS).build()
+            val migrated=Room.databaseBuilder(context,CalorieDatabase::class.java,name).addMigrations(MIGRATION_9_10, pl.roseru.kalorie.data.MIGRATION_10_11, pl.roseru.kalorie.data.MIGRATION_11_12).addCallback(DATABASE_GUARDS).build()
             try {
-                assertEquals(11,migrated.openHelper.readableDatabase.version)
+                assertEquals(12,migrated.openHelper.readableDatabase.version)
                 assertEquals(before,snapshot(migrated.openHelper.readableDatabase))
                 if(from==9)assertNull(migrated.photoAnalysisDao().get(lease.storageScope)) else
                     assertNotNull(PhotoAnalysisStore(context,migrated,LocalOwnerStore(migrated).currentLease()).stored(migrated.photoAnalysisDao().get(lease.storageScope)!!.operationId).confirmation)
                 assertFalse(migrated.openHelper.readableDatabase.query("PRAGMA foreign_key_check").use {it.moveToFirst()})
+                assertTrue(migrated.pushDao().pending(lease.storageScope).isEmpty())
                 MealPhotoStore(context,migrated,LocalOwnerStore(migrated).currentLease()).preview(storedPhoto.id).let {assertEquals(48,it.width);it.recycle()}
             } finally {migrated.close()}
         } finally {source.close();context.deleteDatabase(name);scope?.let(::clean)}
