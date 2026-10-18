@@ -1,12 +1,12 @@
 # Zgodność API, katalogu i synchronizacji — O2
 
-Nowy etap O2_LEDGER_20261017_V1: schema `0025_deletion_ledger` na bazie
+Nowy etap O2_LEDGER_20261017_V1: schema `0026_ledger_review` na bazie
 `615fb6b3`, [kontrakt](REJESTR_USUNIEC_O2.md) i [raport](RAPORT_REJESTR_USUNIEC_O2.md).
 API mobilne `/api/v1`, E9 opt-in i okno30dni zachowane. Zmienia się operacyjny
 protokół usunięć: nowy operator/eksporter, obowiązkowe ACK i cutoff z niezależnym
 fence_pin. Starszy CLI i pełny rollback obrazu wymagają kwalifikacji O3;
-0025 do0024 zachowuje ochronę/evidence, głębszy downgrade odmawia.
-Poniższe historyczne receipty opisują wcześniejsze źródła, nie odbiór0025.
+0026 do0024 zachowuje ochronę/evidence, głębszy downgrade odmawia.
+Poniższe historyczne receipty opisują wcześniejsze źródła, nie odbiór0026.
 
 Stan17.10.2026: **FIX1 PASS** po trzech poprawionych P2 koordynatora.
 [Nowy C2/image/schema, scratch rollback i8/8CI39031423976](ODBIOR_RECOVERY_O2.md#odebrany-zestaw-wykonawczy-c2).

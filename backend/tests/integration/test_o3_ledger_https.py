@@ -105,7 +105,7 @@ def test_owned_pg_https_lost_ack_restart_and_enforced_effect(historical_database
     # A dedicated database keeps the exact seven-event oracle independent of
     # earlier tests' already acknowledged source prefix. Never reset that source.
     engine, migrate, _ = historical_database
-    migrate("upgrade", "0025_deletion_ledger")
+    migrate("upgrade", "0026_ledger_review")
     source = harness(engine)
     owner, operation, subject = uuid4(), uuid4(), str(uuid4())
     with engine.begin() as connection:

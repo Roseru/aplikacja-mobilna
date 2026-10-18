@@ -8,7 +8,8 @@ Migracja `0024_e9_history_graph` → `0025_deletion_ledger`.
 będą przypięte w aktualizowanym opisie PR/odbiorze koordynatora;
 poniższe liczby mają jawnie podany zakres i źródło.
 Aktualny head/base i komplet ośmiu kontroli: [PR124/checks](https://github.com/Roseru/aplikacja-mobilna/pull/124/checks).
-Aktualny main po zwykłym merge: `0ac8e165ecda4312887c956027d007016572ee34`.
+Aktualna zintegrowana baza: `be9c1f68ecbb96f8cea8d359cccaebd8f7bb9b6e`;
+integracja O3 `483dcfa95a1b27bcbdcf1b04ebb22ca7c46f49a9` zachowana fast-forwardem.
 
 ## Wynik i granica
 
@@ -154,3 +155,54 @@ jobem, działającym historycznym status i odmową CURRENT status:1PASS14,66s.
 Oba historyczne CLI testy17/20 wykonują ten sam mocny oracle; review9/10,
 ostatnia P2 nieznanego operation_id zamknięta. Natywna szeroka macierz i pełne
 CI końcowego head mają osobne receipty; bieżący wynik jest w PR/checks.
+
+
+## Odbiór koordynatora483dcfa9 — dwie P2, poprawka0026
+
+Marker `O2_PR124_REVIEW_483dcfa9_V1`, 18.10.2026. Odczytano publiczny
+[review](https://github.com/Roseru/aplikacja-mobilna/pull/124#pullrequestreview-5561646015)
+oraz O3-071. Oba wektory ponownie odtworzono na własnym rzeczywistym PG17,
+bez zmiany używanej instalacji lub usług O3: neutralny następca odrzucony23514;
+zastany EXECUTE ledger_configure przyjęty dla LOGIN, roli i PUBLIC.
+Nowe cztery regresje przed poprawką: **4FAIL/0ERROR**, dokładnie z tych przyczyn.
+Pierwsze cztery po poprawce: **4PASS/8,16s**; szerszy odbiór ma osobny wynik.
+
+Niezmienna0025 zachowana; nowa0026 zastępuje allowlist guardu dokładnymi
+niebezpiecznymi przodkami24 z grafu Alembic. Test rzeczywistego nienumerycznego
+następcy, rzeczywistego downgrade oraz snapshoty konfiguracji (hashy kluczy,
+bez publikacji sekretów), ledger/ACK i funkcji dowodzą atomowości. Test filled25
+przechodzi do26 oraz wraca25/24 i ponownie26 bez utraty dowodów. Provisioner
+operatora sprawdza pełny efektywny callable EXECUTE; real LOGIN pokrywa również
+ACK/batch/export_position/internal oraz rollback hasła i zachowanie grantu
+przy odmowie. Dopiero jawny REVOKE pozwala na czysty provisioning.
+
+Readiness i aktywacja wymagają26; provisionery obsługują26 oraz zachowane
+jawne wcześniejsze markery. Release projekcji24,
+protokół v1 i historyczne C2/receipty zachowane. Nowe źródło nie jest aktywowane
+na używanej instalacji. Produkcyjny drugi host/fencing/cutoff odłożone przez
+właściciela (O3-071); niezależny nośnik klucza, pełneKO32 i provider reconciliation
+po restore wymagają osobnego odbioru. Poprzednie8/8CI39075980367 dotyczy483dcfa9;
+**nie potwierdza poprawki**. Dokładny nowy head/base, końcowe testy i review są
+w aktualizowanym opisie PR124/checks i wpisie O2-042.
+
+
+Lokalny końcowy odbiór poprawki0026: **71/71 PG17 PASS,0skip,82,13s**
+(`test_deletion_ledger_review.py` + ledger + real operator LOGIN). Osobno
+**2/2 E8 currenthead PASS,18,09s**: faktyczna aktywacja/SCRAM/CLI/purge prywatnych
+projekcji na26; dwa pozostałe przypadki pliku nie były w tym celowanym zakresie.
+Pełny unit1742PASS/83,65s; infra Windows217PASS/27,84s. Ruff z konfiguracją CI,
+format410plików, E0/704linki i diff-check PASS. Niezależny końcowy review9/10
+bez otwartychP0/P1/P2; reviewer wykonał samodzielnie28testów kontraktu, nie PG.
+Nowy pełny CI dokładnego head jest wymagany przed ponownym odbiorem.
+
+
+- O2-042, CI39103006246/heade4aa721b: postgres RED,1407ERROR/32,02s
+  przez błąd wspólnego setupu historycznej bazy21. Literalne ::regprocedure
+  były rozwiązywane podczas przygotowania zapytania pomimo ledger=false.
+  Dwie realLOGIN regresje21/24 przed poprawką2FAIL/0ERROR. Osobny proceduralny
+  IFledger odcina przygotowanie tej gałęzi; wszystkie8OID i efektywne ACL
+  pozostają bez zmian. Końcowa macierz **73/73PG17PASS/0skip/85,12s**, w tym
+  nowe14regresji i wcześniejsze testy operatora/ledgeru. Ponowny niezależny
+  review tej poprawki9/10/noP0/P1/P2. Powtarzalny runner na wcześniejszym
+  czystym e4aa721b69PASS/0skip jest węższym dowodem i nie zastępuje pełnego CI.
+  Nowy head wymaga własnych8zielonych kontroli; wcześniejszy RED zachowujemy.

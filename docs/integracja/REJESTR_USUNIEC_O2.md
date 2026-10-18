@@ -2,7 +2,8 @@
 
 Zlecenie O2_LEDGER_20261017_V1; wejście O3-066 / PR123,
 `dd39050b69711a91023e20d7b6cfb9dad53bef44`. Baza `615fb6b3` / schema0024.
-Status: implementacja L0–L2, weryfikacja L3 i CI w toku.
+Bieżący schemat: `0026_ledger_review` po niezmiennej `0025_deletion_ledger`.
+Status odbioru i dokładne CI: [PR124](https://github.com/Roseru/aplikacja-mobilna/pull/124).
 
 ## Granice i kolejność
 
@@ -76,7 +77,7 @@ telefon O1 i produkcyjne RPO/RTO wymagają osobnych odbiorów.
 
 ## Interfejs wykonywalny i odbiór
 
-Migracja: `0025_deletion_ledger`. Kod runtime: `deletion.py`,
+Migracje: niezmienna `0025_deletion_ledger`, poprawka `0026_ledger_review`. Kod runtime: `deletion.py`,
 `ledger_contract.py`, `ledger_transport.py`, `ledger_export.py`,
 `ledger_restore.py` w module identity. PostgreSQL jest jedynym źródłem intencji,
 wszystkie tabele ledgeru są zarządzane wersjonowanym SQL i wyłączone wyłącznie
@@ -163,7 +164,7 @@ Downgrade do0024 zachowuje tabele, receipt, role i bariery. Zejście poniżej002
 jest atomowo odrzucane. Stare obrazy/operator wymagają własnej kwalifikacji;
 nie deklarujemy kompatybilnego rollbacku całej instalacji. Nemesis zachowuje
 sprawdzony release projekcji0024 i aktywny stan; nowa migracja aktualizuje tylko
-wymagany marker Alembic aktywacji na0025, zachowując wszystkie preconditions/ACL.
+wymagany marker Alembic aktywacji na0026, zachowując wszystkie preconditions/ACL.
 
 Schemat i jawnie syntetyczne przykłady:
 [JSON Schema v1](../../contracts/schemas/deletion-ledger-v1.schema.json),
@@ -185,3 +186,30 @@ innej bazy lub wersji PG. Dla hostowego PG17 ustaw katalog klienta przez
 Wyniki/pełne prywatne logi pozostają w nowym katalogu, neutralny receipt podaje
 head, dirty_source, liczność, brak skipów i granicę odbioru. Te same testy PG/unit
 są automatycznie zbierane przez nieosłabiony backend.yml.
+
+
+## Poprawki odbioru PR124 — schema0026
+
+Odbiór `O2_PR124_REVIEW_483dcfa9_V1` wykazał dwie P2 mimo zielonego CI.
+Nowa0026 zmienia funkcję guardu przed aktualizacją markera;0025 pozostaje
+niezmienna. Zamiast zamkniętej listy dozwolonych24/25 guard odrzuca dokładny
+zamrożony zbiór niebezpiecznych przodków0024 z liniowego grafu Alembic.
+Nie porównuje nazw rewizji. Test sprawdza zgodność zbioru z rzeczywistym grafem,
+neutralnego następcę o nienumerycznej nazwie oraz atomową odmowę23/niżej.
+Downgrade26→25→24 zachowuje poprawiony guard, dane, role i bariery; dalszy
+rollback jest odrzucany. Bezpośrednie stamp/DELETE markera i treść przyszłych
+migracji wymagają osobnego review zaufanego migratora, nie są ścieżką rollbacku.
+
+Provisioning operatora wymaga dokładnie ośmiu wywoływalnych funkcji kontraktu
+oraz odmawia każdego innego efektywnego EXECUTE w schema app. Kontrola obejmuje
+bezpośrednie, dziedziczone i PUBLIC granty, w tym ledger_configure, ACK, eksport
+i wewnętrznych rodziców. Funkcje zwracające trigger/event_trigger nie są callable
+z SQL; operator nie ma CREATE/TRIGGER pozwalającego je instalować. Odmowa
+wycofuje transakcję provisionera, zachowuje zastany grant i konfigurację źródła;
+ACL poprawia się jawnie przez administratora, potem ponawia provisioning.
+
+Upgrade z zapełnionego0025 nie tworzy nowej kotwicy/strumienia ani nie zmienia
+kluczy, eventów, ACK, generacji lub jobs. Aktywacja i readiness wymagają dokładnie
+0026; provisionery zachowują też jawne wcześniejsze markery. Natomiast release projekcji/algorytm0024 i stare C2/receipty nie są
+przemianowane. Protokół źródło/ACK/cutoff pozostaje v1. Granice O3/O1 oraz brak
+wdrożenia i zakaz automatycznego otwarcia po restore pozostają w mocy.

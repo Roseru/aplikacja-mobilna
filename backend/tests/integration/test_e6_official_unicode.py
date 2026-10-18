@@ -298,7 +298,7 @@ def test_upgrade0013_backfill_down_reup_bytes_hash_history_readiness(historical_
             assert frozen_table_rows(connection, before) == before
         with TestClient(create_app(settings, engine=engine)) as client:
             assert client.get("/health/ready").status_code == 200
-        assert EXPECTED_REVISION == "0025_deletion_ledger"
+        assert EXPECTED_REVISION == "0026_ledger_review"
     finally:
         migrate("upgrade", EXPECTED_REVISION)
 

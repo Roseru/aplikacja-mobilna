@@ -723,10 +723,14 @@ def test_current_head_keeps_existing_e7_worker_maintenance_permission(ledger):
     ],
 )
 def test_current_head_real_e8_provisioners_keep_minimal_acl(ledger, profile, prefix, base):
+    engine, _, _ = ledger
+    assert_real_e8_provisioner_keeps_minimal_acl(engine, profile, prefix, base)
+
+
+def assert_real_e8_provisioner_keeps_minimal_acl(engine, profile, prefix, base):
     import subprocess
     import sys
 
-    engine, _, _ = ledger
     parsed = engine.url
     login, password = "ledger_e8_" + uuid4().hex[:12], secrets.token_urlsafe(32)
     environment = os.environ | {
