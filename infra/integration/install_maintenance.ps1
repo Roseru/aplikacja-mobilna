@@ -36,7 +36,9 @@ foreach ($directory in @($operations, $backupRoot)) {
 }
 # Store the physical path: packaged desktop callers may virtualize LocalAppData,
 # while Task Scheduler runs outside that package's filesystem view.
-$backupRoot = (& $pythonPath -I -c 'import pathlib,sys; print(pathlib.Path(sys.argv[1]).resolve(strict=True))' $backupRoot).Trim()
+$resolvedBackup = & $pythonPath -I -c 'import json,pathlib,sys; print(json.dumps(str(pathlib.Path(sys.argv[1]).resolve(strict=True))))' $backupRoot
+if ($LASTEXITCODE -ne 0) { throw 'Cannot resolve the physical backup root.' }
+$backupRoot = $resolvedBackup | ConvertFrom-Json
 if ($LASTEXITCODE -ne 0 -or -not [IO.Path]::IsPathFullyQualified($backupRoot)) { throw 'Cannot resolve the physical backup root.' }
 $ownerPath = Join-Path $backupRoot 'owner.json'
 if (Test-Path -LiteralPath $ownerPath) {
@@ -52,16 +54,24 @@ if (Test-Path -LiteralPath $ownerPath) {
 # Install committed sources in an immutable private runtime, independent of branch switches.
 $revision = (& git -C $checkout rev-parse HEAD).Trim()
 if ($LASTEXITCODE -ne 0) { throw 'Cannot identify committed runtime.' }
+& git -C $checkout diff --exit-code HEAD -- infra/integration backend
+if ($LASTEXITCODE -ne 0) { throw 'Commit runtime sources before installation.' }
 $runtime = Join-Path $operations "runtime-$revision"
 if (-not (Test-Path -LiteralPath $runtime)) {
     $archive = Join-Path $operations 'runtime.zip'
-    & git -C $checkout archive --format=zip --output=$archive HEAD infra/integration infra/local backend/Dockerfile backend/pyproject.toml backend/uv.lock
+    & git -C $checkout archive --format=zip --output=$archive HEAD infra/integration infra/local backend
     if ($LASTEXITCODE -ne 0) { throw 'Cannot prepare committed runtime.' }
     Expand-Archive -LiteralPath $archive -DestinationPath $runtime
     Remove-Item -LiteralPath $archive
 }
 $script = Join-Path $runtime 'infra/integration/maintenance.py'
 if (-not (Test-Path -LiteralPath $script)) { throw 'Commit maintenance sources before installation.' }
+$uv = (Get-Command uv -ErrorAction Stop).Source
+$environmentTool = Join-Path $runtime 'infra/integration/runtime_environment.py'
+$environmentJson = & $pythonPath -I $environmentTool --runtime $runtime --python $pythonPath --uv $uv
+if ($LASTEXITCODE -ne 0) { throw 'Locked runtime environment qualification failed; tasks unchanged.' }
+$environment = $environmentJson | ConvertFrom-Json
+$pythonw = $environment.pythonw
 $settingsPath = Join-Path $operations 'settings.json'
 @{state=$statePath; backups=$backupRoot; docker=$docker; docker_desktop=$desktop;
   finalizer_disabled=$true; keep=14; source_commit=$revision} | ConvertTo-Json | Set-Content -LiteralPath $settingsPath -Encoding utf8
