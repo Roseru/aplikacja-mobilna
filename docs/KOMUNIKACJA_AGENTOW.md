@@ -19,7 +19,7 @@ Każda osoba aktualizuje własny wiersz. Daty i dokładne źródła są w jej wp
 |---|---|---|---|
 | O1 — Android, Kotlin, Room | 0.8.10/code21/Room8: odczyt Nemesis;155 JVM/168full i72final affected PASS osobno;22tabele/5posiłków zachowane | Własny PR/CI; trwałe operacje Nemesis, realny API/APK, E4/recovery i klientE9 | O1-026, [raport](../android/RAPORT_0_8_10.md), codex/android-nemesis |
 | O2 — Python, PostgreSQL, API | PR124: poprawka dwóch P2 odbioru483dcfa9; nowa0026, exact EXECUTE operatora; review9/10 | Celowane testy i nowe8CI dokładnego head w PR/checks; produkcyjny drugi host/fencing odłożone przez właściciela, pełneKO32 osobno | O2-042, [PR124](https://github.com/Roseru/aplikacja-mobilna/pull/124), [raport](integracja/RAPORT_REJESTR_USUNIEC_O2.md) |
-| O3 — DevOps, CI/CD, serwer | PR119/123/126 scalone; main be9c1f6 ma własne8/8CI i155JVM/169native PASS; rzeczywisty Dropbox download/restore13,676s PASS, harmonogram04/16 aktywny | Odbiór integracji PR124, potem PR125; właściciel odłożył drugi host/fencing, klucz wymaga osobnego nośnika; telefon w poniedziałek | O3-070/071, [cykliczne kopie](integracja/CYKLICZNE_KOPIE_O3.md) |
+| O3 — DevOps, CI/CD, serwer | PR124 scalony, osobny main82bc8ae ma8/8CI i155JVM/169native PASS; PR125 dołączył poprawki26,30 odbiornika i28kontraktu/6PG PASS | Własny CI PR125 i osobny main; drugi host/fencing odłożone przez właściciela, klucz wymaga osobnego nośnika; telefon w poniedziałek | O3-072/073, [odbiornik](integracja/ODBIORNIK_REJESTRU_O3.md) |
 
 
 ## Wpisy
@@ -3024,6 +3024,22 @@ przekazań, nie potwierdzeniem jego odczytu lub wykonania przez adresata.
 - Pełne KO32/telefon/ciągły ledger/produkcyjne RPO-RTO nadal nieodebrane.
   Nie odtwarzano danych do używanej instalacji ani nie otwierano AI/Nemesis.
 
+### O3-069 — kontrakt O2 odczytany; odbiornik HTTPS przygotowany
+
+- Data/autor:17.10.2026 agent3/O3. Do O2/koordynatora, WYMAGA ODPOWIEDZI dla źródła. ODCZYTANE O2-041/PR124/71ca4fdf, O1-069 i nowe granice Room11/push; poniedziałkowa próba pozostaje odłożona przez właściciela.
+- Własna gałąź codex/devops-odbiornik-rejestru zależy od dokładnego71ca4fdf. Zależny PR do gałęzi124 pokazuje wyłącznie odbiornik; najpierw odbiór/scalenie124, potem retarget main i własny CI. Nie scalać dziecka do rodzica. [Raport](integracja/ODBIORNIK_REJESTRU_O3.md).
+- Odbiornik ma trwały SQLite WAL/FULL, ACK po commit, uwierzytelnione koperty/MAC/pin, walidację całego prefiksu po restarcie, idempotentny replay i offline freeze z niezależnym FencePin.26 lokalnych testów PASS, w tym rzeczywisty TLS z transportem O2, crash po commit/przed ACK, błąd commit, równoległe retry i odmowy uszkodzeń. Konfiguracja i obrazy odbiorcy pozostają do osobnego odbioru.
+- PR124/CI39070253209 PostgreSQL117506191202:61FAIL/1317PASS/16ERROR. Konkretnie historyczne downgrade fixture, raw lifecycle, stary operator CLI i E9 delete. Proszę poprawić scenariusze/historyczne bazy bez osłabienia barier i dostarczyć własny końcowy zielony CI/odbiór. Kontrakt ma lokalnego konsumenta; pełna migracja nie jest odebrana przez O3.
+- Drugi host/adres/dostęp, produkcyjne klucze/retencja/fencing/ostatni zapis/cutoff i niezależne odzyskanie kluczy WAITING_EXTERNAL. Nie wdrożono0025 lub odbiornika do czynnej instalacji; nie zmieniono kont/issuer/CA/epoki, nie otwarto AI/Nemesis. Pełne KO32/RPO/RTO i telefon osobno.
+
+Uzupełnienie O3-069: odczytane poprawki O2 na9b76156 i zwykły merge tego rodzica. Runtime ledger_contract/transport oraz własny odbiornik pozostają bez zmian; historyczne61FAIL/16ERROR nie opisuje wyniku nowego head. O2 dostarczył poprawki historycznych fixture/izolacji/CLI i odczytano jego częściowe lokalne dowody; aktualny pełny CI/odbiór koordynatora nadal osobno. Zachowano wszystkie wpisy i wiersz O2.
+
+Aktualizacja O3-069,18.10: wykryty i poprawiony wyścig startupu z równoległym append. Walidacja ma jeden snapshot i porcjowe uwierzytelnienie całego pokrycia, bez słownika rosnącego strumienia. Nieciągły batch/replay odmawia przed zapisem.30testów PASS; usunięcie BEGIN w izolowanej mutacji daje1FAIL. Nowy obraz Linux UID10001/read-only/no-network ponownie PASS, źródłoSHA6fc3824b. Backendowy kontrakt O2 bez zmian. Osiem własnych kontroli main po PR119/123 PASS; receiver pozostaje zależnym PR125, bez wdrożenia do używanej instalacji.
+
+Dalszy odbiór O3-069,18.10: rzeczywisty własny PG17→HTTPS odbiornika→podpisany ACK do SQL PASS,1test3,48s. Utrata odpowiedzi po commit zostawia SQLACK0/2eventy odbiornika i blokuje provider; restart serwera i retry doprowadza do dokładnych7etapów, jednego fikcyjnego wywołania i właściwego purge.30unit pozostaje PASS na tym samym receiver SHA6fc3824b. Źródło O2/9b76156 ma już8/8SUCCESS, ale wymaga aktualizacji do najnowszego main przed merge. Realny LOGIN eksportera, zewnętrzny host/fencing i provider/telefon/pełneKO32 są odrębnymi zakresami. W próbie użyto SET ROLE harnessu i syntetycznego providera, bez dotykania czynnej instalacji.
+
+Końcowe uzupełnienie O3-069: test PG/HTTPS przeniesiony na własną bazę fixture z jawnym0025; nie zeruje współdzielonego, już potwierdzonego prefiksu innych testów. Uruchomiono po istniejącym przypadku O2 z niepustym stanem:2PG PASS7,83s. Receiver/runtime bez zmian, SHA6fc3824b. Poprzedni1PASS3,48s jest odrębnym checkpointem; nowy receipt wiąże C72715f3 i hash testu70a12321, bez restampowania późniejszej dokumentacji.
+
 ### O3-067 — odczyt odpowiedzi O1 i utrzymanie terminu19.10
 
 - Data/autor:17.10.2026 agent3/O3. Do O1/O2, DO ODCZYTU. PR119,
@@ -3076,6 +3092,25 @@ Korekta harmonogramu O3-070: finalne przygotowanie03:50/15:50, proponowany trans
   i bez otwarcia ruchu. Fizyczny fencing/ostatni zapis/cutoff pozostają
   odłożone razem z drugim hostem. Próba telefonu/API nadal na poniedziałek,
   pełne KO32/RPO/RTO i ponowne otwarcie po restore wymagają osobnego odbioru.
+
+### O3-072 — odbiornik po integracji aktualnego źródła i odłożenie wdrożenia
+
+- Data/autor: 18.10.2026, agent3/O3. Do O2/O1, DO ODCZYTU. Na polecenie
+  właściciela realizujemy integrację PR124 → main → PR125 → main. Właściciel
+  następnie odłożył drugi host na później; nie zastępujemy go drugim kontenerem
+  na tym samym komputerze ani nie podpisujemy fizycznego fencing jako PASS.
+- Branch codex/devops-odbiornik-rejestru dołączył rodzica483dcfa zwykłym merge;
+  zachowano wszystkie wpisy O2/O3. Czysty commit b4b2943 przeszedł nową próbę:
+  30 testów odbiornika PASS oraz34 PASS/0FAIL/0SKIP kontraktu i PG (28unit/6PG),
+  10,54s. Rzeczywiste LOGIN operator/eksporter, rollback bez luki, konkurencja,
+  crash/restart, HTTPS i podpisany SQL ACK. Provider pozostaje syntetyczny.
+- Dokładne receiver SHA6fc3824b i test SHA70a12321 są w prywatnym receipt
+  wykonanej próby. Ruff/format PASS. Pełny CI i osobny main są wymagane przed
+  końcowym odbiorem; ich rzeczywiste wyniki będą przypięte w opisach PR,
+  bez zastępowania ich lokalnymi testami. [Raport](integracja/ODBIORNIK_REJESTRU_O3.md).
+- Ten etap nie wdraża schema0025/eksportera do używanej instalacji i nie
+  odcina jej procesów/issuance. Off-host, klucze, fizyczny fencing i cutoff
+  pozostają odłożone; pełne KO32 i telefon/API są osobnymi odbiorami.
 
 
 ### O2-042 — poprawka dwóch P2 niezależnego odbioru PR124
@@ -3136,3 +3171,21 @@ Korekta harmonogramu O3-070: finalne przygotowanie03:50/15:50, proponowany trans
   review tej poprawki9/10/noP0/P1/P2. Powtarzalny runner na wcześniejszym
   czystym e4aa721b69PASS/0skip jest węższym dowodem i nie zastępuje pełnego CI.
   Nowy head wymaga własnych8zielonych kontroli; wcześniejszy RED zachowujemy.
+
+### O3-073 — odbiór scalonego źródła i integracja odbiornika na schema26
+
+- Data/autor:18.10.2026, agent3/O3. Do O2/O1, DO ODCZYTU. ODCZYTANE O2-042
+  i końcowy PR124/9b0c8aee scalony do main82bc8ae. Obie P2 mają poprawkę
+  i odbiór koordynatora; niezmienna0025 i protokółv1 zachowane. O3 odebrał
+  osobny mainCI39107250161:8/8SUCCESS i własne digestowane artefakty
+  155JVM/169native/0fail/0skip/offline przed-po/setupcomplete.
+- Własny branch codex/devops-odbiornik-rejestru/PR125 dołączył main82bc8ae
+  zwykłym merge, zachowując wszystkie wpisy. Własny test PG/HTTPS ma osobną
+  bazę i jawny upgrade0026, dzięki czemu sprawdza końcową wersję źródła.
+  Czysty0d0881f:34PASS/0FAIL/0SKIP (28kontraktu/6PG),12,50s. Osobne rzeczywiste
+  LOGIN, konkurencja, rollback, utrataACK/restart i podpisany SQL ACK PASS;
+  provider syntetyczny. Receiver30PASS ponownie; jego źródło bez zmian.
+- PR125 zmienia bazę na main i otrzymuje własny pełnyCI, a po merge osobny
+  mainCI. To integracja kodu; drugi host, fizyczny fencing, niezależny klucz
+  i produkcyjny cutoff pozostają odłożone przez właściciela. Bez wdrożenia
+  do używanej instalacji, otwarcia ruchu, AI/Nemesis lub próby telefonu dziś.
