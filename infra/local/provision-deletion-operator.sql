@@ -90,7 +90,9 @@ BEGIN
       -- Effective privileges include direct, inherited and PUBLIC grants.
       -- Refuse every callable app function outside the operator contract;
       -- never silently repair a hostile existing LOGIN or parent role.
-      IF ledger AND EXISTS(SELECT FROM pg_proc p JOIN pg_namespace n ON n.oid=p.pronamespace
+      IF ledger THEN
+        -- Prepare regprocedure constants only when their schema exists.
+        IF EXISTS(SELECT FROM pg_proc p JOIN pg_namespace n ON n.oid=p.pronamespace
         WHERE n.nspname='app' AND p.prorettype NOT IN('trigger'::regtype,'event_trigger'::regtype)
         AND has_function_privilege(login_name,p.oid,'EXECUTE')
         AND p.oid NOT IN (
@@ -102,7 +104,8 @@ BEGIN
           'app.ledger_provider_target(uuid,uuid)'::regprocedure,
           'app.ledger_provider_result(uuid,uuid,text)'::regprocedure,
           'app.ledger_prepare_purge(uuid)'::regprocedure)) THEN
-        RAISE EXCEPTION 'Operator has unexpected effective function privileges';
+          RAISE EXCEPTION 'Operator has unexpected effective function privileges';
+        END IF;
       END IF;
       IF ledger THEN
         FOREACH function_name IN ARRAY ARRAY['app.ledger_status(uuid)',

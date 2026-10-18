@@ -194,3 +194,15 @@ Pełny unit1742PASS/83,65s; infra Windows217PASS/27,84s. Ruff z konfiguracją CI
 format410plików, E0/704linki i diff-check PASS. Niezależny końcowy review9/10
 bez otwartychP0/P1/P2; reviewer wykonał samodzielnie28testów kontraktu, nie PG.
 Nowy pełny CI dokładnego head jest wymagany przed ponownym odbiorem.
+
+
+- O2-042, CI39103006246/heade4aa721b: postgres RED,1407ERROR/32,02s
+  przez błąd wspólnego setupu historycznej bazy21. Literalne ::regprocedure
+  były rozwiązywane podczas przygotowania zapytania pomimo ledger=false.
+  Dwie realLOGIN regresje21/24 przed poprawką2FAIL/0ERROR. Osobny proceduralny
+  IFledger odcina przygotowanie tej gałęzi; wszystkie8OID i efektywne ACL
+  pozostają bez zmian. Końcowa macierz **73/73PG17PASS/0skip/85,12s**, w tym
+  nowe14regresji i wcześniejsze testy operatora/ledgeru. Ponowny niezależny
+  review tej poprawki9/10/noP0/P1/P2. Powtarzalny runner na wcześniejszym
+  czystym e4aa721b69PASS/0skip jest węższym dowodem i nie zastępuje pełnego CI.
+  Nowy head wymaga własnych8zielonych kontroli; wcześniejszy RED zachowujemy.

@@ -307,3 +307,49 @@ def test_existing_0025_e8_provisioners_remain_compatible(
         command.upgrade(config, "0025_deletion_ledger")
     assert value(engine, "SELECT version_num FROM app.alembic_version") == "0025_deletion_ledger"
     assert_real_e8_provisioner_keeps_minimal_acl(engine, profile, prefix, base)
+
+
+@pytest.mark.parametrize("revision", ["0021_e8_nemesis_results", "0024_e9_history_graph"])
+def test_preledger_operator_provision_resolves_only_existing_contract(
+    historical_database, revision
+):
+    engine, migrate, url = historical_database
+    if revision != "0024_e9_history_graph":
+        migrate("downgrade", revision)
+    assert value(engine, "SELECT to_regprocedure('app.ledger_status(uuid)')") is None
+    login = "review_legacy_operator_" + uuid4().hex[:12]
+    password = secrets.token_urlsafe(32)
+    operator = None
+    try:
+        provision(url, login, password)
+        operator = create_engine(
+            engine.url.set(username=login, password=password), hide_parameters=True
+        )
+        with operator.connect() as c:
+            assert c.exec_driver_sql("SELECT session_user,current_user").one() == (login, login)
+            assert c.scalar(
+                text(
+                    "SELECT has_function_privilege(current_user,"
+                    "'app.begin_account_deletion(uuid,uuid,integer)','EXECUTE')"
+                )
+            )
+            assert c.scalar(
+                text(
+                    "SELECT has_table_privilege(current_user,'app.account_deletion_jobs','SELECT')"
+                )
+            )
+            assert not c.scalar(
+                text(
+                    "SELECT has_table_privilege(current_user,'app.user_accounts',"
+                    "'SELECT,INSERT,UPDATE,DELETE')"
+                )
+            )
+    finally:
+        if operator is not None:
+            operator.dispose()
+        with engine.begin() as c:
+            if c.scalar(
+                text("SELECT EXISTS(SELECT FROM pg_roles WHERE rolname=:login)"), {"login": login}
+            ):
+                c.exec_driver_sql(f'DROP OWNED BY "{login}"')
+                c.exec_driver_sql(f'DROP ROLE "{login}"')
