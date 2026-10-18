@@ -7,7 +7,11 @@ Kontrakt: [integracja E7](../docs/e7/INTEGRACJA_O1.md),
 [server confirm](../backend/src/calorie_app/modules/ai/decisions.py),
 [ai.schema](../contracts/schemas/ai.schema.json).
 
-## Bieżący etap0.8.19 — atomowy dziennik i kolejka
+Aktualny0.8.20/Room12 i oddzielny odbiór trwałych partii/ACK opisuje
+[raport push](SYNCHRONIZACJA_PUSH.md). Poniższe zestawy97fff24/a7bb7dd są
+historycznymi odbiorami materializacji, z własnymi APK i wynikami z17.10.
+
+## Odebrany etap0.8.19 — atomowy dziennik i kolejka
 
 Kod `97fff241bfbaaa1b5e59bd393d3ebac1ce95ddaf`,0.8.19/code30,
 validation1030, Room11. Po zweryfikowaniu ACK jedna transakcja zapisuje

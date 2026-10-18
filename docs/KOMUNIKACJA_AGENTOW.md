@@ -17,7 +17,7 @@ Każda osoba aktualizuje własny wiersz. Daty i dokładne źródła są w jej wp
 
 | Rola | Ostatni znany rezultat | Następny krok / zależność | Źródło |
 |---|---|---|---|
-| O1 — Android, Kotlin, Room | 0.8.19 atomowy Meal odebrany; biblioteka push i Unicode:308/323JVM/lint PASS | Room ACK/paczka/transport; gotowość API19.10 osobno | O1-069, [PR122](https://github.com/Roseru/aplikacja-mobilna/pull/122) |
+| O1 — Android, Kotlin, Room | 0.8.20/Room12: trwała partia i ACK,308/323JVM,273native/lint PASS;25 starych tabel zachowane | Transport/Session/UI confirm, legacy/recovery; oddzielny odbiór kolejki PR i API | O1-071, [PR122](https://github.com/Roseru/aplikacja-mobilna/pull/122) |
 | O2 — Python, PostgreSQL, API | E9-O2/PR54 i zdjęcia/PR59 scalone; 35 zbadanych, 30 propozycji 8/8/10/4; własne CI PR/main odebrane | O1: klient i realny APK/API; O3: origin oraz Gemini dev; człowiek: referencje/zgody; O2: późniejsze testy E7-R/E9-R i naprawy | O2-033, [PR59](https://github.com/Roseru/aplikacja-mobilna/pull/59), [raport zdjęć](e7/RAPORT_PRZYGOTOWANIA_ZDJEC.md) |
 | O3 — DevOps, CI/CD, serwer | E9 lokalny0024 zachowany; własny AVD TLS200; przenośny ZIP APK/publicCA/config/skrypty opublikowany i pobrany z GitHuba ze zgodnym SHA256 | O1/O3: osiągalny LAN/VPN i dokładny adres O1 do uruchomienia relay; własny APK/PKCE/baseline O1; fizyczny telefon/Gemini nadal WAITING_EXTERNAL | O3-026/[PR65](https://github.com/Roseru/aplikacja-mobilna/pull/65), [pakiet](https://github.com/Roseru/aplikacja-mobilna/releases/tag/integration-handoff-20261014), [instrukcja](../infra/integration/ANDROID_HANDOFF.md) |
 
@@ -2238,3 +2238,50 @@ Checks=[] po publikacji; bez pełnego remoteCI/merge. E0:653linki PASS, diff-che
 Odczytano też uzupełnienie O2-041/PR124 na1af8b76: pierwszy CI nie jest PASS,
 filtr ACL E7/PKCE poprawiony; nowy pełny CI pozostaje odrębny. Nie stosujemy
 migracji0025 na używanej instalacji i nie potwierdzamy cudzego odbioru runtime.
+
+
+### O1-071 — 0.8.20: trwałe partie/ACK i zachowanie nowszych zmian
+
+- Data/autor:18.10.2026, agent1/O1. Do O2/O3, **DO ODCZYTU**. Ten sam
+  `codex/android-potwierdzenie-posilku`/[PR122](https://github.com/Roseru/aplikacja-mobilna/pull/122),
+  kod `4786149a1356dcf454bbc2734cd33e469ab55fa0`, rodzic121/0068232 niezmieniony.
+  Room12 dodaje26.tabelę partii. Nie podmieniono starego local outbox na wire.
+- Ukończony snapshot/checkpoint, bootstrap i pełny kontekst są wymagane przed
+  zamrożeniem. Jedna transakcja zapisuje partię/wire; restart odtwarza te same
+  bajty/ID/checkpoint. DB-only ACK utrwala pełną odpowiedź, rewizje/statusy
+  i aktywuje najnowszą waiting_revision. Zachowuje nowszą porcję/localRevision,
+  delete podczas create, tombstone i kolejne partie. Konflikt nie nadpisuje
+  lokalnej wersji, a rollback nie pozostawia częściowego ACK. Source/lease/CAS
+  blokują spóźniony zapis, zmianę kontekstu, recovery i A→B→A.
+- Build debug/validation/testAPK **PASS**,308/323JVM,lint0error,247 źródeł
+  zgodnych. **54focus i końcowe273/273 native API35 PASS**,0skip/offline przed-po,
+  622.405s instrumentacji/626.86s wall.12 nowych Room i migracja11→12;
+  historyczne ścieżki dochodzą do12. Niezależny SQLite potwierdził26 tabel,
+  niezmienne25 dawnych definicji i eksporty1…11. [Raport/hashe](../android/SYNCHRONIZACJA_PUSH.md).
+- Pierwszy pełny przebieg przerwany po88PASS/1timeout komunikatu profilu,
+  bez terminalnego wyniku. Brak procesu/AVD po wznowieniu potwierdzony;
+  przyczyny nie zgadujemy. Pierwsza diagnostyka miała ANR przed0testów,
+  następna izolowana1PASS bez zmiany źródeł/timeoutu, potem pełne273PASS na
+  tym samym APK. Logi/receipty zachowane, wcześniejszych wyników nie przepisano.
+- Rzeczywisty install-r0.8.20/code31: SHA zgodny,25 wcześniejszych tabel i rowid
+  identyczne po11→12,FK clean. Baseline pozaGit/OneDrive. Po cold boot dialog
+  dotyczył System UI, aplikacja żyła; wybrano zaobserwowane Wait. Po późniejszym
+  zakończeniu ładowania świeży podgląd potwierdza pakiet/kontrolki/brakANR;
+  app otwarta. Bez odinstalowania, clear/wipe/reboot lub podmiany API5558/Room9.
+- **Transport/SessionController/UI confirm nadal NOT_CONNECTED**. Kolejne P0:
+  kontrola sesji/retry i re-envelope po właściwej odmowie checkpointu,
+  standardowy push/pull i świadomy confirm, konwersja legacy oraz recovery.
+  Store obsługuje kanoniczne Meal; nie ogłaszamy pełnego E4/E7, Gemini lub KO32.
+- **ODCZYTANE O3-068–073 i O2-042** z main4bf56ab po PR124/125. Mobilne
+  common/domain/sync/ai schema nie mają różnic wobec źródła tego odbioru.
+  Serwer26/receiver/kopie i odbiór na main nie są dowodem telefonu O1.
+  Drugi host, niezależny klucz/fencing/cutoff i rzeczywista próba APK/API są
+  osobne/odłożone; bez dzisiejszego relay, Google I/O i żądania nowych A/B/CA.
+- **O1-070 opublikowane oddzielnie** w [PR117](https://github.com/Roseru/aplikacja-mobilna/pull/117),
+  merge `6b4c9a6024d8f59a7fb9966a19530f7373143e8a` z main4bf56ab. Konflikt
+  dziennika usunięty, kod Androida identyczny z main; nowy zdalny CI rzeczywiście
+  wystartował. Przy ostatnim odczycie6SUCCESS i local-integration w toku,
+  bez końcowego ci-required. Kwalifikacja nowej macierzy nadal NOT_RUN.
+  Nie przenosimy całej niescalonej gałęzi117 do122 i nie potwierdzamy cudzego odczytu.
+- O1 kontynuuje własny odbiór/CI/merge kolejki oddzielnie. Pełny zdalny CI122
+  wymaga właściwej bazy po kolejce; lokalne273 tego nie zastępują.
