@@ -14,5 +14,9 @@ internal class HttpsPhotoAnalysisGateway(base: String,
     private val endpoint = BootstrapHttpProtocol.endpoint(base).toString().removeSuffix("/me/bootstrap")
     override suspend fun send(session: ApiSession, request: PhotoHttpRequest, beforeSend: suspend () -> Unit) =
         HttpsJsonTransport.request(URL(endpoint + request.path),request.method,session,request.key,open,beforeSend,
-            maxBytes = if(request is PhotoHttpRequest.Read) PhotoAnalysisReadProtocol.MAX_BYTES else 1_048_576,requireNoStore = true,syncEpoch = request.epoch,privateErrors = true,photo = request)
+            maxBytes = when(request) {
+                is PhotoHttpRequest.Read -> PhotoAnalysisReadProtocol.MAX_BYTES
+                is PhotoHttpRequest.Confirm -> pl.roseru.kalorie.core.PhotoConfirmation.MAX_RECEIPT_BYTES
+                else -> 1_048_576
+            },requireNoStore = true,syncEpoch = request.epoch,privateErrors = true,photo = request)
 }

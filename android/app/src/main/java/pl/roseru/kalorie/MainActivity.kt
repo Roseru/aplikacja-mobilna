@@ -122,7 +122,9 @@ class MainActivity : ComponentActivity() {
                     add={id,revision,input->app.sessionScope.launch {app.sessions.addPhotoMealDraftItem(binding.lease,id,revision,input)}},
                     remove={id,revision,item->app.sessionScope.launch {app.sessions.removePhotoMealDraftItem(binding.lease,id,revision,item)}},
                     rename={id,revision,title->app.sessionScope.launch {app.sessions.renamePhotoMealDraft(binding.lease,id,revision,title)}},
-                    discard={id,revision->app.sessionScope.launch {app.sessions.discardPhotoMealDraft(binding.lease,id,revision)}}))
+                    discard={id,revision->app.sessionScope.launch {app.sessions.discardPhotoMealDraft(binding.lease,id,revision)}},
+                    confirm={id,revision,edit->app.sessionScope.launch {app.sessions.confirmPhotoMeal(binding.lease,id,revision,edit)}},
+                    retryConfirmation={id->app.sessionScope.launch {app.sessions.retryPhotoConfirmation(binding.lease,id)}}))
             CalorieTheme(dark) { CalorieApp(model, session, actions, photoModel) }
             }
         }

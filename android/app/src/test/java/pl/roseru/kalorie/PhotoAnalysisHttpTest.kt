@@ -114,4 +114,23 @@ class PhotoAnalysisHttpTest {
         assertFalse(connection.read);assertTrue(connection.closed)
     }
 
+
+    @Test fun confirmationUsesFrozenJsonAndOwnKeyEpochWithoutAnyImageUpload()=runBlocking<Unit> {
+        val request=PhotoHttpRequest.Confirm(id,epoch,id,2,"{\"expected_revision\":2}".toByteArray())
+        val connection=Connection(200)
+        HttpsPhotoAnalysisGateway("https://api.example/api/v1"){url->assertEquals("/api/v1/ai/food-analyses/$id/confirm",url.path);connection}
+            .send(session(),request){}
+        assertEquals("POST",connection.requestMethod);assertEquals(id,connection.getRequestProperty("Idempotency-Key"))
+        assertEquals(epoch,connection.getRequestProperty("X-Sync-Epoch"));assertArrayEquals(request.body(),connection.sent.toByteArray())
+        assertEquals("application/json; charset=utf-8",connection.getRequestProperty("Content-Type"));assertTrue(connection.closed)
+    }
+    @Test fun confirmationReceiptAllowsItsFullEnvelopeButRejectsOversizeBeforeReading()=runBlocking<Unit> {
+        val request=PhotoHttpRequest.Confirm(id,epoch,id,2,"{\"expected_revision\":2}".toByteArray())
+        val payload=ByteArray(PhotoConfirmation.MAX_RECEIPT_BYTES){32}
+        val connection=Connection(200,payload=payload)
+        assertArrayEquals(payload,HttpsPhotoAnalysisGateway("https://api.example/api/v1"){connection}.send(session(),request){}.body)
+        val oversized=Connection(200,payload=ByteArray(PhotoConfirmation.MAX_RECEIPT_BYTES+1))
+        assertThrows(Exception::class.java){runBlocking {HttpsPhotoAnalysisGateway("https://api.example/api/v1"){oversized}.send(session(),request){}}}
+        assertFalse(oversized.read);assertTrue(oversized.closed)
+    }
 }

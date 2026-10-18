@@ -72,6 +72,7 @@ import java.time.LocalDate
             TextButton(onClick={discard=true},enabled=editable,modifier=Modifier.testTag("photo-meal-draft-discard")){Text("Odrzuć poprawki")}
         }
     }
+    PhotoConfirmationPanel(session,actions)
     edit?.let {target->
         val original=remember(target,draft.operationId,draft.editRevision){if(target.isEmpty())PhotoDraftInput("","100","g","","","","") else draft.items.singleOrNull {it.id==target}?.input}
         if(original!=null && session.photoCanEditProposal) PhotoDraftItemDialog(original,target.isEmpty(),editable,onDismiss={edit=null},onSave={input->
