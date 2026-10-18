@@ -17,7 +17,7 @@ Każda osoba aktualizuje własny wiersz. Daty i dokładne źródła są w jej wp
 
 | Rola | Ostatni znany rezultat | Następny krok / zależność | Źródło |
 |---|---|---|---|
-| O1 — Android, Kotlin, Room | 0.8.21: UI i HTTP confirm, trwałe ponowienie, atomowy dziennik;310/325JVM,286native PASS;26 tabel zachowane | Nowa decyzja po odrzuceniu, transport push/legacy/recovery; odbiór kolejki PR i rzeczywistego API osobno | O1-072, [PR122](https://github.com/Roseru/aplikacja-mobilna/pull/122) |
+| O1 — Android, Kotlin, Room | 0.8.22: jawny powrót do poprawek po odrzuceniu, historia decyzji Room13; 313/328 JVM, 299 native PASS; 26 starszych tabel zachowane | Transport push/pull, legacy, recovery/retencja; odbiór kolejki PR i rzeczywistego API osobno | O1-073, [PR122](https://github.com/Roseru/aplikacja-mobilna/pull/122) |
 | O2 — Python, PostgreSQL, API | E9-O2/PR54 i zdjęcia/PR59 scalone; 35 zbadanych, 30 propozycji 8/8/10/4; własne CI PR/main odebrane | O1: klient i realny APK/API; O3: origin oraz Gemini dev; człowiek: referencje/zgody; O2: późniejsze testy E7-R/E9-R i naprawy | O2-033, [PR59](https://github.com/Roseru/aplikacja-mobilna/pull/59), [raport zdjęć](e7/RAPORT_PRZYGOTOWANIA_ZDJEC.md) |
 | O3 — DevOps, CI/CD, serwer | E9 lokalny0024 zachowany; własny AVD TLS200; przenośny ZIP APK/publicCA/config/skrypty opublikowany i pobrany z GitHuba ze zgodnym SHA256 | O1/O3: osiągalny LAN/VPN i dokładny adres O1 do uruchomienia relay; własny APK/PKCE/baseline O1; fizyczny telefon/Gemini nadal WAITING_EXTERNAL | O3-026/[PR65](https://github.com/Roseru/aplikacja-mobilna/pull/65), [pakiet](https://github.com/Roseru/aplikacja-mobilna/releases/tag/integration-handoff-20261014), [instrukcja](../infra/integration/ANDROID_HANDOFF.md) |
 
@@ -2341,3 +2341,52 @@ wynik nie jest kwalifikacją nowej macierzy ani zastępstwem CI122.
   nie otwierano relay ani nie zmieniano APIAVD/oryginalnego pakietu0.8.12.
   A/B/CA już dostarczone — nie jest potrzebne ponowne przekazanie sekretów.
   Oczekiwany odczyt O2/O3 dotyczy źródła i zakresu, nie potwierdzenia za odbiorców.
+
+
+### O1-073 — Android 0.8.22: powrót do poprawek i trwała historia odrzuceń
+
+- Data/autor: 19.10.2026, agent 1 / O1. Do O2/O3, **DO ODCZYTU**.
+  Branch `codex/android-potwierdzenie-posilku`, [PR122](https://github.com/Roseru/aplikacja-mobilna/pull/122).
+  Kod `39c935f339bc8cd28a360aff5479ddea508c832c`, raport i opublikowany head
+  `96afe69b13a068ba3c298fee8663e35aa70ec6c8`.
+  [Odbiór 0.8.22 i SHA-256 APK](../android/POWROT_DO_POPRAWEK.md).
+- Po `proposal_revision_conflict` lub `photo_catalog_choice_changed` jawny,
+  poprawny GET może udostępnić „Wróć do poprawek”. Konflikt rewizji wymaga
+  wyższej rewizji. Osobny dialog zachowuje porcje, dzień, wartości i UUID,
+  zwiększa rewizję przeglądu; kolejna zgoda dostaje nowy klucz. Sam GET nie
+  zmienia decyzji. Lokalny powrót przy wygasłym dostępie nie wysyła HTTP/refresh.
+  Utrata odpowiedzi, niebezpieczny reuse i terminalny stan nie pozwalają
+  wygenerować nowej decyzji; niepewny POST nadal wymaga identycznego replay.
+- Room 13 dodaje `photo_confirmation_history`: pierwotny JSON/klucz/pochodzenie
+  pozostają niezmienne, osobno zapisuje się dowód odczytu i rewizję powrotu.
+  Odrzucenie, odczyt i powrót mają atomowe transakcje oraz CAS źródła/historii.
+  GET rozpoczęty przed odrzuceniem oraz zignorowana starsza odpowiedź nie
+  wytwarzają dowodu. Nowy odczyt, recovery lub A→B→A unieważniają przygotowanie.
+  Historyczny klucz nie może zostać użyty w nowym confirm/cancel. Spóźniony ACK
+  nie materializuje starej decyzji po powrocie. JSON starszego Room12 nie jest
+  przepisywany w migracji; archiwum powstaje dopiero przy właściwym jawnym GET.
+- Odbiór lokalny 0.8.22/code33/validation1033: **313 JVM debug / 328 validation**,
+  **17 celowanych i 299/299 pełnych native PASS**, 0 fail/skip, offline przed/po.
+  Pełny przebieg: 464,342 s instrumentacji / 468,984 s całość. Lint: 0 błędów;
+  E0 i diff-check PASS, 54 lokalne odnośniki pięciu raportów sprawdzone osobno.
+  252 wejścia buildu i trzy niezmienne APK powiązane hashami z kodem powyżej.
+  Niezależny SQLite potwierdził zgodność nowej tabeli z eksportem KSP oraz
+  niezmienione definicje wcześniejszych 26 tabel i eksporty Room1–12.
+- Aktualizacja zwykłego APK przez install-r i pierwsze uruchomienie zachowały
+  wszystkie 26 starszych tabel/kolumn/wartości i rowid pozycji. FK bez błędów,
+  nowa 27. tabela historii pusta. Starą 0.8.21 uruchomiono na bieżącej dobie
+  przed kopią kontrolną. Pierwsze obserwacje zimnego startu nie zastały gotowych
+  kontrolek; bez ANR, kolejne obserwacje tego samego procesu potwierdziły gotowy
+  UI bez ponownego uruchamiania. Aplikacja 0.8.22 otwarta do testów manualnych.
+  Surowe kopie bazy/UI pozostają prywatne poza Git/OneDrive.
+- Przed publikacją ponownie pobrano main `a61730f` i przeczytano O3-074/075;
+  brak nowych wpisów względem odczytu O1-072. PR122 nie ma recenzji/komentarzy,
+  pozostaje draft z dokładnym rodzicem PR121/`0068232d80c0e33b0b33bf15e86cad2174774707`.
+  Zdalny head raportu potwierdzony; własne checks=[] i brak merge. Po odbiorze
+  rodziców konieczna właściwa baza i osobny CI/integracja.
+- Następny etap O1: transport push/pull, konwersja legacy, pełne recovery,
+  retencja i uzgodnienie niejednoznacznych/terminalnych decyzji. Rzeczywisty
+  APK/API/Keycloak/TLS i pełne E4/E7/KO32 pozostają osobno. Nie wywoływano Gemini,
+  nie otwierano relay, nie zmieniano używanego serwera ani APIAVD. A/B/CA są już
+  prywatnie dostarczone; nie potrzeba ponownej dostawy sekretów.
+  Oczekiwane potwierdzenie O2/O3 dotyczy odczytu źródła i granic tego etapu.
