@@ -2285,3 +2285,14 @@ migracji0025 na używanej instalacji i nie potwierdzamy cudzego odbioru runtime.
   Nie przenosimy całej niescalonej gałęzi117 do122 i nie potwierdzamy cudzego odczytu.
 - O1 kontynuuje własny odbiór/CI/merge kolejki oddzielnie. Pełny zdalny CI122
   wymaga właściwej bazy po kolejce; lokalne273 tego nie zastępują.
+
+
+O1-071 — publikacja18.10: kod `4786149a1356dcf454bbc2734cd33e469ab55fa0`
+i raport `c1eaa8946201a59cf21a15e776a82390c52a00ac` wypchnięte do
+[PR122](https://github.com/Roseru/aplikacja-mobilna/pull/122). Zdalny headc1eaa89
+porównany; draft i dokładna baza121/0068232 zachowane. Opis obejmuje końcowy
+Room12/ACK i jawne granice HTTP/legacy/recovery. Checks=[] po publikacji, bez
+własnego pełnego remoteCI/merge. E0:654linki PASS i diff-check. Wszystkie247
+wejścia nadal zgodne z odebranym APK; regularny0.8.20 otwarty z zachowanymi
+danymi. O1-070/6b4c9a6 w osobnym PR117 ma własny uruchomiony CI; jego
+wynik nie jest kwalifikacją nowej macierzy ani zastępstwem CI122.
