@@ -9,6 +9,8 @@ Etap kontynuowany w [PR122](https://github.com/Roseru/aplikacja-mobilna/pull/122
 Poniższy raport obejmuje historyczny etap0.8.20. W0.8.21 podłączono
 [zatwierdzenie posiłku w UI i HTTP confirm](POTWIERDZENIE_INTERFEJS.md);
 transport standardowych partii push pozostaje oddzielnym etapem.
+W0.8.22 dodano [jawny powrót do poprawek po odrzuceniu](POWROT_DO_POPRAWEK.md)
+z archiwum wcześniejszych decyzji i osobną kwalifikacją Room13.
 
 ## Etap 0.8.20 — Room 12
 
@@ -144,7 +146,7 @@ pliku, nie wykonane wywołanie API.
 ## Dalsza implementacja
 
 Następne kroki: transport push, jego kontrola sesji/retry/backoff, pełny odczyt po push,
-nowa decyzja confirm po odrzuceniu, konwersja legacy, recovery i retencja. Przeterminowany
+uzgodnienie terminalnych/niejednoznacznych decyzji, konwersja legacy, recovery i retencja. Przeterminowany
 checkpoint wymaga kontrolowanego przegrupowania koperty po właściwej odmowie
 serwera, z zachowaniem pierwotnych operacji; obecny store sam tego nie wykonuje.
 Konflikty wymagają osobnego uzgodnienia. Adapter Room obsługuje na tym etapie

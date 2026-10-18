@@ -7,7 +7,9 @@ Kontrakt: [integracja E7](../docs/e7/INTEGRACJA_O1.md),
 [server confirm](../backend/src/calorie_app/modules/ai/decisions.py),
 [ai.schema](../contracts/schemas/ai.schema.json).
 
-Aktualny0.8.21/Room12 podłącza [HTTP, kontrolę sesji i przycisk zatwierdzania](POTWIERDZENIE_INTERFEJS.md),
+Aktualny0.8.22/Room13 ma [trwałą historię i powrót do poprawek po odrzuceniu](POWROT_DO_POPRAWEK.md),
+z299/299 pełnych testów urządzenia i zachowaniem26 starszych tabel.
+Etap0.8.21/Room12 podłączył [HTTP, kontrolę sesji i przycisk zatwierdzania](POTWIERDZENIE_INTERFEJS.md),
 z286/286 pełnych testów urządzenia. Historyczny0.8.20 i odbiór trwałych partii/ACK opisuje
 [raport push](SYNCHRONIZACJA_PUSH.md). Poniższe zestawy97fff24/a7bb7dd są
 historycznymi odbiorami materializacji, z własnymi APK i wynikami z17.10.

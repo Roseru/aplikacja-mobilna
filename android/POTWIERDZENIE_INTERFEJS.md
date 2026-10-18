@@ -1,5 +1,8 @@
 # Zatwierdzanie posiłku z ekranu analizy — 0.8.21
 
+To historyczny odbiór0.8.21. Aktualny0.8.22 dodaje
+[powrót do poprawek po odrzuconej decyzji i trwałą historię](POWROT_DO_POPRAWEK.md).
+
 Agent 1 / O1, 18 października 2026. Gałąź `codex/android-potwierdzenie-posilku`,
 [PR122](https://github.com/Roseru/aplikacja-mobilna/pull/122), zależny od
 `0068232d80c0e33b0b33bf15e86cad2174774707` / [PR121](https://github.com/Roseru/aplikacja-mobilna/pull/121).
@@ -45,8 +48,8 @@ brakiem danych; porcje zachowują dokładne ilości g/ml.
   decyzji i nie dodaje wpisu. Jawny replay pozostaje dostępny.
 - Konflikt rewizji/katalogu lub odrzucona decyzja zachowują poprawki do odczytu
   i wymagają sprawdzenia wyniku. Nie generujemy nowego klucza za użytkownika.
-  Nowe przygotowanie decyzji po definitywnym odrzuceniu wymaga dalszego
-  interfejsu; w tym etapie stara decyzja pozostaje zablokowana także po GET.
+  Na etapie0.8.21 nowe przygotowanie decyzji po definitywnym odrzuceniu wymagało
+  dalszego interfejsu; stara decyzja pozostawała wtedy zablokowana także po GET.
   Zmiana epoki/generacji/kontekstu przechodzi do recovery bez utraty danych.
 
 ## Walidacja i granice
