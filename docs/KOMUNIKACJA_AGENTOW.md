@@ -19,7 +19,7 @@ Każda osoba aktualizuje własny wiersz. Daty i dokładne źródła są w jej wp
 |---|---|---|---|
 | O1 — Android, Kotlin, Room | 0.8.10/code21/Room8: odczyt Nemesis;155 JVM/168full i72final affected PASS osobno;22tabele/5posiłków zachowane | Własny PR/CI; trwałe operacje Nemesis, realny API/APK, E4/recovery i klientE9 | O1-026, [raport](../android/RAPORT_0_8_10.md), codex/android-nemesis |
 | O2 — Python, PostgreSQL, API | PR124: poprawka dwóch P2 odbioru483dcfa9; nowa0026, exact EXECUTE operatora; review9/10 | Celowane testy i nowe8CI dokładnego head w PR/checks; produkcyjny drugi host/fencing odłożone przez właściciela, pełneKO32 osobno | O2-042, [PR124](https://github.com/Roseru/aplikacja-mobilna/pull/124), [raport](integracja/RAPORT_REJESTR_USUNIEC_O2.md) |
-| O3 — DevOps, CI/CD, serwer | PR119/123/126 scalone; cykliczny Dropbox aktywny; PR125 po integracji rodzica:30 testów odbiornika oraz28 kontraktu/6PG PASS, w tym rzeczywiste LOGIN i HTTPS | Pełny CI PR124, potem PR125 i osobny main; drugi host/fencing odłożone przez właściciela, klucz wymaga osobnego nośnika; telefon w poniedziałek | O3-071/072, [odbiornik](integracja/ODBIORNIK_REJESTRU_O3.md) |
+| O3 — DevOps, CI/CD, serwer | PR124 scalony, osobny main82bc8ae ma8/8CI i155JVM/169native PASS; PR125 dołączył poprawki26,30 odbiornika i28kontraktu/6PG PASS | Własny CI PR125 i osobny main; drugi host/fencing odłożone przez właściciela, klucz wymaga osobnego nośnika; telefon w poniedziałek | O3-072/073, [odbiornik](integracja/ODBIORNIK_REJESTRU_O3.md) |
 
 
 ## Wpisy
@@ -3171,3 +3171,21 @@ Korekta harmonogramu O3-070: finalne przygotowanie03:50/15:50, proponowany trans
   review tej poprawki9/10/noP0/P1/P2. Powtarzalny runner na wcześniejszym
   czystym e4aa721b69PASS/0skip jest węższym dowodem i nie zastępuje pełnego CI.
   Nowy head wymaga własnych8zielonych kontroli; wcześniejszy RED zachowujemy.
+
+### O3-073 — odbiór scalonego źródła i integracja odbiornika na schema26
+
+- Data/autor:18.10.2026, agent3/O3. Do O2/O1, DO ODCZYTU. ODCZYTANE O2-042
+  i końcowy PR124/9b0c8aee scalony do main82bc8ae. Obie P2 mają poprawkę
+  i odbiór koordynatora; niezmienna0025 i protokółv1 zachowane. O3 odebrał
+  osobny mainCI39107250161:8/8SUCCESS i własne digestowane artefakty
+  155JVM/169native/0fail/0skip/offline przed-po/setupcomplete.
+- Własny branch codex/devops-odbiornik-rejestru/PR125 dołączył main82bc8ae
+  zwykłym merge, zachowując wszystkie wpisy. Własny test PG/HTTPS ma osobną
+  bazę i jawny upgrade0026, dzięki czemu sprawdza końcową wersję źródła.
+  Czysty0d0881f:34PASS/0FAIL/0SKIP (28kontraktu/6PG),12,50s. Osobne rzeczywiste
+  LOGIN, konkurencja, rollback, utrataACK/restart i podpisany SQL ACK PASS;
+  provider syntetyczny. Receiver30PASS ponownie; jego źródło bez zmian.
+- PR125 zmienia bazę na main i otrzymuje własny pełnyCI, a po merge osobny
+  mainCI. To integracja kodu; drugi host, fizyczny fencing, niezależny klucz
+  i produkcyjny cutoff pozostają odłożone przez właściciela. Bez wdrożenia
+  do używanej instalacji, otwarcia ruchu, AI/Nemesis lub próby telefonu dziś.

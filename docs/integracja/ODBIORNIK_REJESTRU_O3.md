@@ -9,15 +9,20 @@ kont, CA, epoki, usług ani bramek AI/Nemesis. Próba APK/API pozostaje na ponie
 ## Zależność i rzeczywisty odbiór źródła
 
 Ten etap wymaga kontraktu runtime z PR124, dokładny parent
-`483dcfa95a1b27bcbdcf1b04ebb22ca7c46f49a9`, branch
-`codex/backend-ciagly-rejestr-usuniec`. Własna gałąź O3 to
+`9b0c8aeee564b34ab1ebd4adabed7d897a36f3ca`, scalony do main
+`82bc8ae48bf010e07f8899d392ab11152716bbe7`. Własna gałąź O3 to
 `codex/devops-odbiornik-rejestru`; zależny PR porównuje się z rodzicem.
 Kolejność odbioru: aktualny PR124 po integracji main, jego merge do main,
 zmiana bazy PR125 na main i własny pełny CI. Nie scalać dziecka do rodzica.
-Parent483dcfa łączy zwykłym merge poprawki O2/9b76156 i mainbe9c1f6;
-konflikt dotyczył wyłącznie dziennika. Kod kontraktu, transportu i migracji
-O2 nie zmienił się w tym kroku. Dokładne zakończone CI i merge są w opisach
-PR124/125; starsze wyniki poniżej pozostają historycznymi checkpointami.
+Pierwsza integracja483dcfa łączyła poprawki O2/9b76156 i mainbe9c1f6.
+Koordynator zgłosił następnie dwie P2; O2 zamknął je nową migracją0026
+i dokładną kontrolą callable EXECUTE operatora, zachowując niezmienną0025.
+O3 odczytał O2-042 i dołączył scalony main82bc8ae zwykłym merge; konflikt
+dotyczył wyłącznie dziennika, zachowano wpisy obu stron. Normatywny protokół
+i kod odbiornika nie zmieniły się. PR124 ma CI39103312164 PASS8/8 oraz
+niezależny mainCI39107250161 PASS8/8; O3 osobno pobrał i zweryfikował digesty
+155JVM/169native/0fail/0skip/offline/setup. Dokładny własny CI i merge PR125
+są w jego opisie; starsze wyniki poniżej są historycznymi checkpointami.
 
 Odczyt O2-041 obejmuje źródło/MAC/ACK/cutoff, egzekwowane bariery oraz jawny
 brak ponownego otwarcia po restore. CI39070253209 źródła nie jest PASS:
@@ -150,14 +155,21 @@ Nie osłabiono SQL lub barier. Końcowy wynik dotyczy poprawnej próby.
 Receipt wskazuje wykonawczy receiver SHA6fc3824b, C72715f3 i osobny hash
 testu; nie przepisujemy go na późniejszy commit dokumentacyjny. Test SQLite nie zastępuje testów źródłowego PostgreSQL.
 
-Nowy odbiór na czystym commicie b4b2943 po połączeniu aktualnego rodzica:
-**34 PASS / 0 FAIL / 0 SKIP** w 10,54 s: 28 przypadków kontraktu i sześć
-rzeczywistych przypadków PostgreSQL, w tym własny PG→HTTPS→ACK. Wykonano
+Końcowy odbiór na czystym commicie0d0881f po połączeniu scalonego rodzica:
+**34 PASS / 0 FAIL / 0 SKIP** w 12,50 s: 28 przypadków kontraktu i sześć
+rzeczywistych przypadków PostgreSQL, w tym własny PG→HTTPS→ACK na
+schema0026. Własny fixture ma oddzielną bazę i jawny upgrade0026; nie resetuje
+wspólnego już potwierdzonego prefiksu. Wykonano
 również osobne rzeczywiste LOGIN eksportera/operatora, konkurencję dwóch
 eksporterów, rollback bez luki i crash/restart etapu providera. Lokalne
 30 testów odbiornika ponownie PASS; Ruff i format trzech plików PASS.
+Receiver nadal ma SHA6fc3824b; test na0026 ma
+SHA2381873722b7f474b97948969cdfa45c857c3c9bd288a8b6cf329cd05cacc6a4.
 Prywatny receipt zachowuje exact commit i hashe wykonanych źródeł;
 nie przypisujemy go późniejszemu commitowi dokumentacyjnemu.
+
+Wcześniejszy34PASS/10,54s na b4b2943 dotyczył0025 i pozostaje osobnym
+checkpointem, podobnie jak wcześniejsze2PG PASS/7,83s opisane powyżej.
 
 Pozostałe wejścia wdrożeniowe (drugi host odłożony przez właściciela): adres/dostęp;
 klucze poza źródłem i ich niezależne odzyskanie; rzeczywisty eksport PG,
