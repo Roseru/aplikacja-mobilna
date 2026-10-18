@@ -240,7 +240,7 @@ def finalizer_login(private):
 
 @contextmanager
 def runtime(*, now=datetime(2026, 10, 12, 12, tzinfo=UTC), zone="UTC"):
-    with fresh_database("0025_deletion_ledger") as private:
+    with fresh_database("0026_ledger_review") as private:
         with _runtime(private, now=now, zone=zone) as rt:
             yield rt
 
@@ -256,6 +256,7 @@ def _runtime(private, *, now, zone):
             "0023_e9_qualification",
             "0024_e9_history_graph",
             "0025_deletion_ledger",
+            "0026_ledger_review",
         }
     for name in ("api", "migrator", "worker"):
         with engines[name].connect() as connection:

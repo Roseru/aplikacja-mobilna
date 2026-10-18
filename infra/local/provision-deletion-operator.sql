@@ -87,12 +87,31 @@ BEGIN
         OR pg_has_role(login_name,'calorie_app_deletion_exporter','MEMBER')) THEN
         RAISE EXCEPTION 'Ledger operator fencing or role separation invalid';
       END IF;
+      -- Effective privileges include direct, inherited and PUBLIC grants.
+      -- Refuse every callable app function outside the operator contract;
+      -- never silently repair a hostile existing LOGIN or parent role.
       IF ledger AND EXISTS(SELECT FROM pg_proc p JOIN pg_namespace n ON n.oid=p.pronamespace
-        WHERE n.nspname='app' AND (p.proname LIKE '_ledger_%'
-          OR p.proname LIKE '%pre25' OR p.proname LIKE 'purge_deleted_account_e%'
-          OR p.proname LIKE 'begin_account_deletion_e%' OR p.proname LIKE 'e8n_delete_helper%')
-        AND has_function_privilege(login_name,p.oid,'EXECUTE')) THEN
-        RAISE EXCEPTION 'Operator can execute an internal deletion parent';
+        WHERE n.nspname='app' AND p.prorettype NOT IN('trigger'::regtype,'event_trigger'::regtype)
+        AND has_function_privilege(login_name,p.oid,'EXECUTE')
+        AND p.oid NOT IN (
+          'app.begin_account_deletion(uuid,uuid,integer)'::regprocedure,
+          'app.confirm_account_deletion(uuid)'::regprocedure,
+          'app.purge_deleted_account(uuid)'::regprocedure,
+          'app.ledger_status(uuid)'::regprocedure,
+          'app.ledger_prepare_provider(uuid)'::regprocedure,
+          'app.ledger_provider_target(uuid,uuid)'::regprocedure,
+          'app.ledger_provider_result(uuid,uuid,text)'::regprocedure,
+          'app.ledger_prepare_purge(uuid)'::regprocedure)) THEN
+        RAISE EXCEPTION 'Operator has unexpected effective function privileges';
+      END IF;
+      IF ledger THEN
+        FOREACH function_name IN ARRAY ARRAY['app.ledger_status(uuid)',
+          'app.ledger_prepare_provider(uuid)', 'app.ledger_provider_target(uuid,uuid)',
+          'app.ledger_provider_result(uuid,uuid,text)', 'app.ledger_prepare_purge(uuid)'] LOOP
+          IF NOT has_function_privilege(login_name,function_name,'EXECUTE') THEN
+            RAISE EXCEPTION 'Ledger operator function privileges are incomplete';
+          END IF;
+        END LOOP;
       END IF;
       FOREACH function_name IN ARRAY ARRAY[
         'app.begin_account_deletion(uuid,uuid,integer)',
