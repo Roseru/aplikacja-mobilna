@@ -69,6 +69,41 @@ nie instaluje tokenów Dropbox ani harmonogramu capture. Zadanie O3-Calorie-Offs
 przebieg17.10/23:44:49 ma LastTaskResult0/Ready, pythonw i Limited.
 To odbiór przygotowania lokalnego, cloud_upload=false.
 
+### Niezależny interpreter instalowanego runtime
+
+Instalatory przygotowania offsite i lokalnego utrzymania archiwizują również
+pełny backend z tego samego commita. Narzędzie
+[`runtime_environment.py`](../../infra/integration/runtime_environment.py)
+buduje jego własne środowisko z `uv.lock`, offline, bez instalacji edytowalnej
+i bez współdzielenia plików zależności przez hardlinki. Wymaga dostępnego `uv`
+oraz kompletu zależności w lokalnym cache. Nie pobiera nowego Pythona ani
+zależności z sieci. Parametr `-Python` wskazuje interpreter do przygotowania;
+zarejestrowane akcje korzystają już z własnego `backend/.venv/Scripts/pythonw.exe`.
+
+Przed rejestracją uruchamia izolowany import i porównuje rzeczywiste
+`sys.prefix`, położenie modułu oraz `EXPECTED_REVISION` z archiwalnym źródłem.
+Ustawienia `PYTHONPATH`, `PYTHONHOME`, `VIRTUAL_ENV` i konfiguracja `UV_*`
+wywołującego nie mogą przekierować instalacji. Nieudana kwalifikacja przerywa
+instalację przed rejestracją zadań; lokalny `runtime-install-error.log` zachowuje
+diagnostykę błędu instalacji zależności. Dowód środowiska nie jest receipt kopii.
+Fizyczna ścieżka kopii jest przekazywana przez JSON, także z polskimi znakami.
+Na Windows kwalifikacja i zadania używają pełnych ścieżek rozszerzonych,
+aby nie przekroczyć limitu dawnych API plikowych. Wheel jest budowany z
+tymczasowej krótkiej kopii archiwalnych źródeł; kopia jest usuwana po instalacji.
+Pozostaje zwykły zainstalowany pakiet, bez odwołania importu do tej kopii.
+
+Próba obu instalatorów na źródłach schema26 i syntetycznym stanie dała cztery
+poprawne akcje, przy przechwyconej rejestracji zamiast zmiany istniejących zadań.
+Osobne rzeczywiste zadanie Windows/Limited/pythonw zaimportowało własny backend26
+i zakończyło się wynikiem0; zadanie testowe usunięto. Wcześniejsze błędy długiej
+ścieżki zatrzymywały instalację przed rejestracją; ich diagnostyka pozostała
+prywatna. Archiwalny backend24 działa również niezależnie od roboczego26.
+
+To zabezpiecza następne instalacje przed importem backendu z roboczej gałęzi.
+Nie aktualizuje automatycznie działającej instalacji, schematu bazy ani
+istniejących harmonogramów. Utrzymanie źródła schema24 wymaga runtime schema24;
+scalenie źródeł schema26 samo nie uprawnia do podmiany tego runtime.
+
 ## Walidacja i gotowość wydania
 
 16nowych testów dostawy PASS,5nowych regresji monitora PASS. Cała lokalna

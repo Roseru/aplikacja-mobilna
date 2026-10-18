@@ -3235,6 +3235,38 @@ Korekta harmonogramu O3-070: finalne przygotowanie03:50/15:50, proponowany trans
   i produkcyjny cutoff pozostają odłożone przez właściciela. Bez wdrożenia
   do używanej instalacji, otwarcia ruchu, AI/Nemesis lub próby telefonu dziś.
 
+### O3-074 — niezależne środowiska kolejnych instalacji kopii
+
+- Data/autor:18.10.2026, agent3/O3. Do O1/O2, DO ODCZYTU. Właściciel zlecił
+  samodzielne domknięcie dostępnych prac. ODCZYTANE O1-065–071, w tym Room12,
+  zakres trwałego ACK bez podłączonego HTTP oraz naprawa konfliktu PR117
+  przez O1/6b4c9a6. Aktywne gałęzie O1 pozostają przy ich autorze.
+- Branch `codex/devops-niezalezny-runtime-kopii`: instalatory maintenance/offsite
+  archiwizują backend z własnego commita, tworzą zamknięte środowisko offline
+  z locka i kwalifikują import/schemat przed rejestracją. Roboczy editable
+  backend ani zmienne środowiska nie wybierają już kodu zadań. Poprawiono
+  również przekazanie fizycznej ścieżki kopii z polskimi znakami przez JSON.
+  [Opis](integracja/CYKLICZNE_KOPIE_O3.md). To poprawka przyszłej instalacji,
+  nie migracja używanego schema24 lub aktualizacja jego harmonogramów.
+- Rzeczywista próba archiwalnego backendu baa48c5/schema24 przy roboczym
+  main4bf56ab/schema26 i celowo obcych PYTHONPATH/VIRTUAL_ENV/UV środowiska:
+  PASS, import wyłącznie z własnego wheel/venv24. Sześć regresji obejmuje
+  obcy import/interpreter/schemat, brak źródeł i niedostępne zależności offline.
+  Pełna lokalna infrastruktura253PASS na Windows. Własny CI nowego PR
+  i osobny odbiór main pozostają wymagane; wynik jest przypinany w opisie PR.
+- Rzeczywisty przebieg obu instalatorów na syntetycznym stanie/source26:
+  cztery akcje używają własnego pythonw, Limited i kwalifikowanego pakietu26;
+  rejestracja tych akcji była przechwycona. Osobny faktyczny import z nowego
+  tymczasowego zadania Windows PASS/result0; zadanie usunięte. Obsłużono
+  polskie znaki i długie ścieżki (rozszerzone ścieżki, krótka tymczasowa kopia
+  do budowy wheel, bez editable). Wcześniejsze nieudane próby instalacji
+  zachowano; nie rejestrowały zadań. Używane zadania i źródło bez zmiany.
+- Świeży HTTPS readiness/discovery200 i oryginalny issuer PASS. Wszystkie
+  trzy istniejące harmonogramy kopii/recovery/prepare włączone, ostatnie wyniki0;
+  nie otwarto relay18444. O3-073/PR125 ma już własny oraz niezależny mainCI
+  39117298868 po8SUCCESS. Drugi host/fizyczny fencing, niezależny nośnik klucza,
+  pełne KO32 i telefon19.10 pozostają osobnymi wejściami/odbiorami. Nie wskazano
+  wymiennego nośnika; lokalny zestaw klucza nie staje się przez to niezależny.
 
 ### O1-070 — PR117 odebrany z nowym main; kwalifikacja toolchainu osobno
 
@@ -3264,3 +3296,17 @@ Korekta harmonogramu O3-070: finalne przygotowanie03:50/15:50, proponowany trans
   nie cofając zmiany innego autora; dawny zapis pozostaje w rodzicu4f10652.
   Wszystkie pozostałe sekcje rodzica zachowane. Android identyczny z main.
   E0/diff-check i własny CI nowego head osobno przed końcowym odbiorem.
+
+
+### O3-075 — integracja PR127 z dokumentacją A1 na nowym main
+
+- Data/autor:18.10.2026, agent3/O3. Do O1/O2, DO ODCZYTU. PR127/head4d42be8
+  zaliczył własny CI39122239087:8/8SUCCESS;1410PG/1742unit/252infraPASS,
+  jeden Windows-only test pokryty lokalnym253PASS. Własne artefakty155JVM
+  i169native z poprawnymi digestami,0fail/0skip/offline przed-po/setupcomplete.
+- W trakcie odbioru scalono PR117 do maineb901a0. Dołączono go zwykłym merge
+  do istniejącego PR127; konflikt wyłącznie dziennika rozwiązany zachowaniem
+  wszystkich wcześniejszych sekcji obu rodziców. Kod Androida, backendu
+  i instalatorów identyczny z odebranym4d42be8; doszła dokumentacja macierzy A1.
+  Nie wdrożono toolchainu ani nowego schematu. Nowy head wymaga własnego CI,
+  a po merge osobnego main; wyniki pozostają w opisie PR, bez fikcyjnego PASS.

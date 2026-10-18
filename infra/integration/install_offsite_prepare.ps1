@@ -20,7 +20,7 @@ if ($existing -and $existing.Description -ne $description) { throw 'Task belongs
 if ($existing -and $existing.State -eq 'Running') { throw 'Wait for existing preparation.' }
 $revision = (& git -C $checkout rev-parse HEAD).Trim()
 if ($LASTEXITCODE -ne 0) { throw 'Cannot identify committed sources.' }
-& git -C $checkout diff --exit-code HEAD -- infra/integration
+& git -C $checkout diff --exit-code HEAD -- infra/integration backend
 if ($LASTEXITCODE -ne 0) { throw 'Commit runtime sources before installation.' }
 & git -C $checkout cat-file -e 'HEAD:infra/integration/offsite_delivery.py'
 if ($LASTEXITCODE -ne 0) { throw 'Committed delivery tool is required.' }
@@ -32,7 +32,7 @@ if (-not (Test-Path -LiteralPath $runtime)) {
     & icacls $runtime '/inheritance:r' '/grant:r' "*${sid}:(OI)(CI)F" '*S-1-5-18:(OI)(CI)F' | Out-Null
     if ($LASTEXITCODE -ne 0) { throw 'Private runtime ACL failed.' }
     $archive = Join-Path $runtime 'runtime.zip'
-    & git -C $checkout archive --format=zip --output=$archive HEAD infra/integration infra/local
+    & git -C $checkout archive --format=zip --output=$archive HEAD infra/integration infra/local backend
     if ($LASTEXITCODE -ne 0) { throw 'Cannot archive committed runtime.' }
     Expand-Archive -LiteralPath $archive -DestinationPath $runtime
     Remove-Item -LiteralPath $archive
@@ -47,6 +47,12 @@ if ($owner.owner -ne 'calorie-o3-offsite-prepare-v1' -or $owner.revision -ne $re
 }
 $script = Join-Path $runtime 'infra/integration/offsite_delivery.py'
 if (-not (Test-Path -LiteralPath $script -PathType Leaf)) { throw 'Runtime script missing.' }
+$uv = (Get-Command uv -ErrorAction Stop).Source
+$environmentTool = Join-Path $runtime 'infra/integration/runtime_environment.py'
+$environmentJson = & $pythonPath -I $environmentTool --runtime $runtime --python $pythonPath --uv $uv
+if ($LASTEXITCODE -ne 0) { throw 'Locked runtime environment qualification failed; task unchanged.' }
+$environment = $environmentJson | ConvertFrom-Json
+$pythonw = $environment.pythonw
 $arguments = '-I "{0}" prepare --settings "{1}"' -f $script, $settingsPath
 $action = New-ScheduledTaskAction -Execute $pythonw -Argument $arguments -WorkingDirectory $runtime
 $principal = New-ScheduledTaskPrincipal -UserId $identity.Name -LogonType Interactive -RunLevel Limited
