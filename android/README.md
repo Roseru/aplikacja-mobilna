@@ -1,10 +1,18 @@
 # Android — Racje i kalorie
 
-Aktualny APK **0.8.20/code31/Room12** ma trwałe partie kanonicznych Meal i atomowy
+Aktualny APK **0.8.21/code32/Room12** pozwala zatwierdzić poprawiony wynik zdjęcia
+przyciskiem „Dodaj do dziennika”. Zachowuje tę samą decyzję po utracie odpowiedzi
+i restarcie; pełny ACK zapisuje atomowo posiłek, pochodzenie i kanoniczną kolejkę.
+[Raport](POTWIERDZENIE_INTERFEJS.md):310/325JVM,14 celowanych i286 pełnych testów
+urządzenia PASS, lint0error. Aktualizacja zachowała wszystkie26 tabel i rowid;
+aplikacja jest otwarta do testów. To lokalny odbiór syntetyczny; rzeczywisty
+APK/API, transport push, legacy/recovery i nowa decyzja po odrzuceniu są osobno.
+
+Wydanie **0.8.20/code31/Room12** ma trwałe partie kanonicznych Meal i atomowy
 odbiór ACK, który zachowuje nowsze porcje oraz nadaje właściwą rewizję kolejnej
 intencji. [Raport](SYNCHRONIZACJA_PUSH.md):308/323JVM,273native API35 i lint0error
 PASS;25 wcześniejszych tabel/rowid zachowane po aktualizacji, aplikacja otwarta.
-To odbiór lokalnego zapisu na fixture. Transport, kontrola sesji, przycisk confirm,
+Był to odbiór lokalnego zapisu na fixture. Na tym etapie transport, kontrola sesji, przycisk confirm,
 konwersja legacy i pełne recovery pozostają do podłączenia.
 
 Poniższe konkretne wydania zachowują własne historyczne źródła i receipty.
