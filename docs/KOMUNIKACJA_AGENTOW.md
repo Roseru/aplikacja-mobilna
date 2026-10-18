@@ -3118,3 +3118,9 @@ Korekta harmonogramu O3-070: finalne przygotowanie03:50/15:50, proponowany trans
   Windowsinfra217, E0/704linki/Ruff/format/diff-check PASS; review9/10 ponownie
   potwierdzony po końcowym oracle. Poprawka i nowy pełny CI pozostają w tym samym
   PR124; stan zdalny i dokładny head/base będą w jego opisie/checks.
+
+- Publikacja O2-042: implementacja poprawki `7703966767607b32f26c46b892d94961e1d391ed`
+  wypchnięta do istniejącego PR124 na zintegrowanej bazie mainbe9c1f6.
+  Końcowy head uwzględnia też korektę nazwy markera w opisie zgodności API;
+  jego własne8CI i dokładna para head/base są w PR/checks, nie dziedziczą
+  wcześniejszych zielonych wyników. Bez merge i wdrożenia.

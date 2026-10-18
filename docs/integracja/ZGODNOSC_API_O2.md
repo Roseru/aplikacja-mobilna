@@ -1,6 +1,6 @@
 # Zgodność API, katalogu i synchronizacji — O2
 
-Nowy etap O2_LEDGER_20261017_V1: schema `0026_deletion_ledger` na bazie
+Nowy etap O2_LEDGER_20261017_V1: schema `0026_ledger_review` na bazie
 `615fb6b3`, [kontrakt](REJESTR_USUNIEC_O2.md) i [raport](RAPORT_REJESTR_USUNIEC_O2.md).
 API mobilne `/api/v1`, E9 opt-in i okno30dni zachowane. Zmienia się operacyjny
 protokół usunięć: nowy operator/eksporter, obowiązkowe ACK i cutoff z niezależnym
