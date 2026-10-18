@@ -53,8 +53,8 @@ def snapshot(connection):
     }
 
 
-def test_upgrade_0002_preserves_legacy_and_finite_nutrition(database):
-    engine, migrate, _ = database
+def test_upgrade_0002_preserves_legacy_and_finite_nutrition(historical_database):
+    engine, migrate, _ = historical_database
     migrate("downgrade", "0002_finite_nutrition")
     account_id, source_id, product_id = uuid4(), uuid4(), uuid4()
     try:
@@ -84,7 +84,7 @@ def test_upgrade_0002_preserves_legacy_and_finite_nutrition(database):
                 )
             )
             before = snapshot(connection)
-        migrate("upgrade", "head")
+        migrate("upgrade", EXPECTED_REVISION)
         with engine.connect() as connection:
             assert snapshot(connection) == before
             assert (
@@ -115,7 +115,7 @@ def test_upgrade_0002_preserves_legacy_and_finite_nutrition(database):
                 .values(energy_kcal=Decimal("NaN"))
             )
     finally:
-        migrate("upgrade", "head")
+        migrate("upgrade", EXPECTED_REVISION)
         with engine.begin() as connection:
             connection.execute(
                 delete(ProductVersion).where(ProductVersion.product_id == product_id)

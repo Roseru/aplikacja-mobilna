@@ -229,3 +229,37 @@ def test_recovery_storage_oracle_rejects_duplicate_foreign_or_corrupt_meal(fault
         stored["meals"].pop()
     with pytest.raises(RuntimeError):
         verify_recovered_state(recovery, second, base, "A", entities, stored)
+
+
+def test_contract_cutoff_pin_survives_bridge_restart_outside_export():
+    from types import SimpleNamespace
+    from uuid import UUID
+
+    from ledger_contract_o2 import OwnedContractLedger
+
+    from calorie_app.modules.identity.ledger_contract import Trust, make_ack
+
+    trust = Trust(
+        *(str(UUID(int=n)) for n in (1, 2, 3, 4)), "https://owned.test", b"s" * 32, b"a" * 32
+    )
+    ack = make_ack(trust, 1, "0" * 64)
+    original = object.__new__(OwnedContractLedger)
+    original.trust = trust
+    original.checkpoint = lambda: {"ack": ack, "envelopes": []}
+    cutoff, controller_pin = original.cutoff_checkpoint()
+    # A fresh bridge has no fence state; the controller retains a separate pin.
+    restarted = object.__new__(OwnedContractLedger)
+    restarted.raw = {"synthetic": True}
+
+    def compose(*args, input_text):
+        payload = json.loads(input_text)
+        assert payload["fence_pin"] == controller_pin.fields()
+        assert payload["cutoff"]["fence_id"] == controller_pin.fence_id
+        assert payload["backup_point"] == ack
+        assert "FencePin(**p['fence_pin'])" in args[-1]
+        return json.dumps({"blocked": 1, "reopen_authorized": False})
+
+    restarted.stack = SimpleNamespace(compose=compose)
+    assert restarted.reconcile({"ack": ack}, cutoff, fence_pin=controller_pin)["blocked"] == 1
+    with pytest.raises(TypeError):
+        restarted.reconcile({"ack": ack}, cutoff)

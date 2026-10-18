@@ -10,8 +10,6 @@ import pytest
 from sqlalchemy import inspect, text
 from sqlalchemy.exc import DBAPIError
 
-from calorie_app.health import EXPECTED_REVISION
-
 pytestmark = pytest.mark.integration
 
 
@@ -297,7 +295,7 @@ def test_retention_minimal_receipt_and_admission_survive(transaction):
     assert row == ("a" * 64, {"executed": True}, None)
 
 
-def test_purge_removes_attribution_and_private_feedback_preserves_shared_versions(transaction):
+def seed_purge_graph(transaction):
     owner = account(transaction)
     other = account(transaction)
     product, source = create(transaction)
@@ -358,15 +356,10 @@ def test_purge_removes_attribution_and_private_feedback_preserves_shared_version
         text("SELECT to_jsonb(v)::text FROM app.product_versions v WHERE product_id=:p"),
         {"p": product},
     )
-    operation = uuid4()
-    transaction.exec_driver_sql("SET LOCAL ROLE calorie_app_deletion_operator")
-    transaction.scalar(
-        text("SELECT app.begin_account_deletion(:o,:op,1)"), {"o": owner, "op": operation}
-    )
-    transaction.scalar(text("SELECT app.confirm_account_deletion(:op)"), {"op": operation})
-    transaction.scalar(text("SELECT app.purge_deleted_account(:op)"), {"op": operation})
-    transaction.scalar(text("SELECT app.purge_deleted_account(:op)"), {"op": operation})
-    transaction.exec_driver_sql("RESET ROLE")
+    return owner, other, product, source, before
+
+
+def verify_purge_graph(transaction, owner, other, product, source, before):
     assert (
         transaction.scalar(
             text("SELECT to_jsonb(v)::text FROM app.product_versions v WHERE product_id=:p"),
@@ -414,6 +407,44 @@ def test_purge_removes_attribution_and_private_feedback_preserves_shared_version
             )
             == 0
         )
+    assert (
+        transaction.scalar(text("SELECT state FROM app.user_accounts WHERE id=:o"), {"o": other})
+        == "active"
+    )
+    assert (
+        transaction.scalar(
+            text("SELECT owner_id FROM app.community_votes WHERE product_id=:p"), {"p": product}
+        )
+        == other
+    )
+
+
+def test_purge_removes_attribution_and_private_feedback_preserves_shared_versions(
+    historical_transaction,
+):
+    transaction = historical_transaction
+    owner, other, product, source, before = seed_purge_graph(transaction)
+    operation = uuid4()
+    transaction.exec_driver_sql("SET LOCAL ROLE calorie_app_deletion_operator")
+    transaction.scalar(
+        text("SELECT app.begin_account_deletion(:o,:op,1)"), {"o": owner, "op": operation}
+    )
+    transaction.scalar(text("SELECT app.confirm_account_deletion(:op)"), {"op": operation})
+    transaction.scalar(text("SELECT app.purge_deleted_account(:op)"), {"op": operation})
+    transaction.scalar(text("SELECT app.purge_deleted_account(:op)"), {"op": operation})
+    transaction.exec_driver_sql("RESET ROLE")
+    verify_purge_graph(transaction, owner, other, product, source, before)
+
+
+def test_current_head_ledger_purge_preserves_e6_shared_bytes_and_other_account(database):
+    from tests.support.deletion_regression import purge
+
+    engine, _, _ = database
+    with engine.begin() as transaction:
+        owner, other, product, source, before = seed_purge_graph(transaction)
+    assert purge(engine, owner)["ledger_complete"] is True
+    with engine.connect() as transaction:
+        verify_purge_graph(transaction, owner, other, product, source, before)
 
 
 def rowsets(connection):
@@ -430,8 +461,8 @@ def rowsets(connection):
     }
 
 
-def test_empty_downgrade_reupgrade_preserves_existing_graph(database):
-    engine, migrate, _ = database
+def test_empty_downgrade_reupgrade_preserves_existing_graph(historical_database):
+    engine, migrate, _ = historical_database
     with engine.connect() as connection:
         old_tables = [
             n
@@ -470,8 +501,8 @@ def test_empty_downgrade_reupgrade_preserves_existing_graph(database):
         )
 
 
-def test_downgrade_atomic_refusal_detects_shared_orphan_artifact(database):
-    engine, migrate, _ = database
+def test_downgrade_atomic_refusal_detects_shared_orphan_artifact(historical_database):
+    engine, migrate, _ = historical_database
     source = uuid4()
     with engine.begin() as connection:
         connection.execute(
@@ -494,7 +525,7 @@ def test_downgrade_atomic_refusal_detects_shared_orphan_artifact(database):
             assert sorted(inspect(connection).get_table_names(schema="app")) == schema
             assert (
                 connection.scalar(text("SELECT version_num FROM app.alembic_version"))
-                == EXPECTED_REVISION
+                == "0024_e9_history_graph"
             )
     finally:
         # Privileged fixture cleanup removes only this synthetic orphan, retaining all old rows.
@@ -587,3 +618,12 @@ def test_new_exact_version_preserves_historical_source_and_nutrition(transaction
         )
         == 2
     )
+
+
+@pytest.fixture
+def historical_transaction(historical_database):
+    engine, _, _ = historical_database
+    with engine.connect() as connection:
+        outer = connection.begin()
+        yield connection
+        outer.rollback()

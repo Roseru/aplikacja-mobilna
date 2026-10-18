@@ -35,15 +35,9 @@ def accept(e7, key):
 
 
 def purge(e7):
-    operation = uuid4()
-    with e7["admin"].begin() as connection:
-        connection.execute(
-            text("SELECT app.begin_account_deletion(:owner,:op,1)"),
-            {"owner": UUID(e7["boots"][0]["account_id"]), "op": operation},
-        )
-    with e7["admin"].begin() as connection:
-        connection.execute(text("SELECT app.confirm_account_deletion(:op)"), {"op": operation})
-        connection.execute(text("SELECT app.purge_deleted_account(:op)"), {"op": operation})
+    from tests.support.deletion_regression import purge as delete
+
+    delete(e7["admin"], UUID(e7["boots"][0]["account_id"]))
 
 
 def test_lost_commit_ack_preserves_one_accepted_file_and_replay(e7):

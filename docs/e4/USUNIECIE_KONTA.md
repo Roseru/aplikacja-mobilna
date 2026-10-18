@@ -90,3 +90,13 @@ Testy rzeczywistego Keycloak zaliczają PKCE A/B, usunięcie wyłącznie `delete
 ponowienie po zewnętrznym DELETE, odmowę refresh/login, blokadę starych JWT
 i bootstrapu oraz niezmienność B i bajtów katalogu. Brak providera nie daje skip.
 Backendowy harness nie stanowi odbioru samousunięcia UI ani logowania APK.
+
+## Aktualizacja ledger0025
+
+Bieżący operator wymaga [kontraktu rejestru usunięć v1](../integracja/REJESTR_USUNIEC_O2.md).
+Bez skonfigurowanej kotwicy i zweryfikowanych zewnętrznych ACK kolejne efekty
+odmawiają. Powyższy opis E4 pozostaje historią pierwotnego protokołu; nie jest
+instrukcją obchodzenia nowych barier. `ledger_complete=true` oznacza ukończenie
+z zewnętrznym ACK; samo lokalne `purged_at` nie wystarcza. Stary CLI jest odcięty
+przed providerem przez odebrany SELECT jobs; O3 musi dodatkowo odciąć stare
+procesy i credentials Keycloak, również te już uruchomione przed cutover.

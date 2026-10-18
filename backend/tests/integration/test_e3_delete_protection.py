@@ -37,9 +37,10 @@ from calorie_app.modules.diary.service import (
     save_weight,
 )
 from calorie_app.modules.identity.models import UserAccount
-from calorie_app.modules.identity.service import begin_deleting, bootstrap
+from calorie_app.modules.identity.service import bootstrap
 from calorie_app.modules.profiles.schemas import ConsentInput, GoalPayload, ProfilePayload
 from calorie_app.modules.profiles.service import create_goal, put_consents, save_profile
+from tests.support.deletion_regression import begin_deleting
 
 pytestmark = pytest.mark.integration
 EXAMPLES = Path(__file__).resolve().parents[3] / "contracts/examples/valid"
@@ -115,8 +116,8 @@ def assert_runtime_acl(connection, role):
             assert actual is (privilege != "DELETE" or table == "meal_items"), (table, privilege)
 
 
-def test_downgrade_emits_operator_warning_and_retains_security(database):
-    engine, migrate, _ = database
+def test_downgrade_emits_operator_warning_and_retains_security(historical_database):
+    engine, migrate, _ = historical_database
     output = io.StringIO()
     config = Config(str(Path(__file__).resolve().parents[2] / "alembic.ini"), stdout=output)
     try:
@@ -406,7 +407,7 @@ def database_snapshot(engine):
 def test_upgrade_0007_preserves_entire_graph_published_bytes_and_secure_downgrade(
     request, tmp_path
 ):
-    engine, migrate, _ = request.getfixturevalue("catalog_db")
+    engine, migrate, _ = request.getfixturevalue("historical_database")
     # Remove only fixtures in the already guarded disposable database. Recreate
     # 0007 from 0006 to exercise the original grants, rather than retained 0008 ACL.
     with engine.begin() as connection:

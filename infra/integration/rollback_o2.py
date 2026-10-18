@@ -23,6 +23,8 @@ from recovery_o2 import (
 from run import ROOT, Stack
 from verify import Probe, expect
 
+from calorie_app.health import EXPECTED_REVISION
+
 PREDECESSOR = "a522471140150271d853d66aa06f11d868699e49"
 REVISION = "0021_e8_nemesis_results"
 PYTHON_IMAGE = (
@@ -34,7 +36,13 @@ PYTHON_IMAGE = (
 def command(root, arguments, *, env=None):
     with (root / "experiment-private.log").open("ab") as log:
         subprocess.run(
-            arguments, cwd=ROOT, env=env, stdout=log, stderr=log, check=True, timeout=600
+            arguments,
+            cwd=ROOT,
+            env=env,
+            stdout=log,
+            stderr=log,
+            check=True,
+            timeout=600,
         )
 
 
@@ -56,7 +64,12 @@ def verify_meals(stack, probe, fixtures, tokens):
         )
     )
     expected = [
-        {"id": op["entity_id"], "owner": boot["account_id"], "revision": 1, "deleted": False}
+        {
+            "id": op["entity_id"],
+            "owner": boot["account_id"],
+            "revision": 1,
+            "deleted": False,
+        }
         for boot, op in fixtures.values()
     ]
     check(
@@ -128,9 +141,9 @@ def rehearse_predecessor(root, commit, current_image):
     receipt = {
         "result": "FAIL",
         "commit": commit,
-        "for_revision": "0024_e9_history_graph",
+        "for_revision": EXPECTED_REVISION,
         "strategy": "restore",
-        "scope": "synthetic predecessor 0021 -> upgrade0024 -> paired restore0021",
+        "scope": "synthetic predecessor 0021 -> upgrade current -> paired restore0021",
         "predecessor_commit": PREDECESSOR,
         "predecessor_schema": REVISION,
         "production_rollback": "WAITING_EXTERNAL O3 accepted deployed image and coherent backups",
@@ -154,7 +167,10 @@ def rehearse_predecessor(root, commit, current_image):
         )
         old_image = inspect(tag, "{{.Id}}")
         check(
-            inspect(old_image, '{{index .Config.Labels "org.opencontainers.image.revision"}}')
+            inspect(
+                old_image,
+                '{{index .Config.Labels "org.opencontainers.image.revision"}}',
+            )
             == PREDECESSOR,
             "Historical image source label mismatch",
         )
@@ -225,15 +241,29 @@ def rehearse_predecessor(root, commit, current_image):
         current = Stack(state)
         # Use the actual already-tested C2 image, preserving historical Keycloak26.8.0.
         command(root, ["docker", "image", "tag", current_image, tag])
+        quiet_sql(
+            stack,
+            "calorie_app",
+            "DO $$ BEGIN IF NOT EXISTS(SELECT FROM pg_roles WHERE "
+            "rolname='calorie_app_deletion_exporter') THEN CREATE ROLE "
+            "calorie_app_deletion_exporter NOLOGIN NOSUPERUSER NOCREATEDB "
+            "NOCREATEROLE NOINHERIT; END IF; END $$;",
+        )
         current.compose("run", "--rm", "--no-deps", "migrate")
         current.compose(
-            "up", "--detach", "--no-deps", "--force-recreate", "api", "keycloak", "gateway"
+            "up",
+            "--detach",
+            "--no-deps",
+            "--force-recreate",
+            "api",
+            "keycloak",
+            "gateway",
         )
         probe.ready()
         check(
             quiet_sql(stack, "calorie_app", "SELECT version_num FROM app.alembic_version;")
-            == "0024_e9_history_graph",
-            "Upgrade did not reach0024",
+            == EXPECTED_REVISION,
+            "Upgrade did not reach expected revision",
         )
         verify_meals(stack, probe, fixtures, tokens)
         receipt["upgrade_data_preserved"] = True
@@ -251,7 +281,15 @@ def rehearse_predecessor(root, commit, current_image):
                 }
             ),
         )
-        stack.compose("-f", str(override), "up", "--detach", "--no-deps", "--force-recreate", "api")
+        stack.compose(
+            "-f",
+            str(override),
+            "up",
+            "--detach",
+            "--no-deps",
+            "--force-recreate",
+            "api",
+        )
         deadline = time.monotonic() + 60
         while True:
             try:
@@ -307,7 +345,15 @@ def rehearse_predecessor(root, commit, current_image):
         while time.monotonic() - closed < 421:
             time.sleep(1)
         receipt["issuance_closed_wait_seconds"] = round(time.monotonic() - closed, 3)
-        stack.compose("-f", str(override), "up", "--detach", "--no-deps", "--force-recreate", "api")
+        stack.compose(
+            "-f",
+            str(override),
+            "up",
+            "--detach",
+            "--no-deps",
+            "--force-recreate",
+            "api",
+        )
         stack.compose("up", "--detach", "--no-deps", "--force-recreate", "gateway")
         probe.ready()
         for session in sessions.values():
@@ -324,7 +370,10 @@ def rehearse_predecessor(root, commit, current_image):
                     ),
                     400,
                 )
-                check(response.json()["error"] == "invalid_grant", "Old predecessor refresh valid")
+                check(
+                    response.json()["error"] == "invalid_grant",
+                    "Old predecessor refresh valid",
+                )
         fresh_fixtures, tokens = {}, {}
         for who, (boot, op) in fixtures.items():
             tokens[who] = probe.login(who)["access_token"]
@@ -417,14 +466,18 @@ def verify_meals_after_restore(stack, probe, fixtures, tokens):
             ),
             409,
         )
-        check(response.json()["code"] == "sync_epoch_changed", "Old operation epoch not fenced")
+        check(
+            response.json()["code"] == "sync_epoch_changed",
+            "Old operation epoch not fenced",
+        )
         # Fresh post-restore write and replay proves service operation on real0021.
         fresh = meal(boot, "Fresh synthetic rollback acceptance " + who)
         data = envelope(boot, page["checkpoint"], [fresh])
         for status in ("accepted", "already_applied"):
             check(
                 expect(
-                    probe.api("POST", "/api/v1/sync/push", token=tokens[who], json=data), 200
+                    probe.api("POST", "/api/v1/sync/push", token=tokens[who], json=data),
+                    200,
                 ).json()["results"][0]["status"]
                 == status,
                 "Restored API write/replay failed",

@@ -16,8 +16,7 @@ from calorie_app.core.config import Settings
 from calorie_app.integrations.keycloak import AuthFailure, Principal
 from calorie_app.main import create_app
 from calorie_app.modules.catalog.pagination import database_now
-from calorie_app.modules.identity.models import UserAccount
-from calorie_app.modules.identity.service import begin_deleting, bootstrap
+from calorie_app.modules.identity.service import bootstrap
 from calorie_app.modules.sync.errors import SyncFailure
 from calorie_app.modules.sync.models import RecoveryMapping, SyncChange, SyncCounter, SyncReceipt
 from calorie_app.modules.sync.repository import entity
@@ -26,6 +25,7 @@ from calorie_app.modules.sync.schemas import preflight_structure, validate_wire
 from calorie_app.modules.sync.service import apply_operation
 from calorie_app.modules.sync.snapshots import pull
 from calorie_app.modules.sync.tokens import sign_checkpoint
+from tests.support.deletion_regression import begin_deleting
 
 ROOT = Path(__file__).resolve().parents[3]
 SECRET = SecretStr("e4" * 32)
@@ -245,7 +245,7 @@ def test_counter_commit_order_with_actual_blocking(synced):
 
 
 @pytest.mark.parametrize("drift", ["deleting", "generation", "epoch", "provider"])
-def test_http_late_failure_preserves_prefix_without_ack(synced, drift):
+def test_http_late_failure_preserves_prefix_without_ack(synced, drift, monkeypatch):
     engine, _, who, owner, boot, cp, url = synced
     app = create_app(Settings(database_url=url, catalog_page_token_secret=SECRET), engine=engine)
 
@@ -261,7 +261,9 @@ def test_http_late_failure_preserves_prefix_without_ack(synced, drift):
                     if drift == "deleting":
                         begin_deleting(s, owner)
                     elif drift == "generation":
-                        s.get(UserAccount, owner).generation += 1
+                        # Captured execution context drifts below; a raw account
+                        # generation write is forbidden by the ledger guard.
+                        pass
                     else:
                         s.execute(
                             text("UPDATE app.installation_state SET sync_epoch=:e"), {"e": uuid4()}
@@ -272,6 +274,16 @@ def test_http_late_failure_preserves_prefix_without_ack(synced, drift):
             pass
 
     app.state.oidc_verifier = Verifier()
+    from calorie_app.modules.sync import router as sync_router
+
+    actual_execute = sync_router.execute_one
+
+    def execute_with_context(factory, actor, generation, *args):
+        if drift == "generation" and app.state.oidc_verifier.calls == 3:
+            generation += 1
+        return actual_execute(factory, actor, generation, *args)
+
+    monkeypatch.setattr(sync_router, "execute_one", execute_with_context)
     ops = [operation(boot), operation(boot)]
     with TestClient(app) as client:
         result = client.post(
@@ -279,7 +291,19 @@ def test_http_late_failure_preserves_prefix_without_ack(synced, drift):
             json=request(boot, cp, ops),
             headers={"Authorization": "Bearer synthetic"},
         )
-    assert result.status_code in {403, 409, 503}, result.text
+    assert (
+        result.status_code
+        == {"deleting": 403, "generation": 409, "epoch": 409, "provider": 503}[drift]
+    ), result.text
+    assert (
+        result.json()["code"]
+        == {
+            "deleting": "account_deleting",
+            "generation": "account_generation_changed",
+            "epoch": "sync_epoch_changed",
+            "provider": "identity_provider_unavailable",
+        }[drift]
+    )
     assert set(result.json()) == {"code", "message", "details", "request_id"}
     with Session(engine) as s:
         assert (

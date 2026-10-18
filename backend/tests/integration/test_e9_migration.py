@@ -12,6 +12,7 @@ from alembic.config import Config
 from sqlalchemy import text
 from sqlalchemy.orm import Session, sessionmaker
 
+from calorie_app.health import EXPECTED_REVISION
 from calorie_app.integrations.keycloak import Principal
 from calorie_app.modules.identity.service import bootstrap
 from tests.integration.test_e9_energy import owner, seed
@@ -162,7 +163,7 @@ def test_empty_e9_downgrade_reupgrade_preserves_legacy_contract():
             with engine.connect() as c:
                 assert (
                     c.scalar(text("SELECT version_num FROM app.alembic_version"))
-                    == "0024_e9_history_graph"
+                    == EXPECTED_REVISION
                 )
                 assert c.scalar(text("SELECT app.e8n_runtime_ready()")) is True
         finally:
