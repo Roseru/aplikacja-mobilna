@@ -98,7 +98,8 @@ internal class PhotoAnalysisStore(private val context:Context,private val db:Cal
             try { output.write(image);atomic.finishWrite(output) }
             catch(error:Exception){atomic.failWrite(output);throw error}
             db.withTransaction {
-                sameContext(row,account());check(dao.get(lease.storageScope)==null);dao.insert(row)
+                sameContext(row,account());check(dao.get(lease.storageScope)==null)
+                check(db.photoConfirmationHistoryDao().get(lease.storageScope,id)==null);dao.insert(row)
             }
             row
         } catch(error:Exception) {
@@ -164,10 +165,16 @@ internal class PhotoAnalysisStore(private val context:Context,private val db:Cal
     }
 
     /** Parse and reconcile a GET outside the Room/session guard, against its captured source row. */
-    suspend fun prepareRead(id:String,body:ByteArray):PreparedPhotoRead {
+    suspend fun prepareRead(id:String,body:ByteArray,expectedSource:PhotoAnalysisRequestEntity?=null):PreparedPhotoRead {
         val source=db.withTransaction { checked(id).also { check(it.attempted && it.blockedCode==null) } }
-        val snapshot=PhotoAnalysisSnapshot.read(checkNotNull(source.receiptJson),source.provider).withRead(body)
-        return PreparedPhotoRead(source,snapshot)
+        check(expectedSource==null || source==expectedSource)
+        val previous=PhotoAnalysisSnapshot.read(checkNotNull(source.receiptJson),source.provider)
+        val received=PhotoAnalysisReadProtocol.read(body,previous.receipt)
+        val snapshot=previous.withRead(body)
+        // An ignored older GET cannot manufacture a post-rejection proof for a newer cached proposal.
+        val history=if(received.wireFingerprint==snapshot.latest?.wireFingerprint)prepareHistory(source,snapshot,true)else null
+        val existingProof=history==null && snapshot.serialized==source.receiptJson && canReopenConfirmation(id,snapshot)
+        return PreparedPhotoRead(source,snapshot,history,existingProof)
     }
 
     /** DB-only CAS. A concurrent read, retry state or owner/context change must be prepared anew. */
@@ -177,6 +184,7 @@ internal class PhotoAnalysisStore(private val context:Context,private val db:Cal
         if(row.receiptJson!=prepared.snapshot.serialized) {
             check(dao.accept(lease.storageScope,row.operationId,prepared.snapshot.serialized)==1)
         }
+        prepared.history?.let {acceptHistory(it,prepared.source,prepared.snapshot)}
         prepared.snapshot
     }
     suspend fun defer(id:String,retryAtMillis:Long)=db.withTransaction {
@@ -191,6 +199,7 @@ internal class PhotoAnalysisStore(private val context:Context,private val db:Cal
     suspend fun prepareCancellation(id:String,key:String,revision:Long):PreparedPhotoCancellation {
         val (source,snapshot)=cancellationSource(id)
         require(key!=source.operationId)
+        check(db.photoConfirmationHistoryDao().get(lease.storageScope,key)==null)
         return PreparedPhotoCancellation(source,snapshot.prepareCancellation(key,revision))
     }
     suspend fun prepareCancellationAttempted(id:String,nowMillis:Long):PreparedPhotoCancellation {
@@ -263,9 +272,79 @@ internal class PhotoAnalysisStore(private val context:Context,private val db:Cal
         prepared.snapshot
     }
 
+    private suspend fun prepareHistory(source:PhotoAnalysisRequestEntity,snapshot:PhotoAnalysisSnapshot,readProof:Boolean):PreparedPhotoHistory? {
+        val intent=snapshot.confirmation?:return null
+        if(intent.rejectedCode==null)return null
+        val decisionJson=StrictJson.canonical(intent.journal())
+        val readHash=if(readProof)sha(snapshot.serialized.toByteArray(Charsets.UTF_8))else null
+        val before=db.withTransaction {
+            check(checked(source.operationId)==source)
+            db.photoConfirmationHistoryDao().get(lease.storageScope,intent.key)
+        }
+        check(before?.reopenedEditRevision==null && (readProof || before==null))
+        val record=PhotoConfirmationHistory(lease.storageScope,intent.key,source.operationId,snapshot.receipt.analysisId,
+            CanonicalMealRows.context(source.accountId,source.accountGeneration,source.syncEpoch,source.contextRevision),
+            decisionJson,before?.archivedAt?:Instant.now().toString())
+        check(before==null || before.copy(lastReadSnapshotHash=null,reopenedEditRevision=null)==record)
+        return PreparedPhotoHistory(before,record,readHash)
+    }
+    /** Only DB work; a failed history write must roll back the queue update too. */
+    private suspend fun acceptHistory(prepared:PreparedPhotoHistory,source:PhotoAnalysisRequestEntity,snapshot:PhotoAnalysisSnapshot) {
+        val history=db.photoConfirmationHistoryDao();val record=prepared.decision
+        check(record.ownerScope==lease.storageScope && record.sourceOperationId==source.operationId &&
+            record.analysisId==snapshot.receipt.analysisId && record.confirmationKey==snapshot.confirmation?.key &&
+            record.wireContext==CanonicalMealRows.context(source.accountId,source.accountGeneration,source.syncEpoch,source.contextRevision))
+        check(history.get(record.ownerScope,record.confirmationKey)==prepared.before)
+        if(prepared.before==null)history.insert(record)
+        if(prepared.readHash!=null)check(history.recordRead(record.ownerScope,record.confirmationKey,prepared.readHash)==1)
+    }
+    suspend fun canReopenConfirmation(id:String,snapshot:PhotoAnalysisSnapshot):Boolean {
+        if(!snapshot.canReopenConfirmation)return false
+        val key=checkNotNull(snapshot.confirmation).key
+        val decision=StrictJson.canonical(snapshot.confirmation.journal())
+        val hash=sha(snapshot.serialized.toByteArray(Charsets.UTF_8))
+        return db.withTransaction {
+            val source=checked(id);check(source.receiptJson==snapshot.serialized && source.blockedCode==null)
+            val history=db.photoConfirmationHistoryDao().get(lease.storageScope,key)
+            history!=null && history.sourceOperationId==id && history.analysisId==snapshot.receipt.analysisId &&
+                history.wireContext==CanonicalMealRows.context(source.accountId,source.accountGeneration,source.syncEpoch,source.contextRevision) &&
+                history.decisionJson==decision && history.reopenedEditRevision==null && history.lastReadSnapshotHash==hash
+        }
+    }
+    /** Local explicit action, never POST or token refresh. The prior rejected bytes stay in history. */
+    suspend fun prepareConfirmationReopen(id:String,revision:Long,editRevision:Long):PreparedPhotoConfirmationReopen {
+        val (source,snapshot)=cancellationSource(id)
+        val replacement=snapshot.reopenRejectedConfirmation(revision,editRevision)
+        val hash=sha(snapshot.serialized.toByteArray(Charsets.UTF_8))
+        val decision=StrictJson.canonical(checkNotNull(snapshot.confirmation).journal())
+        val record=db.withTransaction {
+            check(checked(id)==source)
+            checkNotNull(db.photoConfirmationHistoryDao().get(lease.storageScope,snapshot.confirmation.key)).also {
+                check(it.sourceOperationId==id && it.analysisId==snapshot.receipt.analysisId &&
+                    it.wireContext==CanonicalMealRows.context(source.accountId,source.accountGeneration,source.syncEpoch,source.contextRevision) &&
+                    it.decisionJson==decision && it.reopenedEditRevision==null && it.lastReadSnapshotHash==hash)
+            }
+        }
+        return PreparedPhotoConfirmationReopen(source,snapshot,replacement,record,hash,lease)
+    }
+    suspend fun acceptConfirmationReopenPrepared(prepared:PreparedPhotoConfirmationReopen):PhotoAnalysisSnapshot=db.withTransaction {
+        check(prepared.lease==lease)
+        val source=checked(prepared.source.operationId)
+        check(source==prepared.source && source.receiptJson==prepared.previous.serialized && source.blockedCode==null)
+        val record=prepared.history;val history=db.photoConfirmationHistoryDao()
+        check(record.ownerScope==lease.storageScope && history.get(lease.storageScope,record.confirmationKey)==record &&
+            record.sourceOperationId==source.operationId && record.reopenedEditRevision==null && record.lastReadSnapshotHash==prepared.sourceHash)
+        val revision=checkNotNull(prepared.snapshot.mealDraft).editRevision
+        check(prepared.snapshot.confirmation==null && revision==Math.addExact(checkNotNull(prepared.previous.mealDraft).editRevision,1))
+        check(history.markReopened(lease.storageScope,record.confirmationKey,prepared.sourceHash,revision)==1)
+        check(dao.replaceSnapshot(lease.storageScope,source.operationId,prepared.snapshot.serialized)==1)
+        prepared.snapshot
+    }
+
     /** Freeze a full decision outside the guard; no network or diary write. */
     suspend fun prepareConfirmation(id:String,key:String,revision:Long,editRevision:Long):PreparedPhotoConfirmation {
         val (source,snapshot)=cancellationSource(id);require(key!=source.operationId)
+        check(db.photoConfirmationHistoryDao().get(lease.storageScope,key)==null)
         return PreparedPhotoConfirmation(source,snapshot.prepareConfirmation(key,revision,editRevision),lease)
     }
     suspend fun prepareConfirmationAttempted(id:String,nowMillis:Long):PreparedPhotoConfirmation {
@@ -324,7 +403,8 @@ internal class PhotoAnalysisStore(private val context:Context,private val db:Cal
     }
     suspend fun prepareConfirmationRejection(id:String,code:String,sent:PhotoHttpRequest.Confirm):PreparedPhotoConfirmation {
         val (source,snapshot)=cancellationSource(id);confirmationRequestMatches(source,snapshot,sent)
-        return PreparedPhotoConfirmation(source,snapshot.rejectConfirmation(code),lease)
+        val rejected=snapshot.rejectConfirmation(code)
+        return PreparedPhotoConfirmation(source,rejected,lease,prepareHistory(source,rejected,false))
     }
     /** Intent/attempt/rejection CAS only. There is deliberately no standalone receipt commit.
      * An accepted template requires the future atomic Meal/E4/provenance transaction.
@@ -333,6 +413,10 @@ internal class PhotoAnalysisStore(private val context:Context,private val db:Cal
         check(prepared.lease==lease && checkNotNull(prepared.snapshot.confirmation).receiptJson==null)
         val row=checked(prepared.source.operationId)
         check(row==prepared.source && row.attempted && row.receiptJson!=null && row.blockedCode==null)
+        val intent=checkNotNull(prepared.snapshot.confirmation)
+        if(intent.rejectedCode==null)check(db.photoConfirmationHistoryDao().get(lease.storageScope,intent.key)==null)
+        else check(prepared.history!=null)
+        prepared.history?.let {acceptHistory(it,prepared.source,prepared.snapshot)}
         if(row.receiptJson!=prepared.snapshot.serialized)check(dao.replaceSnapshot(lease.storageScope,row.operationId,prepared.snapshot.serialized)==1)
         prepared.snapshot
     }
@@ -367,7 +451,8 @@ internal class PreparedPhotoReceipt internal constructor(internal val source:Pho
 
 /** Captured state plus a fully validated replacement; never a permission to bypass withApiSession. */
 internal class PreparedPhotoRead internal constructor(internal val source:PhotoAnalysisRequestEntity,
-    internal val snapshot:PhotoAnalysisSnapshot) {
+    internal val snapshot:PhotoAnalysisSnapshot,internal val history:PreparedPhotoHistory?=null,private val previousReadProof:Boolean=false) {
+    val canReopenConfirmation get()=(history?.readHash!=null || previousReadProof) && snapshot.canReopenConfirmation
     override fun toString()="PreparedPhotoRead(redacted)"
 }
 
@@ -382,7 +467,7 @@ internal class PreparedPhotoMealDraft internal constructor(internal val source:P
 }
 
 internal class PreparedPhotoConfirmation internal constructor(internal val source:PhotoAnalysisRequestEntity,
-    internal val snapshot:PhotoAnalysisSnapshot,internal val lease:OwnerLease) {
+    internal val snapshot:PhotoAnalysisSnapshot,internal val lease:OwnerLease,internal val history:PreparedPhotoHistory?=null) {
     override fun toString()="PreparedPhotoConfirmation(redacted)"
 }
 /** Validated bytes only; not committed until canonical Meal/outbox/provenance can be atomic. */

@@ -167,6 +167,7 @@ class PhotoAnalysisStorageTest {
         }
         val source=Room.inMemoryDatabaseBuilder(context,CalorieDatabase::class.java).addCallback(DATABASE_GUARDS).build()
         val name="queue-migration-${UUID.randomUUID()}";var scope:String?=null
+        var itemRowids=emptyMap<String,Long>()
         try {
             val lease=account(source,"migration");scope=lease.storageScope
             val repository=DiaryRepository(source,context,lease);repository.initialize()
@@ -179,6 +180,11 @@ class PhotoAnalysisStorageTest {
             if(from>=10) {
                 val (store,row)=cancellationQueue(source,lease);confirmationDraft(store,row.operationId)
                 store.acceptConfirmationPrepared(store.prepareConfirmation(row.operationId,UUID.randomUUID().toString(),2,1))
+                if(from==12) {
+                    store.acceptConfirmationPrepared(store.prepareConfirmationAttempted(row.operationId,0))
+                    val sent=store.stored(row.operationId).confirmation!!.request(row.syncEpoch)
+                    store.acceptConfirmationPrepared(store.prepareConfirmationRejection(row.operationId,"photo_catalog_choice_changed",sent))
+                }
             }
             val before=snapshot(source.openHelper.readableDatabase);assertEquals(from+14,before.size)
             SQLiteDatabase.openOrCreateDatabase(context.getDatabasePath(name),null).use {old->
@@ -196,11 +202,22 @@ class PhotoAnalysisStorageTest {
                 }
                 old.execSQL("CREATE TABLE room_master_table (id INTEGER PRIMARY KEY,identity_hash TEXT)")
                 old.execSQL("INSERT INTO room_master_table VALUES (42,?)",arrayOf(schema.getString("identityHash")));old.version=from
+                itemRowids=old.rawQuery("SELECT id,rowid FROM meal_items",null).use {cursor->buildMap {while(cursor.moveToNext())put(cursor.getString(0),cursor.getLong(1))}}
             }
-            val migrated=Room.databaseBuilder(context,CalorieDatabase::class.java,name).addMigrations(MIGRATION_9_10, pl.roseru.kalorie.data.MIGRATION_10_11, pl.roseru.kalorie.data.MIGRATION_11_12).addCallback(DATABASE_GUARDS).build()
+            val migrated=Room.databaseBuilder(context,CalorieDatabase::class.java,name).addMigrations(MIGRATION_9_10, pl.roseru.kalorie.data.MIGRATION_10_11, pl.roseru.kalorie.data.MIGRATION_11_12, pl.roseru.kalorie.photo.MIGRATION_12_13).addCallback(DATABASE_GUARDS).build()
             try {
-                assertEquals(12,migrated.openHelper.readableDatabase.version)
+                assertEquals(13,migrated.openHelper.readableDatabase.version)
                 assertEquals(before,snapshot(migrated.openHelper.readableDatabase))
+                assertEquals(itemRowids,migrated.openHelper.readableDatabase.query("SELECT id,rowid FROM meal_items").use {cursor->buildMap<String,Long> {while(cursor.moveToNext())put(cursor.getString(0),cursor.getLong(1))}})
+                if(from==12) {
+                    val store=PhotoAnalysisStore(context,migrated,LocalOwnerStore(migrated).currentLease())
+                    val row=store.pending()!!;val saved=store.stored(row.operationId)
+                    assertTrue(migrated.photoConfirmationHistoryDao().decisions(lease.storageScope,row.operationId).isEmpty())
+                    assertFalse(store.canReopenConfirmation(row.operationId,saved))
+                    store.acceptReadPrepared(store.prepareRead(row.operationId,readResult().toString().toByteArray()))
+                    assertTrue(store.canReopenConfirmation(row.operationId,store.stored(row.operationId)))
+                    assertEquals(1,migrated.photoConfirmationHistoryDao().decisions(lease.storageScope,row.operationId).size)
+                }
                 if(from==9)assertNull(migrated.photoAnalysisDao().get(lease.storageScope)) else
                     assertNotNull(PhotoAnalysisStore(context,migrated,LocalOwnerStore(migrated).currentLease()).stored(migrated.photoAnalysisDao().get(lease.storageScope)!!.operationId).confirmation)
                 assertFalse(migrated.openHelper.readableDatabase.query("PRAGMA foreign_key_check").use {it.moveToFirst()})
@@ -651,6 +668,133 @@ class PhotoAnalysisStorageTest {
             db.dao().updateOperation(queued.copy(status="acked",attempted=true));repository.delete(record.mealId)
             val deletion=db.dao().canonicalMealOperations(lease.storageScope,record.mealId).single();val wire=JSONObject(deletion.wireJson!!)
             assertEquals("delete",wire.getString("action"));assertEquals(3,wire.getInt("base_revision"));assertTrue(wire.isNull("payload"))
+        } finally {db.close();scope?.let(::clean)}
+    }
+    private suspend fun rejectedConfirmation(db:CalorieDatabase,lease:OwnerLease,code:String="photo_catalog_choice_changed"):
+        Triple<PhotoAnalysisStore,PhotoAnalysisRequestEntity,PhotoHttpRequest.Confirm> {
+        val(store,row)=cancellationQueue(db,lease);confirmationDraft(store,row.operationId)
+        store.acceptConfirmationPrepared(store.prepareConfirmation(row.operationId,UUID.randomUUID().toString(),2,1))
+        store.acceptConfirmationPrepared(store.prepareConfirmationAttempted(row.operationId,0))
+        val request=store.stored(row.operationId).confirmation!!.request(row.syncEpoch)
+        store.acceptConfirmationPrepared(store.prepareConfirmationRejection(row.operationId,code,request))
+        return Triple(store,row,request)
+    }
+    @Test fun migration12To13PreservesAll26TablesAndBackfillsHistoryOnlyAfterExplicitGet()=runBlocking<Unit> {migrationOldSchema(12)}
+
+    @Test fun rejectionReadProofAndReopeningSurviveRoomRestartWithoutImageOrDiaryWrites()=runBlocking<Unit> {
+        val name="reopen-${UUID.randomUUID()}";var db=Room.databaseBuilder(context,CalorieDatabase::class.java,name).build();var scope:String?=null
+        try {
+            val lease=account(db,"reopen-restart");scope=lease.storageScope
+            var(store,row,request)=rejectedConfirmation(db,lease)
+            val frozen=db.photoConfirmationHistoryDao().get(scope,request.key!!)!!
+            assertNull(frozen.lastReadSnapshotHash);rejected {store.prepareConfirmationReopen(row.operationId,2,1)}
+            store.acceptReadPrepared(store.prepareRead(row.operationId,readResult().toString().toByteArray()))
+            assertTrue(store.canReopenConfirmation(row.operationId,store.stored(row.operationId)))
+            assertTrue(File(context.filesDir,"photo-analysis-inputs/$scope/${row.operationId}.jpg").delete())
+            db.close();db=Room.databaseBuilder(context,CalorieDatabase::class.java,name).build()
+            store=PhotoAnalysisStore(context,db,LocalOwnerStore(db).currentLease())
+            assertTrue(store.canReopenConfirmation(row.operationId,store.stored(row.operationId)))
+            val prepared=store.prepareConfirmationReopen(row.operationId,2,1)
+            val resumed=store.acceptConfirmationReopenPrepared(prepared)
+            assertTrue(resumed.canEditProposal);assertEquals(2L,resumed.mealDraft!!.editRevision);assertNull(resumed.confirmation)
+            val history=db.photoConfirmationHistoryDao().get(scope,request.key!!)!!
+            assertEquals(frozen.decisionJson,history.decisionJson);assertEquals(frozen.archivedAt,history.archivedAt)
+            assertEquals(2L,history.reopenedEditRevision);assertNotNull(history.lastReadSnapshotHash)
+            rejected {store.acceptConfirmationReopenPrepared(prepared)}
+            assertTrue(db.dao().achievementMeals(scope).isEmpty());assertEquals(0,db.dao().operationCount(scope))
+            assertTrue(MealPhotoStore(context,db,LocalOwnerStore(db).currentLease()).uploadBytes(row.sourcePhotoId).isNotEmpty())
+        } finally {db.close();context.deleteDatabase(name);scope?.let(::clean)}
+    }
+    @Test fun historyAndQueueRollbackTogetherOnRejectionReadAndReopenFailures()=runBlocking<Unit> {
+        val db=Room.inMemoryDatabaseBuilder(context,CalorieDatabase::class.java).build();var scope:String?=null
+        try {
+            val lease=account(db,"reopen-atomic");scope=lease.storageScope;val(store,row)=cancellationQueue(db,lease);confirmationDraft(store,row.operationId)
+            store.acceptConfirmationPrepared(store.prepareConfirmation(row.operationId,UUID.randomUUID().toString(),2,1))
+            store.acceptConfirmationPrepared(store.prepareConfirmationAttempted(row.operationId,0))
+            val sent=store.stored(row.operationId).confirmation!!.request(row.syncEpoch);val pending=store.pending()
+            val rejection=store.prepareConfirmationRejection(row.operationId,"proposal_revision_conflict",sent)
+            val sql=db.openHelper.writableDatabase
+            sql.execSQL("CREATE TRIGGER fail_history_insert BEFORE INSERT ON photo_confirmation_history BEGIN SELECT RAISE(ABORT,'synthetic history insert'); END")
+            rejected {store.acceptConfirmationPrepared(rejection)};assertEquals(pending,store.pending())
+            assertTrue(db.photoConfirmationHistoryDao().decisions(scope,row.operationId).isEmpty())
+            sql.execSQL("DROP TRIGGER fail_history_insert");store.acceptConfirmationPrepared(rejection)
+            val denied=store.pending();val history=db.photoConfirmationHistoryDao().get(scope,sent.key!!)!!
+            val read=store.prepareRead(row.operationId,readResult().put("revision",3).toString().toByteArray())
+            sql.execSQL("CREATE TRIGGER fail_history_read BEFORE UPDATE ON photo_confirmation_history BEGIN SELECT RAISE(ABORT,'synthetic history proof'); END")
+            rejected {store.acceptReadPrepared(read)};assertEquals(denied,store.pending());assertEquals(history,db.photoConfirmationHistoryDao().get(scope,sent.key!!))
+            sql.execSQL("DROP TRIGGER fail_history_read");store.acceptReadPrepared(read)
+            val current=store.pending();val proved=db.photoConfirmationHistoryDao().get(scope,sent.key!!)!!
+            val reopen=store.prepareConfirmationReopen(row.operationId,3,1)
+            sql.execSQL("CREATE TRIGGER fail_reopen_queue BEFORE UPDATE ON photo_analysis_requests BEGIN SELECT RAISE(ABORT,'synthetic reopen queue'); END")
+            rejected {store.acceptConfirmationReopenPrepared(reopen)}
+            assertEquals(current,store.pending());assertEquals(proved,db.photoConfirmationHistoryDao().get(scope,sent.key!!))
+            sql.execSQL("DROP TRIGGER fail_reopen_queue");store.acceptConfirmationReopenPrepared(reopen)
+            assertEquals(0,db.dao().operationCount(scope));assertTrue(db.dao().achievementMeals(scope).isEmpty())
+        } finally {db.close();scope?.let(::clean)}
+    }
+    @Test fun reopenedDecisionForbidsArchivedKeyReuseAndLateAckButKeepsStableMealIds()=runBlocking<Unit> {
+        val db=Room.inMemoryDatabaseBuilder(context,CalorieDatabase::class.java).build();var scope:String?=null
+        try {
+            val lease=account(db,"reopen-keys");scope=lease.storageScope;val(store,row,sent)=rejectedConfirmation(db,lease)
+            val old=store.stored(row.operationId);val history=db.photoConfirmationHistoryDao().get(scope,sent.key!!)!!
+            store.acceptReadPrepared(store.prepareRead(row.operationId,readResult().toString().toByteArray()))
+            val next=store.acceptConfirmationReopenPrepared(store.prepareConfirmationReopen(row.operationId,2,1))
+            assertEquals(old.mealDraft!!.mealId,next.mealDraft!!.mealId);assertEquals(old.mealDraft.items.map {it.id},next.mealDraft.items.map {it.id})
+            rejected {store.prepareConfirmation(row.operationId,sent.key!!,2,2)}
+            rejected {store.prepareCancellation(row.operationId,sent.key!!,2)}
+            store.acceptConfirmationPrepared(store.prepareConfirmation(row.operationId,UUID.randomUUID().toString(),2,2))
+            store.acceptConfirmationPrepared(store.prepareConfirmationAttempted(row.operationId,0))
+            val current=store.stored(row.operationId);val wire=current.confirmation!!.request(row.syncEpoch)
+            val payload=JSONObject(String(wire.body()));val provenance=current.confirmation.journal().getJSONObject("expected_provenance")
+            val ack=JSONObject().put("analysis_id",current.receipt.analysisId).put("meal",payload.getJSONObject("meal"))
+                .put("drafts",payload.getJSONArray("drafts")).put("provenance",provenance).toString().toByteArray()
+            rejected {store.prepareConfirmationReceipt(row.operationId,ack,sent)}
+            val materialization=store.materializeConfirmationPrepared(store.prepareConfirmationReceipt(row.operationId,ack,wire))
+            assertEquals(old.mealDraft.mealId,materialization.mealId);assertNull(store.pending())
+            assertEquals(1,db.dao().operationCount(scope));assertEquals(1,db.dao().achievementMeals(scope).size)
+            assertEquals(history.decisionJson,db.photoConfirmationHistoryDao().get(scope,sent.key!!)!!.decisionJson)
+            assertEquals(1,db.photoConfirmationHistoryDao().decisions(scope,row.operationId).size)
+        } finally {db.close();scope?.let(::clean)}
+    }
+    @Test fun reopenedPlansRejectNewerReadsContextChangesAbaAndStaleReviewRevisions()=runBlocking<Unit> {
+        val db=Room.inMemoryDatabaseBuilder(context,CalorieDatabase::class.java).build();val scopes=mutableListOf<String>()
+        try {
+            val lease=account(db,"reopen-A");scopes+=lease.storageScope;val(store,row,_)=rejectedConfirmation(db,lease)
+            val source=store.pending()!!
+            store.acceptReadPrepared(store.prepareRead(row.operationId,readResult().toString().toByteArray()))
+            // A GET captured before rejection/proof cannot be relabelled as a fresh current request.
+            rejected {store.prepareRead(row.operationId,readResult().toString().toByteArray(),source.copy(receiptJson="stale"))}
+            rejected {store.prepareConfirmationReopen(row.operationId,2,2)}
+            val prepared=store.prepareConfirmationReopen(row.operationId,2,1)
+            store.acceptReadPrepared(store.prepareRead(row.operationId,readResult().put("revision",3).toString().toByteArray()))
+            rejected {store.acceptConfirmationReopenPrepared(prepared)}
+            val fresh=store.prepareConfirmationReopen(row.operationId,3,1);val before=store.pending()
+            val binding=db.bootstrapDao().binding(lease.storageScope)!!
+            db.bootstrapDao().update(binding.copy(contextRevision=binding.contextRevision+1));rejected {store.acceptConfirmationReopenPrepared(fresh)}
+            db.bootstrapDao().update(binding);scopes+=account(db,"reopen-B").storageScope;rejected {store.acceptConfirmationReopenPrepared(fresh)}
+            val resumed=LocalOwnerStore(db).select(lease.storageScope);rejected {store.acceptConfirmationReopenPrepared(fresh)}
+            assertEquals(before,PhotoAnalysisStore(context,db,resumed).pending())
+            assertTrue(db.dao().achievementMeals(lease.storageScope).isEmpty())
+        } finally {db.close();scopes.forEach(::clean)}
+    }
+
+
+    @Test fun olderValidGetCannotAuthorizeReopeningAgainstANewerStoredProposal()=runBlocking<Unit> {
+        val db=Room.inMemoryDatabaseBuilder(context,CalorieDatabase::class.java).build();var scope:String?=null
+        try {
+            val lease=account(db,"reopen-stale-get");scope=lease.storageScope;val(store,row)=cancellationQueue(db,lease)
+            confirmationDraft(store,row.operationId)
+            store.acceptReadPrepared(store.prepareRead(row.operationId,readResult().put("revision",3).toString().toByteArray()))
+            store.acceptConfirmationPrepared(store.prepareConfirmation(row.operationId,UUID.randomUUID().toString(),3,1))
+            store.acceptConfirmationPrepared(store.prepareConfirmationAttempted(row.operationId,0))
+            val sent=store.stored(row.operationId).confirmation!!.request(row.syncEpoch)
+            store.acceptConfirmationPrepared(store.prepareConfirmationRejection(row.operationId,"photo_catalog_choice_changed",sent))
+            val stale=store.prepareRead(row.operationId,readResult().toString().toByteArray())
+            assertFalse(stale.canReopenConfirmation);store.acceptReadPrepared(stale)
+            assertFalse(store.canReopenConfirmation(row.operationId,store.stored(row.operationId)))
+            assertNull(db.photoConfirmationHistoryDao().get(scope,sent.key!!)!!.lastReadSnapshotHash)
+            store.acceptReadPrepared(store.prepareRead(row.operationId,readResult().put("revision",3).toString().toByteArray()))
+            assertTrue(store.canReopenConfirmation(row.operationId,store.stored(row.operationId)))
         } finally {db.close();scope?.let(::clean)}
     }
 }

@@ -19,9 +19,10 @@ import pl.roseru.kalorie.session.*
     val draft=session.photoMealDraft
     val row=session.photoUpload
     var approve by remember(session.binding?.lease,status,session.requiresRecovery) {mutableStateOf(false)}
+    var reopen by remember(session.binding?.lease,status,session.requiresRecovery) {mutableStateOf(false)}
     val lifecycle=LocalLifecycleOwner.current
     DisposableEffect(lifecycle,session.binding?.lease,status,session.requiresRecovery) {
-        val observer=LifecycleEventObserver {_,event->if(event==Lifecycle.Event.ON_STOP)approve=false}
+        val observer=LifecycleEventObserver {_,event->if(event==Lifecycle.Event.ON_STOP){approve=false;reopen=false}}
         lifecycle.lifecycle.addObserver(observer)
         onDispose {lifecycle.lifecycle.removeObserver(observer)}
     }
@@ -39,10 +40,19 @@ import pl.roseru.kalorie.session.*
             OutlinedButton(onClick={actions.retryConfirmation(status.operationId)},enabled=network,
                 modifier=Modifier.fillMaxWidth().testTag("photo-confirmation-retry")){Text("Ponów dodanie posiłku")}
         }
-        if(status.rejected)Text("Decyzja odrzucona przez serwer. Sprawdź wynik analizy. Zapisane poprawki pozostają do odczytu.",
+        if(status.canReopen)OutlinedButton(onClick={reopen=true},
+            enabled=idle && session.serverLinked && session.binding?.owner?.kind=="account",
+            modifier=Modifier.fillMaxWidth().testTag("photo-confirmation-reopen")){Text("Wróć do poprawek")}
+        if(status.rejected && !status.canReopen)Text("Decyzja odrzucona przez serwer. Sprawdź wynik analizy. Zapisane poprawki pozostają do odczytu.",
             modifier=Modifier.testTag("photo-confirmation-rejected"))
         if(!session.hasSession)Text("Połącz konto, aby zatwierdzić posiłek. Poprawki pozostają na telefonie.")
     }
+    if(reopen && status.canReopen)AlertDialog(onDismissRequest={reopen=false},title={Text("Wrócić do poprawek?")},
+        text={Text("Serwer odrzucił poprzednią decyzję. Zachowamy jej historię i udostępnimy edycję tych samych składników. Dodanie posiłku będzie wymagało osobnego zatwierdzenia.")},
+        confirmButton={TextButton(onClick={reopen=false;actions.reopen(status.operationId,status.revision,status.editRevision)},
+            enabled=idle && session.serverLinked && session.binding?.owner?.kind=="account",
+            modifier=Modifier.testTag("photo-confirmation-reopen-approve")){Text("Wróć do poprawek")}},
+        dismissButton={TextButton(onClick={reopen=false},modifier=Modifier.testTag("photo-confirmation-reopen-dismiss")){Text("Zachowaj obecny stan")}})
     if(approve && status.canStart)AlertDialog(onDismissRequest={approve=false},title={Text("Dodać posiłek do dziennika?")},
         text={Column(Modifier.heightIn(max=320.dp).verticalScroll(rememberScrollState()),verticalArrangement=Arrangement.spacedBy(8.dp)) {
             Text(draft.title);Text("Dzień: ${draft.localDate}")

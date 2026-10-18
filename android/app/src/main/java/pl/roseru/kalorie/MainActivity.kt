@@ -124,7 +124,8 @@ class MainActivity : ComponentActivity() {
                     rename={id,revision,title->app.sessionScope.launch {app.sessions.renamePhotoMealDraft(binding.lease,id,revision,title)}},
                     discard={id,revision->app.sessionScope.launch {app.sessions.discardPhotoMealDraft(binding.lease,id,revision)}},
                     confirm={id,revision,edit->app.sessionScope.launch {app.sessions.confirmPhotoMeal(binding.lease,id,revision,edit)}},
-                    retryConfirmation={id->app.sessionScope.launch {app.sessions.retryPhotoConfirmation(binding.lease,id)}}))
+                    retryConfirmation={id->app.sessionScope.launch {app.sessions.retryPhotoConfirmation(binding.lease,id)}},
+                    reopen={id,revision,edit->app.sessionScope.launch {app.sessions.reopenPhotoConfirmation(binding.lease,id,revision,edit)}}))
             CalorieTheme(dark) { CalorieApp(model, session, actions, photoModel) }
             }
         }

@@ -1442,7 +1442,7 @@ class SessionController internal constructor(private val db: CalorieDatabase, pr
             val saved=withContext(Dispatchers.Default){captured.store.stored(row.operationId)}
             val preview=withContext(Dispatchers.Default){if(saved.cancelled)null else saved.latest?.let(PhotoAnalysisPreview::from)}
             val cancellation=PhotoCancellationStatus.from(row.operationId,saved)
-            val confirmation=PhotoConfirmationStatus.from(row.operationId,saved)
+            val confirmation=PhotoConfirmationStatus.from(row.operationId,saved,captured.store.canReopenConfirmation(row.operationId,saved))
             val draftPreview=withContext(Dispatchers.Default){PhotoMealDraftPreview.from(row.operationId,saved)}
             mutex.withLock {
                 db.withTransaction {
@@ -1488,7 +1488,7 @@ class SessionController internal constructor(private val db: CalorieDatabase, pr
         val saved=withContext(Dispatchers.Default){captured.store.stored(row.operationId)}
         val cached=withContext(Dispatchers.Default){if(saved.cancelled)null else saved.latest?.let(PhotoAnalysisPreview::from)}
         val cancellation=PhotoCancellationStatus.from(row.operationId,saved)
-            val confirmation=PhotoConfirmationStatus.from(row.operationId,saved)
+            val confirmation=PhotoConfirmationStatus.from(row.operationId,saved,captured.store.canReopenConfirmation(row.operationId,saved))
             val draftPreview=withContext(Dispatchers.Default){PhotoMealDraftPreview.from(row.operationId,saved)}
         withApiSession(ticket) {
             readyPhotoRead(id,captured,row)
@@ -1513,21 +1513,23 @@ class SessionController internal constructor(private val db: CalorieDatabase, pr
                 is PhotoPollStep.Stop->{finishPhotoRead(id,"Sprawdzanie zakończone. Zapisany stan zachowano; możesz sprawdzić ponownie.");return}
                 is PhotoPollStep.Ready->{
                     budget=step.reserved
+                    var sentSource:PhotoAnalysisRequestEntity?=null
                     val answer=withTimeout(step.timeoutMillis) {
                         checkNotNull(photoAnalysisGateway).send(current,request) {
                             withApiSession(current) {
                                 readyPhotoRead(id,captured,row)
                                 check(checkNotNull(sessionFor(binding())).optLong("apiRetryAt")<=now() && captured.store.pending()!!.retryAtMillis<=now())
+                                sentSource=checkNotNull(captured.store.pending())
                             }
                         }
                     }
                     if(answer.status==200) {
-                        val prepared=withContext(Dispatchers.Default){captured.store.prepareRead(row.operationId,answer.body)}
+                        val prepared=withContext(Dispatchers.Default){captured.store.prepareRead(row.operationId,answer.body,checkNotNull(sentSource))}
                         val snapshot=prepared.snapshot
                         val read=checkNotNull(snapshot.latest)
                         val preview=withContext(Dispatchers.Default){if(snapshot.cancelled)null else PhotoAnalysisPreview.from(read)}
                         val cancellation=PhotoCancellationStatus.from(row.operationId,snapshot)
-            val confirmation=PhotoConfirmationStatus.from(row.operationId,snapshot)
+            val confirmation=PhotoConfirmationStatus.from(row.operationId,snapshot,prepared.canReopenConfirmation)
                         val draftPreview=withContext(Dispatchers.Default){PhotoMealDraftPreview.from(row.operationId,snapshot)}
                         withApiSession(current) {
                             readyPhotoRead(id,captured,row);captured.store.acceptReadPrepared(prepared)
@@ -1631,6 +1633,30 @@ class SessionController internal constructor(private val db: CalorieDatabase, pr
             }}
         } catch(error:CancellationException){withContext(NonCancellable){finishPhotoRead(id,"Zapis poprawek przerwany. Odtwórz zapisany szkic.")};throw error}
         catch(_:Exception){finishPhotoRead(id,"Nie zapisano poprawek. Sprawdź nazwę, ilość i wartości lub odtwórz aktualny szkic.")}
+    }
+
+    /** Explicit local review after a persisted post-rejection GET; never sends a replacement decision. */
+    suspend fun reopenPhotoConfirmation(expectedLease:OwnerLease,operationId:String,revision:Long,editRevision:Long) {
+        val id=UUID.randomUUID().toString()
+        try {
+            val captured=beginPhotoUpload(id,null,expectedLease,read=true,local=true,editing=true)?:return
+            val row=checkNotNull(captured.store.pending());check(row.operationId==operationId)
+            val prepared=withContext(Dispatchers.Default){captured.store.prepareConfirmationReopen(operationId,revision,editRevision)}
+            val snapshot=prepared.snapshot
+            val draft=withContext(Dispatchers.Default){PhotoMealDraftPreview.from(operationId,snapshot)}
+            val preview=withContext(Dispatchers.Default){snapshot.latest?.let(PhotoAnalysisPreview::from)}
+            val cancellation=PhotoCancellationStatus.from(operationId,snapshot)
+            val confirmation=PhotoConfirmationStatus.from(operationId,snapshot)
+            mutex.withLock {db.withTransaction {
+                readyPhotoRead(id,captured,row);check(photoEditMode)
+                captured.store.acceptConfirmationReopenPrepared(prepared)
+                photoMealDraft=draft;photoCanEditProposal=snapshot.canEditProposal
+                photoAnalysisPreview=preview;photoCancellationStatus=cancellation;photoConfirmationStatus=confirmation
+                photoPreviewSource=snapshot.serialized;photoUploadOperation=null;photoReadMode=false;photoEditMode=false
+                photoUploadMessage="Możesz ponownie poprawić posiłek. Dodanie go do dziennika wymaga nowego zatwierdzenia.";publish()
+            }}
+        } catch(error:CancellationException){withContext(NonCancellable){finishPhotoRead(id,"Powrót do poprawek przerwany. Zapisane dane zachowano.")};throw error}
+        catch(_:Exception){finishPhotoRead(id,"Nie odblokowano poprawek. Sprawdź bieżący wynik analizy przed nową decyzją.")}
     }
 
     /** Freeze the exact revision reviewed by the user before any token refresh or HTTP. */

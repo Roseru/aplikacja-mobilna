@@ -25,7 +25,7 @@ import java.time.ZoneId
 class PhotoConfirmationScreenTest {
     @get:Rule val compose=createComposeRule()
     private val op="00000000-0000-4000-8000-000000000001"
-    private fun view(edit:Long=1,retry:Boolean=false,rejected:Boolean=false):SessionView {
+    private fun view(edit:Long=1,retry:Boolean=false,rejected:Boolean=false,reopen:Boolean=false):SessionView {
         val assets=InstrumentationRegistry.getInstrumentation().context.assets
         val ack=assets.open("create-accepted.json").bufferedReader().use {it.readText()}
         val source=PhotoAnalysisSnapshot.read(ack,"mock").withRead(assets.open("analysis-read-succeeded.json").use {it.readBytes()})
@@ -37,7 +37,7 @@ class PhotoConfirmationScreenTest {
             hasSession=true,serverLinked=true,photoUploadConfigured=true,photoCanEditProposal=!retry && !rejected,
             photoUpload=PhotoUploadStatus(op,"photo","mock","mock-food-v1",true,true,0,false),
             photoMealDraft=PhotoMealDraftPreview.from(op,if(edit==1L)initial else initial.withMealDraft(draft,1)),
-            photoConfirmation=PhotoConfirmationStatus(op,2,edit,!retry && !rejected,retry,rejected))
+            photoConfirmation=PhotoConfirmationStatus(op,2,edit,!retry && !rejected,retry,rejected,reopen))
     }
     @Composable private fun Panel(view:SessionView,actions:PhotoDraftActions) {
         val density=LocalDensity.current
@@ -82,5 +82,29 @@ class PhotoConfirmationScreenTest {
         compose.runOnIdle {state.value=view().copy(requiresRecovery=true)}
         compose.onNodeWithTag("photo-confirmation-start").assertIsNotEnabled()
         compose.runOnIdle {assertEquals(0,sent)}
+    }
+
+    @Test fun reopenedReviewRequiresProofAndSeparateLocalApprovalEvenWithExpiredAccess() {
+        val state=mutableStateOf(view(rejected=true));val calls=mutableListOf<Triple<String,Long,Long>>()
+        compose.setContent {Panel(state.value,PhotoDraftActions(reopen={id,rev,edit->calls+=Triple(id,rev,edit)}))}
+        compose.onNodeWithTag("photo-confirmation-reopen").assertDoesNotExist()
+        compose.runOnIdle {state.value=view(rejected=true,reopen=true).copy(hasSession=false)}
+        compose.onNodeWithTag("photo-confirmation-start").assertDoesNotExist()
+        compose.onNodeWithTag("photo-confirmation-reopen").assertIsEnabled().performScrollTo().performClick()
+        compose.onNodeWithTag("photo-confirmation-reopen-approve").assertExists();assertTrue(calls.isEmpty())
+        compose.onNodeWithTag("photo-confirmation-reopen-dismiss").performClick();assertTrue(calls.isEmpty())
+        compose.onNodeWithTag("photo-confirmation-reopen").performClick()
+        compose.onNodeWithTag("photo-confirmation-reopen-approve").performClick()
+        compose.runOnIdle {assertEquals(listOf(Triple(op,2L,1L)),calls)}
+    }
+    @Test fun reopenedReviewDialogExpiresWithAnotherEditAndRecoveryDisablesTheAction() {
+        val state=mutableStateOf(view(rejected=true,reopen=true));var calls=0
+        compose.setContent {Panel(state.value,PhotoDraftActions(reopen={_,_,_->calls++}))}
+        compose.onNodeWithTag("photo-confirmation-reopen").performClick()
+        compose.runOnIdle {state.value=view(edit=2,rejected=true,reopen=true)}
+        compose.onNodeWithTag("photo-confirmation-reopen-approve").assertDoesNotExist()
+        compose.runOnIdle {state.value=state.value.copy(requiresRecovery=true)}
+        compose.onNodeWithTag("photo-confirmation-reopen").assertIsNotEnabled()
+        compose.runOnIdle {assertEquals(0,calls)}
     }
 }

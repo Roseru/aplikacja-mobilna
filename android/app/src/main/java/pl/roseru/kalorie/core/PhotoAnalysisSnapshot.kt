@@ -16,6 +16,11 @@ internal class PhotoAnalysisSnapshot private constructor(val serialized:String,
 
     val confirmed get()=confirmation?.confirmed==true || latest?.decision=="confirmed"
 
+    /** Eligibility only. Room must additionally prove a valid GET committed after the rejection. */
+    val canReopenConfirmation get()=!cancelled && !confirmed && latest?.state=="succeeded" && latest.decision=="pending" &&
+        confirmation?.let {it.attempted && it.rejectedCode in setOf("proposal_revision_conflict","photo_catalog_choice_changed") &&
+            (it.rejectedCode!="proposal_revision_conflict" || latest.revision>it.expectedRevision)}==true
+
     val canEditProposal get()=confirmation==null && !confirmed && !cancelled && latest?.state=="succeeded" && latest.decision=="pending" &&
         (cancellation==null || (cancellation.rejectedCode=="proposal_revision_conflict" && latest.revision>cancellation.expectedRevision))
 
@@ -108,6 +113,11 @@ internal class PhotoAnalysisSnapshot private constructor(val serialized:String,
     fun rejectConfirmation(code:String):PhotoAnalysisSnapshot = safe {
         require(!cancelled && confirmation?.confirmed!=true)
         rebuild(latest,originalRead,cancellation,mealDraft,checkNotNull(confirmation).reject(code))
+    }
+    /** The caller must atomically retain the original frozen decision in its durable history. */
+    fun reopenRejectedConfirmation(revision:Long,editRevision:Long):PhotoAnalysisSnapshot = safe {
+        require(canReopenConfirmation && latest?.revision==revision && mealDraft?.editRevision==editRevision)
+        rebuild(latest,originalRead,cancellation,checkNotNull(mealDraft).reviewAgain(),null)
     }
     private fun rebuild(read:PhotoAnalysisRead?,wire:String?,cancel:PhotoCancellation?,draft:PhotoMealDraft?=mealDraft,
         confirm:PhotoConfirmation?=confirmation):PhotoAnalysisSnapshot {

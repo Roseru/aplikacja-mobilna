@@ -58,6 +58,8 @@ internal class PhotoMealDraft private constructor(val analysisId:String,val sour
         require(items.any {it.id==id});changed(items.filterNot {it.id==id})
     }
     fun rename(value:String):PhotoMealDraft = safe {changed(items,value.trim())}
+    /** A new review invalidates callbacks from the rejected decision without replacing meal/item IDs. */
+    fun reviewAgain():PhotoMealDraft = safe {changed(items)}
     fun matches(read:PhotoAnalysisRead) = safe {
         require(analysisId==read.analysisId && sourceRevision<=read.revision)
         val proposal=read.proposal

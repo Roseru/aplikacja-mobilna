@@ -125,4 +125,37 @@ class PhotoConfirmationTest {
         assertNull(rejected.confirmation.receiptJson);assertTrue(rejected.confirmed)
         assertFalse(rejected.canEditProposal)
     }
+
+    @Test fun reopenedCatalogRejectionKeepsExactCorrectionsAndIdsButAdvancesReviewRevision() {
+        val rejected=attempted().rejectConfirmation("photo_catalog_choice_changed")
+        val frozen=StrictJson.canonical(rejected.confirmation!!.journal())
+        assertTrue(rejected.canReopenConfirmation)
+        val resumed=restart(rejected.reopenRejectedConfirmation(2,2))
+        assertTrue(resumed.canEditProposal);assertNull(resumed.confirmation);assertEquals(3L,resumed.mealDraft!!.editRevision)
+        val before=rejected.mealDraft!!.journal().apply {remove("edit_revision")}
+        val after=resumed.mealDraft.journal().apply {remove("edit_revision")}
+        assertEquals(StrictJson.canonical(before),StrictJson.canonical(after))
+        assertEquals(frozen,StrictJson.canonical(rejected.confirmation.journal()))
+        assertEquals(meal,resumed.mealDraft.mealId);assertEquals(item,resumed.mealDraft.items.single().id)
+    }
+    @Test fun revisionConflictRequiresANewerPendingProposalAndExactShownRevisions() {
+        val old=attempted().rejectConfirmation("proposal_revision_conflict")
+        assertFalse(old.canReopenConfirmation);rejected {old.reopenRejectedConfirmation(2,2)}
+        val fresh=restart(old.withRead(bytes(json("analysis-read-succeeded").put("revision",3))))
+        assertTrue(fresh.canReopenConfirmation)
+        rejected {fresh.reopenRejectedConfirmation(2,2)};rejected {fresh.reopenRejectedConfirmation(3,1)}
+        assertTrue(fresh.reopenRejectedConfirmation(3,2).canEditProposal)
+    }
+    @Test fun uncertainAcceptedCancelledAndUnsafeRejectionsNeverAuthorizeAnotherDecision() {
+        val pending=attempted();assertFalse(pending.canReopenConfirmation);rejected {pending.reopenRejectedConfirmation(2,2)}
+        for(code in listOf("idempotency_key_reused","analysis_already_confirmed","photo_confirm_rejected")) {
+            val denied=restart(pending.rejectConfirmation(code));assertFalse(denied.canReopenConfirmation)
+            rejected {denied.reopenRejectedConfirmation(2,2)}
+        }
+        val denied=pending.rejectConfirmation("photo_catalog_choice_changed")
+        for(read in listOf(cancelled(),json("analysis-read-succeeded").put("revision",3).put("decision_state","confirmed"))) {
+            val terminal=restart(denied.withRead(bytes(read)));assertFalse(terminal.canReopenConfirmation)
+            rejected {terminal.reopenRejectedConfirmation(3,2)}
+        }
+    }
 }
