@@ -1,5 +1,9 @@
 # Android — Racje i kalorie
 
+W osobnej gałęzi `codex/android-wysylanie-kolejki` powstaje
+[wysyłanie trwałych partii dziennika](WYSYLANIE_KOLEJKI.md). Dostarczona część
+obejmuje transport HTTP; podłączenie sesji, interfejsu i nowego APK jest w toku.
+
 Aktualny APK **0.8.22/code33/Room13** pozwala jawnie wrócić do poprawek po
 odrzuconej decyzji i poprawnym odczycie stanu serwera. Zachowuje stare body,
 klucz i pochodzenie w historii, a nowa zgoda ma osobny klucz i te same UUID
