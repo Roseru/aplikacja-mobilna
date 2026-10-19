@@ -19,7 +19,7 @@ Każda osoba aktualizuje własny wiersz. Daty i dokładne źródła są w jej wp
 |---|---|---|---|
 | O1 — Android, Kotlin, Room | Macierz kandydata i poprawny SDK37 dostarczone; main4bf56ab dołączony do PR117 | Osobny CI dokumentacji; kwalifikacja nowego toolchainu NOT_RUN, kod Androida na odrębnej kolejce | O1-070, [PR117](https://github.com/Roseru/aplikacja-mobilna/pull/117), [macierz](integracja/MACIERZ_ANDROID_O1_20261017.md) |
 | O2 — Python, PostgreSQL, API | PR124: poprawka dwóch P2 odbioru483dcfa9; nowa0026, exact EXECUTE operatora; review9/10 | Celowane testy i nowe8CI dokładnego head w PR/checks; produkcyjny drugi host/fencing odłożone przez właściciela, pełneKO32 osobno | O2-042, [PR124](https://github.com/Roseru/aplikacja-mobilna/pull/124), [raport](integracja/RAPORT_REJESTR_USUNIEC_O2.md) |
-| O3 — DevOps, CI/CD, serwer | PR124 scalony, osobny main82bc8ae ma8/8CI i155JVM/169native PASS; PR125 dołączył poprawki26,30 odbiornika i28kontraktu/6PG PASS | Własny CI PR125 i osobny main; drugi host/fencing odłożone przez właściciela, klucz wymaga osobnego nośnika; telefon w poniedziałek | O3-072/073, [odbiornik](integracja/ODBIORNIK_REJESTRU_O3.md) |
+| O3 — DevOps, CI/CD, serwer | Świeży HTTPS/schema24 i kopia19.10 PASS; okno APK/API 08:11:36–08:21:36 zamknięte po8 połączeniach O1 | Receipt APK/driver/guard po stronie O1; PR130 to przekazanie, nie pełny odbiór APK/API; drugi host/fencing i niezależny klucz osobno | O3-076/077, [PR130](https://github.com/Roseru/aplikacja-mobilna/pull/130) |
 
 
 ## Wpisy
@@ -3349,3 +3349,35 @@ Korekta harmonogramu O3-070: finalne przygotowanie03:50/15:50, proponowany trans
   APK/API nadal **NOT_RUN** do rzeczywistego wyniku O1; po końcu okna O3
   potwierdzi brak listenera i gotowość usług. Prywatne adresy, dane i logi
   pozostają poza repozytorium.
+
+### O3-077 — zamknięcie okna i dowody serwera; receipt APK po stronie O1
+
+- Data/autor:19.10.2026, agent3/O3. Do O1/O2, **WYMAGA ODPOWIEDZI**.
+  Odniesienie O1-075/O3-076, [PR130](https://github.com/Roseru/aplikacja-mobilna/pull/130),
+  branch `codex/devops-wspolny-test-api`. Próba `O1-O3-APK-API-20261019`.
+- Relay zarejestrował **8 dozwolonych połączeń**: pierwsze08:14:49 CEST,
+  ostatnie08:20:53. O08:20:15 potwierdzono też rzeczywisty ESTABLISHED
+  z dokładnego adresu O1. To dowód transportu TCP, nie parsowania DTO lub
+  zaliczenia scenariusza aplikacji. Nie zapisywano bajtów TLS/HTTP ani tokenów.
+- Automatyczny `WINDOW_CLOSED` **08:21:36,208 CEST**. O08:21:48 brak
+  listenera i połączeń18444. Nie dodano ani nie usuwano reguł zapory.
+  Po zakończeniu świeży HTTPS readiness200/discovery200, dokładny issuer/CA
+  i wymagane pomiary monitoringu OK. Kontenery, obraz, schema24 i zadania
+  kopii zachowane; bez migracji, zmiany epoki, restartu źródła lub AI.
+- Dodatkowa identyfikacja runtime: **236 plików kodu/migracji/konfiguracji**
+  zgodnych bajtowo z odniesieniem `8ff7c0c1f0df7b579136cf6877b20717eb5ae6a4`;
+  wszystkie38 zainstalowanych dystrybucji mają wersje zgodne z jego lockiem.
+  Sam `/app/uv.lock` ma inne bajty: lista wheels greenlet przy tej samej
+  wersji3.5.6 oraz devRuff0.16.10 zamiast0.17.0; Ruff nie jest zainstalowany
+  w obrazie. Nie nazywamy więc całego obrazu buildem dokładnego commita8ff.
+  Wiążącym identyfikatorem używanego obrazu jest SHA podany w O3-076.
+- Lokalna walidacja dokumentacji E0:11schemas/98valid/35invalid/18scenarios/
+  712linków PASS i diff-check PASS. Własny CI PR130 nie zastępuje wyniku APK;
+  jego aktualny stan jest w checks, PR pozostaje draft bez merge.
+- **Wynik O3: serwer/preflight PASS, przyjęcie peera PASS, zamknięcie PASS.**
+  Odczyt gałęzi O1 nadal wskazywał `92f2ca2`/O1-075, bez nowego receipt.
+  Wspólny odbiór **PARTIAL / WAITING_O1_RECEIPT**: realny PKCE/bootstrap/GET,
+  poprawny DTO, późne odrzucenie przez guard i baseline pozostają
+  **NOT_CONFIRMED_BY_O3** do odczytu dowodu O1. Nie potwierdzamy ich za autora.
+  O1 dopisuje wynik i zamknięcie własnego transportu z tym samym ID;
+  nowy0.8.23/Room14 i E4/E7 nadal wymagają odrębnej kwalifikacji.
