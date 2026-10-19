@@ -17,7 +17,7 @@ Każda osoba aktualizuje własny wiersz. Daty i dokładne źródła są w jej wp
 
 | Rola | Ostatni znany rezultat | Następny krok / zależność | Źródło |
 |---|---|---|---|
-| O1 — Android, Kotlin, Room | Przygotowana bariera validation po pełnym parserze ACK/przed zapisem; 12/12 JVM i lekka kompilacja obu kontrolerów PASS; kod opublikowany osobno od 0.8.23 | Opt-in driver, receipt POST i skonfigurowany APK/pełna kwalifikacja nadal do wykonania; E4 NOT_RUN, bez nowego okna podczas gry | O1-080, [bariera](../android/REPLAY_ACK_VALIDATION.md), [PR138](https://github.com/Roseru/aplikacja-mobilna/pull/138), rodzic [PR129](https://github.com/Roseru/aplikacja-mobilna/pull/129) |
+| O1 — Android, Kotlin, Room | Kod drivera prepare/hold/replay i receipt POST opublikowane; 24/24 JVM i lekka kompilacja obu wariantów oraz drivera PASS | Potrzebne jawne kanoniczne wejście testowe, osobny skonfigurowany APK/pełny build/native i własne C0/C1/C2; E4 NOT_RUN, bez okna podczas gry | O1-081, [driver](../android/DRIVER_REPLAY_E4.md), [PR138](https://github.com/Roseru/aplikacja-mobilna/pull/138), rodzic [PR129](https://github.com/Roseru/aplikacja-mobilna/pull/129) |
 | O2 — Python, PostgreSQL, API | E9-O2/PR54 i zdjęcia/PR59 scalone; 35 zbadanych, 30 propozycji 8/8/10/4; własne CI PR/main odebrane | O1: klient i realny APK/API; O3: origin oraz Gemini dev; człowiek: referencje/zgody; O2: późniejsze testy E7-R/E9-R i naprawy | O2-033, [PR59](https://github.com/Roseru/aplikacja-mobilna/pull/59), [raport zdjęć](e7/RAPORT_PRZYGOTOWANIA_ZDJEC.md) |
 | O3 — DevOps, CI/CD, serwer | E9 lokalny0024 zachowany; własny AVD TLS200; przenośny ZIP APK/publicCA/config/skrypty opublikowany i pobrany z GitHuba ze zgodnym SHA256 | O1/O3: osiągalny LAN/VPN i dokładny adres O1 do uruchomienia relay; własny APK/PKCE/baseline O1; fizyczny telefon/Gemini nadal WAITING_EXTERNAL | O3-026/[PR65](https://github.com/Roseru/aplikacja-mobilna/pull/65), [pakiet](https://github.com/Roseru/aplikacja-mobilna/releases/tag/integration-handoff-20261014), [instrukcja](../infra/integration/ANDROID_HANDOFF.md) |
 
@@ -2753,3 +2753,59 @@ wynik nie jest kwalifikacją nowej macierzy ani zastępstwem CI122.
   czatu ani Gemini, nie zmieniono usług lub istniejących APK i nie restartowano
   komputera. Nie deklaruję odczytu/gotowości O2/O3; proszę wyłącznie o odczyt
   źródeł i granic przygotowania, bez rozpoczynania okna sieciowego.
+
+### O1-081 — kod drivera prepare/hold/replay i neutralny receipt POST
+
+- Data/autor: 19.10.2026, agent 1/O1. Do O2/O3, **DO ODCZYTU**.
+  Źródło opublikowane `e68310d629d58f73c116d2a3165db338e869394b`,
+  branch `codex/android-replay-ack`, [PR138](https://github.com/Roseru/aplikacja-mobilna/pull/138).
+  [Instrukcja i granice](https://github.com/Roseru/aplikacja-mobilna/blob/e68310d629d58f73c116d2a3165db338e869394b/android/DRIVER_REPLAY_E4.md).
+  Ten sam zależny etap od PR129/9a3a9a9, bez nowego PR/merge.
+- Kontynuacja O1-080: kod opt-in LiveMealReplayTest, normalnie wykluczony
+  z test APK; osobna flaga O1_LIVE_E4_REPLAY_TEST. Trzy fazy instrumentacji
+  prepare/hold/replay wymagają jawnego synthetic_account i nowego trial_id.
+  Driver korzysta z istniejącej sesji, store.prepare/open, synchronizeMeals
+  oraz atomowego ACK. Nie tworzy posiłku lub substytutu operacji i nie edytuje
+  SQL/wire/UUID. Wymaga wskazanego istniejącego kanonicznego Meal/create,
+  jednej pending operacji i małego payload. Legacy nie spełnia tego wejścia;
+  źródło testowej operacji nadal do ustalenia przed próbą.
+- Prepare zamraża bez HTTP i zapisuje prywatny baseline. Hold wymaga pełnego
+  poprawnego DTO, HTTP200/no-store z poprawnym request_id, attempted=true,
+  nadal brak ACK i revision0; zapisuje PID/start procesu/deadline i pozostawia
+  czas na osobne PG C1 oraz rzeczywisty kill. Brak kill/wygaśnięcie daje
+  NOT_RUN i blokuje replay tej próby. Replay wymaga nowego procesu i niezależnego
+  external_kill_utc z receipt operatora, tej samej koperty oraz końcowego
+  already_applied/revision1, acked i zachowania danych. Jego PASS obejmuje
+  tylko lokalne obserwacje; PG C0/C1/C2 i dowód kill pozostają osobno.
+- Neutralny receipt POST powstaje wyłącznie validation dla hasha uzbrojonej
+  partii: run/stała ścieżka/UTC/status/no_store/oczyszczony request_id.
+  Brak body/konta/UUID partii/hash/tokenów. Do4 wpisów, przekroczenie limitu
+  flagowane i odrzucane w driverze. Zwykły wariant ma no-op i nadal brak
+  wywołania obserwatora w skompilowanych klasach kontrolera/transportu.
+- Odciski19 tabel z rowid obejmują też inne konta/gościa i katalog. Wyłącznie
+  serverRevision wybranego Meal, status wybranej operacji oraz trzy pola ACK
+  wybranej partii są normalizowane i sprawdzane osobno. Pozostałe pola/wire,
+  inne partie i FK pozostają chronione. Metadane logowania i snapshoty mogą
+  legalnie zmienić się w sync. Pliki raw tylko noBackupFilesDir aplikacji,
+  create-new/fsync; ewentualny odbiór wyłącznie prywatnie poza Git/OneDrive.
+- **24/24 lekkich JVM PASS**:12 gate/7 receipt/5 fingerprint. Oba warianty
+  kontrolera/transportu i driver skompilowane exit0 na istniejących klasach
+  zależnych;12 wejść zgodnych hashami. Po przeglądzie rowid/kill zmieniono
+  tylko driver i skompilowano ponownie8,41s; inne dowody zachowane bez
+  zbędnego powtarzania. Pierwsze23PASS/1FAIL to błędny fixture UUID bez liter
+  przy teście uppercase; poprawiono test i powtórzono24/24, bez osłabienia
+  walidatora. Logi obu prób zachowane. E0/diff-check PASS; jeden procesor,
+  heap256MiB i obniżony priorytet, bez Gradle.
+- **Nie jest to gotowy odbiór urządzenia ani wspólny E4.** Nadal potrzebne
+  kanoniczne syntetyczne wejście, osobne środowisko urządzenia, skonfigurowany
+  APK/test APK/manifest/SHA, pełny build/native i rzeczywiste wykonanie.
+  Nie instalować na zachowanym O1Api35 z oryginalnym APK R2/R3; identyczny
+  applicationId validation nie izoluje danych. O2/O3 porównają dopiero nowy
+  konkretny kandydat z używanym obrazem/schema24 i uzgodnią świeże ograniczone
+  okno po gotowości O1. Lokalny argument kill_utc nie zastępuje niezależnego
+  receipt operatora ani PG C1. Wspólny test nadal **NOT_RUN**.
+- Właściciel gra: brak uruchomienia Gradle/AVD/instrumentacji/API/Gemini,
+  instalacji, nowych listenerów/czatu lub restartu komputera. APK i Room
+  bez zmiany. Sprawdzono ponownie main4228cca i O3c0aef36/PR137, bez nowych
+  wpisów lub scalenia ich gałęzi. Proszę tylko o odczyt źródła/ograniczeń;
+  nie deklaruję gotowości lub odczytu za O2/O3 i nie otwieram okna.
