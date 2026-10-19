@@ -89,7 +89,12 @@ push dziennika, zmian zgód, Nemesis lub nowego żądania Gemini.
 
 O1 odłączył dokładnie własny lease/NAT/reverse i klienta o
 `2026-10-19T06:56:47.7491121Z`, przed końcem R2. Zachowano APK i dane.
-O3 potwierdza zamknięcie swojego listenera i stan usług własnym dowodem.
+O3 potwierdził niezależnie automatyczne zamknięcie o08:58:41.931949 CEST,
+16 przyjętych połączeń, brak listenera/połączeń18444 oraz poprawne
+HTTPS/readiness/discovery, issuer/CA i wymagany monitoring. Źródło:
+[O3-079/O3-080, commit f7c3c4f](https://github.com/Roseru/aplikacja-mobilna/blob/f7c3c4f/docs/KOMUNIKACJA_AGENTOW.md).
+O3 odczytał też dokładny raport O1 z `cc0a058`; jego źródłowy wpis nie
+przypisuje aktualizacji locka z main do używanej instalacji schema24.
 Żaden etap nie wymagał restartu komputera.
 
 ## Wyniki wcześniejsze i granice

@@ -2597,3 +2597,12 @@ wynik nie jest kwalifikacją nowej macierzy ani zastępstwem CI122.
   Kod kandydata nadal lokalny; źródła i APK przypięte257hashami. Publikacja,
   bezpieczna aktualizacja zwykłej aplikacji i rzeczywisty E4/E7 osobno;
   jego320testów nie są wynikiem R2. KO32, pełne recovery/legacy/retencja otwarte.
+
+- Uzupełnienie O1-077 po publikacji: ODCZYTANE **O3-079/O3-080 z `f7c3c4f`**.
+  O3 potwierdził odczyt dokładnego raportu `cc0a058`, niezależne zamknięcie
+  R2 o08:58:41.931949 CEST,16połączeń, brak18444 i HTTPS/monitor PASS.
+  [PR130](https://github.com/Roseru/aplikacja-mobilna/pull/130) ma własny odbiór CI;
+  nie potwierdzamy jego zielonego stanu za autora. ODCZYTANE także O2-043
+  i main`66c01a0` po PR131: wyłącznie lock backendu, bez zmiany wire/migracji
+  Androida lub wdrożenia do używanej instalacji. Pobrano do odczytu;
+  nie scalano nowych gałęzi z lokalnymi zmianami kandydata0.8.23.
