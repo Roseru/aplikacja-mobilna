@@ -2,6 +2,16 @@
 
 Przygotowanie O2, 13.10.2026. Źródła odczytane z main `2fc70f7ae612c031f63d53c04d3c81b4402b72c5` w osobnym checkoutcie koordynatora. Odrębny zakres od aktywnego E9/PR54; bez zmian kodu, journalu, kont lub środowiska. Status: **PREPARED / WAITING_EXTERNAL**, bez realnego APK PASS.
 
+## Aktualny odbiór — 19.10.2026
+
+Poniższe PREPARED/WAITING_EXTERNAL i NOT_RUN opisują historyczne przygotowanie
+oraz decyzję z15.10. Wynik późniejszych prób i niezależny odbiór O2:
+[R2/R3 oraz oracle kolejnej próby E4](ODBIOR_R2_R3_ORACLE_E4_O2.md).
+R2 late-GET/guard PASS, R3 świeże odczyty B/A4/4 PASS według receipts O1,
+transport/zamknięcie PASS niezależnie O3; całość PARTIAL w granicach raportu.
+Nowa próba zapisu E4 pozostaje NOT_RUN. Zachowujemy poniżej pierwotny oracle
+i historię bez przypisywania nowych dowodów wcześniejszym próbom.
+
 ## Krótki stan i największa niewiadoma
 
 - O1-023 określa pierwszy przebieg: APK, rzeczywiste konto A/Chrome/PKCE, bootstrap, GET me/motivation, potem logout/restart i B→A. Same odczyty nie potwierdzają zgody ani nie synchronizują dziennika.
