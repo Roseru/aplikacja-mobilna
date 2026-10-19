@@ -38,7 +38,7 @@ odpowiedzi i związaniu jej z konkretną kopertą. Dodano parser normatywnego
 `SyncError`, którego `details` jest obiektem; błędów E3 nie wolno używać
 zamiennie. Nie pokazujemy użytkownikowi swobodnego tekstu serwera.
 
-## Odbiór bieżącej części
+## Historyczny odbiór samego transportu
 
 Kod `d646c154e59ca1fff6669648580e59798ada6b6c`: pełne zadania
 `testDebugUnitTest`, `testValidationUnitTest` oraz `lintDebug` PASS.
@@ -60,10 +60,17 @@ zależności i protokół serwera pozostają bez zmian w tej części.
 Nie wygenerowano ani nie zainstalowano nowego APK. Otwarty do testów pozostaje
 odebrany [Android 0.8.22](POWROT_DO_POPRAWEK.md).
 
-## Następna część: sesja i interfejs
+## Sesja i interfejs — aktualizacja 19 października
+
+Poniższą część podłączono w kandydacie 0.8.23/Room14;
+[raport interfejsu](SYNCHRONIZACJA_INTERFEJS.md) podaje końcowe testy
+322/337 JVM, 22/22 celowane i 320/320 pełne native oraz manifest APK.
+To lokalny odbiór, bez aktualizacji zwykłej aplikacji lub rzeczywistego push.
+Pełne uzgodnienie wygasłej koperty z punktu 5 nadal nie jest zaimplementowane;
+klient blokuje wysyłkę i zachowuje pierwotną partię.
 
 1. Kontroler rezerwuje jedną operację dla przechwyconego konta, lease i pełnego
-   kontekstu. Blokuje równoległy bootstrap, zmianę sesji, pull i inne mutacje.
+   kontekstu. Blokuje równoległy bootstrap, pull i inne operacje serwerowe.
    Wylogowanie lub A→B→A unieważniają przygotowanie i późną odpowiedź.
 2. Po bootstrapie i pełnym pull korzysta z checkpointu trwałego snapshotu.
    `MealPushStore.prepare` utrwala batch i zamraża operacje przed HTTP;
@@ -84,10 +91,11 @@ odebrany [Android 0.8.22](POWROT_DO_POPRAWEK.md).
    i potrzebę uzgodnienia osobno. Po push odświeża pełną kopię serwera.
    Nie nazywa kopii serwera kompletną synchronizacją lokalnych typów legacy.
 
-Odbiór tej części będzie wymagał testów Room i sesji: lost ACK/restart,
+Lokalny odbiór tej części objął testy Room i sesji: lost ACK/restart,
 odświeżenie/backoff, zatrzymana odpowiedź po logout/A→B→A/kontekście,
 awaria atomowego zapisu, nowa porcja podczas lotu i konflikt późniejszej
-operacji. Dopiero po kwalifikacji nowego APK można zaktualizować emulator.
+operacji. Aktualizacja używanego APK i wspólna próba E4 wymagają osobnych
+dowodów; nie wykonuje ich sama publikacja źródeł.
 
 Nie jest to pełne E4, konwersja historycznych typów, automatyczne wysyłanie
 WorkManager, pełne recovery/retencja ani rzeczywisty odbiór APK/API/KO32.

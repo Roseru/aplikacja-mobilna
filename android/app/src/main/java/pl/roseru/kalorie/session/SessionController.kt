@@ -30,6 +30,8 @@ data class SessionView(val binding: SessionBinding? = null, val busy: Boolean = 
     val serverLinked: Boolean = false, val requiresRecovery: Boolean = false,
     val profileBusy: Boolean = false, val serverProfile: ProfileRead? = null,
     val snapshotBusy: Boolean = false, val snapshot: SnapshotStatus? = null,
+    val mealPushConfigured:Boolean=false,val mealPushBusy:Boolean=false,val mealPush:MealPushStatus?=null,
+    val mealPushMessage:String?=null,val mealPushRetryAt:Long=0,
     val motivationConfigured: Boolean = false, val motivationBusy: Boolean = false,
     val motivation: MotivationState = MotivationState.NotRequested,
     val rankingConsentConfigured: Boolean = false, val rankingConsentBusy: Boolean = false,
@@ -66,7 +68,9 @@ class SessionController internal constructor(private val db: CalorieDatabase, pr
     private val nemesisWriteGateway: NemesisWriteGateway? = null,
     private val photoCapabilitiesGateway: PhotoCapabilitiesGateway? = null,
     private val photoAnalysisGateway:PhotoAnalysisGateway?=null,
-    private val photoAnalysisStores:((OwnerLease)->PhotoAnalysisStore)?=null) {
+    private val photoAnalysisStores:((OwnerLease)->PhotoAnalysisStore)?=null,
+    private val mealPushGateway:MealPushGateway?=null,private val mealPushStore:MealPushStore?=null,
+    private val mealPushProtocol:pl.roseru.kalorie.core.sync.PushProtocol?=null) {
     private val owners = LocalOwnerStore(db)
     private val mutex = Mutex()
     private var record = JSONObject()
@@ -122,6 +126,11 @@ class SessionController internal constructor(private val db: CalorieDatabase, pr
     private var nemesisVersion: Pair<String, Pair<Long, java.time.Instant>>? = null
     private var nemesisRetryQuery: NemesisQuery? = null
     private var nemesisNextQuery: NemesisQuery.Listing? = null
+    private var mealPushOperation:String?=null
+    private var mealPushFence:Pair<OwnerLease,AccountBindingEntity>?=null
+    private var mealPushMessage:String?=null
+    private fun clearMealPush() { mealPushOperation=null;mealPushFence=null;mealPushMessage=null
+        mutable.value=mutable.value.copy(mealPushBusy=false,mealPush=null,mealPushMessage=null,mealPushRetryAt=0) }
     private var snapshotOperation: String? = null
     private val snapshots = snapshotProtocol?.let { ServerSnapshotStore(db, it) }
     private val snapshotProtocol = snapshotProtocol
@@ -135,7 +144,7 @@ class SessionController internal constructor(private val db: CalorieDatabase, pr
     /** In-memory confirmation is invalidated also by an external Room context update. */
     suspend fun observeMotivationContext() {
         try {
-            db.invalidationTracker.createFlow("account_bindings", "local_active_owner", "local_owners", "photo_analysis_requests").collect {
+            db.invalidationTracker.createFlow("account_bindings", "local_active_owner", "local_owners", "photo_analysis_requests", "sync_push_batches", "outbox", "server_snapshot_access").collect {
                 mutex.withLock {
                     if (mutable.value.binding != null) publish(mutable.value.message)
                 }
@@ -268,6 +277,9 @@ class SessionController internal constructor(private val db: CalorieDatabase, pr
         if(photoUploadFence!=null && (session==null || server==null || server.requiresRecovery ||
             photoUploadFence!=(current.lease to server.contextRevision) ||
             photoUploadContext!=Triple(server.accountId,server.accountGeneration,server.syncEpoch))) clearPhotoUpload()
+        if(mealPushFence!=null && (session==null || server!=mealPushFence?.second ||
+            current.lease!=mealPushFence?.first)) clearMealPush()
+        val mealStatus=if(current.owner.kind=="account")mealPushStore?.status(current.lease) else null
         val photoRow=if(current.owner.kind=="account" && session!=null && photoAnalysisStores!=null)
             db.photoAnalysisDao().get(current.lease.storageScope) else null
         if(photoPreviewSource!=photoRow?.receiptJson || photoRow?.blockedCode!=null) {
@@ -285,6 +297,9 @@ class SessionController internal constructor(private val db: CalorieDatabase, pr
             serverLinked = server != null, requiresRecovery = server?.requiresRecovery == true,
             profileBusy = profileOperation != null && privateReadKind == PrivateReadKind.PROFILE, serverProfile = serverProfile,
             snapshotBusy = snapshotOperation != null, snapshot = snapshots?.status(current.lease),
+            mealPushConfigured=mealPushGateway!=null && mealPushStore!=null && mealPushProtocol!=null && snapshots!=null,
+            mealPushBusy=mealPushOperation!=null,mealPush=mealStatus,mealPushMessage=mealPushMessage,
+            mealPushRetryAt=maxOf(session?.optLong("apiRetryAt")?:0,mealStatus?.retryAtMillis?:0).takeIf {it>now()}?:0,
             photoCapabilitiesConfigured = photoCapabilitiesGateway != null,
             photoCapabilitiesBusy = profileOperation != null && privateReadKind == PrivateReadKind.PHOTO,
             photoCapabilities = photoCapabilitiesState,
@@ -355,6 +370,7 @@ class SessionController internal constructor(private val db: CalorieDatabase, pr
             bootstrapOperation = null
             profileOperation = null
             snapshotOperation = null
+            clearMealPush()
             consentOperation = null
             clearPhotoUpload()
             nemesisMutationOperation = null
@@ -457,6 +473,7 @@ class SessionController internal constructor(private val db: CalorieDatabase, pr
         bootstrapOperation = null
         profileOperation = null
         snapshotOperation = null
+        clearMealPush()
         consentOperation = null
         clearPhotoUpload()
         nemesisMutationOperation = null
@@ -497,7 +514,7 @@ class SessionController internal constructor(private val db: CalorieDatabase, pr
                 serverProfile = null
                 clearMotivation()
                 // Manual renewal invalidates a held private read. Automatic renewal belongs to it.
-                if (expected == null) { clearPhotoUpload(); profileOperation = null; consentOperation = null; nemesisMutationOperation = null; clearRanking(); clearNemesis() }
+                if (expected == null) { clearMealPush(); clearPhotoUpload(); profileOperation = null; consentOperation = null; nemesisMutationOperation = null; clearRanking(); clearNemesis() }
                 mutable.value = mutable.value.copy(busy = true, profileBusy = profileOperation != null && privateReadKind == PrivateReadKind.PROFILE,
                     motivationBusy = profileOperation != null && privateReadKind == PrivateReadKind.MOTIVATION,
                     serverProfile = null, motivation = MotivationState.NotRequested, rankingConsent = RankingConsentState.NotRequested,
@@ -572,7 +589,7 @@ class SessionController internal constructor(private val db: CalorieDatabase, pr
         val id = UUID.randomUUID().toString()
         val lease = try { mutex.withLock {
             if (bootstrapOperation != null || operation != null || record.has("pending")) return
-            if (profileOperation != null || snapshotOperation != null || consentOperation != null || photoUploadOperation != null || nemesisMutationOperation != null) return
+            if (mealPushOperation != null || profileOperation != null || snapshotOperation != null || consentOperation != null || photoUploadOperation != null || nemesisMutationOperation != null) return
             val current = binding()
             if (current.owner.kind != "account" || sessionFor(current) == null) {
                 publish("Zaloguj się, aby połączyć konto z serwerem. Dziennik działa offline."); return
@@ -705,7 +722,7 @@ class SessionController internal constructor(private val db: CalorieDatabase, pr
         var capturedLease: OwnerLease? = null
         var rankingQuery: RankingQuery? = null
         val capturedBinding = try { mutex.withLock {
-            if (profileOperation != null || consentOperation != null || snapshotOperation != null || bootstrapOperation != null || operation != null || photoUploadOperation != null || nemesisMutationOperation != null || record.has("pending")) return
+            if (mealPushOperation != null || profileOperation != null || consentOperation != null || snapshotOperation != null || bootstrapOperation != null || operation != null || photoUploadOperation != null || nemesisMutationOperation != null || record.has("pending")) return
             val current = binding()
             capturedLease = current.lease
             if (current.owner.kind != "account" || sessionFor(current) == null) {
@@ -1020,7 +1037,7 @@ class SessionController internal constructor(private val db: CalorieDatabase, pr
         val id = UUID.randomUUID().toString()
         var lease: OwnerLease? = null
         val request = try { mutex.withLock {
-            if (consentOperation != null || profileOperation != null || snapshotOperation != null || bootstrapOperation != null || operation != null || photoUploadOperation != null || nemesisMutationOperation != null || record.has("pending")) return
+            if (mealPushOperation != null || consentOperation != null || profileOperation != null || snapshotOperation != null || bootstrapOperation != null || operation != null || photoUploadOperation != null || nemesisMutationOperation != null || record.has("pending")) return
             val current = binding()
             lease = current.lease
             check(current.owner.kind == "account" && sessionFor(current) != null)
@@ -1178,7 +1195,7 @@ class SessionController internal constructor(private val db: CalorieDatabase, pr
         val id = UUID.randomUUID().toString()
         var lease: OwnerLease? = null
         val request = try { mutex.withLock {
-            if (photoUploadOperation != null || nemesisMutationOperation != null || consentOperation != null || profileOperation != null || snapshotOperation != null || bootstrapOperation != null || operation != null || record.has("pending")) return
+            if (mealPushOperation != null || photoUploadOperation != null || nemesisMutationOperation != null || consentOperation != null || profileOperation != null || snapshotOperation != null || bootstrapOperation != null || operation != null || record.has("pending")) return
             val current = binding(); lease = current.lease
             check(current.owner.kind == "account" && sessionFor(current) != null)
             val server = checkNotNull(db.bootstrapDao().binding(current.lease.storageScope)); check(!server.requiresRecovery)
@@ -1305,7 +1322,7 @@ class SessionController internal constructor(private val db: CalorieDatabase, pr
     private suspend fun beginPhotoUpload(id:String,consent:PhotoUploadConsent?,expectedLease:OwnerLease,
         read:Boolean=false,local:Boolean=false,cancel:Boolean=false,editing:Boolean=false,confirm:Boolean=false):PhotoCapture?=mutex.withLock {
         owners.requireCurrent(expectedLease)
-        if(photoAnalysisGateway==null || photoAnalysisStores==null || photoUploadOperation!=null ||
+        if(mealPushOperation!=null || photoAnalysisGateway==null || photoAnalysisStores==null || photoUploadOperation!=null ||
             profileOperation!=null || bootstrapOperation!=null || snapshotOperation!=null || consentOperation!=null ||
             nemesisMutationOperation!=null || operation!=null || record.has("pending")) return@withLock null
         val current=binding()
@@ -1970,15 +1987,138 @@ class SessionController internal constructor(private val db: CalorieDatabase, pr
         catch(_:Exception){/* Keep an attempted/changed-owner operation intact. */}
     }
 
+    /** Explicit canonical Meal push. Legacy rows remain local and are reported separately. */
+    suspend fun synchronizeMeals(expectedLease:OwnerLease) {
+        val transport=mealPushGateway?:return
+        val store=mealPushStore?:return
+        val protocol=mealPushProtocol?:return
+        if(snapshotGateway==null || snapshots==null)return
+        val id=UUID.randomUUID().toString()
+        val server=try {mutex.withLock {
+            owners.requireCurrent(expectedLease)
+            if(mealPushOperation!=null || operation!=null || bootstrapOperation!=null || snapshotOperation!=null ||
+                profileOperation!=null || consentOperation!=null || nemesisMutationOperation!=null || photoUploadOperation!=null || record.has("pending"))return@withLock null
+            val current=binding();val session=sessionFor(current)
+            if(current.owner.kind!="account" || session==null){publish("Zaloguj się, aby wysłać dziennik. Dane lokalne zachowane.");return@withLock null}
+            val known=db.bootstrapDao().binding(expectedLease.storageScope)
+            if(known==null || known.requiresRecovery){publish("Najpierw połącz konto lub uzgodnij stan serwera. Kolejka zachowana.");return@withLock null}
+            val pushStatus=store.status(expectedLease)
+            if(maxOf(session.optLong("apiRetryAt"),pushStatus.retryAtMillis)>now()){publish("Serwer jest zajęty. Poczekaj do zakończenia zapisanej przerwy.");return@withLock null}
+            if(!pushStatus.ready){publish("Najpierw pobierz pełną kopię danych serwera. Kolejka zachowana.");return@withLock null}
+            mealPushOperation=id;mealPushFence=expectedLease to known;mealPushMessage=null
+            publish();known
+        }}catch(error:CancellationException){throw error}catch(_:Exception){null}?:return
+        var acknowledged=0;var refused=0
+        try {
+            var refreshed=false
+            val fresh=mutex.withLock {
+                checkMealPush(id,expectedLease,server)
+                val state=AuthState.jsonDeserialize(checkNotNull(sessionFor(binding())).getString("authState"))
+                (state.accessTokenExpirationTime?:0)>now()+30_000
+            }
+            if(!fresh){check(refreshFor(expectedLease));refreshed=true}
+            var ticket=apiSession(expectedLease)
+            repeat(10) {
+                withApiSession(ticket){checkMealPush(id,expectedLease,server)}
+                // Includes serialization and schema checks; never execute under the session guard.
+                val request=store.prepare(expectedLease)
+                if(request==null){
+                    finishMealPush(id,expectedLease,mealPushSummary(acknowledged,refused))
+                    if(acknowledged+refused>0)downloadSnapshot(expectedLease,server)
+                    return
+                }
+                while(true) {
+                    val captured=ticket
+                    suspend fun ready(){checkMealPush(id,expectedLease,server);store.requireCurrent(request)}
+                    val result=transport.post(captured,request.batch){withApiSession(captured){ready();store.markAttempted(request,now())}}
+                    if(result.status==200){
+                        val prepared=store.prepareAck(request,result.status,result.body)
+                        withApiSession(captured){ready();val ack=store.applyAck(prepared)
+                            acknowledged+=ack.acknowledged;refused+=ack.refused}
+                        break
+                    }
+                    val code=if(result.status in setOf(429,503))"" else withContext(Dispatchers.Default){protocol.errorCode(result.body)}
+                    withApiSession(captured){ready()}
+                    if(result.status==401 && code=="unauthorized" && !refreshed){
+                        refreshed=true;check(refreshFor(expectedLease));ticket=apiSession(expectedLease)
+                        withApiSession(ticket){ready()};continue
+                    }
+                    if(result.status in setOf(429,503)) {
+                        val seconds=BootstrapHttpProtocol.retrySeconds(result.retryAfter,now())
+                        val retryAt=Math.addExact(now(),Math.multiplyExact(seconds,1000))
+                        // Commit the batch deadline before the separate credential-vault write.
+                        // A vault failure or logout cannot roll it back or shorten it.
+                        withApiSession(captured){ready();store.defer(request,retryAt)}
+                        withApiSession(captured){
+                            checkMealPush(id,expectedLease,server)
+                            val session=checkNotNull(sessionFor(binding()))
+                            persist(copyRecord().put("session",JSONObject(session.toString()).put("apiRetryAt",retryAt)))
+                            mealPushOperation=null;mealPushMessage="Serwer jest zajęty. Ponów za co najmniej $seconds s; zapisana partia zachowana."
+                            publish()
+                        }
+                        return
+                    }
+                    withApiSession(captured){
+                        ready()
+                        val message=when {
+                            result.status==403 && code=="account_deleting"->{
+                                store.requireReconciliation(request,deleting=true)
+                                "Konto jest usuwane. Wysyłanie zablokowane; dane i zapisana partia zachowane."
+                            }
+                            (result.status in setOf(403,409,410,422,413) && code in setOf("sync_epoch_changed",
+                                "account_generation_changed","sync_reconciliation_required","sync_cursor_expired",
+                                "account_bootstrap_required","invalid_sync_token","invalid_request","request_too_large"))->{
+                                store.requireReconciliation(request)
+                                "Wymagane uzgodnienie danych. Sprawdź połączenie i pobierz pełną kopię serwera; pierwotna partia zachowana."
+                            }
+                            result.status==401->"Sesja wymaga ponownego logowania. Zapisana partia i dziennik zachowane."
+                            else->"Wysyłka nie została potwierdzona. Ponów zapisaną partię; dziennik zachowany."
+                        }
+                        mealPushOperation=null
+                        mealPushFence=expectedLease to checkNotNull(db.bootstrapDao().binding(expectedLease.storageScope))
+                        mealPushMessage=message;publish()
+                    }
+                    return
+                }
+            }
+            finishMealPush(id,expectedLease,mealPushSummary(acknowledged,refused)+" Pozostałe wpisy wyślesz kolejną próbą.")
+            downloadSnapshot(expectedLease,server)
+        }catch(error:CancellationException){withContext(NonCancellable){finishMealPush(id,expectedLease)};throw error}
+        catch(_:Exception){finishMealPush(id,expectedLease)}
+    }
+    /** DB-only check, called under the mutex (and, for network/apply, its Room transaction). */
+    private suspend fun checkMealPush(id:String,lease:OwnerLease,server:AccountBindingEntity) {
+        check(mealPushOperation==id && mealPushFence==(lease to server))
+        owners.requireCurrent(lease)
+        check(db.bootstrapDao().binding(lease.storageScope)==server && !server.requiresRecovery)
+        check(!record.has("pending") && operation==null)
+        check(checkNotNull(sessionFor(binding())).optLong("apiRetryAt")<=now())
+    }
+    private fun mealPushSummary(acknowledged:Int,refused:Int)=if(acknowledged+refused==0)
+        "Brak gotowych posiłków do wysłania. Starsze wpisy i pozostałe typy danych pozostają w kolejce."
+        else "Serwer potwierdził: $acknowledged. Wymagają uzgodnienia: $refused. Kopia serwera jest odświeżana osobno."
+    private suspend fun finishMealPush(id:String,lease:OwnerLease,message:String=
+        "Odpowiedź nie została potwierdzona. Ponów tę samą zapisaną partię; dziennik zachowany.")=mutex.withLock {
+        if(mealPushOperation!=id)return@withLock
+        mealPushOperation=null
+        try {
+            if(owners.currentLease()!=lease){clearMealPush();publish();return@withLock}
+            mealPushMessage=message;publish()
+        }catch(_:Exception){clearMealPush()}
+    }
+
+
     /** Full server archive. The local diary remains editable, and no queue entry is acknowledged. */
-    suspend fun downloadSnapshot() {
+    suspend fun downloadSnapshot(expectedLease:OwnerLease?=null,expectedContext:AccountBindingEntity?=null) {
         val transport = snapshotGateway ?: return
         val store = snapshots ?: return
         val protocol = snapshotProtocol ?: return
         val id = UUID.randomUUID().toString()
         val lease = try { mutex.withLock {
-            if (snapshotOperation != null || profileOperation != null || consentOperation != null || bootstrapOperation != null || operation != null || photoUploadOperation != null || nemesisMutationOperation != null || record.has("pending")) return
+            if (mealPushOperation != null || snapshotOperation != null || profileOperation != null || consentOperation != null || bootstrapOperation != null || operation != null || photoUploadOperation != null || nemesisMutationOperation != null || record.has("pending")) return
+            expectedLease?.let { owners.requireCurrent(it) }
             val current = binding()
+            expectedContext?.let { check(db.bootstrapDao().binding(current.lease.storageScope)==it) }
             if (current.owner.kind != "account" || sessionFor(current) == null || !mutable.value.serverLinked) {
                 publish("Zaloguj się i połącz konto, aby pobrać kopię serwera."); return
             }

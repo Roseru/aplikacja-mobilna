@@ -29,7 +29,7 @@ import java.time.format.DateTimeFormatter
     }
     val account = view.binding?.owner?.kind == "account"
     val available = account && view.rankingConfigured && view.serverLinked && !view.requiresRecovery && !view.pendingLogin
-    val busy = view.busy || view.bootstrapBusy || view.profileBusy || view.motivationBusy || view.snapshotBusy || view.rankingConsentBusy || view.rankingBusy
+    val busy = view.mealPushBusy || view.busy || view.bootstrapBusy || view.profileBusy || view.motivationBusy || view.snapshotBusy || view.rankingConsentBusy || view.rankingBusy
     val state = if (available && !view.busy) view.ranking else RankingState.NotRequested
     val listState = rememberLazyListState()
     val page = (state as? RankingState.Ready)?.page

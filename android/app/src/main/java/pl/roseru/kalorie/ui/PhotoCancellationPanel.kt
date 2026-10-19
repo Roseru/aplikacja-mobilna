@@ -27,7 +27,7 @@ import pl.roseru.kalorie.session.SessionView
     }
     if(status==null || row==null || row.operationId!=status.operationId || row.blocked || !row.acknowledged)return
     val idle=!session.photoUploadBusy && !session.busy && !session.pendingLogin && !session.requiresRecovery &&
-        !session.bootstrapBusy && !session.profileBusy && !session.snapshotBusy && !session.motivationBusy &&
+        !session.bootstrapBusy && !session.profileBusy && !session.mealPushBusy && !session.snapshotBusy && !session.motivationBusy &&
         !session.rankingConsentBusy && !session.rankingBusy && !session.nemesisBusy && !session.nemesisMutationBusy && !session.photoCapabilitiesBusy
     val network=idle && session.hasSession && session.binding?.owner?.kind=="account" && session.serverLinked
     Card(Modifier.fillMaxWidth().testTag("photo-cancellation-panel")) {

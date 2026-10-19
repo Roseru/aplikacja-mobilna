@@ -23,7 +23,8 @@ data class SessionActions(val login: () -> Unit, val logout: () -> Unit, val ref
     val uploadPhoto:(String,PhotoUploadConsent,Boolean)->Unit={_,_,_->},
     val retryPhotoUpload:()->Unit={},val discardUnsentPhotoUpload:()->Unit={},
     val readPhotoAnalysis:()->Unit={},val restorePhotoAnalysis:()->Unit={},val stopPhotoAnalysis:()->Unit={},val clearPhotoAnalysis:()->Unit={},
-    val cancelPhotoAnalysis:(String,Long)->Unit={_,_->},val retryPhotoCancellation:(String)->Unit={},val releaseCancelledPhoto:(String)->Unit={},val photoDraft:PhotoDraftActions=PhotoDraftActions())
+    val cancelPhotoAnalysis:(String,Long)->Unit={_,_->},val retryPhotoCancellation:(String)->Unit={},val releaseCancelledPhoto:(String)->Unit={},val photoDraft:PhotoDraftActions=PhotoDraftActions(),
+    val synchronizeMeals:(pl.roseru.kalorie.data.OwnerLease)->Unit={})
 
 @Composable fun SessionScreen(view: SessionView, actions: SessionActions, back: () -> Unit, backLabel: String = "Wróć do profilu") {
     val account = view.binding?.owner?.kind == "account"
@@ -47,6 +48,7 @@ data class SessionActions(val login: () -> Unit, val logout: () -> Unit, val ref
             modifier = Modifier.fillMaxWidth().testTag("session-login")) { Text(if (account) "Zaloguj się ponownie / zmień konto" else "Zaloguj się w przeglądarce") }
         if (view.pendingLogin || view.busy) OutlinedButton(onClick = actions.cancel, modifier = Modifier.fillMaxWidth()) { Text("Anuluj logowanie") }
         if (account) {
+            MealPushPanel(view,actions.synchronizeMeals)
             Card(Modifier.fillMaxWidth()) {
                 Column(Modifier.padding(20.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
                     Text("Połączenie z serwerem", style = MaterialTheme.typography.titleMedium)
@@ -59,7 +61,7 @@ data class SessionActions(val login: () -> Unit, val logout: () -> Unit, val ref
                     if (!view.apiConfigured) Text("Połączenie będzie dostępne po podłączeniu serwera aplikacji.")
                     if (view.bootstrapBusy) { LinearProgressIndicator(Modifier.fillMaxWidth()); Text("Łączę konto z serwerem…") }
                     OutlinedButton(onClick = actions.bootstrap,
-                        enabled = view.apiConfigured && !view.bootstrapBusy && !view.profileBusy && !view.snapshotBusy && !view.rankingConsentBusy && !view.rankingBusy && !view.busy && !view.pendingLogin,
+                        enabled = view.apiConfigured && !view.bootstrapBusy && !view.profileBusy && !view.mealPushBusy && !view.snapshotBusy && !view.rankingConsentBusy && !view.rankingBusy && !view.busy && !view.pendingLogin,
                         modifier = Modifier.fillMaxWidth().testTag("session-bootstrap")) {
                         Text(if (view.serverLinked) "Sprawdź połączenie" else "Połącz konto z serwerem")
                     }
@@ -85,14 +87,14 @@ data class SessionActions(val login: () -> Unit, val logout: () -> Unit, val ref
                     }
                     OutlinedButton(onClick = actions.readProfile,
                         enabled = view.apiConfigured && view.serverLinked && !view.requiresRecovery && !view.busy &&
-                            !view.bootstrapBusy && !view.profileBusy && !view.snapshotBusy && !view.motivationBusy && !view.rankingConsentBusy && !view.rankingBusy && !view.pendingLogin,
+                            !view.bootstrapBusy && !view.profileBusy && !view.mealPushBusy && !view.snapshotBusy && !view.motivationBusy && !view.rankingConsentBusy && !view.rankingBusy && !view.pendingLogin,
                         modifier = Modifier.fillMaxWidth().testTag("session-read-profile")) { Text("Pobierz profil z serwera") }
                 }
             }
             Card(Modifier.fillMaxWidth()) {
                 Column(Modifier.padding(20.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
                     Text("Kopia danych serwera", style = MaterialTheme.typography.titleMedium)
-                    Text("Pobierz dane konta na urządzenie. Posiłki zapisane lokalnie czekają na osobny etap synchronizacji.")
+                    Text("Pobierz dane konta na urządzenie. Gotowe posiłki wyślesz z panelu wysyłania dziennika; starsze wpisy i inne typy danych pozostają osobno.")
                     val status = view.snapshot
                     if (status?.completedTime != null) {
                         Text("Ostatnia pełna kopia: ${status.completedTime}", Modifier.testTag("snapshot-complete"))
@@ -105,7 +107,7 @@ data class SessionActions(val login: () -> Unit, val logout: () -> Unit, val ref
                     if (status?.needsBootstrap == true) Text("Najpierw wybierz Sprawdź połączenie, aby ponownie potwierdzić stan konta.")
                     OutlinedButton(onClick = actions.downloadSnapshot,
                         enabled = view.apiConfigured && view.serverLinked && status?.blocked != true && status?.needsBootstrap != true && !view.busy &&
-                            !view.bootstrapBusy && !view.profileBusy && !view.snapshotBusy && !view.motivationBusy && !view.rankingConsentBusy && !view.rankingBusy && !view.pendingLogin,
+                            !view.bootstrapBusy && !view.profileBusy && !view.mealPushBusy && !view.snapshotBusy && !view.motivationBusy && !view.rankingConsentBusy && !view.rankingBusy && !view.pendingLogin,
                         modifier = Modifier.fillMaxWidth().testTag("session-download-snapshot")) {
                         Text(if (status != null && status.pendingPages > 0) "Wznów pobieranie kopii" else "Pobierz kopię danych serwera")
                     }

@@ -86,6 +86,7 @@ class MainActivity : ComponentActivity() {
                 bootstrap = { app.sessionScope.launch { app.sessions.bootstrap() } },
                 readProfile = { app.sessionScope.launch { app.sessions.readProfile() } },
                 downloadSnapshot = { app.sessionScope.launch { app.sessions.downloadSnapshot() } },
+                synchronizeMeals = { lease -> app.sessionScope.launch { app.sessions.synchronizeMeals(lease) } },
                 readMotivation = { app.sessionScope.launch { app.sessions.readMotivation() } },
                 readRankingConsents = { app.sessionScope.launch { app.sessions.readRankingConsents() } },
                 confirmRankingConsent = { id, enabled -> app.sessionScope.launch { app.sessions.confirmRankingConsent(id, enabled) } },

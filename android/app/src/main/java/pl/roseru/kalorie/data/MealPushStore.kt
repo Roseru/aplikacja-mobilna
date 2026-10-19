@@ -16,7 +16,8 @@ import java.util.UUID
 ], indices = [Index("ownerScope"), Index("snapshotRunId")])
 data class SyncPushBatch(@PrimaryKey val id: String, val ownerScope: String, val wireContext: String,
     val snapshotRunId: String, val requestJson: String, val requestHash: String, val createdAt: String,
-    val attempted: Boolean = false, val responseJson: String? = null, val state: String = "pending") {
+    val attempted: Boolean = false, val responseJson: String? = null, val state: String = "pending",
+    @ColumnInfo(defaultValue="0") val retryAtMillis:Long=0) {
     override fun toString() = "SyncPushBatch(redacted)"
 }
 
@@ -28,6 +29,10 @@ data class SyncPushBatch(@PrimaryKey val id: String, val ownerScope: String, val
     @Update suspend fun update(row: SyncPushBatch)
     @Query("SELECT * FROM outbox WHERE ownerScope=:owner AND entityType='meal' AND wireFormat='sync-v1' AND status='pending' ORDER BY rowid LIMIT 100")
     suspend fun eligible(owner: String): List<OutboxEntity>
+    @Query("SELECT COUNT(*) FROM outbox WHERE ownerScope=:owner AND entityType='meal' AND wireFormat='sync-v1' AND status=:status")
+    suspend fun count(owner: String, status: String): Int
+    @Query("SELECT COUNT(*) FROM outbox WHERE ownerScope=:owner AND wireFormat!='sync-v1' AND status!='acked'")
+    suspend fun legacyCount(owner: String): Int
 }
 
 /** A local lease is a write fence, not an authenticated API ticket. */
@@ -50,6 +55,8 @@ internal data class MealPushAckSource(val gate: MealPushGate, val row: SyncPushB
     override fun toString() = "MealPushAckSource(redacted)"
 }
 data class MealPushAckResult(val acknowledged: Int, val refused: Int, val replay: Boolean)
+data class MealPushStatus(val pending: Int, val waiting: Int, val refused: Int, val legacy: Int,
+    val persistedBatch: Boolean, val ready: Boolean, val retryAtMillis:Long=0)
 class PreparedMealPushAck internal constructor(internal val request: MealPushRequest,
     internal val source: MealPushAckSource, internal val batch: SyncPushBatch,
     internal val meals: List<MealEntity>, internal val operations: List<OutboxEntity>, val result: MealPushAckResult) {
@@ -61,6 +68,29 @@ class MealPushStore(private val db: CalorieDatabase, private val schema: SyncWir
     private val protocol = PushProtocol(schema)
     private val owners = LocalOwnerStore(db)
     private val dao = db.pushDao()
+
+    /** Public counters only; no JSON, identity, checkpoint or credentials in UI state. */
+    suspend fun status(lease: OwnerLease): MealPushStatus = db.withTransaction {
+        owners.requireCurrent(lease)
+        val ready = try { gate(lease); true } catch (error: kotlinx.coroutines.CancellationException) { throw error }
+            catch (_: Exception) { false }
+        MealPushStatus(dao.count(lease.storageScope,"pending"), dao.count(lease.storageScope,"waiting_revision"),
+            dao.count(lease.storageScope,"conflict") + dao.count(lease.storageScope,"rejected"),
+            dao.legacyCount(lease.storageScope),dao.pending(lease.storageScope).isNotEmpty(),ready,
+            dao.pending(lease.storageScope).maxOfOrNull {it.retryAtMillis}?:0)
+    }
+
+    /** A normative preflight refusal never ACKs a prefix or rewrites the original envelope. */
+    suspend fun requireReconciliation(request: MealPushRequest, deleting: Boolean = false) = db.withTransaction {
+        val (gate,row)=current(request)
+        check(row.state=="pending" && row.responseJson==null && row.attempted)
+        if(deleting) db.snapshotDao().save(gate.access.copy(blocked=true))
+        else {
+            db.snapshotDao().save(gate.access.copy(bootstrapAttemptId=gate.bootstrap.operationId))
+            db.bootstrapDao().update(gate.binding.copy(requiresRecovery=true,
+                contextRevision=Math.addExact(gate.binding.contextRevision,1)))
+        }
+    }
 
     private suspend fun gate(lease: OwnerLease): MealPushGate {
         owners.requireCurrent(lease)
@@ -162,12 +192,21 @@ class MealPushStore(private val db: CalorieDatabase, private val schema: SyncWir
         val (_, row) = current(request)
         check(row.state == "pending" && row.responseJson == null)
     }
-    suspend fun markAttempted(request: MealPushRequest) {
+    suspend fun markAttempted(request: MealPushRequest,nowMillis:Long=System.currentTimeMillis()) {
         db.withTransaction {
             val (_, row) = current(request)
             check(row.state == "pending" && row.responseJson == null)
+            check(row.retryAtMillis<=nowMillis)
             dao.update(row.copy(attempted = true))
         }
+    }
+
+    /** The delay belongs to the frozen batch and survives logout, not just controller restart. */
+    suspend fun defer(request:MealPushRequest,retryAtMillis:Long)=db.withTransaction {
+        val (_,row)=current(request)
+        check(row.state=="pending" && row.responseJson==null && row.attempted)
+        require(retryAtMillis>=row.retryAtMillis && retryAtMillis>=0)
+        dao.update(row.copy(retryAtMillis=retryAtMillis))
     }
 
     /** All JSON/domain work precedes the DB-only commit used under the session guard. */
@@ -254,5 +293,11 @@ val MIGRATION_11_12 = object : Migration(11, 12) {
         db.execSQL("CREATE TABLE IF NOT EXISTS sync_push_batches (id TEXT NOT NULL, ownerScope TEXT NOT NULL, wireContext TEXT NOT NULL, snapshotRunId TEXT NOT NULL, requestJson TEXT NOT NULL, requestHash TEXT NOT NULL, createdAt TEXT NOT NULL, attempted INTEGER NOT NULL, responseJson TEXT, state TEXT NOT NULL, PRIMARY KEY(id), FOREIGN KEY(ownerScope) REFERENCES local_owners(storageScope) ON UPDATE NO ACTION ON DELETE RESTRICT, FOREIGN KEY(snapshotRunId) REFERENCES server_snapshot_runs(id) ON UPDATE NO ACTION ON DELETE RESTRICT)")
         db.execSQL("CREATE INDEX index_sync_push_batches_ownerScope ON sync_push_batches(ownerScope)")
         db.execSQL("CREATE INDEX index_sync_push_batches_snapshotRunId ON sync_push_batches(snapshotRunId)")
+    }
+}
+
+val MIGRATION_13_14=object:Migration(13,14) {
+    override fun migrate(db:SupportSQLiteDatabase) {
+        db.execSQL("ALTER TABLE sync_push_batches ADD COLUMN retryAtMillis INTEGER NOT NULL DEFAULT 0")
     }
 }
