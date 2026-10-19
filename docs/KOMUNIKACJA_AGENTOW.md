@@ -19,7 +19,7 @@ Każda osoba aktualizuje własny wiersz. Daty i dokładne źródła są w jej wp
 |---|---|---|---|
 | O1 — Android, Kotlin, Room | Macierz kandydata i poprawny SDK37 dostarczone; main4bf56ab dołączony do PR117 | Osobny CI dokumentacji; kwalifikacja nowego toolchainu NOT_RUN, kod Androida na odrębnej kolejce | O1-070, [PR117](https://github.com/Roseru/aplikacja-mobilna/pull/117), [macierz](integracja/MACIERZ_ANDROID_O1_20261017.md) |
 | O2 — Python, PostgreSQL, API | PR131 scalony, main CI8/8 PASS; R2 late-GET/guard i R3 GET B/A4/4 odebrane w ograniczonym zakresie | Nowa próba E4 NOT_RUN: O1 kandydat i przerwanie przed ACK, O2/O3 zgodność backendu i oracle PG; kontakt A1 pominięty | O2-043/044, [odbiór i oracle](integracja/ODBIOR_R2_R3_ORACLE_E4_O2.md) |
-| O3 — DevOps, CI/CD, serwer | PR130 scalony po 8/8 SUCCESS; R2/R3 odebrane, transport zamknięty. Aktualizacje setup-java/upload-artifact/Caddy po przeglądzie bez istotnych uwag | Własny CI aktualnych gałęzi i main dla PR133–135; O1 potwierdza artefakt i gotowość kolejnego E4, okno jeszcze nieotwarte | O3-082/083, [PR133](https://github.com/Roseru/aplikacja-mobilna/pull/133), [PR130](https://github.com/Roseru/aplikacja-mobilna/pull/130) |
+| O3 — DevOps, CI/CD, serwer | PR130/133–135 scalone, końcowy main 8/8; odczyt O2-044, narzędzie read-only C0/C1/C2 przygotowane i sprawdzone lokalnie na PG17 | Własny PR i CI narzędzia; O1 publikuje APK/driver/manifest i barierę POST przed ACK, potem zgodność i nowe okno. Próba E4 NOT_RUN | O3-084, [przygotowanie replay](integracja/PRZYGOTOWANIE_REPLAY_E4_O3.md) |
 
 
 ## Wpisy
@@ -3735,3 +3735,50 @@ Korekta harmonogramu O3-070: finalne przygotowanie03:50/15:50, proponowany trans
   w opisie PR; końcowy CI oraz main po merge odbierane osobno. Poprzedni
   PR131 scalony jako `66c01a0`, własny main CI39213365405 **8/8 SUCCESS**.
   Ten wpis nie deklaruje nowego CI, wdrożenia lub odczytu za O1/O3.
+
+
+### O3-084 — przygotowanie niezależnych odczytów PG dla jednej operacji E4
+
+- Data/autor: 19.10.2026, agent 3/O3. Do O1/O2, **WYMAGA ODPOWIEDZI**
+  dla kandydata i techniki O1; odczyt O2-044 **POTWIERDZONY przez O3**.
+  Źródło O2: main `4228ccafdf01a8936dc39bc1964f5d325504ec04`/PR136,
+  jego osobny CI main sprawdzony **8/8 SUCCESS**. Właściciel zlecił
+  przygotowanie naszej części i przekazanie wejść O1.
+- [Instrukcja O3](integracja/PRZYGOTOWANIE_REPLAY_E4_O3.md) i
+  [narzędzie](../infra/integration/e4_observer.py): osobne C0/C1/C2 przez
+  read-only REPEATABLE READ/psql, limity5s/1s/15s, kontrola kontenerów,
+  image/schema/epoch i SHA256 wierszy jednego syntetycznego właściciela
+  w sześciu tabelach. Receipt tworzony wyłącznie jako nowy plik prywatny.
+  Nowy/istniejący DiaryDay i początkowo nieistniejący counter są legalne;
+  C1→C2 nie może zmienić treści, rewizji, receipt, counter lub zmian.
+  PASS narzędzia dotyczy wyłącznie obserwacji serwera, nie HTTP/Room/restartu.
+- Rzeczywisty source nadal schema24/image05c1792f; sprawdzono kolumny
+  oraz SELECT dla losowego nieistniejącego właściciela bez zapisów, około0,64s.
+  14 wskazanych źródeł/kontraktów z obrazu zgodne z archiwalnym8ff7c0c
+  po normalizacji CRLF→LF, bajtowo zgodne z checkoutem main4228cca.
+  Nie deklaruję pochodzenia całego obrazu ani zgodności nieopublikowanego APK.
+  Operatorski HTTPS przez loopback z oryginalną tożsamością TLS/discovery
+  o22:29CEST HTTP200, monitoring wymagany OK. Bezpośrednia próba starego
+  adresu issuer z tego hosta nie połączyła się; osiągalność O1 do uzgodnienia.
+- Lokalne testy: rzeczywisty osobny PG17/schema26 **4 PASS**, nowy/istniejący
+  dzień, commit/odczyt/replay, wykrycie mutacji przy niezmiennej liczbie
+  wierszy. Testy ujawniły legalny brak counter nowego konta; poprawiono
+  obserwator, nie serwer. Wcześniejsze logi prób zachowane prywatnie.
+  Testy wejść/ochrony receipt i etykiet kontenerów **12 PASS**, lint/format
+  i E0 PASS: 11 schematów, 98 valid/35 invalid, 18 scenariuszy, 728 linków.
+  Wynik zdalnego CI tego PR jest osobnym dowodem.
+- O1 nadal PR129/head `a41a5cb558b39ee2adde29d731fee60eba07bf8f`,
+  nowy APK/manifest/driver i podłączenie ACK nieopublikowane.
+  [Wiadomość do O1](https://github.com/Roseru/aplikacja-mobilna/pull/129#issuecomment-6276564094)
+  wysłana i odczytana zwrotnie; nie deklaruję odczytu/gotowości za O1.
+  O1 publikuje dokładny kandydat i barierę po prawdziwym HTTP200/przed ACK,
+  czas na C1 i realny kill/restart; odpowiada we własnym wpisie na O2-044/O3-084.
+  O2 proszony o odczyt instrukcji i ewentualne uwagi do warunków PG.
+- **Wspólny E4 NOT_RUN**, brak nowego okna/listenera. Przed startem
+  dokładna zgodność APK z używanym API/schema24 i aktualny peer/gotowość.
+  Jeżeli potrzeba nowego backendu, osobne środowisko; oryginalne dane,
+  epoka, CA, używany obraz i przypięte zadania nie zostały zmienione.
+  R2/R3 pozostają zakończone w dotychczasowym zakresie; pełne E4,
+  import/WorkManager/E7/recovery/retencja/KO32 pozostają osobnymi odbiorami.
+- Publikacja: `codex/devops-przygotowanie-replay-e4`, własny PR narzędzia
+  i instrukcji; nie przenoszono niescalonej gałęzi O1.
