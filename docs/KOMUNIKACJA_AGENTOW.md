@@ -19,7 +19,7 @@ Każda osoba aktualizuje własny wiersz. Daty i dokładne źródła są w jej wp
 |---|---|---|---|
 | O1 — Android, Kotlin, Room | Macierz kandydata i poprawny SDK37 dostarczone; main4bf56ab dołączony do PR117 | Osobny CI dokumentacji; kwalifikacja nowego toolchainu NOT_RUN, kod Androida na odrębnej kolejce | O1-070, [PR117](https://github.com/Roseru/aplikacja-mobilna/pull/117), [macierz](integracja/MACIERZ_ANDROID_O1_20261017.md) |
 | O2 — Python, PostgreSQL, API | PR124 scalony i main CI PASS; aktualizacja3zależności PR131 po niezależnym review i27testach+8próbach ustawień PASS | Końcowy własny CI PR131 i po merge main; odbiór próby APK/API O1/O3 osobno, Gemini/pełneKO32 nadal otwarte | O2-042/043, [PR131](https://github.com/Roseru/aplikacja-mobilna/pull/131) |
-| O3 — DevOps, CI/CD, serwer | R2: late GET/guard PASS wg receipt O1, PKCE A→guest→B→A i15tabel PASS; O3 niezależnie zamknął relay po16 połączeniach i potwierdził HTTPS/usługi | Świeże /me i /me/motivation w B i powrotnym A NOT_RUN; pełne E3/E4/E7/KO32 osobno; raport O1 w PR129 | O3-078/079, [PR130](https://github.com/Roseru/aplikacja-mobilna/pull/130) |
+| O3 — DevOps, CI/CD, serwer | R2: late GET/guard i izolacja kont PASS wg O1; R3: cztery świeże GET profilu/motywacji B/A PASS, 15/15 tabel zachowane; O3 potwierdził zamknięcie transportu i zdrowe usługi | Końcowe kontrole PR130 dla nowego head; pełne E4/E7/KO32 i nowy APK osobno; raporty O1 w PR129 | O3-079–081, [PR130](https://github.com/Roseru/aplikacja-mobilna/pull/130) |
 
 
 ## Wpisy
@@ -3538,3 +3538,68 @@ Korekta harmonogramu O3-070: finalne przygotowanie03:50/15:50, proponowany trans
   bez instalowania nowego locka, zmian danych/epoki/kont/usług lub Gemini.
   Port18444 zamknięty, świeży HTTPS i wymagany monitoring OK. Końcowy head
   PR130 wymaga własnych kontroli; wcześniejszych8/8 nie przepisujemy.
+
+### O3-081 — R3: cztery świeże GET B/A PASS i końcowe zamknięcie współpracy
+
+- Data/autor: 19.10.2026, agent 3/O3. Do O1/O2, **DO ODCZYTU**.
+  **ODCZYTANE** O1-078 oraz
+  [cały raport R3](https://github.com/Roseru/aplikacja-mobilna/blob/a41a5cb558b39ee2adde29d731fee60eba07bf8f/docs/integracja/ODBIOR_APK_API_O1_R3_20261019.md)
+  z dokładnego `a41a5cb558b39ee2adde29d731fee60eba07bf8f` / PR129.
+  Raport odpowiada neutralnym przekazaniom O1 w prywatnym kanale
+  autoryzowanym przez właściciela i niezależnym dowodom transportu O3.
+- Próba `O1-O3-APK-API-20261019-R3` uzupełnia wyłącznie cztery GET,
+  historycznie NOT_RUN w O3-079/080 i raporcie R2. Istniejący O1Api35/API35,
+  **0.8.12.validation/code1023/Room9**, dokładne źródło/APK/driver z O3-079
+  pozostały bez zmiany. Nie powtarzano ani nie zmieniano zaliczonego
+  oracle późnego GET/logout z R2; wcześniejszy FAIL i SKIP pozostają w historii.
+- Po rzeczywistym PKCE do B, zakończonym bootstrap i kolejnych odczytach
+  O1 wrócił przez PKCE do pierwotnego A i wykonał drugą parę. Każdy GET
+  ma nowy receipt i przyjęty DTO pod niezmienionymi guardami klienta:
+
+  | Konto / ścieżka | UTC 19.10.2026 | X-Request-ID | Wynik wg O1 |
+  |---|---|---|---|
+  | B `/api/v1/me` | 07:14:36.096630Z | `878bdebc-ae56-41be-a4ab-4318753626ba` | 200 / no-store / DTO przyjęty / kontekst zgodny |
+  | B `/api/v1/me/motivation` | 07:16:08.181707Z | `96ad1f47-69e4-4f49-b235-4b72ba41da6c` | 200 / no-store / DTO przyjęty / kontekst zgodny |
+  | A `/api/v1/me` | 07:20:36.086847Z | `8c4fe2d3-bba7-4c40-9da2-0dc9b3d8c94a` | 200 / no-store / DTO przyjęty / kontekst zgodny |
+  | A `/api/v1/me/motivation` | 07:21:35.538478Z | `ac59c840-79fe-4af1-8154-c5fa48711dc3` | 200 / no-store / DTO przyjęty / kontekst zgodny |
+
+- **4/4 PASS wg O1.** `/me` ma `account_id` i `sync_epoch`, bez
+  `account_generation`; oba puste profile (`null`) zostały poprawnie przyjęte.
+  Motywacja sprawdza `account_generation` i `sync_epoch`; pokazano gotowy
+  wynik serwera, bez zastępowania braków zerami. Zgodność kontekstu wynika
+  z ukończonego podglądu DTO pod guardami `readPrivate`/`publish` dokładnego
+  źródła `e319e531`; nie eksportowano body ani tożsamości. Nie wymuszano
+  wszystkich wariantów pending/null motywacji. O3 odczytuje dowód urządzenia
+  O1, nie deklaruje niezależnego dostępu do jego prywatnej bazy.
+- O1 wykonał świeży baseline 23 tabel Room9. Po B i po powrocie A
+  **15/15 tabel danych lokalnych identycznych**, FK clean; B ma osobnego
+  właściciela, A wróciło do pierwotnego, lease rosły. Metadane logowania
+  mogą zmieniać się zgodnie z testem. Własny klient/lease/NAT/reverse O1
+  zamknięte **09:22:20.2290396 CEST**.
+- **Niezależny transport O3:** start **09:06:26.320467 CEST**, planowany
+  koniec **09:26:26.320467 CEST**, TTL1200s; ta sama potwierdzona trasa
+  prywatna i wyłącznie dokładny peer właściciela. Przyjęto **13 połączeń**.
+  Po odłączeniu O1 O3 sprawdził dokładny własny proces/skrypt oraz brak
+  aktywnych połączeń i zakończył go **09:23:43.3603175 CEST**.
+  To **OWNER_STOP_AFTER_PEER_DISCONNECT**, nie automatyczny koniec TTL.
+  Po zamknięciu brak listenera/połączeń18444, świeży HTTPS/readiness/
+  discovery200/exactissuer/CA i wymagany monitoring PASS.
+- Wznowienie pracy: odrębna świeża kontrola **11:50 CEST** potwierdziła
+  HTTPS/readiness/discovery200 i wszystkie wymagane usługi/kopie OK.
+  Brak listenerów18444 i18446; prywatny czat wygasł po swoim oknie do09:35:48.
+  Nie deklarujemy ciągłej obserwacji podczas przerwy. Instalacja nadal ma
+  **schema24** i obraz z O3-076, bez wdrożenia nowego locka/main, zmiany
+  zapory/CA/issuer/kont/epoki/danych/harmonogramów lub restartu źródła.
+- Wynik wspólny: **R2 late-GET/guard i izolacja kont PASS; R3 cztery świeże
+  GET B/A PASS wg O1; transport/zamknięcie/gotowość PASS niezależnie O3**.
+  Bez importu gościa, push dziennika, zmian zgód, Nemesis lub AI.
+  Nie zamyka to całego E4/E7, WorkManager, recovery/retencji lub KO32.
+  Nowy0.8.23/Room14 i jego320 testów pozostają odrębnym odbiorem O1.
+- Źródło publikacji: `codex/devops-wspolny-test-api` /
+  [PR130](https://github.com/Roseru/aplikacja-mobilna/pull/130).
+  Zmiana tylko wspólnego dziennika i własnego wiersza O3, bez przenoszenia
+  niescalonej gałęzi Androida. Poprzedni head `f7c3c4f` ma własne8/8SUCCESS;
+  nowy wpis wymaga własnego CI. Lokalnie E0: 11 schematów, 98 valid,
+  35 invalid, 18 scenariuszy i 711 linków PASS; diff-check PASS.
+  Następny krok: kontrole końcowego head,
+  następnie odbiór integracyjny przez zwykły workflow. Dowody prywatne poza Git.
