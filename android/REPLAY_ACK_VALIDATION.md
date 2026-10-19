@@ -3,6 +3,8 @@
 Agent 1, 19.10.2026. Gałąź `codex/android-replay-ack` zależy od dokładnego
 `9a3a9a9c0cd03817f95cf6f504237288c8998d0c` / [PR129](https://github.com/Roseru/aplikacja-mobilna/pull/129).
 To przygotowanie obserwacji, nie nowy APK ani wynik wspólnej próby.
+Aktualizacja: [kod trzech faz drivera i neutralny receipt POST](DRIVER_REPLAY_E4.md)
+mają osobny lekki odbiór 24 JVM i kompilacji; nadal bez próby urządzenia/API.
 [Manifest 0.8.23](ODBIOR_0_8_23.json) opisuje wcześniejsze niezmienne APK
 ze źródła `70afd6c`; nie obejmuje nowej bariery.
 
@@ -45,7 +47,7 @@ obserwacji PG C1 i rzeczywiście zabija proces aplikacji przed ACK.
 przed przerwaniem nie dowodzi utraty ACK. Nowy proces ponawia zapisane
 żądanie przez istniejący transport, bez ręcznej edycji Room.
 
-## Dowody i brakujące wejścia
+## Historyczny odbiór pierwszej bariery — 17cddcf
 
 Lekkie testy JVM obejmują dopasowanie konkretnej koperty, one-shot,
 blokadę ponownego uzbrojenia, timeout, cancellation, disarm/stary bilet,
@@ -68,13 +70,15 @@ na Room. Log JUnit SHA256:
 Plik odcisków źródeł i klas zależnych SHA256:
 `abecd0877f0f723aa581d6b2b3d9f78b20d5f68cc3598f24d0ab08260d07c781`.
 
-**Wspólny E4 NOT_RUN.** Nadal trzeba przygotować opt-in driver urządzenia,
+**Na tym etapie wspólny E4 NOT_RUN.** Pozostawały opt-in driver urządzenia,
 neutralny receipt rzeczywistego POST i niezależne dowody Room przed kill/po
 restarcie, a także osobny skonfigurowany APK/driver z manifestem i SHA256.
 Potem O2/O3 porównują go z używanym obrazem/schema24 i uzgadniają świeże
 ograniczone okno. Sam hook i testy JVM nie oznaczają gotowości do startu.
 Zachowujemy [oracle O2](https://github.com/Roseru/aplikacja-mobilna/blob/4228ccafdf01a8936dc39bc1964f5d325504ec04/docs/integracja/ODBIOR_R2_R3_ORACLE_E4_O2.md)
 i [C0/C1/C2 O3](https://github.com/Roseru/aplikacja-mobilna/blob/c0aef3671d81338c0e5a3ad96aa5f3823b18f34e/docs/integracja/PRZYGOTOWANIE_REPLAY_E4_O3.md).
+Nowszy dokument drivera rozlicza przygotowane od tego czasu źródła i nadal
+brakujące dowody; nie przypisujemy mu historycznych testów innego źródła.
 
 Podczas gry właściciela bez Gradle, emulatora, instalacji, Gemini lub nowych
 połączeń testowych. Nie zmieniono wersji aplikacji, schematu Room ani

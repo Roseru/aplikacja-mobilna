@@ -42,6 +42,9 @@ android {
     if (providers.gradleProperty("O1_LIVE_API_RECEIPT_TEST").orElse("false").get() == "true") {
         sourceSets.getByName("androidTest").java.srcDir("src/liveReceipt/java")
     }
+    if (providers.gradleProperty("O1_LIVE_E4_REPLAY_TEST").orElse("false").get() == "true") {
+        sourceSets.getByName("androidTest").java.srcDir("src/liveReplay/java")
+    }
     compileOptions {
         sourceCompatibility = JavaVersion.VERSION_17
         targetCompatibility = JavaVersion.VERSION_17

@@ -5,4 +5,6 @@ internal object MealPushObservation {
     const val ENABLED = false
     @Suppress("UNUSED_PARAMETER")
     suspend fun beforeApplyAck(batchId: String, requestHash: String) = Unit
+    @Suppress("UNUSED_PARAMETER")
+    fun record(requestHash: String, method: String, path: String, status: Int, cacheControl: String?, requestId: String?) = Unit
 }

@@ -1,10 +1,12 @@
 # Android — Racje i kalorie
 
 Na zależnej gałęzi `codex/android-replay-ack` przygotowano
-[barierę przed zapisem ACK](REPLAY_ACK_VALIDATION.md) wyłącznie validation:
-12 JVM PASS i lekka kompilacja obu wariantów kontrolera. Bez nowego APK,
+[barierę przed zapisem ACK](REPLAY_ACK_VALIDATION.md) wyłącznie validation
+oraz [kod drivera prepare/hold/replay](DRIVER_REPLAY_E4.md): 24 JVM PASS,
+lekka kompilacja obu wariantów kontrolera/transportu i drivera. Bez nowego APK,
 pełnego buildu lub próby z serwerem; poniższy manifest 0.8.23 opisuje
-wcześniejsze artefakty, bez tej bariery. Driver urządzenia jest następnym krokiem.
+wcześniejsze artefakty, bez tej bariery. Pełny build i wykonanie drivera na
+osobnym urządzeniu pozostają następnym krokiem.
 
 Kandydat **0.8.23/code34/Room14** na `codex/android-wysylanie-kolejki`
 łączy [transport trwałych partii](WYSYLANIE_KOLEJKI.md) z sesją i

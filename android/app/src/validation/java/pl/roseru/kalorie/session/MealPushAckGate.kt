@@ -31,9 +31,22 @@ internal class MealPushAckGate(
         val release = CompletableDeferred<Unit>()
         val outcome = CompletableDeferred<String>()
         internal val claimed = AtomicBoolean(false)
+        @Volatile var holdDeadlineNanos: Long? = null
+            private set
+        internal fun deadline(value: Long) { holdDeadlineNanos = value }
         private val sequence = mutableListOf<String>()
+        private val receipts = mutableListOf<MealPushHttpReceipt>()
+        @Volatile var httpOverflow: Boolean = false
+            private set
 
         @Synchronized fun events(): List<String> = sequence.toList()
+        @Synchronized fun httpReceipts(): List<MealPushHttpReceipt> = receipts.toList()
+        @Synchronized internal fun received(receipt: MealPushHttpReceipt): Boolean {
+            if (claimed.get()) return false
+            if (receipts.size >= 4) { httpOverflow = true; return false }
+            receipts.add(receipt)
+            return true
+        }
         @Synchronized internal fun record(name: String) {
             sequence.add(name)
             // Diagnostics contain only the generated run ID and fixed event name.
@@ -43,6 +56,12 @@ internal class MealPushAckGate(
     }
 
     private val active = AtomicReference<Ticket?>()
+
+    fun received(requestHash: String, receipt: MealPushHttpReceipt): String? {
+        val ticket = active.get() ?: return null
+        if (ticket.requestHash != requestHash || !ticket.received(receipt)) return null
+        return ticket.run
+    }
 
     fun arm(batchId: String, requestHash: String): Ticket {
         require(UUID_PATTERN.matches(batchId))
@@ -69,6 +88,7 @@ internal class MealPushAckGate(
                 ticket.record("expired"); ticket.outcome.complete("expired")
                 throw CancellationException("ACK trial expired before hold")
             }
+            ticket.deadline(nanoTime() + minOf(maxHoldMillis, remaining) * 1_000_000)
             ticket.record("held"); ticket.held.complete(Unit)
             try {
                 withTimeout(minOf(maxHoldMillis, remaining)) { ticket.release.await() }
