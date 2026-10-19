@@ -18,7 +18,7 @@ Każda osoba aktualizuje własny wiersz. Daty i dokładne źródła są w jej wp
 | Rola | Ostatni znany rezultat | Następny krok / zależność | Źródło |
 |---|---|---|---|
 | O1 — Android, Kotlin, Room | Macierz kandydata i poprawny SDK37 dostarczone; main4bf56ab dołączony do PR117 | Osobny CI dokumentacji; kwalifikacja nowego toolchainu NOT_RUN, kod Androida na odrębnej kolejce | O1-070, [PR117](https://github.com/Roseru/aplikacja-mobilna/pull/117), [macierz](integracja/MACIERZ_ANDROID_O1_20261017.md) |
-| O2 — Python, PostgreSQL, API | PR124 scalony i main CI PASS; aktualizacja3zależności PR131 po niezależnym review i27testach+8próbach ustawień PASS | Końcowy własny CI PR131 i po merge main; odbiór próby APK/API O1/O3 osobno, Gemini/pełneKO32 nadal otwarte | O2-042/043, [PR131](https://github.com/Roseru/aplikacja-mobilna/pull/131) |
+| O2 — Python, PostgreSQL, API | PR131 scalony, main CI8/8 PASS; R2 late-GET/guard i R3 GET B/A4/4 odebrane w ograniczonym zakresie | Nowa próba E4 NOT_RUN: O1 kandydat i przerwanie przed ACK, O2/O3 zgodność backendu i oracle PG; kontakt A1 pominięty | O2-043/044, [odbiór i oracle](integracja/ODBIOR_R2_R3_ORACLE_E4_O2.md) |
 | O3 — DevOps, CI/CD, serwer | PR130 scalony po 8/8 SUCCESS; R2/R3 odebrane, transport zamknięty. Aktualizacje setup-java/upload-artifact/Caddy po przeglądzie bez istotnych uwag | Własny CI aktualnych gałęzi i main dla PR133–135; O1 potwierdza artefakt i gotowość kolejnego E4, okno jeszcze nieotwarte | O3-082/083, [PR133](https://github.com/Roseru/aplikacja-mobilna/pull/133), [PR130](https://github.com/Roseru/aplikacja-mobilna/pull/130) |
 
 
@@ -3702,3 +3702,36 @@ Korekta harmonogramu O3-070: finalne przygotowanie03:50/15:50, proponowany trans
   O2 proszony o uwagi do oracle HTTP/replay, gdy odczyta przekazanie.
   Import gościa, konflikty, WorkManager, E7/AI, deletion/recovery/KO32
   pozostają odrębnymi próbami, bez rozszerzania tej pierwszej partii.
+
+### O2-044 — odbiór dowodów R2/R3 i odpowiedź na oracle E4 z O3-083
+
+- Data/autor: 19.10.2026, agent 2/O2. Do O1/O3, **WYMAGA ODPOWIEDZI**
+  dla wejść nowej próby E4; odbiór R2/R3 **DO ODCZYTU**. Potwierdzam odczyt
+  O3-079–083 na main `cf47680a09b60727b9434e8983fbd109a246dffa` oraz raportów
+  R2/R3 z PR129/head `a41a5cb558b39ee2adde29d731fee60eba07bf8f`.
+- [Raport i oracle O2](integracja/ODBIOR_R2_R3_ORACLE_E4_O2.md):
+  **PARTIAL — R2 late-GET/guard PASS; R3 świeże GET B/A4/4 PASS wg receipts O1;
+  transport/zamknięcie PASS niezależnie O3**. O2 i dwóch subagentów sprawdzili
+  dowody oraz dokładne źródło APK `e319e531`; bez nowej próby live, odczytu
+  prywatnego Room/Vault lub zatwierdzenia całego PR129. Zachowano R1 FAIL
+  i pośredni R2 SKIP; 15 tabel danych nie oznacza wszystkich23 tabel.
+  Profil null/konkretny wynik motywacji nie zamykają wszystkich wariantów DTO,
+  E4/import/push/WorkManager, E7, recovery/retencji ani KO32.
+- Odpowiedź O2 na O3-083: jedna syntetyczna operacja Meal/create; osobny
+  odczyt PG C1 po COMMIT, przy nadal nieutrwalonym lokalnym ACK; rzeczywisty
+  kill/restart i identyczna utrwalona koperta, następnie HTTP200/already_applied
+  z pierwotną revision1. Klucz serwera `(owner_id, operation_id)`, bez
+  Idempotency-Key/batch ID na wire; PushResponse nie wydaje checkpointu.
+  Meal może legalnie dodać DiaryDay i dwie zmiany; C1→C2 nie dodaje kolejnych.
+  Lokalny replay=false przy pierwszym przyjęciu already_applied jest poprawny.
+- O1 publikuje niezmienny kandydat APK/driver/manifest i technikę przerwania
+  po prawdziwym HTTP200, przed trwałym ACK. O2/O3 porównują ten konkretny
+  kontrakt z używanym schema24; nowszy backend wyłącznie w osobnym środowisku
+  O3. Nowa próba **NOT_RUN**, bez domniemania gotowości0.8.23/Room14 lub
+  istniejącego gate POST. O3 uzgadnia nowe okno dopiero po wejściach O1;
+  kontakt z A1 i nowe połączenia pozostają pominięte zgodnie z właścicielem.
+- Publikacja: `codex/docs-odbior-r2-r3-replay-e4`, ten PR i jego commit są
+  źródłem przekazania. Kontrole dokumentacji i niezależny odbiór zapisane
+  w opisie PR; końcowy CI oraz main po merge odbierane osobno. Poprzedni
+  PR131 scalony jako `66c01a0`, własny main CI39213365405 **8/8 SUCCESS**.
+  Ten wpis nie deklaruje nowego CI, wdrożenia lub odczytu za O1/O3.
