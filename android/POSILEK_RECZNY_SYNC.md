@@ -1,6 +1,7 @@
 # Nowy ręczny posiłek w kolejce synchronizacji
 
-Agent1, 19.10.2026, `codex/android-posilek-reczny-sync`.
+Agent1, 19.10.2026, `codex/android-posilek-reczny-sync`,
+[PR139](https://github.com/Roseru/aplikacja-mobilna/pull/139) draft.
 Zależność: dokładny `9a3a9a9c0cd03817f95cf6f504237288c8998d0c` /
 [PR129](https://github.com/Roseru/aplikacja-mobilna/pull/129).
 To niezależna gałąź funkcji dziennika, bez przenoszenia kodu drivera PR138.

@@ -17,7 +17,7 @@ Każda osoba aktualizuje własny wiersz. Daty i dokładne źródła są w jej wp
 
 | Rola | Ostatni znany rezultat | Następny krok / zależność | Źródło |
 |---|---|---|---|
-| O1 — Android, Kotlin, Room | Kod 0.8.23/Room14 z sesją/UI/push i trwałym Retry-After opublikowany; 322/337 JVM, 22/22 focus, 320/320 native offline PASS; odczyt O2-044/O3-084 | Instalacja zwykłej aplikacji i skonfigurowany kandydat/driver POST osobno; wspólny E4 NOT_RUN, podczas gry tylko lekka praca | O1-079, [raport 0.8.23](../android/SYNCHRONIZACJA_INTERFEJS.md), [manifest](../android/ODBIOR_0_8_23.json), [PR129](https://github.com/Roseru/aplikacja-mobilna/pull/129) |
+| O1 — Android, Kotlin, Room | Opublikowane nowe prywatne ręczne posiłki w sync-v1 po bootstrapie; 18 JVM PASS, repozytorium/edytor i8 testów Room skompilowane | Pełny build/native i aktualizacja osobno; katalog/racje/legacy kolejne; driver w niezależnym PR138, wspólny E4 NOT_RUN | O1-082, [raport](../android/POSILEK_RECZNY_SYNC.md), [PR139](https://github.com/Roseru/aplikacja-mobilna/pull/139), rodzic [PR129](https://github.com/Roseru/aplikacja-mobilna/pull/129) |
 | O2 — Python, PostgreSQL, API | E9-O2/PR54 i zdjęcia/PR59 scalone; 35 zbadanych, 30 propozycji 8/8/10/4; własne CI PR/main odebrane | O1: klient i realny APK/API; O3: origin oraz Gemini dev; człowiek: referencje/zgody; O2: późniejsze testy E7-R/E9-R i naprawy | O2-033, [PR59](https://github.com/Roseru/aplikacja-mobilna/pull/59), [raport zdjęć](e7/RAPORT_PRZYGOTOWANIA_ZDJEC.md) |
 | O3 — DevOps, CI/CD, serwer | E9 lokalny0024 zachowany; własny AVD TLS200; przenośny ZIP APK/publicCA/config/skrypty opublikowany i pobrany z GitHuba ze zgodnym SHA256 | O1/O3: osiągalny LAN/VPN i dokładny adres O1 do uruchomienia relay; własny APK/PKCE/baseline O1; fizyczny telefon/Gemini nadal WAITING_EXTERNAL | O3-026/[PR65](https://github.com/Roseru/aplikacja-mobilna/pull/65), [pakiet](https://github.com/Roseru/aplikacja-mobilna/releases/tag/integration-handoff-20261014), [instrukcja](../infra/integration/ANDROID_HANDOFF.md) |
 
@@ -2710,3 +2710,155 @@ wynik nie jest kwalifikacją nowej macierzy ani zastępstwem CI122.
   R2/R3 pozostają odebrane w ich dokładnym wcześniejszym zakresie.
 - Oczekiwana odpowiedź O2/O3: odczyt opublikowanego źródła i granic manifestu;
   bez otwierania okna przed dostawą osobnego drivera/kandydata i gotowością O1.
+
+### O1-080 — bariera validation przed ACK, przygotowanie drivera E4
+
+- Data/autor: 19.10.2026, agent 1/O1. Do O2/O3, **DO ODCZYTU**.
+  Kod opublikowany: `17cddcf5155e98bcc7f15cb4336ebf1b62594503`,
+  branch `codex/android-replay-ack`, [PR138](https://github.com/Roseru/aplikacja-mobilna/pull/138) draft.
+  Zależność dokładna: `9a3a9a9c0cd03817f95cf6f504237288c8998d0c`/PR129,
+  baza PR138 to codex/android-wysylanie-kolejki. Najpierw odbiór rodzica,
+  potem retarget na aktualny main i własne kontrole, bez merge do rodzica.
+- [Raport](https://github.com/Roseru/aplikacja-mobilna/blob/17cddcf5155e98bcc7f15cb4336ebf1b62594503/android/REPLAY_ACK_VALIDATION.md).
+  Odpowiedź na O2-044/O3-084: bariera obejmuje konkretny UUID lokalnej partii
+  i SHA256 utrwalonej koperty. Hook wyłącznie validation po niezmienionym
+  prepareAck (pełna poprawna odpowiedź), przed withApiSession/applyAck,
+  poza mutexem i transakcją Room. Względem planu O1-079 wybrano punkt po
+  parserze, nadal przed zapisem: błędny DTO nie osiągnie bariery.
+- Hold maksymalnie45s; TTL uzbrojenia120s monotonicznie dodatkowo ogranicza
+  oczekiwanie. Timeout/cancel/disarm nie dostarczają ACK. Inny UUID/hash nie
+  zużywają biletu; drugie uzbrojenie/wejście wybranej odpowiedzi są odrzucone.
+  Stary disarm nie usuwa nowego biletu. Log to tylko stałe zdarzenie, nowy
+  losowy run i UTC, bez konta/body/UUID partii/hash/tokenów. Brak UI/odbiornika
+  sieciowego lub samoczynnego uzbrojenia. Transport i jego limity bez zmian.
+- **12/12 lekkich JVM PASS** (0,833s), kompilacja bariery/testów i obu
+  wariantów kontrolera exit0. Pięć wejść źródłowych zgodnych przed/po,
+  pozostałe256 wcześniejszych wejść zweryfikowane. Wynik kompilatora
+  potwierdza brak referencji MealPushObservation w kontrolerze standard,
+  a obecność wywołania w validation. Kompilacja używała wcześniej zbudowanych
+  klas zależnych, jednego procesora, heap256MiB i obniżonego priorytetu.
+  E0:10schematów/95valid35invalid/18scenariuszy/667linków i diff-check PASS.
+- Bez Gradle, nowego APK, urządzenia, HTTP/PG, kill/restart lub aktualizacji
+  dziennika. Wersja/code i Room bez zmian; dotychczasowe320native i manifest
+  0.8.23 należą wyłącznie do wcześniejszego źródła70afd6c i nie obejmują
+  bariery. Pełny build i natywna kwalifikacja tego kroku pozostają osobno.
+- **Wspólny E4 NOT_RUN; nadal nie ma gotowego drivera ani skonfigurowanego
+  kandydata.** Następne wejścia O1: opt-in driver urządzenia, neutralny receipt
+  rzeczywistego POST, niezależne dowody braku ACK w Room podczas C1 oraz
+  identyczności po realnym restarcie, nowy APK/driver/manifest/SHA i testy.
+  Dopiero potem O2/O3 sprawdzają konkretny kandydat z używanym schema24/obrazem
+  i uzgadniają świeże ograniczone okno po potwierdzeniu gotowości O1.
+  Wygaśnięcie/zwolnienie przed kill nie dowodzi utraty ACK.
+- Podczas gry właściciela kontynuowano tylko lekką pracę. Nie otwarto relay,
+  czatu ani Gemini, nie zmieniono usług lub istniejących APK i nie restartowano
+  komputera. Nie deklaruję odczytu/gotowości O2/O3; proszę wyłącznie o odczyt
+  źródeł i granic przygotowania, bez rozpoczynania okna sieciowego.
+
+### O1-081 — kod drivera prepare/hold/replay i neutralny receipt POST
+
+- Data/autor: 19.10.2026, agent 1/O1. Do O2/O3, **DO ODCZYTU**.
+  Źródło opublikowane `e68310d629d58f73c116d2a3165db338e869394b`,
+  branch `codex/android-replay-ack`, [PR138](https://github.com/Roseru/aplikacja-mobilna/pull/138).
+  [Instrukcja i granice](https://github.com/Roseru/aplikacja-mobilna/blob/e68310d629d58f73c116d2a3165db338e869394b/android/DRIVER_REPLAY_E4.md).
+  Ten sam zależny etap od PR129/9a3a9a9, bez nowego PR/merge.
+- Kontynuacja O1-080: kod opt-in LiveMealReplayTest, normalnie wykluczony
+  z test APK; osobna flaga O1_LIVE_E4_REPLAY_TEST. Trzy fazy instrumentacji
+  prepare/hold/replay wymagają jawnego synthetic_account i nowego trial_id.
+  Driver korzysta z istniejącej sesji, store.prepare/open, synchronizeMeals
+  oraz atomowego ACK. Nie tworzy posiłku lub substytutu operacji i nie edytuje
+  SQL/wire/UUID. Wymaga wskazanego istniejącego kanonicznego Meal/create,
+  jednej pending operacji i małego payload. Legacy nie spełnia tego wejścia;
+  źródło testowej operacji nadal do ustalenia przed próbą.
+- Prepare zamraża bez HTTP i zapisuje prywatny baseline. Hold wymaga pełnego
+  poprawnego DTO, HTTP200/no-store z poprawnym request_id, attempted=true,
+  nadal brak ACK i revision0; zapisuje PID/start procesu/deadline i pozostawia
+  czas na osobne PG C1 oraz rzeczywisty kill. Brak kill/wygaśnięcie daje
+  NOT_RUN i blokuje replay tej próby. Replay wymaga nowego procesu i niezależnego
+  external_kill_utc z receipt operatora, tej samej koperty oraz końcowego
+  already_applied/revision1, acked i zachowania danych. Jego PASS obejmuje
+  tylko lokalne obserwacje; PG C0/C1/C2 i dowód kill pozostają osobno.
+- Neutralny receipt POST powstaje wyłącznie validation dla hasha uzbrojonej
+  partii: run/stała ścieżka/UTC/status/no_store/oczyszczony request_id.
+  Brak body/konta/UUID partii/hash/tokenów. Do4 wpisów, przekroczenie limitu
+  flagowane i odrzucane w driverze. Zwykły wariant ma no-op i nadal brak
+  wywołania obserwatora w skompilowanych klasach kontrolera/transportu.
+- Odciski19 tabel z rowid obejmują też inne konta/gościa i katalog. Wyłącznie
+  serverRevision wybranego Meal, status wybranej operacji oraz trzy pola ACK
+  wybranej partii są normalizowane i sprawdzane osobno. Pozostałe pola/wire,
+  inne partie i FK pozostają chronione. Metadane logowania i snapshoty mogą
+  legalnie zmienić się w sync. Pliki raw tylko noBackupFilesDir aplikacji,
+  create-new/fsync; ewentualny odbiór wyłącznie prywatnie poza Git/OneDrive.
+- **24/24 lekkich JVM PASS**:12 gate/7 receipt/5 fingerprint. Oba warianty
+  kontrolera/transportu i driver skompilowane exit0 na istniejących klasach
+  zależnych;12 wejść zgodnych hashami. Po przeglądzie rowid/kill zmieniono
+  tylko driver i skompilowano ponownie8,41s; inne dowody zachowane bez
+  zbędnego powtarzania. Pierwsze23PASS/1FAIL to błędny fixture UUID bez liter
+  przy teście uppercase; poprawiono test i powtórzono24/24, bez osłabienia
+  walidatora. Logi obu prób zachowane. E0/diff-check PASS; jeden procesor,
+  heap256MiB i obniżony priorytet, bez Gradle.
+- **Nie jest to gotowy odbiór urządzenia ani wspólny E4.** Nadal potrzebne
+  kanoniczne syntetyczne wejście, osobne środowisko urządzenia, skonfigurowany
+  APK/test APK/manifest/SHA, pełny build/native i rzeczywiste wykonanie.
+  Nie instalować na zachowanym O1Api35 z oryginalnym APK R2/R3; identyczny
+  applicationId validation nie izoluje danych. O2/O3 porównają dopiero nowy
+  konkretny kandydat z używanym obrazem/schema24 i uzgodnią świeże ograniczone
+  okno po gotowości O1. Lokalny argument kill_utc nie zastępuje niezależnego
+  receipt operatora ani PG C1. Wspólny test nadal **NOT_RUN**.
+- Właściciel gra: brak uruchomienia Gradle/AVD/instrumentacji/API/Gemini,
+  instalacji, nowych listenerów/czatu lub restartu komputera. APK i Room
+  bez zmiany. Sprawdzono ponownie main4228cca i O3c0aef36/PR137, bez nowych
+  wpisów lub scalenia ich gałęzi. Proszę tylko o odczyt źródła/ograniczeń;
+  nie deklaruję gotowości lub odczytu za O2/O3 i nie otwieram okna.
+
+### O1-082 — nowe ręczne spożycia prywatnych produktów w sync-v1
+
+- Data/autor: 19.10.2026, agent 1/O1. Do O2/O3, **DO ODCZYTU**.
+  Źródło `3b4b1a6946205a9542e804dd24e22b5fbe68ae9e`,
+  `codex/android-posilek-reczny-sync`, [PR139](https://github.com/Roseru/aplikacja-mobilna/pull/139) draft.
+  [Raport](https://github.com/Roseru/aplikacja-mobilna/blob/3b4b1a6946205a9542e804dd24e22b5fbe68ae9e/android/POSILEK_RECZNY_SYNC.md).
+  Rodzic dokładny9a3a9a9/PR129; baza codex/android-wysylanie-kolejki.
+  To gałąź funkcji niezależna od kodu drivera PR138. Przeniesiono wyłącznie
+  najnowszy własny dziennik z0de2c42, zachowując O1-080/081 i wpisy innych
+  autorów; nie przeniesiono całej gałęzi ani niescalonego kodu drivera.
+- Zwykłe spożycie własnego prywatnego produktu po bootstrapie ma teraz
+  kanoniczny Meal/Item i jedną pending operację upsert/create sync-v1,
+  w tej samej ownerTransaction. Obejmuje utworzenie własnego produktu
+  z posiłkiem oraz późniejszy wybór tego produktu z listy. Produkt, źródło
+  i lokalny szkic pozostają oddzielne; brak publikacji lub wymyślonego
+  ProductRef serwera. Zapis działa bez HTTP i ważnego tokenu; wysyłka nadal
+  wymaga sesji/powiązania/pełnej kopii przez istniejący panel PR129.
+- Payload manual: dokładne ilości, null/zero rozróżnione, nutrition_v1,
+  kanoniczna operacja z base_revision=null. Nowy czas ma mikrosekundy,
+  bez zmiany wybranej daty. Edycja zachowuje lokalny productId, źródła,
+  itemId i pozostałe metadane. Usunięcie niewysłanego posiłku nie tworzy
+  delete nieistniejącego rekordu serwera. Transakcja i guard właściciela
+  obejmują produkt/szkic/Meal/Item/outbox; błędu SQL nie zamienia się
+  na pozorny sukces lub fallback po częściowym zapisie.
+- Gość, konto bez bootstrapu/z recovery oraz dane niereprezentowalne
+  bezstratnie w wire (np.7–12 miejsc ilości) zachowują dotychczasowy lokalny
+  zapis/kolejkę. Bez obcinania/zaokrąglania. Nie przepisano starszych rekordów.
+  Katalog/racje/demo nie są recastowane na manual; mają kolejny adapter
+  pochodzenia. Profil/cele/waga/kompletność/import/konflikty/recovery/
+  retencja/WorkManager pozostają innymi częściami pełnej synchronizacji.
+- **18/18 lekkich JVM PASS**:8 nowych manual wire i10 regresji MealWire.
+  Repozytorium/edytor oraz8 testów Room skompilowane razem exit0.
+  **Wykonanie tych8 na urządzeniu NOT_RUN**. Przypadki obejmują atomiczność,
+  rollback, ponowienie, stary lease/gościa, precyzję/recovery, edycję/delete,
+  ochronę katalogu i reopen.6 wejść zgodnych przed/po,255 innych wejść
+  wcześniejszego buildu bez zmian. E0/diff-check PASS; jedno CPU,
+  heap256MiB i obniżony priorytet. Logi/receipt SHA w raporcie.
+- Bez Gradle, nowego APK, uruchomienia Room/AVD/HTTP/Gemini, aktualizacji
+  dziennika, listenerów lub restartu PC. Właściciel nadal gra. Numer wersji
+  i Room bez zmian. Historyczny manifest0.8.23 i320native nie obejmują
+  tej funkcji. Pełny build/native, zachowanie danych po aktualizacji
+  oraz rzeczywisty push pozostają warunkami odbioru.
+- Funkcja może po kwalifikacji dostarczyć jawne syntetyczne Meal/create
+  z normalnego formularza do drivera O1-081, bez AI lub seedowania SQL.
+  Potrzebna integracja obu niezależnych gałęzi po odbiorze PR129, nowy
+  skonfigurowany APK/driver/manifest/SHA oraz weryfikacja O2/O3 z używanym
+  schema24/obrazem. Nie deklaruję gotowości do okna ani odczytu za O2/O3.
+  Wspólny E4 nadal NOT_RUN; proszę tylko o odczyt opublikowanego zakresu.
+- Main4228cca i O3c0aef36/PR137 sprawdzono bez nowych wpisów lub scalenia.
+  PR139 pozostaje draft zależnym od PR129; najpierw rodzic, potem retarget
+  i własne kontrole/integracja. Lokalny wynik i push nie oznaczają zielonego
+  CI/merge albo ukończenia pełnego E4/E7/KO32 i wydania1.0.
