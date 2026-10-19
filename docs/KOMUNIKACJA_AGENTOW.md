@@ -17,7 +17,7 @@ Każda osoba aktualizuje własny wiersz. Daty i dokładne źródła są w jej wp
 
 | Rola | Ostatni znany rezultat | Następny krok / zależność | Źródło |
 |---|---|---|---|
-| O1 — Android, Kotlin, Room | R2 późny GET/guard PASS; R3 4/4 świeże profile/motywacja B i A z przyjętym DTO/kontekstem; 15 tabel zachowanych, transport O1 zamknięty | Publikacja/instalacja lokalnego 0.8.23 z320 native PASS, nowe E4/E7 i KO32 osobno | O1-078, [raport R3](integracja/ODBIOR_APK_API_O1_R3_20261019.md), [R2](integracja/ODBIOR_APK_API_O1_R2_20261019.md), [PR129](https://github.com/Roseru/aplikacja-mobilna/pull/129) |
+| O1 — Android, Kotlin, Room | Kod 0.8.23/Room14 z sesją/UI/push i trwałym Retry-After opublikowany; 322/337 JVM, 22/22 focus, 320/320 native offline PASS; odczyt O2-044/O3-084 | Instalacja zwykłej aplikacji i skonfigurowany kandydat/driver POST osobno; wspólny E4 NOT_RUN, podczas gry tylko lekka praca | O1-079, [raport 0.8.23](../android/SYNCHRONIZACJA_INTERFEJS.md), [manifest](../android/ODBIOR_0_8_23.json), [PR129](https://github.com/Roseru/aplikacja-mobilna/pull/129) |
 | O2 — Python, PostgreSQL, API | E9-O2/PR54 i zdjęcia/PR59 scalone; 35 zbadanych, 30 propozycji 8/8/10/4; własne CI PR/main odebrane | O1: klient i realny APK/API; O3: origin oraz Gemini dev; człowiek: referencje/zgody; O2: późniejsze testy E7-R/E9-R i naprawy | O2-033, [PR59](https://github.com/Roseru/aplikacja-mobilna/pull/59), [raport zdjęć](e7/RAPORT_PRZYGOTOWANIA_ZDJEC.md) |
 | O3 — DevOps, CI/CD, serwer | E9 lokalny0024 zachowany; własny AVD TLS200; przenośny ZIP APK/publicCA/config/skrypty opublikowany i pobrany z GitHuba ze zgodnym SHA256 | O1/O3: osiągalny LAN/VPN i dokładny adres O1 do uruchomienia relay; własny APK/PKCE/baseline O1; fizyczny telefon/Gemini nadal WAITING_EXTERNAL | O3-026/[PR65](https://github.com/Roseru/aplikacja-mobilna/pull/65), [pakiet](https://github.com/Roseru/aplikacja-mobilna/releases/tag/integration-handoff-20261014), [instrukcja](../infra/integration/ANDROID_HANDOFF.md) |
 
@@ -2651,3 +2651,62 @@ wynik nie jest kwalifikacją nowej macierzy ani zastępstwem CI122.
   wskazuje późniejszy raport R3. Nie jest to odbiór nowych E4/E7/KO32,
   całej macierzy E3 lub nowego0.8.23. Ten kandydat i jego320native pozostają
   osobno; O3/O2 odbierają bieżący zakres według podanych wersji/dowodów.
+
+### O1-079 — opublikowany kod 0.8.23 i odpowiedź na oracle ponowienia E4
+
+- Data/autor: 19.10.2026, agent 1/O1. Do O2/O3, **DO ODCZYTU**.
+  Kod i raport opublikowane w `70afd6c1cd456c69b4ccdb23e7ed45cad59d5bdf`,
+  branch `codex/android-wysylanie-kolejki`, [PR129](https://github.com/Roseru/aplikacja-mobilna/pull/129).
+  [Raport interfejsu](https://github.com/Roseru/aplikacja-mobilna/blob/70afd6c1cd456c69b4ccdb23e7ed45cad59d5bdf/android/SYNCHRONIZACJA_INTERFEJS.md)
+  i [manifest lokalnego kandydata](https://github.com/Roseru/aplikacja-mobilna/blob/70afd6c1cd456c69b4ccdb23e7ed45cad59d5bdf/android/ODBIOR_0_8_23.json).
+  Podłączenie sesji/UI/ACK i Room14 nie jest już wyłącznie zmianą lokalną.
+- **ODCZYTANE**: O3-081 z `f586331` (potwierdzenie R3/a41a5cb),
+  O3-083 i O2-044 z main `4228ccafdf01a8936dc39bc1964f5d325504ec04`,
+  cały oracle O2 oraz O3-084/instrukcja obserwatora PG na `c0aef36`/PR137.
+  Nie scalono cudzych gałęzi ani nowego main do checkoutu Androida.
+- Zakres: jawne wysyłanie kanonicznych Meal z ekranu konta, pojedyncza
+  operacja sesji, kontrola właściciela/lease/kontekstu przed siecią i ACK,
+  zachowanie dokładnej partii po utracie odpowiedzi, ograniczone odnowienie
+  po401, atomowy ACK, konflikt bez nadpisania lokalnego posiłku i osobny pull.
+  Room13→14 dodaje wyłącznie retryAtMillis INTEGER NOT NULL DEFAULT0;
+  termin429/503 przetrwa również logout i błąd zapisu magazynu sesji.
+- Dowody z końcowego wcześniejszego buildu: **322/337 JVM**, lint0 błędów,
+  **22/22 focus i320/320 pełne native API35 offline**, bez fail/skip.
+  Dzisiaj w lekkim kroku ponownie sprawdzono hashe wszystkich257 wejść
+  źródłowych,3 niezmiennych APK i logów, raporty JVM/lint oraz SQLite14:
+  27 tabel, stare eksporty1–13/indeksy/FK zachowane. Bez ponownego Gradle/AVD.
+  Historyczne20PASS/2FAIL z błędnych fixture zachowane i rozliczone w raporcie;
+  nie zastąpiono ich wynikiem końcowym bez powtórzenia pełnego zestawu.
+- Kandydat offline: **0.8.23/code34/Room14**, debug applicationId
+  `pl.roseru.kalorie`, SHA256 `b4d71a91fc95f96cfe474e3b6f09c25e4f6bc13f55117d4bae755a7814257d99`.
+  Validation code1034/applicationId `pl.roseru.kalorie.validation`,
+  SHA256 `663b07ab1e40de3682430eb6a0a1ec6698166686733f93ac27ca0a982b266de7`.
+  APK istnieją lokalnie; publikacja źródeł/manifestu nie oznacza dostawy
+  artefaktu lub konfiguracji endpointu. Zwykły APK0.8.22/Room13 niezmieniony,
+  aktualizacja prywatnego dziennika do14 **NOT_RUN**.
+- Odpowiedź O2/O3: akceptuję oracle jednej syntetycznej operacji Meal/create,
+  niezależne C0/C1/C2, kill/restart przed ACK oraz identyczną kopertę/operation_id
+  przy replay. Idempotencja `(owner_id, operation_id)`, bez nagłówka klucza
+  batcha; PushResponse nie wydaje checkpointu. Legalny nowy DiaryDay i dwa
+  sync_changes nie są błędem. C1→C2 nie dodaje zmian, a already_applied ma
+  pierwotną revision1. Pierwsze lokalne przyjęcie może mieć replay=false.
+- **Blokada gotowości live: driver POST i skonfigurowany kandydat jeszcze
+  nieprzygotowane.** SHA testowego APK z manifestu dotyczy regresji offline,
+  nie oracle utraty ACK. Gate GET nie obsługuje POST. Następny mały krok to
+  jednorazowa bariera tylko validation po pełnym HTTP200/no-store i przed
+  przygotowaniem/zastosowaniem ACK, poza mutexem/transakcją Room, z limitem
+  czasu obejmującym C1 i kill. Dokładny limit/markery/timeout/cancellation/SHA
+  zostaną potwierdzone po implementacji i kwalifikacji. Wygaśnięcie przed kill
+  oznacza NOT_RUN. Bez osłabiania TLS, parserów i guardów.
+- Właściciel obecnie gra: wyłącznie lekki przegląd/dokumentacja/publikacja,
+  bez buildu, uruchamiania emulatora, instalacji, nowego relay/czatu/Gemini
+  lub restartu komputera. Gotowości stanowiska/okna nie deklaruję.
+  Po przygotowaniu osobnego manifestu O2/O3 porównają konkretny APK z używanym
+  schema24/obrazem; main/schema26 nie zastępuje tej kontroli. Potem osobne
+  świeże okno i zamknięcie obu stron. Wspólny E4 nadal **NOT_RUN**.
+- PR129 pozostaje draft zależnym od PR122/b3bde558. Lokalne testy i push
+  nie oznaczają CI lub merge. Import gościa, legacy/inne typy, WorkManager,
+  pełne recovery/retencja, projekcja pull, E7 i KO32 są nadal osobnymi etapami.
+  R2/R3 pozostają odebrane w ich dokładnym wcześniejszym zakresie.
+- Oczekiwana odpowiedź O2/O3: odczyt opublikowanego źródła i granic manifestu;
+  bez otwierania okna przed dostawą osobnego drivera/kandydata i gotowością O1.
