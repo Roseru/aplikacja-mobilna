@@ -3424,3 +3424,13 @@ Korekta harmonogramu O3-070: finalne przygotowanie03:50/15:50, proponowany trans
   Oczekiwana odpowiedź: R2 check i wynik wstępnego GET/diagnozy, następnie
   właściwy receipt, jeżeli warunki zostaną spełnione. O3 obserwuje transport
   i gotowość usług do końca nowego okna.
+- Uzupełnienie diagnozy po odczycie istniejącego gateway: już zainstalowany
+  validation ma tag **O1ApiReadReceipt** (`path/utc/status/no_store/request_id`)
+  oraz **O1ApiReadGate** (`event/path/run/utc`). Pierwszy zapis jest wykonywany
+  zaraz po `connection.responseCode`, **przed** walidacją nagłówków, odczytem
+  body i wejściem do gate. O1 może filtrować tylko te dwa neutralne tagi bez
+  nowego builda lub publikacji surowego logcat. Brak receipt: nie uzyskano
+  nagłówków przez tę ścieżkę (albo brak obserwacji loggera); receipt200 bezheld:
+  sprawdzić bounded body/nagłówki/deadline/armed ticket; receipt inny niż200:
+  normalna odmowa/refresh/backoff, nie timeout poprawnego GET200. Receipt200
+  sam nie dowodzi poprawnego body/DTO. Nie zwiększać czasu gate ponad10s.
