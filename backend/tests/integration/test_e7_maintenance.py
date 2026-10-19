@@ -152,19 +152,9 @@ def test_purge_during_live_provider_io_preserves_permit_and_anonymizes_ledger(e7
         fake.accepted(1)
         assert permits(e7) == 1 and not worker.children[0][0].wait(0)
         operation = uuid4()
-        with e7["admin"].begin() as connection:
-            connection.exec_driver_sql("SET LOCAL ROLE calorie_app_deletion_operator")
-            connection.execute(
-                text("SELECT app.begin_account_deletion(:owner,:operation,1)"),
-                {"owner": owner, "operation": operation},
-            )
-            # Synthetic trusted identity confirmation; no external IdP is called.
-            connection.execute(
-                text("SELECT app.confirm_account_deletion(:operation)"), {"operation": operation}
-            )
-            connection.execute(
-                text("SELECT app.purge_deleted_account(:operation)"), {"operation": operation}
-            )
+        from tests.support.deletion_regression import purge
+
+        purge(e7["admin"], owner, operation)
         assert permits(e7) == 1 and not worker.children[0][0].wait(0)
         assert sql_value(e7, "SELECT count(*) FROM app.user_accounts WHERE id=:id", id=owner) == 0
         assert sql_value(e7, "SELECT count(*) FROM app.ai_analyses WHERE id=:id", id=analysis) == 0

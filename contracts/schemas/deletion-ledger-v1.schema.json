@@ -1,0 +1,421 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$ref": "#/$defs/Envelope",
+  "$defs": {
+    "Envelope": {
+      "type": "object",
+      "properties": {
+        "body": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 1048576,
+          "contentMediaType": "application/json",
+          "contentSchema": {
+            "$ref": "#/$defs/Batch"
+          }
+        },
+        "mac": {
+          "type": "string",
+          "pattern": "^[0-9a-f]{64}$"
+        }
+      },
+      "required": [
+        "body",
+        "mac"
+      ],
+      "additionalProperties": false
+    },
+    "Ack": {
+      "type": "object",
+      "properties": {
+        "installation_id": {
+          "type": "string",
+          "format": "uuid"
+        },
+        "stream_id": {
+          "type": "string",
+          "format": "uuid"
+        },
+        "anchor_id": {
+          "type": "string",
+          "format": "uuid"
+        },
+        "receiver_id": {
+          "type": "string",
+          "format": "uuid"
+        },
+        "domain": {
+          "const": "deletion-ledger-ack-v1"
+        },
+        "sequence": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 9223372036854775807
+        },
+        "chain_hash": {
+          "type": "string",
+          "pattern": "^[0-9a-f]{64}$"
+        },
+        "mac": {
+          "type": "string",
+          "pattern": "^[0-9a-f]{64}$"
+        }
+      },
+      "required": [
+        "installation_id",
+        "stream_id",
+        "anchor_id",
+        "receiver_id",
+        "domain",
+        "sequence",
+        "chain_hash",
+        "mac"
+      ],
+      "additionalProperties": false
+    },
+    "Event": {
+      "type": "object",
+      "properties": {
+        "sequence": {
+          "type": "integer",
+          "minimum": 1
+        },
+        "event_id": {
+          "type": "string",
+          "format": "uuid"
+        },
+        "operation_id": {
+          "type": [
+            "string",
+            "null"
+          ],
+          "format": "uuid"
+        },
+        "stage": {
+          "enum": [
+            "anchor",
+            "legacy",
+            "begin",
+            "provider",
+            "confirm",
+            "purge"
+          ]
+        },
+        "outcome": {
+          "enum": [
+            "cutover_unknown_history",
+            "unknown",
+            "intent",
+            "confirmed",
+            "failed",
+            "uncertain"
+          ]
+        },
+        "attempt": {
+          "type": [
+            "string",
+            "null"
+          ],
+          "format": "uuid"
+        },
+        "content": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 16384
+        },
+        "content_hash": {
+          "type": "string",
+          "pattern": "^[0-9a-f]{64}$"
+        },
+        "previous_hash": {
+          "type": "string",
+          "pattern": "^[0-9a-f]{64}$"
+        },
+        "chain_hash": {
+          "type": "string",
+          "pattern": "^[0-9a-f]{64}$"
+        }
+      },
+      "required": [
+        "sequence",
+        "event_id",
+        "operation_id",
+        "stage",
+        "outcome",
+        "attempt",
+        "content",
+        "content_hash",
+        "previous_hash",
+        "chain_hash"
+      ],
+      "additionalProperties": false
+    },
+    "Batch": {
+      "type": "object",
+      "properties": {
+        "version": {
+          "const": 1
+        },
+        "installation_id": {
+          "type": "string",
+          "format": "uuid"
+        },
+        "stream_id": {
+          "type": "string",
+          "format": "uuid"
+        },
+        "anchor_id": {
+          "type": "string",
+          "format": "uuid"
+        },
+        "receiver_id": {
+          "type": "string",
+          "format": "uuid"
+        },
+        "events": {
+          "type": "array",
+          "minItems": 1,
+          "maxItems": 128,
+          "items": {
+            "$ref": "#/$defs/Event"
+          }
+        }
+      },
+      "required": [
+        "version",
+        "installation_id",
+        "stream_id",
+        "anchor_id",
+        "receiver_id",
+        "events"
+      ],
+      "additionalProperties": false
+    },
+    "Content": {
+      "type": "object",
+      "properties": {
+        "version": {
+          "const": 1
+        },
+        "installation_id": {
+          "type": "string",
+          "format": "uuid"
+        },
+        "stream_id": {
+          "type": "string",
+          "format": "uuid"
+        },
+        "anchor_id": {
+          "type": "string",
+          "format": "uuid"
+        },
+        "sequence": {
+          "type": "integer",
+          "minimum": 1
+        },
+        "event_id": {
+          "type": "string",
+          "format": "uuid"
+        },
+        "operation_id": {
+          "type": [
+            "string",
+            "null"
+          ],
+          "format": "uuid"
+        },
+        "account_id": {
+          "type": [
+            "string",
+            "null"
+          ],
+          "format": "uuid"
+        },
+        "issuer": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 2048
+        },
+        "subject": {
+          "type": [
+            "string",
+            "null"
+          ],
+          "minLength": 1,
+          "maxLength": 255
+        },
+        "expected_generation": {
+          "type": [
+            "integer",
+            "null"
+          ],
+          "minimum": 1,
+          "maximum": 2147483646
+        },
+        "deleting_generation": {
+          "type": [
+            "integer",
+            "null"
+          ],
+          "minimum": 2,
+          "maximum": 2147483647
+        },
+        "stage": {
+          "enum": [
+            "anchor",
+            "legacy",
+            "begin",
+            "provider",
+            "confirm",
+            "purge"
+          ]
+        },
+        "outcome": {
+          "enum": [
+            "cutover_unknown_history",
+            "unknown",
+            "intent",
+            "confirmed",
+            "failed",
+            "uncertain"
+          ]
+        },
+        "attempt": {
+          "type": [
+            "string",
+            "null"
+          ],
+          "format": "uuid"
+        }
+      },
+      "required": [
+        "version",
+        "installation_id",
+        "stream_id",
+        "anchor_id",
+        "sequence",
+        "event_id",
+        "operation_id",
+        "account_id",
+        "issuer",
+        "subject",
+        "expected_generation",
+        "deleting_generation",
+        "stage",
+        "outcome",
+        "attempt"
+      ],
+      "additionalProperties": false
+    },
+    "Cutoff": {
+      "type": "object",
+      "properties": {
+        "installation_id": {
+          "type": "string",
+          "format": "uuid"
+        },
+        "stream_id": {
+          "type": "string",
+          "format": "uuid"
+        },
+        "anchor_id": {
+          "type": "string",
+          "format": "uuid"
+        },
+        "receiver_id": {
+          "type": "string",
+          "format": "uuid"
+        },
+        "domain": {
+          "const": "deletion-ledger-cutoff-v1"
+        },
+        "sequence": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 9223372036854775807
+        },
+        "chain_hash": {
+          "type": "string",
+          "pattern": "^[0-9a-f]{64}$"
+        },
+        "mac": {
+          "type": "string",
+          "pattern": "^[0-9a-f]{64}$"
+        },
+        "fence_id": {
+          "type": "string",
+          "format": "uuid"
+        },
+        "fence_sha256": {
+          "type": "string",
+          "pattern": "^[0-9a-f]{64}$"
+        },
+        "scope": {
+          "enum": [
+            "contract-test",
+            "production"
+          ]
+        }
+      },
+      "required": [
+        "installation_id",
+        "stream_id",
+        "anchor_id",
+        "receiver_id",
+        "domain",
+        "sequence",
+        "chain_hash",
+        "mac",
+        "fence_id",
+        "fence_sha256",
+        "scope"
+      ],
+      "additionalProperties": false
+    },
+    "FencePin": {
+      "type": "object",
+      "properties": {
+        "installation_id": {
+          "type": "string",
+          "format": "uuid"
+        },
+        "stream_id": {
+          "type": "string",
+          "format": "uuid"
+        },
+        "anchor_id": {
+          "type": "string",
+          "format": "uuid"
+        },
+        "receiver_id": {
+          "type": "string",
+          "format": "uuid"
+        },
+        "fence_id": {
+          "type": "string",
+          "format": "uuid"
+        },
+        "fence_sha256": {
+          "type": "string",
+          "pattern": "^[0-9a-f]{64}$"
+        },
+        "scope": {
+          "enum": [
+            "contract-test",
+            "production"
+          ]
+        }
+      },
+      "required": [
+        "installation_id",
+        "stream_id",
+        "anchor_id",
+        "receiver_id",
+        "fence_id",
+        "fence_sha256",
+        "scope"
+      ],
+      "additionalProperties": false
+    }
+  }
+}

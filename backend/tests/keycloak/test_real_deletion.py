@@ -16,7 +16,7 @@ from test_real_pkce import auth, decoded, tokens
 from calorie_app.integrations.keycloak.admin import AdminFailure, KeycloakAdmin, RealmAdminConfig
 from calorie_app.modules.catalog.export import export_package
 from calorie_app.modules.catalog.service import import_catalog
-from calorie_app.modules.identity.deletion import begin, resume, status
+from tests.support.deletion_regression import begin, resume, status
 
 api = api_fixture
 

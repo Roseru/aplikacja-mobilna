@@ -23,6 +23,7 @@ from calorie_app.modules.sync.repository import append_change, entity, lock_coun
 from calorie_app.modules.sync.retention import prune
 from calorie_app.modules.sync.snapshot_models import SyncSession, SyncSessionItem
 from calorie_app.modules.sync.tokens import read_token, sign_checkpoint, timestamp
+from tests.support.deletion_regression import begin as begin_deletion
 
 pytestmark = pytest.mark.integration
 SECRET = SecretStr("31" * 32)
@@ -182,19 +183,16 @@ def test_page_binding_combined_tokens_filters_epoch_precedence_and_deleting(owne
     )
     with pytest.raises(SyncFailure, match="sync_epoch_changed"):
         snapshots.pull(factory, a, {"sync_epoch": str(uuid4()), "checkpoint": expired}, SECRET)
-    with engine.begin() as connection:
-        connection.execute(
-            text("UPDATE app.user_accounts SET generation=2 WHERE id=:id"), {"id": a}
-        )
+    from calorie_app.modules.sync.tokens import sign_token
+
+    claims = read_token(
+        first["page_token"], SECRET, kind="page", owner_id=a, generation=1, epoch=epoch
+    )
+    wrong_generation = first | {"page_token": sign_token(claims | {"generation": 2}, SECRET)}
     with pytest.raises(SyncFailure, match="account_generation_changed"):
-        follow(factory, a, first, 1)
+        follow(factory, a, wrong_generation, 1)
     with engine.begin() as connection:
-        connection.execute(
-            text(
-                "UPDATE app.user_accounts SET state='deleting',generation=generation+1 WHERE id=:id"
-            ),
-            {"id": a},
-        )
+        begin_deletion(connection, a, uuid4(), 1)
     with pytest.raises(SyncFailure, match="account_deleting"):
         follow(factory, a, first, 1)
 
