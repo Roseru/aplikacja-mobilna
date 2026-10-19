@@ -392,7 +392,7 @@ jobs:
           uv run --project backend --locked python infra/integration/recovery_o2.py
           --state "${{ runner.temp }}/o2-recovery" --port 19443
       - name: Deliver the tested immutable O2 image without runtime credentials
-        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
         with:
           name: o2-backend-image-${{ github.sha }}
           path: |
@@ -402,7 +402,7 @@ jobs:
           retention-days: 14
       - name: Upload secret-free infrastructure receipt
         if: always()
-        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
         with:
           name: local-integration-receipt
           path: |
