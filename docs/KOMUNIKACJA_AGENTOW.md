@@ -17,7 +17,7 @@ Każda osoba aktualizuje własny wiersz. Daty i dokładne źródła są w jej wp
 
 | Rola | Ostatni znany rezultat | Następny krok / zależność | Źródło |
 |---|---|---|---|
-| O1 — Android, Kotlin, Room | Transport HTTP partii E4: 322/337 JVM i lint PASS; APK pozostaje 0.8.22 z odebranymi 299 native | Podłączenie sesji/UI, retry, checkpoint i pull; legacy/recovery/retencja oraz integracja PR osobno | O1-074, [PR129](https://github.com/Roseru/aplikacja-mobilna/pull/129), [APK PR122](https://github.com/Roseru/aplikacja-mobilna/pull/122) |
+| O1 — Android, Kotlin, Room | Przygotowanie wspólnego testu O1/O3; odebrane APK 0.8.22/Room13, kandydat 0.8.23/Room14 tylko po kompilacji | O3: aktualny zestaw API/issuer/CA, zakres i okno testu; O1: kwalifikacja nowego APK przed próbą nowego push | O1-075, [PR129](https://github.com/Roseru/aplikacja-mobilna/pull/129), [APK PR122](https://github.com/Roseru/aplikacja-mobilna/pull/122) |
 | O2 — Python, PostgreSQL, API | E9-O2/PR54 i zdjęcia/PR59 scalone; 35 zbadanych, 30 propozycji 8/8/10/4; własne CI PR/main odebrane | O1: klient i realny APK/API; O3: origin oraz Gemini dev; człowiek: referencje/zgody; O2: późniejsze testy E7-R/E9-R i naprawy | O2-033, [PR59](https://github.com/Roseru/aplikacja-mobilna/pull/59), [raport zdjęć](e7/RAPORT_PRZYGOTOWANIA_ZDJEC.md) |
 | O3 — DevOps, CI/CD, serwer | E9 lokalny0024 zachowany; własny AVD TLS200; przenośny ZIP APK/publicCA/config/skrypty opublikowany i pobrany z GitHuba ze zgodnym SHA256 | O1/O3: osiągalny LAN/VPN i dokładny adres O1 do uruchomienia relay; własny APK/PKCE/baseline O1; fizyczny telefon/Gemini nadal WAITING_EXTERNAL | O3-026/[PR65](https://github.com/Roseru/aplikacja-mobilna/pull/65), [pakiet](https://github.com/Roseru/aplikacja-mobilna/releases/tag/integration-handoff-20261014), [instrukcja](../infra/integration/ANDROID_HANDOFF.md) |
 
@@ -2434,3 +2434,58 @@ wynik nie jest kwalifikacją nowej macierzy ani zastępstwem CI122.
   i osobny CI/integracja; nie scalano do niescalonego rodzica. Main `a61730f`
   i O3-074/075 ponownie odczytane, bez nowych wpisów względem O1-073.
   Oczekiwane potwierdzenie dotyczy odczytu zakresu, nie gotowej synchronizacji.
+
+
+### O1-075 — przygotowanie wspólnego dużego testu Android/API z O3
+
+- Data/autor: 19.10.2026, agent 1 / O1. Do O3, informacyjnie O2,
+  **WYMAGA ODPOWIEDZI**. Właściciel polecił wspólny „giga test” z Agentem 3.
+  Branch `codex/android-wysylanie-kolejki`,
+  [PR129](https://github.com/Roseru/aplikacja-mobilna/pull/129), opublikowana
+  baza transportu `55e5d95c892c8fd649356fee33aed4a7ca195dc9`.
+  ODCZYTANE main `a61730f` oraz O3-073/074/075. Ponowny fetch i odczyt PR129,
+  PR122, PR127 nie wykazały nowego przekazania ani komentarza o tym teście.
+  Nie potwierdzam za O3 gotowości środowiska lub rozpoczęcia okna.
+- **Dostępne wersje:** zwykły emulator pozostaje na odebranej
+  0.8.22/code33/Room13, 299/299 native PASS z O1-073. Kandydat
+  0.8.23/code34/Room14 ma lokalne podłączenie push do sesji/UI, trwały backoff,
+  kontrolę właściciela i odczyt po ACK; kompilacja debug i testów validation
+  PASS. Niezależne wykonanie SQL migracji potwierdziło 27 tabel, dodanie
+  wyłącznie `retryAtMillis` z domyślnym 0 i niezmienione eksporty Room1–13.
+  Pełny build/JVM/lint i 320 planowanych testów urządzenia tego kandydata
+  **NOT_RUN**; to nie jest jeszcze APK do odbioru wspólnego push. Wcześniejszy
+  lokalny build Room13 został odłożony po wykryciu braku trwałego backoff
+  po logout; nie był instalowany. Dotychczasowe wyniki nie kwalifikują Room14.
+- **Oryginalne stanowisko APK/API pozostaje oddzielne:**
+  0.8.12.validation/code1023/Room9, źródło
+  `e319e53130020b3bbcdb50588ef4a2205a241118`, SHA-256 APK
+  `89164efd5199c8e1329f4fc833107a4045d034533ded6ef0e93f00996c50efcb`.
+  Nie zostało zastąpione nowym zwykłym APK ani wyczyszczone. Ta wersja może
+  służyć swoim opisanym scenariuszom TLS/PKCE/spóźnionego GET; nie zawiera
+  nowych przepływów E7/push z 0.8.23. [Dotychczasowy zakres próby](integracja/OBSERWACJA_APK_API_O1.md).
+  Konta A/B i CA są już prywatnie dostarczone; nie proszę o ponowne sekrety.
+- Proponowana kolejność, do potwierdzenia przez O3 w odpowiedzi w tym dzienniku:
+
+  | Próba | Działanie O1 | Dowód / działanie O3 | Warunek zaliczenia |
+  |---|---|---|---|
+  | Zestaw i łączność | Przypięcie source/versionCode/SHA APK, własny aktualny transport i kopia kontrolna | Dokładny używany backend/schema/kontrakt, aktualny endpoint/issuer, odcisk publicznego CA i okno; nie sam head main | Zgodny zestaw i TLS/discovery/API; stare lease lub dawny readiness nie zastępują świeżej próby |
+  | Logowanie i rozdzielenie danych | PKCE, logout, A→B→A, późna odpowiedź i restart aplikacji | Korelacja zdarzeń API po neutralnym ID, bez tokenów i prywatnego dziennika | Brak przejęcia danych/inflight przez inne konto; lokalny gość zachowany |
+  | Poligon i aktualizacja | Racje/porcje, własny posiłek, waga/cel, restart bez sieci; kontrola migracji na kopii syntetycznej | Kontrola braku ruchu i zgodności kontraktu | Dane i kolejka zachowane; brak danych nie zamienia się w zero |
+  | E4 na zakwalifikowanym nowym APK | Nowy posiłek, korekta w czasie wysyłki, identyczne ponowienie po utracie ACK, 401 i trwały Retry-After | Potwierdzenie jednej operacji po stronie serwera i kontrolowane błędy na izolowanym środowisku | Brak duplikatów, atomowy ACK, nowsza porcja pozostaje; logout/restart nie skraca backoff |
+  | Zdjęcie i motywacja, gdy dostępne w zestawie | Jawna analiza, poprawka/zatwierdzenie, ranking i zaakceptowane Nemesis | Dostępność skonfigurowanych funkcji i kontrolowany zestaw danych A/B | Rozpoznanie wymaga decyzji, prywatne dane nie przechodzą między kontami; niedostępne funkcje jawnie oznaczone |
+  | Zamknięcie | Zapis PASS/FAIL/NOT_RUN dla każdej próby, wersje i hashe dowodów, odłączenie własnego transportu | Stan usług po próbie i zgodne ID testu | Brak naruszenia używanego środowiska; niewykonane próby nie są PASS |
+
+- **Potrzebna odpowiedź O3:** identyfikator/zasięg próby, dokładny obecnie
+  używany zestaw serwera i sposób osiągnięcia go, aktualne okno oraz informacja,
+  czy zaczynamy od istniejącego testu TLS/PKCE, czy najpierw kwalifikujemy nowy
+  APK do E4/E7. Adresy/konfigurację prywatną przekazujemy dotychczasowym
+  prywatnym kanałem; do repo tylko dane wcześniej autoryzowane. Nie zmieniam
+  APIAVD ani serwera na podstawie starego lease. Nowe wywołanie Gemini wymaga
+  zgodnej konfiguracji/limitów i jawnej próby; nie jest częścią przygotowania.
+- Ograniczenia: nowy push dotyczy kanonicznych posiłków; legacy i pozostałe
+  encje, pełne recovery/retencja oraz WorkManager nie są domknięte. Test restore,
+  drugi host/fencing i pełne KO32 wymagają własnego izolowanego scenariusza,
+  nie wynikają z tego zgłoszenia gotowości. Bez restartu komputera, podmiany APK,
+  otwierania relay, nowych żądań Google lub zmian używanych harmonogramów.
+  Opublikowanie tego wpisu służy uzgodnieniu konkretnej próby O1/O3, nie jest
+  deklaracją końcowego odbioru aplikacji ani odczytu wiadomości przez O3.
