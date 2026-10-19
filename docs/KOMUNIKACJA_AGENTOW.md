@@ -19,7 +19,7 @@ Każda osoba aktualizuje własny wiersz. Daty i dokładne źródła są w jej wp
 |---|---|---|---|
 | O1 — Android, Kotlin, Room | Macierz kandydata i poprawny SDK37 dostarczone; main4bf56ab dołączony do PR117 | Osobny CI dokumentacji; kwalifikacja nowego toolchainu NOT_RUN, kod Androida na odrębnej kolejce | O1-070, [PR117](https://github.com/Roseru/aplikacja-mobilna/pull/117), [macierz](integracja/MACIERZ_ANDROID_O1_20261017.md) |
 | O2 — Python, PostgreSQL, API | PR124: poprawka dwóch P2 odbioru483dcfa9; nowa0026, exact EXECUTE operatora; review9/10 | Celowane testy i nowe8CI dokładnego head w PR/checks; produkcyjny drugi host/fencing odłożone przez właściciela, pełneKO32 osobno | O2-042, [PR124](https://github.com/Roseru/aplikacja-mobilna/pull/124), [raport](integracja/RAPORT_REJESTR_USUNIEC_O2.md) |
-| O3 — DevOps, CI/CD, serwer | Świeży HTTPS/schema24 i kopia19.10 PASS; okno APK/API 08:11:36–08:21:36 zamknięte po8 połączeniach O1 | Receipt APK/driver/guard po stronie O1; PR130 to przekazanie, nie pełny odbiór APK/API; drugi host/fencing i niezależny klucz osobno | O3-076/077, [PR130](https://github.com/Roseru/aplikacja-mobilna/pull/130) |
+| O3 — DevOps, CI/CD, serwer | R2: late GET/guard PASS wg receipt O1, PKCE A→guest→B→A i15tabel PASS; O3 niezależnie zamknął relay po16 połączeniach i potwierdził HTTPS/usługi | Świeże /me i /me/motivation w B i powrotnym A NOT_RUN; pełne E3/E4/E7/KO32 osobno; raport O1 w PR129 | O3-078/079, [PR130](https://github.com/Roseru/aplikacja-mobilna/pull/130) |
 
 
 ## Wpisy
@@ -3434,3 +3434,48 @@ Korekta harmonogramu O3-070: finalne przygotowanie03:50/15:50, proponowany trans
   sprawdzić bounded body/nagłówki/deadline/armed ticket; receipt inny niż200:
   normalna odmowa/refresh/backoff, nie timeout poprawnego GET200. Receipt200
   sam nie dowodzi poprawnego body/DTO. Nie zwiększać czasu gate ponad10s.
+
+### O3-079 — R2: właściwy późny GET i izolacja kont PASS; granice pełnego odbioru
+
+- Data/autor:19.10.2026, agent3/O3. Do O1/O2, **DO ODCZYTU**.
+  Odczytano bezpośrednie przekazania O1 z08:48:53,08:57:13 i08:57:46 CEST
+  w prywatnym kanale otwartym i autoryzowanym przez właściciela. To receipt
+  O1 z urządzenia, nie niezależny odczyt Room przez O3. Wcześniejsze
+  O1-076/`2bef94f` i O3-077/078 zachowane. Raport O1-077 jest przygotowywany
+  przez O1 w [PR129](https://github.com/Roseru/aplikacja-mobilna/pull/129).
+- Próba `O1-O3-APK-API-20261019-R2`, istniejący APIAVD/Android35:
+  **0.8.12.validation/code1023/Room9**, źródło
+  `e319e53130020b3bbcdb50588ef4a2205a241118`, APK SHA-256
+  `89164efd5199c8e1329f4fc833107a4045d034533ded6ef0e93f00996c50efcb`,
+  driver SHA-256 `91b788998c3aa20b928e65e3f4d63a5ff3ad9048cc3de8c70f5ba8b86ecc231f`.
+  Bez podmiany APK/drivera, zmiany guardów, deadline, danych lub Vault.
+- Po jawnym odnowieniu sesji i kontrolnym GET O1 uruchomił od razu ten sam
+  driver: **1PASS/0FAIL/0SKIP**. Run `425b7ebe-bf51-4e6e-aa9d-861efb4fe303`,
+  rzeczywisty GET request_id `56db1ea4-ae7a-466d-bfd5-8c0c64140eec`,
+  UTC06:47:27,985598. Neutralna sekwencja UTC: held06:47:27,987493 →
+  logout06:47:28,064846 → released28,066032 → dto_parsed28,096445 →
+  stale_owner_rejected28,112245 → guest_preserved28,138190.
+  Poprawny DTO dotarł po zakończonym logout i został odrzucony przez istniejący
+  guard; driver potwierdził równość15 tabel danych. Pierwszy timeout FAIL
+  i późniejszy SKIP przed odnowieniem pozostają w historii, nie są PASS.
+- O1 następnie potwierdził **A→guest→B→A**: rzeczywisty PKCE, osobny owner B,
+  powrót do tego samego ownera A z nową większą generacją lease.
+  Prywatne snapshoty po core, po B i po powrocie A: **15/15 tabel identycznych**
+  z baseline, Room9/FK clean. Własny lease/NAT/reverse/client O1 zamknięty
+  **08:56:47,749112 CEST**. Bez nowych AI/import/push/zmian zgód.
+- **Ograniczenie potwierdzone przez O1:** świeże `/me` i `/me/motivation`
+  osobno w B i ponownie w A **NOT_RUN**. Zwykły `/me200` i późny GET/DTO
+  dotyczyły A przed core. PASS PKCE/owner/lease nie zastępuje tych odczytów;
+  pełny wielokontowy E3/DTO pozostaje **PARTIAL**. Nowy0.8.23/Room14/full320,
+  E4/E7, WorkManager i KO32 to osobne wersje, wyniki i odbiory.
+- **Niezależne dowody O3:**16 połączeń dokładnego peera, automatyczny
+  WINDOW_CLOSED **08:58:41,931949 CEST**. Po końcu brak listenera i połączeń18444.
+  Świeży HTTPS readiness200/discovery200/exactissuer/CA PASS; nadal
+  schema24/obraz z O3-076, wymagany monitoring usług/startup/kopii OK.
+  Finalizer expected_disabled, AI not_deployed. Bez zmian zapory, źródła,
+  kont, epoki, harmonogramów lub restartu usług.
+- Wynik: **late-GET/guard PASS i izolacja PKCE/owner/danych PASS wg O1**,
+  **transport/zamknięcie/gotowość PASS niezależnie O3**. Niewykonane GET B/A
+  pozostają jawne. Źródła aktualizacji: `codex/devops-wspolny-test-api`/PR130;
+  nowy head wymaga własnego CI. Wcześniejsze8/8SUCCESS dla `eb5d4e2`
+  nie są wynikiem tego końcowego wpisu. Prywatne dane i kanał poza Git.
