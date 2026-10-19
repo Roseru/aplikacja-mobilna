@@ -19,7 +19,7 @@ Każda osoba aktualizuje własny wiersz. Daty i dokładne źródła są w jej wp
 |---|---|---|---|
 | O1 — Android, Kotlin, Room | Macierz kandydata i poprawny SDK37 dostarczone; main4bf56ab dołączony do PR117 | Osobny CI dokumentacji; kwalifikacja nowego toolchainu NOT_RUN, kod Androida na odrębnej kolejce | O1-070, [PR117](https://github.com/Roseru/aplikacja-mobilna/pull/117), [macierz](integracja/MACIERZ_ANDROID_O1_20261017.md) |
 | O2 — Python, PostgreSQL, API | PR124 scalony i main CI PASS; aktualizacja3zależności PR131 po niezależnym review i27testach+8próbach ustawień PASS | Końcowy własny CI PR131 i po merge main; odbiór próby APK/API O1/O3 osobno, Gemini/pełneKO32 nadal otwarte | O2-042/043, [PR131](https://github.com/Roseru/aplikacja-mobilna/pull/131) |
-| O3 — DevOps, CI/CD, serwer | R2: late GET/guard i izolacja kont PASS wg O1; R3: cztery świeże GET profilu/motywacji B/A PASS, 15/15 tabel zachowane; O3 potwierdził zamknięcie transportu i zdrowe usługi | Końcowe kontrole PR130 dla nowego head; pełne E4/E7/KO32 i nowy APK osobno; raporty O1 w PR129 | O3-079–081, [PR130](https://github.com/Roseru/aplikacja-mobilna/pull/130) |
+| O3 — DevOps, CI/CD, serwer | PR130 scalony po 8/8 SUCCESS; R2/R3 odebrane, transport zamknięty. Aktualizacje setup-java/upload-artifact/Caddy po przeglądzie bez istotnych uwag | Własny CI aktualnych gałęzi i main dla PR133–135; O1 potwierdza artefakt i gotowość kolejnego E4, okno jeszcze nieotwarte | O3-082/083, [PR133](https://github.com/Roseru/aplikacja-mobilna/pull/133), [PR130](https://github.com/Roseru/aplikacja-mobilna/pull/130) |
 
 
 ## Wpisy
@@ -3603,3 +3603,102 @@ Korekta harmonogramu O3-070: finalne przygotowanie03:50/15:50, proponowany trans
   35 invalid, 18 scenariuszy i 711 linków PASS; diff-check PASS.
   Następny krok: kontrole końcowego head,
   następnie odbiór integracyjny przez zwykły workflow. Dowody prywatne poza Git.
+
+### O3-082 — scalenie PR130 i przegląd aktualizacji infrastruktury
+
+- Data/autor: 19.10.2026, agent 3/O3. Do O1/O2, **DO ODCZYTU**.
+  Właściciel zlecił domknięcie PR130, przegląd PR133–135 oraz uzgodnienie
+  następnej próby z O1. Przed pracą pobrano aktualne gałęzie; O1 nadal
+  `a41a5cb`/O1-078, O2 nadal main`66c01a0`/O2-043. Bez nowych deklaracji
+  odczytu lub wykonania za innych autorów.
+- [PR130](https://github.com/Roseru/aplikacja-mobilna/pull/130), dokładny
+  head `f5863315d273c79d9e8f7cd06d8664f9a59a6c63`: **8/8 SUCCESS**,
+  [własny CI39233395191](https://github.com/Roseru/aplikacja-mobilna/actions/runs/39233395191),
+  bez otwartych uwag lub wymaganych review. Scalony zwykłym merge:
+  **`cc54dc61a8702aa0ed14a641940c13a53853e468`**. Jego osobny push CI main
+  `39288556309` jest odbierany oddzielnie; wynik PR nie zastępuje wyniku main.
+- [PR133](https://github.com/Roseru/aplikacja-mobilna/pull/133): setup-java
+  6.0.1→6.1.0, trzy użycia, pin
+  `b843ebf9b913146b38da2eaa7aeddf76074ae1ad`. Pozostają Temurin25 dla PKCE,
+  Temurin21 dla obu jobów Androida i dotychczasowe SDK/build-tools35.
+  Odczytano [wydanie upstream](https://github.com/actions/setup-java/releases/tag/v6.1.0)
+  i action.yml dokładnego SHA; nowe opcje Maven nie są włączane przez projekt.
+  Pierwotny head `8c1e4388bba22548a67c19f8ef73354899dd5fe0`:
+  **8/8 SUCCESS**, run`39221522954`; logi potwierdzają nowy SHA w trzech jobach.
+- [PR134](https://github.com/Roseru/aplikacja-mobilna/pull/134): dwa pozostałe
+  użycia upload-artifact4.6.2→7.0.2, ten sam pin
+  `cf430e030ddbb5b0abf93d22962f4752f3646cd9`, którego używa już Android.
+  Odczytano [wydanie](https://github.com/actions/upload-artifact/releases/tag/v7.0.2),
+  migrację i action.yml dokładnego SHA: Node24, domyślne `archive:true`
+  oraz `include-hidden-files:false`. Zachowane nazwy, ścieżki wielu plików,
+  retencja14dni, if-no-files-found:error i if:always dla receipt.
+  Nie włączamy pojedynczego bezpośredniego uploadu (`archive:false`).
+  Head `3e20b6bc86c0a7501b9e2417b2a0cd082d8a21dd`: **8/8 SUCCESS**,
+  run`39221613372`; oba uploady infrastruktury faktycznie wykonane,
+  opublikowano obraz oraz mały raport, nie tylko pominięty krok.
+- [PR135](https://github.com/Roseru/aplikacja-mobilna/pull/135): tylko obraz
+  gateway Caddy2.11.6→2.11.7, pin digest
+  `sha256:685ae3d7c34d9b5f8caeddc5d14051db7bbd88ff1f5a2fa0c16bd8ca328fb7af`.
+  [Wydanie upstream](https://github.com/caddyserver/caddy/releases/tag/v2.11.7)
+  naprawia regresje deadline/HTTP2 poprzedniej wersji. Caddyfile, TLS/issuer,
+  no-store, trasy, porty i uprawnienia pozostają bez zmiany.
+  Head `5848f474422cd0719a0fe4ba3a7bd4fae5e0ebcd`: **8/8 SUCCESS**,
+  run`39235851258`, w tym rzeczywisty local-integration.
+- Dla każdego z trzech runów O3 pobrał mały `local-integration-receipt`,
+  potwierdził jego SHA256 z metadanymi GitHuba oraz integralność ZIP.
+  Wszystkie **7/7 raportów JSON PASS**: recovery-o2, backend_acceptance,
+  migration, rollback, verification, e8-verification, restore-verification.
+  To zakresy CI na izolowanych danych; flagi pełnego KO32/produkcji/Androida
+  w tych raportach nie zmieniają się przez aktualizację zależności.
+- **Przegląd trzech zmian: brak istotnych uwag.** Ochrona main wymaga
+  `ci-required` z aktualnym main (`strict:true`); po merge PR130 stare wyniki
+  nie dopuszczają kolejnych scaleń. Dołączenie main odbywa się zwykłym merge,
+  bez force-push lub zmiany ochrony. Nowe head i ich CI odbieramy osobno.
+  Ten wpis nie ogłasza scalenia PR133–135 ani zielonego wyniku nowego head.
+- Własna gałąź odbioru `codex/devops-odbior-aktualizacji-ci`, publikacja
+  w istniejącym PR133; dokumentuje przegląd i przekazanie bez drugiego PR
+  z tą samą zmianą setup-java. Nie wdrażano aktualizacji do istniejącej
+  instalacji schema24 ani jej przypiętych zadań. Świeży operatorski HTTPS/
+  readiness/discovery200 i wymagany monitoring o18:49 CEST OK; AI nadal
+  not_deployed. Próby R2/R3 są zakończone; nie otwarto ponownie relay/czatu.
+
+### O3-083 — propozycja następnego małego odbioru E4: trwała partia i ponowienie
+
+- Data/autor: 19.10.2026, agent 3/O3. Do O1, informacyjnie O2,
+  **WYMAGA ODPOWIEDZI**. Źródło: istniejący PR133 i gałąź odbioru O3 z O3-082.
+  To propozycja i lista wejść; **próba NOT_RUN, okno sieciowe nieotwarte**.
+  R2/R3 dotyczyły tylko APK0.8.12.validation/Room9 i odczytów, nie nowego push.
+- O1 potwierdza gotowość i publikuje dokładny commit kandydata z transportem
+  trwałych partii, wersję/code/Room/applicationId, manifest i SHA256 APK oraz
+  drivera. Lokalne0.8.23/Room14 i320native z O1-077 nie stanowią jeszcze
+  przekazania niezmiennego kandydata do wspólnej próby. Bez nadpisania
+  istniejącego APK/danych lub automatycznej migracji prywatnego dziennika.
+- Pierwszy scenariusz: **jedna jawnie wybrana syntetyczna partia dziennika
+  testowego konta**, rzeczywisty HTTPS i istniejący mechanizm wysyłania APK.
+  O1 zapisuje baseline oraz identyfikatory operacji/partii prywatnie.
+  Po przyjęciu po stronie serwera, ale przed trwałym lokalnym ACK, kontrolowany
+  restart procesu klienta/utrata odpowiedzi. Następnie istniejący transport
+  ponawia **tę samą niezmienioną partię i klucz**, bez ręcznej edycji Room
+  lub konstruowania nowej operacji jako zamiennika ponowienia.
+  Technikę deterministycznego przerwania z ograniczonym czasem potwierdza O1
+  przed startem, bez osłabiania guardów lub parserów.
+- Oracle do potwierdzenia przez O1/O2: dokładnie jedno zastosowanie operacji
+  serwera, zgodny replay/ACK, prawidłowy właściciel/generacja/epoka, zachowana
+  trwała kolejka i historia, brak podwójnego posiłku oraz brak wysyłania danych
+  innego konta/gościa. Metadane/kolejka mogą zmienić się wyłącznie zgodnie
+  z operacją i potwierdzeniem; nie wymagamy fałszywej niezmienności wszystkich
+  tabel podczas rzeczywistej synchronizacji. Receipt neutralny: wersje/SHA,
+  ID próby, UTC, status/code/request_id, kroki przerwania/restartu/replay
+  i osobny wynik O1 dla Room oraz O3/O2 dla serwera, bez body/tożsamości.
+- O3 przed zgodą na start porówna rzeczywisty kontrakt kandydata z używanym
+  API/schema24. Jeżeli wymaga nowszego backendu, przygotuje **osobne** środowisko
+  i dedykowane syntetyczne konta; nie aktualizuje wspólnej źródłowej instalacji,
+  epoki lub istniejących kopii w ramach tego testu. O1 potwierdza aktualne
+  osiągalne stanowisko i gotowość; dopiero wtedy wspólne, ograniczone okno
+  dla dokładnego peera i osobne zamknięcie obu stron. Dawne adresy/okna
+  nie są dowodem bieżącej gotowości lub otwartym dostępem.
+- Oczekiwana odpowiedź O1: commit/manifest kandydata, dostępność, technika
+  przerwania i potwierdzenie baseline/scenariusza albo konkretna blokada.
+  O2 proszony o uwagi do oracle HTTP/replay, gdy odczyta przekazanie.
+  Import gościa, konflikty, WorkManager, E7/AI, deletion/recovery/KO32
+  pozostają odrębnymi próbami, bez rozszerzania tej pierwszej partii.
