@@ -6,6 +6,10 @@ nie zamyka całego E3/E4/E7 ani KO32. Normatywny zakres:
 [odbiór O2](ODBIOR_APK_API_O2.md), [driver i obserwacja](OBSERWACJA_APK_API_O1.md).
 Komunikacja: O3-078 i O1-077 w [dzienniku](../KOMUNIKACJA_AGENTOW.md).
 
+Aktualizacja z późniejszego okna: cztery odczyty B/A oznaczone w tym raporcie
+NOT_RUN zostały następnie wykonane w [osobnym R3](ODBIOR_APK_API_O1_R3_20261019.md).
+Poniżej pozostaje historyczny wynik R2.
+
 ## Przypięty zestaw
 
 | Element | Rzeczywiście użyta wersja |

@@ -17,7 +17,7 @@ Każda osoba aktualizuje własny wiersz. Daty i dokładne źródła są w jej wp
 
 | Rola | Ostatni znany rezultat | Następny krok / zależność | Źródło |
 |---|---|---|---|
-| O1 — Android, Kotlin, Room | R2 późny rzeczywisty GET/logout/DTO/guard PASS; PKCE A→gość→B→A, 15 tabel zachowanych; transport O1 zamknięty | Osobne /me i /motivation B/A NOT_RUN; nowy 0.8.23 ma lokalne320 native PASS, publikacja/instalacja i E4/E7 osobno | O1-077, [raport R2](integracja/ODBIOR_APK_API_O1_R2_20261019.md), [PR129](https://github.com/Roseru/aplikacja-mobilna/pull/129) |
+| O1 — Android, Kotlin, Room | R2 późny GET/guard PASS; R3 4/4 świeże profile/motywacja B i A z przyjętym DTO/kontekstem; 15 tabel zachowanych, transport O1 zamknięty | Publikacja/instalacja lokalnego 0.8.23 z320 native PASS, nowe E4/E7 i KO32 osobno | O1-078, [raport R3](integracja/ODBIOR_APK_API_O1_R3_20261019.md), [R2](integracja/ODBIOR_APK_API_O1_R2_20261019.md), [PR129](https://github.com/Roseru/aplikacja-mobilna/pull/129) |
 | O2 — Python, PostgreSQL, API | E9-O2/PR54 i zdjęcia/PR59 scalone; 35 zbadanych, 30 propozycji 8/8/10/4; własne CI PR/main odebrane | O1: klient i realny APK/API; O3: origin oraz Gemini dev; człowiek: referencje/zgody; O2: późniejsze testy E7-R/E9-R i naprawy | O2-033, [PR59](https://github.com/Roseru/aplikacja-mobilna/pull/59), [raport zdjęć](e7/RAPORT_PRZYGOTOWANIA_ZDJEC.md) |
 | O3 — DevOps, CI/CD, serwer | E9 lokalny0024 zachowany; własny AVD TLS200; przenośny ZIP APK/publicCA/config/skrypty opublikowany i pobrany z GitHuba ze zgodnym SHA256 | O1/O3: osiągalny LAN/VPN i dokładny adres O1 do uruchomienia relay; własny APK/PKCE/baseline O1; fizyczny telefon/Gemini nadal WAITING_EXTERNAL | O3-026/[PR65](https://github.com/Roseru/aplikacja-mobilna/pull/65), [pakiet](https://github.com/Roseru/aplikacja-mobilna/releases/tag/integration-handoff-20261014), [instrukcja](../infra/integration/ANDROID_HANDOFF.md) |
 
@@ -2606,3 +2606,48 @@ wynik nie jest kwalifikacją nowej macierzy ani zastępstwem CI122.
   i main`66c01a0` po PR131: wyłącznie lock backendu, bez zmiany wire/migracji
   Androida lub wdrożenia do używanej instalacji. Pobrano do odczytu;
   nie scalano nowych gałęzi z lokalnymi zmianami kandydata0.8.23.
+
+
+### O1-078 — R3: cztery świeże odczyty profilu i motywacji B oraz A
+
+- Data/autor:19.10.2026, agent1/O1. Do O3/O2, **DO ODCZYTU**.
+  [Pełny neutralny raport R3](integracja/ODBIOR_APK_API_O1_R3_20261019.md).
+  Branch `codex/android-wysylanie-kolejki`, [PR129](https://github.com/Roseru/aplikacja-mobilna/pull/129).
+  Nowy ID`O1-O3-APK-API-20261019-R3`, dokładne okno O3
+  09:06:26.320467–09:26:26.320467 CEST, uzgodnione na autoryzowanym prywatnym
+  czacie. R2 i jego FAIL/SKIP/PASS zachowane oddzielnie; nie powtarzano core.
+- Ten sam O1Api35/API35, źródło e319e53130020b3bbcdb50588ef4a2205a241118,
+  0.8.12.validation/code1023/Room9, APK89164efd…/driver91b788…
+  z pełnymi SHA w raporcie. Zainstalowane hashe ponownie zweryfikowane.
+  Nowy baseline23tabel, świeży checkTLS/discovery200/readiness200,
+  nowy własny klient/lease. O3 zachował ten sam issuer/CA/schema24/obraz.
+- **4/4GET HTTP200/no-store, przyjęty DTO i zgodny kontekst:**
+  B `/me` UTC07:14:36.096630Z/request`878bdebc-ae56-41be-a4ab-4318753626ba`;
+  B `/me/motivation`07:16:08.181707Z/`96ad1f47-69e4-4f49-b235-4b72ba41da6c`;
+  A `/me`07:20:36.086847Z/`8c4fe2d3-bba7-4c40-9da2-0dc9b3d8c94a`;
+  A `/me/motivation`07:21:35.538478Z/`ac59c840-79fe-4af1-8154-c5fa48711dc3`.
+  Rzeczywisty PKCE B, odczyty po ukończeniu poprzedniej operacji, potem
+  jawny PKCE A i odczyty po powrocie. Nie używano starych receipt jako nowych.
+- Dowód contextMATCH: ukończony DTO widoczny pod niezmienionymi guardami
+  e319 `readPrivate`/`publish`, które odrzucają niezgodność z własnym binding.
+  `/me`:account_id+sync_epoch, bez nieistniejącego account_generation.
+  Motivation:generation+epoch. O3 zaakceptował tę metodę bez eksportu
+  identity/body. Oba profile poprawnie null; motywacja pokazała wynik
+  serwerowy, bez wymyślania0. Nie wymuszano syntetycznego pending/null.
+  Pierwszy obserwator B nie zastał przycisku po wzroście karty; potwierdzono
+  gotowy DTO i unikalny receipt bez powtórki GET. To nie błąd API.
+- Po B i po powrocie A niezależnie **15/15tabel lokalnych identycznych**
+  z nowym baseline, Room9/FK clean, odrębny owner B i pierwotny A,
+  rosnące generacje lease. Dane, Vault i surowe zrzuty poza Git/OneDrive.
+  Bez importu/push/zmian zgód, Nemesis/AI lub wdrażania nowego backendu.
+- Własny R3 lease/NAT/reverse i klient zamknięte
+  **09:22:20.2290396 CEST**, przed końcem okna; zachowano APK i dane,
+  usunięto własny tymczasowy XML z AVD. O3 potwierdził odczyt czterech receipt
+  i niezależne wcześniejsze zamknięcie swojego relay **09:23:43.3603175 CEST**,
+  OWNER_STOP_AFTER_PEER_DISCONNECT po sprawdzeniu własności procesu;
+  brak18444 i świeży HTTPS/monitor PASS. To nie automatyczny koniec TTL.
+  O3 publikuje własny dowód osobno. Nie restartowano komputera.
+- R3 uzupełnia dokładnie cztery NOT_RUN z O1-077; historyczny raport R2
+  wskazuje późniejszy raport R3. Nie jest to odbiór nowych E4/E7/KO32,
+  całej macierzy E3 lub nowego0.8.23. Ten kandydat i jego320native pozostają
+  osobno; O3/O2 odbierają bieżący zakres według podanych wersji/dowodów.
