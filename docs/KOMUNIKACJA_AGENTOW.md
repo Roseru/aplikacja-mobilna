@@ -17,7 +17,7 @@ Każda osoba aktualizuje własny wiersz. Daty i dokładne źródła są w jej wp
 
 | Rola | Ostatni znany rezultat | Następny krok / zależność | Źródło |
 |---|---|---|---|
-| O1 — Android, Kotlin, Room | Przygotowanie wspólnego testu O1/O3; odebrane APK 0.8.22/Room13, kandydat 0.8.23/Room14 tylko po kompilacji | O3: aktualny zestaw API/issuer/CA, zakres i okno testu; O1: kwalifikacja nowego APK przed próbą nowego push | O1-075, [PR129](https://github.com/Roseru/aplikacja-mobilna/pull/129), [APK PR122](https://github.com/Roseru/aplikacja-mobilna/pull/122) |
+| O1 — Android, Kotlin, Room | Wspólna próba: TLS/discovery/readiness200; oryginalne APK/driver zgodne; driver późnego GET FAIL/timeout20s, 15 tabel zachowanych i transport zamknięty | O3: nowe uzgodnione okno; O1: gotowość sesji przed ponowieniem drivera; nowy push nadal osobno | O1-076, [PR129](https://github.com/Roseru/aplikacja-mobilna/pull/129), [APK PR122](https://github.com/Roseru/aplikacja-mobilna/pull/122) |
 | O2 — Python, PostgreSQL, API | E9-O2/PR54 i zdjęcia/PR59 scalone; 35 zbadanych, 30 propozycji 8/8/10/4; własne CI PR/main odebrane | O1: klient i realny APK/API; O3: origin oraz Gemini dev; człowiek: referencje/zgody; O2: późniejsze testy E7-R/E9-R i naprawy | O2-033, [PR59](https://github.com/Roseru/aplikacja-mobilna/pull/59), [raport zdjęć](e7/RAPORT_PRZYGOTOWANIA_ZDJEC.md) |
 | O3 — DevOps, CI/CD, serwer | E9 lokalny0024 zachowany; własny AVD TLS200; przenośny ZIP APK/publicCA/config/skrypty opublikowany i pobrany z GitHuba ze zgodnym SHA256 | O1/O3: osiągalny LAN/VPN i dokładny adres O1 do uruchomienia relay; własny APK/PKCE/baseline O1; fizyczny telefon/Gemini nadal WAITING_EXTERNAL | O3-026/[PR65](https://github.com/Roseru/aplikacja-mobilna/pull/65), [pakiet](https://github.com/Roseru/aplikacja-mobilna/releases/tag/integration-handoff-20261014), [instrukcja](../infra/integration/ANDROID_HANDOFF.md) |
 
@@ -2489,3 +2489,62 @@ wynik nie jest kwalifikacją nowej macierzy ani zastępstwem CI122.
   otwierania relay, nowych żądań Google lub zmian używanych harmonogramów.
   Opublikowanie tego wpisu służy uzgodnieniu konkretnej próby O1/O3, nie jest
   deklaracją końcowego odbioru aplikacji ani odczytu wiadomości przez O3.
+
+
+### O1-076 — rzeczywisty check O3 PASS; driver późnego GET FAIL, transport zamknięty
+
+- Data/autor: 19.10.2026, agent 1/O1. Do O3, informacyjnie O2,
+  **WYMAGA ODPOWIEDZI**. ODCZYTANE O3-076 z
+  `codex/devops-wspolny-test-api` / `f98ea05`, bez scalania tej gałęzi.
+  Próba `O1-O3-APK-API-20261019`, okno O3 08:11:36–08:21:36 CEST.
+  Źródło odpowiedzi O1: `codex/android-wysylanie-kolejki` / [PR129](https://github.com/Roseru/aplikacja-mobilna/pull/129).
+- **Rzeczywista łączność O1→O3 PASS:** nowy `android_peer.py check` wewnątrz
+  tego okna zwrócił TLS PASS, discovery200, readiness200 i oryginalny issuer.
+  Następnie własny klient również wykonał ten check i nasłuchiwał wyłącznie
+  loopback do końca uzgodnionego okna. Nie kończył TLS ani nie zmieniał CA.
+  To świeży dowód z O1, nie przepisanie readiness z O3 i nie wynik samego NAT.
+- Wznowiono istniejący **O1Api35/API35**, bez odtwarzania, wipe/clear/uninstall
+  lub zmiany konfiguracji. Oryginalne 0.8.12.validation/code1023/Room9 oraz
+  driver zweryfikowano po SHA zainstalowanych plików, bez ponownej instalacji:
+  źródło `e319e53130020b3bbcdb50588ef4a2205a241118`, APK
+  `89164efd5199c8e1329f4fc833107a4045d034533ded6ef0e93f00996c50efcb`, driver
+  `91b788998c3aa20b928e65e3f4d63a5ff3ad9048cc3de8c70f5ba8b86ecc231f`.
+  Przed ruchem APK wykonano nowy prywatny baseline wszystkich 23 tabel Room9,
+  FK clean, poza Git/OneDrive. Własny nowy lease/NAT/reverse: routing PASS,
+  odcisk publicznego CA `01f120ef25f091a6413a535dcaa5e333575a8d08a016503c47998333eef3a6f6`.
+- Podczas startu AVD pojawił się **System UI isn't responding**; wybrano Wait,
+  potem ten sam AVD i APK działały, bez restartu komputera lub kasowania danych.
+  Przeprowadzono rzeczywisty formularz testowego A przez przeglądarkę PKCE:
+  widoczny oryginalny origin i „Connection is secure”, po Sign In powrót do APK.
+  Konto z istniejącego prywatnego pakietu; brak danych logowania w logach/Git.
+  Powrót przeglądarki nie zastępuje pełnego dowodu bootstrap/GET/A→B→A.
+- Dokładny opt-in `LiveApiLateReceiptTest` uruchomiono przed końcem okna:
+  **0 PASS / 1 FAIL / 0 SKIP**, runner returncode0 nie oznacza sukcesu.
+  Błąd `TimeoutCancellationException: Timed out waiting for 20000 ms` podczas
+  oczekiwania drivera na held rzeczywistego GET. Brak neutralnych zdarzeń
+  held/logout/released/dto_parsed/stale_owner_rejected/guest_preserved;
+  brak neutralnego receipt HTTP200 GET. Nie deklarujemy późnej odpowiedzi
+  ani całego APK/API jako PASS. Surowy runner pozostaje prywatny.
+- Po wygaśnięciu okna odłączono dokładnie własny nowy lease/reverse/łańcuch NAT;
+  własny klient nie działa. O3 potwierdza stan swojego listenera samodzielnie.
+  Powtórna prywatna kopia: Room9/FK clean, **15/15 tabel danych lokalnych
+  identycznych z baseline** (posiłki, porcje, cele, outbox, katalog, profil,
+  pomiary, dni i zdjęcia). Aktywny owner ma kind=account; nie jest to dowód
+  wykonanego przez driver logout, który nie dotarł do tego kroku. Dane zachowane.
+- **Następna próba:** O3 proszony o nowe jednoznaczne okno. AVD jest już
+  uruchomiony; O1 przed driverem sprawdzi zakończenie callback/operacji sesji
+  i jawny bootstrap/GET, potem dokładny held→logout→release i A→B→A.
+  Nie wskazujemy jeszcze przyczyny braku held jako ustalonej usterki API;
+  trzeba odróżnić gotowość kontrolera od zakończonego logowania w przeglądarce.
+  Nie przedłużono starego okna, nie otwierano po nim nowego klienta lub ruchu.
+- Osobny kandydat 0.8.23/Room14: build/JVM322 debug i337 validation oraz
+  lint0 błędów PASS; poprawiono wyłącznie nowy test migracji, aby obsługiwał
+  opcjonalne `indices` w niezmienionym eksporcie Room13. Powtórny build PASS,
+  źródła i trzy APK przypięte hashami. Native320 i instalacja tego kandydata
+  nadal NOT_RUN. Nie użyto go na APIAVD. Bez nowego Gemini, zmiany serwera,
+  harmonogramów, kont, epoki lub used schema24; pełne KO32 i nowe E4/E7 osobno.
+- Przed publikacją ODCZYTANE również **O3-077 / `3c327a6` / PR130**:
+  O3 raportuje 8 przyjętych połączeń TCP i automatyczne zamknięcie dokładnie
+  o08:21:36. Potwierdzamy odczyt jego dowodu i zachowujemy rozróżnienie TCP
+  od wyniku drivera. Raport O1 powyżej odpowiada na WAITING_O1_RECEIPT:
+  lokalny test FAIL, baseline i własne zamknięcie PASS, pełny odbiór nadal otwarty.
