@@ -1,5 +1,11 @@
 # Android — Racje i kalorie
 
+Android **0.8.13** dodaje jawne sprawdzanie dostępności analizy zdjęć dla własnego konta: dostawcę/model, limity i stan usługi, z obsługą utraty sesji i czasu ponowienia. Zdjęcia nadal pozostają lokalne; odczyt nie przyznaje zgody i nie wysyła obrazu. [Raport](RAPORT_0_8_13.md) opisuje walidację, zachowanie danych i zależność od PR73. Room9 bez migracji. Multipart/Gemini/confirm i zapis przez E4 wymagają dalszych etapów.
+
+Android **0.8.12** dodaje lokalne zdjęcia z aparatu i galerii, trwały podgląd/usuwanie w aktywnym profilu oraz ręczny fallback. Poprawia Done w edycji gramatury. [Raport](RAPORT_0_8_12.md):165 JVM/21 końcowych zmienionych testów PASS; wcześniejsze188/186PASS+2RED zachowane osobno. Room8→9 zachował wszystkie stare kolumny22tabel/5posiłków. Upload/Gemini/confirm/sync i rzeczywisty APK/API nadal mają dalsze odbiory.
+
+Android **0.8.11** dodaje kody i zaproszenia Nemesis, świadomą akceptację zakresów oraz zakończenie udostępniania. Dokładna decyzja jest zapisana przed HTTP i ponawiana ręcznie tym samym kluczem po utracie odpowiedzi. [Raport i podglądy](RAPORT_0_8_11.md):165 JVM/179 pełny device dla pierwszego źródła, końcowe4 formularze po poprawce klawiatury osobno; Room8 bez migracji,22tabele/5posiłków zachowane. Gęstszy ranking, osiągnięcia i Postępy pozostają zachowane. Rzeczywisty pairing APK/API, E4/recovery i klientE9 wymagają dalszych odbiorów.
+
 Android **0.8.10** dodaje odczyt Nemesis: listę rywalizacji, uzgodnione zasady, punkty oraz dozwolone porównania. Pending/hidden/null/zero są oddzielne, a powrót na ekran ponownie sprawdza udostępnianie. [Raport i podglądy](RAPORT_0_8_10.md):155 JVM/168 pełny device i końcowe72 affected osobno; Room8 bez migracji,5posiłków zachowane. Zaproszenia/accept/cancel i realny API mają dalsze odbiory.
 
 Android **0.8.9** zagęszcza ranking zgodnie z feedbackiem: wspólny wiersz pozycji/punktów i mniejsze odstępy, z czytelnym układem przy dużym tekście. Poprawia rozróżnienie deklaracji zgody i aktywnego automatu po przekazaniu E9. [Raport i podglądy](RAPORT_0_8_9.md):144 JVM i18 zmienionych testów urządzenia PASS, Room8 bez migracji,22tabele/5posiłków zachowane. Nemesis, klientE9 i rzeczywisty API mają dalsze etapy.
@@ -103,7 +109,7 @@ Android Studio zwykle tworzy ignorowany `local.properties` z własną ścieżką
 Uruchom z katalogu `android/`, przy ustawionym `JAVA_HOME` i dostępnym SDK:
 
 ```powershell
-.\gradlew.bat :app:assembleDebug :app:testDebugUnitTest :app:lintDebug
+.\gradlew.bat :app:assembleDebug :app:testDebugUnitTest :app:testValidationUnitTest :app:lintDebug
 .\gradlew.bat :app:connectedValidationAndroidTest
 ```
 
@@ -118,6 +124,13 @@ Workflow [Project CI](../.github/workflows/backend.yml) uruchamia na każdym PR 
 Po zakończeniu przebiegu otwórz jego stronę w GitHub **Actions → Project CI → Artifacts**. Artefakt `android-debug-<commit>` zawiera `Racje-i-kalorie-<wersja>-debug.apk`, `manifest.json` oraz `SHA256SUMS`. Manifest podaje rzeczywisty applicationId, versionName/versionCode sprawdzone także wewnątrz APK, wariant debug, dokładny commit checkoutu i SHA-256 samego APK. Dla PR commit oznacza testowaną integrację z bazą (`refs/pull/.../merge`); commit źródłowej gałęzi znajdziesz na stronie PR. Artefakt powstaje po zaliczeniu JVM/lint; dopiero zielone całe `ci-required` potwierdza również odbiór urządzenia i backendu.
 
 Raporty są w osobnych artefaktach `android-jvm-lint-<commit>` i `android-api35-<commit>`; upload jest podejmowany także po nieudanym teście. APK i raporty mają retencję 14 dni i pozostają poza Git. To dostawa debug do testowania, nie podpisane wydanie produkcyjne ani wdrożenie API. APK nie pojawi się, jeśli jego budowa lub wcześniejsze kontrole nie powiodły się. Pobranie artefaktów może wymagać zalogowania do GitHuba.
+
+Testy JVM są wykonywane i sprawdzane oddzielnie dla debug oraz validation.
+Wariant validation obejmuje także testy receipt/gate/proof z `src/testValidation`;
+sam wynik debug ich nie potwierdza. Każdy katalog JUnit musi mieć wykonane testy
+bez błędów i pominięć. `jvm-summary.json` opisuje debug, a
+`jvm-validation-summary.json` validation. Wspólne przypadki uruchamiają się
+w obu wariantach, więc ich sumy nie są liczbą unikalnych scenariuszy.
 
 ## Kontrole odbioru
 

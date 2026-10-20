@@ -12,8 +12,8 @@ android {
         applicationId = "pl.roseru.kalorie"
         minSdk = 26
         targetSdk = 35
-        versionCode = 21
-        versionName = "0.8.10"
+        versionCode = 24
+        versionName = "0.8.13"
         // Public deployment configuration only. No credentials or client secret in the APK.
         val issuer = providers.gradleProperty("CALORIE_OIDC_ISSUER").orElse("").get()
         require(issuer.none { it == '\n' || it == '\r' || it == '"' || it == '\\' })
@@ -33,7 +33,15 @@ android {
         }
     }
     testBuildType = "validation"
+    // The regular APK has a no-op observer; HTTP receipts exist only in validation.
+    sourceSets.getByName("debug").java.srcDir("src/standard/java")
+    sourceSets.getByName("release").java.srcDir("src/standard/java")
     sourceSets.getByName("androidTest").assets.srcDir("$projectDir/schemas")
+    sourceSets.getByName("androidTest").assets.srcDir("src/test/resources/photo")
+    // Real API driver is deliberately excluded from ordinary CI/device fixtures.
+    if (providers.gradleProperty("O1_LIVE_API_RECEIPT_TEST").orElse("false").get() == "true") {
+        sourceSets.getByName("androidTest").java.srcDir("src/liveReceipt/java")
+    }
     compileOptions {
         sourceCompatibility = JavaVersion.VERSION_17
         targetCompatibility = JavaVersion.VERSION_17
@@ -59,6 +67,7 @@ dependencies {
     ksp(libs.room.compiler)
     implementation(libs.datastore.preferences)
     implementation(libs.appauth)
+    implementation(libs.exifinterface)
     debugImplementation(libs.compose.tooling)
     debugImplementation(libs.compose.test.manifest)
     "validationImplementation"(libs.compose.tooling)
@@ -69,4 +78,14 @@ dependencies {
     androidTestImplementation(libs.compose.ui.test)
     androidTestImplementation(libs.android.test.runner)
     androidTestImplementation(libs.android.test.junit)
+}
+
+// Independent validation version channel prevents downgrading shared test data.
+androidComponents {
+    onVariants(selector().withBuildType("validation")) { variant ->
+        variant.outputs.forEach { output ->
+            output.versionCode.set(1000 + checkNotNull(android.defaultConfig.versionCode))
+            output.versionName.set(checkNotNull(android.defaultConfig.versionName) + ".validation")
+        }
+    }
 }

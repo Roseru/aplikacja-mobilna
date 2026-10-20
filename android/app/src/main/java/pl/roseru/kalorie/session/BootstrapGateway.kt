@@ -10,6 +10,7 @@ import pl.roseru.kalorie.core.RankingConsentAttempt
 import pl.roseru.kalorie.core.RankingQuery
 import pl.roseru.kalorie.core.NemesisQuery
 import pl.roseru.kalorie.core.NemesisReadProtocol
+import pl.roseru.kalorie.core.NemesisAttempt
 import pl.roseru.kalorie.core.catalog.StrictJson
 import pl.roseru.kalorie.core.requireHttps
 import pl.roseru.kalorie.data.OwnerLease
@@ -39,12 +40,22 @@ internal interface BootstrapGateway {
 internal interface ProfileGateway {
     suspend fun get(session: ApiSession, beforeSend: suspend () -> Unit): BootstrapHttpResult
 }
+internal interface PhotoCapabilitiesGateway : ProfileGateway
+internal class HttpsPhotoCapabilitiesGateway(base: String,
+    private val open: (URL) -> HttpsURLConnection = { it.openConnection() as HttpsURLConnection }) : PhotoCapabilitiesGateway {
+    private val url = URL(BootstrapHttpProtocol.endpoint(base).toString().removeSuffix("/me/bootstrap") + "/ai/capabilities")
+    override suspend fun get(session: ApiSession, beforeSend: suspend () -> Unit) =
+        HttpsJsonTransport.request(url, "GET", session, null, open, beforeSend, requireNoStore = true, privateErrors = true)
+}
 internal interface MotivationGateway : ProfileGateway
 internal interface RankingGateway {
     suspend fun get(session: ApiSession, query: RankingQuery, beforeSend: suspend () -> Unit): BootstrapHttpResult
 }
 internal interface NemesisGateway {
     suspend fun get(session: ApiSession, epoch: String, query: NemesisQuery, beforeSend: suspend () -> Unit): BootstrapHttpResult
+}
+internal interface NemesisWriteGateway {
+    suspend fun send(session: ApiSession, request: NemesisAttempt, beforeSend: suspend () -> Unit): BootstrapHttpResult
 }
 internal interface RankingConsentGateway {
     suspend fun put(session: ApiSession, request: RankingConsentAttempt, beforeSend: suspend () -> Unit): BootstrapHttpResult
@@ -154,12 +165,24 @@ internal class HttpsNemesisGateway(base: String,
 }
 
 /** Shared bounded transport; callers cannot supply an arbitrary URL or extra headers. */
+internal class HttpsNemesisWriteGateway(base: String,
+    private val open: (URL) -> HttpsURLConnection = { it.openConnection() as HttpsURLConnection }) : NemesisWriteGateway {
+    private val endpoint = BootstrapHttpProtocol.endpoint(base).toString().removeSuffix("/me/bootstrap")
+    override suspend fun send(session: ApiSession, request: NemesisAttempt, beforeSend: suspend () -> Unit) =
+        HttpsJsonTransport.request(URL(endpoint + request.command.path()), request.command.method, session, request.key, open, beforeSend,
+            NemesisReadProtocol.MAX_BYTES, requireNoStore = true, syncEpoch = request.epoch, privateErrors = true, nemesis = request)
+}
+
 private object HttpsJsonTransport {
     suspend fun request(url: URL, method: String, session: ApiSession, key: String?,
         open: (URL) -> HttpsURLConnection, beforeSend: suspend () -> Unit,
         maxBytes: Int = BootstrapHttpProtocol.MAX_BYTES, requireNoStore: Boolean = false,
-        consent: RankingConsentAttempt? = null, syncEpoch: String? = null, privateErrors: Boolean = false) = withContext(Dispatchers.IO) {
+        consent: RankingConsentAttempt? = null, syncEpoch: String? = null, privateErrors: Boolean = false,
+        nemesis: NemesisAttempt? = null) = withContext(Dispatchers.IO) {
         syncEpoch?.let(NemesisReadProtocol::uuid)
+        require(consent == null || nemesis == null)
+        if (nemesis != null) require(key == nemesis.key && syncEpoch == nemesis.epoch && method == nemesis.command.method)
+        val payload = consent?.body() ?: nemesis?.command?.body()
         require(session.accessToken.isNotBlank() && session.accessToken.length <= 65_536 &&
             session.accessToken.none { it.isWhitespace() || it.isISOControl() })
         val connection = open(url)
@@ -167,7 +190,7 @@ private object HttpsJsonTransport {
             connection.requestMethod = method
             connection.instanceFollowRedirects = false
             connection.useCaches = false
-            connection.doOutput = consent != null
+            connection.doOutput = payload != null
             connection.connectTimeout = 15_000
             connection.readTimeout = 15_000
             connection.setRequestProperty("Authorization", "Bearer ${session.accessToken}")
@@ -181,14 +204,21 @@ private object HttpsJsonTransport {
                 connection.setRequestProperty("Content-Type", "application/json; charset=utf-8")
                 connection.setRequestProperty("If-Match", "\"${consent.baseRevision}\"")
                 consent.consentEpoch?.let { connection.setRequestProperty("X-Ranking-Consent-Epoch", it) }
-                connection.setFixedLengthStreamingMode(consent.body().size)
+            }
+            nemesis?.command?.baseRevision?.let { connection.setRequestProperty("If-Match", "\"$it\"") }
+            if (payload != null) {
+                connection.setRequestProperty("Content-Type", "application/json; charset=utf-8")
+                connection.setFixedLengthStreamingMode(payload.size)
             }
             coroutineContext.ensureActive()
             beforeSend()
             val deadline = System.nanoTime() + 30_000_000_000L
-            if (consent != null) connection.outputStream.use { it.write(consent.body()) }
+            if (payload != null) connection.outputStream.use { it.write(payload) }
             val status = connection.responseCode
             require(status in 200..599 && status !in 300..399)
+            if (ApiReadObservation.ENABLED && method == "GET" &&
+                url.path in setOf("/api/v1/me", "/api/v1/me/motivation")) ApiReadObservation.record(method, url.path, status,
+                connection.getHeaderField("Cache-Control"), connection.getHeaderField("X-Request-ID"))
             // A proxy may return HTML for overload. Honour its delay without reading/echoing the body.
             if (status == 429 || status == 503) return@withContext BootstrapHttpResult(status, ByteArray(0), connection.getHeaderField("Retry-After"))
             if ((status == 200 || privateErrors) && requireNoStore) require(connection.getHeaderField("Cache-Control")
@@ -196,7 +226,7 @@ private object HttpsJsonTransport {
             val contentType = connection.contentType?.substringBefore(';')?.trim()
             require(contentType.equals("application/json", ignoreCase = true))
             require(connection.getHeaderField("Content-Encoding").let { it == null || it.equals("identity", ignoreCase = true) })
-            val bound = if (status == 200) maxBytes else BootstrapHttpProtocol.MAX_BYTES
+            val bound = if (status in 200..299) maxBytes else BootstrapHttpProtocol.MAX_BYTES
             require(connection.contentLengthLong <= bound)
             val stream = if (status in 200..299) connection.inputStream else connection.errorStream
             val bytes = checkNotNull(stream).use {
@@ -208,6 +238,7 @@ private object HttpsJsonTransport {
                 }
             }
             val etag = if (consent != null) connection.getHeaderField("ETag")?.also { require(it.length <= 32) } else null
+            if (ApiReadObservation.ENABLED) ApiReadObservation.beforeReturn(method, url.path, status, deadline)
             BootstrapHttpResult(status, bytes, connection.getHeaderField("Retry-After"), etag)
         } finally { connection.disconnect() }
     }

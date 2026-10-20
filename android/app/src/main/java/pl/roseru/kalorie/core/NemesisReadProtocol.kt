@@ -73,6 +73,7 @@ object NemesisReadProtocol {
         return NemesisPage(items.toList(), cursor)
     }
     internal fun detail(bytes: ByteArray, id: String) = challenge(read(bytes)).also { require(it.id == id) }
+    internal fun metadata(bytes: ByteArray) = challenge(read(bytes))
     private fun challenge(json: JSONObject): NemesisChallenge {
         exact(json, "id", "revision", "role", "status", "terms", "invited_at", "expires_at", "accepted_at", "start_date", "end_date",
             "start_at", "end_at", "deadline", "result_status", "cancel_reason", "partner_pseudonym")
@@ -106,7 +107,7 @@ object NemesisReadProtocol {
         return NemesisChallenge(id, revision, role, status, terms, invited, expires, accepted, startDate, endDate, start, end,
             deadline, result, reason, if (status == "cancelled") null else partner)
     }
-    private fun terms(json: JSONObject): NemesisTerms {
+    internal fun terms(json: JSONObject): NemesisTerms {
         exact(json, "rule_version", "duration_days", "time_zone", "scope")
         require(json.get("rule_version") == Achievements.RULE)
         val days = integer(json, "duration_days", 7, 90).toInt(); require(days in setOf(7, 30, 90))
@@ -175,7 +176,7 @@ object NemesisReadProtocol {
     private fun choice(json: JSONObject, key: String, vararg values: String) = (json.get(key) as String).also { require(it in values) }
     private fun <T> nullable(json: JSONObject, key: String, parse: (Any) -> T): T? = if (json.get(key) === JSONObject.NULL) null else parse(json.get(key))
     private fun date(value: String) = LocalDate.parse(value.also { require(Regex("\\d{4}-\\d{2}-\\d{2}").matches(it)) }).also { require(it.year in 1..9999) }
-    private fun timestamp(value: String): Instant {
+    internal fun timestamp(value: String): Instant {
         require(Regex("\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}(\\.[0-9]{1,6})?Z").matches(value))
         require(LocalDateTime.parse(value.dropLast(1)).year in 1..9999)
         return Instant.parse(value)

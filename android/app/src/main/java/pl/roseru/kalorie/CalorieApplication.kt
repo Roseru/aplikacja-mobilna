@@ -8,7 +8,7 @@ import pl.roseru.kalorie.session.*
 import pl.roseru.kalorie.core.sync.*
 
 class CalorieApplication : Application() {
-    val database by lazy { Room.databaseBuilder(this, CalorieDatabase::class.java, "calorie-diary.db").addMigrations(MIGRATION_1_2, MIGRATION_2_3, MIGRATION_3_4, MIGRATION_4_5, MIGRATION_5_6, MIGRATION_6_7, MIGRATION_7_8).addCallback(DATABASE_GUARDS).build() }
+    val database by lazy { Room.databaseBuilder(this, CalorieDatabase::class.java, "calorie-diary.db").addMigrations(MIGRATION_1_2, MIGRATION_2_3, MIGRATION_3_4, MIGRATION_4_5, MIGRATION_5_6, MIGRATION_6_7, MIGRATION_7_8, pl.roseru.kalorie.photo.MIGRATION_8_9).addCallback(DATABASE_GUARDS).build() }
     // Legacy guest setup API. UI repositories always use the active, captured lease.
     val repository get() = DiaryRepository(database, this)
     val preferences by lazy { Preferences(this) }
@@ -29,11 +29,17 @@ class CalorieApplication : Application() {
             try { HttpsRankingGateway(it) } catch (_: Exception) { null }
         }, nemesisGateway = getString(R.string.api_base_url).takeIf { it.isNotEmpty() }?.let {
             try { HttpsNemesisGateway(it) } catch (_: Exception) { null }
+        }, nemesisWriteGateway = getString(R.string.api_base_url).takeIf { it.isNotEmpty() }?.let {
+            try { HttpsNemesisWriteGateway(it) } catch (_: Exception) { null }
+        }, photoCapabilitiesGateway = getString(R.string.api_base_url).takeIf { it.isNotEmpty() }?.let {
+            try { HttpsPhotoCapabilitiesGateway(it) } catch (_: Exception) { null }
         }, snapshotProtocol = SnapshotProtocol(SyncWireSchema(SyncWireSchema.FILES.associateWith { file ->
             assets.open("sync/$file").use { it.readBytes() }
         }))) }
     override fun onCreate() {
         super.onCreate()
-        sessionScope.launch { sessions.start(); sessions.observeMotivationContext() }
+        // Finish process attachment before lazy Room initialization; Main.immediate
+        // would perform it inline inside Application.onCreate on a cold process.
+        sessionScope.launch(Dispatchers.Main) { sessions.start(); sessions.observeMotivationContext() }
     }
 }

@@ -17,7 +17,7 @@ import pl.roseru.kalorie.DiaryEvent
 import pl.roseru.kalorie.DiaryViewModel
 import pl.roseru.kalorie.session.*
 
-@Composable fun CalorieApp(model: DiaryViewModel, session: SessionView, actions: SessionActions) {
+@Composable fun CalorieApp(model: DiaryViewModel, session: SessionView, actions: SessionActions, photoModel: pl.roseru.kalorie.photo.MealPhotoViewModel) {
     val ready by model.ready.collectAsStateWithLifecycle()
     val error by model.startupError.collectAsStateWithLifecycle()
     val nav = rememberNavController()
@@ -42,7 +42,7 @@ import pl.roseru.kalorie.session.*
     Scaffold(
         snackbarHost = { SnackbarHost(snackbar) },
         bottomBar = {
-            if (route !in listOf("food", "rations", "custom")) NavigationBar(containerColor = MaterialTheme.colorScheme.surface) {
+            if (route !in listOf("food", "rations", "custom", "photo")) NavigationBar(containerColor = MaterialTheme.colorScheme.surface) {
                 NavigationBarItem(selected = route == "diary", onClick = { nav.navigate("diary") { popUpTo("diary"); launchSingleTop = true } },
                     icon = { Icon(Icons.AutoMirrored.Outlined.Assignment, contentDescription = null) }, label = { Text("Dziennik") })
                 NavigationBarItem(selected = route == "analytics", onClick = { nav.navigate("analytics") { launchSingleTop = true } },
@@ -56,8 +56,13 @@ import pl.roseru.kalorie.session.*
     ) { padding ->
         NavHost(nav, startDestination = "diary", modifier = Modifier.padding(padding).consumeWindowInsets(padding)) {
             composable("diary") { DiaryScreen(model, onAdd = { nav.navigate("food") }, onSettings = { nav.navigate("settings") { launchSingleTop = true } }) }
-            composable("food") { FoodScreen(model, onBack = { nav.popBackStack() }, onRations = { nav.navigate("rations") }, onCustom = { nav.navigate("custom") }) }
+            composable("food") { FoodScreen(model, onBack = { nav.popBackStack() }, onRations = { nav.navigate("rations") }, onCustom = { nav.navigate("custom") }, onPhoto = { nav.navigate("photo") }) }
             composable("rations") { RationScreen(model, onBack = { nav.popBackStack() }) }
+            composable("photo") {
+                val day by model.day.collectAsStateWithLifecycle()
+                MealPhotoScreen(photoModel, day.date, onBack = { nav.popBackStack() }, onManual = { nav.navigate("custom") },
+                    session = session, onReadCapabilities = actions.readPhotoCapabilities)
+            }
             composable("custom") { CustomFoodScreen(model, onBack = { nav.popBackStack() }) }
             composable("settings") { SettingsScreen(model) }
             composable("profile") { ProfileScreen(model, onAccount = { nav.navigate("account") { launchSingleTop = true } },
@@ -82,5 +87,5 @@ import pl.roseru.kalorie.session.*
             }) }
         }
     }
-    if (route in listOf("settings", "profile", "analytics", "account", "achievements", "ranking-consent", "ranking", "nemesis")) BackHandler { nav.popBackStack() }
+    if (route in listOf("photo", "settings", "profile", "analytics", "account", "achievements", "ranking-consent", "ranking", "nemesis")) BackHandler { nav.popBackStack() }
 }
