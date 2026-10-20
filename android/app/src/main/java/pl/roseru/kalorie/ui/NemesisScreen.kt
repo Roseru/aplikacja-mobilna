@@ -27,7 +27,7 @@ import java.time.format.DateTimeFormatter
     val account = view.binding?.owner?.kind == "account"
     val available = account && view.nemesisConfigured && view.serverLinked && !view.requiresRecovery && !view.pendingLogin
     val busy = view.busy || view.nemesisBusy || view.bootstrapBusy || view.profileBusy || view.snapshotBusy ||
-        view.motivationBusy || view.rankingBusy || view.rankingConsentBusy
+        view.motivationBusy || view.rankingBusy || view.rankingConsentBusy || view.nemesisMutationBusy
     val state = if (available && !view.busy) view.nemesis else NemesisState.NotRequested
     fun refresh() { selected?.let(liveActions.readNemesisChallenge) ?: liveActions.readNemesis() }
     DisposableEffect(lifecycle) {
@@ -49,6 +49,7 @@ import java.time.format.DateTimeFormatter
             Text("Regularność we dwoje", color = MaterialTheme.colorScheme.onSurfaceVariant)
             Text("Punkty za kompletne dni i realizację własnego celu. Większy deficyt nie daje przewagi.", style = MaterialTheme.typography.bodySmall)
         }
+        if (available && view.nemesisMutationConfigured) item { NemesisMutationPanel(view, liveActions, busy) }
         item { when (state) {
             NemesisState.NotRequested -> Text(when {
                 !account -> "Zaloguj się, aby zobaczyć swoje rywalizacje. Dziennik i osiągnięcia są dostępne offline."
