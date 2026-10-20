@@ -63,7 +63,8 @@ Przyszła wspólna próba może dzięki tej funkcji przygotować syntetyczny Mea
 z normalnego formularza aplikacji, bez Gemini i seedowania SQL. Wymaga to
 integracji obu oddzielnych gałęzi: tej funkcji oraz
 [drivera PR138](https://github.com/Roseru/aplikacja-mobilna/pull/138), nowego
-skonfigurowanego APK i osobnego odbioru. Obecne APK nie zawierają tej zmiany.
+skonfigurowanego APK i osobnego odbioru. APK z odbioru rodzica129 nie zawierają tej zmiany. Nowe artefakty tego etapu
+kwalifikuje osobna sekcja20.10 poniżej.
 
 ## Weryfikacja lokalna i granice dowodów
 
@@ -89,3 +90,58 @@ HTTP lub Gemini. Numer wersji i schemat Room bez zmiany; historyczny manifest
 0.8.23 oraz jego320native nie kwalifikują nowej funkcji. Pełny build, regresja
 urządzenia, aktualizacja bez utraty danych i rzeczywisty push są osobnymi
 warunkami odbioru przed wydaniem. To praca przygotowana podczas gry właściciela.
+
+
+## Pełny odbiór lokalny 20.10.2026 — O1-088
+
+Źródło APK i testów: `c24583b81dc4aaea814eb476253aa632aba69645`,
+kod funkcji `3b4b1a6946205a9542e804dd24e22b5fbe68ae9e`.
+Rodzic nadal dokładny9a3a9a9/PR129; brak kodu niezależnego drivera138.
+Właściciel zakończył grę, dopuszczając pełny build i emulator. Restartu PC
+nie wykonywano; nadal wymaga osobnej zgody.
+
+- Build debug/validation/test APK PASS w585,59s;330JVM debug i345JVM
+  validation PASS, failures/errors/skips0. Wspólne testy wykonują się w obu
+  wariantach, więc nie jest to675 unikalnych scenariuszy. Lint0error/0fatal,
+  4warning/1information. Wszystkie śledzone wejścia Androida identyczne
+  przed i po buildzie oraz przed odbiorem instalacji.
+- Faktycznie wykonane8/8 nowych ManualMealStorageTest PASS. Następnie pełne
+  **328/328API35 offline PASS**, bez failures/skips,591,14s. Zawiera te8,
+  nie sumujemy do336. Kontrola trybu samolotowego, wyłączonego Wi-Fi i braku
+  sieci domyślnej przed/po. Zastępuje to wcześniejsze8Room NOT_RUN dla tego
+  konkretnego źródła; historyczny zapis powyżej pozostaje śladem19.10.
+- Oddzielny O1Tests35/5556 zaktualizowany wyłącznie install-r. Dokładny SHA
+  obu zainstalowanych APK zgodny z receipt;29 tabel SQLite (w tym techniczne)
+  identycznych przed/po instalacji, Room14/FK clean. Testy następnie pracują
+  na swoich syntetycznych bazach/fixtures; nie deklarujemy niezmienności
+  wszystkich tabel podczas rzeczywistych mutacji testowych.
+- Zwykły CodexCalories/5554 zaktualizowany0.8.22/code33/Room13 →
+  0.8.23/code34/Room14. Prywatny baseline poza Git/OneDrive: wszystkie27
+  dotychczasowych tabel i rowid meal_items identyczne po install-r i migracji,
+  FK clean. Bez clear/uninstall/downgrade. Aplikacja ponownie uruchomiona,
+  widoczne standardowe kontrolki i brak ANR; pozostawiona do prób ręcznych.
+  Oryginalna instalacja API O1Api35/5558 nie była aktualizowana lub czyszczona.
+
+| Artefakt z dokładnego źródła c24583b | SHA-256 |
+|---|---|
+| debug0.8.23/code34 | `e2214ae4b427894647f57383d6cfb34520c5063349d64462e9445c5b45deb5ae` |
+| validation0.8.23/code1034 | `dd4facd2ed2ae53713da4fa2ef290b9b397f87f37d4e74cf01912799009f7a97` |
+| test APK | `fa643cdc47d13f3ebd2713ca99b190f12e93c2c7497eb7397953898987f384ff` |
+
+Log pełnej regresji SHA256:
+`c807a21382e6799a3e11c9e6151d9b0991604d19b35abe557552c4bc03824aeb`.
+Pakiet lokalny poza Git: output-apk/manual139-c24583b, wygenerowane przez
+tools/android_ci.py: APK, manifest.json z wersją/commitem/SHA i SHA256SUMS.
+Nie nadpisuje pakietu rodzica o tej samej wersji. Binariów nie publikowano
+do repozytorium. Zwykły APK nie ma skonfigurowanych issuer/API; to lokalny
+odbiór offline, bez realnego logowania, push lub analizy Gemini.
+
+PR139 pozostaje zależnym draftem; własny pełny Project CI po integracji
+aktualnego main/rodzica jest osobnym warunkiem. Własny main po PR73 ma
+8/8SUCCESS CI39444389844, ale nie kwalifikuje139. PR96/head1042125 jest
+opublikowany na main i ma170/185JVM oraz194native PASS; przy odczycie trwa
+jeszcze local-integration, bez merge96. O1-087 w PR96 podaje szczegóły.
+Pełny E4, driver138, katalog/racje/legacy/import/WorkManager, recovery,
+E7 i KO32 nadal mają osobne bramki. Brak nowego relay, okna O3, deploy,
+zmiany używanej schema24/epoki/kont lub Google I/O. Do wspólnego E4 potrzebny
+jest nowy konkretny APK z oboma niezależnymi etapami i uzgodniony oracle O2/O3.

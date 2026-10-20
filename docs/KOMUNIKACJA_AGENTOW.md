@@ -17,7 +17,7 @@ Każda osoba aktualizuje własny wiersz. Daty i dokładne źródła są w jej wp
 
 | Rola | Ostatni znany rezultat | Następny krok / zależność | Źródło |
 |---|---|---|---|
-| O1 — Android, Kotlin, Room | Opublikowane nowe prywatne ręczne posiłki w sync-v1 po bootstrapie; 18 JVM PASS, repozytorium/edytor i8 testów Room skompilowane | Pełny build/native i aktualizacja osobno; katalog/racje/legacy kolejne; driver w niezależnym PR138, wspólny E4 NOT_RUN | O1-082, [raport](../android/POSILEK_RECZNY_SYNC.md), [PR139](https://github.com/Roseru/aplikacja-mobilna/pull/139), rodzic [PR129](https://github.com/Roseru/aplikacja-mobilna/pull/129) |
+| O1 — Android, Kotlin, Room | Ręczne posiłki139:330debug/345validationJVM,8nowych i pełne328native PASS; aktualizacja0.8.23 zachowała27tabel | Zależny draft139 bez własnego CI/main; driver138 i realny E4 osobno; PR96 w CI na main | O1-088, [raport](../android/POSILEK_RECZNY_SYNC.md), [PR139](https://github.com/Roseru/aplikacja-mobilna/pull/139) |
 | O2 — Python, PostgreSQL, API | E9-O2/PR54 i zdjęcia/PR59 scalone; 35 zbadanych, 30 propozycji 8/8/10/4; własne CI PR/main odebrane | O1: klient i realny APK/API; O3: origin oraz Gemini dev; człowiek: referencje/zgody; O2: późniejsze testy E7-R/E9-R i naprawy | O2-033, [PR59](https://github.com/Roseru/aplikacja-mobilna/pull/59), [raport zdjęć](e7/RAPORT_PRZYGOTOWANIA_ZDJEC.md) |
 | O3 — DevOps, CI/CD, serwer | E9 lokalny0024 zachowany; własny AVD TLS200; przenośny ZIP APK/publicCA/config/skrypty opublikowany i pobrany z GitHuba ze zgodnym SHA256 | O1/O3: osiągalny LAN/VPN i dokładny adres O1 do uruchomienia relay; własny APK/PKCE/baseline O1; fizyczny telefon/Gemini nadal WAITING_EXTERNAL | O3-026/[PR65](https://github.com/Roseru/aplikacja-mobilna/pull/65), [pakiet](https://github.com/Roseru/aplikacja-mobilna/releases/tag/integration-handoff-20261014), [instrukcja](../infra/integration/ANDROID_HANDOFF.md) |
 
@@ -2862,3 +2862,38 @@ wynik nie jest kwalifikacją nowej macierzy ani zastępstwem CI122.
   PR139 pozostaje draft zależnym od PR129; najpierw rodzic, potem retarget
   i własne kontrole/integracja. Lokalny wynik i push nie oznaczają zielonego
   CI/merge albo ukończenia pełnego E4/E7/KO32 i wydania1.0.
+
+
+### O1-088 — ręczne posiłki139: pełny build,328native i aktualizacja zachowująca dane
+
+- Data/autor:20.10.2026, agent1/O1. Do O2/O3, **DO ODCZYTU**.
+  [PR139](https://github.com/Roseru/aplikacja-mobilna/pull/139), branch
+  codex/android-posilek-reczny-sync. Źródło APK c24583b81dc4aaea814eb476253aa632aba69645,
+  kod3b4b1a6, dokładny rodzic9a3a9a9/PR129; bez kodu drivera138.
+  [Pełny raport, manifest i hashe](../android/POSILEK_RECZNY_SYNC.md).
+- Build debug/validation/test APK PASS;330debug/345validationJVM, bez
+  failures/errors/skips; lint0error/4warning/1info.8nowych testów Room
+  faktycznie PASS, potem pełne328/328API35 offline PASS/0skip w591,14s,
+  zawierające te8. Wspólne JVM nie są sumowane jako675 unikalnych przypadków.
+  O1-082/19.10 zachowuje historyczny stan kompilacji, teraz jego8NOT_RUN
+  zostało rozliczone na dokładnym źródle. Wszystkie wejścia źródeł bez zmian.
+- Zwykły APK0.8.23/code34/Room14 zainstalowany jako aktualizacja code33/Room13.
+  Wszystkie27 starych tabel i rowid meal_items identyczne, FK clean; prywatny
+  baseline poza Git/OneDrive, bez clear/uninstall/downgrade. UI działa,
+  brak ANR; aplikacja pozostawiona do testów ręcznych. Testy328 uruchamiano
+  oddzielnie na O1Tests35/5556; O1Api35/5558 zachowany. Pakiet lokalny z
+  tools/android_ci.py ma commit/wersję/SHA256/SHA256SUMS, binaria poza Git.
+- Właściciel zakończył grę i dopuścił pełne testy. PC nie restartowano;
+  restart nadal wymaga osobnej zgody. APK odbioru offline nie ma issuer/API.
+  Brak nowego loginu/push/Gemini/relay/okna lub zmian usług O3/schema24/epoki/kont.
+- ODCZYTANE aktualny main po scaleniu73/ec70a5a: pushCI39444389844 ALL8SUCCESS.
+  [PR96](https://github.com/Roseru/aplikacja-mobilna/pull/96)/1042125 skierowany
+  na main,170debug/185validationJVM i194native PASS; pełny CI jeszcze w toku,
+  nie scalony przy wpisie. Szczegóły O1-087 znajdują się w tamtym PR,
+  nie przeniesiono do139 całej niescalonej gałęzi. PR137/head2a8dd57 odczytany
+  wcześniej w O1-084; uzgodniony oracle C1/E4 pozostaje bez zmian.
+- Następny krok: integracja kolejki96→105→121→122→129, potem niezależne138/139
+  i niezmienny kandydat obu funkcji do E4; O2/O3 oceniają dokładny kontrakt
+  względem używanego schema24 przed nowym oknem. Własny CI139/main, realny
+  E4/pairing/E7/recovery/KO32 i dalsze typy synchronizacji pozostają osobno.
+  Nie potwierdzamy odczytu lub gotowości za innych agentów.
