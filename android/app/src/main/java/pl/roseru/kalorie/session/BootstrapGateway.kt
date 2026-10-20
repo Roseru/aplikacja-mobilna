@@ -40,6 +40,13 @@ internal interface BootstrapGateway {
 internal interface ProfileGateway {
     suspend fun get(session: ApiSession, beforeSend: suspend () -> Unit): BootstrapHttpResult
 }
+internal interface PhotoCapabilitiesGateway : ProfileGateway
+internal class HttpsPhotoCapabilitiesGateway(base: String,
+    private val open: (URL) -> HttpsURLConnection = { it.openConnection() as HttpsURLConnection }) : PhotoCapabilitiesGateway {
+    private val url = URL(BootstrapHttpProtocol.endpoint(base).toString().removeSuffix("/me/bootstrap") + "/ai/capabilities")
+    override suspend fun get(session: ApiSession, beforeSend: suspend () -> Unit) =
+        HttpsJsonTransport.request(url, "GET", session, null, open, beforeSend, requireNoStore = true, privateErrors = true)
+}
 internal interface MotivationGateway : ProfileGateway
 internal interface RankingGateway {
     suspend fun get(session: ApiSession, query: RankingQuery, beforeSend: suspend () -> Unit): BootstrapHttpResult

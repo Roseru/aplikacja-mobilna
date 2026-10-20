@@ -23,7 +23,8 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import pl.roseru.kalorie.photo.MealPhotoViewModel
 import java.time.LocalDate
 
-@Composable fun MealPhotoScreen(model: MealPhotoViewModel, date: LocalDate, onBack: () -> Unit, onManual: () -> Unit) {
+@Composable fun MealPhotoScreen(model: MealPhotoViewModel, date: LocalDate, onBack: () -> Unit, onManual: () -> Unit,
+    session: pl.roseru.kalorie.session.SessionView = pl.roseru.kalorie.session.SessionView(), onReadCapabilities: () -> Unit = {}) {
     val drafts by model.drafts.collectAsStateWithLifecycle()
     val busy by model.busy.collectAsStateWithLifecycle()
     val message by model.message.collectAsStateWithLifecycle()
@@ -64,6 +65,7 @@ import java.time.LocalDate
             message?.let { Text(it,Modifier.testTag("photo-message")) }
             TextButton(onClick=onManual, modifier=Modifier.testTag("photo-manual")) { Text("Dodaj posiłek ręcznie") }
         }
+        item { PhotoCapabilitiesPanel(session, onReadCapabilities) }
         item { Text("Zapisane zdjęcia · ${drafts.size}", style=MaterialTheme.typography.titleMedium, modifier=Modifier.testTag("photo-count")) }
         if (drafts.isEmpty()) item { Text("Nie ma jeszcze zapisanych zdjęć.", Modifier.testTag("photo-empty")) }
         items(drafts,key={it.id}) { row ->

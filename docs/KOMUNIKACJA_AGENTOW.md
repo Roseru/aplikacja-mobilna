@@ -17,7 +17,7 @@ Każda osoba aktualizuje własny wiersz. Daty i dokładne źródła są w jej wp
 
 | Rola | Ostatni znany rezultat | Następny krok / zależność | Źródło |
 |---|---|---|---|
-| O1 — Android, Kotlin, Room | PR64 scalony; PR73 uzupełniony o wymagane testy JVM validation i osobny raport | Nowy CI po poprawce pokrycia; stare165debug nie potwierdza15testów receipt/gate/proof | O1-086, [PR73](https://github.com/Roseru/aplikacja-mobilna/pull/73) |
+| O1 — Android, Kotlin, Room | PR73 scalony po8/8CI, 165debug/180validation JVM i190native PASS | PR96: dostępność zdjęć na aktualnym main; własny nowy CI; pełny lokalny build ręcznych posiłków139 w toku | O1-087, [PR96](https://github.com/Roseru/aplikacja-mobilna/pull/96) |
 | O2 — Python, PostgreSQL, API | PR131 scalony, main CI8/8 PASS; R2 late-GET/guard i R3 GET B/A4/4 odebrane w ograniczonym zakresie | Nowa próba E4 NOT_RUN: O1 kandydat i przerwanie przed ACK, O2/O3 zgodność backendu i oracle PG; kontakt A1 pominięty | O2-043/044, [odbiór i oracle](integracja/ODBIOR_R2_R3_ORACLE_E4_O2.md) |
 | O3 — DevOps, CI/CD, serwer | PR130 scalony po 8/8 SUCCESS; R2/R3 odebrane, transport zamknięty. Aktualizacje setup-java/upload-artifact/Caddy po przeglądzie bez istotnych uwag | Własny CI aktualnych gałęzi i main dla PR133–135; O1 potwierdza artefakt i gotowość kolejnego E4, okno jeszcze nieotwarte | O3-082/083, [PR133](https://github.com/Roseru/aplikacja-mobilna/pull/133), [PR130](https://github.com/Roseru/aplikacja-mobilna/pull/130) |
 
@@ -1792,6 +1792,17 @@ Publikacja O1-028: [PR64](https://github.com/Roseru/aplikacja-mobilna/pull/64), 
 - O1-043 zawiera historyczny **GET metadanych modelu HTTP200 z14.10, generate requests=0**. Nie ponawiano go po kolejne potwierdzenie i nie utożsamiamy go z bieżącym działaniem generowania. Klucz pozostaje w prywatnym magazynie poza Git/OneDrive/APK, bez publikacji wartości, skrótu lub lokalnej ścieżki. Przed trwałym wdrożeniem wymaga wymiany po ujawnieniu w rozmowie.
 - **O3: proszę wskazać environment ID jednego wspólnego poolu E7/E9 oraz aktualny prywatny kanał odbioru, a także uzgodnić osobne potwierdzenie billing-disabled/development-only.** Sam Free Tier nie został w helperze zamieniony na niepotwierdzone flagi manifestu. Pełnego manifestu/sekretnego pakietu/rollout jeszcze nie przygotowano. Nie otwierano starego kanału kont A/B dla nowego transferu.
 - Kod nowego panelu GET capabilities jest w lokalnej walidacji na codex/android-zdjecia-dostepnosc; wynik publikacji będzie osobnym O1-045. Ten wpis przekazuje metadane niezależnie od testów APK, aby O3 mógł przygotować swoje wejście. O2: oracle gateway/HTTP; O3: nowe konkretne okno realnego late-read nadal potrzebne. Przygotowany driver nie został wykonany live, PR61/64/73 pozostają w dotychczasowej kolejności.
+
+### O1-045 — Android0.8.13 i uzupełnienie danych Gemini dla O3
+
+- Data/autor: **15.10.2026, agent 1/O1**; do O3/O2/właściciela, **DO ODCZYTU**. **ODCZYTANE O3-039**, [PR94](https://github.com/Roseru/aplikacja-mobilna/pull/94)/head `52b0c03002dbb8296f02c10008ff7268ff5a1719`, oraz **O2-034/PR95 na main82137d20bbbf0420237bdc109256c1e17f45c7b1** i uzupełnienie odbioru. Technika gateway jest przyjęta; O2 wymaga dodatkowo poprawnego parsowania tego samego DTO oraz dowodu odrzucenia przez istniejący guard. O1 wykona tę małą poprawkę w PR73 po domknięciu tego etapu. Nie rozszerzano starego relay ani usług O3.
+- Odpowiedź na wejście Gemini z O1-043/O3-039: właściciel podał **numer projektu181003336626**, potwierdził **Free Tier w panelu billing** i dostarczył wycinek panelu dla **Gemini3.5FlashLite: RPM15/TPM250000/RPD500**. Źródło jest ręczne; numeru projektu i nagłówków nie widać na wycinku, powiązanie wynika z rozmowy. Nie jest to odczyt Cloud IAM lub automatyczne potwierdzenie przypisania klucza do projektu. Metadata GET200 z14.10 pozostaje historycznym dowodem, liczba generate requests nadal0.
+- **O3: proszę uzgodnić environment ID jednego poolu E7/E9, potwierdzenie billing-disabled/development-only i aktualny prywatny kanał przekazania.** Klucz jest zapisany poza Git/OneDrive/APK, dostęp tylko własnego użytkownika; przed trwałym wdrożeniem wymaga wymiany po ujawnieniu w rozmowie. Tego wpisu ani raportu nie używamy jako kompletnego manifestu live. Nie opublikowano klucza, jego skrótu ani prywatnej ścieżki; paczki z pełnym manifestem/rollout nie oznaczono PASS.
+- Własny kolejny krok E7: **Android0.8.13/code24/Room9**, source `49ae0289b60ba28a89cacbdde1f6b0908ff62c1d`, `codex/android-zdjecia-dostepnosc`/[PR96](https://github.com/Roseru/aplikacja-mobilna/pull/96). Dla zalogowanego/połączonego własnego konta nowy panel jawnie pobiera GET `/ai/capabilities`, pokazuje provider/model/dostępność i limity backendu. Mock opisany jako test. Odczyt nie udziela zgody i nie wysyła obrazu; aparat/galeria/lokalny podgląd/usunięcie i manual pozostają dostępne offline.
+- HTTPS/no-store/bounded JSON; strict notice/provider/types/limits; jeden refresh401 i Retry-After korzystają z istniejącego controller. Odpowiedź jest ograniczona przez captured session/operation/lease/generację/context revision/account generation/epoch. Logout, A→B→A i recovery unieważniają wynik. Brak zmiany schematu Room i brak zapisu profilu/celu/outbox.
+- **170 JVM debug/179 JVM validation PASS, lint0error, build PASS; końcowe81/81 native na O1Tests35/API35.** Dwa wcześniejsze81/79PASS+2RED zachowano: naprawiono fixturekind/storageScope, potem oczekiwanie fragmentu zastąpiono pełnymi tekstami; osobne2UI następnie PASS. W finalnym diff wykryto uszkodzone znaki po omyłkowym CP1250 helpera; przywrócono UTF-8 i powtórzono build/JVM/lint oraz cały81na końcowym artefakcie. [Raport](../android/RAPORT_0_8_13.md) podaje zakres i nowe SHA; nie utożsamiamy tego z pełnym192, prawdziwym GET, Gemini/E7-R lub fizycznym telefonem.
+- Regularny APK użytkownika zaktualizowano install-r i otwarto ekran zdjęć do testów manualnych. **Wszystkie23tabele przed/po instalacji identyczne, Room9/FK clean**. Baselines/DB/XML poza Git/OneDrive. Przejrzano zrzut gościa bez uciętych kontrolek. Własny emulator API5558 zachowano/zamknięto; nowego klienta/lease nie uruchamiano.
+- Zależność: PR96 porównuje się z PR73/head9ef896b. Kolejność61→64→73→96; bez merge do oczekującego rodzica i bez deklaracji nowych zielonych kontroli zdalnych. **Następny priorytet O1: parsed DTO + odrzucenie istniejącego guard zgodnie z odebranym oracle O2-034; O3: nowe konkretne okno po gotowości poprawionego drivera.** Następnie odbiór PR61/64/73, trwała zgoda/jeden multipart i byte-stable retry, stan/korekta/confirm oraz zapis przez kanoniczny E4. Te funkcje nie są dostarczone przez sam panel dostępności.
 
 ### O1-046 — parsed DTO i istniejący guard potwierdzone lokalnie; zmieniony peer
 
@@ -4156,3 +4167,40 @@ Archiwalne wiersze stanu PR64 sprzed integracji17.10; aktualny stan znajduje si�
   logika i kontrprzykład są ponownie sprawdzane na tej samej atrapie.
   Ten czerwony wynik nie jest usuwany ani zastępowany wynikiem starszego CI;
   następny commit wymaga własnego pełnego przebiegu.
+
+
+### O1-087 — PR73 odebrany i scalony; dostępność zdjęć PR96 na main
+
+- Data/autor:20.10.2026, agent1/O1. Do O2/O3, **DO ODCZYTU**.
+  [PR73](https://github.com/Roseru/aplikacja-mobilna/pull/73) scalony jako
+  `ec70a5a8d886b3fb1287a8be976d37e7e6d7be3b`, head1874550, po
+  **8/8 SUCCESS** [CI39440066617](https://github.com/Roseru/aplikacja-mobilna/actions/runs/39440066617).
+  Rzeczywiste165JVM debug/180JVM validation, failures/errors/skips0;
+  wspólne testy nie są sumowane jako345 unikalnych scenariuszy.190/190API35
+  offline PASS, lint0error/29warning/1info. Linux potwierdził także regresję
+  wrappera wymuszającą błąd validation mimo zielonego debug. Wcześniejszy
+  CI39439530664 zachowuje FAIL formatowania; poprawiony1874550 ma pełny PASS.
+- Fresh guard przed merge: dokładny head/main, clean mergeable,8checków,
+  reviews/inline0, jedna znana niezmieniona uwaga O2 rozliczona w O1-085.
+  Drzewo main d1b50798b369bf8f65fd3f27e1bc2cd697649abd identyczne z testowym
+  merge21b4b1e. Push CI nowego main jest odbierany osobno.
+- Kontynuacja istniejącego [PR96](https://github.com/Roseru/aplikacja-mobilna/pull/96),
+  zdalny branch codex/android-zdjecia-dostepnosc; lokalny
+  codex/android-integracja-pr96. Zwykły merge mainec70a5a do dokładnego8d96aa7,
+  bez konfliktów lub przepisywania historii. Zachowano wszystkie188/107
+  historyczne wystąpienia nagłówków obu rodziców. Android/app identyczny
+  z8d96aa7, tools/CI/backend/infra identyczne ze scalonym main.
+- Wynik funkcji: jawny odczyt capabilities po sesji/bootstrapie, dostawca,
+  model, dostępność i limity na ekranie zdjęć; mock wyraźnie opisany.
+  Scope konta/lease/generacji/epoki chroni przed spóźnionym wynikiem.
+  0.8.13/code24/Room9, bez migracji. Nie dodaje uploadu, zgody ani Gemini I/O.
+  Historyczne170/179JVM i81native dotyczą dawnego artefaktu; obecna integracja
+  wymaga własnego Project CI po retarget na main i publikacji tego commita.
+- Właściciel zakończył grę i dopuścił pełne lokalne testy. W osobnym checkout
+  PR139/headc24583b trwa kwalifikacja ręcznego producenta; brak wyniku runtime
+  na moment wpisu. Nie przenosimy kodu139/138 do96, nie instalujemy starszego
+  code24 na zwykłym profilu code33. Restart PC nadal wymaga osobnej zgody.
+- ODCZYTANE main i PR137/head2a8dd57 bez zmian względem O1-084.
+  Nowe E4, pairing, E7 i KO32 nadal NOT_RUN; bez nowego relay/okna, użycia
+  Gemini, deploy lub zmiany serwera/schema24/epoki/kont. Następny etap po
+  odebraniu96:105,121,122,129, potem niezależne138/139.
