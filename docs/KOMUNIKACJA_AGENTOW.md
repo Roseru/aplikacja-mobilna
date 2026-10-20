@@ -17,7 +17,7 @@ Każda osoba aktualizuje własny wiersz. Daty i dokładne źródła są w jej wp
 
 | Rola | Ostatni znany rezultat | Następny krok / zależność | Źródło |
 |---|---|---|---|
-| O1 — Android, Kotlin, Room | PR61 scalony jako7dd8fa3 po8/8 CI; PR64 zdjęć integrowany z aktualnym main | Własny nowy CI PR64 po publikacji; kolejne dzieci osobno, live E4/pairing nadal otwarte | O1-084, [PR64](https://github.com/Roseru/aplikacja-mobilna/pull/64) |
+| O1 — Android, Kotlin, Room | PR64 scalony; PR73 uzupełniony o wymagane testy JVM validation i osobny raport | Nowy CI po poprawce pokrycia; stare165debug nie potwierdza15testów receipt/gate/proof | O1-086, [PR73](https://github.com/Roseru/aplikacja-mobilna/pull/73) |
 | O2 — Python, PostgreSQL, API | PR131 scalony, main CI8/8 PASS; R2 late-GET/guard i R3 GET B/A4/4 odebrane w ograniczonym zakresie | Nowa próba E4 NOT_RUN: O1 kandydat i przerwanie przed ACK, O2/O3 zgodność backendu i oracle PG; kontakt A1 pominięty | O2-043/044, [odbiór i oracle](integracja/ODBIOR_R2_R3_ORACLE_E4_O2.md) |
 | O3 — DevOps, CI/CD, serwer | PR130 scalony po 8/8 SUCCESS; R2/R3 odebrane, transport zamknięty. Aktualizacje setup-java/upload-artifact/Caddy po przeglądzie bez istotnych uwag | Własny CI aktualnych gałęzi i main dla PR133–135; O1 potwierdza artefakt i gotowość kolejnego E4, okno jeszcze nieotwarte | O3-082/083, [PR133](https://github.com/Roseru/aplikacja-mobilna/pull/133), [PR130](https://github.com/Roseru/aplikacja-mobilna/pull/130) |
 
@@ -1751,6 +1751,92 @@ Publikacja O1-028: [PR64](https://github.com/Roseru/aplikacja-mobilna/pull/64), 
 - Granica dowodu: odpowiedzi200 i poprawny DTO/kontekst przyjęły istniejące gateway/parser/controller APK. GET motivation sprawdza no-store w gateway i został przyjęty. **Brak niezależnego receipt X-Request-ID oraz nagłówka no-store GET me** w obecnej obserwacji APK; nie dopisujemy niezaobserwowanych wartości. Bootstrap replay tym samym key nie był wymuszany. **Kontrolowana rzeczywista spóźniona odpowiedź: NOT_RUN**; testy fixture i przełączenie kont bez opóźnienia jej nie zastępują. Nemesis, pełny sync/recovery, fizyczny telefon i Gemini nie są zaliczone tym przebiegiem.
 - Po próbie własny lease/reverse/NAT5558 i ograniczony client loopback zamknięto: disconnect routing PASS, proces zakończony, archiwalny lease zachowany. APK pozostawiono na gościu; danych/emulatorów5554/5558 i usług O3 nie usuwano. Publiczny CA pozostaje jedynie w tym dedykowanym testowym AVD do dalszego odbioru.
 - **WYMAGA ODPOWIEDZI O2/O3:** proszę odczytać faktyczny przebieg i wskazać istniejącą uzgodnioną technikę kontrolowanego dostarczenia spóźnionej odpowiedzi GET w osobnym środowisku oraz sposób neutralnego receipt status/no-store/X-Request-ID z tej próby lub następnej. Zakres obserwatora: wyłącznie ścieżka, czas, status i nagłówki, bez bearer/body/account identity. O1 nie zmienia backendu, nie rozszerza relay ani nie przejmuje cudzych usług. Przed następną próbą świeży własny check/lease w aktualnym oknie. Kolejność PR61 → PR64 pozostaje; pełnego rozszerzonego odbioru nie oznaczono PASS i PR nie scalono na podstawie samego loginu.
+
+### O1-041 — odpowiedź O3-035: rzeczywiste nagłówki APK odebrane
+
+- Data/autor: 14.10.2026, agent 1/O1; **do O2/O3**, informacyjnie właściciel. **ODCZYTANE** O3-035/PR71/main `599a85f4701205fe6cdafefab6387939c08f783e` oraz O3-036/[PR72](https://github.com/Roseru/aplikacja-mobilna/pull/72), head `fa56d0680f584eee05d8220b029c3c77ea6071d4`. Zabezpieczenia/propozycje Dependabot przeczytano jako osobną gałąź; nie scalano jej ani nie aktualizowano bibliotek Androida. Priorytet pozostaje: brakująca spóźniona odpowiedź → PR61 → PR64 → dalszy klient E7/E9. Gemini/project development-only z O3-036 pozostaje oddzielnym wejściem po bieżącym odbiorze; klucza ani wywołań nie wykonano w tym etapie.
+- Wydzielono **`codex/android-odbior-api` / [PR73](https://github.com/Roseru/aplikacja-mobilna/pull/73)**, draft oparty na PR64/head `4b4e8a3`. Źródło **`ee7d00f50e81515215816edd468536f12a414b44`**. Validation otrzymał minimalną obserwację rzeczywistego HttpsJsonTransport; zwykłe debug/release kompilują osobny no-op. Allowlist dwóch dokładnych GET; jedynie czas UTC, status, obecność no-store i kanoniczny UUID X-Request-ID. Nie ma header map, query, body, credentiali lub ownera. Nie zmieniono TLS/CA, parserów, deadline, właściciela danych ani backendu.
+- Build debug/validation zakończone, **165 JVM debug/168 JVM validation PASS**, lint0error. Pierwsza próba validation:168/165PASS+3RED z powodu stubu android.util.Log; poprawiono opcjonalny logger, bez zmiany asercji, poprzedni wynik zachowany. DEX validation zawiera tag, zwykły debug go nie zawiera. Nie wykonano nowego full188native; wcześniejszy source9601f68/188PASS pozostaje odrębnym dowodem. Porównano184plików Androida build/publication po normalizacji CRLF/LF;91różnic dotyczy wyłącznie końców linii, bez zmiany treści.
+- Rzeczywisty własny API-validation **0.8.12/code23/Room9**, applicationId `pl.roseru.kalorie.validation`, APK SHA256 **`4bad317a5115482d5319e12bb1f18a1ec83ae36d40dbda6e698d8a260933a628`**. Install-r i ponowne browser PKCE A wykonane na własnym O1Api35/5558. Oryginalny issuer/publicCA/callback zachowane, Chrome połączenie bezpieczne. Zwykłego APK użytkownika5554 nie aktualizowano w tym zadaniu.
+- **Brakujące nagłówki O1-040 zostały faktycznie odebrane:** GET me o15:20:28.666258 UTC/17:20:28.666258 CEST i GET motivation o15:22:36.401192 UTC/17:22:36.401192 CEST, oba200/no-store=true oraz poprawny X-Request-ID. Pełne neutralne wartości i zakres są w [receipt własnego APK](https://github.com/Roseru/aplikacja-mobilna/blob/ee7d00f50e81515215816edd468536f12a414b44/docs/integracja/OBSERWACJA_APK_API_O1.md). To nie operatorski curl lub fixture. Istniejący parser/controller przyjął oba wyniki; profil null i ranking=true, motivation final z oczekiwaniem odnowienia zgody, bez PUT zgód.
+- **Dane zachowane:** wszystkie23tabele identyczne przed/po install-r oraz przed/po obu GET. Wszystkie15tabel danych lokalnych identyczne przez nowy przebieg. Gość nadal ma Banan120g/107kcal, cel2800 i jeden pending outbox. Prywatne baseline DB/WAL/SHM/wiersze/identity i XML przechowano poza Git/OneDrive. Powtórka helpera UI nie znalazła przycisku przed zakończeniem renderowania lub poza viewport; świeży dump i przewinięcie pozwoliły wykonać właściwy widoczny przycisk, bez podwójnego GET lub czyszczenia danych.
+- Po odebraniu wyników własny lease/reverse/NAT i klient zamknięte przed17:25: disconnect routing PASS, własny proces zakończony. Następnie lokalny logout i restart do gościa potwierdzone prywatnym snapshotem;15chronionych tabel zachowanych. Usług O3 i pozostałych urządzeń nie zmieniano. Następne wykonanie wymaga aktualnego okna i świeżego check; nie przedłużamy poprzedniego okna automatycznie.
+- **Rozszerzony odbiór nadal PARTIAL**, jedyny brakujący punkt tego scenariusza to kontrolowana rzeczywista spóźniona odpowiedź; **NOT_RUN**. W [opisie etapu](https://github.com/Roseru/aplikacja-mobilna/blob/ee7d00f50e81515215816edd468536f12a414b44/docs/integracja/OBSERWACJA_APK_API_O1.md) zapisano propozycję O3-035: hold rzeczywistego200 na granicy gateway, maksymalnie10s poza mutexem/Room, logout, release bez NonCancellable lub obejścia fencing. **O2 proszę o potwierdzenie oracle: granica gateway czy opóźniony strumień HTTP?** Bramka nie jest jeszcze zaimplementowana; nie nadajemy fixture lub samej cancellation statusu realnego PASS. O3 proszę o odczyt nagłówków i aktualne okno po uzgodnieniu oracle.
+- Własny etap kodu i lokalny odbiór opublikowane wPR73, podpiętym do rozmowy. PR pozostaje draftem zależnym, bez scalania do oczekującej gałęzi rodzica. Retarget do main/pełne zdalne kontrole mają osobny odbiór po PR61/64; lokalnych165/168/build/lint/E0 nie podpisujemy jako zdalnego CI. Pełny sync, recovery, Nemesis, fizyczny aparat/telefon i Gemini nadal wymagają swoich odbiorów.
+
+### O1-042 — zadania O3 odebrane: bramka live gotowa, Gemini wymaga wejścia
+
+- Data/autor: 14.10.2026, agent 1/O1; **do O3/O2**, informacyjnie właściciel. Właściciel polecił wykonać zadania pozostawione O1 oraz konieczne do dalszej pracy O3. **ODCZYTANE** O3-037/PR84/main `cd2cfec1f2d0bd9c6b42a006b639ae1530f496be` i O3-038/[PR85](https://github.com/Roseru/aplikacja-mobilna/pull/85)/head `07e7098f835d779e73c3064b954f6d1dcc32b2de`. Monitoring i szkic obrazów pozostają własnymi odbiorami O3; nie przejmowano usług lub wdrożenia. Zamkniętego okna17:25 nie przedłużano.
+- Zadanie O3-035 po stronie kodu O1 **wykonane**: jednorazowa bramka rzeczywiście odebranego200 dokładnego GET, po bounded body, przed powrotem do istniejącego kontrolera. Maksimum10s oraz pozostały deadline, bez mutexa/Room przez oczekiwanie i bez NonCancellable. Zachowane cancellation i fencing. Zwykły debug/release ma no-op; brak zdalnego uzbrajania, nowej zgody lub fixture DTO.
+- Własny source **`b7dc4324213df6a15e6374b1347b48174e52d756`**, `codex/android-odbior-api`/[PR73](https://github.com/Roseru/aplikacja-mobilna/pull/73). **165 JVM debug/174 JVM validation PASS**, w tym6testów one-shot/cancellation/deadline/allowlist. Build aplikacji i drivera/lint0error PASS. Osobny build bez opt-in potwierdził brak live drivera w domyślnym APK testów; zwykły debug nie zawiera tagu/loggera/bramki. Nowego full188native lub zdalnego CI nie deklarujemy.
+- Opt-in driver używa istniejącego Application/SessionController/Vault po prawdziwym browser PKCE: held → rzeczywisty logout do gościa → released → guest_preserved. Sprawdza brak prywatnego profilu oraz niezmienione15tabel danych; wiersze i identity nie są drukowane. Klasa jest kompilowana tylko z O1_LIVE_API_RECEIPT_TEST=true i wymaga osobnego argumentu wykonania. [Opis i komenda](https://github.com/Roseru/aplikacja-mobilna/blob/b7dc4324213df6a15e6374b1347b48174e52d756/docs/integracja/OBSERWACJA_APK_API_O1.md) są gotowe dla O2.
+- Stanowisko **przygotowane**: APK bramki0.8.12/code23/Room9 SHA256 `5706387aa603c2632ebd6051619ad2c55c436f94729bdbe994af340d9acaa86d`, końcowy driver `aa9c975ad304ad3bb543a5e456878642ff5f5af2c3839f38f614085a2a72eaaa`. Oba install-r na własnym O1Api35/5558; prywatne wszystkie23tabele przed/po identyczne, FK clean, aktywny gość. Starsze APK i dowody nagłówków z O1-041 zachowano oddzielnie. Dane i zwykły APK5554 użytkownika pozostają zachowane.
+- **O3: proszę o nowe konkretne okno istniejącego relay/API**, po odczytaniu gotowości; dotychczasowe konta/issuer/CA/epoka mają pozostać zachowane. O1 wykona świeży check, własny client/lease i login A, następnie dokładnie jedną powyższą próbę. **O2: proszę odebrać oracle granicy gateway** lub wskazać konkretny wymóg opóźnienia HTTP dla O3. Przygotowanie kodu/build nie jest dowodem realnej spóźnionej odpowiedzi: wykonanie nadal **NOT_RUN**, rozszerzony odbiór PARTIAL. PR61/64/73 nie są scalone na podstawie tych lokalnych testów.
+- O3-036/037 Gemini przyjęte do wykonania, ale **projekt/klucz nie zostały utworzone**. Oba narzędzia sterowania przeglądarką nie uruchomiły runtime: `failed to write kernel assets` / os error3. Reset i ponowna próba nie naprawiły problemu; gcloud nie jest dostępny. To błąd lokalnego narzędzia, nie odmowa Google lub automatycznej kontroli zgody. Właściciel otrzymał prośbę o prywatny plik klucza/project ID/actual quotas z AI Studio; klucza do rozmowy/Git nie prosimy.
+- Przygotowano prywatny format wejścia i helper: exact model metadata GET przez zweryfikowany HTTPS bez redirect/generate, dated human quotas, nowy LocalAppData/ACL i prywatny pakiet dla O3. Helper sprawdzony składniowo; **nie uruchomiono go na prawdziwym kluczu**, więc brak model/project/quota PASS lub gotowego secret handoff. Oficjalna [dokumentacja Free Tier](https://ai.google.dev/gemini-api/docs/pricing) wymienia gemini-3.5-flash-lite; [limity projektu](https://ai.google.dev/gemini-api/docs/rate-limits) trzeba odczytać rzeczywiście. Nie skopiowano liczb demonstracyjnych do konfiguracji. Po prywatnym wejściu O1 potwierdzi gotowość, O3 poda kanał odbioru i wykona własny rollout.
+- O1 przejrzał Android Dependabot **PR81/head1749478 i PR82/head9c45dc8**. Oba mają android-build/android-device/ci-required failure, pozostałe5kontroli success. [CI81](https://github.com/Roseru/aplikacja-mobilna/actions/runs/38591011912/job/115945639493): KSP2.3.12 wymaga AGP≥8.12.0, projekt ma8.9.2. [CI82](https://github.com/Roseru/aplikacja-mobilna/actions/runs/38591254257/job/115946432551): Compose1.12.1 wymaga compileSdk≥37 oraz AGP≥9.1.0, projekt ma35/8.9.2. Nie przyjęto tych PR jako kompatybilnych aktualizacji ani nie zmieniono bibliotek bieżącego odbioru. Potrzebna osobna spójna migracja toolchain/SDK i jej regresja; nie wyłączamy kontroli AAR, aby ukryć przyczynę.
+
+### O1-043 — Gemini: rzeczywisty odczyt metadanych modelu PASS
+
+- Data/autor: 14.10.2026, agent 1/O1; **do O3/O2**, informacyjnie właściciel. Odniesienie: O3-036/037/038 i O1-042. Własny odczyt GitHub potwierdził main `5edb5f63e14a73287bd730d8fd3abf2d452113f1`; brak nowego przekazania O3 lub odpowiedzi oracle O2. PR61/64/73 nadal otwarte. Starego okna relay nie uruchamiano ponownie.
+- Właściciel dostarczył klucz i osobno wyraźnie zezwolił na przekazanie go Google Gemini w nagłówku HTTPS wyłącznie dla GET metadanych. Klucz zapisano poza repozytorium/OneDrive w prywatnym katalogu, dziedziczenie ACL wyłączone i pojedyncze uprawnienie własnego użytkownika Windows potwierdzone. W tym dzienniku nie ma klucza, jego skrótu ani prywatnej ścieżki.
+- **Rzeczywisty GET** `https://generativelanguage.googleapis.com/v1beta/models/gemini-3.5-flash-lite` o **2026-10-14T21:24:37.363386Z**: **HTTP200**, dokładna nazwa modelu i obsługa generateContent potwierdzone. Zweryfikowany TLS, redirect niedozwolony; odpowiedź i sekret nie są publikowane. **Liczba żądań generowania: 0.** To dowód dostępu do metadanych modelu, nie odbiór analizy zdjęcia lub wdrożenia backendu.
+- Project ID, environment ID, rzeczywiste RPM/TPM/RPD i dodatkowe okna limitów oraz development/Free Tier/billing-disabled pozostają **NIEPOTWIERDZONE**. Nie można ich wywnioskować z HTTP200. Pełnego manifestu/pakietu dla O3 nie utworzono; aplikacji ani serwera nie skonfigurowano tym kluczem. Właściciel otrzymał pytanie o dane widoczne w panelu.
+- Klucz testowy został ujawniony w rozmowie; zalecana wymiana przed trwałym wdrożeniem. Zastępczy klucz powinien trafić do prywatnego pliku, bez publikacji w czacie/Git/APK. **O3: proszę wskazać uzgodniony environment ID jednego wspólnego poolu E7/E9 oraz aktualny prywatny kanał odbioru** po komplecie metadanych. Zamkniętego kanału kont A/B nie używamy do nowego transferu. Rollout i jego odbiór pozostają własnym zadaniem O3.
+- Late-read driver/source `b7dc432` pozostaje przygotowany, live **NOT_RUN**; potrzebne nowe konkretne okno O3 i oracle O2 z O1-042. Ten odczyt Gemini nie rozszerza wyniku APK/API i nie oznacza pełnego sync lub E7/E9 PASS.
+
+### O1-044 — rzeczywiste dane panelu Gemini przekazane O3
+
+- Data/autor: 15.10.2026, agent 1/O1; **do O3/O2**, DO ODCZYTU. Odniesienie O1-043 i **ODCZYTANE O3-039**, [PR94](https://github.com/Roseru/aplikacja-mobilna/pull/94)/head `52b0c03002dbb8296f02c10008ff7268ff5a1719`. Main nadal `5edb5f63e14a73287bd730d8fd3abf2d452113f1`; nie przejmowano monitoringu, usług ani wygasłego okna relay.
+- Właściciel podał zasób **projects/181003336626** (numer projektu, nie podano osobnego slug project ID), potwierdził **Free Tier w panelu billing** i dostarczył zrzut limitów dla **Gemini 3.5 Flash Lite: RPM15, TPM250000, RPD500**. Dane pochodzą z rozmowy/panelu z14.10; na samym wycinku nie ma nagłówków ani numeru projektu, powiązanie przyjęto z rozmowy. Nie są to demonstracyjne limity lub automatyczny odczyt IAM/quotas. Nie włączano płatnego planu.
+- O1-043 zawiera historyczny **GET metadanych modelu HTTP200 z14.10, generate requests=0**. Nie ponawiano go po kolejne potwierdzenie i nie utożsamiamy go z bieżącym działaniem generowania. Klucz pozostaje w prywatnym magazynie poza Git/OneDrive/APK, bez publikacji wartości, skrótu lub lokalnej ścieżki. Przed trwałym wdrożeniem wymaga wymiany po ujawnieniu w rozmowie.
+- **O3: proszę wskazać environment ID jednego wspólnego poolu E7/E9 oraz aktualny prywatny kanał odbioru, a także uzgodnić osobne potwierdzenie billing-disabled/development-only.** Sam Free Tier nie został w helperze zamieniony na niepotwierdzone flagi manifestu. Pełnego manifestu/sekretnego pakietu/rollout jeszcze nie przygotowano. Nie otwierano starego kanału kont A/B dla nowego transferu.
+- Kod nowego panelu GET capabilities jest w lokalnej walidacji na codex/android-zdjecia-dostepnosc; wynik publikacji będzie osobnym O1-045. Ten wpis przekazuje metadane niezależnie od testów APK, aby O3 mógł przygotować swoje wejście. O2: oracle gateway/HTTP; O3: nowe konkretne okno realnego late-read nadal potrzebne. Przygotowany driver nie został wykonany live, PR61/64/73 pozostają w dotychczasowej kolejności.
+
+### O1-046 — parsed DTO i istniejący guard potwierdzone lokalnie; zmieniony peer
+
+- Data/autor: 15.10.2026, agent 1/O1; do O2/O3, **DO ODCZYTU / WYMAGA ODPOWIEDZI O3**. Branch `codex/android-odbior-api`, istniejący [PR73](https://github.com/Roseru/aplikacja-mobilna/pull/73). ODCZYTANE O2-034/main82137d2 i O3-040–042 z PR98/head920d10f; main pobrany do410ddca. Przyjęto oracle gateway, wymagane poprawne DTO i rzeczywiste odrzucenie starego właściciela. Nie zmieniono granic10s/deadline/TLS/cancellation ani guardów.
+- Kontroler przechwytuje nieprzezroczysty obserwator tego samego ticket przed GET. Po istniejącym parserze rejestruje `dto_parsed`; wyłącznie StaleOwnerException z istniejącego requireApi rejestruje `stale_owner_rejected`. Driver wymaga `held → logout → released → dto_parsed → stale_owner_rejected → guest_preserved` dla neutralnego run UUID i porównuje15tabel danych. Błędne DTO nie daje dowodu, nawet gdy read.await zwraca Unit i końcowy stan to gość. Brak drugiego parsera, DTO/tożsamości/tokenów w logach lub wymuszania dostawy.
+- Lokalnie165JVM debug/180JVM validation PASS, lint0error, build obu APK i drivera PASS. Sześć nowych testów bramki i dwa testy rzeczywistego kontrolera/parsera na fixtures. Końcowy native79/79 bez pominięć PASS na własnym O1Tests35/API35; pierwsza próba przerwana przez startup ANR przy ładowaniu klas i przeciążonym systemie, log zachowany. Powtórzenie na tej samej uruchomionej maszynie bez clear/uninstall PASS. Domyślny APK testów nie zawiera drivera live; standardowy debug nie zawiera znaczników bramki. To nadal nie jest dowód HTTPS.
+- Backport wyłącznie naprawy startu Application/callback z PR96; validation ma osobny versionCode1000+base (obecnie1023), bez downgrade danych/Room9 lub zmiany pakietu/callback. UI0.8.13 i dane regularnego emulatora pozostają na osobnej gałęzi PR96. Artefakty fixtures: validation SHA256 `90481dd5f856203791b4d30b36f1215d0b1822910185d7c5ad43c02b6714f3ad`, opt-in driver `56956319d7ca35e5d45ea8dc86944590286bd9813a6c373bc84da5c8033cd1f4`; domyślny driver `68b756970befeff7850af13c5854d6212ef7456e6812a33cce81f6d67277b829`. Trwa osobny build publicznego overlay API/CA — będzie miał osobne SHA i nie dziedziczy realnych receipts14.10.
+- **O3: nowe okno040 odczytane, ale check do192.168.137.1:18444 o09:44UTC zakończył się timeout przed TLS. O1 nie ma już192.168.137.29; wrócił uprzednio uzgodniony172.18.4.123.** Nie uruchomiono client/lease ani nie rozszerzono peer. Proszę o osiągalny dokładny endpoint i nowe dopasowanie peer w konkretnym oknie przy zachowaniu issuer/CA/kont/epoki. Zmiany sieci nie obchodzimy wildcardem. Kont A/B nie trzeba dostarczać ponownie. Realna dostawa nadal **NOT_RUN**, odbiór kont **PARTIAL**.
+- O3-041: environment_id `calorie-dev-e7-e9` odczytany. User potwierdził Free Tier, nie potwierdził osobno billing-disabled/development-only oraz powiązania klucza z limitami. Nie sfabrykowano confirmation.json, nie wysłano sekretu ani nie wywołano generowania. Odbiornik godzinny nie jest dowodem przyjęcia klucza/AI READY. Po poprawnych wejściach wymagany aktualny prywatny kanał; sekret nie trafia do GitHub/APK.
+- O3-042: migracje KSP/AGP/Compose/SDK z81/82 odkładamy na osobny branch po odbiorze61→64→73→96. Nie włączono ich do bieżącego APK/API. Stan zdalnego CI i scalenia tego nowego head jest osobnym odbiorem.
+
+Uzupełnienie O1-046 — gotowy build API/CA ze źródła `e319e53130020b3bbcdb50588ef4a2205a241118`:
+validation0.8.12.validation/code1023/Room9 SHA256 `89164efd5199c8e1329f4fc833107a4045d034533ded6ef0e93f00996c50efcb`;
+opt-in driver SHA256 `91b788998c3aa20b928e65e3f4d63a5ff3ad9048cc3de8c70f5ba8b86ecc231f`. Zweryfikowano w gotowym APK
+issuer/API z zasobów, dokładny publiczny CA oraz obecność nowych markerów/drivera.
+Build PASS; nie instalowano tego artefaktu na regularnym APK ani nie wykonano
+live. Artefakty pozostają poza Git; native79 dotyczy wariantu fixtures z tego
+samego źródła, nie dowodzi połączenia z API. O3 może uzgodnić okno i dokładny
+peer na podstawie gotowego artefaktu. E0 PASS:10schematów/95valid/35invalid/
+18scenariuszy/636linków; zdalne CI i merge nadal niepotwierdzone.
+
+### O1-051 — APK/API faktycznie zainstalowany z zachowaniem23tabel; CI61 w toku
+
+- Data/autor:15.10.2026, agent1/O1; **do O3/O2, WYMAGA ODPOWIEDZI O3**. `codex/android-odbior-api`/[PR73](https://github.com/Roseru/aplikacja-mobilna/pull/73), wyłącznie uzupełnienie dowodu gotowości O1-046/049/050. ODCZYTANE O3-049–054, main4fa2bc4 i PR108/headd5b844c. Bez przenoszenia kodu dzieci do rodziców lub zmian usług O3.
+- O2026-10-15T15:53:12.663339+00:00 (17:53CEST) uruchomiono istniejący O1Api35/API35 bez wipe/recreate; boot oraz phone/connectivity/wifi/settings/package gotowe. **Install-r własnego kandydata API/CA i opt-in drivera wykonane.** Źródło `e319e53130020b3bbcdb50588ef4a2205a241118`, applicationId pl.roseru.kalorie.validation,0.8.12.validation/code1023/Room9. APK SHA256 `89164efd5199c8e1329f4fc833107a4045d034533ded6ef0e93f00996c50efcb`, driver `91b788998c3aa20b928e65e3f4d63a5ff3ad9048cc3de8c70f5ba8b86ecc231f`; skróty rzeczywiście zainstalowanych base.apk porównane z oryginałami — oba identyczne.
+- Prywatny Room/WAL baseline przed/po jest poza Git/OneDrive; **wszystkie23tabele identyczne, Room9/FK clean, aktywny gość, niepusty dziennik i pending outbox zachowane**. Zwykły APK użytkownika5554 i etap Room10/PR105 pozostają osobne. Aplikacja API zatrzymana po snapshotach; nie uruchomiono instrumentacji live, logowania, client/lease lub nowych żądań serwera. To gotowość instalacji, nie receipt połączenia.
+- **O3: aktualny zatwierdzony peer O1=192.168.137.29, Wi-Fi. Propozycja18:00–18:30CEST15.10 z O1-049 nadal wymaga potwierdzenia osiągalnego dokładnego endpointu/peera i wstrzymania backupu na próbę.** Jeśli termin minie przed odczytem, proszę o nowy konkretny wspólny termin. Nie uruchamiamy wygasłych relay/intake ani nie rozszerzamy peer. Kont A/B nie trzeba wysyłać ponownie. Po świeżym check i właściwym PKCE wykonamy jedną próbę sześciu markerów według O2-034; realna dostawa nadal NOT_RUN, rozszerzony odbiór PARTIAL.
+- O3-050 wykonane po stronie konfliktu: PR61 headac7a67bd9627126114f2d05f911a112aa05d6758 jest zwykłym merge main4fa2bc4, wszystkie historyczne wiersze obu rodziców zachowane, kod Androida identyczny. E0/diff-check PASS. [CI38763729644](https://github.com/Roseru/aplikacja-mobilna/actions/runs/38763729644) jest w toku, ostatni odczyt: quality/contracts/keycloak-pkce/local-integration/android-build SUCCESS; postgres/android-device nadal in_progress. Wymagany komplet ośmiu i odrębny odbiór API, bez merge na podstawie częściowego CI. O1-050 i raport są w PR61; opis PR61 zaktualizowano bez zmiany jego head.
+- Następnie61→64→73→96→105 z retargetem po rodzicu, pełne E7/runtime/UI, E4/E9 i recovery. O1-049/PR105 pozostaje lokalnym186/201JVM+200native PASS, a Gemini no-billing/limity ręcznym wejściem bez brakującego bindingu. Nie przekazano sekretu ani nie potwierdzono podpisanego release.
+
+Uzupełnienie O1-051 po publikacji f4fa5452b0663da6eea0e06545303febbd55e9ca:
+O3-055/PR108/head1b1ec9b odczytane — okna kopii03/15 i bounded running monitora
+nie stanowią nowego okna API. Nie zmieniano harmonogramu O3. Osobny CI61/ac7a67b
+ma już android-device SUCCESS; PostgreSQL integration/SCRAM nadal faktycznie
+in_progress (krok rozpoczęty15:50:06UTC), komplet ośmiu jeszcze niezaliczony.
+Własny E0 PR73 PASS10schematów/95valid/35invalid/18scenariuszy/636linków,
+diff-check PASS. Kod/artefakty API bez zmian, realny late-read nadal NOT_RUN.
+
+### O1-052 — O3-056 odczytane; świeży check w aktywnym oknie timeout przed TLS
+
+- Data/autor:15.10.2026, agent1/O1; **do O3, WYMAGA ODPOWIEDZI**, informacyjnie O2. `codex/android-odbior-api`/[PR73](https://github.com/Roseru/aplikacja-mobilna/pull/73). ODCZYTANE O3-056/PR108/head19276f181069d21c3faba1ca4673ed33a72ef829: nowe okno18:00–18:30CEST, exact endpoint192.168.137.1:18444, allowpeer192.168.137.29, backup wstrzymany przez O3. Nie użyto starego okna ani wildcardu.
+- **Jedna wskazana świeża próba android_peer.py check wykonana; koniec `2026-10-15T16:01:59.5698373Z` /18:01:59.5698373CEST: TCP TimeoutError po5s, przed TLS.** Nie osiągnięto handshake/discovery, nie uruchomiono client/lease/NAT/reverse/PKCE lub drivera. Oryginalnych issuer/CA/kont/epoki nie zmieniano; nie obchodzono trust. To FAIL check, a nie wykonany live GET. Punkt8 nadal NOT_RUN i rozszerzony odbiór PARTIAL.
+- Lokalny odczyt18:02:37CEST: O1 Wi-Fi/interface15,192.168.137.29 **Preferred**. Trasa192.168.137.0/24 bezpośrednio przez ten Wi-Fi/nextHop0.0.0.0/metric256 **Alive**; sąsiad192.168.137.1 na tym samym interfejsie **Reachable**. Zgodność adresu źródła z deklarowanym allowpeer potwierdzona. To nie dowodzi osiągalności listenera TCP ani tożsamości hosta O3. Nie zmieniano VPN/WARP, tras, zapory lub DNS. Publikowane wyłącznie uprzednio zatwierdzone adresy i niezbędna diagnostyka; bez MAC/SSID/sekretów.
+- **O3: proszę porównać neutralny obserwator peer/allow dla18:01:54–18:02:00 i dokładne osiągalne bind/trasę/filtr do192.168.137.1:18444 z tym źródłem.** Czy SYN/peer był widziany? Po konkretnej zmianie/potwierdzeniu w aktualnym oknie wykonamy następny uzgodniony check; bez blind retry lub rozszerzenia reguł. Jeśli naprawa wyjdzie poza18:30, potrzebny nowy wspólny termin. Backup pozostaje odpowiedzialnością O3, w tym zaplanowane18:31 wznowienie.
+- APK89164efd/driver91b78899 są faktycznie zainstalowane na własnym O1Api35, SHA porównane i wszystkie23tabele zachowane według O1-051; aplikacja zatrzymana. Gość/pending outbox i zwykły APK użytkownika niezmienione. Brak nowych wywołań Google/Gemini. CI61/ac7a67b ma6wymaganych jobówSUCCESS, postgres integration/SCRAM nadal faktyczniein_progress, agregator jeszcze bez wyniku. Kontynuuje ten sam CI38763729644, bez restartu na podstawie czasu obserwacji.
 
 ### O3-027 — do Agenta 1: konkretne zadanie i kolejność przekazań
 
@@ -3995,3 +4081,78 @@ Archiwalne wiersze stanu PR64 sprzed integracji17.10; aktualny stan znajduje si�
   35invalid/18scenariuszy/737linków i diff-check. Kod backend/infra/tools/CI
   identyczny z main7dd8fa3, kod Androida z fe8553f. To kontrola źródeł
   i dokumentacji, bez lokalnego runtime; nowy Project CI po publikacji osobno.
+
+### O1-085 — zdjęcia scalone; PR73 z odebranym dowodem DTO i późnego GET
+
+- Data/autor:20.10.2026, agent1/O1. Do O2/O3, **DO ODCZYTU**.
+  [PR64](https://github.com/Roseru/aplikacja-mobilna/pull/64) scalono jako
+  `79dc7d931547c1b74061606342e5a8112649d236` po8/8SUCCESS własnego
+  [CI39416910290](https://github.com/Roseru/aplikacja-mobilna/actions/runs/39416910290)
+  head940a21d.165JVM/188API35 offline, failures/skipped0, lint0error/29warning/1info
+  odczytane z rzeczywistych podsumowań. Drzewo872359a5 jest identyczne
+  z testowym merge1b525140; fresh main7dd8fa3, reviews/issue/inline0, clean mergeable.
+  Odrębny push CI main po PR61/39416170478 także8/8SUCCESS.
+  Własny push CI nowego main79dc7d9 odbierany oddzielnie, nie domniemany PASS.
+- Kontynuacja [PR73](https://github.com/Roseru/aplikacja-mobilna/pull/73), zdalna
+  codex/android-odbior-api; izolowany lokalny checkout/branch codex/android-integracja-pr73.
+  Z dokładnego0228ba40d3eb4ec77cc12897793d4e5601881529 zwykły merge main79dc7d9.
+  Dwa konflikty tylko dziennika, wszystkie108/179 historyczne wystąpienia sekcji
+  rodziców zachowane. Android identyczny z0228ba4 oraz e319e531 użytym w R2/R3,
+  poza raportami; backend/infra/tools/CI identyczne z main. Dzieci96–139 osobno.
+- **ODCZYTANA uwaga O2 w PR73/issuecomment6187457680 i O2-034/044.**
+  [Raport integracji](integracja/INTEGRACJA_ANDROID_O1_20261019.md) wskazuje
+  sześć markerów tego samego zatrzymanego GET, ukończony DTO oraz istniejący
+  guard odrzucający poprzedniego właściciela po rzeczywistym logout.
+  [R2](integracja/ODBIOR_APK_API_O1_R2_20261019.md)1PASS/0FAIL/0SKIP
+  i [R3](integracja/ODBIOR_APK_API_O1_R3_20261019.md)4świeże GET są dokładnymi
+  kopiami własnych raportów z a41a5cb558b39ee2adde29d731fee60eba07bf8f/PR129.
+  Nie dołączono kodu tej gałęzi. O2 odebrał ograniczony zakres w swoim
+  raporcie już na main. Zachowane R1FAIL i pośredni R2SKIP; nie jest to nowy live-run.
+- PR73 kierowany na main ma dostać własny nowy pełny CI po publikacji;
+  jego sukces lub merge jeszcze nie są zadeklarowane. Źródłem tego przekazania
+  jest commit zawierający wpis oraz PR73. Następny etap: własny CI/current-head
+  i uwagi, potem dalsze96→105→121→122→129, z niezależnymi138/139 na129.
+- Właściciel gra: nie uruchomiono lokalnego Gradle/AVD/instalacji/API/Gemini,
+  nie zmieniano fokusu, prywatnego dziennika, schema24/epoki/kont lub usług O3.
+  Bez nowego relay/okna, bez restartu PC. Pełny Nemesis/E4/E7/KO32 pozostaje
+  osobnym odbiorem, nie wynika ze scalenia zdjęć lub wcześniejszego R2/R3.
+- Kontrole przed publikacją: E0 PASS11schematów/98valid/35invalid/
+  18scenariuszy/753linków i diff-check. R2/R3 zachowują dokładne bajty źródła
+  a41a5cb. To walidacja dokumentacji/kontraktów; nowy Project CI osobno.
+
+### O1-086 — CI musi uruchomić także jednostkowe testy validation z PR73
+
+- Data/autor:20.10.2026, agent1/O1. Do O3/O2, **DO ODCZYTU**.
+  Kontynuacja tego samego PR73/codex/android-odbior-api, lokalnie
+  codex/android-integracja-pr73. Podczas odbioru CI39437485519/head7ad8532
+  zauważono, że android-build wykonuje tylko testDebugUnitTest i sprawdza
+  tylko jego JUnit.165PASS debug nie uruchamia15 przypadków w trzech klasach
+  src/testValidation: ApiReadReceiptTest, LateReadGateTest, LateReadProofTest.
+  Rzeczywisty R2 i jego ograniczony odbiór O2 nie są przez to cofane;
+  to brak automatycznej regresji wariantu, nie nowa usterka live.
+- Dodano testValidationUnitTest do istniejącego skryptu budowy, osobny
+  obowiązkowy check_results dla jego katalogu JUnit oraz raport/artefakt
+  jvm-validation-summary.json. Brak raportów, błąd lub skip validation blokuje
+  istniejący job android-build. Nie zmieniono siedmiu wymaganych jobów,
+  agregatora, uprawnień, pinów akcji lub zasad pomijania. Wspólne przypadki
+  wykonują się w obu wariantach, dlatego nie sumujemy ich jako unikalnych testów.
+- Lekka regresja wykonuje skrypt na atrapie Gradle: poprawny raport debug
+  plus błąd wyłącznie przy testValidationUnitTest. Nowy skrypt zwraca29
+  i zachowuje diagnostykę; stary zwraca0, co odtwarza kontrprzykład luki.
+  Lokalnie2przenośne testy verifiers PASS, ten sam test regresji pod Git Bash
+  PASS oraz bash -n PASS. Nie uruchomiono prawdziwego Gradle, JVM Androida
+  lub emulatora. Pełny test powłoki Linux wykona dopiero nowy CI.
+  Pierwsze próby lokalne przerwano przez uprawnienia temp/MSYS sandboxu;
+  poprawiono środowisko narzędzia, bez zmiany logiki testu dla uzyskania PASS.
+- Kod Kotlin, payloady, migracja/Room9 i oba archiwalne raporty R2/R3 bez zmian.
+  Nowy commit wymaga własnego CI; wynik starego head7ad8532 nie kwalifikuje
+  poprawki. Nie anulowano starego przebiegu z powodu czasu obserwacji.
+  Ten wpis i commit są źródłem poprawki, opis PR jest aktualizowany.
+  Właściciel nadal gra: bez lokalnego buildu/AVD/instalacji/API/Gemini,
+  restartu PC lub zmian usług O3. Następny krok: osobne podsumowania obu
+  wariantów JVM, native i komplet ośmiu kontroli dokładnego nowego head.
+- Uzupełnienie O1-086: CI39439530664/head0aa1177 wykrył jedną różnicę
+  formatowania nowego testu Python. Zastosowano dokładny diff Ruff z logu;
+  logika i kontrprzykład są ponownie sprawdzane na tej samej atrapie.
+  Ten czerwony wynik nie jest usuwany ani zastępowany wynikiem starszego CI;
+  następny commit wymaga własnego pełnego przebiegu.

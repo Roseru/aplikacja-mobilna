@@ -108,3 +108,64 @@ Kontrole integracji PR64 przed publikacją: E0 PASS11schematów/98valid/
 35invalid/18scenariuszy/737linków i diff-check. Kod backend/infra/tools/CI
 jest identyczny z main7dd8fa3, a kod Androida z fe8553f. Liczności E0 dotyczą
 dokumentacji i kontraktów; nie zastępują wymaganego nowego Project CI.
+
+## O1-085 — zdjęcia scalone, dowód późnego GET skierowany do CI, 20.10.2026
+
+Własny [push CI main po PR61](https://github.com/Roseru/aplikacja-mobilna/actions/runs/39416170478)
+dla7dd8fa3 zakończył się8/8SUCCESS. [PR64](https://github.com/Roseru/aplikacja-mobilna/pull/64)
+ma także własny [CI39416910290](https://github.com/Roseru/aplikacja-mobilna/actions/runs/39416910290)
+head940a21deb9e47ecb6058b7d8636525d3b387c588 z ośmioma sukcesami.
+Z rzeczywistych podsumowań:165JVM i188API35 offline, failures/skipped0,
+lint0error/29warning/1info. Nie są to liczności starego rodzica179.
+Przy świeżym main7dd8fa3, clean mergeable oraz reviews/issue/inline0 scalono
+PR64 jako `79dc7d931547c1b74061606342e5a8112649d236`. Drzewo
+`872359a560040ee543a57bec7f02371e964960d3` jest identyczne z przetestowanym
+merge1b525140518e5d2242b83b2a382273bc3a8ab2ca. Push CI nowego main jest odrębny.
+
+Kolejny [PR73](https://github.com/Roseru/aplikacja-mobilna/pull/73), poprzedni
+head0228ba40d3eb4ec77cc12897793d4e5601881529, otrzymał main79dc7d9 przez
+zwykły merge. Dwa konflikty dotyczą tylko dziennika; wszystkie108/179
+historyczne wystąpienia sekcji obu rodziców zachowano. Kod Androida jest
+identyczny z0228ba4 oraz z e319e53130020b3bbcdb50588ef4a2205a241118,
+źródłem rzeczywistej próby R2/R3. Backend/infra/tools/CI pozostają kodem main.
+Dalszych dzieci96–139 nie dołączono, API/relay/Gemini nie uruchamiano.
+
+Odczytano [uwagę O2](https://github.com/Roseru/aplikacja-mobilna/pull/73#issuecomment-6187457680).
+Dowód wymaga ukończonego DTO tego samego zatrzymanego wyniku, odrzucenia
+przez istniejący guard po logout i zachowania gościa. Kod PR73 ma osobne
+markery dto_parsed/stale_owner_rejected i wymaga kolejno sześciu markerów, a R2
+z19.10 faktycznie zaliczył1PASS/0FAIL/0SKIP. [R2](ODBIOR_APK_API_O1_R2_20261019.md)
+i [R3](ODBIOR_APK_API_O1_R3_20261019.md) włączono jako dokładne kopie raportów
+z a41a5cb558b39ee2adde29d731fee60eba07bf8f/PR129, bez reszty gałęzi.
+[O2 odebrał ten ograniczony zakres](ODBIOR_R2_R3_ORACLE_E4_O2.md).
+R1FAIL i pośredni R2SKIP zachowano; nie dopisujemy nowego livePASS w tej zmianie.
+Pełne pairing/Nemesis/E4/E7/recovery/KO32 wymagają osobnych odbiorów.
+
+PR73 ma być skierowany na main i otrzymać własne osiem wymaganych kontroli
+dokładnego nowego head. Lokalny runtime nie został uruchomiony podczas gry
+właściciela; nie instalowano APK i nie zmieniano lokalnego dziennika.
+
+Kontrole przed publikacją PR73: E0 PASS11schematów/98valid/35invalid/
+18scenariuszy/753linków i diff-check. Obie kopie R2/R3 zachowują dokładne
+bajty źródła a41a5cb; to kontrola dokumentacji i kontraktów, bez nowej próby API.
+
+## O1-086 — wymagane testy JVM obu wariantów, 20.10.2026
+
+Odczyt CI39437485519/head7ad8532 wykazał165JVM debug, ale istniejący skrypt
+i workflow nie wykonywały testValidationUnitTest.15 testów receipt/gate/proof
+z src/testValidation pozostawało poza tym wynikiem. Nie przypisujemy165PASS
+debug do całego nowego kodu obserwacji. R2/R3 zachowują swój rzeczywisty odbiór;
+zmiana domyka automatyczne testy regresji i wymaga własnego nowego CI.
+
+Skrypt wykonuje teraz oba zadania jednostkowe. Workflow sprawdza ich katalogi
+niezależnie, odrzucając brak raportu, błędy i pominięcia; publikuje także
+jvm-validation-summary.json oraz XML/HTML validation. Siedem obowiązkowych
+jobów i agregator pozostają bez zmian. Liczności obu wariantów należy podawać
+osobno, ponieważ wspólne scenariusze wykonują się dwukrotnie.
+
+Regresja powłoki daje poprawny JUnit debug, a atrapa Gradle zwraca błąd29
+wyłącznie przy uruchomieniu testów validation. Nowy wrapper odmawia i zapisuje
+diagnostykę. Ten sam przypadek na starym wrapperze zwraca0, odtwarzając lukę.
+Lokalnie2testy przenośne PASS, przypadek regresji pod Git Bash PASS,
+kontrprzykład starego skryptu odtworzony, bash -n PASS. To nie wykonanie
+Gradle lub pełnego Linux CI; te wyniki będą odebrane z nowego run/head.

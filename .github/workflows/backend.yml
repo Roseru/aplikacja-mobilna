@@ -254,6 +254,9 @@ jobs:
             --results android/app/build/test-results/testDebugUnitTest \
             --lint android/app/build/reports/lint-results-debug.xml \
             --output android/app/build/ci/jvm-summary.json
+          python tools/android_ci.py check \
+            --results android/app/build/test-results/testValidationUnitTest \
+            --output android/app/build/ci/jvm-validation-summary.json
       - name: Package the built debug APK with its version and checksum
         env:
           TESTED_COMMIT: ${{ github.sha }}
@@ -280,8 +283,11 @@ jobs:
           path: |
             android/app/build/reports/tests/testDebugUnitTest/
             android/app/build/test-results/testDebugUnitTest/
+            android/app/build/reports/tests/testValidationUnitTest/
+            android/app/build/test-results/testValidationUnitTest/
             android/app/build/reports/lint-results-debug.*
             android/app/build/ci/jvm-summary.json
+            android/app/build/ci/jvm-validation-summary.json
             android/app/build/ci/gradle-build.log
           if-no-files-found: error
           retention-days: 14

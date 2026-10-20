@@ -20,6 +20,7 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.ViewModelStore
 import androidx.lifecycle.ViewModelStoreOwner
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.Dispatchers
 import pl.roseru.kalorie.data.DiaryRepository
 import pl.roseru.kalorie.session.SessionActions
 import pl.roseru.kalorie.data.ThemeMode
@@ -30,7 +31,8 @@ class MainActivity : ComponentActivity() {
     private val ownerModels: OwnerViewModels by viewModels()
     private val login = registerForActivityResult(ActivityResultContracts.StartActivityForResult()) { result ->
         val app = application as CalorieApplication
-        app.sessionScope.launch { app.sessions.completeLogin(result.data) }
+        // Queue after Application startup so the controller first restores its saved record.
+        app.sessionScope.launch(Dispatchers.Main) { app.sessions.completeLogin(result.data) }
     }
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
