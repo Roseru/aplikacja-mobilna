@@ -6,7 +6,9 @@ import json
 import os
 import re
 import subprocess
-from datetime import date, datetime
+from copy import deepcopy
+from datetime import UTC, date, datetime
+from decimal import Decimal, InvalidOperation
 from pathlib import Path
 from uuid import UUID
 
@@ -29,7 +31,71 @@ FIELDS = {
     "item_count",
     "expected_schema",
     "expected_api_image",
+    "envelope_sha256",
+    "expected_meal",
 }
+
+
+def meal_content(payload):
+    """Normalize storage representations only, preserving nulls, text and item order."""
+    result = deepcopy(payload)
+    instant = datetime.fromisoformat(result["occurred_at"])
+    if instant.tzinfo is None:
+        raise ValueError("Meal time requires an offset")
+    result["occurred_at"] = instant.astimezone(UTC).isoformat(timespec="microseconds")
+
+    def decimal(value):
+        if value is None:
+            return None
+        if not isinstance(value, str) or not re.fullmatch(r"[0-9]+(?:\.[0-9]+)?", value):
+            raise ValueError("Expected a finite decimal string")
+        number = Decimal(value)
+        return format(number, "f").rstrip("0").rstrip(".") if "." in value else value
+
+    for item in result["items"]:
+        item["quantity"]["amount"] = decimal(item["quantity"]["amount"])
+        item["density_g_per_ml"] = decimal(item["density_g_per_ml"])
+        for field in ("energy_kcal", "protein_g", "fat_g", "carbs_g"):
+            item["nutrition_per_100"][field] = decimal(item["nutrition_per_100"][field])
+    return result
+
+
+def prepare_plan(context, raw_request):
+    """Offline preparation in the matching backend runtime; never call API or DB."""
+    # Reuse the normative parser/preflight; capture/compare remain stdlib-only.
+    from calorie_app.modules.catalog.validation import parse_json
+    from calorie_app.modules.sync.errors import SyncFailure
+    from calorie_app.modules.sync.schemas import preflight_structure
+    from calorie_app.modules.sync.service import fingerprint
+
+    if set(context) != {"trial_id", "owner_id", "expected_schema", "expected_api_image"}:
+        raise ValueError("Invalid preparation context")
+    request = parse_json(raw_request)
+    try:
+        preflight_structure(request)
+    except SyncFailure:
+        raise ValueError("Invalid frozen envelope") from None
+    if len(request["operations"]) != 1:
+        raise ValueError("Require exactly one Meal/create")
+    operation = request["operations"][0]
+    if (
+        operation["entity_type"] != "meal"
+        or operation["action"] != "upsert"
+        or operation["base_revision"] is not None
+        or operation["sync_epoch"] != request["sync_epoch"]
+    ):
+        raise ValueError("Require exactly one Meal/create in the envelope epoch")
+    plan = {
+        **context,
+        **{key: operation[key] for key in ("operation_id", "entity_id", "sync_epoch")},
+        "local_date": operation["payload"]["local_date"],
+        "item_count": len(operation["payload"]["items"]),
+        "operation_sha256": fingerprint(operation),
+        "envelope_sha256": hashlib.sha256(raw_request).hexdigest(),
+        "expected_meal": operation["payload"],
+    }
+    validate_plan(plan)
+    return plan
 
 
 def validate_plan(plan):
@@ -42,6 +108,7 @@ def validate_plan(plan):
         raise ValueError("Plan requires an ISO date")
     for key, pattern in (
         ("operation_sha256", r"[0-9a-f]{64}"),
+        ("envelope_sha256", r"[0-9a-f]{64}"),
         ("expected_api_image", r"sha256:[0-9a-f]{64}"),
         ("expected_schema", r"[a-z0-9_]{1,64}"),
     ):
@@ -49,6 +116,9 @@ def validate_plan(plan):
             raise ValueError("Invalid expected identity or hash")
     if type(plan["item_count"]) is not int or not 1 <= plan["item_count"] <= 100:
         raise ValueError("Plan requires 1..100 meal items")
+    expected = meal_content(plan["expected_meal"])
+    if expected["local_date"] != plan["local_date"] or len(expected["items"]) != plan["item_count"]:
+        raise ValueError("Expected Meal differs from plan metadata")
     return hashlib.sha256(json.dumps(plan, sort_keys=True).encode()).hexdigest()
 
 
@@ -72,7 +142,7 @@ SET LOCAL statement_timeout = '5s';
 SET LOCAL lock_timeout = '1s';
 SET LOCAL timezone = 'UTC';
 SELECT jsonb_build_object(
- 'format', 1, 'phase', '{phase}', 'plan_sha256', '{plan_hash}',
+ 'format', 2, 'phase', '{phase}', 'plan_sha256', '{plan_hash}',
  'observed_at', clock_timestamp(), 'backend_pid', pg_backend_pid(),
  'read_only', current_setting('transaction_read_only'),
  'schema', (SELECT jsonb_agg(version_num ORDER BY version_num) FROM app.alembic_version),
@@ -84,6 +154,24 @@ SELECT jsonb_build_object(
           FROM app.meals WHERE owner_id='{owner}'::uuid AND id='{meal}'::uuid),
  'items', (SELECT count(*) FROM app.meal_items
            WHERE owner_id='{owner}'::uuid AND meal_id='{meal}'::uuid),
+ 'meal_content', (SELECT jsonb_build_object(
+           'title', m.title, 'occurred_at', m.occurred_at, 'time_zone', m.time_zone,
+           'local_date', m.local_date, 'meal_type', m.meal_type, 'goal_id', m.goal_id,
+           'ration', m.ration, 'items', (SELECT COALESCE(jsonb_agg(jsonb_build_object(
+             'item_id', i.item_id, 'name', i.name,
+             'product', CASE WHEN i.product_id IS NULL THEN NULL ELSE
+               jsonb_build_object('product_id', i.product_id, 'revision', i.product_revision) END,
+             'quantity', jsonb_build_object('amount', i.quantity_amount::text,
+                                            'unit', i.quantity_unit),
+             'basis_unit', i.basis_unit, 'nutrition_per_100', jsonb_build_object(
+               'energy_kcal', i.energy_kcal::text, 'protein_g', i.protein_g::text,
+               'fat_g', i.fat_g::text, 'carbs_g', i.carbs_g::text),
+             'density_g_per_ml', i.density_g_per_ml::text, 'density_source', i.density_source,
+             'nutrition_origin', i.nutrition_origin, 'formula_version', i.formula_version,
+             'ration_component_position', i.ration_component_position
+           ) ORDER BY i.position), '[]'::jsonb) FROM app.meal_items i
+           WHERE i.owner_id=m.owner_id AND i.meal_id=m.id))
+          FROM app.meals m WHERE m.owner_id='{owner}'::uuid AND m.id='{meal}'::uuid),
  'day', (SELECT jsonb_build_object('id', id, 'revision', revision,
            'deleted', deleted_at IS NOT NULL) FROM app.diary_days
           WHERE owner_id='{owner}'::uuid AND local_date='{plan["local_date"]}'::date),
@@ -111,7 +199,7 @@ def compare(plan, snapshots):
         raise ValueError("Observation timestamps must increase")
     for snapshot in snapshots:
         if (
-            snapshot["format"] != 1
+            snapshot["format"] != 2
             or snapshot["plan_sha256"] != plan_hash
             or snapshot["read_only"] != "on"
             or snapshot["schema"] != [plan["expected_schema"]]
@@ -151,6 +239,8 @@ def compare(plan, snapshots):
     }
     if c1["meal"] != expected or c1["receipt"] != receipt or c1["items"] != plan["item_count"]:
         raise ValueError("C1 does not contain the expected committed Meal and receipt")
+    if meal_content(c1["meal_content"]) != meal_content(plan["expected_meal"]):
+        raise ValueError("C1 Meal content differs from the frozen expected operation")
     if c1["day"] is None or c1["day"]["deleted"]:
         raise ValueError("C1 requires a live DiaryDay")
     if c0["day"] is not None and c0["day"] != c1["day"]:
@@ -169,7 +259,7 @@ def compare(plan, snapshots):
             raise ValueError("Unexpected C0 to C1 row counts")
     if c1["position"] - (c0["position"] or 0) != 1 + new_day:
         raise ValueError("Unexpected C0 to C1 counter delta")
-    for key in ("meal", "items", "day", "receipt", "position", "tables"):
+    for key in ("meal", "items", "meal_content", "day", "receipt", "position", "tables"):
         if c2[key] != c1[key]:
             raise ValueError("Replay changed committed server state")
     return {
@@ -248,6 +338,9 @@ def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--plan", type=Path, required=True)
     sub = parser.add_subparsers(dest="action", required=True)
+    prepare = sub.add_parser("prepare", help="Use matching backend runtime before C0")
+    prepare.add_argument("--request", type=Path, required=True)
+    prepare.add_argument("--output", type=Path, required=True)
     save = sub.add_parser("capture")
     save.add_argument("--settings", type=Path, required=True)
     save.add_argument("--phase", choices=("C0", "C1", "C2"), required=True)
@@ -257,7 +350,13 @@ def main():
     args = parser.parse_args()
     try:
         plan = json.loads(args.plan.read_text(encoding="utf-8-sig"))
-        if args.action == "capture":
+        if args.action == "prepare":
+            plan = prepare_plan(plan, args.request.read_bytes())
+            with args.output.open("x", encoding="utf-8") as output:
+                os.chmod(args.output, 0o600)
+                json.dump(plan, output, indent=2)
+            print(json.dumps({"private_plan": "SAVED", "overall_apk_api_trial": "NOT_ASSESSED"}))
+        elif args.action == "capture":
             settings = json.loads(args.settings.read_text(encoding="utf-8-sig"))
             snapshot = capture(settings, plan, args.phase)
             # Exclusive creation preserves earlier evidence; caller uses an ACL-private directory.
@@ -278,6 +377,8 @@ def main():
             print(json.dumps(compare(plan, snapshots)))
     except (
         ValueError,
+        InvalidOperation,
+        ImportError,
         KeyError,
         TypeError,
         RuntimeError,

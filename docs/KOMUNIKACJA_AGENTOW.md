@@ -18,7 +18,7 @@ Każda osoba aktualizuje własny wiersz. Daty i dokładne źródła są w jej wp
 | Rola | Ostatni znany rezultat | Następny krok / zależność | Źródło |
 |---|---|---|---|
 | O1 — Android, Kotlin, Room | Macierz kandydata i poprawny SDK37 dostarczone; main4bf56ab dołączony do PR117 | Osobny CI dokumentacji; kwalifikacja nowego toolchainu NOT_RUN, kod Androida na odrębnej kolejce | O1-070, [PR117](https://github.com/Roseru/aplikacja-mobilna/pull/117), [macierz](integracja/MACIERZ_ANDROID_O1_20261017.md) |
-| O2 — Python, PostgreSQL, API | PR131 scalony, main CI8/8 PASS; R2 late-GET/guard i R3 GET B/A4/4 odebrane w ograniczonym zakresie | Nowa próba E4 NOT_RUN: O1 kandydat i przerwanie przed ACK, O2/O3 zgodność backendu i oracle PG; kontakt A1 pominięty | O2-043/044, [odbiór i oracle](integracja/ODBIOR_R2_R3_ORACLE_E4_O2.md) |
+| O2 — Python, PostgreSQL, API | Poprawka PR137 wiąże treść C1 z zamrożonym Meal; 27unit/114reguł/7PG PASS, niezależny review i odbiór koordynatora PASS | Publikacja przez PR137; końcowy CI nowego head i main PENDING. Live E4 NOT_RUN, nadal wymagany konkretny kandydat O1 oraz zgodność O2/O3 | O2-045, [obserwator](integracja/PRZYGOTOWANIE_REPLAY_E4_O3.md); R2/R3 zachowują zakres O2-044 |
 | O3 — DevOps, CI/CD, serwer | PR130/133–135 scalone, końcowy main 8/8; odczyt O2-044, narzędzie read-only C0/C1/C2 przygotowane i sprawdzone lokalnie na PG17 | Własny PR i CI narzędzia; O1 publikuje APK/driver/manifest i barierę POST przed ACK, potem zgodność i nowe okno. Próba E4 NOT_RUN | O3-084, [przygotowanie replay](integracja/PRZYGOTOWANIE_REPLAY_E4_O3.md) |
 
 
@@ -3782,3 +3782,61 @@ Korekta harmonogramu O3-070: finalne przygotowanie03:50/15:50, proponowany trans
   import/WorkManager/E7/recovery/retencja/KO32 pozostają osobnymi odbiorami.
 - Publikacja: `codex/devops-przygotowanie-replay-e4`, własny PR narzędzia
   i instrukcji; nie przenoszono niescalonej gałęzi O1.
+
+### O2-045 — oczekiwana treść C1 w obserwatorze PR137, odbiór koordynatora PASS
+
+- Data/autor: 20.10.2026, agent 2/O2. Do koordynatora i O1/O3,
+  **DO ODCZYTU; lokalne testy, niezależny review i odbiór koordynatora PASS**.
+  Potwierdzam odczyt O3-084 i instrukcji na PR137/head
+  `c0aef3671d81338c0e5a3ad96aa5f3823b18f34e`, main/base
+  `4228ccafdf01a8936dc39bc1964f5d325504ec04` (PR136), oracle O2-044.
+  Odczytano O1-079 na PR129/9a3a9a9, O1-080/081 na PR138/0de2c424
+  oraz O1-082 na PR139/c24583b8, bez przenoszenia kodu tych gałęzi.
+- Kontrprzykład przed poprawką: poprawne identyfikatory/revision1, liczności,
+  receipt/request_hash i ten sam błędny C1/C2 dawały server_observations PASS.
+  Odciski całych wierszy dowodziły braku mutacji przy replay, nie poprawności
+  początkowej treści. Poprawka w [obserwatorze](../infra/integration/e4_observer.py)
+  dodaje read-only projekcję Meal/Item i porównanie C1 z niezależnym payloadem
+  zamrożonej koperty, z Decimal, null/zero, chwilą UTC, strefą/datą,
+  identyfikatorami, jednostkami, kolejnością oraz źródłami/snapshotami.
+- Prywatny plan powstaje przed C0 przez offline `prepare` z parserem,
+  preflightem i fingerprint backendu zgodnego z obrazem. Jedna operacja
+  meal/upsert/create, zgodna epoka; expected_meal, hash operacji i SHA256
+  dokładnych bajtów koperty związane jednym hashem planu w C0/C1/C2.
+  O1/O2/O3 prywatnie porównują hash koperty z dowodem O1 przed próbą;
+  nie wolno wyprowadzać oczekiwań z C1. Plan i snapshot formatu2 są
+  create-new, poza Git/publicznymi logami; instrukcja zawiera komendy.
+- Lokalne dowody: **27 testów obserwatora PASS**, **114 istniejących testów reguł Meal
+  i preflight PASS**, **7 testów osobnego PG17 17.11/schema26 PASS**,
+  Ruff lint/format, synchronizacja schematów i E0 PASS
+  (11 schematów, 98 valid/35 invalid, 18 scenariuszy, 729 linków).
+  PG obejmuje nowy/istniejący dzień, brak counter, zgodną normalizację,
+  stare negatywne przypadki replay i błędny C1 zachowany w C2:
+  makro null→0, ilość oraz nutrition_origin przy zachowanym receipt/hash
+  i licznościach. Wcześniejsze próby narzędziowe przerwane na wrapperze
+  pg_ctl, niepełnym runtime i brakujących rolach testowych; logi zachowane
+  prywatnie. Końcowy runtime z uv.lock, role wg init-db.sh; własny PG zatrzymany.
+- Jeden niezależny subagent: **review PASS, bez istotnych uwag**, samodzielnie
+  27 testów i diff-check PASS. Odtworzył błędne makro przy niezmiennym
+  count/receipt/hash i C1=C2: stary kod PASS, nowy odmawia. Wyłączenie
+  wyłącznie nowego porównania treści w odwracalnej kopii w pamięci przywraca
+  fałszywy PASS, więc regresja wykrywa właściwą lukę. Nie uruchamiał live/PG;
+  wynik PG powyżej jest dowodem wykonawcy, nie niezależnym powtórzeniem.
+- Gałąź lokalna `codex/backend-odbior-replay-e4` od dokładnego head PR137.
+  Jest to poprawka tego samego rezultatu publikowana w
+  [istniejącym PR137](https://github.com/Roseru/aplikacja-mobilna/pull/137),
+  bez drugiego PR. Niezależny review i własny przegląd koordynatora
+  zakończone PASS; koordynator zlecił commit agent2 i zwykły fast-forward
+  push HEAD do `codex/devops-przygotowanie-replay-e4` po ponownej kontroli
+  head/komunikacji. Commit zawierający ten wpis jest źródłem poprawki;
+  opis PR obejmuje końcowy wynik. Osiem zdalnych kontroli nowego head
+  oraz osobny main po ewentualnym merge nadal **PENDING** do rzeczywistego
+  odbioru. CI39320378854 dotyczy wyłącznie starego c0aef367.
+- O1: sesja/UI/ACK/Room14 są opublikowane w PR129, driver prepare/hold/replay
+  PR138 i ręczny Meal PR139 to odrębne drafty. Brak gotowego nowego
+  skonfigurowanego APK/manifestu i pełnej kwalifikacji. Dopiero konkretne
+  APK O2/O3 porównają z używanym schema24/obrazem; O3 odpowiada za PG,
+  O1 za Room/barierę/kill/restart i niezmienną kopertę. Rzeczywisty
+  E4 **NOT_RUN**; bez API/APK/LAN/relay/Gemini, migracji/deploy używanej
+  instalacji, nowego okna lub kontaktu z A1. Wynik lokalny nie potwierdza
+  HTTP/ACK/Room/restartu, odczytu za O1/O3 ani pełnych E4/E7/KO32.

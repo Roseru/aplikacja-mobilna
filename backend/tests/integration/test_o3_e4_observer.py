@@ -1,5 +1,6 @@
 """Exercise the operator's actual SQL against committed PG17 sync operations."""
 
+import json
 import sys
 from copy import deepcopy
 from pathlib import Path
@@ -9,11 +10,10 @@ import pytest
 from sqlalchemy import text
 
 from calorie_app.health import EXPECTED_REVISION
-from calorie_app.modules.sync.service import fingerprint
 from tests.integration import test_e4_push as push
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[3] / "infra/integration"))
-from e4_observer import compare, observation_sql
+from e4_observer import compare, observation_sql, prepare_plan
 
 pytestmark = pytest.mark.integration
 IMAGE = "sha256:" + "a" * 64
@@ -25,18 +25,13 @@ def synced(database):
 
 
 def plan_for(synced, op):
-    return {
+    context = {
         "trial_id": str(uuid4()),
         "owner_id": str(synced[3]),
-        "operation_id": op["operation_id"],
-        "entity_id": op["entity_id"],
-        "sync_epoch": op["sync_epoch"],
-        "local_date": op["payload"]["local_date"],
-        "operation_sha256": fingerprint(op),
-        "item_count": len(op["payload"]["items"]),
         "expected_schema": EXPECTED_REVISION,
         "expected_api_image": IMAGE,
     }
+    return prepare_plan(context, json.dumps(push.request(synced[4], synced[5], [op])).encode())
 
 
 def observe(engine, plan, phase):
@@ -56,6 +51,8 @@ def observe(engine, plan, phase):
 @pytest.mark.parametrize("existing_day", [False, True])
 def test_committed_create_and_replay_observations(synced, existing_day):
     op = push.operation(synced[4], "meal")
+    # Meaningful null/zero and NUMERIC(12,6)/UTC normalization on real storage.
+    op["payload"]["items"][0]["nutrition_per_100"].update(protein_g=None, fat_g="0")
     if existing_day:
         day = push.operation(
             synced[4],
@@ -115,4 +112,34 @@ def test_replay_row_mutation_is_detected_even_when_counts_match(synced, table, c
         t: v["count"] for t, v in c2["tables"].items()
     }
     with pytest.raises(ValueError, match="Replay changed"):
+        compare(plan, [c0, c1, c2])
+
+
+@pytest.mark.parametrize(
+    "column,expression",
+    [
+        ("protein_g", "0"),
+        ("quantity_amount", "quantity_amount + 1"),
+        ("nutrition_origin", "'ai_estimate'"),
+    ],
+)
+def test_wrong_committed_content_is_rejected_before_identical_replay(synced, column, expression):
+    op = push.operation(synced[4], "meal")
+    op["payload"]["items"][0]["nutrition_per_100"]["protein_g"] = None
+    plan = plan_for(synced, op)
+    c0 = observe(synced[0], plan, "C0")
+    assert c0["position"] is None
+    assert push.send(synced, [op])[0]["status"] == "accepted"
+    # Isolated test DB only. Keep receipt/hash and all row counts untouched.
+    with synced[0].begin() as connection:
+        connection.execute(
+            text(f"UPDATE app.meal_items SET {column}={expression} WHERE owner_id=:owner"),
+            {"owner": synced[3]},
+        )
+    c1 = observe(synced[0], plan, "C1")
+    assert push.send(synced, [op])[0]["status"] == "already_applied"
+    c2 = observe(synced[0], plan, "C2")
+    assert c1["tables"] == c2["tables"] and c1["receipt"] == c2["receipt"]
+    assert c1["receipt"]["request_hash"] == plan["operation_sha256"]
+    with pytest.raises(ValueError, match="C1 Meal content"):
         compare(plan, [c0, c1, c2])
