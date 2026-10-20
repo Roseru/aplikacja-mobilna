@@ -22,12 +22,12 @@ from calorie_app.modules.diary.service import (
     save_product_draft,
     save_weight,
 )
-from calorie_app.modules.identity.deletion import begin, resume, status
 from calorie_app.modules.identity.models import OnlineReceipt, UserAccount
 from calorie_app.modules.identity.service import bootstrap, require_account
 from calorie_app.modules.profiles.models import UserConsent
 from calorie_app.modules.profiles.schemas import GoalPayload, ProfilePayload
 from calorie_app.modules.profiles.service import create_goal, save_profile
+from tests.support.deletion_regression import begin, resume, status
 
 pytestmark = pytest.mark.integration
 EXAMPLES = Path(__file__).resolve().parents[3] / "contracts/examples/valid"
@@ -445,11 +445,13 @@ def test_deletion_metadata_matches_migrated_schema(database):
     assert created["default"] == "clock_timestamp()"
 
 
-def test_original_0008_upgrade_preserves_private_graph_epoch_and_catalog_bytes(database, tmp_path):
+def test_original_0008_upgrade_preserves_private_graph_epoch_and_catalog_bytes(
+    historical_database, tmp_path
+):
     from calorie_app.modules.catalog.export import export_package, publish_package
     from calorie_app.modules.catalog.service import import_catalog
 
-    engine, migrate, _ = database
+    engine, migrate, _ = historical_database
     # Dedicated *_test fixture, run serially: rebuild the genuine old schema,
     # rather than a downgraded marker retaining the new E4 implementation.
     with engine.begin() as connection:

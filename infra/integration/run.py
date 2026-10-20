@@ -336,6 +336,8 @@ class Stack:
             capture_output=True,
             encoding="utf-8",
             errors="replace",
+            timeout=600,
+            **({"creationflags": subprocess.CREATE_NO_WINDOW} if os.name == "nt" else {}),
         )
         with (self.state / "compose.log").open("a", encoding="utf-8") as output:
             output.write(result.stdout + result.stderr)
