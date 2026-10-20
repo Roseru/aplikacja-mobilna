@@ -18,6 +18,8 @@ from calorie_app.modules.sync.models import SyncReceipt
 sys.path.insert(0, str(Path(__file__).resolve().parents[3] / "infra/integration"))
 from worker import LOCK_ID, Worker, healthy, read_json  # noqa: E402
 
+from tests.support.deletion_regression import begin as begin_deletion
+
 pytestmark = pytest.mark.integration
 
 
@@ -28,7 +30,9 @@ def fixture(database, tmp_path):
     assert password, "Actual worker login tests require TEST_WORKER_PASSWORD"
     worker_url = make_url(url).set(username="calorie_app_worker", password=password)
     settings = Settings(database_url=SecretStr(worker_url.render_as_string(hide_password=False)))
-    a, b, c = [UUID(int=i) for i in (301, 302, 303)]
+    # Fresh identity range preserves stable ordering without reusing a permanently fenced subject.
+    identity_base = uuid4().int & ~0xFFFF
+    a, b, c = [UUID(int=identity_base + i) for i in (301, 302, 303)]
     # The session-scoped database is shared with other integration fixtures.
     # Its conftest refuses anything except an explicit dedicated *_test database.
     with engine.begin() as connection:
@@ -69,12 +73,7 @@ def fixture(database, tmp_path):
                 response={"fresh": True},
             )
         )
-        session.execute(
-            text(
-                "UPDATE app.user_accounts SET state='deleting',generation=generation+1 WHERE id=:c"
-            ),
-            {"c": c},
-        )
+        begin_deletion(session.connection(), c, uuid4(), 1)
         # No HTTP activity: technical read copies alone must still be cleaned.
         for old in (True, False):
             sid = uuid4()
@@ -215,13 +214,7 @@ def test_transition_to_deleting_between_scan_and_lock_is_skipped(fixture):
         if "FOR UPDATE" in statement and not changed:
             changed = True
             with engine.begin() as other:
-                other.execute(
-                    text(
-                        "UPDATE app.user_accounts SET state='deleting',generation=generation+1 "
-                        "WHERE id=:a"
-                    ),
-                    {"a": a},
-                )
+                begin_deletion(other, a, uuid4(), 1)
 
     event.listen(worker.engine, "before_cursor_execute", transition)
     result = worker.run()

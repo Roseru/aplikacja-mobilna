@@ -65,7 +65,7 @@ stan; nie generuj nowych haseł do istniejących baz i nie usuwaj wolumenów jak
 | `storage-init` | Jednorazowo ustawia właściciela własnego wolumenu katalogu; bez dostępu DB |
 | Caddy | Jedyny opublikowany port; TLS, proxy API/OIDC/admin, bez access logów i cache |
 
-Aktualny oczekiwany head to `0024_e9_history_graph`. [Lokalny rollout E9](../../docs/e9/ROLLOUT_LOKALNY_O3.md)
+Aktualny oczekiwany head to `0025_deletion_ledger`. [Ledger v1](../../docs/integracja/REJESTR_USUNIEC_O2.md) ma osobny cutover i odbiór O3; migracja sama nie włącza producenta. [Lokalny rollout E9](../../docs/e9/ROLLOUT_LOKALNY_O3.md)
 opisuje wykonany upgrade istniejącej instalacji i jego granice. Test pobiera wymagany head z backendu,
 żeby późniejsza zgodna migracja O2 nie wymagała osobnego ręcznego przepisania liczby w teście.
 Przed takim rolloutem O3 nadal sprawdza zgodność migracji i obrazu. API nie wykonuje DDL przy
@@ -320,6 +320,10 @@ cancelled lub skipped nie zalicza integracji. Istniejące kontrole Androida, PG 
 pozostają obowiązkowe. Testy TLS obejmują prawdziwy lokalny serwer JWKS, nie mock transportu.
 
 ## Granice odbioru
+
+[Monitoring lokalnej integracji](MONITORING.md) opisuje odczyty, prywatny harmonogram,
+deduplikację issues i rzeczywistą próbę awarii/przywrócenia API. AI oraz kopie offsite
+bez wdrożenia pozostają jawnie nieodebrane.
 
 To działająca infrastruktura lokalna. Podstawowy `verify` nie potwierdza podłączenia obecnego APK,
 KO-31, kompletu official ARPOL, publicznego VPS/domeny/SMTP ani restore/RPO/RTO.

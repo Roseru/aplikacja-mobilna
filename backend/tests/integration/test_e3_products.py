@@ -19,6 +19,7 @@ from calorie_app.modules.catalog.product_pages import decode_page, encode_page, 
 from calorie_app.modules.catalog.service import import_catalog
 from calorie_app.modules.identity.dependencies import current_principal
 from calorie_app.modules.identity.service import bootstrap
+from tests.support.deletion_regression import begin as begin_deletion
 
 pytestmark = pytest.mark.integration
 
@@ -200,10 +201,7 @@ def test_official_snapshot_filters_owner_ttl_and_exact_revision(product_api, tmp
         == 422
     )
     with engine.begin() as connection:
-        connection.execute(
-            text("UPDATE app.user_accounts SET state='deleting',generation=2 WHERE id=:id"),
-            {"id": UUID(registration["account_id"])},
-        )
+        begin_deletion(connection, UUID(registration["account_id"]), uuid4(), 1)
     assert (
         client.get("/api/v1/products", params={"limit": 1, "page_token": token}).json()["code"]
         == "account_deleting"

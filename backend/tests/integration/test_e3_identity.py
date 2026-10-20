@@ -22,12 +22,7 @@ from calorie_app.modules.catalog.pagination import database_now
 from calorie_app.modules.catalog.validation import canonical_json
 from calorie_app.modules.identity.dependencies import current_principal
 from calorie_app.modules.identity.models import InstallationState, OnlineReceipt, UserAccount
-from calorie_app.modules.identity.service import (
-    begin_deleting,
-    bootstrap,
-    current_epoch,
-    lock_account,
-)
+from calorie_app.modules.identity.service import bootstrap, current_epoch, lock_account
 from calorie_app.modules.profiles.models import GoalTimeline, GoalVersion, Profile, UserConsent
 from calorie_app.modules.profiles.pagination import goal_page, parse_goal_cursor, sign_goal_cursor
 from calorie_app.modules.profiles.schemas import ConsentInput, GoalPayload, ProfilePayload
@@ -41,6 +36,7 @@ from calorie_app.modules.profiles.service import (
     read_profile,
     save_profile,
 )
+from tests.support.deletion_regression import begin_deleting
 
 pytestmark = pytest.mark.integration
 ROOT = Path(__file__).resolve().parents[3]
@@ -155,12 +151,23 @@ def test_epoch_and_generation_replay_context_and_deleting_priority(identity_db):
     assert boot(identity_db, who, new_key)[2]["account_id"] == initial["account_id"]
     with identity_db.begin() as connection:
         connection.execute(
-            text("UPDATE app.user_accounts SET generation=generation+1 WHERE id=:id"), {"id": owner}
+            text("UPDATE app.installation_state SET sync_epoch=:epoch"),
+            {"epoch": initial["sync_epoch"]},
         )
-    with pytest.raises(DomainError) as error:
-        boot(identity_db, who, new_key)
-    assert error.value.code == "account_generation_changed"
-    assert boot(identity_db, who)[2]["account_generation"] == 2
+    # Existing immutable receipts cannot be rewritten to manufacture a stale
+    # generation. Exercise the original context check against an in-memory
+    # future account generation, then roll back without a lifecycle write.
+    from calorie_app.modules.identity.service import check_receipt_context
+
+    with Session(identity_db) as session:
+        account = session.get(UserAccount, owner)
+        receipt = session.get(OnlineReceipt, (owner, "bootstrap", key))
+        account.generation += 1
+        with pytest.raises(DomainError) as error:
+            check_receipt_context(receipt, account, UUID(initial["sync_epoch"]))
+        assert error.value.code == "account_generation_changed"
+        session.rollback()
+    assert boot(identity_db, who)[2]["account_generation"] == 1
     with Session(identity_db) as session, session.begin():
         begin_deleting(session, owner)
     for retry_key in (key, new_key, uuid4()):
@@ -653,17 +660,13 @@ def test_runtime_sql_cannot_transfer_private_owner_or_resurrect_profile(identity
 
 def test_account_anchor_and_deleting_guard_apply_to_raw_runtime_sql(identity_db):
     _, owner, _ = boot(identity_db)
-    with identity_db.begin() as connection:
-        connection.execute(text("SET LOCAL ROLE calorie_app_api"))
-        connection.execute(
-            text("UPDATE app.user_accounts SET generation=generation+1 WHERE id=:id"), {"id": owner}
-        )
     for change in (
+        "generation=generation+1",
         "issuer='https://other.example.test'",
         "subject='new-subject'",
         "id=gen_random_uuid()",
         "created_at=clock_timestamp()",
-        "generation=1",
+        "generation=0",
         "state='deleting'",
     ):
         with pytest.raises(IntegrityError), identity_db.begin() as connection:
@@ -737,8 +740,8 @@ def test_moved_and_branched_goal_corrections_replace_heads_preserve_versions(ide
         assert session.scalar(select(func.count()).select_from(GoalVersion)) == 4
 
 
-def test_upgrade_existing_e2_account_backfills_consents_preserves_identity(identity_db, database):
-    engine, migrate, _ = database
+def test_upgrade_existing_e2_account_backfills_consents_preserves_identity(historical_database):
+    engine, migrate, _ = historical_database
     migrate("downgrade", "0005_ration_cursors")
     active, deleting = uuid4(), uuid4()
     with engine.begin() as connection:
@@ -795,10 +798,7 @@ def test_goal_page_expiry_boundary_and_generation_binding(identity_db, monkeypat
         with pytest.raises(DomainError) as error, Session(identity_db) as session, session.begin():
             goal_page(session, owner, 1, token, SECRET)
         assert error.value.code == "page_expired"
-    with identity_db.begin() as connection:
-        connection.execute(
-            text("UPDATE app.user_accounts SET generation=generation+1 WHERE id=:id"), {"id": owner}
-        )
+    token = pagination.sign_goal_cursor(cursor | {"generation": cursor["generation"] + 1}, SECRET)
     with pytest.raises(DomainError) as error, Session(identity_db) as session, session.begin():
         goal_page(session, owner, 1, token, SECRET)
     assert error.value.status == 422

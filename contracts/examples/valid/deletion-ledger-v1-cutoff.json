@@ -1,0 +1,13 @@
+{
+  "installation_id": "00000000-0000-0000-0000-000000000001",
+  "stream_id": "00000000-0000-0000-0000-000000000002",
+  "anchor_id": "00000000-0000-0000-0000-000000000003",
+  "receiver_id": "00000000-0000-0000-0000-000000000004",
+  "domain": "deletion-ledger-cutoff-v1",
+  "sequence": 7,
+  "chain_hash": "01d83cd9fea8f04effbf3e16300f85ddfff97300a51cb9c982e2361f0de9626e",
+  "mac": "275d4342367c96c2a7e025d12c1f2bd9ca653809dbc549dd37836d001e17cd78",
+  "fence_id": "00000000-0000-0000-0000-00000000001e",
+  "fence_sha256": "57b969cfcd190190af5df8faf81e8ab3b96fc77c571bf199d6fe1a25f6bce796",
+  "scope": "contract-test"
+}
