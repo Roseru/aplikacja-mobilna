@@ -78,6 +78,41 @@ class AndroidCiTest(unittest.TestCase):
 
 @unittest.skipUnless(os.name != "nt" and shutil.which("bash"), "Linux CI shell regression")
 class AndroidBuildDiagnosticsTest(unittest.TestCase):
+    def test_validation_failure_blocks_build_even_when_debug_report_passes(self):
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            wrapper = root / "gradlew"
+            wrapper.write_text(
+                "#!/bin/sh\n"
+                "mkdir -p app/build/test-results/testDebugUnitTest\n"
+                "echo '<testsuite tests=\"1\"><testcase name=\"debug\"/></testsuite>' "
+                "> app/build/test-results/testDebugUnitTest/TEST-debug.xml\n"
+                'for task in "$@"; do\n'
+                '  if [ "$task" = ":app:testValidationUnitTest" ]; then\n'
+                "    echo fixture-validation-failure >&2\n"
+                "    exit 29\n"
+                "  fi\n"
+                "done\n"
+                "exit 0\n"
+            )
+            wrapper.chmod(0o755)
+            script = Path(__file__).resolve().parents[1] / "android_build.sh"
+            result = subprocess.run(
+                ["bash", script.as_posix()],
+                cwd=root,
+                capture_output=True,
+                text=True,
+                timeout=10,
+                check=False,
+            )
+            self.assertEqual(result.returncode, 29, result.stdout + result.stderr)
+            self.assertEqual(
+                check_results(root / "app/build/test-results/testDebugUnitTest")["tests"],
+                1,
+            )
+            log = (root / "app/build/ci/gradle-build.log").read_text()
+            self.assertIn("fixture-validation-failure", log)
+
     def test_configuration_failure_keeps_log_and_nonzero_status_without_xml(self):
         self.run_build_script(23)
 

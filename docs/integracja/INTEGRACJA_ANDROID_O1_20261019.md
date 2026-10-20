@@ -148,3 +148,24 @@ właściciela; nie instalowano APK i nie zmieniano lokalnego dziennika.
 Kontrole przed publikacją PR73: E0 PASS11schematów/98valid/35invalid/
 18scenariuszy/753linków i diff-check. Obie kopie R2/R3 zachowują dokładne
 bajty źródła a41a5cb; to kontrola dokumentacji i kontraktów, bez nowej próby API.
+
+## O1-086 — wymagane testy JVM obu wariantów, 20.10.2026
+
+Odczyt CI39437485519/head7ad8532 wykazał165JVM debug, ale istniejący skrypt
+i workflow nie wykonywały testValidationUnitTest.15 testów receipt/gate/proof
+z src/testValidation pozostawało poza tym wynikiem. Nie przypisujemy165PASS
+debug do całego nowego kodu obserwacji. R2/R3 zachowują swój rzeczywisty odbiór;
+zmiana domyka automatyczne testy regresji i wymaga własnego nowego CI.
+
+Skrypt wykonuje teraz oba zadania jednostkowe. Workflow sprawdza ich katalogi
+niezależnie, odrzucając brak raportu, błędy i pominięcia; publikuje także
+jvm-validation-summary.json oraz XML/HTML validation. Siedem obowiązkowych
+jobów i agregator pozostają bez zmian. Liczności obu wariantów należy podawać
+osobno, ponieważ wspólne scenariusze wykonują się dwukrotnie.
+
+Regresja powłoki daje poprawny JUnit debug, a atrapa Gradle zwraca błąd29
+wyłącznie przy uruchomieniu testów validation. Nowy wrapper odmawia i zapisuje
+diagnostykę. Ten sam przypadek na starym wrapperze zwraca0, odtwarzając lukę.
+Lokalnie2testy przenośne PASS, przypadek regresji pod Git Bash PASS,
+kontrprzykład starego skryptu odtworzony, bash -n PASS. To nie wykonanie
+Gradle lub pełnego Linux CI; te wyniki będą odebrane z nowego run/head.

@@ -17,7 +17,7 @@ Każda osoba aktualizuje własny wiersz. Daty i dokładne źródła są w jej wp
 
 | Rola | Ostatni znany rezultat | Następny krok / zależność | Źródło |
 |---|---|---|---|
-| O1 — Android, Kotlin, Room | PR64 zdjęć scalony po8/8; PR73 łączy dowód parsowania i odrzucenia late-GET z aktualnym main | Nowy własny CI PR73 po publikacji; R2/R3 odebrane tylko w swoim zakresie, bez nowej próby live | O1-085, [PR73](https://github.com/Roseru/aplikacja-mobilna/pull/73) |
+| O1 — Android, Kotlin, Room | PR64 scalony; PR73 uzupełniony o wymagane testy JVM validation i osobny raport | Nowy CI po poprawce pokrycia; stare165debug nie potwierdza15testów receipt/gate/proof | O1-086, [PR73](https://github.com/Roseru/aplikacja-mobilna/pull/73) |
 | O2 — Python, PostgreSQL, API | PR131 scalony, main CI8/8 PASS; R2 late-GET/guard i R3 GET B/A4/4 odebrane w ograniczonym zakresie | Nowa próba E4 NOT_RUN: O1 kandydat i przerwanie przed ACK, O2/O3 zgodność backendu i oracle PG; kontakt A1 pominięty | O2-043/044, [odbiór i oracle](integracja/ODBIOR_R2_R3_ORACLE_E4_O2.md) |
 | O3 — DevOps, CI/CD, serwer | PR130 scalony po 8/8 SUCCESS; R2/R3 odebrane, transport zamknięty. Aktualizacje setup-java/upload-artifact/Caddy po przeglądzie bez istotnych uwag | Własny CI aktualnych gałęzi i main dla PR133–135; O1 potwierdza artefakt i gotowość kolejnego E4, okno jeszcze nieotwarte | O3-082/083, [PR133](https://github.com/Roseru/aplikacja-mobilna/pull/133), [PR130](https://github.com/Roseru/aplikacja-mobilna/pull/130) |
 
@@ -4119,3 +4119,35 @@ Archiwalne wiersze stanu PR64 sprzed integracji17.10; aktualny stan znajduje si�
 - Kontrole przed publikacją: E0 PASS11schematów/98valid/35invalid/
   18scenariuszy/753linków i diff-check. R2/R3 zachowują dokładne bajty źródła
   a41a5cb. To walidacja dokumentacji/kontraktów; nowy Project CI osobno.
+
+### O1-086 — CI musi uruchomić także jednostkowe testy validation z PR73
+
+- Data/autor:20.10.2026, agent1/O1. Do O3/O2, **DO ODCZYTU**.
+  Kontynuacja tego samego PR73/codex/android-odbior-api, lokalnie
+  codex/android-integracja-pr73. Podczas odbioru CI39437485519/head7ad8532
+  zauważono, że android-build wykonuje tylko testDebugUnitTest i sprawdza
+  tylko jego JUnit.165PASS debug nie uruchamia15 przypadków w trzech klasach
+  src/testValidation: ApiReadReceiptTest, LateReadGateTest, LateReadProofTest.
+  Rzeczywisty R2 i jego ograniczony odbiór O2 nie są przez to cofane;
+  to brak automatycznej regresji wariantu, nie nowa usterka live.
+- Dodano testValidationUnitTest do istniejącego skryptu budowy, osobny
+  obowiązkowy check_results dla jego katalogu JUnit oraz raport/artefakt
+  jvm-validation-summary.json. Brak raportów, błąd lub skip validation blokuje
+  istniejący job android-build. Nie zmieniono siedmiu wymaganych jobów,
+  agregatora, uprawnień, pinów akcji lub zasad pomijania. Wspólne przypadki
+  wykonują się w obu wariantach, dlatego nie sumujemy ich jako unikalnych testów.
+- Lekka regresja wykonuje skrypt na atrapie Gradle: poprawny raport debug
+  plus błąd wyłącznie przy testValidationUnitTest. Nowy skrypt zwraca29
+  i zachowuje diagnostykę; stary zwraca0, co odtwarza kontrprzykład luki.
+  Lokalnie2przenośne testy verifiers PASS, ten sam test regresji pod Git Bash
+  PASS oraz bash -n PASS. Nie uruchomiono prawdziwego Gradle, JVM Androida
+  lub emulatora. Pełny test powłoki Linux wykona dopiero nowy CI.
+  Pierwsze próby lokalne przerwano przez uprawnienia temp/MSYS sandboxu;
+  poprawiono środowisko narzędzia, bez zmiany logiki testu dla uzyskania PASS.
+- Kod Kotlin, payloady, migracja/Room9 i oba archiwalne raporty R2/R3 bez zmian.
+  Nowy commit wymaga własnego CI; wynik starego head7ad8532 nie kwalifikuje
+  poprawki. Nie anulowano starego przebiegu z powodu czasu obserwacji.
+  Ten wpis i commit są źródłem poprawki, opis PR jest aktualizowany.
+  Właściciel nadal gra: bez lokalnego buildu/AVD/instalacji/API/Gemini,
+  restartu PC lub zmian usług O3. Następny krok: osobne podsumowania obu
+  wariantów JVM, native i komplet ośmiu kontroli dokładnego nowego head.
