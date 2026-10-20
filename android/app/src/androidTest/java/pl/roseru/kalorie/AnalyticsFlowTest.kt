@@ -4,6 +4,8 @@ import androidx.compose.ui.test.*
 import androidx.compose.ui.test.junit4.createAndroidComposeRule
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import kotlinx.coroutines.runBlocking
+import kotlinx.coroutines.flow.first
+import java.util.UUID
 import org.junit.Assert.*
 import org.junit.Rule
 import org.junit.Test
@@ -51,22 +53,41 @@ class AnalyticsFlowTest {
     @Test fun actualHistoricalEntriesAndWeightsAppearOfflineInOlderPeriod() {
         compose.waitUntil(15_000) { compose.onAllNodesWithTag("daily-kcal").fetchSemanticsNodes().isNotEmpty() }
         val app = compose.activity.application as CalorieApplication
-        val date = LocalDate.now().minusDays(100)
-        runBlocking {
-            app.repository.add("basic-banana", 100.0, MealType.LUNCH, date, "analytics-ui-historical")
-            app.repository.setDayComplete(date, true)
-            app.repository.addWeight(82.4, date, "analytics-ui-weight")
+        val date = runBlocking {
+            // Reuse only an empty/unmarked day; never clear somebody else's historical records.
+            (100L..178L).map { LocalDate.now().minusDays(it) }.first { candidate ->
+                val day = candidate.toString()
+                app.database.dao().day("guest", day).first().isEmpty() &&
+                    app.database.dao().weightsBetween("guest", day, day).first().isEmpty() &&
+                    app.database.dao().currentDiaryDay("guest", day)?.declaredComplete != true
+            }
         }
-        compose.onNodeWithTag("open-analytics").performClick()
-        compose.onNodeWithTag("period-90").performClick()
-        compose.onNodeWithTag("analytics-previous").performClick()
-        val end = LocalDate.now().minusDays(90)
-        compose.waitUntil(15_000) { compose.onAllNodesWithTag("analytics-loaded-$end-90").fetchSemanticsNodes().isNotEmpty() }
-        compose.onNodeWithTag("analytics-content").performScrollToNode(hasTestTag("history-$date"))
-        compose.onNodeWithTag("history-$date").assertTextContains("89 kcal", substring = true)
-        compose.onNodeWithTag("history-$date").assertTextContains("Kompletny", substring = true)
-        compose.onNodeWithTag("history-$date").assertTextContains("Waga: 82,4 kg", substring = true)
-        compose.onNodeWithTag("analytics-content").performScrollToNode(hasTestTag("weight-chart"))
-        compose.onNodeWithTag("weight-chart").assertExists()
+        val mealId = "analytics-ui-${UUID.randomUUID()}"
+        val weightId = "analytics-weight-${UUID.randomUUID()}"
+        try {
+            runBlocking {
+                app.repository.add("basic-banana", 100.0, MealType.LUNCH, date, mealId)
+                app.repository.setDayComplete(date, true)
+                app.repository.addWeight(82.4, date, weightId)
+            }
+            compose.onNodeWithTag("open-analytics").performClick()
+            compose.onNodeWithTag("period-90").performClick()
+            compose.onNodeWithTag("analytics-previous").performClick()
+            val end = LocalDate.now().minusDays(90)
+            compose.waitUntil(15_000) { compose.onAllNodesWithTag("analytics-loaded-$end-90").fetchSemanticsNodes().isNotEmpty() }
+            compose.onNodeWithTag("analytics-content").performScrollToNode(hasTestTag("history-$date"))
+            compose.onNodeWithTag("history-$date").assertTextContains("89 kcal", substring = true)
+            compose.onNodeWithTag("history-$date").assertTextContains("Kompletny", substring = true)
+            compose.onNodeWithTag("history-$date").assertTextContains("Waga: 82,4 kg", substring = true)
+            compose.onNodeWithTag("analytics-content").performScrollToNode(hasTestTag("weight-chart"))
+            compose.onNodeWithTag("weight-chart").assertExists()
+        } finally {
+            runBlocking {
+                if (app.database.dao().meal(mealId, "guest") != null) app.repository.delete(mealId)
+                if (app.database.dao().weight(weightId, "guest") != null) app.repository.deleteWeight(weightId)
+                if (app.database.dao().currentDiaryDay("guest", date.toString())?.declaredComplete == true)
+                    app.repository.setDayComplete(date, false)
+            }
+        }
     }
 }

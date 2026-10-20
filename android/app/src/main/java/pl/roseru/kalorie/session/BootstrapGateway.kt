@@ -10,6 +10,7 @@ import pl.roseru.kalorie.core.RankingConsentAttempt
 import pl.roseru.kalorie.core.RankingQuery
 import pl.roseru.kalorie.core.NemesisQuery
 import pl.roseru.kalorie.core.NemesisReadProtocol
+import pl.roseru.kalorie.core.PhotoHttpRequest
 import pl.roseru.kalorie.core.NemesisAttempt
 import pl.roseru.kalorie.core.catalog.StrictJson
 import pl.roseru.kalorie.core.requireHttps
@@ -173,16 +174,18 @@ internal class HttpsNemesisWriteGateway(base: String,
             NemesisReadProtocol.MAX_BYTES, requireNoStore = true, syncEpoch = request.epoch, privateErrors = true, nemesis = request)
 }
 
-private object HttpsJsonTransport {
+internal object HttpsJsonTransport {
     suspend fun request(url: URL, method: String, session: ApiSession, key: String?,
         open: (URL) -> HttpsURLConnection, beforeSend: suspend () -> Unit,
         maxBytes: Int = BootstrapHttpProtocol.MAX_BYTES, requireNoStore: Boolean = false,
         consent: RankingConsentAttempt? = null, syncEpoch: String? = null, privateErrors: Boolean = false,
-        nemesis: NemesisAttempt? = null) = withContext(Dispatchers.IO) {
+        nemesis: NemesisAttempt? = null, photo: PhotoHttpRequest? = null) = withContext(Dispatchers.IO) {
         syncEpoch?.let(NemesisReadProtocol::uuid)
-        require(consent == null || nemesis == null)
+        require(listOfNotNull(consent, nemesis, photo).size <= 1)
         if (nemesis != null) require(key == nemesis.key && syncEpoch == nemesis.epoch && method == nemesis.command.method)
-        val payload = consent?.body() ?: nemesis?.command?.body()
+        if (photo != null) require(key == photo.key && syncEpoch == photo.epoch && method == photo.method &&
+            url.path == "/api/v1" + photo.path)
+        val payload = consent?.body() ?: nemesis?.command?.body() ?: photo?.body()
         require(session.accessToken.isNotBlank() && session.accessToken.length <= 65_536 &&
             session.accessToken.none { it.isWhitespace() || it.isISOControl() })
         val connection = open(url)
@@ -207,13 +210,22 @@ private object HttpsJsonTransport {
             }
             nemesis?.command?.baseRevision?.let { connection.setRequestProperty("If-Match", "\"$it\"") }
             if (payload != null) {
-                connection.setRequestProperty("Content-Type", "application/json; charset=utf-8")
+                connection.setRequestProperty("Content-Type", photo?.contentType ?: "application/json; charset=utf-8")
                 connection.setFixedLengthStreamingMode(payload.size)
             }
             coroutineContext.ensureActive()
             beforeSend()
             val deadline = System.nanoTime() + 30_000_000_000L
-            if (payload != null) connection.outputStream.use { it.write(payload) }
+            if (payload != null) connection.outputStream.use { output ->
+                var offset = 0
+                while (offset < payload.size) {
+                    coroutineContext.ensureActive()
+                    check(System.nanoTime() < deadline)
+                    val count = minOf(4096, payload.size - offset)
+                    output.write(payload, offset, count)
+                    offset += count
+                }
+            }
             val status = connection.responseCode
             require(status in 200..599 && status !in 300..399)
             if (ApiReadObservation.ENABLED && method == "GET" &&

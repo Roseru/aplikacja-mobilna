@@ -81,6 +81,14 @@ class MealPhotoStore(private val context: Context, private val db: CalorieDataba
             }
         }
     }
+    /** Stable prepared image for a separately persisted upload; IO never holds a Room transaction. */
+    internal suspend fun uploadBytes(id: String): ByteArray = withContext(Dispatchers.IO) {
+        val row = db.withTransaction { owners.requireCurrent(lease); requireNotNull(db.photoDao().get(lease.storageScope,id)) }
+        val bytes = AtomicFile(imageFile(id)).openRead().use { MealPhotoPreparation.bounded(it,MealPhotoPreparation.OUTPUT_BYTES) }
+        require(bytes.size == row.byteCount && sha(bytes) == row.sha256)
+        db.withTransaction { owners.requireCurrent(lease); check(db.photoDao().get(lease.storageScope,id) == row) }
+        bytes
+    }
     suspend fun delete(id: String) = withContext(Dispatchers.IO + NonCancellable) {
         db.withTransaction {
             owners.requireCurrent(lease)

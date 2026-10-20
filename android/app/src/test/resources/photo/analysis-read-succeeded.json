@@ -1,0 +1,96 @@
+{
+  "analysis_id": "c7777777-7777-4777-8777-777777777777",
+  "state": "succeeded",
+  "revision": 2,
+  "profile": {
+    "provider": "mock",
+    "model": "mock-food-v1",
+    "prompt_version": "food-photo-prompt-v1",
+    "schema_version": "food-photo-schema-v1",
+    "rest_profile_version": "gemini-rest-v1beta-2026-10-11",
+    "preparation_version": "food-photo-preparation-v1",
+    "mock_scenario": "valid"
+  },
+  "queue_deadline": "2026-10-11T17:00:00Z",
+  "decision_state": "pending",
+  "photo_expires_at": "2026-10-12T16:55:00Z",
+  "error_code": null,
+  "proposal": {
+    "items": [
+      {
+        "name": "Banan",
+        "quantity": {
+          "amount": "120",
+          "unit": "g"
+        },
+        "basis_unit": "g",
+        "nutrition_per_100": {
+          "energy_kcal": "89",
+          "protein_g": "1.1",
+          "fat_g": "0.3",
+          "carbs_g": "22.8"
+        },
+        "identity": {
+          "brand": {
+            "state": "not_applicable",
+            "value": null
+          },
+          "variant": {
+            "state": "unknown",
+            "value": null
+          },
+          "composition": {
+            "state": "known",
+            "value": [
+              "banan"
+            ]
+          }
+        },
+        "density": null,
+        "uncertainty": "medium",
+        "notes": [],
+        "component_id": "d7777777-7777-4777-8777-777777777777",
+        "matches": {
+          "decision": "manual_candidates",
+          "existing_product": null,
+          "candidates": [],
+          "missing_identity_fields": [
+            "variant"
+          ],
+          "truncated": false
+        }
+      }
+    ],
+    "notes": [
+      "Ilość i wartości są szacunkiem do zatwierdzenia."
+    ],
+    "totals": {
+      "energy_kcal": {
+        "known_sum": "106.8",
+        "missing_count": 0,
+        "complete": true,
+        "display": "107"
+      },
+      "protein_g": {
+        "known_sum": "1.32",
+        "missing_count": 0,
+        "complete": true,
+        "display": "1.3"
+      },
+      "fat_g": {
+        "known_sum": "0.36",
+        "missing_count": 0,
+        "complete": true,
+        "display": "0.4"
+      },
+      "carbs_g": {
+        "known_sum": "27.36",
+        "missing_count": 0,
+        "complete": true,
+        "display": "27.4"
+      }
+    },
+    "model_version": "fixture-model-v1",
+    "formula_version": "nutrition_v1"
+  }
+}

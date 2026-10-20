@@ -185,3 +185,22 @@ otrzyma własny Project CI po skierowaniu istniejącego PR96 na main.
 Nie uruchomiono live capabilities/Gemini/nowego okna O3. Bieżący zwykły
 profil ma nowszy code33; nie instalujemy na nim starszego code24.
 Szczegóły i ograniczenia: O1-087 we wspólnym dzienniku.
+
+
+## O1-089 — integracja PR105 z aktualnym main,20.10.2026
+
+Rodzic PR96 został scalony jako03d776b52d769cb1f07d70dfa5acb7b697bb9ae1
+po własnym8/8CI39445144500 dla1042125:170debug/185validationJVM i194native,
+bez błędów/pominięć. Rzeczywiste drzewo zgodne z testowym3c14426.
+PR105/head90d28c2 dołącza aktualny main zwykłym merge. Kod Android/app
+pozostaje identyczny; narzędzia/CI/backend/infra pochodzą ze scalonego main,
+w tym wymagane testy obu wariantów JVM. Osiem konfliktów dotyczyło tylko
+dziennika; wszystkie125/190 wystąpienia historyczne i ich wiersze zachowane.
+
+Historyczne wyniki powyżej opisują konkretne wcześniejsze APK. Nowa integracja
+otrzyma własny pełny Project CI po skierowaniu istniejącego PR105 na main
+i publikacji; wynik rodzica nie zastępuje jej kontroli.0.8.17/code28/Room10
+nie jest instalowany nad aktualnym zwykłym0.8.23/code34/Room14. Własny
+odbiór ręcznych posiłków139 i dowody O1-088 są w osobnym zależnym PR139.
+Brak nowego rzeczywistego API/Gemini lub zmian używanego środowiska O3;
+pełny E7/E4/recovery/KO32 pozostaje osobnym odbiorem. Szczegóły O1-089.

@@ -1,5 +1,7 @@
 # Android — Racje i kalorie
 
+Android **0.8.16** dodaje świadomą wysyłkę zdjęcia, trwałe ponowienie i pobieranie wyniku z lokalnym podglądem składników/kcal/B/T/W. Wejście na ekran odtwarza zapis bez sieci; GET wymaga przycisku, działa w ograniczonym budżecie i respektuje sesję oraz wspólny backoff. [Stan i dowody](ZLECENIE_ANALIZY.md):235/250 JVM,223 native API35 i lint0error PASS. Room9→10 dodaje kolejkę analizy. Anulowanie serwerowe, korekty/confirm/E4 i rzeczywisty Gemini nadal wymagają dalszych etapów. PR105 jest draft zależnym od PR96, bez własnego pełnego zdalnego CI.
+
 Android **0.8.13** dodaje jawne sprawdzanie dostępności analizy zdjęć dla własnego konta: dostawcę/model, limity i stan usługi, z obsługą utraty sesji i czasu ponowienia. Zdjęcia nadal pozostają lokalne; odczyt nie przyznaje zgody i nie wysyła obrazu. [Raport](RAPORT_0_8_13.md) opisuje walidację, zachowanie danych i zależność od PR73. Room9 bez migracji. Multipart/Gemini/confirm i zapis przez E4 wymagają dalszych etapów.
 
 Android **0.8.12** dodaje lokalne zdjęcia z aparatu i galerii, trwały podgląd/usuwanie w aktywnym profilu oraz ręczny fallback. Poprawia Done w edycji gramatury. [Raport](RAPORT_0_8_12.md):165 JVM/21 końcowych zmienionych testów PASS; wcześniejsze188/186PASS+2RED zachowane osobno. Room8→9 zachował wszystkie stare kolumny22tabel/5posiłków. Upload/Gemini/confirm/sync i rzeczywisty APK/API nadal mają dalsze odbiory.
