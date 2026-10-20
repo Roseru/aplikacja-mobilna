@@ -1,8 +1,8 @@
 # Driver wybranej partii E4 — przygotowanie O1
 
 19.10.2026, gałąź `codex/android-replay-ack`, [PR138](https://github.com/Roseru/aplikacja-mobilna/pull/138).
-Kontynuacja [bariery validation](REPLAY_ACK_VALIDATION.md). **Próba urządzenia
-i wspólny E4 NOT_RUN**. Ten dokument nie jest poleceniem uruchomienia testu.
+Kontynuacja [bariery validation](REPLAY_ACK_VALIDATION.md). **Driver live i wspólny E4 NOT_RUN**;
+końcowa kwalifikacja offline znajduje się na końcu. Ten dokument nie jest poleceniem uruchomienia testu.
 
 ## Wejście i osobny build
 
@@ -110,3 +110,58 @@ Bez importu gościa, legacy, konfliktów/recovery, WorkManager, E7 lub KO32.
 
 Podczas gry właściciela: bez Gradle, emulatora, instalacji, sieci testowej,
 Gemini i restartu komputera. Dostęp do serwera nie został otwarty.
+
+
+## Zakończona kwalifikacja offline — 20.10.2026, O1-091
+
+Dokładne źródło końcowych APK: `b15d249df40179896dd0ee1d363f007c47cb701f`, PR138 na
+9a3a9a9/PR129, bez ręcznego producenta139.0.8.23/code34/validation1034/Room14.
+To odbiór lokalny bez skonfigurowanych issuer/API; **live E4 NOT_RUN**.
+
+- Pierwszy pełny build0de2c424 PASS664,45s:322debug/361validation JVM,
+  failures/errors/skips0, lint0error/4warning/1info.24przypadki bariery,
+  receipt i odcisków12/7/5 są częścią361. Wspólnych testów nie sumujemy.
+- Pierwszy pełny native0de2c424 zakończył się319/320PASS,1FAIL/0skip,
+  1401,92s: timeout10s w
+  privateRoomObserverClearsCachedProfileAndConsentAcrossContextAndOwnerChanges.
+  Ten sam przypadek na identycznych APK oddzielnie1/1PASS. Pełny FAIL
+  pozostaje zachowany, SHA256
+  `d1d6afd76a6a8bef45345e058c8b24cb1e5819a736070003619294f31a486ad8`.
+- b15d249 zmienia wyłącznie3 oczekiwania tego testu z value/yield na
+  StateFlow.first. Te same predykaty,10s limit i asercje, bez zmian produkcji.
+  Ponowny build PASS306,84s; niezmienione wejścia JVM zachowują prawidłowe
+  raporty322/361 z poprzedniego wykonania (Gradle UP-TO-DATE, bez ponownego
+  wykonania tych zadań). Oba APK aplikacji mają identyczne SHA jak0de.
+  Poprawiony focus1/1PASS/0skip,13,89s wall.
+- **Ponowny pełny native320/320PASS,0fail/0skip**,1182,22s wall,
+  1171,919s instrumentacji. To domyślna regresja offline i fixtures bez live.
+  O1Tests35/5556 install-r zachował29tabel SQLite (także techniczne),
+  Room14/FK clean. Dokładne zainstalowane SHA zgodne z artefaktami;
+  samolot, Wi-Fi wyłączone i brak sieci domyślnej przed/po.
+- Osobny nowy opt-in build PASS259,92s. LiveMealReplayTest jest tylko
+  w opt-in testAPK, nie w domyślnym testAPK lub aplikacji. Validation APK
+  identyczny przed/po opt-in. Opt-in **nie instalowano ani nie uruchamiano**.
+  Debug DEX bez MealPushAckGate. Rzeczywiste referencje pól/metod constant
+  pool225klas kontrolera/BootstrapGateway/HttpsJsonTransport: brak obserwatora
+  w debug; record i beforeApplyAck obecne w validation. Wszystkie wejścia
+  Android i4artefakty porównano po zakończeniu obu buildów i regresji.
+
+| Niezmienne artefakty b15d249 | SHA-256 |
+|---|---|
+| debug0.8.23/code34 | `9f279cd39b4552cbb46ffb3bd1cfb6eb3d38995f4c4b802680a06389a6f55bf9` |
+| validation0.8.23/code1034 | `9fdefb7b77debea68d2469c485d7527dd61a3c71f727765012082bf209293a1d` |
+| domyślny testAPK bez live | `ac142345d5392b65766980a80382529cee3b78f9cc66fd9fcd5bf33a1dcab3ca` |
+| osobny opt-in testAPK z driverem | `ca2f68c76ed02b718f83b676d0621b4c8f8b2e9fc8148b8c8cd8c8f22707c18b` |
+
+Log nowego pełnego PASS SHA256:
+`6587b26d70ecc17b5de3789732177fb337bbd70833284ea5dbfdf56e675b8ecd`.
+Debug pakiet poza Git:output-apk/replay138-b15d249, APK/manifest.json/SHA256SUMS
+z tools/android_ci.py. Raw logi i binaria poza repozytorium.
+Zwykły5554 nadal ma manual139/0.8.23; oryginalny API5558 zachowany.
+Bez wipe/clear/uninstall, restartu PC, relay/API/Gemini/deploy lub zmiany
+schema24/epoki/kont. PR138 nadal zależny draft, bez własnego pełnego CI/main.
+
+To nie jest jeszcze wspólny kandydat138+139. Dalej: połączenie i kwalifikacja
+obu funkcji, dokładny overlay/manifest, zgodność środowiska O2/O3 i nowe
+ograniczone okno. **Prepare/hold/replay live, kill procesu, PG C0/C1/C2,
+pełny E4/E7-R/recovery/KO32 pozostają NOT_RUN.**

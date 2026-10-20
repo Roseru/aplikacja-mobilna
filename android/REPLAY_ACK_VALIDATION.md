@@ -83,3 +83,16 @@ brakujące dowody; nie przypisujemy mu historycznych testów innego źródła.
 Podczas gry właściciela bez Gradle, emulatora, instalacji, Gemini lub nowych
 połączeń testowych. Nie zmieniono wersji aplikacji, schematu Room ani
 dotychczasowych APK. Pełny build i testy urządzenia pozostają osobnym etapem.
+
+
+## Końcowy odbiór offline — 20.10.2026
+
+Źródło b15d249/PR138:322debug/361validation JVM PASS (po poprawce samego
+testu raporty niezmienionych wejść UP-TO-DATE), lint0error/4warning/1info.
+Pierwszy pełny319/320 z timeoutem zachowany; po poprawce3 oczekiwań
+StateFlow.first focus1/1 i nowy pełny320/320native PASS,0fail/0skip.
+Nowy osobny opt-in build PASS; domyślny testAPK wyklucza driver, opt-in
+go zawiera i nie był instalowany/uruchamiany live.225klas obu wariantów
+potwierdza brak referencji obserwatora w debug i obecność w validation.
+Pełna historia,4SHA i ograniczenia w [raporcie drivera](DRIVER_REPLAY_E4.md).
+Live E4/kill/PG C0C1C2 NOT_RUN; wspólny kandydat138+139 osobno.

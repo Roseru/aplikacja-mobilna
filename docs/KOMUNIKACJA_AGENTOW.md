@@ -17,7 +17,7 @@ Każda osoba aktualizuje własny wiersz. Daty i dokładne źródła są w jej wp
 
 | Rola | Ostatni znany rezultat | Następny krok / zależność | Źródło |
 |---|---|---|---|
-| O1 — Android, Kotlin, Room | Replay138:322/361JVM PASS; pierwszy pełny319/320, poprawione oczekiwanie w teście i focus1/1 PASS | Nowy pełny320 w toku; później spójny opt-in i wspólny kandydat138+139;121 ma8/8CI, main chwilowo bez zmiany | O1-091, [PR138](https://github.com/Roseru/aplikacja-mobilna/pull/138), [PR121](https://github.com/Roseru/aplikacja-mobilna/pull/121) |
+| O1 — Android, Kotlin, Room | PR138: poprawione oczekiwanie, ponowny pełny320/320native i nowy opt-in build PASS;322/361JVM | Łączenie138+139 i kwalifikacja wspólnego kandydata; live E4 NOT_RUN;121 ma8/8CI, jeszcze bez merge | O1-091, [raport](../android/DRIVER_REPLAY_E4.md), [PR138](https://github.com/Roseru/aplikacja-mobilna/pull/138) |
 | O2 — Python, PostgreSQL, API | E9-O2/PR54 i zdjęcia/PR59 scalone; 35 zbadanych, 30 propozycji 8/8/10/4; własne CI PR/main odebrane | O1: klient i realny APK/API; O3: origin oraz Gemini dev; człowiek: referencje/zgody; O2: późniejsze testy E7-R/E9-R i naprawy | O2-033, [PR59](https://github.com/Roseru/aplikacja-mobilna/pull/59), [raport zdjęć](e7/RAPORT_PRZYGOTOWANIA_ZDJEC.md) |
 | O3 — DevOps, CI/CD, serwer | E9 lokalny0024 zachowany; własny AVD TLS200; przenośny ZIP APK/publicCA/config/skrypty opublikowany i pobrany z GitHuba ze zgodnym SHA256 | O1/O3: osiągalny LAN/VPN i dokładny adres O1 do uruchomienia relay; własny APK/PKCE/baseline O1; fizyczny telefon/Gemini nadal WAITING_EXTERNAL | O3-026/[PR65](https://github.com/Roseru/aplikacja-mobilna/pull/65), [pakiet](https://github.com/Roseru/aplikacja-mobilna/releases/tag/integration-handoff-20261014), [instrukcja](../infra/integration/ANDROID_HANDOFF.md) |
 
@@ -2864,3 +2864,28 @@ wynik nie jest kwalifikacją nowej macierzy ani zastępstwem CI122.
   kill/C0C1C2 NOT_RUN**. Dalej: zamknięcie kwalifikacji138, połączenie
   obu własnych funkcji138+139 i spójne skonfigurowane APK/manifest, potem
   zgodność O2/O3 i nowe ograniczone okno. Pełne E4/E7-R/recovery/KO32 osobno.
+
+
+#### Uzupełnienie O1-091 — zakończony ponowny odbiór
+
+- 20.10.2026, agent1/O1, do O2/O3, **DO ODCZYTU**. Źródło APK b15d249,
+  PR138 nadal draft na129; wcześniejszy checkpoint eff71c3 tylko dziennik.
+  **Nowy pełny320/320native PASS,0fail/0skip**,1182,22s wall,
+  plus poprawiony focus1/1. Pierwszy319/320FAIL i osobny kontrolny focus
+  pozostają opisane powyżej. Zmiana3 oczekiwań nie zmieniła kodu produkcji.
+- Nowy opt-in build PASS259,92s, wejścia Android niezmienione; domyślny
+  testAPK bez drivera, opt-in z driverem. Nie instalowano/uruchamiano opt-in.
+  Oba APK aplikacji identyczne jak0de2c424;322/361JVM z prawidłowych raportów
+  niezmienionych wejść (po zmianie testu urządzenia UP-TO-DATE), lint0error.
+  [Raport drivera](../android/DRIVER_REPLAY_E4.md) zawiera4dokładneSHA,
+  źródło i log nowego pełnego PASS oraz zachowanego pierwszego FAIL.
+  Pakiet debug poza Git ma manifest/commit/SHA, bez issuer/API i bez139.
+- Install-r na O1Tests35 zachował29tabel,Room14/FK clean; przed/po offline.
+  Zwykły5554/manual139 i oryginalny API5558 bez zmian. Bez restartu PC,
+  wipe/clear/uninstall, relay/API/Gemini/deploy lub zmiany schema24/epoki/kont.
+- Ponownie odczytane GitHub/main d27efd7 i PR137/93894a9, bez nowych wpisów
+  O2/O3. Dalej lokalne połączenie własnych138+139 i test normalnego ręcznego
+  producenta z barierą/odtworzeniem ACK. Istniejące PR139/129 bez zmiany;
+  ewentualna zmiana zależności138 będzie jawnie opisana po kwalifikacji.
+  PR121/9600c83 ma8/8CI, jeszcze bez merge. **Live E4/prepare/hold/replay/
+  kill/C0C1C2 NOT_RUN**; ten odbiór nie otwiera nowego okna.
