@@ -18,6 +18,7 @@ from sqlalchemy.exc import DBAPIError
 
 from calorie_app.core.config import Settings
 from calorie_app.modules.ai.configuration import configuration
+from tests.support.deletion_regression import begin as begin_deletion
 
 pytestmark = pytest.mark.integration
 SCOPE = "mock:local:mock-food-v1:local"
@@ -634,13 +635,8 @@ def test_energy_admission_is_a_moving_336_hour_window_in_every_session_timezone(
 def test_user_admission_requires_active_account_and_known_purpose(quota, context):
     owner = uuid4() if context == "missing" else quota["owner"]
     if context == "deleting":
-        scalar(
-            quota["admin"],
-            "UPDATE app.user_accounts SET "
-            "state='deleting',generation=generation+1 WHERE id=:owner "
-            "RETURNING id",
-            {"owner": owner},
-        )
+        with quota["admin"].begin() as connection:
+            begin_deletion(connection, owner, uuid4(), 1)
     with pytest.raises(DBAPIError) as failed:
         scalar(
             quota["api"],

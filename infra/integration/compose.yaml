@@ -100,7 +100,7 @@ services:
     restart: unless-stopped
 
   gateway:
-    image: caddy:2.10.2@sha256:c3d7ee5d2b11f9dc54f947f68a734c84e9c9666c92c88a7f30b9cba5da182adb
+    image: caddy:2.11.7@sha256:685ae3d7c34d9b5f8caeddc5d14051db7bbd88ff1f5a2fa0c16bd8ca328fb7af
     ports:
       - "${INTEGRATION_HOST}:${INTEGRATION_PORT}:8443"
     volumes:
