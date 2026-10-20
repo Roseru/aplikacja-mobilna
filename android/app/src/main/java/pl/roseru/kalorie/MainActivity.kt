@@ -104,7 +104,17 @@ class MainActivity : ComponentActivity() {
                 acceptNemesis = { id,ack,weight,deficit -> app.sessionScope.launch { app.sessions.acceptNemesis(id,ack,weight,deficit) } },
                 cancelNemesis = { id -> app.sessionScope.launch { app.sessions.cancelNemesis(id) } },
                 retryNemesisMutation = { app.sessionScope.launch { app.sessions.retryNemesisMutation() } },
-                readPhotoCapabilities = { app.sessionScope.launch { app.sessions.readPhotoCapabilities() } })
+                readPhotoCapabilities = { app.sessionScope.launch { app.sessions.readPhotoCapabilities() } },
+                uploadPhoto = { id,consent,accepted -> app.sessionScope.launch { app.sessions.uploadPhoto(binding.lease,id,consent,accepted) } },
+                retryPhotoUpload = { app.sessionScope.launch { app.sessions.retryPhotoUpload(binding.lease) } },
+                discardUnsentPhotoUpload = { app.sessionScope.launch { app.sessions.discardUnsentPhotoUpload(binding.lease) } },
+                readPhotoAnalysis = { app.sessionScope.launch { app.sessions.readPhotoAnalysis(binding.lease) } },
+                restorePhotoAnalysis = { app.sessionScope.launch { app.sessions.loadPhotoAnalysis(binding.lease) } },
+                stopPhotoAnalysis = { app.sessionScope.launch { app.sessions.stopPhotoAnalysis(binding.lease) } },
+                clearPhotoAnalysis = { app.sessionScope.launch { app.sessions.stopPhotoAnalysis(binding.lease,clearPreview=true) } },
+                cancelPhotoAnalysis = { id,revision -> app.sessionScope.launch { app.sessions.cancelPhotoAnalysis(binding.lease,id,revision) } },
+                retryPhotoCancellation = { id -> app.sessionScope.launch { app.sessions.retryPhotoCancellation(binding.lease,id) } },
+                releaseCancelledPhoto = { id -> app.sessionScope.launch { app.sessions.releaseCancelledPhoto(binding.lease,id) } })
             CalorieTheme(dark) { CalorieApp(model, session, actions, photoModel) }
             }
         }
