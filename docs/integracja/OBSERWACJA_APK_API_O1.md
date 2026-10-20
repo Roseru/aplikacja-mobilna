@@ -1,5 +1,18 @@
 # Obserwacja rzeczywistych odczytów APK — agent 1
 
+Stan integracji20.10.2026/O1-085: rodzic PR64 jest już scalony jako
+`79dc7d931547c1b74061606342e5a8112649d236` po własnym8/8CI39416910290.
+PR73 otrzymuje ten main zwykłym merge i ma uzyskać własny nowy pełny CI.
+Poniższe przygotowanie pozostaje historią. Rzeczywisty wynik późnego GET
+opisuje [R2](ODBIOR_APK_API_O1_R2_20261019.md), kolejne odczyty
+[R3](ODBIOR_APK_API_O1_R3_20261019.md), a ich ograniczony odbiór
+[raport O2](ODBIOR_R2_R3_ORACLE_E4_O2.md).
+Oba raporty O1 skopiowano bajtowo z dokładnego a41a5cb/PR129; nie przeniesiono
+kodu tej gałęzi. Kod aplikacji i drivera PR73 pozostaje identyczny ze źródłem
+e319e531 faktycznie użytym w R2/R3. Nowy CI nie jest nową próbą live.
+Aktualny kanał validation ma versionCode1023 i versionName0.8.12.validation;
+wcześniejsze opisy versionCode23 poniżej dotyczą przygotowania przed rozdzieleniem kanałów.
+
 Przygotowanie 14.10.2026 na `codex/android-odbior-api`. Zależność źródeł:
 `4b4e8a3255f2b3c182954b7f83de9daa2ef7adc5`, niescalony PR64.
 To osobny etap odbioru, nie nowe rozpoznawanie zdjęć ani zmiana backendu.
