@@ -4151,3 +4151,8 @@ Archiwalne wiersze stanu PR64 sprzed integracji17.10; aktualny stan znajduje si�
   Właściciel nadal gra: bez lokalnego buildu/AVD/instalacji/API/Gemini,
   restartu PC lub zmian usług O3. Następny krok: osobne podsumowania obu
   wariantów JVM, native i komplet ośmiu kontroli dokładnego nowego head.
+- Uzupełnienie O1-086: CI39439530664/head0aa1177 wykrył jedną różnicę
+  formatowania nowego testu Python. Zastosowano dokładny diff Ruff z logu;
+  logika i kontrprzykład są ponownie sprawdzane na tej samej atrapie.
+  Ten czerwony wynik nie jest usuwany ani zastępowany wynikiem starszego CI;
+  następny commit wymaga własnego pełnego przebiegu.

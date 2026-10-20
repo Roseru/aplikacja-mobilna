@@ -85,7 +85,7 @@ class AndroidBuildDiagnosticsTest(unittest.TestCase):
             wrapper.write_text(
                 "#!/bin/sh\n"
                 "mkdir -p app/build/test-results/testDebugUnitTest\n"
-                "echo '<testsuite tests=\"1\"><testcase name=\"debug\"/></testsuite>' "
+                'echo \'<testsuite tests="1"><testcase name="debug"/></testsuite>\' '
                 "> app/build/test-results/testDebugUnitTest/TEST-debug.xml\n"
                 'for task in "$@"; do\n'
                 '  if [ "$task" = ":app:testValidationUnitTest" ]; then\n'
