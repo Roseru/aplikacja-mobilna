@@ -922,13 +922,13 @@ class SessionSecurityTest {
             observer = launch(start = CoroutineStart.UNDISPATCHED) { c.observeMotivationContext() }
             val owner = c.view.value.binding!!.lease.storageScope; val old = db.bootstrapDao().binding(owner)!!
             db.bootstrapDao().update(old.copy(contextRevision = old.contextRevision + 1))
-            withTimeout(10_000) { while (c.view.value.serverProfile != null) yield() }
+            withTimeout(10_000) { c.view.first { it.serverProfile == null } }
             c.readRankingConsents(); assertTrue(c.view.value.rankingConsent is RankingConsentState.Ready)
             val current = db.bootstrapDao().binding(owner)!!; db.bootstrapDao().update(current.copy(accountGeneration = current.accountGeneration + 1))
-            withTimeout(10_000) { while (c.view.value.rankingConsent !is RankingConsentState.NotRequested) yield() }
+            withTimeout(10_000) { c.view.first { it.rankingConsent is RankingConsentState.NotRequested } }
             c.readProfile(); assertNotNull(c.view.value.serverProfile)
             val other = LocalOwnerStore(db).registerIdentity(issuer, "fixture-B"); LocalOwnerStore(db).select(other.id)
-            withTimeout(10_000) { while (c.view.value.binding?.owner?.subject != "fixture-B") yield() }
+            withTimeout(10_000) { c.view.first { it.binding?.owner?.subject == "fixture-B" } }
             assertNull(c.view.value.serverProfile); assertEquals(RankingConsentState.NotRequested, c.view.value.rankingConsent); assertTrue(writes.calls.isEmpty())
         } finally { observer?.cancelAndJoin(); vault.clear(); db.close() }
     }
@@ -2659,6 +2659,56 @@ class SessionSecurityTest {
         }
         suspend fun revision()=db.dao().meal(meal,lease.storageScope)!!.meal.serverRevision
         fun close(){vault.clear();db.close()}
+    }
+    @Test fun manualConsumptionAndAckGatePreserveFrozenWireAcrossCancelledAcknowledgementAndReplay()=runBlocking<Unit> {
+        val h=PushHarness();var pending:Job?=null;var ticket:MealPushAckGate.Ticket?=null
+        try {
+            val day=LocalDate.now();val guestId=UUID.randomUUID().toString()
+            val guest=DiaryRepository(h.db,context).apply {initialize()}
+            guest.add("basic-banana",50.0,MealType.SNACK,day,guestId)
+            val guestBefore=h.db.dao().day("guest",day.toString()).first()
+            val guestQueue=h.db.dao().operationCount("guest")
+            h.c=h.again();h.c.start();login(h.c,h.fixture,"fixture-A");h.c.bootstrap()
+            h.lease=h.c.view.value.binding!!.lease;h.c.downloadSnapshot()
+            h.meal=UUID.randomUUID().toString();val product=UUID.randomUUID().toString()
+            DiaryRepository(h.db,context,h.lease).addCustomProduct(
+                CustomProductDraft("Syntetyczny posiłek",100.5,null,0.0,12.25,"Etykieta testowa"),
+                150.5,MealType.LUNCH,day,h.meal,product)
+            h.item=h.db.dao().meal(h.meal,h.lease.storageScope)!!.items.single().id
+            val store=MealPushStore(h.db,CanonicalMealRows.schema(context))
+            val frozen=checkNotNull(store.prepare(h.lease));val operation=frozen.batch.json().getJSONArray("operations")
+            assertEquals(1,operation.length());assertEquals(h.meal,operation.getJSONObject(0).getString("entity_id"))
+            val payload=operation.getJSONObject(0).getJSONObject("payload").getJSONArray("items").getJSONObject(0)
+            assertTrue(payload.isNull("product"));assertEquals("manual",payload.getString("nutrition_origin"))
+            assertEquals("150.5",payload.getJSONObject("quantity").getString("amount"))
+            assertTrue(payload.getJSONObject("nutrition_per_100").isNull("protein_g"))
+            assertEquals("0",payload.getJSONObject("nutrition_per_100").getString("fat_g"))
+            val held=MealPushObservation.ack.arm(frozen.id,frozen.row.requestHash);ticket=held
+            pending=launch(start=CoroutineStart.UNDISPATCHED){h.c.synchronizeMeals(h.lease)}
+            withTimeout(10_000){held.held.await()}
+            assertEquals(listOf("held"),held.events())
+            assertTrue(held.httpReceipts().isEmpty()) // Fixture transport is not evidence of a real HTTP receipt or COMMIT.
+            val waiting=h.db.pushDao().batch(frozen.id)!!
+            assertTrue(waiting.attempted);assertNull(waiting.responseJson);assertEquals(0,h.revision())
+            assertEquals(frozen.row.requestJson,waiting.requestJson)
+            assertEquals("pending",h.db.dao().canonicalMealOperations(h.lease.storageScope,h.meal).single().status)
+            pending.cancelAndJoin();pending=null
+            assertEquals("cancelled",withTimeout(10_000){held.outcome.await()})
+            assertNull(h.db.pushDao().batch(frozen.id)!!.responseJson)
+            h.c=h.again();h.c.start()
+            h.answer={batch,_->BootstrapHttpResult(200,h.receipt(batch,"already_applied"))}
+            h.c.synchronizeMeals(h.lease)
+            assertEquals(2,h.calls.size);assertArrayEquals(frozen.batch.body(),h.calls[0].body())
+            assertArrayEquals(h.calls[0].body(),h.calls[1].body());assertEquals(1,h.revision())
+            assertEquals("complete",h.db.pushDao().batch(frozen.id)!!.state)
+            assertEquals("acked",h.db.dao().canonicalMealOperations(h.lease.storageScope,h.meal).single().status)
+            val saved=h.db.dao().meal(h.meal,h.lease.storageScope)!!.items.single()
+            assertEquals(h.item,saved.id);assertEquals(product,saved.productId)
+            assertEquals("Etykieta testowa",h.db.dao().product(product,h.lease.storageScope)!!.source)
+            assertEquals(2,h.db.dao().operationCount(h.lease.storageScope)) // Private product draft and its independent Meal.
+            assertEquals(guestBefore,h.db.dao().day("guest",day.toString()).first())
+            assertEquals(guestQueue,h.db.dao().operationCount("guest"))
+        }finally{pending?.cancelAndJoin();ticket?.let {MealPushObservation.ack.disarm(it)};h.close()}
     }
     @Test fun mealPushLostAckRestartResendsIdenticalBatchThenPullsWithoutChangingGuest()=runBlocking<Unit> {
         val h=PushHarness()

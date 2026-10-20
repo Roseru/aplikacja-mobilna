@@ -1,5 +1,13 @@
 # Android — Racje i kalorie
 
+Lokalny `codex/android-kandydat-e4` łączy ręczny producent Meal z PR139
+i narzędzie przygotowania/hold/replay z PR138. To przygotowanie wspólnego
+kandydata, jeszcze bez jego własnej kwalifikacji i konfiguracji API.
+Docelowo istniejący PR138 ma zależeć od dokładnego źródła139; gałąź139
+i jej odebrany APK pozostają zachowane. Nowy PR z duplikatem zmian nie powstaje.
+
+Historyczne opisy niezależnych etapów przed ich połączeniem:
+
 Na niezależnej gałęzi `codex/android-posilek-reczny-sync` przygotowano
 [nowe ręczne posiłki w sync-v1](POSILEK_RECZNY_SYNC.md): prywatny produkt
 pozostaje lokalny, a jego spożycie po bootstrapie ma osobną operację Meal.
@@ -7,6 +15,14 @@ pozostaje lokalny, a jego spożycie po bootstrapie ma osobną operację Meal.
 i nowy APK jeszcze NOT_RUN. Starsze wpisy/katalog/racje są osobno.
 Kod [drivera E4](https://github.com/Roseru/aplikacja-mobilna/pull/138) jest
 w oddzielnym PR; nie jest zależnością kodu tego etapu ani odebranym testem live.
+
+Na zależnej gałęzi `codex/android-replay-ack` przygotowano
+[barierę przed zapisem ACK](REPLAY_ACK_VALIDATION.md) wyłącznie validation
+oraz [kod drivera prepare/hold/replay](DRIVER_REPLAY_E4.md): 24 JVM PASS,
+lekka kompilacja obu wariantów kontrolera/transportu i drivera. Bez nowego APK,
+pełnego buildu lub próby z serwerem; poniższy manifest 0.8.23 opisuje
+wcześniejsze artefakty, bez tej bariery. Pełny build i wykonanie drivera na
+osobnym urządzeniu pozostają następnym krokiem.
 
 Kandydat **0.8.23/code34/Room14** na `codex/android-wysylanie-kolejki`
 łączy [transport trwałych partii](WYSYLANIE_KOLEJKI.md) z sesją i
