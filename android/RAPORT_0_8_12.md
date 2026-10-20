@@ -1,5 +1,18 @@
 # Android 0.8.12 — lokalne zdjęcia posiłków
 
+Aktualizacja integracji20.10.2026: rodzic [PR61](https://github.com/Roseru/aplikacja-mobilna/pull/61)
+scalony jako `7dd8fa36d4ecb599c3403f548d85aa7187950bcd` po ośmiu sukcesach
+[CI39330194338](https://github.com/Roseru/aplikacja-mobilna/actions/runs/39330194338).
+To dowód Android0.8.11:165JVM i179API35, nie pełnego zdjęciowego0.8.12.
+Do dotychczasowego head PR64/fe8553f dołączono ten main zwykłym merge;
+kod zdjęć, versionCode23 i Room9 pozostają identyczne. Dwa konflikty wyłącznie
+dziennika rozwiązano z zachowaniem wszystkich164/144 historycznych wystąpień
+sekcji rodziców, także powtórzonego dawnego nagłówka O1-017.
+Po publikacji PR64 do main wymagany jest własny pełny Project CI aktualnego
+head; nie przypisujemy mu wyniku PR61. Lokalnego Gradle, emulatora, instalacji
+lub połączeń API nie uruchamiano podczas gry właściciela.
+[O1-084 i kolejność dalszej integracji](../docs/integracja/INTEGRACJA_ANDROID_O1_20261019.md).
+
 Dodaj posiłek → Zdjęcie posiłku pozwala wybrać obraz z galerii lub zrobić zdjęcie aparatem, zapisać jego prywatną kopię, obejrzeć ją po restarcie i jawnie usunąć. Funkcja działa bez konta i internetu. Ręczny wpis pozostaje dostępny; sam obraz nie tworzy posiłku i nie jest wysyłany.
 
 Źródło: `9253b720559f96e404907aa57e580fafe6a13ed5`, `codex/android-zdjecia-posilkow`, versionCode23. Room8→9 dodaje wyłącznie tabelę meal_photo_drafts. Parent to dokładny head `2202f13255b0e8b79c21cdb526c1b618e8f0fc9e` / PR61; nowy etap nie jest scalany do oczekującej gałęzi. APK poza Git: Racje-i-kalorie-0.8.12-debug.apk, SHA256 `55ca0d0f00d89552e0ba978cf5f575ebb427766e9802d6902b5dc79d9f15721f`.

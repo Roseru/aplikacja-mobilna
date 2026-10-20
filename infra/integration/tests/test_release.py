@@ -1,6 +1,9 @@
+import hashlib
+import io
 import json
 import shutil
 import sys
+import tarfile
 from pathlib import Path
 
 import pytest
@@ -12,6 +15,149 @@ COMMIT = "a" * 40
 IMAGE = "sha256:" + "b" * 64
 SIGNER = "c" * 64
 REVISION = "0024_e9_history_graph"
+
+
+def imported_candidate(candidate):
+    path, spec, inspector = candidate
+    config = {
+        "os": "linux",
+        "architecture": "amd64",
+        "rootfs": {"diff_ids": ["sha256:" + "d" * 64]},
+        "config": {"Labels": {"org.opencontainers.image.revision": COMMIT}},
+    }
+    raw = json.dumps(config).encode()
+    config_digest = "sha256:" + hashlib.sha256(raw).hexdigest()
+    manifest = json.dumps({"config": {"digest": config_digest}}).encode()
+    runtime = "sha256:" + hashlib.sha256(manifest).hexdigest()
+    index = json.dumps({"manifests": [{"digest": runtime}]}).encode()
+    archive = path.parent / "image.tar"
+    with tarfile.open(archive, "w") as stream:
+        for name, data in (
+            ("index.json", index),
+            ("blobs/sha256/" + runtime[7:], manifest),
+            ("blobs/sha256/" + config_digest[7:], raw),
+        ):
+            info = tarfile.TarInfo(name)
+            info.size = len(data)
+            stream.addfile(info, io.BytesIO(data))
+    spec["backend"].update(
+        image=runtime,
+        image_archive={
+            "path": archive.name,
+            "sha256": release.file_digest(archive),
+            "config_digest": config_digest,
+        },
+    )
+    image = {
+        "Id": runtime,
+        "Config": config["config"],
+        "RootFS": {"Layers": config["rootfs"]["diff_ids"]},
+        "Os": "linux",
+        "Architecture": "amd64",
+    }
+    inspector.image = lambda _: image
+    receipt_path = path.parent / spec["evidence"]["backend_acceptance"]["path"]
+    receipt = json.loads(receipt_path.read_text())
+    receipt["image"] = config_digest
+    write(receipt_path, receipt)
+    spec["evidence"]["backend_acceptance"]["sha256"] = release.file_digest(receipt_path)
+    write(path, spec)
+    return path, spec, inspector, image
+
+
+def test_imported_manifest_id_accepts_original_config_receipt(candidate):
+    path, spec, inspector, _ = imported_candidate(candidate)
+    result = release.validate(path, inspector)
+    assert result["result"] == "CANDIDATE_VALIDATED"
+    assert (
+        result["components"]["backend"]["receipt_config_digest"]
+        == spec["backend"]["image_archive"]["config_digest"]
+    )
+
+
+@pytest.mark.parametrize(
+    "damage", ["archive_hash", "config", "runtime", "layers", "os", "missing_archive", "bad_tar"]
+)
+def test_imported_identity_mismatch_blocks_release(candidate, damage):
+    path, spec, inspector, image = imported_candidate(candidate)
+    if damage == "archive_hash":
+        spec["backend"]["image_archive"]["sha256"] = "0" * 64
+    elif damage == "config":
+        spec["backend"]["image_archive"]["config_digest"] = "sha256:" + "0" * 64
+    elif damage == "runtime":
+        spec["backend"]["image"] = "sha256:" + "e" * 64
+        image["Id"] = spec["backend"]["image"]
+    elif damage == "layers":
+        image["RootFS"]["Layers"] = []
+    elif damage == "os":
+        image["Os"] = "windows"
+    elif damage == "missing_archive":
+        del spec["backend"]["image_archive"]
+    elif damage == "bad_tar":
+        archive = path.parent / "image.tar"
+        archive.write_bytes(b"broken archive")
+        spec["backend"]["image_archive"]["sha256"] = release.file_digest(archive)
+    write(path, spec)
+    result = release.validate(path, inspector)
+    assert result["result"] == "BLOCKED"
+    assert result["deployment_authorized"] is False
+
+
+def write_image_archive(path, entries):
+    with tarfile.open(path, "w") as stream:
+        for name, raw in entries:
+            member = tarfile.TarInfo(name)
+            member.size = len(raw)
+            stream.addfile(member, io.BytesIO(raw))
+
+
+@pytest.mark.parametrize("blob", ["manifest", "config"])
+def test_rehashed_archive_rejects_changed_blob(candidate, blob):
+    path, spec, inspector, _ = imported_candidate(candidate)
+    archive = path.parent / spec["backend"]["image_archive"]["path"]
+    digest = (
+        spec["backend"]["image"]
+        if blob == "manifest"
+        else spec["backend"]["image_archive"]["config_digest"]
+    )
+    target = "blobs/sha256/" + digest[7:]
+    with tarfile.open(archive, "r:") as stream:
+        entries = [(member.name, stream.extractfile(member).read()) for member in stream]
+    changed = []
+    for name, raw in entries:
+        if name == target:
+            value = json.loads(raw)
+            if blob == "manifest":
+                value["annotations"] = {"review": "changed manifest bytes"}
+            else:
+                value["config"]["Env"] = ["REVIEW_CHANGED=1"]
+            raw = json.dumps(value).encode()
+        changed.append((name, raw))
+    # Keep descriptor names, runtime ID and receipts pinned; only rehash the TAR.
+    write_image_archive(archive, changed)
+    spec["backend"]["image_archive"]["sha256"] = release.file_digest(archive)
+    write(path, spec)
+    report = release.validate(path, inspector)
+    assert report["result"] == "BLOCKED"
+    assert report["deployment_authorized"] is False
+    assert report["blockers"] == [
+        {"component": "backend", "reason": "Image metadata digest mismatch"}
+    ]
+
+
+def test_rehashed_archive_rejects_duplicate_member(candidate):
+    path, spec, inspector, _ = imported_candidate(candidate)
+    archive = path.parent / spec["backend"]["image_archive"]["path"]
+    with tarfile.open(archive, "r:") as stream:
+        entries = [(member.name, stream.extractfile(member).read()) for member in stream]
+    # Duplicate identical bytes so only ambiguity, rather than a hash mismatch, fails.
+    write_image_archive(archive, [*entries, entries[-1]])
+    spec["backend"]["image_archive"]["sha256"] = release.file_digest(archive)
+    write(path, spec)
+    report = release.validate(path, inspector)
+    assert report["result"] == "BLOCKED"
+    assert report["deployment_authorized"] is False
+    assert report["blockers"] == [{"component": "backend", "reason": "Ambiguous image archive"}]
 
 
 class Inspector:

@@ -56,3 +56,12 @@ O1-050/15.10: zwykły merge main4fa2bc4 do head3ede70d rozwiązuje konflikt wył
 O1-058/16.10: zwykły merge main9d01348 do PR61 zachowuje cały kod Androida e5c31cfa i historie obu rodziców. O3-060/061 oraz8/8 main/CI38803274030 odczytane; nowy merge wymaga własnego CI. Rzeczywisty APK/API nadal NOT_RUN, kolejne etapy zdjęć pozostają w dzieciach. Nie reaktywowano wygasłego relay.
 
 O1-059/17.10: O3-062/063 odebrane. Aktualny maina6e2395 dołączony do PR61 zwykłym merge, z zachowaniem wszystkich historii i identycznym kodem Androida cd583d55. E0/diff-check przed publikacją, nowy head wymaga własnego CI. Migracja narzędzi będzie osobnym etapem; obecne parametry aplikacji i dane nie zostały zmienione. Realny APK/API odłożony na19.10 bez rezerwacji godziny lub peera.
+
+O1-083/19.10: aktualny main4228cca dołączony do3133bcc zwykłym merge.
+Konflikty wyłącznie dziennika rozwiązano z zachowaniem historii obu rodziców
+i obu historycznych wierszy O2 w O1-010. Kod Android0.8.11 identyczny;
+[plan integracji kolejki](../docs/integracja/INTEGRACJA_ANDROID_O1_20261019.md)
+rozróżnia poprzednie8/8 od wymaganych kontroli nowego head. Dzieci64–139
+nie zostały przeniesione. R2/R3 mają osobny ograniczony odbiór O2 i nie są
+automatycznie wynikiem całego Nemesis/E4 lub nowych APK. Bez lokalnego buildu,
+emulatora, instalacji, serwera lub nowego okna podczas gry właściciela.

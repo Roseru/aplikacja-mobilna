@@ -48,6 +48,17 @@ def age(timestamp):
     return (datetime.now(UTC) - datetime.fromisoformat(timestamp)).total_seconds()
 
 
+def offsite_reading(path):
+    try:
+        receipt = json.loads(Path(path).read_text())
+        recent = 0 <= age(receipt["verified_at"]) <= 86400
+        if "archive_captured_at" in receipt:
+            recent = recent and 0 <= age(receipt["archive_captured_at"]) <= 86400
+        return {"state": "ok" if recent and receipt["offsite_verified"] is True else "failed"}
+    except Exception:
+        return {"state": "failed"}
+
+
 def command(arguments, *, status=False):
     result = subprocess.run(
         arguments, capture_output=True, text=True, timeout=15, **console_options()
@@ -218,14 +229,7 @@ def sample(state, settings):
     # Missing external prerequisites remain explicit, never a green backup/AI claim.
     readings["backup"] = {"state": "not_configured"}
     if settings.get("backup_receipt"):
-        try:
-            receipt = json.loads(Path(settings["backup_receipt"]).read_text())
-            recent = 0 <= age(receipt["verified_at"]) <= 86400
-            readings["backup"] = {
-                "state": "ok" if recent and receipt["offsite_verified"] is True else "failed"
-            }
-        except Exception:
-            readings["backup"] = {"state": "failed"}
+        readings["backup"] = offsite_reading(settings["backup_receipt"])
     readings["ai"] = {"state": "not_deployed"}
     readings["local_backup"] = operation_reading(settings.get("local_backup_receipt"), backup=True)
     readings["startup"] = operation_reading(settings.get("startup_receipt"))
