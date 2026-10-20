@@ -67,3 +67,44 @@ Udany CI nie zostanie opisany jako ukończenie tych etapów.
 Podczas gry właściciela nie uruchomiono lokalnego Gradle, emulatora, API lub
 Gemini. Aktualizacja kodu źródłowego istniejącego PR i zdalne CI nie zmieniają
 zainstalowanej aplikacji, prywatnego dziennika, serwera lub ustawień komputera.
+
+## O1-084 — odebrany CI rodzica i integracja zdjęć, 20.10.2026
+
+[CI39330194338](https://github.com/Roseru/aplikacja-mobilna/actions/runs/39330194338)
+dla head `7b302e6cad8e10f8cfe2ab3286f7b15487c64ef4` zakończył się ośmioma
+SUCCESS. Odczytane podsumowania JUnit:165JVM i179API35 offline,
+failures/skipped0; lint0error/29warning/1info. Pozostałe wymagane joby
+contracts, quality, postgres, keycloak-pkce, local-integration i agregator
+ci-required mają własny sukces. To obecny wynik rodzica0.8.11, nie dzieci.
+
+Przed merge ponownie sprawdzono dokładny head/main4228cca, clean mergeable
+oraz reviews/issue/inline0. [PR61](https://github.com/Roseru/aplikacja-mobilna/pull/61)
+scalono zwykłym merge jako `7dd8fa36d4ecb599c3403f548d85aa7187950bcd`.
+Drzewo źródeł `de95e14b3aeca90060982e905a8aac58e190a862` jest identyczne
+z testowym merge `4220990782f535c9ada5b284fa0f794e67e7f68b`.
+Osobny push CI nowego main jest odbierany oddzielnie; sukces PR nie jest
+deklaracją jego ukończenia. Historyczne129/157 sekcji to unikalne nagłówki;
+ponowny guard potwierdził wszystkie130/158 wystąpień obu źródeł, również
+powtórzonego starego O1-017. Żadnego z nich nie usunięto.
+
+Następny [PR64](https://github.com/Roseru/aplikacja-mobilna/pull/64),
+dotychczasowy head `fe8553fd2ae18b45f80311b5c1498c32a295dfbb`, otrzymał
+ten scalony main przez zwykły merge. Tylko dziennik wymagał rozwiązania
+dwóch konfliktów; porównanie każdego historycznego wystąpienia potwierdziło
+zachowanie164/144 sekcji rodziców. Kod Androida jest identyczny z fe8553f,
+poza dopiskami raportów. PR64 jest kierowany na main i po publikacji ma
+uzyskać własne osiem wymaganych kontroli. Dalszych dzieci73–139 nie dodano.
+
+Odczytano nowe [O2-045 i instrukcję PR137/head2a8dd57](https://github.com/Roseru/aplikacja-mobilna/blob/2a8dd57bbb574be9496676e878d65e1f6586c8d3/docs/integracja/PRZYGOTOWANIE_REPLAY_E4_O3.md).
+Plan przyszłego E4 ma powstać przed C0 z dokładnych utrwalonych bajtów
+koperty O1; hash koperty, hash operacji i oczekiwana treść posiłku są różnymi
+dowodami. C1 ma być zgodne z uprzednio przygotowanym payloadem, nie tylko C2.
+Nie przeniesiono niescalonego kodu O2/O3. Driver138 i ręczny producent139
+nadal wymagają integracji oraz własnej pełnej kwalifikacji, potem niezmiennego
+APK/drivera/manifestu i osobnego uzgodnionego okna. Nowa próba E4 NOT_RUN;
+bez aktywacji API/relay/Gemini, migracji używanego schema24 lub zmian epoki.
+
+Kontrole integracji PR64 przed publikacją: E0 PASS11schematów/98valid/
+35invalid/18scenariuszy/737linków i diff-check. Kod backend/infra/tools/CI
+jest identyczny z main7dd8fa3, a kod Androida z fe8553f. Liczności E0 dotyczą
+dokumentacji i kontraktów; nie zastępują wymaganego nowego Project CI.

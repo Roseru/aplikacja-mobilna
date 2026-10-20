@@ -29,7 +29,7 @@ import pl.roseru.kalorie.data.ProductEntity
 import java.math.BigDecimal
 
 @OptIn(ExperimentalMaterial3Api::class)
-@Composable fun FoodScreen(model: DiaryViewModel, onBack: () -> Unit, onRations: () -> Unit, onCustom: () -> Unit) {
+@Composable fun FoodScreen(model: DiaryViewModel, onBack: () -> Unit, onRations: () -> Unit, onCustom: () -> Unit, onPhoto: () -> Unit) {
     val products by model.products.collectAsStateWithLifecycle()
     val recent by model.recent.collectAsStateWithLifecycle()
     val day by model.day.collectAsStateWithLifecycle()
@@ -68,6 +68,11 @@ import java.math.BigDecimal
                     FilterChip(selected = !recentOnly, onClick = { recentOnly = false }, label = { Text("Produkty") })
                     FilterChip(selected = recentOnly, onClick = { recentOnly = true }, label = { Text("Ostatnie") })
                     FilterChip(selected = false, onClick = { keyboard?.hide(); onRations() }, label = { Text("Racje") }, modifier = Modifier.testTag("open-rations"))
+                }
+            }
+            item(key = "photo-food") {
+                OutlinedButton(onClick = { keyboard?.hide(); onPhoto() }, modifier = Modifier.fillMaxWidth().testTag("open-meal-photo")) {
+                    Icon(Icons.Outlined.CameraAlt, null); Spacer(Modifier.width(8.dp)); Text("Zdjęcie posiłku")
                 }
             }
             item(key = "custom-food") {

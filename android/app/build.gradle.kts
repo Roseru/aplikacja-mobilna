@@ -12,8 +12,8 @@ android {
         applicationId = "pl.roseru.kalorie"
         minSdk = 26
         targetSdk = 35
-        versionCode = 22
-        versionName = "0.8.11"
+        versionCode = 23
+        versionName = "0.8.12"
         // Public deployment configuration only. No credentials or client secret in the APK.
         val issuer = providers.gradleProperty("CALORIE_OIDC_ISSUER").orElse("").get()
         require(issuer.none { it == '\n' || it == '\r' || it == '"' || it == '\\' })
@@ -59,6 +59,7 @@ dependencies {
     ksp(libs.room.compiler)
     implementation(libs.datastore.preferences)
     implementation(libs.appauth)
+    implementation(libs.exifinterface)
     debugImplementation(libs.compose.tooling)
     debugImplementation(libs.compose.test.manifest)
     "validationImplementation"(libs.compose.tooling)
