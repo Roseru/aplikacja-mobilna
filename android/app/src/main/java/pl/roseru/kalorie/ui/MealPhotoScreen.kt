@@ -35,7 +35,7 @@ import androidx.lifecycle.compose.LocalLifecycleOwner
     session: pl.roseru.kalorie.session.SessionView = pl.roseru.kalorie.session.SessionView(), onReadCapabilities: () -> Unit = {},
     onUpload:(String,PhotoUploadConsent,Boolean)->Unit={_,_,_->},onRetryUpload:()->Unit={},onDiscardUpload:()->Unit={},
     onReadAnalysis:()->Unit={},onRestoreAnalysis:()->Unit={},onStopAnalysis:()->Unit={},onClearAnalysis:()->Unit={},
-    onCancelAnalysis:(String,Long)->Unit={_,_->},onRetryCancellation:(String)->Unit={},onReleaseCancelled:(String)->Unit={}) {
+    onCancelAnalysis:(String,Long)->Unit={_,_->},onRetryCancellation:(String)->Unit={},onReleaseCancelled:(String)->Unit={},draftActions:pl.roseru.kalorie.session.PhotoDraftActions=pl.roseru.kalorie.session.PhotoDraftActions()) {
     val drafts by model.drafts.collectAsStateWithLifecycle()
     val busy by model.busy.collectAsStateWithLifecycle()
     val message by model.message.collectAsStateWithLifecycle()
@@ -102,7 +102,8 @@ import androidx.lifecycle.compose.LocalLifecycleOwner
         item { PhotoCapabilitiesPanel(session, onReadCapabilities) }
         item { PhotoUploadPanel(session,onRetryUpload,onDiscardUpload,onReadAnalysis,onStopAnalysis) }
         item { PhotoCancellationPanel(session,onCancelAnalysis,onRetryCancellation,onReleaseCancelled) }
-        item { PhotoAnalysisPanel(session.photoAnalysis) }
+        item { PhotoMealDraftPanel(session,date,draftActions) }
+        if(session.photoMealDraft==null) item { PhotoAnalysisPanel(session.photoAnalysis) }
         item { Text("Zapisane zdjęcia · ${drafts.size}", style=MaterialTheme.typography.titleMedium, modifier=Modifier.testTag("photo-count")) }
         if (drafts.isEmpty()) item { Text("Nie ma jeszcze zapisanych zdjęć.", Modifier.testTag("photo-empty")) }
         items(drafts,key={it.id}) { row ->
