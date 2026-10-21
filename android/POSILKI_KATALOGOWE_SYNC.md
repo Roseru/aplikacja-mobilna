@@ -3,6 +3,7 @@
 Agent 1, 21.10.2026, `codex/android-posilki-katalogowe-sync`.
 Zależność: dokładny `a1f547a398e878b4f6429ffdb1b7a99f0903e51d` / PR139.
 Implementacja do odbioru końcowego; testy nowego etapu jeszcze niewykonane.
+Wersja0.8.24/code35, validation1035; Room14 bez nowej migracji.
 
 Po bootstrapie konta zwykły wybór produktu z pakietu E2 lub zaznaczonych
 składników racji zapisuje Meal i operację sync-v1 w jednej transakcji Room.

@@ -1,10 +1,14 @@
 # Android — Racje i kalorie
 
-Na niezależnej gałęzi `codex/android-posilek-reczny-sync` przygotowano
-[nowe ręczne posiłki w sync-v1](POSILEK_RECZNY_SYNC.md): prywatny produkt
-pozostaje lokalny, a jego spożycie po bootstrapie ma osobną operację Meal.
-18 JVM PASS; repozytorium i8 testów Room skompilowane, wykonanie urządzenia
-i nowy APK jeszcze NOT_RUN. Starsze wpisy/katalog/racje są osobno.
+Nowy etap **0.8.24/code35/Room14** na `codex/android-posilki-katalogowe-sync`
+rozszerza [kolejkę o produkty katalogowe i wybrane składniki racji](POSILKI_KATALOGOWE_SYNC.md).
+Implementacja jest gotowa do odbioru końcowego; nowy APK i wykonanie testów
+tego etapu pozostają niepotwierdzone.
+
+Rodzic139/a1f547a dostarcza [ręczne posiłki w sync-v1](POSILEK_RECZNY_SYNC.md):
+prywatny produkt pozostaje lokalny, a spożycie ma osobną operację Meal.
+Jego330/345JVM i328native PASS dotyczą wcześniejszego źródła c24583b,
+nie zastępują sprawdzenia obecnego etapu. Starsze wpisy legacy są osobno.
 Kod [drivera E4](https://github.com/Roseru/aplikacja-mobilna/pull/138) jest
 w oddzielnym PR; nie jest zależnością kodu tego etapu ani odebranym testem live.
 
