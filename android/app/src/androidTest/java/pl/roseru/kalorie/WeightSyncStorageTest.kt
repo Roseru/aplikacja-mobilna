@@ -150,7 +150,13 @@ class WeightSyncStorageTest {
                     val e=entities.getJSONObject(i);val fields=e.getJSONArray("fields")
                     val columns=(0 until fields.length()).joinToString(","){"`"+fields.getJSONObject(it).getString("columnName")+"`"}
                     put(e.getString("tableName"),query("SELECT $columns FROM `${e.getString("tableName")}` ORDER BY rowid").use {c->buildList {
-                        while(c.moveToNext())add((0 until c.columnCount).map {if(c.isNull(it))null else c.getString(it)})
+                        while(c.moveToNext())add((0 until c.columnCount).map {
+                            when {
+                                c.isNull(it)->null
+                                c.getType(it)==android.database.Cursor.FIELD_TYPE_FLOAT->c.getDouble(it).toString()
+                                else->c.getString(it)
+                            }
+                        })
                     }})
                 }
             }
@@ -169,6 +175,9 @@ class WeightSyncStorageTest {
                 old.execSQL("CREATE TABLE room_master_table (id INTEGER PRIMARY KEY,identity_hash TEXT)")
                 old.execSQL("INSERT INTO room_master_table VALUES (42,?)",arrayOf(schema.getString("identityHash")));old.version=14
                 before=dump {old.rawQuery(it,null)}
+                assertEquals(80.123456789,old.rawQuery("SELECT kg FROM weights WHERE id=?",arrayOf(weight)).use {
+                    assertTrue(it.moveToFirst());it.getDouble(0)
+                },0.0)
             }
             target=Room.databaseBuilder(context,CalorieDatabase::class.java,name).addMigrations(MIGRATION_14_15).addCallback(DATABASE_GUARDS).build()
             val sql=target!!.openHelper.readableDatabase;assertEquals(15,sql.version);assertEquals(before,dump {sql.query(it)})

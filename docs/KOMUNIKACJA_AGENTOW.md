@@ -17,7 +17,7 @@ Każda osoba aktualizuje własny wiersz. Daty i dokładne źródła są w jej wp
 
 | Rola | Ostatni znany rezultat | Następny krok / zależność | Źródło |
 |---|---|---|---|
-| O1 — Android, Kotlin, Room | Waga0.8.25/Room15: implementacja i kompilacja PASS; końcowy JVM/native przed odbiorem | Pierwszeństwo merge137/O2-049; waga zależy od140/25f7e4c;139 po nowym main | O1-102, [opis wagi](../android/WAGA_SYNC.md), [PR139](https://github.com/Roseru/aplikacja-mobilna/pull/139) |
+| O1 — Android, Kotlin, Room | PR139 scalony, 8 kontroli PASS; waga0.8.25 w odbiorze | Poprawka precyzji fixture wymaga testu, potem pełne336native | O1-104, [PR139](https://github.com/Roseru/aplikacja-mobilna/pull/139); codex/android-waga-sync |
 | O2 — Python, PostgreSQL, API | PR131 scalony, main CI8/8 PASS; R2 late-GET/guard i R3 GET B/A4/4 odebrane w ograniczonym zakresie | Nowa próba E4 NOT_RUN: O1 kandydat i przerwanie przed ACK, O2/O3 zgodność backendu i oracle PG; kontakt A1 pominięty | O2-043/044, [odbiór i oracle](integracja/ODBIOR_R2_R3_ORACLE_E4_O2.md) |
 | O3 — DevOps, CI/CD, serwer | PR130 scalony po 8/8 SUCCESS; R2/R3 odebrane, transport zamknięty. Aktualizacje setup-java/upload-artifact/Caddy po przeglądzie bez istotnych uwag | Własny CI aktualnych gałęzi i main dla PR133–135; O1 potwierdza artefakt i gotowość kolejnego E4, okno jeszcze nieotwarte | O3-082/083, [PR133](https://github.com/Roseru/aplikacja-mobilna/pull/133), [PR130](https://github.com/Roseru/aplikacja-mobilna/pull/130) |
 
@@ -5580,3 +5580,31 @@ Archiwalne wiersze stanu PR140 sprzed aktualizacji rodzica21.10; aktualny stan z
   pull/reconciliation/konflikty UI, import legacy/gościa, WorkManager i
   pozostałe typy danych nadal mają odrębne etapy; goal pozostaje aktywny.
 - Kontrole przed zamrożeniem źródła O1-102: kompilacja debug/validation/test PASS, wygenerowany Room15, diff-check i E0 PASS11schematów/98valid/35invalid/18scenariuszy/799linków; nowy link opisu wagi istnieje. JVM/native NOT_RUN do końcowej kwalifikacji.
+
+
+### O1-104 — checkpoint synchronizacji wagi i odbiór PR139
+
+- 21.10.2026, agent1/O1, do O2/O3, **DO ODCZYTU**. Odczytano aktualny
+  main34d7cb215eed1c6b6a96c96603f62626ad8a8fca i O2-049/O1-103.
+  PR139 jest scalony; Project CI39634374469 ma8SUCCESS. Odczytane logi:
+  330debug/345validationJVM i328native,0fail/0skip. To wynik139, nie wagi.
+- Waga jest osobno na codex/android-waga-sync, rodzic PR140/25f7e4c.
+  Produkcja ff0d766: 0.8.25/code36/validation1036/Room15, kanoniczne Weight,
+  zapis atomowy i wspólny ACK Meal+Weight. Migracja wyłącznie dodaje tabelę.
+- Build PASS;30wybranychJVM PASS wykonane raz na koniec etapu; lint0error,
+  4warning/1info. Pierwszy pełny native334/336PASS. Poprawki testów5877a0d:
+  brak opcjonalnych indices w fixture i odsłonięcie podglądu zdjęcia po
+  odtworzeniu Activity. Produkcyjne APK pozostały identyczne bajtowo.
+- Następny skupiony przebieg6/7PASS, oba testy zdjęć PASS. Fixture migracji
+  kopiowało REAL przez getString, co skracało80.123456789 do80.1235 jeszcze
+  przed migracją. Obecna poprawka używa getDouble().toString() i dodatkowo
+  sprawdza dokładną wartość przed migracją. Oryginalna ścisła asercja po
+  migracji, stare tabele, kolejka, rowid100 i kontrola FK pozostają.
+- Ostatnia poprawka NIE JEST jeszcze skompilowana ani uruchomiona. Potrzebny
+  test migracji, potem pełne336native. Etap/DRAFT nie jest gotowy do merge
+  ani instalacji użytkownikowi. Zachowano oba nieudane wyniki; nie wykonano
+  ponownie jednostkowych ani pełnego zestawu po ostatniej poprawce.
+- Zapisano checkpoint na prośbę właściciela o zakończenie po5min. Zwykły
+  APK0.8.24, prywatny dziennik i API5558 zachowane. Bez restartu PC, nowych
+  wywołań API/Gemini lub zmian środowiska O3. E4 i pozostałe odbiory osobne.
+  Następny krok O1: dokończyć kwalifikację testów; O2/O3: informacyjnie.
