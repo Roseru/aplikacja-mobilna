@@ -13,6 +13,7 @@ from sqlalchemy.exc import IntegrityError, ProgrammingError
 from sqlalchemy.orm import Session
 
 from calorie_app.core.config import Settings
+from calorie_app.health import EXPECTED_REVISION
 from calorie_app.main import create_app
 from calorie_app.modules.catalog import OFFICIAL_PACKAGE_ID
 from calorie_app.modules.catalog.cli import main as catalog_command
@@ -47,7 +48,7 @@ def counts(engine):
         )
 
 
-def seed_legacy(engine, migrate, value, tmp_path, *, expired=1):
+def seed_legacy(engine, migrate, value, tmp_path, *, expired=1, target_revision=EXPECTED_REVISION):
     """Issue actual old-format rows under old schema/ACL, then upgrade without rewriting."""
     import_catalog(engine, value)
     publish_package(engine, OFFICIAL_PACKAGE_ID, 1, tmp_path)
@@ -71,7 +72,7 @@ def seed_legacy(engine, migrate, value, tmp_path, *, expired=1):
                 )
             )
         before = list(connection.execute(select(RationPageToken).order_by(RationPageToken.id)))
-    migrate("upgrade", "head")
+    migrate("upgrade", target_revision)
     with engine.connect() as connection:
         assert (
             list(connection.execute(select(RationPageToken).order_by(RationPageToken.id))) == before
@@ -217,8 +218,10 @@ def test_modified_unknown_and_wrong_limit_tokens_are_422(catalog_db, tmp_path):
             assert response.status_code == 422
 
 
-def test_legacy_upgrade_active_snapshot_restart_and_expired_after_cleanup(catalog_db, tmp_path):
-    engine, migrate, url = catalog_db
+def test_legacy_upgrade_active_snapshot_restart_and_expired_after_cleanup(
+    historical_catalog_db, tmp_path
+):
+    engine, migrate, url = historical_catalog_db
     value = synthetic_official(count=4)
     active, expired, expires = seed_legacy(engine, migrate, value, tmp_path, expired=3)
     with client_for(engine, url, tmp_path) as client:
@@ -257,12 +260,13 @@ def test_legacy_upgrade_active_snapshot_restart_and_expired_after_cleanup(catalo
         )
     assert counts(engine) == (1, 3)
     migrate("check")
-    with pytest.raises(IntegrityError):
-        migrate("downgrade", "0004_catalog_timestamp")
+    # The legacy-specific guard is verified separately before installing0025.
 
 
-def test_retention_drains_bounded_batches_and_total_legacy_state_never_grows(catalog_db, tmp_path):
-    engine, migrate, url = catalog_db
+def test_retention_drains_bounded_batches_and_total_legacy_state_never_grows(
+    historical_catalog_db, tmp_path
+):
+    engine, migrate, url = historical_catalog_db
     active, expired, _ = seed_legacy(
         engine, migrate, synthetic_official(count=3), tmp_path, expired=1005
     )
@@ -290,9 +294,9 @@ def test_retention_drains_bounded_batches_and_total_legacy_state_never_grows(cat
 
 @pytest.mark.parametrize("role", ["calorie_app_api", "calorie_app_worker"])
 def test_runtime_can_only_invoke_restricted_cleanup_and_read_necessary_evidence(
-    catalog_db, tmp_path, role
+    historical_catalog_db, tmp_path, role
 ):
-    engine, migrate, _ = catalog_db
+    engine, migrate, _ = historical_catalog_db
     seed_legacy(engine, migrate, synthetic_official(count=3), tmp_path)
     with engine.begin() as connection:
         connection.exec_driver_sql(f"SET LOCAL ROLE {role}")
@@ -342,8 +346,10 @@ def test_missing_cursor_configuration_fails_closed_without_persistent_writes(cat
     assert counts(engine) == (0, 0)
 
 
-def test_operator_cleanup_is_real_and_preserves_active_rows(catalog_db, tmp_path, capsys):
-    engine, migrate, _ = catalog_db
+def test_operator_cleanup_is_real_and_preserves_active_rows(
+    historical_catalog_db, tmp_path, capsys
+):
+    engine, migrate, _ = historical_catalog_db
     active, expired, _ = seed_legacy(engine, migrate, synthetic_official(count=3), tmp_path)
     assert catalog_command(["prune-page-tokens"]) == 0
     assert '"removed": 1' in capsys.readouterr().out
@@ -351,3 +357,20 @@ def test_operator_cleanup_is_real_and_preserves_active_rows(catalog_db, tmp_path
     with Session(engine) as session:
         assert session.get(RationPageToken, active) is not None
         assert session.get(RationPageToken, expired[0]) is None
+
+
+def test_historical_legacy_expiry_guard_retains_exact_evidence(historical_catalog_db, tmp_path):
+    engine, migrate, _ = historical_catalog_db
+    seed_legacy(
+        engine,
+        migrate,
+        synthetic_official(count=3),
+        tmp_path,
+        target_revision="0024_e9_history_graph",
+    )
+    with engine.begin() as connection:
+        assert prune_legacy_tokens(connection) == 1
+    before = counts(engine)
+    with pytest.raises(IntegrityError, match="cannot remove legacy page expiry evidence"):
+        migrate("downgrade", "0004_catalog_timestamp")
+    assert counts(engine) == before

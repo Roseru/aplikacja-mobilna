@@ -28,7 +28,6 @@ from calorie_app.modules.diary.service import (
     save_meal,
     save_weight,
 )
-from calorie_app.modules.identity.service import begin_deleting
 from calorie_app.modules.profiles.schemas import GoalPayload, ProfilePayload
 from calorie_app.modules.profiles.service import (
     create_goal,
@@ -36,6 +35,7 @@ from calorie_app.modules.profiles.service import (
     goal_for_dates,
     save_profile,
 )
+from tests.support.deletion_regression import begin_deleting
 
 pytestmark = pytest.mark.integration
 ROOT = Path(__file__).resolve().parents[3]

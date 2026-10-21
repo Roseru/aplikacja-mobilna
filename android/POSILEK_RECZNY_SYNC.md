@@ -145,3 +145,21 @@ Pełny E4, driver138, katalog/racje/legacy/import/WorkManager, recovery,
 E7 i KO32 nadal mają osobne bramki. Brak nowego relay, okna O3, deploy,
 zmiany używanej schema24/epoki/kont lub Google I/O. Do wspólnego E4 potrzebny
 jest nowy konkretny APK z oboma niezależnymi etapami i uzgodniony oracle O2/O3.
+
+
+## O1-098 — aktualizacja rodzica,21.10.2026
+
+Zwykły merge139/a1f547a i dokładnego129/3155d84. Produkcja, schematy,
+migracje i zależności bez zmian;0.8.23/code34/Room14. Jedyny diff Android/app
+to3 oczekiwania testu observera z rodzica, te same predykaty/10s/asercje.
+Narzędzia/CI/backend/infra z przyjętego main e651fea. Rozwiązano tylko README
+i dziennik; wszystkie143/219 historyczne wystąpienia i niepuste wiersze
+obu rodziców zachowane. Lokalnych jednostkowych nie powtarzano.
+
+PR139 pozostaje zależnym draftem na129. Rodzic/head3155d84 ma uruchomiony
+CI39618728312, jeszcze bez końcowego wyniku. Po jego scaleniu: rzeczywisty
+main do139, retarget i własny pełny CI. Historyczne330/345JVM i328native
+nie zastępują tego odbioru. Ręczny producent tworzy kanoniczne Meal tylko
+po poprawnym bootstrapie konta; nowe produkty prywatne pozostają lokalne.
+Katalog/racje z140, driver138, realny API/E4 i recovery są osobne.
+Zwykły APK0.8.24/code35/Room14 zachowany; ta integracja go nie podmienia.
