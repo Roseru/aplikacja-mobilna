@@ -17,7 +17,7 @@ Każda osoba aktualizuje własny wiersz. Daty i dokładne źródła są w jej wp
 
 | Rola | Ostatni znany rezultat | Następny krok / zależność | Źródło |
 |---|---|---|---|
-| O1 — Android, Kotlin, Room | PR122 scalony po8/8CI;129 na rzeczywistym main, produkcja bez zmian | Własny CI129 i push CI main; potem139/138/140 | O1-096, [PR129](https://github.com/Roseru/aplikacja-mobilna/pull/129), [PR122](https://github.com/Roseru/aplikacja-mobilna/pull/122) |
+| O1 — Android, Kotlin, Room | PR122 i jego main8/8PASS;129 gotowy na main po integracji bez zmiany produkcji | Własny Project CI129; aktualizacja zależnego139; potem138/140 i osobny E4 | O1-097, [PR129](https://github.com/Roseru/aplikacja-mobilna/pull/129) |
 | O2 — Python, PostgreSQL, API | PR131 scalony, main CI8/8 PASS; R2 late-GET/guard i R3 GET B/A4/4 odebrane w ograniczonym zakresie | Nowa próba E4 NOT_RUN: O1 kandydat i przerwanie przed ACK, O2/O3 zgodność backendu i oracle PG; kontakt A1 pominięty | O2-043/044, [odbiór i oracle](integracja/ODBIOR_R2_R3_ORACLE_E4_O2.md) |
 | O3 — DevOps, CI/CD, serwer | PR130 scalony po 8/8 SUCCESS; R2/R3 odebrane, transport zamknięty. Aktualizacje setup-java/upload-artifact/Caddy po przeglądzie bez istotnych uwag | Własny CI aktualnych gałęzi i main dla PR133–135; O1 potwierdza artefakt i gotowość kolejnego E4, okno jeszcze nieotwarte | O3-082/083, [PR133](https://github.com/Roseru/aplikacja-mobilna/pull/133), [PR130](https://github.com/Roseru/aplikacja-mobilna/pull/130) |
 
@@ -5213,3 +5213,32 @@ Archiwalne wiersze stanu PR129 sprzed aktualizacji rodzica21.10; aktualny stan z
   zmian używanego schema24/epoki/kont, restartu PC lub instalacji starszego APK.
   Właściciel skrócił pracę do5min; po publikacji zapisujemy checkpoint.
 - Kontrole O1-096 przed publikacją: E0 PASS11schematów/98valid/35invalid/18scenariuszy/791linków i diff-check; bez lokalnych zestawów jednostkowych.
+
+
+### O1-097 — odbiór main122 i gotowość końcowego CI129
+
+- 21.10.2026, agent1/O1, do O2/O3, **DO ODCZYTU**. Wznowienie celu przez
+  właściciela po wcześniejszym checkpoint; lokalnie codex/android-integracja-pr129,
+  remote codex/android-wysylanie-kolejki, istniejący PR129 na main.
+- Osobny push CI39590242229 dla rzeczywistego main e651fea201248fe6e7bdcc98f669bc60e490f691
+  odebrany: wszystkie8 jobów completed/success. PR122 był scalony po własnym
+  CI39582228792/head33d458b; O1-096 zachowuje dokładne metryki i dowód drzewa.
+- Aktualna integracja129/12f36468d3930e9c51a355e925d7b680c069784c opublikowana,
+  main jest przodkiem; produkcja/schematy/migracje/narzędzia bez zmiany tego
+  wznowienia. PR129 oznaczony gotowy; dotychczas po zmianie bazy nie było
+  Project CI dla12f3646. Ten wpis uzupełnia rzeczywisty odbiór i jego push
+  wywoła synchronize istniejącego PR na main. Nowy CI nadal PENDING;
+  historyczne testy129 i PASS rodzica nie zastępują własnego końcowego wyniku.
+- ODCZYTANE main/O1-094–096 oraz PR13793894a9/O2-047, PR138f7cf71e,
+  PR139a1f547a i PR140017ce87. Brak nowych wiadomości zespołu. Dwa komentarze
+  O3 w129 z19.10 odczytane ponownie, bez nowych reviews/inline. Kandydat
+  i technika są w O1-092; świeże skonfigurowane środowisko/E4 nadal osobno.
+- PR139 wymaga aktualizacji dokładnego rodzica129; pozostaje draftem na
+  gałęzi129 do czasu jej scalenia. Nie scalamy dziecka do rodzica i nie
+  przenosimy niezależnego kodu138/140/137 do129. Następnie własne odbiory
+  kolejnych etapów, bez deklarowania ich PASS lub odczytu za O2/O3.
+- Lokalnych jednostkowych nie uruchamiano; źródło produkcyjne bez zmian,
+  wymagane zestawy wykona końcowy CI. Zwykły0.8.24/code35/Room14 zachowany,
+  oryginalny API5558 bez zmian. Bez live API/Gemini/relay/deploy, zmian
+  schema24/epoki/kont, restartu komputera i starszej instalacji APK.
+- Kontrole O1-097: E0 PASS11schematów/98valid/35invalid/18scenariuszy/791linków, diff-check i przegląd dokumentacji; produkcja bez zmian.

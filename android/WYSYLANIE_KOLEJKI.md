@@ -141,3 +141,13 @@ dokumentacja aktualizuje odbiór i zależność. Istniejący PR129 kierujemy
 na main i oddajemy do własnego pełnego CI; dotychczasowe wyniki129 są
 historyczne, lokalnych jednostkowych nie powtarzano. Push CI nowego main
 oraz końcowy CI129 pozostają do odebrania. E4/API i dzieci138/139/140 osobno.
+
+
+## O1-097 — własny CI kolejki129
+
+Po wznowieniu21.10 odebrano osobny push CI39590242229/main e651fea: wszystkie8
+jobów SUCCESS. Integracja129/12f3646 jest na main jako baza PR, bez kolejnej
+zmiany produkcji/migracji. Istniejący PR129 oznaczono gotowy. Wpis O1-097
+uzupełnia odbiór i daje synchronize na prawidłowej bazie; własny Project CI
+tego źródła jest jeszcze PENDING. Lokalnych jednostkowych nie powtarzano.
+Zależny139 będzie aktualizowany osobno; końcowy odbiór E4/API pozostaje otwarty.
