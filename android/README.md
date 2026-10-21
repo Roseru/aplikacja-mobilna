@@ -2,8 +2,9 @@
 
 Nowy etap **0.8.24/code35/Room14** na `codex/android-posilki-katalogowe-sync`
 rozszerza [kolejkę o produkty katalogowe i wybrane składniki racji](POSILKI_KATALOGOWE_SYNC.md).
-Implementacja jest gotowa do odbioru końcowego; nowy APK i wykonanie testów
-tego etapu pozostają niepotwierdzone.
+Odbiór lokalny:13 wybranych JVM i11 native PASS, lint0error. APK0.8.24
+uruchomiono jako aktualizację zachowującą dziennik; pełny CI integracji
+i rzeczywisty katalogowy APK/API pozostają osobno.
 
 Rodzic139/a1f547a dostarcza [ręczne posiłki w sync-v1](POSILEK_RECZNY_SYNC.md):
 prywatny produkt pozostaje lokalny, a spożycie ma osobną operację Meal.

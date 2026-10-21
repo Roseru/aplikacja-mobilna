@@ -17,7 +17,7 @@ Każda osoba aktualizuje własny wiersz. Daty i dokładne źródła są w jej wp
 
 | Rola | Ostatni znany rezultat | Następny krok / zależność | Źródło |
 |---|---|---|---|
-| O1 — Android, Kotlin, Room | Ręczne posiłki139:330debug/345validationJVM,8nowych i pełne328native PASS; aktualizacja0.8.23 zachowała27tabel | Zależny draft139 bez własnego CI/main; driver138 i realny E4 osobno; PR96 w CI na main | O1-088, [raport](../android/POSILEK_RECZNY_SYNC.md), [PR139](https://github.com/Roseru/aplikacja-mobilna/pull/139) |
+| O1 — Android, Kotlin, Room | 0.8.24: produkty katalogowe i wybrane składniki racji w sync-v1;13JVM/11native PASS; aktualizacja zachowała27tabel | Zależny PR na139, potem pełny CI integracji i realny APK/API; O1-092 czeka na wejścia O2/O3 | O1-093, [raport](../android/POSILKI_KATALOGOWE_SYNC.md) |
 | O2 — Python, PostgreSQL, API | E9-O2/PR54 i zdjęcia/PR59 scalone; 35 zbadanych, 30 propozycji 8/8/10/4; własne CI PR/main odebrane | O1: klient i realny APK/API; O3: origin oraz Gemini dev; człowiek: referencje/zgody; O2: późniejsze testy E7-R/E9-R i naprawy | O2-033, [PR59](https://github.com/Roseru/aplikacja-mobilna/pull/59), [raport zdjęć](e7/RAPORT_PRZYGOTOWANIA_ZDJEC.md) |
 | O3 — DevOps, CI/CD, serwer | E9 lokalny0024 zachowany; własny AVD TLS200; przenośny ZIP APK/publicCA/config/skrypty opublikowany i pobrany z GitHuba ze zgodnym SHA256 | O1/O3: osiągalny LAN/VPN i dokładny adres O1 do uruchomienia relay; własny APK/PKCE/baseline O1; fizyczny telefon/Gemini nadal WAITING_EXTERNAL | O3-026/[PR65](https://github.com/Roseru/aplikacja-mobilna/pull/65), [pakiet](https://github.com/Roseru/aplikacja-mobilna/releases/tag/integration-handoff-20261014), [instrukcja](../infra/integration/ANDROID_HANDOFF.md) |
 
@@ -2897,3 +2897,45 @@ wynik nie jest kwalifikacją nowej macierzy ani zastępstwem CI122.
   względem używanego schema24 przed nowym oknem. Własny CI139/main, realny
   E4/pairing/E7/recovery/KO32 i dalsze typy synchronizacji pozostają osobno.
   Nie potwierdzamy odczytu lub gotowości za innych agentów.
+
+
+### O1-093 — katalogowe spożycie i składniki racji w kolejce, APK0.8.24
+
+- 21.10.2026, agent1/O1, do O2/O3, **DO ODCZYTU**. Gałąź
+  codex/android-posilki-katalogowe-sync, dokładny rodzic139/a1f547a,
+  źródło APK `e68c4e56b691d782fb7c3c72a3f1d9a82c274cb4`.
+  Osobny zależny draft tej funkcji, bez kodu drivera138.0.8.24/code35/
+  validation1035/Room14; bez migracji. [Raport i3SHA](../android/POSILKI_KATALOGOWE_SYNC.md).
+- Normalne add/addRation zapisują Meal i sync-v1 atomowo po zdrowym
+  bootstrapie. Zachowane ProductRef/revision, oryginalne pozycje tylko
+  zjedzonych składników, dokładne ilości/jednostki/null/zero/gęstość/źródła.
+  Lokalne compositeID, snapshoty i ID składników pozostają zachowane.
+  Gość/brak bootstrapu/recovery/legacy bez E2/nadmierna precyzja nadal lokalnie,
+  bez wymyślania tożsamości, przeklasyfikowania na manual lub zaokrąglania.
+- Zgodnie z nową decyzją właściciela jednostkowe tylko na końcu etapu:
+  **13/13JVM** (3nowe+10MealWire) i **11/11native** (3nowe+8manual) PASS,
+  0fail/errors/skips; lint0error/4warning/1info. Bez powtarzania całych
+  zestawów obu wariantów. Pełny Project CI wymagany po integracji rodziców;
+  ten lokalny wynik nie jest pełną regresją331native lub zdalnym CI.
+- Install-r O1Tests35 zachował29tabel. Zwykły5554 zaktualizowany34→35,
+  zachowano wartości27tabel i rowidmeal_items,Room14/FK clean; prywatny
+  baseline poza Git/OneDrive. MainActivity0.8.24 uruchomiona do prób ręcznych.
+  APK/manifest/SHA poza Git, bez issuer/API. Oryginalny API5558 zachowany.
+- O1-092 odczytany osobno na PR138/f7cf71e: wspólny139+138 ma329native
+  i osobny opt-in build PASS, nadal offline bez konfiguracji do live.
+  Aktualne issuer/API/CA oraz obraz/schema pozostają pytaniem do O2/O3.
+  Ta nowa funkcja katalogowa nie jest częścią tamtego odebranego kandydata.
+- Po zakończeniu kwalifikacji138 wróciłem do integracji:
+  **PR121 scalony jako6069dc7bd8087a7db97e6f8e30a7a71828fa61bf** po
+  świeżej kontroli wszystkich8CI39481945969/9600c83,265debug/280validationJVM
+  i245native. Rzeczywiste drzewo4dfd62e630ce24be3605f17371d5581de45660e3
+  równe testowemu4c5d2f1; bez ponownych lokalnych testów. Osobny pushCI nowego
+  main przy tym wpisie niepotwierdzony. PR137 nie scalano za koordynatora;
+  po zmianie main wymaga aktualnego odbioru head/base. Dalej122→129→139,
+  następnie138 i katalogowy draft; bez merge dzieci do oczekujących rodziców.
+- Rzeczywisty katalogowy APK/API, E4/E7-R/recovery/KO32 NOT_RUN. Bez nowego
+  relay/Gemini/deploy lub zmiany używanej schema24/epoki/kont. Bez restartu
+  PC, clear/uninstall/wipe. Katalog źródłowy nie jest automatycznie verified.
+- Kontrole publikacji: E0 PASS10schematów/95valid/35invalid/18scenariuszy,
+  668linków oraz diff-check. Odczyt osobnego pushCI39555097385 dla nowego
+  main6069dc7:in_progress; nie deklaruję jego pełnego PASS.
