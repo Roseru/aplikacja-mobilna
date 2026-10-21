@@ -118,6 +118,9 @@ class PushProtocol(private val schema: SyncWireSchema) {
         if (value.getString("entity_type") == "meal" && value.getString("action") == "upsert") {
             MealWire.read(StrictJson.canonical(value.getJSONObject("payload")), schema)
         }
+        if (value.getString("entity_type") == "weight" && value.getString("action") == "upsert") {
+            WeightWire.read(StrictJson.canonical(value.getJSONObject("payload")), schema)
+        }
         return value
     }
     private fun envelope(epoch: String, checkpoint: String, operations: JSONArray) = StrictJson.canonical(

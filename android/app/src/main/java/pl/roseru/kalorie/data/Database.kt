@@ -176,8 +176,9 @@ interface CalorieDao {
     RationEntity::class, RationComponentEntity::class, ProfileEntity::class, WeightEntity::class, DiaryDayEntity::class,
     CatalogGenerationEntity::class, CatalogRecordEntity::class, CatalogMemberEntity::class, CatalogActiveEntity::class,
     LocalOwnerEntity::class, LocalActiveOwnerEntity::class, AccountBindingEntity::class,
-    BootstrapAttemptEntity::class, ServerSnapshotRun::class, ServerSnapshotPage::class, ServerSnapshotAccess::class, ServerSnapshotIdentity::class, pl.roseru.kalorie.photo.MealPhotoDraft::class, pl.roseru.kalorie.photo.PhotoAnalysisRequestEntity::class, PhotoMaterialization::class, SyncPushBatch::class, pl.roseru.kalorie.photo.PhotoConfirmationHistory::class], version = 14, exportSchema = true)
+    BootstrapAttemptEntity::class, ServerSnapshotRun::class, ServerSnapshotPage::class, ServerSnapshotAccess::class, ServerSnapshotIdentity::class, pl.roseru.kalorie.photo.MealPhotoDraft::class, pl.roseru.kalorie.photo.PhotoAnalysisRequestEntity::class, PhotoMaterialization::class, SyncPushBatch::class, pl.roseru.kalorie.photo.PhotoConfirmationHistory::class, CanonicalWeightState::class], version = 15, exportSchema = true)
 abstract class CalorieDatabase : RoomDatabase() {
+    abstract fun weightSyncDao(): CanonicalWeightDao
     abstract fun photoConfirmationHistoryDao():pl.roseru.kalorie.photo.PhotoConfirmationHistoryDao
     abstract fun pushDao(): MealPushDao
     abstract fun materializationDao():PhotoMaterializationDao

@@ -33,6 +33,10 @@ class DiaryRepository(private val db: CalorieDatabase, private val context: Cont
         val lease=boundLease?:owners.currentLease().also {check(it.storageScope==owner);boundLease=it}
         return CanonicalMealEditor(db,context,lease)
     }
+    private suspend fun canonicalWeights():CanonicalWeightEditor {
+        val lease=boundLease?:owners.currentLease().also {check(it.storageScope==owner);boundLease=it}
+        return CanonicalWeightEditor(db,context,lease)
+    }
     suspend fun initialize() = withContext(Dispatchers.IO) {
         val catalog = readCatalog("products-v1.json")
         val rationCatalog = readCatalog("rations-v1.json")
@@ -298,25 +302,32 @@ class DiaryRepository(private val db: CalorieDatabase, private val context: Cont
         if (dao.weight(id, owner) != null) return@ownerTransaction
         val zone = ZoneId.systemDefault()
         val point = WeightEntity(id, owner, date.toString(), date.atTime(LocalTime.now()).atZone(zone).toInstant().toString(), zone.id, kg)
+        if(canonicalWeights().create(point)) return@ownerTransaction
         dao.saveWeight(point)
         enqueueWeight(point, "create")
     }
 
-    suspend fun editWeight(id: String, kg: Double) = ownerTransaction {
+    suspend fun editWeight(id: String, kg: Double) {
         require(kg.isFinite() && kg in 20.0..400.0)
-        val old = requireNotNull(dao.weight(id, owner))
-        require(!old.deleted)
-        val point = old.copy(kg = kg, localRevision = old.localRevision + 1)
-        dao.saveWeight(point)
-        enqueueWeight(point, "update")
+        if(canonicalWeights().change(id, kg)) return
+        ownerTransaction {
+            val old = requireNotNull(dao.weight(id, owner))
+            require(!old.deleted)
+            val point = old.copy(kg = kg, localRevision = old.localRevision + 1)
+            dao.saveWeight(point)
+            enqueueWeight(point, "update")
+        }
     }
 
-    suspend fun deleteWeight(id: String) = ownerTransaction {
-        val old = requireNotNull(dao.weight(id, owner))
-        if (old.deleted) return@ownerTransaction
-        val point = old.copy(deleted = true, localRevision = old.localRevision + 1)
-        dao.saveWeight(point)
-        enqueueWeight(point, "delete")
+    suspend fun deleteWeight(id: String) {
+        if(canonicalWeights().change(id)) return
+        ownerTransaction {
+            val old = requireNotNull(dao.weight(id, owner))
+            if (old.deleted) return@ownerTransaction
+            val point = old.copy(deleted = true, localRevision = old.localRevision + 1)
+            dao.saveWeight(point)
+            enqueueWeight(point, "delete")
+        }
     }
 
     private suspend fun enqueueWeight(point: WeightEntity, action: String) = enqueueLocal("weight", point.id, action,

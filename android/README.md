@@ -1,5 +1,10 @@
 # Android — Racje i kalorie
 
+Etap **0.8.25/code36/Room15** na `codex/android-waga-sync` dodaje
+[kanoniczne pomiary wagi i wspólny ACK z posiłkami](WAGA_SYNC.md).
+Kod i testy urządzenia skompilowane; końcowe JVM/native jeszcze przed odbiorem.
+Ta gałąź zależy od140/25f7e4c; wcześniejszy APK0.8.24 pozostaje zachowany.
+
 Aktualizacja zależności140/21.10: `codex/android-integracja-pr140` dołącza
 dokładny rodzic139/afb6a0a. PR140 pozostaje zależnym draftem. Produkcja,
 schemat14 i wersja0.8.24/code35 bez zmiany; istniejący lokalny odbiór poniżej

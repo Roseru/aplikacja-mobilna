@@ -341,9 +341,9 @@ class MealPushStorageTest {
                 old.execSQL("INSERT INTO room_master_table VALUES (42,?)",arrayOf(oldSchema.getString("identityHash")));old.version=13
                 rowids=old.rawQuery("SELECT id,rowid FROM meal_items",null).use {c->buildMap {while(c.moveToNext())put(c.getString(0),c.getLong(1))}}
             }
-            target=Room.databaseBuilder(context,CalorieDatabase::class.java,name).addMigrations(MIGRATION_13_14).addCallback(DATABASE_GUARDS).build()
+            target=Room.databaseBuilder(context,CalorieDatabase::class.java,name).addMigrations(MIGRATION_13_14, MIGRATION_14_15).addCallback(DATABASE_GUARDS).build()
             val migrated=target!!;val sql=migrated.openHelper.readableDatabase
-            assertEquals(14,sql.version);assertEquals(before,snapshot(sql))
+            assertEquals(15,sql.version);assertEquals(before,snapshot(sql))
             assertEquals(rowids,sql.query("SELECT id,rowid FROM meal_items").use {c->buildMap<String,Long>{while(c.moveToNext())put(c.getString(0),c.getLong(1))}})
             assertFalse(sql.query("PRAGMA foreign_key_check").use {it.moveToFirst()})
             val row=migrated.pushDao().batch(request.id)!!;assertEquals(0L,row.retryAtMillis)

@@ -2095,7 +2095,7 @@ class SessionController internal constructor(private val db: CalorieDatabase, pr
         check(checkNotNull(sessionFor(binding())).optLong("apiRetryAt")<=now())
     }
     private fun mealPushSummary(acknowledged:Int,refused:Int)=if(acknowledged+refused==0)
-        "Brak gotowych posiłków do wysłania. Starsze wpisy i pozostałe typy danych pozostają w kolejce."
+        "Brak gotowych wpisów do wysłania. Starsze wpisy i pozostałe typy danych pozostają w kolejce."
         else "Serwer potwierdził: $acknowledged. Wymagają uzgodnienia: $refused. Kopia serwera jest odświeżana osobno."
     private suspend fun finishMealPush(id:String,lease:OwnerLease,message:String=
         "Odpowiedź nie została potwierdzona. Ponów tę samą zapisaną partię; dziennik zachowany.")=mutex.withLock {
