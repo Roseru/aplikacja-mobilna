@@ -163,3 +163,14 @@ nie zastępują tego odbioru. Ręczny producent tworzy kanoniczne Meal tylko
 po poprawnym bootstrapie konta; nowe produkty prywatne pozostają lokalne.
 Katalog/racje z140, driver138, realny API/E4 i recovery są osobne.
 Zwykły APK0.8.24/code35/Room14 zachowany; ta integracja go nie podmienia.
+
+
+## O1-101 — integracja rzeczywistego main po scaleniu129
+
+21.10.2026: PR129/head3155d84 scalony a919777 po8/8CI39618728312;
+322debug/337validationJVM i320native,0fail/0skip; rzeczywiste drzewo równe
+testmerge71332bd. Zwykły merge a919777 do139/afb6a0a bez konfliktów i bez
+zmiany plików. Produkcja/testy/migracje/zależności bez zmiany;0.8.23/Room14.
+README/dziennik aktualizują odbiór i zależność. PR139 kierujemy na main;
+własny pełny CI nowego head/base nadal wymagany. Lokalnych jednostkowych
+nie powtarzano. Dzieci138/140 i realny skonfigurowany E4/API są osobne.

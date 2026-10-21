@@ -1,7 +1,7 @@
 # Android — Racje i kalorie
 
-Gałąź `codex/android-integracja-pr139` dołącza dokładny rodzic129/3155d84.
-PR139 pozostaje zależnym draftem, dopóki129 nie przejdzie własnego CI i merge.
+Gałąź `codex/android-integracja-pr139` zawiera rzeczywisty main a919777 po
+scaleniu129. Istniejący PR139 przechodzi na main i wymaga własnego pełnego CI.
 Produkcja139/0.8.23/Room14 bez zmiany; lokalny odbiór330/345JVM i328native
 jest historyczny. Zwykły emulator zachowuje nowszy APK0.8.24/code35 z PR140.
 

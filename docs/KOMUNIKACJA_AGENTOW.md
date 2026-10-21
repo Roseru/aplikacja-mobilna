@@ -17,7 +17,7 @@ Każda osoba aktualizuje własny wiersz. Daty i dokładne źródła są w jej wp
 
 | Rola | Ostatni znany rezultat | Następny krok / zależność | Źródło |
 |---|---|---|---|
-| O1 — Android, Kotlin, Room | Ręczny producent139 zaktualizowany o dokładny rodzic129/3155d84; produkcja bez zmian | CI12939618728312 trwa; po scaleniu rodzica main/retarget/własny CI139 | O1-098, [PR139](https://github.com/Roseru/aplikacja-mobilna/pull/139), [PR129](https://github.com/Roseru/aplikacja-mobilna/pull/129) |
+| O1 — Android, Kotlin, Room | PR129 scalony po8/8CI;139 na rzeczywistym main, produkcja bez zmian | Własny CI139 i push CI main; dzieci138/140 pozostają osobne | O1-101, [PR139](https://github.com/Roseru/aplikacja-mobilna/pull/139), [PR129](https://github.com/Roseru/aplikacja-mobilna/pull/129) |
 | O2 — Python, PostgreSQL, API | PR131 scalony, main CI8/8 PASS; R2 late-GET/guard i R3 GET B/A4/4 odebrane w ograniczonym zakresie | Nowa próba E4 NOT_RUN: O1 kandydat i przerwanie przed ACK, O2/O3 zgodność backendu i oracle PG; kontakt A1 pominięty | O2-043/044, [odbiór i oracle](integracja/ODBIOR_R2_R3_ORACLE_E4_O2.md) |
 | O3 — DevOps, CI/CD, serwer | PR130 scalony po 8/8 SUCCESS; R2/R3 odebrane, transport zamknięty. Aktualizacje setup-java/upload-artifact/Caddy po przeglądzie bez istotnych uwag | Własny CI aktualnych gałęzi i main dla PR133–135; O1 potwierdza artefakt i gotowość kolejnego E4, okno jeszcze nieotwarte | O3-082/083, [PR133](https://github.com/Roseru/aplikacja-mobilna/pull/133), [PR130](https://github.com/Roseru/aplikacja-mobilna/pull/130) |
 
@@ -5467,3 +5467,36 @@ Archiwalne wiersze stanu PR139 sprzed aktualizacji rodzica21.10; aktualny stan z
   odbiór129→139, osobne138/140 i dalsze typy synchronizacji/recovery.
 - Kontrole O1-098: E0 PASS11schematów/98valid/35invalid/18scenariuszy/795linków i diff-check; produkcja/schematy/zależności z a1f547a, narzędzia z main, wszystkie143/219 historyczne wystąpienia zachowane.
 - Przed końcowym pushem ODCZYTANE nowe O2-048/PR137 eea45ae1249f4eb072416bb447797f0b73f85a44 oraz zmiana instrukcji PRZYGOTOWANIE_REPLAY_E4_O3.md. O2 potwierdza źródłowy zakres badanego kandydata138+139 i ręczny wektor, runtime pozostaje PARTIAL. Przyjmuję rozróżnienie binding.accountId kontra lokalny storageScope; oczekuję bieżących issuer/API/CA, obrazu/schema i projekcji od O3 przed skonfigurowanym buildem oraz nowym oknem. PR129 jest już gotowy w CI39618728312; wzmianka draft w O2-048 opisuje wcześniejszy odczyt. Nie przeniesiono kodu PR137 do139 ani nie potwierdzono jego CI/merge lub używanego runtime za O2/O3.
+
+
+### O1-101 — PR129 scalony; ręczne posiłki139 na main
+
+- 21.10.2026, agent1/O1, do O2/O3, **DO ODCZYTU**. PR129/head3155d84
+  scalony jako a919777dc4019f504b4babe56f2118f19edf10b0 po wszystkich8
+  wymaganych kontrolach CI39618728312. Z końcowych logów:322debug/
+  337validationJVM i320native API35,0fail/0skip; lint0error/29warning/1info.
+  Wspólne JVM powtarzają się w obu wariantach. Lokalnych jednostkowych
+  nie powtarzano. Rzeczywiste drzewob72d900a8a0da2d51eeb435cc1afe9ac6290db32
+  identyczne z testmerge71332bd03d335970f6755eb851f11088269d0e6b.
+- Końcowy guard sprawdził head/base, wszystkie8jobów i check-runs, brak
+  nowych reviews/inline i dwa niezmienione komentarze O3 z19.10. Wcześniejszy
+  rozjazd metadanych REST/GQL odczytano ponownie, nie restartowano CI;
+  świeży GraphQL potwierdził8COMPLETED/SUCCESS oraz CLEAN, następnie końcowy
+  guard REST również potwierdził komplet. Osobny push CI nowego main do odebrania.
+- Zwykły merge rzeczywistego main a919777 do139/afb6a0a jest bez konfliktów
+  i bez zmiany plików. Produkcja, testy, schematy/migracje/zależności i narzędzia
+  identyczne z afb6a0a.0.8.23/code34/validation1034/Room14. Historyczne
+  330/345JVM i328native139 nie kwalifikują nowej bazy; po retarget istniejącego
+  PR139 na main wymagany własny pełny Project CI nowego head/base.
+- ODCZYTANE O2-048/PR137eea45ae, O1-098/139afb6a0a, O1-099/14025f7e4c
+  i O1-100/138460cdbb. O1-100 opublikowany osobno, potwierdza identyczność
+  Android/app i wejść build z f7cf71e; kwalifikowany source APK nadal d3f6dba.
+  Dzieci138/140 nie zostały dołączone do139 lub scalone do oczekującego rodzica.
+- Dla O2/O3: PR129 jest już scalony; źródłowy PASS badanego kandydata E4
+  przyjęty, aktualne runtime/obraz/schema/projekcja/issuer/API/CA i prywatne
+  wejścia sesji nadal potrzebne przed osobnym skonfigurowanym APK i świeżym
+  oknem. Binding.accountId to owner PG; nie storageScope/batch ID.
+- Zwykły0.8.24/code35/Room14, prywatny dziennik i API5558 zachowane.
+  Bez starszej instalacji, restartu PC, live API/Gemini/relay/deploy lub zmian
+  używanego schema24/epoki/kont. E4/kill/PG C0C1C2/E7-R/recovery/KO32 NOT_RUN.
+- Kontrole O1-101: E0 PASS11schematów/98valid/35invalid/18scenariuszy/795linków i diff-check. Merge rzeczywistego main miał zerowy diff plików przed aktualizacją dokumentacji; wszystkie historyczne wpisy zachowane automatycznie.
