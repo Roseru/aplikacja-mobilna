@@ -245,3 +245,13 @@ ze wskazaną referencją14plików; pełnego starego obrazu nie uruchamiano.
 Kwalifikacja źródłowa nie zamyka PR129, pełnego E4 ani zgodności pozostałych
 producentów. Nie uruchamiano usług O3/API/Gemini, nie zmieniano baz,
 kont/epoki/instalacji, nie kontaktowano A1 i nie testowano LAN/relay.
+
+
+## Aktualizacja integracji PR129 — 21.10.2026
+
+PR129 został scalony do main `a919777dc4019f504b4babe56f2118f19edf10b0`.
+Powyższa ocena zachowuje przypięte źródło APK d3f6dba i swój zakres;
+nie jest odbiorem nowego artefaktu lub używanego runtime. O2-049 w jedynym
+[dzienniku](../KOMUNIKACJA_AGENTOW.md) opisuje aktualizację bazy PR137
+przed scaleniem. Wejścia O3, skonfigurowany APK O1 i rzeczywiste C0/C1/C2
+pozostają wymagane; live E4/E7-R/recovery/KO32 NOT_RUN.

@@ -3,6 +3,7 @@ package pl.roseru.kalorie
 import android.content.Context
 import android.content.Intent
 import androidx.room.Room
+import androidx.room.withTransaction
 import androidx.test.core.app.ApplicationProvider
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import kotlinx.coroutines.*
@@ -14,6 +15,7 @@ import org.junit.Assert.*
 import org.junit.Test
 import org.junit.runner.RunWith
 import pl.roseru.kalorie.core.*
+import pl.roseru.kalorie.core.catalog.StrictJson
 import pl.roseru.kalorie.core.sync.*
 import pl.roseru.kalorie.data.*
 import pl.roseru.kalorie.session.*
@@ -75,10 +77,12 @@ class SessionSecurityTest {
     }
     private fun client(db: CalorieDatabase, vault: SessionVault, fixture: FixtureGateway, api: BootstrapGateway? = null,
         profiles: ProfileGateway? = null, snapshots: SnapshotGateway? = null, motivation: MotivationGateway? = null,
-        consents: RankingConsentGateway? = null, ranking: RankingGateway? = null, nemesis: NemesisGateway? = null, nemesisWrites: NemesisWriteGateway? = null, photos: PhotoCapabilitiesGateway? = null, photoWrites:PhotoAnalysisGateway?=null) = SessionController(
+        consents: RankingConsentGateway? = null, ranking: RankingGateway? = null, nemesis: NemesisGateway? = null, nemesisWrites: NemesisWriteGateway? = null, photos: PhotoCapabilitiesGateway? = null, photoWrites:PhotoAnalysisGateway?=null, pushes:MealPushGateway?=null) = SessionController(
         db, vault, fixture, issuer, context.packageName, now = { fixture.time }, bootstrapGateway = api, profileGateway = profiles, snapshotGateway = snapshots,
         snapshotProtocol = snapshots?.let { snapshotProtocol() }, motivationGateway = motivation, rankingConsentGateway = consents, rankingGateway = ranking, nemesisGateway = nemesis, nemesisWriteGateway = nemesisWrites, photoCapabilitiesGateway = photos,
-        photoAnalysisGateway=photoWrites,photoAnalysisStores=if(photoWrites!=null) { lease:OwnerLease->PhotoAnalysisStore(context,db,lease) } else null)
+        photoAnalysisGateway=photoWrites,photoAnalysisStores=if(photoWrites!=null) { lease:OwnerLease->PhotoAnalysisStore(context,db,lease) } else null,
+        mealPushGateway=pushes,mealPushStore=pushes?.let {MealPushStore(db,CanonicalMealRows.schema(context))},
+        mealPushProtocol=pushes?.let {PushProtocol(CanonicalMealRows.schema(context))})
     private suspend fun login(client: SessionController, fixture: FixtureGateway, subject: String) {
         fixture.subject = subject
         assertNotNull(client.beginLogin())
@@ -2605,6 +2609,251 @@ class SessionSecurityTest {
             assertEquals(history,h.db.photoConfirmationHistoryDao().get(h.lease.storageScope,h.calls.single().key!!))
             assertNull(h.c.view.value.photoMealDraft);assertEquals(1,h.calls.size)
         } finally {h.close()}
+    }
+
+
+    private inner class PushHarness {
+        val db=memory();val vault=SessionVault(context,name());val fixture=FixtureGateway();val api=ApiFixture();val copies=SnapshotFixture()
+        val calls=mutableListOf<PushBatch>();var before:suspend()->Unit={}
+        var answer:suspend(PushBatch,Int)->BootstrapHttpResult={batch,_->BootstrapHttpResult(200,receipt(batch))}
+        val transport=object:MealPushGateway {
+            override suspend fun post(session:ApiSession,batch:PushBatch,beforeSend:suspend()->Unit):BootstrapHttpResult {
+                assertFalse(db.inTransaction());before();beforeSend()
+                assertTrue(db.pushDao().pending(session.lease.storageScope).single().attempted)
+                calls+=batch;return answer(batch,calls.size)
+            }
+        }
+        lateinit var c:SessionController;lateinit var lease:OwnerLease;lateinit var meal:String;lateinit var item:String
+        fun again()=client(db,vault,fixture,api,snapshots=copies,pushes=transport)
+        suspend fun prepare(full:Boolean=true) {
+            c=again();c.start();login(c,fixture,"fixture-A");c.bootstrap();lease=c.view.value.binding!!.lease
+            if(full)c.downloadSnapshot()
+            val ids=enqueue();meal=ids.first;item=ids.second
+        }
+        suspend fun enqueue():Pair<String,String> {
+            val bytes=androidx.test.platform.app.InstrumentationRegistry.getInstrumentation().context.assets
+                .open("materialized-meal-operation.json").use {it.readBytes()}
+            val source=JSONObject(String(bytes)).getJSONObject("payload")
+            val id=UUID.randomUUID().toString();val itemId=UUID.randomUUID().toString();val op=UUID.randomUUID().toString()
+            source.getJSONArray("items").getJSONObject(0).put("item_id",itemId)
+            val schema=CanonicalMealRows.schema(context);val wire=MealWire.read(StrictJson.canonical(source),schema)
+            val binding=db.bootstrapDao().binding(lease.storageScope)!!;val ctx=CanonicalMealRows.context(binding)
+            db.withTransaction {
+                db.dao().insertMeal(CanonicalMealRows.meal(id,lease.storageScope,wire,ctx))
+                CanonicalMealRows.items(id,wire).forEach {db.dao().insertItem(it)}
+                db.dao().enqueue(OutboxEntity(op,lease.storageScope,"meal",id,"upsert",null,wire.canonical,
+                    "2026-10-19T00:00:00Z","pending","sync-v1",MealWire.operation(op,id,binding.syncEpoch,null,wire.canonical,schema),ctx))
+            }
+            return id to itemId
+        }
+        fun receipt(batch:PushBatch,status:String="accepted"):ByteArray {
+            val request=batch.json();val operations=request.getJSONArray("operations");val results=JSONArray()
+            for(i in 0 until operations.length()) {
+                val op=operations.getJSONObject(i)
+                results.put(JSONObject().put("operation_id",op.getString("operation_id")).put("entity_id",op.getString("entity_id"))
+                    .put("status",status).put("revision",if(op.isNull("base_revision"))1 else op.getInt("base_revision")+1)
+                    .put("recovery_mapping",JSONObject.NULL))
+            }
+            return JSONObject().put("sync_epoch",request.getString("sync_epoch")).put("server_time","2026-10-19T00:00:00Z")
+                .put("results",results).toString().toByteArray()
+        }
+        suspend fun revision()=db.dao().meal(meal,lease.storageScope)!!.meal.serverRevision
+        fun close(){vault.clear();db.close()}
+    }
+    @Test fun mealPushLostAckRestartResendsIdenticalBatchThenPullsWithoutChangingGuest()=runBlocking<Unit> {
+        val h=PushHarness()
+        try {
+            h.prepare();val guest=LocalOwnerStore(h.db).ensureGuest();val guestCount=h.db.dao().operationCount(guest.storageScope)
+            h.answer={batch,n->if(n==1)throw java.io.IOException("Synthetic lost ACK") else BootstrapHttpResult(200,h.receipt(batch,"already_applied"))}
+            h.c.synchronizeMeals(h.lease);assertEquals(0,h.revision());val saved=h.db.pushDao().pending(h.lease.storageScope).single()
+            assertTrue(saved.attempted);assertNull(saved.responseJson);assertEquals(1,h.copies.calls.size)
+            h.c=h.again();h.c.start();assertTrue(h.c.view.value.mealPush!!.persistedBatch);assertFalse(h.c.view.value.mealPushBusy)
+            h.c.synchronizeMeals(h.lease)
+            assertEquals(2,h.calls.size);assertArrayEquals(h.calls[0].body(),h.calls[1].body())
+            assertEquals(1,h.revision());assertEquals("complete",h.db.pushDao().batch(saved.id)!!.state)
+            assertTrue(h.db.dao().canonicalMealOperations(h.lease.storageScope,h.meal).all {it.status=="acked"})
+            assertEquals(guestCount,h.db.dao().operationCount(guest.storageScope));assertEquals(2,h.copies.calls.size)
+            assertEquals(0,h.c.view.value.mealPush!!.pending)
+        }finally{h.close()}
+    }
+    @Test fun mealPushRequiresFullSnapshotBeforeFreezingAndSingleFlightBlocksOtherHttp()=runBlocking<Unit> {
+        val h=PushHarness();val entered=CompletableDeferred<Unit>();val release=CompletableDeferred<Unit>()
+        try {
+            h.prepare(false);h.c.synchronizeMeals(h.lease);assertTrue(h.calls.isEmpty());assertTrue(h.db.pushDao().pending(h.lease.storageScope).isEmpty())
+            assertFalse(h.db.dao().canonicalMealOperations(h.lease.storageScope,h.meal).single().attempted)
+            h.c.downloadSnapshot();h.answer={batch,_->entered.complete(Unit);release.await();BootstrapHttpResult(200,h.receipt(batch))}
+            coroutineScope {
+                val task=launch(start=CoroutineStart.UNDISPATCHED){h.c.synchronizeMeals(h.lease)};entered.await()
+                assertTrue(h.c.view.value.mealPushBusy);h.c.synchronizeMeals(h.lease);h.c.bootstrap();h.c.downloadSnapshot();h.c.readProfile()
+                assertEquals(1,h.calls.size);assertEquals(1,h.api.calls.size);assertEquals(1,h.copies.calls.size)
+                release.complete(Unit);task.join()
+            }
+            assertEquals(1,h.revision());assertFalse(h.c.view.value.mealPushBusy)
+        }finally{release.complete(Unit);h.close()}
+    }
+    @Test fun mealPushRefreshesOnceAfter401AndKeepsExactEnvelope()=runBlocking<Unit> {
+        val h=PushHarness()
+        try {
+            h.prepare();h.answer={batch,n->if(n==1)syncDenied(401,"unauthorized") else BootstrapHttpResult(200,h.receipt(batch))}
+            h.c.synchronizeMeals(h.lease);assertEquals(2,h.fixture.calls);assertEquals(2,h.calls.size)
+            assertArrayEquals(h.calls[0].body(),h.calls[1].body());assertEquals(1,h.revision())
+        }finally{h.close()}
+    }
+    @Test fun mealPushRepeated401AndInitiallyExpiredAccessCannotRefreshInALoop()=runBlocking<Unit> {
+        for(expired in listOf(false,true)) {
+            val h=PushHarness()
+            try {
+                h.prepare();if(expired)h.fixture.time+=301_000
+                h.answer={_,_->syncDenied(401,"unauthorized")};h.c.synchronizeMeals(h.lease)
+                assertEquals(2,h.fixture.calls);assertEquals(if(expired)1 else 2,h.calls.size)
+                assertEquals(0,h.revision());assertTrue(h.db.pushDao().pending(h.lease.storageScope).single().attempted)
+                assertFalse(h.c.view.value.mealPushBusy)
+            }finally{h.close()}
+        }
+    }
+    @Test fun mealPushBackoffIsDurableAcrossRestartAndDoesNotShortenRetryAfter()=runBlocking<Unit> {
+        for(status in listOf(429,503)) {
+            val h=PushHarness()
+            try {
+                h.prepare();h.answer={_,_->BootstrapHttpResult(status,ByteArray(0),"86400")}
+                h.c.synchronizeMeals(h.lease);val expected=h.fixture.time+86_400_000
+                assertEquals(expected,h.c.view.value.mealPushRetryAt);assertEquals(1,h.calls.size)
+                h.c=h.again();h.c.start();h.c.synchronizeMeals(h.lease);assertEquals(1,h.calls.size)
+                h.fixture.time=expected-1;h.c.synchronizeMeals(h.lease);assertEquals(1,h.calls.size)
+                h.fixture.time=expected;h.answer={batch,_->BootstrapHttpResult(200,h.receipt(batch))}
+                h.c.synchronizeMeals(h.lease);assertEquals(2,h.calls.size);assertEquals(1,h.revision())
+                assertArrayEquals(h.calls[0].body(),h.calls[1].body())
+            }finally{h.close()}
+        }
+    }
+    @Test fun mealPushLateAckAfterLogoutAToBToACannotAcknowledgeOriginalOrNewOwner()=runBlocking<Unit> {
+        val h=PushHarness();val entered=CompletableDeferred<Unit>();val release=CompletableDeferred<Unit>()
+        try {
+            h.prepare();h.answer={batch,_->entered.complete(Unit);release.await();BootstrapHttpResult(200,h.receipt(batch))}
+            coroutineScope {
+                val task=launch(start=CoroutineStart.UNDISPATCHED){h.c.synchronizeMeals(h.lease)};entered.await()
+                h.c.logout();login(h.c,h.fixture,"fixture-B");login(h.c,h.fixture,"fixture-A")
+                val current=h.c.view.value.binding!!.lease;assertNotEquals(h.lease,current)
+                release.complete(Unit);task.join();assertEquals(0,h.revision());assertEquals(1,h.copies.calls.size)
+                h.c.synchronizeMeals(h.lease);assertEquals(1,h.calls.size)
+                assertTrue(h.db.dao().canonicalMealOperations(h.lease.storageScope,h.meal).all{it.status=="pending"})
+            }
+        }finally{release.complete(Unit);h.close()}
+    }
+    @Test fun mealPushPreflightAndHeldAckRejectChangedContextWithoutMutatingQueue()=runBlocking<Unit> {
+        for(preflight in listOf(true,false)) {
+            val h=PushHarness()
+            try {
+                h.prepare()
+                suspend fun change(){val b=h.db.bootstrapDao().binding(h.lease.storageScope)!!;h.db.bootstrapDao().update(b.copy(contextRevision=b.contextRevision+1))}
+                if(preflight)h.before={change()} else h.answer={batch,_->change();BootstrapHttpResult(200,h.receipt(batch))}
+                h.c.synchronizeMeals(h.lease);assertEquals(if(preflight)0 else 1,h.calls.size)
+                assertEquals(0,h.revision());val batch=h.db.pushDao().pending(h.lease.storageScope).single()
+                assertEquals(!preflight,batch.attempted);assertNull(batch.responseJson);assertEquals(1,h.copies.calls.size)
+            }finally{h.close()}
+        }
+    }
+    @Test fun mealPushInFlightPortionEditBecomesNextOperationWithAcknowledgedRevision()=runBlocking<Unit> {
+        val h=PushHarness()
+        try {
+            h.prepare();h.answer={batch,n->
+                if(n==1)DiaryRepository(h.db,context,h.lease).editItem(h.meal,h.item,200.000001,"200.000001")
+                BootstrapHttpResult(200,h.receipt(batch))}
+            h.c.synchronizeMeals(h.lease);assertEquals(2,h.calls.size);assertEquals(2,h.revision())
+            val first=h.calls[0].json().getJSONArray("operations").getJSONObject(0)
+            val next=h.calls[1].json().getJSONArray("operations").getJSONObject(0)
+            assertEquals(first.getString("entity_id"),next.getString("entity_id"));assertNotEquals(first.getString("operation_id"),next.getString("operation_id"))
+            assertEquals(1,next.getInt("base_revision"));assertEquals("200.000001",next.getJSONObject("payload").getJSONArray("items").getJSONObject(0).getJSONObject("quantity").getString("amount"))
+            assertEquals(h.item,h.db.dao().meal(h.meal,h.lease.storageScope)!!.items.single().id)
+            assertTrue(h.db.dao().canonicalMealOperations(h.lease.storageScope,h.meal).all{it.status=="acked"})
+        }finally{h.close()}
+    }
+    @Test fun mealPushMalformedLaterAckCannotAcknowledgePrefixAndCommitFailureRollsBackEverything()=runBlocking<Unit> {
+        for(malformed in listOf(true,false)) {
+            val h=PushHarness()
+            try {
+                h.prepare();if(malformed)h.enqueue()
+                if(malformed)h.answer={batch,_->val json=JSONObject(String(h.receipt(batch)));json.getJSONArray("results").getJSONObject(1).put("revision",99);BootstrapHttpResult(200,json.toString().toByteArray())}
+                else h.db.openHelper.writableDatabase.execSQL("CREATE TRIGGER fail_push_ack BEFORE UPDATE ON sync_push_batches WHEN NEW.state='complete' BEGIN SELECT RAISE(ABORT,'synthetic full'); END")
+                h.c.synchronizeMeals(h.lease);assertEquals(0,h.revision());assertEquals(1,h.copies.calls.size)
+                val row=h.db.pushDao().pending(h.lease.storageScope).single();assertNull(row.responseJson)
+                assertTrue(h.db.dao().canonicalMealOperations(h.lease.storageScope,h.meal).all{it.status=="pending"})
+                if(!malformed)h.db.openHelper.writableDatabase.execSQL("DROP TRIGGER fail_push_ack")
+                h.answer={batch,_->BootstrapHttpResult(200,h.receipt(batch,"already_applied"))};h.c.synchronizeMeals(h.lease)
+                assertEquals(1,h.revision());assertArrayEquals(h.calls[0].body(),h.calls[1].body())
+            }finally{h.close()}
+        }
+    }
+    @Test fun mealPushContextRefusalAndDeletingRemainBlockedAfterRestartWithoutLosingBatch()=runBlocking<Unit> {
+        for(code in listOf("sync_epoch_changed","account_generation_changed","sync_reconciliation_required","account_deleting","invalid_sync_token")) {
+            val h=PushHarness()
+            try {
+                h.prepare();val status=when(code){"account_deleting"->403;"invalid_sync_token"->422;else->409}
+                h.answer={_,_->syncDenied(status,code)};h.c.synchronizeMeals(h.lease)
+                val saved=h.db.pushDao().pending(h.lease.storageScope).single();assertTrue(saved.attempted);assertNull(saved.responseJson)
+                h.c=h.again();h.c.start();h.c.synchronizeMeals(h.lease);assertEquals(1,h.calls.size);assertEquals(0,h.revision())
+                if(code=="account_deleting")assertTrue(h.c.view.value.snapshot!!.blocked)
+                else {assertTrue(h.c.view.value.requiresRecovery);assertTrue(h.c.view.value.snapshot!!.needsBootstrap)}
+                assertEquals(saved,h.db.pushDao().batch(saved.id))
+            }finally{h.close()}
+        }
+    }
+    @Test fun mealPushAckSurvivesFailedFollowingPullWithoutResendingConfirmedOperations()=runBlocking<Unit> {
+        val h=PushHarness()
+        try {
+            h.prepare();h.copies.answer={if(it==1)snapshotAnswer() else throw java.io.IOException("Synthetic pull loss")}
+            h.c.synchronizeMeals(h.lease);assertEquals(1,h.calls.size);assertEquals(1,h.revision())
+            assertTrue(h.db.pushDao().pending(h.lease.storageScope).isEmpty());assertEquals(0,h.c.view.value.mealPush!!.pending)
+            h.c.synchronizeMeals(h.lease);assertEquals(1,h.calls.size)
+            h.copies.answer={snapshotAnswer()};h.c.downloadSnapshot();assertEquals(1,h.calls.size);assertEquals(3,h.copies.calls.size)
+        }finally{h.close()}
+    }
+    @Test fun mealPushMixedAckReportsConflictWithoutReplacingLocalMeal()=runBlocking<Unit> {
+        val h=PushHarness()
+        try {
+            h.prepare();val other=h.enqueue();val original=h.db.dao().meal(other.first,h.lease.storageScope)
+            h.answer={batch,_->
+                val json=JSONObject(String(h.receipt(batch)));val conflict=json.getJSONArray("results").getJSONObject(1)
+                conflict.remove("revision");conflict.put("status","conflict").put("code","revision_conflict")
+                    .put("message","fixture").put("current",JSONObject.NULL).put("details_retained",true)
+                BootstrapHttpResult(200,json.toString().toByteArray())}
+            h.c.synchronizeMeals(h.lease);assertEquals(1,h.revision())
+            assertEquals(original,h.db.dao().meal(other.first,h.lease.storageScope))
+            assertEquals(1,h.c.view.value.mealPush!!.refused);assertEquals(0,h.c.view.value.mealPush!!.pending)
+            assertEquals(2,h.copies.calls.size);assertTrue(h.c.view.value.mealPushMessage!!.contains("Wymagają uzgodnienia: 1"))
+        }finally{h.close()}
+    }
+    @Test fun mealPushCancellationAndManualRefreshLeaveUnknownBatchPending()=runBlocking<Unit> {
+        for(cancel in listOf(true,false)) {
+            val h=PushHarness();val entered=CompletableDeferred<Unit>();val release=CompletableDeferred<Unit>()
+            try {
+                h.prepare();h.answer={batch,_->entered.complete(Unit);release.await();BootstrapHttpResult(200,h.receipt(batch))}
+                coroutineScope {
+                    val task=launch(start=CoroutineStart.UNDISPATCHED){h.c.synchronizeMeals(h.lease)};entered.await()
+                    if(cancel)task.cancelAndJoin() else {h.c.refresh();release.complete(Unit);task.join()}
+                }
+                assertEquals(0,h.revision());assertTrue(h.db.pushDao().pending(h.lease.storageScope).single().attempted)
+                assertFalse(h.c.view.value.mealPushBusy);assertEquals(1,h.copies.calls.size)
+            }finally{release.complete(Unit);h.close()}
+        }
+    }
+
+
+    @Test fun mealPushBatchBackoffSurvivesLogoutOtherAccountAndRestart()=runBlocking<Unit> {
+        val h=PushHarness()
+        try {
+            h.prepare();h.answer={_,_->BootstrapHttpResult(429,ByteArray(0),"86400")}
+            h.c.synchronizeMeals(h.lease);val deadline=h.fixture.time+86_400_000
+            val saved=h.db.pushDao().pending(h.lease.storageScope).single();assertEquals(deadline,saved.retryAtMillis)
+            h.c.logout();login(h.c,h.fixture,"fixture-B");assertEquals(0L,h.c.view.value.mealPushRetryAt)
+            login(h.c,h.fixture,"fixture-A");val active=h.c.view.value.binding!!.lease
+            assertEquals(deadline,h.c.view.value.mealPushRetryAt);h.c.synchronizeMeals(active);assertEquals(1,h.calls.size)
+            h.c=h.again();h.c.start();h.c.synchronizeMeals(active);assertEquals(1,h.calls.size)
+            assertEquals(saved,h.db.pushDao().batch(saved.id))
+            h.fixture.time=deadline;h.answer={batch,_->BootstrapHttpResult(200,h.receipt(batch))}
+            h.c.synchronizeMeals(active);assertEquals(2,h.calls.size);assertEquals(1,h.revision())
+            assertArrayEquals(h.calls[0].body(),h.calls[1].body())
+        }finally{h.close()}
     }
 
 }

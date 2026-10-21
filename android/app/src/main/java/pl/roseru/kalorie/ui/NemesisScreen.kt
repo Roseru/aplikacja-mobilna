@@ -26,7 +26,7 @@ import java.time.format.DateTimeFormatter
     var selected by remember { mutableStateOf<String?>(null) }
     val account = view.binding?.owner?.kind == "account"
     val available = account && view.nemesisConfigured && view.serverLinked && !view.requiresRecovery && !view.pendingLogin
-    val busy = view.busy || view.nemesisBusy || view.bootstrapBusy || view.profileBusy || view.snapshotBusy ||
+    val busy = view.mealPushBusy || view.busy || view.nemesisBusy || view.bootstrapBusy || view.profileBusy || view.snapshotBusy ||
         view.motivationBusy || view.rankingBusy || view.rankingConsentBusy || view.nemesisMutationBusy
     val state = if (available && !view.busy) view.nemesis else NemesisState.NotRequested
     fun refresh() { selected?.let(liveActions.readNemesisChallenge) ?: liveActions.readNemesis() }

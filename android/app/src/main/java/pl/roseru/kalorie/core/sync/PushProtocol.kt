@@ -88,6 +88,12 @@ class PushProtocol(private val schema: SyncWireSchema) {
         PushReceipt(StrictJson.canonical(value), batch.sha256)
     }
 
+    /** E4 errors use object details; E3/bootstrap errors have a different shape. */
+    fun errorCode(bytes: ByteArray): String = safe {
+        schema.validate(bytes, "SyncError", 65_536)
+        StrictJson.read(bytes).getString("code")
+    }
+
     /** accepted→already_applied may replay the original receipt; a new revision is never a replay. */
     fun sameDecision(batch: PushBatch, first: PushReceipt, next: PushReceipt): Boolean = safe {
         require(first.requestHash == batch.sha256 && next.requestHash == batch.sha256)

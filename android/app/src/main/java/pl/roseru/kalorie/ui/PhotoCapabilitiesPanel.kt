@@ -35,7 +35,7 @@ import pl.roseru.kalorie.session.SessionView
                         }
                     }
                     OutlinedButton(onClick = onRead, enabled = !session.photoCapabilitiesBusy && !session.bootstrapBusy &&
-                        !session.profileBusy && !session.snapshotBusy && !session.motivationBusy && !session.rankingConsentBusy &&
+                        !session.profileBusy && !session.mealPushBusy && !session.snapshotBusy && !session.motivationBusy && !session.rankingConsentBusy &&
                         !session.rankingBusy && !session.nemesisBusy && !session.nemesisMutationBusy && !session.photoUploadBusy,
                         modifier = Modifier.fillMaxWidth().testTag("photo-check-capabilities")) { Text("Sprawdź dostępność") }
                 }

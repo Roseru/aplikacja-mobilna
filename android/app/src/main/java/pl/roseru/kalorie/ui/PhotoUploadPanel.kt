@@ -29,7 +29,7 @@ import pl.roseru.kalorie.session.SessionView
                 if(row.acknowledged && row.retryAtMillis>0) Text("Kolejny odczyt uwzględni przerwę wskazaną przez serwer.")
                 if(row.acknowledged && !row.blocked) OutlinedButton(onClick=onRead,
                     enabled=!session.photoUploadBusy && !session.busy && !session.pendingLogin && !session.requiresRecovery &&
-                        !session.bootstrapBusy && !session.profileBusy && !session.snapshotBusy && !session.motivationBusy &&
+                        !session.bootstrapBusy && !session.profileBusy && !session.mealPushBusy && !session.snapshotBusy && !session.motivationBusy &&
                         !session.rankingConsentBusy && !session.rankingBusy && !session.nemesisBusy && !session.nemesisMutationBusy && !session.photoCapabilitiesBusy,
                     modifier=Modifier.fillMaxWidth().testTag("photo-analysis-read")){Text("Sprawdź wynik")}
                 if(!row.acknowledged && !row.blocked) OutlinedButton(onClick=onRetry,
