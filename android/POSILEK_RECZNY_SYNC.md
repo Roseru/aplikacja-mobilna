@@ -174,3 +174,14 @@ zmiany plików. Produkcja/testy/migracje/zależności bez zmiany;0.8.23/Room14.
 README/dziennik aktualizują odbiór i zależność. PR139 kierujemy na main;
 własny pełny CI nowego head/base nadal wymagany. Lokalnych jednostkowych
 nie powtarzano. Dzieci138/140 i realny skonfigurowany E4/API są osobne.
+
+
+## O1-103 — main po pierwszeństwie137,21.10.2026
+
+O2-049 przyjęte;139 nie scalano w trakcie odbioru137. Po rzeczywistym merge137
+jako167152a: zwykły merge do139/b368f8f. Android/app bez zmian, narzędzia/
+backend/infra z main. Rozwiązano tylko dziennik, zachowując wszystkie225/225
+historyczne wystąpienia i niepuste wiersze. Poprzednie8CI13939627786733 oraz
+330/345JVM328native kwalifikują starą bazęa919777; nowy własny CI167152a
+jest PENDING po publikacji. Lokalnych zestawów nie powtarzano. Waga/Room15
+na osobnej gałęzi nie jest częścią139. Runtime O3 i realny E4 pozostają osobne.

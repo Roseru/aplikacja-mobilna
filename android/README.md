@@ -1,7 +1,7 @@
 # Android — Racje i kalorie
 
-Gałąź `codex/android-integracja-pr139` zawiera rzeczywisty main a919777 po
-scaleniu129. Istniejący PR139 przechodzi na main i wymaga własnego pełnego CI.
+Gałąź `codex/android-integracja-pr139` zawiera rzeczywisty main167152a po
+scaleniu priorytetowego137, z zachowaniem O2-049. Istniejący PR139 przechodzi na main i wymaga własnego pełnego CI.
 Produkcja139/0.8.23/Room14 bez zmiany; lokalny odbiór330/345JVM i328native
 jest historyczny. Zwykły emulator zachowuje nowszy APK0.8.24/code35 z PR140.
 
