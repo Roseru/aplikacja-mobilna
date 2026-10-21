@@ -66,7 +66,11 @@ BEGIN
     OR (SELECT array_agg(version_num ORDER BY version_num) FROM app.alembic_version)
        IS DISTINCT FROM ARRAY['0020_e8_nemesis_integration']::varchar[]
     AND (SELECT array_agg(version_num ORDER BY version_num) FROM app.alembic_version)
-       IS DISTINCT FROM ARRAY['0024_e9_history_graph']::varchar[] THEN
+       IS DISTINCT FROM ARRAY['0024_e9_history_graph']::varchar[]
+    AND (SELECT array_agg(version_num ORDER BY version_num) FROM app.alembic_version)
+       IS DISTINCT FROM ARRAY['0025_deletion_ledger']::varchar[]
+    AND (SELECT array_agg(version_num ORDER BY version_num) FROM app.alembic_version)
+       IS DISTINCT FROM ARRAY['0026_ledger_review']::varchar[] THEN
    RAISE EXCEPTION 'Nemesis target schema required' USING ERRCODE='23514'; END IF;
  IF EXISTS(SELECT 1 FROM pg_catalog.pg_database d,
    LATERAL pg_catalog.aclexplode(coalesce(d.datacl,pg_catalog.acldefault('d',d.datdba))) a

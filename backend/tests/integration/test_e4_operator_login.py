@@ -169,6 +169,9 @@ def operator_installation(request):
         provision(url, login, password)
         provision(url, login, password)  # Repeated pre-upgrade provisioning is safe.
         migrate("head")
+        from tests.support.deletion_regression import harness
+
+        harness(engine)
         provision(url, login, password)  # Also verifies post-upgrade effective ACL.
         with engine.connect() as connection:
             if before is not None:
@@ -377,6 +380,8 @@ def test_cli_begin_status_resume_with_real_operator_login(operator_installation,
                 encoding="utf-8",
                 timeout=30,
             )
+            if action == "resume" and result.returncode != 0:
+                return None
             assert result.returncode == 0, result.stderr
             return json.loads(result.stdout)
 
@@ -384,7 +389,16 @@ def test_cli_begin_status_resume_with_real_operator_login(operator_installation,
         assert started["deleting_generation"] == "2"
         assert cli("status") == started
         assert cli("begin", "--account-id", str(owner), "--expected-generation", "1") == started
-        completed = cli("resume")
+        from tests.support.deletion_regression import harness
+
+        delivery = harness(engine)
+        completed = None
+        for _ in range(8):
+            delivery.deliver()
+            completed = cli("resume")
+            if completed is not None:
+                break
+        assert completed is not None
         assert completed["identity_confirmed_at"] and completed["purged_at"]
         assert cli("status") == completed
         requests_before_retry = list(state["requests"])

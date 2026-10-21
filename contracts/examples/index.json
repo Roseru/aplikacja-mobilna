@@ -2020,6 +2020,51 @@
         "expected_result": "Structural fixture only; server confirms authoritative projections."
       },
       "detection_layer": "schema"
+    },
+    {
+      "id": "deletion-ledger-v1-batch",
+      "purpose": "Syntetyczny kontrakt ledger v1; klucze testowe s*32/a*32, bez dowodu produkcyjnego.",
+      "path": "valid/deletion-ledger-v1-batch.json",
+      "schema": "../schemas/deletion-ledger-v1.schema.json#/$defs/Envelope",
+      "local": {
+        "result": "valid"
+      },
+      "server": {
+        "result": "not_executed",
+        "stage": "E4",
+        "expected_result": "Test kontraktowy nie odbiera produkcyjnego magazynu lub fencing O3."
+      },
+      "detection_layer": "schema_and_fixture_semantics"
+    },
+    {
+      "id": "deletion-ledger-v1-ack",
+      "purpose": "Syntetyczny kontrakt ledger v1; klucze testowe s*32/a*32, bez dowodu produkcyjnego.",
+      "path": "valid/deletion-ledger-v1-ack.json",
+      "schema": "../schemas/deletion-ledger-v1.schema.json#/$defs/Ack",
+      "local": {
+        "result": "valid"
+      },
+      "server": {
+        "result": "not_executed",
+        "stage": "E4",
+        "expected_result": "Test kontraktowy nie odbiera produkcyjnego magazynu lub fencing O3."
+      },
+      "detection_layer": "schema_and_fixture_semantics"
+    },
+    {
+      "id": "deletion-ledger-v1-cutoff",
+      "purpose": "Syntetyczny kontrakt ledger v1; klucze testowe s*32/a*32, bez dowodu produkcyjnego.",
+      "path": "valid/deletion-ledger-v1-cutoff.json",
+      "schema": "../schemas/deletion-ledger-v1.schema.json#/$defs/Cutoff",
+      "local": {
+        "result": "valid"
+      },
+      "server": {
+        "result": "not_executed",
+        "stage": "E4",
+        "expected_result": "Test kontraktowy nie odbiera produkcyjnego magazynu lub fencing O3."
+      },
+      "detection_layer": "schema_and_fixture_semantics"
     }
   ],
   "source_material": {

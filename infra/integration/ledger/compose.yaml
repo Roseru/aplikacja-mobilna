@@ -1,0 +1,19 @@
+services:
+  receiver:
+    image: ${LEDGER_RECEIVER_IMAGE:?Use an immutable qualified receiver image}
+    user: "10001:10001"
+    restart: unless-stopped
+    read_only: true
+    cap_drop: [ALL]
+    security_opt: [no-new-privileges:true]
+    pids_limit: 64
+    mem_limit: 256m
+    ports:
+      - "127.0.0.1:${LEDGER_PORT:-18445}:18445"
+    volumes:
+      - ${LEDGER_PRIVATE_ROOT:?Set a private directory on the independent host}/config:/run/ledger:ro
+      - ${LEDGER_PRIVATE_ROOT:?Set a private directory on the independent host}/data:/var/lib/ledger
+    tmpfs:
+      - /tmp:rw,nosuid,noexec,size=16m
+    logging:
+      driver: none
