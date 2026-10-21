@@ -62,7 +62,7 @@ import androidx.lifecycle.compose.LocalLifecycleOwner
     val canCreate=session.photoUploadConfigured && session.binding?.owner?.kind=="account" && session.hasSession &&
         session.serverLinked && !session.requiresRecovery && !session.pendingLogin && !session.busy &&
         !session.photoUploadBusy && !session.photoCapabilitiesBusy && !session.bootstrapBusy && !session.profileBusy &&
-        !session.snapshotBusy && !session.motivationBusy && !session.rankingConsentBusy && !session.rankingBusy &&
+        !session.mealPushBusy && !session.snapshotBusy && !session.motivationBusy && !session.rankingConsentBusy && !session.rankingBusy &&
         !session.nemesisBusy && !session.nemesisMutationBusy && !busy && session.photoUpload==null && caps?.available==true
 
     val gallery = rememberLauncherForActivityResult(ActivityResultContracts.PickVisualMedia(), model::galleryResult)

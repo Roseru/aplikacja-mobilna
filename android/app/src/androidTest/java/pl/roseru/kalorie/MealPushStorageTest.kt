@@ -254,4 +254,103 @@ class MealPushStorageTest {
             db.dao().updateOperation(operation); apply(store, request)
         } finally { db.close() }
     }
+
+    @Test fun pushStatusCountsCanonicalWaitingRefusalsAndLegacyWithoutExposingBodies()=runBlocking<Unit> {
+        val db=memory()
+        try {
+            val lease=account(db);val (id,item)=meal(db,lease);val store=MealPushStore(db,schema)
+            db.dao().enqueue(OutboxEntity(UUID.randomUUID().toString(),lease.storageScope,"profile",UUID.randomUUID().toString(),"create",null,"{}","2026-10-19T00:00:00Z"))
+            assertEquals(MealPushStatus(1,0,0,1,false,true),store.status(lease))
+            val request=store.prepare(lease)!!;store.markAttempted(request)
+            DiaryRepository(db,context,lease).editItem(id,item,175.5,"175.5")
+            assertEquals(MealPushStatus(1,1,0,1,true,true),store.status(lease))
+            apply(store,request);assertEquals(MealPushStatus(1,0,0,1,false,true),store.status(lease))
+            val pending=db.dao().canonicalMealOperations(lease.storageScope,id).single()
+            assertEquals("pending",pending.status);assertEquals(1,pending.baseRevision);assertFalse(pending.attempted)
+            val acknowledged=db.dao().operation(request.operations.single().operationId)!!
+            assertEquals("acked",acknowledged.status)
+            assertEquals(3,db.dao().operationCount(lease.storageScope))
+        }finally{db.close()}
+    }
+    @Test fun reconciliationRefusalRollsBackAccessAndBindingTogetherAndKeepsOriginalBatch()=runBlocking<Unit> {
+        val db=memory()
+        try {
+            val lease=account(db);meal(db,lease);val store=MealPushStore(db,schema);val request=store.prepare(lease)!!;store.markAttempted(request)
+            val batch=db.pushDao().batch(request.id)!!;val binding=db.bootstrapDao().binding(lease.storageScope)!!;val access=db.snapshotDao().access(lease.storageScope)!!
+            db.openHelper.writableDatabase.execSQL("CREATE TRIGGER fail_recovery BEFORE UPDATE ON account_bindings BEGIN SELECT RAISE(ABORT,'synthetic full'); END")
+            rejected{store.requireReconciliation(request)}
+            assertEquals(binding,db.bootstrapDao().binding(lease.storageScope));assertEquals(access,db.snapshotDao().access(lease.storageScope));assertEquals(batch,db.pushDao().batch(request.id))
+            db.openHelper.writableDatabase.execSQL("DROP TRIGGER fail_recovery");store.requireReconciliation(request)
+            assertTrue(db.bootstrapDao().binding(lease.storageScope)!!.requiresRecovery)
+            assertEquals(binding.contextRevision+1,db.bootstrapDao().binding(lease.storageScope)!!.contextRevision)
+            assertEquals(db.bootstrapDao().attempt(lease.storageScope)!!.operationId,db.snapshotDao().access(lease.storageScope)!!.bootstrapAttemptId)
+            assertEquals(batch,db.pushDao().batch(request.id));assertFalse(store.status(lease).ready)
+            rejected{store.markAttempted(request)};rejected{store.prepare(lease)}
+        }finally{db.close()}
+    }
+
+
+    @Test fun batchDelayCannotBeShortenedOrBypassedAndSurvivesStoreReopen()=runBlocking<Unit> {
+        val db=memory()
+        try {
+            val lease=account(db);meal(db,lease);val store=MealPushStore(db,schema)
+            val request=store.prepare(lease)!!;store.markAttempted(request,2_000)
+            store.defer(request,10_000);val saved=db.pushDao().batch(request.id)!!
+            assertEquals(10_000L,saved.retryAtMillis);assertEquals(request.row.requestJson,saved.requestJson)
+            val reopened=MealPushStore(db,schema).open(lease,request.id)
+            rejected{store.markAttempted(reopened,9_999)};rejected{store.defer(reopened,9_999)}
+            assertEquals(saved,db.pushDao().batch(request.id));assertEquals(10_000L,store.status(lease).retryAtMillis)
+            store.markAttempted(reopened,10_000);assertArrayEquals(request.batch.body(),reopened.batch.body())
+        }finally{db.close()}
+    }
+    @Test fun migration13To14PreservesAll27TablesFrozenBatchAndItemRowidsWithZeroDelay()=runBlocking<Unit> {
+        val source=memory();val name="push-migration-${UUID.randomUUID()}";var target:CalorieDatabase?=null
+        try {
+            val lease=account(source);val (id,item)=meal(source,lease);val store=MealPushStore(source,schema)
+            val request=store.prepare(lease)!!;store.markAttempted(request)
+            DiaryRepository(source,context,lease).editItem(id,item,175.5,"175.5")
+            val oldSchema=JSONObject(String(fixture("pl.roseru.kalorie.data.CalorieDatabase/13.json"))).getJSONObject("database")
+            val entities=oldSchema.getJSONArray("entities")
+            fun snapshot(sql:androidx.sqlite.db.SupportSQLiteDatabase)=buildMap<String,List<List<String?>>>{
+                for(i in 0 until entities.length()) {
+                    val entity=entities.getJSONObject(i);val table=entity.getString("tableName");val fields=entity.getJSONArray("fields")
+                    val columns=(0 until fields.length()).joinToString(","){"`"+fields.getJSONObject(it).getString("columnName")+"`"}
+                    put(table,sql.query("SELECT $columns FROM `$table` ORDER BY rowid").use {cursor->buildList {
+                        while(cursor.moveToNext())add((0 until cursor.columnCount).map {if(cursor.isNull(it))null else cursor.getString(it)})
+                    }})
+                }
+            }
+            val before=snapshot(source.openHelper.readableDatabase);assertEquals(27,before.size)
+            context.getDatabasePath(name).parentFile!!.mkdirs()
+            var rowids=emptyMap<String,Long>()
+            android.database.sqlite.SQLiteDatabase.openOrCreateDatabase(context.getDatabasePath(name),null).use {old->
+                old.execSQL("PRAGMA foreign_keys=OFF")
+                for(i in 0 until entities.length()) {
+                    val entity=entities.getJSONObject(i);val table=entity.getString("tableName")
+                    old.execSQL(entity.getString("createSql").replace("\${TABLE_NAME}",table))
+                    if(entity.has("indices")) {
+                        val indices=entity.getJSONArray("indices")
+                        for(j in 0 until indices.length())old.execSQL(indices.getJSONObject(j).getString("createSql").replace("\${TABLE_NAME}",table))
+                    }
+                    val fields=entity.getJSONArray("fields")
+                    val columns=(0 until fields.length()).joinToString(","){"`"+fields.getJSONObject(it).getString("columnName")+"`"}
+                    val marks=(0 until fields.length()).joinToString(","){"?"}
+                    before.getValue(table).forEach {row->old.execSQL("INSERT INTO `$table` ($columns) VALUES ($marks)",row.toTypedArray())}
+                }
+                old.execSQL("CREATE TABLE room_master_table (id INTEGER PRIMARY KEY,identity_hash TEXT)")
+                old.execSQL("INSERT INTO room_master_table VALUES (42,?)",arrayOf(oldSchema.getString("identityHash")));old.version=13
+                rowids=old.rawQuery("SELECT id,rowid FROM meal_items",null).use {c->buildMap {while(c.moveToNext())put(c.getString(0),c.getLong(1))}}
+            }
+            target=Room.databaseBuilder(context,CalorieDatabase::class.java,name).addMigrations(MIGRATION_13_14).addCallback(DATABASE_GUARDS).build()
+            val migrated=target!!;val sql=migrated.openHelper.readableDatabase
+            assertEquals(14,sql.version);assertEquals(before,snapshot(sql))
+            assertEquals(rowids,sql.query("SELECT id,rowid FROM meal_items").use {c->buildMap<String,Long>{while(c.moveToNext())put(c.getString(0),c.getLong(1))}})
+            assertFalse(sql.query("PRAGMA foreign_key_check").use {it.moveToFirst()})
+            val row=migrated.pushDao().batch(request.id)!!;assertEquals(0L,row.retryAtMillis)
+            assertEquals(request.batch.canonical,row.requestJson);assertTrue(row.attempted);assertNull(row.responseJson)
+            val reopened=MealPushStore(migrated,schema).open(LocalOwnerStore(migrated).currentLease(),row.id)
+            assertArrayEquals(request.batch.body(),reopened.batch.body())
+        }finally{target?.close();source.close();context.deleteDatabase(name)}
+    }
+
 }

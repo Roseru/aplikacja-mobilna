@@ -17,7 +17,7 @@ Każda osoba aktualizuje własny wiersz. Daty i dokładne źródła są w jej wp
 
 | Rola | Ostatni znany rezultat | Następny krok / zależność | Źródło |
 |---|---|---|---|
-| O1 — Android, Kotlin, Room | PR121 scalony, main pushCI SUCCESS; PR122 integrowany z main6069dc7 | Nowy pełny CI122, potem129→139 i dzieci138/140; APK0.8.24 zostaje do prób ręcznych | O1-094, [PR122](https://github.com/Roseru/aplikacja-mobilna/pull/122), [PR140](https://github.com/Roseru/aplikacja-mobilna/pull/140) |
+| O1 — Android, Kotlin, Room | PR122 i jego main8/8PASS;129 gotowy na main po integracji bez zmiany produkcji | Własny Project CI129; aktualizacja zależnego139; potem138/140 i osobny E4 | O1-097, [PR129](https://github.com/Roseru/aplikacja-mobilna/pull/129) |
 | O2 — Python, PostgreSQL, API | PR131 scalony, main CI8/8 PASS; R2 late-GET/guard i R3 GET B/A4/4 odebrane w ograniczonym zakresie | Nowa próba E4 NOT_RUN: O1 kandydat i przerwanie przed ACK, O2/O3 zgodność backendu i oracle PG; kontakt A1 pominięty | O2-043/044, [odbiór i oracle](integracja/ODBIOR_R2_R3_ORACLE_E4_O2.md) |
 | O3 — DevOps, CI/CD, serwer | PR130 scalony po 8/8 SUCCESS; R2/R3 odebrane, transport zamknięty. Aktualizacje setup-java/upload-artifact/Caddy po przeglądzie bez istotnych uwag | Własny CI aktualnych gałęzi i main dla PR133–135; O1 potwierdza artefakt i gotowość kolejnego E4, okno jeszcze nieotwarte | O3-082/083, [PR133](https://github.com/Roseru/aplikacja-mobilna/pull/133), [PR130](https://github.com/Roseru/aplikacja-mobilna/pull/130) |
 
@@ -4515,6 +4515,325 @@ wynik nie jest kwalifikacją nowej macierzy ani zastępstwem CI122.
   prywatnie dostarczone; nie potrzeba ponownej dostawy sekretów.
   Oczekiwane potwierdzenie O2/O3 dotyczy odczytu źródła i granic tego etapu.
 
+### O1-074 — transport niezmiennych partii dziennika; sesja i UI w toku
+
+- Data/autor: 19.10.2026, agent 1 / O1. Do O2/O3, **DO ODCZYTU**.
+  Branch `codex/android-wysylanie-kolejki`, [PR129](https://github.com/Roseru/aplikacja-mobilna/pull/129).
+  Kod `d646c154e59ca1fff6669648580e59798ada6b6c`, raport i opublikowany head
+  `ca81c9ce2c83ccbee3478135100ed0489293f13d`.
+  [Zakres transportu i dalsze podłączenie](../android/WYSYLANIE_KOLEJKI.md).
+- `HttpsMealPushGateway` wysyła POST `/api/v1/sync/push` z dokładnymi bajtami
+  zapisanego `PushBatch`. Idempotencję nadal określają operacje w JSON; brak
+  dodatkowego klucza koperty, nagłówka epoki lub niezaimplementowanej capability.
+  Kontrola przed strumieniem wyjścia może zatrzymać ujawnienie żądania;
+  błąd zapisu nie powoduje ukrytego retry. Odtworzenie zachowuje te same bajty.
+  Wspólne TLS, brak przekierowań/cache, no-store sukcesu/prywatnych błędów,
+  4 MiB sukcesu i 64 KiB błędu także przy nieznanej długości. 429/503 zwracają
+  Retry-After bez czytania HTML proxy. Normatywny parser SyncError ma obiektowe
+  details; błędy E3 nie są zamiennikiem. Wyłącznie pełny HTTP200 może przejść
+  dotychczasową walidację ACK; sam gateway nie potwierdza operacji.
+- Lokalny odbiór: **322 JVM debug / 337 validation PASS**, 0 fail/error/skip,
+  po 9 nowych testów transportu. Lint: 0 błędów. Gradle 6 min 55 s, cały proces
+  416,921 s; 254 wejścia przed/po mają zgodne hashe. E0/diff-check PASS,
+  38 lokalnych odnośników Androida sprawdzonych osobno. Log SHA-256
+  `5a6ed1a3db4a90e1b06b0f308cb566ae23a891dc9d53525d66889f31271ba1aa`.
+  Pierwszy przebieg 321 PASS / 1 FAIL poprawnie odrzucił niepełny syntetyczny
+  błąd epoki; uzupełniono wymagane pola i dodano negatywną asercję ich braku.
+  Walidator/kontrakt bez osłabienia, oryginalny log i raport zachowane.
+- To część transportu, **nie podłączona jeszcze do SessionController/UI**.
+  Następnie O1 wdraża rezerwację operacji i pełny kontekst, trwały backoff,
+  pojedynczy refresh, przygotowanie/atomowy ACK poza/pod blokadą sesji,
+  obsługę wygaśnięcia checkpointu oraz pełny odczyt po push. Dokument opisuje
+  wymagane scenariusze lost ACK/restart, późne odpowiedzi i nowszą lokalną porcję.
+  Legacy, WorkManager, pełne recovery/retencja i rzeczywisty APK/API/KO32 osobno.
+- Nie zmieniono Room13, wersji aplikacji lub zależności. Nie budowano ani nie
+  instalowano nowego APK i nie uruchamiano nowych testów urządzenia. Otwarty
+  APK 0.8.22 i jego 299 native pozostają odbiorem wcześniejszego O1-073,
+  nie dowodem urządzenia dla nowego transportu. Bez Gemini/relay/nowego API,
+  zmian używanego serwera lub APIAVD; A/B/CA nie wymagają ponownego przekazania.
+- PR129 jest draft, dokładny rodzic PR122/`b3bde558d866ccad7a21f0664ffbd092e84bd506`,
+  baza `codex/android-potwierdzenie-posilku`. Zdalny head raportu potwierdzony,
+  własne checks=[] i brak merge. Najpierw odbiór rodzica, potem właściwa baza
+  i osobny CI/integracja; nie scalano do niescalonego rodzica. Main `a61730f`
+  i O3-074/075 ponownie odczytane, bez nowych wpisów względem O1-073.
+  Oczekiwane potwierdzenie dotyczy odczytu zakresu, nie gotowej synchronizacji.
+
+
+### O1-075 — przygotowanie wspólnego dużego testu Android/API z O3
+
+- Data/autor: 19.10.2026, agent 1 / O1. Do O3, informacyjnie O2,
+  **WYMAGA ODPOWIEDZI**. Właściciel polecił wspólny „giga test” z Agentem 3.
+  Branch `codex/android-wysylanie-kolejki`,
+  [PR129](https://github.com/Roseru/aplikacja-mobilna/pull/129), opublikowana
+  baza transportu `55e5d95c892c8fd649356fee33aed4a7ca195dc9`.
+  ODCZYTANE main `a61730f` oraz O3-073/074/075. Ponowny fetch i odczyt PR129,
+  PR122, PR127 nie wykazały nowego przekazania ani komentarza o tym teście.
+  Nie potwierdzam za O3 gotowości środowiska lub rozpoczęcia okna.
+- **Dostępne wersje:** zwykły emulator pozostaje na odebranej
+  0.8.22/code33/Room13, 299/299 native PASS z O1-073. Kandydat
+  0.8.23/code34/Room14 ma lokalne podłączenie push do sesji/UI, trwały backoff,
+  kontrolę właściciela i odczyt po ACK; kompilacja debug i testów validation
+  PASS. Niezależne wykonanie SQL migracji potwierdziło 27 tabel, dodanie
+  wyłącznie `retryAtMillis` z domyślnym 0 i niezmienione eksporty Room1–13.
+  Pełny build/JVM/lint i 320 planowanych testów urządzenia tego kandydata
+  **NOT_RUN**; to nie jest jeszcze APK do odbioru wspólnego push. Wcześniejszy
+  lokalny build Room13 został odłożony po wykryciu braku trwałego backoff
+  po logout; nie był instalowany. Dotychczasowe wyniki nie kwalifikują Room14.
+- **Oryginalne stanowisko APK/API pozostaje oddzielne:**
+  0.8.12.validation/code1023/Room9, źródło
+  `e319e53130020b3bbcdb50588ef4a2205a241118`, SHA-256 APK
+  `89164efd5199c8e1329f4fc833107a4045d034533ded6ef0e93f00996c50efcb`.
+  Nie zostało zastąpione nowym zwykłym APK ani wyczyszczone. Ta wersja może
+  służyć swoim opisanym scenariuszom TLS/PKCE/spóźnionego GET; nie zawiera
+  nowych przepływów E7/push z 0.8.23. [Dotychczasowy zakres próby](integracja/OBSERWACJA_APK_API_O1.md).
+  Konta A/B i CA są już prywatnie dostarczone; nie proszę o ponowne sekrety.
+- Proponowana kolejność, do potwierdzenia przez O3 w odpowiedzi w tym dzienniku:
+
+  | Próba | Działanie O1 | Dowód / działanie O3 | Warunek zaliczenia |
+  |---|---|---|---|
+  | Zestaw i łączność | Przypięcie source/versionCode/SHA APK, własny aktualny transport i kopia kontrolna | Dokładny używany backend/schema/kontrakt, aktualny endpoint/issuer, odcisk publicznego CA i okno; nie sam head main | Zgodny zestaw i TLS/discovery/API; stare lease lub dawny readiness nie zastępują świeżej próby |
+  | Logowanie i rozdzielenie danych | PKCE, logout, A→B→A, późna odpowiedź i restart aplikacji | Korelacja zdarzeń API po neutralnym ID, bez tokenów i prywatnego dziennika | Brak przejęcia danych/inflight przez inne konto; lokalny gość zachowany |
+  | Poligon i aktualizacja | Racje/porcje, własny posiłek, waga/cel, restart bez sieci; kontrola migracji na kopii syntetycznej | Kontrola braku ruchu i zgodności kontraktu | Dane i kolejka zachowane; brak danych nie zamienia się w zero |
+  | E4 na zakwalifikowanym nowym APK | Nowy posiłek, korekta w czasie wysyłki, identyczne ponowienie po utracie ACK, 401 i trwały Retry-After | Potwierdzenie jednej operacji po stronie serwera i kontrolowane błędy na izolowanym środowisku | Brak duplikatów, atomowy ACK, nowsza porcja pozostaje; logout/restart nie skraca backoff |
+  | Zdjęcie i motywacja, gdy dostępne w zestawie | Jawna analiza, poprawka/zatwierdzenie, ranking i zaakceptowane Nemesis | Dostępność skonfigurowanych funkcji i kontrolowany zestaw danych A/B | Rozpoznanie wymaga decyzji, prywatne dane nie przechodzą między kontami; niedostępne funkcje jawnie oznaczone |
+  | Zamknięcie | Zapis PASS/FAIL/NOT_RUN dla każdej próby, wersje i hashe dowodów, odłączenie własnego transportu | Stan usług po próbie i zgodne ID testu | Brak naruszenia używanego środowiska; niewykonane próby nie są PASS |
+
+- **Potrzebna odpowiedź O3:** identyfikator/zasięg próby, dokładny obecnie
+  używany zestaw serwera i sposób osiągnięcia go, aktualne okno oraz informacja,
+  czy zaczynamy od istniejącego testu TLS/PKCE, czy najpierw kwalifikujemy nowy
+  APK do E4/E7. Adresy/konfigurację prywatną przekazujemy dotychczasowym
+  prywatnym kanałem; do repo tylko dane wcześniej autoryzowane. Nie zmieniam
+  APIAVD ani serwera na podstawie starego lease. Nowe wywołanie Gemini wymaga
+  zgodnej konfiguracji/limitów i jawnej próby; nie jest częścią przygotowania.
+- Ograniczenia: nowy push dotyczy kanonicznych posiłków; legacy i pozostałe
+  encje, pełne recovery/retencja oraz WorkManager nie są domknięte. Test restore,
+  drugi host/fencing i pełne KO32 wymagają własnego izolowanego scenariusza,
+  nie wynikają z tego zgłoszenia gotowości. Bez restartu komputera, podmiany APK,
+  otwierania relay, nowych żądań Google lub zmian używanych harmonogramów.
+  Opublikowanie tego wpisu służy uzgodnieniu konkretnej próby O1/O3, nie jest
+  deklaracją końcowego odbioru aplikacji ani odczytu wiadomości przez O3.
+
+
+### O1-076 — rzeczywisty check O3 PASS; driver późnego GET FAIL, transport zamknięty
+
+- Data/autor: 19.10.2026, agent 1/O1. Do O3, informacyjnie O2,
+  **WYMAGA ODPOWIEDZI**. ODCZYTANE O3-076 z
+  `codex/devops-wspolny-test-api` / `f98ea05`, bez scalania tej gałęzi.
+  Próba `O1-O3-APK-API-20261019`, okno O3 08:11:36–08:21:36 CEST.
+  Źródło odpowiedzi O1: `codex/android-wysylanie-kolejki` / [PR129](https://github.com/Roseru/aplikacja-mobilna/pull/129).
+- **Rzeczywista łączność O1→O3 PASS:** nowy `android_peer.py check` wewnątrz
+  tego okna zwrócił TLS PASS, discovery200, readiness200 i oryginalny issuer.
+  Następnie własny klient również wykonał ten check i nasłuchiwał wyłącznie
+  loopback do końca uzgodnionego okna. Nie kończył TLS ani nie zmieniał CA.
+  To świeży dowód z O1, nie przepisanie readiness z O3 i nie wynik samego NAT.
+- Wznowiono istniejący **O1Api35/API35**, bez odtwarzania, wipe/clear/uninstall
+  lub zmiany konfiguracji. Oryginalne 0.8.12.validation/code1023/Room9 oraz
+  driver zweryfikowano po SHA zainstalowanych plików, bez ponownej instalacji:
+  źródło `e319e53130020b3bbcdb50588ef4a2205a241118`, APK
+  `89164efd5199c8e1329f4fc833107a4045d034533ded6ef0e93f00996c50efcb`, driver
+  `91b788998c3aa20b928e65e3f4d63a5ff3ad9048cc3de8c70f5ba8b86ecc231f`.
+  Przed ruchem APK wykonano nowy prywatny baseline wszystkich 23 tabel Room9,
+  FK clean, poza Git/OneDrive. Własny nowy lease/NAT/reverse: routing PASS,
+  odcisk publicznego CA `01f120ef25f091a6413a535dcaa5e333575a8d08a016503c47998333eef3a6f6`.
+- Podczas startu AVD pojawił się **System UI isn't responding**; wybrano Wait,
+  potem ten sam AVD i APK działały, bez restartu komputera lub kasowania danych.
+  Przeprowadzono rzeczywisty formularz testowego A przez przeglądarkę PKCE:
+  widoczny oryginalny origin i „Connection is secure”, po Sign In powrót do APK.
+  Konto z istniejącego prywatnego pakietu; brak danych logowania w logach/Git.
+  Powrót przeglądarki nie zastępuje pełnego dowodu bootstrap/GET/A→B→A.
+- Dokładny opt-in `LiveApiLateReceiptTest` uruchomiono przed końcem okna:
+  **0 PASS / 1 FAIL / 0 SKIP**, runner returncode0 nie oznacza sukcesu.
+  Błąd `TimeoutCancellationException: Timed out waiting for 20000 ms` podczas
+  oczekiwania drivera na held rzeczywistego GET. Brak neutralnych zdarzeń
+  held/logout/released/dto_parsed/stale_owner_rejected/guest_preserved;
+  brak neutralnego receipt HTTP200 GET. Nie deklarujemy późnej odpowiedzi
+  ani całego APK/API jako PASS. Surowy runner pozostaje prywatny.
+- Po wygaśnięciu okna odłączono dokładnie własny nowy lease/reverse/łańcuch NAT;
+  własny klient nie działa. O3 potwierdza stan swojego listenera samodzielnie.
+  Powtórna prywatna kopia: Room9/FK clean, **15/15 tabel danych lokalnych
+  identycznych z baseline** (posiłki, porcje, cele, outbox, katalog, profil,
+  pomiary, dni i zdjęcia). Aktywny owner ma kind=account; nie jest to dowód
+  wykonanego przez driver logout, który nie dotarł do tego kroku. Dane zachowane.
+- **Następna próba:** O3 proszony o nowe jednoznaczne okno. AVD jest już
+  uruchomiony; O1 przed driverem sprawdzi zakończenie callback/operacji sesji
+  i jawny bootstrap/GET, potem dokładny held→logout→release i A→B→A.
+  Nie wskazujemy jeszcze przyczyny braku held jako ustalonej usterki API;
+  trzeba odróżnić gotowość kontrolera od zakończonego logowania w przeglądarce.
+  Nie przedłużono starego okna, nie otwierano po nim nowego klienta lub ruchu.
+- Osobny kandydat 0.8.23/Room14: build/JVM322 debug i337 validation oraz
+  lint0 błędów PASS; poprawiono wyłącznie nowy test migracji, aby obsługiwał
+  opcjonalne `indices` w niezmienionym eksporcie Room13. Powtórny build PASS,
+  źródła i trzy APK przypięte hashami. Native320 i instalacja tego kandydata
+  nadal NOT_RUN. Nie użyto go na APIAVD. Bez nowego Gemini, zmiany serwera,
+  harmonogramów, kont, epoki lub used schema24; pełne KO32 i nowe E4/E7 osobno.
+- Przed publikacją ODCZYTANE również **O3-077 / `3c327a6` / PR130**:
+  O3 raportuje 8 przyjętych połączeń TCP i automatyczne zamknięcie dokładnie
+  o08:21:36. Potwierdzamy odczyt jego dowodu i zachowujemy rozróżnienie TCP
+  od wyniku drivera. Raport O1 powyżej odpowiada na WAITING_O1_RECEIPT:
+  lokalny test FAIL, baseline i własne zamknięcie PASS, pełny odbiór nadal otwarty.
+
+
+### O1-077 — R2: rzeczywisty późny GET zaliczony, PKCE A→B→A i dane zachowane
+
+- Data/autor:19.10.2026, agent1/O1. Do O3/O2, **DO ODCZYTU**.
+  ODCZYTANE O3-078/`eb5d4e2` z `codex/devops-wspolny-test-api`/PR130.
+  Branch O1 `codex/android-wysylanie-kolejki`, [PR129](https://github.com/Roseru/aplikacja-mobilna/pull/129).
+  [Pełny neutralny raport i granice R2](integracja/ODBIOR_APK_API_O1_R2_20261019.md).
+  Właściciel jawnie upoważnił bieżącą koordynację również przez prywatny czat
+  udostępniony przez O3; trwały wynik pozostaje w tym dzienniku. Adres/klucz
+  tego czatu i prywatne dane nie są publikowane.
+- Próba `O1-O3-APK-API-20261019-R2`, okno08:28:41–08:58:41 CEST.
+  Nowy check O1 TLS/discovery200/readiness200 PASS, nowy własny klient/lease.
+  Ten sam istniejący O1Api35/API35, **0.8.12.validation/code1023/Room9**,
+  źródło `e319e53130020b3bbcdb50588ef4a2205a241118`, APK
+  `89164efd5199c8e1329f4fc833107a4045d034533ded6ef0e93f00996c50efcb`, driver
+  `91b788998c3aa20b928e65e3f4d63a5ff3ad9048cc3de8c70f5ba8b86ecc231f`.
+  Hashe zainstalowanych plików zgodne; brak nowej instalacji lub zmiany drivera.
+- Realny PKCE A i UI „Sesja dostępna”, jawny bootstrap oraz poprawny DTO
+  kontrolnego `/me`200/no-store. Po pierwszym GET driver0/0/1SKIP; nie jest PASS.
+  Po jawnym odnowieniu wykonano NOWY GET/DTO UTC06:47:19.720497,
+  request`dc00ca61-1405-4dbe-b0fd-1c92ef3f024a`, i natychmiast dokładny driver:
+  **1PASS/0FAIL/0SKIP**. Starych logów nie użyto jako nowego kontrolnego GET.
+- Właściwy receipt: run`425b7ebe-bf51-4e6e-aa9d-861efb4fe303`, GET
+  UTC06:47:27.985598Z, HTTP200/no-store,
+  request`56db1ea4-ae7a-466d-bfd5-8c0c64140eec`.
+  **held→logout→released→dto_parsed→stale_owner_rejected→guest_preserved**,
+  UTC06:47:27.987493–06:47:28.138190. Rzeczywisty logout, odebrana odpowiedź,
+  utworzony DTO i odrzucenie starego ownera; nie cancellation przed parsowaniem
+  ani fixture. Limit gate10s/guardy bez osłabienia. O3 odczytał ten wynik na czacie.
+- Niezależny prywatny baseline23tabel przed R2; po core aktywny gość,
+  Room9/FK clean,15/15tabel dziennika identycznych. Potem realne logowanie B
+  oraz powrót do A: odrębny owner B, ponownie pierwotny owner A, większe
+  generacje lease, świeże „Sesja dostępna”,15/15tabel identycznych w obu etapach.
+  **Zaliczenie A→gość→B→A obejmuje PKCE/Room/izolację lokalną.** Świeże `/me`
+  i `/me/motivation` osobno dlaB oraz ponownieA **NOT_RUN**, pełne E3 otwarte.
+  Brak importu gościa/push/zmian zgód, nowych Nemesis/AI lub zmian serwera.
+- O1 zamknął własny R2 lease/NAT/reverse i klienta
+  **08:56:47.7491121 CEST**, przed końcem okna; dane/APK zachowane. O3 potwierdza
+  własny listener/usługi samodzielnie. Pierwszy FAIL20s i R2SKIP pozostają
+  zapisane; nie ustalają błędu API. Surowy runner, Vault i kopie są prywatne
+  poza Git/OneDrive. Nie restartowano komputera lub kasowano danych AVD.
+- Osobny nowy0.8.23/Room14 na O1Tests35, bez sieci:322/337JVM, lint0błędów,
+  końcowe22/22focus i320/320native PASS/0fail/0skip, offlineprzed/po.
+  Pierwszy focus20/22 zachowany: poprawiono oracle wykluczający ACKed
+  i cytowanie kolumnySQL limit w konstrukcji starej bazy, bez zmian produktu.
+  Kod kandydata nadal lokalny; źródła i APK przypięte257hashami. Publikacja,
+  bezpieczna aktualizacja zwykłej aplikacji i rzeczywisty E4/E7 osobno;
+  jego320testów nie są wynikiem R2. KO32, pełne recovery/legacy/retencja otwarte.
+
+- Uzupełnienie O1-077 po publikacji: ODCZYTANE **O3-079/O3-080 z `f7c3c4f`**.
+  O3 potwierdził odczyt dokładnego raportu `cc0a058`, niezależne zamknięcie
+  R2 o08:58:41.931949 CEST,16połączeń, brak18444 i HTTPS/monitor PASS.
+  [PR130](https://github.com/Roseru/aplikacja-mobilna/pull/130) ma własny odbiór CI;
+  nie potwierdzamy jego zielonego stanu za autora. ODCZYTANE także O2-043
+  i main`66c01a0` po PR131: wyłącznie lock backendu, bez zmiany wire/migracji
+  Androida lub wdrożenia do używanej instalacji. Pobrano do odczytu;
+  nie scalano nowych gałęzi z lokalnymi zmianami kandydata0.8.23.
+
+
+### O1-078 — R3: cztery świeże odczyty profilu i motywacji B oraz A
+
+- Data/autor:19.10.2026, agent1/O1. Do O3/O2, **DO ODCZYTU**.
+  [Pełny neutralny raport R3](integracja/ODBIOR_APK_API_O1_R3_20261019.md).
+  Branch `codex/android-wysylanie-kolejki`, [PR129](https://github.com/Roseru/aplikacja-mobilna/pull/129).
+  Nowy ID`O1-O3-APK-API-20261019-R3`, dokładne okno O3
+  09:06:26.320467–09:26:26.320467 CEST, uzgodnione na autoryzowanym prywatnym
+  czacie. R2 i jego FAIL/SKIP/PASS zachowane oddzielnie; nie powtarzano core.
+- Ten sam O1Api35/API35, źródło e319e53130020b3bbcdb50588ef4a2205a241118,
+  0.8.12.validation/code1023/Room9, APK89164efd…/driver91b788…
+  z pełnymi SHA w raporcie. Zainstalowane hashe ponownie zweryfikowane.
+  Nowy baseline23tabel, świeży checkTLS/discovery200/readiness200,
+  nowy własny klient/lease. O3 zachował ten sam issuer/CA/schema24/obraz.
+- **4/4GET HTTP200/no-store, przyjęty DTO i zgodny kontekst:**
+  B `/me` UTC07:14:36.096630Z/request`878bdebc-ae56-41be-a4ab-4318753626ba`;
+  B `/me/motivation`07:16:08.181707Z/`96ad1f47-69e4-4f49-b235-4b72ba41da6c`;
+  A `/me`07:20:36.086847Z/`8c4fe2d3-bba7-4c40-9da2-0dc9b3d8c94a`;
+  A `/me/motivation`07:21:35.538478Z/`ac59c840-79fe-4af1-8154-c5fa48711dc3`.
+  Rzeczywisty PKCE B, odczyty po ukończeniu poprzedniej operacji, potem
+  jawny PKCE A i odczyty po powrocie. Nie używano starych receipt jako nowych.
+- Dowód contextMATCH: ukończony DTO widoczny pod niezmienionymi guardami
+  e319 `readPrivate`/`publish`, które odrzucają niezgodność z własnym binding.
+  `/me`:account_id+sync_epoch, bez nieistniejącego account_generation.
+  Motivation:generation+epoch. O3 zaakceptował tę metodę bez eksportu
+  identity/body. Oba profile poprawnie null; motywacja pokazała wynik
+  serwerowy, bez wymyślania0. Nie wymuszano syntetycznego pending/null.
+  Pierwszy obserwator B nie zastał przycisku po wzroście karty; potwierdzono
+  gotowy DTO i unikalny receipt bez powtórki GET. To nie błąd API.
+- Po B i po powrocie A niezależnie **15/15tabel lokalnych identycznych**
+  z nowym baseline, Room9/FK clean, odrębny owner B i pierwotny A,
+  rosnące generacje lease. Dane, Vault i surowe zrzuty poza Git/OneDrive.
+  Bez importu/push/zmian zgód, Nemesis/AI lub wdrażania nowego backendu.
+- Własny R3 lease/NAT/reverse i klient zamknięte
+  **09:22:20.2290396 CEST**, przed końcem okna; zachowano APK i dane,
+  usunięto własny tymczasowy XML z AVD. O3 potwierdził odczyt czterech receipt
+  i niezależne wcześniejsze zamknięcie swojego relay **09:23:43.3603175 CEST**,
+  OWNER_STOP_AFTER_PEER_DISCONNECT po sprawdzeniu własności procesu;
+  brak18444 i świeży HTTPS/monitor PASS. To nie automatyczny koniec TTL.
+  O3 publikuje własny dowód osobno. Nie restartowano komputera.
+- R3 uzupełnia dokładnie cztery NOT_RUN z O1-077; historyczny raport R2
+  wskazuje późniejszy raport R3. Nie jest to odbiór nowych E4/E7/KO32,
+  całej macierzy E3 lub nowego0.8.23. Ten kandydat i jego320native pozostają
+  osobno; O3/O2 odbierają bieżący zakres według podanych wersji/dowodów.
+
+### O1-079 — opublikowany kod 0.8.23 i odpowiedź na oracle ponowienia E4
+
+- Data/autor: 19.10.2026, agent 1/O1. Do O2/O3, **DO ODCZYTU**.
+  Kod i raport opublikowane w `70afd6c1cd456c69b4ccdb23e7ed45cad59d5bdf`,
+  branch `codex/android-wysylanie-kolejki`, [PR129](https://github.com/Roseru/aplikacja-mobilna/pull/129).
+  [Raport interfejsu](https://github.com/Roseru/aplikacja-mobilna/blob/70afd6c1cd456c69b4ccdb23e7ed45cad59d5bdf/android/SYNCHRONIZACJA_INTERFEJS.md)
+  i [manifest lokalnego kandydata](https://github.com/Roseru/aplikacja-mobilna/blob/70afd6c1cd456c69b4ccdb23e7ed45cad59d5bdf/android/ODBIOR_0_8_23.json).
+  Podłączenie sesji/UI/ACK i Room14 nie jest już wyłącznie zmianą lokalną.
+- **ODCZYTANE**: O3-081 z `f586331` (potwierdzenie R3/a41a5cb),
+  O3-083 i O2-044 z main `4228ccafdf01a8936dc39bc1964f5d325504ec04`,
+  cały oracle O2 oraz O3-084/instrukcja obserwatora PG na `c0aef36`/PR137.
+  Nie scalono cudzych gałęzi ani nowego main do checkoutu Androida.
+- Zakres: jawne wysyłanie kanonicznych Meal z ekranu konta, pojedyncza
+  operacja sesji, kontrola właściciela/lease/kontekstu przed siecią i ACK,
+  zachowanie dokładnej partii po utracie odpowiedzi, ograniczone odnowienie
+  po401, atomowy ACK, konflikt bez nadpisania lokalnego posiłku i osobny pull.
+  Room13→14 dodaje wyłącznie retryAtMillis INTEGER NOT NULL DEFAULT0;
+  termin429/503 przetrwa również logout i błąd zapisu magazynu sesji.
+- Dowody z końcowego wcześniejszego buildu: **322/337 JVM**, lint0 błędów,
+  **22/22 focus i320/320 pełne native API35 offline**, bez fail/skip.
+  Dzisiaj w lekkim kroku ponownie sprawdzono hashe wszystkich257 wejść
+  źródłowych,3 niezmiennych APK i logów, raporty JVM/lint oraz SQLite14:
+  27 tabel, stare eksporty1–13/indeksy/FK zachowane. Bez ponownego Gradle/AVD.
+  Historyczne20PASS/2FAIL z błędnych fixture zachowane i rozliczone w raporcie;
+  nie zastąpiono ich wynikiem końcowym bez powtórzenia pełnego zestawu.
+- Kandydat offline: **0.8.23/code34/Room14**, debug applicationId
+  `pl.roseru.kalorie`, SHA256 `b4d71a91fc95f96cfe474e3b6f09c25e4f6bc13f55117d4bae755a7814257d99`.
+  Validation code1034/applicationId `pl.roseru.kalorie.validation`,
+  SHA256 `663b07ab1e40de3682430eb6a0a1ec6698166686733f93ac27ca0a982b266de7`.
+  APK istnieją lokalnie; publikacja źródeł/manifestu nie oznacza dostawy
+  artefaktu lub konfiguracji endpointu. Zwykły APK0.8.22/Room13 niezmieniony,
+  aktualizacja prywatnego dziennika do14 **NOT_RUN**.
+- Odpowiedź O2/O3: akceptuję oracle jednej syntetycznej operacji Meal/create,
+  niezależne C0/C1/C2, kill/restart przed ACK oraz identyczną kopertę/operation_id
+  przy replay. Idempotencja `(owner_id, operation_id)`, bez nagłówka klucza
+  batcha; PushResponse nie wydaje checkpointu. Legalny nowy DiaryDay i dwa
+  sync_changes nie są błędem. C1→C2 nie dodaje zmian, a already_applied ma
+  pierwotną revision1. Pierwsze lokalne przyjęcie może mieć replay=false.
+- **Blokada gotowości live: driver POST i skonfigurowany kandydat jeszcze
+  nieprzygotowane.** SHA testowego APK z manifestu dotyczy regresji offline,
+  nie oracle utraty ACK. Gate GET nie obsługuje POST. Następny mały krok to
+  jednorazowa bariera tylko validation po pełnym HTTP200/no-store i przed
+  przygotowaniem/zastosowaniem ACK, poza mutexem/transakcją Room, z limitem
+  czasu obejmującym C1 i kill. Dokładny limit/markery/timeout/cancellation/SHA
+  zostaną potwierdzone po implementacji i kwalifikacji. Wygaśnięcie przed kill
+  oznacza NOT_RUN. Bez osłabiania TLS, parserów i guardów.
+- Właściciel obecnie gra: wyłącznie lekki przegląd/dokumentacja/publikacja,
+  bez buildu, uruchamiania emulatora, instalacji, nowego relay/czatu/Gemini
+  lub restartu komputera. Gotowości stanowiska/okna nie deklaruję.
+  Po przygotowaniu osobnego manifestu O2/O3 porównają konkretny APK z używanym
+  schema24/obrazem; main/schema26 nie zastępuje tej kontroli. Potem osobne
+  świeże okno i zamknięcie obu stron. Wspólny E4 nadal **NOT_RUN**.
+- PR129 pozostaje draft zależnym od PR122/b3bde558. Lokalne testy i push
+  nie oznaczają CI lub merge. Import gościa, legacy/inne typy, WorkManager,
+  pełne recovery/retencja, projekcja pull, E7 i KO32 są nadal osobnymi etapami.
+  R2/R3 pozostają odebrane w ich dokładnym wcześniejszym zakresie.
+- Oczekiwana odpowiedź O2/O3: odczyt opublikowanego źródła i granic manifestu;
+  bez otwierania okna przed dostawą osobnego drivera/kandydata i gotowością O1.
+
 ### O1-084 — PR61 scalony po własnym CI; zdjęcia PR64 na aktualnym main
 
 - Data/autor:20.10.2026, agent1/O1. Do O2/O3, **DO ODCZYTU**.
@@ -4825,3 +5144,101 @@ Archiwalne wiersze stanu PR122 sprzed integracji21.10; aktualny stan znajduje si
 - Kontrole integracji przed publikacją: E0 PASS11schematów/98valid/35invalid,
   18scenariuszy/782linki i diff-check, porównanie produkcji/schematów/zależności
   z b3 oraz tools/CI/backend/infra z main; historyczne sekcje obu rodziców zachowane.
+
+
+Archiwalne wiersze stanu PR129 sprzed aktualizacji rodzica21.10; aktualny stan znajduje się na początku dokumentu:
+
+> | O1 — Android, Kotlin, Room | Kod 0.8.23/Room14 z sesją/UI/push i trwałym Retry-After opublikowany; 322/337 JVM, 22/22 focus, 320/320 native offline PASS; odczyt O2-044/O3-084 | Instalacja zwykłej aplikacji i skonfigurowany kandydat/driver POST osobno; wspólny E4 NOT_RUN, podczas gry tylko lekka praca | O1-079, [raport 0.8.23](../android/SYNCHRONIZACJA_INTERFEJS.md), [manifest](../android/ODBIOR_0_8_23.json), [PR129](https://github.com/Roseru/aplikacja-mobilna/pull/129) |
+> | O2 — Python, PostgreSQL, API | E9-O2/PR54 i zdjęcia/PR59 scalone; 35 zbadanych, 30 propozycji 8/8/10/4; własne CI PR/main odebrane | O1: klient i realny APK/API; O3: origin oraz Gemini dev; człowiek: referencje/zgody; O2: późniejsze testy E7-R/E9-R i naprawy | O2-033, [PR59](https://github.com/Roseru/aplikacja-mobilna/pull/59), [raport zdjęć](e7/RAPORT_PRZYGOTOWANIA_ZDJEC.md) |
+> | O3 — DevOps, CI/CD, serwer | E9 lokalny0024 zachowany; własny AVD TLS200; przenośny ZIP APK/publicCA/config/skrypty opublikowany i pobrany z GitHuba ze zgodnym SHA256 | O1/O3: osiągalny LAN/VPN i dokładny adres O1 do uruchomienia relay; własny APK/PKCE/baseline O1; fizyczny telefon/Gemini nadal WAITING_EXTERNAL | O3-026/[PR65](https://github.com/Roseru/aplikacja-mobilna/pull/65), [pakiet](https://github.com/Roseru/aplikacja-mobilna/releases/tag/integration-handoff-20261014), [instrukcja](../infra/integration/ANDROID_HANDOFF.md) |
+
+
+### O1-095 — aktualizacja rodzica kolejki129 bez zmiany produkcji
+
+- 21.10.2026, agent1/O1, do O2/O3, **DO ODCZYTU**. Istniejący
+  [PR129](https://github.com/Roseru/aplikacja-mobilna/pull/129), remote
+  codex/android-wysylanie-kolejki, lokalnie codex/android-integracja-pr129.
+  Zwykły merge9a3a9a9c0cd03817f95cf6f504237288c8998d0c z dokładnym
+  rodzicem122/33d458b9ef6d83fb79797de0ee2cb71b6734adbe; bez force-push.
+- Produkcja, schematy i zależności identyczne z9a; tools/CI/backend/infra
+  z main6069dc7. Jedyny diff Android/app to3 oczekiwania testu observera
+  z rodzica122, ten sam plik co b15d249; te same warunki/10s/asercje.
+  Lokalnych jednostkowych nie uruchamiano.0.8.23/code34/validation1034/
+  Room14; bez kolejnej migracji. [Raport zależności](../android/WYSYLANIE_KOLEJKI.md).
+- Konflikty wyłącznie README i dziennika. Wszystkie139/210 historyczne
+  wystąpienia i ich niepuste wiersze zachowane, także powtórzone017;
+  stara tabela w archiwum, aktualne O2/O3 z rodzica. Historyczne322/337JVM
+  i320native nie są wynikiem nowego merge.
+- PR129 pozostaje zależny od PR122; nie scalano go do oczekującego rodzica.
+  CI122/39582228792 przy odczycie: Android-build/device,contracts,quality,
+  keycloak SUCCESS,postgres/local-integration jeszcze w toku. Nie deklarujemy
+  pełnego PASS. Po scaleniu122: aktualny main do129, retarget i własny CI.
+  Osobny main6069dc7/CI39555097385 ma wszystkie8jobów SUCCESS.
+- ODCZYTANE O1-094/PR122, O2-047/PR13793894a9 bez nowych wiadomości.
+  O1-092/PR138f7 i O1-093/PR140017 odczytane osobno; ich kod nie wchodzi
+  do129. Zwykły0.8.24/code35 z PR140 zachowany do prób ręcznych,13JVM/11native
+  PASS i zachowane27tabel/rowid. Oryginalny API5558 zachowany.
+- Dalej odbiór122→129→139, potem dzieci138/140. Rzeczywisty E4/E7-R/recovery/
+  KO32 NOT_RUN; brak nowego relay/API/Gemini/deploy lub zmiany schema24/
+  epoki/kont. Bez instalacji starszego APK, restartu PC, clear/uninstall/wipe.
+- Kontrole aktualizacji: E0 PASS11schematów/98valid/35invalid/18scenariuszy,
+  791linków i diff-check; produkcja/schematy/zależności z9a, narzędzia z main.
+  Komentarze O3 w PR129 z19.10 (6272501816/6276564094) odczytane; odpowiedź
+  o kandydacie i technice jest w osobnym O1-092/PR138, live nadal NOT_RUN.
+
+
+### O1-096 — PR122 scalony, kolejka129 na rzeczywistym main
+
+- 21.10.2026, agent1/O1, do O2/O3, **DO ODCZYTU**. PR122/head33d458b
+  scalony jako e651fea201248fe6e7bdcc98f669bc60e490f691 po wszystkich8
+  wymaganych kontrolach CI39582228792. Faktyczne313debug/328validationJVM
+  i299native,0fail/0skip; lint0error/29warning/1info. Końcowy guard potwierdził
+  head/base, osiem jobów/checków, brak reviews/comments/inline i zgodność
+  drzewa46a6986475fea921e663751324eff64d5e021848 z testmerge9b9643d.
+  Osobny push CI nowego main pozostaje do odebrania.
+- O1-095 opublikowany jako de48384a5fed9fbda43a74bd3d4531efc2109b90.
+  Zwykły merge rzeczywistego main e651fea do tego commita jest bez konfliktów
+  i bez zmiany plików. Wszystkie historyczne wpisy obu rodziców zachowane.
+  Produkcja, schematy, migracje i zależności129 pozostają bez zmian;
+  0.8.23/code34/validation1034/Room14. Lokalnych testów nie powtarzano.
+- Istniejący PR129, remote codex/android-wysylanie-kolejki, lokalnie
+  codex/android-integracja-pr129: retarget na main i własny pełny Project CI
+  po publikacji. Do czasu końcowego wyniku nie deklarujemy jego PASS/merge.
+  Następnie139 i osobne dzieci138/140; kodu tych dzieci nie dołączono do129.
+- ODCZYTANE O2-047/PR13793894a9 i O1-092/093/094/095, bez nowych wiadomości.
+  Komentarze O3 w129 z19.10 odczytane; offline kandydat138 i technika opisane
+  w O1-092. Skonfigurowany APK/świeże wspólne okno i E4 nadal osobno.
+- Zwykły APK0.8.24/code35/Room14 i prywatny dziennik pozostają zachowane.
+  Oryginalny API5558 zachowany. Bez nowych live API/Gemini/relay/deploy,
+  zmian używanego schema24/epoki/kont, restartu PC lub instalacji starszego APK.
+  Właściciel skrócił pracę do5min; po publikacji zapisujemy checkpoint.
+- Kontrole O1-096 przed publikacją: E0 PASS11schematów/98valid/35invalid/18scenariuszy/791linków i diff-check; bez lokalnych zestawów jednostkowych.
+
+
+### O1-097 — odbiór main122 i gotowość końcowego CI129
+
+- 21.10.2026, agent1/O1, do O2/O3, **DO ODCZYTU**. Wznowienie celu przez
+  właściciela po wcześniejszym checkpoint; lokalnie codex/android-integracja-pr129,
+  remote codex/android-wysylanie-kolejki, istniejący PR129 na main.
+- Osobny push CI39590242229 dla rzeczywistego main e651fea201248fe6e7bdcc98f669bc60e490f691
+  odebrany: wszystkie8 jobów completed/success. PR122 był scalony po własnym
+  CI39582228792/head33d458b; O1-096 zachowuje dokładne metryki i dowód drzewa.
+- Aktualna integracja129/12f36468d3930e9c51a355e925d7b680c069784c opublikowana,
+  main jest przodkiem; produkcja/schematy/migracje/narzędzia bez zmiany tego
+  wznowienia. PR129 oznaczony gotowy; dotychczas po zmianie bazy nie było
+  Project CI dla12f3646. Ten wpis uzupełnia rzeczywisty odbiór i jego push
+  wywoła synchronize istniejącego PR na main. Nowy CI nadal PENDING;
+  historyczne testy129 i PASS rodzica nie zastępują własnego końcowego wyniku.
+- ODCZYTANE main/O1-094–096 oraz PR13793894a9/O2-047, PR138f7cf71e,
+  PR139a1f547a i PR140017ce87. Brak nowych wiadomości zespołu. Dwa komentarze
+  O3 w129 z19.10 odczytane ponownie, bez nowych reviews/inline. Kandydat
+  i technika są w O1-092; świeże skonfigurowane środowisko/E4 nadal osobno.
+- PR139 wymaga aktualizacji dokładnego rodzica129; pozostaje draftem na
+  gałęzi129 do czasu jej scalenia. Nie scalamy dziecka do rodzica i nie
+  przenosimy niezależnego kodu138/140/137 do129. Następnie własne odbiory
+  kolejnych etapów, bez deklarowania ich PASS lub odczytu za O2/O3.
+- Lokalnych jednostkowych nie uruchamiano; źródło produkcyjne bez zmian,
+  wymagane zestawy wykona końcowy CI. Zwykły0.8.24/code35/Room14 zachowany,
+  oryginalny API5558 bez zmian. Bez live API/Gemini/relay/deploy, zmian
+  schema24/epoki/kont, restartu komputera i starszej instalacji APK.
+- Kontrole O1-097: E0 PASS11schematów/98valid/35invalid/18scenariuszy/791linków, diff-check i przegląd dokumentacji; produkcja bez zmian.

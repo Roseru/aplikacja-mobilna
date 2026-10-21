@@ -17,7 +17,7 @@ import pl.roseru.kalorie.session.*
 @Composable internal fun RankingConsentScreen(view: SessionView, actions: SessionActions, onBack: () -> Unit, onAccount: () -> Unit, onRanking: () -> Unit = {}) {
     val account = view.binding?.owner?.kind == "account"
     val available = account && view.rankingConsentConfigured && view.serverLinked && !view.requiresRecovery && !view.pendingLogin
-    val busy = view.busy || view.bootstrapBusy || view.profileBusy || view.motivationBusy || view.snapshotBusy || view.rankingConsentBusy || view.rankingBusy
+    val busy = view.mealPushBusy || view.busy || view.bootstrapBusy || view.profileBusy || view.motivationBusy || view.snapshotBusy || view.rankingConsentBusy || view.rankingBusy
     val state = if (available && !view.busy) view.rankingConsent else RankingConsentState.NotRequested
     Column(Modifier.fillMaxSize().verticalScroll(rememberScrollState()).padding(20.dp).testTag("ranking-consent-content"),
         verticalArrangement = Arrangement.spacedBy(16.dp)) {

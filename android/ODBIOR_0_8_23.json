@@ -1,0 +1,70 @@
+{
+  "version": "0.8.23",
+  "version_code": 34,
+  "room_version": 14,
+  "status": "LOCAL_CANDIDATE_NOT_INSTALLED_ON_REGULAR_APP",
+  "build_source_base": "2bef94f774246efe2c3c61b24a05118b7fdad075",
+  "source_inputs_count": 257,
+  "source_manifest_hash_rule": "SHA256 of UTF-8 json.dumps(path_to_raw_file_sha256, sort_keys=True, separators=(comma,colon))",
+  "source_manifest_sha256": "24d0ce84bcc6d6f61644d7467da3c067efa340154c58d1c652cee613a704d687",
+  "artifacts": {
+    "debug": {
+      "sha256": "b4d71a91fc95f96cfe474e3b6f09c25e4f6bc13f55117d4bae755a7814257d99",
+      "kind": "debug"
+    },
+    "validation": {
+      "sha256": "663b07ab1e40de3682430eb6a0a1ec6698166686733f93ac27ca0a982b266de7",
+      "kind": "validation"
+    },
+    "tests": {
+      "sha256": "aefefe9c23c6c7475dab974fbe9800fdb0d6354134bef5758fcc20a6aee936f5",
+      "kind": "tests"
+    }
+  },
+  "application_ids": {
+    "debug": "pl.roseru.kalorie",
+    "validation": "pl.roseru.kalorie.validation",
+    "tests": "pl.roseru.kalorie.validation.test"
+  },
+  "validation_version_code": 1034,
+  "unit_tests": {
+    "Debug": {
+      "tests": 322,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 0
+    },
+    "Validation": {
+      "tests": 337,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 0
+    }
+  },
+  "lint_errors": 0,
+  "native_focus": {
+    "passed": 22,
+    "failures": 0,
+    "skipped": 0,
+    "elapsed_seconds": 57.563,
+    "log_sha256": "b48a305613754124e9ddea861fc9e45af2f1e1bef30fbcaee1d8d44ca15616b0",
+    "offline_before_after": true,
+    "success": true
+  },
+  "native_full": {
+    "passed": 320,
+    "failures": 0,
+    "skipped": 0,
+    "elapsed_seconds": 487.906,
+    "log_sha256": "40a31c9483dddb00e393698087f9abb41e81f41e6976d2873294d71899b76b40",
+    "offline_before_after": true,
+    "success": true
+  },
+  "build_log_sha256": "006d7aca16760a9389663ee7bcc2bbf9b3463bd232377ac1179ba7c8535bf552",
+  "real_api_push": "NOT_RUN",
+  "live_post_driver": null,
+  "regular_app_upgrade": "NOT_RUN",
+  "remote_ci": "NOT_CONFIRMED",
+  "network_configuration": "Default offline configuration; not the configured live E4 candidate",
+  "artifact_delivery": "Local immutable files; no release upload in this step"
+}

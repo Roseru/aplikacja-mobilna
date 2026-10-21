@@ -22,7 +22,7 @@ import java.time.LocalDate
     val row=session.photoUpload?:return
     val draft=session.photoMealDraft
     val idle=!session.photoUploadBusy && !session.busy && !session.pendingLogin && !session.requiresRecovery &&
-        !session.bootstrapBusy && !session.profileBusy && !session.snapshotBusy && !session.motivationBusy &&
+        !session.bootstrapBusy && !session.profileBusy && !session.mealPushBusy && !session.snapshotBusy && !session.motivationBusy &&
         !session.rankingConsentBusy && !session.rankingBusy && !session.nemesisBusy && !session.nemesisMutationBusy && !session.photoCapabilitiesBusy
     val editable=session.photoCanEditProposal && !row.blocked && idle
     if(draft==null) {

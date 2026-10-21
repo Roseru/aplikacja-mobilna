@@ -29,7 +29,7 @@ import pl.roseru.kalorie.session.*
     if(status==null || draft==null || row==null || status.operationId!=row.operationId ||
         draft.operationId!=status.operationId || draft.editRevision!=status.editRevision || row.blocked)return
     val idle=!session.photoUploadBusy && !session.busy && !session.pendingLogin && !session.requiresRecovery &&
-        !session.bootstrapBusy && !session.profileBusy && !session.snapshotBusy && !session.motivationBusy &&
+        !session.bootstrapBusy && !session.profileBusy && !session.mealPushBusy && !session.snapshotBusy && !session.motivationBusy &&
         !session.rankingConsentBusy && !session.rankingBusy && !session.nemesisBusy && !session.nemesisMutationBusy && !session.photoCapabilitiesBusy
     val network=idle && session.hasSession && session.serverLinked && session.binding?.owner?.kind=="account"
     Column(Modifier.fillMaxWidth().testTag("photo-confirmation-panel"),verticalArrangement=Arrangement.spacedBy(8.dp)) {

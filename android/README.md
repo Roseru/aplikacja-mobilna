@@ -1,5 +1,21 @@
 # Android — Racje i kalorie
 
+Gałąź `codex/android-integracja-pr129` zawiera aktualny main e651fea po scaleniu
+PR122. Istniejący PR129 przechodzi na main i wymaga własnego pełnego CI.
+Zwykły emulator zachowuje późniejszy APK0.8.24/code35/Room14 z PR140.
+
+Poniżej historyczny odbiór źródła129/9a3a9a9; nie jest wynikiem nowego merge:
+
+Kandydat **0.8.23/code34/Room14** na `codex/android-wysylanie-kolejki`
+łączy [transport trwałych partii](WYSYLANIE_KOLEJKI.md) z sesją i
+[przyciskiem wysyłania posiłków](SYNCHRONIZACJA_INTERFEJS.md).
+Zapisana partia przetrwa utratę odpowiedzi, a termin Retry-After również
+wylogowanie. Lokalny odbiór: 322/337 JVM, 22 celowane i 320 pełnych testów
+urządzenia PASS, lint 0 błędów; [manifest dowodów](ODBIOR_0_8_23.json).
+To domyślny wariant offline, bez konfiguracji rzeczywistego E4. Aktualizacji
+zwykłej aplikacji i próby push z serwerem jeszcze nie wykonano. R2/R3 na
+starszym APK nie potwierdzają nowego push. Kandydat nie ma drivera POST.
+
 Etap PR122 **0.8.22/code33/Room13** pozwala jawnie wrócić do poprawek po
 odrzuconej decyzji i poprawnym odczycie stanu serwera. Zachowuje stare body,
 klucz i pochodzenie w historii, a nowa zgoda ma osobny klucz i te same UUID
@@ -137,7 +153,15 @@ Dolna zakładka **Postępy** pokazuje ostatnie 7, 30 lub 90 dat kalendarzowych w
 
 ## Co pozostaje na następne etapy
 
-Zweryfikowane pakiety rzeczywistych racji i osobny import materiałów MRE 2026, kalkulator zapotrzebowania, odbiór rzeczywistej sesji z O3, bootstrap i synchronizacja API, zdjęcia/Gemini, produkty społeczności, ranking i Nemesis. Istnieje lokalna kolejka, ale ta wersja **nie wysyła dziennika na serwer**. HTTP tej wersji dotyczy tylko OIDC w skonfigurowanym wariancie. Prywatne produkty nie są publikowane w katalogu społeczności. API katalogu E2 udostępnia wyłącznie official; demo jest lokalne w APK i nie powoduje oczekiwania na konto/API.
+Do pełnego odbioru pozostają: synchronizacja starszych wpisów i pozostałych
+typów danych (profil, cele, waga, kompletność), zastosowanie kopii serwera
+w lokalnym dzienniku, import gościa za zgodą, konflikty, recovery po 30 dniach,
+retencja i WorkManager. Kandydat 0.8.23 ma ręczne wysyłanie kanonicznych Meal,
+ale nie ma jeszcze dowodu rzeczywistego push APK/API. R2/R3 potwierdziły
+konkretne odczyty/logowanie starszego APK; pełna macierz kont pozostaje osobno.
+Następne funkcje to katalog społeczności, kalkulator i korekty zapotrzebowania,
+zweryfikowane pakiety racji/MRE oraz pełne próby Gemini, rankingu i Nemesis.
+Prywatne produkty nie są publikowane; pakiet demo nie jest katalogiem official.
 
 ## Uruchomienie w Android Studio
 
