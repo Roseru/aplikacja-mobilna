@@ -1,12 +1,14 @@
 # Android — Racje i kalorie
 
-Aktualny APK **0.8.22/code33/Room13** pozwala jawnie wrócić do poprawek po
+Etap PR122 **0.8.22/code33/Room13** pozwala jawnie wrócić do poprawek po
 odrzuconej decyzji i poprawnym odczycie stanu serwera. Zachowuje stare body,
 klucz i pochodzenie w historii, a nowa zgoda ma osobny klucz i te same UUID
 posiłku/składników. Niepewna wysyłka nadal wymaga identycznego replay.
 [Raport](POWROT_DO_POPRAWEK.md):313/328JVM,17 celowanych i299 pełnych testów
 urządzenia PASS, lint0error. Migracja12→13 zachowała26 starszych tabel i rowid;
-aplikacja otwarta do testów. Rzeczywisty APK/API, push/pull, legacy, pełne recovery
+to historyczny odbiór tego źródła. Integracja z main6069dc7 wymaga własnego
+CI; lokalnych jednostkowych nie powtarzano. Zwykły emulator ma późniejszy
+APK0.8.24/code35 z PR140. Rzeczywisty APK/API, push/pull, legacy, pełne recovery
 i retencja pozostają osobnymi etapami.
 
 Wydanie **0.8.21/code32/Room12** pozwala zatwierdzić poprawiony wynik zdjęcia
@@ -151,7 +153,7 @@ Android Studio zwykle tworzy ignorowany `local.properties` z własną ścieżką
 Uruchom z katalogu `android/`, przy ustawionym `JAVA_HOME` i dostępnym SDK:
 
 ```powershell
-.\gradlew.bat :app:assembleDebug :app:testDebugUnitTest :app:lintDebug
+.\gradlew.bat :app:assembleDebug :app:testDebugUnitTest :app:testValidationUnitTest :app:lintDebug
 .\gradlew.bat :app:connectedValidationAndroidTest
 ```
 
@@ -166,6 +168,13 @@ Workflow [Project CI](../.github/workflows/backend.yml) uruchamia na każdym PR 
 Po zakończeniu przebiegu otwórz jego stronę w GitHub **Actions → Project CI → Artifacts**. Artefakt `android-debug-<commit>` zawiera `Racje-i-kalorie-<wersja>-debug.apk`, `manifest.json` oraz `SHA256SUMS`. Manifest podaje rzeczywisty applicationId, versionName/versionCode sprawdzone także wewnątrz APK, wariant debug, dokładny commit checkoutu i SHA-256 samego APK. Dla PR commit oznacza testowaną integrację z bazą (`refs/pull/.../merge`); commit źródłowej gałęzi znajdziesz na stronie PR. Artefakt powstaje po zaliczeniu JVM/lint; dopiero zielone całe `ci-required` potwierdza również odbiór urządzenia i backendu.
 
 Raporty są w osobnych artefaktach `android-jvm-lint-<commit>` i `android-api35-<commit>`; upload jest podejmowany także po nieudanym teście. APK i raporty mają retencję 14 dni i pozostają poza Git. To dostawa debug do testowania, nie podpisane wydanie produkcyjne ani wdrożenie API. APK nie pojawi się, jeśli jego budowa lub wcześniejsze kontrole nie powiodły się. Pobranie artefaktów może wymagać zalogowania do GitHuba.
+
+Testy JVM są wykonywane i sprawdzane oddzielnie dla debug oraz validation.
+Wariant validation obejmuje także testy receipt/gate/proof z `src/testValidation`;
+sam wynik debug ich nie potwierdza. Każdy katalog JUnit musi mieć wykonane testy
+bez błędów i pominięć. `jvm-summary.json` opisuje debug, a
+`jvm-validation-summary.json` validation. Wspólne przypadki uruchamiają się
+w obu wariantach, więc ich sumy nie są liczbą unikalnych scenariuszy.
 
 ## Kontrole odbioru
 

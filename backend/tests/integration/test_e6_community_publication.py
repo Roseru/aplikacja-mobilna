@@ -38,8 +38,8 @@ from calorie_app.modules.catalog.community.tokens import decode_page
 from calorie_app.modules.catalog.pagination import database_now
 from calorie_app.modules.diary.models import ProductDraft
 from calorie_app.modules.identity.dependencies import current_principal
-from calorie_app.modules.identity.models import UserAccount
 from calorie_app.modules.identity.service import bootstrap
+from tests.support.deletion_regression import begin as begin_deletion
 
 pytestmark = pytest.mark.integration
 ROOT = Path(__file__).resolve().parents[3]
@@ -310,9 +310,12 @@ def test_epoch_precedence_and_deleting_replay_without_effects(community_db):
             publish(community_db, who, epoch, data, uuid4())
         assert failure.value.code == "sync_epoch_changed"
         with Session(community_db) as session, session.begin():
-            account = session.get(UserAccount, owner)
-            account.state = "deleting"
-            account.generation += 1
+            # Restore the source epoch after independently checking epoch denial;
+            # a fenced source must not authorize a new lifecycle transition.
+            session.execute(
+                text("UPDATE app.installation_state SET sync_epoch=:epoch"), {"epoch": epoch}
+            )
+            begin_deletion(session.connection(), owner, uuid4(), 1)
         with pytest.raises(DomainError) as failure:
             publish(community_db, who, epoch, data, key)
         assert failure.value.code == "account_deleting"
@@ -478,7 +481,8 @@ def test_http_ownership_spoof_missing_auth_epoch_and_strict_queries(community_db
 def test_actual_account_barriers_publish_vs_draft_or_deletion(community_db, action, publish_first):
     from threading import Event
 
-    from calorie_app.modules.identity.service import begin_deleting, require_account
+    from calorie_app.modules.identity.service import require_account
+    from tests.support.deletion_regression import begin_deleting
 
     who, owner, epoch = boot(community_db)
     entity, _ = draft(community_db, owner)

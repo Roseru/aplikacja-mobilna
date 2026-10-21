@@ -21,6 +21,11 @@ def e8_empty(database):
     migrate("upgrade", "head")
 
 
+@pytest.fixture
+def historical_e8_empty(historical_database):
+    yield from e8_empty.__wrapped__(historical_database)
+
+
 def graph(engine, names=None):
     with engine.connect() as connection:
         names = names or [
@@ -62,8 +67,8 @@ def seed_owner(connection):
     return owner
 
 
-def test_e8_empty_roundtrip_preserves_complete_e0_e7_rowsets(e8_empty):
-    engine, migrate, _ = e8_empty
+def test_e8_empty_roundtrip_preserves_complete_e0_e7_rowsets(historical_e8_empty):
+    engine, migrate, _ = historical_e8_empty
     migrate("downgrade", "0015_e7_ai")
     before = graph(engine)
     migrate("upgrade", "head")
@@ -74,8 +79,8 @@ def test_e8_empty_roundtrip_preserves_complete_e0_e7_rowsets(e8_empty):
     assert graph(engine, list(before)) == before
 
 
-def test_filled_upgrade_pending_and_bounded_restart_preserves_sources(e8_empty):
-    engine, migrate, _ = e8_empty
+def test_filled_upgrade_pending_and_bounded_restart_preserves_sources(historical_e8_empty):
+    engine, migrate, _ = historical_e8_empty
     migrate("downgrade", "0015_e7_ai")
     with engine.begin() as connection:
         owner = seed_owner(connection)
@@ -151,8 +156,8 @@ def test_filled_upgrade_pending_and_bounded_restart_preserves_sources(e8_empty):
 
 
 @pytest.mark.parametrize("artifact", ["projection", "affirmation", "session"])
-def test_nonempty_e8_downgrade_refuses_atomically_before_ddl(e8_empty, artifact):
-    engine, migrate, _ = e8_empty
+def test_nonempty_e8_downgrade_refuses_atomically_before_ddl(historical_e8_empty, artifact):
+    engine, migrate, _ = historical_e8_empty
     with engine.begin() as connection:
         owner = seed_owner(connection)
         if artifact == "projection":
@@ -194,8 +199,8 @@ def test_nonempty_e8_downgrade_refuses_atomically_before_ddl(e8_empty, artifact)
     ],
 )
 @pytest.mark.parametrize("grantee", ["PUBLIC", "calorie_app_motivation_worker"])
-def test_hostile_effective_e8_acl_refuses_upgrade_atomically(e8_empty, target, grantee):
-    engine, migrate, _ = e8_empty
+def test_hostile_effective_e8_acl_refuses_upgrade_atomically(historical_e8_empty, target, grantee):
+    engine, migrate, _ = historical_e8_empty
     migrate("downgrade", "0015_e7_ai")
     try:
         with engine.begin() as connection:
@@ -218,8 +223,8 @@ def test_hostile_effective_e8_acl_refuses_upgrade_atomically(e8_empty, target, g
 
 
 @pytest.mark.parametrize("member", ["calorie_app_ai_worker", "calorie_app_api"])
-def test_shared_runtime_membership_cannot_acquire_e8_worker_authority(e8_empty, member):
-    engine, migrate, _ = e8_empty
+def test_shared_runtime_membership_cannot_acquire_e8_worker_authority(historical_e8_empty, member):
+    engine, migrate, _ = historical_e8_empty
     migrate("downgrade", "0015_e7_ai")
     try:
         with engine.begin() as connection:

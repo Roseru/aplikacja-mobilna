@@ -1,5 +1,18 @@
 # Obserwacja rzeczywistych odczytów APK — agent 1
 
+Stan integracji20.10.2026/O1-085: rodzic PR64 jest już scalony jako
+`79dc7d931547c1b74061606342e5a8112649d236` po własnym8/8CI39416910290.
+PR73 otrzymuje ten main zwykłym merge i ma uzyskać własny nowy pełny CI.
+Poniższe przygotowanie pozostaje historią. Rzeczywisty wynik późnego GET
+opisuje [R2](ODBIOR_APK_API_O1_R2_20261019.md), kolejne odczyty
+[R3](ODBIOR_APK_API_O1_R3_20261019.md), a ich ograniczony odbiór
+[raport O2](ODBIOR_R2_R3_ORACLE_E4_O2.md).
+Oba raporty O1 skopiowano bajtowo z dokładnego a41a5cb/PR129; nie przeniesiono
+kodu tej gałęzi. Kod aplikacji i drivera PR73 pozostaje identyczny ze źródłem
+e319e531 faktycznie użytym w R2/R3. Nowy CI nie jest nową próbą live.
+Aktualny kanał validation ma versionCode1023 i versionName0.8.12.validation;
+wcześniejsze opisy versionCode23 poniżej dotyczą przygotowania przed rozdzieleniem kanałów.
+
 Przygotowanie 14.10.2026 na `codex/android-odbior-api`. Zależność źródeł:
 `4b4e8a3255f2b3c182954b7f83de9daa2ef7adc5`, niescalony PR64.
 To osobny etap odbioru, nie nowe rozpoznawanie zdjęć ani zmiana backendu.
@@ -184,3 +197,9 @@ live. Artefakty pozostają poza Git; native79 dotyczy wariantu fixtures z tego
 samego źródła, nie dowodzi połączenia z API. O3 może uzgodnić okno i dokładny
 peer na podstawie gotowego artefaktu. E0 PASS:10schematów/95valid/35invalid/
 18scenariuszy/636linków; zdalne CI i merge nadal niepotwierdzone.
+
+## Faktyczna instalacja kandydata O1-051 —15.10.2026
+
+API/CA `89164efd5199c8e1329f4fc833107a4045d034533ded6ef0e93f00996c50efcb` i driver `91b788998c3aa20b928e65e3f4d63a5ff3ad9048cc3de8c70f5ba8b86ecc231f` z source `e319e53130020b3bbcdb50588ef4a2205a241118` zainstalowano17:53CEST na istniejącym O1Api35/API35. Version0.8.12.validation/code1023/Room9; zainstalowane base.apk mają zgodne SHA256. Wszystkie23tabele przed/po install-r identyczne, FK clean i niepusty gość/pending outbox zachowane. Prywatne Room/WAL poza Git/OneDrive, bez clear/uninstall/wipe. Aplikacja po snapshotach zatrzymana; brak nowych żądań serwera.
+
+Aktualny peer192.168.137.29 i propozycja18:00–18:30CEST15.10 wymagają nowego potwierdzenia O3 oraz świeżego check/lease przed PKCE. Nie używamy starego relay. Realne sześć markerów, odbiór O2 i pełny rozszerzony wynik nadal NOT_RUN/PARTIAL. Regularny APK użytkownika i kolejka Room10 są osobnymi artefaktami.

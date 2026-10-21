@@ -33,10 +33,10 @@ from calorie_app.modules.analytics.motivation.ranking import ranking_publication
 from calorie_app.modules.analytics.motivation.service import source_mutated
 from calorie_app.modules.catalog import models as catalog_models  # noqa: F401
 from calorie_app.modules.diary.service import save_meal
-from calorie_app.modules.identity.deletion import begin, resume
 from calorie_app.modules.identity.service import bootstrap
 from calorie_app.modules.profiles.schemas import ConsentInput, GoalPayload, ProfilePayload
 from calorie_app.modules.profiles.service import create_goal, put_consents, save_profile
+from tests.support.deletion_regression import begin, resume
 from tests.support.e8_3_postgres import PrivatePostgres
 
 pytestmark = pytest.mark.integration

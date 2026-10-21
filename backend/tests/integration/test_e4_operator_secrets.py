@@ -309,6 +309,7 @@ def logging_cluster():
                 "calorie_app_migrator",
                 "calorie_app_api",
                 "calorie_app_worker",
+                "calorie_app_deletion_exporter",
                 "calorie_app_ai_worker",
                 "calorie_app_motivation_worker",
                 "keycloak",

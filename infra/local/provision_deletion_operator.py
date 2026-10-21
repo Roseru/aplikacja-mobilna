@@ -90,8 +90,8 @@ def verify_session(connection: psycopg.Connection) -> None:
             raise ProvisionError("unsupported_server_encoding")
 
 
-def provision(login_bytes: bytes, password_bytes: bytes) -> None:
-    sql_path = Path(__file__).with_name("provision-deletion-operator.sql")
+def provision(login_bytes: bytes, password_bytes: bytes, *, sql_path: Path | None = None) -> None:
+    sql_path = sql_path or Path(__file__).with_name("provision-deletion-operator.sql")
     statements = sql_path.read_text(encoding="utf-8")
     # Explicit options replace PGOPTIONS/service options. They contain no secret.
     # Libpq still resolves other connection details from PG*/service/pgpass.

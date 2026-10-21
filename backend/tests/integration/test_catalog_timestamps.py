@@ -14,6 +14,7 @@ from sqlalchemy.exc import IntegrityError, ProgrammingError
 from sqlalchemy.orm import Session
 
 from calorie_app.core.config import Settings
+from calorie_app.health import EXPECTED_REVISION
 from calorie_app.main import create_app
 from calorie_app.modules.catalog import OFFICIAL_PACKAGE_ID, repository, service
 from calorie_app.modules.catalog.cli import main as catalog_command
@@ -158,8 +159,10 @@ def test_legacy_draft_explicit_proof_recovery(catalog_db, tmp_path, monkeypatch,
 
 
 @pytest.mark.parametrize("suffix", ["Z", ".100000Z", ".123456Z"])
-def test_upgrade_keeps_old_publication_bytes_and_hash(catalog_db, tmp_path, monkeypatch, suffix):
-    engine, migrate, url = catalog_db
+def test_upgrade_keeps_old_publication_bytes_and_hash(
+    historical_catalog_db, tmp_path, monkeypatch, suffix
+):
+    engine, migrate, url = historical_catalog_db
     migrate("downgrade", "0003_catalog_offline")
     try:
         original = synthetic_official(count=1)
@@ -177,7 +180,7 @@ def test_upgrade_keeps_old_publication_bytes_and_hash(catalog_db, tmp_path, monk
         before = package_record(engine)
         path = artifact_path(tmp_path, artifact_relative_path(OFFICIAL_PACKAGE_ID, "official", 1))
         stored_bytes = path.read_bytes()
-        migrate("upgrade", "head")
+        migrate("upgrade", EXPECTED_REVISION)
         assert package_record(engine) == before
         assert not import_catalog(engine, original).created
         assert export_package(engine, OFFICIAL_PACKAGE_ID, 1).compressed == stored_bytes
@@ -188,7 +191,7 @@ def test_upgrade_keeps_old_publication_bytes_and_hash(catalog_db, tmp_path, monk
             assert client.get("/api/v1/offline-package/manifest").json() == manifest
             assert client.get("/api/v1/offline-package/base-pl.1.json.gz").content == stored_bytes
     finally:
-        migrate("upgrade", "head")
+        migrate("upgrade", EXPECTED_REVISION)
 
 
 @pytest.mark.parametrize("defect", ["graph", "source_hash", "product_hash", "ration_hash"])
@@ -224,8 +227,8 @@ def test_recovery_checks_entire_graph_and_child_hash(catalog_db, monkeypatch, de
         assert connection.scalar(text("SELECT count(*) FROM app.catalog_timestamp_recoveries")) == 0
 
 
-def test_recovery_audit_permissions_guards_and_downgrade(catalog_db, monkeypatch):
-    engine, migrate, _ = catalog_db
+def test_recovery_audit_permissions_guards_and_downgrade(historical_catalog_db, monkeypatch):
+    engine, migrate, _ = historical_catalog_db
     original = synthetic_official(count=1) | {"published_at": PREFIX + ".1Z"}
     legacy_import(engine, original, monkeypatch)
     for role in ("calorie_app_api", "calorie_app_worker"):
@@ -260,9 +263,9 @@ def test_recovery_audit_permissions_guards_and_downgrade(catalog_db, monkeypatch
     ):
         with pytest.raises(IntegrityError), engine.begin() as connection:
             connection.exec_driver_sql(statement)
-    with pytest.raises(IntegrityError):
+    with pytest.raises(IntegrityError, match="cannot remove timestamp recovery evidence"):
         migrate("downgrade", "0003_catalog_offline")
-    migrate("upgrade", "head")
+    migrate("upgrade", EXPECTED_REVISION)
     assert not import_catalog(engine, original).created
 
 

@@ -200,8 +200,8 @@ def data_snapshot(connection):
 
 
 @pytest.fixture
-def legacy_database(database):
-    engine, migrate, url = database
+def legacy_database(historical_database):
+    engine, migrate, url = historical_database
     migrate("downgrade", "0001_foundation")
     with engine.begin() as connection:
         row = nutrition_row(connection)
@@ -215,7 +215,7 @@ def legacy_database(database):
             )
             connection.execute(delete(Product).where(Product.id == row["product_id"]))
             connection.execute(delete(ProductSource).where(ProductSource.id == row["source_id"]))
-        migrate("upgrade", "head")
+        # This disposable DB is dropped by historical_database; no ledger downgrade.
 
 
 @pytest.mark.parametrize("column", NUTRITION_COLUMNS)
@@ -234,7 +234,7 @@ def test_upgrade_preserves_data_and_readiness(legacy_database, column):
     with TestClient(create_app(Settings(database_url=url), engine=engine)) as client:
         assert client.get("/health/live").status_code == 200
         assert client.get("/health/ready").status_code == 503
-        migrate("upgrade", "head")
+        migrate("upgrade", EXPECTED_REVISION)
         assert client.get("/health/ready").status_code == 200
     with engine.connect() as connection:
         assert data_snapshot(connection) == before
@@ -254,7 +254,7 @@ def test_upgrade_refuses_legacy_nan_without_partial_changes(legacy_database, col
     checks_before = inspect(engine).get_check_constraints("product_versions", schema="app")
     assert OLD_CHECK_NAME in {item["name"] for item in checks_before}
     with pytest.raises(IntegrityError) as rejected:
-        migrate("upgrade", "head")
+        migrate("upgrade", EXPECTED_REVISION)
     assert isinstance(rejected.value.orig, CheckViolation)
     assert rejected.value.orig.diag.constraint_name == CHECK_NAME
     with engine.connect() as connection:

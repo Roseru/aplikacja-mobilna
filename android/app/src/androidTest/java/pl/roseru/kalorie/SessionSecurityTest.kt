@@ -918,13 +918,13 @@ class SessionSecurityTest {
             observer = launch(start = CoroutineStart.UNDISPATCHED) { c.observeMotivationContext() }
             val owner = c.view.value.binding!!.lease.storageScope; val old = db.bootstrapDao().binding(owner)!!
             db.bootstrapDao().update(old.copy(contextRevision = old.contextRevision + 1))
-            withTimeout(10_000) { while (c.view.value.serverProfile != null) yield() }
+            withTimeout(10_000) { c.view.first { it.serverProfile == null } }
             c.readRankingConsents(); assertTrue(c.view.value.rankingConsent is RankingConsentState.Ready)
             val current = db.bootstrapDao().binding(owner)!!; db.bootstrapDao().update(current.copy(accountGeneration = current.accountGeneration + 1))
-            withTimeout(10_000) { while (c.view.value.rankingConsent !is RankingConsentState.NotRequested) yield() }
+            withTimeout(10_000) { c.view.first { it.rankingConsent is RankingConsentState.NotRequested } }
             c.readProfile(); assertNotNull(c.view.value.serverProfile)
             val other = LocalOwnerStore(db).registerIdentity(issuer, "fixture-B"); LocalOwnerStore(db).select(other.id)
-            withTimeout(10_000) { while (c.view.value.binding?.owner?.subject != "fixture-B") yield() }
+            withTimeout(10_000) { c.view.first { it.binding?.owner?.subject == "fixture-B" } }
             assertNull(c.view.value.serverProfile); assertEquals(RankingConsentState.NotRequested, c.view.value.rankingConsent); assertTrue(writes.calls.isEmpty())
         } finally { observer?.cancelAndJoin(); vault.clear(); db.close() }
     }
