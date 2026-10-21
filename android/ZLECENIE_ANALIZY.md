@@ -1,10 +1,83 @@
 # Zlecenie analizy zdjęcia — stan implementacji Androida
 
-Branch `codex/android-analiza-zdjec`, [PR105](https://github.com/Roseru/aplikacja-mobilna/pull/105), zależny od PR96/merge8d96aa7.
+Branch `codex/android-poprawki-posilkow`, zależny od dokładnego head `90d28c2db6c85ab0721dc5b972168120594617bb` / [PR105](https://github.com/Roseru/aplikacja-mobilna/pull/105). [PR121](https://github.com/Roseru/aplikacja-mobilna/pull/121) kierujemy na `codex/android-analiza-zdjec`; najpierw integrujemy rodzica, następnie zmieniamy bazę dziecka na main i sprawdzamy integrację.
 Wejścia: [integracja O2](../docs/e7/INTEGRACJA_O1.md), [DTO](../backend/src/calorie_app/modules/ai/schemas.py) i [przykład create](../contracts/examples/e7/create-accepted.json).
-Gotowe są transport, trwała kolejka, zgoda/wysyłka i jawne ponowienie oraz pobieranie/polling wyniku z podglądem lokalnym. Dostępne jest również świadome anulowanie i zamknięcie anulowanego zlecenia. Korekta i zatwierdzenie posiłku pozostają do wykonania. Ten etap nie jest odbiorem pełnego E7.
+Gotowe są transport, trwała kolejka, zgoda/wysyłka i jawne ponowienie oraz pobieranie/polling wyniku z podglądem lokalnym. Dostępne jest również świadome anulowanie i zamknięcie anulowanego zlecenia. Dostępny jest trwały lokalny szkic korekt. Zatwierdzenie na serwerze i zapis posiłku pozostają do wykonania. Ten etap nie jest odbiorem pełnego E7.
 
-## Aktualny odbiór0.8.17 — świadome anulowanie analizy
+Aktualny0.8.19 ma osobny [raport atomowego zapisu potwierdzenia](POTWIERDZENIE_POSILKU.md), Room11 i odebrany build. HTTP confirm i jego przycisk pozostają do podłączenia; poniżej zachowano odbiór wcześniejszego edytora0.8.18.
+
+## Aktualny odbiór0.8.18 — trwałe poprawki składników
+
+Kod `6e1eac8128de2a2036878de380c19817c369dbb5`, wersja0.8.18/code29,
+validation1029, Room10 bez migracji. Użytkownik jawnie rozpoczyna korektę
+pobranej propozycji i zapisuje szkic na telefonie. Może zmienić nazwę posiłku,
+nazwy składników, ilość, g/ml oraz kcal i B/T/W na100g albo100ml; dodać lub
+usunąć składnik i odrzucić poprawki po potwierdzeniu. Ostatniego składnika
+nie można usunąć. Szkic ma1–30 pozycji, trwałe meal_id/item_id i powiązanie
+ze źródłowym komponentem propozycji. Własny dodatek jest jawnie oznaczony.
+
+Wartości są liczone przez BigDecimal; przecinek jest dozwolony, brak pozostaje
+null, jawne0 pozostaje0. Nie przyjmujemy liczb ujemnych, wykładnika lub
+przekroczenia granic. Pola żywieniowe są na100 jednostek; zmiana g/ml wymaga
+własnego określenia tych wartości, bez zgadywania gęstości. Niezmieniona
+propozycja AI i jej dopasowania pozostają obok szkicu. Stare długie nazwy
+rozpoznania nie są cicho skracane; zapis do docelowego Meal wymaga limitu200.
+
+Snapshot v3 czyta stare ACK/v1/v2 i przechowuje szkic wraz z wynikiem i
+anulowaniem w istniejącym wierszu Room10. GET i cancel nie gubią poprawek.
+DB-only CAS wymaga zgodnego właściciela, lease, kontekstu i całego poprzedniego
+wiersza; lokalna rewizja chroni przed zapisem ze starego formularza. Niepewne
+anulowanie, terminalne potwierdzenie lub zmiana konta blokują edycję, zachowując
+szkic do odczytu. Otwarty dialog znika po zmianie konta/operacji/rewizji,
+przejściu w tło lub utracie prawa do edycji. Zapisane poprawki przeżywają
+restart, brak obrazu, wygasły token i wspólny Retry-After bez odnowienia lub HTTP.
+
+Przygotowany serializer buduje przyszłe ConfirmRequest z expected_revision,
+stałym meal_id i item_id, prawidłowym nullable payload oraz drafts=[];
+product_id pozostaje null, nutrition_origin=ai_estimate. Niezależny fixture
+sprawdzono normatywnym ai.schema: poprawny payload PASS, trzy mutacje
+(liczbowe wartości odżywcze, pominięte nullable, provenance w sync-v1) odrzucone.
+**Nie podłączono HTTP confirm, zapisu Meal/outbox, provenance E4 ani wyboru
+produktu z katalogu. Szkic nie jest jeszcze wpisem dziennika.** Nie powstają
+automatycznie produkty społecznościowe.
+
+Pełne assemble debug/validation/testAPK **PASS**, **265 JVM debug /280 JVM
+validation, lint0error PASS**. Nowe18 testów core; osobny native focus24/24
+obejmuje18 testów Room,3 sesji i3 Compose. Następnie **245/245 native API35
+PASS**, bez pominięć lub błędów,417.999s instrumentation/422.562s wall,
+przy limicie1800s. Brak aktywnej sieci potwierdzony przed i po. Zainstalowane
+APK odpowiadają hashom. Wszystkie231 rzeczywistych wejść kompilacji porównano
+bitowo przed odbiorem, po buildzie i przy przeniesieniu do niezależnego klonu;
+nie opublikowano zastanych braków plików lub uszkodzeń starego klonu Temp.
+
+| Artefakt0.8.18, kod6e1eac8 | SHA-256 |
+|---|---|
+| Debug/code29 | `e6df50fb3384a875d17d5eb8ff57903153705791bf0b02bfaa7742f00c237a97` |
+| Validation/code1029 | `9be491016507e0fab764cbf7ac218399c829b5dbcc8ecbc5ecadab232043bb56` |
+| Domyślny testAPK | `f10c6b06ed63644e03e4f53d091c4ba5264776c9ff315822ad9ddc29cca304e4` |
+
+Regularny emulator zaktualizowano przez install-r. Faktycznie zainstalowany
+SHA zgodny z debug powyżej; wszystkie24 tabele Room10 identyczne przed,
+po instalacji i po otwarciu aplikacji; FK clean. Prywatne snapshoty i ekran
+pozostają poza Git/OneDrive. Świeża obserwacja potwierdziła właściwy pakiet,
+brak ANR i główne kontrolki; aplikacja otwarta do testów manualnych.
+Oddzielnego kandydata API/Room9 nie aktualizowano.
+
+[Podgląd panelu](../propozycje-ui/analiza-0.8.18/README.md) obejrzano na320dp
+przy czcionce150%. Pełny native mimo poprawnych asercji uchwycił nakładkę ANR
+SystemUI. Diagnostykę zachowano, wybrano obserwowany przycisk Wait i powtórzono
+wyłącznie3testy UI:3/3 PASS. Panel po powtórce jest czytelny bez nakładki.
+Plik nazwany dialogiem ponownie uchwycił panel, więc nie publikujemy go jako
+dowodu wyglądu dialogu. Asercje walidacji i resetu formularza zaliczone;
+wizualny odbiór samego dialogu pozostaje do uzupełnienia.
+
+Rzeczywiste APK/API, Gemini i E7-R: **NOT_RUN**. To oddzielny etap0.8.18,
+nie odbiór pełnego E7. Zdalne CI nowego PR i merge wymagają osobnego sprawdzenia;
+rodzic105 pozostaje bez zmian. Następny etap: utrwalona decyzja confirm,
+bezpieczne ponowienie i uzgodnienie ACK/GET z kanonicznym E4/provenance,
+bez drugiego zapisu posiłku; dalej retencja osieroconych plików.
+
+## Historyczny odbiór0.8.17 — świadome anulowanie analizy
 
 Kod `24526ddab2b4a442b57581f8b3508ffc79a82fd3`, wersja0.8.17/code28, validation1028, Room10. Po jawnym pobraniu stanu można wybrać „Anuluj analizę na serwerze”. Dialog wyjaśnia zachowanie zdjęcia i dziennika oraz to, że anulowanie nie cofa przetwarzania wykonanego już przez dostawcę. Dopiero potwierdzenie utrwala i wysyła jedną decyzję. Zmiana konta, zlecenia lub pokazanej rewizji oraz przejście w tło unieważniają otwarty dialog.
 
@@ -200,3 +273,18 @@ nie jest instalowany nad aktualnym zwykłym0.8.23/code34/Room14. Własny
 odbiór ręcznych posiłków139 i dowody O1-088 są w osobnym zależnym PR139.
 Brak nowego rzeczywistego API/Gemini lub zmian używanego środowiska O3;
 pełny E7/E4/recovery/KO32 pozostaje osobnym odbiorem. Szczegóły O1-089.
+
+
+## O1-090 — integracja trwałych poprawek121,20.10.2026
+
+PR105 scalony jako d27efd7114594d1ca173d950defc61629bf9ff8d po8/8CI39450871756
+dla b6a229c:247debug/262validationJVM i235API35 offline, bez błędów/pominięć.
+Drzewo merge29ff693f zgodne z testowymcfa05f7. PR121 dołącza ten main do
+dokładnego0068232 zwykłym merge, zachowując kod Android/app. Narzędzia/CI,
+backend/infra pochodzą z main. Dwa konflikty tylko dziennika rozwiązano
+z zachowaniem wszystkich127/201 historycznych wystąpień i ich wierszy.
+Ten etap nadal0.8.18/code29/Room10 bez migracji, bez confirm/zapisu Meal.
+Historyczne wyniki powyżej dotyczą dawnych APK; własny nowy Project CI
+tej integracji jest wymagany po retarget istniejącego PR121 na main.
+Starszy APK nie zastępuje zwykłego0.8.23/code34/Room14. O2-046/PR137c5ac5ca
+odczytane, oracle bez zmiany; liveE4/E7/KO32 i środowisko O3 osobno.

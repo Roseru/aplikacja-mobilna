@@ -14,7 +14,7 @@ import pl.roseru.kalorie.session.SessionView
     Card(Modifier.fillMaxWidth().testTag("photo-upload-panel")) {
         Column(Modifier.padding(16.dp),verticalArrangement=Arrangement.spacedBy(8.dp)) {
             Text("Zlecenie analizy",style=MaterialTheme.typography.titleMedium)
-            if(session.photoUploadBusy){LinearProgressIndicator(Modifier.fillMaxWidth());Text(if(session.photoCancelBusy) "Potwierdzanie anulowania…" else if(session.photoReadBusy) "Sprawdzanie wyniku analizy…" else "Przygotowanie lub wysyłanie zdjęcia…")}
+            if(session.photoUploadBusy){LinearProgressIndicator(Modifier.fillMaxWidth());Text(if(session.photoConfirmBusy) "Dodawanie posiłku do dziennika…" else if(session.photoDraftBusy) "Zapisywanie poprawek…" else if(session.photoCancelBusy) "Potwierdzanie anulowania…" else if(session.photoReadBusy) "Sprawdzanie wyniku analizy…" else "Przygotowanie lub wysyłanie zdjęcia…")}
             if(session.photoReadBusy) TextButton(onClick=onStop,modifier=Modifier.testTag("photo-analysis-stop")){Text("Zatrzymaj sprawdzanie")}
             session.photoUploadMessage?.let { Text(it,Modifier.testTag("photo-upload-message")) }
             session.photoUpload?.let { row->

@@ -10,9 +10,34 @@ internal class PhotoAnalysisSnapshotException : IllegalArgumentException("Niepop
  */
 internal class PhotoAnalysisSnapshot private constructor(val serialized:String,
     val receipt:PhotoCreateReceipt,val latest:PhotoAnalysisRead?,private val originalAck:String,
-    private val originalRead:String?=null,val cancellation:PhotoCancellation?=null) {
+    private val originalRead:String?=null,val cancellation:PhotoCancellation?=null,val mealDraft:PhotoMealDraft?=null,val confirmation:PhotoConfirmation?=null) {
 
     val cancelled get()=cancellation?.confirmedRevision!=null || latest?.decision=="cancelled"
+
+    val confirmed get()=confirmation?.confirmed==true || latest?.decision=="confirmed"
+
+    /** Eligibility only. Room must additionally prove a valid GET committed after the rejection. */
+    val canReopenConfirmation get()=!cancelled && !confirmed && latest?.state=="succeeded" && latest.decision=="pending" &&
+        confirmation?.let {it.attempted && it.rejectedCode in setOf("proposal_revision_conflict","photo_catalog_choice_changed") &&
+            (it.rejectedCode!="proposal_revision_conflict" || latest.revision>it.expectedRevision)}==true
+
+    val canEditProposal get()=confirmation==null && !confirmed && !cancelled && latest?.state=="succeeded" && latest.decision=="pending" &&
+        (cancellation==null || (cancellation.rejectedCode=="proposal_revision_conflict" && latest.revision>cancellation.expectedRevision))
+
+    fun withMealDraft(value:PhotoMealDraft,expectedEditRevision:Long):PhotoAnalysisSnapshot = safe {
+        require(canEditProposal)
+        val current=mealDraft
+        require((current?.editRevision?:0)==expectedEditRevision)
+        require(value.editRevision==Math.addExact(expectedEditRevision,1))
+        value.matches(checkNotNull(latest))
+        if(current!=null)require(value.mealId==current.mealId && value.sourceRevision==current.sourceRevision && value.sourceFingerprint==current.sourceFingerprint)
+        else require(value.sourceRevision==latest.revision)
+        rebuild(latest,originalRead,cancellation,value)
+    }
+    fun withoutMealDraft(expectedEditRevision:Long):PhotoAnalysisSnapshot = safe {
+        require(canEditProposal && mealDraft?.editRevision==expectedEditRevision)
+        rebuild(latest,originalRead,cancellation,null)
+    }
 
     /** A repeated POST ACK may never erase an already saved GET or replace the original ACK. */
     fun requireSameReceipt(bytes:ByteArray) = safe {
@@ -26,6 +51,10 @@ internal class PhotoAnalysisSnapshot private constructor(val serialized:String,
         require(bytes.size in 1..PhotoAnalysisReadProtocol.MAX_BYTES)
         val exact=bytes.copyOf()
         val incoming=PhotoAnalysisReadProtocol.read(exact,receipt)
+        confirmation?.takeIf {it.confirmed}?.let { decision->
+            if(incoming.revision<=decision.expectedRevision)return@safe this
+            require(incoming.state=="succeeded" && incoming.decision=="confirmed")
+        }
         cancellation?.confirmedRevision?.let { revision->
             if(incoming.revision<revision)return@safe this
             require(incoming.decision=="cancelled" && incoming.state=="failed" && incoming.errorCode=="analysis_cancelled")
@@ -44,7 +73,7 @@ internal class PhotoAnalysisSnapshot private constructor(val serialized:String,
 
     fun prepareCancellation(key:String,expectedRevision:Long):PhotoAnalysisSnapshot = safe {
         val current=checkNotNull(latest)
-        require(!cancelled && current.decision=="pending" && current.revision==expectedRevision)
+        require(confirmation==null && !cancelled && current.decision=="pending" && current.revision==expectedRevision)
         cancellation?.let { previous->
             require(previous.rejectedCode=="proposal_revision_conflict" && current.revision>previous.expectedRevision && key!=previous.key)
         }
@@ -66,14 +95,41 @@ internal class PhotoAnalysisSnapshot private constructor(val serialized:String,
         require(!cancelled)
         rebuild(latest,originalRead,checkNotNull(cancellation).reject(code))
     }
-    private fun rebuild(read:PhotoAnalysisRead?,wire:String?,cancel:PhotoCancellation?):PhotoAnalysisSnapshot {
-        val json=JSONObject().put("format",if(cancel==null)FORMAT else CANCEL_FORMAT)
+    fun prepareConfirmation(key:String,revision:Long,editRevision:Long):PhotoAnalysisSnapshot = safe {
+        val read=checkNotNull(latest);val draft=checkNotNull(mealDraft)
+        require(canEditProposal && read.revision==revision && draft.editRevision==editRevision)
+        require(key!=cancellation?.key && key!=receipt.analysisId)
+        rebuild(read,originalRead,cancellation,draft,PhotoConfirmation.prepare(key,draft,read))
+    }
+    fun markConfirmationAttempted():PhotoAnalysisSnapshot = safe {
+        val previous=checkNotNull(confirmation)
+        require(!cancelled && (latest?.decision=="pending" || (latest?.decision=="confirmed" && previous.attempted)))
+        rebuild(latest,originalRead,cancellation,mealDraft,previous.markAttempted())
+    }
+    fun withConfirmationReceipt(bytes:ByteArray):PhotoAnalysisSnapshot = safe {
+        require(!cancelled)
+        rebuild(latest,originalRead,cancellation,mealDraft,checkNotNull(confirmation).accept(bytes))
+    }
+    fun rejectConfirmation(code:String):PhotoAnalysisSnapshot = safe {
+        require(!cancelled && confirmation?.confirmed!=true)
+        rebuild(latest,originalRead,cancellation,mealDraft,checkNotNull(confirmation).reject(code))
+    }
+    /** The caller must atomically retain the original frozen decision in its durable history. */
+    fun reopenRejectedConfirmation(revision:Long,editRevision:Long):PhotoAnalysisSnapshot = safe {
+        require(canReopenConfirmation && latest?.revision==revision && mealDraft?.editRevision==editRevision)
+        rebuild(latest,originalRead,cancellation,checkNotNull(mealDraft).reviewAgain(),null)
+    }
+    private fun rebuild(read:PhotoAnalysisRead?,wire:String?,cancel:PhotoCancellation?,draft:PhotoMealDraft?=mealDraft,
+        confirm:PhotoConfirmation?=confirmation):PhotoAnalysisSnapshot {
+        val json=JSONObject().put("format",if(confirm!=null)CONFIRM_FORMAT else if(draft!=null)EDIT_FORMAT else if(cancel==null)FORMAT else CANCEL_FORMAT)
             .put("create",StrictJson.read(originalAck.toByteArray(Charsets.UTF_8)))
             .put("latest",wire?.let {StrictJson.read(it.toByteArray(Charsets.UTF_8))}?:JSONObject.NULL)
-        if(cancel!=null)json.put("cancellation",cancel.journal())
+        if(cancel!=null || draft!=null || confirm!=null)json.put("cancellation",cancel?.journal()?:JSONObject.NULL)
+        if(draft!=null || confirm!=null)json.put("meal_draft",draft?.journal()?:JSONObject.NULL)
+        if(confirm!=null)json.put("confirmation",confirm.journal())
         val encoded=StrictJson.canonical(json)
         require(encoded.toByteArray(Charsets.UTF_8).size<=MAX_STORED_BYTES)
-        return PhotoAnalysisSnapshot(encoded,receipt,read,originalAck,wire,cancel)
+        return PhotoAnalysisSnapshot(encoded,receipt,read,originalAck,wire,cancel,draft,confirm)
     }
 
     override fun toString()="PhotoAnalysisSnapshot(redacted)"
@@ -81,7 +137,9 @@ internal class PhotoAnalysisSnapshot private constructor(val serialized:String,
     companion object {
         private const val FORMAT="photo-analysis-state-v1"
         private const val CANCEL_FORMAT="photo-analysis-state-v2"
-        const val MAX_STORED_BYTES=PhotoAnalysisReadProtocol.MAX_BYTES+65_536+1024
+        private const val EDIT_FORMAT="photo-analysis-state-v3"
+        private const val CONFIRM_FORMAT="photo-analysis-state-v4"
+        const val MAX_STORED_BYTES=PhotoAnalysisReadProtocol.MAX_BYTES+65_536+PhotoMealDraft.MAX_BYTES+PhotoConfirmation.MAX_BODY_BYTES+PhotoConfirmation.MAX_PROVENANCE_BYTES+PhotoConfirmation.MAX_RECEIPT_BYTES+4096
 
         /** Legacy raw ACKs remain readable; they are upgraded only when a GET is committed. */
         fun read(serialized:String,expectedProvider:String):PhotoAnalysisSnapshot = safe {
@@ -94,14 +152,17 @@ internal class PhotoAnalysisSnapshot private constructor(val serialized:String,
                 return@safe PhotoAnalysisSnapshot(serialized,receipt,null,StrictJson.canonical(json))
             }
             val version=json.get("format")
-            require(version==FORMAT || version==CANCEL_FORMAT)
-            require(json.keys().asSequence().toSet()==if(version==FORMAT)setOf("format","create","latest") else setOf("format","create","latest","cancellation"))
+            require(version==FORMAT || version==CANCEL_FORMAT || version==EDIT_FORMAT || version==CONFIRM_FORMAT)
+            require(json.keys().asSequence().toSet()==if(version==FORMAT)setOf("format","create","latest") else if(version==CANCEL_FORMAT)setOf("format","create","latest","cancellation") else if(version==EDIT_FORMAT)setOf("format","create","latest","cancellation","meal_draft") else setOf("format","create","latest","cancellation","meal_draft","confirmation"))
             val ack=StrictJson.canonical(json.getJSONObject("create"))
             val receipt=PhotoAnalysisProtocol.storedCreate(ack.toByteArray(Charsets.UTF_8),expectedProvider)
             val base=PhotoAnalysisSnapshot(serialized,receipt,null,ack)
             val merged=if(json.get("latest")===JSONObject.NULL)base else
                 base.withRead(StrictJson.canonical(json.getJSONObject("latest")).toByteArray(Charsets.UTF_8))
-            val cancel=if(version==CANCEL_FORMAT)PhotoCancellation.restore(json.getJSONObject("cancellation"),receipt.analysisId) else null
+            val cancel=if(version!=FORMAT && json.get("cancellation")!==JSONObject.NULL)PhotoCancellation.restore(json.getJSONObject("cancellation"),receipt.analysisId) else null
+            if(version==CANCEL_FORMAT)require(cancel!=null)
+            val draft=if(version==EDIT_FORMAT || version==CONFIRM_FORMAT)PhotoMealDraft.restore(json.getJSONObject("meal_draft")) else null
+            draft?.matches(checkNotNull(merged.latest))
             if(cancel!=null) {
                 val latest=checkNotNull(merged.latest)
                 require(cancel.expectedRevision>=receipt.revision && cancel.expectedRevision<=latest.revision)
@@ -110,9 +171,17 @@ internal class PhotoAnalysisSnapshot private constructor(val serialized:String,
                     if(latest.revision>=cancel.confirmedRevision)require(latest.decision=="cancelled")
                 }
             }
-            PhotoAnalysisSnapshot(serialized,receipt,merged.latest,ack,merged.originalRead,cancel)
+            val confirmation=if(version==CONFIRM_FORMAT)PhotoConfirmation.restore(json.getJSONObject("confirmation"),checkNotNull(draft),checkNotNull(merged.latest)) else null
+            if(confirmation!=null) {
+                require(cancel==null || cancel.rejectedCode=="proposal_revision_conflict")
+                require(!cancelledBy(cancel))
+                if(confirmation.confirmed)require(merged.latest?.decision!="cancelled")
+                require(confirmation.key!=cancel?.key)
+            }
+            PhotoAnalysisSnapshot(serialized,receipt,merged.latest,ack,merged.originalRead,cancel,draft,confirmation)
         }
 
+        private fun cancelledBy(value:PhotoCancellation?)=value?.confirmedRevision!=null
         private fun canonical(bytes:ByteArray)=StrictJson.canonical(StrictJson.read(bytes))
         private inline fun <T> safe(block:()->T):T = try {block()} catch(_:Exception) {
             // JSON/numeric exceptions can contain private data. Do not retain their causes.
