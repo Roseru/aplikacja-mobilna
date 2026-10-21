@@ -71,8 +71,12 @@ internal class CanonicalMealEditor(private val db:CalorieDatabase,private val co
         val operationId=UUID.randomUUID().toString()
         val payload=if(deleted)null else wire.canonical
         val operation=if(status=="pending")MealWire.operation(operationId,id,epoch,base,payload,schema) else null
-        val meal=CanonicalMealRows.meal(id,lease.storageScope,wire,wireContext,current.meal.serverRevision,Math.addExact(current.meal.localRevision,1),deleted)
-        val items=if(deleted)current.items else CanonicalMealRows.items(id,wire)
+        val meal=current.meal.copy(localRevision=Math.addExact(current.meal.localRevision,1),deleted=deleted,wirePayload=wire.canonical)
+        val items=if(deleted)current.items else CanonicalMealRows.items(id,wire).map { fresh ->
+            // Editing a wire snapshot must retain local private-product/source associations.
+            val original=current.items.single {it.id==fresh.id}
+            original.copy(grams=fresh.grams,wirePayload=fresh.wirePayload)
+        }
         val outbox=OutboxEntity(operationId,lease.storageScope,"meal",id,if(deleted)"delete" else "upsert",base,payload?:"null",Instant.now().toString(),status,"sync-v1",operation,wireContext)
         db.withTransaction {
             owners.requireCurrent(lease)

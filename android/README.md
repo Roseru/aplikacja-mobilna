@@ -1,5 +1,22 @@
 # Android — Racje i kalorie
 
+Gałąź `codex/android-integracja-pr139` zawiera rzeczywisty main167152a po
+scaleniu priorytetowego137, z zachowaniem O2-049. Istniejący PR139 przechodzi na main i wymaga własnego pełnego CI.
+Produkcja139/0.8.23/Room14 bez zmiany; lokalny odbiór330/345JVM i328native
+jest historyczny. Zwykły emulator zachowuje nowszy APK0.8.24/code35 z PR140.
+
+Historyczny wstęp139 (pełny późniejszy odbiór w POSILEK_RECZNY_SYNC.md):
+
+Na niezależnej gałęzi `codex/android-posilek-reczny-sync` przygotowano
+[nowe ręczne posiłki w sync-v1](POSILEK_RECZNY_SYNC.md): prywatny produkt
+pozostaje lokalny, a jego spożycie po bootstrapie ma osobną operację Meal.
+18 JVM PASS; repozytorium i8 testów Room skompilowane, wykonanie urządzenia
+i nowy APK jeszcze NOT_RUN. Starsze wpisy/katalog/racje są osobno.
+Kod [drivera E4](https://github.com/Roseru/aplikacja-mobilna/pull/138) jest
+w oddzielnym PR; nie jest zależnością kodu tego etapu ani odebranym testem live.
+
+Stan rodzica129 przy aktualizacji zależności:
+
 Gałąź `codex/android-integracja-pr129` zawiera aktualny main e651fea po scaleniu
 PR122. Istniejący PR129 przechodzi na main i wymaga własnego pełnego CI.
 Zwykły emulator zachowuje późniejszy APK0.8.24/code35/Room14 z PR140.

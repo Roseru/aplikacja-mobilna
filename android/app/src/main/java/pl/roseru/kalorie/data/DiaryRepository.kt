@@ -9,6 +9,7 @@ import org.json.JSONArray
 import org.json.JSONObject
 import pl.roseru.kalorie.core.*
 import pl.roseru.kalorie.core.catalog.*
+import pl.roseru.kalorie.core.sync.*
 import java.math.BigDecimal
 import java.time.*
 import java.util.UUID
@@ -87,9 +88,42 @@ class DiaryRepository(private val db: CalorieDatabase, private val context: Cont
         val item = MealItemEntity(UUID.randomUUID().toString(), id, product.id, product.name, grams,
             product.kcal, product.protein, product.fat, product.carbs,
             snapshotJson = snapshot(product, exactAmount, product.unit))
+        if (saveCanonicalManualMeal(meal, item, product, exactAmount)) return@ownerTransaction
         dao.insertMeal(meal)
         dao.insertItem(item)
         enqueue(meal, listOf(item), "create")
+    }
+
+    /** Called inside ownerTransaction: diary row, exact item and operation commit together. */
+    private suspend fun saveCanonicalManualMeal(meal: MealEntity, item: MealItemEntity,
+        product: ProductEntity, amount: String): Boolean {
+        // Private manual products have no server catalogue identity. Guest/import and catalogue
+        // provenance need their own adapters; do not silently recast them as manual data.
+        if (product.ownerScope != owner || product.catalogJson != null || db.ownerDao().byScope(owner)?.kind != "account") return false
+        val binding = db.bootstrapDao().binding(owner) ?: return false
+        if (binding.requiresRecovery) return false
+        val schema = CanonicalMealRows.schema(context)
+        val operationId = UUID.randomUUID().toString()
+        val prepared = try {
+            fun number(value: Double?) = value?.let { BigDecimal.valueOf(it) }
+            val wire = ManualMealWire.create(product.name, item.id, amount, product.unit,
+                ExactNutrition(number(product.kcal), number(product.protein), number(product.fat), number(product.carbs)),
+                meal.occurredAt, meal.zoneId, meal.mealType.lowercase(java.util.Locale.ROOT), schema)
+            if (wire.json().getString("local_date") != meal.localDate) return false
+            wire to MealWire.operation(operationId, meal.id, binding.syncEpoch, null, wire.canonical, schema)
+        } catch (_: SyncWireException) {
+            // Local inputs can have 12 quantity decimals; wire-v1 allows six. Preserve the
+            // existing local format and precision instead of rounding or losing the entry.
+            return false
+        }
+        val (wire, operation) = prepared
+        val wireContext = CanonicalMealRows.context(binding)
+        val exactItem = CanonicalMealRows.items(meal.id, wire).single()
+        dao.insertMeal(CanonicalMealRows.meal(meal.id, owner, wire, wireContext))
+        dao.insertItem(item.copy(grams = exactItem.grams, wirePayload = exactItem.wirePayload))
+        dao.enqueue(OutboxEntity(operationId, owner, "meal", meal.id, "upsert", null, wire.canonical,
+            Instant.now().toString(), "pending", "sync-v1", operation, wireContext))
+        return true
     }
 
     suspend fun edit(id:String,grams:Double) {
