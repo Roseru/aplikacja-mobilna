@@ -1,8 +1,8 @@
 # Android — Racje i kalorie
 
 Lokalny `codex/android-kandydat-e4` łączy ręczny producent Meal z PR139
-i narzędzie przygotowania/hold/replay z PR138. To przygotowanie wspólnego
-kandydata, jeszcze bez jego własnej kwalifikacji i konfiguracji API.
+i narzędzie przygotowania/hold/replay z PR138. Własny odbiór offline i dokładne SHA opisuje
+[KANDYDAT_E4.md](KANDYDAT_E4.md); konfiguracja API i próba live pozostają osobno.
 Docelowo istniejący PR138 ma zależeć od dokładnego źródła139; gałąź139
 i jej odebrany APK pozostają zachowane. Nowy PR z duplikatem zmian nie powstaje.
 
