@@ -5608,3 +5608,5 @@ Archiwalne wiersze stanu PR140 sprzed aktualizacji rodzica21.10; aktualny stan z
   APK0.8.24, prywatny dziennik i API5558 zachowane. Bez restartu PC, nowych
   wywołań API/Gemini lub zmian środowiska O3. E4 i pozostałe odbiory osobne.
   Następny krok O1: dokończyć kwalifikację testów; O2/O3: informacyjnie.
+
+- Publikacja checkpointu: [PR141](https://github.com/Roseru/aplikacja-mobilna/pull/141), DRAFT, head d3d5c1f; E0 PASS11schematow/98valid/35invalid/18scenariuszy/799linkow i diff-check PASS. Zdalny CI nowego PR nie zostal jeszcze odebrany.
