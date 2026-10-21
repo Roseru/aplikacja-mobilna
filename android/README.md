@@ -1,7 +1,7 @@
 # Android — Racje i kalorie
 
-Gałąź `codex/android-integracja-pr129` dołącza dokładny rodzic122/33d458b
-w istniejącym stosie PR. Nie kierujemy129 na main przed odbiorem i scaleniem122.
+Gałąź `codex/android-integracja-pr129` zawiera aktualny main e651fea po scaleniu
+PR122. Istniejący PR129 przechodzi na main i wymaga własnego pełnego CI.
 Zwykły emulator zachowuje późniejszy APK0.8.24/code35/Room14 z PR140.
 
 Poniżej historyczny odbiór źródła129/9a3a9a9; nie jest wynikiem nowego merge:

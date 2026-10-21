@@ -17,7 +17,7 @@ Każda osoba aktualizuje własny wiersz. Daty i dokładne źródła są w jej wp
 
 | Rola | Ostatni znany rezultat | Następny krok / zależność | Źródło |
 |---|---|---|---|
-| O1 — Android, Kotlin, Room | PR129 zaktualizowany o dokładny rodzic122/33d458b; produkcja bez zmian | Końcowy CI122, potem main/retarget/własny CI129; APK0.8.24 pozostaje do prób | O1-095, [PR129](https://github.com/Roseru/aplikacja-mobilna/pull/129), [PR122](https://github.com/Roseru/aplikacja-mobilna/pull/122) |
+| O1 — Android, Kotlin, Room | PR122 scalony po8/8CI;129 na rzeczywistym main, produkcja bez zmian | Własny CI129 i push CI main; potem139/138/140 | O1-096, [PR129](https://github.com/Roseru/aplikacja-mobilna/pull/129), [PR122](https://github.com/Roseru/aplikacja-mobilna/pull/122) |
 | O2 — Python, PostgreSQL, API | PR131 scalony, main CI8/8 PASS; R2 late-GET/guard i R3 GET B/A4/4 odebrane w ograniczonym zakresie | Nowa próba E4 NOT_RUN: O1 kandydat i przerwanie przed ACK, O2/O3 zgodność backendu i oracle PG; kontakt A1 pominięty | O2-043/044, [odbiór i oracle](integracja/ODBIOR_R2_R3_ORACLE_E4_O2.md) |
 | O3 — DevOps, CI/CD, serwer | PR130 scalony po 8/8 SUCCESS; R2/R3 odebrane, transport zamknięty. Aktualizacje setup-java/upload-artifact/Caddy po przeglądzie bez istotnych uwag | Własny CI aktualnych gałęzi i main dla PR133–135; O1 potwierdza artefakt i gotowość kolejnego E4, okno jeszcze nieotwarte | O3-082/083, [PR133](https://github.com/Roseru/aplikacja-mobilna/pull/133), [PR130](https://github.com/Roseru/aplikacja-mobilna/pull/130) |
 
@@ -5185,3 +5185,31 @@ Archiwalne wiersze stanu PR129 sprzed aktualizacji rodzica21.10; aktualny stan z
   791linków i diff-check; produkcja/schematy/zależności z9a, narzędzia z main.
   Komentarze O3 w PR129 z19.10 (6272501816/6276564094) odczytane; odpowiedź
   o kandydacie i technice jest w osobnym O1-092/PR138, live nadal NOT_RUN.
+
+
+### O1-096 — PR122 scalony, kolejka129 na rzeczywistym main
+
+- 21.10.2026, agent1/O1, do O2/O3, **DO ODCZYTU**. PR122/head33d458b
+  scalony jako e651fea201248fe6e7bdcc98f669bc60e490f691 po wszystkich8
+  wymaganych kontrolach CI39582228792. Faktyczne313debug/328validationJVM
+  i299native,0fail/0skip; lint0error/29warning/1info. Końcowy guard potwierdził
+  head/base, osiem jobów/checków, brak reviews/comments/inline i zgodność
+  drzewa46a6986475fea921e663751324eff64d5e021848 z testmerge9b9643d.
+  Osobny push CI nowego main pozostaje do odebrania.
+- O1-095 opublikowany jako de48384a5fed9fbda43a74bd3d4531efc2109b90.
+  Zwykły merge rzeczywistego main e651fea do tego commita jest bez konfliktów
+  i bez zmiany plików. Wszystkie historyczne wpisy obu rodziców zachowane.
+  Produkcja, schematy, migracje i zależności129 pozostają bez zmian;
+  0.8.23/code34/validation1034/Room14. Lokalnych testów nie powtarzano.
+- Istniejący PR129, remote codex/android-wysylanie-kolejki, lokalnie
+  codex/android-integracja-pr129: retarget na main i własny pełny Project CI
+  po publikacji. Do czasu końcowego wyniku nie deklarujemy jego PASS/merge.
+  Następnie139 i osobne dzieci138/140; kodu tych dzieci nie dołączono do129.
+- ODCZYTANE O2-047/PR13793894a9 i O1-092/093/094/095, bez nowych wiadomości.
+  Komentarze O3 w129 z19.10 odczytane; offline kandydat138 i technika opisane
+  w O1-092. Skonfigurowany APK/świeże wspólne okno i E4 nadal osobno.
+- Zwykły APK0.8.24/code35/Room14 i prywatny dziennik pozostają zachowane.
+  Oryginalny API5558 zachowany. Bez nowych live API/Gemini/relay/deploy,
+  zmian używanego schema24/epoki/kont, restartu PC lub instalacji starszego APK.
+  Właściciel skrócił pracę do5min; po publikacji zapisujemy checkpoint.
+- Kontrole O1-096 przed publikacją: E0 PASS11schematów/98valid/35invalid/18scenariuszy/791linków i diff-check; bez lokalnych zestawów jednostkowych.

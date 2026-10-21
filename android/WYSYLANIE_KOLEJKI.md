@@ -129,3 +129,15 @@ Zwykły emulator zachowuje nowszy APK0.8.24/code35/Room14 z PR140.
 Źródło129 nie zawiera ręcznego producenta139, drivera138 lub katalogowego140.
 Brak instalacji starszego APK, live API/Gemini/relay/deploy, zmian używanego
 schema24/epoki/kont lub restartu PC. Pełne E4/E7-R/recovery/KO32 osobno.
+
+
+## O1-096 — integracja rzeczywistego main po scaleniu122
+
+21.10.2026: PR122 scalony jako e651fea po8/8CI39582228792 dla33d458b:
+313/328JVM i299native,0fail/0skip. Rzeczywiste drzewo identyczne z testmerge.
+Zwykły merge e651fea do129/de48384 bez konfliktów i bez zmiany plików.
+Produkcja/migracje/zależności bez zmian;0.8.23/code34/Room14. Jedynie
+dokumentacja aktualizuje odbiór i zależność. Istniejący PR129 kierujemy
+na main i oddajemy do własnego pełnego CI; dotychczasowe wyniki129 są
+historyczne, lokalnych jednostkowych nie powtarzano. Push CI nowego main
+oraz końcowy CI129 pozostają do odebrania. E4/API i dzieci138/139/140 osobno.
