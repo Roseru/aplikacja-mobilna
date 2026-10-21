@@ -18,7 +18,6 @@ from calorie_app.main import create_app
 from calorie_app.modules.catalog.export import publish_package
 from calorie_app.modules.catalog.service import import_catalog
 from calorie_app.modules.diary.repository import day_for_date
-from calorie_app.modules.identity.deletion import begin
 from calorie_app.modules.identity.service import bootstrap
 from calorie_app.modules.profiles.schemas import ConsentInput
 from calorie_app.modules.profiles.service import put_consents
@@ -26,6 +25,7 @@ from calorie_app.modules.sync.models import RecoveryMapping
 from calorie_app.modules.sync.router import execute_one, preflight
 from calorie_app.modules.sync.schemas import preflight_structure
 from calorie_app.modules.sync.snapshots import pull
+from tests.support.deletion_regression import begin
 
 pytestmark = pytest.mark.integration
 ROOT = Path(__file__).resolve().parents[3]
@@ -351,8 +351,11 @@ def _assert_new_acl(connection):
                     assert actual is expected, (role, table, column, privilege)
 
 
-def test_e4_entire_rowsets_survive_e5_upgrade_downgrade_reupgrade(database, tmp_path):
-    engine, migrate, url = database
+def test_e4_entire_rowsets_survive_e5_upgrade_downgrade_reupgrade(
+    historical_database, tmp_path, monkeypatch
+):
+    monkeypatch.setattr("calorie_app.health.EXPECTED_REVISION", "0024_e9_history_graph")
+    engine, migrate, url = historical_database
     runtime = create_engine(
         url, hide_parameters=True, connect_args={"options": "-c role=calorie_app_api"}
     )
@@ -438,7 +441,7 @@ def test_e4_entire_rowsets_survive_e5_upgrade_downgrade_reupgrade(database, tmp_
     finally:
         runtime.dispose()
         migrate("upgrade", "head")
-        # The database fixture already refuses non-*_test and non-PG17 targets.
+        # The historical_database fixture already refuses non-*_test and non-PG17 targets.
         # Clean only this disposable graph; retain its installation epoch.
         with engine.begin() as connection:
             connection.execute(

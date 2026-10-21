@@ -27,6 +27,21 @@ def apply_migrations(connection):
         target_metadata=target_metadata,
         version_table_schema="app",
         include_schemas=True,
+        # These private tables are defined/changed exclusively by versioned SQL.
+        include_object=lambda obj, name, kind, reflected, compare_to: (
+            not (
+                kind == "table"
+                and name
+                in {
+                    "deletion_ledger_source",
+                    "deletion_ledger_events",
+                    "deletion_ledger_operations",
+                    "deletion_ledger_receipts",
+                    "deletion_ledger_restore_receipts",
+                    "_ledger_account_context",
+                }
+            )
+        ),
     )
     with context.begin_transaction():
         connection.exec_driver_sql("CREATE SCHEMA IF NOT EXISTS app")

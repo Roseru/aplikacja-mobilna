@@ -25,6 +25,7 @@ BASE_ROLES = (
     "calorie_app_ai_worker",
     "calorie_app_motivation_worker",
     "calorie_app_deletion_operator",
+    "calorie_app_deletion_exporter",
     "calorie_app_nemesis_worker",
     "keycloak",
     "e8_3_nemesis_worker_login",

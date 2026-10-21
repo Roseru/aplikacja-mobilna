@@ -21,17 +21,19 @@ from calorie_app.integrations.keycloak.admin import (
 
 
 def status(connection, operation_id: UUID) -> dict:
-    result = (
-        connection.execute(
-            text("SELECT * FROM app.account_deletion_jobs WHERE operation_id=:operation"),
-            {"operation": operation_id},
-        )
-        .mappings()
-        .one_or_none()
+    from datetime import datetime
+
+    result = connection.scalar(
+        text("SELECT app.ledger_status(:operation)"), {"operation": operation_id}
     )
     if result is None:
         raise ValueError("Unknown deletion operation")
-    return dict(result)
+    for key in ("created_at", "identity_confirmed_at", "block_until", "purged_at"):
+        if result[key] is not None:
+            result[key] = datetime.fromisoformat(result[key])
+    for key in ("operation_id", "account_id"):
+        result[key] = UUID(result[key])
+    return result
 
 
 def begin(connection, account_id: UUID, operation_id: UUID, expected_generation: int) -> dict:
@@ -42,37 +44,87 @@ def begin(connection, account_id: UUID, operation_id: UUID, expected_generation:
     return status(connection, operation_id)
 
 
-def resume(engine, operation_id: UUID, adapter, *, barrier=None) -> dict:
-    # Reading/committing the target is separate from its provider call; the
-    # subject and realm are durable, immutable job attributes, not CLI input.
+def resume(engine, operation_id: UUID, adapter, *, barrier=None, delivery=None) -> dict:
+    def emit(stage):
+        if barrier:
+            barrier(stage)
+
+    def deliver():
+        if delivery is not None:
+            delivery()
+
+    deliver()
     with engine.begin() as connection:
         job = status(connection, operation_id)
-    if job["purged_at"] is not None:
+    if job["legacy_unknown"]:
+        raise ValueError("Legacy deletion requires reconciliation")
+    if job["ledger_complete"]:
         return job
     if job["identity_confirmed_at"] is None:
-        adapter.delete_and_confirm(job["issuer"], job["subject"])
-        if barrier:
-            barrier("provider_confirmed")
+        if job["provider_result"] != "confirmed":
+            with engine.begin() as connection:
+                token = connection.scalar(
+                    text("SELECT app.ledger_prepare_provider(:operation)"),
+                    {"operation": operation_id},
+                )
+            emit("provider_intent_committed")
+            deliver()
+            with engine.begin() as connection:
+                target = connection.scalar(
+                    text("SELECT app.ledger_provider_target(:operation,:token)"),
+                    {"operation": operation_id, "token": token},
+                )
+            # Target and authorization commit precede network. No transaction is open.
+            try:
+                adapter.delete_and_confirm(target["issuer"], target["subject"])
+            except Exception:
+                with engine.begin() as connection:
+                    connection.execute(
+                        text("SELECT app.ledger_provider_result(:operation,:token,'uncertain')"),
+                        {"operation": operation_id, "token": token},
+                    )
+                deliver()
+                raise
+            emit("provider_confirmed")
+            with engine.begin() as connection:
+                connection.execute(
+                    text("SELECT app.ledger_provider_result(:operation,:token,'confirmed')"),
+                    {"operation": operation_id, "token": token},
+                )
+            emit("provider_result_committed")
+            deliver()
         with engine.begin() as connection:
             connection.execute(
-                text("SELECT app.confirm_account_deletion(:operation)"),
-                {"operation": operation_id},
+                text("SELECT app.confirm_account_deletion(:operation)"), {"operation": operation_id}
             )
-        if barrier:
-            barrier("confirmation_committed")
+        emit("confirmation_committed")
+    deliver()
+    with engine.begin() as connection:
+        connection.execute(
+            text("SELECT app.ledger_prepare_purge(:operation)"), {"operation": operation_id}
+        )
+    emit("purge_intent_committed")
+    deliver()
     with engine.begin() as connection:
         connection.execute(
             text("SELECT app.purge_deleted_account(:operation)"), {"operation": operation_id}
         )
-    if barrier:
-        barrier("purge_committed")
+    emit("purge_committed")
+    deliver()
     with engine.begin() as connection:
-        return status(connection, operation_id)
+        job = status(connection, operation_id)
+    if not job["ledger_complete"]:
+        raise ValueError("Purge committed locally; durable external ACK pending")
+    return job
 
 
 def public_status(job):
     return {
-        key: str(job[key]) if job[key] is not None else None
+        key: job[key]
+        if key in {"ledger_version", "legacy_unknown", "ledger_complete"}
+        else str(job[key])
+        if job[key] is not None
+        else None
         for key in (
             "operation_id",
             "account_id",
@@ -82,6 +134,10 @@ def public_status(job):
             "identity_confirmed_at",
             "block_until",
             "purged_at",
+            "ledger_version",
+            "legacy_unknown",
+            "ledger_complete",
+            "provider_result",
         )
     }
 

@@ -23,9 +23,9 @@ from calorie_app.modules.diary.service import (
     save_product_draft,
     save_weight,
 )
-from calorie_app.modules.identity.service import begin_deleting
 from calorie_app.modules.profiles.schemas import GoalPayload
 from calorie_app.modules.profiles.service import create_goal
+from tests.support.deletion_regression import begin_deleting
 
 pytestmark = pytest.mark.integration
 EXAMPLES = Path(__file__).resolve().parents[3] / "contracts/examples/valid"

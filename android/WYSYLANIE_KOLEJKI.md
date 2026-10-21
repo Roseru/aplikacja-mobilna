@@ -101,3 +101,53 @@ Nie jest to pełne E4, konwersja historycznych typów, automatyczne wysyłanie
 WorkManager, pełne recovery/retencja ani rzeczywisty odbiór APK/API/KO32.
 Nie zmienia się protokół lub używana instalacja serwera. Nie wywołujemy
 Gemini, nie otwieramy relay i nie podmieniamy osobnego kandydata API.
+
+
+## O1-095 — aktualizacja zależności129 o rodzic122,21.10.2026
+
+Zwykły merge dokładnego9a3a9a9c0cd03817f95cf6f504237288c8998d0c
+z rodzicem122/33d458b9ef6d83fb79797de0ee2cb71b6734adbe.
+Produkcja, schematy, migracje i zależności aplikacji identyczne z9a3a9a9;
+etap0.8.23/code34/validation1034/Room14. Jedyny diff Android/app to3
+oczekiwania istniejącego testu observera, odziedziczone z rodzica122;
+wynikowy plik testu identyczny z opublikowanym b15d249. Predykaty,10s limit
+i asercje bez zmian. Lokalnych zestawów jednostkowych nie uruchamiano.
+
+Tools/CI/backend/infra z przyjętego main6069dc7. Zachowano wszystkie139/210
+historycznych wystąpień dziennika i ich niepuste wiersze, także powtórzone017;
+starsza tabela w archiwum, aktualne O2/O3 z rodzica. README zachowuje opis
+wcześniejszego kandydata jako historyczny, bez przypisywania jego wyników
+nowemu merge. Historyczne322/337JVM i320native dotyczą wcześniejszego APK.
+
+PR129 nadal kierujemy na codex/android-potwierdzenie-posilku/PR122, który
+przy tej aktualizacji oczekuje na końcowy CI39582228792. Nie scalamy dziecka
+do rodzica. Dopiero po scaleniu122 do main: zwykła aktualizacja nowego main,
+retarget istniejącego129 i własny pełny CI nowego head/base. To przygotowanie
+zależności, nie potwierdzenie nowego CI ani rzeczywistego E4.
+
+Zwykły emulator zachowuje nowszy APK0.8.24/code35/Room14 z PR140.
+Źródło129 nie zawiera ręcznego producenta139, drivera138 lub katalogowego140.
+Brak instalacji starszego APK, live API/Gemini/relay/deploy, zmian używanego
+schema24/epoki/kont lub restartu PC. Pełne E4/E7-R/recovery/KO32 osobno.
+
+
+## O1-096 — integracja rzeczywistego main po scaleniu122
+
+21.10.2026: PR122 scalony jako e651fea po8/8CI39582228792 dla33d458b:
+313/328JVM i299native,0fail/0skip. Rzeczywiste drzewo identyczne z testmerge.
+Zwykły merge e651fea do129/de48384 bez konfliktów i bez zmiany plików.
+Produkcja/migracje/zależności bez zmian;0.8.23/code34/Room14. Jedynie
+dokumentacja aktualizuje odbiór i zależność. Istniejący PR129 kierujemy
+na main i oddajemy do własnego pełnego CI; dotychczasowe wyniki129 są
+historyczne, lokalnych jednostkowych nie powtarzano. Push CI nowego main
+oraz końcowy CI129 pozostają do odebrania. E4/API i dzieci138/139/140 osobno.
+
+
+## O1-097 — własny CI kolejki129
+
+Po wznowieniu21.10 odebrano osobny push CI39590242229/main e651fea: wszystkie8
+jobów SUCCESS. Integracja129/12f3646 jest na main jako baza PR, bez kolejnej
+zmiany produkcji/migracji. Istniejący PR129 oznaczono gotowy. Wpis O1-097
+uzupełnia odbiór i daje synchronize na prawidłowej bazie; własny Project CI
+tego źródła jest jeszcze PENDING. Lokalnych jednostkowych nie powtarzano.
+Zależny139 będzie aktualizowany osobno; końcowy odbiór E4/API pozostaje otwarty.

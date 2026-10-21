@@ -89,3 +89,21 @@ Odczyt C1 i kill muszą zmieścić się w pozostałym czasie, inaczej próba NOT
 Bez restartu PC, wipe/clear/uninstall, relay/API/Gemini/deploy lub zmiany
 schema24/epoki/kont. **Live prepare/hold/replay/kill/PG C0C1C2, pełny E4,
 E7-R/recovery/KO32 NOT_RUN**. Import, legacy i WorkManager osobno.
+
+
+## O1-100 — aktualizacja rodzica139,21.10.2026
+
+Zwykły merge f7cf71e i dokładnego139/afb6a0a. Cały Android/app i nadrzędne
+wejścia Gradle/settings/properties/wrapper identyczne z f7cf71e; brak nowej
+kwalifikacji APK lub runtime. Dokładny source APK nadal d3f6dba, istniejące
+cztery SHA i pakiet nie zostały zmienione. Lokalnych jednostkowych/buildów
+nie powtarzano. Narzędzia/CI/backend/infra z main e651fea. README i dziennik
+rozstrzygnięto zachowując wszystkie145/224 historyczne wystąpienia i wiersze.
+
+O2-048/eea45ae odczytane: źródłowa zgodność badanego zakresu PASS, runtime
+PARTIAL. Nowy skonfigurowany validation/opt-in APK powstanie dopiero po
+aktualnych wejściach obrazu/schema/projekcji, issuer/API/CA i sesji od O3.
+owner_id PG musi odpowiadać binding.accountId, nie lokalnemu storageScope.
+PR138 nadal draft na139; własny pełny CI po integracji rodziców wymagany.
+Świeże okno i realny E4/C0C1C2/kill/replay pozostają NOT_RUN. Brak nowego
+API/Gemini/relay/deploy lub zmian używanej instalacji i prywatnego dziennika.

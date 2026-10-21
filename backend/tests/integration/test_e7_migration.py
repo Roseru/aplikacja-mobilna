@@ -15,7 +15,13 @@ from test_e7_runtime import e7 as e7_fixture
 from calorie_app.modules.catalog.community.repository import lock_catalog
 
 pytestmark = pytest.mark.integration
-e7 = e7_fixture
+
+
+@pytest.fixture
+def e7(historical_database, tmp_path):
+    yield from e7_fixture.__wrapped__(historical_database, tmp_path)
+
+
 E7_REVISION = "0015_e7_ai"
 
 
@@ -58,9 +64,9 @@ def graph(engine, names=None):
         }
 
 
-def test_e7_empty_roundtrip_preserves_entire_filled_e4_e6_graph(e7, database, tmp_path):
-    admin, migrate, _ = database
-    with e7_baseline(database):
+def test_e7_empty_roundtrip_preserves_entire_filled_e4_e6_graph(e7, historical_database, tmp_path):
+    admin, migrate, _ = historical_database
+    with e7_baseline(historical_database):
         migrate("downgrade", "0014_catalog_search")
         _seed_e4(admin, tmp_path / "catalogue-artifacts")
         with Session(admin) as session, session.begin():
@@ -95,9 +101,11 @@ def test_e7_empty_roundtrip_preserves_entire_filled_e4_e6_graph(e7, database, tm
 
 
 @pytest.mark.parametrize("artifact", ["photo", "cleanup_intent", "admission", "energy_admission"])
-def test_e7_durable_evidence_refuses_before_ddl_with_exact_rowsets(e7, database, artifact):
-    admin, migrate, _ = database
-    with e7_baseline(database):
+def test_e7_durable_evidence_refuses_before_ddl_with_exact_rowsets(
+    e7, historical_database, artifact
+):
+    admin, migrate, _ = historical_database
+    with e7_baseline(historical_database):
         owner = UUID(e7["boots"][0]["account_id"])
         if artifact == "photo":
             create(e7)
@@ -135,9 +143,11 @@ def test_e7_durable_evidence_refuses_before_ddl_with_exact_rowsets(e7, database,
 
 @pytest.mark.parametrize("privilege", ["maintain", "definer_execute"])
 @pytest.mark.parametrize("grantee", ["calorie_app_ai_worker", "PUBLIC"])
-def test_hostile_effective_ai_acl_refuses_upgrade_atomically(e7, database, privilege, grantee):
-    admin, migrate, _ = database
-    with e7_baseline(database):
+def test_hostile_effective_ai_acl_refuses_upgrade_atomically(
+    e7, historical_database, privilege, grantee
+):
+    admin, migrate, _ = historical_database
+    with e7_baseline(historical_database):
         migrate("downgrade", "0014_catalog_search")
         target = (
             "MAINTAIN ON TABLE app.meals"

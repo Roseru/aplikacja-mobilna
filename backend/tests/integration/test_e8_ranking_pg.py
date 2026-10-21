@@ -13,6 +13,7 @@ from calorie_app.main import create_app
 from calorie_app.modules.identity.service import bootstrap
 from calorie_app.modules.profiles.schemas import ProfilePayload
 from calorie_app.modules.profiles.service import save_profile
+from tests.support.deletion_regression import begin as begin_deletion
 
 pytestmark = pytest.mark.integration
 
@@ -162,7 +163,10 @@ def test_each_live_page_filters_current_publication(ranking_state, mutation):
                 "WHERE owner_id=:owner"
             ),
         }[mutation]
-        connection.execute(text(sql), {"owner": owners["b"], "epoch": uuid4()})
+        if mutation == "deleting":
+            begin_deletion(connection, owners["b"], uuid4(), 1)
+        else:
+            connection.execute(text(sql), {"owner": owners["b"], "epoch": uuid4()})
     second = get(client, limit=1, page_token=first["next_page_token"])
     assert second.status_code == 200, second.text
     assert [item["pseudonym"] for item in second.json()["items"]] == ["C"]
@@ -215,7 +219,10 @@ def test_cursor_ownership_limit_generation_epoch_ttl_and_replay(ranking_state):
         assert get(client, who, limit=limit, page_token=token).status_code == 410
     with engine.begin() as connection:
         connection.execute(
-            text("UPDATE app.user_accounts SET generation=generation+1 WHERE id=:owner"),
+            # Deliberately stale cursor context; account lifecycle is protected.
+            text(
+                "UPDATE app.ranking_sessions SET generation=generation+1 WHERE requester_id=:owner"
+            ),
             {"owner": owners["a"]},
         )
     assert get(client, limit=1, page_token=token).status_code == 410
