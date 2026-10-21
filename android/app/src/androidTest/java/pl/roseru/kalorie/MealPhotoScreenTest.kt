@@ -58,7 +58,13 @@ class MealPhotoScreenTest {
             compose.onNodeWithTag("photo-content").performScrollToNode(hasTestTag("photo-preview"))
             compose.onNodeWithTag("photo-preview").assertIsDisplayed()
             compose.activityRule.scenario.recreate()
+            compose.waitUntil(15_000) { compose.onAllNodesWithTag("photo-content").fetchSemanticsNodes().isNotEmpty() }
+            // LazyColumn can restore before its asynchronous rows are laid out. Reveal the
+            // original row without clicking its toggle: the selected preview must survive.
+            compose.onNodeWithTag("photo-content").performScrollToNode(hasTestTag("photo-preview-${row.id}"))
             compose.waitUntil(15_000) { compose.onAllNodesWithTag("photo-preview").fetchSemanticsNodes().isNotEmpty() }
+            compose.onNodeWithTag("photo-content").performScrollToNode(hasTestTag("photo-preview"))
+            compose.onNodeWithTag("photo-preview").assertIsDisplayed()
             compose.onNodeWithTag("photo-content").performScrollToIndex(0)
             androidx.test.platform.app.InstrumentationRegistry.getInstrumentation().uiAutomation
                 .executeShellCommand("screencap -p /data/local/tmp/calorie-v0812-photo.png").use { descriptor ->

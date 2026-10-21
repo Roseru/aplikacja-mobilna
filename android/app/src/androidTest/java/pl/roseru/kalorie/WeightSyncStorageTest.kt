@@ -160,7 +160,7 @@ class WeightSyncStorageTest {
                 old.execSQL("PRAGMA foreign_keys=OFF")
                 for(i in 0 until entities.length()) {
                     val e=entities.getJSONObject(i);val table=e.getString("tableName");old.execSQL(e.getString("createSql").replace("\${TABLE_NAME}",table))
-                    val indices=e.getJSONArray("indices");for(j in 0 until indices.length())old.execSQL(indices.getJSONObject(j).getString("createSql").replace("\${TABLE_NAME}",table))
+                    val indices=e.optJSONArray("indices")?:JSONArray();for(j in 0 until indices.length())old.execSQL(indices.getJSONObject(j).getString("createSql").replace("\${TABLE_NAME}",table))
                     val fields=e.getJSONArray("fields");val columns=(0 until fields.length()).joinToString(","){"`"+fields.getJSONObject(it).getString("columnName")+"`"}
                     val marks=(0 until fields.length()).joinToString(","){"?"}
                     rows.getValue(table).forEach {old.execSQL("INSERT INTO `$table` ($columns) VALUES ($marks)",it.toTypedArray())}
