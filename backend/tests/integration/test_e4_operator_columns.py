@@ -306,7 +306,7 @@ def test_deletion_job_columns_do_not_receive_write_exception(
 
 @pytest.mark.parametrize("grantee", GRANTEES)
 @pytest.mark.parametrize("column_installation", ("fresh", "e3_after_0011"), indirect=True)
-def test_deletion_job_column_select_and_table_select_remain_allowed(column_installation, grantee):
+def test_ledger_forbids_job_column_select_before_legacy_provider_call(column_installation, grantee):
     cluster, database, login, password, _ = column_installation
     with cluster.session(database) as connection:
         column_acl(
@@ -314,20 +314,17 @@ def test_deletion_job_column_select_and_table_select_remain_allowed(column_insta
         )
         before_data = digest(connection)
     try:
-        cluster.provision(database, login, password)
-        with real_login(cluster, database, login, password) as operator:
-            require(
-                operator.execute("SELECT operation_id FROM app.account_deletion_jobs").fetchall()
-                == [],
-                "Allowed deletion-job column SELECT failed",
-            )
-            require(
-                operator.execute("SELECT * FROM app.account_deletion_jobs").fetchall() == [],
-                "Allowed deletion-job table SELECT failed",
-            )
+        before = None
+        with cluster.session(database) as connection:
+            before = state_digest(connection)
+        result = cluster.provision(database, login, password, success=False)
+        require(result.stderr.strip() == "provisioning_failed", "Unsafe job SELECT must refuse")
         with cluster.session(database) as connection:
             require(
-                digest(connection) == before_data, "Allowed job SELECT provisioning changed data"
+                state_digest(connection) == before, "Rejected provisioning changed role/ACL/data"
+            )
+            require(
+                digest(connection) == before_data, "Rejected job SELECT changed application data"
             )
     finally:
         with cluster.session(database) as connection:

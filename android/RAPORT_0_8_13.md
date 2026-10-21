@@ -85,3 +85,19 @@ relay, loginu i rzeczywistego GET capabilities.
 | końcowy test APK | `d65b9731e84552a77e64c3a5b1f32c0918b1f87fbdf8d734b0decb7b60847e35` |
 
 Lokalny zwykły APK: `output-apk/Racje-i-kalorie-0.8.13-debug.apk` (poza Git). Zdalne CI, merge, E7-R i fizyczny telefon wymagają osobnych odbiorów.
+
+
+## O1-087 — integracja na aktualnym main, 20.10.2026
+
+PR73 scalony jako ec70a5a po pełnym8/8CI39440066617/head1874550:
+165JVM debug/180JVM validation oraz190API35 offline, bez błędów i pominięć.
+To odrębne warianty z powtarzającymi się testami wspólnymi.
+Drzewo merge zgodne z faktycznie przetestowanym21b4b1e.
+PR96/head8d96aa7 dołącza ten main zwykłym merge bez konfliktów.
+Kod Android/app identyczny ze źródłem96; narzędzia/CI/backend/infra
+ze scalonym main, w tym wymagane testy obu wariantów JVM. Room9 bez migracji.
+Historyczne wyniki powyżej pozostają dowodami dawnych APK; nowa integracja
+otrzyma własny Project CI po skierowaniu istniejącego PR96 na main.
+Nie uruchomiono live capabilities/Gemini/nowego okna O3. Bieżący zwykły
+profil ma nowszy code33; nie instalujemy na nim starszego code24.
+Szczegóły i ograniczenia: O1-087 we wspólnym dzienniku.

@@ -77,3 +77,16 @@ To APK offline bez issuer/API. Nie wykonywano rzeczywistego katalogowego
 POST/replay ani Gemini. Zgodność z konkretnym serwerem, połączenie z driverem
 E4 i pełny zdalny CI po integracji rodziców pozostają osobnymi odbiorami.
 Nowy katalog nie został opublikowany ani zmieniony na serwerze.
+
+
+## O1-099 — aktualizacja rodzica,21.10.2026
+
+Zwykły merge017ce87 i dokładnego139/afb6a0a. Produkcja/migracje/schematy/
+zależności140 bez zmian;0.8.24/code35/validation1035/Room14. Odziedziczono
+wyłącznie3 oczekiwania testu observera o tych samych warunkach/10s/asercjach.
+Narzędzia/CI/backend/infra z main e651fea. README/dziennik rozstrzygnięte
+z zachowaniem wszystkich144/224 historycznych wystąpień i ich wierszy.
+Lokalnych jednostkowych nie powtarzano. PR140 nadal draft na139, który
+oczekuje na129/CI39618728312. Własny pełny CI140 po integracji rodziców;
+historyczne13wybranych JVM/11native oraz istniejący APK e68c4e5 są osobnym
+odbiorem, nie wynikiem tego merge. Zwykła instalacja/dziennik bez zmian.

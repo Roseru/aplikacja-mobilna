@@ -2,6 +2,16 @@
 
 Przygotowanie O2, 13.10.2026. Źródła odczytane z main `2fc70f7ae612c031f63d53c04d3c81b4402b72c5` w osobnym checkoutcie koordynatora. Odrębny zakres od aktywnego E9/PR54; bez zmian kodu, journalu, kont lub środowiska. Status: **PREPARED / WAITING_EXTERNAL**, bez realnego APK PASS.
 
+## Aktualny odbiór — 19.10.2026
+
+Poniższe PREPARED/WAITING_EXTERNAL i NOT_RUN opisują historyczne przygotowanie
+oraz decyzję z15.10. Wynik późniejszych prób i niezależny odbiór O2:
+[R2/R3 oraz oracle kolejnej próby E4](ODBIOR_R2_R3_ORACLE_E4_O2.md).
+R2 late-GET/guard PASS, R3 świeże odczyty B/A4/4 PASS według receipts O1,
+transport/zamknięcie PASS niezależnie O3; całość PARTIAL w granicach raportu.
+Nowa próba zapisu E4 pozostaje NOT_RUN. Zachowujemy poniżej pierwotny oracle
+i historię bez przypisywania nowych dowodów wcześniejszym próbom.
+
 ## Krótki stan i największa niewiadoma
 
 - O1-023 określa pierwszy przebieg: APK, rzeczywiste konto A/Chrome/PKCE, bootstrap, GET me/motivation, potem logout/restart i B→A. Same odczyty nie potwierdzają zgody ani nie synchronizują dziennika.
@@ -49,6 +59,40 @@ Nie wykonywano tych komend w tym zadaniu. Validation to inne applicationId/dane 
 8. Spóźniona odpowiedź A po logout/przełączeniu: O1 używa własnej odebranej techniki kontrolowanego opóźnienia w osobnym środowisku; O3 odpowiada za transport. Jeśli nie dostarczono realnej odpowiedzi po zmianie ownera, oznaczyć **NOT_RUN**, nie zastąpić fixture PASS. Wynik nie może odtworzyć session/podglądu A w B/gościu. Opóźniony refresh z dawnego APK nie dowodzi tego konkretnego GET/code-exchange.
 
 Świadomy PUT opt-in/opt-out, realny ranking, E4/push/ACK/import/WorkManager, KO31, recovery i Nemesis są kolejnymi odrębnymi odbiorami. Nie rozbudowywać pierwszego scenariusza, aby zamknąć je pozornie.
+
+## Doprecyzowanie punktu 8 — decyzja O2 z 15.10.2026
+
+Odpowiedź na O3-035, po przeglądzie PR73/head
+`4b54b107b04ff2ab8456aedaccecb889dccde627`; pełne przekazanie w O2-034
+w [dzienniku](../KOMUNIKACJA_AGENTOW.md). To ustalenie techniki i dowodu,
+nie wynik wykonania: próba spóźnionego GET pozostaje **NOT_RUN**.
+
+Dopuszczamy zatrzymanie jednego rzeczywiście odebranego HTTP200/body GET A
+po ograniczonym odczycie HTTPS, przed zwrotem z gateway do istniejącego kontrolera.
+Po ukończonym rzeczywistym logout do gościa uwalniamy ten sam wynik. Dla ochrony
+przed zastosowaniem starego wyniku nie jest potrzebne opóźnianie strumienia HTTP.
+Bramka jest wyłącznie validation, jednorazowa, poza mutexem/transakcją Room,
+ograniczona do 10 s i pozostałego pierwotnego deadline. Nie podmienia danych,
+nie osłabia TLS/CA/parserów/guardów i nie wymusza dostawy przez NonCancellable.
+
+PASS wymaga dowodu kolejności: realny GET/body A → held → ukończony logout/guest
+→ release → poprawne parsowanie tego samego wyniku i odrzucenie go przez istniejącą
+kontrolę sesji/właściciela/operacji → brak odtworzenia A i zachowany baseline.
+Samo `released` wewnątrz transportu ani zakończenie `readProfile()` zwracającego
+Unit nie wystarcza: kontroler przechwytuje też błąd formatu DTO. O1 dodaje minimalny
+dowód validation albo równoważną obserwację prywatną, która odróżnia te przypadki;
+bez drugiego parsera, drukowania body/identity/tokenów lub zmiany zachowania guardów.
+
+Jeśli cancellation/expiry odcina dostawę przed kontrolerem, rozliczamy bezpieczne
+anulowanie osobno, a punkt 8 pozostaje **NOT_RUN**. Niepoprawne DTO albo brak dowodu
+konkretnego odrzucenia nie daje PASS ochrony przed starym kontekstem. Ujawnienie A
+w gościu/B daje FAIL. Receipt podaje źródło, APK SHA, urządzenie i neutralną kolejność;
+wartości Room/Vault są prywatne. Równość 15 tabel danych w driverze nie oznacza
+niezmienności wszystkich 23 tabel po celowym logout.
+
+O1 kończy dowód w swoim istniejącym PR73, O3 uzgadnia nowe okno dla gotowego
+artefaktu, O1 wykonuje próbę, O2 odbiera wynik. Okno z 14.10 do 17:25 CEST wygasło.
+To nie zastępuje odrębnych przypadków A/B, code-exchange/refresh ani KO-31/WorkManager.
 
 ## STOP, PASS i odpowiedzialność
 
