@@ -12,6 +12,7 @@ import org.json.JSONObject
 import org.junit.Assert.*
 import org.junit.Test
 import pl.roseru.kalorie.core.MealType
+import pl.roseru.kalorie.core.BootstrapResponse
 import pl.roseru.kalorie.core.sync.MealWire
 import pl.roseru.kalorie.data.*
 
