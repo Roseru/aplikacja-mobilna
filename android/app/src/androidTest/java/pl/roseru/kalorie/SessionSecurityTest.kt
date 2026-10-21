@@ -918,13 +918,13 @@ class SessionSecurityTest {
             observer = launch(start = CoroutineStart.UNDISPATCHED) { c.observeMotivationContext() }
             val owner = c.view.value.binding!!.lease.storageScope; val old = db.bootstrapDao().binding(owner)!!
             db.bootstrapDao().update(old.copy(contextRevision = old.contextRevision + 1))
-            withTimeout(10_000) { while (c.view.value.serverProfile != null) yield() }
+            withTimeout(10_000) { c.view.first { it.serverProfile == null } }
             c.readRankingConsents(); assertTrue(c.view.value.rankingConsent is RankingConsentState.Ready)
             val current = db.bootstrapDao().binding(owner)!!; db.bootstrapDao().update(current.copy(accountGeneration = current.accountGeneration + 1))
-            withTimeout(10_000) { while (c.view.value.rankingConsent !is RankingConsentState.NotRequested) yield() }
+            withTimeout(10_000) { c.view.first { it.rankingConsent is RankingConsentState.NotRequested } }
             c.readProfile(); assertNotNull(c.view.value.serverProfile)
             val other = LocalOwnerStore(db).registerIdentity(issuer, "fixture-B"); LocalOwnerStore(db).select(other.id)
-            withTimeout(10_000) { while (c.view.value.binding?.owner?.subject != "fixture-B") yield() }
+            withTimeout(10_000) { c.view.first { it.binding?.owner?.subject == "fixture-B" } }
             assertNull(c.view.value.serverProfile); assertEquals(RankingConsentState.NotRequested, c.view.value.rankingConsent); assertTrue(writes.calls.isEmpty())
         } finally { observer?.cancelAndJoin(); vault.clear(); db.close() }
     }
@@ -2083,6 +2083,7 @@ class SessionSecurityTest {
                 return when(request) {
                     is PhotoHttpRequest.Create->{posts++;BootstrapHttpResult(202,uploadAck())}
                     is PhotoHttpRequest.Read->{reads++;BootstrapHttpResult(200,analysisRead())}
+                    is PhotoHttpRequest.Confirm->error("Unexpected confirm in cancellation fixture")
                     is PhotoHttpRequest.Cancel->{calls+=UploadCall(request.key,request.body());if(calls.size==1)throw java.io.IOException("Synthetic lost ACK");BootstrapHttpResult(200,cancellationAck())}
                 }
             }
@@ -2120,6 +2121,7 @@ class SessionSecurityTest {
                 return when(request) {
                     is PhotoHttpRequest.Create->BootstrapHttpResult(202,uploadAck())
                     is PhotoHttpRequest.Read->BootstrapHttpResult(200,analysisRead())
+                    is PhotoHttpRequest.Confirm->error("Unexpected confirm in cancellation fixture")
                     is PhotoHttpRequest.Cancel->{calls+=request;denied(401,"unauthorized")}
                 }
             }
@@ -2145,6 +2147,7 @@ class SessionSecurityTest {
                 return when(request) {
                     is PhotoHttpRequest.Create->BootstrapHttpResult(202,uploadAck())
                     is PhotoHttpRequest.Read->BootstrapHttpResult(200,analysisRead())
+                    is PhotoHttpRequest.Confirm->error("Unexpected confirm in cancellation fixture")
                     is PhotoHttpRequest.Cancel->{calls+=UploadCall(request.key,request.body());if(calls.size==1)denied(429,"rate_limit_exceeded","60")else BootstrapHttpResult(200,cancellationAck())}
                 }
             }
@@ -2176,6 +2179,7 @@ class SessionSecurityTest {
                     return when(request) {
                         is PhotoHttpRequest.Create->BootstrapHttpResult(202,uploadAck())
                         is PhotoHttpRequest.Read->BootstrapHttpResult(200,analysisRead())
+                        is PhotoHttpRequest.Confirm->error("Unexpected confirm in cancellation fixture")
                         is PhotoHttpRequest.Cancel->{cancels++;entered.complete(Unit);release.await();BootstrapHttpResult(200,cancellationAck())}
                     }
                 }
@@ -2211,6 +2215,7 @@ class SessionSecurityTest {
                 return when(request) {
                     is PhotoHttpRequest.Create->BootstrapHttpResult(202,uploadAck())
                     is PhotoHttpRequest.Read->BootstrapHttpResult(200,analysisRead(revision=revision))
+                    is PhotoHttpRequest.Confirm->error("Unexpected confirm in cancellation fixture")
                     is PhotoHttpRequest.Cancel->{calls+=request;if(calls.size==1)denied(409,"proposal_revision_conflict")else BootstrapHttpResult(200,cancellationAck(4))}
                 }
             }
@@ -2242,6 +2247,7 @@ class SessionSecurityTest {
                 return when(request) {
                     is PhotoHttpRequest.Create->BootstrapHttpResult(202,uploadAck())
                     is PhotoHttpRequest.Read->BootstrapHttpResult(200,analysisRead())
+                    is PhotoHttpRequest.Confirm->error("Unexpected confirm in cancellation fixture")
                     is PhotoHttpRequest.Cancel->{cancels++;if(cancels==1)BootstrapHttpResult(200,cancellationAck().let {JSONObject(String(it)).put("analysis_id",UUID.randomUUID().toString()).toString().toByteArray()})else denied(409,"sync_epoch_changed")}
                 }
             }
@@ -2301,6 +2307,7 @@ class SessionSecurityTest {
                 return when(request) {
                     is PhotoHttpRequest.Create->BootstrapHttpResult(202,uploadAck())
                     is PhotoHttpRequest.Read->BootstrapHttpResult(200,analysisRead())
+                    is PhotoHttpRequest.Confirm->error("Unexpected confirm in cancellation fixture")
                     is PhotoHttpRequest.Cancel->{cancels++;throw java.io.IOException("Synthetic uncertainty")}
                 }
             }
@@ -2350,4 +2357,254 @@ class SessionSecurityTest {
             } finally {vault.clear();db.close();cleanUpload(scope)}
         }
     }
+    private inner class ConfirmHarness {
+        val db=memory();val vault=SessionVault(context,name());val fixture=FixtureGateway()
+        val calls=mutableListOf<PhotoHttpRequest.Confirm>();var reads=0
+        var handler:suspend(PhotoHttpRequest.Confirm)->BootstrapHttpResult={BootstrapHttpResult(200,ack(it))}
+        var readDecision="pending"
+        var readHandler:suspend(ByteArray)->ByteArray={it}
+        val transport=object:PhotoAnalysisGateway {
+            override suspend fun send(session:ApiSession,request:PhotoHttpRequest,beforeSend:suspend()->Unit):BootstrapHttpResult {
+                assertFalse(db.inTransaction());beforeSend()
+                return when(request) {
+                    is PhotoHttpRequest.Create->BootstrapHttpResult(202,uploadAck())
+                    is PhotoHttpRequest.Read->{reads++;BootstrapHttpResult(200,readHandler(JSONObject(String(analysisRead(revision=if(reads==1)2 else 3)))
+                        .put("decision_state",readDecision).toString().toByteArray()))}
+                    is PhotoHttpRequest.Cancel->error("Confirm must fence cancellation")
+                    is PhotoHttpRequest.Confirm->{
+                        assertTrue(PhotoAnalysisStore(context,db,lease).stored(id).confirmation!!.attempted)
+                        calls+=request;handler(request)
+                    }
+                }
+            }
+        }
+        lateinit var c:SessionController;lateinit var lease:OwnerLease;lateinit var id:String;lateinit var image:String
+        fun clientAgain()=client(db,vault,fixture,ApiFixture(),photos=uploadReader(),photoWrites=transport)
+        suspend fun prepare() {
+            c=clientAgain();c.start();login(c,fixture,"fixture-A");c.bootstrap();c.readPhotoCapabilities()
+            lease=c.view.value.binding!!.lease;image=uploadImage(db,lease)
+            c.uploadPhoto(lease,image,uploadConsent(c),true);c.readPhotoAnalysis(lease)
+            id=db.photoAnalysisDao().get(lease.storageScope)!!.operationId
+            c.startPhotoMealDraft(lease,id,2,LocalDate.of(2026,10,18))
+            assertTrue(c.view.value.photoConfirmation!!.canStart)
+        }
+        suspend fun ack(request:PhotoHttpRequest.Confirm):ByteArray {
+            val body=JSONObject(String(request.body()))
+            val snapshot=PhotoAnalysisStore(context,db,LocalOwnerStore(db).currentLease()).stored(id)
+            return JSONObject().put("analysis_id",snapshot.receipt.analysisId).put("meal",body.getJSONObject("meal"))
+                .put("drafts",body.getJSONArray("drafts")).put("provenance",snapshot.confirmation!!.journal().getJSONObject("expected_provenance"))
+                .toString().toByteArray()
+        }
+        fun close(){vault.clear();db.close();if(::lease.isInitialized)cleanUpload(lease.storageScope)}
+    }
+
+    @Test fun photoConfirmLostAckRestoresWithoutHttpThenCommitsExactlyOneMealAndOutbox()=runBlocking<Unit> {
+        val h=ConfirmHarness()
+        try {
+            h.prepare();h.handler={if(h.calls.size==1)throw java.io.IOException("Synthetic lost ACK") else BootstrapHttpResult(200,h.ack(it))}
+            h.c.confirmPhotoMeal(h.lease,h.id,2,1)
+            assertEquals(1,h.calls.size);assertTrue(h.c.view.value.photoConfirmation!!.canRetry)
+            assertFalse(h.c.view.value.photoCanEditProposal);assertFalse(h.c.view.value.photoCancellation?.canStart==true)
+            assertTrue(h.db.dao().achievementMeals(h.lease.storageScope).isEmpty());assertEquals(0,h.db.dao().operationCount(h.lease.storageScope))
+            val restarted=h.clientAgain();restarted.start();restarted.loadPhotoAnalysis(h.lease)
+            assertEquals(1,h.calls.size);assertEquals(1,h.reads);assertTrue(restarted.view.value.photoConfirmation!!.canRetry)
+            restarted.retryPhotoConfirmation(h.lease,h.id)
+            assertEquals(2,h.calls.size);assertEquals(h.calls[0].key,h.calls[1].key);assertArrayEquals(h.calls[0].body(),h.calls[1].body())
+            assertEquals(1,h.db.dao().achievementMeals(h.lease.storageScope).size);assertEquals(1,h.db.dao().operationCount(h.lease.storageScope))
+            assertNull(h.db.photoAnalysisDao().get(h.lease.storageScope));assertNull(restarted.view.value.photoMealDraft)
+            assertTrue(MealPhotoStore(context,h.db,h.lease).uploadBytes(h.image).isNotEmpty())
+            assertFalse(File(context.filesDir,"photo-analysis-inputs/${h.lease.storageScope}/${h.id}.jpg").exists())
+            restarted.retryPhotoConfirmation(h.lease,h.id);assertEquals(2,h.calls.size)
+            assertEquals(1,h.db.dao().operationCount(h.lease.storageScope))
+        } finally {h.close()}
+    }
+    @Test fun photoConfirm401RefreshesOnlyOnceAndRetainsTheSameRequest()=runBlocking<Unit> {
+        val h=ConfirmHarness()
+        try {
+            h.prepare();h.handler={denied(401,"unauthorized")};h.c.confirmPhotoMeal(h.lease,h.id,2,1)
+            assertEquals(2,h.calls.size);assertSame(h.calls[0],h.calls[1]);assertEquals(2,h.fixture.calls)
+            assertTrue(h.c.view.value.photoConfirmation!!.canRetry);assertFalse(h.c.view.value.photoConfirmBusy)
+            assertEquals(0,h.db.dao().operationCount(h.lease.storageScope))
+        } finally {h.close()}
+    }
+    @Test fun photoConfirmBackoffIsDurableAndRetryDoesNotAllocateAnotherDecision()=runBlocking<Unit> {
+        for(status in listOf(429,503,409)) {
+        val h=ConfirmHarness()
+        try {
+            h.prepare();h.handler={BootstrapHttpResult(status,if(status==409)denied(409,"ai_operation_busy").body else byteArrayOf(),"60")};h.c.confirmPhotoMeal(h.lease,h.id,2,1)
+            val frozen=h.db.photoAnalysisDao().get(h.lease.storageScope)!!
+            assertTrue(frozen.retryAtMillis>=h.fixture.time+60_000)
+            val restarted=h.clientAgain();restarted.start();restarted.loadPhotoAnalysis(h.lease);restarted.retryPhotoConfirmation(h.lease,h.id)
+            assertEquals(1,h.calls.size);assertEquals(frozen,h.db.photoAnalysisDao().get(h.lease.storageScope))
+            h.fixture.time+=60_001;h.handler={BootstrapHttpResult(200,h.ack(it))};restarted.retryPhotoConfirmation(h.lease,h.id)
+            assertEquals(2,h.calls.size);assertArrayEquals(h.calls[0].body(),h.calls[1].body());assertEquals(h.calls[0].key,h.calls[1].key)
+            assertEquals(1,h.db.dao().achievementMeals(h.lease.storageScope).size)
+        } finally {h.close()}
+        }
+    }
+    @Test fun photoConfirmWrongAckCannotPartiallyCommitAndExplicitRetryUsesOriginalBody()=runBlocking<Unit> {
+        val h=ConfirmHarness()
+        try {
+            h.prepare();h.handler={BootstrapHttpResult(200,JSONObject(String(h.ack(it))).put("analysis_id",UUID.randomUUID().toString()).toString().toByteArray())}
+            h.c.confirmPhotoMeal(h.lease,h.id,2,1)
+            assertTrue(h.c.view.value.photoConfirmation!!.canRetry);assertEquals(0,h.db.dao().operationCount(h.lease.storageScope))
+            assertTrue(h.db.dao().achievementMeals(h.lease.storageScope).isEmpty())
+            h.handler={BootstrapHttpResult(200,h.ack(it))};h.c.retryPhotoConfirmation(h.lease,h.id)
+            assertEquals(1,h.db.dao().operationCount(h.lease.storageScope));assertEquals(h.calls[0].key,h.calls[1].key)
+        } finally {h.close()}
+    }
+    @Test fun photoConfirmOldDialogAndEditsCannotReplaceAnUncertainDecision()=runBlocking<Unit> {
+        val h=ConfirmHarness()
+        try {
+            h.prepare();h.c.confirmPhotoMeal(h.lease,h.id,1,1);h.c.confirmPhotoMeal(h.lease,h.id,2,2);assertTrue(h.calls.isEmpty())
+            h.handler={throw java.io.IOException("Synthetic uncertainty")};h.c.confirmPhotoMeal(h.lease,h.id,2,1)
+            val frozen=h.db.photoAnalysisDao().get(h.lease.storageScope)
+            h.c.confirmPhotoMeal(h.lease,h.id,2,1);h.c.renamePhotoMealDraft(h.lease,h.id,1,"Cannot replace frozen intent")
+            h.c.cancelPhotoAnalysis(h.lease,h.id,2)
+            assertEquals(1,h.calls.size);assertEquals(frozen,h.db.photoAnalysisDao().get(h.lease.storageScope))
+        } finally {h.close()}
+    }
+    @Test fun photoConfirmHeldAckCannotApplyAfterLogoutAndAtoBtoA()=runBlocking<Unit> {
+        val h=ConfirmHarness();val entered=CompletableDeferred<Unit>();val release=CompletableDeferred<Unit>()
+        try {
+            h.prepare();h.handler={val ack=h.ack(it);entered.complete(Unit);release.await();BootstrapHttpResult(200,ack)}
+            val job=async {h.c.confirmPhotoMeal(h.lease,h.id,2,1)};withTimeout(10_000){entered.await()}
+            h.c.logout();login(h.c,h.fixture,"fixture-B");h.c.logout();login(h.c,h.fixture,"fixture-A")
+            release.complete(Unit);job.await()
+            assertTrue(h.db.dao().achievementMeals(h.lease.storageScope).isEmpty());assertNotNull(h.db.photoAnalysisDao().get(h.lease.storageScope))
+            assertNull(h.c.view.value.photoMealDraft);h.c.retryPhotoConfirmation(h.lease,h.id);assertEquals(1,h.calls.size)
+        } finally {release.complete(Unit);h.close()}
+    }
+    @Test fun photoConfirmHeldAckCannotApplyAfterContextRevisionChanges()=runBlocking<Unit> {
+        val h=ConfirmHarness();val entered=CompletableDeferred<Unit>();val release=CompletableDeferred<Unit>()
+        try {
+            h.prepare();h.handler={val ack=h.ack(it);entered.complete(Unit);release.await();BootstrapHttpResult(200,ack)}
+            val job=async {h.c.confirmPhotoMeal(h.lease,h.id,2,1)};withTimeout(10_000){entered.await()}
+            val binding=h.db.bootstrapDao().binding(h.lease.storageScope)!!
+            h.db.bootstrapDao().update(binding.copy(contextRevision=binding.contextRevision+1,requiresRecovery=true))
+            release.complete(Unit);job.await()
+            assertEquals(0,h.db.dao().operationCount(h.lease.storageScope));assertTrue(h.db.dao().achievementMeals(h.lease.storageScope).isEmpty())
+            assertNotNull(h.db.photoAnalysisDao().get(h.lease.storageScope));assertNull(h.c.view.value.photoConfirmation)
+        } finally {release.complete(Unit);h.close()}
+    }
+    @Test fun photoConfirmGetConfirmedDoesNotReplaceOwnAckOrImplicitlyWriteDiary()=runBlocking<Unit> {
+        val h=ConfirmHarness()
+        try {
+            h.prepare();h.handler={throw java.io.IOException("Synthetic uncertainty")};h.c.confirmPhotoMeal(h.lease,h.id,2,1)
+            h.readDecision="confirmed";h.c.readPhotoAnalysis(h.lease)
+            assertTrue(h.c.view.value.photoConfirmation!!.canRetry);assertEquals(0,h.db.dao().operationCount(h.lease.storageScope))
+            h.handler={BootstrapHttpResult(200,h.ack(it))};h.c.retryPhotoConfirmation(h.lease,h.id)
+            assertEquals(1,h.db.dao().operationCount(h.lease.storageScope));assertArrayEquals(h.calls[0].body(),h.calls[1].body())
+        } finally {h.close()}
+    }
+    @Test fun photoConfirmConflictNeverCreatesANewKeyOrMealAndRecoveryIsExplicit()=runBlocking<Unit> {
+        for(code in listOf("proposal_revision_conflict","photo_catalog_choice_changed","sync_epoch_changed")) {
+            val h=ConfirmHarness()
+            try {
+                h.prepare();h.handler={denied(409,code)};h.c.confirmPhotoMeal(h.lease,h.id,2,1)
+                h.c.retryPhotoConfirmation(h.lease,h.id);h.c.confirmPhotoMeal(h.lease,h.id,2,1)
+                assertEquals(1,h.calls.size);assertEquals(0,h.db.dao().operationCount(h.lease.storageScope))
+                assertNotNull(h.db.photoAnalysisDao().get(h.lease.storageScope))
+                if(code=="sync_epoch_changed")assertTrue(h.db.bootstrapDao().binding(h.lease.storageScope)!!.requiresRecovery)
+                else {assertTrue(h.c.view.value.photoConfirmation!!.rejected);assertFalse(h.c.view.value.photoConfirmation!!.canRetry)}
+            } finally {h.close()}
+        }
+    }
+
+
+    @Test fun photoConfirmStoppingScreenFencesHeldAckAndExplicitRetryCommitsOnce()=runBlocking<Unit> {
+        val h=ConfirmHarness();val entered=CompletableDeferred<Unit>();val release=CompletableDeferred<Unit>()
+        try {
+            h.prepare();h.handler={val ack=h.ack(it);entered.complete(Unit);release.await();BootstrapHttpResult(200,ack)}
+            val job=async {h.c.confirmPhotoMeal(h.lease,h.id,2,1)};withTimeout(10_000){entered.await()}
+            h.c.stopPhotoAnalysis(h.lease,clearPreview=true);release.complete(Unit);job.await()
+            assertEquals(0,h.db.dao().operationCount(h.lease.storageScope));assertNull(h.c.view.value.photoConfirmation)
+            assertNotNull(h.db.photoAnalysisDao().get(h.lease.storageScope))
+            h.c.loadPhotoAnalysis(h.lease);assertTrue(h.c.view.value.photoConfirmation!!.canRetry)
+            h.handler={BootstrapHttpResult(200,h.ack(it))};h.c.retryPhotoConfirmation(h.lease,h.id)
+            assertEquals(2,h.calls.size);assertEquals(h.calls[0].key,h.calls[1].key)
+            assertArrayEquals(h.calls[0].body(),h.calls[1].body());assertEquals(1,h.db.dao().operationCount(h.lease.storageScope))
+        } finally {release.complete(Unit);h.close()}
+    }
+    @Test fun photoReopenRequiresPostRejectionGetThenExplicitLocalReviewAndANewApprovedKey()=runBlocking<Unit> {
+        val h=ConfirmHarness()
+        try {
+            h.prepare();h.handler={denied(409,"proposal_revision_conflict")};h.c.confirmPhotoMeal(h.lease,h.id,2,1)
+            val frozen=h.db.photoAnalysisDao().get(h.lease.storageScope)!!
+            val original=h.db.photoConfirmationHistoryDao().get(h.lease.storageScope,h.calls.single().key!!)!!
+            assertFalse(h.c.view.value.photoConfirmation!!.canReopen)
+            h.c.reopenPhotoConfirmation(h.lease,h.id,2,1);assertEquals(frozen,h.db.photoAnalysisDao().get(h.lease.storageScope))
+            h.c.readPhotoAnalysis(h.lease);assertTrue(h.c.view.value.photoConfirmation!!.canReopen)
+            val restarted=h.clientAgain();restarted.start();restarted.loadPhotoAnalysis(h.lease)
+            assertEquals(2,h.reads);assertEquals(1,h.calls.size);assertTrue(restarted.view.value.photoConfirmation!!.canReopen)
+            restarted.reopenPhotoConfirmation(h.lease,h.id,3,1)
+            assertEquals(2L,restarted.view.value.photoMealDraft!!.editRevision);assertTrue(restarted.view.value.photoCanEditProposal)
+            assertEquals(1,h.calls.size);assertEquals(2,h.reads);assertEquals(0,h.db.dao().operationCount(h.lease.storageScope))
+            restarted.confirmPhotoMeal(h.lease,h.id,3,1);restarted.reopenPhotoConfirmation(h.lease,h.id,3,1)
+            assertEquals(1,h.calls.size)
+            restarted.renamePhotoMealDraft(h.lease,h.id,2,"Nowa sprawdzona porcja")
+            h.handler={BootstrapHttpResult(200,h.ack(it))};restarted.confirmPhotoMeal(h.lease,h.id,3,3)
+            assertEquals(2,h.calls.size);assertNotEquals(h.calls[0].key,h.calls[1].key)
+            assertEquals(1,h.db.dao().operationCount(h.lease.storageScope));assertEquals(1,h.db.dao().achievementMeals(h.lease.storageScope).size)
+            assertNull(h.db.photoAnalysisDao().get(h.lease.storageScope))
+            assertEquals(original.decisionJson,h.db.photoConfirmationHistoryDao().get(h.lease.storageScope,h.calls[0].key!!)!!.decisionJson)
+        } finally {h.close()}
+    }
+    @Test fun photoReopenLocalReviewDoesNotRefreshExpiredAccessOrSendAnyRequest()=runBlocking<Unit> {
+        val h=ConfirmHarness()
+        try {
+            h.prepare();h.handler={denied(409,"photo_catalog_choice_changed")};h.c.confirmPhotoMeal(h.lease,h.id,2,1)
+            h.c.readPhotoAnalysis(h.lease);val oidc=h.fixture.calls;val reads=h.reads
+            h.fixture.time+=400_000;h.c.loadPhotoAnalysis(h.lease)
+            assertFalse(h.c.view.value.hasSession);assertTrue(h.c.view.value.photoConfirmation!!.canReopen)
+            h.c.reopenPhotoConfirmation(h.lease,h.id,3,1)
+            assertTrue(h.c.view.value.photoCanEditProposal);assertEquals(2L,h.c.view.value.photoMealDraft!!.editRevision)
+            assertEquals(oidc,h.fixture.calls);assertEquals(reads,h.reads);assertEquals(1,h.calls.size)
+            assertEquals(0,h.db.dao().operationCount(h.lease.storageScope))
+        } finally {h.close()}
+    }
+    @Test fun photoReopenNeverReplacesAnUncertainOrUnsafeDecisionEvenAfterGet()=runBlocking<Unit> {
+        for(code in listOf("uncertain","idempotency_key_reused","analysis_already_confirmed","photo_confirm_rejected")) {
+            val h=ConfirmHarness()
+            try {
+                h.prepare();h.handler={if(code=="uncertain")throw java.io.IOException("Synthetic uncertainty") else denied(409,code)}
+                h.c.confirmPhotoMeal(h.lease,h.id,2,1);h.c.readPhotoAnalysis(h.lease)
+                val before=h.db.photoAnalysisDao().get(h.lease.storageScope)
+                assertFalse(h.c.view.value.photoConfirmation!!.canReopen)
+                h.c.reopenPhotoConfirmation(h.lease,h.id,3,1)
+                assertEquals(before,h.db.photoAnalysisDao().get(h.lease.storageScope));assertEquals(1,h.calls.size)
+                assertEquals(0,h.db.dao().operationCount(h.lease.storageScope));assertFalse(h.c.view.value.photoCanEditProposal)
+            } finally {h.close()}
+        }
+    }
+    @Test fun photoReopenGetStartedBeforeRejectionCannotSupplyFreshReadProof()=runBlocking<Unit> {
+        val h=ConfirmHarness();val entered=CompletableDeferred<Unit>();val release=CompletableDeferred<Unit>()
+        try {
+            h.prepare();h.handler={throw java.io.IOException("Synthetic uncertainty")};h.c.confirmPhotoMeal(h.lease,h.id,2,1)
+            h.readHandler={body->entered.complete(Unit);release.await();body}
+            val job=async {h.c.readPhotoAnalysis(h.lease)};withTimeout(10_000){entered.await()}
+            val store=PhotoAnalysisStore(context,h.db,h.lease)
+            store.acceptConfirmationPrepared(store.prepareConfirmationRejection(h.id,"photo_catalog_choice_changed",h.calls.single()))
+            release.complete(Unit);job.await();h.c.loadPhotoAnalysis(h.lease)
+            assertFalse(h.c.view.value.photoConfirmation!!.canReopen)
+            assertNull(h.db.photoConfirmationHistoryDao().get(h.lease.storageScope,h.calls.single().key!!)!!.lastReadSnapshotHash)
+            h.readHandler={it};h.c.readPhotoAnalysis(h.lease);assertTrue(h.c.view.value.photoConfirmation!!.canReopen)
+            assertEquals(1,h.calls.size);assertEquals(0,h.db.dao().operationCount(h.lease.storageScope))
+        } finally {release.complete(Unit);h.close()}
+    }
+    @Test fun photoReopenStaleAccountCallbackCannotChangeTheOriginalArchivedDecision()=runBlocking<Unit> {
+        val h=ConfirmHarness()
+        try {
+            h.prepare();h.handler={denied(409,"photo_catalog_choice_changed")};h.c.confirmPhotoMeal(h.lease,h.id,2,1)
+            h.c.readPhotoAnalysis(h.lease)
+            val before=h.db.photoAnalysisDao().get(h.lease.storageScope)
+            val history=h.db.photoConfirmationHistoryDao().get(h.lease.storageScope,h.calls.single().key!!)
+            h.c.logout();login(h.c,h.fixture,"fixture-B");h.c.logout();login(h.c,h.fixture,"fixture-A")
+            h.c.reopenPhotoConfirmation(h.lease,h.id,3,1)
+            assertEquals(before,h.db.photoAnalysisDao().get(h.lease.storageScope))
+            assertEquals(history,h.db.photoConfirmationHistoryDao().get(h.lease.storageScope,h.calls.single().key!!))
+            assertNull(h.c.view.value.photoMealDraft);assertEquals(1,h.calls.size)
+        } finally {h.close()}
+    }
+
 }

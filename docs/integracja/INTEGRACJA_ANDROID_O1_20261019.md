@@ -219,3 +219,31 @@ Historyczne wyniki powyżej dotyczą dawnych APK; własny nowy Project CI
 tej integracji jest wymagany po retarget istniejącego PR121 na main.
 Starszy APK nie zastępuje zwykłego0.8.23/code34/Room14. O2-046/PR137c5ac5ca
 odczytane, oracle bez zmiany; liveE4/E7/KO32 i środowisko O3 osobno.
+
+
+## O1-094 — integracja potwierdzania posiłku z main,21.10.2026
+
+Zwykły merge źródła `b3bde558d866ccad7a21f0664ffbd092e84bd506`
+z main `6069dc7bd8087a7db97e6f8e30a7a71828fa61bf`, po scalonym PR121.
+Kod produkcyjny, schematy i zależności aplikacji identyczne z b3bde558;
+etap0.8.22/code33/validation1033/Room13. Integracja nie dodaje kolejnej
+wersji schematu ponad migracje dostarczone już przez ten etap.
+
+Tools/CI/backend/infra są identyczne z aktualnym main. Dwa konflikty tylko
+dziennika rozwiązano z zachowaniem wszystkich133/203 historycznych
+wystąpień i ich niepustych wierszy, także powtórzonych017; dawna tabela
+pozostaje w archiwum, aktualne O2/O3 pochodzą z main.
+
+Jedyna zmiana testu względem b3:3 oczekiwania istniejącego observera Room
+z value/yield na StateFlow.first, jak w opublikowanym b15d249/PR138.
+Te same predykaty,10s limit i końcowe asercje; bez nowych testów lub zmiany
+produkcji. Usuwa znany timeout aktywnego odpytywania opisany w O1-091.
+Historyczne313/328JVM i299native dotyczą wcześniejszego APK; nowa integracja
+wymaga własnego Project CI po skierowaniu istniejącego PR122 na main.
+Lokalnych zestawów jednostkowych nie powtarzano.
+
+Zwykły emulator korzysta już z późniejszego0.8.24/code35/Room14 z PR140:
+13wybranych JVM/11native PASS, aktualizacja zachowała27tabel i rowid.
+Ten merge nie podmienia tego APK. Kandydat139+138 pozostaje osobny,
+offline bez konfiguracji do live. Rzeczywisty APK/API/E4/E7-R/recovery/KO32
+oraz używane środowisko O3 mają odrębny odbiór; bez deploy/schema24/epoki/kont.

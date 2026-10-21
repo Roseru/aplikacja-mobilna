@@ -7,7 +7,9 @@ import java.util.Collections
 data class PhotoDraftActions(val start:(String,Long,LocalDate)->Unit={_,_,_->},
     val replace:(String,Long,String,PhotoDraftInput)->Unit={_,_,_,_->},
     val add:(String,Long,PhotoDraftInput)->Unit={_,_,_->},val remove:(String,Long,String)->Unit={_,_,_->},
-    val rename:(String,Long,String)->Unit={_,_,_->},val discard:(String,Long)->Unit={_,_->})
+    val rename:(String,Long,String)->Unit={_,_,_->},val discard:(String,Long)->Unit={_,_->},
+    val confirm:(String,Long,Long)->Unit={_,_,_->},val retryConfirmation:(String)->Unit={},
+    val reopen:(String,Long,Long)->Unit={_,_,_->})
 
 class PhotoDraftItemPreview(val id:String,val manuallyAdded:Boolean,val input:PhotoDraftInput,val energy:PhotoNutrientPreview) {
     override fun toString()="PhotoDraftItemPreview(redacted)"

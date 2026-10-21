@@ -60,6 +60,17 @@ internal sealed class PhotoHttpRequest(val key: String?, val epoch: String?, val
         init { require(expectedRevision in 1..2_147_483_647L) }
         override fun body() = "{\"expected_revision\":$expectedRevision}".toByteArray(Charsets.UTF_8)
     }
+    /** Immutable JSON bytes from a previously frozen correction decision, never an image retry. */
+    class Confirm internal constructor(key:String,epoch:String,analysisId:String,val expectedRevision:Long,body:ByteArray) :
+        PhotoHttpRequest(uuid(key),uuid(epoch),"/ai/food-analyses/${uuid(analysisId)}/confirm","POST","application/json; charset=utf-8") {
+        private val wire=body.copyOf()
+        init {
+            require(expectedRevision in 1..Int.MAX_VALUE.toLong() && wire.size in 1..PhotoConfirmation.MAX_BODY_BYTES)
+            val json=StrictJson.read(wire)
+            require(json.get("expected_revision")==expectedRevision || json.get("expected_revision")==expectedRevision.toInt())
+        }
+        override fun body()=wire.copyOf()
+    }
     companion object {
         const val IMAGE_BYTES = 5_242_880
         const val BODY_BYTES = 6_291_456

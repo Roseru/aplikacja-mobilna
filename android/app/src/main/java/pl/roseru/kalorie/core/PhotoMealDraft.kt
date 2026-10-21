@@ -58,6 +58,8 @@ internal class PhotoMealDraft private constructor(val analysisId:String,val sour
         require(items.any {it.id==id});changed(items.filterNot {it.id==id})
     }
     fun rename(value:String):PhotoMealDraft = safe {changed(items,value.trim())}
+    /** A new review invalidates callbacks from the rejected decision without replacing meal/item IDs. */
+    fun reviewAgain():PhotoMealDraft = safe {changed(items)}
     fun matches(read:PhotoAnalysisRead) = safe {
         require(analysisId==read.analysisId && sourceRevision<=read.revision)
         val proposal=read.proposal
@@ -70,6 +72,11 @@ internal class PhotoMealDraft private constructor(val analysisId:String,val sour
     /** Strict sync-v1 template only; not a request, a mutation key, a diary write or a product publication. */
     fun confirmBody(read:PhotoAnalysisRead):ByteArray = safe {
         matches(read);require(read.state=="succeeded" && read.decision=="pending" && read.proposal!=null)
+        confirmationTemplate(read.revision)
+    }
+    /** Pure template for restoring a frozen decision; this does not authorize HTTP. */
+    internal fun confirmationTemplate(revision:Long):ByteArray = safe {
+        require(revision in sourceRevision..Int.MAX_VALUE.toLong())
         val rows=items.map {item->
             text(item.name,200)
             JSONObject().put("item_id",item.id).put("name",item.name).put("product",JSONObject.NULL)
@@ -81,7 +88,7 @@ internal class PhotoMealDraft private constructor(val analysisId:String,val sour
         val meal=JSONObject().put("title",title).put("occurred_at",occurredAt.toString()).put("time_zone",zone.id)
             .put("local_date",localDate.toString()).put("meal_type",mealType?:JSONObject.NULL).put("goal_id",JSONObject.NULL)
             .put("ration",JSONObject.NULL).put("items",JSONArray(rows))
-        StrictJson.canonical(JSONObject().put("expected_revision",read.revision)
+        StrictJson.canonical(JSONObject().put("expected_revision",revision)
             .put("meal",JSONObject().put("meal_id",mealId).put("payload",meal)).put("drafts",JSONArray())).toByteArray(Charsets.UTF_8)
     }
     fun journal():JSONObject = safe {

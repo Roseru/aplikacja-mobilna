@@ -1,5 +1,47 @@
 # Android — Racje i kalorie
 
+Etap PR122 **0.8.22/code33/Room13** pozwala jawnie wrócić do poprawek po
+odrzuconej decyzji i poprawnym odczycie stanu serwera. Zachowuje stare body,
+klucz i pochodzenie w historii, a nowa zgoda ma osobny klucz i te same UUID
+posiłku/składników. Niepewna wysyłka nadal wymaga identycznego replay.
+[Raport](POWROT_DO_POPRAWEK.md):313/328JVM,17 celowanych i299 pełnych testów
+urządzenia PASS, lint0error. Migracja12→13 zachowała26 starszych tabel i rowid;
+to historyczny odbiór tego źródła. Integracja z main6069dc7 wymaga własnego
+CI; lokalnych jednostkowych nie powtarzano. Zwykły emulator ma późniejszy
+APK0.8.24/code35 z PR140. Rzeczywisty APK/API, push/pull, legacy, pełne recovery
+i retencja pozostają osobnymi etapami.
+
+Wydanie **0.8.21/code32/Room12** pozwala zatwierdzić poprawiony wynik zdjęcia
+przyciskiem „Dodaj do dziennika”. Zachowuje tę samą decyzję po utracie odpowiedzi
+i restarcie; pełny ACK zapisuje atomowo posiłek, pochodzenie i kanoniczną kolejkę.
+[Raport](POTWIERDZENIE_INTERFEJS.md):310/325JVM,14 celowanych i286 pełnych testów
+urządzenia PASS, lint0error. Aktualizacja zachowała wszystkie26 tabel i rowid;
+aplikacja jest otwarta do testów. To lokalny odbiór syntetyczny; rzeczywisty
+APK/API, transport push, legacy/recovery i nowa decyzja po odrzuceniu były wtedy osobno.
+
+Wydanie **0.8.20/code31/Room12** ma trwałe partie kanonicznych Meal i atomowy
+odbiór ACK, który zachowuje nowsze porcje oraz nadaje właściwą rewizję kolejnej
+intencji. [Raport](SYNCHRONIZACJA_PUSH.md):308/323JVM,273native API35 i lint0error
+PASS;25 wcześniejszych tabel/rowid zachowane po aktualizacji, aplikacja otwarta.
+Był to odbiór lokalnego zapisu na fixture. Na tym etapie transport, kontrola sesji, przycisk confirm,
+konwersja legacy i pełne recovery pozostają do podłączenia.
+
+Poniższe konkretne wydania zachowują własne historyczne źródła i receipty.
+
+Android **0.8.19/code30/Room11** dodaje atomowy zapis zweryfikowanego wyniku
+confirm jako Meal/Items, provenance i kanonicznej kolejki E4, ze stabilnym replay
+po edycji/usunięciu i odzyskaniem przy błędzie transakcji. Dziennik pokazuje
+nieokreślony typ posiłku i dokładne ilości g/ml; brak energii pozostaje niepełny.
+[Raport i ograniczenia](POTWIERDZENIE_POSILKU.md):291/306JVM,260native API35,
+lint0error PASS,24 stare tabele i rowid zachowane po aktualizacji. HTTP confirm,
+przycisk zatwierdzania i standardowy push nadal wymagają podłączenia; to nie
+odbiór pełnego E4/E7. [Podglądy](../propozycje-ui/analiza-0.8.19/README.md).
+Kolejny etap ma [bibliotekę paczek i odpowiedzi push E4](SYNCHRONIZACJA_PUSH.md):
+308/323 JVM i lint0error PASS, bez podmiany zainstalowanego APK. Trwały odbiór
+ACK w Room, transport i uruchomienie oczekujących intencji są do podłączenia.
+Poniższe opisy konkretnych wcześniejszych wydań zachowują ich historyczny zakres.
+
+
 Android **0.8.16** dodaje świadomą wysyłkę zdjęcia, trwałe ponowienie i pobieranie wyniku z lokalnym podglądem składników/kcal/B/T/W. Wejście na ekran odtwarza zapis bez sieci; GET wymaga przycisku, działa w ograniczonym budżecie i respektuje sesję oraz wspólny backoff. [Stan i dowody](ZLECENIE_ANALIZY.md):235/250 JVM,223 native API35 i lint0error PASS. Room9→10 dodaje kolejkę analizy. Anulowanie serwerowe, korekty/confirm/E4 i rzeczywisty Gemini nadal wymagają dalszych etapów. PR105 jest draft zależnym od PR96, bez własnego pełnego zdalnego CI.
 
 Android **0.8.13** dodaje jawne sprawdzanie dostępności analizy zdjęć dla własnego konta: dostawcę/model, limity i stan usługi, z obsługą utraty sesji i czasu ponowienia. Zdjęcia nadal pozostają lokalne; odczyt nie przyznaje zgody i nie wysyła obrazu. [Raport](RAPORT_0_8_13.md) opisuje walidację, zachowanie danych i zależność od PR73. Room9 bez migracji. Multipart/Gemini/confirm i zapis przez E4 wymagają dalszych etapów.
