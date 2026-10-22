@@ -115,7 +115,7 @@ class MealPushStore(private val db: CalorieDatabase, private val schema: SyncWir
         }
     }
 
-    private suspend fun gate(lease: OwnerLease): MealPushGate {
+    internal suspend fun gate(lease: OwnerLease): MealPushGate {
         owners.requireCurrent(lease)
         check(db.ownerDao().byScope(lease.storageScope)?.kind == "account")
         val binding = checkNotNull(db.bootstrapDao().binding(lease.storageScope))

@@ -179,8 +179,8 @@ class WeightSyncStorageTest {
                     assertTrue(it.moveToFirst());it.getDouble(0)
                 },0.0)
             }
-            target=Room.databaseBuilder(context,CalorieDatabase::class.java,name).addMigrations(MIGRATION_14_15).addCallback(DATABASE_GUARDS).build()
-            val sql=target!!.openHelper.readableDatabase;assertEquals(15,sql.version);assertEquals(before,dump {sql.query(it)})
+            target=Room.databaseBuilder(context,CalorieDatabase::class.java,name).addMigrations(MIGRATION_14_15, pl.roseru.kalorie.data.MIGRATION_15_16).addCallback(DATABASE_GUARDS).build()
+            val sql=target!!.openHelper.readableDatabase;assertEquals(16,sql.version);assertEquals(before,dump {sql.query(it)})
             assertEquals(80.123456789,target!!.dao().weight(weight,lease.storageScope)!!.kg,0.0)
             assertNull(target!!.weightSyncDao().state(lease.storageScope,weight))
             assertEquals(100L,sql.query("SELECT rowid FROM weights WHERE id=?",arrayOf(weight)).use {assertTrue(it.moveToFirst());it.getLong(0)})
