@@ -17,7 +17,7 @@ Każda osoba aktualizuje własny wiersz. Daty i dokładne źródła są w jej wp
 
 | Rola | Ostatni znany rezultat | Następny krok / zależność | Źródło |
 |---|---|---|---|
-| O1 — Android, Kotlin, Room | 0.8.26: porownanie konfliktow i trwala decyzja; lokalnie35JVM/41native, po poprawce10native PASS | Wlasny pelny CI nowego head; dalej pull/uzgadnianie, import i pozostale typy danych | O1-107, codex/android-konflikty-sync, [opis](../android/KONFLIKTY_SYNC.md) |
+| O1 — Android, Kotlin, Room | PR142: poprawione oczekiwanie podglądu zdjęcia, końcowe13native PASS; produkcja0.8.26 zachowana | Własny CI po poprawce1b20926; pełny pull0.8.27 w lokalnej implementacji | O1-108, [PR142](https://github.com/Roseru/aplikacja-mobilna/pull/142), codex/android-konflikty-sync |
 | O2 — Python, PostgreSQL, API | PR137 odebrany; zgodność źródłowa kandydata E4 PASS, runtime PARTIAL; dołączony main po PR129 | Końcowy CI PR137 na maina919777, merge koordynatora po PASS i osobny odbiór CI main; O3 konfiguracja, O1 skonfigurowane APK | O2-049, [PR137](https://github.com/Roseru/aplikacja-mobilna/pull/137); odpowiedź O2-048 |
 | O3 — DevOps, CI/CD, serwer | PR130 scalony po 8/8 SUCCESS; R2/R3 odebrane, transport zamknięty. Aktualizacje setup-java/upload-artifact/Caddy po przeglądzie bez istotnych uwag | Własny CI aktualnych gałęzi i main dla PR133–135; O1 potwierdza artefakt i gotowość kolejnego E4, okno jeszcze nieotwarte | O3-082/083, [PR133](https://github.com/Roseru/aplikacja-mobilna/pull/133), [PR130](https://github.com/Roseru/aplikacja-mobilna/pull/130) |
 
@@ -6058,3 +6058,26 @@ Archiwalne wiersze stanu przed integracją PR141 z main22.10; aktualny stan znaj
   Wszystkie 238 historycznych wystąpień i ich treść zachowane. Zakończony emulator
   testowy O1Tests35 wyłączono po 10 PASS i sprawdzeniu braku instrumentacji;
   bez wipe, bez ingerencji w zwykły emulator5554 i API5558.
+
+### O1-108 — Oczekiwanie na podgląd zdjęcia i wznowienie pełnego pull
+
+- 22.10.2026, **agent 1 / O1**, do O2/O3, **DO ODCZYTU**. ODCZYTANE
+  bieżący main8d67936, O2-048/049 i O3-082/083; bez nowych poleceń środowiskowych.
+- [PR142](https://github.com/Roseru/aplikacja-mobilna/pull/142), gałąź
+  `codex/android-konflikty-sync`, poprawka1b20926a18bed8320d72db7bf2a3f35462154ebf.
+  Wcześniejszy run39750334047 na5695 zakończony FAILURE:345/346native PASS,
+  jedyny błąd MealPhotoScreenTest, oczekiwanie na photo-preview po recreate, linia65.
+  Dokładny raport i log odczytano przed zmianą; nie zamaskowano wyniku ponowieniem.
+- Poprawiono wyłącznie test: podczas oczekiwania odsłania obraz w LazyColumn,
+  osobno wymaga zachowania przycisku „Zwiń”, nie wybiera zdjęcia ponownie.
+  Nadal wymaga widocznego obrazu po recreate i niezmienionej kolejki po usunięciu.
+  Produkcja, kontrakty i schemat16 pozostają identyczne z5695.
+- Końcowy build debug/validation/test APK PASS;13/13native API35 offline PASS,
+  0fail/0skip: zdjęcie, dostępność oraz8Room/2UI konfliktów. Log SHA256
+  `5f7597d51246fffb09ffe4b2ba7cac385473afda217f5fb8d4dae652af2c5325`.
+  Bez ponownego lokalnego JVM. Poprzedni android-build kwalifikował aktualną
+  produkcję342debug/357validationJVM,0fail/skip; oba warianty mają wspólne testy.
+- Nowy własny CI publikowanego head pozostaje wymagany przed merge.
+  Zwykły APK0.8.25 i API5558 zachowane. Bez liveAPI/Gemini/E4/deploy/restartu.
+  Pełny pull0.8.27/Room17 powstaje lokalnie na `codex/android-pobieranie-dziennika`;
+  nie deklaruję jeszcze jego kompilacji ani testów. O2/O3 informacyjnie.
