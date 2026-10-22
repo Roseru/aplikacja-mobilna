@@ -89,6 +89,7 @@ class DiaryRepository(private val db: CalorieDatabase, private val context: Cont
             product.kcal, product.protein, product.fat, product.carbs,
             snapshotJson = snapshot(product, exactAmount, product.unit))
         if (saveCanonicalManualMeal(meal, item, product, exactAmount)) return@ownerTransaction
+        if (saveCanonicalCatalogMeal(meal, listOf(item))) return@ownerTransaction
         dao.insertMeal(meal)
         dao.insertItem(item)
         enqueue(meal, listOf(item), "create")
@@ -154,9 +155,45 @@ class DiaryRepository(private val db: CalorieDatabase, private val context: Cont
                 rationComponentPosition = (if (ration.ration.catalogJson == null) component.position + 1 else component.position)
                     .also { require(it > 0) })
         }
+        if (saveCanonicalCatalogMeal(meal, items, ration.ration)) return@ownerTransaction
         dao.insertMeal(meal)
         items.forEach { dao.insertItem(it) }
         enqueue(meal, items, "create")
+    }
+
+    /** Catalogue consumption keeps the local package/source snapshot and queues only the Meal. */
+    private suspend fun saveCanonicalCatalogMeal(meal: MealEntity, items: List<MealItemEntity>,
+        ration: RationEntity? = null): Boolean {
+        if (items.any { it.snapshotJson == null } || (ration != null && ration.catalogJson == null) ||
+            db.ownerDao().byScope(owner)?.kind != "account") return false
+        val binding = db.bootstrapDao().binding(owner) ?: return false
+        if (binding.requiresRecovery) return false
+        val schema = CanonicalMealRows.schema(context)
+        val operationId = UUID.randomUUID().toString()
+        val prepared = try {
+            val parts = items.map { item ->
+                val snapshot = StrictJson.read(checkNotNull(item.snapshotJson).toByteArray(Charsets.UTF_8))
+                val product = snapshot.getJSONObject("product")
+                require(item.productId == CatalogStore.recordId("product", product.getString("product_id"), product.getInt("revision")))
+                CatalogMealWire.Part(item.id, checkNotNull(item.snapshotJson), item.rationComponentPosition)
+            }
+            val wire = CatalogMealWire.create(ration?.name ?: items.single().productName, parts, ration?.catalogJson,
+                meal.occurredAt, meal.zoneId, meal.mealType.lowercase(java.util.Locale.ROOT), schema)
+            if (wire.json().getString("local_date") != meal.localDate) return false
+            wire to MealWire.operation(operationId, meal.id, binding.syncEpoch, null, wire.canonical, schema)
+        } catch (_: SyncWireException) {
+            // Preserve quantities beyond wire-v1 precision in the existing local format.
+            return false
+        }
+        val (wire, operation) = prepared
+        val wireContext = CanonicalMealRows.context(binding)
+        dao.insertMeal(CanonicalMealRows.meal(meal.id, owner, wire, wireContext)
+            .copy(rationId = meal.rationId, rationName = meal.rationName))
+        val wireItems = CanonicalMealRows.items(meal.id, wire).associateBy { it.id }
+        items.forEach { item -> dao.insertItem(item.copy(wirePayload = wireItems.getValue(item.id).wirePayload)) }
+        dao.enqueue(OutboxEntity(operationId, owner, "meal", meal.id, "upsert", null, wire.canonical,
+            Instant.now().toString(), "pending", "sync-v1", operation, wireContext))
+        return true
     }
 
     suspend fun editItem(id:String,itemId:String,grams:Double,amountText:String?=null) {

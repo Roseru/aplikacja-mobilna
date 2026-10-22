@@ -1,5 +1,33 @@
 # Android — Racje i kalorie
 
+Integracja140 z22.10.2026: zwykły merge25f7e4c i rzeczywistego main34d7cb2
+po scaleniu139. Całe android/app i Gradle bez zmian,0.8.24/code35/Room14.
+PR140 przechodzi na main; własny pełny CI nowego head/base jest wymagany.
+Waga141 pozostaje oddzielnym etapem. Starsze opisy zależności poniżej są historyczne.
+
+Aktualizacja zależności140/21.10: `codex/android-integracja-pr140` dołącza
+dokładny rodzic139/afb6a0a. PR140 pozostaje zależnym draftem. Produkcja,
+schemat14 i wersja0.8.24/code35 bez zmiany; istniejący lokalny odbiór poniżej
+nie zastępuje własnego przyszłego CI po integracji rodziców.
+
+Nowy etap **0.8.24/code35/Room14** na `codex/android-posilki-katalogowe-sync`
+rozszerza [kolejkę o produkty katalogowe i wybrane składniki racji](POSILKI_KATALOGOWE_SYNC.md).
+Odbiór lokalny:13 wybranych JVM i11 native PASS, lint0error. APK0.8.24
+uruchomiono jako aktualizację zachowującą dziennik; pełny CI integracji
+i rzeczywisty katalogowy APK/API pozostają osobno.
+
+Rodzic139/a1f547a dostarcza [ręczne posiłki w sync-v1](POSILEK_RECZNY_SYNC.md):
+prywatny produkt pozostaje lokalny, a spożycie ma osobną operację Meal.
+Jego330/345JVM i328native PASS dotyczą wcześniejszego źródła c24583b,
+nie zastępują sprawdzenia obecnego etapu. Starsze wpisy legacy są osobno.
+
+Stan rodzica139 przy aktualizacji zależności:
+
+Gałąź `codex/android-integracja-pr139` dołącza dokładny rodzic129/3155d84.
+PR139 pozostaje zależnym draftem, dopóki129 nie przejdzie własnego CI i merge.
+
+Historyczny wstęp rodzica139 przed merge:
+
 Gałąź `codex/android-integracja-pr139` zawiera rzeczywisty main167152a po
 scaleniu priorytetowego137, z zachowaniem O2-049. Istniejący PR139 przechodzi na main i wymaga własnego pełnego CI.
 Produkcja139/0.8.23/Room14 bez zmiany; lokalny odbiór330/345JVM i328native
