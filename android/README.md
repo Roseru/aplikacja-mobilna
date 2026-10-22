@@ -1,5 +1,14 @@
 # Android — Racje i kalorie
 
+Etap **0.8.25/code36/Room15** na `codex/android-waga-sync` dodaje
+[kanoniczne pomiary wagi i wspólny ACK z posiłkami](WAGA_SYNC.md).
+Odbiór lokalny:30wybranychJVM i336/336native PASS. Aktualizacja0.8.24→0.8.25
+zachowała27starszych tabel, wszystkie wartości i rowid; aplikacja otwarta
+do prób ręcznych. [Metadane odbioru](ODBIOR_0_8_25.json) zawierają źródła/SHA.
+Dołączono main e1e28df po scaleniu140; własny CI integracji141 jest osobnym odbiorem.
+
+Historyczny wstęp main po integracji140:
+
 Integracja140 z22.10.2026: zwykły merge25f7e4c i rzeczywistego main34d7cb2
 po scaleniu139. Całe android/app i Gradle bez zmian,0.8.24/code35/Room14.
 PR140 przechodzi na main; własny pełny CI nowego head/base jest wymagany.

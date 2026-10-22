@@ -1,0 +1,144 @@
+{
+  "version": "0.8.25",
+  "version_code": 36,
+  "validation_version_code": 1036,
+  "room_version": 15,
+  "status": "LOCAL_QUALIFIED_AND_INSTALLED_ON_REGULAR_APP",
+  "scope": "Immutable local APK qualification; integration head requires separate remote CI",
+  "production_source": "ff0d766caad85803784e572d67cd52dfcce36c1e",
+  "test_source": "d624712b332bf57bc032a12d9fc79442dd013d91",
+  "source_manifest_commit": "d624712b332bf57bc032a12d9fc79442dd013d91",
+  "source_inputs_count": 307,
+  "source_manifest_hash_rule": "SHA256 of UTF-8 json.dumps(path_to_raw_file_sha256, sort_keys=True, separators=(comma,colon))",
+  "source_manifest_sha256": "2bb13a2eaa1f31d9369c417800bb489b6832d720fe797ceaf3a04a66568d3cef",
+  "artifacts": {
+    "debug": {
+      "sha256": "167082026db6d89ccbecc6989f8457bd0ef6bd2942d8b9b4b8699395fd61d9a9",
+      "source_commit": "ff0d766caad85803784e572d67cd52dfcce36c1e"
+    },
+    "validation": {
+      "sha256": "28b8aa4f84ac56663eaa660942f2f3efea8b5d355bf2fd582493288f65cf29d0",
+      "source_commit": "ff0d766caad85803784e572d67cd52dfcce36c1e"
+    },
+    "tests": {
+      "sha256": "9799c1239205b5422b132629b5a99d10243e035aed9398ed48e0c7bf2c718dde",
+      "source_commit": "d624712b332bf57bc032a12d9fc79442dd013d91"
+    }
+  },
+  "application_ids": {
+    "debug": "pl.roseru.kalorie",
+    "validation": "pl.roseru.kalorie.validation",
+    "tests": "pl.roseru.kalorie.validation.test"
+  },
+  "selected_debug_jvm": {
+    "tests": 30,
+    "failures": 0,
+    "errors": 0,
+    "skipped": 0,
+    "reports": 3
+  },
+  "jvm_source": "ff0d766caad85803784e572d67cd52dfcce36c1e",
+  "jvm_repeated_after_test_only_fix": false,
+  "jvm_and_production_inputs_unchanged": true,
+  "lint": {
+    "Error": 0,
+    "Fatal": 0,
+    "Warning": 4,
+    "Information": 1
+  },
+  "native_full": {
+    "tests": 336,
+    "failures": 0,
+    "skipped": 0,
+    "elapsed_seconds": 2179.09,
+    "log_sha256": "b512a6003f9795b825b891e2e64500cabef8521b637aa73c6eb39d76d09567c5",
+    "offline_before": {
+      "airplane_mode_on": "1",
+      "wifi_status": "Wifi is disabled",
+      "network": [
+        "Active default network: none"
+      ]
+    },
+    "offline_after": {
+      "airplane_mode_on": "1",
+      "wifi_status": "Wifi is disabled",
+      "network": [
+        "Active default network: none"
+      ]
+    },
+    "success": true,
+    "new_weight_cases": 5
+  },
+  "prior_full_before_test_fixes": {
+    "tests": 336,
+    "failures": 2,
+    "skipped": 0,
+    "elapsed_seconds": 1306.84,
+    "log_sha256": "b324f8dac0fa6595623cb654cd73ef89e0a228306daa73e49c88edc6d6b98e5e",
+    "offline_before": {
+      "airplane_mode_on": "1",
+      "wifi_status": "Wifi is disabled",
+      "network": [
+        "Active default network: none"
+      ]
+    },
+    "offline_after": {
+      "airplane_mode_on": "1",
+      "wifi_status": "Wifi is disabled",
+      "network": [
+        "Active default network: none"
+      ]
+    },
+    "success": false,
+    "new_weight_cases": 4
+  },
+  "prior_focus_before_precision_fix": {
+    "tests": 7,
+    "failures": 1,
+    "skipped": 0,
+    "elapsed_seconds": 82.27,
+    "log_sha256": "f8fb1363c63d0ba3cc26eb4008a7d5163a91ef24f52ee918b2fb6b04f2a9c367",
+    "offline_before": {
+      "airplane_mode_on": "1",
+      "wifi_status": "Wifi is disabled",
+      "network": [
+        "Active default network: none"
+      ]
+    },
+    "offline_after": {
+      "airplane_mode_on": "1",
+      "wifi_status": "Wifi is disabled",
+      "network": [
+        "Active default network: none"
+      ]
+    },
+    "success": false,
+    "new_weight_cases": 4,
+    "photo_cases": 2
+  },
+  "regular_app_upgrade": {
+    "room": 15,
+    "old_tables": 27,
+    "fk_clean": true,
+    "old_values_and_all_old_rowids_preserved": true,
+    "version": "0.8.25",
+    "code": 36,
+    "apk_sha256": "167082026db6d89ccbecc6989f8457bd0ef6bd2942d8b9b4b8699395fd61d9a9"
+  },
+  "regular_ui": {
+    "package_visible": true,
+    "anr": false,
+    "known_controls": [
+      "Dodaj posiłek",
+      "Dziennik",
+      "Postępy",
+      "Profil",
+      "Ustawienia"
+    ],
+    "system_ui_wait_selected": false,
+    "no_app_relaunch_during_observation": true
+  },
+  "real_api_push": "NOT_RUN",
+  "network_configuration": "Default offline configuration; not the configured live E4 candidate",
+  "artifact_delivery": "Local immutable APK, manifest and checksum; no release upload in this step"
+}

@@ -204,9 +204,9 @@ class PhotoAnalysisStorageTest {
                 old.execSQL("INSERT INTO room_master_table VALUES (42,?)",arrayOf(schema.getString("identityHash")));old.version=from
                 itemRowids=old.rawQuery("SELECT id,rowid FROM meal_items",null).use {cursor->buildMap {while(cursor.moveToNext())put(cursor.getString(0),cursor.getLong(1))}}
             }
-            val migrated=Room.databaseBuilder(context,CalorieDatabase::class.java,name).addMigrations(MIGRATION_9_10, pl.roseru.kalorie.data.MIGRATION_10_11, pl.roseru.kalorie.data.MIGRATION_11_12, pl.roseru.kalorie.photo.MIGRATION_12_13, pl.roseru.kalorie.data.MIGRATION_13_14).addCallback(DATABASE_GUARDS).build()
+            val migrated=Room.databaseBuilder(context,CalorieDatabase::class.java,name).addMigrations(MIGRATION_9_10, pl.roseru.kalorie.data.MIGRATION_10_11, pl.roseru.kalorie.data.MIGRATION_11_12, pl.roseru.kalorie.photo.MIGRATION_12_13, pl.roseru.kalorie.data.MIGRATION_13_14, pl.roseru.kalorie.data.MIGRATION_14_15).addCallback(DATABASE_GUARDS).build()
             try {
-                assertEquals(14,migrated.openHelper.readableDatabase.version)
+                assertEquals(15,migrated.openHelper.readableDatabase.version)
                 assertEquals(before,snapshot(migrated.openHelper.readableDatabase))
                 assertEquals(itemRowids,migrated.openHelper.readableDatabase.query("SELECT id,rowid FROM meal_items").use {cursor->buildMap<String,Long> {while(cursor.moveToNext())put(cursor.getString(0),cursor.getLong(1))}})
                 if(from==12) {
