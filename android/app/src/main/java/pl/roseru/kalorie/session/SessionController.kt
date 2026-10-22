@@ -51,7 +51,8 @@ data class SessionView(val binding: SessionBinding? = null, val busy: Boolean = 
     val photoCancelBusy:Boolean=false,val photoCancellation:PhotoCancellationStatus?=null,
     val photoConfirmBusy:Boolean=false,val photoConfirmation:PhotoConfirmationStatus?=null,
     val photoDraftBusy:Boolean=false,val photoCanEditProposal:Boolean=false,val photoMealDraft:PhotoMealDraftPreview?=null,
-    val conflictBusy:Boolean=false,val conflicts:ConflictListView=ConflictListView())
+    val conflictBusy:Boolean=false,val conflicts:ConflictListView=ConflictListView(),
+    val diaryApplication:ServerDiaryApplication?=null,val diaryApplying:Boolean=false)
 
 /** Serializes durable decisions, not network waits. A callback/refresh is fenced by a captured
  * owner lease AND an operation ID, so logout and A→B→A cannot apply an old response.
@@ -72,7 +73,8 @@ class SessionController internal constructor(private val db: CalorieDatabase, pr
     private val photoAnalysisStores:((OwnerLease)->PhotoAnalysisStore)?=null,
     private val mealPushGateway:MealPushGateway?=null,private val mealPushStore:MealPushStore?=null,
     private val mealPushProtocol:pl.roseru.kalorie.core.sync.PushProtocol?=null,
-    private val conflictStore:SyncConflictStore?=null) {
+    private val conflictStore:SyncConflictStore?=null,
+    private val diaryStore:ServerDiaryStore?=null) {
     private val owners = LocalOwnerStore(db)
     private val mutex = Mutex()
     private var record = JSONObject()
@@ -144,6 +146,7 @@ class SessionController internal constructor(private val db: CalorieDatabase, pr
         clearConflicts()
         mutable.value=mutable.value.copy(mealPushBusy=false,mealPush=null,mealPushMessage=null,mealPushRetryAt=0) }
     private var snapshotOperation: String? = null
+    private var diaryApplying = false
     private val snapshots = snapshotProtocol?.let { ServerSnapshotStore(db, it) }
     private val snapshotProtocol = snapshotProtocol
     private var serverProfile: ProfileRead? = null
@@ -156,7 +159,7 @@ class SessionController internal constructor(private val db: CalorieDatabase, pr
     /** In-memory confirmation is invalidated also by an external Room context update. */
     suspend fun observeMotivationContext() {
         try {
-            db.invalidationTracker.createFlow("account_bindings", "local_active_owner", "local_owners", "photo_analysis_requests", "sync_push_batches", "outbox", "server_snapshot_access").collect {
+            db.invalidationTracker.createFlow("account_bindings", "local_active_owner", "local_owners", "photo_analysis_requests", "sync_push_batches", "outbox", "server_snapshot_access", "server_diary_applications").collect {
                 mutex.withLock {
                     if (mutable.value.binding != null) publish(mutable.value.message)
                 }
@@ -311,6 +314,8 @@ class SessionController internal constructor(private val db: CalorieDatabase, pr
             serverLinked = server != null, requiresRecovery = server?.requiresRecovery == true,
             profileBusy = profileOperation != null && privateReadKind == PrivateReadKind.PROFILE, serverProfile = serverProfile,
             snapshotBusy = snapshotOperation != null, snapshot = snapshots?.status(current.lease),
+            diaryApplication=if(current.owner.kind=="account")diaryStore?.latest(current.lease) else null,
+            diaryApplying=diaryApplying && snapshotOperation!=null,
             mealPushConfigured=mealPushGateway!=null && mealPushStore!=null && mealPushProtocol!=null && snapshots!=null,
             mealPushBusy=mealPushOperation!=null,mealPush=mealStatus,mealPushMessage=mealPushMessage,
             conflictBusy=conflictBusy,conflicts=conflictState,
@@ -2214,6 +2219,27 @@ class SessionController internal constructor(private val db: CalorieDatabase, pr
 
 
     /** Full server archive. The local diary remains editable, and no queue entry is acknowledged. */
+    /** Reuse a completed local archive after a restart, without HTTP or a fresh access token. */
+    suspend fun applyDiaryCopy(lease:OwnerLease) {
+        val store=diaryStore?:return
+        val id=UUID.randomUUID().toString()
+        mutex.withLock {
+            if(mutable.value.binding?.lease!=lease || snapshotOperation!=null || mealPushOperation!=null ||
+                bootstrapOperation!=null || profileOperation!=null || consentOperation!=null || operation!=null ||
+                photoUploadOperation!=null || nemesisMutationOperation!=null || conflictBusy || record.has("pending"))return
+            owners.requireCurrent(lease)
+            snapshotOperation=id;diaryApplying=true;publish()
+        }
+        try {
+            val result=store.apply(lease)
+            finishSnapshot(id,lease,"Dziennik uzupełniony z kopii. Uwzględniono: ${result.included}; lokalne zmiany zachowane do uzgodnienia: ${result.held}.")
+        } catch(error:CancellationException) {
+            withContext(NonCancellable){finishSnapshot(id,lease)};throw error
+        } catch(_:Exception) {
+            finishSnapshot(id,lease,"Nie udało się uzupełnić dziennika z tej kopii. Dane i kolejka zachowane; pobierz świeżą pełną kopię.")
+        }
+    }
+
     suspend fun downloadSnapshot(expectedLease:OwnerLease?=null,expectedContext:AccountBindingEntity?=null) {
         val transport = snapshotGateway ?: return
         val store = snapshots ?: return
@@ -2230,6 +2256,7 @@ class SessionController internal constructor(private val db: CalorieDatabase, pr
             val retryAt = sessionFor(current)!!.optLong("apiRetryAt")
             if (retryAt > now()) { publish("Serwer jest zajęty. Ponów za co najmniej ${(retryAt - now() + 999) / 1000} s."); return }
             snapshotOperation = id
+            diaryApplying = false
             mutable.value = mutable.value.copy(snapshotBusy = true, message = null)
             current.lease
         } } catch (error: CancellationException) { throw error }
@@ -2254,11 +2281,24 @@ class SessionController internal constructor(private val db: CalorieDatabase, pr
                         ready()
                         store.apply(sent, result.body)
                     }
+                    var completedMessage="Kopia serwera pobrana. Lokalny dziennik i kolejka zachowane."
+                    if(next==null && diaryStore!=null) {
+                        val mayApply=mutex.withLock {
+                            requireApi(captured);check(snapshotOperation==id)
+                            if(db.bootstrapDao().binding(lease.storageScope)?.requiresRecovery==true)false
+                            else {diaryApplying=true;publish();true}
+                        }
+                        if(mayApply) completedMessage=try {
+                            val applied=diaryStore.apply(lease,sent.runId)
+                            "Kopia pobrana, dziennik uzupełniony. Uwzględniono: ${applied.included}; lokalne zmiany zachowane do uzgodnienia: ${applied.held}."
+                        } catch(error:CancellationException){throw error}
+                        catch(_:Exception){"Kopia pobrana. Uzupełnienie dziennika wymaga ponowienia lub świeżej kopii; dane i kolejka zachowane."}
+                    }
                     mutex.withLock {
                         if (snapshotOperation == id) {
                             requireApi(captured)
-                            if (next == null) snapshotOperation = null
-                            publish(if (next == null) "Kopia serwera pobrana. Lokalny dziennik i kolejka zachowane." else null)
+                            if (next == null) {snapshotOperation = null;diaryApplying=false}
+                            publish(if (next == null) completedMessage else null)
                         }
                     }
                     if (next == null) return
@@ -2315,6 +2355,7 @@ class SessionController internal constructor(private val db: CalorieDatabase, pr
         message: String = "Pobieranie przerwane. Ponów, aby wznowić; pobrane strony i dziennik zachowane.") = mutex.withLock {
         if (snapshotOperation != id) return@withLock
         snapshotOperation = null
+        diaryApplying = false
         try { publish(if (owners.currentLease() == lease) message else null) }
         catch (_: Exception) { mutable.value = mutable.value.copy(snapshotBusy = false, message = message) }
     }

@@ -73,7 +73,7 @@ internal class ServerDiaryProtocol(private val schema: SyncWireSchema) {
                     if (payload != null) when (type) {
                         "meal" -> MealWire.read(payload, schema)
                         "weight" -> WeightWire.read(payload, schema)
-                        "profile", "goal", "diary_day", "product_draft" -> Unit // Domain schema validated by PullResponse.
+                        "profile", "goal", "diary_day", "product_draft" -> ServerDiaryValues.validate(type, payload)
                         else -> error("Unsupported diary entity")
                     }
                     val entityRevision = row.getLong("revision")
@@ -90,6 +90,7 @@ internal class ServerDiaryProtocol(private val schema: SyncWireSchema) {
                 expected = snapshots.query(epoch, limit, value.getString("snapshot_token"), value.getString("page_token"))
             }
         }
+        ServerDiaryValues.validateSnapshot(entities, checkNotNull(timeline))
         ServerDiarySnapshot(epoch, checkNotNull(checkpoint), checkNotNull(lastTime), checkNotNull(firstTime),
             checkNotNull(timeline), entities)
     }

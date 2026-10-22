@@ -111,7 +111,9 @@ class DiaryRepository(private val db: CalorieDatabase, private val context: Cont
         val operationId = UUID.randomUUID().toString()
         val prepared = try {
             fun number(value: Double?) = value?.let { BigDecimal.valueOf(it) }
-            val wire = ManualMealWire.create(product.name, item.id, amount, product.unit,
+            val wire = product.wirePayload?.let { PrivateProductWire.meal(it, item.id, amount, product.unit,
+                meal.occurredAt, meal.zoneId, meal.mealType.lowercase(java.util.Locale.ROOT), schema) }
+                ?: ManualMealWire.create(product.name, item.id, amount, product.unit,
                 ExactNutrition(number(product.kcal), number(product.protein), number(product.fat), number(product.carbs)),
                 meal.occurredAt, meal.zoneId, meal.mealType.lowercase(java.util.Locale.ROOT), schema)
             if (wire.json().getString("local_date") != meal.localDate) return false
@@ -125,7 +127,7 @@ class DiaryRepository(private val db: CalorieDatabase, private val context: Cont
         val wireContext = CanonicalMealRows.context(binding)
         val exactItem = CanonicalMealRows.items(meal.id, wire).single()
         dao.insertMeal(CanonicalMealRows.meal(meal.id, owner, wire, wireContext))
-        dao.insertItem(item.copy(grams = exactItem.grams, wirePayload = exactItem.wirePayload))
+        dao.insertItem(exactItem.copy(productId = product.id))
         dao.enqueue(OutboxEntity(operationId, owner, "meal", meal.id, "upsert", null, wire.canonical,
             Instant.now().toString(), "pending", "sync-v1", operation, wireContext))
         return true

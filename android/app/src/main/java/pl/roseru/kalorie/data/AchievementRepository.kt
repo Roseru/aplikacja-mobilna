@@ -16,7 +16,7 @@ sealed interface AchievementState {
 
 class AchievementRepository(private val db: CalorieDatabase, private val clock: LocalDayClock = LocalDayClock()) {
     fun observe(owner: String): Flow<AchievementState> = combine(
-        db.invalidationTracker.createFlow("meals", "meal_items", "goals", "diary_days", "weights"), clock.instants()
+        db.invalidationTracker.createFlow("meals", "meal_items", "goals", "diary_days", "weights", "server_diary_records"), clock.instants()
     ) { _, now ->
         // One transaction avoids mixing declarations, goals and meals from different revisions.
         val input = db.withTransaction {
