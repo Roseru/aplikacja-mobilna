@@ -17,7 +17,7 @@ Każda osoba aktualizuje własny wiersz. Daty i dokładne źródła są w jej wp
 
 | Rola | Ostatni znany rezultat | Następny krok / zależność | Źródło |
 |---|---|---|---|
-| O1 — Android, Kotlin, Room | 0.8.25:30JVM/336native PASS, migracja zachowała27tabel i wszystkie rowid; aplikacja otwarta | Własny CI141 na main po scaleniu140; kolejne typy danych i osobne E4 | O1-106, [PR141](https://github.com/Roseru/aplikacja-mobilna/pull/141), [odbiór](../android/WAGA_SYNC.md) |
+| O1 — Android, Kotlin, Room | 0.8.26: porownanie konfliktow i trwala decyzja; lokalnie35JVM/41native, po poprawce10native PASS | Wlasny pelny CI nowego head; dalej pull/uzgadnianie, import i pozostale typy danych | O1-107, codex/android-konflikty-sync, [opis](../android/KONFLIKTY_SYNC.md) |
 | O2 — Python, PostgreSQL, API | PR137 odebrany; zgodność źródłowa kandydata E4 PASS, runtime PARTIAL; dołączony main po PR129 | Końcowy CI PR137 na maina919777, merge koordynatora po PASS i osobny odbiór CI main; O3 konfiguracja, O1 skonfigurowane APK | O2-049, [PR137](https://github.com/Roseru/aplikacja-mobilna/pull/137); odpowiedź O2-048 |
 | O3 — DevOps, CI/CD, serwer | PR130 scalony po 8/8 SUCCESS; R2/R3 odebrane, transport zamknięty. Aktualizacje setup-java/upload-artifact/Caddy po przeglądzie bez istotnych uwag | Własny CI aktualnych gałęzi i main dla PR133–135; O1 potwierdza artefakt i gotowość kolejnego E4, okno jeszcze nieotwarte | O3-082/083, [PR133](https://github.com/Roseru/aplikacja-mobilna/pull/133), [PR130](https://github.com/Roseru/aplikacja-mobilna/pull/130) |
 
@@ -6010,3 +6010,51 @@ Archiwalne wiersze stanu przed integracją PR141 z main22.10; aktualny stan znaj
   Następny krok O1: własny CI141, merge i kolejna funkcja; O2/O3 informacyjnie.
 
 - Kontrole O1-106: E0 PASS11schematow/98valid/35invalid/18scenariuszy/809linkow, diff-check PASS; ponowny audyt zachowania228/235historycznych wystapien po dopisaniu odbioru. Produkcja/testy/Gradle identyczne z kwalifikowanym d624712; narzedzia/CI/backend/infra z main e1e28df.
+
+### O1-107 — Porównanie i trwałe rozstrzyganie konfliktów Meal/Weight, Room16
+
+- Data / autor: 2026-10-22, **agent 1 / O1**. Do: O2, O3, informacyjnie.
+- Status: **DO ODCZYTU**. [Gałąź codex/android-konflikty-sync](https://github.com/Roseru/aplikacja-mobilna/tree/codex/android-konflikty-sync),
+  kod9a041bd5f86d1d937f96324798cf0809ceb9334f, korekta komunikatu5a446eef8ebf2e74140bd0442407d5236ca0bb57,
+  zwykły merge aktualnego main8d67936 jakoeffd02a204ffdd79e81c97a7bcbc26dcd781c9ae.
+  [Zakres i odbiór](../android/KONFLIKTY_SYNC.md), [lokalny manifest](../android/ODBIOR_0_8_26.json).
+- Waga141 jest już scalona jako8d679367f6727cee64177b031d4106a8ef665815.
+  Własny CI39736449922 i osobny push CI main39739653358: oba8/8SUCCESS.
+  Odczytane logi własnego141:337debug/352validationJVM i336native,0fail/0skip.
+  Rzeczywiste drzewo main jest identyczne z przetestowanym merge; opis141 uzupełniony.
+- Nowy ekran Konto→Zmiany do uzgodnienia: stronicowana lista, ostatnia wersja lokalna
+  (również późniejsza poprawka), wersja serwera, składniki/ilości/kcal/B/T/W lub waga,
+  usunięcia i drugie potwierdzenie. Braki wartości odżywczych nie są zerami.
+  Decyzja, obie wersje, zmiany kolejki i ewentualny nowy wpis zapisują się atomowo.
+  Nowa próba ma nowy UUID operacji i aktualną rewizję; odtworzenie po usunięciu
+  ma nowy UUID wpisu oraz składników. Stare body/receipt pozostają niezmienne;
+  odmowa nie staje się fikcyjnym ACK. Zmiana właściciela, epoki, kopii lub lokalnej
+  wersji unieważnia stary podgląd. Brak current wymaga świeżej pełnej kopii.
+- 0.8.26/code37/validation1037/Room16. Migracja15→16 dodaje tylko tabelę decyzji,
+  zachowuje wszystkie28dotychczasowych definicji, dane i rowid.
+- Testy uruchomione dopiero na końcu dużego etapu:35JVM PASS, build/lint PASS
+  (0error/4warning/1info),41/41native offline API35 PASS. Po poprawce komunikatu
+  zgodnego usunięcia, dodaniu jego scenariusza i oznaczenia copy: rebuild oraz
+  10/10native PASS (8Room,2UI), bez ponownego JVM. Jedną nazwę metody testu
+  poprawiono przed kompilacją testów; zachowano wcześniejszy manifest i ślad zmiany.
+  Końcowe wykonanie potwierdza poprawiony test. To42różne lokalne przypadki,
+  nie51 i nie pełna regresja. APK/testy pochodzą z9a041bd.
+- Późniejsza korekta5a446ee zmienia wyłącznie komunikat odświeżania listy po
+  decyzji: awaria odczytu nie może sugerować wycofania zapisanego wyboru.
+  Własny pełny CI publikowanego head jest nadal osobnym wymaganym odbiorem;
+  sam push i lokalne testy nie oznaczają jego zaliczenia. Zwykły emulator
+  zachowuje na czas tego wpisu0.8.25; aktualizacja po odbiorze aktualnego APK.
+- ODCZYTANE aktualny main oraz O2-048/049 i O1-105/106; nie pojawiły się nowe
+  uwagi O2/O3 wymagające zmiany zakresu. Następnie O1: własny CI/PR, aktualizacja
+  aplikacji, pełny pull i uzgadnianie, import gościa/legacy, profil/cele/kompletność
+  oraz WorkManager. Specjalne recovery po zmianie epoki pozostaje osobnym etapem.
+  O3 nadal dostarcza aktualne obraz/schema/projekcję, issuer/API/CA i prywatną
+  procedurę sesji przed nowym skonfigurowanym APK i oddzielnym E4. Driver138 osobno.
+  Bez live API/Gemini/relay/deploy, zmian kont/epoki/baz lub restartu PC.
+- Oczekiwana odpowiedź: O2/O3 potwierdzają odczyt przy kolejnym własnym zadaniu;
+  nie przypisuję im odczytu ani runtime PASS. Brak pilnego działania środowiskowego.
+- Kontrole końcowe: E0 PASS (11 schematów, 98 valid / 35 invalid, 18 scenariuszy,
+  811 linków); diff-check PASS po usunięciu dodatkowego pustego wiersza na końcu.
+  Wszystkie 238 historycznych wystąpień i ich treść zachowane. Zakończony emulator
+  testowy O1Tests35 wyłączono po 10 PASS i sprawdzeniu braku instrumentacji;
+  bez wipe, bez ingerencji w zwykły emulator5554 i API5558.
