@@ -1,18 +1,27 @@
 # Synchronizacja pomiarów wagi — O1
 
 Etap0.8.25/code36/validation1036, Room15. Gałąź `codex/android-waga-sync`
-zależy od dokładnego PR140/25f7e4c. Nie zawiera niezależnego drivera138.
-Status checkpointu 21.10.2026: build debug/validation PASS, 30 wybranych
-testów JVM PASS (jedno uruchomienie na koniec etapu), lint bez błędów.
-Pierwszy pełny przebieg urządzenia: 334/336 PASS, dwa błędy testów.
-Po poprawieniu obsługi brakujących indeksów w fixture oraz przewinięcia
-podglądu zdjęcia: 6/7 PASS, w tym oba testy zdjęć. Pozostały test migracji
-wykazał utratę precyzji podczas kopiowania REAL przez Cursor.getString.
-Fixture używa teraz getDouble().toString() i sprawdza wartość również
-przed migracją. Ta ostatnia poprawka wymaga kompilacji i wykonania testu;
-ponowny pełny odbiór 336 testów pozostaje do zrobienia. Etap nie jest odebrany.
-Produkcja pozostaje na ff0d766; poprawki po tym commicie dotyczą testów
-i dokumentacji. Zwykły APK użytkownika nie został podmieniony.
+powstała z PR140/25f7e4c; teraz dołącza main e1e28df po scaleniu140.
+Nie zawiera niezależnego drivera138.
+Status odbioru lokalnego22.10.2026: build debug/validation PASS,30 wybranych
+JVM PASS uruchomione raz na końcu etapu; lint0error/4warning/1info. Po poprawkach
+testów pełny native API35 offline336/336PASS,0fail/0skip,2179,09s; obejmuje5
+nowych scenariuszy Weight. [Metadane odbioru](ODBIOR_0_8_25.json) utrwalają źródła i SHA.
+Zwykła aplikacja0.8.24/code35/Room14 została zaktualizowana do0.8.25/code36/
+Room15 bez clear/uninstall. Wszystkie27starych tabel, ich wartości i rowid
+pozostały identyczne; FK czyste. Aplikacja otwarta do prób ręcznych.
+
+Pierwszy pełny przebieg miał334/336PASS; po poprawkach opcjonalnych indices
+fixture i odsłonięciu podglądu zdjęcia6/7PASS, oba testy zdjęć PASS. Następnie
+naprawiono kopiowanie REAL w fixture przez getDouble().toString() i sprawdzono
+dokładną wartość również przed migracją. Ścisłe asercje po migracji pozostały.
+Końcowe336/336PASS dotyczą tej poprawki; wcześniejszych błędów nie usunięto z dowodów.
+
+Produkcja pochodzi zff0d766caad85803784e572d67cd52dfcce36c1e, testAPK z
+d624712b332bf57bc032a12d9fc79442dd013d91. Po poprawkach wyłącznie testów
+nie ponawiano JVM i nie przebudowano produkcji; APK identyczne bajtowo.
+Zwykły merge aktualnego main po140 zachowuje całe przetestowane android/app
+i Gradle. Odbiór własnego CI nowego head/base141 pozostaje osobnym warunkiem merge.
 
 Nowy pomiar konta po zdrowym bootstrapie zapisuje pomiar, dokładny payload
 Weight i operację sync-v1 w jednej transakcji. UI zachowuje zakres20–400kg;
@@ -40,10 +49,13 @@ Przygotowane scenariusze: dokładne Decimal/data/strefa, identyczna koperta,
 łączenie zmian przed wysłaniem, restart i utrata ACK z późniejszą poprawką,
 delete po ACK, mieszana partia Meal+Weight i rollback późniejszego zapisu,
 gość/unlinked/precyzja/recovery/izolacja oraz14→15 z zachowaniem starych tabel
-i rowid. Końcowy wynik po ostatniej poprawce pozostaje do uzupełnienia.
+i rowid. Wszystkie te przypadki są objęte końcowym336/336PASS.
 
 Pozostają osobne: rzeczywisty APK/API, pełne pull/reconciliation i rozwiązanie
 konfliktu w UI, import gościa/historycznych wpisów, inne typy dziennika,
 WorkManager, używany schema24/epoka/konta, E4/E7-R/recovery/KO32. Ten etap nie
 wywołuje Gemini, nie otwiera relay i nie zmienia środowiska Agenta3. Zwykły
-APK0.8.24 i prywatny dziennik nie zostały podmienione przed kwalifikacją.
+APK zaktualizowano do0.8.25 dopiero po kwalifikacji; prywatny dziennik zachowany.
+
+
+Artefakt lokalny: `Racje-i-kalorie-0.8.25-debug.apk`, źródło `ff0d766caad85803784e572d67cd52dfcce36c1e`, SHA-256 `167082026db6d89ccbecc6989f8457bd0ef6bd2942d8b9b4b8699395fd61d9a9`. APK/manifest/SHA256SUMS pozostają lokalną dostawą, bez publikowania buildów w repozytorium. Pierwszy podgląd zasłonił komunikat Android System UI; następna obserwacja potwierdziła samoistne ustąpienie komunikatu i gotową aplikację, bez jej restartu lub wyboru Wait.
