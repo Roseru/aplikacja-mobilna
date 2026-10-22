@@ -2087,7 +2087,7 @@ class SessionController internal constructor(private val db: CalorieDatabase, pr
             conflictTicket=null;conflictState=conflictState.copy(preview=null,message="Wpis zmienił się podczas porównywania. Otwórz aktualne wersje i potwierdź wybór ponownie.")
         }
         catch(_:Exception){
-            conflictTicket=null;conflictState=conflictState.copy(preview=null,message="Nie zapisano nowej decyzji. Odśwież listę; zachowano ostatni trwale zapisany stan.")
+            conflictTicket=null;conflictState=conflictState.copy(preview=null,message="Nie udało się zakończyć obsługi widoku. Odśwież listę, aby sprawdzić zapisany stan.")
         }
         finally {conflictBusy=false;publish()}
     }

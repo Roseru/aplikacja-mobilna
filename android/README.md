@@ -1,5 +1,16 @@
 # Android — Racje i kalorie
 
+Etap **0.8.26/code37/Room16** na `codex/android-konflikty-sync` dodaje
+[porównanie i świadome rozwiązywanie konfliktów posiłków i wagi](KONFLIKTY_SYNC.md):
+wersja lokalna/serwerowa, nowa operacja po decyzji, odtwarzanie pod nowym UUID
+i trwała historia decyzji. Starsze kolejki, pełne uzgadnianie i WorkManager
+pozostają kolejnymi etapami. Lokalnie35JVM i41native PASS, po końcowej
+poprawce10native PASS bez ponownego JVM; źródło lokalnych APK9a041bd.
+CI publikowanego head oraz aktualizacja zwykłego emulatora są osobnymi odbiorami.
+
+Poprzedni etap141 scalono jako8d67936; własny CI39736449922 i osobny
+push CI main39739653358 przeszły wszystkie8kontroli. Poniżej jego wcześniejszy opis.
+
 Etap **0.8.25/code36/Room15** na `codex/android-waga-sync` dodaje
 [kanoniczne pomiary wagi i wspólny ACK z posiłkami](WAGA_SYNC.md).
 Odbiór lokalny:30wybranychJVM i336/336native PASS. Aktualizacja0.8.24→0.8.25
