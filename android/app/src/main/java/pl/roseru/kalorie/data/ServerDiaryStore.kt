@@ -28,6 +28,17 @@ class ServerDiaryStore(private val db: CalorieDatabase, private val schema: Sync
     suspend fun apply(lease:OwnerLease,expectedRun:String?=null):ServerDiaryApplication = applyCopy(lease,expectedRun,null)
     internal suspend fun applyReconciled(lease:OwnerLease,expectedRun:String,planId:String):ServerDiaryApplication = applyCopy(lease,expectedRun,planId)
     private suspend fun applyCopy(lease: OwnerLease, expectedRun: String?, planId:String?): ServerDiaryApplication = withContext(Dispatchers.IO) {
+        // A compacted historical application is a saved result, never a reason to reapply old data.
+        if(expectedRun!=null) {
+            val saved=db.withTransaction {
+                LocalOwnerStore(db).requireCurrent(lease)
+                val binding=checkNotNull(db.bootstrapDao().binding(lease.storageScope))
+                records.application(expectedRun)?.also {
+                    check(it.ownerScope==lease.storageScope && it.wireContext==CanonicalMealRows.context(binding))
+                }
+            }
+            if(saved!=null)return@withContext saved
+        }
         val source = db.withTransaction {
             val gate = push.gate(lease,planId)
             if (expectedRun != null && gate.run.id != expectedRun) throw DiaryProjectionChangedException()

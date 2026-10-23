@@ -145,9 +145,12 @@ class ServerSnapshotStorageTest {
             store.expire(third)
             repeat(7) { store.apply(store.begin(lease), response()) }
             val active = store.active(lease)!!.id
-            rejected { store.begin(lease) }
+            val ninth = store.begin(lease)
             assertEquals(active, store.active(lease)!!.id)
-            assertEquals(8, db.snapshotDao().runs(lease.storageScope).size)
+            assertEquals(9, db.snapshotDao().runs(lease.storageScope).size)
+            assertEquals(8, db.snapshotArchiveDao().rawRuns(lease.storageScope).size)
+            assertNotNull(db.snapshotArchiveDao().receipt(first.runId))
+            assertEquals("pending", db.snapshotDao().run(ninth.runId)!!.state)
         } finally { db.close() }
     }
     @Test fun contextErrorRequiresNewConfirmedBootstrapAndPreservesRecoveryAfterward() = runBlocking<Unit> {
@@ -200,9 +203,9 @@ class ServerSnapshotStorageTest {
             }
             expected = originalTables(fixture); assertEquals(18, expected.size)
         } finally { fixture.close() }
-        val migrated = Room.databaseBuilder(context, CalorieDatabase::class.java, name).addMigrations(MIGRATION_6_7, MIGRATION_7_8, pl.roseru.kalorie.photo.MIGRATION_8_9, pl.roseru.kalorie.photo.MIGRATION_9_10, pl.roseru.kalorie.data.MIGRATION_10_11, pl.roseru.kalorie.data.MIGRATION_11_12, pl.roseru.kalorie.photo.MIGRATION_12_13, pl.roseru.kalorie.data.MIGRATION_13_14, pl.roseru.kalorie.data.MIGRATION_14_15, pl.roseru.kalorie.data.MIGRATION_15_16, pl.roseru.kalorie.data.MIGRATION_16_17, pl.roseru.kalorie.data.MIGRATION_17_18, pl.roseru.kalorie.data.MIGRATION_18_19, pl.roseru.kalorie.data.MIGRATION_19_20).addCallback(DATABASE_GUARDS).build()
+        val migrated = Room.databaseBuilder(context, CalorieDatabase::class.java, name).addMigrations(MIGRATION_6_7, MIGRATION_7_8, pl.roseru.kalorie.photo.MIGRATION_8_9, pl.roseru.kalorie.photo.MIGRATION_9_10, pl.roseru.kalorie.data.MIGRATION_10_11, pl.roseru.kalorie.data.MIGRATION_11_12, pl.roseru.kalorie.photo.MIGRATION_12_13, pl.roseru.kalorie.data.MIGRATION_13_14, pl.roseru.kalorie.data.MIGRATION_14_15, pl.roseru.kalorie.data.MIGRATION_15_16, pl.roseru.kalorie.data.MIGRATION_16_17, pl.roseru.kalorie.data.MIGRATION_17_18, pl.roseru.kalorie.data.MIGRATION_18_19, pl.roseru.kalorie.data.MIGRATION_19_20, pl.roseru.kalorie.data.MIGRATION_20_21).addCallback(DATABASE_GUARDS).build()
         try {
-            assertEquals(expected, originalTables(migrated)); assertEquals(20, migrated.openHelper.readableDatabase.version)
+            assertEquals(expected, originalTables(migrated)); assertEquals(21, migrated.openHelper.readableDatabase.version)
             assertTrue(migrated.snapshotDao().runs("guest").isEmpty())
             assertFalse(migrated.openHelper.readableDatabase.query("PRAGMA foreign_key_check").use { it.moveToFirst() })
         } finally { migrated.close(); context.deleteDatabase(name) }

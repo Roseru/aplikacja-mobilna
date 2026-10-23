@@ -15,6 +15,7 @@ import pl.roseru.kalorie.data.*
 import java.util.UUID
 
 class ImportOriginsMigrationTest {
+    @Test fun migration20To21PreservesAllOldTablesFrozenRequestsAndOrigins()=migrate(20)
     private val context get()=InstrumentationRegistry.getInstrumentation().targetContext
     private fun uuid()=UUID.randomUUID().toString()
     @Test fun actualRoom19RetainsAllOldCellsAndFrozenBodiesWhileBackfillingCrossPlanOrigin()=migrate(19)
@@ -34,7 +35,7 @@ class ImportOriginsMigrationTest {
                 .put("page_token",JSONObject.NULL).put("checkpoint","synthetic-checkpoint").put("server_time","2026-10-23T12:00:00Z")
                 .put("goal_timeline_revision",0).put("entities",JSONArray()).put("recovery_mappings",JSONArray()).put("operation_receipts",JSONArray())
             assertNull(snapshots.apply(snapshots.begin(lease),page.toString().toByteArray()))
-            val plan=if(version==19) {
+            val plan=if(version>=19) {
                 val importer=LegacyImportStore(source,wire);val preview=importer.preview(lease,"guest")
                 importer.approve(lease,preview.planId,preview.account,preview.issuer,preview.subject);importer.resume(lease,preview.planId)
                 preview
@@ -87,11 +88,11 @@ class ImportOriginsMigrationTest {
                 assertEquals(cells,dump {old.rawQuery(it,null)})
                 assertFalse(old.rawQuery("PRAGMA foreign_key_check",null).use {it.moveToFirst()})
             }
-            target=Room.databaseBuilder(context,CalorieDatabase::class.java,name).addMigrations(MIGRATION_18_19,MIGRATION_19_20).addCallback(DATABASE_GUARDS).build()
-            val db=target!!;assertEquals(20,db.openHelper.readableDatabase.version)
+            target=Room.databaseBuilder(context,CalorieDatabase::class.java,name).addMigrations(MIGRATION_18_19,MIGRATION_19_20, pl.roseru.kalorie.data.MIGRATION_20_21).addCallback(DATABASE_GUARDS).build()
+            val db=target!!;assertEquals(21,db.openHelper.readableDatabase.version)
             assertEquals(cells,dump {db.openHelper.readableDatabase.query(it)})
             assertFalse(db.openHelper.readableDatabase.query("PRAGMA foreign_key_check").use {it.moveToFirst()})
-            if(version==19) {
+            if(version>=19) {
                 val migrated=db.importDao().origin("guest","meal",id)!!
                 assertEquals(plan!!.planId,migrated.firstPlanId);assertEquals(original.operationId,migrated.firstOperationId)
                 assertEquals(origin!!.originFingerprint,migrated.firstFingerprint)
@@ -104,9 +105,9 @@ class ImportOriginsMigrationTest {
             assertArrayEquals(body,db.pushDao().batch(frozen.id)!!.requestJson.toByteArray());assertEquals(hash,db.pushDao().batch(frozen.id)!!.requestHash)
             db.dao().saveWeight(WeightEntity("new-after-migration","guest","2001-01-03","2001-01-03T12:00:00Z","UTC",81.0))
             val importer2=LegacyImportStore(db,wire);val second=importer2.preview(lease,"guest")
-            if(version==19)assertEquals("already_imported",db.importDao().source(second.planId,"meal",id)!!.state)
+            if(version>=19)assertEquals("already_imported",db.importDao().source(second.planId,"meal",id)!!.state)
             else assertEquals(7,second.total)
-            if(version==19){importer2.approve(lease,second.planId,second.account,second.issuer,second.subject);importer2.resume(lease,second.planId)}
+            if(version>=19){importer2.approve(lease,second.planId,second.account,second.issuer,second.subject);importer2.resume(lease,second.planId)}
             assertEquals(original,db.dao().operation(original.operationId))
             assertArrayEquals(body,db.pushDao().batch(frozen.id)!!.requestJson.toByteArray())
         } finally {target?.close();source.close();context.deleteDatabase(name)}
