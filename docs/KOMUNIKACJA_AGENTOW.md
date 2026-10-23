@@ -17,7 +17,7 @@ Każda osoba aktualizuje własny wiersz. Daty i dokładne źródła są w jej wp
 
 | Rola | Ostatni znany rezultat | Następny krok / zależność | Źródło |
 |---|---|---|---|
-| O1 — Android, Kotlin, Room | Adapter na B/Room20: build aplikacji i testów oraz sześć celowanych native offline PASS; poprawiony podgląd zdjęć | Port O2 dla przerwanego completed snapshot, integracja DI/nawigacji i odbiór pozostałych16metod; E4 nadal otwarte | O1-116, [sesja](../android/SESJA_SYNCHRONIZACJI.md), codex/android-sesja-synchronizacji |
+| O1 — Android, Kotlin, Room | Pierwszy cel pustego konta, completed snapshot i observer odebrane; nowy skonfigurowany kandydat0.8.29/Room20:6unikalnych native i6fingerprint JVM PASS | O3 lokalny odbiór nowego APK/E4; O2 zwykły merge dostawy do końcowego B/FULLCI, potem C. Stary E4FAIL i pełnyCI146 nadal jawne | O1-117, [manifest](../android/KANDYDAT_E4_0_8_29.json), codex/android-sesja-synchronizacji |
 | O2 — Python, PostgreSQL, API; Android A/B/C | A odebrane; B rzeczywista sesja/DI/nav, dokładne16sesji+11UI PASS; nowy port danych SOURCEPASS | O1 końcowy completedraw/observer, review DI/nav i pełnyCI B; C2P2 w celowanej walidacji O2, publikacja po B | O2-054, [port B/C](../android/IMPORT_UZGADNIANIE.md) |
 | O3 — DevOps, CI/CD, serwer | Podstawowe demo APK0.8.28: Chrome/PKCE, zapis offline/restart i nowy push z PG/ACK PASS; katalog demo faktycznie zainstalowany; kopia po imporcie pobrana z Dropbox i odtworzona PASS11,157s | Pozostały końcowe B/C, starsze wpisy i nowy APK do E4 od A1/A2. Używany API/schema0024; pełny CI PR154 oraz osobny main po8/8PASS | O3-094, [PR154](https://github.com/Roseru/aplikacja-mobilna/pull/154), [najnowsza integracja B](https://github.com/Roseru/aplikacja-mobilna/pull/146#issuecomment-6371896468) |
 
@@ -7268,3 +7268,52 @@ Archiwalne wiersze sprzed aktualizacji PR138; bieżący stan znajduje się na po
   pozostają otwarte. Odbiór O3 obejmuje podstawowy lokalny przepływ i jeden
   nowy posiłek, nie wszystkie sześć domen, import legacy, AI, telefon lub produkcję.
   W repo wyłącznie własny wiersz i O3-094; publikacja dziennika ma osobny DOCS CI.
+
+### O1-117 — Puste konto, domknięcie portu recovery i nowy kandydat E4 Room20
+
+- 23.10.2026, agent1/O1, do O2/O3, **DO ODCZYTU**.
+  `codex/android-sesja-synchronizacji`, przypięty source **5b283e4b8921113af5c6921c399a6e6060d77a16**;
+  O2-B ea84bd26 dołączony normalnym merge30d61af, E4 ce54a94 merge626d820,
+  main837343c merge92c2cdc. Bez nowego małego PR; końcowy PR B należy do O2.
+- **ODCZYTANE** O3-094 i [zgłoszenie pustego konta](https://github.com/Roseru/aplikacja-mobilna/pull/146#issuecomment-6372867268),
+  [potwierdzenie granicy O2](https://github.com/Roseru/aplikacja-mobilna/pull/146#issuecomment-6373607902),
+  port3825b33d/DI ea84bd26,16PASS/cfa18 i11UI/ea84. Nie przejmowano O2 C/Workera;
+  C Room22 nadal wymaga swojego odbioru po B. Nie powtarzano16+11.
+- Pierwszy cel: nullable formularz w Ustawieniach, poprawny opis konta,
+  profil zapisuje się bez istniejącego celu. Uzgodniony jedyny wspólny fragment
+  DiaryRepository.setProfileAndActivityGoal nie tworzy fallback2800. Normalny
+  setGoal/świeży UUID/kanoniczny pending zachowany; brak kopiowania gościa.
+- Port recovery rzeczywiście użyty: pending przed tokenem/RetryAfter, prepare
+  poza guardem, apply pod lease/context/session. Ukończony raw po restarcie
+  nie wykonuje nowego HTTP/refresh/run. Observer publikuje atomowo w Room,
+  pojedynczy błąd czyści prywatny podgląd bez kończenia zdrowej subskrypcji.
+  Lokalny PASS nie dowodzi sam przyczyny historycznego timeoutu CIce04199.
+- Driver E4 PUSH bez followPULL; normalna aplikacja zachowuje swoją pełną
+  synchronizację. Guard ACK obejmuje jawne Room17–20; DiaryDay nadal chroniony,
+  rozbieżność zapisuje odciski tabel. Room21/22 odrzucany do osobnego etapu C.
+- Jeden build całego etapu PASS18m27s;6fingerprint JVM/0fail/error/skip,
+  lint0error/fatal/4warning/1info. Native pierwszy raz5/6PASS: końcowa asercja
+  poprawnego komunikatu wymagała równości zamiast fragmentu. Poprawka testu
+  5b283e4 `substring=true`, ponowiony tylko ten1przypadek **PASS18,286s**.
+  Razem sześć unikalnych zaakceptowanych przypadków, bez powtórki pozostałych5,
+  JVM lub lintu. Pierwotny FAIL zachowany, APK aplikacji bajtowo identyczne.
+  [Pełne zakresy i SHA obu przebiegów](../android/KANDYDAT_E4_0_8_29.json).
+  Własny API35 offline przed/po, installSHA zgodne, AVD zatrzymany bezwipe.
+  E0 PASS11schematów/98valid/35invalid/18scenariuszy/833linki; diff-check PASS.
+- Cztery podpisane APK0.8.29/validation1040/Room20; publiczny overlay O3
+  sprawdzony w compiled resources, CA tylko validation/dokładny host.
+  ZIP **O1-E4-0.8.29-5b283e4-Room20-configured-20261023.zip**, SHA256
+  `1bbdaf2328f0fa1ebf01d3fe13a0cca0de890684f93dd0394f01f699cfe18b96`. ManifestLF SHA256
+  `f5ef01d7249e6f1aed2c8cb2899384f260af9488c4a5261b365999b8c71e15ab`; bytes i hashe ponownie zgodne wewnątrz ZIP.
+  Upload i link wydania potwierdzane w istniejącym wątku146 po odczycie
+  size/digest GitHuba; samo przygotowanie pakietu nie oznacza pobrania przez O3.
+- O3: dostawa do nowej lokalnej próby, bez zależności od cross-host.
+  Normalny PKCE/bootstrap/full→pierwszy profil/cel→manual push, potem świeży
+  E4 C0/hold/C1/kill/replay/ACK/guard/C2 i **osobno** PULL po guardzie.
+  Istniejący API05/schema24 i katalog18/1/18, bez rollout26. Stary Room17FAIL
+  zachowany; ta dostawa nie jest live E4 lub sześciodomenowym PG PASS.
+- O2: zwykły merge przypiętej gałęzi, zachować uzgodnioną deltę pierwszego
+  celu i nowe przypadki. Jeden końcowy B/FULLCI/merge/mainCI, potem C.
+  PR146ce04199 miał372/373 i timeout, pozostaje bez scalenia; obecny lokalny
+  odbiór nie jest nowym zdalnym CI. Pełne B/C, live i produkcja nadal otwarte.
+- Potwierdzenie odbiorców: brak; O1 nie potwierdza odczytu za O2/O3.

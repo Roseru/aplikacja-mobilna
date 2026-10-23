@@ -1,6 +1,55 @@
 # Wspólny kandydat ręcznego posiłku i ponowienia ACK
 
-## Aktualny skonfigurowany pakiet — 23.10.2026
+## Nowy kandydat0.8.29 / Room20 — 23.10.2026
+
+Źródło **5b283e4b8921113af5c6921c399a6e6060d77a16**, gałąź `codex/android-sesja-synchronizacji`.
+[Manifest czterech APK i dokładnych zakresów](KANDYDAT_E4_0_8_29.json).
+Debug40, **validation1040/0.8.29.validation**, Room20. Zwykłe merge portu/DI
+O2-B ea84bd26, własnego drivera ce54a94 i main837343c; bez migracji O2-C21/22.
+
+Puste konto ma jawny formularz pierwszego celu i niezależny zapis profilu;
+nie powstaje domyślny2800 ani kopia gościa. Ustawienia opisują profil konta.
+Pending ukończonego recovery snapshot jest akceptowany lokalnie przed
+Retry-After/refresh; prepare poza guardem, apply pod właściwym kontekstem.
+Obserwator czyta spójną transakcję Room i nie kończy zdrowej subskrypcji po
+błędzie pojedynczej emisji. Driver E4 sprawdza trwały ACK **przed osobnym PULL**,
+chroni jawne schematy17–20 i zapisuje odciski poszczególnych tabel przy FAIL.
+DiaryDay nie jest wyłączony z ochrony; nieznane Room21/22 zostaje odrzucone.
+
+Kwalifikacja: pierwszy wspólny build debug/validation/defaulttest+lint
+PASS18m27s, **6 fingerprint JVM PASS**, lint0error/fatal,4warning,1info.
+Pierwszy scoped native API35 offline: **5/6PASS**, ostatnia asercja pierwszego
+celu omyłkowo porównywała cały poprawny komunikat z jego fragmentem.
+Jedyna poprawka5b283e4: `substring=true` w teście; ponowiony tylko ten przypadek,
+**1/1PASS18,286s**. Pięć pozostałych scenariuszy/JVM/lint bez powtórki.
+Kod aplikacji i oba jej APK identyczne z92c2cdc. Przebudowane wyłącznie dwa
+testAPK; osobny opt-in build PASS165.67s, nie zmienia validation.
+Pierwotny FAIL zachowany w manifeście obok obu przebiegów; sześć unikalnych
+przypadków obejmuje UI pierwszego celu, zmianę klasy aktywności, pending raw,
+observer/prywatny kontekst i rozdzielenie ACK/PULL. Transport jest fixture.
+Zainstalowane SHA i strict offline przed/po zgodne; AVD zatrzymany bez wipe.
+Wcześniejsze16sesji/cfa18 i11UI/ea84 wykonane przez O2, niepowtarzane przez O1.
+
+Nowy fizyczny pakiet **O1-E4-0.8.29-5b283e4-Room20-configured-20261023.zip**, SHA256
+`1bbdaf2328f0fa1ebf01d3fe13a0cca0de890684f93dd0394f01f699cfe18b96`. ManifestLF SHA256
+`f5ef01d7249e6f1aed2c8cb2899384f260af9488c4a5261b365999b8c71e15ab`; sumy porównane także wewnątrz ZIP.
+Podpisy wszystkich4APK zweryfikowane. CA/issuer/API sprawdzone w skompilowanych
+zasobach: dodatkowy CA wyłącznie validation/dokładny host, bez cleartext/userCA.
+Potwierdzenie uploadu z size/digest i link do roboczego wydania jest przekazywane
+w [istniejącym wątku146](https://github.com/Roseru/aplikacja-mobilna/pull/146).
+Sam lokalny pakiet nie potwierdza pobrania przez O3.
+
+O3 odbiera na własnym AVD: zwykły PKCE/bootstrap/full, pierwszy profil/cel,
+nowy manual push, następnie osobna świeża próba E4 z nowymi ID i planem.
+C0→hold→niezależny C1→zewnętrzny kill przed deadline→nowy proces/replay/ACK→
+guard→C2; PULL dopiero osobno po guardzie. Nie trzeba uruchamiać cross-host
+relay. Istniejący lokalny API05/schema24 i katalog demo18/1/18 pozostają
+wejściem O3; nie wykonano rollout26. O2 otrzymuje ten sam source do zwykłego
+merge i jednego końcowego B/FULLCI/mainCI, dopiero potem C.
+**Live E4/kill/PG, live pierwszy cel, końcowe B/C i zdalny FULL CI tego źródła
+pozostają otwarte. Historyczny Room17 zachowuje FAIL końcowego guardu.**
+
+## Historyczny skonfigurowany pakiet0.8.27 — 23.10.2026
 
 **Dostawa na GitHub potwierdzona:** [robocze wydanie z czterema APK](https://github.com/Roseru/aplikacja-mobilna/releases/tag/untagged-a106e469bb345cdfa8b1),
 ZIP44941585B, SHA256 `8bcf6105e7fb064c35ba5d42321cc4cc8547a5a5b61796bdfc75510ff112522d`.
