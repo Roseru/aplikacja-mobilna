@@ -103,8 +103,7 @@ class ServerSnapshotStore(private val db: CalorieDatabase, private val protocol:
                 pull?.planId==planId && (pull==null || (pull.groupIndex==groupIndex &&
                 pull.operationIdsJson==pl.roseru.kalorie.core.catalog.StrictJson.canonical(org.json.JSONArray(recoveryOperationIds))))
         }?.let { return@withTransaction request(it, lease, value) }
-        // Bound retained archives without silently deleting older evidence or local history.
-        if (runs.size >= 8 || runs.sumOf { it.byteCount } >= 128L * 1_048_576) throw SnapshotCapacityException()
+        SnapshotArchiveStore(db).reserve(lease,value,extraRuns=1)
         val run = ServerSnapshotRun(UUID.randomUUID().toString(), lease.storageScope, lease.generation, value.accountId,
             value.accountGeneration, value.syncEpoch, value.contextRevision, null, null, null, null, null, 0, 0, 0, 100, "pending")
         dao.insert(run)
@@ -125,6 +124,11 @@ class ServerSnapshotStore(private val db: CalorieDatabase, private val protocol:
             val value = context(request.lease, request.binding)
             val run = checkNotNull(dao.run(request.runId))
             if (!same(run, request.lease, value)) throw SnapshotConflictException()
+            if(db.snapshotArchiveDao().receipt(run.id)!=null) {
+                if(run.state=="complete" && SnapshotArchiveStore(db).verifiesPage(run.id,request.pageIndex,request.query.canonical,page.canonical))
+                    return@withTransaction null
+                throw SnapshotConflictException()
+            }
             val old = dao.page(run.id, request.pageIndex)
             if (old != null) {
                 if (old.queryJson != request.query.canonical || old.responseJson != page.canonical) throw SnapshotConflictException()
@@ -145,9 +149,11 @@ class ServerSnapshotStore(private val db: CalorieDatabase, private val protocol:
             val count = SnapshotProtocol.IDENTITIES.keys.sumOf { json.getJSONArray(it).length() }
             val itemCount = Math.addExact(run.itemCount, count)
             val bytesCount = Math.addExact(run.byteCount, page.canonical.toByteArray(Charsets.UTF_8).size.toLong())
-            val ownerBytes = dao.runs(run.ownerScope).sumOf { it.byteCount } - run.byteCount + bytesCount
-            if (itemCount > 100_000 || run.pageCount >= 2000 || bytesCount > 64L * 1_048_576 || ownerBytes > 128L * 1_048_576)
+            val newRawBytes=Math.addExact(request.query.canonical.toByteArray(Charsets.UTF_8).size.toLong(),page.canonical.toByteArray(Charsets.UTF_8).size.toLong())
+            val runRawBytes=Math.addExact(db.snapshotArchiveDao().rawBytes(run.id),newRawBytes)
+            if (itemCount > 100_000 || run.pageCount >= 2000 || bytesCount > SnapshotArchiveStore.MAX_RUN_BYTES || runRawBytes > SnapshotArchiveStore.MAX_RUN_BYTES)
                 throw SnapshotCapacityException()
+            SnapshotArchiveStore(db).reserve(request.lease,value,extraBytes=newRawBytes)
             val final = json.isNull("page_token")
             val next = run.copy(snapshotToken = json.getString("snapshot_token"), nextPage = if (final) null else json.getString("page_token"),
                 checkpoint = if (final) json.getString("checkpoint") else null, serverTime = json.getString("server_time"),
@@ -161,7 +167,10 @@ class ServerSnapshotStore(private val db: CalorieDatabase, private val protocol:
             dao.update(next)
             // Reconciliation raw pages are staging. Its semantic ledger validates the complete
             // copy/receipts before atomically publishing the active checkpoint and typed evidence.
-            if (final && db.importDao().pull(run.id)==null) dao.save(ServerSnapshotAccess(run.ownerScope, run.id, false))
+            if (final && db.importDao().pull(run.id)==null) {
+                protocol.validateFull(value.syncEpoch,dao.pages(run.id).map { ArchivedDiaryPage(it.queryJson,it.responseJson) })
+                dao.save(ServerSnapshotAccess(run.ownerScope, run.id, false))
+            }
             nextRequest
         }
     }

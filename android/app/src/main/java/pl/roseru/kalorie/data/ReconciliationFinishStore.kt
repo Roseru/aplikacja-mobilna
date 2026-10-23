@@ -164,6 +164,7 @@ internal class ReconciliationFinishStore(private val owner:ReconciliationStore) 
             dao.insert(ReconciliationEvidence(id,"completion","application",completion,LegacyImportStore.digest(completion),source.run.id))
             dao.update(next.copy(state="complete"))
             db.bootstrapDao().update(expected.copy(requiresRecovery=false))
+            db.syncWorkDao().insert(ReconciliationCompletion(ownerScope=lease.storageScope,wireContext=context,planId=id,runId=application.runId))
             application
         }
     }

@@ -33,7 +33,7 @@ data class SessionActions(val login: () -> Unit, val logout: () -> Unit, val ref
     val resolveConflict:(pl.roseru.kalorie.data.OwnerLease,String,pl.roseru.kalorie.data.ConflictChoice)->Unit={_,_,_->},
     val applyDiaryCopy:(pl.roseru.kalorie.data.OwnerLease)->Unit={})
 
-@Composable fun SessionScreen(view: SessionView, actions: SessionActions, back: () -> Unit, backLabel: String = "Wróć do profilu", onImport:(()->Unit)?=null) {
+@Composable fun SessionScreen(view: SessionView, actions: SessionActions, back: () -> Unit, backLabel: String = "Wróć do profilu", onImport:(()->Unit)?=null,syncStatus:String?=null) {
     val account = view.binding?.owner?.kind == "account"
     var confirmLogout by remember { mutableStateOf(false) }
     Column(Modifier.fillMaxSize().verticalScroll(rememberScrollState()).padding(20.dp), verticalArrangement = Arrangement.spacedBy(16.dp)) {
@@ -59,6 +59,7 @@ data class SessionActions(val login: () -> Unit, val logout: () -> Unit, val ref
                 modifier=Modifier.fillMaxWidth().testTag("session-import")) {Text("Import i uzgadnianie danych")}
             if(!view.serverLinked)Text("Najpierw połącz to konto z serwerem. Wpisy pozostają na urządzeniu.")
         }
+        if(account && syncStatus!=null)Text(syncStatus,Modifier.testTag("sync-background-status"))
         if (account) {
             MealPushPanel(view,actions.synchronizeMeals)
             SyncConflictPanel(view,actions)

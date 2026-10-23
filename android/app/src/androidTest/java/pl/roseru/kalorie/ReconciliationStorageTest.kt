@@ -62,6 +62,33 @@ class ReconciliationStorageTest {
         store.acceptCompletedSnapshot(lease,binding,plan.planId,request.runId);return request
     }
     private suspend fun rejects(action:suspend ()->Unit) {var rejected=false;try{action()}catch(_:Exception){rejected=true};assertTrue(rejected)}
+    @Test fun archiveCompactionProtectsIncompleteReceiptGroupsAndAwaitingSnapshotWithoutSubstitutingOrdinaryCopy()=runBlocking<Unit> {
+        val db=memory()
+        try {
+            val lease=account(db);DiaryRepository(db,context,lease).addWeight(80.125,LocalDate.of(2001,1,2))
+            val ordinary=MealPushStore(db,schema);val frozen=ordinary.prepare(lease)!!;ordinary.markAttempted(frozen)
+            val original=db.dao().operation(frozen.operations.single().operationId)!!;val frozenRow=db.pushDao().batch(frozen.id)!!
+            val binding=expire(db,lease,frozen);val store=ReconciliationStore(db,schema);val plan=plan(store,lease,binding)
+            val proof=pull(db,store,lease,binding,plan);val source=db.importDao().sources(plan.planId).single()
+            store.decide(lease,binding,plan.planId,source.entityType,source.sourceId,source.sourceHash,"{\"choice\":\"replay_original\"}")
+            val request=store.preparePush(lease,binding,plan.planId)!!;store.markAttempted(request)
+            store.applyAck(store.prepareAck(request,200,reply(request.batch)))
+            val pages=db.snapshotDao().pages(proof.runId);val evidence=db.importDao().evidence(plan.planId)
+            val pulls=db.importDao().pulls(plan.planId);val batches=db.importDao().batches(plan.planId)
+            val snapshots=ServerSnapshotStore(db,SnapshotProtocol(schema))
+            repeat(12) {index->assertNull(snapshots.apply(snapshots.begin(lease),page(binding.syncEpoch,checkpoint="ordinary-after-ack-$index")))}
+            assertNull(db.snapshotArchiveDao().receipt(proof.runId));assertEquals(pages,db.snapshotDao().pages(proof.runId))
+            assertEquals(evidence,db.importDao().evidence(plan.planId));assertEquals(pulls,db.importDao().pulls(plan.planId))
+            assertEquals(batches,db.importDao().batches(plan.planId));assertEquals(frozenRow,db.pushDao().batch(frozen.id))
+            assertEquals(8,db.snapshotArchiveDao().rawRuns(lease.storageScope).size)
+            rejects {store.finish(lease,binding,plan.planId)}
+            assertTrue(db.bootstrapDao().binding(lease.storageScope)!!.requiresRecovery)
+            pull(db,store,lease,binding,plan,listOf(entity(original)))
+            assertEquals(1,store.finish(lease,binding,plan.planId).included)
+            assertFalse(db.bootstrapDao().binding(lease.storageScope)!!.requiresRecovery)
+            assertFalse(db.openHelper.readableDatabase.query("PRAGMA foreign_key_check").use {it.moveToFirst()})
+        }finally{db.close()}
+    }
     @Test fun ordinaryCopyAfterRecoveryAckCannotPreventRequestingFreshTypedPlanSnapshot()=runBlocking<Unit> {
         val db=memory()
         try {

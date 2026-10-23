@@ -12,8 +12,8 @@ private fun immutableGoals(db: SupportSQLiteDatabase) {
 }
 
 val DATABASE_GUARDS = object : RoomDatabase.Callback() {
-    override fun onCreate(db: SupportSQLiteDatabase) { immutableGoals(db); importGuards(db) }
-    override fun onOpen(db: SupportSQLiteDatabase) { immutableGoals(db); importGuards(db) }
+    override fun onCreate(db: SupportSQLiteDatabase) { immutableGoals(db); importGuards(db); snapshotArchiveGuards(db); reconciliationCompletionGuards(db) }
+    override fun onOpen(db: SupportSQLiteDatabase) { immutableGoals(db); importGuards(db); snapshotArchiveGuards(db); reconciliationCompletionGuards(db) }
 }
 
 val MIGRATION_5_6 = object : Migration(5, 6) {

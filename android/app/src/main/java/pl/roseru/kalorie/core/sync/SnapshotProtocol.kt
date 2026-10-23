@@ -27,6 +27,7 @@ class SnapshotPage internal constructor(internal val canonical: String) {
 }
 
 class SnapshotProtocol(private val schema: SyncWireSchema) {
+    internal fun validateFull(epoch:String,pages:List<ArchivedDiaryPage>) { ServerDiaryProtocol(schema).read(epoch,pages) }
     fun query(epoch: String, limit: Int = 100, snapshot: String? = null, page: String? = null,
         recoveryOperationIds: List<String> = emptyList()): SnapshotQuery {
         require(recoveryOperationIds.isEmpty() || (snapshot == null && page == null))

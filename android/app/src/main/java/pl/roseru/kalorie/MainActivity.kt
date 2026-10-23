@@ -22,6 +22,7 @@ import androidx.lifecycle.ViewModelStoreOwner
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.Dispatchers
 import pl.roseru.kalorie.data.DiaryRepository
+import pl.roseru.kalorie.sync.userStatus
 import pl.roseru.kalorie.session.SessionActions
 import pl.roseru.kalorie.session.PhotoDraftActions
 import pl.roseru.kalorie.data.ThemeMode
@@ -75,6 +76,8 @@ class MainActivity : ComponentActivity() {
                         pl.roseru.kalorie.importing.ImportViewModel(app.database,app.syncSchema,binding.lease,app.sessions,createSavedStateHandle())
                     }})
             } else null
+            val syncFlow=remember(ownerKey) {app.database.syncWorkDao().observe(binding.lease.storageScope)}
+            val syncState by syncFlow.collectAsStateWithLifecycle(initialValue=null)
             val mode by model.theme.collectAsStateWithLifecycle()
             val dark = when (mode) { ThemeMode.SYSTEM -> isSystemInDarkTheme(); ThemeMode.LIGHT -> false; ThemeMode.DARK -> true }
             SideEffect {
@@ -93,7 +96,7 @@ class MainActivity : ComponentActivity() {
                 readProfile = { app.sessionScope.launch { app.sessions.readProfile() } },
                 downloadSnapshot = { app.sessionScope.launch { app.sessions.downloadSnapshot(binding.lease) } },
                 applyDiaryCopy = { lease -> app.sessionScope.launch { app.sessions.applyDiaryCopy(lease) } },
-                synchronizeMeals = { lease -> app.sessionScope.launch { app.sessions.synchronizeMeals(lease) } },
+                synchronizeMeals = { lease -> app.sessionScope.launch { app.syncWorkRuntime.manual(lease) } },
                 loadConflicts = { lease -> app.sessionScope.launch { app.sessions.loadConflicts(lease) } },
                 nextConflicts = { lease -> app.sessionScope.launch { app.sessions.moveConflicts(lease,1) } },
                 previousConflicts = { lease -> app.sessionScope.launch { app.sessions.moveConflicts(lease,-1) } },
@@ -140,7 +143,7 @@ class MainActivity : ComponentActivity() {
                     confirm={id,revision,edit->app.sessionScope.launch {app.sessions.confirmPhotoMeal(binding.lease,id,revision,edit)}},
                     retryConfirmation={id->app.sessionScope.launch {app.sessions.retryPhotoConfirmation(binding.lease,id)}},
                     reopen={id,revision,edit->app.sessionScope.launch {app.sessions.reopenPhotoConfirmation(binding.lease,id,revision,edit)}}))
-            CalorieTheme(dark) { CalorieApp(model, session, actions, photoModel, importModel) }
+            CalorieTheme(dark) { CalorieApp(model, session, actions, photoModel, importModel, syncState?.userStatus()) }
             }
         }
     }

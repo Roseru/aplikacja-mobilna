@@ -12,8 +12,8 @@ android {
         applicationId = "pl.roseru.kalorie"
         minSdk = 26
         targetSdk = 35
-        versionCode = 40
-        versionName = "0.8.29"
+        versionCode = 42
+        versionName = "0.8.31"
         // Public deployment configuration only. No credentials or client secret in the APK.
         val issuer = providers.gradleProperty("CALORIE_OIDC_ISSUER").orElse("").get()
         require(issuer.none { it == '\n' || it == '\r' || it == '"' || it == '\\' })
@@ -69,6 +69,7 @@ dependencies {
     implementation(libs.room.ktx)
     ksp(libs.room.compiler)
     implementation(libs.datastore.preferences)
+    implementation("androidx.work:work-runtime-ktx:2.10.5")
     implementation(libs.appauth)
     implementation(libs.exifinterface)
     debugImplementation(libs.compose.tooling)
@@ -81,6 +82,7 @@ dependencies {
     androidTestImplementation(libs.compose.ui.test)
     androidTestImplementation(libs.android.test.runner)
     androidTestImplementation(libs.android.test.junit)
+    androidTestImplementation("androidx.work:work-testing:2.10.5")
 }
 
 // Independent validation version channel prevents downgrading shared test data.
