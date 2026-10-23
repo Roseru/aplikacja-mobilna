@@ -3051,14 +3051,19 @@ class SessionSecurityTest {
             }
         }
         fun again()=client(push.db,push.vault,push.fixture,push.api,snapshots=push.copies,pushes=transport,projectDiary=true,reconcile=true)
-        suspend fun prepare(approve:Boolean=true) {
+        suspend fun prepare(approve:Boolean=true,changeEpoch:Boolean=false) {
             push.prepare()
             val ordinary=MealPushStore(push.db,CanonicalMealRows.schema(context))
             val frozen=ordinary.prepare(push.lease)!!;ordinary.markAttempted(frozen)
-            ordinary.requireReconciliation(frozen)
+            if(changeEpoch) {
+                ordinary.applyAck(ordinary.prepareAck(frozen,200,push.receipt(frozen.batch)))
+                push.api.answer={accepted(newEpoch)}
+            } else ordinary.requireReconciliation(frozen)
             push.c.bootstrap()
             binding=push.db.bootstrapDao().binding(push.lease.storageScope)!!
             assertTrue(binding.requiresRecovery)
+            if(changeEpoch)push.copies.answer={BootstrapHttpResult(200,JSONObject(String(snapshotAnswer().body))
+                .put("sync_epoch",binding.syncEpoch).toString().toByteArray())}
             plan=store.begin(push.lease,binding)
             if(approve)store.approve(push.lease,binding,plan.planId,plan.account,plan.issuer,plan.subject)
             push.c=again();push.c.start()
@@ -3168,5 +3173,94 @@ class SessionSecurityTest {
             assertEquals(h.binding,h.push.db.bootstrapDao().binding(h.push.lease.storageScope))
             assertFalse(h.push.c.view.value.mealPushBusy);assertFalse(h.push.c.view.value.snapshotBusy)
         }finally{release.complete(Unit);h.close()}
+    }
+
+    @Test fun recoverySavedAckWithTypedTargetCommitsOfflineAfterExpiryWithoutRefreshOrSecondPost()=runBlocking<Unit> {
+        val h=RecoveryHarness()
+        try {
+            h.prepare(changeEpoch=true);assertTrue(h.snapshot() is SyncStepResult.Completed)
+            val source=h.push.db.importDao().sources(h.plan.planId).single()
+            h.store.decide(h.push.lease,h.binding,h.plan.planId,source.entityType,source.sourceId,source.sourceHash,
+                "{\"choice\":\"recreate_missing\"}")
+            val target=UUID.randomUUID().toString()
+            val mapping=JSONObject().put("source_epoch",source.sourceEpoch)
+                .put("source_entity_id",JSONObject(source.sourceJson).getString("wire_id"))
+                .put("target_entity_id",target).put("target_revision",7)
+            h.push.answer={batch,_->
+                val operation=batch.json().getJSONArray("operations").getJSONObject(0)
+                val result=JSONObject().put("operation_id",operation.getString("operation_id"))
+                    .put("entity_id",operation.getString("entity_id")).put("status","already_applied")
+                    .put("revision",5).put("recovery_mapping",mapping)
+                BootstrapHttpResult(200,JSONObject().put("sync_epoch",h.binding.syncEpoch)
+                    .put("server_time","2026-10-23T14:00:00Z").put("results",JSONArray().put(result)).toString().toByteArray())
+            }
+            assertEquals(SyncStepResult.ReconciliationRequired("reconciliation_snapshot_required"),h.send())
+            val frozen=h.push.db.importDao().batches(h.plan.planId).single()
+            assertEquals("awaiting_snapshot",frozen.state);assertNotNull(frozen.responseJson)
+            val operation=h.push.calls.single().json().getJSONArray("operations").getJSONObject(0)
+            h.push.copies.answer={
+                val entity=JSONObject().put("entity_type","meal").put("entity_id",target).put("revision",7)
+                    .put("deleted",false).put("payload",operation.getJSONObject("payload"))
+                BootstrapHttpResult(200,JSONObject(String(snapshotAnswer().body)).put("sync_epoch",h.binding.syncEpoch)
+                    .put("server_time","2026-10-23T14:00:00Z").put("entities",JSONArray().put(entity))
+                    .put("recovery_mappings",JSONArray().put(mapping)).toString().toByteArray())
+            }
+            assertTrue(h.snapshot() is SyncStepResult.Completed)
+            val oidcCalls=h.push.fixture.calls;val copyCalls=h.push.copies.calls.size
+            h.push.fixture.time+=400_000;h.push.fixture.refreshFailure=java.io.IOException("Synthetic offline identity endpoint")
+            h.push.answer={_,_->error("Saved ACK must not send another POST")}
+            h.push.copies.answer={error("Saved ACK must not start another pull")}
+            h.push.c=h.again();h.push.c.start()
+            val result=h.send() as SyncStepResult.Completed
+            assertEquals(frozen.id,result.batchId);assertEquals(1,result.acknowledged);assertEquals(0,result.refused)
+            assertEquals(1,h.push.calls.size);assertEquals(copyCalls,h.push.copies.calls.size);assertEquals(oidcCalls,h.push.fixture.calls)
+            assertEquals("acked",h.push.db.dao().operation(operation.getString("operation_id"))!!.status)
+            val saved=h.push.db.importDao().batch(frozen.id)!!
+            assertEquals("complete",saved.state);assertEquals(frozen.requestJson,saved.requestJson);assertEquals(frozen.responseJson,saved.responseJson)
+            assertEquals(target,h.push.db.importDao().sources(h.plan.planId).single().wireId)
+            assertEquals(h.binding,h.push.db.bootstrapDao().binding(h.push.lease.storageScope))
+        }finally{h.close()}
+    }
+
+    @Test fun recoveryCompletedArchiveBeforeReceiptsResumesOfflineWithoutNewRunOrRefresh()=runBlocking<Unit> {
+        val h=RecoveryHarness()
+        try {
+            h.prepare()
+            val request=h.store.nextSnapshot(h.push.lease,h.binding,h.plan.planId)!!
+            assertNull(ServerSnapshotStore(h.push.db,snapshotProtocol()).apply(request,snapshotAnswer().body))
+            assertEquals("complete",h.push.db.snapshotDao().run(request.runId)!!.state)
+            assertTrue(h.push.db.importDao().evidence(h.plan.planId).none{it.kind=="receipt_group"})
+            val runsBefore=h.push.db.snapshotDao().runs(h.push.lease.storageScope)
+            val oidcCalls=h.push.fixture.calls;val copyCalls=h.push.copies.calls.size
+            h.push.fixture.time+=400_000;h.push.fixture.refreshFailure=java.io.IOException("Synthetic offline identity endpoint")
+            h.push.copies.answer={error("Completed local archive must not be fetched again")}
+            h.push.c=h.again();h.push.c.start()
+            val result=h.snapshot() as SyncStepResult.Completed
+            assertEquals(request.runId,result.runId);assertEquals(copyCalls,h.push.copies.calls.size)
+            assertEquals(oidcCalls,h.push.fixture.calls);assertEquals(runsBefore,h.push.db.snapshotDao().runs(h.push.lease.storageScope))
+            assertEquals(1,h.push.db.importDao().evidence(h.plan.planId).count{it.kind=="receipt_group"})
+            assertTrue(h.push.calls.isEmpty());assertEquals(h.binding,h.push.db.bootstrapDao().binding(h.push.lease.storageScope))
+        }finally{h.close()}
+    }
+
+    @Test fun ownedBootstrapAndPullRefreshOnlyOnceWhenEarlyRenewalStillReceives401()=runBlocking<Unit> {
+        for(pull in listOf(false,true)) {
+            val db=memory();val vault=SessionVault(context,name());val fixture=FixtureGateway();val api=ApiFixture();val copies=SnapshotFixture()
+            try {
+                val c=client(db,vault,fixture,api,snapshots=copies,projectDiary=true)
+                c.start();login(c,fixture,"fixture-A");c.bootstrap()
+                val lease=c.view.value.binding!!.lease;val known=db.bootstrapDao().binding(lease.storageScope)!!
+                val authCalls=fixture.calls;val bootstrapCalls=api.calls.size
+                fixture.time+=280_000
+                api.answer={denied(401,"unauthorized")};copies.answer={syncDenied(401,"unauthorized")}
+                val result=if(pull)c.executePullStep(lease,known) else c.executeBootstrapStep(lease,known)
+                assertEquals(SessionController.SyncCommandOutcome.LoginRequired,result)
+                assertEquals(authCalls+1,fixture.calls)
+                assertEquals(if(pull)1 else 0,copies.calls.size)
+                assertEquals(bootstrapCalls+if(pull)0 else 1,api.calls.size)
+                assertEquals(known,db.bootstrapDao().binding(lease.storageScope))
+                assertFalse(c.view.value.busy);assertFalse(c.view.value.bootstrapBusy);assertFalse(c.view.value.snapshotBusy)
+            }finally{vault.clear();db.close()}
+        }
     }
 }

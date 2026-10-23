@@ -1,9 +1,12 @@
 # Polecenia synchronizacji wykonywane w sesji Androida
 
 O1, 23.10.2026. Implementacja części sesyjnej dla modułów Androida O2-B/C.
-Baza zawiera scalony [etap sześciu domen](DOMENY_SYNC.md) oraz lokalnie dołączony
-milestone O2-B `2798f967da0d82270d684f2ded7bb285bcfb101d`. B nie jest scalony;
-ma własną otwartą uwagę P1 i nie jest gotowym wydaniem. `SessionController`
+Baza zawiera scalony [etap sześciu domen](DOMENY_SYNC.md). Pierwszy milestone
+sesji był oparty na O2-B `2798f967da0d82270d684f2ded7bb285bcfb101d` z otwartą P1.
+Po zachowaniu tego builda dołączono zwykłym merge poprawione B
+`a73f2cbc7f1d8e246b8eb7e103ce5ac1d49f1a8a` (Room20). O2 przekazał poprawki
+importu, porównania i atomowego dowodu decyzji; B nadal nie jest scalony ani
+odebrany razem z rzeczywistą sesją/DI/nawigacją. `SessionController`
 implementuje dostarczone interfejsy `SyncStepExecutor` i `ReconciliationStepExecutor`.
 O2 podłącza DI/UI/WorkManager; w konstruktorze kontrolera przekazuje
 `reconciliationStore=ReconciliationStore(database, schema)`. Brak tej konfiguracji
@@ -54,6 +57,12 @@ Anulowanie propaguje `CancellationException`; nigdy nie jest zakończeniem kroku
 
 ## Kolejność i odzyskiwanie
 
+Opóźniony callback ekranu powinien wywołać `bootstrap(expectedLease)` z lease
+wyświetlonego konta. Kontroler przechwytuje jego aktualny binding pod guardem;
+przełączenie konta przed wykonaniem callbacku go odrzuca. Wariant z jawnym
+`expectedContext` pozostaje dla orkiestracji. Do ręcznego pobrania ekrany także
+przekazują przechwycony lease, zamiast ponownie wybierać właściciela w callbacku.
+
 Orkiestrator O2-C zarządza PULL→PUSH→PULL. Pojedynczy PUSH nie uruchamia
 ukrytego odczytu ani nie uznaje nowych zmian powstałych po ACK za potwierdzone.
 Zapisany Retry-After przeżywa odtworzenie kontrolera i zmianę aktywnego konta.
@@ -97,3 +106,12 @@ Nie uruchamiano JVM ani instrumentacji. Zadanie to nie pakuje APK aplikacji;
 brak dostawy APK lub instalacji. Testy urządzenia i finalna integracja są
 odłożone do dalszego odbioru. Nie tworzymy częściowego PR dla tego milestone.
 Pełny zdalny CI i rzeczywisty E4 pozostają osobnymi bramkami.
+
+Kompilujący milestone jest opublikowany jako89766ec; jego receipt dotyczy
+wyłącznie zależności2798. Nowsze B i dalsze lokalne zmiany mają oddzielny odbiór.
+Podczas lekkiej pracy dodano lease dla opóźnionego przycisku bootstrap oraz
+ograniczenie odnowienia do jednej próby także po odnowieniu wstępnym.
+Przygotowane dalsze przypadki obejmują saved ACK po wygaśnięciu tokenu,
+kompletny raw snapshot przerwany przed zapisem receipts i wstępny refresh→401.
+Przyjęcie kompletnego raw bez sieci czeka na dodatkowy port O2 przygotowania/
+zastosowania kopii; obecny kod nie realizuje jeszcze tej gałęzi. Nie są to wyniki PASS.

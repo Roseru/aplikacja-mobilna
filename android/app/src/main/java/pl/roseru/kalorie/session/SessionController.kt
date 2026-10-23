@@ -667,6 +667,21 @@ class SessionController internal constructor(private val db: CalorieDatabase, pr
     /** Explicit E3 connection, never a diary sync or an implicit guest import. */
     suspend fun bootstrap() { bootstrapFor(null, null) }
 
+    /** UI callbacks carry the displayed owner even if execution is delayed by another action. */
+    suspend fun bootstrap(expectedLease:OwnerLease) {
+        val context=try {mutex.withLock {db.withTransaction {
+            owners.requireCurrent(expectedLease)
+            db.bootstrapDao().binding(expectedLease.storageScope)
+        }}}catch(error:CancellationException){throw error}
+        catch(_:StaleOwnerException){return}
+        catch(_:Exception){
+            mutex.withLock {if(mutable.value.binding?.lease==expectedLease)
+                mutable.value=mutable.value.copy(message="Pamięć konta jest niedostępna. Dziennik pozostaje lokalny.")}
+            return
+        }
+        bootstrapFor(expectedLease,context)
+    }
+
     /** A worker/reconciliation command cannot follow a later account selection or context update. */
     suspend fun bootstrap(expectedLease: OwnerLease, expectedContext: AccountBindingEntity?) {
         bootstrapFor(expectedLease, expectedContext)
@@ -933,7 +948,7 @@ class SessionController internal constructor(private val db: CalorieDatabase, pr
             var ticket = apiSession(fence)
             var request = withApiSession(ticket) { ready(); bootstraps.begin(lease) }
             var renewedKey = false
-            var refreshed = false
+            var refreshed = !fresh
             while (true) {
                 val captured = ticket
                 val result = gateway.post(captured, request.operationId) {
@@ -2623,7 +2638,7 @@ class SessionController internal constructor(private val db: CalorieDatabase, pr
             if (!fresh) check(refreshFor(lease, fence))
             var ticket = apiSession(fence)
             var request = withApiSession(ticket) { check(snapshotOperation == id); requireSyncContext(fence); store.begin(lease) }
-            var refreshed = false
+            var refreshed = !fresh
             while (true) {
                 val captured = ticket
                 val sent = request
