@@ -52,15 +52,17 @@ internal class CanonicalMealEditor(private val db:CalorieDatabase,private val co
         val dao=db.dao();val owners=LocalOwnerStore(db)
         val source=db.withTransaction {
             owners.requireCurrent(lease)
+            check(db.importDao().retired(lease.storageScope,"meal",id)==null)
             val current=dao.meal(id,lease.storageScope)?:return@withTransaction null
             if(current.meal.wirePayload==null)return@withTransaction null
-            Triple(current,dao.canonicalMealOperations(lease.storageScope,id),db.bootstrapDao().binding(lease.storageScope))
+            Triple(current,dao.canonicalMealOperations(lease.storageScope,db.wireSyncId(lease.storageScope,"meal",id)),db.bootstrapDao().binding(lease.storageScope))
         }?:return@withContext false
         val (current,queued,binding)=source
         if(current.meal.deleted){require(itemId==null);return@withContext true}
         val schema=CanonicalMealRows.schema(context)
         val original=MealWire.read(checkNotNull(current.meal.wirePayload),schema)
-        val next=if(itemId==null)null else if(remove)original.without(itemId,schema) else original.withAmount(itemId,checkNotNull(amount),schema)
+        val wireItemId=itemId?.let {local->db.importDao().items(lease.storageScope,id).firstOrNull {it.localId==local}?.wireId ?: local}
+        val next=if(wireItemId==null)null else if(remove)original.without(wireItemId,schema) else original.withAmount(wireItemId,checkNotNull(amount),schema)
         val deleted=next==null;val wire=next?:original
         val wireContext=checkNotNull(current.meal.wireContext)
         val contextCurrent=binding!=null && !binding.requiresRecovery && wireContext==CanonicalMealRows.context(binding)
@@ -70,17 +72,18 @@ internal class CanonicalMealEditor(private val db:CalorieDatabase,private val co
         val epoch=StrictJson.read(wireContext.toByteArray(Charsets.UTF_8)).getString("sync_epoch")
         val operationId=UUID.randomUUID().toString()
         val payload=if(deleted)null else wire.canonical
-        val operation=if(status=="pending")MealWire.operation(operationId,id,epoch,base,payload,schema) else null
+        val wireId=db.wireSyncId(lease.storageScope,"meal",id)
+        val operation=if(status=="pending")MealWire.operation(operationId,wireId,epoch,base,payload,schema) else null
         val meal=current.meal.copy(localRevision=Math.addExact(current.meal.localRevision,1),deleted=deleted,wirePayload=wire.canonical)
-        val items=if(deleted)current.items else CanonicalMealRows.items(id,wire).map { fresh ->
+        val items=if(deleted)current.items else db.localMealItems(lease.storageScope,id,wire).map { fresh ->
             // Editing a wire snapshot must retain local private-product/source associations.
             val original=current.items.single {it.id==fresh.id}
             original.copy(grams=fresh.grams,wirePayload=fresh.wirePayload)
         }
-        val outbox=OutboxEntity(operationId,lease.storageScope,"meal",id,if(deleted)"delete" else "upsert",base,payload?:"null",Instant.now().toString(),status,"sync-v1",operation,wireContext)
+        val outbox=OutboxEntity(operationId,lease.storageScope,"meal",wireId,if(deleted)"delete" else "upsert",base,payload?:"null",Instant.now().toString(),status,"sync-v1",operation,wireContext)
         db.withTransaction {
             owners.requireCurrent(lease)
-            check(dao.meal(id,lease.storageScope)==current && dao.canonicalMealOperations(lease.storageScope,id)==queued && db.bootstrapDao().binding(lease.storageScope)==binding)
+            check(dao.meal(id,lease.storageScope)==current && dao.canonicalMealOperations(lease.storageScope,wireId)==queued && db.bootstrapDao().binding(lease.storageScope)==binding)
             dao.updateMeal(meal)
             if(!deleted) {
                 val ids=items.map {it.id}.toSet();current.items.filter {it.id !in ids}.forEach {dao.removeItem(it)}

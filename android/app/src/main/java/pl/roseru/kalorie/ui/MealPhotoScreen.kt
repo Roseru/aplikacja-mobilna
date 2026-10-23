@@ -30,6 +30,13 @@ import pl.roseru.kalorie.session.PhotoUploadConsent
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.LifecycleEventObserver
 import androidx.lifecycle.compose.LocalLifecycleOwner
+import kotlinx.coroutines.CancellationException
+
+private sealed interface LocalPhotoPreview {
+    data object Loading:LocalPhotoPreview
+    data object Failed:LocalPhotoPreview
+    data class Ready(val bitmap:Bitmap):LocalPhotoPreview
+}
 
 @Composable fun MealPhotoScreen(model: MealPhotoViewModel, date: LocalDate, onBack: () -> Unit, onManual: () -> Unit,
     session: pl.roseru.kalorie.session.SessionView = pl.roseru.kalorie.session.SessionView(), onReadCapabilities: () -> Unit = {},
@@ -67,9 +74,15 @@ import androidx.lifecycle.compose.LocalLifecycleOwner
 
     val gallery = rememberLauncherForActivityResult(ActivityResultContracts.PickVisualMedia(), model::galleryResult)
     val camera = rememberLauncherForActivityResult(ActivityResultContracts.TakePicture(), model::cameraResult)
-    val preview by produceState<Bitmap?>(null, selected, model) {
-        value = null
-        selected?.let { value = runCatching { model.preview(it) }.getOrNull() }
+    var previewAttempt by remember(model,selected) { mutableIntStateOf(0) }
+    val preview by key(model,selected,previewAttempt) {
+        produceState<LocalPhotoPreview>(LocalPhotoPreview.Loading) {
+            selected?.let { id ->
+                value=try {LocalPhotoPreview.Ready(model.preview(id))}
+                    catch(error:CancellationException){throw error}
+                    catch(_:Exception){LocalPhotoPreview.Failed}
+            }
+        }
     }
     LazyColumn(Modifier.fillMaxSize().testTag("photo-content"), contentPadding=PaddingValues(16.dp), verticalArrangement=Arrangement.spacedBy(12.dp)) {
         item {
@@ -118,8 +131,15 @@ import androidx.lifecycle.compose.LocalLifecycleOwner
                     OutlinedButton(onClick={approval=row.id},enabled=canCreate,
                         modifier=Modifier.fillMaxWidth().testTag("photo-analyze-${row.id}")) { Text("Analizuj to zdjęcie") }
                     if(selected==row.id) {
-                        preview?.let { Image(it.asImageBitmap(),"Zapisane zdjęcie posiłku",Modifier.fillMaxWidth().heightIn(max=280.dp).testTag("photo-preview"), contentScale=ContentScale.Fit) }
-                            ?: Text("Otwieranie zdjęcia…")
+                        when(val current=preview) {
+                            LocalPhotoPreview.Loading->Text("Otwieranie zdjęcia…")
+                            LocalPhotoPreview.Failed->{
+                                Text("Nie udało się otworzyć lokalnego zdjęcia. Możesz spróbować ponownie lub wybrać je z galerii.",
+                                    Modifier.testTag("photo-preview-error"))
+                                TextButton(onClick={previewAttempt++},modifier=Modifier.testTag("photo-preview-retry")) {Text("Spróbuj ponownie")}
+                            }
+                            is LocalPhotoPreview.Ready->Image(current.bitmap.asImageBitmap(),"Zapisane zdjęcie posiłku",Modifier.fillMaxWidth().heightIn(max=280.dp).testTag("photo-preview"), contentScale=ContentScale.Fit)
+                        }
                     }
                 }
             }

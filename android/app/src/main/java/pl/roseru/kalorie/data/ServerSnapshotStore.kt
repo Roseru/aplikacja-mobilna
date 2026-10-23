@@ -35,6 +35,7 @@ data class ServerSnapshotIdentity(val runId: String, val field: String, val iden
     @Query("SELECT * FROM server_snapshot_runs WHERE id = :id") suspend fun run(id: String): ServerSnapshotRun?
     @Query("SELECT * FROM server_snapshot_runs WHERE ownerScope = :owner ORDER BY rowid DESC") suspend fun runs(owner: String): List<ServerSnapshotRun>
     @Query("SELECT * FROM server_snapshot_pages WHERE runId = :run ORDER BY pageIndex") suspend fun pages(run: String): List<ServerSnapshotPage>
+    @Query("SELECT COUNT(*) FROM server_snapshot_pages WHERE runId = :run") suspend fun pageCount(run:String):Int
     @Query("SELECT * FROM server_snapshot_pages WHERE runId = :run AND pageIndex = :index") suspend fun page(run: String, index: Int): ServerSnapshotPage?
     @Query("SELECT * FROM server_snapshot_access WHERE ownerScope = :owner") suspend fun access(owner: String): ServerSnapshotAccess?
     @Insert suspend fun insert(run: ServerSnapshotRun)
@@ -77,18 +78,38 @@ class ServerSnapshotStore(private val db: CalorieDatabase, private val protocol:
     private fun same(run: ServerSnapshotRun, lease: OwnerLease, value: AccountBindingEntity) =
         run.ownerScope == lease.storageScope && run.leaseGeneration == lease.generation && run.accountId == value.accountId &&
             run.accountGeneration == value.accountGeneration && run.syncEpoch == value.syncEpoch && run.contextRevision == value.contextRevision
-    private fun request(run: ServerSnapshotRun, lease: OwnerLease, value: AccountBindingEntity) =
-        SnapshotRequest(run.id, run.pageCount, lease, value, protocol.query(run.syncEpoch, run.limit, run.snapshotToken, run.nextPage))
+    private suspend fun request(run: ServerSnapshotRun, lease: OwnerLease, value: AccountBindingEntity): SnapshotRequest {
+        val saved=if(run.pageCount==0)db.importDao().pull(run.id) else null
+        val ids=saved?.let { org.json.JSONArray(it.operationIdsJson) }?.let { rows ->
+            (0 until rows.length()).map { rows.getString(it) } } ?: emptyList()
+        return SnapshotRequest(run.id, run.pageCount, lease, value,
+            protocol.query(run.syncEpoch, run.limit, run.snapshotToken, run.nextPage,ids))
+    }
 
-    suspend fun begin(lease: OwnerLease): SnapshotRequest = db.withTransaction {
+    suspend fun begin(lease: OwnerLease, recoveryOperationIds:List<String> = emptyList(),
+        planId:String? = null, groupIndex:Int = 0): SnapshotRequest = db.withTransaction {
+        require(groupIndex>=0 && (recoveryOperationIds.isEmpty() || planId!=null))
+        // Validate first-query bounds before persisting any run.
+        protocol.query(checkNotNull(db.bootstrapDao().binding(lease.storageScope)).syncEpoch, recoveryOperationIds=recoveryOperationIds)
+        if(planId!=null) {
+            val plan=checkNotNull(db.importDao().plan(planId))
+            check(plan.targetScope==lease.storageScope && plan.approvedAt!=null)
+        }
         val value = context(lease)
         val runs = dao.runs(lease.storageScope)
-        runs.firstOrNull { it.state == "pending" && same(it, lease, value) }?.let { return@withTransaction request(it, lease, value) }
+        runs.firstOrNull { run ->
+            val pull=db.importDao().pull(run.id)
+            run.state == "pending" && same(run, lease, value) &&
+                pull?.planId==planId && (pull==null || (pull.groupIndex==groupIndex &&
+                pull.operationIdsJson==pl.roseru.kalorie.core.catalog.StrictJson.canonical(org.json.JSONArray(recoveryOperationIds))))
+        }?.let { return@withTransaction request(it, lease, value) }
         // Bound retained archives without silently deleting older evidence or local history.
         if (runs.size >= 8 || runs.sumOf { it.byteCount } >= 128L * 1_048_576) throw SnapshotCapacityException()
         val run = ServerSnapshotRun(UUID.randomUUID().toString(), lease.storageScope, lease.generation, value.accountId,
             value.accountGeneration, value.syncEpoch, value.contextRevision, null, null, null, null, null, 0, 0, 0, 100, "pending")
         dao.insert(run)
+        if(planId!=null)db.importDao().insert(ReconciliationPull(run.id,planId,groupIndex,
+            pl.roseru.kalorie.core.catalog.StrictJson.canonical(org.json.JSONArray(recoveryOperationIds))))
         request(run, lease, value)
     }
     suspend fun requireCurrent(request: SnapshotRequest) = db.withTransaction {
@@ -138,7 +159,9 @@ class ServerSnapshotStore(private val db: CalorieDatabase, private val protocol:
             dao.insert(identities) // A repeated identity aborts the entire page, including tokens.
             dao.insert(ServerSnapshotPage(run.id, request.pageIndex, request.query.canonical, page.canonical))
             dao.update(next)
-            if (final) dao.save(ServerSnapshotAccess(run.ownerScope, run.id, false))
+            // Reconciliation raw pages are staging. Its semantic ledger validates the complete
+            // copy/receipts before atomically publishing the active checkpoint and typed evidence.
+            if (final && db.importDao().pull(run.id)==null) dao.save(ServerSnapshotAccess(run.ownerScope, run.id, false))
             nextRequest
         }
     }

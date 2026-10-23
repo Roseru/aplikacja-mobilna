@@ -21,6 +21,7 @@ import pl.roseru.kalorie.core.sync.SnapshotProtocol
 import pl.roseru.kalorie.core.catalog.StrictJson
 import pl.roseru.kalorie.data.*
 import pl.roseru.kalorie.photo.*
+import pl.roseru.kalorie.sync.*
 import java.util.UUID
 
 data class SessionBinding(val owner: LocalOwnerEntity, val lease: OwnerLease)
@@ -74,9 +75,41 @@ class SessionController internal constructor(private val db: CalorieDatabase, pr
     private val mealPushGateway:MealPushGateway?=null,private val mealPushStore:MealPushStore?=null,
     private val mealPushProtocol:pl.roseru.kalorie.core.sync.PushProtocol?=null,
     private val conflictStore:SyncConflictStore?=null,
-    private val diaryStore:ServerDiaryStore?=null) {
+    private val diaryStore:ServerDiaryStore?=null,
+    private val reconciliationStore:ReconciliationStore?=null):SyncStepExecutor,ReconciliationStepExecutor {
     private val owners = LocalOwnerStore(db)
     private val mutex = Mutex()
+    /** A nullable server binding is also an expectation: the first bootstrap must still be first. */
+    private data class SyncContextFence(val lease: OwnerLease, val server: AccountBindingEntity?) {
+        override fun toString() = "SyncContextFence(redacted)"
+    }
+    private class SyncContextChangedException : IllegalStateException("Captured synchronization context changed")
+    private class SyncLoginRequiredException : IllegalStateException("Synchronization requires interactive login")
+    /** Internal outcomes; the O2 boundary maps them without inspecting any UI message. */
+    internal sealed interface SyncCommandOutcome {
+        data class Bootstrapped(val context: AccountBindingEntity) : SyncCommandOutcome {
+            override fun toString() = "Bootstrapped(redacted)"
+        }
+        data class Pulled(val runId: String, val applied: Boolean) : SyncCommandOutcome {
+            override fun toString() = "Pulled(redacted)"
+        }
+        data class Pushed(val acknowledged: Int, val refused: Int, val more: Boolean) : SyncCommandOutcome
+        data object Busy : SyncCommandOutcome
+        data class RetryAt(val epochMillis: Long) : SyncCommandOutcome
+        data object LoginRequired : SyncCommandOutcome
+        data class ReconciliationRequired(val code: String) : SyncCommandOutcome
+        data object StaleContext : SyncCommandOutcome
+        data object TransientFailure : SyncCommandOutcome
+        data object NotConfigured : SyncCommandOutcome
+    }
+    // Called inside the session mutex; network/apply callers additionally own the Room transaction.
+    private suspend fun requireSyncContext(fence: SyncContextFence) {
+        owners.requireCurrent(fence.lease)
+        if (db.bootstrapDao().binding(fence.lease.storageScope) != fence.server) throw SyncContextChangedException()
+    }
+    private suspend fun completeSyncCommand(fence: SyncContextFence, outcome: SyncCommandOutcome): SyncCommandOutcome = mutex.withLock {
+        db.withTransaction { requireSyncContext(fence); outcome }
+    }
     private var record = JSONObject()
     private var operation: String? = null
     private var bootstrapOperation: String? = null
@@ -160,20 +193,31 @@ class SessionController internal constructor(private val db: CalorieDatabase, pr
     suspend fun observeMotivationContext() {
         try {
             db.invalidationTracker.createFlow("account_bindings", "local_active_owner", "local_owners", "photo_analysis_requests", "sync_push_batches", "outbox", "server_snapshot_access", "server_diary_applications").collect {
-                mutex.withLock {
-                    if (mutable.value.binding != null) publish(mutable.value.message)
-                }
+                try {
+                    mutex.withLock {
+                        // Owner selection and context updates use Room transactions too. Publish
+                        // one consistent view, rather than ending observation on an interleaved ABA.
+                        db.withTransaction {
+                            if (mutable.value.binding != null) publish(mutable.value.message)
+                        }
+                    }
+                }catch(error:CancellationException){throw error}
+                catch(_:Exception){clearPrivateObservation()}
             }
         } catch (error: CancellationException) { throw error }
-        catch (_: Exception) { mutex.withLock {
-            clearPhotoUpload()
-            clearMotivation()
-            clearRanking(); clearNemesis()
-            nemesisMutationOperation = null
-            mutable.value = mutable.value.copy(motivation = MotivationState.NotRequested, rankingConsent = RankingConsentState.NotRequested,
-                ranking = RankingState.NotRequested, nemesis = NemesisState.NotRequested,
-                nemesisDecision = null, nemesisMutationBusy = false, nemesisMutation = NemesisMutationState.Idle)
-        } }
+        catch (_: Exception) {clearPrivateObservation()}
+    }
+    /** A failed projection removes private previews without ending a healthy Room subscription. */
+    private suspend fun clearPrivateObservation()=mutex.withLock {
+        serverProfile=null;profileFence=null;profileServerContext=null
+        clearPhotoUpload()
+        clearMotivation()
+        clearRanking();clearNemesis()
+        nemesisMutationOperation=null
+        mutable.value=mutable.value.copy(serverProfile=null,motivation=MotivationState.NotRequested,
+            rankingConsent=RankingConsentState.NotRequested,ranking=RankingState.NotRequested,
+            nemesis=NemesisState.NotRequested,nemesisDecision=null,nemesisMutationBusy=false,
+            nemesisMutation=NemesisMutationState.Idle)
     }
     private fun copyRecord() = JSONObject(record.toString())
     private suspend fun persist(value: JSONObject) {
@@ -517,18 +561,21 @@ class SessionController internal constructor(private val db: CalorieDatabase, pr
         } }
     }
     suspend fun refresh() { refreshFor(null) }
-    private suspend fun refreshFor(expected: OwnerLease?): Boolean {
+    private suspend fun refreshFor(expected: OwnerLease?, contextFence: SyncContextFence? = null): Boolean {
         val id = UUID.randomUUID().toString()
         var registered = false
         try {
             val captured = mutex.withLock {
                 expected?.let { owners.requireCurrent(it) }
+                check(contextFence == null || contextFence.lease == expected)
+                contextFence?.let { requireSyncContext(it) }
                 check(!mutable.value.busy && !record.has("pending"))
                 val current = binding()
                 val session = checkNotNull(sessionFor(current))
                 require(session.getString("issuer") == issuer)
                 val state = AuthState.jsonDeserialize(session.getString("authState"))
                 validateDiscovery(checkNotNull(state.authorizationServiceConfiguration), issuer)
+                if (contextFence != null && state.refreshToken.isNullOrBlank()) throw SyncLoginRequiredException()
                 operation = id
                 registered = true
                 serverProfile = null
@@ -553,24 +600,46 @@ class SessionController internal constructor(private val db: CalorieDatabase, pr
             require(checkNotNull(tokens.accessTokenExpirationTime) > now())
             return mutex.withLock {
                 if (operation != id) return@withLock false
-                owners.requireCurrent(captured.first.lease)
-                captured.second.update(tokens, null)
-                val session = checkNotNull(sessionFor(captured.first))
-                persist(copyRecord().put("session", JSONObject(session.toString()).put("authState", captured.second.jsonSerializeString())))
-                operation = null
-                publish("Sesja odnowiona. Dziennik zachowany.")
-                true
+                suspend fun applyRefreshed(): Boolean {
+                    owners.requireCurrent(captured.first.lease)
+                    contextFence?.let { requireSyncContext(it) }
+                    captured.second.update(tokens, null)
+                    val session = checkNotNull(sessionFor(captured.first))
+                    persist(copyRecord().put("session", JSONObject(session.toString()).put("authState", captured.second.jsonSerializeString())))
+                    operation = null
+                    publish("Sesja odnowiona. Dziennik zachowany.")
+                    return true
+                }
+                // Keep the context check and token write indivisible with respect to Room owner/context changes.
+                if (contextFence == null) applyRefreshed() else db.withTransaction { applyRefreshed() }
             }
         } catch (error: CancellationException) {
             withContext(NonCancellable) { fail(id, "Odnowienie przerwane. Dziennik działa offline.") }; throw error
         }
-        catch (_: Exception) {
+        catch (error: Exception) {
             mutex.withLock {
                 if (registered && operation != id) return@withLock
                 if (operation != null && operation != id) return@withLock
+                if (contextFence != null) {
+                    // A queued command for A must not publish a login failure in a new context.
+                    if (!registered) return@withLock
+                    val current = try { requireSyncContext(contextFence); true }
+                        catch (error: CancellationException) { throw error }
+                        catch (_: Exception) { false }
+                    if (!current) {
+                        if (operation == id) { operation = null; publish() }
+                        return@withLock
+                    }
+                }
                 if (operation == id) operation = null
                 publish("Sesji nie udało się odnowić. Dziennik działa offline; spróbuj zalogować się ponownie.")
             }
+            contextFence?.let { mutex.withLock { requireSyncContext(it) } }
+            // A revoked refresh token needs a new login, not the worker's connectivity backoff.
+            // Keep the provider's structured error out of UI/logs and preserve the diary/vault.
+            if (contextFence != null && (error is SyncLoginRequiredException ||
+                (error is AuthorizationException && error.type == AuthorizationException.TYPE_OAUTH_TOKEN_ERROR &&
+                    error.error == "invalid_grant"))) throw SyncLoginRequiredException()
             return false
         }
     }
@@ -595,6 +664,9 @@ class SessionController internal constructor(private val db: CalorieDatabase, pr
         check(current.identity == ticket.identity && current.authState == ticket.authState && current.revision == ticket.revision)
     }
     internal suspend fun apiSession(lease: OwnerLease): ApiSession = mutex.withLock { captureApi(lease) }
+    private suspend fun apiSession(fence: SyncContextFence): ApiSession = mutex.withLock {
+        db.withTransaction { requireSyncContext(fence); captureApi(fence.lease) }
+    }
     internal suspend fun <T> withApiSession(ticket: ApiSession, proof: ApiReadProof? = null, block: suspend () -> T): T = mutex.withLock {
         db.withTransaction {
             try { requireApi(ticket) }
@@ -604,71 +676,336 @@ class SessionController internal constructor(private val db: CalorieDatabase, pr
     }
 
     /** Explicit E3 connection, never a diary sync or an implicit guest import. */
-    suspend fun bootstrap() {
-        val gateway = bootstrapGateway ?: return
+    suspend fun bootstrap() { bootstrapFor(null, null) }
+
+    /** UI callbacks carry the displayed owner even if execution is delayed by another action. */
+    suspend fun bootstrap(expectedLease:OwnerLease) {
+        val context=try {mutex.withLock {db.withTransaction {
+            owners.requireCurrent(expectedLease)
+            db.bootstrapDao().binding(expectedLease.storageScope)
+        }}}catch(error:CancellationException){throw error}
+        catch(_:StaleOwnerException){return}
+        catch(_:Exception){
+            mutex.withLock {if(mutable.value.binding?.lease==expectedLease)
+                mutable.value=mutable.value.copy(message="Pamięć konta jest niedostępna. Dziennik pozostaje lokalny.")}
+            return
+        }
+        bootstrapFor(expectedLease,context)
+    }
+
+    /** A worker/reconciliation command cannot follow a later account selection or context update. */
+    suspend fun bootstrap(expectedLease: OwnerLease, expectedContext: AccountBindingEntity?) {
+        bootstrapFor(expectedLease, expectedContext)
+    }
+    internal suspend fun executeBootstrapStep(expectedLease: OwnerLease, expectedContext: AccountBindingEntity?): SyncCommandOutcome =
+        bootstrapFor(expectedLease, expectedContext)
+    internal suspend fun executePullStep(expectedLease: OwnerLease, expectedContext: AccountBindingEntity): SyncCommandOutcome =
+        pullFor(expectedLease, expectedContext, allowRecovery = false)
+    internal suspend fun executePushStep(expectedLease: OwnerLease, expectedContext: AccountBindingEntity): SyncCommandOutcome =
+        pushFor(expectedLease, expectedContext, followWithPull = false)
+
+    override suspend fun executeSyncStep(expectedLease:OwnerLease,expectedContext:AccountBindingEntity,step:SyncStep):SyncStepResult {
+        val outcome=when(step) {
+            SyncStep.PULL->executePullStep(expectedLease,expectedContext)
+            SyncStep.PUSH->executePushStep(expectedLease,expectedContext)
+        }
+        return when(outcome) {
+            is SyncCommandOutcome.Pulled->if(outcome.applied)SyncStepResult.Completed(runId=outcome.runId)
+                else SyncStepResult.ReconciliationRequired("snapshot_projection_required")
+            is SyncCommandOutcome.Pushed->SyncStepResult.Completed(acknowledged=outcome.acknowledged,refused=outcome.refused)
+            is SyncCommandOutcome.RetryAt->SyncStepResult.RetryAt(outcome.epochMillis)
+            is SyncCommandOutcome.ReconciliationRequired->SyncStepResult.ReconciliationRequired(outcome.code)
+            SyncCommandOutcome.Busy->SyncStepResult.Busy
+            SyncCommandOutcome.LoginRequired->SyncStepResult.LoginRequired
+            SyncCommandOutcome.StaleContext->SyncStepResult.StaleContext
+            SyncCommandOutcome.TransientFailure->SyncStepResult.TransientFailure
+            SyncCommandOutcome.NotConfigured->SyncStepResult.NotConfigured
+            is SyncCommandOutcome.Bootstrapped->error("Bootstrap cannot complete an ordinary synchronization step")
+        }
+    }
+
+    private class RecoveryReservation(val id:String,val fence:SyncContextFence,val planId:String,
+        val step:ReconciliationStep,val sessionRevision:Long) {
+        override fun toString()="RecoveryReservation(redacted)"
+    }
+    private sealed interface RecoveryStart {
+        class Ready(val reservation:RecoveryReservation):RecoveryStart
+        class Declined(val result:SyncStepResult):RecoveryStart
+    }
+    private suspend fun requireRecoveryOperation(reservation:RecoveryReservation) {
+        requireSyncContext(reservation.fence)
+        check(if(reservation.step==ReconciliationStep.FULL_SNAPSHOT_RECEIPTS)snapshotOperation==reservation.id
+            else mealPushOperation==reservation.id && mealPushFence==(reservation.fence.lease to reservation.fence.server))
+        check(operation==null && !record.has("pending"))
+        checkNotNull(sessionFor(binding()))
+    }
+    private suspend fun <T> withSavedRecoverySession(reservation:RecoveryReservation,block:suspend()->T):T=mutex.withLock {
+        db.withTransaction {
+            requireRecoveryOperation(reservation)
+            check(sessionRevision==reservation.sessionRevision)
+            block()
+        }
+    }
+    private suspend fun recoveryApi(reservation:RecoveryReservation):Pair<ApiSession,Boolean> {
+        val fresh=mutex.withLock {
+            requireRecoveryOperation(reservation)
+            val state=AuthState.jsonDeserialize(checkNotNull(sessionFor(binding())).getString("authState"))
+            (state.accessTokenExpirationTime?:0)>now()+30_000
+        }
+        if(!fresh)check(refreshFor(reservation.fence.lease,reservation.fence))
+        val ticket=apiSession(reservation.fence)
+        withApiSession(ticket){requireRecoveryOperation(reservation)}
+        return ticket to !fresh
+    }
+    private suspend fun releaseRecoveryOperation(id:String,step:ReconciliationStep)=mutex.withLock {
+        var changed=false
+        if(step==ReconciliationStep.FULL_SNAPSHOT_RECEIPTS && snapshotOperation==id){snapshotOperation=null;diaryApplying=false;changed=true}
+        if(step==ReconciliationStep.PUSH_APPROVED && mealPushOperation==id){mealPushOperation=null;clearMealPush();changed=true}
+        if(changed)try {publish()} catch(_:Exception) {
+            mutable.value=mutable.value.copy(snapshotBusy=snapshotOperation!=null,mealPushBusy=mealPushOperation!=null,diaryApplying=diaryApplying)
+        }
+    }
+
+    /** An approved durable plan is mandatory; ordinary push is never enabled temporarily. */
+    override suspend fun runReconciliationStep(expectedLease:OwnerLease,expectedContext:AccountBindingEntity,
+        planId:String,step:ReconciliationStep):SyncStepResult {
+        val store=reconciliationStore?:return SyncStepResult.NotConfigured
+        if(step==ReconciliationStep.FULL_SNAPSHOT_RECEIPTS && (snapshotGateway==null || snapshots==null || snapshotProtocol==null))return SyncStepResult.NotConfigured
+        if(step==ReconciliationStep.PUSH_APPROVED && (mealPushGateway==null || mealPushProtocol==null))return SyncStepResult.NotConfigured
+        val fence=SyncContextFence(expectedLease,expectedContext)
+        val id=UUID.randomUUID().toString()
+        val start=try {mutex.withLock {db.withTransaction {
+            requireSyncContext(fence)
+            if(mealPushOperation!=null || snapshotOperation!=null || bootstrapOperation!=null || profileOperation!=null ||
+                consentOperation!=null || operation!=null || photoUploadOperation!=null || nemesisMutationOperation!=null ||
+                conflictBusy || record.has("pending"))return@withTransaction RecoveryStart.Declined(SyncStepResult.Busy)
+            val current=binding()
+            if(current.lease!=expectedLease)throw StaleOwnerException()
+            if(current.owner.kind!="account" || sessionFor(current)==null)return@withTransaction RecoveryStart.Declined(SyncStepResult.LoginRequired)
+            if(!expectedContext.requiresRecovery)return@withTransaction RecoveryStart.Declined(SyncStepResult.ReconciliationRequired("reconciliation_not_active"))
+            if(step==ReconciliationStep.FULL_SNAPSHOT_RECEIPTS){snapshotOperation=id;diaryApplying=false}
+            else {mealPushOperation=id;mealPushFence=expectedLease to expectedContext;mealPushMessage=null}
+            publish()
+            RecoveryStart.Ready(RecoveryReservation(id,fence,planId,step,sessionRevision))
+        }}}catch(error:CancellationException){withContext(NonCancellable){releaseRecoveryOperation(id,step)};throw error}
+        catch(_:StaleOwnerException){releaseRecoveryOperation(id,step);return SyncStepResult.StaleContext}
+        catch(_:SyncContextChangedException){releaseRecoveryOperation(id,step);return SyncStepResult.StaleContext}
+        catch(_:Exception){releaseRecoveryOperation(id,step);return SyncStepResult.TransientFailure}
+        val reservation=when(start){is RecoveryStart.Ready->start.reservation;is RecoveryStart.Declined->return start.result}
+        try {
+            return when(step) {
+                ReconciliationStep.FULL_SNAPSHOT_RECEIPTS->recoverSnapshot(reservation,store)
+                ReconciliationStep.PUSH_APPROVED->recoverPush(reservation,store)
+            }
+        }catch(error:CancellationException){throw error}
+        catch(_:StaleOwnerException){return SyncStepResult.StaleContext}
+        catch(_:SyncContextChangedException){return SyncStepResult.StaleContext}
+        catch(_:ImportContextChangedException){return SyncStepResult.StaleContext}
+        catch(_:SyncLoginRequiredException){return SyncStepResult.LoginRequired}
+        catch(_:SnapshotCapacityException){return SyncStepResult.ReconciliationRequired("snapshot_capacity")}
+        catch(_:ReconciliationProofException){return SyncStepResult.ReconciliationRequired("reconciliation_proof_required")}
+        catch(_:SnapshotConflictException){return SyncStepResult.ReconciliationRequired("snapshot_context_changed")}
+        catch(_:Exception) {
+            val current=mutex.withLock {
+                try {requireRecoveryOperation(reservation);true}
+                catch(error:CancellationException){throw error}
+                catch(_:Exception){false}
+            }
+            return if(current)SyncStepResult.TransientFailure else SyncStepResult.StaleContext
+        }finally {
+            withContext(NonCancellable){releaseRecoveryOperation(reservation.id,step)}
+        }
+    }
+
+    private suspend fun recoveryDeadline(reservation:RecoveryReservation,batchDeadline:Long=0):Long=mutex.withLock {
+        requireRecoveryOperation(reservation)
+        maxOf(checkNotNull(sessionFor(binding())).optLong("apiRetryAt"),batchDeadline)
+    }
+    private suspend fun deferRecovery(reservation:RecoveryReservation,ticket:ApiSession,seconds:String?,
+        request:ReconciliationPushRequest?=null):SyncStepResult.RetryAt {
+        val delay=BootstrapHttpProtocol.retrySeconds(seconds,now())
+        val deadline=Math.addExact(now(),Math.multiplyExact(delay,1000))
+        // The durable batch deadline is committed before the independent vault write.
+        if(request!=null)withApiSession(ticket){requireRecoveryOperation(reservation);checkNotNull(reconciliationStore).defer(request,deadline)}
+        withApiSession(ticket){
+            requireRecoveryOperation(reservation)
+            val session=checkNotNull(sessionFor(binding()))
+            persist(copyRecord().put("session",JSONObject(session.toString()).put("apiRetryAt",deadline)))
+        }
+        return SyncStepResult.RetryAt(deadline)
+    }
+    private fun recoveryRefusal(status:Int,code:String):SyncStepResult=when {
+        status==401->SyncStepResult.LoginRequired
+        status in setOf(403,409,410,413,422)->SyncStepResult.ReconciliationRequired(code)
+        else->SyncStepResult.TransientFailure
+    }
+
+    private suspend fun recoverSnapshot(reservation:RecoveryReservation,store:ReconciliationStore):SyncStepResult {
+        val lease=reservation.fence.lease;val context=checkNotNull(reservation.fence.server)
+        // Completing a validated local archive is not another HTTP attempt. Recover it even
+        // while the saved access token is expired or a network Retry-After is still active.
+        val pending=withSavedRecoverySession(reservation){store.pendingSnapshotAcceptance(lease,context,reservation.planId)}
+        if(pending!=null) {
+            val prepared=store.prepareCompletedSnapshot(lease,context,reservation.planId,pending)
+            return withSavedRecoverySession(reservation){
+                store.applyCompletedSnapshot(prepared)
+                SyncStepResult.Completed(runId=pending)
+            }
+        }
+        val deadline=recoveryDeadline(reservation)
+        if(deadline>now())return SyncStepResult.RetryAt(deadline)
+        var request=withSavedRecoverySession(reservation){store.nextSnapshot(lease,context,reservation.planId)}
+            ?:return SyncStepResult.Completed()
+        val initial=recoveryApi(reservation);var ticket=initial.first;var refreshed=initial.second
+        while(true) {
+            val captured=ticket;val sent=request
+            suspend fun ready(){requireRecoveryOperation(reservation);checkNotNull(snapshots).requireCurrent(sent)}
+            val response=checkNotNull(snapshotGateway).get(captured,sent.query){withApiSession(captured){ready()}}
+            if(response.status==200) {
+                val next=withApiSession(captured){ready();checkNotNull(snapshots).apply(sent,response.body)}
+                if(next!=null){request=next;continue}
+                val prepared=store.prepareCompletedSnapshot(lease,context,reservation.planId,sent.runId)
+                withApiSession(captured){
+                    requireRecoveryOperation(reservation)
+                    store.applyCompletedSnapshot(prepared)
+                }
+                return SyncStepResult.Completed(runId=sent.runId)
+            }
+            val code=if(response.status in setOf(429,503))"" else checkNotNull(snapshotProtocol).errorCode(response.body)
+            withApiSession(captured){ready()}
+            if(response.status==401 && code=="unauthorized" && !refreshed){
+                refreshed=true;check(refreshFor(lease,reservation.fence));ticket=apiSession(reservation.fence);continue
+            }
+            if(response.status in setOf(429,503))return deferRecovery(reservation,captured,response.retryAfter)
+            withApiSession(captured){
+                ready()
+                when {
+                    response.status==403 && code=="account_deleting"->checkNotNull(snapshots).block(sent)
+                    response.status==410 && code in setOf("snapshot_expired","sync_cursor_expired")->checkNotNull(snapshots).expire(sent)
+                    response.status==409 && code in setOf("sync_epoch_changed","account_generation_changed","sync_reconciliation_required")->checkNotNull(snapshots).invalidate(sent)
+                }
+            }
+            return if(response.status==410 && code=="snapshot_expired")SyncStepResult.TransientFailure else recoveryRefusal(response.status,code)
+        }
+    }
+
+    private suspend fun recoverPush(reservation:RecoveryReservation,store:ReconciliationStore):SyncStepResult {
+        val lease=reservation.fence.lease;val context=checkNotNull(reservation.fence.server)
+        // Preparation/schema work stays outside the session guard. The store verifies the same plan/context.
+        val request=store.preparePush(lease,context,reservation.planId)?:return withSavedRecoverySession(reservation){SyncStepResult.Completed()}
+        suspend fun applied(commit:suspend()->ReconciliationAckResult):SyncStepResult {
+            val ack=commit()
+            return if(ack.awaitingSnapshot)SyncStepResult.ReconciliationRequired("reconciliation_snapshot_required")
+                else SyncStepResult.Completed(batchId=request.id,acknowledged=ack.acknowledged,refused=ack.refused)
+        }
+        if(request.needsAckRevalidation) {
+            // A received response awaiting typed target proof is not another network mutation.
+            val prepared=store.prepareAck(request,200,checkNotNull(request.savedResponse()))
+            return applied{withSavedRecoverySession(reservation){store.applyAck(prepared)}}
+        }
+        val deadline=recoveryDeadline(reservation,request.row.retryAtMillis)
+        if(deadline>now())return SyncStepResult.RetryAt(deadline)
+        val initial=recoveryApi(reservation);var ticket=initial.first;var refreshed=initial.second
+        while(true) {
+            val captured=ticket
+            suspend fun ready(){requireRecoveryOperation(reservation);store.requireCurrent(request)}
+            val response=checkNotNull(mealPushGateway).post(captured,request.batch){withApiSession(captured){ready();store.markAttempted(request,now())}}
+            if(response.status==200) {
+                val prepared=store.prepareAck(request,response.status,response.body)
+                return applied{withApiSession(captured){ready();store.applyAck(prepared)}}
+            }
+            val code=if(response.status in setOf(429,503))"" else checkNotNull(mealPushProtocol).errorCode(response.body)
+            withApiSession(captured){ready()}
+            if(response.status==401 && code=="unauthorized" && !refreshed){
+                refreshed=true;check(refreshFor(lease,reservation.fence));ticket=apiSession(reservation.fence);continue
+            }
+            if(response.status in setOf(429,503))return deferRecovery(reservation,captured,response.retryAfter,request)
+            return recoveryRefusal(response.status,code)
+        }
+    }
+
+    private suspend fun bootstrapFor(expectedLease: OwnerLease?, expectedContext: AccountBindingEntity?): SyncCommandOutcome {
+        val gateway = bootstrapGateway ?: return SyncCommandOutcome.NotConfigured
         val id = UUID.randomUUID().toString()
-        val lease = try { mutex.withLock {
-            if (bootstrapOperation != null || operation != null || record.has("pending")) return
-            if (mealPushOperation != null || profileOperation != null || snapshotOperation != null || consentOperation != null || photoUploadOperation != null || nemesisMutationOperation != null) return
+        val fence = try { mutex.withLock {
+            expectedLease?.let { owners.requireCurrent(it) }
+            if (bootstrapOperation != null || operation != null || record.has("pending")) return SyncCommandOutcome.Busy
+            if (mealPushOperation != null || profileOperation != null || snapshotOperation != null || consentOperation != null || photoUploadOperation != null || nemesisMutationOperation != null) return SyncCommandOutcome.Busy
             val current = binding()
+            expectedLease?.let { if (current.lease != it) throw StaleOwnerException() }
+            val capturedContext = db.bootstrapDao().binding(current.lease.storageScope)
+            if (expectedLease != null && expectedContext != capturedContext) throw SyncContextChangedException()
             if (current.owner.kind != "account" || sessionFor(current) == null) {
-                publish("Zaloguj się, aby połączyć konto z serwerem. Dziennik działa offline."); return
+                publish("Zaloguj się, aby połączyć konto z serwerem. Dziennik działa offline."); return SyncCommandOutcome.LoginRequired
             }
             val retryAt = sessionFor(current)!!.optLong("apiRetryAt")
             if (retryAt > now()) {
-                publish("Serwer jest zajęty. Ponów za co najmniej ${(retryAt - now() + 999) / 1000} s. Dziennik działa offline."); return
+                publish("Serwer jest zajęty. Ponów za co najmniej ${(retryAt - now() + 999) / 1000} s. Dziennik działa offline."); return SyncCommandOutcome.RetryAt(retryAt)
             }
             bootstrapOperation = id
             serverProfile = null
             clearMotivation()
             mutable.value = mutable.value.copy(bootstrapBusy = true, serverProfile = null, motivation = MotivationState.NotRequested, message = null)
-            current.lease
+            SyncContextFence(current.lease, capturedContext)
         } } catch (error: CancellationException) { throw error }
+        catch (_: StaleOwnerException) { return SyncCommandOutcome.StaleContext }
+        catch (_: SyncContextChangedException) { return SyncCommandOutcome.StaleContext }
         catch (_: Exception) {
             mutable.value = mutable.value.copy(bootstrapBusy = false, message = "Połączenie jest niedostępne. Dziennik pozostaje lokalny.")
-            return
+            return SyncCommandOutcome.TransientFailure
+        }
+        val lease = fence.lease
+        suspend fun ready() {
+            check(bootstrapOperation == id)
+            requireSyncContext(fence)
         }
         try {
             // Renew an expiring token only for the originally captured owner.
             val fresh = mutex.withLock {
-                owners.requireCurrent(lease)
+                ready()
                 val state = AuthState.jsonDeserialize(checkNotNull(sessionFor(binding())).getString("authState"))
                 (state.accessTokenExpirationTime ?: 0) > now() + 30_000
             }
-            if (!fresh) check(refreshFor(lease))
-            var ticket = apiSession(lease)
-            var request = withApiSession(ticket) { check(bootstrapOperation == id); bootstraps.begin(lease) }
+            if (!fresh) check(refreshFor(lease, fence))
+            var ticket = apiSession(fence)
+            var request = withApiSession(ticket) { ready(); bootstraps.begin(lease) }
             var renewedKey = false
-            var refreshed = false
+            var refreshed = !fresh
             while (true) {
                 val captured = ticket
                 val result = gateway.post(captured, request.operationId) {
-                    withApiSession(captured) { check(bootstrapOperation == id) }
+                    withApiSession(captured) { ready() }
                 }
                 if (result.status == 200) {
                     val response = BootstrapProtocol.parse(result.body)
-                    withApiSession(captured) {
-                        check(bootstrapOperation == id)
+                    val linked = withApiSession(captured) {
+                        ready()
                         val server = bootstraps.apply(request, response)
                         bootstrapOperation = null
                         publish(if (server.requiresRecovery) "Konto połączone. Zmiana stanu serwera wymaga uzgodnienia danych; lokalny dziennik zachowany."
                             else "Konto połączone z serwerem. Posiłki i kolejka nadal pozostają lokalne.")
+                        server
                     }
-                    return
+                    return SyncCommandOutcome.Bootstrapped(linked)
                 }
                 val code = if (result.status in setOf(429, 503)) "" else BootstrapHttpProtocol.errorCode(result.body)
-                withApiSession(captured) { check(bootstrapOperation == id) }
+                withApiSession(captured) { ready() }
                 if (result.status == 401 && code == "unauthorized" && !refreshed) {
                     refreshed = true
-                    check(refreshFor(lease))
-                    ticket = apiSession(lease)
-                    withApiSession(ticket) { check(bootstrapOperation == id) }
+                    check(refreshFor(lease, fence))
+                    ticket = apiSession(fence)
+                    withApiSession(ticket) { ready() }
                     continue // Same durable key, at most one renewal.
                 }
                 if (result.status == 409 && code in setOf("sync_epoch_changed", "account_generation_changed") && !renewedKey) {
-                    request = withApiSession(captured) { check(bootstrapOperation == id); bootstraps.renew(request) }
+                    request = withApiSession(captured) { ready(); bootstraps.renew(request) }
                     renewedKey = true
                     continue // At most one new key; old mapping and diary are preserved.
+                }
+                var outcome: SyncCommandOutcome = when (result.status) {
+                    401 -> SyncCommandOutcome.LoginRequired
+                    403, 409 -> SyncCommandOutcome.ReconciliationRequired(code)
+                    else -> SyncCommandOutcome.TransientFailure
                 }
                 val message = when (result.status) {
                     401 -> "Sesja wymaga ponownego logowania. Dziennik działa offline."
@@ -678,28 +1015,38 @@ class SessionController internal constructor(private val db: CalorieDatabase, pr
                         val seconds = BootstrapHttpProtocol.retrySeconds(result.retryAfter, now())
                         val retryAt = Math.addExact(now(), Math.multiplyExact(seconds, 1000))
                         withApiSession(captured) {
-                            check(bootstrapOperation == id)
+                            ready()
                             val session = checkNotNull(sessionFor(binding()))
                             persist(copyRecord().put("session", JSONObject(session.toString()).put("apiRetryAt", retryAt)))
                         }
+                        outcome = SyncCommandOutcome.RetryAt(retryAt)
                         "Serwer jest zajęty. Ponów za co najmniej $seconds s. Dziennik działa offline."
                     }
                     else -> "Nie udało się połączyć konta. Dziennik działa offline."
                 }
                 mutex.withLock {
-                    if (bootstrapOperation == id) { owners.requireCurrent(lease); bootstrapOperation = null; publish(message) }
+                    if (bootstrapOperation == id) { ready(); bootstrapOperation = null; publish(message) }
                 }
-                return
+                return outcome
             }
         } catch (error: CancellationException) {
-            withContext(NonCancellable) { finishBootstrap(id, lease) }; throw error
-        } catch (_: Exception) { finishBootstrap(id, lease) }
+            withContext(NonCancellable) { finishBootstrap(id, fence) }; throw error
+        } catch (_: StaleOwnerException) {
+            finishBootstrap(id, fence); return SyncCommandOutcome.StaleContext
+        } catch (_: SyncContextChangedException) {
+            finishBootstrap(id, fence); return SyncCommandOutcome.StaleContext
+        } catch (_: SyncLoginRequiredException) {
+            finishBootstrap(id, fence); return SyncCommandOutcome.LoginRequired
+        } catch (_: Exception) {
+            finishBootstrap(id, fence); return SyncCommandOutcome.TransientFailure
+        }
     }
-    private suspend fun finishBootstrap(id: String, lease: OwnerLease) = mutex.withLock {
+    private suspend fun finishBootstrap(id: String, fence: SyncContextFence) = mutex.withLock {
         if (bootstrapOperation != id) return@withLock
         bootstrapOperation = null
         try {
-            if (owners.currentLease() == lease) publish("Połączenie nie zostało potwierdzone. Dane i klucz próby zachowane; możesz ponowić.")
+            if (owners.currentLease() == fence.lease && db.bootstrapDao().binding(fence.lease.storageScope) == fence.server)
+                publish("Połączenie nie zostało potwierdzone. Dane i klucz próby zachowane; możesz ponowić.")
             else publish()
         } catch (_: Exception) {
             mutable.value = mutable.value.copy(bootstrapBusy = false, message = "Połączenie nie zostało potwierdzone. Dziennik pozostaje lokalny.")
@@ -837,7 +1184,7 @@ class SessionController internal constructor(private val db: CalorieDatabase, pr
             }
             if (!fresh) check(refreshFor(lease))
             var ticket = apiSession(lease)
-            var refreshed = false
+            var refreshed = !fresh
             var stagedProfile: ProfileRead? = null
             var stagedMotivation: MotivationRead? = null
             var stagedNemesis: NemesisChallenge? = null
@@ -1110,7 +1457,7 @@ class SessionController internal constructor(private val db: CalorieDatabase, pr
             }
             if (!fresh) check(refreshFor(capturedLease))
             var ticket = apiSession(capturedLease)
-            var refreshed = false
+            var refreshed = !fresh
             while (true) {
                 val captured = ticket
                 suspend fun ready() {
@@ -1259,7 +1606,7 @@ class SessionController internal constructor(private val db: CalorieDatabase, pr
                 (state.accessTokenExpirationTime ?: 0) > now() + 30_000
             }
             if (!fresh) check(refreshFor(capturedLease))
-            var ticket = apiSession(capturedLease); var refreshed = false
+            var ticket = apiSession(capturedLease); var refreshed = !fresh
             var preflight = request.command.grantsSharing
             while (true) {
                 val captured = ticket
@@ -1398,7 +1745,7 @@ class SessionController internal constructor(private val db: CalorieDatabase, pr
             (state.accessTokenExpirationTime?:0)>now()+30_000
         }
         if(!fresh) check(refreshFor(captured.lease))
-        var ticket=apiSession(captured.lease);var refreshed=false
+        var ticket=apiSession(captured.lease);var refreshed= !fresh
         // Private image IO and wire encoding are outside withApiSession/Room/mutex.
         val request=captured.store.request(row.operationId)
         suspend fun ready() {
@@ -1521,7 +1868,7 @@ class SessionController internal constructor(private val db: CalorieDatabase, pr
             (auth.accessTokenExpirationTime?:0)>now()+30_000
         }
         if(!fresh) check(refreshFor(captured.lease))
-        var ticket=apiSession(captured.lease);var refreshed=false
+        var ticket=apiSession(captured.lease);var refreshed= !fresh
         val saved=withContext(Dispatchers.Default){captured.store.stored(row.operationId)}
         val cached=withContext(Dispatchers.Default){if(saved.cancelled)null else saved.latest?.let(PhotoAnalysisPreview::from)}
         val cancellation=PhotoCancellationStatus.from(row.operationId,saved)
@@ -1730,7 +2077,7 @@ class SessionController internal constructor(private val db: CalorieDatabase, pr
                 (state.accessTokenExpirationTime?:0)>now()+30_000
             }
             if(!fresh)check(refreshFor(captured.lease))
-            var ticket=apiSession(captured.lease);var refreshed=false
+            var ticket=apiSession(captured.lease);var refreshed= !fresh
             val attempted=withContext(Dispatchers.Default){captured.store.prepareConfirmationAttempted(row.operationId,now())}
             val snapshot=attempted.snapshot
             val request=checkNotNull(snapshot.confirmation).request(row.syncEpoch)
@@ -1858,7 +2205,7 @@ class SessionController internal constructor(private val db: CalorieDatabase, pr
                 (state.accessTokenExpirationTime?:0)>now()+30_000
             }
             if(!fresh) check(refreshFor(captured.lease))
-            var ticket=apiSession(captured.lease);var refreshed=false
+            var ticket=apiSession(captured.lease);var refreshed= !fresh
             val attempted=withContext(Dispatchers.Default){captured.store.prepareCancellationAttempted(row.operationId,now())}
             val snapshot=attempted.snapshot
             val request=checkNotNull(snapshot.cancellation).request(row.syncEpoch,snapshot.receipt.analysisId)
@@ -2097,27 +2444,43 @@ class SessionController internal constructor(private val db: CalorieDatabase, pr
         finally {conflictBusy=false;publish()}
     }
 
-    /** Explicit canonical Meal push. Legacy rows remain local and are reported separately. */
+    /** Canonical private-data push. The historical method name remains compatible with callers. */
     suspend fun synchronizeMeals(expectedLease:OwnerLease) {
-        val transport=mealPushGateway?:return
-        val store=mealPushStore?:return
-        val protocol=mealPushProtocol?:return
-        if(snapshotGateway==null || snapshots==null)return
+        pushFor(expectedLease, null, followWithPull = true)
+    }
+    /** The opt-in ACK driver observes the same write separately from the server projection. */
+    internal suspend fun synchronizeMealsWithoutPull(expectedLease:OwnerLease) {
+        pushFor(expectedLease, null, followWithPull = false)
+    }
+    /** The worker orchestrator owns its final PULL; manual sync keeps its existing follow-up. */
+    private suspend fun pushFor(expectedLease:OwnerLease,expectedContext:AccountBindingEntity?,
+        followWithPull:Boolean):SyncCommandOutcome {
+        val transport=mealPushGateway?:return SyncCommandOutcome.NotConfigured
+        val store=mealPushStore?:return SyncCommandOutcome.NotConfigured
+        val protocol=mealPushProtocol?:return SyncCommandOutcome.NotConfigured
+        if(snapshotGateway==null || snapshots==null)return SyncCommandOutcome.NotConfigured
         val id=UUID.randomUUID().toString()
         val server=try {mutex.withLock {
             owners.requireCurrent(expectedLease)
             if(mealPushOperation!=null || operation!=null || bootstrapOperation!=null || snapshotOperation!=null ||
-                profileOperation!=null || consentOperation!=null || nemesisMutationOperation!=null || photoUploadOperation!=null || record.has("pending"))return@withLock null
+                profileOperation!=null || consentOperation!=null || nemesisMutationOperation!=null || photoUploadOperation!=null || record.has("pending"))return SyncCommandOutcome.Busy
             val current=binding();val session=sessionFor(current)
-            if(current.owner.kind!="account" || session==null){publish("Zaloguj się, aby wysłać dziennik. Dane lokalne zachowane.");return@withLock null}
+            if(current.lease!=expectedLease)throw StaleOwnerException()
+            if(current.owner.kind!="account" || session==null){publish("Zaloguj się, aby wysłać dziennik. Dane lokalne zachowane.");return SyncCommandOutcome.LoginRequired}
             val known=db.bootstrapDao().binding(expectedLease.storageScope)
-            if(known==null || known.requiresRecovery){publish("Najpierw połącz konto lub uzgodnij stan serwera. Kolejka zachowana.");return@withLock null}
+            if(expectedContext!=null && known!=expectedContext)return SyncCommandOutcome.StaleContext
+            if(known==null || known.requiresRecovery){publish("Najpierw połącz konto lub uzgodnij stan serwera. Kolejka zachowana.");return SyncCommandOutcome.ReconciliationRequired("account_context_not_ready")}
             val pushStatus=store.status(expectedLease)
-            if(maxOf(session.optLong("apiRetryAt"),pushStatus.retryAtMillis)>now()){publish("Serwer jest zajęty. Poczekaj do zakończenia zapisanej przerwy.");return@withLock null}
-            if(!pushStatus.ready){publish("Najpierw pobierz pełną kopię danych serwera. Kolejka zachowana.");return@withLock null}
+            val retryAt=maxOf(session.optLong("apiRetryAt"),pushStatus.retryAtMillis)
+            if(retryAt>now()){publish("Serwer jest zajęty. Poczekaj do zakończenia zapisanej przerwy.");return SyncCommandOutcome.RetryAt(retryAt)}
+            if(!pushStatus.ready){publish("Najpierw pobierz pełną kopię danych serwera. Kolejka zachowana.");return SyncCommandOutcome.ReconciliationRequired("snapshot_required")}
             mealPushOperation=id;mealPushFence=expectedLease to known;mealPushMessage=null
             publish();known
-        }}catch(error:CancellationException){throw error}catch(_:Exception){null}?:return
+        }}catch(error:CancellationException){throw error}
+        catch(_:StaleOwnerException){return SyncCommandOutcome.StaleContext}
+        catch(_:SyncContextChangedException){return SyncCommandOutcome.StaleContext}
+        catch(_:Exception){return SyncCommandOutcome.TransientFailure}
+        val fence=SyncContextFence(expectedLease,server)
         var acknowledged=0;var refused=0
         try {
             var refreshed=false
@@ -2126,16 +2489,16 @@ class SessionController internal constructor(private val db: CalorieDatabase, pr
                 val state=AuthState.jsonDeserialize(checkNotNull(sessionFor(binding())).getString("authState"))
                 (state.accessTokenExpirationTime?:0)>now()+30_000
             }
-            if(!fresh){check(refreshFor(expectedLease));refreshed=true}
-            var ticket=apiSession(expectedLease)
+            if(!fresh){check(refreshFor(expectedLease,fence));refreshed=true}
+            var ticket=apiSession(fence)
             repeat(10) {
                 withApiSession(ticket){checkMealPush(id,expectedLease,server)}
                 // Includes serialization and schema checks; never execute under the session guard.
                 val request=store.prepare(expectedLease)
                 if(request==null){
-                    finishMealPush(id,expectedLease,mealPushSummary(acknowledged,refused))
-                    if(acknowledged+refused>0)downloadSnapshot(expectedLease,server)
-                    return
+                    finishMealPush(id,expectedLease,server,mealPushSummary(acknowledged,refused))
+                    if(followWithPull && acknowledged+refused>0)downloadSnapshot(expectedLease,server)
+                    return completeSyncCommand(fence,SyncCommandOutcome.Pushed(acknowledged,refused,more=false))
                 }
                 while(true) {
                     val captured=ticket
@@ -2143,6 +2506,8 @@ class SessionController internal constructor(private val db: CalorieDatabase, pr
                     val result=transport.post(captured,request.batch){withApiSession(captured){ready();store.markAttempted(request,now())}}
                     if(result.status==200){
                         val prepared=store.prepareAck(request,result.status,result.body)
+                        // Validation hold only after the unchanged parser, outside both guards.
+                        if(MealPushObservation.ENABLED)MealPushObservation.beforeApplyAck(request.id,request.row.requestHash)
                         withApiSession(captured){ready();val ack=store.applyAck(prepared)
                             acknowledged+=ack.acknowledged;refused+=ack.refused}
                         break
@@ -2150,7 +2515,7 @@ class SessionController internal constructor(private val db: CalorieDatabase, pr
                     val code=if(result.status in setOf(429,503))"" else withContext(Dispatchers.Default){protocol.errorCode(result.body)}
                     withApiSession(captured){ready()}
                     if(result.status==401 && code=="unauthorized" && !refreshed){
-                        refreshed=true;check(refreshFor(expectedLease));ticket=apiSession(expectedLease)
+                        refreshed=true;check(refreshFor(expectedLease,fence));ticket=apiSession(fence)
                         withApiSession(ticket){ready()};continue
                     }
                     if(result.status in setOf(429,503)) {
@@ -2166,35 +2531,50 @@ class SessionController internal constructor(private val db: CalorieDatabase, pr
                             mealPushOperation=null;mealPushMessage="Serwer jest zajęty. Ponów za co najmniej $seconds s; zapisana partia zachowana."
                             publish()
                         }
-                        return
+                        return SyncCommandOutcome.RetryAt(retryAt)
                     }
+                    var outcome:SyncCommandOutcome=SyncCommandOutcome.TransientFailure
                     withApiSession(captured){
                         ready()
                         val message=when {
                             result.status==403 && code=="account_deleting"->{
                                 store.requireReconciliation(request,deleting=true)
+                                outcome=SyncCommandOutcome.ReconciliationRequired(code)
                                 "Konto jest usuwane. Wysyłanie zablokowane; dane i zapisana partia zachowane."
                             }
                             (result.status in setOf(403,409,410,422,413) && code in setOf("sync_epoch_changed",
                                 "account_generation_changed","sync_reconciliation_required","sync_cursor_expired",
                                 "account_bootstrap_required","invalid_sync_token","invalid_request","request_too_large"))->{
                                 store.requireReconciliation(request)
+                                outcome=SyncCommandOutcome.ReconciliationRequired(code)
                                 "Wymagane uzgodnienie danych. Sprawdź połączenie i pobierz pełną kopię serwera; pierwotna partia zachowana."
                             }
-                            result.status==401->"Sesja wymaga ponownego logowania. Zapisana partia i dziennik zachowane."
+                            result.status==401->{outcome=SyncCommandOutcome.LoginRequired;"Sesja wymaga ponownego logowania. Zapisana partia i dziennik zachowane."}
                             else->"Wysyłka nie została potwierdzona. Ponów zapisaną partię; dziennik zachowany."
                         }
                         mealPushOperation=null
                         mealPushFence=expectedLease to checkNotNull(db.bootstrapDao().binding(expectedLease.storageScope))
                         mealPushMessage=message;publish()
                     }
-                    return
+                    return outcome
                 }
             }
-            finishMealPush(id,expectedLease,mealPushSummary(acknowledged,refused)+" Pozostałe wpisy wyślesz kolejną próbą.")
-            downloadSnapshot(expectedLease,server)
-        }catch(error:CancellationException){withContext(NonCancellable){finishMealPush(id,expectedLease)};throw error}
-        catch(_:Exception){finishMealPush(id,expectedLease)}
+            finishMealPush(id,expectedLease,server,mealPushSummary(acknowledged,refused)+" Pozostałe wpisy wyślesz kolejną próbą.")
+            if(followWithPull)downloadSnapshot(expectedLease,server)
+            return completeSyncCommand(fence,SyncCommandOutcome.Pushed(acknowledged,refused,more=true))
+        }catch(error:CancellationException){withContext(NonCancellable){finishMealPush(id,expectedLease,server)};throw error}
+        catch(_:StaleOwnerException){finishMealPush(id,expectedLease,server);return SyncCommandOutcome.StaleContext}
+        catch(_:SyncContextChangedException){finishMealPush(id,expectedLease,server);return SyncCommandOutcome.StaleContext}
+        catch(_:SyncLoginRequiredException){finishMealPush(id,expectedLease,server);return SyncCommandOutcome.LoginRequired}
+        catch(_:Exception){
+            val current=mutex.withLock {
+                try {requireSyncContext(fence);true}
+                catch(error:CancellationException){throw error}
+                catch(_:Exception){false}
+            }
+            finishMealPush(id,expectedLease,server)
+            return if(current)SyncCommandOutcome.TransientFailure else SyncCommandOutcome.StaleContext
+        }
     }
     /** DB-only check, called under the mutex (and, for network/apply, its Room transaction). */
     private suspend fun checkMealPush(id:String,lease:OwnerLease,server:AccountBindingEntity) {
@@ -2205,14 +2585,14 @@ class SessionController internal constructor(private val db: CalorieDatabase, pr
         check(checkNotNull(sessionFor(binding())).optLong("apiRetryAt")<=now())
     }
     private fun mealPushSummary(acknowledged:Int,refused:Int)=if(acknowledged+refused==0)
-        "Brak gotowych wpisów do wysłania. Starsze wpisy i pozostałe typy danych pozostają w kolejce."
+        "Brak gotowych wpisów do wysłania. Starsze wpisy mogą wymagać przypisania lub uzgodnienia."
         else "Serwer potwierdził: $acknowledged. Wymagają uzgodnienia: $refused. Kopia serwera jest odświeżana osobno."
-    private suspend fun finishMealPush(id:String,lease:OwnerLease,message:String=
+    private suspend fun finishMealPush(id:String,lease:OwnerLease,expectedContext:AccountBindingEntity,message:String=
         "Odpowiedź nie została potwierdzona. Ponów tę samą zapisaną partię; dziennik zachowany.")=mutex.withLock {
         if(mealPushOperation!=id)return@withLock
         mealPushOperation=null
         try {
-            if(owners.currentLease()!=lease){clearMealPush();publish();return@withLock}
+            if(owners.currentLease()!=lease || db.bootstrapDao().binding(lease.storageScope)!=expectedContext){clearMealPush();publish();return@withLock}
             mealPushMessage=message;publish()
         }catch(_:Exception){clearMealPush()}
     }
@@ -2241,40 +2621,52 @@ class SessionController internal constructor(private val db: CalorieDatabase, pr
     }
 
     suspend fun downloadSnapshot(expectedLease:OwnerLease?=null,expectedContext:AccountBindingEntity?=null) {
-        val transport = snapshotGateway ?: return
-        val store = snapshots ?: return
-        val protocol = snapshotProtocol ?: return
+        pullFor(expectedLease, expectedContext, allowRecovery = true)
+    }
+    private suspend fun pullFor(expectedLease:OwnerLease?,expectedContext:AccountBindingEntity?,
+        allowRecovery:Boolean):SyncCommandOutcome {
+        val transport = snapshotGateway ?: return SyncCommandOutcome.NotConfigured
+        val store = snapshots ?: return SyncCommandOutcome.NotConfigured
+        val protocol = snapshotProtocol ?: return SyncCommandOutcome.NotConfigured
+        if (!allowRecovery && diaryStore == null) return SyncCommandOutcome.NotConfigured
         val id = UUID.randomUUID().toString()
-        val lease = try { mutex.withLock {
-            if (mealPushOperation != null || snapshotOperation != null || profileOperation != null || consentOperation != null || bootstrapOperation != null || operation != null || photoUploadOperation != null || nemesisMutationOperation != null || record.has("pending")) return
+        val fence = try { mutex.withLock {
             expectedLease?.let { owners.requireCurrent(it) }
+            if (mealPushOperation != null || snapshotOperation != null || profileOperation != null || consentOperation != null || bootstrapOperation != null || operation != null || photoUploadOperation != null || nemesisMutationOperation != null || record.has("pending")) return SyncCommandOutcome.Busy
             val current = binding()
-            expectedContext?.let { check(db.bootstrapDao().binding(current.lease.storageScope)==it) }
+            expectedLease?.let { if (current.lease != it) throw StaleOwnerException() }
+            val server = db.bootstrapDao().binding(current.lease.storageScope)
+            expectedContext?.let { if (server != it) throw SyncContextChangedException() }
             if (current.owner.kind != "account" || sessionFor(current) == null || !mutable.value.serverLinked) {
-                publish("Zaloguj się i połącz konto, aby pobrać kopię serwera."); return
+                publish("Zaloguj się i połącz konto, aby pobrać kopię serwera."); return SyncCommandOutcome.LoginRequired
             }
+            if (server == null) return SyncCommandOutcome.ReconciliationRequired("account_bootstrap_required")
+            if (!allowRecovery && server.requiresRecovery) return SyncCommandOutcome.ReconciliationRequired("account_context_not_ready")
             val retryAt = sessionFor(current)!!.optLong("apiRetryAt")
-            if (retryAt > now()) { publish("Serwer jest zajęty. Ponów za co najmniej ${(retryAt - now() + 999) / 1000} s."); return }
+            if (retryAt > now()) { publish("Serwer jest zajęty. Ponów za co najmniej ${(retryAt - now() + 999) / 1000} s."); return SyncCommandOutcome.RetryAt(retryAt) }
             snapshotOperation = id
             diaryApplying = false
             mutable.value = mutable.value.copy(snapshotBusy = true, message = null)
-            current.lease
+            SyncContextFence(current.lease, server)
         } } catch (error: CancellationException) { throw error }
-        catch (_: Exception) { mutable.value = mutable.value.copy(message = "Pobieranie jest niedostępne. Dziennik zachowany."); return }
+        catch (_: StaleOwnerException) { return SyncCommandOutcome.StaleContext }
+        catch (_: SyncContextChangedException) { return SyncCommandOutcome.StaleContext }
+        catch (_: Exception) { mutable.value = mutable.value.copy(message = "Pobieranie jest niedostępne. Dziennik zachowany."); return SyncCommandOutcome.TransientFailure }
+        val lease = fence.lease
         try {
             val fresh = mutex.withLock {
-                owners.requireCurrent(lease)
+                check(snapshotOperation == id); requireSyncContext(fence)
                 val state = AuthState.jsonDeserialize(checkNotNull(sessionFor(binding())).getString("authState"))
                 (state.accessTokenExpirationTime ?: 0) > now() + 30_000
             }
-            if (!fresh) check(refreshFor(lease))
-            var ticket = apiSession(lease)
-            var request = withApiSession(ticket) { check(snapshotOperation == id); store.begin(lease) }
-            var refreshed = false
+            if (!fresh) check(refreshFor(lease, fence))
+            var ticket = apiSession(fence)
+            var request = withApiSession(ticket) { check(snapshotOperation == id); requireSyncContext(fence); store.begin(lease) }
+            var refreshed = !fresh
             while (true) {
                 val captured = ticket
                 val sent = request
-                suspend fun ready() { check(snapshotOperation == id); store.requireCurrent(sent) }
+                suspend fun ready() { check(snapshotOperation == id); requireSyncContext(fence); store.requireCurrent(sent) }
                 val result = transport.get(captured, sent.query) { withApiSession(captured) { ready() } }
                 if (result.status == 200) {
                     val next = withApiSession(captured) {
@@ -2282,26 +2674,28 @@ class SessionController internal constructor(private val db: CalorieDatabase, pr
                         store.apply(sent, result.body)
                     }
                     var completedMessage="Kopia serwera pobrana. Lokalny dziennik i kolejka zachowane."
+                    var appliedToDiary=false
                     if(next==null && diaryStore!=null) {
                         val mayApply=mutex.withLock {
-                            requireApi(captured);check(snapshotOperation==id)
+                            requireApi(captured);requireSyncContext(fence);check(snapshotOperation==id)
                             if(db.bootstrapDao().binding(lease.storageScope)?.requiresRecovery==true)false
                             else {diaryApplying=true;publish();true}
                         }
                         if(mayApply) completedMessage=try {
                             val applied=diaryStore.apply(lease,sent.runId)
+                            appliedToDiary=true
                             "Kopia pobrana, dziennik uzupełniony. Uwzględniono: ${applied.included}; lokalne zmiany zachowane do uzgodnienia: ${applied.held}."
                         } catch(error:CancellationException){throw error}
                         catch(_:Exception){"Kopia pobrana. Uzupełnienie dziennika wymaga ponowienia lub świeżej kopii; dane i kolejka zachowane."}
                     }
                     mutex.withLock {
-                        if (snapshotOperation == id) {
-                            requireApi(captured)
-                            if (next == null) {snapshotOperation = null;diaryApplying=false}
-                            publish(if (next == null) completedMessage else null)
-                        }
+                        if (snapshotOperation != id) return SyncCommandOutcome.StaleContext
+                        requireApi(captured)
+                        requireSyncContext(fence)
+                        if (next == null) {snapshotOperation = null;diaryApplying=false}
+                        publish(if (next == null) completedMessage else null)
                     }
-                    if (next == null) return
+                    if (next == null) return SyncCommandOutcome.Pulled(sent.runId,appliedToDiary)
                     request = next
                     continue
                 }
@@ -2309,11 +2703,12 @@ class SessionController internal constructor(private val db: CalorieDatabase, pr
                 withApiSession(captured) { ready() }
                 if (result.status == 401 && code == "unauthorized" && !refreshed) {
                     refreshed = true
-                    check(refreshFor(lease))
-                    ticket = apiSession(lease)
+                    check(refreshFor(lease, fence))
+                    ticket = apiSession(fence)
                     withApiSession(ticket) { ready() }
                     continue
                 }
+                var outcome:SyncCommandOutcome=SyncCommandOutcome.TransientFailure
                 val message = withApiSession(captured) {
                     ready()
                     when {
@@ -2322,10 +2717,12 @@ class SessionController internal constructor(private val db: CalorieDatabase, pr
                             val retryAt = Math.addExact(now(), Math.multiplyExact(seconds, 1000))
                             val session = checkNotNull(sessionFor(binding()))
                             persist(copyRecord().put("session", JSONObject(session.toString()).put("apiRetryAt", retryAt)))
+                            outcome=SyncCommandOutcome.RetryAt(retryAt)
                             "Serwer jest zajęty. Ponów za co najmniej $seconds s; pobrane strony zachowane."
                         }
                         result.status == 403 && code == "account_deleting" -> {
                             store.block(sent)
+                            outcome=SyncCommandOutcome.ReconciliationRequired(code)
                             "Konto jest usuwane. Pobieranie zostało zablokowane; dane lokalne zachowane."
                         }
                         result.status == 410 && code in setOf("snapshot_expired", "sync_cursor_expired") -> {
@@ -2334,29 +2731,40 @@ class SessionController internal constructor(private val db: CalorieDatabase, pr
                         }
                         result.status == 409 && code in setOf("sync_epoch_changed", "account_generation_changed", "sync_reconciliation_required") -> {
                             store.invalidate(sent)
+                            outcome=SyncCommandOutcome.ReconciliationRequired(code)
                             "Stan serwera się zmienił. Połącz konto ponownie; wymagane uzgodnienie, dane zachowane."
                         }
-                        result.status == 401 -> "Sesja wymaga ponownego logowania. Pobrane strony i dziennik zachowane."
+                        result.status == 401 -> {outcome=SyncCommandOutcome.LoginRequired;"Sesja wymaga ponownego logowania. Pobrane strony i dziennik zachowane."}
                         else -> "Pobieranie przerwane. Możesz je wznowić; dziennik zachowany."
                     }
                 }
                 mutex.withLock {
                     if (snapshotOperation == id) { owners.requireCurrent(lease); snapshotOperation = null; publish(message) }
                 }
-                return
+                return outcome
             }
         } catch (error: CancellationException) {
-            withContext(NonCancellable) { finishSnapshot(id, lease) }; throw error
+            withContext(NonCancellable) { finishSnapshot(id, lease, expectedContext = fence.server) }; throw error
         } catch (error: SnapshotCapacityException) {
-            finishSnapshot(id, lease, "Pamięć kopii serwera jest pełna. Dziennik zachowany; potrzebne uporządkowanie kopii.")
-        } catch (_: Exception) { finishSnapshot(id, lease) }
+            finishSnapshot(id, lease, "Pamięć kopii serwera jest pełna. Dziennik zachowany; potrzebne uporządkowanie kopii.",fence.server)
+            return SyncCommandOutcome.ReconciliationRequired("snapshot_capacity")
+        } catch (_: StaleOwnerException) {
+            finishSnapshot(id, lease, expectedContext = fence.server);return SyncCommandOutcome.StaleContext
+        } catch (_: SyncContextChangedException) {
+            finishSnapshot(id, lease, expectedContext = fence.server);return SyncCommandOutcome.StaleContext
+        } catch (_: SyncLoginRequiredException) {
+            finishSnapshot(id, lease, expectedContext = fence.server);return SyncCommandOutcome.LoginRequired
+        } catch (_: Exception) {
+            finishSnapshot(id, lease, expectedContext = fence.server);return SyncCommandOutcome.TransientFailure
+        }
     }
     private suspend fun finishSnapshot(id: String, lease: OwnerLease,
-        message: String = "Pobieranie przerwane. Ponów, aby wznowić; pobrane strony i dziennik zachowane.") = mutex.withLock {
+        message: String = "Pobieranie przerwane. Ponów, aby wznowić; pobrane strony i dziennik zachowane.",
+        expectedContext:AccountBindingEntity?=null) = mutex.withLock {
         if (snapshotOperation != id) return@withLock
         snapshotOperation = null
         diaryApplying = false
-        try { publish(if (owners.currentLease() == lease) message else null) }
+        try { publish(if (owners.currentLease() == lease && (expectedContext==null || db.bootstrapDao().binding(lease.storageScope)==expectedContext)) message else null) }
         catch (_: Exception) { mutable.value = mutable.value.copy(snapshotBusy = false, message = message) }
     }
 }

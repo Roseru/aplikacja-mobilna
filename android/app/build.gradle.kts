@@ -12,8 +12,8 @@ android {
         applicationId = "pl.roseru.kalorie"
         minSdk = 26
         targetSdk = 35
-        versionCode = 39
-        versionName = "0.8.28"
+        versionCode = 40
+        versionName = "0.8.29"
         // Public deployment configuration only. No credentials or client secret in the APK.
         val issuer = providers.gradleProperty("CALORIE_OIDC_ISSUER").orElse("").get()
         require(issuer.none { it == '\n' || it == '\r' || it == '"' || it == '\\' })
@@ -41,6 +41,9 @@ android {
     // Real API driver is deliberately excluded from ordinary CI/device fixtures.
     if (providers.gradleProperty("O1_LIVE_API_RECEIPT_TEST").orElse("false").get() == "true") {
         sourceSets.getByName("androidTest").java.srcDir("src/liveReceipt/java")
+    }
+    if (providers.gradleProperty("O1_LIVE_E4_REPLAY_TEST").orElse("false").get() == "true") {
+        sourceSets.getByName("androidTest").java.srcDir("src/liveReplay/java")
     }
     compileOptions {
         sourceCompatibility = JavaVersion.VERSION_17

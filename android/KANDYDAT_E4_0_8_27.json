@@ -1,0 +1,159 @@
+{
+  "date": "2026-10-23",
+  "author": "agent 1",
+  "pr": 138,
+  "source_commit": "dc012fabf395480c6aa2d1b2a1d59b766ec4add3",
+  "source_android_tree": "8d6d4847439f8afe545d8629a4fee3716c40cff8",
+  "source_build_files_unchanged_after_main_merge": true,
+  "room": 17,
+  "configuration": {
+    "oidc_issuer": "https://192.168.3.162:18443/realms/calorie-dev",
+    "api_base_url": "https://192.168.3.162:18443/api/v1",
+    "application_id": "pl.roseru.kalorie.validation",
+    "version": "0.8.27.validation",
+    "code": 1038,
+    "room": 17,
+    "exact_host_ca": true,
+    "cleartext": false,
+    "user_ca": false
+  },
+  "ca_sha256": "01f120ef25f091a6413a535dcaa5e333575a8d08a016503c47998333eef3a6f6",
+  "artifacts": [
+    {
+      "kind": "debug",
+      "filename": "debug.apk",
+      "bytes": 21069579,
+      "sha256": "36e308caf0b82a285e5da011a05079e46f4fcfb4ecdb4ae881d4a9bbb350046e",
+      "application_id": "pl.roseru.kalorie",
+      "version_code": 38,
+      "version_name": "0.8.27",
+      "live_driver_present": false
+    },
+    {
+      "kind": "validation-configured",
+      "filename": "validation-configured.apk",
+      "bytes": 21087773,
+      "sha256": "5722c4826fef6e342ce822232504ea518e0058776014b50f78a6e66546ee5f2c",
+      "application_id": "pl.roseru.kalorie.validation",
+      "version_code": 1038,
+      "version_name": "0.8.27.validation",
+      "live_driver_present": false
+    },
+    {
+      "kind": "test-default",
+      "filename": "test-default.apk",
+      "bytes": 2366559,
+      "sha256": "803889ea724eb867454e0fc42c15d416fb6840855763036d039c83d5f173d237",
+      "application_id": "pl.roseru.kalorie.validation.test",
+      "version_code": null,
+      "version_name": null,
+      "live_driver_present": false
+    },
+    {
+      "kind": "test-liveReplay-optin",
+      "filename": "test-liveReplay-optin.apk",
+      "bytes": 3563869,
+      "sha256": "988b571eb83820d5bfe380c121b44c38e3d9e0a650668cfa3043312f5e896205",
+      "application_id": "pl.roseru.kalorie.validation.test",
+      "version_code": null,
+      "version_name": null,
+      "live_driver_present": true
+    }
+  ],
+  "qualification": {
+    "selected_jvm": {
+      "MealPushAckGateTest": {
+        "tests": 12,
+        "failures": 0,
+        "errors": 0,
+        "skipped": 0
+      },
+      "MealPushHttpReceiptTest": {
+        "tests": 7,
+        "failures": 0,
+        "errors": 0,
+        "skipped": 0
+      },
+      "MealReplayFingerprintTest": {
+        "tests": 5,
+        "failures": 0,
+        "errors": 0,
+        "skipped": 0
+      }
+    },
+    "repeated_jvm_tests": 0,
+    "lint": {
+      "Error": 0,
+      "Fatal": 0,
+      "Warning": 4,
+      "Information": 1
+    },
+    "default_build_exit": 0,
+    "optin_build_exit": 0,
+    "optin_build_seconds": 280.11,
+    "validation_apk_unchanged_by_optin": true,
+    "default_excludes_live_driver": true,
+    "debug_excludes_ack_gate": true,
+    "native": {
+      "tests": 4,
+      "failures": 0,
+      "skipped": 0,
+      "avd": "O1Replay35",
+      "api": 35,
+      "installed_artifact_hashes_verified": true,
+      "offline_before": true,
+      "offline_after": true,
+      "methods": [
+        {
+          "class": "pl.roseru.kalorie.SessionSecurityTest",
+          "method": "manualConsumptionAndAckGatePreserveFrozenWireAcrossCancelledAcknowledgementAndReplay"
+        },
+        {
+          "class": "pl.roseru.kalorie.MealPhotoScreenTest",
+          "method": "guestPhotoNavigationManualFallbackAndRotationDoNotChangeDiaryOrGrantConsent"
+        },
+        {
+          "class": "pl.roseru.kalorie.MealPhotoScreenTest",
+          "method": "durableSyntheticPreviewSurvivesActivityRecreationAndExplicitDeletionKeepsDiary"
+        },
+        {
+          "class": "pl.roseru.kalorie.MealPhotoAdaptiveTest",
+          "method": "narrowPhotoScreenWithLargeTextKeepsCameraGalleryAndManualFallbackReachable"
+        }
+      ],
+      "log_sha256": "4d9c71b9e7e3ffc2533fa9aae53ed685b20a54ac11ad48aab5f80a72c012739d"
+    },
+    "static_runtime_reference": "8ff7c0c1f0df7b579136cf6877b20717eb5ae6a4",
+    "matching_backend_files": 14,
+    "matching_android_schemas": 3,
+    "original_verifier_failure": "Expected 0.8.27 instead of intentional 0.8.27.validation; original proof retained; no application change",
+    "historical_main_photo_timeout": {
+      "run": 39916344347,
+      "tests": 359,
+      "failures": 1,
+      "method": "MealPhotoScreenTest.durableSyntheticPreviewSurvivesActivityRecreationAndExplicitDeletionKeepsDiary",
+      "failed_at": "Second revealPreview after Activity recreation, line 75",
+      "status": "NOT_REPRODUCED_IN_FOCUS; cause remains unresolved; local PASS is not a fix"
+    },
+    "remote_ci": "PENDING for the updated PR138 source"
+  },
+  "not_run": [
+    "live E4 prepare/hold/replay",
+    "real process kill",
+    "PostgreSQL C0/C1/C2",
+    "Gemini",
+    "E7-R",
+    "epoch recovery",
+    "KO32"
+  ],
+  "delivery": {
+    "status": "LOCAL_PACKAGE_READY; no new transport opened",
+    "requirements": [
+      "O3 confirms current peer and a new bounded window",
+      "Use a dedicated validation AVD; preserve historical API and private diary profiles",
+      "Obtain the synthetic session privately, bootstrap and apply the latest full copy",
+      "Create one new selected Meal with the normal form; export exact frozen bytes privately",
+      "Agree the plan before C0; independent C1 and external kill must precede the hold deadline"
+    ]
+  }
+}

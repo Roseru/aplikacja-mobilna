@@ -1,5 +1,9 @@
 # Android — Racje i kalorie
 
+Integracja O1 na O2-B/Room20 obejmuje pierwszy cel pustego konta, lokalne
+dokończenie kopii recovery i poprawiony driver E4. [Stan odbioru](SESJA_SYNCHRONIZACJI.md)
+oddziela starsze dowody od bieżącego kodu przed końcową kwalifikacją.
+
 Etap **0.8.28/code39/Room18**, Agent2/O2, dodaje [trwały push sześciu domen](DOMENY_SYNC.md):
 profil, cele, kompletność dni i prywatne produkty korzystają ze wspólnej partii
 i atomowego ACK obok posiłków/wagi. Kolejne edycje czekają na właściwą rewizję;
@@ -8,6 +12,51 @@ Lokalnie357/372JVM i73celowane nativeAPI35 PASS, lint0błędów; niezależnyrevi
 Pełny CI dokładnego PR/head oraz odbiór koordynatora pozostają osobnymi warunkami.
 Import i uzgadnianie (O2-B), WorkManager i archiwa (O2-C) są kolejnymi etapami.
 Poniżej zachowano historyczne raporty; zwykła aplikacja i kandydat E4 O1 bez podmiany.
+
+## Historyczny kandydat E4 i jego zakres
+
+Historyczny pakiet E4 /23.10, przed próbą O3-088: skonfigurowane APK0.8.27/Room17 ze źródła
+dc012fa dostarczono jako [robocze wydanie GitHub](https://github.com/Roseru/aplikacja-mobilna/releases/tag/untagged-a106e469bb345cdfa8b1),
+z potwierdzonym digest/rozmiarem ZIP. O3 później potwierdził pobranie; guard Room17 zakończył się FAIL.
+Build/lint,24celowaneJVM i4native offline PASS;
+osobny opt-in zbudowany bez uruchomienia live. [Manifest](KANDYDAT_E4_0_8_27.json)
+i [granice odbioru](KANDYDAT_E4.md) podają cztery SHA, konfigurację CA,
+odczytany lecz niewyjaśniony timeout zdjęcia z CI main i kolejne kroki O3.
+Istniejący PR138 na main; odbiór na drugim komputerze i wspólne E4 nadal osobno.
+
+Poniżej zachowane wcześniejsze stany przygotowania:
+
+Aktualizacja kandydata E4 / 23.10: PR138 zawiera dokładne źródło813dc61
+z własnego PR144 (0.8.27/Room17). Zależność jest jawna: najpierw odbiór144,
+potem retarget138 na rzeczywisty main i własny CI. Nowy driver wymaga lokalnie
+zastosowanej pełnej kopii przed przygotowaniem wybranego posiłku.
+Skonfigurowane APK i nowy odbiór są w przygotowaniu; live E4 NOT_RUN.
+
+Historyczne opisy wcześniejszych integracji i wyników:
+
+PR138 / 23.10: dołączono aktualny main a034f66 po PR143. Nowy kandydat
+zawiera producent posiłków, synchronizację wagi i obsługę konfliktów z main
+oraz osobny opt-in driver E4. Wymaga własnego odbioru i nowych skonfigurowanych
+APK według O3-085; historyczne wyniki poniżej nie kwalifikują nowego źródła.
+PR138 przechodzi na main. Pełny pull0.8.27 pozostaje w oddzielnym PR144.
+
+Historyczne opisy:
+
+Aktualizacja138/21.10: `codex/android-integracja-pr138` zawiera dokładny
+rodzic139/afb6a0a. Cały Android/app i pliki kompilacji identyczne z f7cf71e;
+niezmienny kwalifikowany APK nadal pochodzi z d3f6dba. Ta aktualizacja nie
+tworzy nowego skonfigurowanego APK i nie jest odbiorem live. PR138 nadal draft
+na139; własny pełny CI po integracji rodziców jest osobnym warunkiem.
+
+Lokalny `codex/android-kandydat-e4` łączy ręczny producent Meal z PR139
+i narzędzie przygotowania/hold/replay z PR138. Własny odbiór offline i dokładne SHA opisuje
+[KANDYDAT_E4.md](KANDYDAT_E4.md); konfiguracja API i próba live pozostają osobno.
+Docelowo istniejący PR138 ma zależeć od dokładnego źródła139; gałąź139
+i jej odebrany APK pozostają zachowane. Nowy PR z duplikatem zmian nie powstaje.
+
+Historyczne opisy niezależnych etapów przed ich połączeniem:
+
+Historyczny stan rodzica przy aktualizacji zależności:
 
 Etap **0.8.27/code38/Room17** na `codex/android-pobieranie-dziennika` dodaje
 [pełną kopię serwera w lokalnym dzienniku](POBIERANIE_DZIENNIKA.md): posiłki,
@@ -90,6 +139,16 @@ pozostaje lokalny, a jego spożycie po bootstrapie ma osobną operację Meal.
 i nowy APK jeszcze NOT_RUN. Starsze wpisy/katalog/racje są osobno.
 Kod [drivera E4](https://github.com/Roseru/aplikacja-mobilna/pull/138) jest
 w oddzielnym PR; nie jest zależnością kodu tego etapu ani odebranym testem live.
+
+Na zależnej gałęzi `codex/android-replay-ack` przygotowano
+[barierę przed zapisem ACK](REPLAY_ACK_VALIDATION.md) wyłącznie validation
+oraz [kod drivera prepare/hold/replay](DRIVER_REPLAY_E4.md): 24 JVM PASS,
+lekka kompilacja obu wariantów kontrolera/transportu i drivera. Bez nowego APK,
+pełnego buildu lub próby z serwerem; poniższy manifest 0.8.23 opisuje
+wcześniejsze artefakty, bez tej bariery. Pełny build i wykonanie drivera na
+osobnym urządzeniu pozostają następnym krokiem.
+
+Historyczny stan rodzica przy aktualizacji zależności:
 
 Stan rodzica129 przy aktualizacji zależności:
 

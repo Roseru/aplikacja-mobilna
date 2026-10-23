@@ -1,0 +1,277 @@
+{
+  "signer_certificate_sha256": "e1167912de15c155ed2ce4baf809c4fdf209a6705d860f847e5298d5f7f150b5",
+  "date": "2026-10-23",
+  "author": "agent 1",
+  "source_commit": "5b283e4b8921113af5c6921c399a6e6060d77a16",
+  "branch": "codex/android-sesja-synchronizacji",
+  "source_android_tree": "d8fb06b7a54a372229af0b7aa8082802f4448bf8",
+  "dependency_o2_b": "ea84bd26",
+  "room": 20,
+  "configuration": {
+    "oidc_issuer": "https://192.168.3.162:18443/realms/calorie-dev",
+    "api_base_url": "https://192.168.3.162:18443/api/v1",
+    "application_id": "pl.roseru.kalorie.validation",
+    "version": "0.8.29.validation",
+    "code": 1040,
+    "room": 20,
+    "exact_host_ca": true,
+    "cleartext": false,
+    "user_ca": false
+  },
+  "ca_sha256": "01f120ef25f091a6413a535dcaa5e333575a8d08a016503c47998333eef3a6f6",
+  "artifacts": [
+    {
+      "kind": "debug",
+      "filename": "debug.apk",
+      "bytes": 21512006,
+      "sha256": "35ab73bf2ba598db05ebb0aefc07864f1906f4389e411aa48d9b3e8282c88643",
+      "application_id": "pl.roseru.kalorie",
+      "version_code": 40,
+      "version_name": "0.8.29",
+      "live_driver_present": false
+    },
+    {
+      "kind": "validation-configured",
+      "filename": "validation-configured.apk",
+      "bytes": 22156288,
+      "sha256": "ab1c66105bbef1a146c7201148d1d9a4b47cee2375901637b08a078266110462",
+      "application_id": "pl.roseru.kalorie.validation",
+      "version_code": 1040,
+      "version_name": "0.8.29.validation",
+      "live_driver_present": false
+    },
+    {
+      "kind": "test-default",
+      "filename": "test-default.apk",
+      "bytes": 3742873,
+      "sha256": "beba90c744de6cd951cff0a60254c48fab8c72155392137025e9c1bc63621d3c",
+      "application_id": "pl.roseru.kalorie.validation.test",
+      "version_code": null,
+      "version_name": null,
+      "live_driver_present": false
+    },
+    {
+      "kind": "test-liveReplay-optin",
+      "filename": "test-liveReplay-optin.apk",
+      "bytes": 3758861,
+      "sha256": "3939ffa53a82486faf6b6e13d3413683bd9ac3ec5d2bb3197af066ea523c0580",
+      "application_id": "pl.roseru.kalorie.validation.test",
+      "version_code": null,
+      "version_name": null,
+      "live_driver_present": true
+    }
+  ],
+  "changes": [
+    "Explicit first goal on an empty account; independent profile save; account-specific Settings description",
+    "Recovery pending/prepare/apply completed snapshot; local acceptance before token renewal and retry deadline",
+    "Atomic private observer projection and per-emission fail-closed subscription continuity",
+    "E4 driver checks durable ACK before separately requested PULL; protected schemas 17-20; per-table mismatch diagnostics"
+  ],
+  "qualification": {
+    "selected_jvm": {
+      "MealReplayFingerprintTest": {
+        "tests": 6,
+        "failures": 0,
+        "errors": 0,
+        "skipped": 0
+      }
+    },
+    "lint": {
+      "Error": 0,
+      "Fatal": 0,
+      "Warning": 4,
+      "Information": 1
+    },
+    "reused_qualification": {
+      "source": "92c2cdc1d3be5908c5aeb47e2431cf873e6be5db",
+      "initial_build": {
+        "exit_code": 0,
+        "seconds": 1107.92,
+        "log_sha256": "e4fd1f0ac93b3dfb2056420d279b134e6a63c77cf2288373ddb4c9ffd32d24e1"
+      },
+      "selected_jvm": {
+        "MealReplayFingerprintTest": {
+          "tests": 6,
+          "failures": 0,
+          "errors": 0,
+          "skipped": 0
+        }
+      },
+      "lint": {
+        "Error": 0,
+        "Fatal": 0,
+        "Warning": 4,
+        "Information": 1
+      },
+      "only_changed_input": "android/app/src/androidTest/java/pl/roseru/kalorie/FirstAccountGoalNavigationTest.kt",
+      "application_inputs_unchanged": true,
+      "repeated_jvm": 0,
+      "repeated_lint": false
+    },
+    "default_build": {
+      "exit_code": 0,
+      "seconds": 170.31,
+      "log_sha256": "50dd2edc261fd03a97800fd6f48cbb7fe502e644e9565c2fda3e3c411095922e"
+    },
+    "optin_build": {
+      "exit_code": 0,
+      "seconds": 165.67,
+      "log_sha256": "a0a1d200f9fba50d6841b1f8174a29a0aca4a4a4efd5fe8bc41c9d432d394242"
+    },
+    "validation_apk_unchanged_by_optin": true,
+    "default_excludes_live_driver": true,
+    "debug_excludes_ack_gate": true,
+    "native": {
+      "source": "5b283e4b8921113af5c6921c399a6e6060d77a16",
+      "device": "O1Session35/API35/emulator-5564",
+      "expected_cases": 6,
+      "passed": 6,
+      "failures": 0,
+      "skipped": 0,
+      "success": true,
+      "selectors": [
+        "pl.roseru.kalorie.DiaryFlowTest#selectActivityPreviewAndSaveDailyCalorieGoal",
+        "pl.roseru.kalorie.FirstAccountGoalNavigationTest#emptyAccountCanSaveProfileThenExplicitFirstGoalWithoutGuestFallbackOrFakeAck",
+        "pl.roseru.kalorie.SessionSecurityTest#mealPushWithoutPullSeparatesDurableAckFromFollowingArchive",
+        "pl.roseru.kalorie.SessionSecurityTest#privateRoomObserverClearsCachedProfileAndConsentAcrossContextAndOwnerChanges",
+        "pl.roseru.kalorie.SessionSecurityTest#recoveryCompletedArchiveBeforeReceiptsResumesOfflineWithoutNewRunOrRefresh",
+        "pl.roseru.kalorie.SessionSecurityTest#roomContextChangeClearsDisplayedMotivationAndHeldOldRevisionCannotApply"
+      ],
+      "apks": {
+        "application": {
+          "sha256": "ab1c66105bbef1a146c7201148d1d9a4b47cee2375901637b08a078266110462",
+          "bytes": 22156288
+        },
+        "tests": {
+          "sha256": "beba90c744de6cd951cff0a60254c48fab8c72155392137025e9c1bc63621d3c",
+          "bytes": 3742873
+        }
+      },
+      "initial_run": {
+        "source": "92c2cdc1d3be5908c5aeb47e2431cf873e6be5db",
+        "dependency_o2_b": "ea84bd26",
+        "device": "O1Session35/API35/emulator-5564",
+        "selectors": [
+          "pl.roseru.kalorie.FirstAccountGoalNavigationTest#emptyAccountCanSaveProfileThenExplicitFirstGoalWithoutGuestFallbackOrFakeAck",
+          "pl.roseru.kalorie.DiaryFlowTest#selectActivityPreviewAndSaveDailyCalorieGoal",
+          "pl.roseru.kalorie.SessionSecurityTest#recoveryCompletedArchiveBeforeReceiptsResumesOfflineWithoutNewRunOrRefresh",
+          "pl.roseru.kalorie.SessionSecurityTest#privateRoomObserverClearsCachedProfileAndConsentAcrossContextAndOwnerChanges",
+          "pl.roseru.kalorie.SessionSecurityTest#roomContextChangeClearsDisplayedMotivationAndHeldOldRevisionCannotApply",
+          "pl.roseru.kalorie.SessionSecurityTest#mealPushWithoutPullSeparatesDurableAckFromFollowingArchive"
+        ],
+        "expected_cases": 6,
+        "passed": 5,
+        "failures": 1,
+        "skipped": 0,
+        "elapsed_seconds": 46.515,
+        "build_log_sha256": "e4fd1f0ac93b3dfb2056420d279b134e6a63c77cf2288373ddb4c9ffd32d24e1",
+        "native_log_sha256": "4e8f49dba6cece17b706966d4123b462f227822930b6ca4242186f4792425ba4",
+        "before": {
+          "airplane_mode_on": "1",
+          "wifi": "Wifi is disabled",
+          "network": [
+            "Active default network: none"
+          ]
+        },
+        "after": {
+          "airplane_mode_on": "1",
+          "wifi": "Wifi is disabled",
+          "network": [
+            "Active default network: none"
+          ]
+        },
+        "apks": {
+          "application": {
+            "sha256": "ab1c66105bbef1a146c7201148d1d9a4b47cee2375901637b08a078266110462",
+            "bytes": 22156288
+          },
+          "tests": {
+            "sha256": "082432022f80c6fdd5b926889b1bdfa8f1fcd93a3b0d1d882e758645b64878be",
+            "bytes": 3742866
+          }
+        },
+        "unit": "SIX_FINGERPRINT_JVM_IN_BUILD_RECEIPT",
+        "live": "NOT_RUN",
+        "o2_delegated_16": "NOT_RUN_BY_O1",
+        "pending_completed_snapshot_port": "INCLUDED",
+        "success": false
+      },
+      "corrected_case_run": {
+        "source": "5b283e4b8921113af5c6921c399a6e6060d77a16",
+        "dependency_o2_b": "ea84bd26",
+        "device": "O1Session35/API35/emulator-5564",
+        "selectors": [
+          "pl.roseru.kalorie.FirstAccountGoalNavigationTest#emptyAccountCanSaveProfileThenExplicitFirstGoalWithoutGuestFallbackOrFakeAck"
+        ],
+        "expected_cases": 1,
+        "passed": 1,
+        "failures": 0,
+        "skipped": 0,
+        "elapsed_seconds": 24.937,
+        "build_log_sha256": "50dd2edc261fd03a97800fd6f48cbb7fe502e644e9565c2fda3e3c411095922e",
+        "native_log_sha256": "fc318fe6f06018918fe63d668d2c15433449db2e76ea0cd4cec1e9031724d5ad",
+        "before": {
+          "airplane_mode_on": "1",
+          "wifi": "Wifi is disabled",
+          "network": [
+            "Active default network: none"
+          ]
+        },
+        "after": {
+          "airplane_mode_on": "1",
+          "wifi": "Wifi is disabled",
+          "network": [
+            "Active default network: none"
+          ]
+        },
+        "apks": {
+          "application": {
+            "sha256": "ab1c66105bbef1a146c7201148d1d9a4b47cee2375901637b08a078266110462",
+            "bytes": 22156288
+          },
+          "tests": {
+            "sha256": "beba90c744de6cd951cff0a60254c48fab8c72155392137025e9c1bc63621d3c",
+            "bytes": 3742873
+          }
+        },
+        "unit": "SIX_FINGERPRINT_JVM_IN_BUILD_RECEIPT",
+        "live": "NOT_RUN",
+        "o2_delegated_16": "NOT_RUN_BY_O1",
+        "pending_completed_snapshot_port": "INCLUDED",
+        "success": true
+      },
+      "repeated_passing_cases": 0,
+      "correction": "Test-only substring=true; full account text was correct and all preceding UI/Room/canonical queue assertions passed. Initial5/6FAIL is retained, not relabelled.",
+      "unchanged_application_sha256": "ab1c66105bbef1a146c7201148d1d9a4b47cee2375901637b08a078266110462",
+      "strict_offline_all_runs": true,
+      "live": "NOT_RUN",
+      "remote_full_ci": "NOT_RUN_FOR_THIS_SOURCE"
+    },
+    "delegated_o2_16": "Previously qualified by O2 at cfa18e25; not repeated by O1",
+    "delegated_o2_ui_11": "Previously qualified by O2 at ea84bd26; not repeated by O1",
+    "remote_full_ci": "Not executed for this source; final O2 B PR owns integration CI"
+  },
+  "historical_e4": {
+    "source": "dc012fabf395480c6aa2d1b2a1d59b766ec4add3",
+    "room": 17,
+    "status": "FAIL final protected-table guard; immutable inputs retained; not reclassified"
+  },
+  "not_run": [
+    "Live E4 hold/COMMIT/kill/replay and C0/C1/C2",
+    "Live first-goal PKCE/API/PostgreSQL acceptance",
+    "Room21/22 and O2 C shared worker",
+    "Gemini",
+    "Production deployment"
+  ],
+  "delivery": {
+    "status": "New candidate for independent local O3 trial; no cross-host transport required",
+    "requirements": [
+      "Use this exact source and four APK hashes; preserve the old failed trial",
+      "O3 operator uses a dedicated own validation AVD and normal browser PKCE/bootstrap/full",
+      "Existing local API05/schema24 and demo catalogue18/1/18 are the target, not a candidate26 rollout",
+      "Create fresh plan and operation IDs through ordinary UI; freeze bytes privately before C0",
+      "Run durable ACK guard before separate PULL; do not normalize away DiaryDay changes",
+      "Unknown Room21/22 is rejected until a later explicit guard update and qualification"
+    ]
+  }
+}

@@ -232,14 +232,14 @@ class DiaryFlowTest {
                     app.database.dao().goal("guest", LocalDate.now().toString()).first()?.kcal == kcal
             } }
             // The save feedback overlays the bottom of the list. Finish that interaction before the next tap.
-            compose.waitUntil(5_000) { compose.onAllNodesWithText("Profil i cel zapisane na urządzeniu.").fetchSemanticsNodes().isNotEmpty() }
+            compose.waitUntil(5_000) { compose.onAllNodesWithText("Profil zapisany na urządzeniu.").fetchSemanticsNodes().isNotEmpty() }
             // Use the Snackbar's accessibility action instead of assuming its recommended display duration.
-            val feedback = hasText("Profil i cel zapisane na urządzeniu.")
+            val feedback = hasText("Profil zapisany na urządzeniu.")
             compose.onNode(
                 SemanticsMatcher.keyIsDefined(SemanticsActions.Dismiss) and
                     (feedback or hasAnyDescendant(feedback)), useUnmergedTree = true
             ).performSemanticsAction(SemanticsActions.Dismiss) { dismiss -> assertTrue(dismiss()) }
-            compose.waitUntil(10_000) { compose.onAllNodesWithText("Profil i cel zapisane na urządzeniu.").fetchSemanticsNodes().isEmpty() }
+            compose.waitUntil(10_000) { compose.onAllNodesWithText("Profil zapisany na urządzeniu.").fetchSemanticsNodes().isEmpty() }
             compose.waitForIdle()
             savedGoal = kcal
         }
