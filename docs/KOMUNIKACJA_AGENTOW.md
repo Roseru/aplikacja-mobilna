@@ -6306,3 +6306,15 @@ Archiwalne wiersze stanu przed integracją PR141 z main22.10; aktualny stan znaj
 - Przy końcowej integracji odczytano O3-086 i jego raport ograniczonego replay
   na własnym AVD operatora/Room14: to dowód O3, nie własne wykonanie O2.
   Dostawa O1 Room17, wspólne okno i pełne E4/E7-R/recovery/KO32 pozostają osobno.
+
+- Poprawka po niezależnym odbiorze CI39945158337: android-device miał372/373PASS;
+  jedyny błąd ActivityGoalStorageTest łączył zmianę pseudonimu z jawnym
+  MAINTAIN→REDUCE i oczekiwał starego celu. Rozdzielono oba przypadki:
+  pseudonim/wzrost zachowuje identyczny cel, zmiana typu tworzy nową wersję,
+  sekwencję i correctionOf z identycznymi kcal/B/T/W, historią i atomowym outbox.
+  Zachowano manual-target i rollback triggera; celowane14native PASS.
+  Nowe legacy źródło celu zapisuje własny goal_type/activity_class, aby późniejszy
+  import nie zgadywał historycznego zamiaru z aktualnego profilu. Nieznany typ
+  pozostaje null, stare payloady nie są przepisywane. Regresja potwierdza
+  zachowanie źródła poprzedniego celu po kolejnych zmianach profilu.
+  Nowy head wymaga własnego pełnego CI; poprzedni run nie jest zielonym odbiorem.
