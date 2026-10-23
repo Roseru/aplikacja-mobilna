@@ -20,6 +20,7 @@ import pl.roseru.kalorie.core.sync.*
 import pl.roseru.kalorie.data.*
 import pl.roseru.kalorie.session.*
 import pl.roseru.kalorie.photo.*
+import pl.roseru.kalorie.sync.*
 import java.io.File
 import java.security.KeyStore
 import java.security.MessageDigest
@@ -79,13 +80,14 @@ class SessionSecurityTest {
     }
     private fun client(db: CalorieDatabase, vault: SessionVault, fixture: FixtureGateway, api: BootstrapGateway? = null,
         profiles: ProfileGateway? = null, snapshots: SnapshotGateway? = null, motivation: MotivationGateway? = null,
-        consents: RankingConsentGateway? = null, ranking: RankingGateway? = null, nemesis: NemesisGateway? = null, nemesisWrites: NemesisWriteGateway? = null, photos: PhotoCapabilitiesGateway? = null, photoWrites:PhotoAnalysisGateway?=null, pushes:MealPushGateway?=null, projectDiary:Boolean=false) = SessionController(
+        consents: RankingConsentGateway? = null, ranking: RankingGateway? = null, nemesis: NemesisGateway? = null, nemesisWrites: NemesisWriteGateway? = null, photos: PhotoCapabilitiesGateway? = null, photoWrites:PhotoAnalysisGateway?=null, pushes:MealPushGateway?=null, projectDiary:Boolean=false,reconcile:Boolean=false) = SessionController(
         db, vault, fixture, issuer, context.packageName, now = { fixture.time }, bootstrapGateway = api, profileGateway = profiles, snapshotGateway = snapshots,
         snapshotProtocol = snapshots?.let { snapshotProtocol() }, motivationGateway = motivation, rankingConsentGateway = consents, rankingGateway = ranking, nemesisGateway = nemesis, nemesisWriteGateway = nemesisWrites, photoCapabilitiesGateway = photos,
         photoAnalysisGateway=photoWrites,photoAnalysisStores=if(photoWrites!=null) { lease:OwnerLease->PhotoAnalysisStore(context,db,lease) } else null,
         mealPushGateway=pushes,mealPushStore=pushes?.let {MealPushStore(db,CanonicalMealRows.schema(context))},
         mealPushProtocol=pushes?.let {PushProtocol(CanonicalMealRows.schema(context))},
-        diaryStore=if(projectDiary)ServerDiaryStore(db,CanonicalMealRows.schema(context)) else null)
+        diaryStore=if(projectDiary)ServerDiaryStore(db,CanonicalMealRows.schema(context)) else null,
+        reconciliationStore=if(reconcile)ReconciliationStore(db,CanonicalMealRows.schema(context)) else null)
     private suspend fun login(client: SessionController, fixture: FixtureGateway, subject: String) {
         fixture.subject = subject
         assertNotNull(client.beginLogin())
@@ -3035,5 +3037,136 @@ class SessionSecurityTest {
             assertEquals(SessionController.SyncCommandOutcome.Pushed(1,0,false),h.c.executePushStep(h.lease,known))
             assertEquals(1,h.calls.size);assertEquals(1,h.revision());assertEquals(1,h.copies.calls.size)
         } finally {h.close()}
+    }
+
+    private inner class RecoveryHarness {
+        val push=PushHarness()
+        val store=ReconciliationStore(push.db,CanonicalMealRows.schema(context))
+        lateinit var binding:AccountBindingEntity;lateinit var plan:ImportProgress
+        val transport=object:MealPushGateway {
+            override suspend fun post(session:ApiSession,batch:PushBatch,beforeSend:suspend()->Unit):BootstrapHttpResult {
+                assertFalse(push.db.inTransaction());push.before();beforeSend()
+                assertTrue(push.db.importDao().batches(plan.planId).single().attempted)
+                push.calls+=batch;return push.answer(batch,push.calls.size)
+            }
+        }
+        fun again()=client(push.db,push.vault,push.fixture,push.api,snapshots=push.copies,pushes=transport,projectDiary=true,reconcile=true)
+        suspend fun prepare(approve:Boolean=true) {
+            push.prepare()
+            val ordinary=MealPushStore(push.db,CanonicalMealRows.schema(context))
+            val frozen=ordinary.prepare(push.lease)!!;ordinary.markAttempted(frozen)
+            ordinary.requireReconciliation(frozen)
+            push.c.bootstrap()
+            binding=push.db.bootstrapDao().binding(push.lease.storageScope)!!
+            assertTrue(binding.requiresRecovery)
+            plan=store.begin(push.lease,binding)
+            if(approve)store.approve(push.lease,binding,plan.planId,plan.account,plan.issuer,plan.subject)
+            push.c=again();push.c.start()
+        }
+        suspend fun snapshot():SyncStepResult=push.c.runReconciliationStep(push.lease,binding,plan.planId,ReconciliationStep.FULL_SNAPSHOT_RECEIPTS)
+        suspend fun send():SyncStepResult=push.c.runReconciliationStep(push.lease,binding,plan.planId,ReconciliationStep.PUSH_APPROVED)
+        suspend fun approveReplay() {
+            assertTrue(snapshot() is SyncStepResult.Completed)
+            val source=push.db.importDao().sources(plan.planId).single()
+            store.decide(push.lease,binding,plan.planId,source.entityType,source.sourceId,source.sourceHash,"{\"choice\":\"replay_original\"}")
+        }
+        fun close()=push.close()
+    }
+
+    @Test fun recoveryUnapprovedPlanSendsNothingAndPreservesRecovery()=runBlocking<Unit> {
+        val h=RecoveryHarness()
+        try {
+            h.prepare(approve=false);val copies=h.push.copies.calls.size
+            assertEquals(SyncStepResult.TransientFailure,h.snapshot())
+            assertEquals(copies,h.push.copies.calls.size);assertTrue(h.push.calls.isEmpty())
+            assertEquals(h.binding,h.push.db.bootstrapDao().binding(h.push.lease.storageScope))
+            assertFalse(h.push.c.view.value.snapshotBusy)
+        }finally{h.close()}
+    }
+
+    @Test fun recoverySnapshotPublishesReceiptsOnlyAfterLastPageAndKeepsOrdinaryPushBlocked()=runBlocking<Unit> {
+        val h=RecoveryHarness()
+        try {
+            h.prepare();val before=h.push.db.dao().canonicalMealOperations(h.push.lease.storageScope,h.push.meal)
+            h.push.copies.answer={if(it==2)snapshotAnswer("recovery-next") else snapshotAnswer()}
+            val result=h.snapshot() as SyncStepResult.Completed
+            assertNotNull(result.runId);assertEquals(3,h.push.copies.calls.size)
+            assertTrue(h.push.copies.calls[1].second.contains("recovery_operation_ids="))
+            assertFalse(h.push.copies.calls[2].second.contains("recovery_operation_ids="))
+            assertEquals(1,h.push.db.importDao().evidence(h.plan.planId).count{it.kind=="receipt_group"})
+            assertEquals(before,h.push.db.dao().canonicalMealOperations(h.push.lease.storageScope,h.push.meal))
+            assertEquals(h.binding,h.push.db.bootstrapDao().binding(h.push.lease.storageScope))
+            assertEquals(SyncStepResult.ReconciliationRequired("account_context_not_ready"),
+                h.push.c.executeSyncStep(h.push.lease,h.binding,SyncStep.PUSH))
+            assertTrue(h.push.calls.isEmpty());assertFalse(h.push.c.view.value.snapshotBusy)
+        }finally{h.close()}
+    }
+
+    @Test fun recoveryLostResponseResumesExactRequestWithAtomicAckAndNoHiddenPull()=runBlocking<Unit> {
+        val h=RecoveryHarness()
+        try {
+            h.prepare();h.approveReplay();val copies=h.push.copies.calls.size
+            h.push.answer={_,_->throw java.io.IOException("Synthetic lost recovery ACK")}
+            assertEquals(SyncStepResult.TransientFailure,h.send())
+            val frozen=h.push.db.importDao().batches(h.plan.planId).single()
+            assertTrue(frozen.attempted);assertNull(frozen.responseJson)
+            h.push.c=h.again();h.push.c.start()
+            h.push.answer={batch,_->BootstrapHttpResult(200,h.push.receipt(batch,"already_applied"))}
+            val result=h.send() as SyncStepResult.Completed
+            assertEquals(frozen.id,result.batchId);assertEquals(1,result.acknowledged);assertEquals(0,result.refused)
+            assertEquals(2,h.push.calls.size);assertArrayEquals(h.push.calls[0].body(),h.push.calls[1].body())
+            assertEquals(copies,h.push.copies.calls.size)
+            assertEquals("complete",h.push.db.importDao().batch(frozen.id)!!.state)
+            assertEquals(frozen.requestJson,h.push.db.importDao().batch(frozen.id)!!.requestJson)
+            assertTrue(h.push.db.dao().canonicalMealOperations(h.push.lease.storageScope,h.push.meal).all{it.status=="acked"})
+            assertEquals(h.binding,h.push.db.bootstrapDao().binding(h.push.lease.storageScope))
+        }finally{h.close()}
+    }
+
+    @Test fun recoveryRetryAfterSurvivesControllerRestartAndDoesNotConfirmUnknownBatch()=runBlocking<Unit> {
+        val h=RecoveryHarness()
+        try {
+            h.prepare();h.approveReplay();h.push.answer={_,_->syncDenied(503,"service_unavailable","60")}
+            val retry=h.send() as SyncStepResult.RetryAt
+            val frozen=h.push.db.importDao().batches(h.plan.planId).single()
+            assertEquals(h.push.fixture.time+60_000,retry.epochMillis);assertEquals(retry.epochMillis,frozen.retryAtMillis)
+            h.push.c=h.again();h.push.c.start();assertEquals(retry,h.send());assertEquals(1,h.push.calls.size)
+            assertNull(h.push.db.importDao().batch(frozen.id)!!.responseJson)
+            h.push.fixture.time=retry.epochMillis
+            h.push.answer={batch,_->BootstrapHttpResult(200,h.push.receipt(batch,"already_applied"))}
+            assertTrue(h.send() is SyncStepResult.Completed)
+            assertArrayEquals(h.push.calls[0].body(),h.push.calls[1].body())
+            assertEquals(h.binding,h.push.db.bootstrapDao().binding(h.push.lease.storageScope))
+        }finally{h.close()}
+    }
+
+    @Test fun recoveryContextChangedBeforeSendLeavesFrozenBatchUnattempted()=runBlocking<Unit> {
+        val h=RecoveryHarness()
+        try {
+            h.prepare();h.approveReplay()
+            val changed=h.binding.copy(contextRevision=h.binding.contextRevision+1)
+            h.push.before={h.push.db.withTransaction{h.push.db.bootstrapDao().update(changed)}}
+            assertEquals(SyncStepResult.StaleContext,h.send());assertTrue(h.push.calls.isEmpty())
+            val frozen=h.push.db.importDao().batches(h.plan.planId).single()
+            assertFalse(frozen.attempted);assertNull(frozen.responseJson)
+            assertEquals(changed,h.push.db.bootstrapDao().binding(h.push.lease.storageScope))
+            assertFalse(h.push.c.view.value.mealPushBusy)
+        }finally{h.close()}
+    }
+
+    @Test fun recoveryBusyAndCancellationLeaveAttemptWithoutAckAndKeepOtherStepsBlocked()=runBlocking<Unit> {
+        val h=RecoveryHarness();val entered=CompletableDeferred<Unit>();val release=CompletableDeferred<Unit>()
+        try {
+            h.prepare();h.approveReplay()
+            h.push.answer={batch,_->entered.complete(Unit);release.await();BootstrapHttpResult(200,h.push.receipt(batch))}
+            val task=async{h.send()};withTimeout(10_000){entered.await()}
+            assertEquals(SyncStepResult.Busy,h.send());assertEquals(SyncStepResult.Busy,h.snapshot())
+            assertEquals(1,h.push.calls.size)
+            task.cancelAndJoin();assertTrue(task.isCancelled)
+            val frozen=h.push.db.importDao().batches(h.plan.planId).single()
+            assertTrue(frozen.attempted);assertNull(frozen.responseJson);assertEquals("pending",frozen.state)
+            assertEquals(h.binding,h.push.db.bootstrapDao().binding(h.push.lease.storageScope))
+            assertFalse(h.push.c.view.value.mealPushBusy);assertFalse(h.push.c.view.value.snapshotBusy)
+        }finally{release.complete(Unit);h.close()}
     }
 }

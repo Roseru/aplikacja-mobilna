@@ -1,9 +1,13 @@
 # Polecenia synchronizacji wykonywane w sesji Androida
 
 O1, 23.10.2026. Implementacja części sesyjnej dla modułów Androida O2-B/C.
-Baza zawiera scalony [etap sześciu domen](DOMENY_SYNC.md). Publiczne połączenie
-z planem uzgadniania i orkiestratorem O2 pozostaje do podłączenia po dostawie
-przypiętych typów/store. Ten dokument opisuje kod; wspólny dziennik pozostaje
+Baza zawiera scalony [etap sześciu domen](DOMENY_SYNC.md) oraz lokalnie dołączony
+milestone O2-B `2798f967da0d82270d684f2ded7bb285bcfb101d`. B nie jest scalony;
+ma własną otwartą uwagę P1 i nie jest gotowym wydaniem. `SessionController`
+implementuje dostarczone interfejsy `SyncStepExecutor` i `ReconciliationStepExecutor`.
+O2 podłącza DI/UI/WorkManager; w konstruktorze kontrolera przekazuje
+`reconciliationStore=ReconciliationStore(database, schema)`. Brak tej konfiguracji
+daje `NotConfigured`. Ten dokument opisuje kod; wspólny dziennik pozostaje
 w [KOMUNIKACJA_AGENTOW.md](../docs/KOMUNIKACJA_AGENTOW.md).
 
 ## Zakres właściciela i kontekstu
@@ -60,16 +64,36 @@ przez opt-in driver; nie tworzy innego parsera ani drogi omijającej guardy.
 
 Zwykłe polecenia workera odmawiają przy `requiresRecovery`. Ręczny odczyt
 archiwum w tym stanie nie usuwa flagi i nie importuje go do dziennika.
-Kontrolowane `runReconciliationStep` ma wykorzystywać zatwierdzony trwały plan
+Kontrolowane `runReconciliationStep` wykorzystuje zatwierdzony trwały plan
 O2-B i jego osobne `prepareAck/applyAck`; nie wolno chwilowo wyłączać flagi,
 zmieniać starej epoki koperty ani przepuszczać recovery ACK przez zwykły parser.
-To połączenie pozostaje w implementacji, nie jest potwierdzonym odbiorem B/C.
+Pełny odczyt wykonuje jedną trwałą grupę receipts, do100ID. Kolejne strony
+sprawdza przed HTTP i zastosowaniem; `acceptCompletedSnapshot` zapisuje dowody
+dopiero po ukończeniu kopii. Ukończenie grupy nie oznacza ukończenia całego planu.
+
+PUSH wysyła jeden zatwierdzony zamrożony request. Po utracie odpowiedzi ponawia
+te same bajty. `awaitingSnapshot` daje `reconciliation_snapshot_required`, zeroACK
+i zachowuje odpowiedź. Po nowej kopii `needsAckRevalidation` ponownie waliduje
+zapisany wynik **bez kolejnego POST i bez odnawiania tokenu**. Lokalny zapis
+chroni ten sam lease/kontekst, rezerwacja i rewizja zapisanej sesji. Cancellation
+zdejmuje tylko własną rezerwację; nie zmienia niepewnego requestu ani stanu ACK.
+
+Końcowy `ReconciliationStore.finish` pozostaje jawnym krokiem O2 po decyzjach
+i kopii poACK. Samo `Completed` kroku sieciowego nie zdejmuje `requiresRecovery`.
+Podłączenie w tej gałęzi jest przed odbiorem końcowym, nie jest wynikiem B/C PASS.
 
 ## Stan sprawdzeń
 
 Przypadki urządzenia zapisano dla zmiany kontekstu podczas refresh/HTTP,
 oczekiwanego braku binding, A→B→A, trwałej koperty po utracie odpowiedzi,
 Retry-After, cancellation, busy, rozdzielenia push/pull i przyczyn odnowienia.
-Samo istnienie tych przypadków nie jest wynikiem PASS. Końcowy build i właściwe
-wykonanie następują po ukończeniu spójnego etapu; bez powtarzania całego JVM
-po każdej zmianie. Pełny zdalny CI i rzeczywisty E4 pozostają osobnymi bramkami.
+Samo istnienie tych przypadków nie jest wynikiem PASS. Po ukończeniu części
+sesyjnej wykonano jeden `:app:assembleValidationAndroidTest`: **BUILD SUCCESSFUL
+w10m1s**. Produkcja i przypadki urządzenia skompilowane, testowy APK spakowany;
+źródła kontrolera/gatewaya/testów zgodne z przechwyconymi przed buildem.
+SHA256 logu: `63a7bc97e505c05e77f7e38eaddfbb387f3d962edc261266f5001d2cdee6be86`.
+
+Nie uruchamiano JVM ani instrumentacji. Zadanie to nie pakuje APK aplikacji;
+brak dostawy APK lub instalacji. Testy urządzenia i finalna integracja są
+odłożone do dalszego odbioru. Nie tworzymy częściowego PR dla tego milestone.
+Pełny zdalny CI i rzeczywisty E4 pozostają osobnymi bramkami.

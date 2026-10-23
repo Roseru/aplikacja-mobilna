@@ -6459,3 +6459,43 @@ Archiwalne wiersze stanu przed integracją PR141 z main22.10; aktualny stan znaj
   Room FAIL. To nie pełny PASS E4. O1 analizuje _ensure_day oraz rozdzielenie
   PUSH/PULL; nowy port wykonuje pojedyncze jawne kroki. Materiały O3 zachowane,
   backend acceptance/rollback i nowe live pozostają osobnymi odbiorami.
+
+### O1-115 — Kompilujący adapter sesji B/C do integracji O2
+
+- 23.10.2026, agent1/O1, do O2/koordynatora, **DO ODCZYTU**.
+  `codex/android-sesja-synchronizacji`, kompilujący milestone do podłączenia
+  UI/DI/Worker, **bez nowego PR i bez deklaracji końca B/C**. Zależność:
+  jawnie dołączony zwykłym merge O2-B2798f967da0d82270d684f2ded7bb285bcfb101d.
+  Aktualniejsze poprawki O2 odczytano osobno; nie są dowodem tego builda.
+- SessionController implementuje dokładne SyncStepExecutor oraz
+  ReconciliationStepExecutor. O2 przekazuje `reconciliationStore` do konstruktora
+  i używa samego kontrolera/referencji metod. O1 nie zmienia równolegle
+  data/core/DI/ekranów/Worker. [Opis implementacji](../android/SESJA_SYNCHRONIZACJI.md).
+- Zwykłe PULL/PUSH: jawne wyniki, guard konta/lease/generacji/kontekstu przy
+  refresh, HTTP i zapisie. PULL nie zwraca Completed bez projekcji, PUSH nie
+  uruchamia dodatkowego pull. invalid_grant wymaga loginu, błąd sieci jest
+  chwilowy. Wąskie wejście bootstrap obsługuje także oczekiwany brak binding.
+- Recovery: wyłącznie zatwierdzony plan, strony jednej grupy do100ID,
+  trwały zamrożony request i Retry-After. savedResponse po typed target proof
+  jest walidowane lokalnie bez POST/refresh; zapis chroni również rewizja
+  zapisanej sesji. awaitingSnapshot nie jest ACK. Flagę requiresRecovery
+  kończy wyłącznie jawny lokalny finish O2, nie polecenie sieciowe O1.
+- **Rzeczywisty odbiór tego milestone: kompilacja produkcji i testów urządzenia
+  oraz testowy APK PASS** (`:app:assembleValidationAndroidTest`,10m1s).
+  Źródła kontrolera/gatewaya/testów identyczne z przechwyconymi przed buildem;
+  logSHA256 `63a7bc97e505c05e77f7e38eaddfbb387f3d962edc261266f5001d2cdee6be86`.
+  diff-check PASS. Unit/native/live **NOT_RUN**, APK aplikacji niepakowany.
+  Skompilowane przypadki nie są dowodem wykonania, a komponenty O2 nie
+  zastępują wspólnej integracji. Cięższy lokalny odbiór po18:30 według decyzji właściciela.
+- ODCZYTANE poprawki O2: pełne formularze/porównanie, źródła/null/ilości,
+  kontekst celu i atomowy dowód decyzji; aktualny a73f2cbc7f1d8e246b8eb7e103ce5ac1d49f1a8a.
+  O1 dołączy je po tym zachowanym punkcie kompilacji, następnie właściwy
+  końcowy odbiór. O2 może przygotować integrację i review tego kodu już teraz,
+  ale nie przedstawiać tego commita jako odebranej sesji całej aplikacji.
+- O3-088/FAIL Room17 zachowany. Lokalny b139306 na gałęzi138 oddziela guard
+  ACK od późniejszego pull bez wyłączenia diary_days; nie jest jeszcze
+  zakwalifikowanym nowym APK. Prywatne konto O3 odebrane/odszyfrowane poza
+  repo i OneDrive; klucz/credentiale nie są częścią dostawy.
+- Następnie: O1 kończy kwalifikację adaptera na aktualnym B i przekazuje
+  konkretny wynik; O2 rzeczywiste DI/nawigacja, końcowy B i C. Jeden spójny
+  końcowy PR po dużym rezultacie, bez częściowych/status-onlyPR.

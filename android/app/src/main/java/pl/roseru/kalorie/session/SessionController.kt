@@ -21,6 +21,7 @@ import pl.roseru.kalorie.core.sync.SnapshotProtocol
 import pl.roseru.kalorie.core.catalog.StrictJson
 import pl.roseru.kalorie.data.*
 import pl.roseru.kalorie.photo.*
+import pl.roseru.kalorie.sync.*
 import java.util.UUID
 
 data class SessionBinding(val owner: LocalOwnerEntity, val lease: OwnerLease)
@@ -74,7 +75,8 @@ class SessionController internal constructor(private val db: CalorieDatabase, pr
     private val mealPushGateway:MealPushGateway?=null,private val mealPushStore:MealPushStore?=null,
     private val mealPushProtocol:pl.roseru.kalorie.core.sync.PushProtocol?=null,
     private val conflictStore:SyncConflictStore?=null,
-    private val diaryStore:ServerDiaryStore?=null) {
+    private val diaryStore:ServerDiaryStore?=null,
+    private val reconciliationStore:ReconciliationStore?=null):SyncStepExecutor,ReconciliationStepExecutor {
     private val owners = LocalOwnerStore(db)
     private val mutex = Mutex()
     /** A nullable server binding is also an expectation: the first bootstrap must still be first. */
@@ -675,6 +677,215 @@ class SessionController internal constructor(private val db: CalorieDatabase, pr
         pullFor(expectedLease, expectedContext, allowRecovery = false)
     internal suspend fun executePushStep(expectedLease: OwnerLease, expectedContext: AccountBindingEntity): SyncCommandOutcome =
         pushFor(expectedLease, expectedContext, followWithPull = false)
+
+    override suspend fun executeSyncStep(expectedLease:OwnerLease,expectedContext:AccountBindingEntity,step:SyncStep):SyncStepResult {
+        val outcome=when(step) {
+            SyncStep.PULL->executePullStep(expectedLease,expectedContext)
+            SyncStep.PUSH->executePushStep(expectedLease,expectedContext)
+        }
+        return when(outcome) {
+            is SyncCommandOutcome.Pulled->if(outcome.applied)SyncStepResult.Completed(runId=outcome.runId)
+                else SyncStepResult.ReconciliationRequired("snapshot_projection_required")
+            is SyncCommandOutcome.Pushed->SyncStepResult.Completed(acknowledged=outcome.acknowledged,refused=outcome.refused)
+            is SyncCommandOutcome.RetryAt->SyncStepResult.RetryAt(outcome.epochMillis)
+            is SyncCommandOutcome.ReconciliationRequired->SyncStepResult.ReconciliationRequired(outcome.code)
+            SyncCommandOutcome.Busy->SyncStepResult.Busy
+            SyncCommandOutcome.LoginRequired->SyncStepResult.LoginRequired
+            SyncCommandOutcome.StaleContext->SyncStepResult.StaleContext
+            SyncCommandOutcome.TransientFailure->SyncStepResult.TransientFailure
+            SyncCommandOutcome.NotConfigured->SyncStepResult.NotConfigured
+            is SyncCommandOutcome.Bootstrapped->error("Bootstrap cannot complete an ordinary synchronization step")
+        }
+    }
+
+    private class RecoveryReservation(val id:String,val fence:SyncContextFence,val planId:String,
+        val step:ReconciliationStep,val sessionRevision:Long) {
+        override fun toString()="RecoveryReservation(redacted)"
+    }
+    private sealed interface RecoveryStart {
+        class Ready(val reservation:RecoveryReservation):RecoveryStart
+        class Declined(val result:SyncStepResult):RecoveryStart
+    }
+    private suspend fun requireRecoveryOperation(reservation:RecoveryReservation) {
+        requireSyncContext(reservation.fence)
+        check(if(reservation.step==ReconciliationStep.FULL_SNAPSHOT_RECEIPTS)snapshotOperation==reservation.id
+            else mealPushOperation==reservation.id && mealPushFence==(reservation.fence.lease to reservation.fence.server))
+        check(operation==null && !record.has("pending"))
+        checkNotNull(sessionFor(binding()))
+    }
+    private suspend fun <T> withSavedRecoverySession(reservation:RecoveryReservation,block:suspend()->T):T=mutex.withLock {
+        db.withTransaction {
+            requireRecoveryOperation(reservation)
+            check(sessionRevision==reservation.sessionRevision)
+            block()
+        }
+    }
+    private suspend fun recoveryApi(reservation:RecoveryReservation):Pair<ApiSession,Boolean> {
+        val fresh=mutex.withLock {
+            requireRecoveryOperation(reservation)
+            val state=AuthState.jsonDeserialize(checkNotNull(sessionFor(binding())).getString("authState"))
+            (state.accessTokenExpirationTime?:0)>now()+30_000
+        }
+        if(!fresh)check(refreshFor(reservation.fence.lease,reservation.fence))
+        val ticket=apiSession(reservation.fence)
+        withApiSession(ticket){requireRecoveryOperation(reservation)}
+        return ticket to !fresh
+    }
+    private suspend fun releaseRecoveryOperation(id:String,step:ReconciliationStep)=mutex.withLock {
+        var changed=false
+        if(step==ReconciliationStep.FULL_SNAPSHOT_RECEIPTS && snapshotOperation==id){snapshotOperation=null;diaryApplying=false;changed=true}
+        if(step==ReconciliationStep.PUSH_APPROVED && mealPushOperation==id){mealPushOperation=null;clearMealPush();changed=true}
+        if(changed)try {publish()} catch(_:Exception) {
+            mutable.value=mutable.value.copy(snapshotBusy=snapshotOperation!=null,mealPushBusy=mealPushOperation!=null,diaryApplying=diaryApplying)
+        }
+    }
+
+    /** An approved durable plan is mandatory; ordinary push is never enabled temporarily. */
+    override suspend fun runReconciliationStep(expectedLease:OwnerLease,expectedContext:AccountBindingEntity,
+        planId:String,step:ReconciliationStep):SyncStepResult {
+        val store=reconciliationStore?:return SyncStepResult.NotConfigured
+        if(step==ReconciliationStep.FULL_SNAPSHOT_RECEIPTS && (snapshotGateway==null || snapshots==null || snapshotProtocol==null))return SyncStepResult.NotConfigured
+        if(step==ReconciliationStep.PUSH_APPROVED && (mealPushGateway==null || mealPushProtocol==null))return SyncStepResult.NotConfigured
+        val fence=SyncContextFence(expectedLease,expectedContext)
+        val id=UUID.randomUUID().toString()
+        val start=try {mutex.withLock {db.withTransaction {
+            requireSyncContext(fence)
+            if(mealPushOperation!=null || snapshotOperation!=null || bootstrapOperation!=null || profileOperation!=null ||
+                consentOperation!=null || operation!=null || photoUploadOperation!=null || nemesisMutationOperation!=null ||
+                conflictBusy || record.has("pending"))return@withTransaction RecoveryStart.Declined(SyncStepResult.Busy)
+            val current=binding()
+            if(current.lease!=expectedLease)throw StaleOwnerException()
+            if(current.owner.kind!="account" || sessionFor(current)==null)return@withTransaction RecoveryStart.Declined(SyncStepResult.LoginRequired)
+            if(!expectedContext.requiresRecovery)return@withTransaction RecoveryStart.Declined(SyncStepResult.ReconciliationRequired("reconciliation_not_active"))
+            if(step==ReconciliationStep.FULL_SNAPSHOT_RECEIPTS){snapshotOperation=id;diaryApplying=false}
+            else {mealPushOperation=id;mealPushFence=expectedLease to expectedContext;mealPushMessage=null}
+            publish()
+            RecoveryStart.Ready(RecoveryReservation(id,fence,planId,step,sessionRevision))
+        }}}catch(error:CancellationException){withContext(NonCancellable){releaseRecoveryOperation(id,step)};throw error}
+        catch(_:StaleOwnerException){releaseRecoveryOperation(id,step);return SyncStepResult.StaleContext}
+        catch(_:SyncContextChangedException){releaseRecoveryOperation(id,step);return SyncStepResult.StaleContext}
+        catch(_:Exception){releaseRecoveryOperation(id,step);return SyncStepResult.TransientFailure}
+        val reservation=when(start){is RecoveryStart.Ready->start.reservation;is RecoveryStart.Declined->return start.result}
+        try {
+            return when(step) {
+                ReconciliationStep.FULL_SNAPSHOT_RECEIPTS->recoverSnapshot(reservation,store)
+                ReconciliationStep.PUSH_APPROVED->recoverPush(reservation,store)
+            }
+        }catch(error:CancellationException){throw error}
+        catch(_:StaleOwnerException){return SyncStepResult.StaleContext}
+        catch(_:SyncContextChangedException){return SyncStepResult.StaleContext}
+        catch(_:ImportContextChangedException){return SyncStepResult.StaleContext}
+        catch(_:SyncLoginRequiredException){return SyncStepResult.LoginRequired}
+        catch(_:SnapshotCapacityException){return SyncStepResult.ReconciliationRequired("snapshot_capacity")}
+        catch(_:ReconciliationProofException){return SyncStepResult.ReconciliationRequired("reconciliation_proof_required")}
+        catch(_:SnapshotConflictException){return SyncStepResult.ReconciliationRequired("snapshot_context_changed")}
+        catch(_:Exception) {
+            val current=mutex.withLock {
+                try {requireRecoveryOperation(reservation);true}
+                catch(error:CancellationException){throw error}
+                catch(_:Exception){false}
+            }
+            return if(current)SyncStepResult.TransientFailure else SyncStepResult.StaleContext
+        }finally {
+            withContext(NonCancellable){releaseRecoveryOperation(reservation.id,step)}
+        }
+    }
+
+    private suspend fun recoveryDeadline(reservation:RecoveryReservation,batchDeadline:Long=0):Long=mutex.withLock {
+        requireRecoveryOperation(reservation)
+        maxOf(checkNotNull(sessionFor(binding())).optLong("apiRetryAt"),batchDeadline)
+    }
+    private suspend fun deferRecovery(reservation:RecoveryReservation,ticket:ApiSession,seconds:String?,
+        request:ReconciliationPushRequest?=null):SyncStepResult.RetryAt {
+        val delay=BootstrapHttpProtocol.retrySeconds(seconds,now())
+        val deadline=Math.addExact(now(),Math.multiplyExact(delay,1000))
+        // The durable batch deadline is committed before the independent vault write.
+        if(request!=null)withApiSession(ticket){requireRecoveryOperation(reservation);checkNotNull(reconciliationStore).defer(request,deadline)}
+        withApiSession(ticket){
+            requireRecoveryOperation(reservation)
+            val session=checkNotNull(sessionFor(binding()))
+            persist(copyRecord().put("session",JSONObject(session.toString()).put("apiRetryAt",deadline)))
+        }
+        return SyncStepResult.RetryAt(deadline)
+    }
+    private fun recoveryRefusal(status:Int,code:String):SyncStepResult=when {
+        status==401->SyncStepResult.LoginRequired
+        status in setOf(403,409,410,413,422)->SyncStepResult.ReconciliationRequired(code)
+        else->SyncStepResult.TransientFailure
+    }
+
+    private suspend fun recoverSnapshot(reservation:RecoveryReservation,store:ReconciliationStore):SyncStepResult {
+        val lease=reservation.fence.lease;val context=checkNotNull(reservation.fence.server)
+        val deadline=recoveryDeadline(reservation)
+        if(deadline>now())return SyncStepResult.RetryAt(deadline)
+        var request=withSavedRecoverySession(reservation){store.nextSnapshot(lease,context,reservation.planId)}
+            ?:return SyncStepResult.Completed()
+        val initial=recoveryApi(reservation);var ticket=initial.first;var refreshed=initial.second
+        while(true) {
+            val captured=ticket;val sent=request
+            suspend fun ready(){requireRecoveryOperation(reservation);checkNotNull(snapshots).requireCurrent(sent)}
+            val response=checkNotNull(snapshotGateway).get(captured,sent.query){withApiSession(captured){ready()}}
+            if(response.status==200) {
+                val next=withApiSession(captured){ready();checkNotNull(snapshots).apply(sent,response.body)}
+                if(next!=null){request=next;continue}
+                withApiSession(captured){
+                    requireRecoveryOperation(reservation)
+                    store.acceptCompletedSnapshot(lease,context,reservation.planId,sent.runId)
+                }
+                return SyncStepResult.Completed(runId=sent.runId)
+            }
+            val code=if(response.status in setOf(429,503))"" else checkNotNull(snapshotProtocol).errorCode(response.body)
+            withApiSession(captured){ready()}
+            if(response.status==401 && code=="unauthorized" && !refreshed){
+                refreshed=true;check(refreshFor(lease,reservation.fence));ticket=apiSession(reservation.fence);continue
+            }
+            if(response.status in setOf(429,503))return deferRecovery(reservation,captured,response.retryAfter)
+            withApiSession(captured){
+                ready()
+                when {
+                    response.status==403 && code=="account_deleting"->checkNotNull(snapshots).block(sent)
+                    response.status==410 && code in setOf("snapshot_expired","sync_cursor_expired")->checkNotNull(snapshots).expire(sent)
+                    response.status==409 && code in setOf("sync_epoch_changed","account_generation_changed","sync_reconciliation_required")->checkNotNull(snapshots).invalidate(sent)
+                }
+            }
+            return if(response.status==410 && code=="snapshot_expired")SyncStepResult.TransientFailure else recoveryRefusal(response.status,code)
+        }
+    }
+
+    private suspend fun recoverPush(reservation:RecoveryReservation,store:ReconciliationStore):SyncStepResult {
+        val lease=reservation.fence.lease;val context=checkNotNull(reservation.fence.server)
+        // Preparation/schema work stays outside the session guard. The store verifies the same plan/context.
+        val request=store.preparePush(lease,context,reservation.planId)?:return withSavedRecoverySession(reservation){SyncStepResult.Completed()}
+        suspend fun applied(commit:suspend()->ReconciliationAckResult):SyncStepResult {
+            val ack=commit()
+            return if(ack.awaitingSnapshot)SyncStepResult.ReconciliationRequired("reconciliation_snapshot_required")
+                else SyncStepResult.Completed(batchId=request.id,acknowledged=ack.acknowledged,refused=ack.refused)
+        }
+        if(request.needsAckRevalidation) {
+            // A received response awaiting typed target proof is not another network mutation.
+            val prepared=store.prepareAck(request,200,checkNotNull(request.savedResponse()))
+            return applied{withSavedRecoverySession(reservation){store.applyAck(prepared)}}
+        }
+        val deadline=recoveryDeadline(reservation,request.row.retryAtMillis)
+        if(deadline>now())return SyncStepResult.RetryAt(deadline)
+        val initial=recoveryApi(reservation);var ticket=initial.first;var refreshed=initial.second
+        while(true) {
+            val captured=ticket
+            suspend fun ready(){requireRecoveryOperation(reservation);store.requireCurrent(request)}
+            val response=checkNotNull(mealPushGateway).post(captured,request.batch){withApiSession(captured){ready();store.markAttempted(request,now())}}
+            if(response.status==200) {
+                val prepared=store.prepareAck(request,response.status,response.body)
+                return applied{withApiSession(captured){ready();store.applyAck(prepared)}}
+            }
+            val code=if(response.status in setOf(429,503))"" else checkNotNull(mealPushProtocol).errorCode(response.body)
+            withApiSession(captured){ready()}
+            if(response.status==401 && code=="unauthorized" && !refreshed){
+                refreshed=true;check(refreshFor(lease,reservation.fence));ticket=apiSession(reservation.fence);continue
+            }
+            if(response.status in setOf(429,503))return deferRecovery(reservation,captured,response.retryAfter,request)
+            return recoveryRefusal(response.status,code)
+        }
+    }
 
     private suspend fun bootstrapFor(expectedLease: OwnerLease?, expectedContext: AccountBindingEntity?): SyncCommandOutcome {
         val gateway = bootstrapGateway ?: return SyncCommandOutcome.NotConfigured
