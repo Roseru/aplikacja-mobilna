@@ -32,7 +32,7 @@ data class ServerDiaryApplication(@PrimaryKey val runId: String, val ownerScope:
     @Query("SELECT * FROM server_diary_applications WHERE ownerScope=:owner ORDER BY rowid DESC LIMIT 1")
     suspend fun latest(owner: String): ServerDiaryApplication?
     @Insert suspend fun insert(application: ServerDiaryApplication)
-    @Query("SELECT * FROM outbox WHERE ownerScope=:owner AND status NOT IN ('acked','superseded') ORDER BY rowid")
+    @Query("SELECT * FROM outbox WHERE ownerScope=:owner AND status NOT IN ('acked','superseded','local_only') ORDER BY rowid")
     suspend fun unsettled(owner: String): List<OutboxEntity>
     @Query("SELECT ownerScope FROM meals WHERE id=:id") suspend fun mealOwner(id: String): String?
     @Query("SELECT * FROM goals WHERE ownerScope=:owner ORDER BY localSequence,id") suspend fun allGoals(owner: String): List<GoalEntity>

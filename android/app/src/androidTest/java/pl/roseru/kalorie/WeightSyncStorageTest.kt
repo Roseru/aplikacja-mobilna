@@ -99,7 +99,8 @@ class WeightSyncStorageTest {
             repo.addCustomProduct(CustomProductDraft("Synthetic meal",100.0,null,0.0,12.0,"fixture"),100.0,MealType.LUNCH,LocalDate.now(),meal)
             repo.addWeight(80.5,LocalDate.now(),weight)
             val store=MealPushStore(db,schema);val request=store.prepare(lease)!!;store.markAttempted(request)
-            assertEquals(2,request.batch.json().getJSONArray("operations").length())
+            assertEquals(3,request.batch.json().getJSONArray("operations").length())
+            assertEquals(setOf("meal", "weight", "product_draft"), request.operations.map { it.entityType }.toSet())
             val bad=JSONObject(String(reply(request)));bad.getJSONArray("results").getJSONObject(1).put("entity_id",uuid())
             rejected{store.prepareAck(request,200,bad.toString().toByteArray())}
             val prepared=store.prepareAck(request,200,reply(request))
@@ -107,12 +108,15 @@ class WeightSyncStorageTest {
             rejected{store.applyAck(prepared)}
             assertEquals(0,db.dao().meal(meal,lease.storageScope)!!.meal.serverRevision)
             assertEquals(0,db.weightSyncDao().state(lease.storageScope,weight)!!.serverRevision)
+            val product = request.operations.single { it.entityType == "product_draft" }
+            assertEquals(0, db.domainSyncDao().state(lease.storageScope, "product_draft", product.entityId)!!.serverRevision)
             assertNull(db.pushDao().batch(request.id)!!.responseJson)
             assertTrue(request.operations.all {db.dao().operation(it.operationId)!!.status=="pending"})
             db.openHelper.writableDatabase.execSQL("DROP TRIGGER fail_weight_ack")
-            assertEquals(2,store.applyAck(prepared).acknowledged)
+            assertEquals(3,store.applyAck(prepared).acknowledged)
             assertEquals(1,db.dao().meal(meal,lease.storageScope)!!.meal.serverRevision)
             assertEquals(1,db.weightSyncDao().state(lease.storageScope,weight)!!.serverRevision)
+            assertEquals(1, db.domainSyncDao().state(lease.storageScope, "product_draft", product.entityId)!!.serverRevision)
         }finally{db.close()}
     }
 
@@ -179,8 +183,8 @@ class WeightSyncStorageTest {
                     assertTrue(it.moveToFirst());it.getDouble(0)
                 },0.0)
             }
-            target=Room.databaseBuilder(context,CalorieDatabase::class.java,name).addMigrations(MIGRATION_14_15, pl.roseru.kalorie.data.MIGRATION_15_16, pl.roseru.kalorie.data.MIGRATION_16_17).addCallback(DATABASE_GUARDS).build()
-            val sql=target!!.openHelper.readableDatabase;assertEquals(17,sql.version);assertEquals(before,dump {sql.query(it)})
+            target=Room.databaseBuilder(context,CalorieDatabase::class.java,name).addMigrations(MIGRATION_14_15, pl.roseru.kalorie.data.MIGRATION_15_16, pl.roseru.kalorie.data.MIGRATION_16_17, pl.roseru.kalorie.data.MIGRATION_17_18).addCallback(DATABASE_GUARDS).build()
+            val sql=target!!.openHelper.readableDatabase;assertEquals(18,sql.version);assertEquals(before,dump {sql.query(it)})
             assertEquals(80.123456789,target!!.dao().weight(weight,lease.storageScope)!!.kg,0.0)
             assertNull(target!!.weightSyncDao().state(lease.storageScope,weight))
             assertEquals(100L,sql.query("SELECT rowid FROM weights WHERE id=?",arrayOf(weight)).use {assertTrue(it.moveToFirst());it.getLong(0)})
