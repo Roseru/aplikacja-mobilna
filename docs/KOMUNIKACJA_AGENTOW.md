@@ -18,7 +18,7 @@ Każda osoba aktualizuje własny wiersz. Daty i dokładne źródła są w jej wp
 | Rola | Ostatni znany rezultat | Następny krok / zależność | Źródło |
 |---|---|---|---|
 | O1 — Android, Kotlin, Room | Pierwszy cel pustego konta, completed snapshot i observer odebrane; nowy skonfigurowany kandydat0.8.29/Room20:6unikalnych native i6fingerprint JVM PASS | O3 lokalny odbiór nowego APK/E4; O2 zwykły merge dostawy do końcowego B/FULLCI, potem C. Stary E4FAIL i pełnyCI146 nadal jawne | O1-117, [manifest](../android/KANDYDAT_E4_0_8_29.json), codex/android-sesja-synchronizacji |
-| O2 — Python, PostgreSQL, API; Android A/B/C | A odebrane; B rzeczywista sesja/DI/nav, dokładne16sesji+11UI PASS; nowy port danych SOURCEPASS | O1 końcowy completedraw/observer, review DI/nav i pełnyCI B; C2P2 w celowanej walidacji O2, publikacja po B | O2-054, [port B/C](../android/IMPORT_UZGADNIANIE.md) |
+| O2 — Python, PostgreSQL, API; Android A/B/C | A scalone; B z O1c319/firstGoal/completedraw/observer:6native+28regresji,417/457JVM/lint/E0PASS; SOURCEPASS | Jeden końcowy PR B/FULLCI i odbiór main; potem C/Room22 z dotychczasowym SOURCEPASS | O2-056, [import B](../android/IMPORT_UZGADNIANIE.md), codex/android-o2-import-i-uzgadnianie |
 | O3 — DevOps, CI/CD, serwer | Podstawowe demo APK0.8.28: Chrome/PKCE, zapis offline/restart i nowy push z PG/ACK PASS; katalog demo faktycznie zainstalowany; kopia po imporcie pobrana z Dropbox i odtworzona PASS11,157s | Pozostały końcowe B/C, starsze wpisy i nowy APK do E4 od A1/A2. Używany API/schema0024; pełny CI PR154 oraz osobny main po8/8PASS | O3-094, [PR154](https://github.com/Roseru/aplikacja-mobilna/pull/154), [najnowsza integracja B](https://github.com/Roseru/aplikacja-mobilna/pull/146#issuecomment-6371896468) |
 
 
@@ -7321,3 +7321,39 @@ Archiwalne wiersze sprzed aktualizacji PR138; bieżący stan znajduje się na po
   PR146ce04199 miał372/373 i timeout, pozostaje bez scalenia; obecny lokalny
   odbiór nie jest nowym zdalnym CI. Pełne B/C, live i produkcja nadal otwarte.
 - Potwierdzenie odbiorców: brak; O1 nie potwierdza odczytu za O2/O3.
+
+
+### O2-056 — Końcowa integracja B: świadomy import, uzgodnienie i rzeczywista sesja
+
+- 23.10.2026, agent2/O2, do koordynatora/O1/O3, **DO ODCZYTU**.
+  `codex/android-o2-import-i-uzgadnianie`, zwykły fast-forward O1c31991a9
+  zawierający B ea84 i main837, bez rebase/force lub przejęcia reservedsource.
+  Odczytano O1-117, SESJA, manifest0.8.29 i comments6374317227/6374409593.
+  Niezależny moduł pobierania katalogu O1 pozostaje poza tym B/C i nie blokuje
+  ich odbioru. C853d/d086 ma SOURCEPASS, addytywne21→22 i pozostaje lokalne.
+- Zachowano uzgodniony brak fallback2800 przy samym profilu oraz jawną zgodę
+  na pierwszy cel; completedraw przed tokenem/Retry-After, prepare poza
+  guardem/apply pod guardem, atomowy/resilient observer. O1 E4 driver wykonuje
+  PUSH bez hiddenPULL, guard chroni Room17–20, celowo odmawia21/22. To osobna
+  późniejsza kwalifikacja C, nie powód zmiany lub osłabienia guardu w B.
+- Root przekazał SOURCEPASS trzech rozłącznych zakresów dostawy: sesja,
+  pierwszy cel/UI/małyRepositoryfragment oraz E4driver/ACK/fingerprint/optin;
+  brak materialnychP1/P2. O2 nie deklaruje pobrania lub binaryreview ZIP.
+  O1 wcześniejsze5/6+jedna poprawka asercji+1retest pozostaje odrębne.
+- Nowy lokalny B/Room20/API35 na własnym5562: rzeczywiste6/6native w jednym
+  przebiegu (pendingraw, privateobserver, firstGoal, stary activityGoal,
+  ACKbezPULL i context/motivation). Końcowe27danych/migracji plus1ponowiony
+  firstGoal=28/28native,0fail/error/skip; powtórzenia nie są nowymi przypadkami.
+  JVM417debug/457validation bez fail/error/skip, lintDebug/lintValidation
+  bez error/fatal, assembleDebug, E0/833linki i diff-check PASS.
+- Pierwszy końcowy Gradle miał rzeczywisty FAIL lintValidation w nowym teście
+  FirstAccountGoalNavigationTest: StateFlow.value w kompozycji. Poprawiono
+  tylko ten test na collectAsState bez zmiany asercji/timeoutów. Wykonano
+  ponownie jego przypadek w28native i oba lint/build; zaliczonych JVM i innych
+  5nowych przypadków nie powtarzano. Odebrane16+11 także bez osobnego rerun.
+- Publikacja tego wyniku na tej samej gałęzi oraz jeden PR B do main; własny
+  FULLCI dokładnego head/base, odbiór koordynatora, merge i osobny mainCI
+  pozostają obowiązkowe. C dopiero po ich zakończeniu i decyzji root.
+  Testy są rzeczywistą Room/nawigacją/kontrolerem z syntetycznym transportem;
+  nie są liveHTTP/OIDC/PG/E4/Gemini/deploy. O3 kwalifikuje dostarczony APK
+  osobno, z wersją/commitem/SHA256; starszy E4FAIL pozostaje zachowany.

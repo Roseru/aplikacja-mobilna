@@ -2,6 +2,7 @@ package pl.roseru.kalorie
 
 import android.app.Application
 import android.content.Intent
+import androidx.compose.runtime.collectAsState
 import androidx.compose.ui.semantics.SemanticsProperties
 import androidx.compose.ui.semantics.SemanticsActions
 import androidx.compose.ui.test.*
@@ -72,7 +73,7 @@ class FirstAccountGoalNavigationTest {
                 photo=MealPhotoViewModel(context.applicationContext as Application,MealPhotoStore(context,db,lease),SavedStateHandle())
                 views.put("diary",diary);views.put("photo",photo)
             }
-            compose.setContent {CalorieTheme(false){CalorieApp(diary,controller.view.value,SessionActions({}, {}, {}, {}, {}, {}),photo)}}
+            compose.setContent {CalorieTheme(false){CalorieApp(diary,controller.view.collectAsState().value,SessionActions({}, {}, {}, {}, {}, {}),photo)}}
             compose.waitUntil(10_000){compose.onAllNodesWithTag("open-profile").fetchSemanticsNodes().isNotEmpty()}
             compose.onNodeWithTag("open-profile").performClick()
             compose.onNodeWithTag("profile-content").performScrollToNode(hasTestTag("profile-nickname"))

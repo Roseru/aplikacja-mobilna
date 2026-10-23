@@ -216,3 +216,37 @@ Nawigacyjny fixture nie wykonuje auth/HTTP: świadoma zgoda tworzy tylko
 kolejkę; oryginał gościa i zero ACK są sprawdzane niezależnie.
 Końcowe podłączenie completedraw i poprawka obserwatora nadal należą do O1;
 te wyniki nie zastępują odbioru tych przypadków ani pełnego zdalnego CI.
+
+
+### Końcowa integracja B z dostawą O1
+
+Zwykłe dołączenie c31991a9 (kod aplikacji identyczny ze zbudowanym5b283e4,
+publikacja bae6a77) zawiera B ea84 i main837. O1-117 oraz manifest
+[KANDYDAT_E4_0_8_29.json](KANDYDAT_E4_0_8_29.json) rozdzielają rzeczywistą
+dostawę APK od lokalnych testów i przyszłego live. Zachowano autorstwo oraz
+uzgodniony mały fragment DiaryRepository: sam profil pustego konta nie tworzy
+2800kcal. Pierwszy cel wymaga jawnego zapisu, nowego UUID i kanonicznej kolejki.
+
+Controller przyjmuje completed raw przed odnowieniem tokenu i Retry-After,
+przygotowuje go poza guardem i zapisuje pod guardem. Obserwator publikuje
+atomowo w Room i zachowuje subskrypcję po błędzie pojedynczej emisji.
+Niezależny ograniczony przegląd O1/root: sesja, pierwszy cel oraz E4 driver/
+ACKgate/fingerprint SOURCEPASS, bez materialnychP1/P2. Driver E4 celowo
+kwalifikuje tylko Room17–20; Room21/22 wymaga osobnego późniejszego odbioru C.
+
+Nowy B5562/API35/Room20: sześć zmienionych przypadków sesji/nawigacji6/6PASS
+w jednym przebiegu. Końcowa regresja danych27 oraz ponowienie jednego testu
+pierwszego celu tworzą osobny zbiór28/28PASS; nie sumujemy powtórzonego testu
+jako nowego unikalnego przypadku. Obejmuje pełne LegacyImport8,
+Reconciliation14, port3, migracje2 i nawigację1. JVM417debug/457validation,
+lint obu wariantów bez error/fatal, assembleDebug oraz E0/833linki PASS.
+
+Pierwszy końcowy Gradle zakończył się FAIL lintValidation: nowy test O1
+czytał StateFlow.value wewnątrz kompozycji. Dwa zestawy JVM były w tym biegu
+rzeczywiście zaliczone. Poprawiono tylko test na collectAsState i wykonano
+powyższe28native oraz lint/build; aplikacja i zarezerwowany kod sesji bez
+własnych edycji O2. O1 wcześniejszy wynik5/6 + poprawka substring +1retest
+pozostaje historycznie odrębny od nowego lokalnego B6/6. Odebranych16+11
+nie powtarzano osobno. FULLCI dokładnego PR/head/base i odbiór main są
+kolejnymi bramkami; lokalne fixtures nie kwalifikują zewnętrznego HTTP,
+PKCE/PG, E4 kill/replay, Gemini ani wdrożenia. C pozostaje osobnym etapem.
