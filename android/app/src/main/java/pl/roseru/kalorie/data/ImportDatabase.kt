@@ -21,7 +21,8 @@ data class ImportSource(val planId:String,val entityType:String,val sourceId:Str
     val sourceJson:String,val sourceHash:String,val outboxesJson:String,val localId:String,val wireId:String,
     val sourceEpoch:String?=null,val sourceRevision:Int?=null,val sourceOperationId:String?=null,
     val metadataJson:String="{}",val state:String="pending",val decisionCode:String?=null,
-    val operationId:String?=null,val appliedPayload:String?=null) {
+    val operationId:String?=null,val appliedPayload:String?=null,
+    @ColumnInfo(defaultValue="''") val originFingerprint:String="") {
     override fun toString()="ImportSource(redacted)"
 }
 @Entity(tableName="import_identities",primaryKeys=["ownerScope","entityType","localId"],
@@ -59,6 +60,12 @@ data class ReconciliationPull(@PrimaryKey val runId:String,val planId:String,val
 }
 
 @Dao interface ImportDao {
+    @Query("SELECT b.* FROM reconciliation_batches b JOIN import_plans p ON p.id=b.planId WHERE p.targetScope=:owner AND b.state='complete' AND b.responseJson IS NOT NULL ORDER BY b.rowid") suspend fun received(owner:String):List<ReconciliationBatch>
+    @Query("SELECT * FROM import_origins WHERE sourceScope=:scope AND entityType=:type AND sourceId=:id") suspend fun origin(scope:String,type:String,id:String):ImportOrigin?
+    @Insert(onConflict=OnConflictStrategy.IGNORE) suspend fun insert(origin:ImportOrigin)
+    @Query("SELECT s.* FROM import_sources s JOIN import_plans p ON p.id=s.planId WHERE p.sourceScope=:scope AND p.targetScope=:target AND p.approvedAt IS NOT NULL AND s.entityType=:type AND s.sourceId=:id ORDER BY p.rowid DESC")
+    suspend fun originHistory(scope:String,target:String,type:String,id:String):List<ImportSource>
+    @Query("SELECT operationId FROM import_sources WHERE operationId IS NOT NULL") suspend fun linkedOperations():List<String>
     @Query("SELECT * FROM reconciliation_pulls WHERE runId=:id") suspend fun pull(id:String):ReconciliationPull?
     @Query("SELECT * FROM reconciliation_pulls WHERE planId=:plan ORDER BY groupIndex,rowid") suspend fun pulls(plan:String):List<ReconciliationPull>
     @Insert suspend fun insert(pull:ReconciliationPull)
@@ -81,6 +88,7 @@ data class ReconciliationPull(@PrimaryKey val runId:String,val planId:String,val
     @Insert suspend fun insert(identity:ImportIdentity)
     @Update suspend fun update(identity:ImportIdentity)
     @Query("DELETE FROM import_identities WHERE ownerScope=:owner AND entityType=:type AND localId=:local") suspend fun retireIdentity(owner:String,type:String,local:String)
+    @Query("SELECT * FROM import_item_identities WHERE ownerScope=:owner AND wireId=:wire") suspend fun itemWire(owner:String,wire:String):ImportItemIdentity?
     @Query("SELECT * FROM import_item_identities WHERE ownerScope=:owner AND mealLocalId=:meal") suspend fun items(owner:String,meal:String):List<ImportItemIdentity>
     @Insert suspend fun insert(identity:ImportItemIdentity)
     @Insert suspend fun insert(decision:ImportDecision)
@@ -124,12 +132,18 @@ val MIGRATION_18_19=object:Migration(18,19) {
         db.execSQL("CREATE INDEX index_reconciliation_evidence_runId ON reconciliation_evidence(runId)")
         db.execSQL("CREATE TABLE IF NOT EXISTS reconciliation_pulls (runId TEXT NOT NULL,planId TEXT NOT NULL,groupIndex INTEGER NOT NULL,operationIdsJson TEXT NOT NULL,PRIMARY KEY(runId),FOREIGN KEY(runId) REFERENCES server_snapshot_runs(id) ON DELETE RESTRICT,FOREIGN KEY(planId) REFERENCES import_plans(id) ON DELETE RESTRICT)")
         db.execSQL("CREATE INDEX index_reconciliation_pulls_planId ON reconciliation_pulls(planId)")
-        importGuards(db)
+        importGuards(db,withOrigin=false)
     }
 }
 
-internal fun importGuards(db:SupportSQLiteDatabase) {
-    db.execSQL("CREATE TRIGGER IF NOT EXISTS import_sources_immutable BEFORE UPDATE OF planId,entityType,sourceId,ordinal,sourceJson,sourceHash,outboxesJson,sourceEpoch,sourceRevision,sourceOperationId ON import_sources WHEN NEW.planId IS NOT OLD.planId OR NEW.entityType IS NOT OLD.entityType OR NEW.sourceId IS NOT OLD.sourceId OR NEW.ordinal IS NOT OLD.ordinal OR NEW.sourceJson IS NOT OLD.sourceJson OR NEW.sourceHash IS NOT OLD.sourceHash OR NEW.outboxesJson IS NOT OLD.outboxesJson OR NEW.sourceEpoch IS NOT OLD.sourceEpoch OR NEW.sourceRevision IS NOT OLD.sourceRevision OR NEW.sourceOperationId IS NOT OLD.sourceOperationId BEGIN SELECT RAISE(ABORT,'immutable import source'); END")
+internal fun importGuards(db:SupportSQLiteDatabase,withOrigin:Boolean=true) {
+    if(withOrigin) {
+        db.execSQL("CREATE TRIGGER IF NOT EXISTS import_origin_immutable BEFORE UPDATE ON import_origins BEGIN SELECT RAISE(ABORT,'immutable import origin'); END")
+        db.execSQL("CREATE TRIGGER IF NOT EXISTS import_origin_no_delete BEFORE DELETE ON import_origins BEGIN SELECT RAISE(ABORT,'immutable import origin'); END")
+    }
+    val originColumns=if(withOrigin)",originFingerprint" else ""
+    val originChange=if(withOrigin)" OR NEW.originFingerprint IS NOT OLD.originFingerprint" else ""
+    db.execSQL("CREATE TRIGGER IF NOT EXISTS import_sources_immutable BEFORE UPDATE OF planId,entityType,sourceId,ordinal,sourceJson,sourceHash,outboxesJson,sourceEpoch,sourceRevision,sourceOperationId$originColumns ON import_sources WHEN NEW.planId IS NOT OLD.planId OR NEW.entityType IS NOT OLD.entityType OR NEW.sourceId IS NOT OLD.sourceId OR NEW.ordinal IS NOT OLD.ordinal OR NEW.sourceJson IS NOT OLD.sourceJson OR NEW.sourceHash IS NOT OLD.sourceHash OR NEW.outboxesJson IS NOT OLD.outboxesJson OR NEW.sourceEpoch IS NOT OLD.sourceEpoch OR NEW.sourceRevision IS NOT OLD.sourceRevision OR NEW.sourceOperationId IS NOT OLD.sourceOperationId$originChange BEGIN SELECT RAISE(ABORT,'immutable import source'); END")
     db.execSQL("CREATE TRIGGER IF NOT EXISTS import_decisions_immutable BEFORE UPDATE ON import_decisions WHEN NEW.id IS NOT OLD.id OR NEW.planId IS NOT OLD.planId OR NEW.entityType IS NOT OLD.entityType OR NEW.sourceId IS NOT OLD.sourceId OR NEW.sourceHash IS NOT OLD.sourceHash OR NEW.choiceJson IS NOT OLD.choiceJson OR NEW.decidedAt IS NOT OLD.decidedAt BEGIN SELECT RAISE(ABORT,'immutable import decision'); END")
     db.execSQL("CREATE TRIGGER IF NOT EXISTS guest_assignment_immutable BEFORE UPDATE ON guest_assignments WHEN NEW.sourceScope IS NOT OLD.sourceScope OR NEW.targetScope IS NOT OLD.targetScope OR NEW.accountId IS NOT OLD.accountId OR NEW.issuer IS NOT OLD.issuer OR NEW.subject IS NOT OLD.subject OR NEW.planId IS NOT OLD.planId OR NEW.consentAt IS NOT OLD.consentAt BEGIN SELECT RAISE(ABORT,'immutable guest assignment'); END")
     db.execSQL("CREATE TRIGGER IF NOT EXISTS reconciliation_batch_immutable BEFORE UPDATE OF id,planId,kind,wireContext,snapshotRunId,requestJson,requestHash,originalBatchId,createdAt ON reconciliation_batches WHEN NEW.id IS NOT OLD.id OR NEW.planId IS NOT OLD.planId OR NEW.kind IS NOT OLD.kind OR NEW.wireContext IS NOT OLD.wireContext OR NEW.snapshotRunId IS NOT OLD.snapshotRunId OR NEW.requestJson IS NOT OLD.requestJson OR NEW.requestHash IS NOT OLD.requestHash OR NEW.originalBatchId IS NOT OLD.originalBatchId OR NEW.createdAt IS NOT OLD.createdAt BEGIN SELECT RAISE(ABORT,'immutable reconciliation envelope'); END")

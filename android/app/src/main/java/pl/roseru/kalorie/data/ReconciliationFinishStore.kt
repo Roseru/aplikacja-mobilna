@@ -27,6 +27,7 @@ internal class ReconciliationFinishStore(private val owner:ReconciliationStore) 
             check(dao.batches(id).all {it.state=="complete"})
             val rows=dao.sources(id);check(rows.all {it.state in setOf("acked","retained","accept_server")})
             val copy=owner.latestCopy(lease,expected,id)
+            rows.filter {it.state=="accept_server"}.forEach {owner.requireDecisionProof(it,copy.second)}
             // ACK followed by a fresh full read, rather than comparing against its older pre-push snapshot.
             check(dao.batches(id).none {it.snapshotRunId==copy.first.id})
             FinishSource(plan,rows,copy.first,copy.second,db.snapshotDao().pages(copy.first.id),
@@ -111,10 +112,11 @@ internal class ReconciliationFinishStore(private val owner:ReconciliationStore) 
                     ImportProjection(db,owner.schema).apply(next,updated,checkNotNull(target.payload),expected,target.revision)
                     dao.update(updated)
                 } else if(row.state in setOf("acked","accept_server") && row.sourceEpoch==expected.syncEpoch && (target==null || target.deleted)) {
-                    val oldId=StrictJson.read(row.sourceJson.toByteArray()).getString("wire_id")
-                    if(target==null && row.sourceRevision!=null && db.serverDiaryDao().records(lease.storageScope).none {it.entityType==row.entityType && it.entityId==oldId})
+                    val original=StrictJson.read(row.sourceJson.toByteArray());val oldId=original.getString("wire_id")
+                    val knownProjectionRevision=original.getInt("server_revision")
+                    if(target==null && knownProjectionRevision>0 && db.serverDiaryDao().records(lease.storageScope).none {it.entityType==row.entityType && it.entityId==oldId})
                         db.serverDiaryDao().save(ServerDiaryRecord(lease.storageScope,row.entityType,oldId,row.localId,context,
-                            row.sourceRevision,true,true,null,source.run.id,"pending_local"))
+                            knownProjectionRevision,true,true,null,source.run.id,"pending_local"))
                     when(row.entityType) {
                         "meal"->db.dao().meal(row.localId,lease.storageScope)?.meal?.let {current->
                             db.dao().updateMeal(current.copy(wireContext=context,deleted=true,serverRevision=target?.revision ?: current.serverRevision))}
@@ -146,6 +148,15 @@ internal class ReconciliationFinishStore(private val owner:ReconciliationStore) 
                 check((0 until operations.length()).all {i->db.dao().operation(operations.getJSONObject(i).getString("operation_id"))?.status in setOf("acked","superseded","local_only")})
                 db.pushDao().update(batch.copy(state="archived_reconciled"))
             }
+            // A restored epoch has its own confirmed axis. Archive the old axis rather than
+            // letting ordinary snapshot application accept a foreign context or regress this epoch.
+            db.domainSyncDao().timeline(lease.storageScope)?.let {previous->
+                val oldEpoch=StrictJson.read(previous.wireContext.toByteArray()).getString("sync_epoch")
+                if(oldEpoch==expected.syncEpoch)check(previous.revision<=source.copy.timelineRevision)
+                val text=StrictJson.canonical(JSONObject().put("wire_context",previous.wireContext).put("revision",previous.revision))
+                dao.insert(ReconciliationEvidence(id,"previous_timeline","goal",text,LegacyImportStore.digest(text),source.run.id))
+            }
+            db.domainSyncDao().save(CanonicalGoalTimeline(lease.storageScope,context,source.copy.timelineRevision))
             ensureServerAliases(lease.storageScope,source.copy)
             val application=ServerDiaryStore(db,owner.schema).applyReconciled(lease,source.run.id,id)
             check(owner.context(lease,expected)==expected)
@@ -189,8 +200,20 @@ internal class ReconciliationFinishStore(private val owner:ReconciliationStore) 
 /** Only the latest consciously approved plan for a local projection determines retention. */
 internal suspend fun CalorieDatabase.retainedSyncSources(owner:String):List<ImportSource> {
     val latest=linkedMapOf<Pair<String,String>,ImportSource>()
-    for(plan in importDao().plans(owner).filter {it.approvedAt!=null}) {
-        for(row in importDao().sources(plan.id))latest.putIfAbsent(row.entityType to row.localId,row)
+    for(plan in importDao().plans(owner).filter {it.approvedAt!=null && it.sourceScope==owner}) {
+        for(row in importDao().sources(plan.id))latest.putIfAbsent(row.entityType to row.sourceId,row)
     }
     return latest.values.filter {it.state=="retained"}
+}
+
+/** Resolved immutable originals remain history, rather than blocking every later server goal. */
+internal suspend fun CalorieDatabase.resolvedOriginalGoals(owner:String):Set<String> {
+    val result=mutableSetOf<String>()
+    for(plan in importDao().plans(owner).filter {it.approvedAt!=null && it.sourceScope==owner}) {
+        for(row in importDao().sources(plan.id).filter {it.entityType=="goal" && it.localId!=it.sourceId}) {
+            if(row.state in setOf("acked","accept_server") || row.operationId?.let {dao().operation(it)?.status=="acked"}==true)
+                result+=row.sourceId
+        }
+    }
+    return result
 }

@@ -56,15 +56,18 @@ class ServerDiaryStore(private val db: CalorieDatabase, private val schema: Sync
             val known = previous.associateBy { it.entityType to it.entityId }
             val queue = records.unsettled(lease.storageScope)
             val retained=db.retainedSyncSources(lease.storageScope)
-            val queuedIds = queue.map { it.entityType to it.entityId }.toSet()+retained.map {it.entityType to it.wireId}
+            val retainedIds=retained.flatMap {row->listOf(row.entityType to db.wireSyncId(lease.storageScope,row.entityType,row.sourceId),
+                row.entityType to pl.roseru.kalorie.core.catalog.StrictJson.read(row.sourceJson.toByteArray()).getString("wire_id"))}
+            val queuedIds = queue.map { it.entityType to it.entityId }.toSet()+retainedIds
             val pendingProfile = queue.any { it.entityType == "profile" } || retained.any {it.entityType=="profile"}
             val pendingDays = queue.filter { it.entityType == "diary_day" }.map { it.entityId }.toSet()+
-                retained.filter {it.entityType=="diary_day"}.flatMap {listOf(it.wireId,it.localId)}
+                retained.filter {it.entityType=="diary_day"}.flatMap {listOf(it.wireId,it.localId,it.sourceId)}
             val mappedGoals = previous.filter { it.entityType == "goal" }.mapNotNull { it.localId }.toSet()
             val localGoals = records.allGoals(lease.storageScope)
+            val resolvedOriginals=db.resolvedOriginalGoals(lease.storageScope)
             // Goal versions are immutable. Preserve an entire pending timeline until it is reconciled.
             val holdGoals = queue.any { it.entityType == "goal" } || localGoals.any {
-                it.id !in mappedGoals && retained.none {row->row.entityType=="goal" && row.localId==it.id} && db.domainSyncDao().local(lease.storageScope, "goal", it.id)?.serverRevision?.let { revision -> revision > 0 } != true
+                it.id !in mappedGoals && it.id !in resolvedOriginals && retained.none {row->row.entityType=="goal" && (row.localId==it.id || row.sourceId==it.id)} && db.domainSyncDao().local(lease.storageScope, "goal", it.id)?.serverRevision?.let { revision -> revision > 0 } != true
             }
             val incoming = copy.entities.associateBy { it.type to it.id }
             val observations = copy.entities.map { entity ->

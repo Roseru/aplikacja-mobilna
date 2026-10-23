@@ -18,8 +18,9 @@ Każda osoba aktualizuje własny wiersz. Daty i dokładne źródła są w jej wp
 | Rola | Ostatni znany rezultat | Następny krok / zależność | Źródło |
 |---|---|---|---|
 | O1 — Android, Kotlin, Room | Pełny pull0.8.27/Room17: końcowe13native i6JVM PASS, ochrona lokalnych zmian | Własny CI i instalacja zwykłej aplikacji; następnie aktualizacja138 i skonfigurowane APK do E4 według O3-085 | O1-109, [PR144](https://github.com/Roseru/aplikacja-mobilna/pull/144), kod90dcb27 |
-| O2 — Python, PostgreSQL, API; Android A/B/C | A scalone111d45fc po FULL8/8 i373nativePASS; B ma kompilujący port sesji i395/410JVM+8celowanych Room PASS | B WIP dla integracji O1; otwarta P1 idempotencji między planami, UI/testy/review/CI. Cały ABC trwa | O2-052, [port B/C](../android/IMPORT_UZGADNIANIE.md) |
-| O3 — DevOps, CI/CD, serwer | Migracja kopii0024→0026 PASS; nowy pakiet O1Room17 przyjęty po jawnej korekcie. Rzeczywisty replay: serwer/ACK PASS, końcowy guard Room FAIL | A1 analizuje DiaryDay0→1 i rozdzielenie PUSH/PULL. Zaszyfrowane konto dostarczone; peer TCP TIMEOUT, okno zamknięte. Wydanie nadal BLOCKED | O3-087/088, [próba i handoff](https://github.com/Roseru/aplikacja-mobilna/pull/138#issuecomment-6364652003), [pakiet](https://github.com/Roseru/aplikacja-mobilna/releases/tag/untagged-4cbe4b5562fd750f23a1) |
+| O2 — Python, PostgreSQL, API; Android A/B/C | A odebrane; B poprawki3uwag i atomowy dowód decyzji,417/432JVM oraz23regresje proof/recovery/UI PASS | B WIP odbiór; rzeczywisty O1/nawigacja/DI/pełnyCI; C lokalny osobny checkout, AVD oddzielone | O2-053, [port B/C](../android/IMPORT_UZGADNIANIE.md) |
+| O3 — DevOps, CI/CD, serwer | Dokładny kandydat0026: migracja/restore/rollback PASS; restore24,421s zamknięcia, stareJWT401/refresh400/operacja409, świeże PKCE/zapis/replay zaliczone | Pozostałe2odbioru Android/backend. Nowy APK O1 po FAIL Room17 i osiągalny peer; pełny KO32/telefon/ledger/produkcja osobno | O3-090, [pełny zaktualizowany pakiet](https://github.com/Roseru/aplikacja-mobilna/releases/tag/untagged-4cbe4b5562fd750f23a1), [próba E4](https://github.com/Roseru/aplikacja-mobilna/pull/138#issuecomment-6364874393) |
+
 
 
 
@@ -6431,6 +6432,114 @@ Archiwalne wiersze stanu przed integracją PR141 z main22.10; aktualny stan znaj
   i niezależny push main wymagają osobnej weryfikacji; skipped nie oznacza
   pełnej regresji aplikacji.
 
+### O3-089 — rzeczywisty offline restore0026 dokładnego kandydata wydania
+
+- 23.10.2026, agent3/O3, do O2/O1, **DO ODCZYTU**. PR149 scalony d647c331;
+  własny PR39953337208 i niezależny push main39953656134 **DOCS PASS**,
+  contracts+ci-required success, dokładnie6zaplanowanych skipped, zakres logów
+  potwierdzony. To odbiór dokumentacji, nie nowa pełna regresja aplikacji.
+- Następny rzeczywisty rezultat dotyczy lokalnego kandydata0.8.27/ef4bb4f,
+  immutable image e6e80d58 i schema0026. Oryginalne raporty CI dotyczą innego
+  image8d9324a0, więc nie podstawiono ich jako odbioru tego lokalnego obrazu.
+- Z uwierzytelnionej kopii offsite0024 utworzono osobny PG17 w wewnętrznej
+  sieci bez portów. Dokładny obraz kandydata zmigrował kopię do0026. Bez innych
+  klientów/zapisów wykonano rzeczywiste pg_dump obu baz, globals i spójny
+  manifest konfiguracji/katalogu. Archiwum0026 zweryfikowane, bez seed SQL.
+- Faktyczne pg_restore do kolejnego świeżego PG17: kanoniczne SHA/count
+  pełnych wierszy wszystkich92tabel aplikacji i101tabelKeycloak identyczne.
+  Atrybuty ról wraz z weryfikatorami SCRAM i pierwotna epoka zachowane.
+  Rzeczywiste logowanie migratora przez TCP/SCRAM z odtworzonym sekretem PASS.
+- Osobny istniejący backup.py rehearse odtworzył tę samą parę0026/globals,
+  potwierdził tożsamości/generacje, katalog, nową committed epokę, usunięcie
+  starych snapshotów, zamknięte AI/Nemesis i bounded cleanup. Prawdziwy login
+  finalizera SCRAM działa, bramka nadal wyłączona. **PASS13,467s**,
+  cały eksperyment29,480s. Nie uruchamiano API/Keycloak ani ruchu klientów.
+- Pierwszy harness zatrzymało niepoprawne zapytanie o pg_authid.rolconfig;
+  migracja przeszła, restore jeszcze nie rozpoczęto. Zachowano failure/log/
+  źródło, poprawiono wyłącznie zapytanie metadanych ról i nowy odizolowany
+  zestaw zaliczył próbę. Osobny błąd klucza wyniku checkera zatrzymał pakowanie
+  przed publikacją; poprawiono odczyt components, bez zmiany walidatora.
+  Wszystkie własne kontenery/sieć usunięte z kontrolą etykiet; ID używanego
+  API/PG zachowane. Surowe bazy, konfiguracja i klucze pozostają prywatne.
+- Neutralny restore.json ma SHA256
+  `198d26194d47d58445abec44a6f2fde1519eb0799ce78d674dd06bc099909f1f`.
+  [W tym samym roboczym wydaniu](https://github.com/Roseru/aplikacja-mobilna/releases/tag/untagged-4cbe4b5562fd750f23a1)
+  dodano RESTORE-0026-O3-20261023-ADDENDUM.zip, asset669096331/5911B,
+  SHA2568664a4a85328a726a4940d6cdd90508cefa5132f94f18f3f463896c7d2e2c706.
+  GitHub size/digest odczytane. Dodatek7plików, jawna lista własnych sum,
+  README opisuje nałożenie na oryginalny pełny ZIP821e421b. APK/TAR/katalog/
+  migration i7raportów CI niezmienione; pełny wynik ma18sum plików PASS.
+  Naprawiono też kodowanie i nieaktualną listę braków w dostarczanym README.
+- Lokalny checker ponownie zaliczył android/backend/catalog, całość **BLOCKED**
+  na3pozostałe odbiory android_acceptance/backend_acceptance/rollback.
+  Dodano wyłącznie rzeczywisty dowód integracyjnego restore OFFLINE.
+  Nowy paired0026 nie został wysłany offsite; pełny KO32/telefon, autorytatywny
+  ledger, old JWT/refresh i produkcyjne RPO/RTO nieodebrane, ruchu nie otwarto.
+  Starszy uwierzytelniony offsite0024 i jego odtworzenie są odrębnym dowodem.
+- O2: proszę odebrać zakres neutralnego restore i określić zgodny rollback
+  dokładnego kandydata. O1: nowy APK po rozdzieleniu PUSH/PULL i naprawie
+  końcowego guardu z O3-088 nadal osobno. Zaszyfrowane konto dostarczone,
+  właściciel przekazuje klucz prywatnie; nie wznawiano wygasłego okna peera.
+  Własny PR wyłącznie dziennika, DOCS CI i niezależny push main osobno.
+
+### O3-090 — dokładny rollback0026 przez paired restore0024 i odcięcie sesji
+
+- 23.10.2026, agent3/O3, do O2/O1, **DO ODCZYTU**. PR150 scalony d97f979;
+  własny CI39955758818 i niezależny push main39956167332 **DOCS PASS**,
+  zakres/plan logów potwierdzony,6zaplanowanych skipped. Nie pełna regresja.
+- Nowa rzeczywista próba dokładnego lokalnego obrazu e6e80d58/ef4bb4f/schema26.
+  Odtworzono autentyczną parę offsite24 na osobnej instalacji z zachowaniem
+  issuer/CA. Transparentny transport dopuszczał wyłącznie dokładny origin
+  skierowany do własnego loopback gateway; nie kierował do używanej instalacji.
+  PostgreSQL/Keycloak/API działały w wewnętrznej sieci, gateway na loopback.
+- Przez prawdziwe PKCE utworzono świeże syntetyczne A/B, bootstrap i po jednym
+  posiłku z API, z accepted/already_applied. Przy zatrzymanych writers wykonano
+  nową spójną kopię obu baz/globals/config/katalogu24 już z tymi fixture.
+  Między kopią i restore nie było zapisów biznesowych; to jawny zakres RPO.
+- Dokładny obraz zmigrował bazę do26, zachowując stare pełne wiersze. Prawdziwe
+  PKCE, GET/me i snapshot A/B potwierdziły własność i pełną treść posiłków.
+  Różnice odczytów wyłącznie w sync_sessions/sync_session_items materializowanego
+  pull; wszystkie pozostałe tabele chronione. Poprzedni image05c1792f na26
+  faktycznie zwrócił readiness503, bez dowolnego downgrade.
+- Wybrano strategy=restore. Do świeżego klastra odtworzono oba archiwa24
+  i globals; pełne SHA/count wszystkich86tabel aplikacji i101Keycloak zgodne
+  przed fencing. Nowa losowa epoka committed, snapshoty unieważnione,
+  AI/Nemesis zamknięte. Logout-all i **421,000s** rzeczywistej blokady API
+  i issuance;15kontroli maintenance503 w tym oknie.
+- Po uruchomieniu poprzedniego obrazu stare access **401**, refresh
+  **400/invalid_grant**, operacje starej epoki **409/sync_epoch_changed**.
+  Świeże PKCE/chronione odczyty A/B zachowały treść posiłków. Dwa nowe zapisy
+  po restore accepted i identyczny replay/already_applied, revision1,
+  niezależnie potwierdzone w PG. AI/Nemesis pozostały zamknięte.
+  **PASS491,447s**, ruch otwierano wyłącznie w kopii operatora.
+- Pierwszy harness zatrzymała kontrola tabel po celowym pull: pominięto nazwę
+  sync_session_items. Błąd/log/fixture zachowano; po odczycie rzeczywistego
+  kontraktu nowa izolowana próba dopuszczała dokładnie dwie tabele snapshotu,
+  z prywatnymi SHA wszystkich tabel. Kodu produktu i guardów epoki/sesji
+  nie osłabiano. Kontenery/sieci/wolumeny własnej próby usunięte; nieużywany
+  początkowy wolumen PG wymagał osobnego usunięcia po kontroli label/attachments.
+  Port zwolniony, wszystkie8ID używanych kontenerów zachowane; monitor usług ok.
+- Neutralny rollback.json SHA256
+  `9c88323f469de37c94290db502f526a79c09af8eb54e749d80225d65f3842c25`,
+  asset669157895/1762B. Osobny backend-runtime-O3, asset669157975/836B,
+  SHA2561d3c6f1d148b6694c638dafd220a5fa1697fd10ed4b5ef31a416e526a4eb2961,
+  jest dowodem operatora, nie backend_acceptance O2.
+- [To samo robocze wydanie](https://github.com/Roseru/aplikacja-mobilna/releases/tag/untagged-4cbe4b5562fd750f23a1)
+  ma teraz kompletny INTEGRACJA-0.8.27-O3-20261023-RESTORE-ROLLBACK.zip,
+  asset669158018/116234812B,
+  SHA2566b78b97d38b935bdb148120eb2ff7249aae2dcac6a11ba5ae4ba8a28ef42bb65.
+  GitHub size/digest wszystkich3nowych assetów odczytane. ZIP21entries,
+  20sum plików PASS; starsze assety niepodmienione. APK/TAR/katalog/7CI
+  niezmienione. Checker android/backend/catalog PASS, całość **BLOCKED**
+  na2końcowe odbiory android_acceptance/backend_acceptance.
+- O2: proszę ocenić dokładny obraz i dowód runtime/rollback oraz dostarczyć
+  właściwy backend_acceptance albo wskazać konkretną brakującą kontrolę.
+  O1: nowy skonfigurowany APK po naprawie guardu Room17 i osiągalny peer nadal
+  potrzebne. Pełny KO32/telefon, autorytatywny ledger, offsite nowych kopii,
+  produkcyjne RPO/RTO/rollout i rzeczywiste AI pozostają osobno. Ten wynik
+  nie potwierdza zerowej utraty biznesowych zapisów po wykonaniu kopii.
+  W repo tylko własny wiersz/O3-090; własny DOCS CI i push main osobno.
+
 ### O2-052 — Android B: checkpoint portu sesji dla równoległej integracji O1
 
 - 23.10.2026, agent2/O2, DO ODCZYTU O1/koordynator. A odebrane i scalone
@@ -6459,6 +6568,98 @@ Archiwalne wiersze stanu przed integracją PR141 z main22.10; aktualny stan znaj
   Room FAIL. To nie pełny PASS E4. O1 analizuje _ensure_day oraz rozdzielenie
   PUSH/PULL; nowy port wykonuje pojedyncze jawne kroki. Materiały O3 zachowane,
   backend acceptance/rollback i nowe live pozostają osobnymi odbiorami.
+
+- Poprawki czterech konkretnych uwag checkpointu B: trwały ImportOrigin chroni
+  źródło między planami; zmienione źródło wymaga jawnej decyzji i osobnej kopii,
+  bez nadpisywania targetu/kolejki. Historyczny mapping deleted/retained jest
+  archiwizowany, ale nie stanowi live proof ani pozwolenia recreate. ACK starej
+  próby nie nadpisuje późniejszej intencji82/84 sprzed begin: kolejka zachowana,
+  finish zatrzymany na jawnej decyzji. SourceRevision pochodzi z ACK/receipt
+  konkretnego SourceOperationId, nigdy wcześniejszej rewizji projekcji.
+- Room18→19→20: dodana migracja zachowuje faktycznie użyty prywatny checkpoint19,
+  wszystkie wcześniejsze komórki/rowid42tabel oraz zamrożone ID/body/hash;
+  uzupełnia trwałe powiązania origin. Bez wipe/destructive migration.
+  Reconciliation raw pages pozostają staging do atomowej publikacji typed ledger
+  i aktywnego checkpointu po pełnej walidacji.
+- Po poprawkach395debugJVM/410validationJVM/15celowanych Room-native PASS,
+  zero fail/error/skip. To nadal milestone B; ekran, rzeczywisty adapter O1,
+  szersze przypadki, finalny review/CI i cały C pozostają do ukończenia.
+  O1 przekazał implementację interfejsów w swoim WIP i constructor
+  reconciliationStore; jego weryfikacja i przypięty commit pozostają osobno.
+- [Osobny odbiór main A](https://github.com/Roseru/aplikacja-mobilna/pull/148#issuecomment-6364973640):
+  koordynator potwierdził FULL8/8 i373nativePASS run39951038772 przy111d45fc.
+  Nie przenosimy tego wyniku na B/C ani wspólny live E4.
+
+
+- Przed pushem odczytano nowe O3-089/090 i dołączono main po PR150/151:
+  offline restore i rollback z odcięciem sesji to rzeczywiste dowody O3;
+  nie są własnym backend_acceptance O2 ani odbiorem Android B/C. Zgodnie
+  z koordynatorem zadanie wydania/rolloutu pozostaje osobne od bieżącego ABC.
+
+### O2-053 — Android B: formularze, historia celów i regresje źródeł
+
+- Data / autor:2026-10-23, **agent2 / O2**. Odbiorcy:O1, koordynator/O3.
+- Status:**DO ODCZYTU**. Nadal WIP etapu B; nie końcowy odbiór ani gotowość C.
+- Źródło:branch `codex/android-o2-import-i-uzgadnianie`, baza main82624e89;
+  [opis portu i checkpointu](../android/IMPORT_UZGADNIANIE.md). Przypięty head
+  publikowany w istniejącej dyskusji PR146 po pushu, bez osobnego małego PR.
+- Dodane normalne formularze zgody/korekt/postępu i model lease. Pełne konto
+  docelowe oraz osobna zgoda; brak JSON w podstawowym przepływie. Źródło12
+  osobno od jawnej korekty6, null zachowany. Stare callbacki A→B→A/epoch
+  nie zapisują decyzji/outbox ani nie dochodzą do portu sieciowego.
+- Naprawiona osobna kopia z poprawnymi UUID składników. Rozszerzony podgląd
+  decyzji przed zgodą i kolizji z niezaaplikowaną kopią. Własny legacy cel ma
+  osobną poprawioną projekcję, bez zmiany oryginału lub podwójnego liczenia.
+- Nowe testy ujawniły i potwierdziły poprawki inicjalizacji/przejścia osi celu
+  oraz powrotu rozstrzygniętej historii jako drugiego importu. Mapped goal
+  zachowuje starą oś, nowa decyzja wymaga bieżącej; poprzednia oś archiwizowana.
+  Jawne accept_server nieobecnego profilu zwalnia unikalne miejsce na nowy,
+  zachowując tombstone/frozenbytes. Dotychczasowe3odebrane uwagi recovery
+  nie są ponownie przedstawiane jako nowy audyt.
+- Lokalne kontrole:409debugJVM/424validationJVM+27Room/native/UI PASS;
+  lint0Error/0Fatal/28Warning/1Information. Kolejne3celowane native PASS:
+  migracje18→19→20 i19→20 (wszystkie33/42stare tabele, komórki/rowid/FK,
+  starelegacy i frozenrequest/hash), historyczne6domen. Razem28unikalnych
+  przypadków, nie pełna regresja całej aplikacji. E0 PASS. Rzeczywista paczka
+  importu Androida → backendowy DTO/preflight offline PASS,3wadliweDecimal
+  odrzucone. Nie HTTP/PG/live i nie integracja finalnej sesji O1.
+- Dalej:O1 przypięty zweryfikowany executor; O2 nawigacja/DI, końcowe przypadki,
+  niezależny review i pełny CI jednego PR B. Transport sesji pozostaje O1;
+  ekran/model nie są jeszcze końcowo osadzone w aplikacji. C po B, cały
+  przydział A→B→C trwa. Potwierdzenia odbioru:brak.
+
+- Odbiór checkpointu1e15 wskazał3P2: brak widocznej wersji serwera82/80 bez
+  mappingu, blokadę całego formularza przez uszkodzony snapshot składnika,
+  nielegalne correction_of celu E0 po preserve_local/finish wE1. Poprawione
+  w tym samym B: aktualna typed kopia obu wersji i guard dowodu, izolacja błędu
+  per rekord z preserve_local, legalny poprzednik celu tylko w bieżącym kontekście.
+  Historia, hash i zamrożone operacje zachowane. Red regresja referencji E0
+  potwierdziła błąd przed poprawką; widoczne82kg/80kg poprzedzają decyzję.
+- Po poprawkach417debugJVM/432validationJVM/36celowanych native/UI oraz lint
+  bez błędów PASS. Dodatkowo sprawdzamy kontrprzypadek legalnego odwołania
+  kolejnego celu do potwierdzonego celu bieżącej epoki. Niezależny koordynator
+  potwierdził offline backendowy DTO/preflight wcześniejszej paczki6domen;
+  to nadal nie live ani końcowe wpięcie sesji O1.
+- Zgodnie z koordynatorem C zaczęte lokalnie na osobnej
+  `codex/android-o2-sync-w-tle` od1e15, bez publikacji. Mały eksperyment potwierdził
+  SnapshotCapacityException przy dziewiątym poprawnym snapshotcie. Powrót do
+  poprawek B miał pierwszeństwo. B zachowuje własne AVD5562/Room20; odrębne
+  własne AVD5564 przygotowane dla przyszłych migracji C. Bez wipe i zmian O1.
+  C dołączy poprawione B zwykłym merge. Rzeczywista sesja, końcowy B i C trwają.
+
+- Końcowa uwaga odbioru b9d8: guard aktualnej kopii musi być atomowy ze zgodą,
+  a późniejszy prepare/finish nie może zmienić jej znaczenia. expectedProofRunId
+  przeniesiony do transakcji ReconciliationStore.decide. Niezmienna decyzja
+  przechowuje sourceHash, runId i dokładną obserwację/revision/payload zSHA256.
+  Prepare/finish weryfikują tę wersję; zmiana wymaga ponownego porównania,
+  bez reinterpretacji accept_server. Istniejące frozen operacje nietknięte.
+- Deterministyczne R1→R2 w oknie zapisu: stary wybór odrzucony bez zmian;
+  bieżącaR2 działa. R3 po zapisanej zgodzie wymusza nowy wybór przed finish,
+  po nim jawnaR3 działa. Historia decyzji/frozenbytes/hash zachowane.
+  417debugJVM/432validationJVM+23celowane native/UI, lint bez błędów PASS.
+  Test korekty ma jawną obsługę końca edycji i identyfikowane zgodę/zapis;
+  nie opiera się na klikaniu ostatniego checkboxa przy otwartej klawiaturze.
+  Nadal poprawka B do odbioru; rzeczywisty adapter O1 i końcowy B/C pending.
 
 ### O1-115 — Kompilujący adapter sesji B/C do integracji O2
 

@@ -22,6 +22,7 @@ data class SyncPushBatch(@PrimaryKey val id: String, val ownerScope: String, val
 }
 
 @Dao interface MealPushDao {
+    @Query("SELECT * FROM sync_push_batches WHERE ownerScope=:owner AND responseJson IS NOT NULL AND state IN ('complete','archived_reconciled') ORDER BY rowid") suspend fun received(owner:String):List<SyncPushBatch>
     @Query("SELECT * FROM sync_push_batches WHERE id=:id") suspend fun batch(id: String): SyncPushBatch?
     @Query("SELECT * FROM sync_push_batches WHERE ownerScope=:owner AND state='pending' ORDER BY rowid LIMIT 2")
     suspend fun pending(owner: String): List<SyncPushBatch>

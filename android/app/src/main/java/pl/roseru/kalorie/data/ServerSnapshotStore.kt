@@ -158,7 +158,9 @@ class ServerSnapshotStore(private val db: CalorieDatabase, private val protocol:
             dao.insert(identities) // A repeated identity aborts the entire page, including tokens.
             dao.insert(ServerSnapshotPage(run.id, request.pageIndex, request.query.canonical, page.canonical))
             dao.update(next)
-            if (final) dao.save(ServerSnapshotAccess(run.ownerScope, run.id, false))
+            // Reconciliation raw pages are staging. Its semantic ledger validates the complete
+            // copy/receipts before atomically publishing the active checkpoint and typed evidence.
+            if (final && db.importDao().pull(run.id)==null) dao.save(ServerSnapshotAccess(run.ownerScope, run.id, false))
             nextRequest
         }
     }
