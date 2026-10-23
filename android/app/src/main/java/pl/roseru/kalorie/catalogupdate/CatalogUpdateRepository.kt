@@ -30,10 +30,13 @@ sealed interface CatalogCheck {
 data class CatalogInstallation(val active:CatalogManifest,val activated:Boolean)
 
 /** Uses the same validated generation store as the bundled package; never touches a diary/outbox. */
-class CatalogUpdateRepository internal constructor(private val db:CalorieDatabase,private val schema:CatalogSchema,
+class CatalogUpdateRepository internal constructor(private val db:CalorieDatabase,schemaProvider:()->CatalogSchema,
     private val gateway:CatalogDownloadGateway?,private val gate:NetworkAccessGate,private val cache:File,private val retries:CatalogRetryStore,
     private val now:()->Long=System::currentTimeMillis) {
-    private val reader=CatalogPackageReader(schema,CatalogPackageReader.OFFICIAL_ID,"official")
+    internal constructor(db:CalorieDatabase,schema:CatalogSchema,gateway:CatalogDownloadGateway?,gate:NetworkAccessGate,
+        cache:File,retries:CatalogRetryStore,now:()->Long=System::currentTimeMillis):this(db,{schema},gateway,gate,cache,retries,now)
+    private val schema by lazy(schemaProvider)
+    private val reader by lazy{CatalogPackageReader(schema,CatalogPackageReader.OFFICIAL_ID,"official")}
     @Volatile private var retryAtMemory=0L
     val configured:Boolean get()=gateway!=null
     val networkState get()=gate.state

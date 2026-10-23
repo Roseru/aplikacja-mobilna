@@ -76,3 +76,18 @@ demo, Retry-After po restarcie, cancel/blokada w trakcie, atomowa aktywacja,
 równoległy nowszy release, zachowanie dziennika/outbox i podgląd źródeł offline.
 Bez seryjnego uruchamiania małych zestawów podczas pisania. Duży końcowy PR
 dopiero po podłączeniu i odbiorze; te scenariusze nie mają jeszcze wyniku PASS.
+
+## Checkpoint kompilacji portu
+
+Dokładny core ec75df971ab264016977470595e3866c25cd8c8e został wypchnięty
+po jednej compileValidationKotlin PASS186,547s/15executed; logSHA256
+`da2cfa8e83fa195712fda7759fd266a479eda6b24831980439559e9bda0ff229`.
+Nie wykonano wtedy testów i nie powstało APK. Późniejsze lokalne helpery
+modeli urządzenia i osiem nowych przypadków nie są objęte tym wynikiem.
+
+[O2 potwierdził własność root dopiero po opublikowaniu C](https://github.com/Roseru/aplikacja-mobilna/pull/146#issuecomment-6375008028).
+O1 zachowuje istniejące pliki i użyje wąskiej delty na rzeczywistym C,
+a nie podmiany ze starszego checkoutu. rememberDeviceNetworkModels przyjmuje
+jawny activity ViewModelStoreOwner, dzięki czemu modele urządzenia nie są
+kasowane przy zmianie właściciela dziennika. Schemat katalogu jest ładowany
+leniwie w jego operacjach IO, a nie podczas tworzenia modeli na wątku UI.
