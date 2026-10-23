@@ -37,6 +37,10 @@ class DiaryRepository(private val db: CalorieDatabase, private val context: Cont
         val lease=boundLease?:owners.currentLease().also {check(it.storageScope==owner);boundLease=it}
         return CanonicalWeightEditor(db,context,lease)
     }
+    private suspend fun canonicalDomains(): CanonicalDomainEditor {
+        val lease = boundLease ?: owners.currentLease().also { check(it.storageScope == owner); boundLease = it }
+        return CanonicalDomainEditor(db, context, lease)
+    }
     suspend fun initialize() = withContext(Dispatchers.IO) {
         val catalog = readCatalog("products-v1.json")
         val rationCatalog = readCatalog("rations-v1.json")
@@ -258,9 +262,10 @@ class DiaryRepository(private val db: CalorieDatabase, private val context: Cont
         }
         val existing = dao.goalOn(owner, today)
         val sequence = Math.addExact(dao.goalSequence(owner), 1)
-        val goal = GoalEntity(id, owner, today, kcal, protein, fat, carbs, sequence, Instant.now().toString(), ZoneId.systemDefault().id,
+        val goal = GoalEntity(id, owner, today, kcal, protein, fat, carbs, sequence, Instant.now().truncatedTo(java.time.temporal.ChronoUnit.MICROS).toString(), ZoneId.systemDefault().id,
             if (existing == null) "user_decision" else "history_correction", existing?.id)
         dao.saveGoal(goal)
+        if (canonicalDomains().goal(goal, existing)) return@ownerTransaction
         val payload = JSONObject().put("id", goal.id).put("valid_from", today).put("kcal", kcal)
             .put("protein", protein ?: JSONObject.NULL).put("fat", fat ?: JSONObject.NULL).put("carbs", carbs ?: JSONObject.NULL)
             .put("decided_at", goal.decidedAt).put("zone_id", goal.zoneId).put("reason", goal.reason)
@@ -277,9 +282,12 @@ class DiaryRepository(private val db: CalorieDatabase, private val context: Cont
         val product = ProductEntity(productId, draft.name.trim(), normalizeSearch(draft.name), draft.kcal, draft.protein,
             draft.fat, draft.carbs, grams, "Własny produkt", draft.source.trim(), 0, owner)
         dao.insertProduct(product)
-        enqueueLocal("product_draft", productId, "create", JSONObject().put("id", productId).put("name", product.name)
+        if (!canonicalDomains().product(product)) enqueueLocal("product_draft", productId, "create", JSONObject().put("id", productId).put("name", product.name)
             .put("basis", "100 g").put("kcal", product.kcal).put("protein", product.protein ?: JSONObject.NULL)
             .put("fat", product.fat ?: JSONObject.NULL).put("carbs", product.carbs ?: JSONObject.NULL).put("source", product.source))
+        db.domainSyncDao().local(owner, "product_draft", productId)?.wirePayload?.let {
+            db.serverDiaryDao().update(product.copy(wirePayload = it))
+        }
         add(productId, grams, type, date, mealId)
     }
 
@@ -289,17 +297,48 @@ class DiaryRepository(private val db: CalorieDatabase, private val context: Cont
         val profile = ProfileEntity(old?.id ?: UUID.randomUUID().toString(), owner, nickname.trim(), heightCm,
             activity.name, aim.name, old?.zoneId ?: ZoneId.systemDefault().id, (old?.localRevision ?: 0) + 1)
         dao.saveProfile(profile)
-        enqueueLocal("profile", profile.id, if (old == null) "create" else "update", JSONObject().put("id", profile.id)
+        if (!canonicalDomains().profile(profile, old == null)) enqueueLocal("profile", profile.id, if (old == null) "create" else "update", JSONObject().put("id", profile.id)
             .put("nickname", profile.nickname).put("height_cm", heightCm).put("activity_class", activity.name)
             .put("diet_aim", aim.name).put("zone_id", profile.zoneId).put("local_revision", profile.localRevision))
     }
 
+    /** Retiring a profile preserves its canonical identity/outbox as evidence for delete/recreate. */
+    suspend fun deleteProfile() = ownerTransaction {
+        val old = dao.currentProfile(owner) ?: return@ownerTransaction
+        if (!canonicalDomains().save("profile", old.id, null, false))
+            enqueueLocal("profile", old.id, "delete", JSONObject().put("id", old.id))
+        db.serverDiaryDao().delete(old)
+    }
+
+    suspend fun editCustomProduct(id: String, draft: CustomProductDraft) = ownerTransaction {
+        draft.validate()
+        val old = requireNotNull(dao.product(id, owner))
+        require(old.ownerScope == owner && old.catalogJson == null)
+        val fresh = old.copy(name = draft.name.trim(), searchName = normalizeSearch(draft.name),
+            kcal = draft.kcal, protein = draft.protein, fat = draft.fat, carbs = draft.carbs, source = draft.source.trim())
+        val canonical = canonicalDomains().product(fresh, false)
+        if (!canonical) enqueueLocal("product_draft", id, "update", JSONObject().put("id", id).put("name", fresh.name)
+                .put("kcal", fresh.kcal).put("protein", fresh.protein ?: JSONObject.NULL)
+                .put("fat", fresh.fat ?: JSONObject.NULL).put("carbs", fresh.carbs ?: JSONObject.NULL).put("source", fresh.source))
+        val wire = if (canonical) db.domainSyncDao().local(owner, "product_draft", id)?.wirePayload else null
+        db.serverDiaryDao().update(fresh.copy(wirePayload = wire))
+    }
+
+    suspend fun deleteCustomProduct(id: String) = ownerTransaction {
+        val old = requireNotNull(dao.product(id, owner))
+        require(old.ownerScope == owner && old.catalogJson == null)
+        if (!canonicalDomains().save("product_draft", id, null, false))
+            enqueueLocal("product_draft", id, "delete", JSONObject().put("id", id))
+        db.serverDiaryDao().delete(old) // Consumption already owns a separate immutable nutrient snapshot.
+    }
+
     suspend fun setProfileAndActivityGoal(nickname: String, heightCm: Double, activity: ActivityClass, aim: DietAim) = ownerTransaction {
-        val previous = dao.currentProfile(owner)?.activityClass?.let(ActivityClass::valueOf) ?: ActivityClass.GARRISON
+        val previousProfile = dao.currentProfile(owner)
+        val previous = previousProfile?.activityClass?.let(ActivityClass::valueOf) ?: ActivityClass.GARRISON
         val goal = dao.goal(owner, LocalDate.now().toString()).first()
         val kcal = activityCalorieGoal(goal?.kcal ?: 2800.0, previous, activity)
         setProfile(nickname, heightCm, activity, aim)
-        if (previous != activity || goal == null) setGoal(kcal, goal?.protein, goal?.fat, goal?.carbs)
+        if (previous != activity || goal == null || previousProfile?.dietAim != aim.name) setGoal(kcal, goal?.protein, goal?.fat, goal?.carbs)
     }
 
     suspend fun addWeight(kg: Double, date: LocalDate, id: String = UUID.randomUUID().toString()) = ownerTransaction {
@@ -351,7 +390,7 @@ class DiaryRepository(private val db: CalorieDatabase, private val context: Cont
         if (old?.declaredComplete == declared || (old == null && !declared)) return@ownerTransaction
         val status = DiaryDayEntity(old?.id ?: UUID.randomUUID().toString(), owner, date.toString(), declared, (old?.localRevision ?: 0) + 1)
         dao.saveDiaryDay(status)
-        enqueueLocal("diary_day", status.id, if (old == null) "create" else "update", JSONObject().put("id", status.id)
+        if (!canonicalDomains().day(status, dao.currentProfile(owner)?.zoneId ?: ZoneId.systemDefault().id, old == null)) enqueueLocal("diary_day", status.id, if (old == null) "create" else "update", JSONObject().put("id", status.id)
             .put("local_date", status.localDate).put("declared_complete", declared).put("local_revision", status.localRevision))
     }
 
