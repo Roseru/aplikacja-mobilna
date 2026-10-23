@@ -69,7 +69,7 @@ dependencies {
     implementation(libs.room.ktx)
     ksp(libs.room.compiler)
     implementation(libs.datastore.preferences)
-    implementation("androidx.work:work-runtime-ktx:2.10.5")
+    implementation("androidx.work:work-runtime-ktx:2.12.0")
     implementation(libs.appauth)
     implementation(libs.exifinterface)
     debugImplementation(libs.compose.tooling)
@@ -82,7 +82,7 @@ dependencies {
     androidTestImplementation(libs.compose.ui.test)
     androidTestImplementation(libs.android.test.runner)
     androidTestImplementation(libs.android.test.junit)
-    androidTestImplementation("androidx.work:work-testing:2.10.5")
+    androidTestImplementation("androidx.work:work-testing:2.12.0")
 }
 
 // Independent validation version channel prevents downgrading shared test data.
