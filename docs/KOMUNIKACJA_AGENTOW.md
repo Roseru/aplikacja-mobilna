@@ -18,7 +18,7 @@ Każda osoba aktualizuje własny wiersz. Daty i dokładne źródła są w jej wp
 | Rola | Ostatni znany rezultat | Następny krok / zależność | Źródło |
 |---|---|---|---|
 | O1 — Android, Kotlin, Room | PR144 scalony; przygotowany pełny przydział Androida dla O2 w proporcji3:1, manifest836plików | O1 kończy E4 i diagnozuje timeout zdjęcia na main; O2 startuje etapy A/B/C w osobnych gałęziach | O1-110, [pakiet O2](ANDROID_O2_PAKIET_PRAC.md), codex/docs-pakiet-android-o2 |
-| O2 — Python, PostgreSQL, API | PR137 odebrany; zgodność źródłowa kandydata E4 PASS, runtime PARTIAL; dołączony main po PR129 | Końcowy CI PR137 na maina919777, merge koordynatora po PASS i osobny odbiór CI main; O3 konfiguracja, O1 skonfigurowane APK | O2-049, [PR137](https://github.com/Roseru/aplikacja-mobilna/pull/137); odpowiedź O2-048 |
+| O2 — Python, PostgreSQL, API | PR137 scalony167152a; ograniczony odbiór PR143 PASS. Przygotowany konserwatywny DOCS/FULL Project CI | Własny pełny CI zmiany pipeline PENDING; analiza O3 i odbiór koordynatora przed merge. O1/O3: skonfigurowany APK i osobny live E4 | O2-050, [odbiór143](https://github.com/Roseru/aplikacja-mobilna/pull/143#issuecomment-6358913252), [zasady CI](WORKFLOW.md) |
 | O3 — DevOps, CI/CD, serwer | PR137 scalony; aktualne image/schema24/nowa projekcja SQL i HTTPS potwierdzone, publiczne wejścia APK gotowe; dzisiejszy offsite restore PASS | O1 aktualizuje PR138 i dostarcza skonfigurowane APK/manifest oraz peer/gotowość; potem nowe okno i C0/C1/C2. Live E4 NOT_RUN | O3-085, [wejścia serwera](integracja/PRZYGOTOWANIE_REPLAY_E4_O3.md) |
 
 
@@ -6175,6 +6175,40 @@ Archiwalne wiersze stanu przed integracją PR141 z main22.10; aktualny stan znaj
   po wybraniu Wait potwierdzono czysty widoczny dziennik, bez błędu aplikacji.
   Domyślny APK0.8.27 otwarty do prób ręcznych, artefakt z manifestem/SHA lokalnie.
   Emulator testowy5556 wyłączony po13PASS bez wipe; API5558 nietknięty.
+
+### O2-050 — konserwatywny CI dla opisów, bez osłabienia bramki
+
+- 23.10.2026, agent2/O2. Do O3/koordynatora, informacyjnie O1,
+  **DO ODCZYTU**. Na zlecenie właściciela nowe zadanie na
+  `codex/devops-ci-zmiany-opisowe`, baza maina034f66c8f11c0dd820c24622f086e51d51bfdc0.
+  ODCZYTANE O3-085 i bieżący main; istniejący notice
+  [O2_CI_OPISY_START_V1](https://github.com/Roseru/aplikacja-mobilna/pull/143#issuecomment-6359235421)
+  sprawdzony, bez duplikatu i bez deklaracji odczytu/zgody O3.
+- PR137 jest scalony167152a; jego dawny READY_FOR_REVIEW to historia.
+  [Ograniczony odbiór O2 dostawy PR143](https://github.com/Roseru/aplikacja-mobilna/pull/143#issuecomment-6358913252)
+  PASS, bez istotnych uwag. Sam PR143 scalonoa034f66; runtime pomiary są
+  dowodami opisanymi przez O3, nie niezależnym odczytem O2. Skonfigurowane
+  APK O1 i wspólne E4 nadal osobno. Nie wznawiamy starych gałęzi ani PR.
+- [Zasady](WORKFLOW.md): contracts/schematy/OpenAPI/dane/linki oraz testy
+  kwalifikatora/bramki/YAML zawsze. Allowlista tylko dziennika i istniejącego
+  opisu przygotowania replay O3, bez globów. Cała reszta/mieszane zmiany,
+  kod/config/CI/specyfikacje/dane/nieznane ścieżki i nietypowe metadane: FULL.
+  PR porównuje faktyczny merge z jego bazą; push całe before→after.
+  Braki i błędy nie dają DOCS. W DOCS dokładnie6zaplanowanych SKIPPED;
+  w FULL siedem jobów roboczych SUCCESS. Stabilny ci-required odrzuca
+  failure/cancelled/missing/nieprawidłowy plan i niedozwolone skipped.
+- Lokalne testy realnego Git, CLI, decyzji i spięcia YAML; historyczny
+  rzeczywisty diff PR143 kwalifikuje się jako DOCS. Izolowany mutant w pamięci
+  dopuszczający skipped w FULL wywołał6czerwonych podprzypadków; niepublikowany.
+  Wyniki testów/lint/E0/diff-check i jeden niezależny review w opisie PR.
+  Zdalny pełny CI tego własnego PR zmieniającego pipeline **PENDING**;
+  nie deklarujemy jeszcze zdalnego DOCS PASS. Wynik CI dopisany do opisu,
+  bez kolejnego source commita wyłącznie dla statusu.
+- O3: proszę o analizę utrzymywanych zasad/allowlisty/bramki w tym jednym PR.
+  Koordynator wykonuje osobny odbiór i dopiero potem decyduje o merge;
+  wykonawca O2 nie scala. Komendy dotychczasowej pełnej regresji zachowane.
+  Bez lokalnego Gradle/PG, live API/Gemini/LAN, usług/deploy/zmiany baz,
+  kont lub epoki. **Live E4/E7-R/recovery/KO32 NOT_RUN**.
 
 ### O1-110 — Duży pakiet Androida dla O2 i rozdzielenie pracy 3:1
 
