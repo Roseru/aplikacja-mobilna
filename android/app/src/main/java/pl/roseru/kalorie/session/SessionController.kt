@@ -1162,7 +1162,7 @@ class SessionController internal constructor(private val db: CalorieDatabase, pr
             }
             if (!fresh) check(refreshFor(lease))
             var ticket = apiSession(lease)
-            var refreshed = false
+            var refreshed = !fresh
             var stagedProfile: ProfileRead? = null
             var stagedMotivation: MotivationRead? = null
             var stagedNemesis: NemesisChallenge? = null
@@ -1435,7 +1435,7 @@ class SessionController internal constructor(private val db: CalorieDatabase, pr
             }
             if (!fresh) check(refreshFor(capturedLease))
             var ticket = apiSession(capturedLease)
-            var refreshed = false
+            var refreshed = !fresh
             while (true) {
                 val captured = ticket
                 suspend fun ready() {
@@ -1584,7 +1584,7 @@ class SessionController internal constructor(private val db: CalorieDatabase, pr
                 (state.accessTokenExpirationTime ?: 0) > now() + 30_000
             }
             if (!fresh) check(refreshFor(capturedLease))
-            var ticket = apiSession(capturedLease); var refreshed = false
+            var ticket = apiSession(capturedLease); var refreshed = !fresh
             var preflight = request.command.grantsSharing
             while (true) {
                 val captured = ticket
@@ -1723,7 +1723,7 @@ class SessionController internal constructor(private val db: CalorieDatabase, pr
             (state.accessTokenExpirationTime?:0)>now()+30_000
         }
         if(!fresh) check(refreshFor(captured.lease))
-        var ticket=apiSession(captured.lease);var refreshed=false
+        var ticket=apiSession(captured.lease);var refreshed= !fresh
         // Private image IO and wire encoding are outside withApiSession/Room/mutex.
         val request=captured.store.request(row.operationId)
         suspend fun ready() {
@@ -1846,7 +1846,7 @@ class SessionController internal constructor(private val db: CalorieDatabase, pr
             (auth.accessTokenExpirationTime?:0)>now()+30_000
         }
         if(!fresh) check(refreshFor(captured.lease))
-        var ticket=apiSession(captured.lease);var refreshed=false
+        var ticket=apiSession(captured.lease);var refreshed= !fresh
         val saved=withContext(Dispatchers.Default){captured.store.stored(row.operationId)}
         val cached=withContext(Dispatchers.Default){if(saved.cancelled)null else saved.latest?.let(PhotoAnalysisPreview::from)}
         val cancellation=PhotoCancellationStatus.from(row.operationId,saved)
@@ -2055,7 +2055,7 @@ class SessionController internal constructor(private val db: CalorieDatabase, pr
                 (state.accessTokenExpirationTime?:0)>now()+30_000
             }
             if(!fresh)check(refreshFor(captured.lease))
-            var ticket=apiSession(captured.lease);var refreshed=false
+            var ticket=apiSession(captured.lease);var refreshed= !fresh
             val attempted=withContext(Dispatchers.Default){captured.store.prepareConfirmationAttempted(row.operationId,now())}
             val snapshot=attempted.snapshot
             val request=checkNotNull(snapshot.confirmation).request(row.syncEpoch)
@@ -2183,7 +2183,7 @@ class SessionController internal constructor(private val db: CalorieDatabase, pr
                 (state.accessTokenExpirationTime?:0)>now()+30_000
             }
             if(!fresh) check(refreshFor(captured.lease))
-            var ticket=apiSession(captured.lease);var refreshed=false
+            var ticket=apiSession(captured.lease);var refreshed= !fresh
             val attempted=withContext(Dispatchers.Default){captured.store.prepareCancellationAttempted(row.operationId,now())}
             val snapshot=attempted.snapshot
             val request=checkNotNull(snapshot.cancellation).request(row.syncEpoch,snapshot.receipt.analysisId)

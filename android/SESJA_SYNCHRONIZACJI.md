@@ -111,7 +111,17 @@ Kompilujący milestone jest opublikowany jako89766ec; jego receipt dotyczy
 wyłącznie zależności2798. Nowsze B i dalsze lokalne zmiany mają oddzielny odbiór.
 Podczas lekkiej pracy dodano lease dla opóźnionego przycisku bootstrap oraz
 ograniczenie odnowienia do jednej próby także po odnowieniu wstępnym.
+Ta sama zasada obejmuje odczyty profilu/społeczności, zgodę rankingową,
+polecenia Nemesis oraz wysłanie/odczyt/zatwierdzenie/anulowanie analizy zdjęcia:
+odnowienie przed HTTP zużywa próbę, więc późniejsze401 nie powoduje drugiego
+odnowienia w tej operacji. Bieżący request i jego identyfikator pozostają zachowane.
 Przygotowane dalsze przypadki obejmują saved ACK po wygaśnięciu tokenu,
 kompletny raw snapshot przerwany przed zapisem receipts i wstępny refresh→401.
 Przyjęcie kompletnego raw bez sieci czeka na dodatkowy port O2 przygotowania/
 zastosowania kopii; obecny kod nie realizuje jeszcze tej gałęzi. Nie są to wyniki PASS.
+
+Podgląd lokalnego zdjęcia rozróżnia wczytywanie i błąd odczytu/dekodowania.
+Po błędzie użytkownik może ponowić samo otwarcie obrazu; nie jest wykonywane
+wysłanie ani usunięcie zdjęcia. Zmiana zdjęcia lub właściciela modelu resetuje
+stan podglądu, a anulowanie korutyny pozostaje anulowaniem. Ta lokalna poprawka
+interfejsu również czeka na końcowy build/odbiór, bez nowej deklaracji PASS.
