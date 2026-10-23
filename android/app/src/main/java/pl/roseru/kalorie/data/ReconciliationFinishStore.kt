@@ -27,6 +27,7 @@ internal class ReconciliationFinishStore(private val owner:ReconciliationStore) 
             check(dao.batches(id).all {it.state=="complete"})
             val rows=dao.sources(id);check(rows.all {it.state in setOf("acked","retained","accept_server")})
             val copy=owner.latestCopy(lease,expected,id)
+            rows.filter {it.state=="accept_server"}.forEach {owner.requireDecisionProof(it,copy.second)}
             // ACK followed by a fresh full read, rather than comparing against its older pre-push snapshot.
             check(dao.batches(id).none {it.snapshotRunId==copy.first.id})
             FinishSource(plan,rows,copy.first,copy.second,db.snapshotDao().pages(copy.first.id),

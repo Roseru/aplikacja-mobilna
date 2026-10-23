@@ -38,6 +38,7 @@ internal class ReconciliationPushStore(private val owner:ReconciliationStore) {
             val (run,copy)=owner.latestCopy(lease,expected,id)
             val sources=dao.sources(id)
             val source=sources.firstOrNull {it.state=="approved_source"} ?: return@withTransaction null
+            sources.filter {it.state=="approved_source"}.forEach {owner.requireDecisionProof(it,copy)}
             val choice=StrictJson.read(source.metadataJson.toByteArray()).getString("choice")
             if(choice=="replay_original")return@withTransaction replay(lease,expected,plan,run,source,sources)
             check(source.sourceEpoch!=null && source.sourceEpoch!=expected.syncEpoch)

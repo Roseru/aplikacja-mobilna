@@ -432,6 +432,53 @@ class ReconciliationStorageTest {
             assertArrayEquals(bytes,db.pushDao().batch(old.id)!!.requestJson.toByteArray());assertEquals(hash,db.pushDao().batch(old.id)!!.requestHash)
         } finally {db.close()}
     }
+    @Test fun decisionProofIsCheckedAtomicallyAndChangedServerVersionRequiresNewConsentBeforeFinish()=runBlocking<Unit> {
+        val db=memory()
+        try {
+            val lease=account(db);val accepted=oldAcceptedWeight(db,lease)
+            val original=db.dao().operation(accepted.operations.single().operationId)!!
+            DiaryRepository(db,context,lease).editWeight(original.entityId,82.0)
+            val push=MealPushStore(db,schema);val frozen=push.prepare(lease)!!;push.markAttempted(frozen)
+            val bytes=frozen.batch.body();val hash=frozen.batch.sha256
+            val binding=expire(db,lease,frozen);val store=ReconciliationStore(db,schema);val plan=plan(store,lease,binding)
+            val r1=pull(db,store,lease,binding,plan,listOf(entity(original)))
+            val source=db.importDao().sources(plan.planId).single()
+            // R1 is the version shown by the VM. Publish R2 before the store write; no timing sleeps.
+            suspend fun publish(value:String,revision:Int,checkpoint:String):SnapshotRequest {
+                val request=ServerSnapshotStore(db,SnapshotProtocol(schema)).begin(lease,emptyList(),plan.planId,1)
+                val payload=JSONObject(original.payload).put("weight_kg",value)
+                val server=entity(original,revision).put("payload",payload)
+                assertNull(ServerSnapshotStore(db,SnapshotProtocol(schema)).apply(request,page(binding.syncEpoch,listOf(server),checkpoint)))
+                store.acceptCompletedSnapshot(lease,binding,plan.planId,request.runId);return request
+            }
+            val r2=publish("81",2,"synthetic-proof-r2")
+            val before=db.importDao().sources(plan.planId);val point=db.dao().weight(source.sourceId,lease.storageScope)
+            val operation=db.dao().operation(frozen.operations.single().operationId)!!;val count=db.dao().operationCount(lease.storageScope)
+            rejects {store.decide(lease,binding,plan.planId,"weight",source.sourceId,source.sourceHash,"{\"choice\":\"accept_server\"}",expectedProofRunId=r1.runId)}
+            assertTrue(db.importDao().decisions(plan.planId).isEmpty());assertEquals(before,db.importDao().sources(plan.planId))
+            assertEquals(point,db.dao().weight(source.sourceId,lease.storageScope));assertEquals(operation,db.dao().operation(operation.operationId))
+            assertEquals(count,db.dao().operationCount(lease.storageScope));assertArrayEquals(bytes,db.pushDao().batch(frozen.id)!!.requestJson.toByteArray())
+            assertEquals(hash,db.pushDao().batch(frozen.id)!!.requestHash)
+            store.decide(lease,binding,plan.planId,"weight",source.sourceId,source.sourceHash,"{\"choice\":\"accept_server\"}",expectedProofRunId=r2.runId)
+            val decided=db.importDao().source(plan.planId,"weight",source.sourceId)!!
+            val proof=JSONObject(decided.metadataJson).getJSONObject("decision_proof")
+            assertEquals(r2.runId,proof.getString("run_id"));assertEquals(source.sourceHash,proof.getString("source_hash"))
+            assertEquals("81",proof.getJSONObject("observation").getJSONObject("payload").getString("weight_kg"))
+            assertEquals(1,db.importDao().decisions(plan.planId).size);assertEquals(point,db.dao().weight(source.sourceId,lease.storageScope))
+            val r3=publish("83",3,"synthetic-proof-r3")
+            rejects {store.finish(lease,binding,plan.planId)}
+            val review=store.status(lease,binding,plan.planId)
+            assertEquals("server_proof_changed",review.decisions.single().code)
+            assertEquals(point,db.dao().weight(source.sourceId,lease.storageScope));assertEquals(operation,db.dao().operation(operation.operationId))
+            assertEquals(1,db.importDao().decisions(plan.planId).size);assertEquals(count,db.dao().operationCount(lease.storageScope))
+            assertEquals(decided.metadataJson,db.importDao().source(plan.planId,"weight",source.sourceId)!!.metadataJson)
+            store.decide(lease,binding,plan.planId,"weight",source.sourceId,source.sourceHash,"{\"choice\":\"accept_server\"}",expectedProofRunId=r3.runId)
+            store.finish(lease,binding,plan.planId)
+            assertEquals(83.0,db.dao().weight(source.sourceId,lease.storageScope)!!.kg,0.0)
+            assertEquals(2,db.importDao().decisions(plan.planId).size)
+            assertArrayEquals(bytes,db.pushDao().batch(frozen.id)!!.requestJson.toByteArray());assertEquals(hash,db.pushDao().batch(frozen.id)!!.requestHash)
+        } finally {db.close()}
+    }
     private object StrictJsonForTest {
         fun operation(batch:PushBatch)=pl.roseru.kalorie.core.catalog.StrictJson.canonical(batch.json().getJSONArray("operations").getJSONObject(0))
     }

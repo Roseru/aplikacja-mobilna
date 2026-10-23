@@ -32,6 +32,10 @@ class ImportViewModel(private val db:CalorieDatabase,private val schema:SyncWire
         if(!mutex.tryLock())return@launch
         mutable.value=mutable.value.copy(busy=true,message=null)
         try {block()} catch(cancelled:CancellationException){throw cancelled}
+        catch(_:ReconciliationDecisionProofChangedException){
+            try {reload()} catch(cancelled:CancellationException){throw cancelled} catch(_:Exception){ /* The owner may have changed too. */ }
+            mutable.value=mutable.value.copy(message="Wersja serwera zmieniła się. Porównaj obie wersje i podejmij decyzję ponownie.")
+        }
         catch(_:StaleOwnerException){mutable.value=mutable.value.copy(message="Konto zmieniło się. Otwórz ten ekran ponownie.")}
         catch(_:Exception){mutable.value=mutable.value.copy(message="Nie udało się wykonać tej decyzji. Dane pozostają zapisane. Odśwież podsumowanie i sprawdź brakujące informacje.")}
         finally {mutable.value=mutable.value.copy(busy=false);mutex.unlock()}
@@ -100,9 +104,8 @@ class ImportViewModel(private val db:CalorieDatabase,private val schema:SyncWire
         val plan=checkNotNull(mutable.value.plan);val context=binding()
         require(row.source.planId==plan.planId)
         if(mutable.value.recovery) {
-            val proof=reconciliation.latestCopy(lease,context,plan.planId)
-            if(proof.first.id!=row.proofRunId)throw ImportContextChangedException()
-            reconciliation.decide(lease,context,plan.planId,row.source.entityType,row.source.sourceId,row.source.sourceHash,json)
+            val proofId=row.proofRunId ?: throw ReconciliationDecisionProofChangedException()
+            reconciliation.decide(lease,context,plan.planId,row.source.entityType,row.source.sourceId,row.source.sourceHash,json,expectedProofRunId=proofId)
         }
         else imports.decide(lease,plan.planId,row.source.entityType,row.source.sourceId,row.source.sourceHash,json)
     }
