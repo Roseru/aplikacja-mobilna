@@ -108,7 +108,7 @@ class FirstAccountGoalNavigationTest {
             assertEquals(0,payload.getInt("timeline_base_revision"));assertTrue(payload.isNull("correction_of"))
             assertTrue(payload.isNull("fat_g"));assertTrue(payload.isNull("carbs_g"))
             assertEquals(guestBefore,runBlocking {db.dao().goalsThrough("guest",LocalDate.now().toString()).first()})
-            compose.onNodeWithTag("settings-owner-info").performScrollTo().assertTextContains("Korzystasz z profilu konta.")
+            compose.onNodeWithTag("settings-owner-info").performScrollTo().assertTextContains("Korzystasz z profilu konta.",substring=true)
             assertEquals(0,calls.get())
         }finally{
             compose.runOnUiThread{views.clear()};vault.clear();db.close()
