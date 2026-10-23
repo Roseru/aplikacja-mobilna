@@ -28,6 +28,7 @@ data class ServerDiaryApplication(@PrimaryKey val runId: String, val ownerScope:
 @Dao interface ServerDiaryDao {
     @Query("SELECT * FROM server_diary_records WHERE ownerScope=:owner") suspend fun records(owner: String): List<ServerDiaryRecord>
     @Upsert suspend fun save(record: ServerDiaryRecord)
+    @Query("DELETE FROM server_diary_records WHERE ownerScope=:owner") suspend fun retireContext(owner:String)
     @Query("SELECT * FROM server_diary_applications WHERE runId=:run") suspend fun application(run: String): ServerDiaryApplication?
     @Query("SELECT * FROM server_diary_applications WHERE ownerScope=:owner ORDER BY rowid DESC LIMIT 1")
     suspend fun latest(owner: String): ServerDiaryApplication?
@@ -35,7 +36,7 @@ data class ServerDiaryApplication(@PrimaryKey val runId: String, val ownerScope:
     @Query("SELECT * FROM outbox WHERE ownerScope=:owner AND status NOT IN ('acked','superseded','local_only') ORDER BY rowid")
     suspend fun unsettled(owner: String): List<OutboxEntity>
     @Query("SELECT ownerScope FROM meals WHERE id=:id") suspend fun mealOwner(id: String): String?
-    @Query("SELECT * FROM goals WHERE ownerScope=:owner ORDER BY localSequence,id") suspend fun allGoals(owner: String): List<GoalEntity>
+    @Query("SELECT * FROM goals WHERE ownerScope=:owner AND NOT EXISTS (SELECT 1 FROM import_sources si JOIN import_plans pi ON pi.id=si.planId WHERE pi.targetScope=goals.ownerScope AND pi.state IN ('complete','ready_to_apply') AND si.entityType='goal' AND si.sourceId=goals.id AND si.state='acked' AND si.decisionCode='mapped_projection_retired') ORDER BY localSequence,id") suspend fun allGoals(owner: String): List<GoalEntity>
     @Query("SELECT * FROM goals WHERE id=:id") suspend fun goal(id: String): GoalEntity?
     @Query("SELECT * FROM products WHERE id=:id") suspend fun product(id: String): ProductEntity?
     @Query("SELECT * FROM profiles WHERE id=:id") suspend fun profile(id: String): ProfileEntity?
