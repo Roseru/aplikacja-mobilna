@@ -125,3 +125,6 @@ Po błędzie użytkownik może ponowić samo otwarcie obrazu; nie jest wykonywan
 wysłanie ani usunięcie zdjęcia. Zmiana zdjęcia lub właściciela modelu resetuje
 stan podglądu, a anulowanie korutyny pozostaje anulowaniem. Ta lokalna poprawka
 interfejsu również czeka na końcowy build/odbiór, bez nowej deklaracji PASS.
+Odczyt obrazu, hash i dekodowanie podglądu działają poza transakcją Room.
+Przed zwróceniem bitmapy ponownie sprawdzany jest ten sam lease i dokładny
+rekord zdjęcia. Błąd końcowego guardu zwalnia bitmapę i jest propagowany.
