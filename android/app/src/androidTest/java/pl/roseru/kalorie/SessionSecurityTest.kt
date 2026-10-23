@@ -2923,4 +2923,42 @@ class SessionSecurityTest {
         }finally{h.close()}
     }
 
+    @Test fun mealPushWithoutPullSeparatesDurableAckFromFollowingArchive()=runBlocking<Unit> {
+        val h=PushHarness()
+        try {
+            h.prepare()
+            h.c=client(h.db,h.vault,h.fixture,h.api,snapshots=h.copies,pushes=h.transport,projectDiary=true)
+            h.c.start();h.c.applyDiaryCopy(h.lease)
+            val request=MealPushStore(h.db,CanonicalMealRows.schema(context)).prepare(h.lease)!!
+            val payload=request.batch.json().getJSONArray("operations").getJSONObject(0).getJSONObject("payload")
+            val date=payload.getString("local_date");val dayId=UUID.randomUUID().toString()
+            assertNull(h.db.dao().currentDiaryDay(h.lease.storageScope,date))
+            h.copies.answer={
+                val copy=JSONObject(String(snapshotAnswer().body)).put("server_time","2026-10-23T08:00:00Z")
+                    .put("entities",JSONArray()
+                        .put(JSONObject().put("entity_type","meal").put("entity_id",h.meal).put("revision",1)
+                            .put("deleted",false).put("payload",payload))
+                        .put(JSONObject().put("entity_type","diary_day").put("entity_id",dayId).put("revision",1)
+                            .put("deleted",false).put("payload",JSONObject().put("local_date",date)
+                                .put("time_zone",payload.getString("time_zone")).put("declared_complete",false))))
+                BootstrapHttpResult(200,copy.toString().toByteArray())
+            }
+            val copiesBefore=h.copies.calls.size
+            h.c.synchronizeMealsWithoutPull(h.lease)
+            assertEquals(1,h.calls.size);assertEquals(1,h.revision())
+            assertEquals(copiesBefore,h.copies.calls.size)
+            assertNull(h.db.dao().currentDiaryDay(h.lease.storageScope,date))
+            assertTrue(h.db.dao().canonicalMealOperations(h.lease.storageScope,h.meal).all{it.status=="acked"})
+            assertTrue(h.db.pushDao().pending(h.lease.storageScope).isEmpty())
+            val frozen=h.db.pushDao().batch(request.id)
+            h.c.downloadSnapshot(h.lease)
+            assertEquals(copiesBefore+1,h.copies.calls.size);assertEquals(1,h.calls.size)
+            assertEquals(1,h.revision());assertEquals(frozen,h.db.pushDao().batch(request.id))
+            val day=h.db.dao().currentDiaryDay(h.lease.storageScope,date)!!
+            assertEquals(dayId,day.id);assertFalse(day.declaredComplete);assertEquals(1,day.localRevision)
+            val observed=h.db.serverDiaryDao().records(h.lease.storageScope).single{it.entityType=="diary_day"}
+            assertEquals(dayId,observed.localId);assertEquals(1,observed.knownRevision)
+            assertEquals("applied",observed.disposition)
+        }finally{h.close()}
+    }
 }

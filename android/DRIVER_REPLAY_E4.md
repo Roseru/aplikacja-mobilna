@@ -1,5 +1,32 @@
 # Driver wybranej partii E4 — przygotowanie O1
 
+## Poprawka w przygotowaniu po rzeczywistym replay Room17
+
+23.10.2026: [operator O3 zgłosił FAIL nowego pakietu](https://github.com/Roseru/aplikacja-mobilna/pull/138#issuecomment-6364652003).
+Na dokładnym dc012fa/Room17 zapis ACK i niezależne PG C1/C2 przeszły,
+ale kontrola21tabel po zakończeniu replay zatrzymała próbę: `diary_days`0→1.
+Wynik pozostaje niezaliczony. Stary PASS Room14 i lokalne testy nie zastępują tego wyniku.
+
+Normalna wysyłka wykonuje po ACK pełny pull. Backend przy pierwszym Meal
+tworzy brakujący DiaryDay (`_ensure_day`, revision1/declared_complete=false),
+a `ServerDiaryStore.day` materializuje go podczas zastosowania kopii.
+Stary driver obejmował tę odrębną projekcję jednym odciskiem ACK. Ta sekwencja
+jest zgodna z diagnozą operatora; dokładne powiązanie z jego baseline wymaga
+zachowania oryginalnych dowodów. Nie normalizujemy ani nie wyłączamy `diary_days`.
+
+Poprawiany driver uruchamia **ten sam push/parser/guard/ACK bez następującego
+pull** przez `synchronizeMealsWithoutPull`. Obie fazy HTTP pozostają prawdziwe,
+koperta jest ta sama, a ścisły guard21tabel działa po trwałym ACK. Receipt
+replay jawnie zapisuje `following_pull=NOT_RUN_SEPARATE_OPERATION`. Późniejsze
+pobranie i zastosowanie kopii jest osobnym krokiem operatora/aplikacji;
+nie ogłaszamy go zaliczonym na podstawie ACK. Zwykłe `synchronizeMeals` zachowuje
+automatyczny pull. Nowy przypadek urządzenia odwzorowuje tę granicę: brak dnia
+po ACK, następnie dokładny serwerowy DiaryDay po osobnym pull, bez kolejnego POST.
+
+Zmiana jest lokalna, przed końcowym buildem/testami i nowym kandydatem.
+Wcześniejsze4APK, źródło dc012fa oraz dowody nie są podmieniane. Weryfikator
+odcisków nadal dopuszcza tylko pierwotne pola ACK opisane niżej.
+
 23.10.2026: [nowy skonfigurowany pakiet0.8.27](KANDYDAT_E4.md) i
 [manifest4APK](KANDYDAT_E4_0_8_27.json) są gotowe po buildzie,
 24celowanychJVM i4native offline. Źródło dc012fa; pełny pull PR144 scalony,
@@ -49,8 +76,8 @@ prywatnego dziennika. Sam wspólny applicationId validation nie daje izolacji.
 | Faza | Zachowanie i wynik lokalny |
 |---|---|
 | `prepare` | Sprawdza jeden wskazany pending Meal/create i korzysta z normalnego `MealPushStore.prepare`. Zamraża kopertę bez HTTP; odmawia wykorzystania partii z wcześniejszą próbą sieciową. Prywatnie zapisuje dokładne body/hash/kontekst i odciski chronionych danych. |
-| `hold` | Otwiera tę samą partię i porównuje baseline. Uzbraja barierę dla UUID/hash, uruchamia `synchronizeMeals`. Po poprawnym parserze ACK potwierdza HTTP200/no-store z poprawnym request_id, attempted=true, nadal brak trwałego ACK i serverRevision0. Zapisuje marker oraz prywatny PID/start procesu/deadline. Operator wykonuje osobny PG C1, potem zabija rzeczywisty proces aplikacji przed deadline. |
-| `replay` | Wymaga innego PID i późniejszego startu procesu oraz niezależnego `external_kill_utc` z receipt operatora, między odebraniem odpowiedzi i deadline hold. Sprawdza zachowaną kopertę, kolejkę i dane. Istniejący kontroler ponawia tę samą partię. Driver zwalnia dopiero zweryfikowaną odpowiedź replay i wymaga already_applied/revision1 oraz trwałego ACK. Zapisuje wynik wyłącznie lokalnych obserwacji. |
+| `hold` | Otwiera tę samą partię i porównuje baseline. Uzbraja barierę dla UUID/hash, uruchamia `synchronizeMealsWithoutPull`. Po poprawnym parserze ACK potwierdza HTTP200/no-store z poprawnym request_id, attempted=true, nadal brak trwałego ACK i serverRevision0. Zapisuje marker oraz prywatny PID/start procesu/deadline. Operator wykonuje osobny PG C1, potem zabija rzeczywisty proces aplikacji przed deadline. |
+| `replay` | Wymaga innego PID i późniejszego startu procesu oraz niezależnego `external_kill_utc` z receipt operatora, między odebraniem odpowiedzi i deadline hold. Sprawdza zachowaną kopertę, kolejkę i dane. Istniejący kontroler ponawia tę samą partię bez późniejszego pull. Driver zwalnia dopiero zweryfikowaną odpowiedź replay i wymaga already_applied/revision1, trwałego ACK i niezmiennych21tabel poza jawnymi polami ACK. Osobny pull pozostaje NOT_RUN. |
 
 Faza hold ma zakończyć się zewnętrznym przerwaniem instrumentacji, a nie
 zielonym JUnit. Jeżeli nie osiągnie poprawnej bariery w90s albo proces przeżyje

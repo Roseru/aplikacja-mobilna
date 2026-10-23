@@ -144,7 +144,7 @@ class LiveMealReplayTest {
         val request = store().open(current, plan.getString("batch"))
         verifySelected(request, plan.getString("meal"), plan.getString("operation"))
         val ticket = MealPushObservation.ack.arm(request.id, request.row.requestHash)
-        val send = app.sessionScope.async { app.sessions.synchronizeMeals(current) }
+        val send = app.sessionScope.async { app.sessions.synchronizeMealsWithoutPull(current) }
         try {
             try { withTimeout(90_000) { ticket.held.await() } } catch (_: TimeoutCancellationException) {
                 save("not-run.json", JSONObject().put("reason", "no_validated_ack_hold").put("utc", Instant.now().toString()))
@@ -194,7 +194,7 @@ class LiveMealReplayTest {
             request.batch.sha256 == plan.getString("hash"))
         // Observe but release the validated replay immediately; the existing controller persists ACK.
         val ticket = MealPushObservation.ack.arm(request.id, request.row.requestHash)
-        val send = app.sessionScope.async { app.sessions.synchronizeMeals(current) }
+        val send = app.sessionScope.async { app.sessions.synchronizeMealsWithoutPull(current) }
         try {
             withTimeout(90_000) { ticket.held.await() }
             pending(plan, current)
@@ -215,7 +215,8 @@ class LiveMealReplayTest {
                 app.database.dao().operation(plan.getString("operation"))?.status == "acked")
             assertTrue("Protected data changed during replay", protected(plan) == plan.getString("protected"))
             save("replayed.json", JSONObject().put("run", ticket.run).put("request_id", http!!.requestId)
-                .put("utc", Instant.now().toString()).put("local_observations", "PASS").put("server_observations", "REQUIRED_SEPARATELY"))
+                .put("utc", Instant.now().toString()).put("local_observations", "PASS")
+                .put("following_pull", "NOT_RUN_SEPARATE_OPERATION").put("server_observations", "REQUIRED_SEPARATELY"))
             marker("local_replay_pass", ticket.run)
         } finally { MealPushObservation.ack.disarm(ticket); send.cancelAndJoin() }
     }

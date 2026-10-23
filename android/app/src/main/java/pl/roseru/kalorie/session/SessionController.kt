@@ -2099,6 +2099,13 @@ class SessionController internal constructor(private val db: CalorieDatabase, pr
 
     /** Explicit canonical Meal push. Legacy rows remain local and are reported separately. */
     suspend fun synchronizeMeals(expectedLease:OwnerLease) {
+        pushSelected(expectedLease,followWithPull=true)
+    }
+    /** Observe the durable ACK separately from subsequent server projection. Same parser and guards. */
+    internal suspend fun synchronizeMealsWithoutPull(expectedLease:OwnerLease) {
+        pushSelected(expectedLease,followWithPull=false)
+    }
+    private suspend fun pushSelected(expectedLease:OwnerLease,followWithPull:Boolean) {
         val transport=mealPushGateway?:return
         val store=mealPushStore?:return
         val protocol=mealPushProtocol?:return
@@ -2134,7 +2141,7 @@ class SessionController internal constructor(private val db: CalorieDatabase, pr
                 val request=store.prepare(expectedLease)
                 if(request==null){
                     finishMealPush(id,expectedLease,mealPushSummary(acknowledged,refused))
-                    if(acknowledged+refused>0)downloadSnapshot(expectedLease,server)
+                    if(followWithPull && acknowledged+refused>0)downloadSnapshot(expectedLease,server)
                     return
                 }
                 while(true) {
@@ -2194,7 +2201,7 @@ class SessionController internal constructor(private val db: CalorieDatabase, pr
                 }
             }
             finishMealPush(id,expectedLease,mealPushSummary(acknowledged,refused)+" Pozostałe wpisy wyślesz kolejną próbą.")
-            downloadSnapshot(expectedLease,server)
+            if(followWithPull)downloadSnapshot(expectedLease,server)
         }catch(error:CancellationException){withContext(NonCancellable){finishMealPush(id,expectedLease)};throw error}
         catch(_:Exception){finishMealPush(id,expectedLease)}
     }
