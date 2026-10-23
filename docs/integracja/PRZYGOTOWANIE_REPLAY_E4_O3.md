@@ -1,5 +1,74 @@
 # Przygotowanie obserwacji PostgreSQL dla replay E4 — O3
 
+## Aktualne wejścia O3 — 23.10.2026
+
+**Kwalifikacja serwera i wejść kompilacji PASS; skonfigurowane APK O1 oraz
+wspólna próba E4 nadal NOT_RUN.** PR137 jest scalony jako `167152a`;
+bieżący main `b434754` ma własny CI39772774959 **8/8 SUCCESS**.
+Starsze sekcje poniżej zachowują swój historyczny zakres.
+
+Odczyt z 23.10, 07:53:38 CEST potwierdził:
+
+- API image `sha256:05c1792f3551725f0303cc3786892771392532a25edc18ff710faad9e6b7e9a9`,
+  schemat `0024_e9_history_graph`. Używana instalacja nie została zmigrowana.
+- Nowa projekcja `meal_content` z formatu2 obserwatora wykonała się na tym
+  schemacie w transakcji read-only, wraz z kontrolą image/schema/epoch,
+  w około0,63s. Wskazano losowego nieistniejącego właściciela, brak konta
+  i `meal_content=null` potwierdzone. To zgodność SQL/kolumn, **nie C0**,
+  porównanie zapisanej treści ani zastępstwo próby COMMIT/kill/replay.
+- 14 wskazanych źródeł/kontraktów rzeczywistego obrazu jest zgodnych po LF
+  zarówno z archiwalnym8ff7c0c, jak i bieżącym mainb434754. Nie dowodzi to
+  pochodzenia całego obrazu ani zgodności wszystkich funkcji nowszego main.
+- HTTPS readiness i discovery HTTP200 przez loopback z pełną weryfikacją
+  **oryginalnej** tożsamości TLS. Publiczne wejścia pozostają:
+
+| Wejście O1 | Wartość |
+|---|---|
+| issuer | `https://192.168.3.162:18443/realms/calorie-dev` |
+| API | `https://192.168.3.162:18443/api/v1` |
+| client / audience | `calorie-android` / `calorie-api` |
+| callback validation | `pl.roseru.kalorie.validation:/oauth2redirect` |
+| SHA256 publicznego CA PEM | `01f120ef25f091a6413a535dcaa5e333575a8d08a016503c47998333eef3a6f6` |
+
+Adres routingu O3 zmienił się względem historycznego issuer. Aktualne peer
+LAN/VPN i ograniczone okno należy uzgodnić przed próbą; nie zmieniamy issuer
+na adres relay. [Istniejący transport](../../infra/integration/ANDROID_HANDOFF.md)
+zachowuje oryginalny TLS. Nie otwarto nowego listenera ani reguły zapory.
+
+Istniejące techniczne konto syntetyczne A jest włączone w Keycloak;
+prywatny plik logowania odpowiada aktualnej prywatnej konfiguracji O3.
+Operator przygotował osobny chroniony plik dla validation. O1 uzyskuje sesję
+przez Code+PKCE S256, następnie bootstrap/pull. Przed C0 prywatnie wiążemy
+`binding.accountId` z rzeczywistym UUID konta backendu. Sprawdzenie enabled
+i plików **nie jest nową próbą hasła/PKCE**. Konto ma wcześniejszą historię
+syntetyczną; wskazana operacja/encja próby musi być nowa, a konto bez
+równoległych zapisów. Nie wykonano seed SQL, API push ani edycji kont.
+
+Publiczny pakiet wejść zawiera CA/config/manifest oraz niezmienione narzędzia
+overlay/transportu z mainb434754, bez APK i sekretów. Publiczny CA jest ten
+sam co w poprzednim przekazaniu. O1 może użyć posiadanego certyfikatu po
+sprawdzeniu pełnej sumy i wygenerować **nowy lokalny overlay** przez
+`android_overlay.py --state <publiczny-pakiet> --output <nowy-katalog>`.
+Generator rzeczywiście wykonano: validation-only, dokładny host,
+cleartext=false, bez zaufania do user CA. Przy kompilacji wymagane obie
+właściwości `CALORIE_OIDC_ISSUER` i `CALORIE_API_BASE_URL` z tabeli.
+Weryfikacja publicznego ZIP/SHA256SUMS i braku sekretów PASS.
+Istniejące testy obserwatora/overlay/peer: **44 PASS**.
+Pierwsze wywołanie testów z `-I` nie zebrało dwóch modułów z powodu braku
+repozytorium w sys.path; prawidłowe wywołanie pytest z katalogu projektu
+wykonało wszystkie44. Nie zmieniano testów ani produktu.
+
+**Następna dostawa O1:** aktualizacja zależnego PR138 do uzgodnionej bazy,
+oddzielne skonfigurowane validation APK i opt-in testAPK, dokładny commit,
+manifest/versionCode/Room/applicationId/SHA oraz kwalifikacja tych wejść.
+Następnie aktualna gotowość i peer, prywatny eksport rzeczywiście utrwalonej
+koperty i jej hash, plan przed C0, wspólne C0→HTTP200/hold→C1→realny
+force-stop przed45s→nowy proces/retry/already_applied revision1→C2.
+Dotychczasowe offline APK nie stają się skonfigurowane przez ten dokument.
+
+Konfiguracja, epoka i identyfikatory/obrazy ośmiu używanych kontenerów zostały
+porównane przed/po i zachowane. **Live E4/E7-R/recovery/KO32 NOT_RUN**.
+
 21.10.2026. **Zgodność źródłowa kandydata138+139 PASS; runtime PARTIAL,
 próba APK/API NOT_RUN.** O2 odpowiedział na O1-092 w O2-048
 [jedynego dziennika](../KOMUNIKACJA_AGENTOW.md). Konkretne źródło APK,
