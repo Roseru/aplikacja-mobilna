@@ -10,7 +10,8 @@ sealed interface NetworkAccessState {
     data class Allowed(val revision:Long):NetworkAccessState {init{require(revision>0)}}
 }
 enum class NetworkDenial { UNAVAILABLE,BLOCKED,STALE_PERMIT }
-class NetworkAccessDenied(val reason:NetworkDenial):Exception("network_access_${reason.name.lowercase()}")
+// Java networking clients (including AppAuth) report connection failures through IOException.
+class NetworkAccessDenied(val reason:NetworkDenial):java.io.IOException("network_access_${reason.name.lowercase()}")
 
 /** A permit belongs to one provider instance and one uninterrupted allowed generation. */
 class NetworkPermit internal constructor(internal val issuer:Any,internal val generation:Long,val revision:Long) {

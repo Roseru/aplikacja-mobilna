@@ -1,16 +1,21 @@
 package pl.roseru.kalorie
 
 import android.content.Context
+import android.net.Uri
 import androidx.datastore.core.DataStore
 import androidx.datastore.preferences.core.*
 import androidx.test.core.app.ApplicationProvider
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import kotlinx.coroutines.*
 import kotlinx.coroutines.flow.*
+import net.openid.appauth.AuthorizationServiceConfiguration
+import net.openid.appauth.TokenRequest
+import net.openid.appauth.connectivity.ConnectionBuilder
 import org.junit.Assert.*
 import org.junit.Test
 import org.junit.runner.RunWith
 import pl.roseru.kalorie.core.network.*
+import pl.roseru.kalorie.session.AppAuthGateway
 import java.io.ByteArrayInputStream
 import java.io.ByteArrayOutputStream
 import java.io.File
@@ -138,6 +143,19 @@ class NetworkPolicyStorageTest {
             denied{output.close()}
             assertEquals(0,third.outputCloses.get())
             pending.disconnect();old.disconnect()
+            // AppAuth catches IOException on its background thread. A policy race must reach
+            // its callback normally instead of escaping as an unchecked AsyncTask failure.
+            val authGate=CatalogUpdateFixtures.Gate().apply{allow()}
+            val builder=ConnectionBuilder { uri->
+                authGate.block()
+                PolicyConnectionFactory(scope,authGate).open(URL(uri.toString()))
+            }
+            val context=ApplicationProvider.getApplicationContext<Context>()
+            val auth=AppAuthGateway(context,builder,authGate)
+            val configuration=AuthorizationServiceConfiguration(Uri.parse("https://fixture.invalid/auth"),Uri.parse("https://fixture.invalid/token"))
+            val request=TokenRequest.Builder(configuration,"synthetic-public-client").setGrantType("refresh_token")
+                .setRefreshToken("synthetic-never-sent").build()
+            withTimeout(10_000){denied{auth.tokens(request)}}
         }finally{scope.coroutineContext.job.cancelAndJoin()}
     }
 }
