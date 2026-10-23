@@ -193,25 +193,31 @@ class SessionController internal constructor(private val db: CalorieDatabase, pr
     suspend fun observeMotivationContext() {
         try {
             db.invalidationTracker.createFlow("account_bindings", "local_active_owner", "local_owners", "photo_analysis_requests", "sync_push_batches", "outbox", "server_snapshot_access", "server_diary_applications").collect {
-                mutex.withLock {
-                    // Owner selection and context updates use Room transactions too. Publish
-                    // one consistent view, rather than ending observation on an interleaved ABA.
-                    db.withTransaction {
-                        if (mutable.value.binding != null) publish(mutable.value.message)
+                try {
+                    mutex.withLock {
+                        // Owner selection and context updates use Room transactions too. Publish
+                        // one consistent view, rather than ending observation on an interleaved ABA.
+                        db.withTransaction {
+                            if (mutable.value.binding != null) publish(mutable.value.message)
+                        }
                     }
-                }
+                }catch(error:CancellationException){throw error}
+                catch(_:Exception){clearPrivateObservation()}
             }
         } catch (error: CancellationException) { throw error }
-        catch (_: Exception) { mutex.withLock {
-            serverProfile=null;profileFence=null;profileServerContext=null
-            clearPhotoUpload()
-            clearMotivation()
-            clearRanking(); clearNemesis()
-            nemesisMutationOperation = null
-            mutable.value = mutable.value.copy(serverProfile=null, motivation = MotivationState.NotRequested, rankingConsent = RankingConsentState.NotRequested,
-                ranking = RankingState.NotRequested, nemesis = NemesisState.NotRequested,
-                nemesisDecision = null, nemesisMutationBusy = false, nemesisMutation = NemesisMutationState.Idle)
-        } }
+        catch (_: Exception) {clearPrivateObservation()}
+    }
+    /** A failed projection removes private previews without ending a healthy Room subscription. */
+    private suspend fun clearPrivateObservation()=mutex.withLock {
+        serverProfile=null;profileFence=null;profileServerContext=null
+        clearPhotoUpload()
+        clearMotivation()
+        clearRanking();clearNemesis()
+        nemesisMutationOperation=null
+        mutable.value=mutable.value.copy(serverProfile=null,motivation=MotivationState.NotRequested,
+            rankingConsent=RankingConsentState.NotRequested,ranking=RankingState.NotRequested,
+            nemesis=NemesisState.NotRequested,nemesisDecision=null,nemesisMutationBusy=false,
+            nemesisMutation=NemesisMutationState.Idle)
     }
     private fun copyRecord() = JSONObject(record.toString())
     private suspend fun persist(value: JSONObject) {

@@ -923,17 +923,21 @@ class SessionSecurityTest {
         var observer: Job? = null
         try {
             val c = client(db, vault, fixture, api, profiles, motivation = motivation, consents = writes); c.start(); login(c, fixture, "fixture-A"); c.bootstrap()
+            suspend fun awaitView(stage:String,condition:(SessionView)->Boolean) {
+                assertNotNull("Room observer did not publish: $stage",
+                    withTimeoutOrNull(10_000){c.view.first{condition(it)}})
+            }
             c.readProfile(); assertNotNull(c.view.value.serverProfile)
             observer = launch(start = CoroutineStart.UNDISPATCHED) { c.observeMotivationContext() }
             val owner = c.view.value.binding!!.lease.storageScope; val old = db.bootstrapDao().binding(owner)!!
             db.bootstrapDao().update(old.copy(contextRevision = old.contextRevision + 1))
-            withTimeout(10_000) { c.view.first { it.serverProfile == null } }
+            awaitView("profile invalidated after context revision"){it.serverProfile==null}
             c.readRankingConsents(); assertTrue(c.view.value.rankingConsent is RankingConsentState.Ready)
             val current = db.bootstrapDao().binding(owner)!!; db.bootstrapDao().update(current.copy(accountGeneration = current.accountGeneration + 1))
-            withTimeout(10_000) { c.view.first { it.rankingConsent is RankingConsentState.NotRequested } }
+            awaitView("consent invalidated after account generation"){it.rankingConsent is RankingConsentState.NotRequested}
             c.readProfile(); assertNotNull(c.view.value.serverProfile)
             val other = LocalOwnerStore(db).registerIdentity(issuer, "fixture-B"); LocalOwnerStore(db).select(other.id)
-            withTimeout(10_000) { c.view.first { it.binding?.owner?.subject == "fixture-B" } }
+            awaitView("selected owner changed"){it.binding?.owner?.subject=="fixture-B"}
             assertNull(c.view.value.serverProfile); assertEquals(RankingConsentState.NotRequested, c.view.value.rankingConsent); assertTrue(writes.calls.isEmpty())
         } finally { observer?.cancelAndJoin(); vault.clear(); db.close() }
     }

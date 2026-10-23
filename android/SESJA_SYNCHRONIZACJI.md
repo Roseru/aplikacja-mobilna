@@ -163,5 +163,8 @@ nie został spełniony. Nie ponawiano CI. Analiza kodu wskazuje możliwość prz
 właściciela pomiędzy zapytaniami `publish`, zakończoną `StaleOwnerException`
 i wyjściem z obserwacji. To hipoteza przyczyny tej próby, nie udowodniony reproduktor.
 Lokalna dalsza zmiana obejmuje spójny odczyt publikacji w transakcji Room i wyczyszczenie
-profilu także po błędzie obserwatora. Czeka na wspólny odbiór następnego etapu;
+profilu także po błędzie obserwatora. Błąd pojedynczej publikacji nie kończy
+zdrowej subskrypcji Room; kolejna zmiana może odtworzyć aktualny widok.
+Istniejący przypadek wskazuje teraz niespełniony etap bez zmiany limitu10s,
+liczby przypadków ani propagacji anulowania. Czeka na wspólny odbiór etapu;
 wynik sześciu przypadków źródła3ac2312 nie obejmuje tej późniejszej poprawki.
