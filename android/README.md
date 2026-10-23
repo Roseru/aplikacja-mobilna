@@ -10,8 +10,9 @@ Końcowy build/lint PASS (0 błędów, 4 ostrzeżenia), 13/13 celowanych testów
 urządzenia offline PASS oraz 6 JVM zmienionego helpera PASS; wcześniejsze
 35 niezmienionych JVM zachowuje swój wynik. To odbiór celowany, nie pełna
 regresja. [Manifest](ODBIOR_0_8_27.json) odróżnia wcześniejszy błąd asercji UI,
-końcowe poprawki i dokładne SHA APK. Zdalny CI i aktualizacja zwykłego emulatora
-pozostają osobnym odbiorem.
+końcowe poprawki i dokładne SHA APK. Zwykły emulator zaktualizowany0.8.25→0.8.27:
+wszystkie wartości i rowid28starych tabel zachowane, FK czyste. Dziennik otwarty
+do prób ręcznych. Zdalny CI [PR144](https://github.com/Roseru/aplikacja-mobilna/pull/144) pozostaje osobnym odbiorem.
 
 Rodzic [PR142](https://github.com/Roseru/aplikacja-mobilna/pull/142) jest scalony
 jako b434754. Własny CI39767329100 i osobny CI main39772774959: oba 8/8 SUCCESS.

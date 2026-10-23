@@ -17,7 +17,7 @@ Każda osoba aktualizuje własny wiersz. Daty i dokładne źródła są w jej wp
 
 | Rola | Ostatni znany rezultat | Następny krok / zależność | Źródło |
 |---|---|---|---|
-| O1 — Android, Kotlin, Room | Pełny pull0.8.27/Room17: końcowe13native i6JVM PASS, ochrona lokalnych zmian | Własny CI i instalacja zwykłej aplikacji; następnie aktualizacja138 i skonfigurowane APK do E4 według O3-085 | O1-109, codex/android-pobieranie-dziennika, kod90dcb27 |
+| O1 — Android, Kotlin, Room | Pełny pull0.8.27/Room17: końcowe13native i6JVM PASS, ochrona lokalnych zmian | Własny CI i instalacja zwykłej aplikacji; następnie aktualizacja138 i skonfigurowane APK do E4 według O3-085 | O1-109, [PR144](https://github.com/Roseru/aplikacja-mobilna/pull/144), kod90dcb27 |
 | O2 — Python, PostgreSQL, API | PR137 odebrany; zgodność źródłowa kandydata E4 PASS, runtime PARTIAL; dołączony main po PR129 | Końcowy CI PR137 na maina919777, merge koordynatora po PASS i osobny odbiór CI main; O3 konfiguracja, O1 skonfigurowane APK | O2-049, [PR137](https://github.com/Roseru/aplikacja-mobilna/pull/137); odpowiedź O2-048 |
 | O3 — DevOps, CI/CD, serwer | PR137 scalony; aktualne image/schema24/nowa projekcja SQL i HTTPS potwierdzone, publiczne wejścia APK gotowe; dzisiejszy offsite restore PASS | O1 aktualizuje PR138 i dostarcza skonfigurowane APK/manifest oraz peer/gotowość; potem nowe okno i C0/C1/C2. Live E4 NOT_RUN | O3-085, [wejścia serwera](integracja/PRZYGOTOWANIE_REPLAY_E4_O3.md) |
 
@@ -6166,3 +6166,12 @@ Archiwalne wiersze stanu przed integracją PR141 z main22.10; aktualny stan znaj
   O3 aktualne okno/peer dopiero po nowym pakiecie APK. Bez live API/Gemini,
   deploy, zmiany epoki/kont/baz, API5558 i restartu PC w tym odbiorze.
 - Kontrole dokumentacji: E0 PASS11schematów/98valid/35invalid/18scenariuszy/815linków; diff-check PASS. Zachowano cały wcześniejszy dziennik i wpis O3-085.
+- Publikacja: [PR144](https://github.com/Roseru/aplikacja-mobilna/pull/144),
+  wypchnięty6ed2e04; własny CI39912968825 rozpoczęty, wynik jeszcze nieznany.
+  Po nim zwykły APK zaktualizowany36→38/Room15→17: wszystkie wartości
+  i WSZYSTKIE rowid28wcześniejszych tabel identyczne, FK czyste, nowe metadane
+  gościa puste. Prywatne kopie poza Git/OneDrive, ACL właściciela zweryfikowane.
+  Pierwszy cold start przekroczył czas oczekiwania i SystemUI pokazał Wait;
+  po wybraniu Wait potwierdzono czysty widoczny dziennik, bez błędu aplikacji.
+  Domyślny APK0.8.27 otwarty do prób ręcznych, artefakt z manifestem/SHA lokalnie.
+  Emulator testowy5556 wyłączony po13PASS bez wipe; API5558 nietknięty.

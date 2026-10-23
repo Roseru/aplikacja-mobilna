@@ -43,7 +43,20 @@
     ],
     "full_app_regression": false
   },
-  "regular_app_updated": false,
+  "regular_app_updated": true,
   "remote_ci": "separate pending qualification",
-  "live_api_executed": false
+  "live_api_executed": false,
+  "regular_update": {
+    "from_version": "0.8.25",
+    "from_room": 15,
+    "to_version": "0.8.27",
+    "to_room": 17,
+    "old_tables": 28,
+    "all_old_values_and_all_rowids_preserved": true,
+    "foreign_keys_clean": true,
+    "new_metadata_tables_empty_for_guest": true,
+    "private_backup_outside_git_onedrive": true,
+    "visible_diary_confirmed": true,
+    "emulator_system_ui_delay": "SystemUI wait dialog during cold start; selected Wait, clean final screen observed. No app crash recorded."
+  }
 }
