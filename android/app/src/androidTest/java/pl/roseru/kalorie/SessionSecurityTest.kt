@@ -41,6 +41,7 @@ class SessionSecurityTest {
         var request: AuthorizationRequest? = null
         var calls = 0
         var hold: CompletableDeferred<Unit>? = null
+        var refreshFailure: Exception? = null
         var codeHold: CompletableDeferred<Unit>? = null
         val codeStarted = CompletableDeferred<Unit>()
         val refreshStarted = CompletableDeferred<Unit>()
@@ -64,6 +65,7 @@ class SessionSecurityTest {
             if (request.grantType == GrantTypeValues.REFRESH_TOKEN) {
                 refreshStarted.complete(Unit)
                 hold?.await()
+                refreshFailure?.let { throw it }
             }
             val claims = JSONObject().put("iss", issuer).put("sub", captured).put("aud", SessionClaims.CLIENT_ID)
                 .put("iat", time / 1000).put("exp", time / 1000 + 300)
@@ -3004,5 +3006,34 @@ class SessionSecurityTest {
             assertTrue(saved.attempted);assertNull(saved.responseJson);assertEquals(frozen.requestJson,saved.requestJson)
             assertEquals(0,h.revision());assertFalse(h.c.view.value.mealPushBusy);assertEquals(1,h.copies.calls.size)
         } finally {release.complete(Unit);h.close()}
+    }
+
+    @Test fun ownedPushRevokedRefreshRequestsLoginWithoutSendingOrAcknowledging() = runBlocking<Unit> {
+        val h=PushHarness()
+        try {
+            h.prepare();val known=h.db.bootstrapDao().binding(h.lease.storageScope)!!
+            val before=h.db.dao().canonicalMealOperations(h.lease.storageScope,h.meal)
+            h.fixture.time+=280_000
+            h.fixture.refreshFailure=AuthorizationException.TokenRequestErrors.INVALID_GRANT
+            assertEquals(SessionController.SyncCommandOutcome.LoginRequired,h.c.executePushStep(h.lease,known))
+            assertTrue(h.calls.isEmpty());assertEquals(0,h.revision())
+            assertEquals(before,h.db.dao().canonicalMealOperations(h.lease.storageScope,h.meal))
+            assertFalse(h.c.view.value.busy);assertFalse(h.c.view.value.mealPushBusy)
+        } finally {h.close()}
+    }
+
+    @Test fun ownedPushRefreshNetworkFailureRemainsRetryableAndPreservesQueue() = runBlocking<Unit> {
+        val h=PushHarness()
+        try {
+            h.prepare();val known=h.db.bootstrapDao().binding(h.lease.storageScope)!!
+            val before=h.db.dao().canonicalMealOperations(h.lease.storageScope,h.meal)
+            h.fixture.time+=280_000;h.fixture.refreshFailure=java.io.IOException("Synthetic unavailable identity endpoint")
+            assertEquals(SessionController.SyncCommandOutcome.TransientFailure,h.c.executePushStep(h.lease,known))
+            assertTrue(h.calls.isEmpty());assertEquals(0,h.revision())
+            assertEquals(before,h.db.dao().canonicalMealOperations(h.lease.storageScope,h.meal))
+            h.fixture.refreshFailure=null
+            assertEquals(SessionController.SyncCommandOutcome.Pushed(1,0,false),h.c.executePushStep(h.lease,known))
+            assertEquals(1,h.calls.size);assertEquals(1,h.revision());assertEquals(1,h.copies.calls.size)
+        } finally {h.close()}
     }
 }

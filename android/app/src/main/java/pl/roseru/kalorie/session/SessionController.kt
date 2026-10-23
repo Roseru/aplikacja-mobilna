@@ -82,6 +82,7 @@ class SessionController internal constructor(private val db: CalorieDatabase, pr
         override fun toString() = "SyncContextFence(redacted)"
     }
     private class SyncContextChangedException : IllegalStateException("Captured synchronization context changed")
+    private class SyncLoginRequiredException : IllegalStateException("Synchronization requires interactive login")
     /** Internal outcomes; the O2 boundary maps them without inspecting any UI message. */
     internal sealed interface SyncCommandOutcome {
         data class Bootstrapped(val context: AccountBindingEntity) : SyncCommandOutcome {
@@ -561,6 +562,7 @@ class SessionController internal constructor(private val db: CalorieDatabase, pr
                 require(session.getString("issuer") == issuer)
                 val state = AuthState.jsonDeserialize(session.getString("authState"))
                 validateDiscovery(checkNotNull(state.authorizationServiceConfiguration), issuer)
+                if (contextFence != null && state.refreshToken.isNullOrBlank()) throw SyncLoginRequiredException()
                 operation = id
                 registered = true
                 serverProfile = null
@@ -601,7 +603,7 @@ class SessionController internal constructor(private val db: CalorieDatabase, pr
         } catch (error: CancellationException) {
             withContext(NonCancellable) { fail(id, "Odnowienie przerwane. Dziennik działa offline.") }; throw error
         }
-        catch (_: Exception) {
+        catch (error: Exception) {
             mutex.withLock {
                 if (registered && operation != id) return@withLock
                 if (operation != null && operation != id) return@withLock
@@ -620,6 +622,11 @@ class SessionController internal constructor(private val db: CalorieDatabase, pr
                 publish("Sesji nie udało się odnowić. Dziennik działa offline; spróbuj zalogować się ponownie.")
             }
             contextFence?.let { mutex.withLock { requireSyncContext(it) } }
+            // A revoked refresh token needs a new login, not the worker's connectivity backoff.
+            // Keep the provider's structured error out of UI/logs and preserve the diary/vault.
+            if (contextFence != null && (error is SyncLoginRequiredException ||
+                (error is AuthorizationException && error.type == AuthorizationException.TYPE_OAUTH_TOKEN_ERROR &&
+                    error.error == "invalid_grant"))) throw SyncLoginRequiredException()
             return false
         }
     }
@@ -780,6 +787,8 @@ class SessionController internal constructor(private val db: CalorieDatabase, pr
             finishBootstrap(id, fence); return SyncCommandOutcome.StaleContext
         } catch (_: SyncContextChangedException) {
             finishBootstrap(id, fence); return SyncCommandOutcome.StaleContext
+        } catch (_: SyncLoginRequiredException) {
+            finishBootstrap(id, fence); return SyncCommandOutcome.LoginRequired
         } catch (_: Exception) {
             finishBootstrap(id, fence); return SyncCommandOutcome.TransientFailure
         }
@@ -2187,9 +2196,13 @@ class SessionController internal constructor(private val db: CalorieDatabase, pr
         finally {conflictBusy=false;publish()}
     }
 
-    /** Explicit canonical Meal push. Legacy rows remain local and are reported separately. */
+    /** Canonical private-data push. The historical method name remains compatible with callers. */
     suspend fun synchronizeMeals(expectedLease:OwnerLease) {
         pushFor(expectedLease, null, followWithPull = true)
+    }
+    /** The opt-in ACK driver observes the same write separately from the server projection. */
+    internal suspend fun synchronizeMealsWithoutPull(expectedLease:OwnerLease) {
+        pushFor(expectedLease, null, followWithPull = false)
     }
     /** The worker orchestrator owns its final PULL; manual sync keeps its existing follow-up. */
     private suspend fun pushFor(expectedLease:OwnerLease,expectedContext:AccountBindingEntity?,
@@ -2302,6 +2315,7 @@ class SessionController internal constructor(private val db: CalorieDatabase, pr
         }catch(error:CancellationException){withContext(NonCancellable){finishMealPush(id,expectedLease,server)};throw error}
         catch(_:StaleOwnerException){finishMealPush(id,expectedLease,server);return SyncCommandOutcome.StaleContext}
         catch(_:SyncContextChangedException){finishMealPush(id,expectedLease,server);return SyncCommandOutcome.StaleContext}
+        catch(_:SyncLoginRequiredException){finishMealPush(id,expectedLease,server);return SyncCommandOutcome.LoginRequired}
         catch(_:Exception){
             val current=mutex.withLock {
                 try {requireSyncContext(fence);true}
@@ -2321,7 +2335,7 @@ class SessionController internal constructor(private val db: CalorieDatabase, pr
         check(checkNotNull(sessionFor(binding())).optLong("apiRetryAt")<=now())
     }
     private fun mealPushSummary(acknowledged:Int,refused:Int)=if(acknowledged+refused==0)
-        "Brak gotowych wpisów do wysłania. Starsze wpisy i pozostałe typy danych pozostają w kolejce."
+        "Brak gotowych wpisów do wysłania. Starsze wpisy mogą wymagać przypisania lub uzgodnienia."
         else "Serwer potwierdził: $acknowledged. Wymagają uzgodnienia: $refused. Kopia serwera jest odświeżana osobno."
     private suspend fun finishMealPush(id:String,lease:OwnerLease,expectedContext:AccountBindingEntity,message:String=
         "Odpowiedź nie została potwierdzona. Ponów tę samą zapisaną partię; dziennik zachowany.")=mutex.withLock {
@@ -2488,6 +2502,8 @@ class SessionController internal constructor(private val db: CalorieDatabase, pr
             finishSnapshot(id, lease, expectedContext = fence.server);return SyncCommandOutcome.StaleContext
         } catch (_: SyncContextChangedException) {
             finishSnapshot(id, lease, expectedContext = fence.server);return SyncCommandOutcome.StaleContext
+        } catch (_: SyncLoginRequiredException) {
+            finishSnapshot(id, lease, expectedContext = fence.server);return SyncCommandOutcome.LoginRequired
         } catch (_: Exception) {
             finishSnapshot(id, lease, expectedContext = fence.server);return SyncCommandOutcome.TransientFailure
         }
