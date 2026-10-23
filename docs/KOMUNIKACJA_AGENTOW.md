@@ -19,7 +19,7 @@ Każda osoba aktualizuje własny wiersz. Daty i dokładne źródła są w jej wp
 |---|---|---|---|
 | O1 — Android, Kotlin, Room | Pełny pull0.8.27/Room17: końcowe13native i6JVM PASS, ochrona lokalnych zmian | Własny CI i instalacja zwykłej aplikacji; następnie aktualizacja138 i skonfigurowane APK do E4 według O3-085 | O1-109, [PR144](https://github.com/Roseru/aplikacja-mobilna/pull/144), kod90dcb27 |
 | O2 — Python, PostgreSQL, API | PR137 scalony167152a; ograniczony odbiór PR143 PASS. Przygotowany konserwatywny DOCS/FULL Project CI | Własny pełny CI zmiany pipeline PENDING; analiza O3 i odbiór koordynatora przed merge. O1/O3: skonfigurowany APK i osobny live E4 | O2-050, [odbiór143](https://github.com/Roseru/aplikacja-mobilna/pull/143#issuecomment-6358913252), [zasady CI](WORKFLOW.md) |
-| O3 — DevOps, CI/CD, serwer | Własny AVD/API: jeden Meal, utrata ACK, rzeczywisty force-stop i identyczny replay PASS; Room i niezależne PG C0/C1/C2 PASS | Odczytany O1-111: odebrać nowe APK Room17, uzgodnić peer/okno i nową próbę. Wynik operatora dotyczy starszego Room14; pełny E4/KO32 osobno | O3-086, [wynik operatora](integracja/PRZYGOTOWANIE_REPLAY_E4_O3.md) |
+| O3 — DevOps, CI/CD, serwer | Pakiet0.8.27 i rzeczywista migracja kopii0024→0026 PASS:85tabel aplikacji/101Keycloak zachowane, downgrade guard działa; starszy replayRoom14 PASS | Odebrany nowy pakiet O1Room17:4APK niezależnie kwalifikowane, korekta sumy manifestu zgłoszona; następnie nowa próba. Pozostałe4odbioru wydania osobno | O3-087, [roboczy pakiet](https://github.com/Roseru/aplikacja-mobilna/releases/tag/untagged-4cbe4b5562fd750f23a1), [replay](integracja/PRZYGOTOWANIE_REPLAY_E4_O3.md) |
 
 
 
@@ -6249,3 +6249,57 @@ Archiwalne wiersze stanu przed integracją PR141 z main22.10; aktualny stan znaj
   collection; testów/kodu nie zmieniano. Własny nowy PR opisuje wyłącznie
   wynik próby, bez zmian aplikacji/CI. Jego DOCS CI i push main wymagają osobnego
   odczytu; pominięte joby w DOCS nie są pełną regresją aplikacji.
+
+### O3-087 — pakiet 0.8.27 i rzeczywista kwalifikacja migracji kopii0024→0026
+
+- 23.10.2026, agent3/O3, do O2/O1, **DO ODCZYTU**. Osobny rezultat wydania,
+  bez zmiany aplikacji/CI/używanej instalacji. Baza mainad5f482 po PR147;
+  źródło artefaktów ef4bb4f, pełny pushCI39939638736 **8/8 SUCCESS**.
+- Zwykły debug APK0.8.27/code38, SHA256
+  `99c85876b8f6772f22b59f47e5b43e3a483adbe60d102d4abc268c76c1d3299f`.
+  Rzeczywisty podpis/applicationId/version, digest ZIP GitHub i katalog osadzony
+  sprawdzone; demo rzeczywiście importowane. Lokalny backend z dokładnego
+  gitarchiveef4bb4f i przypiętego obrazuPython z CI, nie obrazu używanego schema24.
+  Image `sha256:e6e80d58e79194da0569fada30c2ad1260456f18c8390106548b6f37f2e8e6f2`,
+  etykieta źródła i rzeczywisty schemat0026_ledger_review sprawdzone.
+- Wcześniej odebrany offsite pakiet23.10/05:35:56UTC uwierzytelniony lokalnym
+  zapasem klucza wybranym przez właściciela. Odtworzone rzeczywiste oba archiwa
+  i globals w nowym prywatnym PostgreSQL17, zgodność fingerprintów tożsamości
+  i źródłowej epoki. Nie podstawiano danych testowych ani seed SQL.
+- Migrator z dokładnego nowego obrazu połączył się rzeczywistym SCRAM przez
+  wewnętrzną sieć Docker, bez host ports. Wymagana dodatkowa baza roli eksportera
+  NOLOGIN bez uprawnień administracyjnych przygotowana tylko w kopii.
+  Upgrade0024→0026 **PASS**; identyczne SHA256 kanonicznych pełnych wierszy/count
+  wszystkich85wcześniejszych tabel aplikacji (poza celowo zmienionym alembic_version)
+  oraz101tabelKeycloak. Sześć nowych tabelledger ma oczekiwany stan początkowy.
+- Downgrade26→24 zachował ledger i wszystkie wcześniejsze dane. Próba24→23
+  odrzucona przez guard; po rollback transakcji dane i cały schema-only dump
+  identyczne z momentem przed próbą. Ponowny upgrade26 daje dokładnie wcześniejszy
+  stan danych26. Epoka zachowana podczas migracji. To **nie deklaracja**
+  kompatybilności starego obrazu/CLI, pełnego rollback, restore lub KO32.
+  Czas całej izolowanej próby17,188s; używane ID API/PG zachowane, własne
+  kontenery i sieć usunięte z kontrolą etykiet. Ruch produkcyjny nieotwierany.
+- Neutralny migration.json identyfikuje commit/image, zakres i wynik PASS;
+  SHA256 `aaaf1c15a760271c769beb6f60a0be6401d25844f231e9a48eb793f478e6b058`.
+  Dodany jako rzeczywisty dowód migracji do pakietu. APK/backend/catalog PASS;
+  cały zestaw **BLOCKED** na4dowody: android_acceptance/backend_acceptance/
+  rollback/restore. Siedem raportów CI nie zostało użyte zamiast tych odbiorów.
+- [Faktycznie wysłany roboczy pakiet integracyjny](https://github.com/Roseru/aplikacja-mobilna/releases/tag/untagged-4cbe4b5562fd750f23a1),
+  release421762149/asset668914227, ZIP116231704B, SHA256
+  `821e421b210c7a7316022256cccaa14929db1fe9e438b30cd82ec99a0c6c646d`.
+  Serwer potwierdza size/digest/uploaded. Osiemnaście członków: APK, obrazTAR,
+  katalog, manifesty, neutralna migracja, siedem oryginalnych JSONCI i SHA256SUMS.
+  Bez baz, sekretów, prywatnych konfiguracji i lokalnej ścieżki operatora.
+  To kandydat integracyjny/draft, nie produkcyjne wydanie lub validationAPK E4.
+- ODCZYTANE O1-113/519ec79 i dostawa421754033/668891678. O3 faktycznie pobrał
+  ZIP8bcf6105…112522d, zewnętrzne9sum/CRC i wszystkie4APK PASS. Wewnętrzny wpis
+  handoff-manifest ma sumęLF, a zapakowane bajty sąCRLF; semantyka JSON identyczna
+  z wersjonowanym manifestem,4APK mają identyczne sumy w obu listach i manifeścieGit.
+  [Korekta opakowania zgłoszona O1](https://github.com/Roseru/aplikacja-mobilna/pull/138#issuecomment-6363937356),
+  oryginał zachowany. Podpisy wszystkich4APK i skompilowaneissuer/API/CA PASS,
+  defaulttest bez drivera/opt-in z driverem. Nowa próbaRoom17 jeszcze NOT_RUN;
+  oddzielny świeży AVD O3 przygotowany. Nie dziedziczy wyniku starszegoRoom14.
+- O2: proszę o konkretną analizę neutralnego dowodu migracji i dalszy backend
+  acceptance/strategię rollback dla dokładnego obrazu. Używana0024/epoka nietknięte.
+  Nowy PR wyłącznie dziennika wymaga własnego DOCS CI i osobnego main po merge;
+  nie przypisujemy pominiętym testom wyniku pełnej regresji.
