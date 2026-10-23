@@ -17,7 +17,7 @@ import pl.roseru.kalorie.core.decimal
 import pl.roseru.kalorie.data.GoalEntity
 import pl.roseru.kalorie.data.ThemeMode
 
-@Composable fun SettingsScreen(model: DiaryViewModel) {
+@Composable fun SettingsScreen(model: DiaryViewModel,catalogModel:pl.roseru.kalorie.catalogupdate.CatalogUpdateViewModel?=null) {
     val theme by model.theme.collectAsStateWithLifecycle()
     val goal by model.todayGoal.collectAsStateWithLifecycle()
     val busy by model.busy.collectAsStateWithLifecycle()
@@ -32,6 +32,10 @@ import pl.roseru.kalorie.data.ThemeMode
         Text("Nowe ustawienia obowiązują od dzisiaj. Cele wcześniejszych dni pozostają zapisane.", color = MaterialTheme.colorScheme.onSurfaceVariant)
         goal?.let { current -> GoalEditor(current, busy, onSave = model::setGoal) }
         HorizontalDivider()
+        if(catalogModel!=null) {
+            CatalogUpdatePanel(catalogModel)
+            HorizontalDivider()
+        }
         SectionTitle("Dane na urządzeniu")
         Text("Korzystasz bez konta. Posiłki i ustawienia są zapisywane lokalnie. Odinstalowanie aplikacji usuwa tę kopię danych.", color = MaterialTheme.colorScheme.onSurfaceVariant)
         Text("Baza demonstracyjna v1. Wartości produktów i początkowy cel służą do sprawdzenia aplikacji. Ustaw własny cel i zweryfikuj dane przed użytkowaniem.", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
