@@ -18,18 +18,18 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import pl.roseru.kalorie.importing.*
 
 /** Decisions use normal fields. Source identifiers and serialized envelopes remain internal. */
-@Composable fun ImportScreen(model:ImportViewModel,back:()->Unit,sendOrdinary:()->Unit) {
+@Composable fun ImportScreen(model:ImportViewModel,back:()->Unit,sendOrdinary:()->Unit,ordinaryConfigured:Boolean=true) {
     val state by model.state.collectAsStateWithLifecycle()
     ImportContent(state,back,model::refresh,model::previewGuest,model::previewOwn,model::selectPlan,model::approve,
         model::resume,model::downloadProof,model::sendApproved,model::finish,model::more,model::keep,model::separateCopy,
-        model::acceptServer,model::replay,model::recreate,model::resolveMapped,model::correct,model::newGoal,sendOrdinary)
+        model::acceptServer,model::replay,model::recreate,model::resolveMapped,model::correct,model::newGoal,sendOrdinary,ordinaryConfigured)
 }
 
 @Composable internal fun ImportContent(state:ImportUiState,back:()->Unit,refresh:()->Unit,guest:()->Unit,own:()->Unit,
     select:(String)->Unit,approve:(Boolean)->Unit,resume:()->Unit,proof:()->Unit,push:()->Unit,finish:()->Unit,more:()->Unit,
     keep:(ImportDecisionRow)->Unit,copy:(ImportDecisionRow)->Unit,server:(ImportDecisionRow)->Unit,replay:(ImportDecisionRow)->Unit,
     recreate:(ImportDecisionRow)->Unit,mapped:(ImportDecisionRow)->Unit,
-    correct:(ImportDecisionRow,Map<String,String>,Boolean)->Unit,newGoal:(ImportDecisionRow,Map<String,String>)->Unit,sendOrdinary:()->Unit) {
+    correct:(ImportDecisionRow,Map<String,String>,Boolean)->Unit,newGoal:(ImportDecisionRow,Map<String,String>)->Unit,sendOrdinary:()->Unit,ordinaryConfigured:Boolean=true) {
     Column(Modifier.fillMaxSize().imePadding().verticalScroll(rememberScrollState()).padding(20.dp),verticalArrangement=Arrangement.spacedBy(12.dp)) {
         TextButton(onClick=back){Text("Wróć do konta")}
         Text("Import i uzgadnianie",style=MaterialTheme.typography.headlineLarge)
@@ -74,8 +74,9 @@ import pl.roseru.kalorie.importing.*
                 OutlinedButton(onClick=finish,enabled=!state.busy && state.rows.isEmpty() && plan.pending==0 && plan.queued==0 && plan.waiting==0 && state.provedGroups==state.proofGroups){Text("Sprawdź i zakończ uzgodnienie")}
             } else if(plan.state!="complete") {
                 Button(onClick=resume,enabled=!state.busy && (plan.pending>0 || plan.waiting>0)){Text("Przetwórz kolejną porcję")}
-                OutlinedButton(onClick=sendOrdinary,enabled=!state.busy && plan.queued>0){Text("Wyślij kolejkę konta")}
+                OutlinedButton(onClick=sendOrdinary,enabled=!state.busy && plan.queued>0 && ordinaryConfigured){Text("Wyślij kolejkę konta")}
             }
+            if(plan.queued>0 && !ordinaryConfigured)Text("Synchronizacja serwera nie jest skonfigurowana. Kolejka pozostaje zapisana.",Modifier.testTag("import-not-configured"))
             if(plan.state=="complete")Text("Plan zakończony. Historia decyzji i oryginały zostały zachowane.",Modifier.testTag("import-complete"))
             if(state.approved)state.rows.take(state.visible).forEach {row->
                 key(row.source.planId,row.source.entityType,row.source.sourceId,row.source.metadataJson,row.code) {

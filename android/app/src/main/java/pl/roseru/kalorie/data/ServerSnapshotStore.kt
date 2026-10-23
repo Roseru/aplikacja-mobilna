@@ -35,6 +35,7 @@ data class ServerSnapshotIdentity(val runId: String, val field: String, val iden
     @Query("SELECT * FROM server_snapshot_runs WHERE id = :id") suspend fun run(id: String): ServerSnapshotRun?
     @Query("SELECT * FROM server_snapshot_runs WHERE ownerScope = :owner ORDER BY rowid DESC") suspend fun runs(owner: String): List<ServerSnapshotRun>
     @Query("SELECT * FROM server_snapshot_pages WHERE runId = :run ORDER BY pageIndex") suspend fun pages(run: String): List<ServerSnapshotPage>
+    @Query("SELECT COUNT(*) FROM server_snapshot_pages WHERE runId = :run") suspend fun pageCount(run:String):Int
     @Query("SELECT * FROM server_snapshot_pages WHERE runId = :run AND pageIndex = :index") suspend fun page(run: String, index: Int): ServerSnapshotPage?
     @Query("SELECT * FROM server_snapshot_access WHERE ownerScope = :owner") suspend fun access(owner: String): ServerSnapshotAccess?
     @Insert suspend fun insert(run: ServerSnapshotRun)
