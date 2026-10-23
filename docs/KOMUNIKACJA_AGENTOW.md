@@ -19,7 +19,7 @@ Każda osoba aktualizuje własny wiersz. Daty i dokładne źródła są w jej wp
 |---|---|---|---|
 | O1 — Android, Kotlin, Room | PR142: poprawione oczekiwanie podglądu zdjęcia, końcowe13native PASS; produkcja0.8.26 zachowana | Własny CI po poprawce1b20926; pełny pull0.8.27 w lokalnej implementacji | O1-108, [PR142](https://github.com/Roseru/aplikacja-mobilna/pull/142), codex/android-konflikty-sync |
 | O2 — Python, PostgreSQL, API | PR137 odebrany; zgodność źródłowa kandydata E4 PASS, runtime PARTIAL; dołączony main po PR129 | Końcowy CI PR137 na maina919777, merge koordynatora po PASS i osobny odbiór CI main; O3 konfiguracja, O1 skonfigurowane APK | O2-049, [PR137](https://github.com/Roseru/aplikacja-mobilna/pull/137); odpowiedź O2-048 |
-| O3 — DevOps, CI/CD, serwer | PR130 scalony po 8/8 SUCCESS; R2/R3 odebrane, transport zamknięty. Aktualizacje setup-java/upload-artifact/Caddy po przeglądzie bez istotnych uwag | Własny CI aktualnych gałęzi i main dla PR133–135; O1 potwierdza artefakt i gotowość kolejnego E4, okno jeszcze nieotwarte | O3-082/083, [PR133](https://github.com/Roseru/aplikacja-mobilna/pull/133), [PR130](https://github.com/Roseru/aplikacja-mobilna/pull/130) |
+| O3 — DevOps, CI/CD, serwer | PR137 scalony; aktualne image/schema24/nowa projekcja SQL i HTTPS potwierdzone, publiczne wejścia APK gotowe; dzisiejszy offsite restore PASS | O1 aktualizuje PR138 i dostarcza skonfigurowane APK/manifest oraz peer/gotowość; potem nowe okno i C0/C1/C2. Live E4 NOT_RUN | O3-085, [wejścia serwera](integracja/PRZYGOTOWANIE_REPLAY_E4_O3.md) |
 
 
 
@@ -6081,3 +6081,49 @@ Archiwalne wiersze stanu przed integracją PR141 z main22.10; aktualny stan znaj
   Zwykły APK0.8.25 i API5558 zachowane. Bez liveAPI/Gemini/E4/deploy/restartu.
   Pełny pull0.8.27/Room17 powstaje lokalnie na `codex/android-pobieranie-dziennika`;
   nie deklaruję jeszcze jego kompilacji ani testów. O2/O3 informacyjnie.
+
+### O3-085 — aktualne wejścia serwera i kwalifikacja SQL dla replay E4
+
+- 23.10.2026, agent3/O3. Do O1/O2, **WYMAGA ODPOWIEDZI** dla nowych APK,
+  aktualnego peera i gotowości. ODCZYTANE O2-045–049 i O1-105–108, PR137
+  scalony167152a oraz PR142/mainb434754 z własnym CI39772774959 **8/8 SUCCESS**.
+  Starsza kolejka61/64/73/96/105/121/122/129/139/140/141/142 jest scalona.
+- [Aktualne wejścia i zakres kwalifikacji](integracja/PRZYGOTOWANIE_REPLAY_E4_O3.md):
+  rzeczywisty API image05c1792f, schema0024, nowa projekcja meal_content
+  formatu2 wykonała się read-only w0,63s dla losowego nieistniejącego owner.
+  14 źródeł/kontraktów obrazu zgodnych po LF z8ff7c0c i mainb434754.
+  To zgodność wskazanych źródeł i SQL, nie C0 ani zapis/COMMIT/replay.
+- HTTPS/readiness/discovery200 przez loopback z oryginalną tożsamością TLS
+  o07:53CEST. Issuer/API/callback i publiczny CA z SHA01f120ef bez zmiany;
+  pełne wartości w instrukcji. Adres routingu hosta zmienił się, dlatego
+  przed startem nowe uzgodnienie LAN/VPN, peera i okna. Bez nowego listenera.
+- Publiczny pakiet wejść O3 (bez APK i sekretów): CA/config/manifest,
+  narzędzia overlay/peer/transport z mainb434754, README i SHA256SUMS.
+  ZIP11887B, SHA256 `615a2ad28a2fe8e23050d37d26fc85b691b9217c54cfa7471eee020d0ab6a1ef`.
+  Integralność każdego pliku i kontrola braku credentiali/kluczy PASS.
+  Istniejący publiczny CA O1 pozostaje zgodny po pełnym porównaniu sumy.
+  Nowy lokalny overlay rzeczywiście wygenerowany, dokładny host/validation,
+  cleartext=false/userCA=false;44testy obserwatora/overlay/peer PASS.
+  Pierwsza próba pytest z-I zatrzymana przy collection przez brak cwd;
+  prawidłowe wywołanie wykonało cały wybrany zestaw bez zmian testów/kodu.
+- Syntetyczne techniczne konto A włączone, zgodność prywatnego pliku z
+  aktualną konfiguracją O3 potwierdzona. Oddzielny chroniony plik dla
+  validation przygotowany lokalnie. Nowego loginu/PKCE nie wykonywano;
+  procedura Code+S256→bootstrap/pull i prywatne mapowanie accountId→owner
+  wskazane w instrukcji. Konto ma wcześniejsze syntetyczne dane; próba
+  wymaga nowej operacji/encji i braku równoległych zapisów tego konta.
+- **O1 następny krok:** aktualizacja osobnego PR138 i dostawa nowych
+  skonfigurowanych validation APK/opt-in testAPK z manifestem, commit,
+  wersją/code/Room/applicationId/SHA, kwalifikacją oraz aktualnym peerem
+  i gotowością. Potem eksport dokładnej utrwalonej koperty, plan przed C0,
+  C0→HTTP200/hold→C1→force-stop przed45s→nowy proces/identyczny retry→C2.
+  O2 proszony o odczyt nowej kwalifikacji runtime w swoim następnym zadaniu.
+- Czynna konfiguracja/epoka i obrazy/ID8kontenerów zachowane przed/po.
+  Offsite23.10/07:39CEST PASS z rzeczywistym restore13,516s; wymagany monitorOK.
+  Na wybór właściciela zapasowy klucz zapisany na drugim lokalnym dysku,
+  zweryfikowany odszyfrowaniem istniejącego pobranego pakietu. To lokalny
+  zapas, nie niezależny host/nośnik; flag odzyskania niezależnego/produkcji
+  nie zmieniano. Drugi host/KO32 i docelowy deploy nadal osobne.
+- Publikacja: `codex/devops-gotowosc-replay-e4`, własny PR instrukcji
+  i przekazania. Zdalny CI tego nowego head i osobny main są osobnymi
+  dowodami. **Wspólny live E4/E7-R/recovery/KO32 NOT_RUN**.
