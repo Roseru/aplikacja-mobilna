@@ -19,7 +19,7 @@ Każda osoba aktualizuje własny wiersz. Daty i dokładne źródła są w jej wp
 |---|---|---|---|
 | O1 — Android, Kotlin, Room | Pełny pull0.8.27/Room17: końcowe13native i6JVM PASS, ochrona lokalnych zmian | Własny CI i instalacja zwykłej aplikacji; następnie aktualizacja138 i skonfigurowane APK do E4 według O3-085 | O1-109, [PR144](https://github.com/Roseru/aplikacja-mobilna/pull/144), kod90dcb27 |
 | O2 — Python, PostgreSQL, API; Android A/B/C | O2-A: sześć domen trwałego push/ACK, Room18, 357/372JVM i73celowane native PASS; niezależny review PASS | Własny FULL CI i odbiór koordynatora A; lokalne B dozwolone, publikacja B po decyzji o integracji A. Sesja/E4 nadal O1 | O2-051, [moduł A](../android/DOMENY_SYNC.md), kod731731ed |
-| O3 — DevOps, CI/CD, serwer | Lokalna skrzynka SMTP i reset hasła z PKCE PASS; nowe konto demo, świeży AVD/TLS oraz nowa kopia0024 z realnym restore PASS 11,191 s | Bieżący cel właściciela: demo lokalne. Końcowy APK/integracja sesji B i odbiór aplikacji pozostają do wykonania; używane API/harmonogram nadal0024 | O3-093, [uruchomienie i wykonane próby](../infra/integration/LOKALNE_DEMO.md), [aktualne przekazanie A1/A2](https://github.com/Roseru/aplikacja-mobilna/pull/146#issuecomment-6370514269) |
+| O3 — DevOps, CI/CD, serwer | Podstawowe demo APK0.8.28: Chrome/PKCE, zapis offline/restart i nowy push z PG/ACK PASS; katalog demo faktycznie zainstalowany; kopia po imporcie pobrana z Dropbox i odtworzona PASS11,157s | Pozostały końcowe B/C, starsze wpisy i nowy APK do E4 od A1/A2. Używany API/schema0024; pełny CI PR154 oraz osobny main po8/8PASS | O3-094, [PR154](https://github.com/Roseru/aplikacja-mobilna/pull/154), [najnowsza integracja B](https://github.com/Roseru/aplikacja-mobilna/pull/146#issuecomment-6371896468) |
 
 
 
@@ -6679,3 +6679,65 @@ Archiwalne wiersze stanu przed integracją PR141 z main22.10; aktualny stan znaj
   ani delegowanych16przypadków. Nie ma nowego kwalifikowanego APK E4.
 - Przed publikacją lokalny Compose/contracts/diff-check; YAML wymaga FULLCI,
   a nie DOCS. Własny PR i niezależny pushmain odbieramy oddzielnie.
+
+### O3-094 — Praktyczna próba lokalnego APK i uzupełnienie katalogu serwera
+
+- Data / autor: 2026-10-23, **agent 3 / O3**.
+- Odbiorcy: O1, O2, właściciel. Status: **DO ODCZYTU**.
+- Źródło: `codex/devops-odbior-demo-lokalnego`; kod APK `3e58b0a`, drzewo
+  identyczne ze scalonym `48bc421` / [PR154](https://github.com/Roseru/aplikacja-mobilna/pull/154).
+  Zewnętrzny overlay TLS O3, bez zmian źródeł Androida i bez opt-in drivera E4.
+- APK **0.8.28.validation/code1039/Room18**, zbudowany offline w2m51s,
+  podpis debug sprawdzony. SHA256
+  `df5d33429fe099586647865ab5eec04ed72f9178aca2695fa5b46395b29e2d9a`.
+  APK zawiera publiczne CA i adresy instalacji; rzeczywiste dane konta nie
+  występują w żadnym rozpakowanym członie ZIP. APK, manifest, neutralny wynik,
+  ekran demo i instrukcja są w prywatnym folderze właściciela na wybranym dysku.
+- Własny świeży AVD API35: normalny Chrome, bezpieczne połączenie z oryginalnym
+  hostname/issuer, Code+PKCE/callback i aktywna sesja aplikacji **PASS**.
+  Zwykłe przyciski połączenia konta i pełnej kopii danych wykonały rzeczywiste
+  bootstrap/pull. Wpis przed powiązaniem i kanoniczny wpis po powiązaniu
+  zapisano bez dostępu do API; Room i kolejka przetrwały force-stop/restart.
+- Pierwszy rzeczywisty push po powiązaniu został odrzucony
+  `dependency_missing`. O3 sprawdził PostgreSQL: **0** produktów, racji
+  i pakietów w używanej instalacji. To brak wdrożenia katalogu demo.
+  Odrzucenie i pierwotny lokalny wpis zachowano; nie ponawiano tej operacji
+  jako rzekomo nowej ani nie zmieniano jej zapisanego receipt.
+- Istniejący CLI O2 na tym samym immutable API05/schema0024, oddzielna rola
+  operatora/migratora, UID10001: validate → import → publish **DEMO PASS2,778s**,
+  18:20:32UTC.18produktów/1racja/18komponentów/1źródło. Wszystkie obiekty
+  zgodne z katalogiem APK, wyłącznie kolejność produktów wejścia była inna.
+  Opublikowany gzip3099B jest identyczny bajtowo z APK, SHA256
+  `65f4aae8002fd5522d0edb4689e05682103b80fbe3e6dbc68f4bf02c645b2bef`.
+  Bez DDL, migracji, zmiany obrazu/epoki lub uprawnień API. To katalog demo;
+  endpoint wydania official nadal nie jest podstawiany danymi demo.
+- **Nowa** operacja po imporcie: normalny przycisk wysyłki → server accepted,
+  meal revision1/item1; niezależny PG odczyt pełnej treści, daty/strefy,
+  referencji, gramatury i Decimal B/T/W/kcal zgodny z zamrożonym wire.
+  SQLite po ACK: ta sama operacja i wire, status acked, serverRevision1.
+  **PASS18:27:40UTC**. Stary rejected receipt bez zmian; legacy nadal lokalnie,
+  bez cichego wysłania lub usunięcia. Nie jest to test utraty ACK/COMMIT/kill/retry.
+- Nowa paired kopia **po imporcie i zaakceptowanym zapisie**, captured18:30:23UTC,
+  integralność i rzeczywisty lokalny restore **PASS11,613s**. Katalog w kopii
+  identyczny bajtowo z APK, realm/SMTP/env zgodne, usługi wznowione.
+  Szyfrogram zapisany w uzgodnionym Dropbox; niezależny GET, pełny SHA256
+  i content_hash, decrypt i rzeczywisty restore pobranej kopii
+  **PASS11,157s,18:44:42UTC**. Klucz na dysku wybranym przez właściciela,
+  instrukcja odzyskania zaktualizowana; niezależne stanowisko nadal false.
+- Ten niepusty katalog ujawnił rzeczywisty FAIL restore_catalog/FileNotFoundError
+  przy276znakach ścieżki Windows i LongPathsEnabled=0. Wynik zachowany.
+  Skrócono wyłącznie prywatny katalog roboczy offsite do189znaków ścieżki
+  docelowej, z ograniczonym ACL. Ten sam szyfrogram skopiowany bajtowo,
+  oryginał zachowany; prepare potwierdził ten sam SHA i plik zdalny.
+  Ponowny restore tego samego pobrania i runtime przeszedł. Globalna polityka
+  Windows, klucz i definicje harmonogramu pozostały bez zmian.
+- PR154 oraz niezależny pushmain: FULL39997581258/40000795870, po8/8SUCCESS;
+  rzeczywiste zakresy i gate odczytane. Main373native/0fail/0skip, offline
+  przed/po potwierdzone. Ten wynik nie kwalifikuje innego head PR146.
+- Odczytane nowe przekazania O2:16dokładnych delegowanych testów sesji
+  **PASS** na cfa18e25, port3825b33d i rzeczywiste DI/nawigacja ea84bd26
+  z osobnymi11UI PASS. Ich zakres zachowany; O3 nie powtarzał16przypadków.
+  Końcowe podłączenie portu/obserwator O1, pełne B/C i skonfigurowany APK E4
+  pozostają otwarte. Odbiór O3 obejmuje podstawowy lokalny przepływ i jeden
+  nowy posiłek, nie wszystkie sześć domen, import legacy, AI, telefon lub produkcję.
+  W repo wyłącznie własny wiersz i O3-094; publikacja dziennika ma osobny DOCS CI.
