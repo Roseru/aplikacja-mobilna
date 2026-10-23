@@ -163,3 +163,35 @@ zgoda naR3 działa. Frozenbytes/hash i wcześniejsze decyzje pozostają identycz
 Kontrola:417/432JVM,23celowane native/UI i lint bez błędów PASS. Formularz ma
 jawną akcję zakończenia edycji, zgodę i zapis; test weryfikuje ich stany,
 zamiast klikać dowolny ostatni checkbox przy otwartej klawiaturze.
+### Wznowienie gotowej kopii i krótki commit sesji
+
+`pendingSnapshotAcceptance(lease, expectedContext, planId): String?` wyszukuje
+zakończony jeszcze nieprzyjęty raw właściwej grupy planu/kontekstu. Nie tworzy
+nowego runa, nie parsuje payloadów i nie wymaga poświadczeń. Liczbę stron
+sprawdza zapytaniem COUNT; parsowanie następuje dopiero w prepare.
+
+`prepareCompletedSnapshot(lease, expectedContext, planId, runId)` zwraca
+`PreparedReconciliationSnapshot`. Przechwytuje plan/run/pull/pages/access,
+źródła, wcześniejszy ledger i projekcję. Po wyjściu z transakcji dekoduje
+całą kopię, wiąże receipts/mapowania ze źródłami i przygotowuje wszystkie
+wpisy oraz kody decyzji. Obiekt ma redagowany toString i nie zawiera tokenów.
+
+`applyCompletedSnapshot(prepared)` wykonuje bieżący guard lease/kontekstu,
+porównuje przechwycony stan i dopiero atomowo zapisuje typed ledger oraz
+aktywny checkpoint. Nie parsuje dużej kopii pod zewnętrznym guardem sesji.
+TOCTOU odrzuca zapis bez częściowego receipt/zmiany źródła. Zapisany marker
+`snapshot_acceptance` identyfikuje każdy przyjęty run, także pustą kolejną
+kopię grupy, której wcześniejszy receipt_group już istnieje. Idempotentne
+ponowienie nie publikuje historycznego aktywnego checkpointu.
+
+`acceptCompletedSnapshot` pozostaje zgodnym wrapperem prepare→apply.
+O1 przygotowuje kopię poza withApiSession i stosuje ją pod swoim guardem;
+zapisany completed raw sprawdza przed Retry-After i odnowieniem tokenu.
+Sam port danych nie dowodzi wdrożenia tego zachowania kontrolera.
+
+Regresje Room: restart w oknie ostatnia strona→przedreceipts bez nowego runa,
+bez ACK i bez zdjęcia requiresRecovery; pięć zmian source/access/pages/context/
+ownerABA między prepare/apply; malformed raw bez publikacji dowodu. Nowy
+przypadek C ujawnił też brak dalszej kopii po ACK i zwykłym pobraniu: plan
+teraz jawnie żąda własnej świeżej typed kopii, nie przyjmuje zwykłej za dowód.
+Cały magazyn uzgadniania14 i3przypadki portu native PASS na Room20/API35.

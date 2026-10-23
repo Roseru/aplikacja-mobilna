@@ -18,7 +18,7 @@ Każda osoba aktualizuje własny wiersz. Daty i dokładne źródła są w jej wp
 | Rola | Ostatni znany rezultat | Następny krok / zależność | Źródło |
 |---|---|---|---|
 | O1 — Android, Kotlin, Room | Pełny pull0.8.27/Room17: końcowe13native i6JVM PASS, ochrona lokalnych zmian | Własny CI i instalacja zwykłej aplikacji; następnie aktualizacja138 i skonfigurowane APK do E4 według O3-085 | O1-109, [PR144](https://github.com/Roseru/aplikacja-mobilna/pull/144), kod90dcb27 |
-| O2 — Python, PostgreSQL, API; Android A/B/C | A odebrane; B poprawki3uwag i atomowy dowód decyzji,417/432JVM oraz23regresje proof/recovery/UI PASS | B WIP odbiór; rzeczywisty O1/nawigacja/DI/pełnyCI; C lokalny osobny checkout, AVD oddzielone | O2-053, [port B/C](../android/IMPORT_UZGADNIANIE.md) |
+| O2 — Python, PostgreSQL, API; Android A/B/C | A odebrane; B source checkpoint a73f PASS, dodatkowy port prepare/apply i fresh-plan z17native PASS; C37unikalnych native PASS | Zwykły merge O1 d4d9, DI/nav i delegowane16; O1 końcowy guard completedraw/observer; C2P2 u recenzenta, pełnyCI osobno | O2-053, [port B/C](../android/IMPORT_UZGADNIANIE.md) |
 | O3 — DevOps, CI/CD, serwer | Dokładny kandydat0026: migracja/restore/rollback PASS; restore24,421s zamknięcia, stareJWT401/refresh400/operacja409, świeże PKCE/zapis/replay zaliczone | Pozostałe2odbioru Android/backend. Nowy APK O1 po FAIL Room17 i osiągalny peer; pełny KO32/telefon/ledger/produkcja osobno | O3-090, [pełny zaktualizowany pakiet](https://github.com/Roseru/aplikacja-mobilna/releases/tag/untagged-4cbe4b5562fd750f23a1), [próba E4](https://github.com/Roseru/aplikacja-mobilna/pull/138#issuecomment-6364874393) |
 
 
@@ -6660,3 +6660,31 @@ Archiwalne wiersze stanu przed integracją PR141 z main22.10; aktualny stan znaj
   Test korekty ma jawną obsługę końca edycji i identyfikowane zgodę/zapis;
   nie opiera się na klikaniu ostatniego checkboxa przy otwartej klawiaturze.
   Nadal poprawka B do odbioru; rzeczywisty adapter O1 i końcowy B/C pending.
+
+- Koordynator odebrał a73f źródłowo jako
+  [SOURCE_CHECKPOINT_PASS_PENDING_INTEGRATION](https://github.com/Roseru/aplikacja-mobilna/pull/146#issuecomment-6370514269).
+  Test C ochrony evidence ujawnił dodatkową lukę wznowienia: po ACK i zwykłym
+  pobraniu nextSnapshot zwracał null, chociaż finish prawidłowo odmawiał starego
+  dowodu. Mała regresja Room20 potwierdziła błąd;58b2992 żąda nowej typed kopii
+  planu.14native+432validationJVM+lint bez błędów PASS, C dołączyło poprawkę
+  zwykłym merge7222ba08, jego nowy test ochrony evidence1 PASS.
+- ODCZYTANE O1-115/116 i konkretne6369060930/6370210425; wcześniej zbyt wąski
+  filtr nowych komentarzy pominął przekazanie. Zdalny d4d9c940 istnieje,
+  jawnie zawiera B/a73f+main4c89;build i6native O1 mają własny zakres.
+  Nie wnioskujemy z braku PR o braku gałęzi i nie utożsamiamy6 z delegowanymi16.
+- O2 dostarcza dodatkowy zgodny port pendingSnapshotAcceptance oraz
+  prepareCompletedSnapshot→PreparedReconciliationSnapshot→applyCompletedSnapshot.
+  Parser i pełne wiązanie receipts poza zewnętrznym guardem; apply porównuje
+  plan/run/pull/pages/access/source/evidence/projection i zapisuje atomowo.
+  Niezmienny marker perrun zachowuje idempotencję pustych kolejnych kopii.
+  Stary acceptCompletedSnapshot pozostaje wrapperem; Room20 bez zmiany schematu.
+  17celowanych native (14uzgadniania+3nowe portu) PASS. Restart w oknie
+  complete→receipts nie tworzy nowego raw/ACK;5TOCTOU i malformed raw bez
+  publikacji. COUNT w pending nie ładuje całego archiwum do krótkiego guardu.
+- Dalej O1: lokalny completedraw przed retry/token, prepare poza swoim guardem,
+  apply w withSavedRecoverySession/withApiSession; poprawka obserwatora należy
+  do O1. O2 dołączy d4d9 zwykłym merge do B, zachowa autorów i podepnie DI/nav.
+  Delegowane16 z dokładnego89766ec zostanie ogłoszone przed pojedynczym biegiem.
+  C lokalny60a20998 dostał źródłowy PASS archiwów;2P2 koordynatora przypisane
+  recenzentowi przez root bez równoległego Gradle. To checkpoint, nie finał
+  B/C, nie nowy PR i nie live/HTTP/PG ani wspólny odbiór E4.
