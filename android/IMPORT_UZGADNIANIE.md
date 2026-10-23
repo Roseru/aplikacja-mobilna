@@ -119,3 +119,29 @@ którego SessionController realizuje oba uzgodnione executory. Nie używamy
 stubu jako odbioru integracji. Dalej: właściwe podłączenie, brakujące przypadki
 końcowe, niezależny review, pełna regresja i jeden PR B z CI/odbiorem.
 C pozostaje kolejnym etapem całego przydziału A→B→C.
+### Poprawki trzech uwag odbioru checkpointu1e15
+
+- Wersje lokalna i serwera są pokazane przed decyzją, z jednostkami i jawnym
+  brakiem danych. VM używa aktualnej zweryfikowanej pełnej kopii planu, również
+  gdy nie ma RecoveryMapping. Brak kopii nie jest przedstawiany jako nieobecność.
+  Stary widok dowodu nie może zapisać decyzji po zmianie aktywnej kopii.
+- Uszkodzony historyczny snapshot pojedynczego składnika nie blokuje całego
+  podsumowania. Taki wpis ma komunikat i opcję zachowania lokalnego; sprawny
+  pomiar nadal może być zaimportowany. Oryginał i sourceHash pozostają identyczne,
+  nie podstawiamy pustego snapshotu ani zerowej wartości odżywczej.
+- Po preserve_local i zakończeniu nowej epoki zachowany historyczny cel nie jest
+  automatycznie correction_of nowej operacji. Nowa zwykła decyzja odwołuje się
+  tylko do żywego celu bieżącego kontekstu z dowodem lub własną bieżącą kolejką;
+  inaczej stanowi osobną decyzję, zachowując historię. Legalne powiązanie celu
+  bieżącej epoki nadal działa.
+
+Regresje poprawek:417debugJVM/432validationJVM,36celowanych native/UI i lint
+bez błędów PASS. Scenariusze obejmują widoczne82kg/80kg bez mappingu przed
+wyborem, brak domyślnego przyjęcia serwera, blokadę przy braku dowodu,
+uszkodzony posiłek z poprawną wagą i nową zwykłą decyzję po preserve_local.
+Pierwszy red test potwierdził niedozwolone correction_of starej epoki.
+Dodatkowy celowany kontrprzypadek sprawdza legalne referencje bieżącej epoki.
+To nadal poprawki B w toku odbioru; rzeczywista sesja O1/nawigacja/DI i pełne
+CI jednego końcowego PR B pozostają osobne. C ma własny checkout od1e15;
+po poprawkach dostanie zwykły merge B. Przyszłe migracje C wymagają osobnego
+własnego AVD, z zachowaniem testowego Room20 B.

@@ -53,7 +53,7 @@ class ImportScreenTest {
     }
     @Test fun knownAbsenceHasNoAutomaticServerChoiceOrRecreation() {
         val source=source().copy(sourceEpoch="epoch",state="decision")
-        val row=ImportDecisionRow(source,"absent_same_epoch",null,null,true)
+        val row=ImportDecisionRow(source,"absent_same_epoch",null,null,true,server=ImportComparisonSide(ImportSideState.ABSENT),proofRunId="verified-full")
         var count=0
         render(ImportUiState(plan=progress().copy(state="decisions"),approved=true,recovery=true,rows=listOf(row)),kept={count++})
         compose.onNodeWithText("Odtwórz brakujący wpis jako nowy").assertDoesNotExist()
@@ -69,12 +69,25 @@ class ImportScreenTest {
         compose.onNodeWithTag("import-message").assertTextEquals("Połączenie synchronizacji nie jest skonfigurowane.")
     }
     @Test fun laterLocalIntentRequiresExplicitChoiceBeforeFinishing() {
-        val source=source().copy(sourceEpoch="epoch",state="decision",operationId="original-acked")
-        val row=ImportDecisionRow(source,"later_local_intent",null,null,true)
+        val root=JSONObject(source().sourceJson);root.getJSONObject("row").put("kg","82")
+        val source=source().copy(sourceJson=root.toString(),sourceEpoch="epoch",state="decision",operationId="original-acked")
+        val server=JSONObject().put("weight_kg","80").put("local_date","2001-01-02").put("occurred_at","2001-01-02T12:00:00Z").put("time_zone","UTC")
+        val row=ImportDecisionRow(source,"later_local_intent",null,null,true,local=ImportComparison.local(source),
+            server=ImportComparison.server("weight",server.toString()),proofRunId="verified-full")
         var accepted=0
         render(ImportUiState(plan=progress().copy(state="decisions",pending=0),approved=true,recovery=true,rows=listOf(row)),serverChoice={accepted++})
+        compose.onNodeWithText("Wersja lokalna").performScrollTo().assertExists()
+        compose.onNodeWithText("Masa ciała: 82 kg").performScrollTo().assertExists()
+        compose.onNodeWithText("Aktualna wersja serwera").performScrollTo().assertExists()
+        compose.onNodeWithText("Masa ciała: 80 kg").performScrollTo().assertExists()
         compose.runOnIdle {assertEquals(0,accepted)}
         compose.onNodeWithText("Sprawdź i zakończ uzgodnienie").performScrollTo().assertIsNotEnabled()
         compose.onNodeWithText("Przyjmij stan serwera").performScrollTo().performClick()
         compose.runOnIdle {assertEquals(1,accepted)}
+    }    @Test fun unavailableServerProofIsNeitherAbsenceNorPermissionToAcceptServer() {
+        val row=ImportDecisionRow(source().copy(sourceEpoch="epoch"),"same_epoch_review",null,null,true)
+        render(ImportUiState(plan=progress().copy(state="decisions",pending=0),approved=true,recovery=true,rows=listOf(row)))
+        compose.onNodeWithText("Brak aktualnego dowodu. Pobierz pełną kopię przed decyzją.").performScrollTo().assertExists()
+        compose.onNodeWithText("Brak wpisu w zweryfikowanej pełnej kopii").assertDoesNotExist()
+        compose.onNodeWithText("Przyjmij stan serwera").performScrollTo().assertIsNotEnabled()
     }}

@@ -99,7 +99,11 @@ class ImportViewModel(private val db:CalorieDatabase,private val schema:SyncWire
     private suspend fun saveDecision(row:ImportDecisionRow,json:String) {
         val plan=checkNotNull(mutable.value.plan);val context=binding()
         require(row.source.planId==plan.planId)
-        if(mutable.value.recovery)reconciliation.decide(lease,context,plan.planId,row.source.entityType,row.source.sourceId,row.source.sourceHash,json)
+        if(mutable.value.recovery) {
+            val proof=reconciliation.latestCopy(lease,context,plan.planId)
+            if(proof.first.id!=row.proofRunId)throw ImportContextChangedException()
+            reconciliation.decide(lease,context,plan.planId,row.source.entityType,row.source.sourceId,row.source.sourceHash,json)
+        }
         else imports.decide(lease,plan.planId,row.source.entityType,row.source.sourceId,row.source.sourceHash,json)
     }
     fun downloadProof()=network(ReconciliationStep.FULL_SNAPSHOT_RECEIPTS)
@@ -137,19 +141,29 @@ class ImportViewModel(private val db:CalorieDatabase,private val schema:SyncWire
         val recovery=selected.kind !in setOf("guest","legacy")
         val progress=if(recovery)reconciliation.status(lease,context,selected.id) else imports.status(lease,selected.id)
         val evidence=db.importDao().evidence(selected.id)
+        val verified=if(recovery && reconciliation.groupsComplete(selected)) {
+            try {reconciliation.latestCopy(lease,context,selected.id)}
+            catch(cancelled:CancellationException){throw cancelled}
+            catch(_:Exception){null}
+        } else null
         val rows=db.importDao().sources(selected.id).filter {it.state in setOf("decision","pending_snapshot")}.map {source->
             val root=StrictJson.read(source.sourceJson.toByteArray())
-            val mapping=evidence.filter {it.kind=="mapping"}.map {StrictJson.read(it.json.toByteArray())}.firstOrNull {
+            val copy=verified?.second
+            val mapping=copy?.mappings?.map {StrictJson.read(it.toByteArray())}?.firstOrNull {
                 it.optString("source_epoch")==source.sourceEpoch && it.optString("source_entity_id")==root.optString("wire_id")}
-            val target=mapping?.getString("target_entity_id")?.let {targetId->
-                evidence.filter {it.kind.startsWith("entity:") && it.identity==targetId}.lastOrNull()?.let {
-                    val entity=StrictJson.read(it.json.toByteArray())
-                    if(entity.getBoolean("deleted") || entity.getString("entity_type")!=source.entityType || entity.isNull("payload"))null
-                    else ImportMappedTarget(targetId,StrictJson.canonical(entity.getJSONObject("payload")))
-                }
-            }
-            ImportDecisionRow(source,source.decisionCode ?: "decision_required",if(recovery)null else LegacyImportForm.from(source),target,
-                source.sourceEpoch!=null && source.sourceEpoch==context.syncEpoch)
+            val serverId=mapping?.getString("target_entity_id") ?: root.optString("wire_id",source.wireId)
+            val entity=copy?.entities?.singleOrNull {it.type==source.entityType && it.id==serverId}
+            val target=if(mapping!=null && entity!=null && !entity.deleted && entity.payload!=null)
+                ImportMappedTarget(entity.id,entity.payload) else null
+            var formFailure=false
+            val form=if(recovery)null else try {LegacyImportForm.from(source)}
+                catch(_:Exception){formFailure=true;null}
+            ImportDecisionRow(source,source.decisionCode ?: "decision_required",form,target,
+                source.sourceEpoch!=null && source.sourceEpoch==context.syncEpoch,
+                local=ImportComparison.local(source),
+                server=if(copy==null)ImportComparisonSide(ImportSideState.UNVERIFIED)
+                    else ImportComparison.server(source.entityType,entity?.payload,entity?.deleted==true),
+                proofRunId=verified?.first?.id,formFailure=formFailure)
         }
         mutable.value=mutable.value.copy(plan=progress,requiresRecovery=context.requiresRecovery,recovery=recovery,
             approved=selected.approvedAt!=null,rows=rows,proofGroups=if(recovery)reconciliation.groups(selected).size else 0,
@@ -158,7 +172,9 @@ class ImportViewModel(private val db:CalorieDatabase,private val schema:SyncWire
 }
 
 data class ImportMappedTarget(val id:String,val payload:String)
-data class ImportDecisionRow(val source:ImportSource,val code:String,val form:LegacyImportForm?,val mapped:ImportMappedTarget?,val sameEpoch:Boolean)
+data class ImportDecisionRow(val source:ImportSource,val code:String,val form:LegacyImportForm?,val mapped:ImportMappedTarget?,val sameEpoch:Boolean,
+    val local:ImportComparisonSide?=null,val server:ImportComparisonSide=ImportComparisonSide(ImportSideState.UNVERIFIED),
+    val proofRunId:String?=null,val formFailure:Boolean=false)
 data class ImportPlanChoice(val id:String,val kind:String,val date:String,val state:String)
 data class ImportUiState(val plan:ImportProgress?=null,val approved:Boolean=false,val recovery:Boolean=false,
     val requiresRecovery:Boolean=false,val rows:List<ImportDecisionRow> = emptyList(),val plans:List<ImportPlanChoice> = emptyList(),
