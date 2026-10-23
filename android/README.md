@@ -1,5 +1,23 @@
 # Android — Racje i kalorie
 
+Etap **0.8.27/code38/Room17** na `codex/android-pobieranie-dziennika` dodaje
+[pełną kopię serwera w lokalnym dzienniku](POBIERANIE_DZIENNIKA.md): posiłki,
+wagę, profil, cele, kompletność dni i prywatne produkty. Cała kopia jest
+sprawdzana przed atomowym zapisem; niewysłane zmiany pozostają zachowane.
+Zapisaną kopię można zastosować offline z ekranu konta.
+
+Końcowy build/lint PASS (0 błędów, 4 ostrzeżenia), 13/13 celowanych testów
+urządzenia offline PASS oraz 6 JVM zmienionego helpera PASS; wcześniejsze
+35 niezmienionych JVM zachowuje swój wynik. To odbiór celowany, nie pełna
+regresja. [Manifest](ODBIOR_0_8_27.json) odróżnia wcześniejszy błąd asercji UI,
+końcowe poprawki i dokładne SHA APK. Zdalny CI i aktualizacja zwykłego emulatora
+pozostają osobnym odbiorem.
+
+Rodzic [PR142](https://github.com/Roseru/aplikacja-mobilna/pull/142) jest scalony
+jako b434754. Własny CI39767329100 i osobny CI main39772774959: oba 8/8 SUCCESS.
+Dołączono aktualny main a034f66 z instrukcją O3-085 do kolejnego E4;
+nie zmienia ona kwalifikowanych źródeł Androida. Poniżej historyczne opisy etapów.
+
 Etap **0.8.26/code37/Room16** na `codex/android-konflikty-sync` dodaje
 [porównanie i świadome rozwiązywanie konfliktów posiłków i wagi](KONFLIKTY_SYNC.md):
 wersja lokalna/serwerowa, nowa operacja po decyzji, odtwarzanie pod nowym UUID
