@@ -231,6 +231,8 @@ internal object HttpsJsonTransport {
             }
             val status = connection.responseCode
             require(status in 200..599 && status !in 300..399)
+            if (MealPushObservation.ENABLED && push != null) MealPushObservation.record(push.sha256, method, url.path, status,
+                connection.getHeaderField("Cache-Control"), connection.getHeaderField("X-Request-ID"))
             if (ApiReadObservation.ENABLED && method == "GET" &&
                 url.path in setOf("/api/v1/me", "/api/v1/me/motivation")) ApiReadObservation.record(method, url.path, status,
                 connection.getHeaderField("Cache-Control"), connection.getHeaderField("X-Request-ID"))

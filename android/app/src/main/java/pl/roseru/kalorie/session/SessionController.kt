@@ -193,20 +193,31 @@ class SessionController internal constructor(private val db: CalorieDatabase, pr
     suspend fun observeMotivationContext() {
         try {
             db.invalidationTracker.createFlow("account_bindings", "local_active_owner", "local_owners", "photo_analysis_requests", "sync_push_batches", "outbox", "server_snapshot_access", "server_diary_applications").collect {
-                mutex.withLock {
-                    if (mutable.value.binding != null) publish(mutable.value.message)
-                }
+                try {
+                    mutex.withLock {
+                        // Owner selection and context updates use Room transactions too. Publish
+                        // one consistent view, rather than ending observation on an interleaved ABA.
+                        db.withTransaction {
+                            if (mutable.value.binding != null) publish(mutable.value.message)
+                        }
+                    }
+                }catch(error:CancellationException){throw error}
+                catch(_:Exception){clearPrivateObservation()}
             }
         } catch (error: CancellationException) { throw error }
-        catch (_: Exception) { mutex.withLock {
-            clearPhotoUpload()
-            clearMotivation()
-            clearRanking(); clearNemesis()
-            nemesisMutationOperation = null
-            mutable.value = mutable.value.copy(motivation = MotivationState.NotRequested, rankingConsent = RankingConsentState.NotRequested,
-                ranking = RankingState.NotRequested, nemesis = NemesisState.NotRequested,
-                nemesisDecision = null, nemesisMutationBusy = false, nemesisMutation = NemesisMutationState.Idle)
-        } }
+        catch (_: Exception) {clearPrivateObservation()}
+    }
+    /** A failed projection removes private previews without ending a healthy Room subscription. */
+    private suspend fun clearPrivateObservation()=mutex.withLock {
+        serverProfile=null;profileFence=null;profileServerContext=null
+        clearPhotoUpload()
+        clearMotivation()
+        clearRanking();clearNemesis()
+        nemesisMutationOperation=null
+        mutable.value=mutable.value.copy(serverProfile=null,motivation=MotivationState.NotRequested,
+            rankingConsent=RankingConsentState.NotRequested,ranking=RankingState.NotRequested,
+            nemesis=NemesisState.NotRequested,nemesisDecision=null,nemesisMutationBusy=false,
+            nemesisMutation=NemesisMutationState.Idle)
     }
     private fun copyRecord() = JSONObject(record.toString())
     private suspend fun persist(value: JSONObject) {
@@ -831,6 +842,16 @@ class SessionController internal constructor(private val db: CalorieDatabase, pr
 
     private suspend fun recoverSnapshot(reservation:RecoveryReservation,store:ReconciliationStore):SyncStepResult {
         val lease=reservation.fence.lease;val context=checkNotNull(reservation.fence.server)
+        // Completing a validated local archive is not another HTTP attempt. Recover it even
+        // while the saved access token is expired or a network Retry-After is still active.
+        val pending=withSavedRecoverySession(reservation){store.pendingSnapshotAcceptance(lease,context,reservation.planId)}
+        if(pending!=null) {
+            val prepared=store.prepareCompletedSnapshot(lease,context,reservation.planId,pending)
+            return withSavedRecoverySession(reservation){
+                store.applyCompletedSnapshot(prepared)
+                SyncStepResult.Completed(runId=pending)
+            }
+        }
         val deadline=recoveryDeadline(reservation)
         if(deadline>now())return SyncStepResult.RetryAt(deadline)
         var request=withSavedRecoverySession(reservation){store.nextSnapshot(lease,context,reservation.planId)}
@@ -843,9 +864,10 @@ class SessionController internal constructor(private val db: CalorieDatabase, pr
             if(response.status==200) {
                 val next=withApiSession(captured){ready();checkNotNull(snapshots).apply(sent,response.body)}
                 if(next!=null){request=next;continue}
+                val prepared=store.prepareCompletedSnapshot(lease,context,reservation.planId,sent.runId)
                 withApiSession(captured){
                     requireRecoveryOperation(reservation)
-                    store.acceptCompletedSnapshot(lease,context,reservation.planId,sent.runId)
+                    store.applyCompletedSnapshot(prepared)
                 }
                 return SyncStepResult.Completed(runId=sent.runId)
             }
@@ -2484,6 +2506,8 @@ class SessionController internal constructor(private val db: CalorieDatabase, pr
                     val result=transport.post(captured,request.batch){withApiSession(captured){ready();store.markAttempted(request,now())}}
                     if(result.status==200){
                         val prepared=store.prepareAck(request,result.status,result.body)
+                        // Validation hold only after the unchanged parser, outside both guards.
+                        if(MealPushObservation.ENABLED)MealPushObservation.beforeApplyAck(request.id,request.row.requestHash)
                         withApiSession(captured){ready();val ack=store.applyAck(prepared)
                             acknowledged+=ack.acknowledged;refused+=ack.refused}
                         break
