@@ -153,3 +153,15 @@ samych APK, z niezmienionymi timeoutami i danymi. Offline przed/po potwierdzone.
 Nie kasowano danych ani nie restartowano komputera. To korekta środowiska
 odbioru, nie zmiana kodu omijająca błąd. Historyczny CI timeout zdjęcia pozostaje
 osobnym wynikiem; ten celowany PASS nie dowodzi przyczyny jego wcześniejszego błędu.
+
+### Dalsza poprawka obserwatora — jeszcze bez odbioru
+
+CI39989059705 pakietu PR146/ce04199 (tested merge1855ee4b) wykonał373native:
+372PASS i timeout10s w `privateRoomObserverClearsCachedProfileAndConsentAcrossContextAndOwnerChanges`.
+XML i osobny logcat odczytane; nie wskazują, który z trzech warunków oczekiwania
+nie został spełniony. Nie ponawiano CI. Analiza kodu wskazuje możliwość przełączenia
+właściciela pomiędzy zapytaniami `publish`, zakończoną `StaleOwnerException`
+i wyjściem z obserwacji. To hipoteza przyczyny tej próby, nie udowodniony reproduktor.
+Lokalna dalsza zmiana obejmuje spójny odczyt publikacji w transakcji Room i wyczyszczenie
+profilu także po błędzie obserwatora. Czeka na wspólny odbiór następnego etapu;
+wynik sześciu przypadków źródła3ac2312 nie obejmuje tej późniejszej poprawki.
