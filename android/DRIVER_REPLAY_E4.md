@@ -1,8 +1,10 @@
 # Driver wybranej partii E4 — przygotowanie O1
 
-23.10.2026: przygotowywany pakiet na aktualnym main a034f66 obejmuje dodatkowo
+23.10.2026: przygotowywany pakiet zależy od pełnego pull813dc61 / PR144 i obejmuje dodatkowo
 odciski tabel canonical_weights i sync_conflict_decisions. Pola te nie są
-normalizowane. Nowa kwalifikacja i skonfigurowane APK pozostają w przygotowaniu;
+normalizowane. Każda faza wymaga zastosowanej lokalnie najnowszej pełnej kopii
+aktualnego konta. Metadane archiwum i jego zastosowania mogą się legalnie
+zmieniać podczas końcowego odczytu po ACK; nie należą do21odcisków. Nowa kwalifikacja i skonfigurowane APK pozostają w przygotowaniu;
 historyczne wyniki poniżej nie potwierdzają tej aktualizacji.
 
 19.10.2026, gałąź `codex/android-replay-ack`, [PR138](https://github.com/Roseru/aplikacja-mobilna/pull/138).

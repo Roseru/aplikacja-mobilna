@@ -77,12 +77,13 @@ class SessionSecurityTest {
     }
     private fun client(db: CalorieDatabase, vault: SessionVault, fixture: FixtureGateway, api: BootstrapGateway? = null,
         profiles: ProfileGateway? = null, snapshots: SnapshotGateway? = null, motivation: MotivationGateway? = null,
-        consents: RankingConsentGateway? = null, ranking: RankingGateway? = null, nemesis: NemesisGateway? = null, nemesisWrites: NemesisWriteGateway? = null, photos: PhotoCapabilitiesGateway? = null, photoWrites:PhotoAnalysisGateway?=null, pushes:MealPushGateway?=null) = SessionController(
+        consents: RankingConsentGateway? = null, ranking: RankingGateway? = null, nemesis: NemesisGateway? = null, nemesisWrites: NemesisWriteGateway? = null, photos: PhotoCapabilitiesGateway? = null, photoWrites:PhotoAnalysisGateway?=null, pushes:MealPushGateway?=null, projectDiary:Boolean=false) = SessionController(
         db, vault, fixture, issuer, context.packageName, now = { fixture.time }, bootstrapGateway = api, profileGateway = profiles, snapshotGateway = snapshots,
         snapshotProtocol = snapshots?.let { snapshotProtocol() }, motivationGateway = motivation, rankingConsentGateway = consents, rankingGateway = ranking, nemesisGateway = nemesis, nemesisWriteGateway = nemesisWrites, photoCapabilitiesGateway = photos,
         photoAnalysisGateway=photoWrites,photoAnalysisStores=if(photoWrites!=null) { lease:OwnerLease->PhotoAnalysisStore(context,db,lease) } else null,
         mealPushGateway=pushes,mealPushStore=pushes?.let {MealPushStore(db,CanonicalMealRows.schema(context))},
-        mealPushProtocol=pushes?.let {PushProtocol(CanonicalMealRows.schema(context))})
+        mealPushProtocol=pushes?.let {PushProtocol(CanonicalMealRows.schema(context))},
+        diaryStore=if(projectDiary)ServerDiaryStore(db,CanonicalMealRows.schema(context)) else null)
     private suspend fun login(client: SessionController, fixture: FixtureGateway, subject: String) {
         fixture.subject = subject
         assertNotNull(client.beginLogin())
@@ -2612,7 +2613,7 @@ class SessionSecurityTest {
     }
 
 
-    private inner class PushHarness {
+    private inner class PushHarness(private val projectDiary:Boolean=false) {
         val db=memory();val vault=SessionVault(context,name());val fixture=FixtureGateway();val api=ApiFixture();val copies=SnapshotFixture()
         val calls=mutableListOf<PushBatch>();var before:suspend()->Unit={}
         var answer:suspend(PushBatch,Int)->BootstrapHttpResult={batch,_->BootstrapHttpResult(200,receipt(batch))}
@@ -2624,7 +2625,7 @@ class SessionSecurityTest {
             }
         }
         lateinit var c:SessionController;lateinit var lease:OwnerLease;lateinit var meal:String;lateinit var item:String
-        fun again()=client(db,vault,fixture,api,snapshots=copies,pushes=transport)
+        fun again()=client(db,vault,fixture,api,snapshots=copies,pushes=transport,projectDiary=projectDiary)
         suspend fun prepare(full:Boolean=true) {
             c=again();c.start();login(c,fixture,"fixture-A");c.bootstrap();lease=c.view.value.binding!!.lease
             if(full)c.downloadSnapshot()
@@ -2661,7 +2662,7 @@ class SessionSecurityTest {
         fun close(){vault.clear();db.close()}
     }
     @Test fun manualConsumptionAndAckGatePreserveFrozenWireAcrossCancelledAcknowledgementAndReplay()=runBlocking<Unit> {
-        val h=PushHarness();var pending:Job?=null;var ticket:MealPushAckGate.Ticket?=null
+        val h=PushHarness(projectDiary=true);var pending:Job?=null;var ticket:MealPushAckGate.Ticket?=null
         try {
             val day=LocalDate.now();val guestId=UUID.randomUUID().toString()
             val guest=DiaryRepository(h.db,context).apply {initialize()}
@@ -2670,6 +2671,7 @@ class SessionSecurityTest {
             val guestQueue=h.db.dao().operationCount("guest")
             h.c=h.again();h.c.start();login(h.c,h.fixture,"fixture-A");h.c.bootstrap()
             h.lease=h.c.view.value.binding!!.lease;h.c.downloadSnapshot()
+            assertNotNull(h.c.view.value.diaryApplication)
             h.meal=UUID.randomUUID().toString();val product=UUID.randomUUID().toString()
             DiaryRepository(h.db,context,h.lease).addCustomProduct(
                 CustomProductDraft("Syntetyczny posiłek",100.5,null,0.0,12.25,"Etykieta testowa"),
@@ -2697,6 +2699,14 @@ class SessionSecurityTest {
             assertNull(h.db.pushDao().batch(frozen.id)!!.responseJson)
             h.c=h.again();h.c.start()
             h.answer={batch,_->BootstrapHttpResult(200,h.receipt(batch,"already_applied"))}
+            // The normal post-ACK pull now projects the same server meal into Room as well.
+            h.copies.answer={
+                val copy=JSONObject(String(snapshotAnswer().body))
+                    .put("server_time","2026-10-23T08:00:00Z")
+                    .put("entities",JSONArray().put(JSONObject().put("entity_type","meal").put("entity_id",h.meal)
+                        .put("revision",1).put("deleted",false).put("payload",operation.getJSONObject(0).getJSONObject("payload"))))
+                BootstrapHttpResult(200,copy.toString().toByteArray())
+            }
             h.c.synchronizeMeals(h.lease)
             assertEquals(2,h.calls.size);assertArrayEquals(frozen.batch.body(),h.calls[0].body())
             assertArrayEquals(h.calls[0].body(),h.calls[1].body());assertEquals(1,h.revision())
@@ -2707,6 +2717,12 @@ class SessionSecurityTest {
             assertEquals(h.item,saved.id);assertEquals(product,saved.productId)
             assertEquals("Etykieta testowa",h.db.dao().product(product,h.lease.storageScope)!!.source)
             assertEquals(2,h.db.dao().operationCount(h.lease.storageScope)) // Private product draft and its independent Meal.
+            val applied=checkNotNull(h.c.view.value.diaryApplication)
+            assertEquals(1,applied.included);assertEquals(0,applied.held)
+            val observed=h.db.serverDiaryDao().records(h.lease.storageScope).single()
+            assertEquals("meal",observed.entityType);assertEquals(h.meal,observed.entityId)
+            assertEquals(1,observed.knownRevision);assertEquals("applied",observed.disposition)
+            assertEquals(applied.runId,observed.runId)
             assertEquals(guestBefore,h.db.dao().day("guest",day.toString()).first())
             assertEquals(guestQueue,h.db.dao().operationCount("guest"))
         }finally{pending?.cancelAndJoin();ticket?.let {MealPushObservation.ack.disarm(it)};h.close()}

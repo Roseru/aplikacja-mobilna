@@ -53,7 +53,15 @@ class LiveMealReplayTest {
         val view = withTimeout(10_000) { app.sessions.view.first { it.binding != null } }
         assertTrue("Trial requires an authenticated account and full snapshot", view.hasSession && view.serverLinked &&
             !view.requiresRecovery && view.binding?.owner?.kind == "account" && view.mealPush?.ready == true)
-        return checkNotNull(view.binding).lease
+        val current = checkNotNull(view.binding).lease
+        app.database.withTransaction {
+            val gate = store().gate(current)
+            val applied = app.database.serverDiaryDao().application(gate.run.id)
+            assertTrue("The latest full copy must already be applied to this account's local diary",
+                applied != null && applied.ownerScope == current.storageScope &&
+                    applied.wireContext == CanonicalMealRows.context(gate.binding))
+        }
+        return current
     }
     private fun store() = MealPushStore(app.database, CanonicalMealRows.schema(app))
     private suspend fun verifySelected(request: MealPushRequest, meal: String, operation: String) {
