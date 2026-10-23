@@ -18,7 +18,7 @@ Każda osoba aktualizuje własny wiersz. Daty i dokładne źródła są w jej wp
 | Rola | Ostatni znany rezultat | Następny krok / zależność | Źródło |
 |---|---|---|---|
 | O1 — Android, Kotlin, Room | Adapter na B/Room20: build aplikacji i testów oraz sześć celowanych native offline PASS; poprawiony podgląd zdjęć | Port O2 dla przerwanego completed snapshot, integracja DI/nawigacji i odbiór pozostałych16metod; E4 nadal otwarte | O1-116, [sesja](../android/SESJA_SYNCHRONIZACJI.md), codex/android-sesja-synchronizacji |
-| O2 — Python, PostgreSQL, API; Android A/B/C | A odebrane; B rzeczywista sesja/DI/nav, dokładne16sesji+11UI PASS; nowy port danych SOURCEPASS | O1 końcowy completedraw/observer, review DI/nav i pełnyCI B; C2P2 w celowanej walidacji O2, publikacja po B | O2-054, [port B/C](../android/IMPORT_UZGADNIANIE.md) |
+| O2 — Python, PostgreSQL, API; Android A/B/C | A odebrane; B sesja/DI/nav16+11PASS/SOURCEPASS; C runtime19+4delta,417/432JVM/lintPASS,2P2 poprawione | O1 końcowy completedraw/observer i finalCI B; C końcowy pin/ograniczony review wiring, publikacja po B | O2-054/055, [import B](../android/IMPORT_UZGADNIANIE.md), [sync C](../android/SYNCHRONIZACJA_W_TLE.md) |
 | O3 — DevOps, CI/CD, serwer | Lokalna skrzynka SMTP i reset hasła z PKCE PASS; nowe konto demo, świeży AVD/TLS oraz nowa kopia0024 z realnym restore PASS 11,191 s | Bieżący cel właściciela: demo lokalne. Końcowy APK/integracja sesji B i odbiór aplikacji pozostają do wykonania; używane API/harmonogram nadal0024 | O3-093, [uruchomienie i wykonane próby](../infra/integration/LOKALNE_DEMO.md), [aktualne przekazanie A1/A2](https://github.com/Roseru/aplikacja-mobilna/pull/146#issuecomment-6370514269) |
 
 
@@ -6946,3 +6946,42 @@ Archiwalne wiersze stanu przed integracją PR141 z main22.10; aktualny stan znaj
   ani delegowanych16przypadków. Nie ma nowego kwalifikowanego APK E4.
 - Przed publikacją lokalny Compose/contracts/diff-check; YAML wymaga FULLCI,
   a nie DOCS. Własny PR i niezależny pushmain odbieramy oddzielnie.
+
+### O2-055 — Android C: rzeczywisty runtime/manual/worker, checkpoint lokalny
+
+- 23.10.2026, agent2/O2, do koordynatora/O1, **DO ODCZYTU**.
+  C nadal `codex/android-o2-sync-w-tle`, bez publikacji przed B. Archiwa
+  z60a20998 mają SOURCEPASS root. Dwie P2 koordynatora poprawione72c3ca86:
+  zakończony odczyt bez postępu wznawia PUSH z jego checkpointem; RetryAfter
+  teraz/przeszły dostaje trwały rosnący backoff i nie skraca przyszłego floor.
+  13pierwszego biegu:12PASS,1błąd oracle odfiltrowującego ACK; zachowany
+  operationId i lookup po ID naprawiły test, celowany1/oba wariantyPASS.
+  Root ograniczony delta SOURCEPASS, bez ponownego audytu archiwów/B.
+- Zwykły merge B/ea84bd26 do C/fa92b672 zachował sesję O1/d4d9, rzeczywiste
+  DI/nav B6258 i wszystkie wpisy. O1 SessionController, obserwatory, testy
+  SessionSecurity/MealPhotoScreen i E4 nadal bez własnych edycji O2.
+- Właściwe nowe wiring C: Application jako runtime owner, actual O1 executor,
+  ta sama maszyna dla manual i WorkManagera, publiczny sygnał sesji+Room
+  lease/context/writes, CONNECTED i jeden watch po restarcie. Stary captured
+  ticket nie kieruje nowej generacji; anulujemy tylko własny poprzedni łańcuch.
+  Stan idle/defer/login/reconciliation/storage/config widoczny na koncie
+  i w imporcie. Brak tokenów lub payloadów w WorkData/logach. SQLCOUNT
+  pozostałej kolejki nie materializuje jej całej; encje/schemat21 bez zmian.
+- Rzeczywisty kontroler O1+przywrócony syntetyczny Vault+Room: manual i realny
+  worker wykonały PULL→PUSH→PULL, ACK/revision1/odczyt82.125kg i finalny
+  checkpoint. Zdarzenia auth0; nie jest to zewnętrzny HTTP/OIDC/PG/live.
+  Wake tests3PASS: restart/watch/write/network constraint, quiet login,
+  ponowne zdarzenie sesji, anulowanie starego A→B→A. Następny zbiorczy
+  bieg18/18PASS: Coordinator8+WorkManager5+Wake3+Session1(dwa warianty)+Nav1.
+- Pełne JVM/lint i dodatkowa nawigacja po prezentacji stanu są kontrolą
+  dokładnego końcowego checkpointu runtime. Jego pin/receipt trafi do root
+  do jednego ograniczonego review wiring/manual/wakeup, bez publikacji C.
+  Końcowy completedraw/observer nadal O1; właściwy finalCI i jeden BPR
+  po jego dostawie, potem odbiór/publikacja C według decyzji koordynatora.
+- Domknięto selektywne zdarzenia konfiguracji/login/recovery w transakcji
+  request. Sama zmiana konfiguracji przy stale dostępnym tokenie nie jest
+  nowym logowaniem. Silniejsza regresja potwierdziła czerwone login→ready;
+  poprawiony warunek dostępność/lease i pełne4wakePASS. Bazowe19nativePASS
+  obejmuje8Coordinator+5WM+4Wake+Session1(dwa warianty)+Nav1; finalna delta
+  4wake i417debug/432validationJVM/lintPASS na dokładnym źródle osobno.
+  E0 i diff-check przed pinem; Room21 encje/export bez zmian, bez nowej migracji.

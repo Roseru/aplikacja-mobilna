@@ -77,10 +77,55 @@ Na własnym izolowanym emulatorze validation, z potwierdzoną tożsamością:
 
 ```powershell
 .\gradlew.bat testDebugUnitTest testValidationUnitTest lintValidation
-.\gradlew.bat connectedValidationAndroidTest '-Pandroid.testInstrumentationRunnerArguments.class=pl.roseru.kalorie.SnapshotArchiveStorageTest,pl.roseru.kalorie.SyncCoordinatorStorageTest,pl.roseru.kalorie.SyncWorkStorageTest,pl.roseru.kalorie.ImportOriginsMigrationTest,pl.roseru.kalorie.ServerSnapshotStorageTest,pl.roseru.kalorie.ServerDiaryStorageTest'
+.\gradlew.bat connectedValidationAndroidTest '-Pandroid.testInstrumentationRunnerArguments.class=pl.roseru.kalorie.SnapshotArchiveStorageTest,pl.roseru.kalorie.SyncCoordinatorStorageTest,pl.roseru.kalorie.SyncWorkStorageTest,pl.roseru.kalorie.SyncWakeStorageTest,pl.roseru.kalorie.SyncSessionIntegrationTest,pl.roseru.kalorie.ImportOriginsMigrationTest,pl.roseru.kalorie.ServerSnapshotStorageTest,pl.roseru.kalorie.ServerDiaryStorageTest'
 ```
 
 Testy używają syntetycznych danych i prawdziwych transakcji SQLite. Osobno
 wymagane są końcowe podłączenie rzeczywistego executora O1, nawigacja/DI B,
 testy integracyjne, review i CI dokładnego head/base. Lokalne wyniki oraz
 odbiór publikujemy w jedynym dzienniku `docs/KOMUNIKACJA_AGENTOW.md`.
+
+## Rzeczywiste podłączenie aplikacji i dowody integracji
+
+`CalorieApplication` implementuje `SyncWorkRuntimeOwner`. Jeden runtime
+łączy bazę, koordynator, rzeczywisty `SessionController` O1 i WorkManager.
+Ręczna akcja oraz przycisk wysłania kolejki z importu przechodzą przez
+`runtime.manual(capturedLease)`, więc używają tej samej maszyny co worker.
+Stany Room są widoczne na ekranie konta i importu; zmiana fazy/ACK odświeża
+postęp planu. Zapisane oczekiwanie lub login nie są komunikatem sukcesu.
+
+Runtime obserwuje kwalifikujące się nowe/zmienione operacje oraz bieżący
+lease/context z Room i jawny publiczny sygnał dostępności sesji O1.
+Nie przejmuje obserwatora prywatnego stanu O1. Wylogowanie/zmiana generacji
+anuluje wyłącznie poprzedni własny unikalny łańcuch. Zmiana kontekstu lub
+opóźniony sygnał starej sesji nie odblokowują nowego konta. Login blokuje
+wakeup od zapisu i okresowego watch; właściwe zdarzenie sesji lub zakończone
+uzgodnienie pozwala wznowić. Ponowny start zachowuje jeden okresowy watch.
+Liczbę pozostałych operacji sprawdza SQL COUNT w transakcji, bez ładowania
+całych payloadów kolejki do pamięci.
+
+Dodatni test `SyncSessionIntegrationTest` używa prawdziwego kontrolera O1,
+przywróconego syntetycznego SessionVault, koordynatora, Room i rzeczywistego
+workera. Dwa warianty — manual i worker — wykonały dokładnie PULL→PUSH→PULL,
+ACK i rewizję1, odczyt82.125kg, zgodność finalnego aktywnego runa i zastosowania
+dziennika oraz niezmienny wire operacji. Auth/discovery/refresh0; transport
+stanowią wyłącznie syntetyczne interfejsy, nie zewnętrzny HTTP/OIDC/PG.
+
+`SyncWakeStorageTest` sprawdza restart obserwatora, jeden trwały watch,
+write→job oczekujący na CONNECTED, zatrzymany login po write/periodic wake,
+ponowne zdarzenie sesji oraz A→B→A z anulowaniem starej pracy. Aktualny
+zbiorczy odbiór ma18/18PASS (8koordynatora,5WorkManagera,3wake,1test dwóch
+wariantów rzeczywistej sesji,1nawigacji). Po dodaniu prezentacji stanu
+wykonano jeszcze celowaną nawigację oraz pełne JVM i lint. Nie jest to pełny
+zdalny CI i nie zastępuje końcowej dostawy completedraw/observer od O1.
+
+Zdarzenia wznowienia mają powód sprawdzany atomowo w request: dostępna
+konfiguracja zwalnia wyłącznie `not_configured`, rzeczywiste przejście
+dostępności sesji lub lease zwalnia `login`, zakończenie recovery zwalnia
+`reconciliation`. Zmiana samej konfiguracji przy stale dostępnym tokenie
+nie udaje nowego uwierzytelnienia. Stan storage wymaga jawnej próby użytkownika.
+Silniejsza regresja tej granicy wykazała czerwone login→ready przed poprawką;
+po poprawce pełne4wake,417/432JVM i lint PASS. Bazowy zestaw19native (Wake4)
+przeszedł wcześniej; końcowa delta jest sprawdzona oddzielnie, bez przenoszenia
+wyniku dawnego CI na nowe źródło. Kształt encji i wyeksportowany schemat Room21
+pozostają niezmienione po instalacji.

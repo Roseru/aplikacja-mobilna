@@ -14,7 +14,6 @@ class SyncCoordinator(private val db:CalorieDatabase,private val schema:SyncWire
         // One application process, including multiple entry points/coordinator instances.
         private val execution=Mutex()
         private val blocked=setOf("login","reconciliation","not_configured","storage")
-        private val waiting=setOf("pending","waiting_revision","waiting_timeline","waiting_profile")
     }
     sealed interface Outcome {
         data class Deferred(val epochMillis:Long):Outcome
@@ -39,19 +38,17 @@ class SyncCoordinator(private val db:CalorieDatabase,private val schema:SyncWire
         previous?.retryAtMillis?:0,0,previous?.requestedVersion?:0,0,previous?.handledVersion?:0,0,0,now())
 
     /** Explicit/manual or an eligible-write signal. Neither can shorten a stored Retry-After. */
-    suspend fun request(lease:OwnerLease,binding:AccountBindingEntity,resumeBlocked:Boolean=false):SyncWorkState=db.withTransaction {
+    suspend fun request(lease:OwnerLease,binding:AccountBindingEntity,resumeBlocked:Boolean=false,resumeReasons:Set<String> = emptySet()):SyncWorkState=db.withTransaction {
         val current=guard(lease,binding);val old=db.syncWorkDao().state(lease.storageScope)
         var state=if(old!=null && matches(old,lease,current))old else initial(lease,current,old)
         state=state.copy(requestedVersion=Math.addExact(state.requestedVersion,1),retryAtMillis=lowerBound(lease.storageScope,state),
-            status=when {current.requiresRecovery->"reconciliation";state.status in blocked && !resumeBlocked->state.status;else->"ready"},updatedAtMillis=now())
+            status=when {current.requiresRecovery->"reconciliation";state.status in blocked && !resumeBlocked && state.status !in resumeReasons->state.status;else->"ready"},updatedAtMillis=now())
         db.syncWorkDao().save(state);state
     }
     suspend fun state(lease:OwnerLease):SyncWorkState?=db.withTransaction {
         LocalOwnerStore(db).requireCurrent(lease);db.syncWorkDao().state(lease.storageScope)
     }
-    private suspend fun remaining(owner:String)=db.serverDiaryDao().unsettled(owner).count {
-        it.wireFormat=="sync-v1" && it.status in waiting
-    }
+    private suspend fun remaining(owner:String)=db.syncWorkDao().remaining(owner)
     private suspend fun save(lease:OwnerLease,binding:AccountBindingEntity,change:(SyncWorkState)->SyncWorkState):SyncWorkState=db.withTransaction {
         guard(lease,binding);val state=checkNotNull(db.syncWorkDao().state(lease.storageScope))
         if(!matches(state,lease,binding))throw StaleOwnerException()

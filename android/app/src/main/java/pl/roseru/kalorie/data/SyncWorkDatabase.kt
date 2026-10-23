@@ -25,7 +25,15 @@ data class SyncWorkState(@PrimaryKey val ownerScope:String,val leaseGeneration:L
 data class SyncQueueSignal(val ownerScope:String,val leaseGeneration:Long,val operationId:String,val action:String,
     val payload:String,val wireContext:String?) {override fun toString()="SyncQueueSignal(redacted)"}
 
+data class SyncContextSignal(val leaseGeneration:Long,@Embedded val binding:AccountBindingEntity) {
+    fun lease()=OwnerLease(binding.ownerScope,leaseGeneration)
+    override fun toString()="SyncContextSignal(redacted)"
+}
 @Dao interface SyncWorkDao {
+    @Query("SELECT a.generation AS leaseGeneration,b.* FROM local_active_owner a JOIN local_owners o ON o.storageScope=a.storageScope JOIN account_bindings b ON b.ownerScope=o.storageScope WHERE a.id=1 AND o.kind='account'")
+    fun contexts():Flow<SyncContextSignal?>
+    @Query("SELECT COUNT(*) FROM outbox WHERE ownerScope=:owner AND wireFormat='sync-v1' AND status IN ('pending','waiting_revision','waiting_timeline','waiting_profile')")
+    suspend fun remaining(owner:String):Int
     @Query("SELECT * FROM sync_work_state WHERE ownerScope=:owner") suspend fun state(owner:String):SyncWorkState?
     @Query("SELECT * FROM sync_work_state WHERE ownerScope=:owner") fun observe(owner:String):Flow<SyncWorkState?>
     @Upsert suspend fun save(state:SyncWorkState)

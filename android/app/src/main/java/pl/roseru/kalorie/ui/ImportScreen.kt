@@ -18,24 +18,25 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import pl.roseru.kalorie.importing.*
 
 /** Decisions use normal fields. Source identifiers and serialized envelopes remain internal. */
-@Composable fun ImportScreen(model:ImportViewModel,back:()->Unit,sendOrdinary:()->Unit,ordinaryConfigured:Boolean=true) {
+@Composable fun ImportScreen(model:ImportViewModel,back:()->Unit,sendOrdinary:()->Unit,ordinaryConfigured:Boolean=true,syncStatus:String?=null) {
     val state by model.state.collectAsStateWithLifecycle()
     ImportContent(state,back,model::refresh,model::previewGuest,model::previewOwn,model::selectPlan,model::approve,
         model::resume,model::downloadProof,model::sendApproved,model::finish,model::more,model::keep,model::separateCopy,
-        model::acceptServer,model::replay,model::recreate,model::resolveMapped,model::correct,model::newGoal,sendOrdinary,ordinaryConfigured)
+        model::acceptServer,model::replay,model::recreate,model::resolveMapped,model::correct,model::newGoal,sendOrdinary,ordinaryConfigured,syncStatus)
 }
 
 @Composable internal fun ImportContent(state:ImportUiState,back:()->Unit,refresh:()->Unit,guest:()->Unit,own:()->Unit,
     select:(String)->Unit,approve:(Boolean)->Unit,resume:()->Unit,proof:()->Unit,push:()->Unit,finish:()->Unit,more:()->Unit,
     keep:(ImportDecisionRow)->Unit,copy:(ImportDecisionRow)->Unit,server:(ImportDecisionRow)->Unit,replay:(ImportDecisionRow)->Unit,
     recreate:(ImportDecisionRow)->Unit,mapped:(ImportDecisionRow)->Unit,
-    correct:(ImportDecisionRow,Map<String,String>,Boolean)->Unit,newGoal:(ImportDecisionRow,Map<String,String>)->Unit,sendOrdinary:()->Unit,ordinaryConfigured:Boolean=true) {
+    correct:(ImportDecisionRow,Map<String,String>,Boolean)->Unit,newGoal:(ImportDecisionRow,Map<String,String>)->Unit,sendOrdinary:()->Unit,ordinaryConfigured:Boolean=true,syncStatus:String?=null) {
     Column(Modifier.fillMaxSize().imePadding().verticalScroll(rememberScrollState()).padding(20.dp),verticalArrangement=Arrangement.spacedBy(12.dp)) {
         TextButton(onClick=back){Text("Wróć do konta")}
         Text("Import i uzgadnianie",style=MaterialTheme.typography.headlineLarge)
         Text("Oryginały pozostają na urządzeniu. Zapisanie planu lub dodanie do kolejki nie oznacza potwierdzenia przez serwer.")
         if(state.busy)LinearProgressIndicator(Modifier.fillMaxWidth())
         state.message?.let {Text(it,Modifier.testTag("import-message"))}
+        syncStatus?.let {Text(it,Modifier.testTag("import-sync-status"))}
         OutlinedButton(onClick=refresh,enabled=!state.busy){Text("Odśwież postęp")}
         if(state.requiresRecovery) {
             Text("Zmienił się stan synchronizacji. Najpierw uzgodnij kopię tego konta; import gościa będzie dostępny po uzgodnieniu.")
