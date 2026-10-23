@@ -87,9 +87,12 @@ class ReconciliationStore(internal val db:CalorieDatabase,internal val schema:Sy
         val index=groups.indices.firstOrNull {it.toString() !in done}
         if(index!=null)return@withTransaction snapshots.begin(lease,groups[index],id,index)
         // A different-device ACK target must be proven by a newer typed snapshot before local ACK.
+        if(plan.state=="complete")return@withTransaction null
         val batches=dao.batches(id)
         val active=snapshots.active(lease)
-        if(batches.any {it.state=="awaiting_snapshot"} ||
+        // An ordinary/other-plan read cannot stand in for this plan or remove its next step.
+        val activePlan=active?.id?.let {dao.pull(it)?.planId}
+        if(activePlan!=id || batches.any {it.state=="awaiting_snapshot"} ||
             (batches.any {it.state=="complete"} && active?.id in batches.map {it.snapshotRunId}))
             return@withTransaction snapshots.begin(lease,emptyList(),id,groups.size)
         null
