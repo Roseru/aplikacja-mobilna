@@ -1,0 +1,35 @@
+services:
+  mailpit:
+    image: axllent/mailpit@sha256:0790692be935ea4420d085694f7985b1f692ca6a8771ab0e0bd8ba75ac180498
+    labels:
+      calorie.local-demo-mail: agent3-v1
+    restart: unless-stopped
+    user: "10001:10001"
+    read_only: true
+    cap_drop:
+      - ALL
+    security_opt:
+      - no-new-privileges:true
+    tmpfs:
+      - /data:rw,noexec,nosuid,nodev,size=67108864,uid=10001,gid=10001,mode=0700
+      - /tmp:rw,noexec,nosuid,nodev,size=16777216,uid=10001,gid=10001,mode=0700
+    command:
+      - --database
+      - /data/mailpit.db
+      - --disable-version-check
+      - --smtp-disable-rdns
+      - --smtp-allowed-recipients
+      - "^[^@]+@(invalid[.]example|example[.]test|calorie-demo[.]test)$"
+    environment:
+      MP_MAX_MESSAGES: "100"
+    ports:
+      - "127.0.0.1:18025:8025"
+    networks:
+      integration:
+        aliases:
+          - calorie-demo-mailpit
+
+networks:
+  integration:
+    external: true
+    name: ${DEMO_NETWORK:?Set the exact existing local integration network}

@@ -97,78 +97,14 @@ class ReconciliationStore(internal val db:CalorieDatabase,internal val schema:Sy
             return@withTransaction snapshots.begin(lease,emptyList(),id,groups.size)
         null
     }
-    /** Parse and semantically validate every archived page before publishing typed evidence. */
-    suspend fun acceptCompletedSnapshot(lease:OwnerLease,expected:AccountBindingEntity,id:String,runId:String)=withContext(Dispatchers.IO) {
-        val source=db.withTransaction {
-            val plan=plan(lease,expected,id);check(plan.approvedAt!=null)
-            val pull=checkNotNull(dao.pull(runId));check(pull.planId==id)
-            val run=checkNotNull(db.snapshotDao().run(runId));check(run.state=="complete" && run.ownerScope==lease.storageScope &&
-                run.accountId==expected.accountId && run.accountGeneration==expected.accountGeneration &&
-                run.syncEpoch==expected.syncEpoch && run.contextRevision==expected.contextRevision)
-            if(dao.evidence(id).any {it.kind=="receipt_group" && it.runId==runId})return@withTransaction null
-            Triple(plan,run,db.snapshotDao().pages(runId)) to db.snapshotDao().access(lease.storageScope)
-        } ?: return@withContext
-        val (captured,access)=source
-        val copy=ServerDiaryProtocol(schema).read(expected.syncEpoch,captured.third.map {ArchivedDiaryPage(it.queryJson,it.responseJson)})
-        check(copy.checkpoint==captured.second.checkpoint && copy.timelineRevision.toLong()==captured.second.timelineRevision)
-        db.withTransaction {
-            check(plan(lease,expected,id)==captured.first && db.snapshotDao().run(runId)==captured.second &&
-                db.snapshotDao().access(lease.storageScope)==access && db.snapshotDao().pages(runId)==captured.third)
-            val pull=checkNotNull(dao.pull(runId));val groups=groups(captured.first)
-            val requested=JSONArray(pull.operationIdsJson).let {rows->(0 until rows.length()).map {rows.getString(it)}}
-            require(if(pull.groupIndex<groups.size)requested==groups[pull.groupIndex] else requested.isEmpty())
-            val known=dao.evidence(id)
-            val sources=dao.sources(id)
-            val originals=sources.flatMap {source->JSONArray(source.outboxesJson).let {rows->
-                (0 until rows.length()).map {rows.getJSONObject(it)} }}.associateBy {it.getString("operationId")}
-            for(text in copy.receipts) {
-                val receipt=StrictJson.read(text.toByteArray());val opId=receipt.getString("operation_id")
-                check(opId in requested)
-                val original=checkNotNull(originals[opId]);check(original.getString("ownerScope")==lease.storageScope)
-                val wire=StrictJson.read(original.getString("wireJson").toByteArray())
-                check(wire.getString("operation_id")==opId && wire.getString("entity_id")==receipt.getString("entity_id") &&
-                    wire.getString("sync_epoch")==receipt.getString("source_epoch"))
-                val old=known.firstOrNull {it.kind=="receipt" && it.identity==opId}
-                if(old!=null)check(old.json==text)
-                dao.insert(ReconciliationEvidence(id,"receipt",opId,text,LegacyImportStore.digest(text),runId))
-            }
-            for(text in copy.mappings) {
-                val mapping=StrictJson.read(text.toByteArray());val key=mapping.getString("source_epoch")+":"+mapping.getString("source_entity_id")
-                val old=known.firstOrNull {it.kind=="mapping" && it.identity==key}
-                if(old!=null)check(StrictJson.read(old.json.toByteArray()).getString("target_entity_id")==mapping.getString("target_entity_id"))
-                // Historical mappings reserve an identity even after target deletion/retention.
-                // Archive them here. A selected operation must separately prove a live typed target;
-                // an unrelated historical reservation must not prevent completing a full read.
-                // A later observation is separately archived rather than overwriting old evidence.
-                dao.insert(ReconciliationEvidence(id,"mapping",key,text,LegacyImportStore.digest(text),runId))
-            }
-            for(entity in copy.entities) {
-                val text=StrictJson.canonical(JSONObject().put("entity_id",entity.id).put("entity_type",entity.type).put("revision",entity.revision)
-                    .put("deleted",entity.deleted).put("payload",entity.payload?.let {StrictJson.read(it.toByteArray())} ?: JSONObject.NULL))
-                dao.insert(ReconciliationEvidence(id,"entity:$runId",entity.id,text,LegacyImportStore.digest(text),runId))
-            }
-            dao.insert(ReconciliationEvidence(id,"receipt_group",pull.groupIndex.toString(),pull.operationIdsJson,
-                LegacyImportStore.digest(pull.operationIdsJson),runId))
-            val plan=captured.first
-            if(groupsComplete(plan)) {
-                val entities=copy.entities.associateBy {it.type to it.id}
-                val previous=db.serverDiaryDao().records(lease.storageScope)
-                for(row in sources.filter {it.operationId==null}) {
-                    val root=StrictJson.read(row.sourceJson.toByteArray());val sourceId=root.getString("wire_id")
-                    val target=entities[row.entityType to sourceId]
-                    val knownBefore=previous.any {it.entityType==row.entityType && it.entityId==sourceId} || root.getInt("server_revision")>0
-                    val code=when {
-                        row.sourceEpoch==null->"legacy_import_after_reconciliation"
-                        row.sourceEpoch==expected.syncEpoch && knownBefore && (target==null || target.deleted)->"absent_same_epoch"
-                        row.sourceEpoch==expected.syncEpoch->"same_epoch_review"
-                        else->"epoch_recovery_review"
-                    }
-                    if(row.metadataJson=="{}")dao.update(row.copy(state="decision",decisionCode=code))
-                }
-                dao.update(plan.copy(state="decisions"))
-            }
-            db.snapshotDao().save(ServerSnapshotAccess(lease.storageScope,runId,false))
-        }
+    suspend fun pendingSnapshotAcceptance(lease:OwnerLease,expected:AccountBindingEntity,id:String):String?=
+        ReconciliationSnapshotAcceptance(this).pending(lease,expected,id)
+    suspend fun prepareCompletedSnapshot(lease:OwnerLease,expected:AccountBindingEntity,id:String,runId:String):PreparedReconciliationSnapshot=
+        ReconciliationSnapshotAcceptance(this).prepare(lease,expected,id,runId)
+    suspend fun applyCompletedSnapshot(prepared:PreparedReconciliationSnapshot)=ReconciliationSnapshotAcceptance(this).apply(prepared)
+    /** Compatibility wrapper; session callers prepare outside their external guard, apply inside it. */
+    suspend fun acceptCompletedSnapshot(lease:OwnerLease,expected:AccountBindingEntity,id:String,runId:String) {
+        applyCompletedSnapshot(prepareCompletedSnapshot(lease,expected,id,runId))
     }
     suspend fun decide(lease:OwnerLease,expected:AccountBindingEntity,id:String,type:String,sourceId:String,sourceHash:String,choiceJson:String,expectedProofRunId:String?=null)=withContext(Dispatchers.IO) {
         val choice=StrictJson.read(choiceJson.toByteArray())
