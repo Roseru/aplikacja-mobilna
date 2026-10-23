@@ -49,7 +49,50 @@ Wymagane kontrole są zależne od dostępności funkcji GitHuba dla danego repoz
 
 Uruchomienia: PR do `main` oraz zmiana `main`. Każdy PR otrzymuje stabilne sprawdzenie zbiorcze `ci-required`. O3 może ograniczać kosztowne zadania do właściwych ścieżek, ale sprawdzenie wymagane nie może zostać pominięte ani oznaczać sukcesu, gdy wymagany test nie wykonał się.
 
-W bieżącym [workflow Project CI](../.github/workflows/backend.yml) wymagane joby to `contracts`, `quality`, `postgres`, `keycloak-pkce`, `android-build`, `android-device` i `local-integration`. Android ma build/lint/JVM oraz pełną instalację validation na API 35 offline. Lokalne środowisko ma rzeczywiste HTTPS/PKCE/API/PostgreSQL, kontrolę uprawnień i trwałości po down/up według [instrukcji](../infra/integration/README.md). Agregator `ci-required` zalicza wyłącznie sukces każdego z siedmiu jobów. Obecna konfiguracja wykonuje je także dla PR dokumentacji; ograniczenie przez ścieżki jest przyszłą optymalizacją, nie działającym pomijaniem. Artefakty APK z wersją/commitem/SHA-256, raporty i receipt infrastruktury bez sekretów mają 14 dni retencji; sposób pobrania APK i granice dostawy opisuje [instrukcja Androida](../android/README.md#github-actions-i-pobieranie-apk). Poniższa tabela przedstawia zakresy sprawdzeń, które mogą być wykonane wewnątrz tych jobów; nie każdy zakres ma osobny job.
+W [Project CI](../.github/workflows/backend.yml) zawsze wykonuje się `contracts`
+(schematy/OpenAPI/dane/linki oraz testy kwalifikatora, bramki i spięcia YAML).
+Ostatni krok tego joba publikuje jawny plan z [ci_scope.py](../tools/ci_scope.py).
+Domyślnie obowiązuje **FULL**: `quality`, `postgres`, `keycloak-pkce`,
+`android-build`, `android-device` i `local-integration` muszą zakończyć się
+SUCCESS, tak jak `contracts`. Android zachowuje JVM debug/validation, lint
+oraz pełne API35 offline; izolowana integracja nadal obejmuje HTTPS/PKCE/API/PG.
+
+**DOCS** jest wyjątkiem tylko dla zwykłych plików100644 z dokładnej allowlisty:
+`docs/KOMUNIKACJA_AGENTOW.md` oraz
+`docs/integracja/PRZYGOTOWANIE_REPLAY_E4_O3.md`. Ich tekst jest opisem przekazań
+lub przygotowania/pomiarów; istniejące narzędzia sprawdzają linki, nie wykonują
+tej treści. Lista nie jest globem `.md`/`docs/`; przed ewentualnym rozszerzeniem
+należy sprawdzić konsumentów pliku. Inne instrukcje, wymagania/specyfikacje,
+kod/testy, dane/assety, CI/config/lockfile i każdy nowy nieznany path oznaczają
+FULL, także gdy diff jest mieszany. Zmiana typu/trybu, symlink lub submodule
+również oznacza FULL. Rename jest rozpatrywany bez detekcji przeniesień:
+każda dodana/usunięta/zmieniona ścieżka jest oceniana osobno, bez limitu300plików.
+Zwykłe usunięcie pliku z allowlisty może mieć DOCS, ale linki nadal muszą przejść.
+
+Dla PR zakres to **pierwszy rodzic testowanego merge → ten merge**, po
+potwierdzeniu obu rodziców względem zdarzenia. Uwzględnia to aktualizację bazy,
+nie utożsamia porównania ze starym head lub HEAD^ dowolnego zdarzenia.
+Dla push zakres to całe before→after, także wiele commitów i merge.
+Brak/zerowy/niedostępny SHA, niespójne zdarzenie/checkout, błąd Git,
+pusty diff lub nieobsługiwane zdarzenie wymuszają FULL albo błąd joba;
+żaden taki przypadek nie uprawnia do DOCS. Checkout kwalifikatora pobiera
+historię; brakujące dane nie są zastępowane listą z limitowanego API.
+[GitHub opisuje testowany merge PR](https://docs.github.com/en/actions/reference/workflows-and-actions/events-that-trigger-workflows#pull_request).
+
+Stabilny `ci-required` ma `if: always()` i zależy od wszystkich siedmiu jobów.
+W DOCS wymaga contracts SUCCESS, poprawnego planu i dokładnie sześciu
+**zaplanowanych SKIPPED** powyższych jobów. W FULL każdy SKIPPED blokuje.
+FAILURE/CANCELLED, brak/nieprawidłowy plan lub wynik, nieznany wariant/joby
+zawsze blokują; nie ma blanket accept skipped ani globalnych paths-ignore.
+Log/summary pokazuje wariant, powód, SHA i wymagane/wykonane/pominięte kontrole.
+DOCS PASS nie oznacza testów aplikacji, nowego APK lub live E4. Sam PR
+zmieniający kwalifikator/testy/pipeline wykonuje FULL; lekka ścieżka sprawdzona
+lokalnie na rzeczywistym diff PR143 nie jest jeszcze zdalnym przebiegiem DOCS.
+Testy lokalne: `python -m unittest discover -s tools/tests -p test_ci_scope.py -v`
+w istniejącym środowisku contracts (z PyYAML). Nie zmieniono uprawnień,
+przypiętych akcji, retencji lub reguł ochrony gałęzi.
+
+Artefakty APK z wersją/commitem/SHA-256, raporty i receipt infrastruktury bez sekretów mają 14 dni retencji; sposób pobrania APK i granice dostawy opisuje [instrukcja Androida](../android/README.md#github-actions-i-pobieranie-apk). Poniższa tabela przedstawia zakresy sprawdzeń, które mogą być wykonane wewnątrz tych jobów; nie każdy zakres ma osobny job.
 
 | Sprawdzenie | Co rzeczywiście wykonuje | Warunek sukcesu / właściciel zawartości |
 |---|---|---|
@@ -63,7 +106,7 @@ W bieżącym [workflow Project CI](../.github/workflows/backend.yml) wymagane jo
 | `local-integration` | Odtworzenie lokalnego zestawu PostgreSQL/API/Keycloak/HTTPS, realne PKCE, ACL i trwałość po down/up | Wykonane testy i receipt bez sekretów; O3; nie jest to odbiór APK ani VPS/restore |
 | `ci-required` | Zbiera wyniki kontroli wymaganych dla danego zakresu | Błąd, anulowanie lub brak obowiązkowego wyniku blokuje PR; O3 |
 
-W E1 uruchamiamy kontrole istniejącego kodu, migracji i jakości. Kolejne kontrole stają się wymagane razem z funkcją z danego etapu. Brak kodu lub zbioru testów nie jest dowodem działania; PR nie dodaje „zielonego” pustego zadania w miejsce przyszłego sprawdzenia. Docelowa optymalizacja zmian samej dokumentacji może ograniczyć emulatory po jawnym uzgodnieniu zasad agregatora; obecnie wszystkie siedem jobów pozostaje wymaganych.
+W E1 uruchamiamy kontrole istniejącego kodu, migracji i jakości. Kolejne kontrole stają się wymagane razem z funkcją z danego etapu. Brak kodu lub zbioru testów nie jest dowodem działania; PR nie dodaje „zielonego” pustego zadania w miejsce przyszłego sprawdzenia. Wyjątek DOCS pomija wyłącznie sześć jawnie wskazanych jobów według powyższego planu; pozostałe zmiany zachowują pełną regresję.
 
 Testy PR nie korzystają z produkcyjnych danych, hasła administratora Keycloak ani rzeczywistego Gemini. Gemini jest mockowane, a tokeny testowe i efemeryczna baza powstają na potrzeby testu. Kontrola kryptografii obejmuje rzeczywiście podpisane tokeny i testowe JWKS; e2e z prawdziwym Keycloak następuje na środowisku integracyjnym przed E4 i przy zmianach logowania.
 
