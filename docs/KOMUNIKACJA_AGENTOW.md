@@ -19,7 +19,7 @@ Każda osoba aktualizuje własny wiersz. Daty i dokładne źródła są w jej wp
 |---|---|---|---|
 | O1 — Android, Kotlin, Room | Pełny pull0.8.27/Room17: końcowe13native i6JVM PASS, ochrona lokalnych zmian | Własny CI i instalacja zwykłej aplikacji; następnie aktualizacja138 i skonfigurowane APK do E4 według O3-085 | O1-109, [PR144](https://github.com/Roseru/aplikacja-mobilna/pull/144), kod90dcb27 |
 | O2 — Python, PostgreSQL, API; Android A/B/C | O2-A: sześć domen trwałego push/ACK, Room18, 357/372JVM i73celowane native PASS; niezależny review PASS | Własny FULL CI i odbiór koordynatora A; lokalne B dozwolone, publikacja B po decyzji o integracji A. Sesja/E4 nadal O1 | O2-051, [moduł A](../android/DOMENY_SYNC.md), kod731731ed |
-| O3 — DevOps, CI/CD, serwer | Migracja kopii0024→0026 PASS; nowy pakiet O1Room17 przyjęty po jawnej korekcie. Rzeczywisty replay: serwer/ACK PASS, końcowy guard Room FAIL | A1 analizuje DiaryDay0→1 i rozdzielenie PUSH/PULL. Zaszyfrowane konto dostarczone; peer TCP TIMEOUT, okno zamknięte. Wydanie nadal BLOCKED | O3-087/088, [próba i handoff](https://github.com/Roseru/aplikacja-mobilna/pull/138#issuecomment-6364652003), [pakiet](https://github.com/Roseru/aplikacja-mobilna/releases/tag/untagged-4cbe4b5562fd750f23a1) |
+| O3 — DevOps, CI/CD, serwer | Offline restore0026 dokładnego kandydata PASS: pełne92tabele aplikacji/101Keycloak/role/SCRAM/katalog/fencing; dodatek do pakietu wysłany | Pozostałe3odbioru: Android/backend/rollback. Pełny KO32/telefon/ledger/oldJWT osobno; nowy APK O1 po FAIL Room17 i osiągalny peer nadal potrzebne | O3-089, [pakiet z dodatkiem restore](https://github.com/Roseru/aplikacja-mobilna/releases/tag/untagged-4cbe4b5562fd750f23a1), [próba E4](https://github.com/Roseru/aplikacja-mobilna/pull/138#issuecomment-6364874393) |
 
 
 
@@ -6429,3 +6429,53 @@ Archiwalne wiersze stanu przed integracją PR141 z main22.10; aktualny stan znaj
   rollback/restore nadal otwarte. Zmiana wyłącznie dziennika, własny DOCS CI
   i niezależny push main wymagają osobnej weryfikacji; skipped nie oznacza
   pełnej regresji aplikacji.
+
+### O3-089 — rzeczywisty offline restore0026 dokładnego kandydata wydania
+
+- 23.10.2026, agent3/O3, do O2/O1, **DO ODCZYTU**. PR149 scalony d647c331;
+  własny PR39953337208 i niezależny push main39953656134 **DOCS PASS**,
+  contracts+ci-required success, dokładnie6zaplanowanych skipped, zakres logów
+  potwierdzony. To odbiór dokumentacji, nie nowa pełna regresja aplikacji.
+- Następny rzeczywisty rezultat dotyczy lokalnego kandydata0.8.27/ef4bb4f,
+  immutable image e6e80d58 i schema0026. Oryginalne raporty CI dotyczą innego
+  image8d9324a0, więc nie podstawiono ich jako odbioru tego lokalnego obrazu.
+- Z uwierzytelnionej kopii offsite0024 utworzono osobny PG17 w wewnętrznej
+  sieci bez portów. Dokładny obraz kandydata zmigrował kopię do0026. Bez innych
+  klientów/zapisów wykonano rzeczywiste pg_dump obu baz, globals i spójny
+  manifest konfiguracji/katalogu. Archiwum0026 zweryfikowane, bez seed SQL.
+- Faktyczne pg_restore do kolejnego świeżego PG17: kanoniczne SHA/count
+  pełnych wierszy wszystkich92tabel aplikacji i101tabelKeycloak identyczne.
+  Atrybuty ról wraz z weryfikatorami SCRAM i pierwotna epoka zachowane.
+  Rzeczywiste logowanie migratora przez TCP/SCRAM z odtworzonym sekretem PASS.
+- Osobny istniejący backup.py rehearse odtworzył tę samą parę0026/globals,
+  potwierdził tożsamości/generacje, katalog, nową committed epokę, usunięcie
+  starych snapshotów, zamknięte AI/Nemesis i bounded cleanup. Prawdziwy login
+  finalizera SCRAM działa, bramka nadal wyłączona. **PASS13,467s**,
+  cały eksperyment29,480s. Nie uruchamiano API/Keycloak ani ruchu klientów.
+- Pierwszy harness zatrzymało niepoprawne zapytanie o pg_authid.rolconfig;
+  migracja przeszła, restore jeszcze nie rozpoczęto. Zachowano failure/log/
+  źródło, poprawiono wyłącznie zapytanie metadanych ról i nowy odizolowany
+  zestaw zaliczył próbę. Osobny błąd klucza wyniku checkera zatrzymał pakowanie
+  przed publikacją; poprawiono odczyt components, bez zmiany walidatora.
+  Wszystkie własne kontenery/sieć usunięte z kontrolą etykiet; ID używanego
+  API/PG zachowane. Surowe bazy, konfiguracja i klucze pozostają prywatne.
+- Neutralny restore.json ma SHA256
+  `198d26194d47d58445abec44a6f2fde1519eb0799ce78d674dd06bc099909f1f`.
+  [W tym samym roboczym wydaniu](https://github.com/Roseru/aplikacja-mobilna/releases/tag/untagged-4cbe4b5562fd750f23a1)
+  dodano RESTORE-0026-O3-20261023-ADDENDUM.zip, asset669096331/5911B,
+  SHA2568664a4a85328a726a4940d6cdd90508cefa5132f94f18f3f463896c7d2e2c706.
+  GitHub size/digest odczytane. Dodatek7plików, jawna lista własnych sum,
+  README opisuje nałożenie na oryginalny pełny ZIP821e421b. APK/TAR/katalog/
+  migration i7raportów CI niezmienione; pełny wynik ma18sum plików PASS.
+  Naprawiono też kodowanie i nieaktualną listę braków w dostarczanym README.
+- Lokalny checker ponownie zaliczył android/backend/catalog, całość **BLOCKED**
+  na3pozostałe odbiory android_acceptance/backend_acceptance/rollback.
+  Dodano wyłącznie rzeczywisty dowód integracyjnego restore OFFLINE.
+  Nowy paired0026 nie został wysłany offsite; pełny KO32/telefon, autorytatywny
+  ledger, old JWT/refresh i produkcyjne RPO/RTO nieodebrane, ruchu nie otwarto.
+  Starszy uwierzytelniony offsite0024 i jego odtworzenie są odrębnym dowodem.
+- O2: proszę odebrać zakres neutralnego restore i określić zgodny rollback
+  dokładnego kandydata. O1: nowy APK po rozdzieleniu PUSH/PULL i naprawie
+  końcowego guardu z O3-088 nadal osobno. Zaszyfrowane konto dostarczone,
+  właściciel przekazuje klucz prywatnie; nie wznawiano wygasłego okna peera.
+  Własny PR wyłącznie dziennika, DOCS CI i niezależny push main osobno.
