@@ -101,4 +101,33 @@ class SyncWorkStorageTest {
             assertEquals(1,calls);assertEquals(2,coordinator.state(lease)!!.requestedVersion)
         }finally{work.cancelAllWork().result.get();db.close()}
     }
+    @Test fun zeroRetryAfterSchedulesDelayedSuccessorAndRestartCannotExecuteItEarly()=runBlocking<Unit> {
+        val db=memory();lateinit var runtime:SyncWorkRuntime;val work=manager {runtime}
+        try {
+            val lease=account(db);val binding=db.bootstrapDao().binding(lease.storageScope)!!;var calls=0
+            val executor=SyncStepExecutor {_,_,_->calls++;SyncStepResult.RetryAt(0)}
+            val coordinator=SyncCoordinator(db,schema,executor){1_000}
+            val scheduler=SyncWorkScheduler(work){1_000};runtime=SyncWorkRuntime(db,coordinator,scheduler)
+            coordinator.request(lease,binding)
+            val ticket=SyncWorkTicket(lease.storageScope,lease.generation,CanonicalMealRows.context(binding))
+            val first=scheduler.enqueue(ticket);val driver=WorkManagerTestInitHelper.getTestDriver(context)!!
+            driver.setAllConstraintsMet(first.id)
+            assertEquals(WorkInfo.State.SUCCEEDED,done(work,first.id).state)
+            assertEquals(1,calls);assertEquals(11_000,coordinator.state(lease)!!.retryAtMillis)
+            val chain=withContext(Dispatchers.IO){work.getWorkInfosForUniqueWork(ticket.uniqueName()).get()}
+            val successor=chain.single {it.id!=first.id}
+            assertEquals(WorkInfo.State.ENQUEUED,successor.state)
+            val restarted=SyncCoordinator(db,schema,executor){1_000}
+            runtime=SyncWorkRuntime(db,restarted,scheduler)
+            driver.setAllConstraintsMet(successor.id)
+            assertEquals(WorkInfo.State.ENQUEUED,withContext(Dispatchers.IO){work.getWorkInfoById(successor.id).get()!!.state})
+            assertEquals(1,calls)
+            // Even a premature scheduler wake must respect the persisted Room deadline.
+            driver.setInitialDelayMet(successor.id)
+            assertEquals(WorkInfo.State.SUCCEEDED,done(work,successor.id).state)
+            assertEquals(1,calls);assertEquals(11_000,restarted.state(lease)!!.retryAtMillis)
+            val resumedChain=withContext(Dispatchers.IO){work.getWorkInfosForUniqueWork(ticket.uniqueName()).get()}
+            assertTrue(resumedChain.any {it.id!=first.id && it.id!=successor.id && it.state==WorkInfo.State.ENQUEUED})
+        }finally{work.cancelAllWork().result.get();db.close()}
+    }
 }

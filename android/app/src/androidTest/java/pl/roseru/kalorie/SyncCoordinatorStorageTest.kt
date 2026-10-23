@@ -155,4 +155,70 @@ class SyncCoordinatorStorageTest {
             }finally{db.close()}
         }
     }
+    @Test fun zeroProgressResumesPushForNewIndependentWriteOrReleasedDependency()=runBlocking<Unit> {
+        for(releaseDependency in listOf(false,true)) {
+            val db=memory();var clock=1_000L
+            try {
+                val lease=account(db);val binding=db.bootstrapDao().binding(lease.storageScope)!!
+                val repository=DiaryRepository(db,context,lease);val blockedId=uuid()
+                repository.addWeight(80.0,LocalDate.of(2026,10,21),blockedId)
+                val original=db.serverDiaryDao().unsettled(lease.storageScope).single()
+                val waiting=original.copy(status="waiting_revision")
+                db.dao().updateOperation(waiting)
+                val server=Server(db);val coordinator=SyncCoordinator(db,schema,server){clock}
+                coordinator.request(lease,binding)
+                assertEquals(SyncCoordinator.Outcome.Deferred(11_000),coordinator.run(lease,binding))
+                assertEquals(listOf(SyncStep.PULL,SyncStep.PUSH,SyncStep.PULL),server.calls)
+                assertEquals("push",coordinator.state(lease)!!.phase)
+                assertEquals(waiting,db.dao().operation(original.operationId));assertTrue(server.sent.isEmpty())
+                val snapshot=db.snapshotDao().access(lease.storageScope)!!.activeRunId!!
+                val checkpoint=db.snapshotDao().run(snapshot)!!.checkpoint
+                val readyId=if(releaseDependency) {
+                    db.dao().updateOperation(original);blockedId
+                } else uuid().also {repository.addWeight(82.0,LocalDate.of(2026,10,22),it)}
+                val readyOperationId=if(releaseDependency)original.operationId else db.weightSyncDao().operations(lease.storageScope,readyId).single().operationId
+                coordinator.request(lease,binding)
+                assertEquals(snapshot,db.snapshotDao().access(lease.storageScope)!!.activeRunId)
+                assertEquals(checkpoint,db.snapshotDao().run(snapshot)!!.checkpoint)
+                server.calls.clear();clock=11_000
+                val resumed=SyncCoordinator(db,schema,server){clock}.run(lease,binding)
+                assertEquals(SyncStep.PUSH,server.calls.first())
+                assertEquals(1,server.sent.size);assertEquals(setOf(readyId),server.records.keys)
+                val sentOperation=checkNotNull(db.dao().operation(readyOperationId))
+                assertEquals("acked",sentOperation.status)
+                if(releaseDependency)assertEquals(SyncCoordinator.Outcome.Complete,resumed)
+                else {
+                    assertTrue(resumed is SyncCoordinator.Outcome.Deferred)
+                    assertEquals(waiting,db.dao().operation(original.operationId))
+                    assertEquals(80.0,db.dao().weight(blockedId,lease.storageScope)!!.kg,0.0)
+                }
+            }finally{db.close()}
+        }
+    }
+    @Test fun expiredRetryAtUsesDurableGrowingBackoffAcrossReopenAndPreservesFutureServerFloor()=runBlocking<Unit> {
+        for(past in listOf(false,true)) {
+            val name="expired-retry-${uuid()}"
+            fun open()=Room.databaseBuilder(context,CalorieDatabase::class.java,name).addCallback(DATABASE_GUARDS).build()
+            var db=open();var clock=1_000L;var calls=0
+            val executor=SyncStepExecutor {_,_,_->calls++;SyncStepResult.RetryAt(if(past)0 else clock)}
+            try {
+                val lease=account(db);val binding=db.bootstrapDao().binding(lease.storageScope)!!
+                val first=SyncCoordinator(db,schema,executor){clock}
+                first.request(lease,binding)
+                assertEquals(SyncCoordinator.Outcome.Deferred(11_000),first.run(lease,binding));assertEquals(1,calls)
+                db.close();db=open()
+                val resumed=SyncCoordinator(db,schema,executor){clock}
+                resumed.request(lease,binding)
+                assertEquals(SyncCoordinator.Outcome.Deferred(11_000),resumed.run(lease,binding));assertEquals(1,calls)
+                clock=11_000
+                assertEquals(SyncCoordinator.Outcome.Deferred(31_000),resumed.run(lease,binding));assertEquals(2,calls)
+                assertEquals(2,resumed.state(lease)!!.consecutiveFailures)
+                clock=31_000
+                val future=SyncCoordinator(db,schema,SyncStepExecutor {_,_,_->calls++;SyncStepResult.RetryAt(121_000)}){clock}
+                assertEquals(SyncCoordinator.Outcome.Deferred(121_000),future.run(lease,binding));assertEquals(3,calls)
+                future.request(lease,binding)
+                assertEquals(SyncCoordinator.Outcome.Deferred(121_000),future.run(lease,binding));assertEquals(3,calls)
+            }finally{db.close();context.deleteDatabase(name)}
+        }
+    }
 }

@@ -18,11 +18,15 @@ jest sprawdzana przed publikacją aktywnego checkpointu. Następnie stosowany
 jest idempotentny `ServerDiaryStore`. Po PUSH zawsze następuje PULL.
 `Completed` PUSH nie oznacza pustej kolejki: po końcowym odczycie Room ponownie
 sprawdza kolejkę i wersję zgłoszeń w tej samej transakcji. Ograniczony wycinek
-pracy zapisuje następną fazę. Brak postępu daje backoff, bez pętli oczekiwania.
+pracy zapisuje następną fazę. Brak postępu po zakończonym PULL zachowuje
+jego checkpoint i zapisuje wznowienie PUSH; nie zapętla kolejnych odczytów.
+Nie zmienia fazy niepewnego wysłania ani cancellation.
 
 `Retry-After` jest maksymalną z zapisanej granicy koordynatora i zamrożonych
 paczek. Nowe kliknięcie, zmiana generacji ani restart jej nie skracają.
 Worker ponownie sprawdza granicę także po przedwczesnym wybudzeniu schedulerem.
+Retry-After0, teraz lub data przeszła także dostają trwały rosnący backoff
+(10s,20s,…); termin jest maksimum tej granicy i przyszłego terminu serwera.
 Login, uzgodnienie, brak konfiguracji i brak miejsca zatrzymują automatyczne
 ponowienia do odpowiedniego jawnego zdarzenia. Cancellation propaguje się:
 nie jest ACK, zmianą identyfikatora operacji ani usunięciem pending pages.

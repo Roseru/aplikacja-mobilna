@@ -60,8 +60,8 @@ class SyncCoordinator(private val db:CalorieDatabase,private val schema:SyncWire
     private suspend fun stop(lease:OwnerLease,binding:AccountBindingEntity,reason:String):Outcome {
         save(lease,binding){it.copy(status=reason)};return Outcome.Stopped(reason)
     }
-    private suspend fun defer(lease:OwnerLease,binding:AccountBindingEntity,at:Long,failed:Boolean=false):Outcome {
-        val state=save(lease,binding){it.copy(status="deferred",retryAtMillis=maxOf(it.retryAtMillis,at),
+    private suspend fun defer(lease:OwnerLease,binding:AccountBindingEntity,at:Long,failed:Boolean=false,resumePhase:String?=null):Outcome {
+        val state=save(lease,binding){it.copy(status="deferred",phase=resumePhase ?: it.phase,retryAtMillis=maxOf(it.retryAtMillis,at),
             consecutiveFailures=if(failed)(it.consecutiveFailures+1).coerceAtMost(30) else it.consecutiveFailures)}
         return Outcome.Deferred(state.retryAtMillis)
     }
@@ -110,8 +110,9 @@ class SyncCoordinator(private val db:CalorieDatabase,private val schema:SyncWire
                         }
                         if(step==SyncStep.PULL && state.phase=="pull_after") {
                             val pending=db.withTransaction {guard(lease,binding);remaining(lease.storageScope)}
+                            // This completed pull supplies the checkpoint for the next push attempt.
                             if(pending>0 && state.acknowledged==0 && state.refused==0)
-                                return defer(lease,binding,Math.addExact(now(),backoff(state.consecutiveFailures)),true)
+                                return defer(lease,binding,Math.addExact(now(),backoff(state.consecutiveFailures)),true,resumePhase="push")
                             state=db.withTransaction {
                                 guard(lease,binding)
                                 val current=checkNotNull(db.syncWorkDao().state(lease.storageScope))
@@ -125,7 +126,8 @@ class SyncCoordinator(private val db:CalorieDatabase,private val schema:SyncWire
                             if(state.status=="idle")return Outcome.Complete
                         }
                     }
-                    is SyncStepResult.RetryAt->return defer(lease,binding,result.epochMillis)
+                    is SyncStepResult.RetryAt->return defer(lease,binding,
+                        maxOf(result.epochMillis,Math.addExact(now(),backoff(state.consecutiveFailures))),true)
                     SyncStepResult.Busy->return defer(lease,binding,Math.addExact(now(),30_000))
                     SyncStepResult.TransientFailure->return defer(lease,binding,Math.addExact(now(),backoff(state.consecutiveFailures)),true)
                     SyncStepResult.LoginRequired->return stop(lease,binding,"login")
