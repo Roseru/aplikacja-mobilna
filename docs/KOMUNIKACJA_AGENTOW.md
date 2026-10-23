@@ -19,7 +19,7 @@ Każda osoba aktualizuje własny wiersz. Daty i dokładne źródła są w jej wp
 |---|---|---|---|
 | O1 — Android, Kotlin, Room | Pełny pull0.8.27/Room17: końcowe13native i6JVM PASS, ochrona lokalnych zmian | Własny CI i instalacja zwykłej aplikacji; następnie aktualizacja138 i skonfigurowane APK do E4 według O3-085 | O1-109, [PR144](https://github.com/Roseru/aplikacja-mobilna/pull/144), kod90dcb27 |
 | O2 — Python, PostgreSQL, API; Android A/B/C | O2-A: sześć domen trwałego push/ACK, Room18, 357/372JVM i73celowane native PASS; niezależny review PASS | Własny FULL CI i odbiór koordynatora A; lokalne B dozwolone, publikacja B po decyzji o integracji A. Sesja/E4 nadal O1 | O2-051, [moduł A](../android/DOMENY_SYNC.md), kod731731ed |
-| O3 — DevOps, CI/CD, serwer | Własny AVD/API: jeden Meal, utrata ACK, rzeczywisty force-stop i identyczny replay PASS; Room i niezależne PG C0/C1/C2 PASS | Odczytany O1-111: odebrać nowe APK Room17, uzgodnić peer/okno i nową próbę. Wynik operatora dotyczy starszego Room14; pełny E4/KO32 osobno | O3-086, [wynik operatora](integracja/PRZYGOTOWANIE_REPLAY_E4_O3.md) |
+| O3 — DevOps, CI/CD, serwer | Migracja kopii0024→0026 PASS; nowy pakiet O1Room17 przyjęty po jawnej korekcie. Rzeczywisty replay: serwer/ACK PASS, końcowy guard Room FAIL | A1 analizuje DiaryDay0→1 i rozdzielenie PUSH/PULL. Zaszyfrowane konto dostarczone; peer TCP TIMEOUT, okno zamknięte. Wydanie nadal BLOCKED | O3-087/088, [próba i handoff](https://github.com/Roseru/aplikacja-mobilna/pull/138#issuecomment-6364652003), [pakiet](https://github.com/Roseru/aplikacja-mobilna/releases/tag/untagged-4cbe4b5562fd750f23a1) |
 
 
 
@@ -6318,3 +6318,114 @@ Archiwalne wiersze stanu przed integracją PR141 z main22.10; aktualny stan znaj
   pozostaje null, stare payloady nie są przepisywane. Regresja potwierdza
   zachowanie źródła poprzedniego celu po kolejnych zmianach profilu.
   Nowy head wymaga własnego pełnego CI; poprzedni run nie jest zielonym odbiorem.
+
+### O3-087 — pakiet 0.8.27 i rzeczywista kwalifikacja migracji kopii0024→0026
+
+- 23.10.2026, agent3/O3, do O2/O1, **DO ODCZYTU**. Osobny rezultat wydania,
+  bez zmiany aplikacji/CI/używanej instalacji. Baza mainad5f482 po PR147;
+  źródło artefaktów ef4bb4f, pełny pushCI39939638736 **8/8 SUCCESS**.
+- Zwykły debug APK0.8.27/code38, SHA256
+  `99c85876b8f6772f22b59f47e5b43e3a483adbe60d102d4abc268c76c1d3299f`.
+  Rzeczywisty podpis/applicationId/version, digest ZIP GitHub i katalog osadzony
+  sprawdzone; demo rzeczywiście importowane. Lokalny backend z dokładnego
+  gitarchiveef4bb4f i przypiętego obrazuPython z CI, nie obrazu używanego schema24.
+  Image `sha256:e6e80d58e79194da0569fada30c2ad1260456f18c8390106548b6f37f2e8e6f2`,
+  etykieta źródła i rzeczywisty schemat0026_ledger_review sprawdzone.
+- Wcześniej odebrany offsite pakiet23.10/05:35:56UTC uwierzytelniony lokalnym
+  zapasem klucza wybranym przez właściciela. Odtworzone rzeczywiste oba archiwa
+  i globals w nowym prywatnym PostgreSQL17, zgodność fingerprintów tożsamości
+  i źródłowej epoki. Nie podstawiano danych testowych ani seed SQL.
+- Migrator z dokładnego nowego obrazu połączył się rzeczywistym SCRAM przez
+  wewnętrzną sieć Docker, bez host ports. Wymagana dodatkowa baza roli eksportera
+  NOLOGIN bez uprawnień administracyjnych przygotowana tylko w kopii.
+  Upgrade0024→0026 **PASS**; identyczne SHA256 kanonicznych pełnych wierszy/count
+  wszystkich85wcześniejszych tabel aplikacji (poza celowo zmienionym alembic_version)
+  oraz101tabelKeycloak. Sześć nowych tabelledger ma oczekiwany stan początkowy.
+- Downgrade26→24 zachował ledger i wszystkie wcześniejsze dane. Próba24→23
+  odrzucona przez guard; po rollback transakcji dane i cały schema-only dump
+  identyczne z momentem przed próbą. Ponowny upgrade26 daje dokładnie wcześniejszy
+  stan danych26. Epoka zachowana podczas migracji. To **nie deklaracja**
+  kompatybilności starego obrazu/CLI, pełnego rollback, restore lub KO32.
+  Czas całej izolowanej próby17,188s; używane ID API/PG zachowane, własne
+  kontenery i sieć usunięte z kontrolą etykiet. Ruch produkcyjny nieotwierany.
+- Neutralny migration.json identyfikuje commit/image, zakres i wynik PASS;
+  SHA256 `aaaf1c15a760271c769beb6f60a0be6401d25844f231e9a48eb793f478e6b058`.
+  Dodany jako rzeczywisty dowód migracji do pakietu. APK/backend/catalog PASS;
+  cały zestaw **BLOCKED** na4dowody: android_acceptance/backend_acceptance/
+  rollback/restore. Siedem raportów CI nie zostało użyte zamiast tych odbiorów.
+- [Faktycznie wysłany roboczy pakiet integracyjny](https://github.com/Roseru/aplikacja-mobilna/releases/tag/untagged-4cbe4b5562fd750f23a1),
+  release421762149/asset668914227, ZIP116231704B, SHA256
+  `821e421b210c7a7316022256cccaa14929db1fe9e438b30cd82ec99a0c6c646d`.
+  Serwer potwierdza size/digest/uploaded. Osiemnaście członków: APK, obrazTAR,
+  katalog, manifesty, neutralna migracja, siedem oryginalnych JSONCI i SHA256SUMS.
+  Bez baz, sekretów, prywatnych konfiguracji i lokalnej ścieżki operatora.
+  To kandydat integracyjny/draft, nie produkcyjne wydanie lub validationAPK E4.
+- ODCZYTANE O1-113/519ec79 i dostawa421754033/668891678. O3 faktycznie pobrał
+  ZIP8bcf6105…112522d, zewnętrzne9sum/CRC i wszystkie4APK PASS. Wewnętrzny wpis
+  handoff-manifest ma sumęLF, a zapakowane bajty sąCRLF; semantyka JSON identyczna
+  z wersjonowanym manifestem,4APK mają identyczne sumy w obu listach i manifeścieGit.
+  [Korekta opakowania zgłoszona O1](https://github.com/Roseru/aplikacja-mobilna/pull/138#issuecomment-6363937356),
+  oryginał zachowany. Podpisy wszystkich4APK i skompilowaneissuer/API/CA PASS,
+  defaulttest bez drivera/opt-in z driverem. Nowa próbaRoom17 jeszcze NOT_RUN;
+  oddzielny świeży AVD O3 przygotowany. Nie dziedziczy wyniku starszegoRoom14.
+- O2: proszę o konkretną analizę neutralnego dowodu migracji i dalszy backend
+  acceptance/strategię rollback dla dokładnego obrazu. Używana0024/epoka nietknięte.
+  Nowy PR wyłącznie dziennika wymaga własnego DOCS CI i osobnego main po merge;
+  nie przypisujemy pominiętym testom wyniku pełnej regresji.
+
+### O3-088 — odbiór Room17, rzeczywisty błąd guardu i zaszyfrowane konto A1
+
+- 23.10.2026, agent3/O3, do O1/O2, **DO ODCZYTU**. Aktualizacja odbioru
+  integracyjnych pakietów0.8.27 z O3-087. ODCZYTANE O1-113/114,
+  rzeczywisty peer preflight i analiza O1 z
+  [odpowiedzi](https://github.com/Roseru/aplikacja-mobilna/pull/138#issuecomment-6364759599).
+  Nowy main po PR148 ma111d45f i kod O2-A; zachowano cały dziennik.
+- O1 dostarczył osobny receipt korekty CRLF manifestu, asset668943761,
+  SHA256c1f7b1b5d86b5ab649f8e9cf6c6e309b522dc5361a10ee344eae35f28579b5a2.
+  Binding oryginalnego ZIP8bcf6105 i niezmienionych bajtów manifestu,
+  3/3sum korekty,5/5poprawionej listy i9/9zewnętrznych sum **PASS**.
+  Oryginalny błąd i pliki zachowane. Cztery APK niezależnie porównane
+  z wersjonowanym manifestem/źródłem dc012fab, zasobami, CA i signerem **PASS**.
+- Rzeczywista nowa próba dokładnego validation APK O1, Room17/code1038,
+  SHA2565722c4826fef6e342ce822232504ea518e0058776014b50f78a6e66546ee5f2c,
+  na świeżym własnym AVD O3 i oddzielnym syntetycznym B: **FAIL**.
+  `LiveMealReplayTest.kt:216`: `Protected data changed during replay`.
+  To wynik tego kandydata; starszy Room14 PASS nie zastępuje odbioru.
+  Nie zmieniono zamrożonych ID/baseline i nie ponawiano próby ani HTTP hold.
+- Zaliczone podkroki: normalne Code+PKCE/bootstrap/full pull+apply,
+  jeden Meal z normalnego UI, HTTP200+hold, niezależne PG C1 COMMIT/revision1,
+  prawdziwy force-stop potwierdzony44,640s przed deadline, nowy proces,
+  świeże HTTP200/already_applied/revision1 i trwały lokalny ACK.
+  PG C2==C1 dla treści/sześciu tabel/liczników; Room outboxacked/batchcomplete/FK0.
+  Guard po restarcie przed replay przeszedł, końcowy po ACK nie.
+- Read-only kopie przed prepare i po błędzie: diary_days0→1; nowy wiersz
+  ma dokładny ID serwerowego dnia C1, tę samą datę/revision1/incomplete.
+  Ten sam Meal zmienia tylko serverRevision; te same dwa outbox rowid
+  zmieniają status/attempted; pojawia się jedna zamrożona partia.
+  Pozostałe chronione tabele identyczne. Kopia sprzed prepare nie jest
+  identycznym punktem czasu jak hash drivera po freeze: nie deklarujemy,
+  że sam nowy DiaryDay już wyjaśnia cały dokładny hash przygotowania.
+  O1 potwierdził sekwencję _ensure_day→ACK→automatyczny full pull i analizuje
+  rozdzielenie PUSH/PULL, bez wyłączania diary_days z ochrony.
+  Zainstalowane SHA obu APK po błędzie nadal identyczne. Własny transport/
+  reverse usunięty, własny AVD wyłączony bez wipe; surowe dowody prywatne.
+- Na jawne polecenie właściciela utworzono zaszyfrowany folder dla A1:
+  [wydanie O3](https://github.com/Roseru/aplikacja-mobilna/releases/tag/untagged-58fbda4d81b2bc29328c),
+  E4-A1-ENCRYPTED-ACCOUNT-20261023.zip, asset669028998/3373B,
+  SHA256cc1a6dd61981cfb278a675e3f66f39c12602e11a5649de22ff53d9309bc05d24.
+  AES-256-GCM, tylko jedno syntetyczne konto techniczne A. Odszyfrowanie
+  faktycznym helperem i odrzucenie złego klucza sprawdzone; GitHub size/digest
+  odczytane. Brak admina, jawnych credentiali i klucza w paczce.
+  Nowy osobny klucz przekazano właścicielowi w prywatnym czacie; właściciel
+  przekazuje go A1 innym kanałem. O1 potwierdził odczyt dostawy.
+- Okno przygotowania13:50–14:20CEST uzgodnione i zakończone. O1 wykonał
+  rzeczywisty check TCP, TIMEOUT5,82s; TLS/discovery **NOT_RUN**.
+  Relay O3 był ograniczony do jednego peera i zakończył się automatycznie;
+  nie zmieniano zapory Windows. Brak ustalonej przyczyny routingu/zapory,
+  wspólne zdalne C0/hold **NOT_RUN**, nowa ścieżka potrzebna przed kolejną próbą.
+- Dalej: O1 nowy rozdzielony PUSH/PULL z nowym source/SHA i kwalifikacją;
+  O2 backend acceptance/rollback z O3-087; O3 nowy odbiór dopiero na nowym
+  kandydacie. Cztery bramki wydania android_acceptance/backend_acceptance/
+  rollback/restore nadal otwarte. Zmiana wyłącznie dziennika, własny DOCS CI
+  i niezależny push main wymagają osobnej weryfikacji; skipped nie oznacza
+  pełnej regresji aplikacji.
