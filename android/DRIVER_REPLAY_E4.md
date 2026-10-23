@@ -1,5 +1,10 @@
 # Driver wybranej partii E4 — przygotowanie O1
 
+23.10.2026: przygotowywany pakiet na aktualnym main a034f66 obejmuje dodatkowo
+odciski tabel canonical_weights i sync_conflict_decisions. Pola te nie są
+normalizowane. Nowa kwalifikacja i skonfigurowane APK pozostają w przygotowaniu;
+historyczne wyniki poniżej nie potwierdzają tej aktualizacji.
+
 19.10.2026, gałąź `codex/android-replay-ack`, [PR138](https://github.com/Roseru/aplikacja-mobilna/pull/138).
 Kontynuacja [bariery validation](REPLAY_ACK_VALIDATION.md). **Driver live i wspólny E4 NOT_RUN**;
 końcowa kwalifikacja offline znajduje się na końcu. Ten dokument nie jest poleceniem uruchomienia testu.
@@ -57,7 +62,7 @@ dowodów. Częściowy plik po awarii nie stanowi poprawnego dowodu. Są tam raw
 body i lokalne identyfikatory; ewentualny odbiór przez operatora musi trafić
 do prywatnego katalogu poza Git/OneDrive. Nie publikować plików lub raw logów.
 
-Odciski obejmują19 tabel danych, ich rowid, wszystkie konta/gościa i wspólny
+Odciski obejmują21 tabel danych, ich rowid, wszystkie konta/gościa i wspólny
 katalog, z kontrolą FK. W wybranych wierszach normalizuje się **tylko**:
 
 - meals.serverRevision — osobno wymagane0 przed ACK i1 po replay;

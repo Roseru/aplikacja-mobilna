@@ -26,7 +26,7 @@ class MealReplayFingerprintTest {
             assertEquals("changed",value("sync_push_batches","batch",column,"changed"))
     }
     @Test fun OtherRowsAndTablesPreserveEvenSimilarColumnNames() {
-        for(table in listOf("profiles","goals","meal_items","photo_analysis_requests"))
+        for(table in listOf("profiles","goals","meal_items","photo_analysis_requests","canonical_weights","sync_conflict_decisions"))
             for(column in listOf("status","serverRevision","attempted","state"))assertEquals("original",value(table,"meal",column,"original"))
         assertEquals("ACK",value("sync_push_batches","other","responseJson","ACK"))
     }

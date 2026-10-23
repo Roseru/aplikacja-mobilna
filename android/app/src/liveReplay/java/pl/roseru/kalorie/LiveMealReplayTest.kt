@@ -79,7 +79,8 @@ class LiveMealReplayTest {
     private suspend fun protected(plan: JSONObject): String = app.database.withTransaction {
         val tables = listOf("products", "meals", "meal_items", "goals", "outbox", "rations", "ration_components",
             "profiles", "weights", "diary_days", "catalog_generations", "catalog_records", "catalog_members",
-            "catalog_active", "meal_photo_drafts", "photo_analysis_requests", "photo_materializations", "photo_confirmation_history", "sync_push_batches")
+            "catalog_active", "meal_photo_drafts", "photo_analysis_requests", "photo_materializations", "photo_confirmation_history", "sync_push_batches",
+            "canonical_weights", "sync_conflict_decisions")
         val result = JSONObject()
         for (table in tables) {
             val digest = MessageDigest.getInstance("SHA-256")
