@@ -200,9 +200,9 @@ class ServerSnapshotStorageTest {
             }
             expected = originalTables(fixture); assertEquals(18, expected.size)
         } finally { fixture.close() }
-        val migrated = Room.databaseBuilder(context, CalorieDatabase::class.java, name).addMigrations(MIGRATION_6_7, MIGRATION_7_8, pl.roseru.kalorie.photo.MIGRATION_8_9, pl.roseru.kalorie.photo.MIGRATION_9_10, pl.roseru.kalorie.data.MIGRATION_10_11, pl.roseru.kalorie.data.MIGRATION_11_12, pl.roseru.kalorie.photo.MIGRATION_12_13, pl.roseru.kalorie.data.MIGRATION_13_14, pl.roseru.kalorie.data.MIGRATION_14_15, pl.roseru.kalorie.data.MIGRATION_15_16).addCallback(DATABASE_GUARDS).build()
+        val migrated = Room.databaseBuilder(context, CalorieDatabase::class.java, name).addMigrations(MIGRATION_6_7, MIGRATION_7_8, pl.roseru.kalorie.photo.MIGRATION_8_9, pl.roseru.kalorie.photo.MIGRATION_9_10, pl.roseru.kalorie.data.MIGRATION_10_11, pl.roseru.kalorie.data.MIGRATION_11_12, pl.roseru.kalorie.photo.MIGRATION_12_13, pl.roseru.kalorie.data.MIGRATION_13_14, pl.roseru.kalorie.data.MIGRATION_14_15, pl.roseru.kalorie.data.MIGRATION_15_16, pl.roseru.kalorie.data.MIGRATION_16_17).addCallback(DATABASE_GUARDS).build()
         try {
-            assertEquals(expected, originalTables(migrated)); assertEquals(16, migrated.openHelper.readableDatabase.version)
+            assertEquals(expected, originalTables(migrated)); assertEquals(17, migrated.openHelper.readableDatabase.version)
             assertTrue(migrated.snapshotDao().runs("guest").isEmpty())
             assertFalse(migrated.openHelper.readableDatabase.query("PRAGMA foreign_key_check").use { it.moveToFirst() })
         } finally { migrated.close(); context.deleteDatabase(name) }

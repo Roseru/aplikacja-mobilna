@@ -16,11 +16,13 @@ data class ProductEntity(
     @PrimaryKey val id: String, val name: String, val searchName: String,
     val kcal: Double, val protein: Double?, val fat: Double?, val carbs: Double?,
     val defaultGrams: Double, val category: String, val source: String, val catalogVersion: Int,
-    val ownerScope: String? = null, val catalogJson: String? = null
+    val ownerScope: String? = null, val catalogJson: String? = null, val wirePayload: String? = null
 ) {
-    val unit: String get() = catalogJson?.let { JSONObject(it).getString("basis_unit") } ?: "g"
-    fun nutrients() = catalogJson?.let { exactProductNutrients(it, "100", unit) } ?: Nutrients(kcal, protein, fat, carbs)
-    fun portion(amount: String, quantityUnit: String = unit) = catalogJson?.let { exactProductNutrients(it, amount, quantityUnit) }
+    val unit: String get() = (wirePayload ?: catalogJson)?.let { JSONObject(it).getString("basis_unit") } ?: "g"
+    fun nutrients() = wirePayload?.let { pl.roseru.kalorie.core.sync.PrivateProductWire.portion(it, "100", unit) }
+        ?: catalogJson?.let { exactProductNutrients(it, "100", unit) } ?: Nutrients(kcal, protein, fat, carbs)
+    fun portion(amount: String, quantityUnit: String = unit) = wirePayload?.let { pl.roseru.kalorie.core.sync.PrivateProductWire.portion(it, amount, quantityUnit) }
+        ?: catalogJson?.let { exactProductNutrients(it, amount, quantityUnit) }
         ?: nutrients().portion(amount.toDouble())
 }
 
@@ -59,7 +61,10 @@ data class MealItemEntity(
     }
     fun consumed(): Nutrients = wirePayload?.let {pl.roseru.kalorie.core.sync.MealWire.consumed(it)} ?: snapshotJson?.let {
         val snapshot = JSONObject(it); val quantity = snapshot.getJSONObject("quantity")
-        exactProductNutrients(snapshot.getJSONObject("product").toString(), quantity.getString("amount"), quantity.getString("unit"))
+        snapshot.optJSONObject("private_product")?.let { product ->
+            pl.roseru.kalorie.core.sync.PrivateProductWire.portion(StrictJson.canonical(product),
+                quantity.getString("amount"), quantity.getString("unit"))
+        } ?: exactProductNutrients(snapshot.getJSONObject("product").toString(), quantity.getString("amount"), quantity.getString("unit"))
     } ?: Nutrients(checkNotNull(kcalPer100), proteinPer100, fatPer100, carbsPer100).portion(grams)
 }
 
@@ -99,7 +104,7 @@ data class OutboxEntity(@PrimaryKey val operationId: String, val ownerScope: Str
 
 @Entity(tableName = "profiles", indices = [Index(value = ["ownerScope"], unique = true)])
 data class ProfileEntity(@PrimaryKey val id: String, val ownerScope: String, val nickname: String,
-    val heightCm: Double, val activityClass: String, val dietAim: String, val zoneId: String, val localRevision: Int)
+    val heightCm: Double?, val activityClass: String, val dietAim: String, val zoneId: String, val localRevision: Int)
 
 @Entity(tableName = "weights", indices = [Index(value = ["ownerScope", "localDate", "deleted"])])
 data class WeightEntity(@PrimaryKey val id: String, val ownerScope: String, val localDate: String,
@@ -113,7 +118,7 @@ data class DiaryDayEntity(@PrimaryKey val id: String, val ownerScope: String, va
 interface CalorieDao {
     @Transaction @Query("SELECT * FROM meals WHERE ownerScope = :owner AND deleted = 0 ORDER BY localDate, occurredAt, id")
     suspend fun achievementMeals(owner: String): List<MealWithItems>
-    @Query("SELECT * FROM goals WHERE ownerScope = :owner ORDER BY validFrom, localSequence, id")
+    @Query("SELECT * FROM goals WHERE ownerScope = :owner AND id NOT IN (SELECT localId FROM server_diary_records WHERE ownerScope=:owner AND entityType='goal' AND deleted=1 AND disposition='applied' AND localId IS NOT NULL) ORDER BY validFrom, localSequence, id")
     suspend fun achievementGoals(owner: String): List<GoalEntity>
     @Query("SELECT * FROM diary_days WHERE ownerScope = :owner AND declaredComplete = 1 ORDER BY localDate")
     suspend fun achievementDeclarations(owner: String): List<DiaryDayEntity>
@@ -121,7 +126,7 @@ interface CalorieDao {
     suspend fun achievementWeights(owner: String): List<WeightEntity>
     @Transaction @Query("SELECT * FROM meals WHERE ownerScope = :owner AND localDate BETWEEN :start AND :end AND deleted = 0 ORDER BY localDate, occurredAt, id")
     fun mealsBetween(owner: String, start: String, end: String): Flow<List<MealWithItems>>
-    @Query("SELECT * FROM goals WHERE ownerScope = :owner AND validFrom <= :end ORDER BY validFrom, localSequence, id")
+    @Query("SELECT * FROM goals WHERE ownerScope = :owner AND validFrom <= :end AND id NOT IN (SELECT localId FROM server_diary_records WHERE ownerScope=:owner AND entityType='goal' AND deleted=1 AND disposition='applied' AND localId IS NOT NULL) ORDER BY validFrom, localSequence, id")
     fun goalsThrough(owner: String, end: String): Flow<List<GoalEntity>>
     @Query("SELECT * FROM diary_days WHERE ownerScope = :owner AND localDate BETWEEN :start AND :end ORDER BY localDate")
     fun daysBetween(owner: String, start: String, end: String): Flow<List<DiaryDayEntity>>
@@ -144,9 +149,9 @@ interface CalorieDao {
     @Update suspend fun updateItem(item: MealItemEntity)
     @Delete suspend fun removeItem(item: MealItemEntity)
     @Query("SELECT * FROM meal_items WHERE id=:id") suspend fun itemById(id: String): MealItemEntity?
-    @Query("SELECT * FROM goals WHERE ownerScope = :owner AND validFrom <= :date ORDER BY validFrom DESC, localSequence DESC, id DESC LIMIT 1")
+    @Query("SELECT * FROM goals WHERE ownerScope = :owner AND validFrom <= :date AND id NOT IN (SELECT localId FROM server_diary_records WHERE ownerScope=:owner AND entityType='goal' AND deleted=1 AND disposition='applied' AND localId IS NOT NULL) ORDER BY validFrom DESC, localSequence DESC, id DESC LIMIT 1")
     fun goal(owner: String, date: String): Flow<GoalEntity?>
-    @Query("SELECT * FROM goals WHERE ownerScope = :owner AND validFrom = :date ORDER BY localSequence DESC, id DESC LIMIT 1") suspend fun goalOn(owner: String, date: String): GoalEntity?
+    @Query("SELECT * FROM goals WHERE ownerScope = :owner AND validFrom = :date AND id NOT IN (SELECT localId FROM server_diary_records WHERE ownerScope=:owner AND entityType='goal' AND deleted=1 AND disposition='applied' AND localId IS NOT NULL) ORDER BY localSequence DESC, id DESC LIMIT 1") suspend fun goalOn(owner: String, date: String): GoalEntity?
     @Query("SELECT * FROM goals WHERE ownerScope = :owner AND id = :id") suspend fun goalById(owner: String, id: String): GoalEntity?
     @Query("SELECT COALESCE(MAX(localSequence), 0) FROM goals WHERE ownerScope = :owner") suspend fun goalSequence(owner: String): Int
     @Insert(onConflict = OnConflictStrategy.IGNORE) suspend fun seedGoal(goal: GoalEntity)
@@ -177,8 +182,9 @@ interface CalorieDao {
     RationEntity::class, RationComponentEntity::class, ProfileEntity::class, WeightEntity::class, DiaryDayEntity::class,
     CatalogGenerationEntity::class, CatalogRecordEntity::class, CatalogMemberEntity::class, CatalogActiveEntity::class,
     LocalOwnerEntity::class, LocalActiveOwnerEntity::class, AccountBindingEntity::class,
-    BootstrapAttemptEntity::class, ServerSnapshotRun::class, ServerSnapshotPage::class, ServerSnapshotAccess::class, ServerSnapshotIdentity::class, pl.roseru.kalorie.photo.MealPhotoDraft::class, pl.roseru.kalorie.photo.PhotoAnalysisRequestEntity::class, PhotoMaterialization::class, SyncPushBatch::class, pl.roseru.kalorie.photo.PhotoConfirmationHistory::class, CanonicalWeightState::class, SyncConflictDecision::class], version = 16, exportSchema = true)
+    BootstrapAttemptEntity::class, ServerSnapshotRun::class, ServerSnapshotPage::class, ServerSnapshotAccess::class, ServerSnapshotIdentity::class, pl.roseru.kalorie.photo.MealPhotoDraft::class, pl.roseru.kalorie.photo.PhotoAnalysisRequestEntity::class, PhotoMaterialization::class, SyncPushBatch::class, pl.roseru.kalorie.photo.PhotoConfirmationHistory::class, CanonicalWeightState::class, SyncConflictDecision::class, ServerDiaryRecord::class, ServerDiaryApplication::class], version = 17, exportSchema = true)
 abstract class CalorieDatabase : RoomDatabase() {
+    abstract fun serverDiaryDao(): ServerDiaryDao
     abstract fun conflictDao(): SyncConflictDao
     abstract fun weightSyncDao(): CanonicalWeightDao
     abstract fun photoConfirmationHistoryDao():pl.roseru.kalorie.photo.PhotoConfirmationHistoryDao
