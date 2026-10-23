@@ -308,7 +308,7 @@ class OwnerStorageTest {
             assertNotNull(db.dao().meal("exact-meal", "guest")!!.items.single().snapshotJson)
             assertTrue(db.dao().meal("tombstone", "guest")!!.meal.deleted)
             assertTrue(db.dao().weight("deleted-weight", "guest")!!.deleted)
-            assertEquals(18, sql.version)
+            assertEquals(19, sql.version)
             assertFalse(sql.query("PRAGMA foreign_key_check").use { it.moveToFirst() })
             DiaryRepository(db, context).initialize()
             assertEquals(expected.getValue("outbox"), sql.query(queries.getValue("outbox")).use(::rows))

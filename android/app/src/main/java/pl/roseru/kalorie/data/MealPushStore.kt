@@ -134,11 +134,15 @@ class MealPushStore(private val db: CalorieDatabase, private val schema: SyncWir
         }
     }
 
-    internal suspend fun gate(lease: OwnerLease): MealPushGate {
+    internal suspend fun gate(lease: OwnerLease, reconciliationPlanId:String?=null): MealPushGate {
         owners.requireCurrent(lease)
         check(db.ownerDao().byScope(lease.storageScope)?.kind == "account")
         val binding = checkNotNull(db.bootstrapDao().binding(lease.storageScope))
-        check(!binding.requiresRecovery)
+        if(binding.requiresRecovery) {
+            val plan=checkNotNull(reconciliationPlanId?.let {db.importDao().plan(it)})
+            check(plan.targetScope==lease.storageScope && plan.wireContext==CanonicalMealRows.context(binding) &&
+                plan.approvedAt!=null && plan.state=="ready_to_apply")
+        }
         val bootstrap = checkNotNull(db.bootstrapDao().attempt(lease.storageScope))
         check(bootstrap.responseJson != null)
         val access = checkNotNull(db.snapshotDao().access(lease.storageScope))

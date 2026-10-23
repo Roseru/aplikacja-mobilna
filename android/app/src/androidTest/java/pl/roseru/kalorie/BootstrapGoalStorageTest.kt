@@ -248,7 +248,7 @@ class BootstrapGoalStorageTest {
         try {
             val sql = db.openHelper.readableDatabase
             queries.forEach { (table, query) -> assertEquals(table, expected.getValue(table), sql.query(query).use(::rows)) }
-            assertEquals(18, sql.version)
+            assertEquals(19, sql.version)
             assertEquals("legacy", db.dao().goalById("guest", "old-goal")!!.reason)
             assertEquals(0, db.dao().goalById("guest", "old-goal")!!.localSequence)
             assertNull(db.bootstrapDao().binding("guest"))

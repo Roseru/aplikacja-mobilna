@@ -25,9 +25,11 @@ class ServerDiaryStore(private val db: CalorieDatabase, private val schema: Sync
         records.latest(lease.storageScope)?.takeIf { it.wireContext == CanonicalMealRows.context(binding) }
     }
 
-    suspend fun apply(lease: OwnerLease, expectedRun: String? = null): ServerDiaryApplication = withContext(Dispatchers.IO) {
+    suspend fun apply(lease:OwnerLease,expectedRun:String?=null):ServerDiaryApplication = applyCopy(lease,expectedRun,null)
+    internal suspend fun applyReconciled(lease:OwnerLease,expectedRun:String,planId:String):ServerDiaryApplication = applyCopy(lease,expectedRun,planId)
+    private suspend fun applyCopy(lease: OwnerLease, expectedRun: String?, planId:String?): ServerDiaryApplication = withContext(Dispatchers.IO) {
         val source = db.withTransaction {
-            val gate = push.gate(lease)
+            val gate = push.gate(lease,planId)
             if (expectedRun != null && gate.run.id != expectedRun) throw DiaryProjectionChangedException()
             gate to db.snapshotDao().pages(gate.run.id)
         }
@@ -37,7 +39,7 @@ class ServerDiaryStore(private val db: CalorieDatabase, private val schema: Sync
         require(copy.checkpoint == gate.run.checkpoint && copy.serverTime == gate.run.serverTime &&
             copy.timelineRevision.toLong() == gate.run.timelineRevision)
         db.withTransaction {
-            if (push.gate(lease) != gate || db.snapshotDao().pages(gate.run.id) != pages) throw DiaryProjectionChangedException()
+            if (push.gate(lease,planId) != gate || db.snapshotDao().pages(gate.run.id) != pages) throw DiaryProjectionChangedException()
             val context = CanonicalMealRows.context(gate.binding)
             records.application(gate.run.id)?.let { saved ->
                 check(saved.ownerScope == lease.storageScope && saved.wireContext == context)
@@ -46,19 +48,23 @@ class ServerDiaryStore(private val db: CalorieDatabase, private val schema: Sync
             val previous = records.records(lease.storageScope)
             check(previous.all { it.wireContext == context }) // Epoch recovery is a separate, explicit operation.
             records.latest(lease.storageScope)?.let { old ->
-                if (old.wireContext != context || Instant.parse(copy.firstServerTime) < Instant.parse(old.serverTime) ||
-                    copy.timelineRevision < old.timelineRevision) throw DiaryProjectionChangedException()
+                val sameEpoch=pl.roseru.kalorie.core.catalog.StrictJson.read(old.wireContext.toByteArray()).getString("sync_epoch")==gate.binding.syncEpoch
+                if ((old.wireContext != context && planId==null) || (sameEpoch &&
+                    (Instant.parse(copy.firstServerTime) < Instant.parse(old.serverTime) || copy.timelineRevision < old.timelineRevision)))
+                    throw DiaryProjectionChangedException()
             }
             val known = previous.associateBy { it.entityType to it.entityId }
             val queue = records.unsettled(lease.storageScope)
-            val queuedIds = queue.map { it.entityType to it.entityId }.toSet()
-            val pendingProfile = queue.any { it.entityType == "profile" }
-            val pendingDays = queue.filter { it.entityType == "diary_day" }.map { it.entityId }.toSet()
+            val retained=db.retainedSyncSources(lease.storageScope)
+            val queuedIds = queue.map { it.entityType to it.entityId }.toSet()+retained.map {it.entityType to it.wireId}
+            val pendingProfile = queue.any { it.entityType == "profile" } || retained.any {it.entityType=="profile"}
+            val pendingDays = queue.filter { it.entityType == "diary_day" }.map { it.entityId }.toSet()+
+                retained.filter {it.entityType=="diary_day"}.flatMap {listOf(it.wireId,it.localId)}
             val mappedGoals = previous.filter { it.entityType == "goal" }.mapNotNull { it.localId }.toSet()
             val localGoals = records.allGoals(lease.storageScope)
             // Goal versions are immutable. Preserve an entire pending timeline until it is reconciled.
             val holdGoals = queue.any { it.entityType == "goal" } || localGoals.any {
-                it.id !in mappedGoals && db.domainSyncDao().local(lease.storageScope, "goal", it.id)?.serverRevision?.let { revision -> revision > 0 } != true
+                it.id !in mappedGoals && retained.none {row->row.entityType=="goal" && row.localId==it.id} && db.domainSyncDao().local(lease.storageScope, "goal", it.id)?.serverRevision?.let { revision -> revision > 0 } != true
             }
             val incoming = copy.entities.associateBy { it.type to it.id }
             val observations = copy.entities.map { entity ->

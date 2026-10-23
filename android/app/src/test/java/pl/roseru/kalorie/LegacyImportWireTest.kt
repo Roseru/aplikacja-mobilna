@@ -272,6 +272,3 @@ class LegacyImportWireTest {
         assertEquals("LegacyImportMetadata(redacted)", audit().toString())
     }
 }
-
-
-

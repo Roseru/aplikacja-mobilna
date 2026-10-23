@@ -52,6 +52,7 @@ internal class CanonicalMealEditor(private val db:CalorieDatabase,private val co
         val dao=db.dao();val owners=LocalOwnerStore(db)
         val source=db.withTransaction {
             owners.requireCurrent(lease)
+            check(db.importDao().retired(lease.storageScope,"meal",id)==null)
             val current=dao.meal(id,lease.storageScope)?:return@withTransaction null
             if(current.meal.wirePayload==null)return@withTransaction null
             Triple(current,dao.canonicalMealOperations(lease.storageScope,db.wireSyncId(lease.storageScope,"meal",id)),db.bootstrapDao().binding(lease.storageScope))

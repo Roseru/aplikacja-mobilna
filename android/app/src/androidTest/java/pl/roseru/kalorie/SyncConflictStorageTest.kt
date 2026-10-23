@@ -270,7 +270,7 @@ class SyncConflictStorageTest {
             }
             target = Room.databaseBuilder(context, CalorieDatabase::class.java, name).addMigrations(MIGRATION_15_16, pl.roseru.kalorie.data.MIGRATION_16_17, pl.roseru.kalorie.data.MIGRATION_17_18, pl.roseru.kalorie.data.MIGRATION_18_19).addCallback(DATABASE_GUARDS).build()
             val sql = target!!.openHelper.readableDatabase
-            assertEquals(18, sql.version); assertEquals(before, dump { sql.query(it) })
+            assertEquals(19, sql.version); assertEquals(before, dump { sql.query(it) })
             assertEquals(0L, sql.query("SELECT COUNT(*) FROM sync_conflict_decisions").use { assertTrue(it.moveToFirst()); it.getLong(0) })
             assertFalse(sql.query("PRAGMA foreign_key_check").use { it.moveToFirst() })
         } finally { target?.close(); source.close(); context.deleteDatabase(name) }

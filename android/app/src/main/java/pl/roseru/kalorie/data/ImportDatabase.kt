@@ -53,13 +53,24 @@ data class ReconciliationEvidence(val planId:String,val kind:String,val identity
     override fun toString()="ReconciliationEvidence(redacted)"
 }
 
+@Entity(tableName="reconciliation_pulls",foreignKeys=[ForeignKey(entity=ServerSnapshotRun::class,parentColumns=["id"],childColumns=["runId"],onDelete=ForeignKey.RESTRICT),ForeignKey(entity=ImportPlan::class,parentColumns=["id"],childColumns=["planId"],onDelete=ForeignKey.RESTRICT)],indices=[Index("planId")])
+data class ReconciliationPull(@PrimaryKey val runId:String,val planId:String,val groupIndex:Int,val operationIdsJson:String) {
+    override fun toString()="ReconciliationPull(redacted)"
+}
+
 @Dao interface ImportDao {
+    @Query("SELECT * FROM reconciliation_pulls WHERE runId=:id") suspend fun pull(id:String):ReconciliationPull?
+    @Query("SELECT * FROM reconciliation_pulls WHERE planId=:plan ORDER BY groupIndex,rowid") suspend fun pulls(plan:String):List<ReconciliationPull>
+    @Insert suspend fun insert(pull:ReconciliationPull)
+    @Query("SELECT s.* FROM import_sources s JOIN import_plans p ON p.id=s.planId WHERE p.targetScope=:owner AND p.state IN ('complete','ready_to_apply') AND s.entityType=:type AND s.sourceId=:id AND s.state='acked' AND s.decisionCode='mapped_projection_retired' ORDER BY p.rowid DESC LIMIT 1")
+    suspend fun retired(owner:String,type:String,id:String):ImportSource?
     @Query("SELECT * FROM import_plans WHERE id=:id") suspend fun plan(id:String):ImportPlan?
     @Query("SELECT * FROM import_plans WHERE targetScope=:owner ORDER BY rowid DESC") suspend fun plans(owner:String):List<ImportPlan>
     @Insert suspend fun insert(plan:ImportPlan)
     @Update suspend fun update(plan:ImportPlan)
     @Query("SELECT * FROM guest_assignments WHERE sourceScope=:source") suspend fun assignment(source:String):GuestAssignment?
     @Insert suspend fun insert(assignment:GuestAssignment)
+    @Query("SELECT s.* FROM import_sources s JOIN import_plans p ON p.id=s.planId WHERE p.targetScope=:owner AND s.operationId=:operation LIMIT 1") suspend fun operationSource(owner:String,operation:String):ImportSource?
     @Query("SELECT * FROM import_sources WHERE planId=:plan ORDER BY ordinal") suspend fun sources(plan:String):List<ImportSource>
     @Query("SELECT * FROM import_sources WHERE planId=:plan AND entityType=:type AND sourceId=:id") suspend fun source(plan:String,type:String,id:String):ImportSource?
     @Insert suspend fun insert(source:ImportSource)
@@ -68,6 +79,8 @@ data class ReconciliationEvidence(val planId:String,val kind:String,val identity
     @Query("SELECT * FROM import_identities WHERE ownerScope=:owner AND entityType=:type AND wireId=:id") suspend fun wire(owner:String,type:String,id:String):ImportIdentity?
     @Query("SELECT * FROM import_identities WHERE ownerScope=:owner") suspend fun identities(owner:String):List<ImportIdentity>
     @Insert suspend fun insert(identity:ImportIdentity)
+    @Update suspend fun update(identity:ImportIdentity)
+    @Query("DELETE FROM import_identities WHERE ownerScope=:owner AND entityType=:type AND localId=:local") suspend fun retireIdentity(owner:String,type:String,local:String)
     @Query("SELECT * FROM import_item_identities WHERE ownerScope=:owner AND mealLocalId=:meal") suspend fun items(owner:String,meal:String):List<ImportItemIdentity>
     @Insert suspend fun insert(identity:ImportItemIdentity)
     @Insert suspend fun insert(decision:ImportDecision)
@@ -109,6 +122,8 @@ val MIGRATION_18_19=object:Migration(18,19) {
         db.execSQL("CREATE INDEX index_reconciliation_batches_snapshotRunId ON reconciliation_batches(snapshotRunId)")
         db.execSQL("CREATE TABLE IF NOT EXISTS reconciliation_evidence (planId TEXT NOT NULL,kind TEXT NOT NULL,identity TEXT NOT NULL,json TEXT NOT NULL,sha256 TEXT NOT NULL,runId TEXT NOT NULL,PRIMARY KEY(planId,kind,identity),FOREIGN KEY(planId) REFERENCES import_plans(id) ON DELETE RESTRICT,FOREIGN KEY(runId) REFERENCES server_snapshot_runs(id) ON DELETE RESTRICT)")
         db.execSQL("CREATE INDEX index_reconciliation_evidence_runId ON reconciliation_evidence(runId)")
+        db.execSQL("CREATE TABLE IF NOT EXISTS reconciliation_pulls (runId TEXT NOT NULL,planId TEXT NOT NULL,groupIndex INTEGER NOT NULL,operationIdsJson TEXT NOT NULL,PRIMARY KEY(runId),FOREIGN KEY(runId) REFERENCES server_snapshot_runs(id) ON DELETE RESTRICT,FOREIGN KEY(planId) REFERENCES import_plans(id) ON DELETE RESTRICT)")
+        db.execSQL("CREATE INDEX index_reconciliation_pulls_planId ON reconciliation_pulls(planId)")
         importGuards(db)
     }
 }

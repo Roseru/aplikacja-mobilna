@@ -351,8 +351,3 @@ object LegacyImportWire {
         return StrictJson.read(normalized.toString().toByteArray(Charsets.UTF_8))
     }
 }
-
-
-
-
-

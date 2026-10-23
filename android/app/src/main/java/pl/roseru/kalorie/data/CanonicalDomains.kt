@@ -35,6 +35,8 @@ data class CanonicalGoalTimeline(@PrimaryKey val ownerScope: String, val wireCon
     @Query("SELECT * FROM canonical_domains WHERE ownerScope=:owner AND entityType=:type AND localId=:id")
     suspend fun local(owner: String, type: String, id: String): CanonicalDomainState?
     @Upsert suspend fun save(state: CanonicalDomainState)
+    @Query("DELETE FROM canonical_domains WHERE ownerScope=:owner AND entityType=:type AND entityId=:id")
+    suspend fun retire(owner:String,type:String,id:String)
     @Query("SELECT * FROM canonical_goal_timelines WHERE ownerScope=:owner")
     suspend fun timeline(owner: String): CanonicalGoalTimeline?
     @Upsert suspend fun save(timeline: CanonicalGoalTimeline)

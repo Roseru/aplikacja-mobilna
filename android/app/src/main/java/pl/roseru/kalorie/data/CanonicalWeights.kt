@@ -55,6 +55,7 @@ internal class CanonicalWeightEditor(private val db: CalorieDatabase, private va
         val owners = LocalOwnerStore(db)
         val source = db.withTransaction {
             owners.requireCurrent(lease)
+            check(db.importDao().retired(lease.storageScope,"weight",id)==null)
             val state = db.weightSyncDao().state(lease.storageScope, id) ?: return@withTransaction null
             val point = checkNotNull(db.dao().weight(id, lease.storageScope))
             Source(point, state, db.weightSyncDao().operations(lease.storageScope, db.wireSyncId(lease.storageScope,"weight",id)), db.bootstrapDao().binding(lease.storageScope))

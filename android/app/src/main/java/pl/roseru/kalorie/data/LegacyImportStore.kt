@@ -84,7 +84,7 @@ class LegacyImportStore(private val db:CalorieDatabase,private val schema:SyncWi
         }
         val approved=plan.copy(approvedAt=time,state="approved");dao.update(approved);progress(approved)
     }
-    suspend fun status(lease:OwnerLease,planId:String):ImportProgress=db.withTransaction { progress(current(lease,planId)) }
+    suspend fun status(lease:OwnerLease,planId:String):ImportProgress=db.withTransaction { current(lease,planId).let {progress(if(it.approvedAt!=null)refresh(it) else it)} }
     suspend fun plans(lease:OwnerLease):List<ImportProgress> = db.withTransaction {
         binding(lease);dao.plans(lease.storageScope).map {progress(it)}
     }
@@ -122,7 +122,7 @@ class LegacyImportStore(private val db:CalorieDatabase,private val schema:SyncWi
             val ids=rows.associate {"${it.entityType}:${it.sourceId}" to it.wireId}
             var axis=db.domainSyncDao().timeline(lease.storageScope)?.revision ?: Math.toIntExact(checkNotNull(gate.run.timelineRevision))
             axis=Math.addExact(axis,db.domainSyncDao().unsettled(lease.storageScope).count {it.entityType=="goal"})
-            for(row in rows.filter {it.state=="pending"}.take(limit)) {
+            for(row in rows.filter {it.state in setOf("pending","waiting_dependency")}.take(limit)) {
                 val root=StrictJson.read(row.sourceJson.toByteArray());val original=root.getJSONObject("row")
                 val items=root.getJSONArray("items")
                 val itemIds=(0 until items.length()).associate {i->val id=items.getJSONObject(i).getString("id")
@@ -147,8 +147,14 @@ class LegacyImportStore(private val db:CalorieDatabase,private val schema:SyncWi
                 val dependency=result.dependencies.firstOrNull {dependency-> rows.firstOrNull {
                     it.entityType==dependency.entityType && it.sourceId==dependency.sourceLocalId }?.let {
                     dao.source(planId,it.entityType,it.sourceId)?.state !in setOf("queued","acked") }==true }
-                if(dependency!=null) {dao.update(row.copy(state="decision",decisionCode="dependency_pending"));continue}
+                if(dependency!=null) {dao.update(row.copy(state="waiting_dependency",decisionCode="dependency_pending"));continue}
                 val payload=checkNotNull(result.payload)
+                val naturalConflict=when(row.entityType) {
+                    "profile"->db.dao().currentProfile(lease.storageScope)?.id?.let {it!=row.localId}==true
+                    "diary_day"->db.dao().currentDiaryDay(lease.storageScope,StrictJson.read(payload.toByteArray()).getString("local_date"))?.id?.let {it!=row.localId}==true
+                    else->false
+                }
+                if(naturalConflict){dao.update(row.copy(state="decision",decisionCode="natural_key_review"));continue}
                 val opId=UUID.randomUUID().toString();val base=known?.knownRevision
                 val wire=operation(opId,row.entityType,row.wireId,context.syncEpoch,base,payload)
                 installIdentity(plan,row,items,itemIds)
@@ -210,28 +216,59 @@ class LegacyImportStore(private val db:CalorieDatabase,private val schema:SyncWi
             rows.filter {it.state=="decision"}.map {ImportIssue(it.entityType,it.sourceId,it.decisionCode ?: "decision_required")})
     }
     /** Full database rows (including records without outbox), exact embedded snapshots and original bodies. */
-    private suspend fun capture(scope:String,guest:Boolean):List<Pair<String,String>> {
+    internal suspend fun capture(scope:String,guest:Boolean):List<Pair<String,String>> {
         val database=db.openHelper.writableDatabase
         fun query(sql:String,args:Array<out Any?>):List<JSONObject> = database.query(sql,args).use {cursor->
             buildList {while(cursor.moveToNext()) add(JSONObject().apply {cursor.columnNames.forEachIndexed {index,name->
                 put(name,when(cursor.getType(index)) {android.database.Cursor.FIELD_TYPE_NULL->JSONObject.NULL
                     android.database.Cursor.FIELD_TYPE_INTEGER->cursor.getLong(index)
-                    android.database.Cursor.FIELD_TYPE_FLOAT->cursor.getDouble(index)
-                    else->cursor.getString(index)}) }})}
+                    android.database.Cursor.FIELD_TYPE_FLOAT->java.math.BigDecimal.valueOf(cursor.getDouble(index)).toPlainString()
+                    else->cursor.getString(index)}) }
+                put("__sqlite_types",JSONObject().apply {cursor.columnNames.forEachIndexed {index,name->put(name,cursor.getType(index))}})
+            })}
         }
         val tables=listOf("goal" to "goals","profile" to "profiles","product_draft" to "products","diary_day" to "diary_days","meal" to "meals","weight" to "weights")
-        return tables.flatMap {(type,table)->
+        val extracted=tables.flatMap {(type,table)->
             val order=if(type=="goal")"localSequence,rowid" else "rowid"
             query("SELECT * FROM $table WHERE ownerScope=? ORDER BY $order",arrayOf(scope)).mapNotNull {row->
                 val id=row.getString("id")
+                if(db.importDao().retired(scope,type,id)!=null)return@mapNotNull null
                 val canonical=when(type) {"meal"->!row.isNull("wirePayload");"weight"->db.weightSyncDao().state(scope,id)!=null
                     else->db.domainSyncDao().local(scope,type,id)!=null}
                 if(!guest && canonical)return@mapNotNull null
                 val items=if(type=="meal")query("SELECT * FROM meal_items WHERE mealId=? ORDER BY rowid",arrayOf(id)) else emptyList()
-                val outboxes=query("SELECT * FROM outbox WHERE ownerScope=? AND entityType=? AND entityId=? ORDER BY rowid",arrayOf(scope,type,id))
-                type to StrictJson.canonical(JSONObject().put("row",row).put("items",JSONArray(items)).put("outboxes",JSONArray(outboxes)))
+                val wireId=db.wireSyncId(scope,type,id)
+                val outboxes=query("SELECT * FROM outbox WHERE ownerScope=? AND entityType=? AND (entityId=? OR entityId=?) ORDER BY rowid",arrayOf(scope,type,id,wireId))
+                val state=if(type in PrivateDomainsWire.types)db.domainSyncDao().local(scope,type,id) else null
+                val weight=if(type=="weight")db.weightSyncDao().state(scope,id) else null
+                val context=when(type){"meal"->if(row.isNull("wireContext"))null else row.getString("wireContext");"weight"->weight?.wireContext;else->state?.wireContext}
+                val payload=when(type){"meal"->if(row.isNull("wirePayload"))null else row.getString("wirePayload");"weight"->weight?.wirePayload;else->state?.wirePayload}
+                val revision=when(type){"meal"->row.optInt("serverRevision");"weight"->weight?.serverRevision ?: 0;else->state?.serverRevision ?: 0}
+                type to StrictJson.canonical(JSONObject().put("row",row).put("items",JSONArray(items)).put("outboxes",JSONArray(outboxes))
+                    .put("wire_id",wireId).put("wire_context",context ?: JSONObject.NULL).put("canonical_payload",payload ?: JSONObject.NULL).put("server_revision",revision))
             }
         }
+        // Deleted profiles/products can have only an outbox left. Preserve those originals too.
+        val represented=tables.flatMap {(type,table)->query("SELECT id FROM $table WHERE ownerScope=?",arrayOf(scope))
+            .map {type to it.getString("id")} }.toSet()
+        val orphaned=query("SELECT entityType,entityId,MIN(rowid) AS ordinal FROM outbox WHERE ownerScope=? AND entityType IN ('profile','goal','product_draft','diary_day','meal','weight') GROUP BY entityType,entityId ORDER BY MIN(rowid)",arrayOf(scope))
+            .mapNotNull {identity->
+                val type=identity.getString("entityType");val id=identity.getString("entityId")
+                if((type to id) in represented || (type to db.localSyncId(scope,type,id)) in represented)return@mapNotNull null
+                if(db.importDao().retired(scope,type,id)!=null)return@mapNotNull null
+                val outboxes=query("SELECT * FROM outbox WHERE ownerScope=? AND entityType=? AND entityId=? ORDER BY rowid",arrayOf(scope,type,id))
+                // A newly linked recovery proposal already has its immutable source in this ledger.
+                // It is not a concurrent new user record and must not be imported a second time.
+                if(outboxes.all {it.getString("wireFormat")=="sync-recovery-v1" && db.importDao().operationSource(scope,it.getString("operationId"))!=null})return@mapNotNull null
+                if(!guest && outboxes.all {it.getString("wireFormat")=="sync-v1" && it.getString("status") in setOf("acked","superseded","local_only")})return@mapNotNull null
+                val latest=outboxes.last()
+                val wireContext=if(latest.isNull("wireContext"))null else latest.getString("wireContext")
+                val row=JSONObject().put("id",id).put("missingProjection",true).put("deleted",true)
+                type to StrictJson.canonical(JSONObject().put("row",row).put("items",JSONArray()).put("outboxes",JSONArray(outboxes))
+                    .put("wire_id",id).put("wire_context",wireContext ?: JSONObject.NULL).put("canonical_payload",JSONObject.NULL)
+                    .put("server_revision",if(latest.isNull("baseRevision"))0 else latest.getInt("baseRevision")))
+            }
+        return extracted+orphaned
     }
     companion object {
         internal fun digest(value:String)=MessageDigest.getInstance("SHA-256").digest(value.toByteArray(Charsets.UTF_8)).joinToString(""){"%02x".format(it)}

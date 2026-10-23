@@ -18,7 +18,7 @@ Każda osoba aktualizuje własny wiersz. Daty i dokładne źródła są w jej wp
 | Rola | Ostatni znany rezultat | Następny krok / zależność | Źródło |
 |---|---|---|---|
 | O1 — Android, Kotlin, Room | Pełny pull0.8.27/Room17: końcowe13native i6JVM PASS, ochrona lokalnych zmian | Własny CI i instalacja zwykłej aplikacji; następnie aktualizacja138 i skonfigurowane APK do E4 według O3-085 | O1-109, [PR144](https://github.com/Roseru/aplikacja-mobilna/pull/144), kod90dcb27 |
-| O2 — Python, PostgreSQL, API; Android A/B/C | O2-A: sześć domen trwałego push/ACK, Room18, 357/372JVM i73celowane native PASS; niezależny review PASS | Własny FULL CI i odbiór koordynatora A; lokalne B dozwolone, publikacja B po decyzji o integracji A. Sesja/E4 nadal O1 | O2-051, [moduł A](../android/DOMENY_SYNC.md), kod731731ed |
+| O2 — Python, PostgreSQL, API; Android A/B/C | A scalone111d45fc po FULL8/8 i373nativePASS; B ma kompilujący port sesji i395/410JVM+8celowanych Room PASS | B WIP dla integracji O1; otwarta P1 idempotencji między planami, UI/testy/review/CI. Cały ABC trwa | O2-052, [port B/C](../android/IMPORT_UZGADNIANIE.md) |
 | O3 — DevOps, CI/CD, serwer | Własny AVD/API: jeden Meal, utrata ACK, rzeczywisty force-stop i identyczny replay PASS; Room i niezależne PG C0/C1/C2 PASS | Odczytany O1-111: odebrać nowe APK Room17, uzgodnić peer/okno i nową próbę. Wynik operatora dotyczy starszego Room14; pełny E4/KO32 osobno | O3-086, [wynik operatora](integracja/PRZYGOTOWANIE_REPLAY_E4_O3.md) |
 
 
@@ -6318,3 +6318,25 @@ Archiwalne wiersze stanu przed integracją PR141 z main22.10; aktualny stan znaj
   pozostaje null, stare payloady nie są przepisywane. Regresja potwierdza
   zachowanie źródła poprzedniego celu po kolejnych zmianach profilu.
   Nowy head wymaga własnego pełnego CI; poprzedni run nie jest zielonym odbiorem.
+
+### O2-052 — Android B: checkpoint portu sesji dla równoległej integracji O1
+
+- 23.10.2026, agent2/O2, DO ODCZYTU O1/koordynator. A odebrane i scalone
+  do main111d45fc; koordynator potwierdził FULL8/8SUCCESS i373nativePASS.
+  Osobny push main pozostaje odbiorem koordynatora. Cały A→B→C trwa.
+- `codex/android-o2-import-i-uzgadnianie`: bieżący milestone B publikowany
+  na wyraźną zgodę koordynatora dla integracji O1, bez małego PR i bez deklaracji
+  końca B. Zwykły merge poprawki A zachowuje wcześniejsze commity i źródła.
+- [Port sesji B/C](../android/IMPORT_UZGADNIANIE.md): SyncExecution.kt oraz
+  rzeczywisty ReconciliationStore/request. O1 przyjął obie sygnatury i poprosił
+  o TransientFailure/NotConfigured; typy dodane. O1 zachowuje sesję/HTTP/guardy.
+  Potrzebne faktyczne podłączenie, nie stub; dokładny SHA w istniejącym PR146.
+- Trwałe źródła/zgoda/chunki/aliasy, grupy receipts, same-epoch replay,
+  recovery mappings i atomowe zakończenie mają pierwsze testy. Pełne
+  395debugJVM/410validationJVM oraz8celowanych Room/native PASS; brak live/HTTP/PG.
+  To nie pełna końcowa regresja ani odbiór aplikacji B.
+- Otwarta konkretna P1 koordynatora: nowy plan nie może ponownie importować
+  niezmienionego źródła i nadpisać później edytowanego targetu/kolejki.
+  Trwałe powiązanie źródeł między planami i regresje są w przygotowaniu.
+  UI zgody/korekt będzie miało normalne pola, bez wymogu edycji JSON.
+  Do końca B potrzebne są także migracje, kompletne przypadki, review i CI.

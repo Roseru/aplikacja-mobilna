@@ -62,7 +62,7 @@ class ServerDiaryMigrationTest {
             }
             target=Room.databaseBuilder(context,CalorieDatabase::class.java,name).addMigrations(MIGRATION_16_17, pl.roseru.kalorie.data.MIGRATION_17_18, pl.roseru.kalorie.data.MIGRATION_18_19).addCallback(DATABASE_GUARDS).build()
             val sql=target!!.openHelper.readableDatabase
-            assertEquals(18,sql.version);assertEquals(before,dump{sql.query(it)})
+            assertEquals(19,sql.version);assertEquals(before,dump{sql.query(it)})
             assertFalse(sql.query("PRAGMA foreign_key_check").use{it.moveToFirst()})
             assertTrue(target!!.serverDiaryDao().records(lease.storageScope).isEmpty());assertNull(target!!.serverDiaryDao().latest(lease.storageScope))
             assertFalse(sql.query("SELECT 1 FROM products WHERE wirePayload IS NOT NULL").use{it.moveToFirst()})
