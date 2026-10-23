@@ -266,7 +266,15 @@ class DiaryRepository(private val db: CalorieDatabase, private val context: Cont
             if (existing == null) "user_decision" else "history_correction", existing?.id)
         dao.saveGoal(goal)
         if (canonicalDomains().goal(goal, existing)) return@ownerTransaction
+        // Capture the intent of this decision now; future import must not infer historical aim
+        // from a later profile. Older legacy payloads remain untouched and may need a decision.
+        val profile = dao.currentProfile(owner)
+        val goalType: Any = when (profile?.dietAim) {
+            DietAim.REDUCE.name -> "reduce"; DietAim.MAINTAIN.name -> "maintain"; DietAim.SURPLUS.name -> "gain"
+            else -> JSONObject.NULL
+        }
         val payload = JSONObject().put("id", goal.id).put("valid_from", today).put("kcal", kcal)
+            .put("goal_type", goalType).put("activity_class", profile?.activityClass ?: JSONObject.NULL)
             .put("protein", protein ?: JSONObject.NULL).put("fat", fat ?: JSONObject.NULL).put("carbs", carbs ?: JSONObject.NULL)
             .put("decided_at", goal.decidedAt).put("zone_id", goal.zoneId).put("reason", goal.reason)
             .put("correction_of", goal.correctionOf ?: JSONObject.NULL).put("local_timeline_base", sequence - 1)

@@ -76,3 +76,9 @@ WorkManager i retencja archiwów do O2-C. Granica sesji została przekazana O1
 w [PR146](https://github.com/Roseru/aplikacja-mobilna/pull/146#issuecomment-6362901101).
 Nie skopiowano OAuth, vaulta ani klienta HTTP. Live E4/E7-R/recovery/KO32
 pozostają odrębnymi odbiorami; ten etap ich nie wykonuje.
+
+Nowe lokalne cele bez kanonicznej operacji zachowują w własnym legacy payloadzie
+`goal_type` oraz `activity_class` z chwili decyzji. Brak profilu daje jawny null;
+import nie może przypisać starszym celom typu na podstawie późniejszego profilu.
+Dotychczasowe payloady pozostają niezmienione. Regresja rozdziela zmianę samego
+pseudonimu/wzrostu od zmiany typu celu i zachowuje kontrolę historii oraz rollbacku.
