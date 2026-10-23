@@ -71,14 +71,24 @@ class MealPhotoStore(private val context: Context, private val db: CalorieDataba
         }
     }
     suspend fun preview(id: String) = withContext(Dispatchers.IO) {
-        db.withTransaction {
+        val row=db.withTransaction {
             owners.requireCurrent(lease)
-            val row = requireNotNull(db.photoDao().get(lease.storageScope,id))
-            val bytes = AtomicFile(imageFile(id)).openRead().use { MealPhotoPreparation.bounded(it, MealPhotoPreparation.OUTPUT_BYTES) }
-            require(bytes.size == row.byteCount && sha(bytes) == row.sha256)
-            requireNotNull(BitmapFactory.decodeByteArray(bytes,0,bytes.size)).also {
-                require(it.width == row.width && it.height == row.height)
+            requireNotNull(db.photoDao().get(lease.storageScope,id))
+        }
+        // File IO, hashing and image decoding must not hold the database writer.
+        val bytes=AtomicFile(imageFile(id)).openRead().use {MealPhotoPreparation.bounded(it,MealPhotoPreparation.OUTPUT_BYTES)}
+        require(bytes.size==row.byteCount && sha(bytes)==row.sha256)
+        val bitmap=requireNotNull(BitmapFactory.decodeByteArray(bytes,0,bytes.size))
+        try {
+            require(bitmap.width==row.width && bitmap.height==row.height)
+            db.withTransaction {
+                owners.requireCurrent(lease)
+                check(db.photoDao().get(lease.storageScope,id)==row)
             }
+            bitmap
+        }catch(error:Throwable){
+            bitmap.recycle()
+            throw error
         }
     }
     /** Stable prepared image for a separately persisted upload; IO never holds a Room transaction. */

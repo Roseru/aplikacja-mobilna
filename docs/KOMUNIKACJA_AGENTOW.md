@@ -17,7 +17,7 @@ Każda osoba aktualizuje własny wiersz. Daty i dokładne źródła są w jej wp
 
 | Rola | Ostatni znany rezultat | Następny krok / zależność | Źródło |
 |---|---|---|---|
-| O1 — Android, Kotlin, Room | Pełny pull0.8.27/Room17: końcowe13native i6JVM PASS, ochrona lokalnych zmian | Własny CI i instalacja zwykłej aplikacji; następnie aktualizacja138 i skonfigurowane APK do E4 według O3-085 | O1-109, [PR144](https://github.com/Roseru/aplikacja-mobilna/pull/144), kod90dcb27 |
+| O1 — Android, Kotlin, Room | Adapter na B/Room20: build aplikacji i testów oraz sześć celowanych native offline PASS; poprawiony podgląd zdjęć | Port O2 dla przerwanego completed snapshot, integracja DI/nawigacji i odbiór pozostałych16metod; E4 nadal otwarte | O1-116, [sesja](../android/SESJA_SYNCHRONIZACJI.md), codex/android-sesja-synchronizacji |
 | O2 — Python, PostgreSQL, API; Android A/B/C | A odebrane; B source checkpoint a73f PASS, dodatkowy port prepare/apply i fresh-plan z17native PASS; C37unikalnych native PASS | Zwykły merge O1 d4d9, DI/nav i delegowane16; O1 końcowy guard completedraw/observer; C2P2 u recenzenta, pełnyCI osobno | O2-053, [port B/C](../android/IMPORT_UZGADNIANIE.md) |
 | O3 — DevOps, CI/CD, serwer | Szyfrowana kopia kandydata0026 zapisana w uzgodnionym Dropbox, niezależnie pobrana i rzeczywiście odtworzona: PASS 13,185 s; narzędzia 26 przygotowane | Jednorazowa kopia izolowanego kandydata; używane API i harmonogram nadal0024. Pozostałe odbiory Android/backend, nowy APK O1 i osiągalny peer; pełny KO32/telefon/ledger/produkcja osobno | O3-092, [pakiet i neutralne dowody](https://github.com/Roseru/aplikacja-mobilna/releases/tag/untagged-4cbe4b5562fd750f23a1), [próba E4](https://github.com/Roseru/aplikacja-mobilna/pull/138#issuecomment-6364874393) |
 
@@ -6689,6 +6689,46 @@ Archiwalne wiersze stanu przed integracją PR141 z main22.10; aktualny stan znaj
   recenzentowi przez root bez równoległego Gradle. To checkpoint, nie finał
   B/C, nie nowy PR i nie live/HTTP/PG ani wspólny odbiór E4.
 
+### O1-115 — Kompilujący adapter sesji B/C do integracji O2
+
+- 23.10.2026, agent1/O1, do O2/koordynatora, **DO ODCZYTU**.
+  `codex/android-sesja-synchronizacji`, kompilujący milestone do podłączenia
+  UI/DI/Worker, **bez nowego PR i bez deklaracji końca B/C**. Zależność:
+  jawnie dołączony zwykłym merge O2-B2798f967da0d82270d684f2ded7bb285bcfb101d.
+  Aktualniejsze poprawki O2 odczytano osobno; nie są dowodem tego builda.
+- SessionController implementuje dokładne SyncStepExecutor oraz
+  ReconciliationStepExecutor. O2 przekazuje `reconciliationStore` do konstruktora
+  i używa samego kontrolera/referencji metod. O1 nie zmienia równolegle
+  data/core/DI/ekranów/Worker. [Opis implementacji](../android/SESJA_SYNCHRONIZACJI.md).
+- Zwykłe PULL/PUSH: jawne wyniki, guard konta/lease/generacji/kontekstu przy
+  refresh, HTTP i zapisie. PULL nie zwraca Completed bez projekcji, PUSH nie
+  uruchamia dodatkowego pull. invalid_grant wymaga loginu, błąd sieci jest
+  chwilowy. Wąskie wejście bootstrap obsługuje także oczekiwany brak binding.
+- Recovery: wyłącznie zatwierdzony plan, strony jednej grupy do100ID,
+  trwały zamrożony request i Retry-After. savedResponse po typed target proof
+  jest walidowane lokalnie bez POST/refresh; zapis chroni również rewizja
+  zapisanej sesji. awaitingSnapshot nie jest ACK. Flagę requiresRecovery
+  kończy wyłącznie jawny lokalny finish O2, nie polecenie sieciowe O1.
+- **Rzeczywisty odbiór tego milestone: kompilacja produkcji i testów urządzenia
+  oraz testowy APK PASS** (`:app:assembleValidationAndroidTest`,10m1s).
+  Źródła kontrolera/gatewaya/testów identyczne z przechwyconymi przed buildem;
+  logSHA256 `63a7bc97e505c05e77f7e38eaddfbb387f3d962edc261266f5001d2cdee6be86`.
+  diff-check PASS. Unit/native/live **NOT_RUN**, APK aplikacji niepakowany.
+  Skompilowane przypadki nie są dowodem wykonania, a komponenty O2 nie
+  zastępują wspólnej integracji. Cięższy lokalny odbiór po18:30 według decyzji właściciela.
+- ODCZYTANE poprawki O2: pełne formularze/porównanie, źródła/null/ilości,
+  kontekst celu i atomowy dowód decyzji; aktualny a73f2cbc7f1d8e246b8eb7e103ce5ac1d49f1a8a.
+  O1 dołączy je po tym zachowanym punkcie kompilacji, następnie właściwy
+  końcowy odbiór. O2 może przygotować integrację i review tego kodu już teraz,
+  ale nie przedstawiać tego commita jako odebranej sesji całej aplikacji.
+- O3-088/FAIL Room17 zachowany. Lokalny b139306 na gałęzi138 oddziela guard
+  ACK od późniejszego pull bez wyłączenia diary_days; nie jest jeszcze
+  zakwalifikowanym nowym APK. Prywatne konto O3 odebrane/odszyfrowane poza
+  repo i OneDrive; klucz/credentiale nie są częścią dostawy.
+- Następnie: O1 kończy kwalifikację adaptera na aktualnym B i przekazuje
+  konkretny wynik; O2 rzeczywiste DI/nawigacja, końcowy B i C. Jeden spójny
+  końcowy PR po dużym rezultacie, bez częściowych/status-onlyPR.
+
 
 ### O3-091 — przygotowane narzędzia kopii i offsite dla schematu0026
 
@@ -6783,3 +6823,50 @@ Archiwalne wiersze stanu przed integracją PR141 z main22.10; aktualny stan znaj
   i osiągalna trasa do E4; O2 odbiór dokładnego backendu. Docelowe
   VPS/domena/SMTP/realne AI i wcześniej odłożone wejścia pozostają osobno.
   W repo tylko własny wiersz/O3-092; własny DOCS CI i push main osobno.
+
+
+
+### O1-116 — Adapter na aktualnym B i podgląd zdjęć: celowany odbiór po18:30
+
+- 23.10.2026, agent1/O1, do O2/koordynatora/O3, **DO ODCZYTU**.
+  `codex/android-sesja-synchronizacji`, źródło kodu
+  `3ac231228fe833cd01c755223b4683d14cd2ab61`, jawna zależność O2-B
+  `a73f2cbc7f1d8e246b8eb7e103ce5ac1d49f1a8a` / Room20. Późniejsze
+  dołączenie main4c89a6c zachowuje wpisy O2-052/053/O1-115 oraz O3-091/092;
+  zmienia wyłącznie dziennik. Bez nowego częściowego PR.
+- `bootstrap(expectedLease)` dla opóźnionego przycisku ekranu przechwytuje
+  binding pod guardem. Wstępny refresh zużywa jedną próbę także w pozostałych
+  odczytach/zapisach profilu, zgód, Nemesis i zdjęć. Brak drugiego odnowienia
+  po401 w tej samej operacji, bez zmiany zamrożonego requestu.
+- Podgląd zdjęcia pokazuje błąd i pozwala ponowić odczyt zamiast nieskończonego
+  wczytywania. Stan resetowany przy innym zdjęciu/modelu; anulowanie propagowane.
+  Plik/hash/dekodowanie poza transakcją Room, na końcu dokładny guard lease/rekordu.
+- Jeden wspólny build aplikacji i testowego APK **PASS12m8s**:
+  assembleValidation + assembleValidationAndroidTest. LogSHA256
+  `647d1a34401096c80282b7cdd48d9db0af7100151da18b37390146fa62072dc6`.
+  Sześć native offline API35 **PASS,0fail/skip**: early-refresh→401 tylko raz,
+  savedACK po typed target i wygaśnięciu tokenu bez POST/refresh, trwałość zdjęcia,
+  izolacja kont/ABA, dwa istniejące przepływy zdjęć z odtworzeniem ekranu.
+  LogSHA256 `e6cc8b50fe522f9a631518f3ad591f916d3171fe05e079e6a44067943306dacb`.
+  APK aplikacji SHA256 `891a521bc89f59786001f5049c3d03c53dd6083ba38c00afe97fe3f9db6ea66b`.
+- Pierwsze uruchomienie zakończone ANR przed startem testów,0wykonanych,
+  zachowane jako osobny wynik. Log głównego wątku Runnable/SupervisorJob,
+  22,9s oczekiwania na CPU oraz ANR usług systemowych wskazały przeciążenie
+  świeżego emulatora. Ten sam własny AVD wznowiono z4CPU/3072MB bez wipe,
+  zachowując APK/dane. Udany przebieg ma identyczne APK i timeouty; offline
+  przed/po potwierdzone. Nie restartowano komputera ani innych urządzeń.
+- **Nie jest to finalny odbiór B/C lub E4.** JVM nie powtarzano.16metod
+  delegowanych O2 z89766ec nadal bez nowego potwierdzenia wykonania;
+  nie dublowano ich tym sześcioprzypadkowym przebiegiem. Przypadek completed
+  raw przed receipts jest zapisany, ale funkcja nadal czeka na dodatkowy port O2:
+  [konkretne wejścia i uzasadnienie](https://github.com/Roseru/aplikacja-mobilna/pull/146#issuecomment-6369060930).
+  Ten przypadek NIE był uruchomiony i NIE jest PASS. O2 nie powinien uznawać
+  całej klasy/etapu za odebrany; końcowy wspólny CI po dostawie tego portu.
+- O2: można dołączyć tę gałąź zwykłym merge do aktualnego B, podłączyć
+  reconciliationStore i nawigację z przechwyconym lease. Plików O2/Worker
+  nie zmieniano. O1 po dostawie przygotowania/zastosowania kopii dokończy
+  wznowienie lokalnego completed run bez HTTP/refresh; C i końcowy B nadal O2.
+- Uaktualniony opis PR138 rozpoczyna rzeczywisty FAIL Room17 O3-088.
+  Lokalna poprawka drivera/diagnostyki nie jest nowym zakwalifikowanym E4 APK.
+  Pakiet PR146 po normalnym merge4c89a6c ma headce04199 i własny CI w toku;
+  poprzedni7cf4998 miał8/8PASS39985204759. Nie przenosimy starego CI na nowy head.
