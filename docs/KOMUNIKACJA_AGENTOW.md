@@ -18,7 +18,7 @@ Każda osoba aktualizuje własny wiersz. Daty i dokładne źródła są w jej wp
 | Rola | Ostatni znany rezultat | Następny krok / zależność | Źródło |
 |---|---|---|---|
 | O1 — Android, Kotlin, Room | Pełny pull0.8.27/Room17: końcowe13native i6JVM PASS, ochrona lokalnych zmian | Własny CI i instalacja zwykłej aplikacji; następnie aktualizacja138 i skonfigurowane APK do E4 według O3-085 | O1-109, [PR144](https://github.com/Roseru/aplikacja-mobilna/pull/144), kod90dcb27 |
-| O2 — Python, PostgreSQL, API; Android A/B/C | A odebrane; B formularze/lease i poprawki historii,409/424JVM oraz27native/UI+3rozszerzenia PASS | B WIP: rzeczywisty executor O1 i nawigacja/DI, końcowa regresja/review/CI; C do realizacji | O2-053, [port B/C](../android/IMPORT_UZGADNIANIE.md) |
+| O2 — Python, PostgreSQL, API; Android A/B/C | A odebrane; B poprawki3uwag porównania/uszkodzonego rekordu/referencji celu,417/432JVM i36native/UI PASS | B WIP odbiór; rzeczywisty O1/nawigacja/DI/pełnyCI; C lokalny osobny checkout, AVD oddzielone | O2-053, [port B/C](../android/IMPORT_UZGADNIANIE.md) |
 | O3 — DevOps, CI/CD, serwer | Dokładny kandydat0026: migracja/restore/rollback PASS; restore24,421s zamknięcia, stareJWT401/refresh400/operacja409, świeże PKCE/zapis/replay zaliczone | Pozostałe2odbioru Android/backend. Nowy APK O1 po FAIL Room17 i osiągalny peer; pełny KO32/telefon/ledger/produkcja osobno | O3-090, [pełny zaktualizowany pakiet](https://github.com/Roseru/aplikacja-mobilna/releases/tag/untagged-4cbe4b5562fd750f23a1), [próba E4](https://github.com/Roseru/aplikacja-mobilna/pull/138#issuecomment-6364874393) |
 
 
@@ -6627,3 +6627,22 @@ Archiwalne wiersze stanu przed integracją PR141 z main22.10; aktualny stan znaj
   niezależny review i pełny CI jednego PR B. Transport sesji pozostaje O1;
   ekran/model nie są jeszcze końcowo osadzone w aplikacji. C po B, cały
   przydział A→B→C trwa. Potwierdzenia odbioru:brak.
+
+- Odbiór checkpointu1e15 wskazał3P2: brak widocznej wersji serwera82/80 bez
+  mappingu, blokadę całego formularza przez uszkodzony snapshot składnika,
+  nielegalne correction_of celu E0 po preserve_local/finish wE1. Poprawione
+  w tym samym B: aktualna typed kopia obu wersji i guard dowodu, izolacja błędu
+  per rekord z preserve_local, legalny poprzednik celu tylko w bieżącym kontekście.
+  Historia, hash i zamrożone operacje zachowane. Red regresja referencji E0
+  potwierdziła błąd przed poprawką; widoczne82kg/80kg poprzedzają decyzję.
+- Po poprawkach417debugJVM/432validationJVM/36celowanych native/UI oraz lint
+  bez błędów PASS. Dodatkowo sprawdzamy kontrprzypadek legalnego odwołania
+  kolejnego celu do potwierdzonego celu bieżącej epoki. Niezależny koordynator
+  potwierdził offline backendowy DTO/preflight wcześniejszej paczki6domen;
+  to nadal nie live ani końcowe wpięcie sesji O1.
+- Zgodnie z koordynatorem C zaczęte lokalnie na osobnej
+  `codex/android-o2-sync-w-tle` od1e15, bez publikacji. Mały eksperyment potwierdził
+  SnapshotCapacityException przy dziewiątym poprawnym snapshotcie. Powrót do
+  poprawek B miał pierwszeństwo. B zachowuje własne AVD5562/Room20; odrębne
+  własne AVD5564 przygotowane dla przyszłych migracji C. Bez wipe i zmian O1.
+  C dołączy poprawione B zwykłym merge. Rzeczywista sesja, końcowy B i C trwają.

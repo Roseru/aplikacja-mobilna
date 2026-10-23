@@ -88,4 +88,60 @@ class ImportViewModelTest {
             assertEquals(0,calls.get());assertEquals(before,db.importDao().plan(id));assertEquals(0,db.dao().operationCount(lease.storageScope))
         } finally {instrumentation.runOnMainSync{store.clear()};db.close()}
     }
-}
+    @Test fun malformedHistoricalMealDoesNotHidePlanOrPreventKeepingItAndImportingValidWeight()=runBlocking<Unit> {
+        val db=db();val store=ViewModelStore()
+        try {
+            LocalOwnerStore(db).ensureGuest()
+            val meal=MealEntity("broken-meal","guest","2001-01-02","2001-01-02T12:00:00Z","UTC","LUNCH")
+            val item=MealItemEntity("broken-item",meal.id,null,"Historical",50.0,null,null,0.0,null,snapshotJson="{")
+            db.dao().insertMeal(meal);db.dao().insertItem(item)
+            val point=WeightEntity("valid-weight","guest","2001-01-02","2001-01-02T12:00:00Z","UTC",80.125)
+            db.dao().saveWeight(point)
+            val lease=account(db);val calls=AtomicInteger();val model=model(db,lease,store,calls);await(model)
+            act(model){model.previewGuest()};act(model){model.approve(true)}
+            val state=model.state.value;assertEquals(2,state.plan!!.total);assertEquals(1,state.plan.pending)
+            val broken=state.rows.single();assertEquals("invalid_legacy_data",broken.code);assertTrue(broken.formFailure);assertNull(broken.form)
+            val original=db.importDao().source(state.plan.planId,"meal",meal.id)!!
+            act(model){model.keep(broken)};assertEquals(1,model.state.value.plan!!.retained)
+            act(model){model.resume()};assertEquals(1,model.state.value.plan!!.queued)
+            assertEquals(1,db.dao().operationCount(lease.storageScope));assertEquals("weight",db.pushDao().eligible(lease.storageScope).single().entityType)
+            val retained=db.importDao().source(state.plan.planId,"meal",meal.id)!!
+            assertEquals("retained",retained.state);assertEquals(original.sourceJson,retained.sourceJson);assertEquals(original.sourceHash,retained.sourceHash)
+            assertEquals("{",db.dao().meal(meal.id,"guest")!!.items.single().snapshotJson);assertEquals(point,db.dao().weight(point.id,"guest"))
+            assertEquals(0,calls.get())
+        } finally {instrumentation.runOnMainSync{store.clear()};db.close()}
+    }
+    @Test fun currentFullCopyShowsLocal82AndServer80WithoutRecoveryMappingBeforeAnyChoice()=runBlocking<Unit> {
+        val db=db();val models=ViewModelStore()
+        try {
+            val lease=account(db);val schema=CanonicalMealRows.schema(context);val repo=DiaryRepository(db,context,lease)
+            repo.addWeight(80.0,java.time.LocalDate.of(2001,1,2))
+            val push=MealPushStore(db,schema);val created=push.prepare(lease)!!;push.markAttempted(created)
+            val operation=created.operations.single()
+            val ack=JSONObject().put("sync_epoch",epoch).put("server_time","2026-10-23T12:00:00Z").put("results",JSONArray().put(JSONObject()
+                .put("operation_id",operation.operationId).put("entity_id",operation.entityId).put("status","accepted").put("revision",1).put("recovery_mapping",JSONObject.NULL)))
+            push.applyAck(push.prepareAck(created,200,ack.toString().toByteArray()))
+            repo.editWeight(operation.entityId,82.0);val pending=push.prepare(lease)!!;push.markAttempted(pending);push.requireReconciliation(pending)
+            val old=db.bootstrapDao().binding(lease.storageScope)!!;val boot=AccountBootstrapStore(db)
+            val binding=boot.apply(boot.begin(lease),BootstrapResponse(old.accountId,old.syncEpoch,old.accountGeneration,"2026-10-23T13:00:00Z"))
+            val calls=AtomicInteger();val model=model(db,lease,models,calls);await(model)
+            act(model){model.previewOwn()};act(model){model.approve(true)}
+            assertEquals(pl.roseru.kalorie.importing.ImportSideState.UNVERIFIED,model.state.value.rows.single().server.state)
+            assertNull(model.state.value.rows.single().proofRunId)
+            val plan=model.state.value.plan!!;val reconciliation=ReconciliationStore(db,schema)
+            val snapshot=reconciliation.nextSnapshot(lease,binding,plan.planId)!!
+            val serverEntity=JSONObject().put("entity_id",operation.entityId).put("entity_type","weight").put("revision",1).put("deleted",false).put("payload",JSONObject(operation.payload))
+            val page=JSONObject().put("sync_epoch",epoch).put("mode","snapshot").put("snapshot_token","synthetic-comparison")
+                .put("page_token",JSONObject.NULL).put("checkpoint","synthetic-comparison-checkpoint").put("server_time","2026-10-23T14:00:00Z")
+                .put("goal_timeline_revision",0).put("entities",JSONArray().put(serverEntity)).put("recovery_mappings",JSONArray()).put("operation_receipts",JSONArray())
+            assertNull(ServerSnapshotStore(db,SnapshotProtocol(schema)).apply(snapshot,page.toString().toByteArray()))
+            reconciliation.acceptCompletedSnapshot(lease,binding,plan.planId,snapshot.runId)
+            act(model){model.refresh()};val row=model.state.value.rows.single()
+            assertNull(row.mapped);assertEquals(snapshot.runId,row.proofRunId)
+            assertTrue(row.local!!.values.toString(),row.local.values.any {it.value=="82 kg"})
+            assertTrue(row.server.values.toString(),row.server.values.any {it.value=="80 kg"})
+            assertEquals(pl.roseru.kalorie.importing.ImportSideState.PRESENT,row.server.state)
+            assertTrue(db.importDao().decisions(plan.planId).isEmpty());assertEquals(0,calls.get())
+            assertEquals("decision",db.importDao().sources(plan.planId).single().state)
+        } finally {instrumentation.runOnMainSync{models.clear()};db.close()}
+    }}

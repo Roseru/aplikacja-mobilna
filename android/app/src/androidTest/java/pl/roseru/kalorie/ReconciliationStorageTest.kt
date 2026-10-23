@@ -374,6 +374,11 @@ class ReconciliationStorageTest {
                     assertTrue(db.resolvedOriginalGoals(lease.storageScope).contains(original.id))
                     assertEquals("Resolved immutable history must not become a second legacy import",0,LegacyImportStore(db,schema).preview(lease,lease.storageScope).total)
                 }
+                repo.setGoal(2700.0,null,0.0,null)
+                val following=ordinary.prepare(lease)!!
+                assertEquals(finalSource.wireId,JSONObject(following.operations.single().payload).getString("correction_of"))
+                assertEquals("history_correction",JSONObject(following.operations.single().payload).getString("reason"))
+                assertEquals(original,db.dao().goalById(lease.storageScope,original.id))
             } finally {db.close()}
         }
     }
@@ -399,6 +404,32 @@ class ReconciliationStorageTest {
             val replacement=push.prepare(lease)!!;assertNotEquals(id,replacement.operations.single().entityId)
             assertNull(replacement.operations.single().baseRevision);assertEquals("Replacement",db.dao().currentProfile(lease.storageScope)!!.nickname)
             assertTrue(db.domainSyncDao().state(lease.storageScope,"profile",id)!!.deleted)
+        } finally {db.close()}
+    }
+    @Test fun ordinaryGoalAfterRetainingOldEpochHistoryDoesNotReferenceAbsentServerGoal()=runBlocking<Unit> {
+        val db=memory()
+        try {
+            val lease=account(db);val repo=DiaryRepository(db,context,lease);repo.setGoal(2500.0,null,0.0,null)
+            val push=MealPushStore(db,schema);val old=push.prepare(lease)!!;push.markAttempted(old)
+            push.applyAck(push.prepareAck(old,200,reply(old.batch)))
+            val op=db.dao().operation(old.operations.single().operationId)!!
+            val historical=db.dao().goalById(lease.storageScope,op.entityId)!!;val bytes=old.batch.body();val hash=old.batch.sha256
+            val binding=changedEpoch(db,lease);val store=ReconciliationStore(db,schema);val plan=plan(store,lease,binding)
+            pull(db,store,lease,binding,plan)
+            val source=db.importDao().sources(plan.planId).single()
+            store.decide(lease,binding,plan.planId,"goal",source.sourceId,source.sourceHash,"{\"choice\":\"preserve_local\"}")
+            store.finish(lease,binding,plan.planId)
+            assertFalse(db.bootstrapDao().binding(lease.storageScope)!!.requiresRecovery)
+            repo.setGoal(2600.0,null,0.0,null)
+            val next=push.prepare(lease)!!;val payload=JSONObject(next.operations.single().payload)
+            assertTrue("Historical E0 UUID must not become an E1 correction_of",payload.isNull("correction_of"))
+            assertEquals("user_decision",payload.getString("reason"));assertEquals(0,payload.getInt("timeline_base_revision"))
+            assertEquals(binding.syncEpoch,next.batch.json().getJSONArray("operations").getJSONObject(0).getString("sync_epoch"))
+            assertNotEquals(op.entityId,next.operations.single().entityId)
+            val fresh=db.dao().goalById(lease.storageScope,next.operations.single().entityId)!!
+            assertNull(fresh.correctionOf);assertEquals("user_decision",fresh.reason)
+            assertEquals(historical,db.dao().goalById(lease.storageScope,historical.id));assertEquals(op,db.dao().operation(op.operationId))
+            assertArrayEquals(bytes,db.pushDao().batch(old.id)!!.requestJson.toByteArray());assertEquals(hash,db.pushDao().batch(old.id)!!.requestHash)
         } finally {db.close()}
     }
     private object StrictJsonForTest {

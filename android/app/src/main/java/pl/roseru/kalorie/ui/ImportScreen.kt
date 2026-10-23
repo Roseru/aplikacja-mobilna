@@ -91,17 +91,20 @@ import pl.roseru.kalorie.importing.*
     Card(Modifier.fillMaxWidth()) {Column(Modifier.padding(16.dp),verticalArrangement=Arrangement.spacedBy(10.dp)) {
         Text(domainLabel(row.source.entityType),style=MaterialTheme.typography.titleLarge)
         Text(issueLabel(row.code))
-        val root=remember(row.source.sourceHash){org.json.JSONObject(row.source.sourceJson).getJSONObject("row")}
-        val sourceSummary=listOf("localDate","validFrom","occurredAt","nickname","name","kg","kcal").mapNotNull {key->
-            if(!root.has(key) || root.isNull(key))null else root.get(key).toString()}
-        if(sourceSummary.isNotEmpty())Text(sourceSummary.joinToString(" · "))
+        val local=row.local ?: remember(row.source.sourceHash){ImportComparison.local(row.source)}
+        ImportVersion("Wersja lokalna",local)
         if(recovery) {
-            val ready=row.code!="full_snapshot_required"
+            ImportVersion("Aktualna wersja serwera",row.server)
+            Text("Zachowanie lokalne pozostawi tę wersję na urządzeniu bez wysyłania. Przyjęcie stanu serwera zastąpi lokalny wpis pokazaną wersją serwera; brak wpisu zostanie zachowany jako brak, a nie zero.")
+        }
+        if(row.formFailure)Text("Nie można odczytać części historycznego wpisu. Oryginał i jego skrót pozostają zapisane. Możesz zachować ten wpis lokalnie i kontynuować pozostałe dane.")
+        if(recovery) {
+            val ready=row.code!="full_snapshot_required" && row.proofRunId!=null && row.server.state!=ImportSideState.UNVERIFIED
             OutlinedButton(onClick={keep(row)},enabled=!busy && ready){Text("Zachowaj lokalnie bez wysyłania")}
             OutlinedButton(onClick={server(row)},enabled=!busy && ready && row.source.sourceEpoch!=null){Text("Przyjmij stan serwera")}
             if(row.sameEpoch && row.code!="absent_same_epoch" && row.source.operationId==null)
                 Button(onClick={replay(row)},enabled=!busy && ready){Text("Ponów pierwotną operację")}
-            if(!row.sameEpoch && row.source.sourceEpoch!=null && row.source.operationId==null) {
+            if(!row.sameEpoch && row.source.sourceEpoch!=null && row.source.operationId==null && !row.formFailure) {
                 if(row.mapped!=null)OutlinedButton(onClick={mapped(row)},enabled=!busy && ready){Text("Użyj powiązanego wpisu z pełnej kopii")}
                 if(row.source.entityType=="goal")OutlinedButton(onClick={goal=!goal},enabled=!busy && ready){Text("Podejmij nową decyzję o celu")}
                 else OutlinedButton(onClick={recreate(row)},enabled=!busy && ready && row.mapped==null){Text("Odtwórz brakujący wpis jako nowy")}
@@ -111,7 +114,7 @@ import pl.roseru.kalorie.importing.*
             OutlinedButton(onClick={keep(row)},enabled=!busy && row.source.operationId==null){Text("Zachowaj lokalnie bez importu")}
             if(row.code in setOf("uuid_collision","item_identity_collision","previously_imported_source_changed"))
                 OutlinedButton(onClick={copy(row)},enabled=!busy){Text("Utwórz osobną kopię")}
-            if(row.code !in setOf("uuid_collision","item_identity_collision","previously_imported_source_changed","uncertain_original_operation","absent_same_epoch","natural_key_review") && row.source.operationId==null) {
+            if(row.code !in setOf("uuid_collision","item_identity_collision","previously_imported_source_changed","uncertain_original_operation","absent_same_epoch","natural_key_review") && row.source.operationId==null && !row.formFailure) {
                 OutlinedButton(onClick={edit=!edit},enabled=!busy){Text("Sprawdź i uzupełnij dane")}
                 if(edit)row.form?.let {ImportCorrectionFields(it,busy){values,standalone->correct(row,values,standalone)}}
             }
@@ -121,6 +124,17 @@ import pl.roseru.kalorie.importing.*
     }}
 }
 
+@Composable private fun ImportVersion(title:String,side:ImportComparisonSide) {
+    Text(title,style=MaterialTheme.typography.titleMedium)
+    when(side.state) {
+        ImportSideState.ABSENT->Text("Brak wpisu w zweryfikowanej pełnej kopii")
+        ImportSideState.DELETED->Text("Wpis usunięty na serwerze")
+        ImportSideState.UNVERIFIED->Text("Brak aktualnego dowodu. Pobierz pełną kopię przed decyzją.")
+        ImportSideState.UNREADABLE->Text("Części danych nie można odczytać; nie zastępujemy ich zerami ani pustą wersją.")
+        ImportSideState.PRESENT->Unit
+    }
+    side.values.forEach {Text("${it.label}: ${it.value}")}
+}
 @Composable private fun ImportCorrectionFields(form:LegacyImportForm,busy:Boolean,save:(Map<String,String>,Boolean)->Unit) {
     val values=remember(form){mutableStateMapOf<String,String>().apply {form.fields.forEach {put(it.key,it.value)}}}
     var consent by rememberSaveable {mutableStateOf(false)}

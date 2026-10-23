@@ -260,7 +260,7 @@ class DiaryRepository(private val db: CalorieDatabase, private val context: Cont
             require(saved.validFrom == today && saved.kcal == kcal && saved.protein == protein && saved.fat == fat && saved.carbs == carbs)
             return@ownerTransaction
         }
-        val existing = dao.goalOn(owner, today)
+        val existing = canonicalDomains().goalPredecessor(dao.goalOn(owner, today))
         val sequence = Math.addExact(dao.goalSequence(owner), 1)
         val goal = GoalEntity(id, owner, today, kcal, protein, fat, carbs, sequence, Instant.now().truncatedTo(java.time.temporal.ChronoUnit.MICROS).toString(), ZoneId.systemDefault().id,
             if (existing == null) "user_decision" else "history_correction", existing?.id)
