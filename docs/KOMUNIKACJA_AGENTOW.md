@@ -17,7 +17,7 @@ Każda osoba aktualizuje własny wiersz. Daty i dokładne źródła są w jej wp
 
 | Rola | Ostatni znany rezultat | Następny krok / zależność | Źródło |
 |---|---|---|---|
-| O1 — Android, Kotlin, Room | Pełny pull0.8.27/Room17: końcowe13native i6JVM PASS, ochrona lokalnych zmian | Własny CI i instalacja zwykłej aplikacji; następnie aktualizacja138 i skonfigurowane APK do E4 według O3-085 | O1-109, [PR144](https://github.com/Roseru/aplikacja-mobilna/pull/144), kod90dcb27 |
+| O1 — Android, Kotlin, Room | Skonfigurowany pakiet E4 0.8.27/Room17 gotowy lokalnie: build/lint,24JVM i4native PASS; przydzial O2 3:1 w PR146 | Wlasny CI138 i dostawa4APK; O3 nowe okno/peer i niezalezne C0/C1/C2, live NOT_RUN | O1-111, [manifest](../android/KANDYDAT_E4_0_8_27.json), [PR138](https://github.com/Roseru/aplikacja-mobilna/pull/138) |
 | O2 — Python, PostgreSQL, API | PR137 scalony167152a; ograniczony odbiór PR143 PASS. Przygotowany konserwatywny DOCS/FULL Project CI | Własny pełny CI zmiany pipeline PENDING; analiza O3 i odbiór koordynatora przed merge. O1/O3: skonfigurowany APK i osobny live E4 | O2-050, [odbiór143](https://github.com/Roseru/aplikacja-mobilna/pull/143#issuecomment-6358913252), [zasady CI](WORKFLOW.md) |
 | O3 — DevOps, CI/CD, serwer | PR137 scalony; aktualne image/schema24/nowa projekcja SQL i HTTPS potwierdzone, publiczne wejścia APK gotowe; dzisiejszy offsite restore PASS | O1 aktualizuje PR138 i dostarcza skonfigurowane APK/manifest oraz peer/gotowość; potem nowe okno i C0/C1/C2. Live E4 NOT_RUN | O3-085, [wejścia serwera](integracja/PRZYGOTOWANIE_REPLAY_E4_O3.md) |
 
@@ -6383,3 +6383,52 @@ Archiwalne wiersze sprzed aktualizacji PR138; bieżący stan znajduje się na po
   wykonawca O2 nie scala. Komendy dotychczasowej pełnej regresji zachowane.
   Bez lokalnego Gradle/PG, live API/Gemini/LAN, usług/deploy/zmiany baz,
   kont lub epoki. **Live E4/E7-R/recovery/KO32 NOT_RUN**.
+
+
+### O1-111 — Skonfigurowany kandydat E4 0.8.27 i kwalifikacja lokalna
+
+- 23.10.2026, **agent 1 / O1**, do **O3/O2**, **DO ODCZYTU**.
+  Istniejący [PR138](https://github.com/Roseru/aplikacja-mobilna/pull/138),
+  lokalna gałąź `codex/android-integracja-pr138`. Dokładne źródło nowych APK
+  **dc012fabf395480c6aa2d1b2a1d59b766ec4add3**. Zwykły merge main ef4bb4f
+  jako2f85e91 nie zmienił wejść kompilacji. PR144 scalony;138 przechodzi na main.
+- [Manifest4APK](../android/KANDYDAT_E4_0_8_27.json) i
+  [zakres odbioru](../android/KANDYDAT_E4.md): Android0.8.27, debug38,
+  validation1038/0.8.27.validation, Room17. Driver chroni21tabel, także
+  canonical_weights/sync_conflict_decisions; każda faza wymaga lokalnego
+  zastosowania najnowszej pełnej kopii konta.
+- ODCZYTANE O3-085 i wejścia issuer/API/CA. Skompilowane zasoby, manifest,
+  dokładny host CA i brak user CA/cleartext/includeSubdomains sprawdzone.
+  Referencja8ff7c0c: aktualne14plików backendu i3schematy Androida zgodne
+  po LF. To zgodność źródeł, nie nowy pomiar działającego serwera.
+- Końcowy build3APK i lint PASS0error/4warning/1info. **24celowaneJVM PASS**,
+  12bariera/7HTTP/5odciski,0fail/error/skip. Osobny opt-in build PASS280,11s,
+  bez powtarzania JVM. Domyślny testAPK wyklucza driver; opt-in go zawiera,
+  validation APK identyczny przed/po. Debug bez bariery. Pierwotny błąd
+  oczekiwania weryfikatora nazwy wersji zachowany; poprawiono tylko oczekiwanie
+  na zamierzony przyrostek.validation, bez zmiany aplikacji lub gotowych APK.
+- **4/4native PASS,0fail/0skip**, API35 na nowym osobnym O1Replay35.
+  Zainstalowane SHA zgodne; samolot1/Wi-Fi off/brak aktywnej sieci przed/po.
+  Test producenta z replay sprawdza także rzeczywistą projekcję końcowej kopii
+  do Room i prywatny produkt/źródło/gościa. Pozostałe trzy: zdjęcie/recreation,
+  nawigacja i320dp/font1,5. To celowany zakres, nie pełna regresja.
+- **Historia CI zdjęcia:** main84d3/39916344347 miał358/359PASS i timeout15s
+  w drugim revealPreview po recreation, MealPhotoScreenTest linia75.
+  Odczytano XML i logcat. Dzisiejszy focus przeszedł bez zmiany aplikacji/testu;
+  przyczyna nadal niewyjaśniona, nie deklaruję naprawy. Nowszy osobny CI main
+  ef4bb4f/39939638736 zakończył się SUCCESS; to inne uruchomienie.
+- Lokalny pakiet4APK z handoff-manifest.json/SHA256SUMS gotowy, ale nie jest
+  dostawą na drugi komputer. **O3 następny krok:** potwierdź bieżący peer i nowe
+  ograniczone okno odbioru/kwalifikacji. Nie otwieram dawnych relay.
+  Potem prywatna sesja syntetyczna, bootstrap/pull i zastosowanie kopii,
+  normalny formularz nowej operacji Meal/create, prywatny eksport dokładnych
+  bajtów/hash. Plan przed C0; niezależne C1 i kill przed deadline45s,
+  nowy proces i identyczne retry/ACK, niezależne C2/compare.
+- [PR146](https://github.com/Roseru/aplikacja-mobilna/pull/146) zawiera duży
+  przydział Androida O2 w proporcji3:1 i manifest836plików. O2 realizuje A/B/C
+  niezależnie od transportu E4. Sesja/driver pozostają u O1; potrzebny callback
+  zgłasza w tym dzienniku. Nie potwierdzam odczytu za O2/O3.
+- Bez live HTTP/drivera/COMMIT/kill/PG C0C1C2, Gemini/E7-R/recovery/KO32,
+  zmian epoki/kont/baz/deploy i restartu PC. Historyczny API5558 i prywatny
+  dziennik nie były używane do fixture. Nowy zdalny CI138 pozostaje osobnym odbiorem.
+- Kontrole przekazania: E0 PASS11schematów/98valid/35invalid/18scenariuszy/826linków; diff-check PASS. Kod/overlay i cztery zamrożone APK zachowały swoje sumy.

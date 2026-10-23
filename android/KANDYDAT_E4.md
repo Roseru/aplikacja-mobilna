@@ -1,5 +1,54 @@
 # Wspólny kandydat ręcznego posiłku i ponowienia ACK
 
+## Aktualny skonfigurowany pakiet — 23.10.2026
+
+Źródło APK: **dc012fabf395480c6aa2d1b2a1d59b766ec4add3**,
+Android **0.8.27**, debug38, validation1038/**0.8.27.validation**, Room17.
+Zawiera scalony pełny pull PR144, ochronę21tabel i wymóg lokalnego zastosowania
+najnowszej pełnej kopii konta przed każdą fazą drivera. Zwykły merge aktualnego
+main ef4bb4f do2f85e91 nie zmienił żadnego wejścia kompilacji Androida;
+sprawdzono wszystkie zapamiętane sumy plików. Istniejący PR138 przechodzi na main.
+
+[Manifest czterech APK, konfiguracji i odbioru](KANDYDAT_E4_0_8_27.json)
+zastępuje wcześniejszy pakiet0.8.23 jako kandydat do nowej próby. Historyczne
+raporty niżej pozostają dowodami swoich źródeł, bez przenoszenia ich wyników.
+
+- Skompilowane issuer/API odpowiadają wejściom O3-085; CA PEM SHA256
+  `01f120ef25f091a6413a535dcaa5e333575a8d08a016503c47998333eef3a6f6`.
+  Zaufanie dodatkowego CA dotyczy wyłącznie wariantu validation i dokładnego
+  hosta192.168.3.162. Brak zaufania user CA, cleartext i includeSubdomains.
+- Build debug/validation/domyslny test APK oraz lint PASS:0error/4warning/1info.
+  **24 celowane JVM PASS**,12bariera/7HTTP/5odciski,0fail/error/skip.
+  Nie uruchamiano ich ponownie przy budowie opt-in.
+- Osobny opt-in build PASS280,11s. Domyślne APK nie zawierają drivera;
+  debug nie zawiera bariery ACK. Opt-in test APK zawiera LiveMealReplayTest,
+  lecz nie był instalowany ani uruchamiany. Validation APK zachował identyczny SHA.
+- **4/4 native PASS,0fail/0skip**, API35, nowy osobny O1Replay35.
+  Sprawdzono zainstalowane SHA, samolot/Wi-Fi off/brak aktywnej sieci przed i po.
+  Test łączący producenta z replay sprawdza teraz także rzeczywisty zapis
+  końcowej kopii do Room i zachowanie prywatnego produktu/źródła/gościa.
+  Pozostałe trzy przypadki obejmują nawigację zdjęcia, jego odtworzenie po
+  recreation i ekran320dp z font1,5. To zakres celowany, nie pełna regresja.
+- Pierwszy prywatny weryfikator po poprawnym buildzie oczekiwał0.8.27 zamiast
+  zamierzonego przyrostka.validation. Zachowano pierwotny wynik i poprawiono
+  tylko oczekiwanie weryfikatora; źródła, trzy gotowe APK i wynik24JVM zachowano.
+- **Otwarty problem CI:** main39916344347 miał358/359PASS i timeout drugiego
+  revealPreview po recreation. Odczytano XML i logcat; powyższy focus przeszedł
+  bez zmiany aplikacji/testu. Nie uznajemy tego za naprawę ani przyczynę wyjaśnioną.
+
+Lokalny pakiet4APK z handoff-manifest.json i SHA256SUMS jest gotowy do
+przekazania uzgodnionym transportem O3. Samo utworzenie pakietu nie jest dostawą
+na drugi komputer. Nowe okno i aktualny peer wymagają ustalenia przed transportem
+oraz rzeczywistą próbą. Zdalny CI nowego head PR138 jest osobnym odbiorem.
+
+**Live E4/HTTP/COMMIT/kill/PG C0C1C2, Gemini/E7-R/recovery/KO32 NOT_RUN.**
+Nie otwarto starego relay, nie zmieniano epoki/kont/baz ani zachowanego API5558.
+24JVM,4native i statyczna zgodność14plików backendu/3schematów z8ff7c0c
+nie zastępują wspólnego testu. Trzy duże moduły O2 są opisane osobno w PR146;
+nie są warunkiem rozpoczęcia ograniczonej próby wybranego Meal/create.
+
+## Historyczny kandydat0.8.23
+
 Agent1,21.10.2026, lokalnie `codex/android-kandydat-e4`, istniejący
 [PR138](https://github.com/Roseru/aplikacja-mobilna/pull/138).
 Dokładne źródło kwalifikowanych APK: `d3f6dba3a58b1d7ee52fb458ce01fc09ed3a4075`.
