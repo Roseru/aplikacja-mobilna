@@ -27,9 +27,9 @@ data class SyncPushBatch(@PrimaryKey val id: String, val ownerScope: String, val
     suspend fun pending(owner: String): List<SyncPushBatch>
     @Insert suspend fun insert(row: SyncPushBatch)
     @Update suspend fun update(row: SyncPushBatch)
-    @Query("SELECT * FROM outbox WHERE ownerScope=:owner AND entityType IN ('meal','weight') AND wireFormat='sync-v1' AND status='pending' ORDER BY rowid LIMIT 100")
+    @Query("SELECT * FROM outbox WHERE ownerScope=:owner AND entityType IN ('meal','weight','profile','goal','diary_day','product_draft') AND wireFormat='sync-v1' AND status='pending' ORDER BY CASE WHEN entityType='diary_day' AND baseRevision IS NULL THEN 0 ELSE 1 END,rowid LIMIT 100")
     suspend fun eligible(owner: String): List<OutboxEntity>
-    @Query("SELECT COUNT(*) FROM outbox WHERE ownerScope=:owner AND entityType IN ('meal','weight') AND wireFormat='sync-v1' AND status=:status")
+    @Query("SELECT COUNT(*) FROM outbox WHERE ownerScope=:owner AND entityType IN ('meal','weight','profile','goal','diary_day','product_draft') AND wireFormat='sync-v1' AND status=:status")
     suspend fun count(owner: String, status: String): Int
     @Query("SELECT COUNT(*) FROM outbox WHERE ownerScope=:owner AND wireFormat!='sync-v1' AND status!='acked'")
     suspend fun legacyCount(owner: String): Int
@@ -72,21 +72,34 @@ internal data class WeightPushEntitySource(val point: WeightEntity, val state: C
     override val payload get() = state.wirePayload
     override fun toString() = "WeightPushEntitySource(redacted)"
 }
+internal data class DomainPushEntitySource(val state: CanonicalDomainState,
+    override val queue: List<OutboxEntity>): PushEntitySource {
+    override val id get() = state.entityId
+    override val context get() = state.wireContext
+    override val revision get() = state.serverRevision
+    override val deleted get() = state.deleted
+    override val payload get() = state.wirePayload
+    override fun toString() = "DomainPushEntitySource(redacted)"
+}
 internal data class MealPushAckSource(val gate: MealPushGate, val row: SyncPushBatch,
-    val operations: List<OutboxEntity>, val entities: List<PushEntitySource>) {
+    val operations: List<OutboxEntity>, val entities: List<PushEntitySource>,
+    val domainQueue: List<OutboxEntity> = emptyList(), val timeline: CanonicalGoalTimeline? = null) {
     override fun toString() = "MealPushAckSource(redacted)"
 }
 data class MealPushAckResult(val acknowledged: Int, val refused: Int, val replay: Boolean)
 data class MealPushStatus(val pending: Int, val waiting: Int, val refused: Int, val legacy: Int,
-    val persistedBatch: Boolean, val ready: Boolean, val retryAtMillis:Long=0)
+    val persistedBatch: Boolean, val ready: Boolean, val retryAtMillis:Long=0,
+    val domains: Map<String, DomainPushStatus> = emptyMap())
+data class DomainPushStatus(val pending: Int, val waiting: Int, val refused: Int)
 class PreparedMealPushAck internal constructor(internal val request: MealPushRequest,
     internal val source: MealPushAckSource, internal val batch: SyncPushBatch,
     internal val meals: List<MealEntity>, internal val operations: List<OutboxEntity>, val result: MealPushAckResult,
-    internal val weights: List<CanonicalWeightState> = emptyList()) {
+    internal val weights: List<CanonicalWeightState> = emptyList(),
+    internal val domains: List<CanonicalDomainState> = emptyList(), internal val timeline: CanonicalGoalTimeline? = null) {
     override fun toString() = "PreparedMealPushAck(redacted)"
 }
 
-/** Ordinary canonical meals and weights. Legacy conversion and recovery remain separate adapters. */
+/** Ordinary canonical six-domain batch. Legacy conversion and recovery remain separate adapters. */
 class MealPushStore(private val db: CalorieDatabase, private val schema: SyncWireSchema) {
     private val protocol = PushProtocol(schema)
     private val owners = LocalOwnerStore(db)
@@ -97,10 +110,16 @@ class MealPushStore(private val db: CalorieDatabase, private val schema: SyncWir
         owners.requireCurrent(lease)
         val ready = try { gate(lease); true } catch (error: kotlinx.coroutines.CancellationException) { throw error }
             catch (_: Exception) { false }
-        MealPushStatus(dao.count(lease.storageScope,"pending"), dao.count(lease.storageScope,"waiting_revision"),
+        val waiting = listOf("waiting_revision", "waiting_timeline", "waiting_profile", "waiting_recovery")
+        val domains = (listOf("meal", "weight") + PrivateDomainsWire.types).associateWith { type ->
+            val rows = db.serverDiaryDao().unsettled(lease.storageScope).filter { it.entityType == type && it.wireFormat == "sync-v1" }
+            DomainPushStatus(rows.count { it.status == "pending" }, rows.count { it.status in waiting },
+                rows.count { it.status in setOf("conflict", "rejected") })
+        }
+        MealPushStatus(dao.count(lease.storageScope,"pending"), waiting.sumOf { dao.count(lease.storageScope,it) },
             dao.count(lease.storageScope,"conflict") + dao.count(lease.storageScope,"rejected"),
             dao.legacyCount(lease.storageScope),dao.pending(lease.storageScope).isNotEmpty(),ready,
-            dao.pending(lease.storageScope).maxOfOrNull {it.retryAtMillis}?:0)
+            dao.pending(lease.storageScope).maxOfOrNull {it.retryAtMillis}?:0, domains)
     }
 
     /** A normative preflight refusal never ACKs a prefix or rewrites the original envelope. */
@@ -141,10 +160,13 @@ class MealPushStore(private val db: CalorieDatabase, private val schema: SyncWir
         source.second?.let { return@withContext open(lease, it.id) }
         if (source.third.isEmpty()) return@withContext null
         val context = CanonicalMealRows.context(source.first.binding)
+        // Meal can implicitly create a different server DiaryDay UUID. An explicit new day in
+        // this unattempted batch must establish its identity first; no operation bytes change.
+        val candidates = source.third.sortedBy { if (it.entityType == "diary_day" && it.baseRevision == null) 0 else 1 }
         val batch = protocol.prepare(source.first.binding.syncEpoch, checkNotNull(source.first.run.checkpoint),
-            source.third.map { checkNotNull(it.wireJson) })
+            candidates.map { checkNotNull(it.wireJson) })
         val wire = batch.json().getJSONArray("operations")
-        val selected = (0 until wire.length()).map { source.third[it] }
+        val selected = (0 until wire.length()).map { candidates[it] }
         selected.forEachIndexed { i, row ->
             validateRow(row, context, StrictJson.canonical(wire.getJSONObject(i)))
             check(!row.attempted)
@@ -187,7 +209,7 @@ class MealPushStore(private val db: CalorieDatabase, private val schema: SyncWir
 
     private fun validateRow(row: OutboxEntity, context: String, wire: String) {
         val value = StrictJson.read(wire.toByteArray(Charsets.UTF_8))
-        check(row.wireFormat == "sync-v1" && row.wireContext == context && row.wireJson == wire && row.entityType in setOf("meal", "weight"))
+        check(row.wireFormat == "sync-v1" && row.wireContext == context && row.wireJson == wire && row.entityType in (setOf("meal", "weight") + PrivateDomainsWire.types))
         check(row.entityType == value.getString("entity_type"))
         check(row.operationId == value.getString("operation_id") && row.entityId == value.getString("entity_id") &&
             row.action == value.getString("action") && row.payload == StrictJson.canonical(value.get("payload")))
@@ -199,12 +221,16 @@ class MealPushStore(private val db: CalorieDatabase, private val schema: SyncWir
             db.dao().canonicalMealOperations(owner, operation.entityId))
         "weight" -> WeightPushEntitySource(checkNotNull(db.dao().weight(operation.entityId, owner)),
             checkNotNull(db.weightSyncDao().state(owner, operation.entityId)), db.weightSyncDao().operations(owner, operation.entityId))
+        in PrivateDomainsWire.types -> DomainPushEntitySource(
+            checkNotNull(db.domainSyncDao().state(owner, operation.entityType, operation.entityId)),
+            db.domainSyncDao().operations(owner, operation.entityType, operation.entityId))
         else -> error("Unsupported canonical entity")
     }
 
-    private fun wireOperation(row: OutboxEntity, epoch: String, revision: Int, payload: String?): String = when (row.entityType) {
+    private fun wireOperation(row: OutboxEntity, epoch: String, revision: Int?, payload: String?): String = when (row.entityType) {
         "meal" -> MealWire.operation(row.operationId, row.entityId, epoch, revision, payload, schema)
         "weight" -> WeightWire.operation(row.operationId, row.entityId, epoch, revision, payload, schema)
+        in PrivateDomainsWire.types -> PrivateDomainsWire.operation(row.operationId, row.entityType, row.entityId, epoch, revision, payload, schema)
         else -> error("Unsupported canonical entity")
     }
 
@@ -254,7 +280,8 @@ class MealPushStore(private val db: CalorieDatabase, private val schema: SyncWir
             val (gate, row) = current(request); check(row.attempted)
             val operations = request.operations.map { checkNotNull(db.dao().operation(it.operationId)) }
             val entities = if (row.state == "complete") emptyList() else operations.map { entity(request.lease.storageScope, it) }
-            MealPushAckSource(gate, row, operations, entities)
+            MealPushAckSource(gate, row, operations, entities, db.domainSyncDao().unsettled(request.lease.storageScope),
+                db.domainSyncDao().timeline(request.lease.storageScope))
         }
         check(source.row.wireContext == CanonicalMealRows.context(source.gate.binding))
         if (source.row.responseJson != null) {
@@ -266,6 +293,8 @@ class MealPushStore(private val db: CalorieDatabase, private val schema: SyncWir
         val results = receipt.json().getJSONArray("results")
         val meals = mutableListOf<MealEntity>(); val weights = mutableListOf<CanonicalWeightState>()
         val operations = mutableListOf<OutboxEntity>()
+        val domains = mutableListOf<CanonicalDomainState>()
+        var timeline = source.timeline
         source.operations.forEachIndexed { i, operation ->
             val entity = source.entities[i]; val queue = entity.queue
             check(operation.status == "pending" && queue.filter { it.attempted } == listOf(operation))
@@ -276,6 +305,15 @@ class MealPushStore(private val db: CalorieDatabase, private val schema: SyncWir
                 when (entity) {
                     is MealPushEntitySource -> meals += entity.meal.meal.copy(serverRevision = revision)
                     is WeightPushEntitySource -> weights += entity.state.copy(serverRevision = revision)
+                    is DomainPushEntitySource -> {
+                        domains += entity.state.copy(serverRevision = revision)
+                        if (operation.entityType == "goal") {
+                            val base = StrictJson.read(operation.payload.toByteArray()).getInt("timeline_base_revision")
+                            val old = checkNotNull(timeline)
+                            check(old.wireContext == source.row.wireContext)
+                            timeline = old.copy(revision = maxOf(old.revision, Math.addExact(base, 1)))
+                        }
+                    }
                 }
                 operations += operation.copy(status = "acked")
                 val waiting = queue.filter { !it.attempted }; check(waiting.size <= 1)
@@ -297,8 +335,24 @@ class MealPushStore(private val db: CalorieDatabase, private val schema: SyncWir
                 operations += operation.copy(status = status)
             }
         }
+        // Only a confirmed predecessor releases the next axis/profile operation. A refusal blocks it.
+        val changes = operations.associateBy { it.operationId }
+        val remaining = source.domainQueue.map { changes[it.operationId] ?: it }
+            .filter { it.status !in setOf("acked", "superseded", "local_only") }
+        remaining.firstOrNull { it.entityType == "goal" }?.let { next ->
+            if (next.status == "waiting_timeline" && timeline?.wireContext == next.wireContext &&
+                StrictJson.read(next.payload.toByteArray()).getInt("timeline_base_revision") == timeline?.revision)
+                operations += next.copy(status = "pending")
+        }
+        remaining.firstOrNull { it.entityType == "profile" }?.let { next ->
+            if (next.status == "waiting_profile") {
+                check(!next.attempted && next.wireJson == null)
+                val payload = if (next.action == "delete") null else next.payload
+                operations += next.copy(status = "pending", wireJson = wireOperation(next, source.gate.binding.syncEpoch, next.baseRevision, payload))
+            }
+        }
         PreparedMealPushAck(request, source, source.row.copy(responseJson = receipt.canonical, state = "complete"),
-            meals.toList(), operations.toList(), result(receipt, false), weights.toList())
+            meals.toList(), operations.toList(), result(receipt, false), weights.toList(), domains.toList(), timeline)
     }
 
     private fun result(receipt: PushReceipt, replay: Boolean): MealPushAckResult {
@@ -317,7 +371,11 @@ class MealPushStore(private val db: CalorieDatabase, private val schema: SyncWir
         prepared.source.entities.forEachIndexed { index, expected ->
             check(entity(request.lease.storageScope, prepared.source.operations[index]) == expected)
         }
+        check(db.domainSyncDao().unsettled(request.lease.storageScope) == prepared.source.domainQueue &&
+            db.domainSyncDao().timeline(request.lease.storageScope) == prepared.source.timeline)
         if (!prepared.result.replay) {
+            prepared.domains.forEach { db.domainSyncDao().save(it) }
+            prepared.timeline?.let { db.domainSyncDao().save(it) }
             prepared.meals.forEach { db.dao().updateMeal(it) }
             prepared.weights.forEach { db.weightSyncDao().update(it) }
             prepared.operations.forEach { db.dao().updateOperation(it) }

@@ -162,7 +162,7 @@ interface CalorieDao {
     @Query("SELECT * FROM outbox WHERE operationId=:id") suspend fun operation(id:String):OutboxEntity?
     @Update suspend fun updateOperation(row:OutboxEntity)
 
-    @Query("SELECT COUNT(*) FROM outbox WHERE ownerScope = :owner AND status IN ('pending','waiting_revision','waiting_recovery')") fun pending(owner: String): Flow<Int>
+    @Query("SELECT COUNT(*) FROM outbox WHERE ownerScope = :owner AND status IN ('pending','waiting_revision','waiting_recovery','waiting_timeline','waiting_profile')") fun pending(owner: String): Flow<Int>
     @Query("SELECT COUNT(*) FROM outbox WHERE ownerScope = :owner") suspend fun operationCount(owner: String): Int
     @Query("SELECT DISTINCT productId FROM meal_items JOIN meals ON meals.id = meal_items.mealId WHERE meals.ownerScope = :owner AND meals.deleted = 0 AND meal_items.productId IS NOT NULL ORDER BY meals.occurredAt DESC LIMIT 12")
     fun recent(owner: String): Flow<List<String>>
@@ -182,8 +182,9 @@ interface CalorieDao {
     RationEntity::class, RationComponentEntity::class, ProfileEntity::class, WeightEntity::class, DiaryDayEntity::class,
     CatalogGenerationEntity::class, CatalogRecordEntity::class, CatalogMemberEntity::class, CatalogActiveEntity::class,
     LocalOwnerEntity::class, LocalActiveOwnerEntity::class, AccountBindingEntity::class,
-    BootstrapAttemptEntity::class, ServerSnapshotRun::class, ServerSnapshotPage::class, ServerSnapshotAccess::class, ServerSnapshotIdentity::class, pl.roseru.kalorie.photo.MealPhotoDraft::class, pl.roseru.kalorie.photo.PhotoAnalysisRequestEntity::class, PhotoMaterialization::class, SyncPushBatch::class, pl.roseru.kalorie.photo.PhotoConfirmationHistory::class, CanonicalWeightState::class, SyncConflictDecision::class, ServerDiaryRecord::class, ServerDiaryApplication::class], version = 17, exportSchema = true)
+    BootstrapAttemptEntity::class, ServerSnapshotRun::class, ServerSnapshotPage::class, ServerSnapshotAccess::class, ServerSnapshotIdentity::class, pl.roseru.kalorie.photo.MealPhotoDraft::class, pl.roseru.kalorie.photo.PhotoAnalysisRequestEntity::class, PhotoMaterialization::class, SyncPushBatch::class, pl.roseru.kalorie.photo.PhotoConfirmationHistory::class, CanonicalWeightState::class, SyncConflictDecision::class, ServerDiaryRecord::class, ServerDiaryApplication::class, CanonicalDomainState::class, CanonicalGoalTimeline::class], version = 18, exportSchema = true)
 abstract class CalorieDatabase : RoomDatabase() {
+    abstract fun domainSyncDao(): CanonicalDomainDao
     abstract fun serverDiaryDao(): ServerDiaryDao
     abstract fun conflictDao(): SyncConflictDao
     abstract fun weightSyncDao(): CanonicalWeightDao
