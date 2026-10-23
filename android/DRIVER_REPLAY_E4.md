@@ -1,10 +1,12 @@
 # Driver wybranej partii E4 — przygotowanie O1
 
 23.10.2026: [nowy skonfigurowany pakiet0.8.27](KANDYDAT_E4.md) i
-[manifest4APK](KANDYDAT_E4_0_8_27.json) są gotowe lokalnie po buildzie,
+[manifest4APK](KANDYDAT_E4_0_8_27.json) są gotowe po buildzie,
 24celowanychJVM i4native offline. Źródło dc012fa; pełny pull PR144 scalony,
 lokalne zastosowanie najnowszej kopii jest wymagane w każdej fazie.
-Opt-in nie uruchamiano, transport i nowe wspólne okno pozostają do uzgodnienia.
+Pakiet dostarczono do roboczego wydania GitHub wskazanego w opisie kandydata;
+upload potwierdzony digest/rozmiarem, pobranie O3 jeszcze niepotwierdzone.
+Opt-in nie uruchamiano, transport API i nowe wspólne okno pozostają do uzgodnienia.
 Poniższe opisy „w przygotowaniu” i wyniki0.8.23 są historią swoich źródeł.
 
 23.10.2026: przygotowywany pakiet zależy od pełnego pull813dc61 / PR144 i obejmuje dodatkowo

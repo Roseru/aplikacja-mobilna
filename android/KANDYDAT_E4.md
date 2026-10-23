@@ -2,6 +2,17 @@
 
 ## Aktualny skonfigurowany pakiet — 23.10.2026
 
+**Dostawa na GitHub potwierdzona:** [robocze wydanie z czterema APK](https://github.com/Roseru/aplikacja-mobilna/releases/tag/untagged-a106e469bb345cdfa8b1),
+ZIP44941585B, SHA256 `8bcf6105e7fb064c35ba5d42321cc4cc8547a5a5b61796bdfc75510ff112522d`.
+GitHub potwierdził size/digest asset668891678; wydanie pozostaje draftem,
+dostępnym dla osób z dostępem do repo. Pobranie przez O3 nie jest jeszcze potwierdzone.
+Package-SHA, CRC i podpisy4APK zweryfikowane. Signer O1:
+`e1167912de15c155ed2ce4baf809c4fdf209a6705d860f847e5298d5f7f150b5`.
+O3 używa świeżego osobnego AVD API35, bez instalacji nad własnym starszym APK
+z innym signerem lub prywatnym dziennikiem. Zamrożony manifest wewnątrz ZIP
+opisuje stan sprzed uploadu; jego LOCAL_READY nie jest aktualnym stanem dostawy.
+Odczytano wynik O3-086/PR147 dla Room14; nie przenosimy go na ten nowy pakiet.
+
 Źródło APK: **dc012fabf395480c6aa2d1b2a1d59b766ec4add3**,
 Android **0.8.27**, debug38, validation1038/**0.8.27.validation**, Room17.
 Zawiera scalony pełny pull PR144, ochronę21tabel i wymóg lokalnego zastosowania
@@ -36,10 +47,10 @@ raporty niżej pozostają dowodami swoich źródeł, bez przenoszenia ich wynik�
   revealPreview po recreation. Odczytano XML i logcat; powyższy focus przeszedł
   bez zmiany aplikacji/testu. Nie uznajemy tego za naprawę ani przyczynę wyjaśnioną.
 
-Lokalny pakiet4APK z handoff-manifest.json i SHA256SUMS jest gotowy do
-przekazania uzgodnionym transportem O3. Samo utworzenie pakietu nie jest dostawą
-na drugi komputer. Nowe okno i aktualny peer wymagają ustalenia przed transportem
-oraz rzeczywistą próbą. Zdalny CI nowego head PR138 jest osobnym odbiorem.
+Pakiet4APK z handoff-manifest.json i SHA256SUMS został dostarczony do roboczego
+wydania GitHub wskazanego wyżej. To potwierdzenie uploadu, bez potwierdzenia
+pobrania przez O3. Nowe okno i aktualny peer wymagają ustalenia przed wspólnym
+transportem API oraz rzeczywistą próbą. Zdalny CI nowego head PR138 jest osobnym odbiorem.
 
 **Live E4/HTTP/COMMIT/kill/PG C0C1C2, Gemini/E7-R/recovery/KO32 NOT_RUN.**
 Nie otwarto starego relay, nie zmieniano epoki/kont/baz ani zachowanego API5558.

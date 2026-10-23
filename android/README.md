@@ -1,11 +1,13 @@
 # Android — Racje i kalorie
 
 Aktualny pakiet E4 /23.10: skonfigurowane APK0.8.27/Room17 ze źródła
-dc012fa są gotowe lokalnie. Build/lint,24celowaneJVM i4native offline PASS;
+dc012fa dostarczono jako [robocze wydanie GitHub](https://github.com/Roseru/aplikacja-mobilna/releases/tag/untagged-a106e469bb345cdfa8b1),
+z potwierdzonym digest/rozmiarem ZIP. Pobranie przez O3 jeszcze niepotwierdzone.
+Build/lint,24celowaneJVM i4native offline PASS;
 osobny opt-in zbudowany bez uruchomienia live. [Manifest](KANDYDAT_E4_0_8_27.json)
 i [granice odbioru](KANDYDAT_E4.md) podają cztery SHA, konfigurację CA,
 odczytany lecz niewyjaśniony timeout zdjęcia z CI main i kolejne kroki O3.
-Istniejący PR138 na main; dostawa na drugi komputer i wspólne E4 nadal osobno.
+Istniejący PR138 na main; odbiór na drugim komputerze i wspólne E4 nadal osobno.
 
 Poniżej zachowane wcześniejsze stany przygotowania:
 

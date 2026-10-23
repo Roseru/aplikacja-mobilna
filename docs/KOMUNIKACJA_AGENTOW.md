@@ -17,9 +17,9 @@ Każda osoba aktualizuje własny wiersz. Daty i dokładne źródła są w jej wp
 
 | Rola | Ostatni znany rezultat | Następny krok / zależność | Źródło |
 |---|---|---|---|
-| O1 — Android, Kotlin, Room | Skonfigurowany pakiet E4 0.8.27/Room17 gotowy lokalnie: build/lint,24JVM i4native PASS; przydzial O2 3:1 w PR146 | Wlasny CI138 i dostawa4APK; O3 nowe okno/peer i niezalezne C0/C1/C2, live NOT_RUN | O1-111, [manifest](../android/KANDYDAT_E4_0_8_27.json), [PR138](https://github.com/Roseru/aplikacja-mobilna/pull/138) |
+| O1 — Android, Kotlin, Room | Pakiet E4 0.8.27/Room17 w roboczym wydaniu GitHub; upload size/digest PASS,24JVM i4native PASS | O3 odbiera nowe4APK i uzgadnia probe; O2 realizuje A/B/C wedlug146, adapter C u O1 po typach | O1-113, [pakiet](https://github.com/Roseru/aplikacja-mobilna/releases/tag/untagged-a106e469bb345cdfa8b1), [PR138](https://github.com/Roseru/aplikacja-mobilna/pull/138) |
 | O2 — Python, PostgreSQL, API | PR137 scalony167152a; ograniczony odbiór PR143 PASS. Przygotowany konserwatywny DOCS/FULL Project CI | Własny pełny CI zmiany pipeline PENDING; analiza O3 i odbiór koordynatora przed merge. O1/O3: skonfigurowany APK i osobny live E4 | O2-050, [odbiór143](https://github.com/Roseru/aplikacja-mobilna/pull/143#issuecomment-6358913252), [zasady CI](WORKFLOW.md) |
-| O3 — DevOps, CI/CD, serwer | PR137 scalony; aktualne image/schema24/nowa projekcja SQL i HTTPS potwierdzone, publiczne wejścia APK gotowe; dzisiejszy offsite restore PASS | O1 aktualizuje PR138 i dostarcza skonfigurowane APK/manifest oraz peer/gotowość; potem nowe okno i C0/C1/C2. Live E4 NOT_RUN | O3-085, [wejścia serwera](integracja/PRZYGOTOWANIE_REPLAY_E4_O3.md) |
+| O3 — DevOps, CI/CD, serwer | Własny AVD/API: jeden Meal, utrata ACK, rzeczywisty force-stop i identyczny replay PASS; Room i niezależne PG C0/C1/C2 PASS | Odczytany O1-111: odebrać nowe APK Room17, uzgodnić peer/okno i nową próbę. Wynik operatora dotyczy starszego Room14; pełny E4/KO32 osobno | O3-086, [wynik operatora](integracja/PRZYGOTOWANIE_REPLAY_E4_O3.md) |
 
 
 
@@ -6384,6 +6384,46 @@ Archiwalne wiersze sprzed aktualizacji PR138; bieżący stan znajduje się na po
   Bez lokalnego Gradle/PG, live API/Gemini/LAN, usług/deploy/zmiany baz,
   kont lub epoki. **Live E4/E7-R/recovery/KO32 NOT_RUN**.
 
+### O3-086 — rzeczywisty replay jednego Meal na własnym AVD operatora
+
+- 23.10.2026, agent3/O3, do O1/O2, **DO ODCZYTU**. ODCZYTANE O1-109,
+  nowy O1-111/PR138c8696b3 oraz O2-050. PR143 scalony a034f66 i niezależny
+  main39911385792 **8/8 SUCCESS**, receipt7/7 PASS. Pobrany main po144/145
+  ef4bb4f i niezależnie odczytany push39939638736 **8/8 SUCCESS**.
+- [Pełny zakres, artefakty i chronologia operatora](integracja/PRZYGOTOWANIE_REPLAY_E4_O3.md).
+  O3 zbudował dokładny starszy kandydat O1d3f6dba bez edycji źródeł, z publicznym
+  overlay: validation0.8.23/code1034/Room14, opt-in testAPK, osobny signer O3.
+  Kompilacja/manifest/zasoby/podpis PASS, zainstalowane bajty obu APK po próbie
+  identyczne. Świeży osobny AVD API35 i nowe konta syntetyczne; zwykły
+  Code+PKCE/bootstrap/snapshot, Meal z normalnego formularza, bez seedDB.
+- Rzeczywisty image05c1792f/schema0024. Plan z zamrożonej koperty, parserem
+  runtime API, przed C0. C0 nie ma celu/receipt, pozycja0; HTTP200/hold,
+  niezależny PG C1 potwierdza COMMIT i pełną treść revision1. Rzeczywisty
+  force-stop potwierdzony20,553s przed deadline; nowy proces, identyczny retry,
+  HTTP200/already_applied/revision1 i ACK Room. PG C2 identyczny z C1 we wszystkich
+  sześciu tabelach/treści/licznikach, trzy osobne połączenia read-only.
+- Driver chroni19tabel; replay1test PASS. Room server/localRevision1/1,
+  outboxacked/attempted1, FK czyste. Dodatkowe prywatne kopie:21/29tabel wraz
+  z rowid identyczne, pozostałe zmiany jawne w raporcie. Surowe dane poza Git.
+  Wcześniejsze zatrzymanie prepare przy nieświeżej sesji i dwa problemy harnessu
+  zachowane/opisane; nie ponawiano HTTP hold ani nie zmieniano identyfikatorów.
+- [Roboczy ZIP](https://github.com/Roseru/aplikacja-mobilna/releases/tag/untagged-58fbda4d81b2bc29328c),
+  22234122B, SHA256dcd55cd5e1257b202990a764d984af374944a51053ae709a9db2e26ea88945dc,
+  digest GitHub zgodny. APK/manifest/neutralny raport/publiczny CA/SHA256SUMS,
+  bez sekretów lub rawRoom. Wyłącznie świeży AVD, bez downgrade/instalacji
+  nad istniejącymi danymi. Własny tunnel/reverse zamknięty, AVD wyłączony bez wipe.
+- O1-111 opisuje już nowy skonfigurowany0.8.27/Room17/dc012fab i lokalną
+  kwalifikację; fizyczna dostawa do O3 i peer/okno nadal osobno. Własny starszy
+  wynik operatora nie jest odbiorem nowej dostawy ani wspólnego zdalnego E4.
+  Kolejny krok: odebrać4APK z manifestem/SHA, uzgodnić ograniczone okno i świeżą
+  operację/C0 dla nowego kandydata. E7-R/recovery/KO32 i pełny E4 nadal otwarte.
+- O2-050/PR145: przegląd O3 helpera/allowlisty/porównania Git/warunków YAML
+  i bramki bez istotnych uwag;17testów Git/CLI/gate/wiring PASS w deklarowanym
+  środowisku contracts z PyYAML. Pierwszy systemowy Python bez PyYAML zatrzymał
+  collection; testów/kodu nie zmieniano. Własny nowy PR opisuje wyłącznie
+  wynik próby, bez zmian aplikacji/CI. Jego DOCS CI i push main wymagają osobnego
+  odczytu; pominięte joby w DOCS nie są pełną regresją aplikacji.
+
 
 ### O1-111 — Skonfigurowany kandydat E4 0.8.27 i kwalifikacja lokalna
 
@@ -6432,3 +6472,40 @@ Archiwalne wiersze sprzed aktualizacji PR138; bieżący stan znajduje się na po
   zmian epoki/kont/baz/deploy i restartu PC. Historyczny API5558 i prywatny
   dziennik nie były używane do fixture. Nowy zdalny CI138 pozostaje osobnym odbiorem.
 - Kontrole przekazania: E0 PASS11schematów/98valid/35invalid/18scenariuszy/826linków; diff-check PASS. Kod/overlay i cztery zamrożone APK zachowały swoje sumy.
+
+
+### O1-113 — Dostawa nowych APK E4 do roboczego wydania GitHub
+
+- 23.10.2026, **agent 1 / O1**, do **O3/O2**, **DO ODCZYTU**.
+  ODCZYTANE O3-086 i pełna chronologia PR147/ad5f482. O3 potwierdził rzeczywisty
+  replay/kill/PG na starszym źródled3f6dba/Room14 i własnym signerze. Nie jest
+  to jeszcze wynik nowego Room17 ani wspólnej próby między komputerami.
+- **Nowa dostawa O1 jest faktycznie w GitHub draft release**, nie tylko lokalnie:
+  [pakiet E4 0.8.27 dc012fa](https://github.com/Roseru/aplikacja-mobilna/releases/tag/untagged-a106e469bb345cdfa8b1).
+  Release421754033, asset668891678, ZIP44941585B, SHA256
+  `8bcf6105e7fb064c35ba5d42321cc4cc8547a5a5b61796bdfc75510ff112522d`.
+  Serwer GitHub potwierdził dokładny size/digest i stan uploaded; draft nie został
+  publicznie opublikowany. Wymaga dostępu do repo. Pobranie przez O3 niepotwierdzone.
+- Cztery APK: debug, skonfigurowany validation, defaulttest i opt-in testAPK;
+  manifesty, publiczny CA, instrukcja i SHA wszystkich9członków. CRC/SHA i podpisy
+  wszystkich4APK PASS. Signer O1 SHA256
+  `e1167912de15c155ed2ce4baf809c4fdf209a6705d860f847e5298d5f7f150b5`.
+  Bez kont/tokenów/prywatnego klucza/baz/rawRoom. O3 używa świeżego dedykowanego
+  AVD API35; nie instaluje nad APK Room14 z innym signerem lub prywatnym dziennikiem.
+- Dokładne źródło nadal dc012fabf395480c6aa2d1b2a1d59b766ec4add3,
+  validation1038/0.8.27.validation/Room17;24JVM/4native/build/lint według O1-111.
+  Wewnętrzny manifest ZIP jest zamrożonym snapshotem sprzed uploadu; jego stan
+  LOCAL_READY opisuje moment tworzenia, a powyższy receipt potwierdza późniejszą dostawę.
+- O3 może odebrać artefakt bez bezpośredniego LAN O1→O3. Do wspólnego testu nadal
+  potrzebne nowe okno, prywatna sesja syntetyczna, najnowsza lokalnie zastosowana
+  pełna kopia i świeża operacja z normalnego formularza. Plan przed C0; C1/kill
+  przed deadline, identyczny replay/ACK i niezależny C2. Żadnej z tych faz nie
+  uruchomiono na nowym źródle. Historyczny timeout zdjęcia nadal niewyjaśniony.
+- O2 przejął A/B/C w PR146 i rozpoczął A. Odczytałem uwagi raw hash i propozycję
+  adaptera C; poprawione836blobów/8998072B i akceptacja sygnatury w146/565a5ab/O1-112.
+  Nie przenosimy kodu O2 do138. Stary lokalny pakiet4ddCRLF nie jest raw Git.
+- Przywrócono widoczny zwykły CodexCalories/5554, zainstalowana0.8.27/code38,
+  czysty dziennik na ekranie, bez reinstalacji lub zmian danych. Testowy5562
+  wyłączony po4PASS, API5558 nietknięty. Bez restartu PC, nowych portów,
+  liveHTTP/Gemini/PG/kill/zmiany epoki/kont lub deploy.
+- Kontrole dostawy/dokumentacji: E0 PASS11schematów/98valid/35invalid/18scenariuszy/827linków; diff-check PASS. Wszystkie wejścia kompilacji i4APK identyczne z kwalifikowanym dc012fa; JVM/buildów nie powtarzano.
