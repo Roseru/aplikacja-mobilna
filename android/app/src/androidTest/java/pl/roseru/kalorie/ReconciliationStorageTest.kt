@@ -89,6 +89,29 @@ class ReconciliationStorageTest {
             assertFalse(db.openHelper.readableDatabase.query("PRAGMA foreign_key_check").use {it.moveToFirst()})
         }finally{db.close()}
     }
+    @Test fun ordinaryCopyAfterRecoveryAckCannotPreventRequestingFreshTypedPlanSnapshot()=runBlocking<Unit> {
+        val db=memory()
+        try {
+            val lease=account(db);DiaryRepository(db,context,lease).addWeight(80.125,LocalDate.of(2001,1,2))
+            val ordinary=MealPushStore(db,schema);val frozen=ordinary.prepare(lease)!!;ordinary.markAttempted(frozen)
+            val original=db.dao().operation(frozen.operations.single().operationId)!!
+            val binding=expire(db,lease,frozen);val store=ReconciliationStore(db,schema);val plan=plan(store,lease,binding)
+            pull(db,store,lease,binding,plan);val source=db.importDao().sources(plan.planId).single()
+            store.decide(lease,binding,plan.planId,source.entityType,source.sourceId,source.sourceHash,"{\"choice\":\"replay_original\"}")
+            val request=store.preparePush(lease,binding,plan.planId)!!;store.markAttempted(request)
+            store.applyAck(store.prepareAck(request,200,reply(request.batch)))
+            val snapshots=ServerSnapshotStore(db,SnapshotProtocol(schema))
+            assertNull(snapshots.apply(snapshots.begin(lease),page(binding.syncEpoch,checkpoint="ordinary-after-ack")))
+            rejects {store.finish(lease,binding,plan.planId)}
+            val fresh=store.nextSnapshot(lease,binding,plan.planId)
+            assertNotNull("Ordinary copy must not make the plan impossible to resume",fresh)
+            assertEquals(plan.planId,db.importDao().pull(fresh!!.runId)!!.planId)
+            assertNull(snapshots.apply(fresh,page(binding.syncEpoch,listOf(entity(original)),checkpoint="typed-after-ack")))
+            store.acceptCompletedSnapshot(lease,binding,plan.planId,fresh.runId)
+            assertEquals(1,store.finish(lease,binding,plan.planId).included)
+            assertFalse(db.bootstrapDao().binding(lease.storageScope)!!.requiresRecovery)
+        }finally{db.close()}
+    }
     @Test fun checkpointExpiryReenvelopesIdenticalOperationAndFinishesOnlyAfterAckAndFreshFullCopy()=runBlocking<Unit> {
         val db=memory()
         try {
