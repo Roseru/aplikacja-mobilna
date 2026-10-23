@@ -86,6 +86,7 @@ class MainActivity : ComponentActivity() {
                 bootstrap = { app.sessionScope.launch { app.sessions.bootstrap() } },
                 readProfile = { app.sessionScope.launch { app.sessions.readProfile() } },
                 downloadSnapshot = { app.sessionScope.launch { app.sessions.downloadSnapshot() } },
+                applyDiaryCopy = { lease -> app.sessionScope.launch { app.sessions.applyDiaryCopy(lease) } },
                 synchronizeMeals = { lease -> app.sessionScope.launch { app.sessions.synchronizeMeals(lease) } },
                 loadConflicts = { lease -> app.sessionScope.launch { app.sessions.loadConflicts(lease) } },
                 nextConflicts = { lease -> app.sessionScope.launch { app.sessions.moveConflicts(lease,1) } },

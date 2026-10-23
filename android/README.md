@@ -1,5 +1,13 @@
 # Android — Racje i kalorie
 
+Aktualizacja kandydata E4 / 23.10: PR138 zawiera dokładne źródło813dc61
+z własnego PR144 (0.8.27/Room17). Zależność jest jawna: najpierw odbiór144,
+potem retarget138 na rzeczywisty main i własny CI. Nowy driver wymaga lokalnie
+zastosowanej pełnej kopii przed przygotowaniem wybranego posiłku.
+Skonfigurowane APK i nowy odbiór są w przygotowaniu; live E4 NOT_RUN.
+
+Historyczne opisy wcześniejszych integracji i wyników:
+
 PR138 / 23.10: dołączono aktualny main a034f66 po PR143. Nowy kandydat
 zawiera producent posiłków, synchronizację wagi i obsługę konfliktów z main
 oraz osobny opt-in driver E4. Wymaga własnego odbioru i nowych skonfigurowanych
@@ -23,6 +31,25 @@ i jej odebrany APK pozostają zachowane. Nowy PR z duplikatem zmian nie powstaje
 Historyczne opisy niezależnych etapów przed ich połączeniem:
 
 Historyczny stan rodzica przy aktualizacji zależności:
+
+Etap **0.8.27/code38/Room17** na `codex/android-pobieranie-dziennika` dodaje
+[pełną kopię serwera w lokalnym dzienniku](POBIERANIE_DZIENNIKA.md): posiłki,
+wagę, profil, cele, kompletność dni i prywatne produkty. Cała kopia jest
+sprawdzana przed atomowym zapisem; niewysłane zmiany pozostają zachowane.
+Zapisaną kopię można zastosować offline z ekranu konta.
+
+Końcowy build/lint PASS (0 błędów, 4 ostrzeżenia), 13/13 celowanych testów
+urządzenia offline PASS oraz 6 JVM zmienionego helpera PASS; wcześniejsze
+35 niezmienionych JVM zachowuje swój wynik. To odbiór celowany, nie pełna
+regresja. [Manifest](ODBIOR_0_8_27.json) odróżnia wcześniejszy błąd asercji UI,
+końcowe poprawki i dokładne SHA APK. Zwykły emulator zaktualizowany0.8.25→0.8.27:
+wszystkie wartości i rowid28starych tabel zachowane, FK czyste. Dziennik otwarty
+do prób ręcznych. Zdalny CI [PR144](https://github.com/Roseru/aplikacja-mobilna/pull/144) pozostaje osobnym odbiorem.
+
+Rodzic [PR142](https://github.com/Roseru/aplikacja-mobilna/pull/142) jest scalony
+jako b434754. Własny CI39767329100 i osobny CI main39772774959: oba 8/8 SUCCESS.
+Dołączono aktualny main a034f66 z instrukcją O3-085 do kolejnego E4;
+nie zmienia ona kwalifikowanych źródeł Androida. Poniżej historyczne opisy etapów.
 
 Etap **0.8.26/code37/Room16** na `codex/android-konflikty-sync` dodaje
 [porównanie i świadome rozwiązywanie konfliktów posiłków i wagi](KONFLIKTY_SYNC.md):
