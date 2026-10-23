@@ -20,7 +20,8 @@ class ServerDiaryScreenTest {
     @Test fun cachedCopyCanBeAppliedOfflineWithoutASessionAndShowsHeldLocalChanges() {
         val calls=mutableListOf<OwnerLease>()
         compose.setContent{CalorieTheme(false){SessionScreen(view(),SessionActions({},{},{},{},{},{},applyDiaryCopy={calls+=it}),{})}}
-        compose.onNodeWithTag("diary-copy-counts").performScrollTo().assertTextContains("2")
+        compose.onNodeWithTag("diary-copy-counts").performScrollTo()
+            .assertTextEquals("Uwzględnione rekordy: 4 · Lokalne zmiany do uzgodnienia: 2")
         compose.onNodeWithTag("session-apply-diary-copy").performScrollTo().assertIsEnabled().performClick()
         compose.runOnIdle{assertEquals(listOf(lease),calls)}
         compose.onNodeWithTag("session-download-snapshot").assertIsNotEnabled()

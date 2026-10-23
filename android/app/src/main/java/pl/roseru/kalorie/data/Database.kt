@@ -61,7 +61,10 @@ data class MealItemEntity(
     }
     fun consumed(): Nutrients = wirePayload?.let {pl.roseru.kalorie.core.sync.MealWire.consumed(it)} ?: snapshotJson?.let {
         val snapshot = JSONObject(it); val quantity = snapshot.getJSONObject("quantity")
-        exactProductNutrients(snapshot.getJSONObject("product").toString(), quantity.getString("amount"), quantity.getString("unit"))
+        snapshot.optJSONObject("private_product")?.let { product ->
+            pl.roseru.kalorie.core.sync.PrivateProductWire.portion(StrictJson.canonical(product),
+                quantity.getString("amount"), quantity.getString("unit"))
+        } ?: exactProductNutrients(snapshot.getJSONObject("product").toString(), quantity.getString("amount"), quantity.getString("unit"))
     } ?: Nutrients(checkNotNull(kcalPer100), proteinPer100, fatPer100, carbsPer100).portion(grams)
 }
 

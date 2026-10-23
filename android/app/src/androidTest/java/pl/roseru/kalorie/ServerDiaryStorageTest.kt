@@ -89,6 +89,7 @@ class ServerDiaryStorageTest {
             val created=db.dao().day(lease.storageScope,"2026-10-21").first().single {it.meal.id!=meal.meal.id}
             assertFalse(created.items.single().consumed().asExact().energy.complete)
             assertEquals("ml",created.items.single().unit)
+            assertEquals(product.wirePayload,StrictJson.canonical(JSONObject(created.items.single().snapshotJson!!).getJSONObject("private_product")))
             assertTrue(db.serverDiaryDao().unsettled(lease.storageScope).all{it.wireFormat=="sync-v1"})
         }finally{db.close()}
     }
@@ -177,6 +178,73 @@ class ServerDiaryStorageTest {
             db.close();db=open();assertEquals(result,ServerDiaryStore(db,schema).apply(LocalOwnerStore(db).currentLease()))
             assertEquals(1,db.dao().achievementMeals(restored.storageScope).size)
         }finally{db.close();context.deleteDatabase(name)}
+    }
+    @Test fun twelvePlaceLocalConsumptionAndEditsKeepUnknownEnergyAndExactPrivateSource()=runBlocking<Unit> {
+        val db=memory()
+        try {
+            val lease=account(db);val rows=all();snapshot(db,lease,rows);ServerDiaryStore(db,schema).apply(lease)
+            val product=db.dao().product(rows.id("product_draft"),lease.storageScope)!!
+            val repo=DiaryRepository(db,context,lease);val id=uuid();val amount="125.123456789012"
+            assertFalse(product.portion(amount).asExact().energy.complete)
+            repo.add(product.id,amount.toDouble(),MealType.SNACK,LocalDate.of(2026,10,21),id,amount)
+            val meal=db.dao().meal(id,lease.storageScope)!!;val item=meal.items.single()
+            assertNull(meal.meal.wirePayload);assertNull(item.kcalPer100)
+            assertEquals(amount,item.amountText);assertEquals("ml",item.unit);assertFalse(item.consumed().asExact().energy.complete)
+            assertEquals(product.wirePayload,StrictJson.canonical(JSONObject(item.snapshotJson!!).getJSONObject("private_product")))
+            val queued=db.serverDiaryDao().unsettled(lease.storageScope).single()
+            assertEquals("legacy",queued.wireFormat);assertNull(queued.wireJson);assertFalse(queued.attempted)
+            val payload=JSONObject(queued.payload).getJSONArray("items").getJSONObject(0)
+            assertTrue(payload.has("kcal_per_100") && payload.isNull("kcal_per_100"))
+            assertEquals(amount,payload.getJSONObject("exact_snapshot").getJSONObject("quantity").getString("amount"))
+            val edited="125.123456789013";repo.editItem(id,item.id,edited.toDouble(),edited)
+            val updated=db.dao().meal(id,lease.storageScope)!!.items.single()
+            assertEquals(edited,updated.amountText);assertFalse(updated.consumed().asExact().energy.complete)
+            assertEquals(product.wirePayload,StrictJson.canonical(JSONObject(updated.snapshotJson!!).getJSONObject("private_product")))
+            assertEquals(2,db.dao().operationCount(lease.storageScope))
+        }finally{db.close()}
+    }
+    @Test fun recreatedProfileReplacesRetiredIdentityButPreservesAnyPendingProfile()=runBlocking<Unit> {
+        val ids=listOf("11111111-1111-4111-8111-111111111111","ffffffff-ffff-4fff-8fff-fffffffffff1")
+        for(reverse in listOf(false,true))for(pending in listOf(false,true)) {
+            val db=memory()
+            try {
+                val lease=account(db);val rows=all();val oldId=ids[if(reverse)1 else 0];val newId=ids[if(reverse)0 else 1]
+                rows.first().put("entity_id",oldId)
+                snapshot(db,lease,rows);ServerDiaryStore(db,schema).apply(lease)
+                if(pending)DiaryRepository(db,context,lease).setProfile("Local choice",180.0,ActivityClass.COMMANDO,DietAim.REDUCE)
+                val local=db.dao().currentProfile(lease.storageScope);val queue=db.serverDiaryDao().unsettled(lease.storageScope)
+                val retired=JSONObject(rows.first().toString()).put("revision",2).put("deleted",true).put("payload",JSONObject.NULL)
+                val replacement=JSONObject(rows.first().toString()).put("entity_id",newId)
+                replacement.getJSONObject("payload").put("pseudonym","Recreated profile")
+                snapshot(db,lease,listOf(replacement)+rows.drop(1)+retired,"2026-10-22T11:00:00Z")
+                val result=ServerDiaryStore(db,schema).apply(lease)
+                if(pending) {
+                    assertEquals(2,result.held);assertEquals(local,db.dao().currentProfile(lease.storageScope))
+                } else {
+                    assertEquals(0,result.held);assertEquals(newId,db.dao().currentProfile(lease.storageScope)!!.id)
+                    assertEquals("Recreated profile",db.dao().currentProfile(lease.storageScope)!!.nickname)
+                    assertNull(db.serverDiaryDao().profile(oldId))
+                }
+                assertEquals(queue,db.serverDiaryDao().unsettled(lease.storageScope))
+                assertEquals(7,db.serverDiaryDao().records(lease.storageScope).size)
+            }finally{db.close()}
+        }
+    }
+    @Test fun anUnknownRetiredProfileNeverDeletesTheLiveProfileOrInventsALocalConflict()=runBlocking<Unit> {
+        val db=memory()
+        try {
+            val lease=account(db);val rows=all()
+            rows.first().put("entity_id","11111111-1111-4111-8111-111111111111")
+            val retired=JSONObject(rows.first().toString()).put("entity_id","ffffffff-ffff-4fff-8fff-fffffffffff1")
+                .put("revision",2).put("deleted",true).put("payload",JSONObject.NULL)
+            val full=rows+retired
+            snapshot(db,lease,full);assertEquals(0,ServerDiaryStore(db,schema).apply(lease).held)
+            snapshot(db,lease,full,"2026-10-22T11:00:00Z")
+            val result=ServerDiaryStore(db,schema).apply(lease)
+            assertEquals(0,result.held);assertEquals(7,result.included)
+            assertEquals(rows.id("profile"),db.dao().currentProfile(lease.storageScope)!!.id)
+            assertEquals(0,db.dao().operationCount(lease.storageScope))
+        }finally{db.close()}
     }
     @Test fun anOlderCopyCannotRollBackANewerAppliedCopyOrAConfirmedWeightRevision()=runBlocking<Unit> {
         val db=memory()

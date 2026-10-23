@@ -59,6 +59,17 @@ class ServerDiaryProtocolTest {
         bad.getJSONObject("payload").put("reason","history_correction").put("correction_of",UUID.randomUUID().toString())
         assertThrows(Exception::class.java){protocol.read(epoch,listOf(page(response(listOf(bad)))))}
     }
+    @Test fun localTwelvePlacePortionsKeepPrecisionAndMissingValuesButDoNotLoosenWireLimits() {
+        val draft=entity("product_draft").getJSONObject("payload").put("basis_unit","ml")
+        val amount="125.123456789012"
+        assertEquals("62.561728394506",PrivateProductWire.portion(StrictJson.canonical(draft),amount,"ml").asExact().energy.canonical)
+        draft.getJSONObject("nutrition_per_100").put("energy_kcal",JSONObject.NULL)
+        val text=StrictJson.canonical(draft)
+        assertFalse(PrivateProductWire.portion(text,amount,"ml").asExact().energy.complete)
+        assertThrows(Exception::class.java){PrivateProductWire.portion(text,amount+"3","ml")}
+        assertThrows(SyncWireException::class.java){PrivateProductWire.meal(text,UUID.randomUUID().toString(),amount,"ml",
+            "2026-10-22T08:00:00Z","Europe/Warsaw","lunch",schema)}
+    }
     @Test fun privateDraftKeepsMlDensityAndUnknownEnergyWithoutAnOfficialProductIdentity() {
         val draft=entity("product_draft").getJSONObject("payload")
         draft.put("basis_unit","ml").put("density_g_per_ml","1.25").put("density_source","Synthetic label")

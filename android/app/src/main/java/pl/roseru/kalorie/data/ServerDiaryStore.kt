@@ -51,11 +51,13 @@ class ServerDiaryStore(private val db: CalorieDatabase, private val schema: Sync
             }
             val known = previous.associateBy { it.entityType to it.entityId }
             val queue = records.unsettled(lease.storageScope)
+            val queuedIds = queue.map { it.entityType to it.entityId }.toSet()
+            val pendingProfile = queue.any { it.entityType == "profile" }
+            val pendingDays = queue.filter { it.entityType == "diary_day" }.map { it.entityId }.toSet()
+            val mappedGoals = previous.filter { it.entityType == "goal" }.mapNotNull { it.localId }.toSet()
             val localGoals = records.allGoals(lease.storageScope)
             // Goal versions are immutable. Preserve an entire pending timeline until it is reconciled.
-            val holdGoals = queue.any { it.entityType == "goal" } || localGoals.any { goal ->
-                previous.none { it.entityType == "goal" && it.localId == goal.id }
-            }
+            val holdGoals = queue.any { it.entityType == "goal" } || localGoals.any { it.id !in mappedGoals }
             val incoming = copy.entities.associateBy { it.type to it.id }
             val observations = copy.entities.map { entity ->
                 val old = known[entity.type to entity.id]
@@ -72,19 +74,25 @@ class ServerDiaryStore(private val db: CalorieDatabase, private val schema: Sync
                 it.copy(deleted = true, absent = true, payload = null, runId = gate.run.id, disposition = "pending_local")
             }
             val order = mapOf("goal" to 0, "profile" to 1, "product_draft" to 2, "meal" to 3, "weight" to 4, "diary_day" to 5)
+            val goalOrder = observations.filter { it.entityType == "goal" && !it.deleted }.associate {
+                it.entityId to ServerDiaryValues.json(entity(it)).getInt("timeline_base_revision")
+            }
             var included = 0; var held = 0
             for (row in observations.sortedWith(compareBy<ServerDiaryRecord> { order.getValue(it.entityType) }
-                .thenBy { if (it.entityType == "goal" && !it.deleted) ServerDiaryValues.json(entity(it)).getInt("timeline_base_revision") else -1 }
+                // Release the retired unique profile before importing its replacement, regardless of UUID order.
+                .thenBy { if (it.entityType == "profile" && it.deleted) 0 else 1 }
+                .thenBy { if (it.entityType == "goal") goalOrder[it.entityId] ?: -1 else -1 }
                 .thenBy { it.entityId })) {
                 val old = known[row.entityType to row.entityId]
-                val pending = queue.any { it.entityType == row.entityType &&
-                    (it.entityId == row.entityId || it.entityId == row.localId || row.entityType == "profile") }
+                val pending = (row.entityType to row.entityId) in queuedIds ||
+                    row.localId?.let { (row.entityType to it) in queuedIds } == true ||
+                    (row.entityType == "profile" && pendingProfile)
                 val localId = if (pending || (row.entityType == "goal" && holdGoals)) null else when (row.entityType) {
                     "meal" -> meal(row, old)
                     "weight" -> weight(row, old)
                     "goal" -> goal(row, old)
                     "profile" -> profile(row, old, copy)
-                    "diary_day" -> day(row, old, queue)
+                    "diary_day" -> day(row, old, pendingDays)
                     "product_draft" -> product(row, old)
                     else -> error("Unsupported diary entity")
                 }
@@ -110,7 +118,7 @@ class ServerDiaryStore(private val db: CalorieDatabase, private val schema: Sync
         "weight" -> dao.weightOwner(row.entityId) != null
         "goal" -> records.goal(row.entityId) != null
         "product_draft" -> records.product(row.entityId) != null
-        "profile" -> dao.currentProfile(row.ownerScope) != null
+        "profile" -> records.profile(row.localId ?: row.entityId) != null
         "diary_day" -> records.day(row.localId ?: row.entityId) != null
         else -> true
     }
@@ -183,9 +191,16 @@ class ServerDiaryStore(private val db: CalorieDatabase, private val schema: Sync
     }
 
     private suspend fun profile(row: ServerDiaryRecord, old: ServerDiaryRecord?, copy: ServerDiarySnapshot): String? {
+        if (row.deleted) {
+            // An old tombstone does not address the owner's different, live profile.
+            val target = records.profile(old?.localId ?: row.entityId)
+            check(target == null || target.ownerScope == row.ownerScope)
+            if (target != null && old?.localId != target.id) return null
+            target?.let { records.delete(it) }
+            return target?.id ?: old?.localId
+        }
         val current = dao.currentProfile(row.ownerScope)
         if (current != null && old?.localId != current.id) return null
-        if (row.deleted) { current?.let { records.delete(it) }; return current?.id ?: old?.localId }
         val collision = records.profile(row.entityId); check(collision == null || collision.ownerScope == row.ownerScope)
         val value = ServerDiaryValues.json(entity(row)); val zone = value.getString("time_zone")
         val today = LocalDate.now(ZoneId.of(zone)).toString()
@@ -200,7 +215,7 @@ class ServerDiaryStore(private val db: CalorieDatabase, private val schema: Sync
         return localId
     }
 
-    private suspend fun day(row: ServerDiaryRecord, old: ServerDiaryRecord?, queue: List<OutboxEntity>): String? {
+    private suspend fun day(row: ServerDiaryRecord, old: ServerDiaryRecord?, pendingDays: Set<String>): String? {
         if (row.deleted) {
             val current = records.day(old?.localId ?: row.entityId)
             check(current == null || current.ownerScope == row.ownerScope)
@@ -211,7 +226,7 @@ class ServerDiaryStore(private val db: CalorieDatabase, private val schema: Sync
         val value = ServerDiaryValues.json(entity(row)); val date = value.getString("local_date")
         val current = dao.currentDiaryDay(row.ownerScope, date)
         if (current != null && (old?.localId != current.id ||
-                queue.any { it.entityType == "diary_day" && it.entityId == current.id })) return null
+                current.id in pendingDays)) return null
         val collision = records.day(row.entityId); check(collision == null || collision.ownerScope == row.ownerScope)
         val id = current?.id ?: row.entityId
         dao.saveDiaryDay(DiaryDayEntity(id, row.ownerScope, date, value.getBoolean("declared_complete"), current?.localRevision ?: 1))
