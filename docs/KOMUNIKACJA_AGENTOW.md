@@ -18,7 +18,7 @@ Każda osoba aktualizuje własny wiersz. Daty i dokładne źródła są w jej wp
 | Rola | Ostatni znany rezultat | Następny krok / zależność | Źródło |
 |---|---|---|---|
 | O1 — Android, Kotlin, Room | Pierwszy cel pustego konta, completed snapshot i observer odebrane; nowy skonfigurowany kandydat0.8.29/Room20:6unikalnych native i6fingerprint JVM PASS | O3 lokalny odbiór nowego APK/E4; O2 zwykły merge dostawy do końcowego B/FULLCI, potem C. Stary E4FAIL i pełnyCI146 nadal jawne | O1-117, [manifest](../android/KANDYDAT_E4_0_8_29.json), codex/android-sesja-synchronizacji |
-| O2 — Python, PostgreSQL, API; Android A/B/C | A scalone; B156 fixture2 po O1ACK i1/1PASS, nowy head906c; C końcowe51+417/457PASS przed testfix | Nowy exactCI B156; poprawka906c dołączona do C, pojedyncza delta na Room22, bez publikacji | O2-055/056/057/058, [B PR156](https://github.com/Roseru/aplikacja-mobilna/pull/156), [sync C](../android/SYNCHRONIZACJA_W_TLE.md) |
+| O2 — Python, PostgreSQL, API; Android A/B/C | A scalone; B156 fixture2 po O1ACK i1/1PASS, nowy906c; C po merge60fd delta1/1PASS naRoom22, wcześniejsze51+417/457 osobno | Root monitoruje nowy exactCI B40027484780; C bez publikacji do decyzji po Bmerge | O2-055/056/057/058/059, [B PR156](https://github.com/Roseru/aplikacja-mobilna/pull/156), [sync C](../android/SYNCHRONIZACJA_W_TLE.md) |
 | O3 — DevOps, CI/CD, serwer | Podstawowe demo APK0.8.28: Chrome/PKCE, zapis offline/restart i nowy push z PG/ACK PASS; katalog demo faktycznie zainstalowany; kopia po imporcie pobrana z Dropbox i odtworzona PASS11,157s | Pozostały końcowe B/C, starsze wpisy i nowy APK do E4 od A1/A2. Używany API/schema0024; pełny CI PR154 oraz osobny main po8/8PASS | O3-094, [PR154](https://github.com/Roseru/aplikacja-mobilna/pull/154), [najnowsza integracja B](https://github.com/Roseru/aplikacja-mobilna/pull/146#issuecomment-6371896468) |
 
 
@@ -7475,3 +7475,27 @@ Archiwalne wiersze sprzed aktualizacji PR138; bieżący stan znajduje się na po
   właściciela i root nadal wymagany. C pozostaje lokalne; po zwykłym merge
   poprawki wyłącznie uzasadniona delta-regresja na Room22, bez nowego katalogu,
   providera lub przedwczesnego pusha/PR C. Pierwszy FAIL pozostaje historyczny.
+
+
+### O2-059 — C: pojedyncza regresja Room22 po poprawce fixture B156
+
+- 23.10.2026, agent2/O2, do koordynatora/O1, **DO ODCZYTU**.
+  `codex/android-o2-sync-w-tle`, zwykły merge60fd3e693bfeeaf9d47f54dfd56d29c60e5c2348
+  dołącza dokładny B906c5625. Konflikty tylko własnej tabeli i appendów dziennika;
+  O2-057 i O2-058 oraz wszystkie wpisy O1/O3 zachowane. Bez pusha/PR C.
+- Delta wobec e369: tylko przekazana metoda SessionSecurityTest oraz2dokumenty
+  B; produkcja C/Room/proof/archive/Coordinator/Work bez zmian. Cały plik
+  SessionSecurity identyczny zB906c. O1ACK6375078824 nadal dotyczy wyłącznie
+  jednej metody; SessionController i inne metody bez własnych edycji.
+- Uruchomiono tylko manualConsumptionAndAckGatePreserveFrozenWireAcrossCancelledAcknowledgementAndReplay
+  na własnym C5564/API35/Room22/validation1042:1/1PASS,0fail/error/skip,
+  build54s. Dwie encje, obaACK/revision1, oba pending/rev0 po cancellation,
+  frozenbytes/hash/retry, history/localproduct/item/guest potwierdzone.
+  RawXML/log/hash przypięte osobnym receipt. Brak zmiany guardu E4 lub jego
+  kwalifikacji Room22; to syntetyczny transport, bezlive.
+- Wcześniejsze C51native/417debug/457validation/lint/E0 na bc0e pozostają
+  osobnymi zaliczonymi dowodami, bez pełnego rerun po test-onlyfix. Root odebrał
+  rzeczywisty B906c1/1 i source delta; nowy FULLCI40027484780 jest PENDING.
+  C nadal czeka na dispatch po Bmerge, później jeden PR na rzeczywistym main;
+  merge C wymaga BmainCI PASS i własnego exactCPRCI PASS. Nie dołączano nowego
+  kontraktu/provider/katalogu ec75df9 ani nie tworzono równoległych preferencji.

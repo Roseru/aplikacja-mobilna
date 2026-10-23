@@ -2,12 +2,13 @@
 
 ## Aktualny stan
 
-Wersja0.8.31/code42/validation1042, Room22. Końcowa integracja lokalna
-`bc0e080f9368c0789ecd0d39ebf6a2b273205cf0` zawiera dokładny końcowy B
-`0ee0c3667c1650abe55e2747680d3f3bf771e927` oraz zaakceptowaną poprawkę
+Wersja0.8.31/code42/validation1042, Room22. Aktualna integracja lokalna
+`60fd3e693bfeeaf9d47f54dfd56d29c60e5c2348` zawiera B z poprawką fixture
+`906c562544f6659a304222addb02c96a13ff2d1e` oraz zaakceptowaną poprawkę
 trwałego recovery `d08627f1`. SOURCEPASS archiwów, koordynatora, runtime/UI
-oraz ograniczonej delty recovery bez materialnychP1/P2. Lokalny odbiór:
-51native,417debug/457validationJVM, lint obu wariantów, assembleDebug i E0 PASS.
+oraz ograniczonej delty recovery bez materialnychP1/P2. Oddzielne dowody:
+51native i417debug/457validationJVM/lint/build na bc0e oraz pojedyncza delta
+fixture na60fd:1/1PASS. E0 i diff-check PASS.
 C pozostaje przed publikacją, końcowym FULLCI i odbiorem main; B ma osobny
 [PR156](https://github.com/Roseru/aplikacja-mobilna/pull/156).
 
@@ -120,3 +121,16 @@ Końcowe FULLCI dokładnego head/base i main są osobnymi bramkami.
 Lokalne fixtures nie kwalifikują zewnętrznego HTTP/OIDC/PG, live E4/kill/replay,
 Gemini lub wdrożenia. E4driver O1 nadal celowo odmawia Room21/22; jego późniejsza
 kwalifikacja jest oddzielna od tego odbioru C. Nowy publiczny katalog O1 poza PR.
+
+
+### Osobna delta fixture po pierwszym CI B
+
+Pierwszy CI B/head0ee miał433native/432PASS+1FAIL/0skip: zarezerwowany
+manualConsumptionAndAckGate fixture nadal oczekiwał jednej operacji zamiast
+prawidłowej pary product_draft+Meal. Po O1ACK i niezależnym SOURCEPASS poprawka
+B906c dotyczy tylko tej metody i dokumentacji. Zwykły merge do C60fd nie zmienia
+kodu aplikacji, Room, archiwów, koordynatora lub durableproof. Ten jeden
+przypadek na C5564/Room22:1/1PASS,0fail/error/skip. Wcześniejsze51native oraz
+417/457JVM/lint zbc0e są osobnym dowodem; nie uruchamiano ich ponownie bez zmiany.
+Nowy exactCI B i późniejszy C/main pozostają wymagane. To lokalny test
+fixture ACKgate/cancel/replay, nie kwalifikacja live E4driver/fingerprintRoom22.
