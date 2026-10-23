@@ -44,8 +44,14 @@ class SyncConflictStorageTest {
     private suspend fun create(db: CalorieDatabase, lease: OwnerLease, type: String): String {
         val id = uuid(); val repo = DiaryRepository(db, context, lease)
         if (type == "weight") repo.addWeight(80.125, LocalDate.now(), id)
-        else repo.addCustomProduct(CustomProductDraft("Synthetic soup", 100.0, 2.0, null, 10.0, "fixture"), 150.5,
-            MealType.LUNCH, LocalDate.now(), id)
+        else {
+            // This fixture isolates Meal conflict decisions; the private product already exists.
+            // New public product creation and mixed-domain receipts are covered by DomainSyncStorageTest.
+            val productId = uuid()
+            db.dao().insertProduct(ProductEntity(productId, "Synthetic soup", "synthetic soup", 100.0, 2.0, null, 10.0,
+                100.0, "Fixture", "fixture", 0, lease.storageScope))
+            repo.add(productId, 150.5, MealType.LUNCH, LocalDate.now(), id)
+        }
         return id
     }
     private suspend fun edit(db: CalorieDatabase, lease: OwnerLease, type: String, id: String, value: Double) {
@@ -262,9 +268,9 @@ class SyncConflictStorageTest {
                 old.execSQL("INSERT INTO room_master_table VALUES (42,?)", arrayOf(schema15.getString("identityHash"))); old.version = 15
                 before = dump { old.rawQuery(it, null) }
             }
-            target = Room.databaseBuilder(context, CalorieDatabase::class.java, name).addMigrations(MIGRATION_15_16, pl.roseru.kalorie.data.MIGRATION_16_17).addCallback(DATABASE_GUARDS).build()
+            target = Room.databaseBuilder(context, CalorieDatabase::class.java, name).addMigrations(MIGRATION_15_16, pl.roseru.kalorie.data.MIGRATION_16_17, pl.roseru.kalorie.data.MIGRATION_17_18).addCallback(DATABASE_GUARDS).build()
             val sql = target!!.openHelper.readableDatabase
-            assertEquals(17, sql.version); assertEquals(before, dump { sql.query(it) })
+            assertEquals(18, sql.version); assertEquals(before, dump { sql.query(it) })
             assertEquals(0L, sql.query("SELECT COUNT(*) FROM sync_conflict_decisions").use { assertTrue(it.moveToFirst()); it.getLong(0) })
             assertFalse(sql.query("PRAGMA foreign_key_check").use { it.moveToFirst() })
         } finally { target?.close(); source.close(); context.deleteDatabase(name) }

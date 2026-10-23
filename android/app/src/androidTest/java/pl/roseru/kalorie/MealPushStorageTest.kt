@@ -255,16 +255,22 @@ class MealPushStorageTest {
         } finally { db.close() }
     }
 
+    private fun assertCounters(expected: MealPushStatus, actual: MealPushStatus) {
+        assertEquals(expected, actual.copy(domains = emptyMap()))
+        assertEquals(setOf("meal", "weight", "profile", "goal", "diary_day", "product_draft"), actual.domains.keys)
+        assertEquals(DomainPushStatus(expected.pending, expected.waiting, expected.refused), actual.domains["meal"])
+        assertTrue(actual.domains.filterKeys { it != "meal" }.values.all { it == DomainPushStatus(0, 0, 0) })
+    }
     @Test fun pushStatusCountsCanonicalWaitingRefusalsAndLegacyWithoutExposingBodies()=runBlocking<Unit> {
         val db=memory()
         try {
             val lease=account(db);val (id,item)=meal(db,lease);val store=MealPushStore(db,schema)
             db.dao().enqueue(OutboxEntity(UUID.randomUUID().toString(),lease.storageScope,"profile",UUID.randomUUID().toString(),"create",null,"{}","2026-10-19T00:00:00Z"))
-            assertEquals(MealPushStatus(1,0,0,1,false,true),store.status(lease))
+            assertCounters(MealPushStatus(1,0,0,1,false,true), store.status(lease))
             val request=store.prepare(lease)!!;store.markAttempted(request)
             DiaryRepository(db,context,lease).editItem(id,item,175.5,"175.5")
-            assertEquals(MealPushStatus(1,1,0,1,true,true),store.status(lease))
-            apply(store,request);assertEquals(MealPushStatus(1,0,0,1,false,true),store.status(lease))
+            assertCounters(MealPushStatus(1,1,0,1,true,true), store.status(lease))
+            apply(store,request);assertCounters(MealPushStatus(1,0,0,1,false,true),store.status(lease))
             val pending=db.dao().canonicalMealOperations(lease.storageScope,id).single()
             assertEquals("pending",pending.status);assertEquals(1,pending.baseRevision);assertFalse(pending.attempted)
             val acknowledged=db.dao().operation(request.operations.single().operationId)!!
@@ -341,9 +347,9 @@ class MealPushStorageTest {
                 old.execSQL("INSERT INTO room_master_table VALUES (42,?)",arrayOf(oldSchema.getString("identityHash")));old.version=13
                 rowids=old.rawQuery("SELECT id,rowid FROM meal_items",null).use {c->buildMap {while(c.moveToNext())put(c.getString(0),c.getLong(1))}}
             }
-            target=Room.databaseBuilder(context,CalorieDatabase::class.java,name).addMigrations(MIGRATION_13_14, MIGRATION_14_15, pl.roseru.kalorie.data.MIGRATION_15_16, pl.roseru.kalorie.data.MIGRATION_16_17).addCallback(DATABASE_GUARDS).build()
+            target=Room.databaseBuilder(context,CalorieDatabase::class.java,name).addMigrations(MIGRATION_13_14, MIGRATION_14_15, pl.roseru.kalorie.data.MIGRATION_15_16, pl.roseru.kalorie.data.MIGRATION_16_17, pl.roseru.kalorie.data.MIGRATION_17_18).addCallback(DATABASE_GUARDS).build()
             val migrated=target!!;val sql=migrated.openHelper.readableDatabase
-            assertEquals(17, sql.version);assertEquals(before,snapshot(sql))
+            assertEquals(18, sql.version);assertEquals(before,snapshot(sql))
             assertEquals(rowids,sql.query("SELECT id,rowid FROM meal_items").use {c->buildMap<String,Long>{while(c.moveToNext())put(c.getString(0),c.getLong(1))}})
             assertFalse(sql.query("PRAGMA foreign_key_check").use {it.moveToFirst()})
             val row=migrated.pushDao().batch(request.id)!!;assertEquals(0L,row.retryAtMillis)

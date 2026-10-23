@@ -57,7 +57,9 @@ class ServerDiaryStore(private val db: CalorieDatabase, private val schema: Sync
             val mappedGoals = previous.filter { it.entityType == "goal" }.mapNotNull { it.localId }.toSet()
             val localGoals = records.allGoals(lease.storageScope)
             // Goal versions are immutable. Preserve an entire pending timeline until it is reconciled.
-            val holdGoals = queue.any { it.entityType == "goal" } || localGoals.any { it.id !in mappedGoals }
+            val holdGoals = queue.any { it.entityType == "goal" } || localGoals.any {
+                it.id !in mappedGoals && db.domainSyncDao().local(lease.storageScope, "goal", it.id)?.serverRevision?.let { revision -> revision > 0 } != true
+            }
             val incoming = copy.entities.associateBy { it.type to it.id }
             val observations = copy.entities.map { entity ->
                 val old = known[entity.type to entity.id]
@@ -99,10 +101,21 @@ class ServerDiaryStore(private val db: CalorieDatabase, private val schema: Sync
                 // A deleted, never materialized row has no local ID and still counts as included.
                 val applied = localId != null || (!pending && row.deleted && old?.localId == null &&
                     !(row.entityType == "goal" && holdGoals) && !existsLocally(row))
+                if (applied && row.entityType in PrivateDomainsWire.types && localId != null) {
+                    val state = db.domainSyncDao().state(row.ownerScope, row.entityType, row.entityId)
+                    if (state != null && (state.wireContext != context || (!row.absent && state.serverRevision > row.knownRevision)))
+                        throw DiaryProjectionChangedException()
+                    db.domainSyncDao().save(CanonicalDomainState(row.ownerScope, row.entityType, row.entityId, localId,
+                        row.payload ?: state?.wirePayload, context, if (row.absent) state?.serverRevision ?: row.knownRevision else row.knownRevision, row.deleted))
+                }
                 records.save(row.copy(localId = localId ?: old?.localId,
                     disposition = if (applied) "applied" else "pending_local"))
                 if (applied) included++ else held++
             }
+            val timeline = db.domainSyncDao().timeline(lease.storageScope)
+            if (timeline != null && (timeline.wireContext != context || timeline.revision > copy.timelineRevision))
+                throw DiaryProjectionChangedException()
+            db.domainSyncDao().save(CanonicalGoalTimeline(lease.storageScope, context, copy.timelineRevision))
             val saved = ServerDiaryApplication(gate.run.id, lease.storageScope, context, copy.serverTime,
                 copy.timelineRevision, included, held, Instant.now().toString())
             records.insert(saved)
@@ -186,21 +199,29 @@ class ServerDiaryStore(private val db: CalorieDatabase, private val schema: Sync
             Math.addExact(value.getInt("timeline_base_revision"), 1), value.getString("decided_at"),
             value.getString("time_zone"), value.getString("reason"),
             if (value.isNull("correction_of")) null else value.getString("correction_of"))
-        if (current == null) dao.saveGoal(fresh) else if (current != fresh) throw DiaryProjectionChangedException()
+        if (current == null) dao.saveGoal(fresh) else if (current != fresh) {
+            val state = db.domainSyncDao().state(row.ownerScope, "goal", row.entityId)
+            // localSequence is local ordering; the exact canonical payload owns the server axis base.
+            if (state?.wireContext != row.wireContext || state.wirePayload != row.payload ||
+                current != fresh.copy(localSequence = current.localSequence)) throw DiaryProjectionChangedException()
+        }
         return row.entityId
     }
 
     private suspend fun profile(row: ServerDiaryRecord, old: ServerDiaryRecord?, copy: ServerDiarySnapshot): String? {
         if (row.deleted) {
             // An old tombstone does not address the owner's different, live profile.
-            val target = records.profile(old?.localId ?: row.entityId)
+            val canonical = db.domainSyncDao().state(row.ownerScope, "profile", row.entityId)
+            check(canonical == null || canonical.wireContext == row.wireContext)
+            val target = records.profile(old?.localId ?: canonical?.localId ?: row.entityId)
             check(target == null || target.ownerScope == row.ownerScope)
-            if (target != null && old?.localId != target.id) return null
+            if (target != null && old?.localId != target.id && canonical?.localId != target.id) return null
             target?.let { records.delete(it) }
             return target?.id ?: old?.localId
         }
         val current = dao.currentProfile(row.ownerScope)
-        if (current != null && old?.localId != current.id) return null
+        if (current != null && old?.localId != current.id &&
+            db.domainSyncDao().state(row.ownerScope, "profile", row.entityId)?.localId != current.id) return null
         val collision = records.profile(row.entityId); check(collision == null || collision.ownerScope == row.ownerScope)
         val value = ServerDiaryValues.json(entity(row)); val zone = value.getString("time_zone")
         val today = LocalDate.now(ZoneId.of(zone)).toString()
@@ -217,16 +238,18 @@ class ServerDiaryStore(private val db: CalorieDatabase, private val schema: Sync
 
     private suspend fun day(row: ServerDiaryRecord, old: ServerDiaryRecord?, pendingDays: Set<String>): String? {
         if (row.deleted) {
-            val current = records.day(old?.localId ?: row.entityId)
+            val canonical = db.domainSyncDao().state(row.ownerScope, "diary_day", row.entityId)
+            check(canonical == null || canonical.wireContext == row.wireContext)
+            val current = records.day(old?.localId ?: canonical?.localId ?: row.entityId)
             check(current == null || current.ownerScope == row.ownerScope)
-            if (current != null && old?.localId != current.id) return null
+            if (current != null && old?.localId != current.id && canonical?.localId != current.id) return null
             current?.let { dao.saveDiaryDay(it.copy(declaredComplete = false)) }
             return current?.id ?: old?.localId
         }
         val value = ServerDiaryValues.json(entity(row)); val date = value.getString("local_date")
         val current = dao.currentDiaryDay(row.ownerScope, date)
-        if (current != null && (old?.localId != current.id ||
-                current.id in pendingDays)) return null
+        if (current != null && ((old?.localId != current.id &&
+                db.domainSyncDao().state(row.ownerScope, "diary_day", row.entityId)?.localId != current.id) || current.id in pendingDays)) return null
         val collision = records.day(row.entityId); check(collision == null || collision.ownerScope == row.ownerScope)
         val id = current?.id ?: row.entityId
         dao.saveDiaryDay(DiaryDayEntity(id, row.ownerScope, date, value.getBoolean("declared_complete"), current?.localRevision ?: 1))
@@ -236,7 +259,8 @@ class ServerDiaryStore(private val db: CalorieDatabase, private val schema: Sync
     private suspend fun product(row: ServerDiaryRecord, old: ServerDiaryRecord?): String? {
         val current = records.product(row.entityId)
         check(current == null || (current.ownerScope == row.ownerScope && current.catalogJson == null))
-        if (current != null && old?.localId != current.id) return null
+        if (current != null && old?.localId != current.id &&
+            db.domainSyncDao().state(row.ownerScope, "product_draft", row.entityId)?.localId != current.id) return null
         if (row.deleted) { current?.let { records.delete(it) }; return current?.id ?: old?.localId }
         val value = ServerDiaryValues.json(entity(row)); val nutrition = value.getJSONObject("nutrition_per_100")
         val name = value.getString("name")
