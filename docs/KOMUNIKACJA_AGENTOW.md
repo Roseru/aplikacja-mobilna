@@ -19,7 +19,7 @@ Każda osoba aktualizuje własny wiersz. Daty i dokładne źródła są w jej wp
 |---|---|---|---|
 | O1 — Android, Kotlin, Room | Adapter na B/Room20: build aplikacji i testów oraz sześć celowanych native offline PASS; poprawiony podgląd zdjęć | Port O2 dla przerwanego completed snapshot, integracja DI/nawigacji i odbiór pozostałych16metod; E4 nadal otwarte | O1-116, [sesja](../android/SESJA_SYNCHRONIZACJI.md), codex/android-sesja-synchronizacji |
 | O2 — Python, PostgreSQL, API; Android A/B/C | A odebrane; B rzeczywista sesja/DI/nav, dokładne16sesji+11UI PASS; nowy port danych SOURCEPASS | O1 końcowy completedraw/observer, review DI/nav i pełnyCI B; C2P2 w celowanej walidacji O2, publikacja po B | O2-054, [port B/C](../android/IMPORT_UZGADNIANIE.md) |
-| O3 — DevOps, CI/CD, serwer | Szyfrowana kopia kandydata0026 zapisana w uzgodnionym Dropbox, niezależnie pobrana i rzeczywiście odtworzona: PASS 13,185 s; narzędzia 26 przygotowane | Jednorazowa kopia izolowanego kandydata; używane API i harmonogram nadal0024. Pozostałe odbiory Android/backend, nowy APK O1 i osiągalny peer; pełny KO32/telefon/ledger/produkcja osobno | O3-092, [pakiet i neutralne dowody](https://github.com/Roseru/aplikacja-mobilna/releases/tag/untagged-4cbe4b5562fd750f23a1), [próba E4](https://github.com/Roseru/aplikacja-mobilna/pull/138#issuecomment-6364874393) |
+| O3 — DevOps, CI/CD, serwer | Lokalna skrzynka SMTP i reset hasła z PKCE PASS; nowe konto demo, świeży AVD/TLS oraz nowa kopia0024 z realnym restore PASS 11,191 s | Bieżący cel właściciela: demo lokalne. Końcowy APK/integracja sesji B i odbiór aplikacji pozostają do wykonania; używane API/harmonogram nadal0024 | O3-093, [uruchomienie i wykonane próby](../infra/integration/LOKALNE_DEMO.md), [aktualne przekazanie A1/A2](https://github.com/Roseru/aplikacja-mobilna/pull/146#issuecomment-6370514269) |
 
 
 
@@ -6899,3 +6899,50 @@ Archiwalne wiersze stanu przed integracją PR141 z main22.10; aktualny stan znaj
   celowany odbiór obu klas. Bez osobnego PR C, bez live i bez końcowej
   deklaracji całego A→B→C. Następny krok: dokładny końcowy O1, odbiór DI/nav,
   pełna integracyjna regresja/CI jednego B i dopiero publikacja C.
+
+### O3-093 — Lokalne demo: SMTP, reset hasła, konto i nowa kopia
+
+- Data / autor: 2026-10-23, **agent 3 / O3**.
+- Odbiorcy: O1, O2, właściciel. Status: **DO ODCZYTU**.
+- Źródło: `codex/devops-lokalne-smtp-demo`, baza `4c89a6c`;
+  [instrukcja](../infra/integration/LOKALNE_DEMO.md),
+  [Compose](../infra/integration/compose.demo-mail.yaml).
+- Właściciel wybrał teraz wyłącznie demo lokalne. A1/A2 powiadomieni o zakresie;
+  nie czekamy na VPS/domenę, aby wykonać lokalny odbiór. Pełne wymagania
+  produkcyjne pozostają osobnym zakresem, bez oznaczania ich PASS.
+- Nowa osobna usługa Mailpit1.32.0 z przypiętym digestem rzeczywiście działa
+  w istniejącej sieci Docker. UID10001, read-only, tmpfs, brak capabilities,
+  UI tylko loopback18025, SMTP bez portu gospodarza. Wyłącznie domeny testowe,
+  brak zewnętrznego relay. Skrzynka jest nietrwała. Osiem istniejących usług
+  zachowanych; kontener poczty jest dziewiątym, osobnym projektem.
+- Faktyczne SMTP RCPT TO: domena testowa 250, inna domena 550, bez DATA.
+  Compose ma wymuszone LF, aby zapisany w kopii SHA nie zmieniał się przy
+  checkout na Windows. Dane konta na wybranym dysku mają ograniczone ACL.
+- Istniejący realm i prywatny szablon mają lokalne SMTP i Forgot password.
+  Rzeczywisty zwykły formularz → jedna wiadomość SMTP → link resetowania
+  z oryginalnym TLS/issuer → nowe hasło/Code+PKCE/nonce/podpis JWT **PASS**
+  17:30:46UTC,2,032s. Stare hasło odrzucone, stary refresh400invalid_grant.
+  Własna jednorazowa tożsamość usunięta; haseł wcześniejszych kont nie zmieniono.
+  Oddzielne syntetyczne konto demo ma tylko rolę APIuser i sprawdzone PKCE.
+  Właściciel ma dane logowania w prywatnym folderze na wybranym dysku;
+  żadne hasło/token/treść email/link resetowania nie trafia do GitHuba.
+- Po zmianach wykonano NOWĄ paired kopię używanej0024: captured17:38:28UTC,
+  integrity i rzeczywisty restore offline **PASS11,191s**, verified17:39:06UTC.
+  Ręczne wywołanie istniejącego przypiętego runtime8ff7c0c bez filtra --due,
+  bez przestawiania harmonogramu. Zapisane demo-mail.env i szablon realm
+  porównane bajtowo z nową kopią. Usługi wznowione, osiem ID zachowanych,
+  Mailpithealthy. To nowa kopia lokalna; brak twierdzenia o jej nowym offsite.
+- Nowy własny AVD API35 rzeczywiście uruchomiony: HTTPSreadiness/discovery
+  właściwy CA/hostname/exactissuer **PASS**, błędneCA SSLHandshakeException,
+  po zamknięciu transportu oczekiwany brak połączenia. AVD zatrzymany bezwipe,
+  reguły/reverse usunięte. Bez instalacji APK, logowania aplikacji i E4.
+- Monitor17:41UTC: API/KC/PG/retention/motivation/lifecycle/TLS/dysk/kopie/startup
+  OK, finalizer expected_disabled, AI not_deployed. Aktualny API05c1792f,
+  schema0024 i epoka pozostają zachowane; rollout26 nie wykonany.
+- Odczytane nowe wyniki zespołu w PR146: A1d4d9c94 ma sześć odrębnych native
+  PASS; rzeczywisty CIce04199 miał372/373 i timeout obserwatora danych,
+  lokalna6ccf08a jeszcze bez odbioru. A2a73f2cbc ma odebrany zakres źródeł B,
+  pełna integracja/port/CI i C nadal otwarte. Nie przejmowano ich sesji/testów
+  ani delegowanych16przypadków. Nie ma nowego kwalifikowanego APK E4.
+- Przed publikacją lokalny Compose/contracts/diff-check; YAML wymaga FULLCI,
+  a nie DOCS. Własny PR i niezależny pushmain odbieramy oddzielnie.
