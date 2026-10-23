@@ -102,13 +102,13 @@ w10m1s**. Produkcja i przypadki urządzenia skompilowane, testowy APK spakowany;
 źródła kontrolera/gatewaya/testów zgodne z przechwyconymi przed buildem.
 SHA256 logu: `63a7bc97e505c05e77f7e38eaddfbb387f3d962edc261266f5001d2cdee6be86`.
 
-Nie uruchamiano JVM ani instrumentacji. Zadanie to nie pakuje APK aplikacji;
+W tym pierwszym odbiorze nie uruchamiano JVM ani instrumentacji. Zadanie nie pakuje APK aplikacji;
 brak dostawy APK lub instalacji. Testy urządzenia i finalna integracja są
 odłożone do dalszego odbioru. Nie tworzymy częściowego PR dla tego milestone.
 Pełny zdalny CI i rzeczywisty E4 pozostają osobnymi bramkami.
 
 Kompilujący milestone jest opublikowany jako89766ec; jego receipt dotyczy
-wyłącznie zależności2798. Nowsze B i dalsze lokalne zmiany mają oddzielny odbiór.
+wyłącznie zależności2798. Odbiór nowszego B opisano poniżej.
 Podczas lekkiej pracy dodano lease dla opóźnionego przycisku bootstrap oraz
 ograniczenie odnowienia do jednej próby także po odnowieniu wstępnym.
 Ta sama zasada obejmuje odczyty profilu/społeczności, zgodę rankingową,
@@ -118,13 +118,38 @@ odnowienia w tej operacji. Bieżący request i jego identyfikator pozostają zac
 Przygotowane dalsze przypadki obejmują saved ACK po wygaśnięciu tokenu,
 kompletny raw snapshot przerwany przed zapisem receipts i wstępny refresh→401.
 Przyjęcie kompletnego raw bez sieci czeka na dodatkowy port O2 przygotowania/
-zastosowania kopii; obecny kod nie realizuje jeszcze tej gałęzi. Nie są to wyniki PASS.
+zastosowania kopii; obecny kod nie realizuje jeszcze tej gałęzi. Ten przypadek nie jest PASS.
 
 Podgląd lokalnego zdjęcia rozróżnia wczytywanie i błąd odczytu/dekodowania.
 Po błędzie użytkownik może ponowić samo otwarcie obrazu; nie jest wykonywane
 wysłanie ani usunięcie zdjęcia. Zmiana zdjęcia lub właściciela modelu resetuje
-stan podglądu, a anulowanie korutyny pozostaje anulowaniem. Ta lokalna poprawka
-interfejsu również czeka na końcowy build/odbiór, bez nowej deklaracji PASS.
+stan podglądu, a anulowanie korutyny pozostaje anulowaniem. Budowa i celowany
+odbiór poniżej obejmują kod tej poprawki; nie oznaczają pełnej regresji interfejsu.
 Odczyt obrazu, hash i dekodowanie podglądu działają poza transakcją Room.
 Przed zwróceniem bitmapy ponownie sprawdzany jest ten sam lease i dokładny
 rekord zdjęcia. Błąd końcowego guardu zwalnia bitmapę i jest propagowany.
+
+### Odbiór na B/Room20, 23.10 po18:30
+
+Źródło kodu `3ac231228fe833cd01c755223b4683d14cd2ab61`, zależność
+O2-B `a73f2cbc7f1d8e246b8eb7e103ce5ac1d49f1a8a`. Jeden build
+`assembleValidation` i `assembleValidationAndroidTest`: **PASS12m8s**,
+APK aplikacji oraz testowy APK. LogSHA256
+`647d1a34401096c80282b7cdd48d9db0af7100151da18b37390146fa62072dc6`.
+
+Sześć celowanych native offline API35 **PASS,0fail/skip**: pojedynczy refresh
+przed bootstrap/pull→401, lokalne zastosowanie savedACK po typed target przy
+wygasłym tokenie bez POST/refresh, trwałość zdjęcia po ponownym otwarciu,
+izolacja kont/ABA i dwa istniejące przepływy ekranu zdjęć z odtworzeniem Activity.
+LogSHA256 `e6cc8b50fe522f9a631518f3ad591f916d3171fe05e079e6a44067943306dacb`.
+JVM/live nie uruchamiano. Nie obejmuje16metod wcześniejszego przekazania O2
+ani pending przypadku completed-before-receipts; nie kwalifikuje całego B/C.
+
+Pierwszy start instrumentacji przerwał ANR przed pierwszym przypadkiem.
+Zachowany oddzielny log wskazuje Runnable w inicjalizacji korutyny i22,9s
+oczekiwania na CPU oraz ANR usług systemowych. Po zmianie zasobów tego samego
+własnego świeżego AVD z2CPU/2048MB na4CPU/3072MB przebieg przeszedł na tych
+samych APK, z niezmienionymi timeoutami i danymi. Offline przed/po potwierdzone.
+Nie kasowano danych ani nie restartowano komputera. To korekta środowiska
+odbioru, nie zmiana kodu omijająca błąd. Historyczny CI timeout zdjęcia pozostaje
+osobnym wynikiem; ten celowany PASS nie dowodzi przyczyny jego wcześniejszego błędu.

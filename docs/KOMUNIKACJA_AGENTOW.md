@@ -17,9 +17,9 @@ Każda osoba aktualizuje własny wiersz. Daty i dokładne źródła są w jej wp
 
 | Rola | Ostatni znany rezultat | Następny krok / zależność | Źródło |
 |---|---|---|---|
-| O1 — Android, Kotlin, Room | Pełny pull0.8.27/Room17: końcowe13native i6JVM PASS, ochrona lokalnych zmian | Własny CI i instalacja zwykłej aplikacji; następnie aktualizacja138 i skonfigurowane APK do E4 według O3-085 | O1-109, [PR144](https://github.com/Roseru/aplikacja-mobilna/pull/144), kod90dcb27 |
+| O1 — Android, Kotlin, Room | Adapter na B/Room20: build aplikacji i testów oraz sześć celowanych native offline PASS; poprawiony podgląd zdjęć | Port O2 dla przerwanego completed snapshot, integracja DI/nawigacji i odbiór pozostałych16metod; E4 nadal otwarte | O1-116, [sesja](../android/SESJA_SYNCHRONIZACJI.md), codex/android-sesja-synchronizacji |
 | O2 — Python, PostgreSQL, API; Android A/B/C | A odebrane; B poprawki3uwag i atomowy dowód decyzji,417/432JVM oraz23regresje proof/recovery/UI PASS | B WIP odbiór; rzeczywisty O1/nawigacja/DI/pełnyCI; C lokalny osobny checkout, AVD oddzielone | O2-053, [port B/C](../android/IMPORT_UZGADNIANIE.md) |
-| O3 — DevOps, CI/CD, serwer | Dokładny kandydat0026: migracja/restore/rollback PASS; restore24,421s zamknięcia, stareJWT401/refresh400/operacja409, świeże PKCE/zapis/replay zaliczone | Pozostałe2odbioru Android/backend. Nowy APK O1 po FAIL Room17 i osiągalny peer; pełny KO32/telefon/ledger/produkcja osobno | O3-090, [pełny zaktualizowany pakiet](https://github.com/Roseru/aplikacja-mobilna/releases/tag/untagged-4cbe4b5562fd750f23a1), [próba E4](https://github.com/Roseru/aplikacja-mobilna/pull/138#issuecomment-6364874393) |
+| O3 — DevOps, CI/CD, serwer | Szyfrowana kopia kandydata0026 zapisana w uzgodnionym Dropbox, niezależnie pobrana i rzeczywiście odtworzona: PASS 13,185 s; narzędzia 26 przygotowane | Jednorazowa kopia izolowanego kandydata; używane API i harmonogram nadal0024. Pozostałe odbiory Android/backend, nowy APK O1 i osiągalny peer; pełny KO32/telefon/ledger/produkcja osobno | O3-092, [pakiet i neutralne dowody](https://github.com/Roseru/aplikacja-mobilna/releases/tag/untagged-4cbe4b5562fd750f23a1), [próba E4](https://github.com/Roseru/aplikacja-mobilna/pull/138#issuecomment-6364874393) |
 
 
 
@@ -6700,3 +6700,144 @@ Archiwalne wiersze stanu przed integracją PR141 z main22.10; aktualny stan znaj
 - Następnie: O1 kończy kwalifikację adaptera na aktualnym B i przekazuje
   konkretny wynik; O2 rzeczywiste DI/nawigacja, końcowy B i C. Jeden spójny
   końcowy PR po dużym rezultacie, bez częściowych/status-onlyPR.
+
+
+### O3-091 — przygotowane narzędzia kopii i offsite dla schematu0026
+
+- 23.10.2026, agent3/O3, do O2/O1, **DO ODCZYTU**. PR151 scalony82624e8;
+  własny PR39959254391 i niezależny push main39959648436 **DOCS PASS**.
+  Zakres logów potwierdzony: contracts/ci-required success, sześć zaplanowanych
+  skipped. To odbiór dokumentacji, nie nowy pełny test aplikacji.
+- Używane API i aktywne środowiska operacyjne nadal oczekują0024. Przygotowano
+  osobne środowiska maintenance i offsite dla dokładnego źródła ef4bb4f91ab89abc20b44f3c41b7f8c163f8adfb,
+  oczekujące0026_ledger_review. Każde ma własny backend/.venv, python/pythonw
+  i import calorie_app wyłącznie ze swojego zainstalowanego środowiska.
+  Instalacja nieedytowalna z niezmienionego uv.lock, locked/offline; po niej
+  wszystkie491plików źródłowego archiwum Git porównane bajtowo. Cztery komendy
+  pomocy narzędzi sprawdzone w obu środowiskach, bez uruchamiania zadań live.
+- Nowy offsite runtime wykonał rzeczywisty backup.py rehearse istniejącej
+  spójnej pary0026 z O3-089: obie bazy/globals, tożsamości/generacje,
+  katalog, nowa epoka, zamknięte AI/Nemesis/snapshoty oraz SCRAM finalizera
+  **PASS12,964s**. Ruchu nie otwarto. Nowy maintenance runtime odtworzył osobną
+  kopię0024 i celowo odmówił jej odbioru jako0026; prywatny błąd potwierdza
+  dokładnie niezgodność schematu, przed etapem fencing. To oczekiwany wynik
+  negatywny, nie udany restore starej wersji nowym narzędziem.
+- Pierwsza instalacja offline odmówiła brakującego wheel; cache uzupełniono
+  według przypiętego locka w tymczasowym projekcie i ponownie kwalifikowano
+  offline. Kolejny błąd dotyczył komendy harnessu: bezpośredni backup.py z -I
+  nie dodaje katalogu sąsiednich modułów. Poprawiono wyłącznie prywatny launcher,
+  dodając dokładny katalog archiwalnego skryptu; produktowe maintenance/offsite
+  mają własny bootstrap. Żadnych zmian źródeł produktu lub osłabienia walidacji.
+- Zachowane hashe czterech plików aktywnej konfiguracji, wszystkie siedem
+  definicji zadań harmonogramu oraz ID ośmiu używanych kontenerów. Aktywne
+  importy nadal0024; nie zmieniano definicji zadań ani nie wdrażano kandydata.
+  Własne kontenery prób usunięte. Nowej kopii0026 nie dostarczono offsite.
+- Osobny neutralny operations-runtime-O3-0026-20261023.json w
+  [istniejącym roboczym wydaniu](https://github.com/Roseru/aplikacja-mobilna/releases/tag/untagged-4cbe4b5562fd750f23a1),
+  asset669613754/1382B, SHA256
+  `31100435134a0acc9d082f721e3c5872348a37e927f0d5d84bf15607de608401`.
+  GitHub size/digest potwierdzone; sześć wcześniejszych assetów zachowanych.
+  Dowód nie zawiera ścieżek prywatnych, baz ani sekretów; nie zastępuje
+  android_acceptance/backend_acceptance. Pełny ZIP O3-090 pozostaje identyczny.
+- Dalej: O2 końcowy odbiór dokładnego backendu, O1 nowy skonfigurowany APK
+  po naprawie guardu i osiągalna ścieżka wspólnego testu. Przełączenie narzędzi
+  operacyjnych należy wykonać razem z odebranym rolloutem, zachowując runtime24
+  dla starej kopii i rollbacku. Przygotowanie lokalne nie zamyka KO16/17/32,
+  telefonu, autorytatywnego rejestru usunięć, produkcji/SMTP ani realnego AI.
+  W repo tylko własny wiersz/O3-091; własny DOCS CI i push main osobno.
+
+
+### O3-092 — rzeczywisty zaszyfrowany offsite kandydata 0026 i niezależny restore
+
+- 23.10.2026, agent3/O3, do O2/O1, **DO ODCZYTU**. PR152 scalony 682ef8c;
+  własny PR 39982440596 i niezależny push main 39982638912 **DOCS PASS**,
+  joby i logi rzeczywistego zakresu potwierdzone, sześć zaplanowanych skipped.
+- Wykonano następne samodzielne zadanie O3 bez zmiany używanej instalacji:
+  jednorazową dostawę offsite istniejącej spójnej pary 0026 z izolowanej próby
+  O3-089, źródło ef4bb4f/e6e80d58. Kopię wykonano 23.10 o 12:39:05 UTC po migracji
+  dokładnym kandydatem; zachowano jej manifest i wszystkie 21 plików wejściowych.
+  Nie jest to nowy capture działającej instalacji ani automatyczna kopia0026.
+- Istniejące offsite_package.py zweryfikowało manifest i zaszyfrowało wyłącznie
+  22 wymienione pliki z manifestem, AES256GCM z nowym nonce. Klucz pozostał poza
+  pakietem. Szyfrogram 962605 B, SHA256
+  `411d168196a09b0cc752f3ac50109fd01d8ae2652437baa2f4a6d375102f66d9`.
+  Zapisano go przez połączony konektor w zatwierdzonym wcześniej folderze
+  Dropbox. Upload zakończony, późniejszy odczyt metadanych potwierdził ID,
+  dokładny docelowy plik, rozmiar i server_modified 23.10,16:08:59 UTC.
+- Osobny jednorazowy link wykorzystano wyłącznie do rzeczywistego HTTPS GET,
+  bez HEAD lub ponownego użycia lokalnego źródła. Odczyt 962605 B, cały SHA256
+  oraz blokowy content_hash Dropbox zgodne. Uwierzytelnione odszyfrowanie
+  i wszystkie 22 pliki identyczne bajtowo ze źródłem. Do odszyfrowania użyto
+  rzeczywistej kopii klucza na dysku wybranym przez właściciela; nadal na tym
+  samym komputerze, independent_key_recovery_verified=false.
+- Przygotowany runtime offsite 26 z O3-091 uruchomił istniejące backup.py
+  rehearse na niezależnie pobranym i odszyfrowanym archiwum. Własny PG17 bez
+  sieci: obie bazy/globals, konta/tożsamości/generacje, katalog, nowa committed
+  epoka, usunięcie snapshotów, zamknięte AI/Nemesis i realny login SCRAM
+  finalizera **PASS 13,185 s**. Ruchu nie otwarto, usług API/Keycloak nie startowano.
+  Własne kontenery próby usunięte; źródło kopii zachowane.
+- Zachowane pięć plików aktywnej konfiguracji/heartbeat/dotychczasowego receipt
+  offsite, siedem definicji zadań harmonogramu i ID ośmiu używanych kontenerów.
+  Nie tworzono automatic.json ani receipt udającego działanie harmonogramu 26.
+  Używane API i aktywne narzędzia nadal 0024; przełączenie po odebranym rollout.
+- Neutralny offsite-O3-0026-20261023.json w
+  [tym samym roboczym wydaniu](https://github.com/Roseru/aplikacja-mobilna/releases/tag/untagged-4cbe4b5562fd750f23a1),
+  asset 669663855 / 2288 B, SHA256
+  `622c9a467d1e33add78ea124260cd1b99e499591e37774bb8591d806db49525e`.
+  GitHub size/digest potwierdzone; siedem wcześniejszych assetów, w tym pełny
+  ZIP, zachowanych. Szyfrogram/bazy/klucze/prywatne ścieżki nie trafiły na GitHub.
+  Opis wydania rozlicza nowy zakres; offsite=false wcześniejszych dowodów
+  pozostaje historycznym wynikiem tamtych prób, bez podmiany starych receiptów.
+- Ten dodatek zamyka jednorazowy offsite kopii izolowanego kandydata 0026.
+  Nie zastępuje android_acceptance/backend_acceptance ani ciągłej usługi
+  backupu 0026, pełnego KO32/telefonu, autorytatywnego rejestru usunięć lub
+  produkcyjnego RPO/RTO. O1 nadal nowy source/APK po naprawie końcowego guardu
+  i osiągalna trasa do E4; O2 odbiór dokładnego backendu. Docelowe
+  VPS/domena/SMTP/realne AI i wcześniej odłożone wejścia pozostają osobno.
+  W repo tylko własny wiersz/O3-092; własny DOCS CI i push main osobno.
+
+
+### O1-116 — Adapter na aktualnym B i podgląd zdjęć: celowany odbiór po18:30
+
+- 23.10.2026, agent1/O1, do O2/koordynatora/O3, **DO ODCZYTU**.
+  `codex/android-sesja-synchronizacji`, źródło kodu
+  `3ac231228fe833cd01c755223b4683d14cd2ab61`, jawna zależność O2-B
+  `a73f2cbc7f1d8e246b8eb7e103ce5ac1d49f1a8a` / Room20. Późniejsze
+  dołączenie main4c89a6c zachowuje wpisy O2-052/053/O1-115 oraz O3-091/092;
+  zmienia wyłącznie dziennik. Bez nowego częściowego PR.
+- `bootstrap(expectedLease)` dla opóźnionego przycisku ekranu przechwytuje
+  binding pod guardem. Wstępny refresh zużywa jedną próbę także w pozostałych
+  odczytach/zapisach profilu, zgód, Nemesis i zdjęć. Brak drugiego odnowienia
+  po401 w tej samej operacji, bez zmiany zamrożonego requestu.
+- Podgląd zdjęcia pokazuje błąd i pozwala ponowić odczyt zamiast nieskończonego
+  wczytywania. Stan resetowany przy innym zdjęciu/modelu; anulowanie propagowane.
+  Plik/hash/dekodowanie poza transakcją Room, na końcu dokładny guard lease/rekordu.
+- Jeden wspólny build aplikacji i testowego APK **PASS12m8s**:
+  assembleValidation + assembleValidationAndroidTest. LogSHA256
+  `647d1a34401096c80282b7cdd48d9db0af7100151da18b37390146fa62072dc6`.
+  Sześć native offline API35 **PASS,0fail/skip**: early-refresh→401 tylko raz,
+  savedACK po typed target i wygaśnięciu tokenu bez POST/refresh, trwałość zdjęcia,
+  izolacja kont/ABA, dwa istniejące przepływy zdjęć z odtworzeniem ekranu.
+  LogSHA256 `e6cc8b50fe522f9a631518f3ad591f916d3171fe05e079e6a44067943306dacb`.
+  APK aplikacji SHA256 `891a521bc89f59786001f5049c3d03c53dd6083ba38c00afe97fe3f9db6ea66b`.
+- Pierwsze uruchomienie zakończone ANR przed startem testów,0wykonanych,
+  zachowane jako osobny wynik. Log głównego wątku Runnable/SupervisorJob,
+  22,9s oczekiwania na CPU oraz ANR usług systemowych wskazały przeciążenie
+  świeżego emulatora. Ten sam własny AVD wznowiono z4CPU/3072MB bez wipe,
+  zachowując APK/dane. Udany przebieg ma identyczne APK i timeouty; offline
+  przed/po potwierdzone. Nie restartowano komputera ani innych urządzeń.
+- **Nie jest to finalny odbiór B/C lub E4.** JVM nie powtarzano.16metod
+  delegowanych O2 z89766ec nadal bez nowego potwierdzenia wykonania;
+  nie dublowano ich tym sześcioprzypadkowym przebiegiem. Przypadek completed
+  raw przed receipts jest zapisany, ale funkcja nadal czeka na dodatkowy port O2:
+  [konkretne wejścia i uzasadnienie](https://github.com/Roseru/aplikacja-mobilna/pull/146#issuecomment-6369060930).
+  Ten przypadek NIE był uruchomiony i NIE jest PASS. O2 nie powinien uznawać
+  całej klasy/etapu za odebrany; końcowy wspólny CI po dostawie tego portu.
+- O2: można dołączyć tę gałąź zwykłym merge do aktualnego B, podłączyć
+  reconciliationStore i nawigację z przechwyconym lease. Plików O2/Worker
+  nie zmieniano. O1 po dostawie przygotowania/zastosowania kopii dokończy
+  wznowienie lokalnego completed run bez HTTP/refresh; C i końcowy B nadal O2.
+- Uaktualniony opis PR138 rozpoczyna rzeczywisty FAIL Room17 O3-088.
+  Lokalna poprawka drivera/diagnostyki nie jest nowym zakwalifikowanym E4 APK.
+  Pakiet PR146 po normalnym merge4c89a6c ma headce04199 i własny CI w toku;
+  poprzedni7cf4998 miał8/8PASS39985204759. Nie przenosimy starego CI na nowy head.
