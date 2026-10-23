@@ -18,7 +18,7 @@ Każda osoba aktualizuje własny wiersz. Daty i dokładne źródła są w jej wp
 | Rola | Ostatni znany rezultat | Następny krok / zależność | Źródło |
 |---|---|---|---|
 | O1 — Android, Kotlin, Room | Pełny pull0.8.27/Room17: końcowe13native i6JVM PASS, ochrona lokalnych zmian | Własny CI i instalacja zwykłej aplikacji; następnie aktualizacja138 i skonfigurowane APK do E4 według O3-085 | O1-109, [PR144](https://github.com/Roseru/aplikacja-mobilna/pull/144), kod90dcb27 |
-| O2 — Python, PostgreSQL, API; Android A/B/C | A scalone111d45fc po FULL8/8 i373nativePASS; B ma kompilujący port sesji i395/410JVM+8celowanych Room PASS | B WIP dla integracji O1; otwarta P1 idempotencji między planami, UI/testy/review/CI. Cały ABC trwa | O2-052, [port B/C](../android/IMPORT_UZGADNIANIE.md) |
+| O2 — Python, PostgreSQL, API; Android A/B/C | A scalone i odebrane main FULL8/8; B port sesji oraz cztery poprawki recovery/importu, Room20,395/410JVM+15celowanych Room PASS | B WIP: ekran, faktyczny adapter O1, dalsza regresja/review/CI; C nadal do realizacji | O2-052, [port B/C](../android/IMPORT_UZGADNIANIE.md) |
 | O3 — DevOps, CI/CD, serwer | Migracja kopii0024→0026 PASS; nowy pakiet O1Room17 przyjęty po jawnej korekcie. Rzeczywisty replay: serwer/ACK PASS, końcowy guard Room FAIL | A1 analizuje DiaryDay0→1 i rozdzielenie PUSH/PULL. Zaszyfrowane konto dostarczone; peer TCP TIMEOUT, okno zamknięte. Wydanie nadal BLOCKED | O3-087/088, [próba i handoff](https://github.com/Roseru/aplikacja-mobilna/pull/138#issuecomment-6364652003), [pakiet](https://github.com/Roseru/aplikacja-mobilna/releases/tag/untagged-4cbe4b5562fd750f23a1) |
 
 
@@ -6459,3 +6459,24 @@ Archiwalne wiersze stanu przed integracją PR141 z main22.10; aktualny stan znaj
   Room FAIL. To nie pełny PASS E4. O1 analizuje _ensure_day oraz rozdzielenie
   PUSH/PULL; nowy port wykonuje pojedyncze jawne kroki. Materiały O3 zachowane,
   backend acceptance/rollback i nowe live pozostają osobnymi odbiorami.
+
+- Poprawki czterech konkretnych uwag checkpointu B: trwały ImportOrigin chroni
+  źródło między planami; zmienione źródło wymaga jawnej decyzji i osobnej kopii,
+  bez nadpisywania targetu/kolejki. Historyczny mapping deleted/retained jest
+  archiwizowany, ale nie stanowi live proof ani pozwolenia recreate. ACK starej
+  próby nie nadpisuje późniejszej intencji82/84 sprzed begin: kolejka zachowana,
+  finish zatrzymany na jawnej decyzji. SourceRevision pochodzi z ACK/receipt
+  konkretnego SourceOperationId, nigdy wcześniejszej rewizji projekcji.
+- Room18→19→20: dodana migracja zachowuje faktycznie użyty prywatny checkpoint19,
+  wszystkie wcześniejsze komórki/rowid42tabel oraz zamrożone ID/body/hash;
+  uzupełnia trwałe powiązania origin. Bez wipe/destructive migration.
+  Reconciliation raw pages pozostają staging do atomowej publikacji typed ledger
+  i aktywnego checkpointu po pełnej walidacji.
+- Po poprawkach395debugJVM/410validationJVM/15celowanych Room-native PASS,
+  zero fail/error/skip. To nadal milestone B; ekran, rzeczywisty adapter O1,
+  szersze przypadki, finalny review/CI i cały C pozostają do ukończenia.
+  O1 przekazał implementację interfejsów w swoim WIP i constructor
+  reconciliationStore; jego weryfikacja i przypięty commit pozostają osobno.
+- [Osobny odbiór main A](https://github.com/Roseru/aplikacja-mobilna/pull/148#issuecomment-6364973640):
+  koordynator potwierdził FULL8/8 i373nativePASS run39951038772 przy111d45fc.
+  Nie przenosimy tego wyniku na B/C ani wspólny live E4.

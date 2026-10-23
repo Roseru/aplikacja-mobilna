@@ -50,14 +50,34 @@ internal class ReconciliationPushStore(private val owner:ReconciliationStore) {
                 val wire=StrictJson.read(checkNotNull(original.wireJson).toByteArray())
                 check(wire.getString("sync_epoch")==source.sourceEpoch && wire.getString("action")=="upsert")
             }
+            val localProof=source.sourceOperationId?.let {db.provedOperationResults(schema,lease.storageScope)[it]}
+            if(localProof!=null)check(localProof.status=="accepted" && localProof.entityId==oldId && localProof.epoch==source.sourceEpoch)
+            if(original!=null)check(original.status !in setOf("conflict","rejected"))
             val receipt=dao.evidence(id).firstOrNull {it.kind=="receipt" && it.identity==source.sourceOperationId}
                 ?.let {StrictJson.read(it.json.toByteArray())}
-            if(receipt!=null)check(receipt.getString("source_epoch")==source.sourceEpoch && receipt.getString("entity_id")==oldId &&
-                receipt.getString("status")=="accepted" && (source.sourceRevision==null || receipt.getInt("revision")==source.sourceRevision))
+            if(receipt!=null) {
+                check(receipt.getString("source_epoch")==source.sourceEpoch && receipt.getString("entity_id")==oldId && receipt.getString("status")=="accepted")
+                if(localProof!=null)check(receipt.getInt("revision")==localProof.revision)
+                val wire=original?.wireJson?.let {StrictJson.read(it.toByteArray())}
+                if(wire!=null && !wire.has("recovery")) {
+                    val base=if(wire.isNull("base_revision"))0L else wire.getLong("base_revision")
+                    check(receipt.getLong("revision")==base+1) // Validate the received receipt against its own frozen operation.
+                }
+            }
+            // Old milestone plans may contain a projection revision paired with an uncertain update.
+            // Preserve that original evidence but use only a bound receipt/response for this operation.
+            val sourceRevision=if(source.sourceOperationId==null)source.sourceRevision
+                else if(receipt!=null)receipt.getInt("revision") else localProof?.revision
             val proposed=source.wireId
             val target=copy.entities.singleOrNull {it.id==proposed}
             val mapping=copy.mappings.map {StrictJson.read(it.toByteArray())}.singleOrNull {
                 it.getString("source_epoch")==source.sourceEpoch && it.getString("source_entity_id")==oldId }
+            if(mapping!=null) {
+                val mappedTarget=copy.entities.singleOrNull {it.id==mapping.getString("target_entity_id")}
+                // Deletion/retention keeps the mapping reservation; it is not permission for another recreate.
+                check(mappedTarget!=null && !mappedTarget.deleted && mappedTarget.type==source.entityType &&
+                    mappedTarget.revision==mapping.getInt("target_revision"))
+            }
             val payloadText=when(val supplied=decision.opt("payload")) {
                 is JSONObject->StrictJson.canonical(supplied)
                 is String->StrictJson.canonical(StrictJson.read(supplied.toByteArray()))
@@ -79,7 +99,7 @@ internal class ReconciliationPushStore(private val owner:ReconciliationStore) {
                     value.getInt("timeline_base_revision")==copy.timelineRevision)
             }
             val sourceMeta=StrictJson.canonical(JSONObject().put("source_epoch",source.sourceEpoch).put("source_entity_id",oldId)
-                .put("source_revision",source.sourceRevision ?: JSONObject.NULL).put("source_operation_id",source.sourceOperationId ?: JSONObject.NULL)
+                .put("source_revision",sourceRevision ?: JSONObject.NULL).put("source_operation_id",source.sourceOperationId ?: JSONObject.NULL)
                 .put("decision",if(resolve)"resolve_existing" else "recreate_missing"))
             val opId=UUID.randomUUID().toString()
             val operation=recovery.operation(opId,source.entityType,proposed,expected.syncEpoch,base,payload,sourceMeta)
@@ -259,8 +279,20 @@ internal class ReconciliationPushStore(private val owner:ReconciliationStore) {
             val resultJson=StrictJson.canonical(outcome)
             dao.insert(ReconciliationEvidence(request.planId,"ack_result",operation.operationId,resultJson,LegacyImportStore.digest(resultJson),row.snapshotRunId))
             db.dao().updateOperation(operation.copy(status=if(accepted)"acked" else outcome.getString("status")))
-            dao.update(source.copy(state=if(accepted)"acked" else "decision",wireId=target,
-                decisionCode=if(accepted)null else "server_"+outcome.getString("status")))
+            val root=StrictJson.read(source.sourceJson.toByteArray())
+            val originals=root.getJSONArray("outboxes")
+            val laterOperation=(0 until originals.length()).map {originals.getJSONObject(it)}.any {
+                it.getString("operationId")!=operation.operationId && it.getString("wireFormat")=="sync-v1" &&
+                    it.getString("status") !in setOf("acked","superseded","local_only") }
+            val currentPayload=if(root.isNull("canonical_payload"))null else root.getString("canonical_payload")
+            val localDeleted=root.getJSONObject("row").optBoolean("missingProjection",false) ||
+                root.getJSONObject("row").optInt("deleted",0)==1 || root.getJSONObject("row").optBoolean("deleted",false)
+            val laterIntent=accepted && row.kind=="checkpoint_replay" && (laterOperation ||
+                (operation.action=="upsert" && (currentPayload!=operation.payload || localDeleted)))
+            // ACK belongs only to the frozen operation. A newer captured proposal remains queued;
+            // selecting replay_original never authorizes accepting server data over that proposal.
+            dao.update(source.copy(state=if(accepted && !laterIntent)"acked" else "decision",wireId=target,
+                decisionCode=if(laterIntent)"later_local_intent" else if(accepted)null else "server_"+outcome.getString("status")))
         }
         dao.update(row.copy(responseJson=prepared.response.canonical,state="complete"))
         prepared.result

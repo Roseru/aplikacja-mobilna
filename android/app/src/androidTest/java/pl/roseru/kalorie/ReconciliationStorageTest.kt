@@ -217,6 +217,119 @@ class ReconciliationStorageTest {
             rejects {store.finish(lease,binding,plan.planId)}
         } finally {db.close();context.deleteDatabase(name)}
     }
+    @Test fun unrelatedHistoricalMappingsToDeletedAndRetainedTargetsDoNotBlockFullSnapshotOrFinish()=runBlocking<Unit> {
+        val db=memory()
+        try {
+            val lease=account(db);val binding=changedEpoch(db,lease);val store=ReconciliationStore(db,schema);val plan=plan(store,lease,binding)
+            val deleted=uuid();val retained=uuid()
+            fun historical(target:String)=JSONObject().put("source_epoch",epoch).put("source_entity_id",uuid())
+                .put("target_entity_id",target).put("target_revision",4)
+            val dead=JSONObject().put("entity_type","weight").put("entity_id",deleted).put("revision",4).put("deleted",true).put("payload",JSONObject.NULL)
+            val snapshot=pull(db,store,lease,binding,plan,listOf(dead),mappings=listOf(historical(deleted),historical(retained)))
+            assertEquals(2,db.importDao().evidence(plan.planId).count {it.kind=="mapping"})
+            assertEquals(1,db.importDao().evidence(plan.planId).count {it.kind=="receipt_group"})
+            val application=store.finish(lease,binding,plan.planId)
+            assertEquals(snapshot.runId,application.runId);assertFalse(db.bootstrapDao().binding(lease.storageScope)!!.requiresRecovery)
+            assertNull(db.dao().weight(deleted,lease.storageScope));assertNull(db.dao().weight(retained,lease.storageScope))
+        } finally {db.close()}
+    }
+    @Test fun historicalMappingReservationCannotAuthorizeRecreateOfDeletedOrRetainedTarget()=runBlocking<Unit> {
+        for(deleted in listOf(false,true)) {
+            val db=memory()
+            try {
+                val lease=account(db);val old=oldAcceptedWeight(db,lease);val binding=changedEpoch(db,lease)
+                val store=ReconciliationStore(db,schema);val plan=plan(store,lease,binding)
+                val source=db.importDao().sources(plan.planId).single();val target=uuid()
+                val entities=if(deleted)listOf(JSONObject().put("entity_type","weight").put("entity_id",target).put("revision",4)
+                    .put("deleted",true).put("payload",JSONObject.NULL)) else emptyList()
+                pull(db,store,lease,binding,plan,entities,mappings=listOf(mapping(source,target,4)))
+                store.decide(lease,binding,plan.planId,"weight",source.sourceId,source.sourceHash,"{\"choice\":\"recreate_missing\"}")
+                val count=db.dao().operationCount(lease.storageScope)
+                rejects {store.preparePush(lease,binding,plan.planId)}
+                assertEquals(count,db.dao().operationCount(lease.storageScope));assertTrue(db.importDao().batches(plan.planId).isEmpty())
+                assertEquals("acked",db.dao().operation(old.operations.single().operationId)!!.status)
+                assertTrue(db.bootstrapDao().binding(lease.storageScope)!!.requiresRecovery)
+                store.decide(lease,binding,plan.planId,"weight",source.sourceId,source.sourceHash,"{\"choice\":\"preserve_local\"}")
+                store.finish(lease,binding,plan.planId)
+                assertFalse(db.dao().weight(source.localId,lease.storageScope)!!.deleted)
+                assertEquals(80.125,db.dao().weight(source.localId,lease.storageScope)!!.kg,0.0)
+                assertFalse(db.bootstrapDao().binding(lease.storageScope)!!.requiresRecovery)
+            } finally {db.close()}
+        }
+    }
+    @Test fun replayBeforeBeginNewerLocalIntentNeverAcceptsServerOverWaitingCreateOrUpdate()=runBlocking<Unit> {
+        for(update in listOf(false,true)) {
+            val db=memory()
+            try {
+                val lease=account(db);val repo=DiaryRepository(db,context,lease);val push=MealPushStore(db,schema)
+                val id:String;var prior:OutboxEntity?=null
+                if(update) {
+                    val created=oldAcceptedWeight(db,lease);id=created.operations.single().entityId;prior=created.operations.single()
+                    repo.editWeight(id,82.0)
+                } else {repo.addWeight(80.0,LocalDate.of(2001,1,2));id=push.prepare(lease)!!.operations.single().entityId}
+                val frozen=push.prepare(lease)!!;push.markAttempted(frozen)
+                val intended=if(update)84.0 else 82.0
+                repo.editWeight(id,intended)
+                val local=db.dao().weight(id,lease.storageScope)!!
+                val waiting=db.weightSyncDao().operations(lease.storageScope,id).single {it.operationId!=frozen.operations.single().operationId}
+                assertEquals("waiting_revision",waiting.status);assertFalse(waiting.attempted);assertNull(waiting.wireJson)
+                val bytes=frozen.batch.body();val hash=frozen.batch.sha256
+                val binding=expire(db,lease,frozen);val store=ReconciliationStore(db,schema);val plan=plan(store,lease,binding)
+                pull(db,store,lease,binding,plan,prior?.let {listOf(entity(it))} ?: emptyList())
+                val source=db.importDao().sources(plan.planId).single()
+                store.decide(lease,binding,plan.planId,"weight",source.sourceId,source.sourceHash,"{\"choice\":\"replay_original\"}")
+                val retry=store.preparePush(lease,binding,plan.planId)!!;store.markAttempted(retry)
+                store.applyAck(store.prepareAck(retry,200,reply(retry.batch)))
+                val acceptedRevision=if(update)2 else 1
+                pull(db,store,lease,binding,plan,listOf(entity(frozen.operations.single(),acceptedRevision)))
+                assertEquals("later_local_intent",db.importDao().sources(plan.planId).single().decisionCode)
+                rejects {store.finish(lease,binding,plan.planId)}
+                assertEquals(local,db.dao().weight(id,lease.storageScope));assertEquals(intended,db.dao().weight(id,lease.storageScope)!!.kg,0.0)
+                assertEquals(waiting,db.dao().operation(waiting.operationId))
+                assertEquals("acked",db.dao().operation(frozen.operations.single().operationId)!!.status)
+                assertArrayEquals(bytes,db.pushDao().batch(frozen.id)!!.requestJson.toByteArray());assertEquals(hash,db.pushDao().batch(frozen.id)!!.requestHash)
+                assertTrue(db.bootstrapDao().binding(lease.storageScope)!!.requiresRecovery)
+                assertEquals(source.sourceHash,db.importDao().sources(plan.planId).single().sourceHash)
+            } finally {db.close()}
+        }
+    }
+    @Test fun uncertainUpdateSourceRevisionComesFromThatOperationsReceiptAndNeverEarlierProjectionAck()=runBlocking<Unit> {
+        for(receiptKind in listOf("missing","accepted","rejected")) {
+            val db=memory()
+            try {
+                val lease=account(db);val created=oldAcceptedWeight(db,lease);val id=created.operations.single().entityId
+                DiaryRepository(db,context,lease).editWeight(id,82.0)
+                val push=MealPushStore(db,schema);val lost=push.prepare(lease)!!;push.markAttempted(lost)
+                val original=db.dao().operation(lost.operations.single().operationId)!!
+                assertEquals(1,original.baseRevision);assertEquals(1,db.weightSyncDao().state(lease.storageScope,id)!!.serverRevision)
+                val bytes=lost.batch.body();val hash=lost.batch.sha256
+                val binding=changedEpoch(db,lease);val store=ReconciliationStore(db,schema);val plan=plan(store,lease,binding)
+                val source=db.importDao().sources(plan.planId).single()
+                assertEquals(original.operationId,source.sourceOperationId);assertNull(source.sourceRevision)
+                assertEquals(1,JSONObject(source.sourceJson).getInt("server_revision")) // Earlier create ACK remains historical projection evidence.
+                val receipts=if(receiptKind=="missing")emptyList() else listOf(JSONObject().put("source_epoch",epoch)
+                    .put("operation_id",original.operationId).put("entity_id",id).put("status",receiptKind)
+                    .put("revision",if(receiptKind=="accepted")2 else JSONObject.NULL).put("code",if(receiptKind=="accepted")JSONObject.NULL else "invalid_payload"))
+                pull(db,store,lease,binding,plan,receipts=receipts)
+                store.decide(lease,binding,plan.planId,"weight",source.sourceId,source.sourceHash,"{\"choice\":\"recreate_missing\"}")
+                if(receiptKind=="rejected") {
+                    val count=db.dao().operationCount(lease.storageScope)
+                    rejects {store.preparePush(lease,binding,plan.planId)}
+                    assertEquals(count,db.dao().operationCount(lease.storageScope));assertTrue(db.importDao().batches(plan.planId).isEmpty())
+                } else {
+                    val recovery=store.preparePush(lease,binding,plan.planId)!!
+                    val reference=recovery.batch.json().getJSONArray("operations").getJSONObject(0).getJSONObject("recovery")
+                    assertEquals(original.operationId,reference.getString("source_operation_id"))
+                    if(receiptKind=="accepted")assertEquals(2,reference.getInt("source_revision")) else assertTrue(reference.isNull("source_revision"))
+                    assertNotEquals(original.operationId,recovery.operations.single().operationId)
+                    assertEquals(binding.syncEpoch,recovery.batch.json().getString("sync_epoch"))
+                }
+                assertEquals(original,db.dao().operation(original.operationId));assertArrayEquals(bytes,db.pushDao().batch(lost.id)!!.requestJson.toByteArray())
+                assertEquals(hash,db.pushDao().batch(lost.id)!!.requestHash);assertTrue(db.bootstrapDao().binding(lease.storageScope)!!.requiresRecovery)
+                assertNull(db.importDao().sources(plan.planId).single().sourceRevision)
+            } finally {db.close()}
+        }
+    }
     private object StrictJsonForTest {
         fun operation(batch:PushBatch)=pl.roseru.kalorie.core.catalog.StrictJson.canonical(batch.json().getJSONArray("operations").getJSONObject(0))
     }

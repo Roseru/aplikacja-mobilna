@@ -1,8 +1,8 @@
 # Import i uzgadnianie — port sesji B/C
 
 Stan: lokalny milestone B dla równoległej integracji O1. To nie odbiór całego B.
-Cross-plan idempotencja źródeł ma otwartą uwagę P1 koordynatora; ekran i pełna
-regresja/migracje/review pozostają w realizacji. Nie używać tego checkpointu
+Cztery konkretne uwagi koordynatora są poprawione i mają regresje; ekran,
+pełna regresja i końcowy przegląd pozostają w realizacji. Nie używać tego checkpointu
 jako gotowej dostawy aplikacji ani dowodu live.
 
 `pl.roseru.kalorie.sync.SyncExecution.kt` definiuje zwykłe PULL/PUSH,
@@ -45,7 +45,37 @@ mapping.target_revision. Same-epoch expiry tworzy nową powiązaną kopertę,
 operacje pozostają identyczne; epoch recovery ma nowe ID i RecoverySource.
 Brak receipt nie jest ACK ani dowodem niewykonania.
 
-Kontrole milestone: pełne395debugJVM/410validationJVM i8celowanych Room/native
+Kontrole milestone: pełne395debugJVM/410validationJVM i15celowanych Room/native
 PASS na własnym emulatorze, bez HTTP/PG. To nie pełna regresja urządzenia B,
 nie test końcowego ekranu i nie integracja z sesją O1. Zmiana dwóch typów
 wyniku zgodnie z O1 dodatkowo przechodzi kompilację przed checkpointem.
+
+## Poprawki po odbiorze checkpointu
+
+- Źródło ma trwały ImportOrigin i fingerprint niezależny od planu oraz postępu
+  kolejki. Niezmienione źródło pomija projekcję/outbox także po edycji targetu,
+  zamrożonej próbie, restarcie i pełnym pull. Zmienione źródło wymaga decyzji;
+  osobna kopia dostaje nowy localId i wireUUID. Pierwsze powiązanie jest niezmienne.
+- Room18→19 zachowuje opublikowany i rzeczywiście użyty checkpoint9tabel.
+  Migracja19→20 dodaje origin/fingerprint i uzupełnia powiązania z ledgeru;
+  test zachowuje wszystkie wcześniejsze komórki/rowid42tabel i frozenbody/hash.
+  Bez wipe ani zmiany zwykłej instalacji użytkownika.
+- Historyczny mapping pozostaje rezerwacją także dla deleted/retained targetu;
+  nie blokuje archiwizacji pełnej kopii. Żywy typed proof jest wymagany dopiero
+  przez operację, która chce go użyć. Usunięty target nie upoważnia do recreate.
+- ACK replay_original potwierdza tylko frozen operację. Późniejsza lokalna
+  intencja istniejąca przed begin pozostaje bez zmian w kolejce i powoduje
+  jawną decyzję later_local_intent; finish nie nadpisuje jej danymi serwera.
+- SourceOperationId ma rewizję swojego własnego zapisanego ACK/receipt.
+  Wcześniejsza rewizja projekcji pozostaje oddzielnym dowodem. Zgodny receipt
+  update2/revision2 daje dokładną rewizję2; brak receipt zachowuje null dla
+  niepewnej próby, a sprzeczna odmowa blokuje odzyskiwanie.
+- Reconciliation raw pages są staging. acceptCompletedSnapshot publikuje aktywny
+  checkpoint i typed ledger dopiero po pełnej walidacji całej kopii w jednej
+  transakcji. Zwykły snapshot zachowuje dotychczasowe wejście.
+
+Regresje15native obejmują także oba rodzaje późniejszej intencji (create oraz
+update z potwierdzoną bazą), >100receipts, target innego urządzenia, poprawną
+historyczną rezerwację i jej niedopuszczalne użycie, brak/zgodny/odmowny receipt.
+Pierwsza wersja rozszerzonej regresji wykryła pomieszanie knownProjectionRevision
+z SourceRevision; odrębny dowód wcześniejszego ACK nadal chroni same-epoch absence.

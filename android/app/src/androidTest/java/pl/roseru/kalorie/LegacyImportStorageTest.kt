@@ -122,4 +122,93 @@ class LegacyImportStorageTest {
             assertEquals(legacy,db.dao().operation(legacy.operationId))
         } finally {db.close()}
     }
+    private suspend fun guestMeal(db:CalorieDatabase):String {
+        LocalOwnerStore(db).ensureGuest();val id=uuid()
+        db.dao().insertMeal(MealEntity(id,"guest","2001-01-02","2001-01-02T12:00:00Z","UTC","LUNCH"))
+        db.dao().insertItem(MealItemEntity("item-"+id,id,"basic-rice","Historical rice",50.0,100.125,null,0.0,12.5))
+        return id
+    }
+    private suspend fun imported(db:CalorieDatabase,lease:OwnerLease):Pair<ImportProgress,ImportSource> {
+        val store=LegacyImportStore(db,schema);val plan=store.preview(lease,"guest");approve(store,lease,plan);store.resume(lease,plan.planId)
+        return plan to db.importDao().sources(plan.planId).single {it.entityType=="meal"}
+    }
+    @Test fun newPlansNeverReinstallUnchangedOriginAfterTargetEditLostAckRestartAndFullPull()=runBlocking<Unit> {
+        val name="origin-resume-${uuid()}"
+        fun open()=Room.databaseBuilder(context,CalorieDatabase::class.java,name).addCallback(DATABASE_GUARDS).build()
+        var db=open()
+        try {
+            val guestId=guestMeal(db);val lease=account(db);val (first,source)=imported(db,lease)
+            val push=MealPushStore(db,schema);val sent=push.prepare(lease)!!;push.markAttempted(sent);push.applyAck(push.prepareAck(sent,200,reply(sent)))
+            val local=db.dao().meal(source.localId,lease.storageScope)!!
+            assertTrue(CanonicalMealEditor(db,context,lease).change(source.localId,local.items.single().id,"25"))
+            val frozen=push.prepare(lease)!!;push.markAttempted(frozen)
+            val target=db.dao().meal(source.localId,lease.storageScope)!!;val operation=db.dao().operation(frozen.operations.single().operationId)!!
+            val bytes=frozen.batch.body();val hash=frozen.batch.sha256
+            db.dao().saveWeight(WeightEntity("guest-new-1","guest","2001-01-03","2001-01-03T12:00:00Z","UTC",81.125))
+            db.close();db=open();var store=LegacyImportStore(db,schema)
+            val second=store.preview(lease,"guest");assertNotEquals(first.planId,second.planId)
+            val same=db.importDao().source(second.planId,"meal",guestId)!!
+            assertEquals("already_imported",same.state);assertNull(same.decisionCode)
+            approve(store,lease,second);store.resume(lease,second.planId)
+            assertEquals(target,db.dao().meal(source.localId,lease.storageScope));assertEquals(operation,db.dao().operation(operation.operationId))
+            assertArrayEquals(bytes,db.pushDao().batch(frozen.id)!!.requestJson.toByteArray());assertEquals(hash,db.pushDao().batch(frozen.id)!!.requestHash)
+            val snapshots=ServerSnapshotStore(db,SnapshotProtocol(schema));val request=snapshots.begin(lease)
+            val original=JSONObject().put("entity_id",source.wireId).put("entity_type","meal").put("revision",1)
+                .put("deleted",false).put("payload",JSONObject(sent.operations.single().payload))
+            val page=JSONObject().put("sync_epoch",epoch).put("mode","snapshot").put("snapshot_token","synthetic-origin-pull")
+                .put("page_token",JSONObject.NULL).put("checkpoint","synthetic-origin-checkpoint").put("server_time","2026-10-23T14:00:00Z")
+                .put("goal_timeline_revision",0).put("entities",JSONArray().put(original)).put("recovery_mappings",JSONArray()).put("operation_receipts",JSONArray())
+            assertNull(snapshots.apply(request,page.toString().toByteArray()));ServerDiaryStore(db,schema).apply(lease,request.runId)
+            assertEquals(target,db.dao().meal(source.localId,lease.storageScope))
+            db.dao().saveWeight(WeightEntity("guest-new-2","guest","2001-01-04","2001-01-04T12:00:00Z","UTC",82.125))
+            store=LegacyImportStore(db,schema);val third=store.preview(lease,"guest");assertNotEquals(second.planId,third.planId)
+            assertEquals("already_imported",db.importDao().source(third.planId,"meal",guestId)!!.state)
+            assertEquals("already_imported",db.importDao().source(third.planId,"weight","guest-new-1")!!.state)
+            approve(store,lease,third);store.resume(lease,third.planId)
+            assertEquals(target,db.dao().meal(source.localId,lease.storageScope));assertEquals(operation,db.dao().operation(operation.operationId))
+            assertArrayEquals(bytes,db.pushDao().batch(frozen.id)!!.requestJson.toByteArray())
+            assertEquals(2,db.openHelper.readableDatabase.query("SELECT COUNT(*) FROM outbox WHERE ownerScope=? AND entityType='meal'",arrayOf(lease.storageScope)).use {it.moveToFirst();it.getInt(0)})
+            assertEquals(first.planId,db.importDao().origin("guest","meal",guestId)!!.firstPlanId)
+            assertEquals(50.0,db.dao().meal(guestId,"guest")!!.items.single().grams,0.0)
+        } finally {db.close();context.deleteDatabase(name)}
+    }
+    @Test fun changedImportedSourceRequiresExplicitSeparateCopyAndNeverOverwritesFrozenTarget()=runBlocking<Unit> {
+        val db=Room.inMemoryDatabaseBuilder(context,CalorieDatabase::class.java).addCallback(DATABASE_GUARDS).build()
+        try {
+            val guestId=guestMeal(db);val lease=account(db);val (first,source)=imported(db,lease)
+            val originalSource=db.importDao().source(first.planId,"meal",guestId)!!
+            val push=MealPushStore(db,schema);val sent=push.prepare(lease)!!;push.markAttempted(sent);push.applyAck(push.prepareAck(sent,200,reply(sent)))
+            val local=db.dao().meal(source.localId,lease.storageScope)!!
+            CanonicalMealEditor(db,context,lease).change(source.localId,local.items.single().id,"25")
+            val frozen=push.prepare(lease)!!;push.markAttempted(frozen)
+            val target=db.dao().meal(source.localId,lease.storageScope)!!;val operation=db.dao().operation(frozen.operations.single().operationId)!!
+            val guest=db.dao().meal(guestId,"guest")!!
+            db.dao().updateMeal(guest.meal.copy(localRevision=2));db.dao().updateItem(guest.items.single().copy(grams=75.0))
+            val sourceEdit=OutboxEntity(uuid(),"guest","meal",guestId,"update",null,"{\"grams\":75}","2026-10-23T12:00:00Z")
+            db.dao().enqueue(sourceEdit)
+            val store=LegacyImportStore(db,schema);val second=store.preview(lease,"guest");approve(store,lease,second)
+            val changed=db.importDao().source(second.planId,"meal",guestId)!!
+            assertEquals("previously_imported_source_changed",changed.decisionCode)
+            assertNotEquals(originalSource.originFingerprint,changed.originFingerprint)
+            store.resume(lease,second.planId)
+            assertEquals(target,db.dao().meal(source.localId,lease.storageScope));assertEquals(operation,db.dao().operation(operation.operationId))
+            rejects {store.decide(lease,second.planId,"meal",guestId,changed.sourceHash,"{\"choice\":\"metadata\"}")}
+            store.decide(lease,second.planId,"meal",guestId,changed.sourceHash,"{\"choice\":\"new_identity\"}")
+            store.resume(lease,second.planId)
+            val separate=db.importDao().source(second.planId,"meal",guestId)!!
+            assertEquals("queued",separate.state);assertNotEquals(source.localId,separate.localId);assertNotEquals(source.wireId,separate.wireId)
+            assertEquals(75.0,db.dao().meal(separate.localId,lease.storageScope)!!.items.single().grams,0.0)
+            assertEquals(target,db.dao().meal(source.localId,lease.storageScope));assertEquals(operation,db.dao().operation(operation.operationId))
+            assertArrayEquals(frozen.batch.body(),db.pushDao().batch(frozen.id)!!.requestJson.toByteArray())
+            assertEquals(originalSource,db.importDao().source(first.planId,"meal",guestId))
+            assertEquals(sourceEdit,db.dao().operation(sourceEdit.operationId))
+            db.dao().saveWeight(WeightEntity("new-after-copy","guest","2001-01-04","2001-01-04T12:00:00Z","UTC",82.125))
+            val third=store.preview(lease,"guest")
+            assertEquals("already_imported",db.importDao().source(third.planId,"meal",guestId)!!.state)
+            approve(store,lease,third);store.resume(lease,third.planId)
+            assertEquals(target,db.dao().meal(source.localId,lease.storageScope));assertEquals(operation,db.dao().operation(operation.operationId))
+            assertEquals(first.planId,db.importDao().origin("guest","meal",guestId)!!.firstPlanId)
+        } finally {db.close()}
+    }
+
 }

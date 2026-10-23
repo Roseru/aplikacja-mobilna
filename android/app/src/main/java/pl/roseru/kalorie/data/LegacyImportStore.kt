@@ -13,7 +13,8 @@ import java.util.UUID
 
 class ImportContextChangedException:IllegalStateException("Konto lub źródło importu zmieniło się; odśwież podsumowanie")
 data class ImportProgress(val planId:String,val account:String,val issuer:String,val subject:String,
-    val state:String,val total:Int,val queued:Int,val acknowledged:Int,val retained:Int,val decisions:List<ImportIssue>)
+    val state:String,val total:Int,val queued:Int,val acknowledged:Int,val retained:Int,val decisions:List<ImportIssue>,
+    val alreadyImported:Int=0,val pending:Int=0,val waiting:Int=0)
 data class ImportIssue(val type:String,val sourceId:String,val code:String)
 
 /** Consent, source capture and each materialized chunk commit in independent durable transactions. */
@@ -49,22 +50,32 @@ class LegacyImportStore(private val db:CalorieDatabase,private val schema:SyncWi
             val plan=ImportPlan(UUID.randomUUID().toString(),sourceScope,lease.storageScope,context.accountId,
                 checkNotNull(target.issuer),checkNotNull(target.subject),kind,fingerprint,wireContext,Instant.now().toString())
             dao.insert(plan)
+            val linkedOperations=dao.linkedOperations().toSet()
             for((ordinal,entry) in captured.withIndex()) {
                 val (type,json)=entry;val root=StrictJson.read(json.toByteArray());val row=root.getJSONObject("row")
-                val id=row.getString("id");val alias=dao.identities(lease.storageScope).firstOrNull {
+                val id=row.getString("id")
+                val originFingerprint=importOriginFingerprint(json,linkedOperations)
+                val origin=dao.origin(sourceScope,type,id)
+                if(origin!=null)check(origin.targetScope==lease.storageScope)
+                val prior=dao.originHistory(sourceScope,lease.storageScope,type,id).firstOrNull {
+                    it.operationId!=null && it.originFingerprint==originFingerprint }
+                val alias=dao.identities(lease.storageScope).firstOrNull {
+                    it.entityType==type && it.localId==(prior?.localId ?: "") } ?: dao.identities(lease.storageScope).firstOrNull {
                     it.entityType==type && it.sourceScope==sourceScope && it.sourceId==id }
-                val wireId=alias?.wireId ?: validUuid(id) ?: UUID.randomUUID().toString()
+                val wireId=alias?.wireId ?: prior?.wireId ?: validUuid(id) ?: UUID.randomUUID().toString()
                 // Room uses global primary keys. A retained source needs a separate local projection ID.
-                val localId=alias?.localId ?: if(sourceScope==lease.storageScope)id else UUID.randomUUID().toString()
+                val localId=alias?.localId ?: prior?.localId ?: if(sourceScope==lease.storageScope)id else UUID.randomUUID().toString()
                 val outboxes=root.getJSONArray("outboxes")
                 val uncertain=(0 until outboxes.length()).any { i->val op=outboxes.getJSONObject(i)
                     op.optInt("attempted")==1 && op.optString("status") !in setOf("acked","superseded","local_only") }
                 val collision=dao.wire(lease.storageScope,type,wireId)?.let {it.localId!=localId}==true ||
                     db.serverDiaryDao().records(lease.storageScope).any {it.entityType==type && it.entityId==wireId &&
                         (sourceScope!=lease.storageScope || it.localId!=id)}
-                val issue=when {uncertain->"uncertain_original_operation";collision->"uuid_collision";else->null}
+                val issue=when {prior!=null->null;origin!=null->"previously_imported_source_changed"
+                    uncertain->"uncertain_original_operation";collision->"uuid_collision";else->null}
                 dao.insert(ImportSource(plan.id,type,id,ordinal,json,digest(json),StrictJson.canonical(outboxes),localId,wireId,
-                    state=if(issue==null)"pending" else "decision",decisionCode=issue))
+                    state=if(prior!=null)"already_imported" else if(issue==null)"pending" else "decision",decisionCode=issue,
+                    originFingerprint=originFingerprint))
             }
             progress(plan)
         }
@@ -95,14 +106,15 @@ class LegacyImportStore(private val db:CalorieDatabase,private val schema:SyncWi
         db.withTransaction {
             val plan=current(lease,planId);check(plan.approvedAt!=null)
             val row=checkNotNull(dao.source(planId,type,id));require(row.sourceHash==expectedHash)
-            check(row.operationId==null && row.state !in setOf("retained","acked"))
+            check(row.operationId==null && row.state !in setOf("retained","acked","already_imported"))
             // An uncertain attempted operation needs receipts/replay reconciliation, not a second import.
             if(row.decisionCode=="uncertain_original_operation") require(choice.getString("choice")=="keep_local")
             if(row.decisionCode=="uuid_collision") require(choice.getString("choice") in setOf("new_identity","keep_local"))
+            if(row.decisionCode=="previously_imported_source_changed") require(choice.getString("choice") in setOf("new_identity","keep_local"))
             dao.insert(ImportDecision(UUID.randomUUID().toString(),planId,type,id,expectedHash,canonical,Instant.now().toString()))
             dao.update(when(choice.getString("choice")) {
                 "keep_local"->row.copy(state="retained",decisionCode=null,metadataJson=canonical)
-                "new_identity"->row.copy(wireId=UUID.randomUUID().toString(),state="pending",decisionCode=null,metadataJson=canonical)
+                "new_identity"->row.copy(wireId=UUID.randomUUID().toString(),localId=UUID.randomUUID().toString(),state="pending",decisionCode=null,metadataJson=canonical)
                 else->row.copy(metadataJson=canonical,state="pending",decisionCode=null)
             })
             progress(plan)
@@ -123,6 +135,17 @@ class LegacyImportStore(private val db:CalorieDatabase,private val schema:SyncWi
             var axis=db.domainSyncDao().timeline(lease.storageScope)?.revision ?: Math.toIntExact(checkNotNull(gate.run.timelineRevision))
             axis=Math.addExact(axis,db.domainSyncDao().unsettled(lease.storageScope).count {it.entityType=="goal"})
             for(row in rows.filter {it.state in setOf("pending","waiting_dependency")}.take(limit)) {
+                // Another approved plan may have materialized this source since this preview.
+                val origin=dao.origin(plan.sourceScope,row.entityType,row.sourceId)
+                if(origin!=null) {
+                    check(origin.targetScope==plan.targetScope)
+                    val prior=dao.originHistory(plan.sourceScope,plan.targetScope,row.entityType,row.sourceId).firstOrNull {
+                        it.planId!=plan.id && it.operationId!=null && it.originFingerprint==row.originFingerprint }
+                    if(prior!=null) {dao.update(row.copy(state="already_imported",decisionCode=null));continue}
+                    if(StrictJson.read(row.metadataJson.toByteArray()).optString("choice")!="new_identity") {
+                        dao.update(row.copy(state="decision",decisionCode="previously_imported_source_changed"));continue
+                    }
+                }
                 val root=StrictJson.read(row.sourceJson.toByteArray());val original=root.getJSONObject("row")
                 val items=root.getJSONArray("items")
                 val itemIds=(0 until items.length()).associate {i->val id=items.getJSONObject(i).getString("id")
@@ -168,6 +191,7 @@ class LegacyImportStore(private val db:CalorieDatabase,private val schema:SyncWi
                         it.wireFormat!="sync-v1" && !it.attempted}.forEach {db.dao().updateOperation(it.copy(status="superseded"))}
                 }
                 dao.update(row.copy(state="queued",decisionCode=null,operationId=opId,appliedPayload=payload))
+                dao.insert(ImportOrigin(plan.sourceScope,row.entityType,row.sourceId,plan.targetScope,plan.id,opId,row.originFingerprint))
                 if(row.entityType=="goal")axis=Math.addExact(axis,1)
             }
             val state=refresh(plan);progress(state)
@@ -205,7 +229,7 @@ class LegacyImportStore(private val db:CalorieDatabase,private val schema:SyncWi
             else if(operation?.status in setOf("conflict","rejected"))dao.update(source.copy(state="decision",decisionCode="server_${operation?.status}"))
         }
         val updated=dao.sources(plan.id)
-        val state=when {updated.all {it.state in setOf("acked","retained")}->"complete"
+        val state=when {updated.all {it.state in setOf("acked","retained","already_imported")}->"complete"
             updated.any {it.state=="decision"}->"decisions";else->"running"}
         return plan.copy(state=state).also {dao.update(it)}
     }
@@ -213,7 +237,8 @@ class LegacyImportStore(private val db:CalorieDatabase,private val schema:SyncWi
         val rows=dao.sources(plan.id)
         return ImportProgress(plan.id,plan.targetAccountId,plan.issuer,plan.subject,plan.state,rows.size,
             rows.count {it.state=="queued"},rows.count {it.state=="acked"},rows.count {it.state=="retained"},
-            rows.filter {it.state=="decision"}.map {ImportIssue(it.entityType,it.sourceId,it.decisionCode ?: "decision_required")})
+            rows.filter {it.state=="decision"}.map {ImportIssue(it.entityType,it.sourceId,it.decisionCode ?: "decision_required")},
+            alreadyImported=rows.count {it.state=="already_imported"},pending=rows.count {it.state=="pending"},waiting=rows.count {it.state=="waiting_dependency"})
     }
     /** Full database rows (including records without outbox), exact embedded snapshots and original bodies. */
     internal suspend fun capture(scope:String,guest:Boolean):List<Pair<String,String>> {
