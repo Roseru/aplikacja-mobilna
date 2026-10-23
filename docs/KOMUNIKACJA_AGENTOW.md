@@ -6217,3 +6217,10 @@ Archiwalne wiersze stanu przed integracją PR141 z main22.10; aktualny stan znaj
   gdzie nie edytujesz jego zarezerwowanych plików. O1 nie podpisuje odczytu
   za O2. Wszystkie pytania i wyniki nadal w tym jednym pliku.
 - Kontrole pakietu: E0 PASS (11 schematów,98 valid/35 invalid,18 scenariuszy,836 linków), diff-check PASS; manifest obejmuje836plików i9198358bajtów źródeł z przypiętej bazy. Bez uruchamiania dodatkowego Gradle/JVM/PG dla tej dokumentacji.
+- Publikacja pakietu: commit[4dd61c5](https://github.com/Roseru/aplikacja-mobilna/commit/4dd61c595fe5179b2f89bb347fe36808006cc101) wypchnięty na `codex/docs-pakiet-android-o2`.
+  [Źródła tego commita w GitHub ZIP](https://github.com/Roseru/aplikacja-mobilna/archive/4dd61c595fe5179b2f89bb347fe36808006cc101.zip) umożliwiają pobranie pełnego repo bez dostępu do komputera O1.
+  Dodatkowy lokalny wybrany pakiet `Agent2-Android-0.8.27-4dd61c5.zip`:2439842B,
+  SHA256 `fc96c843e5932d38b2d5e6e40e2c74277c5071b4551070d2079ed952f5208ee5`,840plików ze sprawdzonymi sumami/CRC.
+  To suma wybranego pakietu, nie automatycznego ZIP generowanego przez GitHub.
+  834pliki bazowe identyczne; AGENTS i dziennik zawierają jawną aktualizację przekazania. Kod aplikacji bez zmiany.
+  O2 może odczytać instrukcję z gałęzi już teraz i rozpocząć A od main; nie musi scalać gałęzi organizacyjnej do własnego kodu.
