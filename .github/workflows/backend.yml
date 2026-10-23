@@ -13,8 +13,12 @@ env:
 jobs:
   contracts:
     runs-on: ubuntu-latest
+    outputs:
+      plan: ${{ steps.scope.outputs.plan }}
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          fetch-depth: 0
       - uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7.0.0
         with:
           python-version: '3.13'
@@ -22,9 +26,16 @@ jobs:
         with:
           version: '0.9.5'
       - run: uv sync --project tools/contracts --locked
+      - name: Test scope, gate and workflow wiring in every mode
+        run: uv run --project tools/contracts --locked --offline python -m unittest discover -s tools/tests -p test_ci_scope.py -v
       - run: python backend/sync_catalog_schemas.py --check
       - run: uv run --project tools/contracts --locked --offline python tools/contracts/validate.py
+      - name: Qualify the exact tested Git range
+        id: scope
+        run: python tools/ci_scope.py classify
   quality:
+    needs: [contracts]
+    if: ${{ needs.contracts.result == 'success' && fromJSON(needs.contracts.outputs.plan).mode == 'full' }}
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
@@ -35,8 +46,8 @@ jobs:
         with:
           version: '0.9.5'
       - run: uv sync --project backend --locked
-      - run: uv run --project backend --locked ruff check --config backend/pyproject.toml backend tools/ai_reference tools/offline_catalog tools/sync_client infra/local infra/integration tools/android_ci.py tools/tests/test_android_ci.py
-      - run: uv run --project backend --locked ruff format --check --config backend/pyproject.toml backend tools/ai_reference tools/offline_catalog tools/sync_client infra/local infra/integration tools/android_ci.py tools/tests/test_android_ci.py
+      - run: uv run --project backend --locked ruff check --config backend/pyproject.toml backend tools/ai_reference tools/offline_catalog tools/sync_client infra/local infra/integration tools/android_ci.py tools/tests/test_android_ci.py tools/ci_scope.py tools/tests/test_ci_scope.py
+      - run: uv run --project backend --locked ruff format --check --config backend/pyproject.toml backend tools/ai_reference tools/offline_catalog tools/sync_client infra/local infra/integration tools/android_ci.py tools/tests/test_android_ci.py tools/ci_scope.py tools/tests/test_ci_scope.py
       - run: uv run --project backend --locked python -m pytest backend/tests/unit
       - run: uv run --project backend --locked python -m pytest infra/integration/tests --tb=short
       - run: uv build backend
@@ -71,6 +82,8 @@ jobs:
             -f http://127.0.0.1:8000/health/live
           test "$(curl -s -o /tmp/e1-health.json -w '%{http_code}' http://127.0.0.1:8000/health/ready)" = 503
   postgres:
+    needs: [contracts]
+    if: ${{ needs.contracts.result == 'success' && fromJSON(needs.contracts.outputs.plan).mode == 'full' }}
     runs-on: ubuntu-latest
     services:
       postgres:
@@ -178,6 +191,8 @@ jobs:
           test "$(curl -s -o "$storage/no-official.json" -w '%{http_code}' http://127.0.0.1:8000/api/v1/offline-package/manifest)" = 404
           jq -e '.code == "not_found" and .details == []' "$storage/no-official.json"
   keycloak-pkce:
+    needs: [contracts]
+    if: ${{ needs.contracts.result == 'success' && fromJSON(needs.contracts.outputs.plan).mode == 'full' }}
     runs-on: ubuntu-latest
     timeout-minutes: 15
     services:
@@ -225,6 +240,8 @@ jobs:
             --home "$RUNNER_TEMP/e3-keycloak-dist/keycloak-26.8.0" \
             --java-home "$JAVA_HOME" --state "$RUNNER_TEMP/e3-keycloak"
   android-build:
+    needs: [contracts]
+    if: ${{ needs.contracts.result == 'success' && fromJSON(needs.contracts.outputs.plan).mode == 'full' }}
     runs-on: ubuntu-latest
     timeout-minutes: 30
     steps:
@@ -292,6 +309,8 @@ jobs:
           if-no-files-found: error
           retention-days: 14
   android-device:
+    needs: [contracts]
+    if: ${{ needs.contracts.result == 'success' && fromJSON(needs.contracts.outputs.plan).mode == 'full' }}
     runs-on: ubuntu-latest
     timeout-minutes: 40
     steps:
@@ -355,6 +374,8 @@ jobs:
           if-no-files-found: error
           retention-days: 14
   local-integration:
+    needs: [contracts]
+    if: ${{ needs.contracts.result == 'success' && fromJSON(needs.contracts.outputs.plan).mode == 'full' }}
     runs-on: ubuntu-latest
     timeout-minutes: 35
     steps:
@@ -433,11 +454,12 @@ jobs:
             --state "${{ runner.temp }}/calorie-integration"
   ci-required:
     if: always()
+    timeout-minutes: 5
     needs: [contracts, quality, postgres, keycloak-pkce, android-build, android-device, local-integration]
     runs-on: ubuntu-latest
     steps:
-      - name: Require actual successful checks
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - name: Require the exact planned results
         env:
           RESULTS: ${{ toJSON(needs) }}
-        run: |
-          echo "$RESULTS" | jq -e 'all(.[]; .result == "success")'
+        run: python tools/ci_scope.py gate
