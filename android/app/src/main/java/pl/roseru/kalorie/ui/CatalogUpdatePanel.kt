@@ -49,6 +49,7 @@ import java.time.format.FormatStyle
             TextButton(onClick=onRetryLocal){Text("Ponów odczyt zapisanej bazy")}
         }
         if(!state.configured)Text("Aktualizacje bazy nie są jeszcze dostępne w tej wersji aplikacji.")
+        else if(state.networkUnavailable)Text("Sieć aplikacji jest wstrzymana do odczytania ustawień. Zapisana baza pozostaje dostępna offline.")
         else if(!state.networkAllowed)Text("Blokada sieci jest włączona. Zapisana baza pozostaje dostępna w trybie poligonowym.",
             modifier=Modifier.testTag("catalog-network-blocked"))
         when(state.phase) {

@@ -10,6 +10,7 @@ import kotlinx.coroutines.flow.flowOn
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.withContext
 import pl.roseru.kalorie.core.catalog.*
+import pl.roseru.kalorie.core.network.*
 import pl.roseru.kalorie.data.CalorieDatabase
 import pl.roseru.kalorie.data.CatalogGenerationEntity
 import pl.roseru.kalorie.data.CatalogStore
@@ -30,12 +31,12 @@ data class CatalogInstallation(val active:CatalogManifest,val activated:Boolean)
 
 /** Uses the same validated generation store as the bundled package; never touches a diary/outbox. */
 class CatalogUpdateRepository internal constructor(private val db:CalorieDatabase,private val schema:CatalogSchema,
-    private val gateway:CatalogDownloadGateway?,private val gate:CatalogNetworkGate,private val cache:File,private val retries:CatalogRetryStore,
+    private val gateway:CatalogDownloadGateway?,private val gate:NetworkAccessGate,private val cache:File,private val retries:CatalogRetryStore,
     private val now:()->Long=System::currentTimeMillis) {
     private val reader=CatalogPackageReader(schema,CatalogPackageReader.OFFICIAL_ID,"official")
     @Volatile private var retryAtMemory=0L
     val configured:Boolean get()=gateway!=null
-    val networkAllowed get()=gate.allowed
+    val networkState get()=gate.state
     val installed:Flow<List<InstalledCatalog>> = db.catalogDao().activeGenerations().map { rows->
         rows.map { row->
             try {InstalledCatalog.Ready(description(row))}
@@ -77,7 +78,6 @@ class CatalogUpdateRepository internal constructor(private val db:CalorieDatabas
             check(it.release==row.release && it.sha256==row.sha256)
         }
     }
-    private fun permitted() {if(!gate.allowed.value)throw CatalogNetworkBlocked()}
     private fun retry(value:String?):CatalogCheck.RetryAt {
         val at=now()
         val delay=pl.roseru.kalorie.session.BootstrapHttpProtocol.retrySeconds(value,at)
@@ -88,16 +88,17 @@ class CatalogUpdateRepository internal constructor(private val db:CalorieDatabas
     }
     suspend fun check():CatalogCheck=withContext(Dispatchers.IO) {
         val client=gateway?:return@withContext CatalogCheck.NotConfigured
-        permitted()
+        val permit=gate.captureAllowed()
         val deadline=maxOf(retryAtMemory,retries.deadline())
         if(deadline>now())return@withContext CatalogCheck.RetryAt(deadline)
-        when(val response=client.manifest()) {
+        when(val response=client.manifest(permit)) {
             is CatalogHttpResult.Missing->CatalogCheck.NotPublished
             is CatalogHttpResult.Retry->retry(response.value)
             is CatalogHttpResult.Success->{
-                permitted();ensureActive()
+                gate.requireCurrent(permit);ensureActive()
                 val candidate=reader.inspect(checkNotNull(response.bytes).inputStream())
                 db.withTransaction {
+                    gate.requireCurrent(permit)
                     val active=db.catalogDao().active(candidate.packageId)
                     val local=active?.let{checkNotNull(db.catalogDao().generationById(it.generationId))}?.let(::description)
                     if(local!=null && local.release>=candidate.release) {
@@ -112,27 +113,29 @@ class CatalogUpdateRepository internal constructor(private val db:CalorieDatabas
     /** Retry/missing never stages a generation or changes the active release. */
     internal suspend fun download(manifest:CatalogManifest,progress:(Long,Long)->Unit,validating:()->Unit={}):CatalogDownloadResult=withContext(Dispatchers.IO) {
         val client=gateway?:return@withContext CatalogDownloadResult.NotConfigured
-        permitted();ensureActive()
+        val permit=gate.captureAllowed();ensureActive()
         val deadline=maxOf(retryAtMemory,retries.deadline())
         if(deadline>now())return@withContext CatalogDownloadResult.RetryAt(deadline)
         require(manifest.packageId==CatalogPackageReader.OFFICIAL_ID && manifest.kind=="official")
         check(cache.isDirectory || cache.mkdirs())
         val temporary=File.createTempFile("catalog-",".download",cache)
         try {
-            when(val response=client.download(manifest,temporary,progress)) {
+            when(val response=client.download(manifest,temporary,permit,progress)) {
                 is CatalogHttpResult.Missing->CatalogDownloadResult.Missing
                 is CatalogHttpResult.Retry->CatalogDownloadResult.RetryAt(retry(response.value).epochMillis)
                 is CatalogHttpResult.Success->{
-                    permitted();ensureActive()
+                    gate.requireCurrent(permit);ensureActive()
                     validating()
                     val value=reader.read(manifest,temporary.inputStream())
-                    permitted();ensureActive()
+                    gate.requireCurrent(permit);ensureActive()
                     val store=CatalogStore(db)
                     val installed=db.withTransaction {
                         // Both stage and activate roll back together on cancellation or failure.
                         currentCoroutineContext().ensureActive()
+                        gate.requireCurrent(permit)
                         val staged=store.stage(value)
                         currentCoroutineContext().ensureActive()
+                        gate.requireCurrent(permit)
                         val activated=store.activate(staged)
                         val current=checkNotNull(db.catalogDao().active(manifest.packageId))
                         val currentValue=description(checkNotNull(db.catalogDao().generationById(current.generationId)))

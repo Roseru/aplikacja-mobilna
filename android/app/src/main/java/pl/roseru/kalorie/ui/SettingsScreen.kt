@@ -17,7 +17,8 @@ import pl.roseru.kalorie.core.decimal
 import pl.roseru.kalorie.data.GoalEntity
 import pl.roseru.kalorie.data.ThemeMode
 
-@Composable fun SettingsScreen(model: DiaryViewModel,catalogModel:pl.roseru.kalorie.catalogupdate.CatalogUpdateViewModel?=null) {
+@Composable fun SettingsScreen(model: DiaryViewModel,catalogModel:pl.roseru.kalorie.catalogupdate.CatalogUpdateViewModel?=null,
+    networkModel:pl.roseru.kalorie.core.network.NetworkPolicyViewModel?=null) {
     val theme by model.theme.collectAsStateWithLifecycle()
     val goal by model.todayGoal.collectAsStateWithLifecycle()
     val busy by model.busy.collectAsStateWithLifecycle()
@@ -32,6 +33,10 @@ import pl.roseru.kalorie.data.ThemeMode
         Text("Nowe ustawienia obowiązują od dzisiaj. Cele wcześniejszych dni pozostają zapisane.", color = MaterialTheme.colorScheme.onSurfaceVariant)
         goal?.let { current -> GoalEditor(current, busy, onSave = model::setGoal) }
         HorizontalDivider()
+        if(networkModel!=null) {
+            NetworkPolicyPanel(networkModel)
+            HorizontalDivider()
+        }
         if(catalogModel!=null) {
             CatalogUpdatePanel(catalogModel)
             HorizontalDivider()

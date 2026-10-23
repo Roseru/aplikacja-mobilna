@@ -5,13 +5,14 @@ import androidx.lifecycle.viewModelScope
 import kotlinx.coroutines.*
 import kotlinx.coroutines.flow.*
 import pl.roseru.kalorie.core.catalog.CatalogManifest
+import pl.roseru.kalorie.core.network.*
 import java.util.UUID
 import java.util.concurrent.atomic.AtomicReference
 
 enum class CatalogUpdatePhase { IDLE,CHECKING,AVAILABLE,DOWNLOADING,VERIFYING,INSTALLED,CURRENT,NOT_PUBLISHED,
     NOT_CONFIGURED,RETRY_LATER,BLOCKED,CANCELLED,FAILED }
 data class CatalogUpdateState(val installed:List<InstalledCatalog> = emptyList(),val localReadFailed:Boolean=false,
-    val configured:Boolean=false,val networkAllowed:Boolean=false,val phase:CatalogUpdatePhase=CatalogUpdatePhase.IDLE,
+    val configured:Boolean=false,val networkAllowed:Boolean=false,val networkUnavailable:Boolean=true,val phase:CatalogUpdatePhase=CatalogUpdatePhase.IDLE,
     val available:CatalogManifest?=null,val received:Long=0,val expected:Long=0,val retryAt:Long=0,
     val checkedAt:Long?=null,val serverOlder:Boolean=false) {
     val busy:Boolean get()=phase in setOf(CatalogUpdatePhase.CHECKING,CatalogUpdatePhase.DOWNLOADING,CatalogUpdatePhase.VERIFYING)
@@ -19,10 +20,12 @@ data class CatalogUpdateState(val installed:List<InstalledCatalog> = emptyList()
 
 class CatalogUpdateViewModel(private val repository:CatalogUpdateRepository,
     private val now:()->Long=System::currentTimeMillis):ViewModel() {
-    private val mutable=MutableStateFlow(CatalogUpdateState(configured=repository.configured,networkAllowed=repository.networkAllowed.value))
+    private val mutable=MutableStateFlow(CatalogUpdateState(configured=repository.configured,
+        networkAllowed=repository.networkState.value is NetworkAccessState.Allowed,networkUnavailable=repository.networkState.value==NetworkAccessState.Unavailable))
     val state:StateFlow<CatalogUpdateState> = mutable.asStateFlow()
     private val token=AtomicReference<String?>(null)
     private var operation:Job?=null
+    private var operationPolicy:NetworkAccessState?=null
     private val sourceView=MutableStateFlow<CatalogSourcesState>(CatalogSourcesState.Closed)
     val sources:StateFlow<CatalogSourcesState> = sourceView.asStateFlow()
     private var sourceJob:Job?=null
@@ -31,9 +34,10 @@ class CatalogUpdateViewModel(private val repository:CatalogUpdateRepository,
     init {
         retryLocalRead()
         viewModelScope.launch {
-            repository.networkAllowed.collect {allowed->
-                if(!allowed && mutable.value.busy)stop(CatalogUpdatePhase.BLOCKED)
-                mutable.update { old->old.copy(networkAllowed=allowed,phase=if(allowed && old.phase==CatalogUpdatePhase.BLOCKED)
+            repository.networkState.collect {policy->
+                val allowed=policy is NetworkAccessState.Allowed
+                if(mutable.value.busy && policy!=operationPolicy)stop(if(allowed)CatalogUpdatePhase.CANCELLED else CatalogUpdatePhase.BLOCKED)
+                mutable.update { old->old.copy(networkAllowed=allowed,networkUnavailable=policy==NetworkAccessState.Unavailable,phase=if(allowed && old.phase==CatalogUpdatePhase.BLOCKED)
                     if(old.available!=null)CatalogUpdatePhase.AVAILABLE else CatalogUpdatePhase.IDLE else old.phase) }
             }
         }
@@ -88,6 +92,7 @@ class CatalogUpdateViewModel(private val repository:CatalogUpdateRepository,
     private fun stop(phase:CatalogUpdatePhase) {
         token.set(null)
         operation?.cancel();operation=null
+        operationPolicy=null
         mutable.update{it.copy(phase=phase,received=0,expected=0)}
     }
     private fun change(id:String,action:(CatalogUpdateState)->CatalogUpdateState) {
@@ -97,18 +102,21 @@ class CatalogUpdateViewModel(private val repository:CatalogUpdateRepository,
         val current=mutable.value
         if(current.busy)return
         if(!current.configured){mutable.update{it.copy(phase=CatalogUpdatePhase.NOT_CONFIGURED)};return}
-        if(!repository.networkAllowed.value){mutable.update{it.copy(phase=CatalogUpdatePhase.BLOCKED)};return}
+        val policy=repository.networkState.value
+        if(policy !is NetworkAccessState.Allowed){mutable.update{it.copy(phase=CatalogUpdatePhase.BLOCKED)};return}
         if(current.retryAt>now()){mutable.update{it.copy(phase=CatalogUpdatePhase.RETRY_LATER)};return}
         val id=UUID.randomUUID().toString();token.set(id)
+        operationPolicy=policy
         mutable.update{it.copy(phase=phase)}
         val job=viewModelScope.launch(start=CoroutineStart.LAZY) {
             try {action(id)}
             catch(error:CancellationException){throw error}
-            catch(_:CatalogNetworkBlocked){change(id){it.copy(phase=CatalogUpdatePhase.BLOCKED)}}
-            catch(_:Exception){change(id){it.copy(phase=if(repository.networkAllowed.value)CatalogUpdatePhase.FAILED else CatalogUpdatePhase.BLOCKED)}}
+            catch(_:NetworkAccessDenied){change(id){it.copy(phase=if(repository.networkState.value is NetworkAccessState.Allowed)CatalogUpdatePhase.CANCELLED else CatalogUpdatePhase.BLOCKED)}}
+            catch(_:Exception){change(id){it.copy(phase=if(repository.networkState.value is NetworkAccessState.Allowed)CatalogUpdatePhase.FAILED else CatalogUpdatePhase.BLOCKED)}}
             finally {
                 if(token.compareAndSet(id,null)) {
                     operation=null
+                    operationPolicy=null
                     mutable.update {if(it.busy)it.copy(phase=CatalogUpdatePhase.FAILED) else it}
                 }
             }

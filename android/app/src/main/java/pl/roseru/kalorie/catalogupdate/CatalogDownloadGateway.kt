@@ -1,11 +1,10 @@
 package pl.roseru.kalorie.catalogupdate
 
 import kotlinx.coroutines.*
-import kotlinx.coroutines.flow.MutableStateFlow
-import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.first
 import pl.roseru.kalorie.core.catalog.CatalogManifest
 import pl.roseru.kalorie.core.catalog.CatalogPackageReader
+import pl.roseru.kalorie.core.network.*
 import pl.roseru.kalorie.session.BootstrapHttpProtocol
 import java.io.ByteArrayOutputStream
 import java.io.File
@@ -13,13 +12,6 @@ import java.io.OutputStream
 import java.net.URL
 import javax.net.ssl.HttpsURLConnection
 
-/** Adapter to the existing device network policy, never another persisted field-mode switch. */
-interface CatalogNetworkGate { val allowed:StateFlow<Boolean> }
-object ClosedCatalogNetworkGate:CatalogNetworkGate {
-    private val closed=MutableStateFlow(false)
-    override val allowed:StateFlow<Boolean> = closed
-}
-class CatalogNetworkBlocked:Exception("catalog_network_blocked")
 class CatalogTransferRejected(val code:String):Exception(code)
 
 internal sealed interface CatalogHttpResult {
@@ -28,42 +20,43 @@ internal sealed interface CatalogHttpResult {
     class Retry(val value:String?):CatalogHttpResult
 }
 internal interface CatalogDownloadGateway {
-    suspend fun manifest():CatalogHttpResult
-    suspend fun download(manifest:CatalogManifest,target:File,progress:(Long,Long)->Unit):CatalogHttpResult
+    suspend fun manifest(permit:NetworkPermit):CatalogHttpResult
+    suspend fun download(manifest:CatalogManifest,target:File,permit:NetworkPermit,progress:(Long,Long)->Unit):CatalogHttpResult
 }
 
 /** Public same-origin GET only: no session, bearer, redirects, cookies or arbitrary manifest URL. */
-internal class HttpsCatalogDownloadGateway(base:String,private val gate:CatalogNetworkGate,
+internal class HttpsCatalogDownloadGateway(base:String,private val gate:NetworkAccessGate,
     private val open:(URL)->HttpsURLConnection={it.openConnection() as HttpsURLConnection}):CatalogDownloadGateway {
     private val base=BootstrapHttpProtocol.endpoint(base).toString().removeSuffix("/me/bootstrap")
-    override suspend fun manifest():CatalogHttpResult {
+    override suspend fun manifest(permit:NetworkPermit):CatalogHttpResult {
         val output=ByteArrayOutputStream()
         val result=request(URL("$base/offline-package/manifest"),"application/json",CatalogPackageReader.MAX_MANIFEST,
-            30_000,output,null){_,_->}
+            30_000,output,null,permit){_,_->}
         return if(result is CatalogHttpResult.Success)CatalogHttpResult.Success(output.toByteArray()) else result
     }
-    override suspend fun download(manifest:CatalogManifest,target:File,progress:(Long,Long)->Unit):CatalogHttpResult {
+    override suspend fun download(manifest:CatalogManifest,target:File,permit:NetworkPermit,progress:(Long,Long)->Unit):CatalogHttpResult {
         require(manifest.packageId==CatalogPackageReader.OFFICIAL_ID && manifest.kind=="official")
         require(manifest.path=="base-pl.${manifest.release}.json.gz" && manifest.release>0)
         return target.outputStream().use { output->
             request(URL("$base/offline-package/${manifest.path}"),"application/gzip",manifest.compressedBytes,
-                120_000,output,manifest.sha256,progress)
+                120_000,output,manifest.sha256,permit,progress)
         }
     }
     private suspend fun request(url:URL,type:String,limit:Int,timeout:Long,output:OutputStream,
-        hash:String?,progress:(Long,Long)->Unit):CatalogHttpResult = coroutineScope {
-        if(!gate.allowed.value)throw CatalogNetworkBlocked()
+        hash:String?,permit:NetworkPermit,progress:(Long,Long)->Unit):CatalogHttpResult = coroutineScope {
+        gate.requireCurrent(permit)
         require(limit in 1..CatalogPackageReader.MAX_GZIP)
         val connection=open(url)
         // This sibling also disconnects a blocking socket when the user cancels the job.
         val policy=launch(Dispatchers.IO,start=CoroutineStart.UNDISPATCHED) {
-            try {gate.allowed.first{!it}} finally {connection.disconnect()}
+            try {gate.state.first{try{gate.requireCurrent(permit);false}catch(_:NetworkAccessDenied){true}}}
+            finally {connection.disconnect()}
         }
         try {withContext(Dispatchers.IO) {
             val started=System.nanoTime()
             fun current() {
                 ensureActive()
-                if(!gate.allowed.value)throw CatalogNetworkBlocked()
+                gate.requireCurrent(permit)
                 if((System.nanoTime()-started)/1_000_000>=timeout)throw CatalogTransferRejected("catalog_timeout")
             }
             connection.requestMethod="GET";connection.instanceFollowRedirects=false

@@ -1,7 +1,7 @@
 # Pobieranie bazy offline — implementacja O1 w toku
 
 Gałąź `codex/android-katalog-do-pobrania`, baza main837343c.
-To rozpoczęty kolejny etap, **bez kompilacji, testów, APK, publikacji lub PR**.
+To rozpoczęty kolejny etap; pełne wpięcie, odbiór, APK i PR pozostają otwarte.
 Nie zmienia zamrożonej dostawy0.8.29/Room20 dla O2/O3.
 
 ## Zachowanie
@@ -35,32 +35,38 @@ do skopiowania; podgląd nie otwiera strony internetowej.
 
 ## Granica integracji z O2-C
 
-Nie powstaje drugi przełącznik trybu poligonowego. CatalogNetworkGate
-otrzymuje wspólną politykę sieci; domyślnie jest zamknięty.
-SharedCatalogNetworkGate potrafi odwzorować `Flow<Boolean>` z tej polityki.
-Jego błąd zamyka sieć, a odczyt zapisanej bazy i jej źródeł nadal działa.
+O2 potwierdził [faktyczny brak portu w C](https://github.com/Roseru/aplikacja-mobilna/pull/146#issuecomment-6374626101).
+O1 przejął jeden kontrakt i trwały provider w `core/network`: NetworkAccessGate,
+NetworkAccessState.Unavailable/Blocked/Allowed(revision), NetworkPermit,
+captureAllowed i requireCurrent. Nie powstaje niezależny drugi boolean.
+Permit ma również tożsamość providera i lokalną generację, więc ponowne
+Allowed po błędzie albo przejściu przez Blocked nie przywraca starego pozwolenia.
 
-SettingsScreen przyjmuje opcjonalny CatalogUpdateViewModel. **Rzeczywisty
-root/DI/nawigacja nie zostały jeszcze podłączone**: MainActivity,
-CalorieApplication/App oraz Worker/Preferences pozostają u O2 w finalnym C.
-O1 poprosił o przypięty port polityki i podał granice plików w istniejącym
-[wątku146](https://github.com/Roseru/aplikacja-mobilna/pull/146#issuecomment-6374409593).
-Kolejność B→C nie zależy od tego nowego modułu.
+DeviceNetworkPolicy przechowuje jedno ustawienie urządzenia w DataStore,
+oddzielone od motywu i konta. Domyślny standard jest dozwolony dopiero po
+prawidłowym odczycie. Błąd zapisu/odczytu zamyka gate; jawna zmiana/naprawa
+zwiększa rewizję. Polityka nie wyłącza Wi-Fi telefonu i nie kasuje dziennika.
+Katalog przechwytuje permit dla operacji i ponownie sprawdza go w transporcie,
+po walidacji oraz przed stage/activate. Podgląd źródeł nie wymaga pozwolenia.
 
-Po odbiorze właściwego main integracja ma tworzyć jeden model katalogu dla
-urządzenia, poza kluczem właściciela dziennika. Przykładowe zależności:
+PolicyConnectionFactory osłania HTTPS dla API/AppAuth z oryginalnym TLS,
+zamykając połączenia przy zmianie polityki. AppAuthGateway przyjmuje builder
+oraz gate; ich domyślne wartości są zamknięte. **Tego roboczego źródła nie
+należy traktować jako gotowego APK przed rzeczywistym wpięciem DI**.
 
-```kotlin
-val gate = SharedCatalogNetworkGate(applicationScope, sharedNetworkPermission)
-val repository = CatalogUpdateFactory.repository(context, database, gate)
-// W prawdziwym ViewModelStore i fabryce lifecycle, nie przy każdej rekompozycji:
-val model = CatalogUpdateViewModel(repository)
-SettingsScreen(diaryModel, catalogModel = model)
-```
+SettingsScreen przyjmuje opcjonalne CatalogUpdateViewModel oraz
+NetworkPolicyViewModel. Root/DI/nawigacja nadal czekają na uzgodnienie
+własności trzech plików z O2. O1 [podał dokładny nowy zakres i typy](https://github.com/Roseru/aplikacja-mobilna/pull/146#issuecomment-6374865798),
+nie nadpisując MainActivity/CalorieApplication/App ani Workera C.
+B/C kontynuują niezależnie. Pełny WF-05 wymaga wszystkich konsumentów:
+katalogu, API, logowania i wspólnego runtime/workera, w tym wybudzenia po
+odblokowaniu. Sam CONNECTED ani sama gotowa preferencja nie są jego odbiorem.
 
-`sharedNetworkPermission` musi wynikać z trwałej polityki C, nie ze stałego
-`true`, samej obecności Wi-Fi lub testowego zamiennika. To przykład zależności,
-nie gotowy blok do wklejenia do composable.
+Właściwe DI ma tworzyć **jeden** DeviceNetworkPolicy i jedną fabrykę
+połączeń dla aplikacji; oba modele ekranów żyją poza kluczem właściciela.
+CatalogUpdateFactory.repository otrzymuje ten sam provider co API/AppAuth
+oraz runtime, bez stałego `true` i bez osobnego przełącznika.
+Kompilacja portu jest osobnym zakresem; nie zastępuje testu gotowej funkcji.
 
 ## Odbiór po ukończeniu etapu
 
