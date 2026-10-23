@@ -147,6 +147,15 @@ internal class ReconciliationFinishStore(private val owner:ReconciliationStore) 
                 check((0 until operations.length()).all {i->db.dao().operation(operations.getJSONObject(i).getString("operation_id"))?.status in setOf("acked","superseded","local_only")})
                 db.pushDao().update(batch.copy(state="archived_reconciled"))
             }
+            // A restored epoch has its own confirmed axis. Archive the old axis rather than
+            // letting ordinary snapshot application accept a foreign context or regress this epoch.
+            db.domainSyncDao().timeline(lease.storageScope)?.let {previous->
+                val oldEpoch=StrictJson.read(previous.wireContext.toByteArray()).getString("sync_epoch")
+                if(oldEpoch==expected.syncEpoch)check(previous.revision<=source.copy.timelineRevision)
+                val text=StrictJson.canonical(JSONObject().put("wire_context",previous.wireContext).put("revision",previous.revision))
+                dao.insert(ReconciliationEvidence(id,"previous_timeline","goal",text,LegacyImportStore.digest(text),source.run.id))
+            }
+            db.domainSyncDao().save(CanonicalGoalTimeline(lease.storageScope,context,source.copy.timelineRevision))
             ensureServerAliases(lease.storageScope,source.copy)
             val application=ServerDiaryStore(db,owner.schema).applyReconciled(lease,source.run.id,id)
             check(owner.context(lease,expected)==expected)
@@ -194,4 +203,16 @@ internal suspend fun CalorieDatabase.retainedSyncSources(owner:String):List<Impo
         for(row in importDao().sources(plan.id))latest.putIfAbsent(row.entityType to row.sourceId,row)
     }
     return latest.values.filter {it.state=="retained"}
+}
+
+/** Resolved immutable originals remain history, rather than blocking every later server goal. */
+internal suspend fun CalorieDatabase.resolvedOriginalGoals(owner:String):Set<String> {
+    val result=mutableSetOf<String>()
+    for(plan in importDao().plans(owner).filter {it.approvedAt!=null && it.sourceScope==owner}) {
+        for(row in importDao().sources(plan.id).filter {it.entityType=="goal" && it.localId!=it.sourceId}) {
+            if(row.state in setOf("acked","accept_server") || row.operationId?.let {dao().operation(it)?.status=="acked"}==true)
+                result+=row.sourceId
+        }
+    }
+    return result
 }

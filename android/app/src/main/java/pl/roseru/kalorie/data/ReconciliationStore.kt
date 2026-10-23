@@ -195,7 +195,8 @@ class ReconciliationStore(internal val db:CalorieDatabase,internal val schema:Sy
         val rows=dao.sources(plan.id)
         return ImportProgress(plan.id,plan.targetAccountId,plan.issuer,plan.subject,plan.state,rows.size,rows.count {it.state=="queued"},
             rows.count {it.state=="acked"},rows.count {it.state=="retained"},rows.filter {it.state=="decision"}.map {
-                ImportIssue(it.entityType,it.sourceId,it.decisionCode ?: "decision_required")})
+                ImportIssue(it.entityType,it.sourceId,it.decisionCode ?: "decision_required")},
+            pending=rows.count {it.state=="approved_source"},waiting=rows.count {it.state=="awaiting_snapshot"})
     }
     suspend fun finish(lease:OwnerLease,expected:AccountBindingEntity,id:String):ServerDiaryApplication = ReconciliationFinishStore(this).finish(lease,expected,id)
     suspend fun preparePush(lease:OwnerLease,expected:AccountBindingEntity,id:String):ReconciliationPushRequest? = ReconciliationPushStore(this).prepare(lease,expected,id)

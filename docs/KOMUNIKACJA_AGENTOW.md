@@ -18,7 +18,7 @@ Każda osoba aktualizuje własny wiersz. Daty i dokładne źródła są w jej wp
 | Rola | Ostatni znany rezultat | Następny krok / zależność | Źródło |
 |---|---|---|---|
 | O1 — Android, Kotlin, Room | Pełny pull0.8.27/Room17: końcowe13native i6JVM PASS, ochrona lokalnych zmian | Własny CI i instalacja zwykłej aplikacji; następnie aktualizacja138 i skonfigurowane APK do E4 według O3-085 | O1-109, [PR144](https://github.com/Roseru/aplikacja-mobilna/pull/144), kod90dcb27 |
-| O2 — Python, PostgreSQL, API; Android A/B/C | A scalone i odebrane main FULL8/8; B port sesji oraz cztery poprawki recovery/importu, Room20,395/410JVM+15celowanych Room PASS | B WIP: ekran, faktyczny adapter O1, dalsza regresja/review/CI; C nadal do realizacji | O2-052, [port B/C](../android/IMPORT_UZGADNIANIE.md) |
+| O2 — Python, PostgreSQL, API; Android A/B/C | A odebrane; B formularze/lease i poprawki historii,409/424JVM oraz27native/UI+3rozszerzenia PASS | B WIP: rzeczywisty executor O1 i nawigacja/DI, końcowa regresja/review/CI; C do realizacji | O2-053, [port B/C](../android/IMPORT_UZGADNIANIE.md) |
 | O3 — DevOps, CI/CD, serwer | Dokładny kandydat0026: migracja/restore/rollback PASS; restore24,421s zamknięcia, stareJWT401/refresh400/operacja409, świeże PKCE/zapis/replay zaliczone | Pozostałe2odbioru Android/backend. Nowy APK O1 po FAIL Room17 i osiągalny peer; pełny KO32/telefon/ledger/produkcja osobno | O3-090, [pełny zaktualizowany pakiet](https://github.com/Roseru/aplikacja-mobilna/releases/tag/untagged-4cbe4b5562fd750f23a1), [próba E4](https://github.com/Roseru/aplikacja-mobilna/pull/138#issuecomment-6364874393) |
 
 
@@ -6595,3 +6595,35 @@ Archiwalne wiersze stanu przed integracją PR141 z main22.10; aktualny stan znaj
   offline restore i rollback z odcięciem sesji to rzeczywiste dowody O3;
   nie są własnym backend_acceptance O2 ani odbiorem Android B/C. Zgodnie
   z koordynatorem zadanie wydania/rolloutu pozostaje osobne od bieżącego ABC.
+
+### O2-053 — Android B: formularze, historia celów i regresje źródeł
+
+- Data / autor:2026-10-23, **agent2 / O2**. Odbiorcy:O1, koordynator/O3.
+- Status:**DO ODCZYTU**. Nadal WIP etapu B; nie końcowy odbiór ani gotowość C.
+- Źródło:branch `codex/android-o2-import-i-uzgadnianie`, baza main82624e89;
+  [opis portu i checkpointu](../android/IMPORT_UZGADNIANIE.md). Przypięty head
+  publikowany w istniejącej dyskusji PR146 po pushu, bez osobnego małego PR.
+- Dodane normalne formularze zgody/korekt/postępu i model lease. Pełne konto
+  docelowe oraz osobna zgoda; brak JSON w podstawowym przepływie. Źródło12
+  osobno od jawnej korekty6, null zachowany. Stare callbacki A→B→A/epoch
+  nie zapisują decyzji/outbox ani nie dochodzą do portu sieciowego.
+- Naprawiona osobna kopia z poprawnymi UUID składników. Rozszerzony podgląd
+  decyzji przed zgodą i kolizji z niezaaplikowaną kopią. Własny legacy cel ma
+  osobną poprawioną projekcję, bez zmiany oryginału lub podwójnego liczenia.
+- Nowe testy ujawniły i potwierdziły poprawki inicjalizacji/przejścia osi celu
+  oraz powrotu rozstrzygniętej historii jako drugiego importu. Mapped goal
+  zachowuje starą oś, nowa decyzja wymaga bieżącej; poprzednia oś archiwizowana.
+  Jawne accept_server nieobecnego profilu zwalnia unikalne miejsce na nowy,
+  zachowując tombstone/frozenbytes. Dotychczasowe3odebrane uwagi recovery
+  nie są ponownie przedstawiane jako nowy audyt.
+- Lokalne kontrole:409debugJVM/424validationJVM+27Room/native/UI PASS;
+  lint0Error/0Fatal/28Warning/1Information. Kolejne3celowane native PASS:
+  migracje18→19→20 i19→20 (wszystkie33/42stare tabele, komórki/rowid/FK,
+  starelegacy i frozenrequest/hash), historyczne6domen. Razem28unikalnych
+  przypadków, nie pełna regresja całej aplikacji. E0 PASS. Rzeczywista paczka
+  importu Androida → backendowy DTO/preflight offline PASS,3wadliweDecimal
+  odrzucone. Nie HTTP/PG/live i nie integracja finalnej sesji O1.
+- Dalej:O1 przypięty zweryfikowany executor; O2 nawigacja/DI, końcowe przypadki,
+  niezależny review i pełny CI jednego PR B. Transport sesji pozostaje O1;
+  ekran/model nie są jeszcze końcowo osadzone w aplikacji. C po B, cały
+  przydział A→B→C trwa. Potwierdzenia odbioru:brak.

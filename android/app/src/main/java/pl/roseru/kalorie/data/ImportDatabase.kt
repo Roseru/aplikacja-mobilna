@@ -88,6 +88,7 @@ data class ReconciliationPull(@PrimaryKey val runId:String,val planId:String,val
     @Insert suspend fun insert(identity:ImportIdentity)
     @Update suspend fun update(identity:ImportIdentity)
     @Query("DELETE FROM import_identities WHERE ownerScope=:owner AND entityType=:type AND localId=:local") suspend fun retireIdentity(owner:String,type:String,local:String)
+    @Query("SELECT * FROM import_item_identities WHERE ownerScope=:owner AND wireId=:wire") suspend fun itemWire(owner:String,wire:String):ImportItemIdentity?
     @Query("SELECT * FROM import_item_identities WHERE ownerScope=:owner AND mealLocalId=:meal") suspend fun items(owner:String,meal:String):List<ImportItemIdentity>
     @Insert suspend fun insert(identity:ImportItemIdentity)
     @Insert suspend fun insert(decision:ImportDecision)

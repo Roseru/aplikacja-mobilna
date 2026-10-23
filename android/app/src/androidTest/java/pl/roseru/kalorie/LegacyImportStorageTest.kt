@@ -122,10 +122,115 @@ class LegacyImportStorageTest {
             assertEquals(legacy,db.dao().operation(legacy.operationId))
         } finally {db.close()}
     }
+    @Test fun explicitPrecisionCorrectionCreatesDerivativeAndPreservesArchivedOriginal()=runBlocking<Unit> {
+        val db=Room.inMemoryDatabaseBuilder(context,CalorieDatabase::class.java).addCallback(DATABASE_GUARDS).build()
+        try {
+            LocalOwnerStore(db).ensureGuest()
+            val old=WeightEntity("precise","guest","2000-01-02","2000-01-02T12:00:00Z","UTC",80.123456789)
+            db.dao().saveWeight(old)
+            val lease=account(db);val store=LegacyImportStore(db,schema);val plan=store.preview(lease,"guest")
+            assertEquals("precision_review",plan.decisions.single().code);assertEquals(0,plan.pending)
+            approve(store,lease,plan)
+            val source=store.source(lease,plan.planId,"weight",old.id)
+            val choice=JSONObject().put("choice","metadata").put("row_overrides",JSONObject().put("kg","80.123457"))
+            store.decide(lease,plan.planId,"weight",old.id,source.sourceHash,choice.toString());store.resume(lease,plan.planId)
+            val updated=store.source(lease,plan.planId,"weight",old.id)
+            assertEquals("queued",updated.state);assertEquals(source.sourceJson,updated.sourceJson);assertEquals(source.sourceHash,updated.sourceHash)
+            assertEquals(old,db.dao().weight(old.id,"guest"))
+            val request=MealPushStore(db,schema).prepare(lease)!!
+            assertEquals("80.123457",JSONObject(request.operations.single().payload).getString("weight_kg"))
+            assertEquals(80.123457,db.dao().weight(updated.localId,lease.storageScope)!!.kg,0.0)
+        } finally {db.close()}
+    }
+    @Test fun correctedAccountGoalKeepsImmutableOriginalButOnlyDerivativeIsVisible()=runBlocking<Unit> {
+        val db=Room.inMemoryDatabaseBuilder(context,CalorieDatabase::class.java).addCallback(DATABASE_GUARDS).build()
+        try {
+            val lease=account(db)
+            val old=GoalEntity("old-goal",lease.storageScope,"2001-01-02",2000.123456789,null,0.0,100.0)
+            db.dao().saveGoal(old)
+            val store=LegacyImportStore(db,schema);val plan=store.preview(lease,lease.storageScope)
+            assertEquals(1,plan.decisions.size);approve(store,lease,plan)
+            val source=store.source(lease,plan.planId,"goal",old.id)
+            val choice=JSONObject().put("choice","metadata").put("goal_decided_at","2001-01-02T12:00:00Z")
+                .put("zone","UTC").put("goal_reason","user_decision").put("goal_aim","maintain").put("goal_activity","line")
+                .put("row_overrides",JSONObject().put("kcal","2000.123457"))
+            store.decide(lease,plan.planId,"goal",old.id,source.sourceHash,choice.toString())
+            val progress=store.resume(lease,plan.planId)
+            assertTrue(progress.decisions.toString(),progress.decisions.isEmpty())
+            val imported=store.source(lease,plan.planId,"goal",old.id)
+            assertNotEquals(old.id,imported.localId);assertEquals(old,db.dao().goalById(lease.storageScope,old.id))
+            val visible=db.dao().achievementGoals(lease.storageScope)
+            assertEquals(1,visible.size);assertEquals(imported.localId,visible.single().id)
+            assertEquals(2000.123457,visible.single().kcal,0.0);assertNull(visible.single().protein);assertEquals(0.0,visible.single().fat!!,0.0)
+            val push=MealPushStore(db,schema);val request=push.prepare(lease)!!
+            assertEquals("2000.123457",JSONObject(request.operations.single().payload).getString("energy_kcal"))
+            push.markAttempted(request);push.applyAck(push.prepareAck(request,200,reply(request)))
+            assertEquals(setOf(old.id),db.resolvedOriginalGoals(lease.storageScope))
+            assertEquals(old,db.dao().goalById(lease.storageScope,old.id))
+        } finally {db.close()}
+    }
+    @Test fun sixHistoricalDomainsImportThroughOrdinaryMixedBatchWithoutGuessingCatalogueOrLosingNulls()=runBlocking<Unit> {
+        val db=Room.inMemoryDatabaseBuilder(context,CalorieDatabase::class.java).addCallback(DATABASE_GUARDS).build()
+        try {
+            LocalOwnerStore(db).ensureGuest()
+            val goal=GoalEntity("legacy-goal","guest","2001-01-02",2100.125,null,0.0,null)
+            val profile=ProfileEntity("legacy-profile","guest","Old profile",180.125,"LINE","REDUCE","UTC",1)
+            val product=ProductEntity("legacy-private","Historical private","historical private",150.5,null,0.0,null,100.0,"Private","Historical label",0,"guest")
+            val day=DiaryDayEntity("legacy-day","guest","2001-01-02",true,1)
+            val meal=MealEntity("legacy-meal","guest","2001-01-02","2001-01-02T12:00:00Z","UTC","UNSPECIFIED",rationName="Historical ration")
+            val item=MealItemEntity("legacy-item",meal.id,"basic-rice","Historical component",12.125,100.5,null,0.0,null)
+            val weight=WeightEntity("legacy-weight","guest","2001-01-02","2001-01-02T12:00:00Z","UTC",80.125)
+            db.dao().saveGoal(goal);db.dao().saveProfile(profile);db.dao().insertProduct(product);db.dao().saveDiaryDay(day)
+            db.dao().insertMeal(meal);db.dao().insertItem(item);db.dao().saveWeight(weight)
+            val lease=account(db);val store=LegacyImportStore(db,schema);val plan=store.preview(lease,"guest")
+            assertEquals(6,plan.total);assertEquals(setOf("goal","diary_day"),plan.decisions.map {it.type}.toSet())
+            assertEquals(0,db.dao().operationCount(lease.storageScope));approve(store,lease,plan)
+            val archived=db.importDao().sources(plan.planId).associateBy {it.entityType}
+            for(source in archived.values.filter {it.entityType in setOf("goal","diary_day")}) {
+                val choice=JSONObject().put("choice","metadata").put("zone","UTC")
+                if(source.entityType=="goal")choice.put("goal_decided_at","2001-01-02T10:00:00Z").put("goal_reason","user_decision")
+                    .put("goal_aim","reduce").put("goal_activity","line")
+                store.decide(lease,plan.planId,source.entityType,source.sourceId,source.sourceHash,choice.toString())
+            }
+            val queued=store.resume(lease,plan.planId);assertTrue(queued.decisions.toString(),queued.decisions.isEmpty())
+            assertEquals(6,queued.queued);assertEquals(0,queued.acknowledged)
+            val push=MealPushStore(db,schema);val request=push.prepare(lease)!!
+            assertEquals(setOf("profile","goal","diary_day","product_draft","meal","weight"),request.operations.map {it.entityType}.toSet())
+            if(InstrumentationRegistry.getArguments().getString("o2ExportLegacy")=="true") {
+                // Opt-in synthetic fixture only: the test runner may uninstall its target after completion.
+                val body=request.batch.body();val hash=LegacyImportStore.digest(String(body))
+                val chunks=android.util.Base64.encodeToString(body,android.util.Base64.NO_WRAP).chunked(1800)
+                android.util.Log.i("O2LegacyOracle","SYNTHETIC_BEGIN:$hash:${chunks.size}")
+                chunks.forEachIndexed {index,chunk->android.util.Log.i("O2LegacyOracle","SYNTHETIC_PART:$hash:$index:$chunk")}
+                android.util.Log.i("O2LegacyOracle","SYNTHETIC_END:$hash")
+            }
+            val wires=request.operations.associate {it.entityType to JSONObject(it.payload)}
+            val mealWire=wires.getValue("meal");assertEquals("2001-01-02",mealWire.getString("local_date"));assertTrue(mealWire.isNull("meal_type"))
+            assertTrue(mealWire.isNull("ration"));val wireItem=mealWire.getJSONArray("items").getJSONObject(0)
+            assertTrue(wireItem.isNull("product"));assertEquals("manual",wireItem.getString("nutrition_origin"))
+            assertEquals("12.125",wireItem.getJSONObject("quantity").getString("amount"))
+            assertTrue(wireItem.getJSONObject("nutrition_per_100").isNull("protein_g"))
+            assertEquals("0",wireItem.getJSONObject("nutrition_per_100").getString("fat_g"))
+            assertEquals("Historical label",wires.getValue("product_draft").getString("source_description"))
+            assertTrue(wires.getValue("goal").isNull("protein_g"));assertEquals("reduce",wires.getValue("goal").getString("goal_type"))
+            push.markAttempted(request);assertArrayEquals(request.batch.body(),push.open(lease,request.id).batch.body())
+            assertEquals(0,store.status(lease,plan.planId).acknowledged)
+            push.applyAck(push.prepareAck(request,200,reply(request)))
+            val complete=store.status(lease,plan.planId);assertEquals("complete",complete.state);assertEquals(6,complete.acknowledged)
+            for(source in db.importDao().sources(plan.planId)) {
+                assertEquals(archived.getValue(source.entityType).sourceJson,source.sourceJson)
+                assertEquals(source.sourceHash,LegacyImportStore.digest(source.sourceJson))
+            }
+            assertEquals(goal,db.dao().goalById("guest",goal.id));assertEquals(profile,db.dao().currentProfile("guest"))
+            assertEquals(product,db.dao().product(product.id,"guest"));assertEquals(day,db.dao().currentDiaryDay("guest",day.localDate))
+            assertEquals(meal,db.dao().meal(meal.id,"guest")!!.meal);assertEquals(item,db.dao().meal(meal.id,"guest")!!.items.single())
+            assertEquals(weight,db.dao().weight(weight.id,"guest"));assertEquals(6,db.dao().operationCount(lease.storageScope))
+        } finally {db.close()}
+    }
     private suspend fun guestMeal(db:CalorieDatabase):String {
         LocalOwnerStore(db).ensureGuest();val id=uuid()
         db.dao().insertMeal(MealEntity(id,"guest","2001-01-02","2001-01-02T12:00:00Z","UTC","LUNCH"))
-        db.dao().insertItem(MealItemEntity("item-"+id,id,"basic-rice","Historical rice",50.0,100.125,null,0.0,12.5))
+        db.dao().insertItem(MealItemEntity(uuid(),id,"basic-rice","Historical rice",50.0,100.125,null,0.0,12.5))
         return id
     }
     private suspend fun imported(db:CalorieDatabase,lease:OwnerLease):Pair<ImportProgress,ImportSource> {
@@ -198,6 +303,13 @@ class LegacyImportStorageTest {
             val separate=db.importDao().source(second.planId,"meal",guestId)!!
             assertEquals("queued",separate.state);assertNotEquals(source.localId,separate.localId);assertNotEquals(source.wireId,separate.wireId)
             assertEquals(75.0,db.dao().meal(separate.localId,lease.storageScope)!!.items.single().grams,0.0)
+            val originalItem=db.dao().meal(guestId,"guest")!!.items.single().id
+            val firstAlias=db.importDao().items(lease.storageScope,source.localId).single()
+            val copyAlias=db.importDao().items(lease.storageScope,separate.localId).single()
+            assertEquals(originalItem,firstAlias.wireId) // Preserve the ordinary UUID on its first import.
+            assertNotEquals(firstAlias.wireId,copyAlias.wireId) // An explicit new Meal has its own durable item identity.
+            assertEquals(originalItem,copyAlias.sourceId)
+            assertEquals(copyAlias.wireId,JSONObject(separate.appliedPayload!!).getJSONArray("items").getJSONObject(0).getString("item_id"))
             assertEquals(target,db.dao().meal(source.localId,lease.storageScope));assertEquals(operation,db.dao().operation(operation.operationId))
             assertArrayEquals(frozen.batch.body(),db.pushDao().batch(frozen.id)!!.requestJson.toByteArray())
             assertEquals(originalSource,db.importDao().source(first.planId,"meal",guestId))

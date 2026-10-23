@@ -79,3 +79,43 @@ update z potwierdzoną bazą), >100receipts, target innego urządzenia, poprawn�
 historyczną rezerwację i jej niedopuszczalne użycie, brak/zgodny/odmowny receipt.
 Pierwsza wersja rozszerzonej regresji wykryła pomieszanie knownProjectionRevision
 z SourceRevision; odrębny dowód wcześniejszego ACK nadal chroni same-epoch absence.
+
+## Formularze i dalsza weryfikacja B — checkpoint O2-053
+
+`ImportScreen`, `ImportViewModel` i `LegacyImportForm` udostępniają normalne pola
+zgody, postępu i decyzji. Konto docelowe ma pełny issuer/subject, osobny checkbox
+oraz sprawdzenie źródłowego fingerprintu przy zgodzie. Model jest przypisany do
+konkretnego lease; stary callback po A→B→A lub zmianie epoki nie zapisuje decyzji
+ani nie wywołuje portu sieciowego. Wartości źródłowe są osobno od korekty; brak
+nie staje się zerem, nie ma zaokrąglania do wire ani edytora JSON. Zapisany plan
+wznawia się po restarcie, a queued/NotConfigured/Retry nie oznaczają complete.
+
+- Podgląd rozpoznaje brak metadanych i nadmierną precyzję przed zgodą, a kolizje
+  także w pełnej kopii, której jeszcze nie zastosowano do projekcji. Konflikt
+  pojedynczego profilu lub dnia wymaga jawnej decyzji, bez cichego nadpisania.
+- Osobna kopia zmienionego źródła dostaje trwałe, osobne UUID składników, także
+  dla poprawnych UUID źródła. Pierwszy import zachowuje źródłowe wireUUID.
+- Poprawiony własny cel ma nową lokalną projekcję; historyczny rekord pozostaje
+  niezmienny, bez podwójnego liczenia. Pierwszy import inicjuje oś z pełnej kopii.
+- Powiązany cel recovery zachowuje historyczny payload/axis. Nowa decyzja wymaga
+  aktualnej osi i nowej projekcji. Końcowa transakcja archiwizuje poprzednią oś,
+  przełącza kontekst i zachowuje zakaz regresji w tej samej epoce. Rozstrzygnięty
+  oryginał pozostaje historią i nie wraca jako nowy import ani blokada osi.
+- Jawne accept_server znanej nieobecności profilu usuwa lokalną projekcję,
+  zachowuje tombstone i frozen request; później można utworzyć nowy profil.
+
+Weryfikacja checkpointu:409debugJVM/424validationJVM i27Room/native/UI PASS,
+lint0Error/0Fatal/28Warning/1Information. Następne3celowane native PASS rozszerzają
+pokrycie o pełne18→19→20 oraz zachowują19→20 i6domen historycznych. Migracje
+porównują wszystkie stare komórki/rowid/FK (33/42tabele), w tym wcześniejsze
+legacy i zamrożony request/hash. Bieżące28unikalnych przypadków nie oznacza
+pełnej regresji urządzenia aplikacji. E0 PASS. Syntetyczna paczka sześciu domen
+z rzeczywistego importu Androida przeszła backendowy PushRequest/preflight;
+trzy celowo wadliwe Decimal zostały odrzucone. Bez HTTP/PG/live.
+
+Nadal WIP: ekran jest komponentem z przetestowanym modelem; ostateczne
+osadzenie w nawigacji/DI oraz transport wymagają zweryfikowanego commita O1,
+którego SessionController realizuje oba uzgodnione executory. Nie używamy
+stubu jako odbioru integracji. Dalej: właściwe podłączenie, brakujące przypadki
+końcowe, niezależny review, pełna regresja i jeden PR B z CI/odbiorem.
+C pozostaje kolejnym etapem całego przydziału A→B→C.

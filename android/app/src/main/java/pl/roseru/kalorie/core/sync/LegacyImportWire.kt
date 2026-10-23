@@ -40,6 +40,7 @@ sealed interface LegacyImportConversion {
 
 /** Pure conversion only: no clock, UUID allocation, account assignment, database, ACK or recovery. */
 object LegacyImportWire {
+    internal fun readSource(raw:String):JSONObject=legacy(raw)
     private class Review(val code: String, val paths: List<String>) : IllegalArgumentException()
     private fun review(code: String, vararg paths: String): Nothing = throw Review(code, paths.toList())
 
@@ -322,7 +323,7 @@ object LegacyImportWire {
             ?: wireItems.firstOrNull()?.getString("name") ?: review("missing_metadata", "items"))
             .put("occurred_at", timestamp(text(row, "occurredAt", "occurred_at"), "occurred_at"))
             .put("time_zone", zone(row, metadata)).put("local_date", text(row, "localDate", "local_date"))
-            .put("meal_type", text(row, "mealType", "meal_type").lowercase(Locale.ROOT))
+            .put("meal_type", text(row, "mealType", "meal_type").let {if(it=="UNSPECIFIED")JSONObject.NULL else it.lowercase(Locale.ROOT)})
             .put("goal_id", goal?.let { dependency(ids, "goal", it, dependencies) } ?: JSONObject.NULL)
             .put("ration", ration?.let { JSONObject().put("ration_id", it.getString("ration_id"))
                 .put("revision", it.getInt("revision")).put("name", it.getString("name")) } ?: JSONObject.NULL)

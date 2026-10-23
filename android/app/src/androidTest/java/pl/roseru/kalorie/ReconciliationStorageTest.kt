@@ -28,10 +28,10 @@ class ReconciliationStorageTest {
         assertNull(snapshots.apply(snapshots.begin(lease),page(epoch)))
         return lease
     }
-    private fun page(currentEpoch:String,entities:List<JSONObject> = emptyList(),checkpoint:String="synthetic-checkpoint",receipts:List<JSONObject> = emptyList(),mappings:List<JSONObject> = emptyList()):ByteArray=
+    private fun page(currentEpoch:String,entities:List<JSONObject> = emptyList(),checkpoint:String="synthetic-checkpoint",receipts:List<JSONObject> = emptyList(),mappings:List<JSONObject> = emptyList(),timelineRevision:Int=0):ByteArray=
         JSONObject().put("sync_epoch",currentEpoch).put("mode","snapshot").put("snapshot_token","synthetic-snapshot")
             .put("page_token",JSONObject.NULL).put("checkpoint",checkpoint).put("server_time","2026-10-23T14:00:00Z")
-            .put("goal_timeline_revision",0).put("entities",JSONArray(entities)).put("recovery_mappings",JSONArray(mappings))
+            .put("goal_timeline_revision",timelineRevision).put("entities",JSONArray(entities)).put("recovery_mappings",JSONArray(mappings))
             .put("operation_receipts",JSONArray(receipts)).toString().toByteArray()
     private fun entity(operation:OutboxEntity,revision:Int=1):JSONObject=JSONObject().put("entity_id",operation.entityId).put("entity_type",operation.entityType)
         .put("revision",revision).put("deleted",operation.action=="delete").put("payload",if(operation.action=="delete")JSONObject.NULL else JSONObject(operation.payload))
@@ -56,9 +56,9 @@ class ReconciliationStorageTest {
         val plan=store.begin(lease,binding);store.approve(lease,binding,plan.planId,plan.account,plan.issuer,plan.subject);return plan
     }
     private suspend fun pull(db:CalorieDatabase,store:ReconciliationStore,lease:OwnerLease,binding:AccountBindingEntity,plan:ImportProgress,
-        entities:List<JSONObject> = emptyList(),checkpoint:String="synthetic-new-checkpoint",mappings:List<JSONObject> = emptyList(),receipts:List<JSONObject> = emptyList()):SnapshotRequest {
+        entities:List<JSONObject> = emptyList(),checkpoint:String="synthetic-new-checkpoint",mappings:List<JSONObject> = emptyList(),receipts:List<JSONObject> = emptyList(),timelineRevision:Int=0):SnapshotRequest {
         val request=store.nextSnapshot(lease,binding,plan.planId)!!
-        assertNull(ServerSnapshotStore(db,SnapshotProtocol(schema)).apply(request,page(binding.syncEpoch,entities,checkpoint,receipts,mappings)))
+        assertNull(ServerSnapshotStore(db,SnapshotProtocol(schema)).apply(request,page(binding.syncEpoch,entities,checkpoint,receipts,mappings,timelineRevision)))
         store.acceptCompletedSnapshot(lease,binding,plan.planId,request.runId);return request
     }
     private suspend fun rejects(action:suspend ()->Unit) {var rejected=false;try{action()}catch(_:Exception){rejected=true};assertTrue(rejected)}
@@ -329,6 +329,77 @@ class ReconciliationStorageTest {
                 assertNull(db.importDao().sources(plan.planId).single().sourceRevision)
             } finally {db.close()}
         }
+    }
+    @Test fun mappedGoalKeepsHistoricalAxisWhileNewDecisionRequiresCurrentAxisAndSeparateProjection()=runBlocking<Unit> {
+        for(mapped in listOf(true,false)) {
+            val db=memory()
+            try {
+                val lease=account(db);val repo=DiaryRepository(db,context,lease)
+                repo.setGoal(2500.0,null,0.0,null)
+                val ordinary=MealPushStore(db,schema);val old=ordinary.prepare(lease)!!;ordinary.markAttempted(old)
+                ordinary.applyAck(ordinary.prepareAck(old,200,reply(old.batch)))
+                val op=db.dao().operation(old.operations.single().operationId)!!
+                val original=db.dao().goalById(lease.storageScope,op.entityId)!!;val bytes=old.batch.body();val hash=old.batch.sha256
+                val binding=changedEpoch(db,lease);val store=ReconciliationStore(db,schema);val plan=plan(store,lease,binding)
+                val source=db.importDao().sources(plan.planId).single();val target=uuid()
+                val mappedEntity=entity(op,5).put("entity_id",target)
+                val mappedProof=mapping(source,target,5)
+                pull(db,store,lease,binding,plan,if(mapped)listOf(mappedEntity) else emptyList(),
+                    mappings=if(mapped)listOf(mappedProof) else emptyList(),timelineRevision=8)
+                val choice=if(mapped)JSONObject().put("choice","resolve_existing").put("target_id",target)
+                    else JSONObject().put("choice","new_goal_decision").put("payload",JSONObject(op.payload).put("energy_kcal","2600").put("timeline_base_revision",0))
+                store.decide(lease,binding,plan.planId,"goal",source.sourceId,source.sourceHash,choice.toString())
+                if(!mapped) {
+                    rejects {store.preparePush(lease,binding,plan.planId)}
+                    assertEquals(1,db.dao().operationCount(lease.storageScope))
+                    choice.getJSONObject("payload").put("timeline_base_revision",8)
+                    store.decide(lease,binding,plan.planId,"goal",source.sourceId,source.sourceHash,choice.toString())
+                }
+                val request=store.preparePush(lease,binding,plan.planId)!!
+                val sent=request.operations.single();val payload=JSONObject(sent.payload)
+                assertEquals(if(mapped)0 else 8,payload.getInt("timeline_base_revision"))
+                assertEquals(if(mapped)"2500" else "2600",payload.getString("energy_kcal"));assertTrue(payload.isNull("protein_g"))
+                store.markAttempted(request);store.applyAck(store.prepareAck(request,200,reply(request.batch)))
+                val refreshed=db.importDao().sources(plan.planId).single();val revision=if(mapped)6 else 1
+                val accepted=entity(sent,revision)
+                pull(db,store,lease,binding,plan,listOf(accepted),mappings=listOf(mapping(source,refreshed.wireId,revision)),timelineRevision=if(mapped)8 else 9)
+                val application=store.finish(lease,binding,plan.planId)
+                assertEquals(0,application.held);assertFalse(db.bootstrapDao().binding(lease.storageScope)!!.requiresRecovery)
+                assertEquals(original,db.dao().goalById(lease.storageScope,original.id));assertEquals(op,db.dao().operation(op.operationId))
+                assertArrayEquals(bytes,db.pushDao().batch(old.id)!!.requestJson.toByteArray());assertEquals(hash,db.pushDao().batch(old.id)!!.requestHash)
+                val finalSource=db.importDao().sources(plan.planId).single()
+                if(mapped)assertEquals(original.id,finalSource.localId) else {
+                    assertNotEquals(original.id,finalSource.localId)
+                    assertEquals(2600.0,db.dao().goalById(lease.storageScope,finalSource.localId)!!.kcal,0.0)
+                    assertTrue(db.resolvedOriginalGoals(lease.storageScope).contains(original.id))
+                    assertEquals("Resolved immutable history must not become a second legacy import",0,LegacyImportStore(db,schema).preview(lease,lease.storageScope).total)
+                }
+            } finally {db.close()}
+        }
+    }
+    @Test fun acceptingKnownAbsentProfileReleasesUniqueSlotWithoutChangingFrozenRequest()=runBlocking<Unit> {
+        val db=memory()
+        try {
+            val lease=account(db);val repo=DiaryRepository(db,context,lease)
+            repo.setProfile("Before",180.0,ActivityClass.LINE,DietAim.MAINTAIN)
+            val push=MealPushStore(db,schema);val created=push.prepare(lease)!!;push.markAttempted(created)
+            push.applyAck(push.prepareAck(created,200,reply(created.batch)));val id=created.operations.single().entityId
+            repo.setProfile("Pending",181.0,ActivityClass.LINE,DietAim.MAINTAIN)
+            val pending=push.prepare(lease)!!;push.markAttempted(pending);val bytes=pending.batch.body();val hash=pending.batch.sha256
+            val binding=expire(db,lease,pending);val store=ReconciliationStore(db,schema);val plan=plan(store,lease,binding)
+            pull(db,store,lease,binding,plan);val source=db.importDao().sources(plan.planId).single()
+            assertEquals("absent_same_epoch",source.decisionCode)
+            store.decide(lease,binding,plan.planId,"profile",source.sourceId,source.sourceHash,"{\"choice\":\"accept_server\"}")
+            store.finish(lease,binding,plan.planId)
+            assertNull(db.dao().currentProfile(lease.storageScope));assertTrue(db.domainSyncDao().state(lease.storageScope,"profile",id)!!.deleted)
+            assertTrue(db.serverDiaryDao().records(lease.storageScope).single().absent)
+            assertEquals("local_only",db.dao().operation(pending.operations.single().operationId)!!.status)
+            assertArrayEquals(bytes,db.pushDao().batch(pending.id)!!.requestJson.toByteArray());assertEquals(hash,db.pushDao().batch(pending.id)!!.requestHash)
+            repo.setProfile("Replacement",182.0,ActivityClass.LINE,DietAim.MAINTAIN)
+            val replacement=push.prepare(lease)!!;assertNotEquals(id,replacement.operations.single().entityId)
+            assertNull(replacement.operations.single().baseRevision);assertEquals("Replacement",db.dao().currentProfile(lease.storageScope)!!.nickname)
+            assertTrue(db.domainSyncDao().state(lease.storageScope,"profile",id)!!.deleted)
+        } finally {db.close()}
     }
     private object StrictJsonForTest {
         fun operation(batch:PushBatch)=pl.roseru.kalorie.core.catalog.StrictJson.canonical(batch.json().getJSONArray("operations").getJSONObject(0))
