@@ -77,8 +77,12 @@ Kontrolowane `runReconciliationStep` wykorzystuje zatwierdzony trwały plan
 O2-B i jego osobne `prepareAck/applyAck`; nie wolno chwilowo wyłączać flagi,
 zmieniać starej epoki koperty ani przepuszczać recovery ACK przez zwykły parser.
 Pełny odczyt wykonuje jedną trwałą grupę receipts, do100ID. Kolejne strony
-sprawdza przed HTTP i zastosowaniem; `acceptCompletedSnapshot` zapisuje dowody
-dopiero po ukończeniu kopii. Ukończenie grupy nie oznacza ukończenia całego planu.
+sprawdza przed HTTP i zastosowaniem. Gotowy raw wykrywa
+`pendingSnapshotAcceptance` przed terminem Retry-After i odnowieniem tokenu.
+`prepareCompletedSnapshot` parsuje go poza guardem sesji; `applyCompletedSnapshot`
+zapisuje dowody wewnątrz guardu. Lokalny dokończony run używa rewizji zapisanej
+sesji, świeży wynik sieciowy używa aktualnego ApiSession. Ukończenie grupy
+nie oznacza ukończenia całego planu ani zdjęcia flagi recovery.
 
 PUSH wysyła jeden zatwierdzony zamrożony request. Po utracie odpowiedzi ponawia
 te same bajty. `awaitingSnapshot` daje `reconciliation_snapshot_required`, zeroACK
@@ -117,8 +121,9 @@ odnowienie przed HTTP zużywa próbę, więc późniejsze401 nie powoduje drugie
 odnowienia w tej operacji. Bieżący request i jego identyfikator pozostają zachowane.
 Przygotowane dalsze przypadki obejmują saved ACK po wygaśnięciu tokenu,
 kompletny raw snapshot przerwany przed zapisem receipts i wstępny refresh→401.
-Przyjęcie kompletnego raw bez sieci czeka na dodatkowy port O2 przygotowania/
-zastosowania kopii; obecny kod nie realizuje jeszcze tej gałęzi. Ten przypadek nie jest PASS.
+Port O2 przygotowania/zastosowania kopii3825b33d jest dołączony przez ea84bd26;
+lokalny kod kontrolera realizuje tę gałąź. Własny pending przypadek sprawdza
+również zachowanie przyszłego Retry-After i czeka na końcowy odbiór, nie jest jeszcze PASS.
 
 Podgląd lokalnego zdjęcia rozróżnia wczytywanie i błąd odczytu/dekodowania.
 Po błędzie użytkownik może ponowić samo otwarcie obrazu; nie jest wykonywane
@@ -168,3 +173,20 @@ zdrowej subskrypcji Room; kolejna zmiana może odtworzyć aktualny widok.
 Istniejący przypadek wskazuje teraz niespełniony etap bez zmiany limitu10s,
 liczby przypadków ani propagacji anulowania. Czeka na wspólny odbiór etapu;
 wynik sześciu przypadków źródła3ac2312 nie obejmuje tej późniejszej poprawki.
+
+### Pierwszy profil i cel pustego konta — zgłoszenie O3
+
+Rzeczywista próba O3 po PKCE/bootstrap/pustej pełnej kopii ujawniła pętlę:
+Settings pomijało edytor przy braku celu, a profil wymagał istniejącego celu.
+Lokalna poprawka renderuje pusty formularz celu i pozwala zapisać sam profil.
+Repozytorium nie tworzy2800kcal przy takim zapisie. Pierwszy cel wymaga jawnego
+zatwierdzenia kcal przez użytkownika i korzysta z dotychczasowego setGoal,
+świeżego UUID, aktualnego kontekstu i kanonicznej kolejki. Puste B/T/W zostają null.
+Przy istniejącym celu zmiana aktywności nadal przelicza jego rzeczywistą wartość.
+Informacja Ustawień odróżnia profil konta od gościa bez deklarowania ważnej sesji.
+
+Jedna nowa regresja używa rzeczywistej trasy CalorieApp, modeli i Room po
+zastosowaniu pustej kopii. Zapisuje profil bez celu, następnie jawny cel,
+sprawdza oryginał gościa, UUID/kontekst/kanoniczne payload i brak fikcyjnego ACK.
+Transport jest syntetyczny, to nie nowy odbiór PKCE/HTTP/PG. Test i poprawka
+czekają na wspólny odbiór końca etapu razem z portem i obserwatorem.

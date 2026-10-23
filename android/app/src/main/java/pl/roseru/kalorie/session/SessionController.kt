@@ -842,6 +842,16 @@ class SessionController internal constructor(private val db: CalorieDatabase, pr
 
     private suspend fun recoverSnapshot(reservation:RecoveryReservation,store:ReconciliationStore):SyncStepResult {
         val lease=reservation.fence.lease;val context=checkNotNull(reservation.fence.server)
+        // Completing a validated local archive is not another HTTP attempt. Recover it even
+        // while the saved access token is expired or a network Retry-After is still active.
+        val pending=withSavedRecoverySession(reservation){store.pendingSnapshotAcceptance(lease,context,reservation.planId)}
+        if(pending!=null) {
+            val prepared=store.prepareCompletedSnapshot(lease,context,reservation.planId,pending)
+            return withSavedRecoverySession(reservation){
+                store.applyCompletedSnapshot(prepared)
+                SyncStepResult.Completed(runId=pending)
+            }
+        }
         val deadline=recoveryDeadline(reservation)
         if(deadline>now())return SyncStepResult.RetryAt(deadline)
         var request=withSavedRecoverySession(reservation){store.nextSnapshot(lease,context,reservation.planId)}
@@ -854,9 +864,10 @@ class SessionController internal constructor(private val db: CalorieDatabase, pr
             if(response.status==200) {
                 val next=withApiSession(captured){ready();checkNotNull(snapshots).apply(sent,response.body)}
                 if(next!=null){request=next;continue}
+                val prepared=store.prepareCompletedSnapshot(lease,context,reservation.planId,sent.runId)
                 withApiSession(captured){
                     requireRecoveryOperation(reservation)
-                    store.acceptCompletedSnapshot(lease,context,reservation.planId,sent.runId)
+                    store.applyCompletedSnapshot(prepared)
                 }
                 return SyncStepResult.Completed(runId=sent.runId)
             }

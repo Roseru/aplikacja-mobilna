@@ -344,9 +344,12 @@ class DiaryRepository(private val db: CalorieDatabase, private val context: Cont
         val previousProfile = dao.currentProfile(owner)
         val previous = previousProfile?.activityClass?.let(ActivityClass::valueOf) ?: ActivityClass.GARRISON
         val goal = dao.goal(owner, LocalDate.now().toString()).first()
-        val kcal = activityCalorieGoal(goal?.kcal ?: 2800.0, previous, activity)
+        val kcal = goal?.let { activityCalorieGoal(it.kcal, previous, activity) }
         setProfile(nickname, heightCm, activity, aim)
-        if (previous != activity || goal == null || previousProfile?.dietAim != aim.name) setGoal(kcal, goal?.protein, goal?.fat, goal?.carbs)
+        // A new account's absent goal is not the guest's demonstration target.
+        // The user sets the first goal explicitly; profile editing remains independent.
+        if (goal != null && kcal != null && (previous != activity || previousProfile?.dietAim != aim.name))
+            setGoal(kcal, goal.protein, goal.fat, goal.carbs)
     }
 
     suspend fun addWeight(kg: Double, date: LocalDate, id: String = UUID.randomUUID().toString()) = ownerTransaction {

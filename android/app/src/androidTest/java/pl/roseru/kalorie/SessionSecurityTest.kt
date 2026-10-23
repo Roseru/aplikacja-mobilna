@@ -3237,12 +3237,17 @@ class SessionSecurityTest {
             val runsBefore=h.push.db.snapshotDao().runs(h.push.lease.storageScope)
             val oidcCalls=h.push.fixture.calls;val copyCalls=h.push.copies.calls.size
             h.push.fixture.time+=400_000;h.push.fixture.refreshFailure=java.io.IOException("Synthetic offline identity endpoint")
+            val retryAt=h.push.fixture.time+60_000
+            val saved=h.push.vault.read()
+            saved.getJSONObject("session").put("apiRetryAt",retryAt)
+            h.push.vault.write(saved)
             h.push.copies.answer={error("Completed local archive must not be fetched again")}
             h.push.c=h.again();h.push.c.start()
             val result=h.snapshot() as SyncStepResult.Completed
             assertEquals(request.runId,result.runId);assertEquals(copyCalls,h.push.copies.calls.size)
             assertEquals(oidcCalls,h.push.fixture.calls);assertEquals(runsBefore,h.push.db.snapshotDao().runs(h.push.lease.storageScope))
             assertEquals(1,h.push.db.importDao().evidence(h.plan.planId).count{it.kind=="receipt_group"})
+            assertEquals(retryAt,h.push.vault.read().getJSONObject("session").getLong("apiRetryAt"))
             assertTrue(h.push.calls.isEmpty());assertEquals(h.binding,h.push.db.bootstrapDao().binding(h.push.lease.storageScope))
         }finally{h.close()}
     }
