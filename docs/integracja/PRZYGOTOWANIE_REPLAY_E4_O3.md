@@ -1,6 +1,80 @@
 # Przygotowanie obserwacji PostgreSQL dla replay E4 — O3
 
-## Aktualne wejścia O3 — 23.10.2026
+## Próba operatora O3 — 23.10.2026, 12:53–12:54 CEST
+
+**Jedna rzeczywista próba Meal/utrata ACK/restart/identyczny replay na własnym
+świeżym AVD O3: PASS po stronie APK i niezależnego PostgreSQL.** To wynik
+konkretnego kandydata Room14. Aktualny kandydat O1 Room17, wspólne okno między
+komputerami i pełny odbiór E4/E7-R/recovery/KO32 pozostają osobnymi zadaniami.
+
+O3 zbudował bez edycji źródeł dokładny kandydat O1
+`d3f6dba3a58b1d7ee52fb458ce01fc09ed3a4075`, z publicznym overlay TLS i wejściami
+z tabeli poniżej. Kompilacja obu APK, podpis, skompilowane issuer/API/CA,
+wykluczenie userCA/cleartext i obecność drivera w opt-in testAPK sprawdzone.
+Zainstalowane bajty obu APK po próbie ponownie porównano z tymi sumami:
+
+| Artefakt | Wersja / SHA256 |
+|---|---|
+| validation APK | `0.8.23.validation`, code1034, Room14; `b12a7bd43edd2cbda39a11de3381f006f7b195536a1430cde74739306b173eed` |
+| opt-in testAPK | `7822b5cef7170a0b1093f64b541b08922b4f0051f6c3e68d129fe01f5316a892` |
+| signer O3 | `313a9f31843fe4955a00569acde836897cff61dcb7bd5760c4726d4291c832a2` |
+
+Użyto nowego, osobnego AVD API35 i nowych kont syntetycznych operatora.
+Zwykły Chrome/Code+PKCE S256, bootstrap, pełna kopia i ręczny formularz
+utworzyły jeden posiłek. Bez seed SQL/Room, czyszczenia aplikacji ani zmiany
+wybranych identyfikatorów. Pierwotne konta integracyjne zachowano.
+Używany API image05c1792f/schema0024 i epoka pozostały bez migracji.
+
+| Odczyt / zdarzenie | UTC | Wynik |
+|---|---|---|
+| C0, osobna transakcja read-only | 10:53:13.721434 | cel/receipt/składniki nie istnieją, pozycja0; pusty licznik utworzony przez bootstrap |
+| rzeczywiste HTTP200 / hold | 10:53:47.761056 / 10:53:47.789785 | zweryfikowany ACK zatrzymany przed zapisem lokalnym |
+| C1, nowe połączenie PostgreSQL | 10:54:12.007249 | Meal/receipt revision1, pełna treść zgodna z planem sprzed C0 |
+| rzeczywisty force-stop | przed 10:54:32.786867 deadline | PID nieobecny, potwierdzony zapas20,553s do deadline |
+| nowy proces i identyczny retry | 10:54:14.419873 | nowe HTTP200, `already_applied`, pierwotna revision1, lokalny ACK PASS |
+| C2, trzecie połączenie PostgreSQL | 10:54:15.992926 | identyczne treści, liczniki i hashe sześciu tabel jak C1 |
+
+Plan powstał z dokładnych utrwalonych bajtów, parserem/fingerprint rzeczywistego
+runtime API, przed C0. SHA koperty:
+`d2dc64cb6c319ac7824e67af41cbf6f13c76ced9dcc1d64df76b0cd9643ae8d0`.
+Fingerprint operacji:
+`5891ce757279891db0953647fc6633acb3c71d031b344e2127151c89633174de`.
+Każdy odczyt sprawdził obraz, schemat, epokę, konto, plan i read-only.
+C0→C1: jeden Meal, jeden składnik, jeden DiaryDay, jeden receipt, dwie zmiany;
+pozycja0→2. C1→C2 bez przyrostu i bez zmiany zapisanej treści.
+
+Driver potwierdził ochronę19 tabel oraz nowy identyfikator procesu.
+Po próbie Room14: Meal serverRevision/localRevision1/1, outbox `acked`,
+attempted1, FK czyste. Dodatkowe kopie przed/po zachowały identyczne wiersze
+i rowid21 z29 tabel. Pozostałe obejmują aktualny kontekst, metadane kopii,
+Meal/outbox/batch; nie deklarujemy niezmienności wszystkich tabel.
+Hold zakończył się oczekiwanym `Process crashed` po force-stop; odrębny test
+replay zakończył się `OK (1 test)`. Własny tunnel/reverse usunięto, AVD
+wyłączono bez wipe, nie otwierano nowego listenera LAN.
+
+Historia operatora zachowana: pierwsze prepare zatrzymało się przed freeze/HTTP
+przez nieświeżą sesję. Po przerwie ten sam AVD i dane wznowiono bez czyszczenia,
+a zwykły ponowny login potwierdził świeżą sesję. Przy drugim prepare poprawiono
+wyłącznie zbyt mocne oczekiwanie lokalnego harnessu „wszystkie tabele puste”:
+bootstrap już tworzy pusty licznik pozycji0. Nie ponawiano prepare po freeze.
+Pierwszy poll pliku hold zwrócił puste bajty; odczytano ten sam trwający hold
+i przerwano go w terminie, bez drugiego wysłania operacji hold.
+
+[Roboczy pakiet operatora](https://github.com/Roseru/aplikacja-mobilna/releases/tag/untagged-58fbda4d81b2bc29328c)
+zawiera oba APK, manifest, neutralny raport, publiczny CA i SHA256SUMS:
+ZIP22234122B, SHA256
+`dcd55cd5e1257b202990a764d984af374944a51053ae709a9db2e26ea88945dc`.
+GitHub potwierdził rozmiar i ten sam digest po uploadzie. Draft wymaga dostępu
+do repozytorium. Bez haseł, tokenów, ownerID, raw HTTP/Room lub prywatnego CA.
+APK ma osobny signer O3 i starszy Room14: wyłącznie świeży izolowany AVD,
+bez instalacji nad istniejącymi danymi ani obniżania schematu.
+
+Odczytany nowy O1-111/PR138 headc8696b3 dostarcza opis skonfigurowanego
+0.8.27/code1038/Room17, źródło dc012fab, manifest i lokalne kwalifikacje.
+Fizyczna dostawa tych APK do O3 i aktualny peer/ograniczone okno nadal wymagają
+potwierdzenia. Ten starszy wynik operatora nie zastępuje odbioru nowej dostawy.
+
+## Wejścia O3 z 23.10.2026, 07:53 CEST — stan przed próbą
 
 **Kwalifikacja serwera i wejść kompilacji PASS; skonfigurowane APK O1 oraz
 wspólna próba E4 nadal NOT_RUN.** PR137 jest scalony jako `167152a`;
