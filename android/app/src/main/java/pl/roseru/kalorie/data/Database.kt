@@ -182,8 +182,9 @@ interface CalorieDao {
     RationEntity::class, RationComponentEntity::class, ProfileEntity::class, WeightEntity::class, DiaryDayEntity::class,
     CatalogGenerationEntity::class, CatalogRecordEntity::class, CatalogMemberEntity::class, CatalogActiveEntity::class,
     LocalOwnerEntity::class, LocalActiveOwnerEntity::class, AccountBindingEntity::class,
-    BootstrapAttemptEntity::class, ServerSnapshotRun::class, ServerSnapshotPage::class, ServerSnapshotAccess::class, ServerSnapshotIdentity::class, pl.roseru.kalorie.photo.MealPhotoDraft::class, pl.roseru.kalorie.photo.PhotoAnalysisRequestEntity::class, PhotoMaterialization::class, SyncPushBatch::class, pl.roseru.kalorie.photo.PhotoConfirmationHistory::class, CanonicalWeightState::class, SyncConflictDecision::class, ServerDiaryRecord::class, ServerDiaryApplication::class, CanonicalDomainState::class, CanonicalGoalTimeline::class], version = 18, exportSchema = true)
+    BootstrapAttemptEntity::class, ServerSnapshotRun::class, ServerSnapshotPage::class, ServerSnapshotAccess::class, ServerSnapshotIdentity::class, pl.roseru.kalorie.photo.MealPhotoDraft::class, pl.roseru.kalorie.photo.PhotoAnalysisRequestEntity::class, PhotoMaterialization::class, SyncPushBatch::class, pl.roseru.kalorie.photo.PhotoConfirmationHistory::class, CanonicalWeightState::class, SyncConflictDecision::class, ServerDiaryRecord::class, ServerDiaryApplication::class, CanonicalDomainState::class, CanonicalGoalTimeline::class, ImportPlan::class, GuestAssignment::class, ImportSource::class, ImportIdentity::class, ImportItemIdentity::class, ImportDecision::class, ReconciliationBatch::class, ReconciliationEvidence::class], version = 19, exportSchema = true)
 abstract class CalorieDatabase : RoomDatabase() {
+    abstract fun importDao(): ImportDao
     abstract fun domainSyncDao(): CanonicalDomainDao
     abstract fun serverDiaryDao(): ServerDiaryDao
     abstract fun conflictDao(): SyncConflictDao

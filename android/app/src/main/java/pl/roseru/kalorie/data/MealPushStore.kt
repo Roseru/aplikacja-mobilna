@@ -55,8 +55,8 @@ internal sealed interface PushEntitySource {
     val payload: String?
     val queue: List<OutboxEntity>
 }
-internal data class MealPushEntitySource(val meal: MealWithItems, override val queue: List<OutboxEntity>): PushEntitySource {
-    override val id get() = meal.meal.id
+internal data class MealPushEntitySource(val meal: MealWithItems, override val queue: List<OutboxEntity>, val wireId:String=meal.meal.id): PushEntitySource {
+    override val id get() = wireId
     override val context get() = meal.meal.wireContext
     override val revision get() = meal.meal.serverRevision
     override val deleted get() = meal.meal.deleted
@@ -64,8 +64,8 @@ internal data class MealPushEntitySource(val meal: MealWithItems, override val q
     override fun toString() = "MealPushEntitySource(redacted)"
 }
 internal data class WeightPushEntitySource(val point: WeightEntity, val state: CanonicalWeightState,
-    override val queue: List<OutboxEntity>): PushEntitySource {
-    override val id get() = point.id
+    override val queue: List<OutboxEntity>, val wireId:String=point.id): PushEntitySource {
+    override val id get() = wireId
     override val context get() = state.wireContext
     override val revision get() = state.serverRevision
     override val deleted get() = point.deleted
@@ -217,10 +217,10 @@ class MealPushStore(private val db: CalorieDatabase, private val schema: SyncWir
     }
 
     private suspend fun entity(owner: String, operation: OutboxEntity): PushEntitySource = when (operation.entityType) {
-        "meal" -> MealPushEntitySource(checkNotNull(db.dao().meal(operation.entityId, owner)),
-            db.dao().canonicalMealOperations(owner, operation.entityId))
-        "weight" -> WeightPushEntitySource(checkNotNull(db.dao().weight(operation.entityId, owner)),
-            checkNotNull(db.weightSyncDao().state(owner, operation.entityId)), db.weightSyncDao().operations(owner, operation.entityId))
+        "meal" -> MealPushEntitySource(checkNotNull(db.dao().meal(db.localSyncId(owner,"meal",operation.entityId), owner)),
+            db.dao().canonicalMealOperations(owner, operation.entityId),operation.entityId)
+        "weight" -> WeightPushEntitySource(checkNotNull(db.dao().weight(db.localSyncId(owner,"weight",operation.entityId), owner)),
+            checkNotNull(db.weightSyncDao().state(owner, db.localSyncId(owner,"weight",operation.entityId))), db.weightSyncDao().operations(owner, operation.entityId),operation.entityId)
         in PrivateDomainsWire.types -> DomainPushEntitySource(
             checkNotNull(db.domainSyncDao().state(owner, operation.entityType, operation.entityId)),
             db.domainSyncDao().operations(owner, operation.entityType, operation.entityId))

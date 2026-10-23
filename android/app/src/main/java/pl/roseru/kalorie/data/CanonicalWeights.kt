@@ -57,7 +57,7 @@ internal class CanonicalWeightEditor(private val db: CalorieDatabase, private va
             owners.requireCurrent(lease)
             val state = db.weightSyncDao().state(lease.storageScope, id) ?: return@withTransaction null
             val point = checkNotNull(db.dao().weight(id, lease.storageScope))
-            Source(point, state, db.weightSyncDao().operations(lease.storageScope, id), db.bootstrapDao().binding(lease.storageScope))
+            Source(point, state, db.weightSyncDao().operations(lease.storageScope, db.wireSyncId(lease.storageScope,"weight",id)), db.bootstrapDao().binding(lease.storageScope))
         } ?: return@withContext false
         if (source.point.deleted) { require(kg == null); return@withContext true }
         val schema = CanonicalMealRows.schema(context)
@@ -76,15 +76,16 @@ internal class CanonicalWeightEditor(private val db: CalorieDatabase, private va
         val epoch = StrictJson.read(source.state.wireContext.toByteArray(Charsets.UTF_8)).getString("sync_epoch")
         val operationId = UUID.randomUUID().toString()
         val payload = if (deleted) null else wire.canonical
-        val operation = if (status == "pending") WeightWire.operation(operationId, id, epoch, base, payload, schema) else null
+        val wireId=db.wireSyncId(lease.storageScope,"weight",id)
+        val operation = if (status == "pending") WeightWire.operation(operationId, wireId, epoch, base, payload, schema) else null
         val point = source.point.copy(kg = kg ?: source.point.kg, deleted = deleted,
             localRevision = Math.addExact(source.point.localRevision, 1))
-        val outbox = OutboxEntity(operationId, lease.storageScope, "weight", id, if (deleted) "delete" else "upsert",
+        val outbox = OutboxEntity(operationId, lease.storageScope, "weight", wireId, if (deleted) "delete" else "upsert",
             base, payload ?: "null", Instant.now().toString(), status, "sync-v1", operation, source.state.wireContext)
         db.withTransaction {
             owners.requireCurrent(lease)
             check(db.dao().weight(id, lease.storageScope) == source.point && db.weightSyncDao().state(lease.storageScope, id) == source.state &&
-                db.weightSyncDao().operations(lease.storageScope, id) == source.queue && db.bootstrapDao().binding(lease.storageScope) == binding)
+                db.weightSyncDao().operations(lease.storageScope, wireId) == source.queue && db.bootstrapDao().binding(lease.storageScope) == binding)
             db.dao().saveWeight(point)
             db.weightSyncDao().update(source.state.copy(wirePayload = wire.canonical))
             source.queue.filter { !it.attempted }.forEach { db.dao().updateOperation(it.copy(status = "superseded")) }
