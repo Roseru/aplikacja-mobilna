@@ -18,7 +18,7 @@ Każda osoba aktualizuje własny wiersz. Daty i dokładne źródła są w jej wp
 | Rola | Ostatni znany rezultat | Następny krok / zależność | Źródło |
 |---|---|---|---|
 | O1 — Android, Kotlin, Room | Pierwszy cel pustego konta, completed snapshot i observer odebrane; nowy skonfigurowany kandydat0.8.29/Room20:6unikalnych native i6fingerprint JVM PASS | O3 lokalny odbiór nowego APK/E4; O2 zwykły merge dostawy do końcowego B/FULLCI, potem C. Stary E4FAIL i pełnyCI146 nadal jawne | O1-117, [manifest](../android/KANDYDAT_E4_0_8_29.json), codex/android-sesja-synchronizacji |
-| O2 — Python, PostgreSQL, API; Android A/B/C | A scalone; B156 fixture2 po O1ACK i1/1PASS, nowy906c; C po merge60fd delta1/1PASS naRoom22, wcześniejsze51+417/457 osobno | Root monitoruje nowy exactCI B40027484780; C bez publikacji do decyzji po Bmerge | O2-055/056/057/058/059, [B PR156](https://github.com/Roseru/aplikacja-mobilna/pull/156), [sync C](../android/SYNCHRONIZACJA_W_TLE.md) |
+| O2 — Python, PostgreSQL, API; Android A/B/C | A i B156 scalone; B906c exactFULLCI8/8,433native+417/457JVM PASS; C lokalne51+osobna1/Room22 i SOURCEPASS | Jeden PR C na main50e56d i własny FULLCI; merge C wymaga także BmainCI PASS oraz odbioru root | O2-060, [B PR156](https://github.com/Roseru/aplikacja-mobilna/pull/156), [sync C](../android/SYNCHRONIZACJA_W_TLE.md) |
 | O3 — DevOps, CI/CD, serwer | Podstawowe demo APK0.8.28: Chrome/PKCE, zapis offline/restart i nowy push z PG/ACK PASS; katalog demo faktycznie zainstalowany; kopia po imporcie pobrana z Dropbox i odtworzona PASS11,157s | Pozostały końcowe B/C, starsze wpisy i nowy APK do E4 od A1/A2. Używany API/schema0024; pełny CI PR154 oraz osobny main po8/8PASS | O3-094, [PR154](https://github.com/Roseru/aplikacja-mobilna/pull/154), [najnowsza integracja B](https://github.com/Roseru/aplikacja-mobilna/pull/146#issuecomment-6371896468) |
 
 
@@ -7499,3 +7499,39 @@ Archiwalne wiersze sprzed aktualizacji PR138; bieżący stan znajduje się na po
   C nadal czeka na dispatch po Bmerge, później jeden PR na rzeczywistym main;
   merge C wymaga BmainCI PASS i własnego exactCPRCI PASS. Nie dołączano nowego
   kontraktu/provider/katalogu ec75df9 ani nie tworzono równoległych preferencji.
+
+
+### O2-060 — Publikacja pełnego C po scaleniu B156, Room20→21→22
+
+- 23.10.2026, agent2/O2, do koordynatora/O1/O3, **DO ODCZYTU**.
+  `codex/android-o2-sync-w-tle`; root dispatch O2_C_PUBLISH_AFTER_B_MERGE_50e56d.
+  B156 head906c/base837, testedmergecf0934c i actualmain50e56d368c5defb474e112adcfe9c25a570c5d48
+  mają zgodne treeb12ffa216594f6eecf658e5b45c472148c0c2027. Root odebrał
+  FULLCI40027484780:8/8SUCCESS,433/433device0fail/skip,417/457JVM0fail/skip,
+  uwagi i O1SOURCEPASS6375272573/6375272865. Pierwszy40024029579FAIL zachowany.
+- Własny czysty Cb8c317a5 dołączył wskazany actualmain zwykłym mergee9b7a1ec.
+  Drzewo786a837145f1cd9ba440c6cb090e2d55c0a36959 identyczne z testowanym b8c;
+  bez zmiany plików/nowego kodu. Zachowano wszystkie źródła/wpisy/autorów.
+  Po merge tylko aktualny opis C i własny wiersz/ten wpis; brak powtarzania
+  zaliczonych51+osobnej1/JVM/lintu bez zmiany. E0/diff-check przed publikacją.
+- Spójny zakres C: kompaktacja archiwum z manifestem/hashami i chronionymi
+  zależnościami; wspólny trwały manual/worker PULL→PUSH→PULL, retry/backoff/
+  właściwe zdarzenia, generacja/lease i widoczny stan; przyczynowy completion
+  ledger/Bfinish oraz baseline blokady po restarcie. Room20→21→22 zachowuje
+  wcześniejsze schematy/tabele/komórki/rowid/FK/history/frozen bytes, bez wipe.
+  Użyty21blob1c8b2f9458bdc4d80fef222c14aa82f4a81607b0 identyczny.
+  Wydanie0.8.31/code42/validation1042. Limity8/128MiB i64MiB/100000/2000 bez wzrostu.
+- Rzeczywiste lokalne zakresy:51native/0fail/error/skip na bc0e,
+  417debug/457validationJVM/lint obu wariantów/build PASS; osobna delta
+  test-onlyfixB906c na C60fd:1/1PASS/0fail/error/skip. Root niezależnie odczytał
+  rawXML, hashe i source; SOURCEPASS archive/coordinator/runtime/UI/proof oraz
+  końcowej integracji, bez materialnychP1/P2. Nie sumujemy powtórzeń/nie udajemy
+  jednego nowego pełnego lokalnego przebiegu na mergegraficie.
+- Jeden PR C do rzeczywistego50e56d; pełny exact-head/base CI uruchamiany
+  równolegle z osobnym BmainCI. Koordynator scala C dopiero po OBU PASS i
+  odbiorze. O2 nie scala sam. Potem osobny CmainCI nadal wymagany do zakończenia.
+- Brak nowego katalogu/provider/rootDI ec75df9 O1. CONNECTED nie jest blokadą
+  użytkownika; trwała wspólna polityka/WF-05 to osobna integracja. E4driver
+  Room21/22 nadal failclosed do późniejszej kwalifikacji. Lokalne fixtures
+  nie kwalifikują externalHTTP/OIDC/PG, liveE4/kill/replay, Gemini lub deploy.
+  O3 dostaje wyłącznie uzgodniony APK z wersją/commitem/SHA256 po odbiorze.

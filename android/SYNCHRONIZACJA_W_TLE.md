@@ -9,8 +9,13 @@ trwałego recovery `d08627f1`. SOURCEPASS archiwów, koordynatora, runtime/UI
 oraz ograniczonej delty recovery bez materialnychP1/P2. Oddzielne dowody:
 51native i417debug/457validationJVM/lint/build na bc0e oraz pojedyncza delta
 fixture na60fd:1/1PASS. E0 i diff-check PASS.
-C pozostaje przed publikacją, końcowym FULLCI i odbiorem main; B ma osobny
-[PR156](https://github.com/Roseru/aplikacja-mobilna/pull/156).
+B [PR156](https://github.com/Roseru/aplikacja-mobilna/pull/156) jest scalone do
+main50e56d368c5defb474e112adcfe9c25a570c5d48 po exactFULLCI8/8SUCCESS;
+root odczytał433/433native i417/457JVM bez fail/skip. Zwykły merge tego main
+do C zachował identyczne drzewo b8c317a5, więc testów nie powtarzano.
+Publikowany jest jeden PR C na rzeczywistym main; jego FULLCI i osobny main
+pozostają wymagane. Równoległy BmainCI jest dodatkową obowiązkową bramką
+przed scaleniem C przez koordynatora.
 
 ## Jeden trwały przepływ
 
@@ -134,3 +139,14 @@ przypadek na C5564/Room22:1/1PASS,0fail/error/skip. Wcześniejsze51native oraz
 417/457JVM/lint zbc0e są osobnym dowodem; nie uruchamiano ich ponownie bez zmiany.
 Nowy exactCI B i późniejszy C/main pozostają wymagane. To lokalny test
 fixture ACKgate/cancel/replay, nie kwalifikacja live E4driver/fingerprintRoom22.
+
+
+### Publikacja C na scalonym B
+
+Na decyzję koordynatora50e56d→C dołączono zwykłym mergee9b7a1ec.
+Drzewo786a837145f1cd9ba440c6cb090e2d55c0a36959 jest identyczne z b8c317a5;
+po nim zmieniono tylko ten opis i własny wiersz/wpis O2 w dzienniku.
+SOURCEPASS i lokalne51na bc0e, osobna1na60fd oraz417/457JVM/lint zachowują
+swoje rzeczywiste zakresy i przypięte dowody. Nowy FULLCI PR C jest wymagany;
+C można scalić dopiero po jego PASS, BmainCI PASS i odbiorze root.
+Nowe WIP O1 ec75df9/katalog/provider/addytywne rootDI nie są częścią tego PR.
