@@ -19,7 +19,7 @@ Każda osoba aktualizuje własny wiersz. Daty i dokładne źródła są w jej wp
 |---|---|---|---|
 | O1 — Android, Kotlin, Room | Pełny pull0.8.27/Room17: końcowe13native i6JVM PASS, ochrona lokalnych zmian | Własny CI i instalacja zwykłej aplikacji; następnie aktualizacja138 i skonfigurowane APK do E4 według O3-085 | O1-109, [PR144](https://github.com/Roseru/aplikacja-mobilna/pull/144), kod90dcb27 |
 | O2 — Python, PostgreSQL, API; Android A/B/C | O2-A: sześć domen trwałego push/ACK, Room18, 357/372JVM i73celowane native PASS; niezależny review PASS | Własny FULL CI i odbiór koordynatora A; lokalne B dozwolone, publikacja B po decyzji o integracji A. Sesja/E4 nadal O1 | O2-051, [moduł A](../android/DOMENY_SYNC.md), kod731731ed |
-| O3 — DevOps, CI/CD, serwer | Offline restore0026 dokładnego kandydata PASS: pełne92tabele aplikacji/101Keycloak/role/SCRAM/katalog/fencing; dodatek do pakietu wysłany | Pozostałe3odbioru: Android/backend/rollback. Pełny KO32/telefon/ledger/oldJWT osobno; nowy APK O1 po FAIL Room17 i osiągalny peer nadal potrzebne | O3-089, [pakiet z dodatkiem restore](https://github.com/Roseru/aplikacja-mobilna/releases/tag/untagged-4cbe4b5562fd750f23a1), [próba E4](https://github.com/Roseru/aplikacja-mobilna/pull/138#issuecomment-6364874393) |
+| O3 — DevOps, CI/CD, serwer | Dokładny kandydat0026: migracja/restore/rollback PASS; restore24,421s zamknięcia, stareJWT401/refresh400/operacja409, świeże PKCE/zapis/replay zaliczone | Pozostałe2odbioru Android/backend. Nowy APK O1 po FAIL Room17 i osiągalny peer; pełny KO32/telefon/ledger/produkcja osobno | O3-090, [pełny zaktualizowany pakiet](https://github.com/Roseru/aplikacja-mobilna/releases/tag/untagged-4cbe4b5562fd750f23a1), [próba E4](https://github.com/Roseru/aplikacja-mobilna/pull/138#issuecomment-6364874393) |
 
 
 
@@ -6479,3 +6479,61 @@ Archiwalne wiersze stanu przed integracją PR141 z main22.10; aktualny stan znaj
   końcowego guardu z O3-088 nadal osobno. Zaszyfrowane konto dostarczone,
   właściciel przekazuje klucz prywatnie; nie wznawiano wygasłego okna peera.
   Własny PR wyłącznie dziennika, DOCS CI i niezależny push main osobno.
+
+### O3-090 — dokładny rollback0026 przez paired restore0024 i odcięcie sesji
+
+- 23.10.2026, agent3/O3, do O2/O1, **DO ODCZYTU**. PR150 scalony d97f979;
+  własny CI39955758818 i niezależny push main39956167332 **DOCS PASS**,
+  zakres/plan logów potwierdzony,6zaplanowanych skipped. Nie pełna regresja.
+- Nowa rzeczywista próba dokładnego lokalnego obrazu e6e80d58/ef4bb4f/schema26.
+  Odtworzono autentyczną parę offsite24 na osobnej instalacji z zachowaniem
+  issuer/CA. Transparentny transport dopuszczał wyłącznie dokładny origin
+  skierowany do własnego loopback gateway; nie kierował do używanej instalacji.
+  PostgreSQL/Keycloak/API działały w wewnętrznej sieci, gateway na loopback.
+- Przez prawdziwe PKCE utworzono świeże syntetyczne A/B, bootstrap i po jednym
+  posiłku z API, z accepted/already_applied. Przy zatrzymanych writers wykonano
+  nową spójną kopię obu baz/globals/config/katalogu24 już z tymi fixture.
+  Między kopią i restore nie było zapisów biznesowych; to jawny zakres RPO.
+- Dokładny obraz zmigrował bazę do26, zachowując stare pełne wiersze. Prawdziwe
+  PKCE, GET/me i snapshot A/B potwierdziły własność i pełną treść posiłków.
+  Różnice odczytów wyłącznie w sync_sessions/sync_session_items materializowanego
+  pull; wszystkie pozostałe tabele chronione. Poprzedni image05c1792f na26
+  faktycznie zwrócił readiness503, bez dowolnego downgrade.
+- Wybrano strategy=restore. Do świeżego klastra odtworzono oba archiwa24
+  i globals; pełne SHA/count wszystkich86tabel aplikacji i101Keycloak zgodne
+  przed fencing. Nowa losowa epoka committed, snapshoty unieważnione,
+  AI/Nemesis zamknięte. Logout-all i **421,000s** rzeczywistej blokady API
+  i issuance;15kontroli maintenance503 w tym oknie.
+- Po uruchomieniu poprzedniego obrazu stare access **401**, refresh
+  **400/invalid_grant**, operacje starej epoki **409/sync_epoch_changed**.
+  Świeże PKCE/chronione odczyty A/B zachowały treść posiłków. Dwa nowe zapisy
+  po restore accepted i identyczny replay/already_applied, revision1,
+  niezależnie potwierdzone w PG. AI/Nemesis pozostały zamknięte.
+  **PASS491,447s**, ruch otwierano wyłącznie w kopii operatora.
+- Pierwszy harness zatrzymała kontrola tabel po celowym pull: pominięto nazwę
+  sync_session_items. Błąd/log/fixture zachowano; po odczycie rzeczywistego
+  kontraktu nowa izolowana próba dopuszczała dokładnie dwie tabele snapshotu,
+  z prywatnymi SHA wszystkich tabel. Kodu produktu i guardów epoki/sesji
+  nie osłabiano. Kontenery/sieci/wolumeny własnej próby usunięte; nieużywany
+  początkowy wolumen PG wymagał osobnego usunięcia po kontroli label/attachments.
+  Port zwolniony, wszystkie8ID używanych kontenerów zachowane; monitor usług ok.
+- Neutralny rollback.json SHA256
+  `9c88323f469de37c94290db502f526a79c09af8eb54e749d80225d65f3842c25`,
+  asset669157895/1762B. Osobny backend-runtime-O3, asset669157975/836B,
+  SHA2561d3c6f1d148b6694c638dafd220a5fa1697fd10ed4b5ef31a416e526a4eb2961,
+  jest dowodem operatora, nie backend_acceptance O2.
+- [To samo robocze wydanie](https://github.com/Roseru/aplikacja-mobilna/releases/tag/untagged-4cbe4b5562fd750f23a1)
+  ma teraz kompletny INTEGRACJA-0.8.27-O3-20261023-RESTORE-ROLLBACK.zip,
+  asset669158018/116234812B,
+  SHA2566b78b97d38b935bdb148120eb2ff7249aae2dcac6a11ba5ae4ba8a28ef42bb65.
+  GitHub size/digest wszystkich3nowych assetów odczytane. ZIP21entries,
+  20sum plików PASS; starsze assety niepodmienione. APK/TAR/katalog/7CI
+  niezmienione. Checker android/backend/catalog PASS, całość **BLOCKED**
+  na2końcowe odbiory android_acceptance/backend_acceptance.
+- O2: proszę ocenić dokładny obraz i dowód runtime/rollback oraz dostarczyć
+  właściwy backend_acceptance albo wskazać konkretną brakującą kontrolę.
+  O1: nowy skonfigurowany APK po naprawie guardu Room17 i osiągalny peer nadal
+  potrzebne. Pełny KO32/telefon, autorytatywny ledger, offsite nowych kopii,
+  produkcyjne RPO/RTO/rollout i rzeczywiste AI pozostają osobno. Ten wynik
+  nie potwierdza zerowej utraty biznesowych zapisów po wykonaniu kopii.
+  W repo tylko własny wiersz/O3-090; własny DOCS CI i push main osobno.
