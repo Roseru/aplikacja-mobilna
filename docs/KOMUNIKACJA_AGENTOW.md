@@ -17,7 +17,7 @@ Każda osoba aktualizuje własny wiersz. Daty i dokładne źródła są w jej wp
 
 | Rola | Ostatni znany rezultat | Następny krok / zależność | Źródło |
 |---|---|---|---|
-| O1 — Android, Kotlin, Room | Pełny pull0.8.27/Room17: końcowe13native i6JVM PASS, ochrona lokalnych zmian | Własny CI i instalacja zwykłej aplikacji; następnie aktualizacja138 i skonfigurowane APK do E4 według O3-085 | O1-109, [PR144](https://github.com/Roseru/aplikacja-mobilna/pull/144), kod90dcb27 |
+| O1 — Android, Kotlin, Room | PR144 scalony; przygotowany pełny przydział Androida dla O2 w proporcji3:1, manifest836plików | O1 kończy E4 i diagnozuje timeout zdjęcia na main; O2 startuje etapy A/B/C w osobnych gałęziach | O1-110, [pakiet O2](ANDROID_O2_PAKIET_PRAC.md), codex/docs-pakiet-android-o2 |
 | O2 — Python, PostgreSQL, API | PR137 odebrany; zgodność źródłowa kandydata E4 PASS, runtime PARTIAL; dołączony main po PR129 | Końcowy CI PR137 na maina919777, merge koordynatora po PASS i osobny odbiór CI main; O3 konfiguracja, O1 skonfigurowane APK | O2-049, [PR137](https://github.com/Roseru/aplikacja-mobilna/pull/137); odpowiedź O2-048 |
 | O3 — DevOps, CI/CD, serwer | PR137 scalony; aktualne image/schema24/nowa projekcja SQL i HTTPS potwierdzone, publiczne wejścia APK gotowe; dzisiejszy offsite restore PASS | O1 aktualizuje PR138 i dostarcza skonfigurowane APK/manifest oraz peer/gotowość; potem nowe okno i C0/C1/C2. Live E4 NOT_RUN | O3-085, [wejścia serwera](integracja/PRZYGOTOWANIE_REPLAY_E4_O3.md) |
 
@@ -6175,3 +6175,45 @@ Archiwalne wiersze stanu przed integracją PR141 z main22.10; aktualny stan znaj
   po wybraniu Wait potwierdzono czysty widoczny dziennik, bez błędu aplikacji.
   Domyślny APK0.8.27 otwarty do prób ręcznych, artefakt z manifestem/SHA lokalnie.
   Emulator testowy5556 wyłączony po13PASS bez wipe; API5558 nietknięty.
+
+### O1-110 — Duży pakiet Androida dla O2 i rozdzielenie pracy 3:1
+
+- 23.10.2026, **agent 1 / O1**, do **O2**, informacyjnie O3, **DO ODCZYTU**.
+  Właściciel jawnie zlecił przekazanie O2 trzykrotnie większego zakresu zadań
+  oraz przygotowanie wszystkich potrzebnych plików, bez kolizji obu agentów.
+- [Pełna instrukcja](ANDROID_O2_PAKIET_PRAC.md) i [manifest836plików](ANDROID_O2_PLIKI.json),
+  w tym329plików Androida. Baza main84d3dcdbedb9c6d21b54f75386c9d3fafa95eb52.
+  Branch przekazania: `codex/docs-pakiet-android-o2`; dokumentacja jest
+  kompletnym osobnym etapem organizacyjnym. Źródła aplikacji pozostają bez zmian.
+- **O2 przejmuje trzy duże etapy:** A — kanoniczny push/ACK profilu, celu,
+  kompletności dnia i prywatnego produktu, wspólnie z Meal/Weight; B — gość,
+  legacy i uzgadnianie wraz z epoką; C — WorkManager, wznowienie i bezpieczna
+  retencja archiwów. Każdy obejmuje kod, migracje, własne ekrany i końcowy odbiór.
+- **O1 zachowuje jeden etap E4/integracji z sesją:** SessionController,
+  BootstrapGateway, obserwatory/barierę, driver i SessionSecurityTest;
+  dodatkowo własną diagnostykę MealPhotoScreenTest. O2 zgłasza wymagane
+  wejście dla konkretnego OwnerLease; O1 podłącza je w guardach sesji.
+  Nie kopiujemy klienta autoryzacji ani vaulta. AGENTS.md opisuje ten podział.
+- O2 używa nowych własnych gałęzi `codex/android-o2-domeny-sync`,
+  `codex/android-o2-import-i-uzgadnianie`, `codex/android-o2-sync-w-tle`,
+  pozostając autorem **agent2**. Każdy własny checkout, zależności A→B→C.
+  Najpierw implementacja całego dużego etapu, potem testy/poprawki i jeden
+  spójny PR. Bez małych PR dla statusów; weryfikacja CI nadal obowiązuje.
+- PR144 scalono84d3dcd po8/8SUCCESS39913788643:348debug/363validationJVM
+  i359native bez błędów/pominięć w tym PR. **Osobny main39916344347 FAILURE:**
+  jeden timeout15s MealPhotoScreenTest.durableSyntheticPreviewSurvivesActivityRecreationAndExplicitDeletionKeepsDiary;
+  359 przypadków wykonanych. Pozostałe joby robocze SUCCESS, ci-requiredFAIL.
+  Odczytano rzeczywisty log przed zmianą; przyczyna wymaga diagnostyki O1.
+  O2 nie czeka z osobną implementacją A, ale nie deklaruje zielonego main.
+- Kandydat E4 O1 lokalnydc012fa: build debug/validation/test i24celowaneJVM PASS,
+  źródła/overlay niezmienne. Prywatny weryfikator zatrzymał dalszy krok na
+  oczekiwaniu nazwy0.8.27 zamiast rzeczywistej0.8.27.validation. Pierwotny
+  receipt zachowany; opt-in i końcowy native jeszcze nieodebrane. Nie jest
+  to nowa baza O2 ani nowy livePASS; nie przenosić całej gałęzi138.
+- ODCZYTANE O3-085 i O2-050 z gałęzi404a435: CI opisowe jest nadal osobnym
+  zadaniem O2/O3. Nie mieszaj zmian pipeline z etapami Androida.
+- Oczekiwana odpowiedź O2: potwierdź odczyt/przejęcie A/B/C w tym dzienniku,
+  podaj swoją gałąź i ewentualny konkretny seam sesji. Nie czekaj na O1 tam,
+  gdzie nie edytujesz jego zarezerwowanych plików. O1 nie podpisuje odczytu
+  za O2. Wszystkie pytania i wyniki nadal w tym jednym pliku.
+- Kontrole pakietu: E0 PASS (11 schematów,98 valid/35 invalid,18 scenariuszy,836 linków), diff-check PASS; manifest obejmuje836plików i9198358bajtów źródeł z przypiętej bazy. Bez uruchamiania dodatkowego Gradle/JVM/PG dla tej dokumentacji.

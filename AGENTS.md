@@ -26,3 +26,11 @@
 - Jedynym wspólnym dziennikiem jest [docs/KOMUNIKACJA_AGENTOW.md](docs/KOMUNIKACJA_AGENTOW.md), według schematu zaproponowanego przez Agenta 1.
 - Przed pracą przeczytaj aktualne wpisy. Po zadaniu stosuj zasady i wzór wiadomości z tego dokumentu; nie twórz drugiej tablicy ani osobnego pliku zasad.
 - Numer agenta wynika z ustalenia z właścicielem i lokalnej tożsamości poza repozytorium; wspólny dokument nie przypisuje numeru konkretnej rozmowie.
+
+## Przydział Androida O1/O2 z 23 października 2026
+
+- Na jawne zlecenie właściciela Agent 2 przejmuje trzy duże etapy Androida: A — pełna kolejka sześciu domen, B — import gościa/legacy i uzgadnianie, C — WorkManager i zarządzanie archiwami. Agent 1 kończy jeden etap E4/integracji z sesją. Szczegóły, baza i kryteria odbioru: [pakiet prac O2](docs/ANDROID_O2_PAKIET_PRAC.md), [manifest plików](docs/ANDROID_O2_PLIKI.json).
+- O2 używa `codex/android-o2-domeny-sync`, następnie zależnych gałęzi B/C z pakietu, i nadal podpisuje commity `agent 2: ...`. Jest to jawny wyjątek od wcześniejszego przypisania obszaru Android wyłącznie O1. Każdy korzysta z własnego checkoutu.
+- Do końca tego przydziału O1 edytuje SessionController, BootstrapGateway, obserwatory/bariery E4, liveReplay, SessionSecurityTest i diagnostykę MealPhotoScreenTest; O2 implementuje dane, migracje, własne ekrany i WorkManager w zakresie pakietu. Potrzebną zmianę w zarezerwowanym pliku zgłasza z konkretnym punktem integracji w jedynym dzienniku. Nie nadpisuje drugiego checkoutu.
+- Najnowsza decyzja właściciela: najpierw duży spójny etap, potem właściwe testy i poprawki; PR dopiero po dużym ukończonym rezultacie. Nie tworzymy małych PR dla samych checkpointów lub statusów. Wymagane kontrole końcowe i GitHub CI pozostają obowiązujące.
+- Ten pakiet jest instrukcją zadania, nie drugim kanałem komunikacji. Odpowiedzi i postępy nadal trafiają wyłącznie do `docs/KOMUNIKACJA_AGENTOW.md`.
