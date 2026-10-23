@@ -18,7 +18,7 @@ Każda osoba aktualizuje własny wiersz. Daty i dokładne źródła są w jej wp
 | Rola | Ostatni znany rezultat | Następny krok / zależność | Źródło |
 |---|---|---|---|
 | O1 — Android, Kotlin, Room | Pełny pull0.8.27/Room17: końcowe13native i6JVM PASS, ochrona lokalnych zmian | Własny CI i instalacja zwykłej aplikacji; następnie aktualizacja138 i skonfigurowane APK do E4 według O3-085 | O1-109, [PR144](https://github.com/Roseru/aplikacja-mobilna/pull/144), kod90dcb27 |
-| O2 — Python, PostgreSQL, API | PR137 scalony167152a; ograniczony odbiór PR143 PASS. Przygotowany konserwatywny DOCS/FULL Project CI | Własny pełny CI zmiany pipeline PENDING; analiza O3 i odbiór koordynatora przed merge. O1/O3: skonfigurowany APK i osobny live E4 | O2-050, [odbiór143](https://github.com/Roseru/aplikacja-mobilna/pull/143#issuecomment-6358913252), [zasady CI](WORKFLOW.md) |
+| O2 — Python, PostgreSQL, API; Android A/B/C | O2-A: sześć domen trwałego push/ACK, Room18, 357/372JVM i73celowane native PASS; niezależny review PASS | Własny FULL CI i odbiór koordynatora A; lokalne B dozwolone, publikacja B po decyzji o integracji A. Sesja/E4 nadal O1 | O2-051, [moduł A](../android/DOMENY_SYNC.md), kod731731ed |
 | O3 — DevOps, CI/CD, serwer | Własny AVD/API: jeden Meal, utrata ACK, rzeczywisty force-stop i identyczny replay PASS; Room i niezależne PG C0/C1/C2 PASS | Odczytany O1-111: odebrać nowe APK Room17, uzgodnić peer/okno i nową próbę. Wynik operatora dotyczy starszego Room14; pełny E4/KO32 osobno | O3-086, [wynik operatora](integracja/PRZYGOTOWANIE_REPLAY_E4_O3.md) |
 
 
@@ -6249,3 +6249,72 @@ Archiwalne wiersze stanu przed integracją PR141 z main22.10; aktualny stan znaj
   collection; testów/kodu nie zmieniano. Własny nowy PR opisuje wyłącznie
   wynik próby, bez zmian aplikacji/CI. Jego DOCS CI i push main wymagają osobnego
   odczytu; pominięte joby w DOCS nie są pełną regresją aplikacji.
+
+### O2-051 — Android A: sześć domen trwałej kolejki, początek łańcucha A/B/C
+
+- 23.10.2026, agent2/O2. Do O1/koordynatora, informacyjnie O3,
+  **DO ODCZYTU**. ODCZYTANE O1-110/pakiet z PR146/bdc53fd oraz O3-085.
+  Właściciel zlecił cały A→B→C; ten wpis przekazuje ukończony kod A do
+  wewnętrznego odbioru, nie końcowy raport całego przydziału.
+- Źródło: `codex/android-o2-domeny-sync`, kod
+  [731731ed](https://github.com/Roseru/aplikacja-mobilna/commit/731731ed),
+  start main84d3dcdb, zwykłe dołączenie main po PR145/ef4bb4f9.
+  [Moduł A](../android/DOMENY_SYNC.md):0.8.28/code39/validation1039/Room18.
+  Pierwotny checkout, PR145, materiały źródłowe i zarezerwowane pliki O1 zachowane.
+- Nowe kwalifikujące się profile, cele, kompletność dni i prywatne produkty
+  zapisują stan i kanoniczną operację w jednej transakcji. Wspólna partia
+  MealPushStore/MealPushRequest i istniejący transport obsługują sześć domen.
+  Cały ACK walidowany przed mutacją; utrata odpowiedzi/restart wznawia dokładne
+  bajty. Późniejsze edycje, null, źródła i ilości niemieszczące się w wire
+  pozostają zachowane; brak cichego zaokrąglania lub publikacji katalogu.
+- Rewizja encji celu jest oddzielona od osi; odmowa blokuje zależne wersje.
+  Zmiana samego typu celu tworzy nową wersję bez zmiany kcal/B/T/W;
+  pseudonim/wzrost nie tworzą celu. Profile delete/recreate mają odrębne UUID,
+  stary tombstone nie usuwa następcy. Jawny nowy dzień poprzedza Meal w nowej
+  partii; konflikt D1/currentD0 zachowuje oba znaczenia identyfikatorów.
+- Migracja17→18 addytywna:31wcześniejszych definicji tabel bez zmian,
+  wszystkie stare wartości/rowid/FK/outbox zachowane. Nowe sidecar tylko dla
+  potwierdzonych projekcji serwera; legacy/gość/held nie są automatycznie importowane.
+  Starsza migracja zamrożonej partii13→18 także sprawdzona.
+- Końcowo357debugJVM/372validationJVM/73celowane nativeAPI35 PASS,
+  0fail/error/skip; build3APK PASS, lint0error/28warning/1information.
+  Własny headless validation emulator, syntetyczne dane i tryb samolotowy.
+  Pierwszy build zatrzymał błąd publikacji prywatnego transformcache;
+  zachowano log i wersje narzędzi, izolowany cache umożliwił build.
+  Pierwszy native64/70 miał6błędów starych fixture dwudomenowych;
+  jawne oczekiwania poprawione bez osłabienia atomowości. Końcowy73/73.
+- Jeden celowany niezależny review PASS po naprawie P2 pierwszego tombstone
+  po ACK i dwóch regresjach oraz jawnego typu celu. Brak nierozwiązanychP1/P2.
+  Mutacja operation_id-binding w osobnej kopii rzeczywistego parsera ACK dała
+  wymagany czerwony test; właściwe źródło nienaruszone. Rzeczywista koperta
+  Android6domen→backend PushRequest/preflight PASS;3błędne Decimal odmówione422.
+  To DTO/Room/JVM/UI, nie HTTPS/COMMIT PostgreSQL ani live.
+- O1: wczesny konkretny kontrakt lease-safe C przekazany w
+  [PR146](https://github.com/Roseru/aplikacja-mobilna/pull/146#issuecomment-6362901101):
+  executeSyncStep(expectedLease,expectedContext,PULL/PUSH)→jawne wyniki.
+  O2 utrwala orkiestrację manual/worker; O1 zachowuje sesję/refresh/HTTP/guardy.
+  Odpowiedź O1 jeszcze niezaobserwowana; A/B kontynuowane niezależnie.
+- PR145 scalonyef4bb4f9; koordynator przekazał osobny FULL main8/8SUCCESS,
+  [receipt](https://github.com/Roseru/aplikacja-mobilna/pull/145#issuecomment-6363305056).
+  Własny pełny CI dokładnego PR/head A pozostaje **PENDING** przy publikacji;
+  wynik w opisie PR, bez source commita wyłącznie dla statusu.
+- Następnie lokalne B z dokładnego opublikowanego head A w osobnej gałęzi,
+  zgodnie z pozwoleniem koordynatora. Publikacja B dopiero po jego decyzji
+  o integracji A; poprawki A w tym samym PR. Koordynator wykonuje merge.
+  Brak live API/Gemini/LAN/deploy, zmian działających usług/kont/baz/epoki.
+  **Wspólne E4/E7-R/recovery/KO32 NOT_RUN**; B/C i finalna akceptacja osobno.
+- Przy końcowej integracji odczytano O3-086 i jego raport ograniczonego replay
+  na własnym AVD operatora/Room14: to dowód O3, nie własne wykonanie O2.
+  Dostawa O1 Room17, wspólne okno i pełne E4/E7-R/recovery/KO32 pozostają osobno.
+
+- Poprawka po niezależnym odbiorze CI39945158337: android-device miał372/373PASS;
+  jedyny błąd ActivityGoalStorageTest łączył zmianę pseudonimu z jawnym
+  MAINTAIN→REDUCE i oczekiwał starego celu. Rozdzielono oba przypadki:
+  pseudonim/wzrost zachowuje identyczny cel, zmiana typu tworzy nową wersję,
+  sekwencję i correctionOf z identycznymi kcal/B/T/W, historią i atomowym outbox.
+  Zachowano manual-target i rollback triggera; celowane14native PASS.
+  Nowe legacy źródło celu zapisuje własny goal_type/activity_class, aby późniejszy
+  import nie zgadywał historycznego zamiaru z aktualnego profilu. Nieznany typ
+  pozostaje null, stare payloady nie są przepisywane. Regresja potwierdza
+  zachowanie źródła poprzedniego celu po kolejnych zmianach profilu.
+  Nowy head wymaga własnego pełnego CI; poprzedni run nie jest zielonym odbiorem.

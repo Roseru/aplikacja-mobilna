@@ -204,6 +204,7 @@ class SyncConflictStore(private val db: CalorieDatabase, private val schema: Syn
                     val state = CanonicalWeightState(target, lease.storageScope, payload, source.batch.wireContext, if (restore) 0 else revision)
                     if (restore) db.weightSyncDao().insert(state) else db.weightSyncDao().update(state)
                 }
+                is DomainPushEntitySource -> error("Private-domain reconciliation requires its explicit adapter")
             }
             source.entity.queue.forEach { db.dao().updateOperation(it.copy(status = "superseded")) }
             if (operationId != null) db.dao().enqueue(OutboxEntity(operationId, lease.storageScope, source.operation.entityType,

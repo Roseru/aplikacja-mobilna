@@ -30,8 +30,26 @@ class ActivityGoalStorageTest {
             assertEquals(before.protein, line.protein); assertEquals(before.fat, line.fat); assertEquals(before.carbs, line.carbs)
             assertEquals(before, db.dao().goal("guest", yesterday).first())
             assertEquals(2, db.dao().operationCount("guest"))
-            repo.setProfileAndActivityGoal("Nowy pseudonim", 182.0, ActivityClass.LINE, DietAim.REDUCE)
+            repo.setProfileAndActivityGoal("Nowy pseudonim", 182.0, ActivityClass.LINE, DietAim.MAINTAIN)
             assertEquals(line, db.dao().goal("guest", today).first())
+            assertEquals(3, db.dao().operationCount("guest")) // Profile alone; nickname/height do not decide a goal.
+            repo.setProfileAndActivityGoal("Nowy pseudonim", 182.0, ActivityClass.LINE, DietAim.REDUCE)
+            val reduce = db.dao().goal("guest", today).first()!!
+            assertNotEquals(line.id, reduce.id)
+            assertEquals(line.localSequence + 1, reduce.localSequence)
+            assertEquals(line.id, reduce.correctionOf)
+            assertEquals(line.kcal, reduce.kcal, 0.0)
+            assertEquals(line.protein, reduce.protein); assertEquals(line.fat, reduce.fat); assertEquals(line.carbs, reduce.carbs)
+            assertEquals(line, db.dao().goalById("guest", line.id))
+            assertEquals(before, db.dao().goal("guest", yesterday).first())
+            assertEquals(5, db.dao().operationCount("guest")) // Profile and the new immutable goal commit together.
+            fun goalSource(id: String) = db.openHelper.writableDatabase.query(
+                "SELECT payload FROM outbox WHERE ownerScope='guest' AND entityType='goal' AND entityId=?", arrayOf(id)
+            ).use { cursor -> assertTrue(cursor.moveToFirst()); org.json.JSONObject(cursor.getString(0)) }
+            val lineOriginal = goalSource(line.id).toString()
+            assertEquals("maintain", goalSource(line.id).getString("goal_type"))
+            assertEquals("reduce", goalSource(reduce.id).getString("goal_type"))
+            assertEquals("LINE", goalSource(reduce.id).getString("activity_class"))
             repo.setGoal(3000.0, 150.0, null, null, "manual-target")
             repo.setProfileAndActivityGoal("Poligon", 182.0, ActivityClass.COMMANDO, DietAim.REDUCE)
             val commando = db.dao().goal("guest", today).first()!!
@@ -41,6 +59,8 @@ class ActivityGoalStorageTest {
             repo.initialize()
             assertEquals(commando, db.dao().goal("guest", today).first())
             assertEquals(before, db.dao().goal("guest", yesterday).first())
+            assertEquals(lineOriginal, goalSource(line.id).toString())
+            assertEquals("reduce", goalSource(reduce.id).getString("goal_type"))
         } finally { db.close() }
     }
 

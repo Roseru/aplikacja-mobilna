@@ -1,5 +1,14 @@
 # Android — Racje i kalorie
 
+Etap **0.8.28/code39/Room18**, Agent2/O2, dodaje [trwały push sześciu domen](DOMENY_SYNC.md):
+profil, cele, kompletność dni i prywatne produkty korzystają ze wspólnej partii
+i atomowego ACK obok posiłków/wagi. Kolejne edycje czekają na właściwą rewizję;
+odmowy nie potwierdzają zależnych zmian. Migracja zachowuje wcześniejsze dane.
+Lokalnie357/372JVM i73celowane nativeAPI35 PASS, lint0błędów; niezależnyreviewPASS.
+Pełny CI dokładnego PR/head oraz odbiór koordynatora pozostają osobnymi warunkami.
+Import i uzgadnianie (O2-B), WorkManager i archiwa (O2-C) są kolejnymi etapami.
+Poniżej zachowano historyczne raporty; zwykła aplikacja i kandydat E4 O1 bez podmiany.
+
 Etap **0.8.27/code38/Room17** na `codex/android-pobieranie-dziennika` dodaje
 [pełną kopię serwera w lokalnym dzienniku](POBIERANIE_DZIENNIKA.md): posiłki,
 wagę, profil, cele, kompletność dni i prywatne produkty. Cała kopia jest

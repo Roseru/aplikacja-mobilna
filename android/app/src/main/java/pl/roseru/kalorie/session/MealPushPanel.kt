@@ -18,12 +18,18 @@ import pl.roseru.kalorie.data.OwnerLease
     Card(Modifier.fillMaxWidth().testTag("meal-push-panel")) {
         Column(Modifier.padding(20.dp),verticalArrangement=Arrangement.spacedBy(8.dp)) {
             Text("Wysyłanie dziennika",style=MaterialTheme.typography.titleMedium)
-            Text("Wyślij przygotowane posiłki i pomiary wagi tego konta. Wpisy gościa pozostają osobno.")
+            Text("Wyślij przygotowane zmiany sześciu typów danych tego konta. Wpisy gościa pozostają osobno.")
             if(status!=null) {
                 Text("Gotowe: ${status.pending} · Czekają na poprzednią zmianę: ${status.waiting}",Modifier.testTag("meal-push-counts"))
+                val labels = mapOf("meal" to "Posiłki", "weight" to "Waga", "profile" to "Profil",
+                    "goal" to "Cele", "diary_day" to "Kompletność dni", "product_draft" to "Prywatne produkty")
+                labels.forEach { (type, label) ->
+                    status.domains[type]?.let { count -> Text("$label: gotowe ${count.pending}, oczekujące ${count.waiting}, do uzgodnienia ${count.refused}",
+                        Modifier.testTag("sync-domain-$type")) }
+                }
                 if(status.persistedBatch)Text("Zapisana partia czeka na potwierdzenie. Ponowienie zachowa te same operacje.")
                 if(status.refused>0)Text("Wymagają uzgodnienia: ${status.refused}. Lokalne dane zachowano.")
-                if(status.legacy>0)Text("Starsze wpisy i pozostałe typy: ${status.legacy}. Ich wysyłanie jest jeszcze w przygotowaniu.")
+                if(status.legacy>0)Text("Starsze lub wymagające konwersji wpisy: ${status.legacy}. Pozostają lokalnie do świadomego uzgodnienia.")
             }
             if(!view.mealPushConfigured)Text("Wysyłanie będzie dostępne po podłączeniu serwera.")
             else if(view.snapshot?.blocked==true)Text("Konto jest usuwane. Wysyłanie pozostaje zablokowane; dane lokalne zachowano.")

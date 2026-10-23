@@ -33,10 +33,19 @@ class MealPushScreenTest {
         compose.setContent {Panel(state.value){sent+=it}}
         compose.onNodeWithTag("meal-push-counts").assertTextEquals("Gotowe: 1 · Czekają na poprzednią zmianę: 1")
         compose.onNodeWithText("Wymagają uzgodnienia: 1. Lokalne dane zachowano.").assertExists()
-        compose.onNodeWithText("Starsze wpisy i pozostałe typy: 2. Ich wysyłanie jest jeszcze w przygotowaniu.").assertExists()
+        compose.onNodeWithText("Starsze lub wymagające konwersji wpisy: 2. Pozostają lokalnie do świadomego uzgodnienia.").assertExists()
         compose.onNodeWithTag("session-send-meals").performScrollTo().assertIsEnabled().assertTextEquals("Ponów zapisaną partię").performClick()
         compose.runOnIdle {assertEquals(listOf(OwnerLease("A",1)),sent);state.value=state.value.copy(mealPushBusy=true)}
         compose.onNodeWithTag("session-send-meals").assertIsNotEnabled()
+    }
+    @Test fun sixDomainsShowIndependentPendingWaitingAndRefusalCounts() {
+        val names = listOf("meal", "weight", "profile", "goal", "diary_day", "product_draft")
+        val labels = listOf("Posiłki", "Waga", "Profil", "Cele", "Kompletność dni", "Prywatne produkty")
+        val counts = names.mapIndexed { index, type -> type to DomainPushStatus(index, index + 1, index + 2) }.toMap()
+        val state = view().copy(mealPush = view().mealPush!!.copy(domains = counts))
+        compose.setContent { Panel(state) {} }
+        names.forEachIndexed { index, type -> compose.onNodeWithTag("sync-domain-$type").performScrollTo()
+            .assertTextEquals("${labels[index]}: gotowe $index, oczekujące ${index + 1}, do uzgodnienia ${index + 2}") }
     }
     @Test fun recoveryMissingSnapshotAndEveryServerOperationDisableSending() {
         val state=mutableStateOf(view());compose.setContent {Panel(state.value){fail("Blocked action sent")}}
