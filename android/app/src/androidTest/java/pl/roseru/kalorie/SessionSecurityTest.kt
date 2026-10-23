@@ -2686,9 +2686,14 @@ class SessionSecurityTest {
                 150.5,MealType.LUNCH,day,h.meal,product)
             h.item=h.db.dao().meal(h.meal,h.lease.storageScope)!!.items.single().id
             val store=MealPushStore(h.db,CanonicalMealRows.schema(context))
-            val frozen=checkNotNull(store.prepare(h.lease));val operation=frozen.batch.json().getJSONArray("operations")
-            assertEquals(1,operation.length());assertEquals(h.meal,operation.getJSONObject(0).getString("entity_id"))
-            val payload=operation.getJSONObject(0).getJSONObject("payload").getJSONArray("items").getJSONObject(0)
+            val frozen=checkNotNull(store.prepare(h.lease));val operations=frozen.batch.json().getJSONArray("operations")
+            assertEquals(2,operations.length())
+            val expectedIdentities=setOf("product_draft" to product,"meal" to h.meal)
+            val byIdentity=(0 until operations.length()).map {operations.getJSONObject(it)}
+                .associateBy {it.getString("entity_type") to it.getString("entity_id")}
+            assertEquals(expectedIdentities,byIdentity.keys)
+            val mealOperation=checkNotNull(byIdentity["meal" to h.meal])
+            val payload=mealOperation.getJSONObject("payload").getJSONArray("items").getJSONObject(0)
             assertTrue(payload.isNull("product"));assertEquals("manual",payload.getString("nutrition_origin"))
             assertEquals("150.5",payload.getJSONObject("quantity").getString("amount"))
             assertTrue(payload.getJSONObject("nutrition_per_100").isNull("protein_g"))
@@ -2700,37 +2705,51 @@ class SessionSecurityTest {
             assertTrue(held.httpReceipts().isEmpty()) // Fixture transport is not evidence of a real HTTP receipt or COMMIT.
             val waiting=h.db.pushDao().batch(frozen.id)!!
             assertTrue(waiting.attempted);assertNull(waiting.responseJson);assertEquals(0,h.revision())
-            assertEquals(frozen.row.requestJson,waiting.requestJson)
+            assertEquals(frozen.row.requestJson,waiting.requestJson);assertEquals(frozen.row.requestHash,waiting.requestHash)
+            assertEquals(0,h.db.domainSyncDao().state(h.lease.storageScope,"product_draft",product)!!.serverRevision)
+            for(op in byIdentity.values)assertEquals("pending",h.db.dao().operation(op.getString("operation_id"))!!.status)
             assertEquals("pending",h.db.dao().canonicalMealOperations(h.lease.storageScope,h.meal).single().status)
             pending.cancelAndJoin();pending=null
             assertEquals("cancelled",withTimeout(10_000){held.outcome.await()})
             assertNull(h.db.pushDao().batch(frozen.id)!!.responseJson)
+            assertEquals(0,h.revision())
+            assertEquals(0,h.db.domainSyncDao().state(h.lease.storageScope,"product_draft",product)!!.serverRevision)
+            for(op in byIdentity.values)assertEquals("pending",h.db.dao().operation(op.getString("operation_id"))!!.status)
             h.c=h.again();h.c.start()
             h.answer={batch,_->BootstrapHttpResult(200,h.receipt(batch,"already_applied"))}
-            // The normal post-ACK pull now projects the same server meal into Room as well.
+            // The post-ACK full copy includes both acknowledged entities with their original payloads.
             h.copies.answer={
                 val copy=JSONObject(String(snapshotAnswer().body))
                     .put("server_time","2026-10-23T08:00:00Z")
-                    .put("entities",JSONArray().put(JSONObject().put("entity_type","meal").put("entity_id",h.meal)
-                        .put("revision",1).put("deleted",false).put("payload",operation.getJSONObject(0).getJSONObject("payload"))))
+                    .put("entities",JSONArray().apply {
+                        for(op in byIdentity.values)put(JSONObject().put("entity_type",op.getString("entity_type"))
+                            .put("entity_id",op.getString("entity_id")).put("revision",1).put("deleted",false)
+                            .put("payload",op.getJSONObject("payload")))
+                    })
                 BootstrapHttpResult(200,copy.toString().toByteArray())
             }
             h.c.synchronizeMeals(h.lease)
             assertEquals(2,h.calls.size);assertArrayEquals(frozen.batch.body(),h.calls[0].body())
             assertArrayEquals(h.calls[0].body(),h.calls[1].body());assertEquals(1,h.revision())
             assertEquals("complete",h.db.pushDao().batch(frozen.id)!!.state)
-            assertEquals("acked",h.db.dao().operation(operation.getJSONObject(0).getString("operation_id"))!!.status)
+            assertEquals(frozen.row.requestHash,h.db.pushDao().batch(frozen.id)!!.requestHash)
+            assertEquals(1,h.db.domainSyncDao().state(h.lease.storageScope,"product_draft",product)!!.serverRevision)
+            for(op in byIdentity.values)assertEquals("acked",h.db.dao().operation(op.getString("operation_id"))!!.status)
+            assertEquals(0,h.db.pushDao().count(h.lease.storageScope,"pending"))
             assertTrue(h.db.dao().canonicalMealOperations(h.lease.storageScope,h.meal).isEmpty())
             val saved=h.db.dao().meal(h.meal,h.lease.storageScope)!!.items.single()
             assertEquals(h.item,saved.id);assertEquals(product,saved.productId)
             assertEquals("Etykieta testowa",h.db.dao().product(product,h.lease.storageScope)!!.source)
             assertEquals(2,h.db.dao().operationCount(h.lease.storageScope)) // Private product draft and its independent Meal.
             val applied=checkNotNull(h.c.view.value.diaryApplication)
-            assertEquals(1,applied.included);assertEquals(0,applied.held)
-            val observed=h.db.serverDiaryDao().records(h.lease.storageScope).single()
-            assertEquals("meal",observed.entityType);assertEquals(h.meal,observed.entityId)
-            assertEquals(1,observed.knownRevision);assertEquals("applied",observed.disposition)
-            assertEquals(applied.runId,observed.runId)
+            assertEquals(2,applied.included);assertEquals(0,applied.held)
+            val observed=h.db.serverDiaryDao().records(h.lease.storageScope).associateBy {it.entityType to it.entityId}
+            assertEquals(expectedIdentities,observed.keys)
+            for((identity,record) in observed) {
+                assertEquals(1,record.knownRevision);assertEquals("applied",record.disposition)
+                assertEquals(applied.runId,record.runId)
+                assertEquals(StrictJson.canonical(checkNotNull(byIdentity[identity]).getJSONObject("payload")),record.payload)
+            }
             assertEquals(guestBefore,h.db.dao().day("guest",day.toString()).first())
             assertEquals(guestQueue,h.db.dao().operationCount("guest"))
         }finally{pending?.cancelAndJoin();ticket?.let {MealPushObservation.ack.disarm(it)};h.close()}

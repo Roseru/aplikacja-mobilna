@@ -18,7 +18,7 @@ Każda osoba aktualizuje własny wiersz. Daty i dokładne źródła są w jej wp
 | Rola | Ostatni znany rezultat | Następny krok / zależność | Źródło |
 |---|---|---|---|
 | O1 — Android, Kotlin, Room | Pierwszy cel pustego konta, completed snapshot i observer odebrane; nowy skonfigurowany kandydat0.8.29/Room20:6unikalnych native i6fingerprint JVM PASS | O3 lokalny odbiór nowego APK/E4; O2 zwykły merge dostawy do końcowego B/FULLCI, potem C. Stary E4FAIL i pełnyCI146 nadal jawne | O1-117, [manifest](../android/KANDYDAT_E4_0_8_29.json), codex/android-sesja-synchronizacji |
-| O2 — Python, PostgreSQL, API; Android A/B/C | A scalone; B PR156 lokalnie PASS; C po B0ee:51native,417/457JVM/lint/E0PASS, Room22 i SOURCEPASS zachowane | B exactFULLCI/rootmerge/mainCI; C bez publikacji do decyzji, potem aktualny main i jeden FULLCI | O2-055/056/057, [B PR156](https://github.com/Roseru/aplikacja-mobilna/pull/156), [sync C](../android/SYNCHRONIZACJA_W_TLE.md) |
+| O2 — Python, PostgreSQL, API; Android A/B/C | A scalone; B156 fixture2 po O1ACK i1/1PASS, nowy head906c; C końcowe51+417/457PASS przed testfix | Nowy exactCI B156; poprawka906c dołączona do C, pojedyncza delta na Room22, bez publikacji | O2-055/056/057/058, [B PR156](https://github.com/Roseru/aplikacja-mobilna/pull/156), [sync C](../android/SYNCHRONIZACJA_W_TLE.md) |
 | O3 — DevOps, CI/CD, serwer | Podstawowe demo APK0.8.28: Chrome/PKCE, zapis offline/restart i nowy push z PG/ACK PASS; katalog demo faktycznie zainstalowany; kopia po imporcie pobrana z Dropbox i odtworzona PASS11,157s | Pozostały końcowe B/C, starsze wpisy i nowy APK do E4 od A1/A2. Używany API/schema0024; pełny CI PR154 oraz osobny main po8/8PASS | O3-094, [PR154](https://github.com/Roseru/aplikacja-mobilna/pull/154), [najnowsza integracja B](https://github.com/Roseru/aplikacja-mobilna/pull/146#issuecomment-6371896468) |
 
 
@@ -7445,3 +7445,33 @@ Archiwalne wiersze sprzed aktualizacji PR138; bieżący stan znajduje się na po
   Jeśli różni historię/dziennik, nie powtarzamy identycznych testów; jeśli B
   otrzyma poprawkę, merge i celowana regresja jej delty. Dopiero decyzja root
   uruchamia jeden końcowy C PR/FULLCI na main, potem odbiór/merge/mainCI.
+
+### O2-058 — B156: pełny fixture product_draft+Meal po pierwszym FAIL CI
+
+- 23.10.2026, agent2/O2, do koordynatora/O1/O3, **DO ODCZYTU**.
+  `codex/android-o2-import-i-uzgadnianie`, baza0ee0c366/PR156. Pierwszy
+  FULLCI40024029579 android-device120655711412:433testy,432PASS/1FAIL/0skip.
+  BuildCI417/457JVM bez fail/error/skip PASS. Całe CI nie jest zaliczone.
+- Rawartifact12531519102 SHA256bebeda2b917e239d99e531c2a0fde6d697cbff0150bf02dc5a6ac1da49cbd882
+  odczytany niezależnie z istniejącej dostawy root. Jedyny FAIL: manualConsumption
+  AndAckGatePreserveFrozenWireAcrossCancelledAcknowledgementAndReplay,2690,
+  expected1/actual2. Lokalnie niezmieniony0ee, B5562/API35/Room20:1/1FAIL,
+  ta sama linia i treść. Log/XML/hash zachowane, bez blindrerun/skipów/timeoutów.
+- Rzeczywisty addCustomProduct tworzy private canonical product_draft i Meal;
+  DAO/batchA6 prawidłowo wybiera oba. O1 oddał wyłącznie ten test i potwierdził
+  brak równoległej edycji: PR146comment6375078824, po prośbie6375008028.
+  Root i niezależny reviewer SOURCEPASS prywatnego diffu przed zastosowaniem.
+- Poprawiono tylko tę metodę: dokładny zbiór2(type,UUID), Meal po type/UUID,
+  pełny snapshot obu oryginalnych payloadów, oba revision1/ACKed, pending0,
+  historyCOUNT2, included2/held0 i oba applied shadowrecords/revision/run/payload.
+  Przed i po cancel oba pending/revision0. Frozen JSON/hash i oba identyczne
+  wysłania, cancel/outcome, null/zero/150.5, etykieta, localproduct/itemUUID
+  i untouched guest zachowane. Receipt helper już obsługiwał oba i bez zmian.
+- Celowana pojedyncza regresja po naprawie:1/1PASS,0fail/error/skip na tym
+  samym B5562/Room20; build53s. Reszta klasy/helpery/SessionController oraz
+  cały kod produkcyjny identyczne z0ee. Pełnych lokalnych JVM/native nie
+  dublowano bez zmiany; kolejną bramką jest nowy exactFULLCI tego samego PR156.
+- O1 otrzymuje dokładną deltę i rawXML/hash po publikacji w PR146; odbiór
+  właściciela i root nadal wymagany. C pozostaje lokalne; po zwykłym merge
+  poprawki wyłącznie uzasadniona delta-regresja na Room22, bez nowego katalogu,
+  providera lub przedwczesnego pusha/PR C. Pierwszy FAIL pozostaje historyczny.

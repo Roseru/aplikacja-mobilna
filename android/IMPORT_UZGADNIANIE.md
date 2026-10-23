@@ -250,3 +250,25 @@ pozostaje historycznie odrębny od nowego lokalnego B6/6. Odebranych16+11
 nie powtarzano osobno. FULLCI dokładnego PR/head/base i odbiór main są
 kolejnymi bramkami; lokalne fixtures nie kwalifikują zewnętrznego HTTP,
 PKCE/PG, E4 kill/replay, Gemini ani wdrożenia. C pozostaje osobnym etapem.
+
+
+### Regresja pełnego CI: prywatny produkt i posiłek we wspólnej kopercie
+
+Pierwszy FULLCI40024029579/head0ee wykonał433native:432PASS/1FAIL/0skip.
+Stary manualConsumptionAndAckGate fixture oczekiwał jednej pozycji, choć
+addCustomProduct poprawnie tworzy canonical product_draft i Meal dla batcha
+sześciu domen. Lokalna reprodukcja na niezmienionym0ee:1/1FAIL, linia2690.
+O1 jawnie oddał tylko tę metodę (comment6375078824); prywatny diff otrzymał
+niezależny SOURCEPASS przed zastosowaniem. Produkcyjny wybór batcha bez zmian.
+
+Fixture teraz wymaga dokładnie dwóch(type,id), wybiera Meal po tożsamości,
+przekazuje pełną kopię obu oryginalnych payloadów i sprawdza obaACK/revision1,
+pending0/historyCOUNT2/included2/held0 oraz oba shadowrecords/runId/payloady.
+Przed i po cancellation obie operacje pozostają pending z revision0; po replay
+obie są ACKed. Dotychczasowe oracles frozen body/hash, liczba dwóch wysłań,
+null vs0, ilość150.5, etykieta, product/itemUUID i gość pozostają zachowane.
+Tylko ten przypadek ponowiony na B5562/Room20:1/1PASS,0fail/error/skip.
+Pozostałe metody, helpery i SessionController bez własnych zmian. Pierwszy
+FAIL i wszystkie wcześniejsze wyniki pozostają oddzielnymi dowodami.
+Nowy exact-head FULLCI tego samego PR oraz main są nadal wymagane;
+nie ponawiano zdalnego CI bez rzeczywistej zmiany.
