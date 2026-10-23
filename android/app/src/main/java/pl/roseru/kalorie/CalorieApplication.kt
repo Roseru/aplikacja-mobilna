@@ -12,6 +12,8 @@ class CalorieApplication : Application() {
     // Legacy guest setup API. UI repositories always use the active, captured lease.
     val repository get() = DiaryRepository(database, this)
     val preferences by lazy { Preferences(this) }
+    val syncSchema by lazy { CanonicalMealRows.schema(this) }
+    val reconciliationStore by lazy { ReconciliationStore(database,syncSchema) }
     val sessionScope = CoroutineScope(SupervisorJob() + Dispatchers.Main.immediate)
     val sessions by lazy { SessionController(database, SessionVault(this), AppAuthGateway(this), getString(R.string.oidc_issuer), packageName,
         bootstrapGateway = getString(R.string.api_base_url).takeIf { it.isNotEmpty() }?.let {
@@ -40,6 +42,7 @@ class CalorieApplication : Application() {
         }, mealPushStore = MealPushStore(database,CanonicalMealRows.schema(this)),
         mealPushProtocol = PushProtocol(CanonicalMealRows.schema(this)),
         conflictStore = SyncConflictStore(database,CanonicalMealRows.schema(this)),
+        reconciliationStore = reconciliationStore,
         diaryStore = ServerDiaryStore(database,CanonicalMealRows.schema(this)),
         photoAnalysisStores = { lease -> pl.roseru.kalorie.photo.PhotoAnalysisStore(this,database,lease) }, snapshotProtocol = SnapshotProtocol(SyncWireSchema(SyncWireSchema.FILES.associateWith { file ->
             assets.open("sync/$file").use { it.readBytes() }
