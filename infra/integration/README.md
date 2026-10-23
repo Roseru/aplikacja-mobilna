@@ -1,5 +1,9 @@
 # Lokalne środowisko integracyjne — osoba 3
 
+[Lokalne demo i skrzynka do resetowania hasła](LOKALNE_DEMO.md) opisują
+opcjonalną pocztę Mailpit oraz wykonany odbiór. Uruchamia się ją jako osobny
+projekt w istniejącej sieci, bez przebudowy API lub migracji.
+
 PostgreSQL 17 + API aktualnego checkoutu + Keycloak 26.8.0 na własnej bazie PostgreSQL.
 Caddy dostarcza lokalny HTTPS. Obrazy usług i bazowy obraz Python są przypięte digestami,
 a zależności backendu pochodzą z istniejącego `uv.lock`. Ten zestaw nie zastępuje
