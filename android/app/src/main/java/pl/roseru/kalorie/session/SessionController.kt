@@ -2506,6 +2506,8 @@ class SessionController internal constructor(private val db: CalorieDatabase, pr
                     val result=transport.post(captured,request.batch){withApiSession(captured){ready();store.markAttempted(request,now())}}
                     if(result.status==200){
                         val prepared=store.prepareAck(request,result.status,result.body)
+                        // Validation hold only after the unchanged parser, outside both guards.
+                        if(MealPushObservation.ENABLED)MealPushObservation.beforeApplyAck(request.id,request.row.requestHash)
                         withApiSession(captured){ready();val ack=store.applyAck(prepared)
                             acknowledged+=ack.acknowledged;refused+=ack.refused}
                         break

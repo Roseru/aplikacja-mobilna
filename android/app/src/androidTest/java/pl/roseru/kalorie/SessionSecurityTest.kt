@@ -2621,7 +2621,7 @@ class SessionSecurityTest {
     }
 
 
-    private inner class PushHarness {
+    private inner class PushHarness(private val projectDiary:Boolean=false) {
         val db=memory();val vault=SessionVault(context,name());val fixture=FixtureGateway();val api=ApiFixture();val copies=SnapshotFixture()
         val calls=mutableListOf<PushBatch>();var before:suspend()->Unit={}
         var answer:suspend(PushBatch,Int)->BootstrapHttpResult={batch,_->BootstrapHttpResult(200,receipt(batch))}
@@ -2633,7 +2633,7 @@ class SessionSecurityTest {
             }
         }
         lateinit var c:SessionController;lateinit var lease:OwnerLease;lateinit var meal:String;lateinit var item:String
-        fun again()=client(db,vault,fixture,api,snapshots=copies,pushes=transport)
+        fun again()=client(db,vault,fixture,api,snapshots=copies,pushes=transport,projectDiary=projectDiary)
         suspend fun prepare(full:Boolean=true) {
             c=again();c.start();login(c,fixture,"fixture-A");c.bootstrap();lease=c.view.value.binding!!.lease
             if(full)c.downloadSnapshot()
@@ -2668,6 +2668,72 @@ class SessionSecurityTest {
         }
         suspend fun revision()=db.dao().meal(meal,lease.storageScope)!!.meal.serverRevision
         fun close(){vault.clear();db.close()}
+    }
+    @Test fun manualConsumptionAndAckGatePreserveFrozenWireAcrossCancelledAcknowledgementAndReplay()=runBlocking<Unit> {
+        val h=PushHarness(projectDiary=true);var pending:Job?=null;var ticket:MealPushAckGate.Ticket?=null
+        try {
+            val day=LocalDate.now();val guestId=UUID.randomUUID().toString()
+            val guest=DiaryRepository(h.db,context).apply {initialize()}
+            guest.add("basic-banana",50.0,MealType.SNACK,day,guestId)
+            val guestBefore=h.db.dao().day("guest",day.toString()).first()
+            val guestQueue=h.db.dao().operationCount("guest")
+            h.c=h.again();h.c.start();login(h.c,h.fixture,"fixture-A");h.c.bootstrap()
+            h.lease=h.c.view.value.binding!!.lease;h.c.downloadSnapshot()
+            assertNotNull(h.c.view.value.diaryApplication)
+            h.meal=UUID.randomUUID().toString();val product=UUID.randomUUID().toString()
+            DiaryRepository(h.db,context,h.lease).addCustomProduct(
+                CustomProductDraft("Syntetyczny posiłek",100.5,null,0.0,12.25,"Etykieta testowa"),
+                150.5,MealType.LUNCH,day,h.meal,product)
+            h.item=h.db.dao().meal(h.meal,h.lease.storageScope)!!.items.single().id
+            val store=MealPushStore(h.db,CanonicalMealRows.schema(context))
+            val frozen=checkNotNull(store.prepare(h.lease));val operation=frozen.batch.json().getJSONArray("operations")
+            assertEquals(1,operation.length());assertEquals(h.meal,operation.getJSONObject(0).getString("entity_id"))
+            val payload=operation.getJSONObject(0).getJSONObject("payload").getJSONArray("items").getJSONObject(0)
+            assertTrue(payload.isNull("product"));assertEquals("manual",payload.getString("nutrition_origin"))
+            assertEquals("150.5",payload.getJSONObject("quantity").getString("amount"))
+            assertTrue(payload.getJSONObject("nutrition_per_100").isNull("protein_g"))
+            assertEquals("0",payload.getJSONObject("nutrition_per_100").getString("fat_g"))
+            val held=MealPushObservation.ack.arm(frozen.id,frozen.row.requestHash);ticket=held
+            pending=launch(start=CoroutineStart.UNDISPATCHED){h.c.synchronizeMeals(h.lease)}
+            withTimeout(10_000){held.held.await()}
+            assertEquals(listOf("held"),held.events())
+            assertTrue(held.httpReceipts().isEmpty()) // Fixture transport is not evidence of a real HTTP receipt or COMMIT.
+            val waiting=h.db.pushDao().batch(frozen.id)!!
+            assertTrue(waiting.attempted);assertNull(waiting.responseJson);assertEquals(0,h.revision())
+            assertEquals(frozen.row.requestJson,waiting.requestJson)
+            assertEquals("pending",h.db.dao().canonicalMealOperations(h.lease.storageScope,h.meal).single().status)
+            pending.cancelAndJoin();pending=null
+            assertEquals("cancelled",withTimeout(10_000){held.outcome.await()})
+            assertNull(h.db.pushDao().batch(frozen.id)!!.responseJson)
+            h.c=h.again();h.c.start()
+            h.answer={batch,_->BootstrapHttpResult(200,h.receipt(batch,"already_applied"))}
+            // The normal post-ACK pull now projects the same server meal into Room as well.
+            h.copies.answer={
+                val copy=JSONObject(String(snapshotAnswer().body))
+                    .put("server_time","2026-10-23T08:00:00Z")
+                    .put("entities",JSONArray().put(JSONObject().put("entity_type","meal").put("entity_id",h.meal)
+                        .put("revision",1).put("deleted",false).put("payload",operation.getJSONObject(0).getJSONObject("payload"))))
+                BootstrapHttpResult(200,copy.toString().toByteArray())
+            }
+            h.c.synchronizeMeals(h.lease)
+            assertEquals(2,h.calls.size);assertArrayEquals(frozen.batch.body(),h.calls[0].body())
+            assertArrayEquals(h.calls[0].body(),h.calls[1].body());assertEquals(1,h.revision())
+            assertEquals("complete",h.db.pushDao().batch(frozen.id)!!.state)
+            assertEquals("acked",h.db.dao().operation(operation.getJSONObject(0).getString("operation_id"))!!.status)
+            assertTrue(h.db.dao().canonicalMealOperations(h.lease.storageScope,h.meal).isEmpty())
+            val saved=h.db.dao().meal(h.meal,h.lease.storageScope)!!.items.single()
+            assertEquals(h.item,saved.id);assertEquals(product,saved.productId)
+            assertEquals("Etykieta testowa",h.db.dao().product(product,h.lease.storageScope)!!.source)
+            assertEquals(2,h.db.dao().operationCount(h.lease.storageScope)) // Private product draft and its independent Meal.
+            val applied=checkNotNull(h.c.view.value.diaryApplication)
+            assertEquals(1,applied.included);assertEquals(0,applied.held)
+            val observed=h.db.serverDiaryDao().records(h.lease.storageScope).single()
+            assertEquals("meal",observed.entityType);assertEquals(h.meal,observed.entityId)
+            assertEquals(1,observed.knownRevision);assertEquals("applied",observed.disposition)
+            assertEquals(applied.runId,observed.runId)
+            assertEquals(guestBefore,h.db.dao().day("guest",day.toString()).first())
+            assertEquals(guestQueue,h.db.dao().operationCount("guest"))
+        }finally{pending?.cancelAndJoin();ticket?.let {MealPushObservation.ack.disarm(it)};h.close()}
     }
     @Test fun mealPushLostAckRestartResendsIdenticalBatchThenPullsWithoutChangingGuest()=runBlocking<Unit> {
         val h=PushHarness()
@@ -3271,5 +3337,44 @@ class SessionSecurityTest {
                 assertFalse(c.view.value.busy);assertFalse(c.view.value.bootstrapBusy);assertFalse(c.view.value.snapshotBusy)
             }finally{vault.clear();db.close()}
         }
+    }
+
+    @Test fun mealPushWithoutPullSeparatesDurableAckFromFollowingArchive()=runBlocking<Unit> {
+        val h=PushHarness()
+        try {
+            h.prepare()
+            h.c=client(h.db,h.vault,h.fixture,h.api,snapshots=h.copies,pushes=h.transport,projectDiary=true)
+            h.c.start();h.c.applyDiaryCopy(h.lease)
+            val request=MealPushStore(h.db,CanonicalMealRows.schema(context)).prepare(h.lease)!!
+            val payload=request.batch.json().getJSONArray("operations").getJSONObject(0).getJSONObject("payload")
+            val date=payload.getString("local_date");val dayId=UUID.randomUUID().toString()
+            assertNull(h.db.dao().currentDiaryDay(h.lease.storageScope,date))
+            h.copies.answer={
+                val copy=JSONObject(String(snapshotAnswer().body)).put("server_time","2026-10-23T08:00:00Z")
+                    .put("entities",JSONArray()
+                        .put(JSONObject().put("entity_type","meal").put("entity_id",h.meal).put("revision",1)
+                            .put("deleted",false).put("payload",payload))
+                        .put(JSONObject().put("entity_type","diary_day").put("entity_id",dayId).put("revision",1)
+                            .put("deleted",false).put("payload",JSONObject().put("local_date",date)
+                                .put("time_zone",payload.getString("time_zone")).put("declared_complete",false))))
+                BootstrapHttpResult(200,copy.toString().toByteArray())
+            }
+            val copiesBefore=h.copies.calls.size
+            h.c.synchronizeMealsWithoutPull(h.lease)
+            assertEquals(1,h.calls.size);assertEquals(1,h.revision())
+            assertEquals(copiesBefore,h.copies.calls.size)
+            assertNull(h.db.dao().currentDiaryDay(h.lease.storageScope,date))
+            assertTrue(h.db.dao().canonicalMealOperations(h.lease.storageScope,h.meal).all{it.status=="acked"})
+            assertTrue(h.db.pushDao().pending(h.lease.storageScope).isEmpty())
+            val frozen=h.db.pushDao().batch(request.id)
+            h.c.downloadSnapshot(h.lease)
+            assertEquals(copiesBefore+1,h.copies.calls.size);assertEquals(1,h.calls.size)
+            assertEquals(1,h.revision());assertEquals(frozen,h.db.pushDao().batch(request.id))
+            val day=h.db.dao().currentDiaryDay(h.lease.storageScope,date)!!
+            assertEquals(dayId,day.id);assertFalse(day.declaredComplete);assertEquals(1,day.localRevision)
+            val observed=h.db.serverDiaryDao().records(h.lease.storageScope).single{it.entityType=="diary_day"}
+            assertEquals(dayId,observed.localId);assertEquals(1,observed.knownRevision)
+            assertEquals("applied",observed.disposition)
+        }finally{h.close()}
     }
 }
