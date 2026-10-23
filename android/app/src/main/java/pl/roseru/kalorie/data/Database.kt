@@ -143,6 +143,7 @@ interface CalorieDao {
     @Insert suspend fun insertItem(item: MealItemEntity)
     @Update suspend fun updateItem(item: MealItemEntity)
     @Delete suspend fun removeItem(item: MealItemEntity)
+    @Query("SELECT * FROM meal_items WHERE id=:id") suspend fun itemById(id: String): MealItemEntity?
     @Query("SELECT * FROM goals WHERE ownerScope = :owner AND validFrom <= :date ORDER BY validFrom DESC, localSequence DESC, id DESC LIMIT 1")
     fun goal(owner: String, date: String): Flow<GoalEntity?>
     @Query("SELECT * FROM goals WHERE ownerScope = :owner AND validFrom = :date ORDER BY localSequence DESC, id DESC LIMIT 1") suspend fun goalOn(owner: String, date: String): GoalEntity?
@@ -176,8 +177,10 @@ interface CalorieDao {
     RationEntity::class, RationComponentEntity::class, ProfileEntity::class, WeightEntity::class, DiaryDayEntity::class,
     CatalogGenerationEntity::class, CatalogRecordEntity::class, CatalogMemberEntity::class, CatalogActiveEntity::class,
     LocalOwnerEntity::class, LocalActiveOwnerEntity::class, AccountBindingEntity::class,
-    BootstrapAttemptEntity::class, ServerSnapshotRun::class, ServerSnapshotPage::class, ServerSnapshotAccess::class, ServerSnapshotIdentity::class, pl.roseru.kalorie.photo.MealPhotoDraft::class, pl.roseru.kalorie.photo.PhotoAnalysisRequestEntity::class, PhotoMaterialization::class, SyncPushBatch::class, pl.roseru.kalorie.photo.PhotoConfirmationHistory::class], version = 14, exportSchema = true)
+    BootstrapAttemptEntity::class, ServerSnapshotRun::class, ServerSnapshotPage::class, ServerSnapshotAccess::class, ServerSnapshotIdentity::class, pl.roseru.kalorie.photo.MealPhotoDraft::class, pl.roseru.kalorie.photo.PhotoAnalysisRequestEntity::class, PhotoMaterialization::class, SyncPushBatch::class, pl.roseru.kalorie.photo.PhotoConfirmationHistory::class, CanonicalWeightState::class, SyncConflictDecision::class], version = 16, exportSchema = true)
 abstract class CalorieDatabase : RoomDatabase() {
+    abstract fun conflictDao(): SyncConflictDao
+    abstract fun weightSyncDao(): CanonicalWeightDao
     abstract fun photoConfirmationHistoryDao():pl.roseru.kalorie.photo.PhotoConfirmationHistoryDao
     abstract fun pushDao(): MealPushDao
     abstract fun materializationDao():PhotoMaterializationDao

@@ -18,7 +18,7 @@ import pl.roseru.kalorie.data.OwnerLease
     Card(Modifier.fillMaxWidth().testTag("meal-push-panel")) {
         Column(Modifier.padding(20.dp),verticalArrangement=Arrangement.spacedBy(8.dp)) {
             Text("Wysyłanie dziennika",style=MaterialTheme.typography.titleMedium)
-            Text("Wyślij przygotowane posiłki tego konta. Wpisy gościa pozostają osobno.")
+            Text("Wyślij przygotowane posiłki i pomiary wagi tego konta. Wpisy gościa pozostają osobno.")
             if(status!=null) {
                 Text("Gotowe: ${status.pending} · Czekają na poprzednią zmianę: ${status.waiting}",Modifier.testTag("meal-push-counts"))
                 if(status.persistedBatch)Text("Zapisana partia czeka na potwierdzenie. Ponowienie zachowa te same operacje.")
@@ -35,7 +35,7 @@ import pl.roseru.kalorie.data.OwnerLease
             Button(onClick={synchronize(binding.lease)},enabled=view.mealPushConfigured && view.serverLinked &&
                 !view.requiresRecovery && status?.ready==true && !busy &&
                 (status.pending>0 || status.persistedBatch),modifier=Modifier.fillMaxWidth().testTag("session-send-meals")) {
-                Text(if(status?.persistedBatch==true)"Ponów zapisaną partię" else "Wyślij oczekujące posiłki")
+                Text(if(status?.persistedBatch==true)"Ponów zapisaną partię" else "Wyślij oczekujące wpisy")
             }
         }
     }

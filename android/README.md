@@ -1,5 +1,13 @@
 # Android — Racje i kalorie
 
+PR138 / 23.10: dołączono aktualny main a034f66 po PR143. Nowy kandydat
+zawiera producent posiłków, synchronizację wagi i obsługę konfliktów z main
+oraz osobny opt-in driver E4. Wymaga własnego odbioru i nowych skonfigurowanych
+APK według O3-085; historyczne wyniki poniżej nie kwalifikują nowego źródła.
+PR138 przechodzi na main. Pełny pull0.8.27 pozostaje w oddzielnym PR144.
+
+Historyczne opisy:
+
 Aktualizacja138/21.10: `codex/android-integracja-pr138` zawiera dokładny
 rodzic139/afb6a0a. Cały Android/app i pliki kompilacji identyczne z f7cf71e;
 niezmienny kwalifikowany APK nadal pochodzi z d3f6dba. Ta aktualizacja nie
@@ -16,8 +24,56 @@ Historyczne opisy niezależnych etapów przed ich połączeniem:
 
 Historyczny stan rodzica przy aktualizacji zależności:
 
+Etap **0.8.26/code37/Room16** na `codex/android-konflikty-sync` dodaje
+[porównanie i świadome rozwiązywanie konfliktów posiłków i wagi](KONFLIKTY_SYNC.md):
+wersja lokalna/serwerowa, nowa operacja po decyzji, odtwarzanie pod nowym UUID
+i trwała historia decyzji. Starsze kolejki, pełne uzgadnianie i WorkManager
+pozostają kolejnymi etapami. Lokalnie35JVM i41native PASS, po końcowej
+poprawce10native PASS bez ponownego JVM; źródło lokalnych APK9a041bd.
+CI publikowanego head oraz aktualizacja zwykłego emulatora są osobnymi odbiorami.
+
+Poprzedni etap141 scalono jako8d67936; własny CI39736449922 i osobny
+push CI main39739653358 przeszły wszystkie8kontroli. Poniżej jego wcześniejszy opis.
+
+Etap **0.8.25/code36/Room15** na `codex/android-waga-sync` dodaje
+[kanoniczne pomiary wagi i wspólny ACK z posiłkami](WAGA_SYNC.md).
+Odbiór lokalny:30wybranychJVM i336/336native PASS. Aktualizacja0.8.24→0.8.25
+zachowała27starszych tabel, wszystkie wartości i rowid; aplikacja otwarta
+do prób ręcznych. [Metadane odbioru](ODBIOR_0_8_25.json) zawierają źródła/SHA.
+Dołączono main e1e28df po scaleniu140; własny CI integracji141 jest osobnym odbiorem.
+
+Historyczny wstęp main po integracji140:
+
+Integracja140 z22.10.2026: zwykły merge25f7e4c i rzeczywistego main34d7cb2
+po scaleniu139. Całe android/app i Gradle bez zmian,0.8.24/code35/Room14.
+PR140 przechodzi na main; własny pełny CI nowego head/base jest wymagany.
+Waga141 pozostaje oddzielnym etapem. Starsze opisy zależności poniżej są historyczne.
+
+Aktualizacja zależności140/21.10: `codex/android-integracja-pr140` dołącza
+dokładny rodzic139/afb6a0a. PR140 pozostaje zależnym draftem. Produkcja,
+schemat14 i wersja0.8.24/code35 bez zmiany; istniejący lokalny odbiór poniżej
+nie zastępuje własnego przyszłego CI po integracji rodziców.
+
+Nowy etap **0.8.24/code35/Room14** na `codex/android-posilki-katalogowe-sync`
+rozszerza [kolejkę o produkty katalogowe i wybrane składniki racji](POSILKI_KATALOGOWE_SYNC.md).
+Odbiór lokalny:13 wybranych JVM i11 native PASS, lint0error. APK0.8.24
+uruchomiono jako aktualizację zachowującą dziennik; pełny CI integracji
+i rzeczywisty katalogowy APK/API pozostają osobno.
+
+Rodzic139/a1f547a dostarcza [ręczne posiłki w sync-v1](POSILEK_RECZNY_SYNC.md):
+prywatny produkt pozostaje lokalny, a spożycie ma osobną operację Meal.
+Jego330/345JVM i328native PASS dotyczą wcześniejszego źródła c24583b,
+nie zastępują sprawdzenia obecnego etapu. Starsze wpisy legacy są osobno.
+
+Stan rodzica139 przy aktualizacji zależności:
+
 Gałąź `codex/android-integracja-pr139` dołącza dokładny rodzic129/3155d84.
 PR139 pozostaje zależnym draftem, dopóki129 nie przejdzie własnego CI i merge.
+
+Historyczny wstęp rodzica139 przed merge:
+
+Gałąź `codex/android-integracja-pr139` zawiera rzeczywisty main167152a po
+scaleniu priorytetowego137, z zachowaniem O2-049. Istniejący PR139 przechodzi na main i wymaga własnego pełnego CI.
 Produkcja139/0.8.23/Room14 bez zmiany; lokalny odbiór330/345JVM i328native
 jest historyczny. Zwykły emulator zachowuje nowszy APK0.8.24/code35 z PR140.
 

@@ -50,7 +50,8 @@ data class SessionView(val binding: SessionBinding? = null, val busy: Boolean = 
     val photoReadBusy:Boolean=false,val photoAnalysis:PhotoAnalysisPreview?=null,
     val photoCancelBusy:Boolean=false,val photoCancellation:PhotoCancellationStatus?=null,
     val photoConfirmBusy:Boolean=false,val photoConfirmation:PhotoConfirmationStatus?=null,
-    val photoDraftBusy:Boolean=false,val photoCanEditProposal:Boolean=false,val photoMealDraft:PhotoMealDraftPreview?=null)
+    val photoDraftBusy:Boolean=false,val photoCanEditProposal:Boolean=false,val photoMealDraft:PhotoMealDraftPreview?=null,
+    val conflictBusy:Boolean=false,val conflicts:ConflictListView=ConflictListView())
 
 /** Serializes durable decisions, not network waits. A callback/refresh is fenced by a captured
  * owner lease AND an operation ID, so logout and A→B→A cannot apply an old response.
@@ -70,7 +71,8 @@ class SessionController internal constructor(private val db: CalorieDatabase, pr
     private val photoAnalysisGateway:PhotoAnalysisGateway?=null,
     private val photoAnalysisStores:((OwnerLease)->PhotoAnalysisStore)?=null,
     private val mealPushGateway:MealPushGateway?=null,private val mealPushStore:MealPushStore?=null,
-    private val mealPushProtocol:pl.roseru.kalorie.core.sync.PushProtocol?=null) {
+    private val mealPushProtocol:pl.roseru.kalorie.core.sync.PushProtocol?=null,
+    private val conflictStore:SyncConflictStore?=null) {
     private val owners = LocalOwnerStore(db)
     private val mutex = Mutex()
     private var record = JSONObject()
@@ -129,7 +131,17 @@ class SessionController internal constructor(private val db: CalorieDatabase, pr
     private var mealPushOperation:String?=null
     private var mealPushFence:Pair<OwnerLease,AccountBindingEntity>?=null
     private var mealPushMessage:String?=null
+    private var conflictState=ConflictListView()
+    private var conflictBusy=false
+    private var conflictFence:Pair<OwnerLease,AccountBindingEntity>?=null
+    private val conflictKeys=mutableMapOf<String,String>()
+    private var conflictTicket:Pair<String,ConflictTicket>?=null
+    private fun clearConflicts() {
+        conflictState=ConflictListView();conflictKeys.clear();conflictTicket=null;conflictFence=null;conflictBusy=false
+        mutable.value=mutable.value.copy(conflictBusy=false,conflicts=conflictState)
+    }
     private fun clearMealPush() { mealPushOperation=null;mealPushFence=null;mealPushMessage=null
+        clearConflicts()
         mutable.value=mutable.value.copy(mealPushBusy=false,mealPush=null,mealPushMessage=null,mealPushRetryAt=0) }
     private var snapshotOperation: String? = null
     private val snapshots = snapshotProtocol?.let { ServerSnapshotStore(db, it) }
@@ -279,6 +291,8 @@ class SessionController internal constructor(private val db: CalorieDatabase, pr
             photoUploadContext!=Triple(server.accountId,server.accountGeneration,server.syncEpoch))) clearPhotoUpload()
         if(mealPushFence!=null && (session==null || server!=mealPushFence?.second ||
             current.lease!=mealPushFence?.first)) clearMealPush()
+        if(conflictFence!=null && (server==null || server.requiresRecovery ||
+            conflictFence!=(current.lease to server))) clearConflicts()
         val mealStatus=if(current.owner.kind=="account")mealPushStore?.status(current.lease) else null
         val photoRow=if(current.owner.kind=="account" && session!=null && photoAnalysisStores!=null)
             db.photoAnalysisDao().get(current.lease.storageScope) else null
@@ -299,6 +313,7 @@ class SessionController internal constructor(private val db: CalorieDatabase, pr
             snapshotBusy = snapshotOperation != null, snapshot = snapshots?.status(current.lease),
             mealPushConfigured=mealPushGateway!=null && mealPushStore!=null && mealPushProtocol!=null && snapshots!=null,
             mealPushBusy=mealPushOperation!=null,mealPush=mealStatus,mealPushMessage=mealPushMessage,
+            conflictBusy=conflictBusy,conflicts=conflictState,
             mealPushRetryAt=maxOf(session?.optLong("apiRetryAt")?:0,mealStatus?.retryAtMillis?:0).takeIf {it>now()}?:0,
             photoCapabilitiesConfigured = photoCapabilitiesGateway != null,
             photoCapabilitiesBusy = profileOperation != null && privateReadKind == PrivateReadKind.PHOTO,
@@ -1987,6 +2002,96 @@ class SessionController internal constructor(private val db: CalorieDatabase, pr
         catch(_:Exception){/* Keep an attempted/changed-owner operation intact. */}
     }
 
+    /** Offline comparison uses the active account lease, independently of token expiry. */
+    private suspend fun reloadConflictList(lease:OwnerLease,message:String?=null,offset:Int=0) {
+        owners.requireCurrent(lease)
+        val server=checkNotNull(db.bootstrapDao().binding(lease.storageScope))
+        check(!server.requiresRecovery)
+        val rows=checkNotNull(conflictStore).candidates(lease,offset)
+        val entries=rows.take(20).map { row->
+            val key=UUID.randomUUID().toString()
+            conflictKeys[key]=row.operationId
+            val date=when(row.entityType) {
+                "meal"->db.dao().meal(row.entityId,lease.storageScope)?.meal?.localDate
+                "weight"->db.dao().weight(row.entityId,lease.storageScope)?.localDate
+                else->null
+            }
+            ConflictListEntry(key,(if(row.entityType=="weight")"Pomiar wagi" else "Posiłek")+(date?.let {" · $it"}?:""))
+        }
+        owners.requireCurrent(lease)
+        check(db.bootstrapDao().binding(lease.storageScope)==server)
+        conflictFence=lease to server
+        conflictState=ConflictListView(entries,rows.size>20,loaded=true,message=message,page=offset/20)
+    }
+
+    suspend fun loadConflicts(lease:OwnerLease)=mutex.withLock {
+        if(conflictStore==null || mutable.value.binding?.lease!=lease)return@withLock
+        conflictBusy=true;conflictKeys.clear();conflictTicket=null
+        try {
+            publish()
+            reloadConflictList(lease)
+        } catch(error:CancellationException){throw error}
+        catch(_:Exception){conflictState=ConflictListView(message="Nie udało się odczytać wpisów. Sprawdź połączenie konta; dziennik pozostaje zachowany.")}
+        finally {conflictBusy=false;publish()}
+    }
+
+    suspend fun moveConflicts(lease:OwnerLease,direction:Int)=mutex.withLock {
+        if(conflictStore==null || mutable.value.binding?.lease!=lease || direction !in setOf(-1,1))return@withLock
+        if(direction==1 && !conflictState.hasMore || direction==-1 && conflictState.page==0)return@withLock
+        val offset=Math.multiplyExact(Math.addExact(conflictState.page,direction),20)
+        conflictBusy=true;conflictKeys.clear();conflictTicket=null
+        try {publish();reloadConflictList(lease,offset=offset)}
+        catch(error:CancellationException){throw error}
+        catch(_:Exception){conflictState=ConflictListView(message="Nie udało się odczytać kolejnej strony. Odśwież listę.")}
+        finally {conflictBusy=false;publish()}
+    }
+
+    suspend fun openConflict(lease:OwnerLease,key:String)=mutex.withLock {
+        if(conflictStore==null || mutable.value.binding?.lease!=lease)return@withLock
+        val operationId=conflictKeys[key]?:return@withLock
+        conflictBusy=true;conflictTicket=null
+        try {
+            publish()
+            val ticket=conflictStore.open(lease,operationId)
+            owners.requireCurrent(lease)
+            check(db.bootstrapDao().binding(lease.storageScope)==conflictFence?.second)
+            val previewKey=UUID.randomUUID().toString()
+            conflictTicket=previewKey to ticket
+            conflictState=conflictState.copy(preview=conflictPreview(previewKey,ticket),message=null)
+        } catch(error:CancellationException){throw error}
+        catch(_:Exception){conflictState=conflictState.copy(preview=null,message="Nie można jeszcze porównać tego wpisu. Pobierz świeżą kopię danych serwera i spróbuj ponownie.")}
+        finally {conflictBusy=false;publish()}
+    }
+
+    suspend fun closeConflict(lease:OwnerLease)=mutex.withLock {
+        if(mutable.value.binding?.lease!=lease)return@withLock
+        conflictTicket=null;conflictState=conflictState.copy(preview=null);publish()
+    }
+
+    suspend fun resolveConflict(lease:OwnerLease,key:String,choice:ConflictChoice)=mutex.withLock {
+        if(conflictStore==null || mutable.value.binding?.lease!=lease)return@withLock
+        val held=conflictTicket?.takeIf {it.first==key}?.second?:return@withLock
+        conflictBusy=true
+        try {
+            publish()
+            val queuedOperation=conflictStore.choose(held,choice)
+            conflictTicket=null;conflictKeys.clear()
+            val message=when {
+                choice==ConflictChoice.SERVER->"Przyjęto wersję serwera. Porównane wersje zachowano w historii decyzji."
+                queuedOperation!=null->"Wybór zapisany. Wynik trafi do kolejnej synchronizacji."
+                else->"Potwierdzono usunięcie. Porównane wersje zachowano w historii decyzji."
+            }
+            reloadConflictList(lease,message)
+        } catch(error:CancellationException){throw error}
+        catch(_:ConflictChangedException){
+            conflictTicket=null;conflictState=conflictState.copy(preview=null,message="Wpis zmienił się podczas porównywania. Otwórz aktualne wersje i potwierdź wybór ponownie.")
+        }
+        catch(_:Exception){
+            conflictTicket=null;conflictState=conflictState.copy(preview=null,message="Nie udało się zakończyć obsługi widoku. Odśwież listę, aby sprawdzić zapisany stan.")
+        }
+        finally {conflictBusy=false;publish()}
+    }
+
     /** Explicit canonical Meal push. Legacy rows remain local and are reported separately. */
     suspend fun synchronizeMeals(expectedLease:OwnerLease) {
         val transport=mealPushGateway?:return
@@ -2097,7 +2202,7 @@ class SessionController internal constructor(private val db: CalorieDatabase, pr
         check(checkNotNull(sessionFor(binding())).optLong("apiRetryAt")<=now())
     }
     private fun mealPushSummary(acknowledged:Int,refused:Int)=if(acknowledged+refused==0)
-        "Brak gotowych posiłków do wysłania. Starsze wpisy i pozostałe typy danych pozostają w kolejce."
+        "Brak gotowych wpisów do wysłania. Starsze wpisy i pozostałe typy danych pozostają w kolejce."
         else "Serwer potwierdził: $acknowledged. Wymagają uzgodnienia: $refused. Kopia serwera jest odświeżana osobno."
     private suspend fun finishMealPush(id:String,lease:OwnerLease,message:String=
         "Odpowiedź nie została potwierdzona. Ponów tę samą zapisaną partię; dziennik zachowany.")=mutex.withLock {
