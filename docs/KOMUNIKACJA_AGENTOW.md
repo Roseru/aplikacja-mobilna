@@ -7305,8 +7305,12 @@ Archiwalne wiersze sprzed aktualizacji PR138; bieżący stan znajduje się na po
   ZIP **O1-E4-0.8.29-5b283e4-Room20-configured-20261023.zip**, SHA256
   `1bbdaf2328f0fa1ebf01d3fe13a0cca0de890684f93dd0394f01f699cfe18b96`. ManifestLF SHA256
   `f5ef01d7249e6f1aed2c8cb2899384f260af9488c4a5261b365999b8c71e15ab`; bytes i hashe ponownie zgodne wewnątrz ZIP.
-  Upload i link wydania potwierdzane w istniejącym wątku146 po odczycie
-  size/digest GitHuba; samo przygotowanie pakietu nie oznacza pobrania przez O3.
+  **Upload potwierdzony:** [nowy draft4APK](https://github.com/Roseru/aplikacja-mobilna/releases/tag/untagged-c5e17b414f6c1d031b4c),
+  asset670346083/46599933B, GitHub size/digest zgodne z powyższym SHA.
+  Źródła wypchnięte **bae6a778965df0bd6f264984336da36503aab855**, bez scalenia do main.
+  [Przekazanie O2/O3](https://github.com/Roseru/aplikacja-mobilna/pull/146#issuecomment-6374317227)
+  oraz [wątek E4](https://github.com/Roseru/aplikacja-mobilna/pull/138#issuecomment-6374317608).
+  Pobranie i odbiór O3 pozostają osobnym krokiem; starszych assetów nie zmieniono.
 - O3: dostawa do nowej lokalnej próby, bez zależności od cross-host.
   Normalny PKCE/bootstrap/full→pierwszy profil/cel→manual push, potem świeży
   E4 C0/hold/C1/kill/replay/ACK/guard/C2 i **osobno** PULL po guardzie.

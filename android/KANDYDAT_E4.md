@@ -35,9 +35,10 @@ Nowy fizyczny pakiet **O1-E4-0.8.29-5b283e4-Room20-configured-20261023.zip**, SH
 `f5ef01d7249e6f1aed2c8cb2899384f260af9488c4a5261b365999b8c71e15ab`; sumy porównane także wewnątrz ZIP.
 Podpisy wszystkich4APK zweryfikowane. CA/issuer/API sprawdzone w skompilowanych
 zasobach: dodatkowy CA wyłącznie validation/dokładny host, bez cleartext/userCA.
-Potwierdzenie uploadu z size/digest i link do roboczego wydania jest przekazywane
-w [istniejącym wątku146](https://github.com/Roseru/aplikacja-mobilna/pull/146).
-Sam lokalny pakiet nie potwierdza pobrania przez O3.
+**Upload potwierdzony:** [nowe robocze wydanie czterech APK](https://github.com/Roseru/aplikacja-mobilna/releases/tag/untagged-c5e17b414f6c1d031b4c),
+asset670346083, 46599933B; GitHub size/digest odpowiada powyższemu SHA.
+Źródła wypchnięte w **bae6a778965df0bd6f264984336da36503aab855**. [Przekazanie O2/O3](https://github.com/Roseru/aplikacja-mobilna/pull/146#issuecomment-6374317227).
+Wydanie pozostaje draftem. Odbiór/pobranie przez O3 jest osobnym krokiem.
 
 O3 odbiera na własnym AVD: zwykły PKCE/bootstrap/full, pierwszy profil/cel,
 nowy manual push, następnie osobna świeża próba E4 z nowymi ID i planem.
