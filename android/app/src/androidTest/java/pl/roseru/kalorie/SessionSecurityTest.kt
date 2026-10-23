@@ -77,12 +77,13 @@ class SessionSecurityTest {
     }
     private fun client(db: CalorieDatabase, vault: SessionVault, fixture: FixtureGateway, api: BootstrapGateway? = null,
         profiles: ProfileGateway? = null, snapshots: SnapshotGateway? = null, motivation: MotivationGateway? = null,
-        consents: RankingConsentGateway? = null, ranking: RankingGateway? = null, nemesis: NemesisGateway? = null, nemesisWrites: NemesisWriteGateway? = null, photos: PhotoCapabilitiesGateway? = null, photoWrites:PhotoAnalysisGateway?=null, pushes:MealPushGateway?=null) = SessionController(
+        consents: RankingConsentGateway? = null, ranking: RankingGateway? = null, nemesis: NemesisGateway? = null, nemesisWrites: NemesisWriteGateway? = null, photos: PhotoCapabilitiesGateway? = null, photoWrites:PhotoAnalysisGateway?=null, pushes:MealPushGateway?=null, projectDiary:Boolean=false) = SessionController(
         db, vault, fixture, issuer, context.packageName, now = { fixture.time }, bootstrapGateway = api, profileGateway = profiles, snapshotGateway = snapshots,
         snapshotProtocol = snapshots?.let { snapshotProtocol() }, motivationGateway = motivation, rankingConsentGateway = consents, rankingGateway = ranking, nemesisGateway = nemesis, nemesisWriteGateway = nemesisWrites, photoCapabilitiesGateway = photos,
         photoAnalysisGateway=photoWrites,photoAnalysisStores=if(photoWrites!=null) { lease:OwnerLease->PhotoAnalysisStore(context,db,lease) } else null,
         mealPushGateway=pushes,mealPushStore=pushes?.let {MealPushStore(db,CanonicalMealRows.schema(context))},
-        mealPushProtocol=pushes?.let {PushProtocol(CanonicalMealRows.schema(context))})
+        mealPushProtocol=pushes?.let {PushProtocol(CanonicalMealRows.schema(context))},
+        diaryStore=if(projectDiary)ServerDiaryStore(db,CanonicalMealRows.schema(context)) else null)
     private suspend fun login(client: SessionController, fixture: FixtureGateway, subject: String) {
         fixture.subject = subject
         assertNotNull(client.beginLogin())
@@ -2856,4 +2857,152 @@ class SessionSecurityTest {
         }finally{h.close()}
     }
 
+    @Test fun ownedBootstrapRequiresExactMissingBindingAndRejectsStaleLease() = runBlocking<Unit> {
+        val db=memory();val vault=SessionVault(context,name());val fixture=FixtureGateway();val api=ApiFixture()
+        try {
+            val c=client(db,vault,fixture,api);c.start();login(c,fixture,"fixture-A")
+            val lease=c.view.value.binding!!.lease
+            val first=c.executeBootstrapStep(lease,null)
+            assertTrue(first is SessionController.SyncCommandOutcome.Bootstrapped)
+            val known=db.bootstrapDao().binding(lease.storageScope)!!
+            assertEquals(known,(first as SessionController.SyncCommandOutcome.Bootstrapped).context)
+            assertEquals(SessionController.SyncCommandOutcome.StaleContext,c.executeBootstrapStep(lease,null))
+            assertEquals(SessionController.SyncCommandOutcome.StaleContext,
+                c.executeBootstrapStep(lease,known.copy(contextRevision=known.contextRevision+1)))
+            assertEquals(1,api.calls.size)
+            c.logout();login(c,fixture,"fixture-B");c.logout();login(c,fixture,"fixture-A")
+            val active=c.view.value.binding!!.lease;val before=c.view.value
+            assertNotEquals(lease,active)
+            assertEquals(SessionController.SyncCommandOutcome.StaleContext,c.executeBootstrapStep(lease,known))
+            assertEquals(before,c.view.value);assertEquals(1,api.calls.size)
+            assertEquals(known,db.bootstrapDao().binding(lease.storageScope))
+        } finally {vault.clear();db.close()}
+    }
+
+    @Test fun ownedBootstrapHeldResponseCannotReplaceChangedContext() = runBlocking<Unit> {
+        val db=memory();val vault=SessionVault(context,name());val fixture=FixtureGateway();val api=ApiFixture()
+        val entered=CompletableDeferred<Unit>();val release=CompletableDeferred<Unit>()
+        try {
+            val c=client(db,vault,fixture,api);c.start();login(c,fixture,"fixture-A");c.bootstrap()
+            val lease=c.view.value.binding!!.lease;val known=db.bootstrapDao().binding(lease.storageScope)!!
+            api.answer={entered.complete(Unit);release.await();accepted()}
+            val task=async {c.executeBootstrapStep(lease,known)}
+            withTimeout(10_000){entered.await()}
+            val changed=known.copy(contextRevision=known.contextRevision+1,requiresRecovery=true)
+            db.withTransaction {db.bootstrapDao().update(changed)}
+            release.complete(Unit)
+            assertEquals(SessionController.SyncCommandOutcome.StaleContext,task.await())
+            assertEquals(changed,db.bootstrapDao().binding(lease.storageScope))
+            assertNull(db.bootstrapDao().attempt(lease.storageScope)!!.responseJson)
+            assertEquals(2,api.calls.size);assertFalse(c.view.value.bootstrapBusy)
+        } finally {release.complete(Unit);vault.clear();db.close()}
+    }
+
+    @Test fun ownedBootstrapRefreshRejectsChangedContextBeforeTokenCommit() = runBlocking<Unit> {
+        val db=memory();val vault=SessionVault(context,name());val fixture=FixtureGateway();val api=ApiFixture()
+        try {
+            val c=client(db,vault,fixture,api);c.start();login(c,fixture,"fixture-A");c.bootstrap()
+            val lease=c.view.value.binding!!.lease;val known=db.bootstrapDao().binding(lease.storageScope)!!
+            val auth=vault.read().getJSONObject("session").getString("authState")
+            val attempt=db.bootstrapDao().attempt(lease.storageScope)
+            fixture.time+=280_000;fixture.hold=CompletableDeferred()
+            val task=async {c.executeBootstrapStep(lease,known)}
+            withTimeout(10_000){fixture.refreshStarted.await()}
+            val changed=known.copy(contextRevision=known.contextRevision+1,requiresRecovery=true)
+            db.withTransaction {db.bootstrapDao().update(changed)}
+            fixture.hold!!.complete(Unit)
+            assertEquals(SessionController.SyncCommandOutcome.StaleContext,task.await())
+            assertEquals(auth,vault.read().getJSONObject("session").getString("authState"))
+            assertEquals(changed,db.bootstrapDao().binding(lease.storageScope))
+            assertEquals(attempt,db.bootstrapDao().attempt(lease.storageScope));assertEquals(1,api.calls.size)
+            assertFalse(c.view.value.busy);assertFalse(c.view.value.bootstrapBusy)
+        } finally {fixture.hold?.complete(Unit);vault.clear();db.close()}
+    }
+
+    @Test fun ownedPullCommitsProjectionAndSeparatesRecoveryFromOrdinaryStep() = runBlocking<Unit> {
+        val db=memory();val vault=SessionVault(context,name());val fixture=FixtureGateway();val api=ApiFixture();val copies=SnapshotFixture()
+        try {
+            val c=client(db,vault,fixture,api,snapshots=copies,projectDiary=true);c.start();login(c,fixture,"fixture-A");c.bootstrap()
+            val lease=c.view.value.binding!!.lease;val known=db.bootstrapDao().binding(lease.storageScope)!!
+            val result=c.executePullStep(lease,known)
+            assertTrue(result is SessionController.SyncCommandOutcome.Pulled)
+            val pulled=result as SessionController.SyncCommandOutcome.Pulled
+            assertTrue(pulled.applied);assertEquals(pulled.runId,c.view.value.diaryApplication!!.runId)
+            assertNotNull(db.serverDiaryDao().application(pulled.runId));assertEquals(0,db.dao().operationCount(lease.storageScope))
+            val recovery=known.copy(contextRevision=known.contextRevision+1,requiresRecovery=true)
+            db.withTransaction {db.bootstrapDao().update(recovery)}
+            assertEquals(SessionController.SyncCommandOutcome.ReconciliationRequired("account_context_not_ready"),c.executePullStep(lease,recovery))
+            assertEquals(1,copies.calls.size)
+            c.downloadSnapshot(lease,recovery)
+            assertEquals(2,copies.calls.size);assertTrue(db.bootstrapDao().binding(lease.storageScope)!!.requiresRecovery)
+            assertNotNull(db.serverDiaryDao().application(pulled.runId));assertEquals(0,db.dao().operationCount(lease.storageScope))
+        } finally {vault.clear();db.close()}
+    }
+
+    @Test fun ownedPushReturnsCountsWithoutHiddenPullAndRetainsExactUnknownBatch() = runBlocking<Unit> {
+        val h=PushHarness()
+        try {
+            h.prepare();val known=h.db.bootstrapDao().binding(h.lease.storageScope)!!
+            h.answer={_,_->throw java.io.IOException("Synthetic lost response")}
+            assertEquals(SessionController.SyncCommandOutcome.TransientFailure,h.c.executePushStep(h.lease,known))
+            val frozen=h.db.pushDao().pending(h.lease.storageScope).single()
+            assertTrue(frozen.attempted);assertNull(frozen.responseJson);assertEquals(0,h.revision());assertEquals(1,h.copies.calls.size)
+            h.c=h.again();h.c.start();h.answer={batch,_->BootstrapHttpResult(200,h.receipt(batch,"already_applied"))}
+            val completed=h.c.executePushStep(h.lease,known)
+            assertEquals(SessionController.SyncCommandOutcome.Pushed(1,0,false),completed)
+            assertEquals(1,h.revision());assertEquals(1,h.copies.calls.size);assertEquals(2,h.calls.size)
+            assertArrayEquals(h.calls[0].body(),h.calls[1].body())
+            assertEquals(frozen.requestJson,h.db.pushDao().batch(frozen.id)!!.requestJson)
+            assertEquals("complete",h.db.pushDao().batch(frozen.id)!!.state)
+        } finally {h.close()}
+    }
+
+    @Test fun ownedPushHonoursRetryAtAndReportsRefusalAsReconciliation() = runBlocking<Unit> {
+        val h=PushHarness()
+        try {
+            h.prepare();val known=h.db.bootstrapDao().binding(h.lease.storageScope)!!
+            h.answer={_,_->syncDenied(503,"service_unavailable","60")}
+            val retry=h.c.executePushStep(h.lease,known) as SessionController.SyncCommandOutcome.RetryAt
+            assertEquals(h.fixture.time+60_000,retry.epochMillis)
+            val saved=h.db.pushDao().pending(h.lease.storageScope).single()
+            assertEquals(retry.epochMillis,saved.retryAtMillis)
+            h.c=h.again();h.c.start();assertEquals(retry,h.c.executePushStep(h.lease,known));assertEquals(1,h.calls.size)
+            h.fixture.time=retry.epochMillis;h.answer={_,_->syncDenied(409,"sync_epoch_changed")}
+            assertEquals(SessionController.SyncCommandOutcome.ReconciliationRequired("sync_epoch_changed"),h.c.executePushStep(h.lease,known))
+            val changed=h.db.bootstrapDao().binding(h.lease.storageScope)!!;assertTrue(changed.requiresRecovery)
+            assertEquals(SessionController.SyncCommandOutcome.StaleContext,h.c.executePushStep(h.lease,known))
+            assertEquals(SessionController.SyncCommandOutcome.ReconciliationRequired("account_context_not_ready"),h.c.executePushStep(h.lease,changed))
+            assertEquals(2,h.calls.size);assertEquals(1,h.copies.calls.size);assertEquals(0,h.revision())
+            assertEquals(saved.requestJson,h.db.pushDao().batch(saved.id)!!.requestJson);assertNull(h.db.pushDao().batch(saved.id)!!.responseJson)
+        } finally {h.close()}
+    }
+
+    @Test fun ownedPushChangedContextBeforeSendKeepsFrozenRequestUnattempted() = runBlocking<Unit> {
+        val h=PushHarness()
+        try {
+            h.prepare();val known=h.db.bootstrapDao().binding(h.lease.storageScope)!!
+            val changed=known.copy(contextRevision=known.contextRevision+1,requiresRecovery=true)
+            h.before={h.db.withTransaction {h.db.bootstrapDao().update(changed)}}
+            assertEquals(SessionController.SyncCommandOutcome.StaleContext,h.c.executePushStep(h.lease,known))
+            assertTrue(h.calls.isEmpty());assertEquals(changed,h.db.bootstrapDao().binding(h.lease.storageScope))
+            val saved=h.db.pushDao().pending(h.lease.storageScope).single()
+            assertFalse(saved.attempted);assertNull(saved.responseJson);assertEquals(0,h.revision())
+        } finally {h.close()}
+    }
+
+    @Test fun ownedPushBusyAndCancellationNeverReturnCompletedOrApplyAck() = runBlocking<Unit> {
+        val h=PushHarness();val entered=CompletableDeferred<Unit>();val release=CompletableDeferred<Unit>()
+        try {
+            h.prepare();val known=h.db.bootstrapDao().binding(h.lease.storageScope)!!
+            h.answer={batch,_->entered.complete(Unit);release.await();BootstrapHttpResult(200,h.receipt(batch))}
+            val task=async {h.c.executePushStep(h.lease,known)}
+            withTimeout(10_000){entered.await()}
+            assertEquals(SessionController.SyncCommandOutcome.Busy,h.c.executePushStep(h.lease,known));assertEquals(1,h.calls.size)
+            val frozen=h.db.pushDao().pending(h.lease.storageScope).single()
+            task.cancelAndJoin();assertTrue(task.isCancelled)
+            val saved=h.db.pushDao().batch(frozen.id)!!
+            assertTrue(saved.attempted);assertNull(saved.responseJson);assertEquals(frozen.requestJson,saved.requestJson)
+            assertEquals(0,h.revision());assertFalse(h.c.view.value.mealPushBusy);assertEquals(1,h.copies.calls.size)
+        } finally {release.complete(Unit);h.close()}
+    }
 }
