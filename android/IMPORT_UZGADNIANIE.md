@@ -195,3 +195,24 @@ ownerABA między prepare/apply; malformed raw bez publikacji dowodu. Nowy
 przypadek C ujawnił też brak dalszej kopii po ACK i zwykłym pobraniu: plan
 teraz jawnie żąda własnej świeżej typed kopii, nie przyjmuje zwykłej za dowód.
 Cały magazyn uzgadniania14 i3przypadki portu native PASS na Room20/API35.
+
+### Rzeczywiste podłączenie aplikacji
+
+Po zwykłym merge O1/d4d9c940 CalorieApplication przekazuje ten sam store
+uzgadniania do rzeczywistego SessionController. MainActivity tworzy
+ImportViewModel w magazynie scope:generation, z przechwyconym lease,
+SavedStateHandle i samym kontrolerem jako ReconciliationStepExecutor.
+Przełączenie właściciela usuwa poprzedni magazyn modeli.
+
+Ścieżka Profil→Konto→Import i uzgadnianie otwiera właściwy ekran; callbacki
+bootstrap/downloadSnapshot także przenoszą captured lease. Import gościa
+wymaga odrębnej zgody z pełnym issuer i subject. Brak konfiguracji wyłącza
+wysyłanie i pokazuje, że kolejka jest zachowana; queued nie jest ACK.
+
+Na źródlecfa18e25 wykonano dokładne16metod SessionSecurityTest z89766ec,
+porównane z XML:16PASS,0fail/error/skip. Oddzielnie11PASS: rzeczywista
+nawigacja CalorieApp z Room i kontrolerem O1 oraz6testów ekranu i4ViewModelu.
+Nawigacyjny fixture nie wykonuje auth/HTTP: świadoma zgoda tworzy tylko
+kolejkę; oryginał gościa i zero ACK są sprawdzane niezależnie.
+Końcowe podłączenie completedraw i poprawka obserwatora nadal należą do O1;
+te wyniki nie zastępują odbioru tych przypadków ani pełnego zdalnego CI.

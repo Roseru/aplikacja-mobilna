@@ -87,7 +87,7 @@ import pl.roseru.kalorie.session.*
             composable("import") {
                 if(importModel!=null) {
                     LaunchedEffect(importModel) {importModel.refresh()}
-                    ImportScreen(importModel,back={nav.popBackStack()},sendOrdinary={session.binding?.lease?.let(actions.synchronizeMeals)})
+                    ImportScreen(importModel,back={nav.popBackStack()},sendOrdinary={session.binding?.lease?.let(actions.synchronizeMeals)},ordinaryConfigured=session.mealPushConfigured)
                 } else TextButton(onClick={nav.popBackStack()}) {Text("Wróć do konta")}
             }
             composable("nemesis") { NemesisScreen(session, actions, onBack = { nav.popBackStack() },

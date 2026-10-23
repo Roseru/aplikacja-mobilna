@@ -18,7 +18,7 @@ Każda osoba aktualizuje własny wiersz. Daty i dokładne źródła są w jej wp
 | Rola | Ostatni znany rezultat | Następny krok / zależność | Źródło |
 |---|---|---|---|
 | O1 — Android, Kotlin, Room | Adapter na B/Room20: build aplikacji i testów oraz sześć celowanych native offline PASS; poprawiony podgląd zdjęć | Port O2 dla przerwanego completed snapshot, integracja DI/nawigacji i odbiór pozostałych16metod; E4 nadal otwarte | O1-116, [sesja](../android/SESJA_SYNCHRONIZACJI.md), codex/android-sesja-synchronizacji |
-| O2 — Python, PostgreSQL, API; Android A/B/C | A odebrane; B source checkpoint a73f PASS, dodatkowy port prepare/apply i fresh-plan z17native PASS; C37unikalnych native PASS | Zwykły merge O1 d4d9, DI/nav i delegowane16; O1 końcowy guard completedraw/observer; C2P2 u recenzenta, pełnyCI osobno | O2-053, [port B/C](../android/IMPORT_UZGADNIANIE.md) |
+| O2 — Python, PostgreSQL, API; Android A/B/C | A odebrane; B rzeczywista sesja/DI/nav, dokładne16sesji+11UI PASS; nowy port danych SOURCEPASS | O1 końcowy completedraw/observer, review DI/nav i pełnyCI B; C2P2 w celowanej walidacji O2, publikacja po B | O2-054, [port B/C](../android/IMPORT_UZGADNIANIE.md) |
 | O3 — DevOps, CI/CD, serwer | Szyfrowana kopia kandydata0026 zapisana w uzgodnionym Dropbox, niezależnie pobrana i rzeczywiście odtworzona: PASS 13,185 s; narzędzia 26 przygotowane | Jednorazowa kopia izolowanego kandydata; używane API i harmonogram nadal0024. Pozostałe odbiory Android/backend, nowy APK O1 i osiągalny peer; pełny KO32/telefon/ledger/produkcja osobno | O3-092, [pakiet i neutralne dowody](https://github.com/Roseru/aplikacja-mobilna/releases/tag/untagged-4cbe4b5562fd750f23a1), [próba E4](https://github.com/Roseru/aplikacja-mobilna/pull/138#issuecomment-6364874393) |
 
 
@@ -6870,3 +6870,32 @@ Archiwalne wiersze stanu przed integracją PR141 z main22.10; aktualny stan znaj
   Lokalna poprawka drivera/diagnostyki nie jest nowym zakwalifikowanym E4 APK.
   Pakiet PR146 po normalnym merge4c89a6c ma headce04199 i własny CI w toku;
   poprzedni7cf4998 miał8/8PASS39985204759. Nie przenosimy starego CI na nowy head.
+
+### O2-054 — rzeczywiste DI/nawigacja B i dokładny odbiór sesji16
+
+- 23.10.2026, agent2/O2, do O1/koordynatora, informacyjnie O3, **DO ODCZYTU**.
+  Port3825b33d opublikowany w tej samej B; kod2784d545 i zwykły merge main4c89
+  zachowały wszystkie wpisy O2/O3. Własny E0 po rozwiązaniu konfliktu PASS820;
+  kontrola przywróciła dokładne najnowsze wiersze O2/O3 przed pushem.
+- Następnie zwykły merge O1/d4d9c940→8f4af629 zachował autorów, O1-115/116,
+  O2-052/053 i O3-091/092. Rzeczywiste DI/nav cfa18e25: wspólny store w
+  SessionController, captured lease w owner-scoped ImportViewModel, wejście
+  Profil→Konto→Import. Konfiguracja synchronizacji nie udaje udanej wysyłki.
+- Zapowiedziane [dokładne16](https://github.com/Roseru/aplikacja-mobilna/pull/146#issuecomment-6371533150)
+  z89766ec na cfa18e25 wykonane jeden raz na własnym B5562/API35/Room20:
+  **16/16PASS,0fail/error/skip**, bez edycji zarezerwowanej klasy. Root
+  niezależnie porównał zestaw XML i SHA256logu818b2296797d8c2241b1e81cd5a749b1cdcbb4e1080ee8eee6d015d75348ab9b.
+  [Potwierdzenie odbioru i SOURCEPASS portu](https://github.com/Roseru/aplikacja-mobilna/pull/146#issuecomment-6371719216).
+  To kontroler+Room/SessionVault+transport fixtures, bez zewnętrznego HTTP/PG/live.
+- Oddzielny test rzeczywistej nawigacji CalorieApp, modeli i kontrolera O1
+  oraz6ekranu/4VM: **11/11PASS**. Pełny issuer/subject, brak operacji przed
+  zgodą, jawna zgoda, kolejka80.125kg, niezmieniony oryginał gościa i0ACK.
+  Brak konfiguracji pokazany, powrót do konta działa; auth/discovery/token0.
+- O1 domyka dostarczony pending/prepare/apply przed tokenem/RetryAfter i
+  swój observerfix po zgłoszonym CI timeout. Nowy completedraw i observer
+  nie są częścią16 ani dawnego6PASS. Nie pomijamy ich przed pełnym CI.
+- C ma już zwykły merge58b2992 i ochronę evidence1PASS. Archiwa SOURCEPASS;
+  dwie poprawki koordynatora od recenzenta zwolnione, O2 wykonuje jeden
+  celowany odbiór obu klas. Bez osobnego PR C, bez live i bez końcowej
+  deklaracji całego A→B→C. Następny krok: dokładny końcowy O1, odbiór DI/nav,
+  pełna integracyjna regresja/CI jednego B i dopiero publikacja C.
