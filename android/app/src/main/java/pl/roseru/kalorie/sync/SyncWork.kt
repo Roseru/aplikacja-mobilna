@@ -89,7 +89,6 @@ class SyncWorkRuntime(private val db:CalorieDatabase,val coordinator:SyncCoordin
                     if(changed)signal()
                 }
             }
-            var previousContext:SyncContextSignal?=null
             var previousSession:SyncSessionSignal?=null
             var previousTicket:SyncWorkTicket?=null
             combine(db.syncWorkDao().contexts(),sessions.distinctUntilChanged()) {context,session->context to session}
@@ -98,10 +97,9 @@ class SyncWorkRuntime(private val db:CalorieDatabase,val coordinator:SyncCoordin
                     if(previousTicket!=null && previousTicket!!.uniqueName()!=ticket?.uniqueName())scheduler.cancel(previousTicket!!)
                     val loginEvent=session.available && (previousSession?.available!=true || previousSession?.lease!=session.lease)
                     val configurationEvent=session.configured && previousSession?.configured!=true
-                    val recovered=context?.binding?.requiresRecovery==false && previousContext?.binding?.requiresRecovery==true
-                    previousContext=context;previousSession=session;previousTicket=ticket
+                    previousSession=session;previousTicket=ticket
                     if(context!=null && ticket!=null && session.lease==context.lease()) {
-                        val reasons=buildSet {if(loginEvent)add("login");if(recovered)add("reconciliation");if(configurationEvent)add("not_configured")}
+                        val reasons=buildSet {if(loginEvent)add("login");if(configurationEvent)add("not_configured")}
                         signal(expected=ticket,resumeReasons=reasons)
                     }
                 }

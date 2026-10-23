@@ -77,7 +77,7 @@ Na własnym izolowanym emulatorze validation, z potwierdzoną tożsamością:
 
 ```powershell
 .\gradlew.bat testDebugUnitTest testValidationUnitTest lintValidation
-.\gradlew.bat connectedValidationAndroidTest '-Pandroid.testInstrumentationRunnerArguments.class=pl.roseru.kalorie.SnapshotArchiveStorageTest,pl.roseru.kalorie.SyncCoordinatorStorageTest,pl.roseru.kalorie.SyncWorkStorageTest,pl.roseru.kalorie.SyncWakeStorageTest,pl.roseru.kalorie.SyncSessionIntegrationTest,pl.roseru.kalorie.ImportOriginsMigrationTest,pl.roseru.kalorie.ServerSnapshotStorageTest,pl.roseru.kalorie.ServerDiaryStorageTest'
+.\gradlew.bat connectedValidationAndroidTest '-Pandroid.testInstrumentationRunnerArguments.class=pl.roseru.kalorie.SnapshotArchiveStorageTest,pl.roseru.kalorie.SyncCoordinatorStorageTest,pl.roseru.kalorie.SyncWorkStorageTest,pl.roseru.kalorie.SyncWakeStorageTest,pl.roseru.kalorie.SyncRecoveryResumeTest,pl.roseru.kalorie.SyncSessionIntegrationTest,pl.roseru.kalorie.ImportOriginsMigrationTest,pl.roseru.kalorie.ServerSnapshotStorageTest,pl.roseru.kalorie.ServerDiaryStorageTest'
 ```
 
 Testy używają syntetycznych danych i prawdziwych transakcji SQLite. Osobno
@@ -127,5 +127,41 @@ nie udaje nowego uwierzytelnienia. Stan storage wymaga jawnej próby użytkownik
 Silniejsza regresja tej granicy wykazała czerwone login→ready przed poprawką;
 po poprawce pełne4wake,417/432JVM i lint PASS. Bazowy zestaw19native (Wake4)
 przeszedł wcześniej; końcowa delta jest sprawdzona oddzielnie, bez przenoszenia
-wyniku dawnego CI na nowe źródło. Kształt encji i wyeksportowany schemat Room21
-pozostają niezmienione po instalacji.
+wyniku dawnego CI na nowe źródło. Schemat21 pozostaje niezmieniony po instalacji; poniższa poprawka przechodzi
+jawnie do22.
+
+
+## Trwałe zakończenie uzgodnienia i schemat22
+
+Ograniczony przegląd runtime665a wykazał, że sam obserwowany spadek
+`requiresRecovery` nie wystarcza po restarcie obserwatora. Migracja21→22
+zachowuje wszystkie wcześniejsze komórki/rowid/FK, dodaje nullable
+`sync_work_state.reconciliationBaseline` oraz niezmienny lokalny ledger
+`reconciliation_completions`. Wydanie C ma0.8.31/code42/validation1042.
+Surowy schemat21 i migracja20→21 pozostają identyczne.
+
+Rzeczywisty B finish zapisuje monotoniczny numer zakończenia w tej samej
+transakcji co complete, zastosowanie pełnej kopii i zdjęcie recovery.
+Powtórzenie zakończonego planu zwraca istniejący wynik bez nowego numeru.
+Nowa blokada zapisuje aktualny numer jako granicę. Automatyczne wznowienie
+wymaga nowszego, zatwierdzonego i zakończonego planu tego samego właściciela
+oraz pełnego kontekstu, powiązanego z zastosowaną kopią. Nie porównujemy
+zegara ani dat. Sama flaga, login, konfiguracja lub historyczny complete
+nie zwalniają nowszej blokady. Weryfikacja odbywa się transakcyjnie zarówno
+przy request, jak i bezpośrednim wznowieniu workera.
+
+Po potwierdzonym zakończeniu nowy cykl zaczyna PULL; nie skraca zapisanego
+Retry-After. Dla migrowanej zdrowej blokady z nieznaną granicą NULL zachowuje
+blokadę do jawnej próby użytkownika. Migrowana blokada nadal wymagająca
+recovery zapisuje granicę przed przyszłym zakończeniem; nie dopisujemy
+fikcyjnych dowodów dawnym planom.
+
+Celowany odbiór7/7nativePASS,0fail/error/skip: rzeczywisty B finish bez
+obserwatora → zamknięcie plikowej Room → nowy runtime → właściwy worker,
+negatywny stary plan/nowszy zwykły konflikt, pełna migracja21→22 z porównaniem
+wszystkich starych tabel i cztery regresje wake. Zachowane prywatne dane
+gościa, historyczne80.125kg, frozen JSON/hash/operacja oraz brak fałszywego
+ACK; wczesne wybudzenie zachowuje termin90000 i nie wywołuje transportu.
+Testy są lokalnymi fixtures bez zewnętrznego HTTP. Błąd pierwszej kompilacji
+nowego testu (nieistniejące pole payloadHash) poprawiono na mocniejsze
+porównanie całej oryginalnej operacji z jedyną dozwoloną zmianą statusu.

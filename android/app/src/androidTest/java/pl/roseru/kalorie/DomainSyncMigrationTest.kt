@@ -96,9 +96,9 @@ class DomainSyncMigrationTest {
                 assertFalse(old.rawQuery("PRAGMA foreign_key_check", null).use { it.moveToFirst() })
             }
             target = Room.databaseBuilder(context, CalorieDatabase::class.java, name)
-                .addMigrations(MIGRATION_17_18, MIGRATION_18_19, MIGRATION_19_20, pl.roseru.kalorie.data.MIGRATION_20_21).addCallback(DATABASE_GUARDS).build()
+                .addMigrations(MIGRATION_17_18, MIGRATION_18_19, MIGRATION_19_20, pl.roseru.kalorie.data.MIGRATION_20_21, pl.roseru.kalorie.data.MIGRATION_21_22).addCallback(DATABASE_GUARDS).build()
             val sql = target!!.openHelper.readableDatabase
-            assertEquals(21, sql.version)
+            assertEquals(22, sql.version)
             assertEquals(before, dump { sql.query(it) })
             assertFalse(sql.query("PRAGMA foreign_key_check").use { it.moveToFirst() })
             assertEquals(81.123456789, target!!.dao().weight(weight, guest.storageScope)!!.kg, 0.0)

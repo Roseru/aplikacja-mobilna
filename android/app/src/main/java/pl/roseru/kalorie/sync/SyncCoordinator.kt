@@ -37,25 +37,44 @@ class SyncCoordinator(private val db:CalorieDatabase,private val schema:SyncWire
         lease.storageScope,lease.generation,CanonicalMealRows.context(binding),UUID.randomUUID().toString(),"pull_before","ready",
         previous?.retryAtMillis?:0,0,previous?.requestedVersion?:0,0,previous?.handledVersion?:0,0,0,now())
 
+    /** Capture a causal boundary once per block; an old completed plan cannot release a new block. */
+    private suspend fun blockReconciliation(state:SyncWorkState)=state.copy(status="reconciliation",
+        reconciliationBaseline=if(state.status=="reconciliation" && state.reconciliationBaseline!=null)state.reconciliationBaseline
+            else db.syncWorkDao().completionSequence(state.ownerScope,state.wireContext))
+    private suspend fun recover(state:SyncWorkState,current:AccountBindingEntity):SyncWorkState {
+        if(current.requiresRecovery)return blockReconciliation(state)
+        val baseline=state.reconciliationBaseline
+        // Migrated healthy blocks have no known causal boundary: fail closed until explicit manual action.
+        if(state.status!="reconciliation" || baseline==null ||
+            !db.syncWorkDao().completedAfter(state.ownerScope,state.wireContext,baseline))return state
+        return state.copy(status="ready",phase="pull_before",activeVersion=0,cycleId=UUID.randomUUID().toString(),
+            acknowledged=0,refused=0,reconciliationBaseline=null)
+    }
     /** Explicit/manual or an eligible-write signal. Neither can shorten a stored Retry-After. */
     suspend fun request(lease:OwnerLease,binding:AccountBindingEntity,resumeBlocked:Boolean=false,resumeReasons:Set<String> = emptySet()):SyncWorkState=db.withTransaction {
         val current=guard(lease,binding);val old=db.syncWorkDao().state(lease.storageScope)
         var state=if(old!=null && matches(old,lease,current))old else initial(lease,current,old)
+        state=recover(state,current)
+        val status=when {
+            current.requiresRecovery->"reconciliation"
+            state.status in blocked && !resumeBlocked && (state.status=="reconciliation" || state.status !in resumeReasons)->state.status
+            else->"ready"
+        }
         state=state.copy(requestedVersion=Math.addExact(state.requestedVersion,1),retryAtMillis=lowerBound(lease.storageScope,state),
-            status=when {current.requiresRecovery->"reconciliation";state.status in blocked && !resumeBlocked && state.status !in resumeReasons->state.status;else->"ready"},updatedAtMillis=now())
+            status=status,reconciliationBaseline=if(status=="reconciliation")state.reconciliationBaseline else null,updatedAtMillis=now())
         db.syncWorkDao().save(state);state
     }
     suspend fun state(lease:OwnerLease):SyncWorkState?=db.withTransaction {
         LocalOwnerStore(db).requireCurrent(lease);db.syncWorkDao().state(lease.storageScope)
     }
     private suspend fun remaining(owner:String)=db.syncWorkDao().remaining(owner)
-    private suspend fun save(lease:OwnerLease,binding:AccountBindingEntity,change:(SyncWorkState)->SyncWorkState):SyncWorkState=db.withTransaction {
+    private suspend fun save(lease:OwnerLease,binding:AccountBindingEntity,change:suspend (SyncWorkState)->SyncWorkState):SyncWorkState=db.withTransaction {
         guard(lease,binding);val state=checkNotNull(db.syncWorkDao().state(lease.storageScope))
         if(!matches(state,lease,binding))throw StaleOwnerException()
         change(state).copy(updatedAtMillis=now()).also {db.syncWorkDao().save(it)}
     }
     private suspend fun stop(lease:OwnerLease,binding:AccountBindingEntity,reason:String):Outcome {
-        save(lease,binding){it.copy(status=reason)};return Outcome.Stopped(reason)
+        save(lease,binding){if(reason=="reconciliation")blockReconciliation(it) else it.copy(status=reason,reconciliationBaseline=null)};return Outcome.Stopped(reason)
     }
     private suspend fun defer(lease:OwnerLease,binding:AccountBindingEntity,at:Long,failed:Boolean=false,resumePhase:String?=null):Outcome {
         val state=save(lease,binding){it.copy(status="deferred",phase=resumePhase ?: it.phase,retryAtMillis=maxOf(it.retryAtMillis,at),
@@ -70,10 +89,10 @@ class SyncCoordinator(private val db:CalorieDatabase,private val schema:SyncWire
             var state=db.withTransaction {
                 val current=guard(lease,binding);val old=db.syncWorkDao().state(lease.storageScope)
                 if(old==null || !matches(old,lease,current))return@withTransaction null
-                val value=old.copy(retryAtMillis=lowerBound(lease.storageScope,old))
+                val recovered=recover(old,current)
+                val value=recovered.copy(retryAtMillis=lowerBound(lease.storageScope,recovered))
                 db.syncWorkDao().save(value);value
             } ?: return Outcome.Stale
-            if(binding.requiresRecovery)return stop(lease,binding,"reconciliation")
             if(state.status in blocked)return Outcome.Stopped(state.status)
             if(state.retryAtMillis>now())return Outcome.Deferred(state.retryAtMillis)
             if(state.status=="idle" && state.requestedVersion<=state.handledVersion)return Outcome.Complete

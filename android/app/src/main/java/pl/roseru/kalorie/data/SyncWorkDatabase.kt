@@ -18,8 +18,20 @@ data class SnapshotArchiveReceipt(@PrimaryKey val runId:String,val originalPages
     parentColumns=["storageScope"],childColumns=["ownerScope"],onDelete=ForeignKey.RESTRICT)])
 data class SyncWorkState(@PrimaryKey val ownerScope:String,val leaseGeneration:Long,val wireContext:String,
     val cycleId:String,val phase:String,val status:String,val retryAtMillis:Long,val consecutiveFailures:Int,
-    val requestedVersion:Long,val activeVersion:Long,val handledVersion:Long,val acknowledged:Int,val refused:Int,val updatedAtMillis:Long) {
+    val requestedVersion:Long,val activeVersion:Long,val handledVersion:Long,val acknowledged:Int,val refused:Int,val updatedAtMillis:Long,
+    @ColumnInfo(defaultValue="NULL") val reconciliationBaseline:Long?=null) {
     override fun toString()="SyncWorkState(phase=$phase,status=$status)"
+}
+
+/** Local causal proof of verified B finalization. Sequence is unrelated to server revisions or time. */
+@Entity(tableName="reconciliation_completions",foreignKeys=[
+    ForeignKey(entity=LocalOwnerEntity::class,parentColumns=["storageScope"],childColumns=["ownerScope"],onDelete=ForeignKey.RESTRICT),
+    ForeignKey(entity=ImportPlan::class,parentColumns=["id"],childColumns=["planId"],onDelete=ForeignKey.RESTRICT),
+    ForeignKey(entity=ServerDiaryApplication::class,parentColumns=["runId"],childColumns=["runId"],onDelete=ForeignKey.RESTRICT)
+],indices=[Index(value=["planId"],unique=true),Index("runId"),Index(value=["ownerScope","wireContext"])])
+data class ReconciliationCompletion(@PrimaryKey(autoGenerate=true) val sequence:Long=0,
+    val ownerScope:String,val wireContext:String,val planId:String,val runId:String) {
+    override fun toString()="ReconciliationCompletion(redacted)"
 }
 
 data class SyncQueueSignal(val ownerScope:String,val leaseGeneration:Long,val operationId:String,val action:String,
@@ -30,6 +42,11 @@ data class SyncContextSignal(val leaseGeneration:Long,@Embedded val binding:Acco
     override fun toString()="SyncContextSignal(redacted)"
 }
 @Dao interface SyncWorkDao {
+    @Insert suspend fun insert(completion:ReconciliationCompletion)
+    @Query("SELECT COALESCE(MAX(sequence),0) FROM reconciliation_completions WHERE ownerScope=:owner AND wireContext=:context")
+    suspend fun completionSequence(owner:String,context:String):Long
+    @Query("SELECT EXISTS (SELECT 1 FROM reconciliation_completions c JOIN import_plans p ON p.id=c.planId JOIN server_diary_applications a ON a.runId=c.runId WHERE c.ownerScope=:owner AND c.wireContext=:context AND c.sequence>:baseline AND p.targetScope=c.ownerScope AND p.wireContext=c.wireContext AND p.kind IN ('reconcile_same_epoch','reconcile_epoch') AND p.state='complete' AND p.approvedAt IS NOT NULL AND a.ownerScope=c.ownerScope AND a.wireContext=c.wireContext)")
+    suspend fun completedAfter(owner:String,context:String,baseline:Long):Boolean
     @Query("SELECT a.generation AS leaseGeneration,b.* FROM local_active_owner a JOIN local_owners o ON o.storageScope=a.storageScope JOIN account_bindings b ON b.ownerScope=o.storageScope WHERE a.id=1 AND o.kind='account'")
     fun contexts():Flow<SyncContextSignal?>
     @Query("SELECT COUNT(*) FROM outbox WHERE ownerScope=:owner AND wireFormat='sync-v1' AND status IN ('pending','waiting_revision','waiting_timeline','waiting_profile')")
@@ -78,5 +95,21 @@ val MIGRATION_20_21=object:Migration(20,21) {
         db.execSQL("CREATE TABLE snapshot_archive_receipts (runId TEXT NOT NULL PRIMARY KEY, originalPages INTEGER NOT NULL, originalItems INTEGER NOT NULL, originalByteCount INTEGER NOT NULL, releasedRawBytes INTEGER NOT NULL, manifestJson TEXT NOT NULL, manifestHash TEXT NOT NULL, compactedAt TEXT NOT NULL, FOREIGN KEY(runId) REFERENCES server_snapshot_runs(id) ON UPDATE NO ACTION ON DELETE RESTRICT)")
         db.execSQL("CREATE TABLE sync_work_state (ownerScope TEXT NOT NULL PRIMARY KEY, leaseGeneration INTEGER NOT NULL, wireContext TEXT NOT NULL, cycleId TEXT NOT NULL, phase TEXT NOT NULL, status TEXT NOT NULL, retryAtMillis INTEGER NOT NULL, consecutiveFailures INTEGER NOT NULL, requestedVersion INTEGER NOT NULL, activeVersion INTEGER NOT NULL, handledVersion INTEGER NOT NULL, acknowledged INTEGER NOT NULL, refused INTEGER NOT NULL, updatedAtMillis INTEGER NOT NULL, FOREIGN KEY(ownerScope) REFERENCES local_owners(storageScope) ON UPDATE NO ACTION ON DELETE RESTRICT)")
         snapshotArchiveGuards(db)
+    }
+}
+internal fun reconciliationCompletionGuards(db:SupportSQLiteDatabase) {
+    for(action in listOf("UPDATE","DELETE"))
+        db.execSQL("CREATE TRIGGER IF NOT EXISTS reconciliation_completion_no_${action.lowercase()} BEFORE $action ON reconciliation_completions BEGIN SELECT RAISE(ABORT,'immutable reconciliation completion'); END")
+    db.execSQL("CREATE TRIGGER IF NOT EXISTS reconciliation_completion_no_replace BEFORE INSERT ON reconciliation_completions WHEN EXISTS (SELECT 1 FROM reconciliation_completions WHERE sequence=NEW.sequence OR planId=NEW.planId) BEGIN SELECT RAISE(ABORT,'immutable reconciliation completion'); END")
+}
+
+val MIGRATION_21_22=object:Migration(21,22) {
+    override fun migrate(db:SupportSQLiteDatabase) {
+        db.execSQL("ALTER TABLE sync_work_state ADD COLUMN reconciliationBaseline INTEGER DEFAULT NULL")
+        db.execSQL("CREATE TABLE reconciliation_completions (sequence INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL, ownerScope TEXT NOT NULL, wireContext TEXT NOT NULL, planId TEXT NOT NULL, runId TEXT NOT NULL, FOREIGN KEY(ownerScope) REFERENCES local_owners(storageScope) ON UPDATE NO ACTION ON DELETE RESTRICT, FOREIGN KEY(planId) REFERENCES import_plans(id) ON UPDATE NO ACTION ON DELETE RESTRICT, FOREIGN KEY(runId) REFERENCES server_diary_applications(runId) ON UPDATE NO ACTION ON DELETE RESTRICT)")
+        db.execSQL("CREATE UNIQUE INDEX index_reconciliation_completions_planId ON reconciliation_completions(planId)")
+        db.execSQL("CREATE INDEX index_reconciliation_completions_runId ON reconciliation_completions(runId)")
+        db.execSQL("CREATE INDEX index_reconciliation_completions_ownerScope_wireContext ON reconciliation_completions(ownerScope,wireContext)")
+        reconciliationCompletionGuards(db)
     }
 }

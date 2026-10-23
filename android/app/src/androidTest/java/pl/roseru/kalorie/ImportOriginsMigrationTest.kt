@@ -15,6 +15,7 @@ import pl.roseru.kalorie.data.*
 import java.util.UUID
 
 class ImportOriginsMigrationTest {
+    @Test fun migration21To22PreservesBlockedStateAndAllOldCellsWithoutInventingCompletionProof()=migrate(21)
     @Test fun migration20To21PreservesAllOldTablesFrozenRequestsAndOrigins()=migrate(20)
     private val context get()=InstrumentationRegistry.getInstrumentation().targetContext
     private fun uuid()=UUID.randomUUID().toString()
@@ -52,6 +53,8 @@ class ImportOriginsMigrationTest {
             }
             val origin=plan?.let {source.importDao().sources(it.planId).single()};val push=MealPushStore(source,wire)
             val frozen=push.prepare(lease)!!;push.markAttempted(frozen)
+            if(version==21)source.syncWorkDao().save(SyncWorkState(lease.storageScope,lease.generation,
+                CanonicalMealRows.context(source.bootstrapDao().binding(lease.storageScope)!!),"old-cycle","push","reconciliation",90000,3,7,5,2,0,1,123))
             val original=source.dao().operation(frozen.operations.single().operationId)!!
             val body=frozen.batch.body();val hash=frozen.batch.sha256
             val schema=InstrumentationRegistry.getInstrumentation().context.assets.open("pl.roseru.kalorie.data.CalorieDatabase/$version.json")
@@ -88,8 +91,14 @@ class ImportOriginsMigrationTest {
                 assertEquals(cells,dump {old.rawQuery(it,null)})
                 assertFalse(old.rawQuery("PRAGMA foreign_key_check",null).use {it.moveToFirst()})
             }
-            target=Room.databaseBuilder(context,CalorieDatabase::class.java,name).addMigrations(MIGRATION_18_19,MIGRATION_19_20, pl.roseru.kalorie.data.MIGRATION_20_21).addCallback(DATABASE_GUARDS).build()
-            val db=target!!;assertEquals(21,db.openHelper.readableDatabase.version)
+            target=Room.databaseBuilder(context,CalorieDatabase::class.java,name).addMigrations(MIGRATION_18_19,MIGRATION_19_20, pl.roseru.kalorie.data.MIGRATION_20_21, pl.roseru.kalorie.data.MIGRATION_21_22).addCallback(DATABASE_GUARDS).build()
+            val db=target!!;assertEquals(22,db.openHelper.readableDatabase.version)
+            if(version==21) {
+                val migratedState=db.syncWorkDao().state(lease.storageScope)!!
+                assertNull(migratedState.reconciliationBaseline)
+                assertEquals("reconciliation",migratedState.status)
+                assertEquals(0L,db.syncWorkDao().completionSequence(lease.storageScope,migratedState.wireContext))
+            }
             assertEquals(cells,dump {db.openHelper.readableDatabase.query(it)})
             assertFalse(db.openHelper.readableDatabase.query("PRAGMA foreign_key_check").use {it.moveToFirst()})
             if(version>=19) {

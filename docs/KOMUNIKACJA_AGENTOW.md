@@ -6985,3 +6985,21 @@ Archiwalne wiersze stanu przed integracją PR141 z main22.10; aktualny stan znaj
   obejmuje8Coordinator+5WM+4Wake+Session1(dwa warianty)+Nav1; finalna delta
   4wake i417debug/432validationJVM/lintPASS na dokładnym źródle osobno.
   E0 i diff-check przed pinem; Room21 encje/export bez zmian, bez nowej migracji.
+
+- Ograniczony review runtime665a znalazł dodatkową P2: zakończony B przy
+  zatrzymanym watcherze nie zwalniał trwałego reconciliation po restarcie.
+  Poprawka C przechodzi jawnie21→22 (0.8.31/code42/validation1042), nie
+  modyfikuje wydanego21. Nowy immutable ledger lokalnych zakończeń B oraz
+  nullable granica blokady dają dowód przyczynowy bez zegara. B finish
+  zapisuje dowód atomowo; idempotentny stary plan nie wydaje nowego numeru.
+  Request/run wymagają dowodu nowszego od blokady w tym samym kontekście.
+  Sama flaga/login/config nie zwalniają nowego konfliktu. Retry-After trwa.
+- Celowany odbiór nowej delty7/7nativePASS,0fail/error/skip: rzeczywisty B
+  finish bez watchera, plikowa baza zamknięta/otwarta, nowy runtime i worker;
+  stary complete nie zwalnia nowszej blokady; migracja21→22 porównuje wszystkie
+  stare komórki/rowid/FK/frozen bytes i zachowuje NULL nieznanej granicy;
+  pełne4wake. Oryginały/private/history/frozen/hash zachowane, brak fałszywego
+  ACK. Pierwszy compile testu wymagał poprawy błędnego pola payloadHash na
+  porównanie całej operacji. Schemat21blob nadal1c8b2f9458bdc4d80fef222c14aa82f4a81607b0.
+  Nowy ograniczony delta review i końcowa integracja/CI nadal wymagane.
+  LintValidation i E0 (826linków)/diff-check PASS po poprawce22; pełnych dawnych zestawów nie dublowano. C pozostaje lokalne przed B/końcowym odbiorem.
