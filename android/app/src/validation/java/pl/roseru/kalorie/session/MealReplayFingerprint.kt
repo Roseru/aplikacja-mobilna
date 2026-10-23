@@ -2,6 +2,20 @@ package pl.roseru.kalorie.session
 
 /** Only the selected mutation's documented ACK fields may differ across C0/replay. */
 internal object MealReplayFingerprint {
+    /** Business rows are explicit per supported schema; an unknown migration must be reviewed. */
+    fun tables(room:Int):List<String> {
+        require(room in 17..20) { "Unsupported replay schema" }
+        return buildList {
+            addAll(listOf("products","meals","meal_items","goals","outbox","rations","ration_components",
+                "profiles","weights","diary_days","catalog_generations","catalog_records","catalog_members",
+                "catalog_active","meal_photo_drafts","photo_analysis_requests","photo_materializations",
+                "photo_confirmation_history","sync_push_batches","canonical_weights","sync_conflict_decisions"))
+            if(room>=18)addAll(listOf("canonical_domains","canonical_goal_timelines"))
+            if(room>=19)addAll(listOf("import_plans","guest_assignments","import_sources","import_identities",
+                "import_item_identities","import_decisions","reconciliation_batches","reconciliation_evidence","reconciliation_pulls"))
+            if(room>=20)add("import_origins")
+        }
+    }
     fun normalize(table: String, rowId: String?, column: String, value: String?,
         mealId: String, operationId: String, batchId: String): String? = when {
         table == "meals" && rowId == mealId && column == "serverRevision" -> "0"

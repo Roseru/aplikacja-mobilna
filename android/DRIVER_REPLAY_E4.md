@@ -27,6 +27,23 @@ Zmiana jest lokalna, przed końcowym buildem/testami i nowym kandydatem.
 Wcześniejsze4APK, źródło dc012fa oraz dowody nie są podmieniane. Weryfikator
 odcisków nadal dopuszcza tylko pierwotne pola ACK opisane niżej.
 
+Przygotowany zakres po integracji A/B: Room17 chroni21tabel, Room18 —23,
+Room19 —32, Room20 —33, w tym kanoniczne domeny/oś, import i jego pochodzenie,
+decyzje oraz dowody/batche uzgadniania. Plan prywatnej próby zapisuje dokładny
+Room i listę chronionych tabel; hold/replay wymagają identycznego zakresu.
+Nieznany schemat jest odrzucany przed zamrożeniem nowej partii. Nie stosujemy
+wykrywania tabel przez podobieństwo nazw ani cichego pomijania nowych ledgerów.
+To kod w przygotowaniu, bez nowej kwalifikacji lub podmiany starych APK.
+Przed przyszłym odbiorem C trzeba osobno uzgodnić wyłączność kontrolowanego
+replay wobec automatycznego workera; znany zakres kończy się na Room20.
+
+Przy różnicy guard zapisuje prywatny `guard-failed-<phase>.json` z dokładnymi
+hashami expected/actual z tego samego punktu porównania oraz nazwami zmienionych
+tabel. Komunikat instrumentacji zawiera jedynie stałą fazę i nazwy tabel,
+bez hashy, wierszy, tożsamości lub koperty. Nie zastępuje baseline nowym
+stanem i nie ponawia wysyłki; zachowuje wynik FAIL. Pozwala odróżnić zmianę
+przy samym ACK od późniejszej projekcji bez wyprowadzania surowych baz.
+
 23.10.2026: [nowy skonfigurowany pakiet0.8.27](KANDYDAT_E4.md) i
 [manifest4APK](KANDYDAT_E4_0_8_27.json) są gotowe po buildzie,
 24celowanychJVM i4native offline. Źródło dc012fa; pełny pull PR144 scalony,

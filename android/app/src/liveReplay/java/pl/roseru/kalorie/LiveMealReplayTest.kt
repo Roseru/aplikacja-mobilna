@@ -85,10 +85,11 @@ class LiveMealReplayTest {
     }
     /** Fingerprints include every protected row, including guests/other accounts and shared catalogue. */
     private suspend fun protected(plan: JSONObject): String = app.database.withTransaction {
-        val tables = listOf("products", "meals", "meal_items", "goals", "outbox", "rations", "ration_components",
-            "profiles", "weights", "diary_days", "catalog_generations", "catalog_records", "catalog_members",
-            "catalog_active", "meal_photo_drafts", "photo_analysis_requests", "photo_materializations", "photo_confirmation_history", "sync_push_batches",
-            "canonical_weights", "sync_conflict_decisions")
+        val database=app.database.openHelper.readableDatabase
+        val tables=MealReplayFingerprint.tables(database.version)
+        val planned=plan.getJSONArray("protected_tables")
+        assertTrue("Database schema changed during the selected trial",plan.getInt("room")==database.version &&
+            planned.length()==tables.size && tables.indices.all{planned.getString(it)==tables[it]})
         val result = JSONObject()
         for (table in tables) {
             val digest = MessageDigest.getInstance("SHA-256")
@@ -112,6 +113,19 @@ class LiveMealReplayTest {
         assertTrue("Foreign key check failed", !app.database.openHelper.readableDatabase.query("PRAGMA foreign_key_check").use { it.moveToFirst() })
         StrictJson.canonical(result)
     }
+    /** Preserve the exact hash comparison point without exporting any row content to logs. */
+    private suspend fun assertProtected(plan:JSONObject,phaseName:String) {
+        require(phaseName in setOf("before-send","after-restart","after-ack"))
+        val expected=plan.getString("protected")
+        val actual=protected(plan)
+        if(actual==expected)return
+        val before=StrictJson.read(expected.toByteArray(Charsets.UTF_8))
+        val after=StrictJson.read(actual.toByteArray(Charsets.UTF_8))
+        val changed=MealReplayFingerprint.tables(plan.getInt("room")).filter{before.getString(it)!=after.getString(it)}
+        save("guard-failed-$phaseName.json",JSONObject().put("phase",phaseName).put("room",plan.getInt("room"))
+            .put("changed_tables",org.json.JSONArray(changed)).put("expected",before).put("actual",after))
+        assertTrue("Protected data changed at $phaseName: ${changed.joinToString(",")}",false)
+    }
     private fun marker(name: String, run: String? = null) {
         // Fixed marker names and validated/random trial references only.
         Log.i("O1MealReplayDriver", "phase=$name trial=${uuid("trial_id")} run=${run ?: "none"} utc=${Instant.now()}")
@@ -120,6 +134,8 @@ class LiveMealReplayTest {
     @Test fun prepareSelectedExistingMealWithoutSending() = runBlocking<Unit> {
         phase("prepare")
         val current = lease(); val meal = uuid("meal_id"); val operation = uuid("operation_id")
+        val room=app.database.openHelper.readableDatabase.version
+        val tables=MealReplayFingerprint.tables(room)
         val eligible = app.database.pushDao().eligible(current.storageScope)
         assertTrue("Exactly one selected pending canonical operation is required", eligible.size == 1 &&
             eligible.single().entityId == meal && eligible.single().operationId == operation &&
@@ -129,6 +145,7 @@ class LiveMealReplayTest {
         val plan = JSONObject().put("trial", uuid("trial_id")).put("owner", current.storageScope)
             .put("meal", meal).put("operation", operation).put("batch", request.id)
             .put("request", request.row.requestJson).put("hash", request.row.requestHash).put("context", request.row.wireContext)
+            .put("room",room).put("protected_tables",org.json.JSONArray(tables))
         val row = pending(plan, current)
         assertTrue("Preparation cannot reuse an attempted HTTP batch", !row.attempted)
         plan.put("protected", protected(plan))
@@ -140,7 +157,7 @@ class LiveMealReplayTest {
         val plan = load("prepared.json"); val current = lease()
         assertTrue("Wrong account for selected trial", plan.getString("owner") == current.storageScope)
         pending(plan, current)
-        assertTrue("Protected data changed before send", protected(plan) == plan.getString("protected"))
+        assertProtected(plan,"before-send")
         val request = store().open(current, plan.getString("batch"))
         verifySelected(request, plan.getString("meal"), plan.getString("operation"))
         val ticket = MealPushObservation.ack.arm(request.id, request.row.requestHash)
@@ -188,7 +205,7 @@ class LiveMealReplayTest {
             !kill.isBefore(Instant.parse(held.getString("held_utc"))) && kill.isBefore(Instant.parse(held.getString("deadline_utc"))))
         assertTrue("Wrong account after restart", current.storageScope == plan.getString("owner"))
         pending(plan, current)
-        assertTrue("Protected data changed after restart", protected(plan) == plan.getString("protected"))
+        assertProtected(plan,"after-restart")
         val request = store().open(current, plan.getString("batch"))
         assertTrue("Persisted wire changed after restart", request.row.requestJson == plan.getString("request") &&
             request.batch.sha256 == plan.getString("hash"))
@@ -213,7 +230,7 @@ class LiveMealReplayTest {
                 result.getString("status") == "already_applied" && result.getInt("revision") == 1 && result.isNull("recovery_mapping"))
             assertTrue("Local revision/queue were not atomically confirmed", app.database.dao().meal(plan.getString("meal"), current.storageScope)?.meal?.serverRevision == 1 &&
                 app.database.dao().operation(plan.getString("operation"))?.status == "acked")
-            assertTrue("Protected data changed during replay", protected(plan) == plan.getString("protected"))
+            assertProtected(plan,"after-ack")
             save("replayed.json", JSONObject().put("run", ticket.run).put("request_id", http!!.requestId)
                 .put("utc", Instant.now().toString()).put("local_observations", "PASS")
                 .put("following_pull", "NOT_RUN_SEPARATE_OPERATION").put("server_observations", "REQUIRED_SEPARATELY"))
