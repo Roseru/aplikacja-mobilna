@@ -1,0 +1,62 @@
+{
+  "version": "0.8.27",
+  "version_code": 38,
+  "validation_version_code": 1038,
+  "room": 17,
+  "qualified_code_commit": "90dcb27",
+  "integration_commit": "c4b5e38813b1c04ac9e6c7d5d005ddde26adcd10",
+  "qualified_source_unchanged_after_merge": true,
+  "base_main": "a034f66c8f11c0dd820c24622f086e51d51bfdc0",
+  "local_build": "PASS: debug / validation / validationAndroidTest",
+  "lint": {
+    "errors": 0,
+    "warnings": 4
+  },
+  "schema17_sha256": "04afb8766f5bf2e9e8217f0ea09387c88ae1e02ce9bd8a35da1454f959a6bd4d",
+  "apk_sha256": {
+    "debug/app-debug.apk": "ae39208075d3b00b685249887fa0f9fe7a014508cfea546e2df3696a1a64265c",
+    "validation/app-validation.apk": "a65b8c5a500a39981c3fd39ab3dfb5a26c1586e2ffa64096e5027bc653d162a9",
+    "androidTest/validation/app-validation-androidTest.apk": "ebd6867a389a94bfbb9b5da885f15702f13c60515004d79020521dbf3c4aafdc"
+  },
+  "local_jvm": {
+    "initial_selected": 40,
+    "final_changed_helper": 6,
+    "unchanged_prior_others": 35,
+    "distinct_cases": 41,
+    "failures": 0,
+    "skipped": 0
+  },
+  "local_native": {
+    "initial_tests": 55,
+    "initial_pass": 54,
+    "initial_fail": 1,
+    "initial_failure": "UI whole-text counter assertion; actual displayed4/2 was correct",
+    "initial_log_sha256": "3fa708d8d605ff1864a692d43c19ffb5cc516c383898f682998721fdf4dc129e",
+    "final_tests": 13,
+    "final_fail": 0,
+    "final_skipped": 0,
+    "final_log_sha256": "88868ca0a2387f37d4be8776cd50eb8153b45bb984242fd8056546127eb0f4a2",
+    "final_scope": [
+      "ServerDiaryStorageTest:10",
+      "ServerDiaryMigrationTest:1",
+      "ServerDiaryScreenTest:2"
+    ],
+    "full_app_regression": false
+  },
+  "regular_app_updated": true,
+  "remote_ci": "separate pending qualification",
+  "live_api_executed": false,
+  "regular_update": {
+    "from_version": "0.8.25",
+    "from_room": 15,
+    "to_version": "0.8.27",
+    "to_room": 17,
+    "old_tables": 28,
+    "all_old_values_and_all_rowids_preserved": true,
+    "foreign_keys_clean": true,
+    "new_metadata_tables_empty_for_guest": true,
+    "private_backup_outside_git_onedrive": true,
+    "visible_diary_confirmed": true,
+    "emulator_system_ui_delay": "SystemUI wait dialog during cold start; selected Wait, clean final screen observed. No app crash recorded."
+  }
+}

@@ -30,7 +30,8 @@ data class SessionActions(val login: () -> Unit, val logout: () -> Unit, val ref
     val previousConflicts:(pl.roseru.kalorie.data.OwnerLease)->Unit={},
     val openConflict:(pl.roseru.kalorie.data.OwnerLease,String)->Unit={_,_->},
     val closeConflict:(pl.roseru.kalorie.data.OwnerLease)->Unit={},
-    val resolveConflict:(pl.roseru.kalorie.data.OwnerLease,String,pl.roseru.kalorie.data.ConflictChoice)->Unit={_,_,_->})
+    val resolveConflict:(pl.roseru.kalorie.data.OwnerLease,String,pl.roseru.kalorie.data.ConflictChoice)->Unit={_,_,_->},
+    val applyDiaryCopy:(pl.roseru.kalorie.data.OwnerLease)->Unit={})
 
 @Composable fun SessionScreen(view: SessionView, actions: SessionActions, back: () -> Unit, backLabel: String = "Wróć do profilu") {
     val account = view.binding?.owner?.kind == "account"
@@ -101,14 +102,18 @@ data class SessionActions(val login: () -> Unit, val logout: () -> Unit, val ref
             Card(Modifier.fillMaxWidth()) {
                 Column(Modifier.padding(20.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
                     Text("Kopia danych serwera", style = MaterialTheme.typography.titleMedium)
-                    Text("Pobierz dane konta na urządzenie. Gotowe posiłki wyślesz z panelu wysyłania dziennika; starsze wpisy i inne typy danych pozostają osobno.")
+                    Text("Pełna kopia uzupełnia posiłki, wagę, profil, cele, kompletność dni i prywatne produkty. Niewysłane lokalne poprawki pozostają zachowane do uzgodnienia.")
                     val status = view.snapshot
                     if (status?.completedTime != null) {
                         Text("Ostatnia pełna kopia: ${status.completedTime}", Modifier.testTag("snapshot-complete"))
                         Text("Rekordy: ${status.completedItems} · Strony: ${status.completedPages}")
                     } else Text("Pełna kopia nie została jeszcze pobrana.")
                     if (status != null && status.pendingPages > 0) Text("Zapisany postęp · Rekordy: ${status.pendingItems} · Strony: ${status.pendingPages}", Modifier.testTag("snapshot-progress"))
-                    if (view.snapshotBusy) { LinearProgressIndicator(Modifier.fillMaxWidth()); Text("Pobieram kopię…") }
+                    view.diaryApplication?.let { applied ->
+                        Text("Dziennik uzupełniony: ${applied.appliedAt}", Modifier.testTag("diary-copy-applied"))
+                        Text("Uwzględnione rekordy: ${applied.included} · Lokalne zmiany do uzgodnienia: ${applied.held}", Modifier.testTag("diary-copy-counts"))
+                    }
+                    if (view.snapshotBusy) { LinearProgressIndicator(Modifier.fillMaxWidth()); Text(if(view.diaryApplying) "Uzupełniam dziennik…" else "Pobieram kopię…") }
                     if (view.requiresRecovery) Text("Możesz pobrać kopię do uzgodnienia danych. Wysyłanie wpisów wymaga zakończenia uzgodnienia.")
                     if (status?.blocked == true) Text("Pobieranie zablokowane — konto jest usuwane.")
                     if (status?.needsBootstrap == true) Text("Najpierw wybierz Sprawdź połączenie, aby ponownie potwierdzić stan konta.")
@@ -117,6 +122,13 @@ data class SessionActions(val login: () -> Unit, val logout: () -> Unit, val ref
                             !view.bootstrapBusy && !view.profileBusy && !view.mealPushBusy && !view.snapshotBusy && !view.motivationBusy && !view.rankingConsentBusy && !view.rankingBusy && !view.pendingLogin,
                         modifier = Modifier.fillMaxWidth().testTag("session-download-snapshot")) {
                         Text(if (status != null && status.pendingPages > 0) "Wznów pobieranie kopii" else "Pobierz kopię danych serwera")
+                    }
+                    if(status?.completedTime!=null && !view.requiresRecovery) OutlinedButton(
+                        onClick={view.binding?.lease?.let(actions.applyDiaryCopy)},
+                        enabled=!view.snapshotBusy && !view.mealPushBusy && !view.bootstrapBusy && !view.profileBusy &&
+                            !view.busy && !view.pendingLogin && status.blocked!=true && status.needsBootstrap!=true,
+                        modifier=Modifier.fillMaxWidth().testTag("session-apply-diary-copy")) {
+                        Text("Uzupełnij dziennik z zapisanej kopii")
                     }
                 }
             }

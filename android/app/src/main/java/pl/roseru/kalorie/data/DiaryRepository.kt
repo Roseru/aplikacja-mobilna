@@ -89,8 +89,11 @@ class DiaryRepository(private val db: CalorieDatabase, private val context: Cont
         val zone = ZoneId.systemDefault()
         val time = date.atTime(LocalTime.now()).atZone(zone).toInstant().toString()
         val meal = MealEntity(id, owner, date.toString(), time, zone.id, type.name)
+        val energy = if (product.wirePayload == null) product.kcal else product.nutrients().asExact().energy.let {
+            if (it.complete) it.knownSum.toDouble() else null
+        }
         val item = MealItemEntity(UUID.randomUUID().toString(), id, product.id, product.name, grams,
-            product.kcal, product.protein, product.fat, product.carbs,
+            energy, product.protein, product.fat, product.carbs,
             snapshotJson = snapshot(product, exactAmount, product.unit))
         if (saveCanonicalManualMeal(meal, item, product, exactAmount)) return@ownerTransaction
         if (saveCanonicalCatalogMeal(meal, listOf(item))) return@ownerTransaction
@@ -111,7 +114,9 @@ class DiaryRepository(private val db: CalorieDatabase, private val context: Cont
         val operationId = UUID.randomUUID().toString()
         val prepared = try {
             fun number(value: Double?) = value?.let { BigDecimal.valueOf(it) }
-            val wire = ManualMealWire.create(product.name, item.id, amount, product.unit,
+            val wire = product.wirePayload?.let { PrivateProductWire.meal(it, item.id, amount, product.unit,
+                meal.occurredAt, meal.zoneId, meal.mealType.lowercase(java.util.Locale.ROOT), schema) }
+                ?: ManualMealWire.create(product.name, item.id, amount, product.unit,
                 ExactNutrition(number(product.kcal), number(product.protein), number(product.fat), number(product.carbs)),
                 meal.occurredAt, meal.zoneId, meal.mealType.lowercase(java.util.Locale.ROOT), schema)
             if (wire.json().getString("local_date") != meal.localDate) return false
@@ -125,7 +130,7 @@ class DiaryRepository(private val db: CalorieDatabase, private val context: Cont
         val wireContext = CanonicalMealRows.context(binding)
         val exactItem = CanonicalMealRows.items(meal.id, wire).single()
         dao.insertMeal(CanonicalMealRows.meal(meal.id, owner, wire, wireContext))
-        dao.insertItem(item.copy(grams = exactItem.grams, wirePayload = exactItem.wirePayload))
+        dao.insertItem(exactItem.copy(productId = product.id, snapshotJson = item.snapshotJson))
         dao.enqueue(OutboxEntity(operationId, owner, "meal", meal.id, "upsert", null, wire.canonical,
             Instant.now().toString(), "pending", "sync-v1", operation, wireContext))
         return true
@@ -177,6 +182,7 @@ class DiaryRepository(private val db: CalorieDatabase, private val context: Cont
         val prepared = try {
             val parts = items.map { item ->
                 val snapshot = StrictJson.read(checkNotNull(item.snapshotJson).toByteArray(Charsets.UTF_8))
+                if (snapshot.has("private_product")) return false // Preserve private local precision; never invent catalogue provenance.
                 val product = snapshot.getJSONObject("product")
                 require(item.productId == CatalogStore.recordId("product", product.getString("product_id"), product.getInt("revision")))
                 CatalogMealWire.Part(item.id, checkNotNull(item.snapshotJson), item.rationComponentPosition)
@@ -361,8 +367,14 @@ class DiaryRepository(private val db: CalorieDatabase, private val context: Cont
     }
 
     private suspend fun snapshot(product: ProductEntity, amountText: String, unit: String): String? {
-        val json = product.catalogJson ?: return null
         val amount = ContractDecimal.userQuantity(amountText, 12) ?: throw NutritionError("quantity_range")
+        product.wirePayload?.let { text ->
+            PrivateProductWire.portion(text, ContractDecimal.canonical(amount), unit)
+            return StrictJson.canonical(JSONObject().put("formula_version", NutritionV1.FORMULA)
+                .put("private_product", StrictJson.read(text.toByteArray(Charsets.UTF_8)))
+                .put("quantity", JSONObject().put("amount", ContractDecimal.canonical(amount)).put("unit", unit)))
+        }
+        val json = product.catalogJson ?: return null
         product.portion(ContractDecimal.canonical(amount), unit)
         val original = JSONObject(json)
         val sources = JSONArray()
@@ -383,7 +395,7 @@ class DiaryRepository(private val db: CalorieDatabase, private val context: Cont
         val rows = JSONArray()
         items.forEach { item ->
             rows.put(JSONObject().put("id", item.id).put("product_id", item.productId).put("product_name", item.productName)
-                .put("grams", item.grams).put("kcal_per_100", item.kcalPer100)
+                .put("grams", item.grams).put("kcal_per_100", item.kcalPer100 ?: JSONObject.NULL)
                 .put("ration_component_id", item.rationComponentId ?: JSONObject.NULL)
                 .put("ration_component_position", item.rationComponentPosition ?: JSONObject.NULL)
                 .put("exact_snapshot", item.snapshotJson?.let(::JSONObject) ?: JSONObject.NULL)
