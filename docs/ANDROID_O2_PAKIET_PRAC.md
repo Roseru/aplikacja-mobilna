@@ -31,7 +31,11 @@ Najnowsza decyzja właściciela: najpierw cały spójny etap, potem właściwe t
 
 ## 3. Pliki i źródła, które otrzymujesz
 
-Pełny spis plików bazowych, rozmiarów i SHA-256 znajduje się w [ANDROID_O2_PLIKI.json](ANDROID_O2_PLIKI.json). Wszystkie wskazane tam pliki pochodzą z dokładnego commita bazy, z bajtów przechowywanych przez Git. Manifest nie zawiera SDK, cache, APK, lokalnych baz ani plików sesji.
+Pełny spis plików bazowych, rozmiarów i SHA-256 znajduje się w [ANDROID_O2_PLIKI.json](ANDROID_O2_PLIKI.json). Poprawiony format v2 opisuje **836 surowych blobów Gita, 8 998 072 bajty**, w tym329plików Androida. Odczyt wykonano jednym binarnym `git cat-file --batch`, bez dekodowania stdout i konwersji końców linii; sprawdzono długości, ramki oraz Git blob SHA-1, a SHA-256 obliczono z tych samych bajtów. Manifest nie zawiera SDK, cache, APK, lokalnych baz ani plików sesji.
+
+**Korekta po odbiorze O2:** pierwsza wersja manifestu podawała9 198 358bajtów i błędnie nazywała je surowymi bajtami Gita. Użyty lokalny `git archive` zastosował Windows LF→CRLF:819pozycji miało inne sumy/rozmiary, wszystkie wyjaśnione dokładnie tą konwersją. Wersja v2 naprawia obietnicę integralności, nie zmienia kodu aplikacji ani zakresu A/B/C. [Uwagi O2](https://github.com/Roseru/aplikacja-mobilna/pull/146#issuecomment-6362434771) zostały odczytane.
+
+Historyczny lokalny `Agent2-Android-0.8.27-4dd61c5.zip` ma własną poprawną sumę całego ZIP i jego członków, ale zawiera CRLF i pierwotny błędnie opisany manifest. **Nie używaj go do sprawdzania raw Git.** Pozostaje zachowany jako wcześniejszy artefakt. Poprawiony wybrany pakiet ma osobną nazwę `Agent2-Android-0.8.27-<commit>-raw.zip`, manifest pochodzenia i SHA256SUMS. W nim834pliki bazowe mają surowe bajty z84d3, a AGENTS/dziennik są jawnymi aktualizacjami z commita przekazania; aktualne instrukcje i indeks są dodatkowymi plikami. Żaden z tych SHA nie jest sumą ZIP generowanego przez GitHub. Do pracy O2 nadal używa swojego checkoutu Git.
 
 Przygotowany pakiet źródłowy jest kopią do odczytu i odtworzenia checkoutu, a nie drugą gałęzią rozwoju. Do publikacji używaj własnego checkoutu repozytorium. Jeżeli masz już repo, nie nadpisuj go ZIP-em i nie przenoś całej niescalonej gałęzi O1.
 
@@ -162,7 +166,9 @@ Gość może przejść do konta, wznowić import po przerwaniu i synchronizować
 
 ### Połączenie z sesją — wspólna granica
 
-O2 przygotowuje moduł orkiestracji i workera przyjmujący wykonawcę polecenia dla **konkretnego OwnerLease**. Wykonawca jest wstrzykiwany; nie przechowuje tokenu. W dzienniku przekazuje wymaganą sygnaturę wejścia i wyników. O1 zapewnia w SessionController wejście wykonujące sprawdzenie lease i autoryzację w istniejących guardach.
+O2 przygotowuje moduł orkiestracji i workera przyjmujący wykonawcę polecenia dla **konkretnego OwnerLease**. Wykonawca jest wstrzykiwany; nie przechowuje tokenu. O1 odczytał i przyjmuje [propozycję O2](https://github.com/Roseru/aplikacja-mobilna/pull/146#issuecomment-6362901101): `suspend fun executeSyncStep(expectedLease: OwnerLease, expectedContext: AccountBindingEntity, step: SyncStep): SyncStepResult`, z krokami PULL/PUSH i jawnymi wynikami Success/Busy/RetryAt/LoginRequired/ReconciliationRequired/StaleLease. Typy i ich dokładną ścieżkę dostarcza O2. O1 implementuje połączenie w swoim SessionController po przypięciu tego kontraktu; nie jest ono jeszcze wykonane ani odebrane. A/B postępują niezależnie.
+
+Wynik nie może powstawać z parsowania tekstu UI. Cancellation jest propagowana, nigdy zamieniana w Success. Każda faza kontroluje ten sam lease/generację i kontekst przed capture/refresh, przed HTTP i przed zapisem. Adapter PUSH musi kontrolować obecny dodatkowy pull w `synchronizeMeals`, aby orkiestracja O2 PULL→PUSH→PULL była jedyną pętlą. Istniejące publiczne wejścia i guardy pozostają zgodne.
 
 Samo sprawdzenie właściciela przed wywołaniem metody bez parametru, która ponownie pobiera bieżącego użytkownika, nie spełnia KO-31. Nie zastępuj brakującego połączenia nowym klientem HTTP lub kopiowaniem vaulta. Do czasu integracji wynik testów z wstrzykniętym wykonawcą opisuje moduł; pełny wynik aplikacji wymaga rzeczywistego połączenia.
 
