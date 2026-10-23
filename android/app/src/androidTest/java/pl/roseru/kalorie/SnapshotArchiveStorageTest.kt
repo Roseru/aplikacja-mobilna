@@ -120,4 +120,23 @@ class SnapshotArchiveStorageTest {
             foreignKeys(db)
         }finally{db.close()}
     }
+    @Test fun invalidFinalSemanticsCannotPublishActivePointerAndValidRetryUsesOriginalQuery()=runBlocking<Unit> {
+        val db=memory()
+        try {
+            val lease=account(db);val snapshots=ServerSnapshotStore(db,SnapshotProtocol(schema))
+            val active=complete(snapshots,lease,0).runId;val request=snapshots.begin(lease)
+            val invalid=JSONObject(String(page(1))).put("entities",JSONArray().put(JSONObject()
+                .put("entity_type","profile").put("entity_id",UUID.randomUUID().toString()).put("revision",1).put("deleted",false)
+                .put("payload",JSONObject().put("pseudonym","Synthetic").put("height_cm","301").put("activity_class","line").put("time_zone","UTC"))))
+            var failed=false;try{snapshots.apply(request,invalid.toString().toByteArray())}catch(_:Exception){failed=true}
+            assertTrue(failed);assertEquals(active,snapshots.active(lease)!!.id)
+            assertTrue(db.snapshotDao().pages(request.runId).isEmpty())
+            assertEquals("pending",db.snapshotDao().run(request.runId)!!.state)
+            assertEquals(request.query.encoded(),snapshots.begin(lease).query.encoded())
+            invalid.getJSONArray("entities").getJSONObject(0).getJSONObject("payload").put("height_cm","180")
+            assertNull(snapshots.apply(request,invalid.toString().toByteArray()))
+            assertEquals(request.runId,snapshots.active(lease)!!.id)
+            foreignKeys(db)
+        }finally{db.close()}
+    }
 }
