@@ -2,6 +2,11 @@ package pl.roseru.kalorie.ui
 
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.text.KeyboardOptions
+import androidx.compose.foundation.text.KeyboardActions
+import androidx.compose.ui.text.input.ImeAction
+import androidx.compose.ui.text.input.KeyboardType
+import androidx.compose.ui.platform.LocalFocusManager
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
@@ -136,6 +141,7 @@ import pl.roseru.kalorie.importing.*
     side.values.forEach {Text("${it.label}: ${it.value}")}
 }
 @Composable private fun ImportCorrectionFields(form:LegacyImportForm,busy:Boolean,save:(Map<String,String>,Boolean)->Unit) {
+    val focus=LocalFocusManager.current
     val values=remember(form){mutableStateMapOf<String,String>().apply {form.fields.forEach {put(it.key,it.value)}}}
     var consent by rememberSaveable {mutableStateOf(false)}
     var standalone by rememberSaveable {mutableStateOf(form.standaloneGoal)}
@@ -147,14 +153,15 @@ import pl.roseru.kalorie.importing.*
             Text(field.label)
             field.options.forEach {(label,value)->FilterChip(selected=values[field.key]==value,onClick={values[field.key]=value},label={Text(label)},enabled=!busy)}
         } else OutlinedTextField(values[field.key] ?: "",{values[field.key]=it},label={Text(field.label)},singleLine=true,
-            enabled=!busy,modifier=Modifier.fillMaxWidth().testTag("import-field:${field.key}"))
+            keyboardOptions=KeyboardOptions(keyboardType=if(field.decimal)KeyboardType.Decimal else KeyboardType.Text,imeAction=ImeAction.Done),
+            keyboardActions=KeyboardActions(onDone={focus.clearFocus()}),enabled=!busy,modifier=Modifier.fillMaxWidth().testTag("import-field:${field.key}"))
     }
     if(form.fields.any {it.key.contains("goal")}) {
         Row {Checkbox(standalone,{standalone=it},enabled=!busy);Text("Ten cel jest osobną decyzją, bez powiązania jako korekta wcześniejszego celu")}
     }
-    Row {Checkbox(consent,{consent=it},enabled=!busy);Text("Sprawdziłem wartości i potwierdzam uzupełnienia oraz korekty")}
-    if(invalid)Text("Uzupełnij wymagane pola i sprawdź precyzję liczb. Żadna wartość nie została zaokrąglona.")
-    Button(onClick={try {form.choice(values,standalone);invalid=false;save(values.toMap(),standalone)} catch(_:Exception){invalid=true}},enabled=consent && !busy){Text("Zapisz świadomą korektę")}
+    Row {Checkbox(consent,{consent=it},enabled=!busy,modifier=Modifier.testTag("import-correction-consent"));Text("Sprawdziłem wartości i potwierdzam uzupełnienia oraz korekty")}
+    if(invalid)Text("Uzupełnij wymagane pola i sprawdź precyzję liczb. Żadna wartość nie została zaokrąglona.",Modifier.testTag("import-correction-error"))
+    Button(onClick={try {form.choice(values,standalone);invalid=false;save(values.toMap(),standalone)} catch(_:Exception){invalid=true}},enabled=consent && !busy,modifier=Modifier.testTag("import-correction-save")){Text("Zapisz świadomą korektę")}
 }
 
 @Composable private fun NewGoalForm(busy:Boolean,save:(Map<String,String>)->Unit) {
@@ -183,6 +190,7 @@ private fun issueLabel(code:String)=when(code) {
     "uncertain_original_operation","existing_wire_review"->"Niepewna operacja wymaga dowodu serwera. Nie tworzymy automatycznie drugiej kopii."
     "absent_same_epoch"->"Wpis znany w tej epoce jest nieobecny w pełnej kopii. Nie zostanie odtworzony automatycznie."
     "full_snapshot_required"->"Najpierw pobierz pełną kopię i dowody operacji."
+    "server_proof_changed"->"Wersja serwera zmieniła się po poprzedniej decyzji. Porównaj obie wersje ponownie."
     "later_local_intent"->"Potwierdzenie dotyczy wcześniejszej wersji. Późniejsza lokalna zmiana nadal wymaga decyzji."
     "epoch_recovery_review"->"Serwer używa nowej epoki. Wybierz sposób postępowania z historycznym wpisem."
     "same_epoch_review"->"Sprawdź stan serwera przed ponowieniem niepewnej operacji."

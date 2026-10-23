@@ -145,3 +145,21 @@ To nadal poprawki B w toku odbioru; rzeczywista sesja O1/nawigacja/DI i pełne
 CI jednego końcowego PR B pozostają osobne. C ma własny checkout od1e15;
 po poprawkach dostanie zwykły merge B. Przyszłe migracje C wymagają osobnego
 własnego AVD, z zachowaniem testowego Room20 B.
+### Atomowy dowód decyzji po odbiorzeb9d8
+
+UI przekazuje `expectedProofRunId` do `ReconciliationStore.decide`; sprawdzenie
+odbywa się w tej samej transakcji co append decyzji i zmiana źródła. Zapisany
+`decision_proof` zawiera runId, sourceHash oraz dokładną obserwację serwera
+(tożsamość, obecność/usunięcie, rewizja, payload) i jej SHA-256. Pozostałe
+wejścia lokalne zachowują zgodność, ale także utrwalają bieżący dowód w transakcji.
+Przygotowanie nowych operacji i finish sprawdzają zapisany dowód. Nie zmieniają
+zgody na inną wersję: zmiana daje `server_proof_changed` i ponowne porównanie.
+Wznowienie istniejącego frozen request zachowuje jego własną kopertę i dowody.
+
+Deterministyczna regresja: pokazanaR1 → opublikowanaR2 → zapis ze starym runId
+odrzucony bez zmian decyzji/outbox/projekcji. AktualnaR2 zapisuje właściwy dowód.
+PóźniejszaR3 nie może zostać przyjęta podczas finish bez nowego wyboru; jawna
+zgoda naR3 działa. Frozenbytes/hash i wcześniejsze decyzje pozostają identyczne.
+Kontrola:417/432JVM,23celowane native/UI i lint bez błędów PASS. Formularz ma
+jawną akcję zakończenia edycji, zgodę i zapis; test weryfikuje ich stany,
+zamiast klikać dowolny ostatni checkbox przy otwartej klawiaturze.

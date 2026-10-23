@@ -46,10 +46,11 @@ class ImportScreenTest {
         compose.onNodeWithText("Źródło · ${kg.label}: 1.234567890123").performScrollTo().assertExists()
         compose.onNodeWithText("Zapisz świadomą korektę").performScrollTo().assertIsNotEnabled()
         compose.onNodeWithTag("import-field:row:kg").performScrollTo().performTextReplacement("1.234567")
-        // The checkbox and its explanatory text are sibling semantics.
-        compose.onAllNodes(isToggleable()).onLast().performScrollTo().performClick()
-        compose.onNodeWithText("Zapisz świadomą korektę").performScrollTo().performClick()
-        compose.runOnIdle {assertEquals("1.234567",saved!!["row:kg"]);assertTrue(source.sourceJson.contains("1.234567890123"))}
+        compose.onNodeWithTag("import-field:row:kg").assertTextContains("1.234567",substring=true).performImeAction()
+        compose.onNodeWithTag("import-correction-consent").performScrollTo().performClick().assertIsOn()
+        compose.onNodeWithTag("import-correction-save").performScrollTo().assertIsEnabled().performClick()
+        compose.onNodeWithTag("import-correction-error").assertDoesNotExist()
+        compose.runOnIdle {assertNotNull("Explicitly approved correction must invoke its callback",saved);assertEquals("1.234567",saved!!["row:kg"]);assertTrue(source.sourceJson.contains("1.234567890123"))}
     }
     @Test fun knownAbsenceHasNoAutomaticServerChoiceOrRecreation() {
         val source=source().copy(sourceEpoch="epoch",state="decision")

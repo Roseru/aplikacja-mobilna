@@ -10,7 +10,7 @@ import pl.roseru.kalorie.core.sync.*
 import java.time.Instant
 import java.util.UUID
 
-class ReconciliationProofException:IllegalStateException("Uzgodnienie wymaga aktualnej pełnej kopii i rozstrzygnięcia źródeł")
+open class ReconciliationProofException:IllegalStateException("Uzgodnienie wymaga aktualnej pełnej kopii i rozstrzygnięcia źródeł")
 
 /** Full snapshots, receipts and user choices have a durable ledger independent of ordinary push. */
 class ReconciliationStore(internal val db:CalorieDatabase,internal val schema:SyncWireSchema) {
@@ -167,12 +167,16 @@ class ReconciliationStore(internal val db:CalorieDatabase,internal val schema:Sy
             db.snapshotDao().save(ServerSnapshotAccess(lease.storageScope,runId,false))
         }
     }
-    suspend fun decide(lease:OwnerLease,expected:AccountBindingEntity,id:String,type:String,sourceId:String,sourceHash:String,choiceJson:String)=withContext(Dispatchers.IO) {
-        val choice=StrictJson.read(choiceJson.toByteArray());val canonical=StrictJson.canonical(choice)
+    suspend fun decide(lease:OwnerLease,expected:AccountBindingEntity,id:String,type:String,sourceId:String,sourceHash:String,choiceJson:String,expectedProofRunId:String?=null)=withContext(Dispatchers.IO) {
+        val choice=StrictJson.read(choiceJson.toByteArray())
         require(choice.getString("choice") in setOf("preserve_local","accept_server","recreate_missing","resolve_existing","new_goal_decision","replay_original"))
         db.withTransaction {
             val plan=plan(lease,expected,id);check(plan.approvedAt!=null && groupsComplete(plan))
+            check(plan.state!="complete")
             val row=checkNotNull(dao.source(id,type,sourceId));check(row.sourceHash==sourceHash)
+            val proof=latestCopy(lease,expected,id)
+            if(expectedProofRunId!=null && proof.first.id!=expectedProofRunId)throw ReconciliationDecisionProofChangedException()
+            val canonical=ReconciliationDecisionProof.attach(choice,row,proof.first.id,proof.second)
             if(row.operationId!=null) {
                 check(db.dao().operation(row.operationId)?.status in setOf("acked","conflict","rejected"))
                 require(choice.getString("choice") in setOf("preserve_local","accept_server"))
@@ -190,7 +194,10 @@ class ReconciliationStore(internal val db:CalorieDatabase,internal val schema:Sy
             progress(plan)
         }
     }
-    suspend fun status(lease:OwnerLease,expected:AccountBindingEntity,id:String):ImportProgress=db.withTransaction {progress(plan(lease,expected,id))}
+    suspend fun status(lease:OwnerLease,expected:AccountBindingEntity,id:String):ImportProgress {
+        refreshDecisionProofs(lease,expected,id)
+        return db.withTransaction {progress(plan(lease,expected,id))}
+    }
     internal suspend fun progress(plan:ImportPlan):ImportProgress {
         val rows=dao.sources(plan.id)
         return ImportProgress(plan.id,plan.targetAccountId,plan.issuer,plan.subject,plan.state,rows.size,rows.count {it.state=="queued"},
@@ -198,13 +205,33 @@ class ReconciliationStore(internal val db:CalorieDatabase,internal val schema:Sy
                 ImportIssue(it.entityType,it.sourceId,it.decisionCode ?: "decision_required")},
             pending=rows.count {it.state=="approved_source"},waiting=rows.count {it.state=="awaiting_snapshot"})
     }
-    suspend fun finish(lease:OwnerLease,expected:AccountBindingEntity,id:String):ServerDiaryApplication = ReconciliationFinishStore(this).finish(lease,expected,id)
-    suspend fun preparePush(lease:OwnerLease,expected:AccountBindingEntity,id:String):ReconciliationPushRequest? = ReconciliationPushStore(this).prepare(lease,expected,id)
+    suspend fun finish(lease:OwnerLease,expected:AccountBindingEntity,id:String):ServerDiaryApplication {
+        if(refreshDecisionProofs(lease,expected,id))throw ReconciliationDecisionProofChangedException()
+        return ReconciliationFinishStore(this).finish(lease,expected,id)
+    }
+    suspend fun preparePush(lease:OwnerLease,expected:AccountBindingEntity,id:String):ReconciliationPushRequest? {
+        if(refreshDecisionProofs(lease,expected,id))throw ReconciliationDecisionProofChangedException()
+        return ReconciliationPushStore(this).prepare(lease,expected,id)
+    }
     suspend fun requireCurrent(request:ReconciliationPushRequest)=ReconciliationPushStore(this).requireCurrent(request)
     suspend fun markAttempted(request:ReconciliationPushRequest,nowMillis:Long=System.currentTimeMillis())=ReconciliationPushStore(this).markAttempted(request,nowMillis)
     suspend fun defer(request:ReconciliationPushRequest,retryAtMillis:Long)=ReconciliationPushStore(this).defer(request,retryAtMillis)
     suspend fun prepareAck(request:ReconciliationPushRequest,httpStatus:Int,bytes:ByteArray):PreparedReconciliationAck=ReconciliationPushStore(this).prepareAck(request,httpStatus,bytes)
     suspend fun applyAck(prepared:PreparedReconciliationAck):ReconciliationAckResult=ReconciliationPushStore(this).applyAck(prepared)
+    private suspend fun refreshDecisionProofs(lease:OwnerLease,expected:AccountBindingEntity,id:String):Boolean=db.withTransaction {
+        val plan=plan(lease,expected,id)
+        if(plan.state=="complete" || !groupsComplete(plan))return@withTransaction false
+        val rows=dao.sources(id).filter {it.state in setOf("approved_source","accept_server")}
+        if(rows.isEmpty())return@withTransaction false
+        val copy=latestCopy(lease,expected,id).second
+        val changed=rows.filterNot {ReconciliationDecisionProof.matches(it,copy)}
+        for(row in changed)dao.update(row.copy(state="decision",decisionCode="server_proof_changed"))
+        if(changed.isNotEmpty())dao.update(plan.copy(state="decisions"))
+        changed.isNotEmpty()
+    }
+    internal fun requireDecisionProof(source:ImportSource,copy:ServerDiarySnapshot) {
+        if(!ReconciliationDecisionProof.matches(source,copy))throw ReconciliationDecisionProofChangedException()
+    }
     internal suspend fun latestCopy(lease:OwnerLease,expected:AccountBindingEntity,id:String):Pair<ServerSnapshotRun,ServerDiarySnapshot> {
         val plan=plan(lease,expected,id);check(groupsComplete(plan))
         val run=checkNotNull(snapshots.active(lease));val pull=checkNotNull(dao.pull(run.id));check(pull.planId==id)
