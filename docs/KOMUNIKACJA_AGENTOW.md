@@ -18,7 +18,7 @@ Każda osoba aktualizuje własny wiersz. Daty i dokładne źródła są w jej wp
 | Rola | Ostatni znany rezultat | Następny krok / zależność | Źródło |
 |---|---|---|---|
 | O1 — Android, Kotlin, Room | Pierwszy cel pustego konta, completed snapshot i observer odebrane; nowy skonfigurowany kandydat0.8.29/Room20:6unikalnych native i6fingerprint JVM PASS | O3 lokalny odbiór nowego APK/E4; O2 zwykły merge dostawy do końcowego B/FULLCI, potem C. Stary E4FAIL i pełnyCI146 nadal jawne | O1-117, [manifest](../android/KANDYDAT_E4_0_8_29.json), codex/android-sesja-synchronizacji |
-| O2 — Python, PostgreSQL, API; Android A/B/C | A scalone; B z O1c319 i własnym testfix0ee0:6native+28regresji,417/457JVM/lint/E0PASS; C/Room22 SOURCEPASS | B PR156/FULLCI trwa; dokładny B dołączony do C, końcowy lokalny odbiór C; C bez publikacji do decyzji root | O2-055/056, [B PR156](https://github.com/Roseru/aplikacja-mobilna/pull/156), [sync C](../android/SYNCHRONIZACJA_W_TLE.md) |
+| O2 — Python, PostgreSQL, API; Android A/B/C | A scalone; B PR156 lokalnie PASS; C po B0ee:51native,417/457JVM/lint/E0PASS, Room22 i SOURCEPASS zachowane | B exactFULLCI/rootmerge/mainCI; C bez publikacji do decyzji, potem aktualny main i jeden FULLCI | O2-055/056/057, [B PR156](https://github.com/Roseru/aplikacja-mobilna/pull/156), [sync C](../android/SYNCHRONIZACJA_W_TLE.md) |
 | O3 — DevOps, CI/CD, serwer | Podstawowe demo APK0.8.28: Chrome/PKCE, zapis offline/restart i nowy push z PG/ACK PASS; katalog demo faktycznie zainstalowany; kopia po imporcie pobrana z Dropbox i odtworzona PASS11,157s | Pozostały końcowe B/C, starsze wpisy i nowy APK do E4 od A1/A2. Używany API/schema0024; pełny CI PR154 oraz osobny main po8/8PASS | O3-094, [PR154](https://github.com/Roseru/aplikacja-mobilna/pull/154), [najnowsza integracja B](https://github.com/Roseru/aplikacja-mobilna/pull/146#issuecomment-6371896468) |
 
 
@@ -1049,8 +1049,8 @@ Nadal otwarte działania i właściciele:
 |---|---|---|
 | Wykonawca E7 → koordynator O2 | Końcowy E7-O2, niezależny odbiór, CI aktualnego head/base i merge | Dowody według mastera; roboczy raport i sama aktywność nie dają PASS |
 | O1 z O2/O3 | Odbiór/scalenie sesji, HTTP/bootstrap/odczyty, adapter wire/Room, recovery/WorkManager i pełny sync | Zgodne APK/API, scenariusze kont i KO-31; login APK nie zamyka E3/E5/E6 całego zespołu |
-| O2 — Python, PostgreSQL, API | E9-O2 scalone PR54; E7-R offline:35 zbadane,30 propozycji8/8/10/4,4odrzucone,1unresolved; nowe3cases niezależnie9,2/10/noP1P2 | Człowiek:referencje/zgody; O3:datowane wejścia; koordynator:finalCI/mergePR59. Corpus proposals complete, live/E10 osobno | O2-031/032, [PR59](https://github.com/Roseru/aplikacja-mobilna/pull/59), [raport zdjęć](e7/RAPORT_PRZYGOTOWANIA_ZDJEC.md) |
-| O2 — Python, PostgreSQL, API | PR124: poprawka dwóch P2 odbioru483dcfa9; nowa0026, exact EXECUTE operatora; review9/10 | Celowane testy i nowe8CI dokładnego head w PR/checks; produkcyjny drugi host/fencing odłożone przez właściciela, pełneKO32 osobno | O2-042, [PR124](https://github.com/Roseru/aplikacja-mobilna/pull/124), [raport](integracja/RAPORT_REJESTR_USUNIEC_O2.md) |
+| O2 — Python, PostgreSQL, API; Android A/B/C | A scalone; B PR156 lokalnie PASS; C po B0ee:51native,417/457JVM/lint/E0PASS, Room22 i SOURCEPASS zachowane | B exactFULLCI/rootmerge/mainCI; C bez publikacji do decyzji, potem aktualny main i jeden FULLCI | O2-055/056/057, [B PR156](https://github.com/Roseru/aplikacja-mobilna/pull/156), [sync C](../android/SYNCHRONIZACJA_W_TLE.md) |
+| O2 — Python, PostgreSQL, API; Android A/B/C | A scalone; B PR156 lokalnie PASS; C po B0ee:51native,417/457JVM/lint/E0PASS, Room22 i SOURCEPASS zachowane | B exactFULLCI/rootmerge/mainCI; C bez publikacji do decyzji, potem aktualny main i jeden FULLCI | O2-055/056/057, [B PR156](https://github.com/Roseru/aplikacja-mobilna/pull/156), [sync C](../android/SYNCHRONIZACJA_W_TLE.md) |
 | O3 i O2 — E7-R | Potwierdzona, datowana konfiguracja Free Tier/model/projekt/limitów w wydzielonym środowisku oraz legalny niesensytywny corpus ≥30 zdjęć | Rzeczywisty pomiar według mastera; klucz poza repo i czatem, bez billing. Brak tego wejścia nie blokuje niezależnego E7-O2 lub późniejszego E8 |
 | O3 z zespołem | Docelowy issuer/HTTPS/VPS/SMTP, backup i rzeczywisty restore/KO-32 oraz bramki wydania AI | Własne dowody środowiska; lokalna retencja, harness PKCE i CI nie zastępują tych odbiorów |
 
@@ -1404,7 +1404,7 @@ Historyczna tabela zależności sprzed PR59; bieżące przekazanie zdjęć jest 
 |---|---|---|
 | Wykonawca E7 → koordynator O2 | Końcowy E7-O2, niezależny odbiór, CI aktualnego head/base i merge | Dowody według mastera; roboczy raport i sama aktywność nie dają PASS |
 | O1 z O2/O3 | Odbiór/scalenie sesji, HTTP/bootstrap/odczyty, adapter wire/Room, recovery/WorkManager i pełny sync | Zgodne APK/API, scenariusze kont i KO-31; login APK nie zamyka E3/E5/E6 całego zespołu |
-| O2 — katalog | E5-O2-C: dokładne źródła i przypisania składników ARPOL WZ 1 / WZ 4 WEGE | Producent/wariant/partia, masa składnika i wartości; rozstrzygnięcie rozbieżności kisielu, izotoniku, gruszki i wersji sucharów. Materiały O2-014 nie stają się official; brak pozostaje null, wariantów nie sumujemy |
+| O2 — Python, PostgreSQL, API; Android A/B/C | A scalone; B PR156 lokalnie PASS; C po B0ee:51native,417/457JVM/lint/E0PASS, Room22 i SOURCEPASS zachowane | B exactFULLCI/rootmerge/mainCI; C bez publikacji do decyzji, potem aktualny main i jeden FULLCI | O2-055/056/057, [B PR156](https://github.com/Roseru/aplikacja-mobilna/pull/156), [sync C](../android/SYNCHRONIZACJA_W_TLE.md) |
 | O3 i O2 — E7-R | Potwierdzona, datowana konfiguracja Free Tier/model/projekt/limitów w wydzielonym środowisku oraz legalny niesensytywny corpus ≥30 zdjęć | Rzeczywisty pomiar według mastera; klucz poza repo i czatem, bez billing. Brak tego wejścia nie blokuje niezależnego E7-O2 lub późniejszego E8 |
 | O3 z zespołem | Docelowy issuer/HTTPS/VPS/SMTP, backup i rzeczywisty restore/KO-32 oraz bramki wydania AI | Własne dowody środowiska; lokalna retencja, harness PKCE i CI nie zastępują tych odbiorów |
 
@@ -7414,3 +7414,34 @@ Archiwalne wiersze sprzed aktualizacji PR138; bieżący stan znajduje się na po
   Testy są rzeczywistą Room/nawigacją/kontrolerem z syntetycznym transportem;
   nie są liveHTTP/OIDC/PG/E4/Gemini/deploy. O3 kwalifikuje dostarczony APK
   osobno, z wersją/commitem/SHA256; starszy E4FAIL pozostaje zachowany.
+
+### O2-057 — Końcowy lokalny odbiór C po integracji rzeczywistego B/O1
+
+- 23.10.2026, agent2/O2, do koordynatora/O1/O3, **DO ODCZYTU**.
+  `codex/android-o2-sync-w-tle`, mergebc0e080f9368c0789ecd0d39ebf6a2b273205cf0
+  zawiera dokładny końcowy B0ee0c366/PR156 i C853d/d086. Wykonano na decyzję
+  root podczas zdalnego FULLCI B; C pozostaje lokalne, bez pusha/PR do odbioru
+  B i decyzji koordynatora. Aktualny opis: android/SYNCHRONIZACJA_W_TLE.md.
+- Zachowane wszystkie wpisy i najnowsze wiersze O1/O2/O3; konflikt wyłącznie
+  w bieżącej tabeli komunikacji. Zarezerwowane SessionController/Gateway/
+  SessionSecurity/MealPhotoScreen są identyczne z B0ee. FirstGoal i brak
+  fallback2800 odziedziczone z B. Schematy21/22 i code durableproof identyczne
+  z zaakceptowanym d086. Nie zmieniono limitów, guardu E4 lub nowego katalogu.
+- Końcowy lokalny przebieg na własnym C5564/API35/Room22:51/51native,
+  0fail/error/skip. Archive5+Coordinator8+Work5+Wake4+actualSession1(dwa
+  warianty manual/worker)+Recovery2+ImportNav1+FirstGoal1+Migration4+
+  Snapshot9+Diary10+ArchiveRecovery1. Rzeczywiste transakcje Room, worker,
+  procesowe anulowanie/ABA, Retry-After, prywatne oryginały/frozen/history,
+  pełny SQLiteFull i ochrona dowodów recovery; bez zewnętrznego HTTP.
+- Pełne JVM417debug/457validation,0fail/error/skip; oba lint0error/fatal,
+  assembleDebug i E0/833linki/diff-check PASS. Jeden lokalny Gradle i urządzenie
+  testowe naraz. Logi/XML/hashe przypięte prywatnym receipt; zewnętrzny CI
+  B156 nadal oddzielnie PENDING, C FULLCI jeszcze nie wykonany.
+- Odczytano6374626101: brak dostarczonego trwałego wspólnego networkgate;
+  Preferences ma tylko motyw, CONNECTED nie jest blokadą użytkownika.
+  To osobna wspólna integracja WF-05, bez równoległego dopisywania do B/C.
+  Obecny pakiet nie deklaruje kompletnego v1/WF-05 lub live E4/PG/kill/Gemini.
+- Po akceptacji B/merge/mainCI: zwykły merge rzeczywistego main do czystego C.
+  Jeśli różni historię/dziennik, nie powtarzamy identycznych testów; jeśli B
+  otrzyma poprawkę, merge i celowana regresja jej delty. Dopiero decyzja root
+  uruchamia jeden końcowy C PR/FULLCI na main, potem odbiór/merge/mainCI.

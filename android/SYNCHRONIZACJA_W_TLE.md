@@ -1,167 +1,122 @@
 # Synchronizacja w tle — etap C
 
-Ten dokument opisuje moduł O2. Rzeczywisty transport i uwierzytelnienie należą
-do wykonawcy sesji O1. Test z wstrzykniętym wykonawcą nie potwierdza integracji
-sesji, HTTP, logowania ani wdrożenia.
+## Aktualny stan
 
-## Trwały przepływ
+Wersja0.8.31/code42/validation1042, Room22. Końcowa integracja lokalna
+`bc0e080f9368c0789ecd0d39ebf6a2b273205cf0` zawiera dokładny końcowy B
+`0ee0c3667c1650abe55e2747680d3f3bf771e927` oraz zaakceptowaną poprawkę
+trwałego recovery `d08627f1`. SOURCEPASS archiwów, koordynatora, runtime/UI
+oraz ograniczonej delty recovery bez materialnychP1/P2. Lokalny odbiór:
+51native,417debug/457validationJVM, lint obu wariantów, assembleDebug i E0 PASS.
+C pozostaje przed publikacją, końcowym FULLCI i odbiorem main; B ma osobny
+[PR156](https://github.com/Roseru/aplikacja-mobilna/pull/156).
 
-`SyncCoordinator` współdzieli blokadę ręcznego wywołania i WorkManagera.
-Room zapisuje zakres/generację właściciela, pełny kontekst konta, fazę
-`pull_before → push → pull_after`, wersje zgłoszeń, liczniki i czas ponowienia.
-Koordynator sprawdza lease/kontekst przed i po każdym wywołaniu typowanego
-`SyncStepExecutor`. O1 nadal odpowiada za guard przed fizycznym wysłaniem oraz
-commit odpowiedzi HTTP. Sama blokada koordynatora nie zastępuje tych guardów.
+## Jeden trwały przepływ
 
-PULL wymaga identyfikatora kompletnej aktualnej kopii; jej pełna semantyka
-jest sprawdzana przed publikacją aktywnego checkpointu. Następnie stosowany
-jest idempotentny `ServerDiaryStore`. Po PUSH zawsze następuje PULL.
-`Completed` PUSH nie oznacza pustej kolejki: po końcowym odczycie Room ponownie
-sprawdza kolejkę i wersję zgłoszeń w tej samej transakcji. Ograniczony wycinek
-pracy zapisuje następną fazę. Brak postępu po zakończonym PULL zachowuje
-jego checkpoint i zapisuje wznowienie PUSH; nie zapętla kolejnych odczytów.
-Nie zmienia fazy niepewnego wysłania ani cancellation.
+`CalorieApplication` implementuje `SyncWorkRuntimeOwner`: Room, koordynator,
+rzeczywisty `SessionController` O1 i WorkManager korzystają z jednego runtime.
+Ręczne wywołanie i import używają `manual(capturedLease)`, tak samo jak worker.
+`SyncCoordinator` współdzieli procesowy mutex oraz zapisuje owner/generation,
+pełny kontekst, cykl, `pull_before → push → pull_after`, wersje zgłoszeń,
+liczniki i termin ponowienia. Wyniki typowanego executora nie są komunikatami UI.
+Guard lease/kontekstu działa przed i po kroku; O1 nadal chroni fizyczny send
+oraz commit odpowiedzi. A→B→A nie przywraca ważności wcześniejszej pracy.
 
-`Retry-After` jest maksymalną z zapisanej granicy koordynatora i zamrożonych
-paczek. Nowe kliknięcie, zmiana generacji ani restart jej nie skracają.
-Worker ponownie sprawdza granicę także po przedwczesnym wybudzeniu schedulerem.
-Retry-After0, teraz lub data przeszła także dostają trwały rosnący backoff
-(10s,20s,…); termin jest maksimum tej granicy i przyszłego terminu serwera.
-Login, uzgodnienie, brak konfiguracji i brak miejsca zatrzymują automatyczne
-ponowienia do odpowiedniego jawnego zdarzenia. Cancellation propaguje się:
-nie jest ACK, zmianą identyfikatora operacji ani usunięciem pending pages.
+PULL wymaga kompletnego aktualnego runa i pełnej walidacji przed publikacją
+checkpointu; zastosowanie do dziennika jest idempotentne. Po PUSH następuje PULL.
+`Completed` PUSH nie oznacza pustej kolejki: jej SQL COUNT i wersje zgłoszeń
+sprawdzane są atomowo. Brak postępu po ukończonym PULL wznawia PUSH z jego
+checkpointem po backoff. Nie resetuje niepewnego wysłania. Cancellation
+propaguje się bez ACK, nowego operation_id lub zmiany frozen bytes/hash.
 
-## Harmonogram
+Termin jest maksimum zapisanej granicy i Retry-After zamrożonych paczek.
+Restart, kliknięcie i nowy lease go nie skracają; worker sprawdza go także
+po przedwczesnym wybudzeniu. Retry-After teraz/przeszły otrzymuje rosnący
+trwały backoff10s,20s,…; wycinek pracy jest ograniczony do32kroków.
+Login, uzgodnienie, brak konfiguracji i pojemność są osobnymi stanami.
+Stan oraz postęp widać na koncie i ekranie importu; oczekiwanie nie jest sukcesem.
 
-WorkManager 2.10.5 zachowuje zgodność z SDK35 projektu. Aktualizacja AGP,
-Kotlina i SDK nie należy do tego etapu. [Dokumentacja WorkManagera](https://developer.android.com/jetpack/androidx/releases/work).
+## Wybudzenia i zakończenie recovery
 
-Jednorazowe zadania mają ograniczenie `CONNECTED`. Unikalny łańcuch wynika
-z SHA-256 zakresu i generacji; `APPEND_OR_REPLACE` zachowuje sygnał przychodzący
-podczas kończenia poprzedniej pracy. Następca czyta bieżący zapis Room,
-więc nie powtarza zakończonego cyklu bez nowego zgłoszenia. WorkData zawiera
-wyłącznie scope, generation i wire context; nie zawiera tokenów, payloadu,
-poświadczeń ani informacji potrzebnych do interaktywnego logowania.
+Nowe/zmienione kwalifikujące się operacje, aktualny lease/context Room
+oraz publiczny sygnał sesji O1 wybudzają maszynę. Usunięcie ACK z kolejki
+samo nie jest nową operacją. Runtime anuluje wyłącznie poprzedni własny
+łańcuch przy zmianie owner/generation; opóźniony sygnał starej sesji jest odrzucany.
+Konfiguracja zwalnia tylko `not_configured`, właściwe przejście dostępności
+sesji/lease zwalnia `login`. Storage wymaga jawnej próby użytkownika.
 
-Obserwator łączy krótkie serie zapisów kolejki. Okresowa praca z warunkiem
-sieciowym umożliwia powrót po zakończeniu procesu. Zatrzymany login lub
-uzgodnienie nie wywołują transportu przy takim wybudzeniu. System Android
-może wykonać pracę później niż wyznaczona granica; nie gwarantujemy punktualności.
-[Ograniczenia i opóźnienia](https://developer.android.com/develop/background-work/background-tasks/persistent/getting-started/define-work).
+Recovery wymaga trwałego dowodu przyczynowego. Rzeczywisty B finish zapisuje
+monotoniczny lokalny numer w `reconciliation_completions` w tej samej
+transakcji co complete, zastosowanie pełnej kopii i zdjęcie requiresRecovery.
+Ponowienie zakończonego planu zwraca istniejący wynik bez nowego numeru.
+Nowa blokada zapamiętuje aktualny numer jako `reconciliationBaseline`.
+Request/run zwalniają ją tylko dla nowszego zatwierdzonego zakończenia
+tego samego właściciela/pełnego kontekstu i powiązanej zastosowanej kopii.
+Sama flaga, historyczny plan, login, konfiguracja lub zegar nie są dowodem.
+Wznowienie zaczyna nowy PULL i zachowuje Retry-After.
 
-## Archiwa i migracja
+Migrowana zdrowa blokada z nieznaną granicą NULL pozostaje zablokowana do
+jawnej próby użytkownika. Jeśli nadal wymaga recovery, zapisuje granicę przed
+przyszłym zakończeniem. Nie dopisujemy fikcyjnych potwierdzeń dawnym planom.
 
-Addytywna migracja20→21 dodaje `sync_work_state` oraz append-only
-`snapshot_archive_receipts`. Zachowuje wcześniejsze tabele i dane, bez wipe
-lub destructive migration. Surowa retencja nadal wynosi8prób/128MiB na konto;
-jedna próba ma maksymalnie64MiB/100000rekordów/2000stron. Liczymy rzeczywiste
-UTF-8 zapytań i odpowiedzi. Nie zwiększamy tych limitów.
+WorkManager2.10.5 ma CONNECTED, unikalny SHA owner/generation oraz
+APPEND_OR_REPLACE; zdarzenie podczas kończenia pracy nie przepada.
+Jeden trwały watch15min umożliwia powrót po zakończeniu procesu, pozostawiając
+zatrzymane stany bez transportu. WorkData zawiera tylko zakres/generację/kontekst,
+bez tokenów, payloadów lub haseł. Android może opóźnić wykonanie.
+[Warunki pracy](https://developer.android.com/develop/background-work/background-tasks/persistent/getting-started/define-work).
 
-Kompaktowane są najstarsze bezpieczne zakończone/wygasłe próby. Chronione są
-aktywna kopia, pending próby, ostatnie zastosowanie, zamrożone/niezamknięte
-paczki, nierozstrzygnięte konflikty i projekcje oraz dowody/receipts/grupy
-niedokończonych zatwierdzonych planów uzgodnienia. Jeśli wszystko jest
-chronione, rezerwacja odmawia bez utraty dotychczasowej kopii i danych.
+CONNECTED nie jest trwałą blokadą sieci wybieraną przez użytkownika.
+Preferences przechowuje obecnie tylko motyw; wspólny network gate pozostaje
+osobną uzgadnianą integracją O1/O2. C nie deklaruje ukończenia całego WF-05/v1.
 
-Przed usunięciem raw pages i indeksu tożsamości transakcja zapisuje niezmienny
-manifest: oryginalny kontekst, checkpoint, tokeny, liczniki i SHA-256 każdego
-query/response. Wiersz próby, jego liczniki i klucze obce pozostają zachowane.
-Spóźnione identyczne zakończenie sprawdza receipt i nie publikuje starej kopii.
-Odtworzenie zapisanego historycznego `ServerDiaryApplication` zwraca wynik
-przed odczytem skompaktowanych stron; nie cofa późniejszej lokalnej edycji.
-Stary receipt archiwum nie zastępuje świeżej kopii wymaganej po ACK recovery.
+## Archiwum i migracje
 
-## Powtarzalna weryfikacja
+Limity pozostają8prób/128MiB na właściciela oraz64MiB/100000rekordów/2000stron
+jednej próby. Liczone są rzeczywiste bajty UTF-8 zapytań i odpowiedzi.
+Kompaktacja wybiera najstarsze bezpieczne ukończone/wygasłe próby i atomowo
+zastępuje rawpages niezmiennym manifestem/hashami oraz zwalnia identities.
+Zostają run, kontekst, tokeny/checkpoint, liczniki, FK i dowody. Chronione są
+aktywne/pending, ostatnie zastosowanie, frozen requests, nierozstrzygnięte
+konflikty/pending_local oraz wszystkie nieukończone zatwierdzone grupy recovery,
+evidence i awaitingSnapshot. Brak kandydata/pojemności cofa transakcję.
 
-Na własnym izolowanym emulatorze validation, z potwierdzoną tożsamością:
+Identyczna późna strona skompaktowanego runa sprawdza digest i nie publikuje
+historycznego checkpointu. Historyczny ServerDiaryApplication zwraca zapisany
+wynik przed odczytem raw i nie cofa późniejszej lokalnej edycji. Stary receipt
+nie zastępuje świeżej typed kopii potrzebnej po recovery ACK.
+
+Addytywne20→21 dodaje stan pracy i receipts archiwum;21→22 dodaje nullable
+granicę blokady oraz niezmienny ledger zakończeń. Użyty schemat21 i migracja
+20→21 pozostają zachowane; blob21=`1c8b2f9458bdc4d80fef222c14aa82f4a81607b0`.
+Wszystkie45starych encji zachowane; jedynym nowym polem starej tabeli jest
+nullable granica. Nie ma wipe/fallbackToDestructiveMigration lub zmiany frozen wire.
+
+## Weryfikacja i granice dowodów
+
+Końcowe51native/0fail/error/skip obejmuje Archive5, Coordinator8, Work5,
+Wake4, rzeczywistą sesję1(wariant manual+worker), trwałe recovery2, importnav1,
+firstGoal1, migracje4, Snapshot9, Diary10 i ochronę archiwum recovery1.
+Rzeczywisty kontroler O1 z syntetycznym Vault/gateway wykonał PULL→PUSH→PULL,
+ACK/revision1/82.125kg oraz finalny checkpoint. Recovery używa realnego B finish,
+zamknięcia/otwarcia plikowej Room i nowego runtime/workera; stary complete
+nie zwalnia nowszego konfliktu. Oryginały/private/history/frozen/hash zachowane.
+Test pojemności obejmuje rzeczywisty SQLiteFull, nie tylko wyjątek fixture.
+
+JVM417debug/457validation bez fail/error/skip, oba lint bez error/fatal,
+assembleDebug i E0 PASS na tym samym źródle. Wcześniejsze przypięte przebiegi
+oraz red/green i błędy fixture są w jedynym dzienniku O2-055/056/057;
+nie sumujemy powtórzeń jako unikalnych przypadków.
+
+Powtarzalne sprawdzenie z katalogu android na własnym validation emulatorze:
 
 ```powershell
-.\gradlew.bat testDebugUnitTest testValidationUnitTest lintValidation
-.\gradlew.bat connectedValidationAndroidTest '-Pandroid.testInstrumentationRunnerArguments.class=pl.roseru.kalorie.SnapshotArchiveStorageTest,pl.roseru.kalorie.SyncCoordinatorStorageTest,pl.roseru.kalorie.SyncWorkStorageTest,pl.roseru.kalorie.SyncWakeStorageTest,pl.roseru.kalorie.SyncRecoveryResumeTest,pl.roseru.kalorie.SyncSessionIntegrationTest,pl.roseru.kalorie.ImportOriginsMigrationTest,pl.roseru.kalorie.ServerSnapshotStorageTest,pl.roseru.kalorie.ServerDiaryStorageTest'
+.\gradlew.bat :app:testDebugUnitTest :app:testValidationUnitTest :app:lintDebug :app:lintValidation :app:assembleDebug
+.\gradlew.bat :app:connectedValidationAndroidTest
 ```
 
-Testy używają syntetycznych danych i prawdziwych transakcji SQLite. Osobno
-wymagane są końcowe podłączenie rzeczywistego executora O1, nawigacja/DI B,
-testy integracyjne, review i CI dokładnego head/base. Lokalne wyniki oraz
-odbiór publikujemy w jedynym dzienniku `docs/KOMUNIKACJA_AGENTOW.md`.
-
-## Rzeczywiste podłączenie aplikacji i dowody integracji
-
-`CalorieApplication` implementuje `SyncWorkRuntimeOwner`. Jeden runtime
-łączy bazę, koordynator, rzeczywisty `SessionController` O1 i WorkManager.
-Ręczna akcja oraz przycisk wysłania kolejki z importu przechodzą przez
-`runtime.manual(capturedLease)`, więc używają tej samej maszyny co worker.
-Stany Room są widoczne na ekranie konta i importu; zmiana fazy/ACK odświeża
-postęp planu. Zapisane oczekiwanie lub login nie są komunikatem sukcesu.
-
-Runtime obserwuje kwalifikujące się nowe/zmienione operacje oraz bieżący
-lease/context z Room i jawny publiczny sygnał dostępności sesji O1.
-Nie przejmuje obserwatora prywatnego stanu O1. Wylogowanie/zmiana generacji
-anuluje wyłącznie poprzedni własny unikalny łańcuch. Zmiana kontekstu lub
-opóźniony sygnał starej sesji nie odblokowują nowego konta. Login blokuje
-wakeup od zapisu i okresowego watch; właściwe zdarzenie sesji lub zakończone
-uzgodnienie pozwala wznowić. Ponowny start zachowuje jeden okresowy watch.
-Liczbę pozostałych operacji sprawdza SQL COUNT w transakcji, bez ładowania
-całych payloadów kolejki do pamięci.
-
-Dodatni test `SyncSessionIntegrationTest` używa prawdziwego kontrolera O1,
-przywróconego syntetycznego SessionVault, koordynatora, Room i rzeczywistego
-workera. Dwa warianty — manual i worker — wykonały dokładnie PULL→PUSH→PULL,
-ACK i rewizję1, odczyt82.125kg, zgodność finalnego aktywnego runa i zastosowania
-dziennika oraz niezmienny wire operacji. Auth/discovery/refresh0; transport
-stanowią wyłącznie syntetyczne interfejsy, nie zewnętrzny HTTP/OIDC/PG.
-
-`SyncWakeStorageTest` sprawdza restart obserwatora, jeden trwały watch,
-write→job oczekujący na CONNECTED, zatrzymany login po write/periodic wake,
-ponowne zdarzenie sesji oraz A→B→A z anulowaniem starej pracy. Aktualny
-zbiorczy odbiór ma18/18PASS (8koordynatora,5WorkManagera,3wake,1test dwóch
-wariantów rzeczywistej sesji,1nawigacji). Po dodaniu prezentacji stanu
-wykonano jeszcze celowaną nawigację oraz pełne JVM i lint. Nie jest to pełny
-zdalny CI i nie zastępuje końcowej dostawy completedraw/observer od O1.
-
-Zdarzenia wznowienia mają powód sprawdzany atomowo w request: dostępna
-konfiguracja zwalnia wyłącznie `not_configured`, rzeczywiste przejście
-dostępności sesji lub lease zwalnia `login`, zakończenie recovery zwalnia
-`reconciliation`. Zmiana samej konfiguracji przy stale dostępnym tokenie
-nie udaje nowego uwierzytelnienia. Stan storage wymaga jawnej próby użytkownika.
-Silniejsza regresja tej granicy wykazała czerwone login→ready przed poprawką;
-po poprawce pełne4wake,417/432JVM i lint PASS. Bazowy zestaw19native (Wake4)
-przeszedł wcześniej; końcowa delta jest sprawdzona oddzielnie, bez przenoszenia
-wyniku dawnego CI na nowe źródło. Schemat21 pozostaje niezmieniony po instalacji; poniższa poprawka przechodzi
-jawnie do22.
-
-
-## Trwałe zakończenie uzgodnienia i schemat22
-
-Ograniczony przegląd runtime665a wykazał, że sam obserwowany spadek
-`requiresRecovery` nie wystarcza po restarcie obserwatora. Migracja21→22
-zachowuje wszystkie wcześniejsze komórki/rowid/FK, dodaje nullable
-`sync_work_state.reconciliationBaseline` oraz niezmienny lokalny ledger
-`reconciliation_completions`. Wydanie C ma0.8.31/code42/validation1042.
-Surowy schemat21 i migracja20→21 pozostają identyczne.
-
-Rzeczywisty B finish zapisuje monotoniczny numer zakończenia w tej samej
-transakcji co complete, zastosowanie pełnej kopii i zdjęcie recovery.
-Powtórzenie zakończonego planu zwraca istniejący wynik bez nowego numeru.
-Nowa blokada zapisuje aktualny numer jako granicę. Automatyczne wznowienie
-wymaga nowszego, zatwierdzonego i zakończonego planu tego samego właściciela
-oraz pełnego kontekstu, powiązanego z zastosowaną kopią. Nie porównujemy
-zegara ani dat. Sama flaga, login, konfiguracja lub historyczny complete
-nie zwalniają nowszej blokady. Weryfikacja odbywa się transakcyjnie zarówno
-przy request, jak i bezpośrednim wznowieniu workera.
-
-Po potwierdzonym zakończeniu nowy cykl zaczyna PULL; nie skraca zapisanego
-Retry-After. Dla migrowanej zdrowej blokady z nieznaną granicą NULL zachowuje
-blokadę do jawnej próby użytkownika. Migrowana blokada nadal wymagająca
-recovery zapisuje granicę przed przyszłym zakończeniem; nie dopisujemy
-fikcyjnych dowodów dawnym planom.
-
-Celowany odbiór7/7nativePASS,0fail/error/skip: rzeczywisty B finish bez
-obserwatora → zamknięcie plikowej Room → nowy runtime → właściwy worker,
-negatywny stary plan/nowszy zwykły konflikt, pełna migracja21→22 z porównaniem
-wszystkich starych tabel i cztery regresje wake. Zachowane prywatne dane
-gościa, historyczne80.125kg, frozen JSON/hash/operacja oraz brak fałszywego
-ACK; wczesne wybudzenie zachowuje termin90000 i nie wywołuje transportu.
-Testy są lokalnymi fixtures bez zewnętrznego HTTP. Błąd pierwszej kompilacji
-nowego testu (nieistniejące pole payloadHash) poprawiono na mocniejsze
-porównanie całej oryginalnej operacji z jedyną dozwoloną zmianą statusu.
+Powyższy drugi rozkaz uruchamia pełny zestaw, nie tylko lokalnie wybrane51.
+Końcowe FULLCI dokładnego head/base i main są osobnymi bramkami.
+Lokalne fixtures nie kwalifikują zewnętrznego HTTP/OIDC/PG, live E4/kill/replay,
+Gemini lub wdrożenia. E4driver O1 nadal celowo odmawia Room21/22; jego późniejsza
+kwalifikacja jest oddzielna od tego odbioru C. Nowy publiczny katalog O1 poza PR.
