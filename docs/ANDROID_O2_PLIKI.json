@@ -1,0 +1,5056 @@
+{
+  "format": "o2-android-source-index-v2",
+  "repository": "Roseru/aplikacja-mobilna",
+  "baseline_commit": "84d3dcdbedb9c6d21b54f75386c9d3fafa95eb52",
+  "android_version": "0.8.27",
+  "room": 17,
+  "file_count": 836,
+  "total_source_bytes": 8998072,
+  "scope": "Exact raw Git blob bytes at baseline, read with binary git cat-file --batch. No checkout, archive, encoding or line-ending conversion. Handoff document updates are separate.",
+  "source_roots": [
+    "AGENTS.md",
+    "WYMAGANIA_PROJEKTOWE.md",
+    "README.md",
+    "android",
+    "contracts",
+    "backend/src",
+    "backend/tests",
+    "backend/pyproject.toml",
+    "backend/uv.lock",
+    "backend/sync_catalog_schemas.py",
+    "tools/sync_client",
+    "tools/contracts",
+    "docs/ARCHITEKTURA.md",
+    "docs/PLAN_PRAC.md",
+    "docs/WORKFLOW.md",
+    "docs/KOMUNIKACJA_AGENTOW.md",
+    "docs/e4",
+    "docs/e2",
+    "Random Data/MRE/README.md",
+    "Random Data/MRE/mre_2026.json"
+  ],
+  "files": [
+    {
+      "path": "AGENTS.md",
+      "group": "project_reference",
+      "bytes": 5771,
+      "sha256": "1409dcfa728e18f208f2ad7781edfcb7a5826d2a746f99e95259bbaa89311531"
+    },
+    {
+      "path": "README.md",
+      "group": "project_reference",
+      "bytes": 7943,
+      "sha256": "46b7681f45936f353e871c485ed4a7f47ce05854fd104b3835e81500ee07c2c7"
+    },
+    {
+      "path": "Random Data/MRE/README.md",
+      "group": "project_reference",
+      "bytes": 4786,
+      "sha256": "f9320f5bb742a3f7d6491ac17a06ce51b849a9f24a61c1fa02d7790fec6843ac"
+    },
+    {
+      "path": "Random Data/MRE/mre_2026.json",
+      "group": "project_reference",
+      "bytes": 386831,
+      "sha256": "f519ef7390287c06293e7d45ff65371d5fa5cc68565994c948baebd2b0c2ad94"
+    },
+    {
+      "path": "WYMAGANIA_PROJEKTOWE.md",
+      "group": "project_reference",
+      "bytes": 87586,
+      "sha256": "d8d6bec644d0b27a11b520b5424fba9192da82ce9999545f9d1c169a64f3d0e3"
+    },
+    {
+      "path": "android/BOOTSTRAP_HTTP.md",
+      "group": "android",
+      "bytes": 6724,
+      "sha256": "9a46fbf1d4aa954480f441b7700c5252fbd1953250f7d6ce2f9fcc9735b37e02"
+    },
+    {
+      "path": "android/INTEGRACJA_E3.md",
+      "group": "android",
+      "bytes": 6988,
+      "sha256": "6a3c0784760393e612091165d89bfd2b935e2cf084eb65da37a6a3461b16040c"
+    },
+    {
+      "path": "android/KONFLIKTY_SYNC.md",
+      "group": "android",
+      "bytes": 6187,
+      "sha256": "f812acfdceb5ce352011a7b2c6bba7012dd2964e09ef0de781e18c5bee05edca"
+    },
+    {
+      "path": "android/ODBIOR_0_8_23.json",
+      "group": "android",
+      "bytes": 2208,
+      "sha256": "f8aac667cce2b82fe731c0448f4467ffb5607819adef0900dc46cbf1f3ea5ba1"
+    },
+    {
+      "path": "android/ODBIOR_0_8_25.json",
+      "group": "android",
+      "bytes": 4357,
+      "sha256": "298b010fb9a1d7133011d16369eb01b727c23d0dfdd0aed7f2c92d7a5a0f699a"
+    },
+    {
+      "path": "android/ODBIOR_0_8_26.json",
+      "group": "android",
+      "bytes": 1666,
+      "sha256": "f4b032ad9c3302ab830a320c08ed411bb7cb96032a57c50dab7adea301f335c0"
+    },
+    {
+      "path": "android/ODBIOR_0_8_27.json",
+      "group": "android",
+      "bytes": 2274,
+      "sha256": "091b6a26fb5ae802cb1127c2a4bc1961e8925b7d14a1e202ec312eb5abe80bff"
+    },
+    {
+      "path": "android/ODCZYT_PROFILU.md",
+      "group": "android",
+      "bytes": 5894,
+      "sha256": "4c1cf8fe665d25039db5be527207af403400fe229594516e68a839752b82003c"
+    },
+    {
+      "path": "android/POBIERANIE_DZIENNIKA.md",
+      "group": "android",
+      "bytes": 6295,
+      "sha256": "c57a5b25d7f64469ab2e4e81fd5a74ccddc77af8fc21726d25e3fd5ca681fab7"
+    },
+    {
+      "path": "android/POPRAWKI_REVIEW.md",
+      "group": "android",
+      "bytes": 4439,
+      "sha256": "dc7f57b567e30a4ebd419eaa442edaf170643ace85b7f0d07e730f59ad6b1140"
+    },
+    {
+      "path": "android/POSILEK_RECZNY_SYNC.md",
+      "group": "android",
+      "bytes": 11167,
+      "sha256": "e63cc23d79103e40137db08b05e703f7a40ca074e8adc8937b86f56329e56af1"
+    },
+    {
+      "path": "android/POSILKI_KATALOGOWE_SYNC.md",
+      "group": "android",
+      "bytes": 5435,
+      "sha256": "7e9155e3e84967bf38657d3439d6ba5836111deaadd41f61c7006c69dd2201a9"
+    },
+    {
+      "path": "android/POTWIERDZENIE_INTERFEJS.md",
+      "group": "android",
+      "bytes": 6683,
+      "sha256": "851ca946cb8e535aae40d990bbd8fe007f865f65260f995c3d0b0fa4d767b616"
+    },
+    {
+      "path": "android/POTWIERDZENIE_POSILKU.md",
+      "group": "android",
+      "bytes": 14235,
+      "sha256": "becbd941d7db7afe52b518476c14beb0b89dfe098db3d48f37166f27236f68a6"
+    },
+    {
+      "path": "android/POWROT_DO_POPRAWEK.md",
+      "group": "android",
+      "bytes": 5094,
+      "sha256": "4b0c5c93e6626c94473467f9089533fc6f1da43d4030854fdf0b9e121fe3b4f5"
+    },
+    {
+      "path": "android/RAPORT_0_4.md",
+      "group": "android",
+      "bytes": 6138,
+      "sha256": "ef87b5dc63c0bcd5808183630f5c878e78a928cb19db1538b7f03f4b035b7110"
+    },
+    {
+      "path": "android/RAPORT_0_5.md",
+      "group": "android",
+      "bytes": 4080,
+      "sha256": "04ba0c5281bfacce03f53a7434623273a4229f2b39916639287d9fc81160c53f"
+    },
+    {
+      "path": "android/RAPORT_0_6.md",
+      "group": "android",
+      "bytes": 5435,
+      "sha256": "8cc78ebae8424fd4e5895550165f33f20c5bc6899d492fca0d6165789ef84724"
+    },
+    {
+      "path": "android/RAPORT_0_7.md",
+      "group": "android",
+      "bytes": 4717,
+      "sha256": "29871ae0ec16eb862795f50165ee21ef5a6395d98ee0ad4185e289dd0be79d50"
+    },
+    {
+      "path": "android/RAPORT_0_7_1.md",
+      "group": "android",
+      "bytes": 4560,
+      "sha256": "423389e88387691826af27d4b4996ff080ce48f5d45e05523a2a2f421814bf20"
+    },
+    {
+      "path": "android/RAPORT_0_7_2.md",
+      "group": "android",
+      "bytes": 5041,
+      "sha256": "c64dac7b371da4547411b9106551315b8b939d25edf0227d1a7a54061a066317"
+    },
+    {
+      "path": "android/RAPORT_0_7_3.md",
+      "group": "android",
+      "bytes": 4094,
+      "sha256": "2855b9fe777c4cf7d7a591b2769031972c1cbd44604ed6c64a14d353e7161e73"
+    },
+    {
+      "path": "android/RAPORT_0_8_0.md",
+      "group": "android",
+      "bytes": 4698,
+      "sha256": "faf6228b50254b443da921c9560c6607c0fb85575a664815ea43c34237f71f12"
+    },
+    {
+      "path": "android/RAPORT_0_8_1.md",
+      "group": "android",
+      "bytes": 5795,
+      "sha256": "c6c94b6000eef71aed0389eabcb16938053a3078aec66cf1a0f1d5be976bba9f"
+    },
+    {
+      "path": "android/RAPORT_0_8_10.md",
+      "group": "android",
+      "bytes": 6750,
+      "sha256": "b5e0664f8fd87ce7878e6f25334b569f78fc57fde48c370d49e78b25950d39e1"
+    },
+    {
+      "path": "android/RAPORT_0_8_11.md",
+      "group": "android",
+      "bytes": 11749,
+      "sha256": "a97a0f990a405741d6464ce470511acc367f6e08cabe6922a74d800c07b248d3"
+    },
+    {
+      "path": "android/RAPORT_0_8_12.md",
+      "group": "android",
+      "bytes": 49309,
+      "sha256": "7445105298f3f8b3c62c0081a761e68e071fbeb01a2490ee0f077c36118a41fe"
+    },
+    {
+      "path": "android/RAPORT_0_8_13.md",
+      "group": "android",
+      "bytes": 6415,
+      "sha256": "ed2089b01243affac98e480a5eeb7fb9883d410c01b12ef1241b22ed5cc6626e"
+    },
+    {
+      "path": "android/RAPORT_0_8_2.md",
+      "group": "android",
+      "bytes": 4712,
+      "sha256": "d8d4c2a239a8557787b7201f64ef653a8196c9ec10a0a1472d9aa83f00566fbf"
+    },
+    {
+      "path": "android/RAPORT_0_8_3.md",
+      "group": "android",
+      "bytes": 5877,
+      "sha256": "5c3c7147049d026a52d1525e9987e4ad6bf5fdfee6f46cd65f60a92a45ccf0cb"
+    },
+    {
+      "path": "android/RAPORT_0_8_4.md",
+      "group": "android",
+      "bytes": 6809,
+      "sha256": "ca4cc6bc0fcaa0ae83c344cd1d19d65bbcf92b1bf84c040f4db508c82358bd58"
+    },
+    {
+      "path": "android/RAPORT_0_8_5.md",
+      "group": "android",
+      "bytes": 9057,
+      "sha256": "21cde7716a8613b00c952659e4a0d473e129ce550ec2f051e0023d7353689b98"
+    },
+    {
+      "path": "android/RAPORT_0_8_6.md",
+      "group": "android",
+      "bytes": 11025,
+      "sha256": "16504b01449c449543574a036abfb328219ff11923796a8465ac752217c3479e"
+    },
+    {
+      "path": "android/RAPORT_0_8_7.md",
+      "group": "android",
+      "bytes": 10305,
+      "sha256": "47a186b947a06ff1fac626856149003ef5ea822d082e73306bdbf3c414f633d4"
+    },
+    {
+      "path": "android/RAPORT_0_8_8.md",
+      "group": "android",
+      "bytes": 8590,
+      "sha256": "39a8181cd9638b5a3cf5551f8cf5729b3a694d2fdc78aa6a2bcd8beeaba518af"
+    },
+    {
+      "path": "android/RAPORT_0_8_9.md",
+      "group": "android",
+      "bytes": 4322,
+      "sha256": "9d43311a1a43ddfb4966541c86c7235bf1279e77239df35c76de4f84c40e6564"
+    },
+    {
+      "path": "android/README.md",
+      "group": "android",
+      "bytes": 36797,
+      "sha256": "b2c445f801541da17c139b6dbbb0a71a31d6c7b67b1754364cdf7316bfab86ac"
+    },
+    {
+      "path": "android/SESJA_OIDC.md",
+      "group": "android",
+      "bytes": 6390,
+      "sha256": "2a47899daa1aef62c89af658e6be4a8c20e59705c48eec3ba0463bb1d4142a8e"
+    },
+    {
+      "path": "android/SYNCHRONIZACJA_INTERFEJS.md",
+      "group": "android",
+      "bytes": 8436,
+      "sha256": "aa6c35df264f39aa733fa006ab96e3734a290103333f50cfe6c6c0af5499c7dc"
+    },
+    {
+      "path": "android/SYNCHRONIZACJA_PULL.md",
+      "group": "android",
+      "bytes": 6053,
+      "sha256": "0e9002f4886fc4acc335bd37ee41a522c2b3c95a56981330edb0abbc2d9619e1"
+    },
+    {
+      "path": "android/SYNCHRONIZACJA_PUSH.md",
+      "group": "android",
+      "bytes": 9672,
+      "sha256": "c65305bc1b8d89eff1540b977c6ca14aff3f239360816cbbd235906ab18a7a19"
+    },
+    {
+      "path": "android/WAGA_SYNC.md",
+      "group": "android",
+      "bytes": 4334,
+      "sha256": "71873e2f68225f92f3fc9f3b2e96341b0da328f84333f2d5942aec40f05c71da"
+    },
+    {
+      "path": "android/WYSYLANIE_KOLEJKI.md",
+      "group": "android",
+      "bytes": 9096,
+      "sha256": "41e4c807bcfeb4e5b5260a441bc9d98716d706b2ed819ea54c234b2a0650d5e4"
+    },
+    {
+      "path": "android/ZLECENIE_ANALIZY.md",
+      "group": "android",
+      "bytes": 37047,
+      "sha256": "64b3b74657310016aefc7f1c0bae0e1971a405f4aa61cb2da7369ea237194832"
+    },
+    {
+      "path": "android/app/build.gradle.kts",
+      "group": "android",
+      "bytes": 3865,
+      "sha256": "4a8b40c7a5fe7be0c0ab805ffc0b7b41c4cb7968620981750aa4f9ef7da990ee"
+    },
+    {
+      "path": "android/app/schemas/pl.roseru.kalorie.data.CalorieDatabase/1.json",
+      "group": "android",
+      "bytes": 12057,
+      "sha256": "c2dacf4ff65391deca75b7b50a9062336cbffbf28f69b6bfac2260f6610ce85a"
+    },
+    {
+      "path": "android/app/schemas/pl.roseru.kalorie.data.CalorieDatabase/10.json",
+      "group": "android",
+      "bytes": 56225,
+      "sha256": "02167422d164624e8109a91a9f1fbfb6da060669a12b6c0805b3ca0941de7063"
+    },
+    {
+      "path": "android/app/schemas/pl.roseru.kalorie.data.CalorieDatabase/11.json",
+      "group": "android",
+      "bytes": 61275,
+      "sha256": "fb04daa824bf2e42d3cc049d797ae22a2e569aa1f46edbf09761911831558f6a"
+    },
+    {
+      "path": "android/app/schemas/pl.roseru.kalorie.data.CalorieDatabase/12.json",
+      "group": "android",
+      "bytes": 64967,
+      "sha256": "bfabf1083878e388caf2c3f858dc141912202cbd7aa561db7ca7c87947a894a6"
+    },
+    {
+      "path": "android/app/schemas/pl.roseru.kalorie.data.CalorieDatabase/13.json",
+      "group": "android",
+      "bytes": 68003,
+      "sha256": "9b6361488b6d8921a12bfd3c89cfd05f0b4e5b70f1be6e9c3d606dc2c0a63fbb"
+    },
+    {
+      "path": "android/app/schemas/pl.roseru.kalorie.data.CalorieDatabase/14.json",
+      "group": "android",
+      "bytes": 68253,
+      "sha256": "463c114c9aeab3afdfde4a0638f9170b1c396fbd35c06cc73a5cffffceb13366"
+    },
+    {
+      "path": "android/app/schemas/pl.roseru.kalorie.data.CalorieDatabase/15.json",
+      "group": "android",
+      "bytes": 70255,
+      "sha256": "e3ee458e1a795367c3673a1e371e1185d2220d49a77f7ba778f8dd59ad70e111"
+    },
+    {
+      "path": "android/app/schemas/pl.roseru.kalorie.data.CalorieDatabase/16.json",
+      "group": "android",
+      "bytes": 75591,
+      "sha256": "4d1d872233d0eb1c34a9bc7c0bbfd93fd2e3e0bead8dc408f5db8b789509919e"
+    },
+    {
+      "path": "android/app/schemas/pl.roseru.kalorie.data.CalorieDatabase/17.json",
+      "group": "android",
+      "bytes": 82289,
+      "sha256": "04afb8766f5bf2e9e8217f0ea09387c88ae1e02ce9bd8a35da1454f959a6bd4d"
+    },
+    {
+      "path": "android/app/schemas/pl.roseru.kalorie.data.CalorieDatabase/2.json",
+      "group": "android",
+      "bytes": 16418,
+      "sha256": "221e12f96201e36b303b81f89bfa297391759a5c18074e2ab8366ca657f4ae36"
+    },
+    {
+      "path": "android/app/schemas/pl.roseru.kalorie.data.CalorieDatabase/3.json",
+      "group": "android",
+      "bytes": 22630,
+      "sha256": "4f1fc5e907a0d9ebc8cd601a292c5f5cd078481b96a94a9dc81e0b49317a8845"
+    },
+    {
+      "path": "android/app/schemas/pl.roseru.kalorie.data.CalorieDatabase/4.json",
+      "group": "android",
+      "bytes": 30342,
+      "sha256": "742e7821e12fff72dd61db95e923251b757e580c34d1a6b34f862138f0b08337"
+    },
+    {
+      "path": "android/app/schemas/pl.roseru.kalorie.data.CalorieDatabase/5.json",
+      "group": "android",
+      "bytes": 33871,
+      "sha256": "8f88793f71e98e6f6e34bc70e43fb141e6cd1fd89dd2a14b356b586bd3fee4dd"
+    },
+    {
+      "path": "android/app/schemas/pl.roseru.kalorie.data.CalorieDatabase/6.json",
+      "group": "android",
+      "bytes": 40479,
+      "sha256": "ae87f77336680364570dbcc127879316813281add638e6b3a0b5a8e59fddca30"
+    },
+    {
+      "path": "android/app/schemas/pl.roseru.kalorie.data.CalorieDatabase/7.json",
+      "group": "android",
+      "bytes": 49007,
+      "sha256": "e5ec3e18a48ec108964ba60a6c2caf5ddbe0e1c87a422bb017b21b890b667d91"
+    },
+    {
+      "path": "android/app/schemas/pl.roseru.kalorie.data.CalorieDatabase/8.json",
+      "group": "android",
+      "bytes": 49206,
+      "sha256": "4046ced8d52e8901180bf13b5a449591882113d46fe83fde5d6adec1cc003b3c"
+    },
+    {
+      "path": "android/app/schemas/pl.roseru.kalorie.data.CalorieDatabase/9.json",
+      "group": "android",
+      "bytes": 51631,
+      "sha256": "045fd0486e067ad1b3f5ee60a837144423ea3d82842de57d55b2640d8ba7d0c4"
+    },
+    {
+      "path": "android/app/src/androidTest/assets/contracts/profile-read.json",
+      "group": "android",
+      "bytes": 542,
+      "sha256": "4f6918c2e3e2957020506edca166d5450b8683fdb93bc031c134943c0ab4b144"
+    },
+    {
+      "path": "android/app/src/androidTest/assets/motivation/motivation-final.json",
+      "group": "android",
+      "bytes": 1535,
+      "sha256": "7ab5437e7eb652d28b2435c672200532bf5fef6c55e864c71e16aa2fa64e804e"
+    },
+    {
+      "path": "android/app/src/androidTest/assets/motivation/motivation-pending-backfill.json",
+      "group": "android",
+      "bytes": 1541,
+      "sha256": "306d000cf72aba5efdd7ec77009740aa651be90e9142b1ef8c85733fda88c9fa"
+    },
+    {
+      "path": "android/app/src/androidTest/assets/motivation/motivation-pending-materialization.json",
+      "group": "android",
+      "bytes": 1553,
+      "sha256": "d5c466bdcaf8c029441a72e15eba78d2b1592707a7ddeafee6e5ca6d5cef8b07"
+    },
+    {
+      "path": "android/app/src/androidTest/assets/motivation/motivation-revoked.json",
+      "group": "android",
+      "bytes": 1586,
+      "sha256": "bffb94768e49db2a5364f081e6f21c7894ea3c7da7764eac6cf63308fb636989"
+    },
+    {
+      "path": "android/app/src/androidTest/assets/nemesis/final.json",
+      "group": "android",
+      "bytes": 1129,
+      "sha256": "5478d0ed53a20b3977515a6373c56b58e58db176568dda36d61ad03117ba4fb6"
+    },
+    {
+      "path": "android/app/src/androidTest/assets/nemesis/hidden.json",
+      "group": "android",
+      "bytes": 809,
+      "sha256": "e03b7dba03ab5ab1bf5fb2a976bec93f083eb29ddef98c4f4813a1ba2dd12e6b"
+    },
+    {
+      "path": "android/app/src/androidTest/assets/nemesis/metadata.json",
+      "group": "android",
+      "bytes": 719,
+      "sha256": "ca08b36ae66377014319ad0df68cf03bb049ea4de86cefa4220e3aeb66a04df1"
+    },
+    {
+      "path": "android/app/src/androidTest/assets/nemesis/pending.json",
+      "group": "android",
+      "bytes": 289,
+      "sha256": "20569ae0d5c8c0fc2588056c49800193512c551449b21fd6149ce055e4ad1fd9"
+    },
+    {
+      "path": "android/app/src/androidTest/assets/nemesis/provisional.json",
+      "group": "android",
+      "bytes": 1085,
+      "sha256": "02b6745114e1668036a8c286eeb242f70f62268272fa5f4384f2ab1259015802"
+    },
+    {
+      "path": "android/app/src/androidTest/java/pl/roseru/kalorie/AchievementPresentationTest.kt",
+      "group": "android",
+      "bytes": 8453,
+      "sha256": "05f2fb6693a445afbaa0a7c936c38c621d4bbb1fa1a70e38e356c9081776260d"
+    },
+    {
+      "path": "android/app/src/androidTest/java/pl/roseru/kalorie/AchievementStorageTest.kt",
+      "group": "android",
+      "bytes": 14040,
+      "sha256": "15b7f1b64454c2d3acf380cafe9d002b6437171541d160ef6daaf31dedd0b77e"
+    },
+    {
+      "path": "android/app/src/androidTest/java/pl/roseru/kalorie/ActivityGoalStorageTest.kt",
+      "group": "android",
+      "bytes": 3440,
+      "sha256": "791d0b8ef7d0dd7cafb5a91997da2c438e07eec5f8fcab5ed27e346403c65944"
+    },
+    {
+      "path": "android/app/src/androidTest/java/pl/roseru/kalorie/AnalyticsFlowTest.kt",
+      "group": "android",
+      "bytes": 5712,
+      "sha256": "b8da56281d43797032019a230ed87db9a50647ad595c6983e141f4a4518e9748"
+    },
+    {
+      "path": "android/app/src/androidTest/java/pl/roseru/kalorie/AnalyticsMidnightFlowTest.kt",
+      "group": "android",
+      "bytes": 3265,
+      "sha256": "f5db0f38f35769f59a25b5dc9a4fede15a682919ae54a5d2e2031439ac2e98e6"
+    },
+    {
+      "path": "android/app/src/androidTest/java/pl/roseru/kalorie/AnalyticsMidnightStorageTest.kt",
+      "group": "android",
+      "bytes": 4612,
+      "sha256": "76d484306abb5a940c090a8b9a734f6c4d5d6dbcca4d5c2a03e99a4e7d93f342"
+    },
+    {
+      "path": "android/app/src/androidTest/java/pl/roseru/kalorie/AnalyticsPresentationTest.kt",
+      "group": "android",
+      "bytes": 8142,
+      "sha256": "75a189e34e768033cfbe1163bcce540a3ab9b994e45d4e5d4e9f1b1e1c128e20"
+    },
+    {
+      "path": "android/app/src/androidTest/java/pl/roseru/kalorie/AnalyticsStorageTest.kt",
+      "group": "android",
+      "bytes": 7812,
+      "sha256": "7a8d16ab2672b7d929b44b9acada1dd0c6e82bd4b25c276996b42eff32031fe7"
+    },
+    {
+      "path": "android/app/src/androidTest/java/pl/roseru/kalorie/BootstrapGoalStorageTest.kt",
+      "group": "android",
+      "bytes": 17228,
+      "sha256": "0576db582318749b17c3205a00fb2470278a56bac04daef8e649516745e448f0"
+    },
+    {
+      "path": "android/app/src/androidTest/java/pl/roseru/kalorie/CanonicalDiaryScreenTest.kt",
+      "group": "android",
+      "bytes": 4560,
+      "sha256": "7c9001e38f7ff89b40a99bff357ae7fc3f7d0de3300f4148c45cd1a65e770110"
+    },
+    {
+      "path": "android/app/src/androidTest/java/pl/roseru/kalorie/CatalogMealStorageTest.kt",
+      "group": "android",
+      "bytes": 6695,
+      "sha256": "af824ccfdaa5495036f3a559dee4fb706c7a53e71907f900cfbec86ca5d28b4a"
+    },
+    {
+      "path": "android/app/src/androidTest/java/pl/roseru/kalorie/CatalogStorageTest.kt",
+      "group": "android",
+      "bytes": 21048,
+      "sha256": "7e4ced9ceef63b8ebdc41f70975375e21a468b8842ce386e33ff44fa283e0a67"
+    },
+    {
+      "path": "android/app/src/androidTest/java/pl/roseru/kalorie/CompletenessFlowTest.kt",
+      "group": "android",
+      "bytes": 2061,
+      "sha256": "8e82dd7963e0c1d9023ee77161962299bf60e175828d2847de7a31031ef97633"
+    },
+    {
+      "path": "android/app/src/androidTest/java/pl/roseru/kalorie/CompletenessStorageTest.kt",
+      "group": "android",
+      "bytes": 2728,
+      "sha256": "83bcfe65467ec6ab45c59ab3e310d3f3ef6a407199543d8dbd07092e62a808e4"
+    },
+    {
+      "path": "android/app/src/androidTest/java/pl/roseru/kalorie/DiaryFlowTest.kt",
+      "group": "android",
+      "bytes": 30022,
+      "sha256": "ed868d4f13c7616d4b291455851d8a9e42608d8d879a80661bb1e2163346598f"
+    },
+    {
+      "path": "android/app/src/androidTest/java/pl/roseru/kalorie/DiaryStorageTest.kt",
+      "group": "android",
+      "bytes": 4750,
+      "sha256": "77ec5df152256847f1ad63a3b4fd846b03c23cf869e75cba3dadb9f933d0ad01"
+    },
+    {
+      "path": "android/app/src/androidTest/java/pl/roseru/kalorie/LocalFeaturesTest.kt",
+      "group": "android",
+      "bytes": 9134,
+      "sha256": "fa75159a3790407da4bb23e8d149424a914f3f0511688a56780a63503ee55ffa"
+    },
+    {
+      "path": "android/app/src/androidTest/java/pl/roseru/kalorie/ManualMealStorageTest.kt",
+      "group": "android",
+      "bytes": 9568,
+      "sha256": "b92c8d86f220f1ee9ad84c86f1ebec09904ff79fb0c9c1353d4863cc72e39ce0"
+    },
+    {
+      "path": "android/app/src/androidTest/java/pl/roseru/kalorie/MealPhotoAdaptiveTest.kt",
+      "group": "android",
+      "bytes": 2533,
+      "sha256": "e272d4766f92f4f91b82341ecd19948662b32e15053e2f81870cdfc146bf5824"
+    },
+    {
+      "path": "android/app/src/androidTest/java/pl/roseru/kalorie/MealPhotoScreenTest.kt",
+      "group": "android",
+      "bytes": 5290,
+      "sha256": "948b1ed9fb358687a5f415607ac893ef0fb598aff7b138bad01af8c7fe2860d9"
+    },
+    {
+      "path": "android/app/src/androidTest/java/pl/roseru/kalorie/MealPhotoStorageTest.kt",
+      "group": "android",
+      "bytes": 16699,
+      "sha256": "3d35b7e7a46f333f933824a8666ec47db5878ab707b0986b99f717e2e136c2a0"
+    },
+    {
+      "path": "android/app/src/androidTest/java/pl/roseru/kalorie/MealPushScreenTest.kt",
+      "group": "android",
+      "bytes": 4124,
+      "sha256": "e95a96d5a1d6f53da6de1703244e92663841c0c0d7faf6ed3323217258a2d65c"
+    },
+    {
+      "path": "android/app/src/androidTest/java/pl/roseru/kalorie/MealPushStorageTest.kt",
+      "group": "android",
+      "bytes": 29074,
+      "sha256": "e5565b8b438ba4d0cb7d4ba2484fcdf50d2baf3b399e616b5e2a295fcd287f41"
+    },
+    {
+      "path": "android/app/src/androidTest/java/pl/roseru/kalorie/NemesisMutationScreenTest.kt",
+      "group": "android",
+      "bytes": 6817,
+      "sha256": "df03a570b7c553479069da8863787914f5b845fa1d59855a9d712b739d1a1a17"
+    },
+    {
+      "path": "android/app/src/androidTest/java/pl/roseru/kalorie/NemesisScreenTest.kt",
+      "group": "android",
+      "bytes": 7951,
+      "sha256": "5a0d9abb39091a079877ff0c88f499465178aad9ac0bfcf0a3723cceef2ae14a"
+    },
+    {
+      "path": "android/app/src/androidTest/java/pl/roseru/kalorie/OwnerStorageTest.kt",
+      "group": "android",
+      "bytes": 20912,
+      "sha256": "671d5ab8f48b6fecc4d6bcbbcc9650ad998ba85ac87afc2ece861c192f2c7e54"
+    },
+    {
+      "path": "android/app/src/androidTest/java/pl/roseru/kalorie/PhotoAnalysisStorageTest.kt",
+      "group": "android",
+      "bytes": 71477,
+      "sha256": "bd24c73302507cba82e4e9fb88e50b0d39f95fc3c5ceef0bb2b0a91cb26cc1df"
+    },
+    {
+      "path": "android/app/src/androidTest/java/pl/roseru/kalorie/PhotoCancellationScreenTest.kt",
+      "group": "android",
+      "bytes": 3873,
+      "sha256": "31e3e04b06f2fc2009b80831d39ab9083cea2d16585b8f2a8584027cb1c24a45"
+    },
+    {
+      "path": "android/app/src/androidTest/java/pl/roseru/kalorie/PhotoCapabilitiesScreenTest.kt",
+      "group": "android",
+      "bytes": 3351,
+      "sha256": "b7e65e6d08f8423201d8d90436071c13bd1ae49d93030631772228c24d76826f"
+    },
+    {
+      "path": "android/app/src/androidTest/java/pl/roseru/kalorie/PhotoConfirmationScreenTest.kt",
+      "group": "android",
+      "bytes": 7363,
+      "sha256": "648d68ec14c18184e53eb7149b96eaa2608f66917954f18863cf1128e11ab5c9"
+    },
+    {
+      "path": "android/app/src/androidTest/java/pl/roseru/kalorie/PhotoMealDraftScreenTest.kt",
+      "group": "android",
+      "bytes": 7654,
+      "sha256": "f0e6189d4a2a1e0afc894b4fb67f415d105670aa93184ad228505b981a872291"
+    },
+    {
+      "path": "android/app/src/androidTest/java/pl/roseru/kalorie/PhotoUploadScreenTest.kt",
+      "group": "android",
+      "bytes": 11125,
+      "sha256": "317ea287dd80ae1ff99f074b116de14f18f28aa8b03c1fb3ab0a18b8a61bf341"
+    },
+    {
+      "path": "android/app/src/androidTest/java/pl/roseru/kalorie/RankingConsentScreenTest.kt",
+      "group": "android",
+      "bytes": 7098,
+      "sha256": "6b565a765daf827d39e792364d962ae794f8489a54bb8263f8ed1039b947361d"
+    },
+    {
+      "path": "android/app/src/androidTest/java/pl/roseru/kalorie/RankingScreenTest.kt",
+      "group": "android",
+      "bytes": 8100,
+      "sha256": "e46139ab29b0e0651c17137be93424c9a9053e62ab188c028897a5076415eac9"
+    },
+    {
+      "path": "android/app/src/androidTest/java/pl/roseru/kalorie/RationStorageTest.kt",
+      "group": "android",
+      "bytes": 9880,
+      "sha256": "c11f03086968f27483325ab379480126e4130f73b3e1179cd6bc7dfff382e9d6"
+    },
+    {
+      "path": "android/app/src/androidTest/java/pl/roseru/kalorie/ServerDiaryMigrationTest.kt",
+      "group": "android",
+      "bytes": 5257,
+      "sha256": "c6409e34e8e0cf2c753351a2faff26d4114954381484b00fa8eac96d452ec43b"
+    },
+    {
+      "path": "android/app/src/androidTest/java/pl/roseru/kalorie/ServerDiaryScreenTest.kt",
+      "group": "android",
+      "bytes": 2152,
+      "sha256": "d044906b5311a225b5ab084136c0806408e1f9fa83255f5088c765cfb2e59789"
+    },
+    {
+      "path": "android/app/src/androidTest/java/pl/roseru/kalorie/ServerDiaryStorageTest.kt",
+      "group": "android",
+      "bytes": 20041,
+      "sha256": "242a306bd03548c0d1fb0c079d655b4c18956d65eb938a319dc32b5798b8ff4a"
+    },
+    {
+      "path": "android/app/src/androidTest/java/pl/roseru/kalorie/ServerMotivationScreenTest.kt",
+      "group": "android",
+      "bytes": 7921,
+      "sha256": "6c92972a941b30b5935c042721aa173f3d185b75f087307faf460a2dde5da75c"
+    },
+    {
+      "path": "android/app/src/androidTest/java/pl/roseru/kalorie/ServerProfileScreenTest.kt",
+      "group": "android",
+      "bytes": 4820,
+      "sha256": "a0bccf7f7e5856d2c5b45b62b17c6167ca34cf5f58d4200a46f9ed9d4b9123b8"
+    },
+    {
+      "path": "android/app/src/androidTest/java/pl/roseru/kalorie/ServerSnapshotStorageTest.kt",
+      "group": "android",
+      "bytes": 17781,
+      "sha256": "bdb910051b467905b6013bc8f248a0248f647ce71c3a61ddbb49ebfe492a6fb9"
+    },
+    {
+      "path": "android/app/src/androidTest/java/pl/roseru/kalorie/SessionSecurityTest.kt",
+      "group": "android",
+      "bytes": 229564,
+      "sha256": "72677321002d2e0f557755ed3a849a5fe29b72558c2a40ab792dd11b80cd2f62"
+    },
+    {
+      "path": "android/app/src/androidTest/java/pl/roseru/kalorie/SyncConflictScreenTest.kt",
+      "group": "android",
+      "bytes": 3378,
+      "sha256": "8120a85e93c83391f1111a3067a0ff99a3778758cc809d4799e1b06689fdb2ea"
+    },
+    {
+      "path": "android/app/src/androidTest/java/pl/roseru/kalorie/SyncConflictStorageTest.kt",
+      "group": "android",
+      "bytes": 19664,
+      "sha256": "463de96fe9e2e7fff216e616535c2dbce7f9a82326710cfe0cfc4c0aeeb36c35"
+    },
+    {
+      "path": "android/app/src/androidTest/java/pl/roseru/kalorie/WeightSyncStorageTest.kt",
+      "group": "android",
+      "bytes": 14156,
+      "sha256": "77a7dbaa78615d36d2f27c43fce70cd637dcefdad53c3228dfce91375a0dee32"
+    },
+    {
+      "path": "android/app/src/liveReceipt/java/pl/roseru/kalorie/LiveApiLateReceiptTest.kt",
+      "group": "android",
+      "bytes": 3473,
+      "sha256": "e9015521c658b76761010dd6566b1a0d667ba69e7cf580ea6643a93ac54eb9d0"
+    },
+    {
+      "path": "android/app/src/main/AndroidManifest.xml",
+      "group": "android",
+      "bytes": 2049,
+      "sha256": "ef6f7834b31b3f3cc47015e19b8302018423893376678e6c4ce91caf77e8899f"
+    },
+    {
+      "path": "android/app/src/main/assets/catalog/e2/base-pl.1.json.gz.bin",
+      "group": "android",
+      "bytes": 3099,
+      "sha256": "65f4aae8002fd5522d0edb4689e05682103b80fbe3e6dbc68f4bf02c645b2bef"
+    },
+    {
+      "path": "android/app/src/main/assets/catalog/e2/catalog.schema.json",
+      "group": "android",
+      "bytes": 14080,
+      "sha256": "91eaac7aaeeda723d5ee7911fa41cc77fe12c47195d3f022ad79231b79048cf0"
+    },
+    {
+      "path": "android/app/src/main/assets/catalog/e2/common.schema.json",
+      "group": "android",
+      "bytes": 3754,
+      "sha256": "991dca36b6a358b14eb064e0817cb5510eb518327115a5c681c4509961299dac"
+    },
+    {
+      "path": "android/app/src/main/assets/catalog/e2/manifest.json",
+      "group": "android",
+      "bytes": 434,
+      "sha256": "fee1d2c9f96922c0c16ea35170a4c19c65ce96c3a0ecf0b6a74bf30d7f74048e"
+    },
+    {
+      "path": "android/app/src/main/assets/catalog/products-v1.json",
+      "group": "android",
+      "bytes": 1806,
+      "sha256": "87cadb43a256d79144ebc65f94f0e235cd19651e9e070559ea300848604d8162"
+    },
+    {
+      "path": "android/app/src/main/assets/catalog/rations-v1.json",
+      "group": "android",
+      "bytes": 1652,
+      "sha256": "a53735cd629daf52de367c4cf55b847300681aa8d353acbfc792ef03bea654f4"
+    },
+    {
+      "path": "android/app/src/main/assets/sync/common.schema.json",
+      "group": "android",
+      "bytes": 4732,
+      "sha256": "1da6f3135570b5c812af64c2287d0c79029acb23262b38aa345e04ae5767fc2e"
+    },
+    {
+      "path": "android/app/src/main/assets/sync/domain.schema.json",
+      "group": "android",
+      "bytes": 77073,
+      "sha256": "3286a3c09d7c2959479eb082fe8fc274f1101b01d6c51dc6bf5f036e01e0decb"
+    },
+    {
+      "path": "android/app/src/main/assets/sync/sync.schema.json",
+      "group": "android",
+      "bytes": 53575,
+      "sha256": "c08464421bff7661489c06d4fd5a20b227eff74ed048cc0ded737f56e1a85004"
+    },
+    {
+      "path": "android/app/src/main/java/pl/roseru/kalorie/CalorieApplication.kt",
+      "group": "android",
+      "bytes": 4263,
+      "sha256": "2e7bee76375d0d604fc2334252340cddf645878a5b62bfd5a63be321499846a4"
+    },
+    {
+      "path": "android/app/src/main/java/pl/roseru/kalorie/DiaryViewModel.kt",
+      "group": "android",
+      "bytes": 8419,
+      "sha256": "796635b17698a986ed24a986e4f8a45ec36088987b5404e7d4803aa94f8f43a0"
+    },
+    {
+      "path": "android/app/src/main/java/pl/roseru/kalorie/MainActivity.kt",
+      "group": "android",
+      "bytes": 11444,
+      "sha256": "196a34212e41d5b1d57b5fa99ac17699aba4e00121d2de7960e9f2f77eec99bc"
+    },
+    {
+      "path": "android/app/src/main/java/pl/roseru/kalorie/core/Achievements.kt",
+      "group": "android",
+      "bytes": 5783,
+      "sha256": "2537a79d2d6d095752b47814034b0f42481b911f61bf3436b611d0f6dedec3f6"
+    },
+    {
+      "path": "android/app/src/main/java/pl/roseru/kalorie/core/Analytics.kt",
+      "group": "android",
+      "bytes": 4398,
+      "sha256": "ef6cb62139aa442ba6e778bb0bb80461d03feed0509343dc5a270640edcaffc4"
+    },
+    {
+      "path": "android/app/src/main/java/pl/roseru/kalorie/core/BootstrapProtocol.kt",
+      "group": "android",
+      "bytes": 2056,
+      "sha256": "ead40bc5d2f14934f46e8f581cb3a7ae7ee7635f7dca338295e32302ebda2e4b"
+    },
+    {
+      "path": "android/app/src/main/java/pl/roseru/kalorie/core/DiaryCompleteness.kt",
+      "group": "android",
+      "bytes": 252,
+      "sha256": "c36fa6a470b01e219d3360abf91e7fa8db6898c489f75b251886505da57a0915"
+    },
+    {
+      "path": "android/app/src/main/java/pl/roseru/kalorie/core/LocalDayClock.kt",
+      "group": "android",
+      "bytes": 1274,
+      "sha256": "4e59e02e96112f2b90f19ec22e8aee1a22094d1a3aaa77cbca67cfd1db3443d6"
+    },
+    {
+      "path": "android/app/src/main/java/pl/roseru/kalorie/core/LocalProfile.kt",
+      "group": "android",
+      "bytes": 1505,
+      "sha256": "6c63d61a0f56fdca37d96548538748a13f8915fa513c1f61684c754a71f21449"
+    },
+    {
+      "path": "android/app/src/main/java/pl/roseru/kalorie/core/MotivationReadProtocol.kt",
+      "group": "android",
+      "bytes": 7613,
+      "sha256": "d0baa2643c731787243f2ef8da5beb2140c319d77480e14ecfbf4327027588f2"
+    },
+    {
+      "path": "android/app/src/main/java/pl/roseru/kalorie/core/NemesisMutationProtocol.kt",
+      "group": "android",
+      "bytes": 10261,
+      "sha256": "eae615c5e891106f39ed02d7469e3a38a62832e85a02b0aae5c55cca39640d5f"
+    },
+    {
+      "path": "android/app/src/main/java/pl/roseru/kalorie/core/NemesisReadProtocol.kt",
+      "group": "android",
+      "bytes": 13215,
+      "sha256": "3fffb29d87194b460e2758eb8fe7e20410f19a4a5e7bab6a6fecd48138e307e7"
+    },
+    {
+      "path": "android/app/src/main/java/pl/roseru/kalorie/core/Nutrition.kt",
+      "group": "android",
+      "bytes": 2525,
+      "sha256": "fe85554dc7ab0a240bf93c8f67c8346fa610f3d4145e7214250972cd83e140f6"
+    },
+    {
+      "path": "android/app/src/main/java/pl/roseru/kalorie/core/NutritionV1.kt",
+      "group": "android",
+      "bytes": 4413,
+      "sha256": "1ddd61be562c2a5ed75bb727e1d16cf232767ed1a50d6e261e9b66d22f55729b"
+    },
+    {
+      "path": "android/app/src/main/java/pl/roseru/kalorie/core/PhotoAnalysisProgress.kt",
+      "group": "android",
+      "bytes": 5832,
+      "sha256": "f257f5bd183808ef8c21237aedface84d9902b2dea72d217822e67ff15793027"
+    },
+    {
+      "path": "android/app/src/main/java/pl/roseru/kalorie/core/PhotoAnalysisProtocol.kt",
+      "group": "android",
+      "bytes": 9188,
+      "sha256": "4076b68c78be0280206a448ab15f2a5d47a2b012f0a622d34e93f7fd48423bf1"
+    },
+    {
+      "path": "android/app/src/main/java/pl/roseru/kalorie/core/PhotoAnalysisReadProtocol.kt",
+      "group": "android",
+      "bytes": 13628,
+      "sha256": "efed7e259807188c0c5f4ce94ed556c0adf2b879c508a62fa0dd8633a4fcdee9"
+    },
+    {
+      "path": "android/app/src/main/java/pl/roseru/kalorie/core/PhotoAnalysisSnapshot.kt",
+      "group": "android",
+      "bytes": 12342,
+      "sha256": "e803ec52f43cf2215e7067b55a5e6838f8c1ee84ef1be6a6a776f621f35c56dc"
+    },
+    {
+      "path": "android/app/src/main/java/pl/roseru/kalorie/core/PhotoCancellation.kt",
+      "group": "android",
+      "bytes": 3253,
+      "sha256": "5bea379fc8b4d4d40a132f592586247cfe90def9df2592eba59474509146dc6a"
+    },
+    {
+      "path": "android/app/src/main/java/pl/roseru/kalorie/core/PhotoCapabilitiesProtocol.kt",
+      "group": "android",
+      "bytes": 3224,
+      "sha256": "73da3d957965785e99e64b0d93f396265ae58ccc1e93ec70a4e1b01977b8b869"
+    },
+    {
+      "path": "android/app/src/main/java/pl/roseru/kalorie/core/PhotoConfirmation.kt",
+      "group": "android",
+      "bytes": 9386,
+      "sha256": "32ad9669ae8ba10526c3b8a66514b17eba4444644e4439e49b8196dc4c3bdd51"
+    },
+    {
+      "path": "android/app/src/main/java/pl/roseru/kalorie/core/PhotoMealDraft.kt",
+      "group": "android",
+      "bytes": 11651,
+      "sha256": "b2765e1fe1ceac00a253552eb94ffc4a611356e4b6bd8bd5b6b44e676474e52c"
+    },
+    {
+      "path": "android/app/src/main/java/pl/roseru/kalorie/core/ProfileReadProtocol.kt",
+      "group": "android",
+      "bytes": 4182,
+      "sha256": "f6fff8d5e264be585e28709d5ff01cc55a536d364a46e6a08dcea7f09d431ad6"
+    },
+    {
+      "path": "android/app/src/main/java/pl/roseru/kalorie/core/RankingConsentProtocol.kt",
+      "group": "android",
+      "bytes": 3589,
+      "sha256": "ef9799dea3e630ff17aee8be6e198a8b9e696b1f88f41a81997d935d6d24c449"
+    },
+    {
+      "path": "android/app/src/main/java/pl/roseru/kalorie/core/RankingReadProtocol.kt",
+      "group": "android",
+      "bytes": 4155,
+      "sha256": "562172f3b19b9c13ac905195e09500063b203d7ee978ea828f0306ce6b6800a5"
+    },
+    {
+      "path": "android/app/src/main/java/pl/roseru/kalorie/core/SessionIdentity.kt",
+      "group": "android",
+      "bytes": 3751,
+      "sha256": "ea5cc107338c377c3ea126fadd0576ee1e00297aa4711177e8d1cad989e28eb4"
+    },
+    {
+      "path": "android/app/src/main/java/pl/roseru/kalorie/core/catalog/CatalogNutrition.kt",
+      "group": "android",
+      "bytes": 874,
+      "sha256": "190df64e86786d20e53571077669e9ef1464a86224ec4949b97ee47519d88254"
+    },
+    {
+      "path": "android/app/src/main/java/pl/roseru/kalorie/core/catalog/CatalogPackageReader.kt",
+      "group": "android",
+      "bytes": 9051,
+      "sha256": "5bb508461d515509d82418fe416bc4ab2957e735543f2f2bb8a1617f44915178"
+    },
+    {
+      "path": "android/app/src/main/java/pl/roseru/kalorie/core/catalog/CatalogSchema.kt",
+      "group": "android",
+      "bytes": 5196,
+      "sha256": "39b69d50e6bbddfad264e6e3ca4d9b03b236595735fa5964538243cc7883ff13"
+    },
+    {
+      "path": "android/app/src/main/java/pl/roseru/kalorie/core/catalog/StrictJson.kt",
+      "group": "android",
+      "bytes": 4423,
+      "sha256": "e85f23184e33a3a724018dd7b74949c56a16112e42e74b9966d2c9c70709d42f"
+    },
+    {
+      "path": "android/app/src/main/java/pl/roseru/kalorie/core/sync/CatalogMealWire.kt",
+      "group": "android",
+      "bytes": 4449,
+      "sha256": "04cee279e0978d9a9c2fdd7f5d81a8877ad22184dfeec9bf6769902943f3e731"
+    },
+    {
+      "path": "android/app/src/main/java/pl/roseru/kalorie/core/sync/ConflictProtocol.kt",
+      "group": "android",
+      "bytes": 3897,
+      "sha256": "68c2a87a013944233f8c5326f1f310274a927f47880d579c579ab33fdf67b057"
+    },
+    {
+      "path": "android/app/src/main/java/pl/roseru/kalorie/core/sync/ManualMealWire.kt",
+      "group": "android",
+      "bytes": 2070,
+      "sha256": "5b1aafd34f65be1bec4a31bba3729aed1c8d32c0d9731b7db50e09c02118d497"
+    },
+    {
+      "path": "android/app/src/main/java/pl/roseru/kalorie/core/sync/MealWire.kt",
+      "group": "android",
+      "bytes": 4074,
+      "sha256": "96aa52d27b4478246711f75e26d9d26e5495bad0629450041dd9eea24a7d42b7"
+    },
+    {
+      "path": "android/app/src/main/java/pl/roseru/kalorie/core/sync/PrivateProductWire.kt",
+      "group": "android",
+      "bytes": 2357,
+      "sha256": "1e40722b5b49b7dca2f71503523ce3f4c4d1377a1319c24a473fadb31375bbac"
+    },
+    {
+      "path": "android/app/src/main/java/pl/roseru/kalorie/core/sync/PushProtocol.kt",
+      "group": "android",
+      "bytes": 7092,
+      "sha256": "8164a757d831d19d23e16d26c41fe53aa3a150ae9cac0be1d690465619ae1234"
+    },
+    {
+      "path": "android/app/src/main/java/pl/roseru/kalorie/core/sync/ServerDiaryProtocol.kt",
+      "group": "android",
+      "bytes": 5524,
+      "sha256": "0ab3a0f8581da37db919aa8a53bf3b31a14afb8f98b918b8b851d8ee2524d5e7"
+    },
+    {
+      "path": "android/app/src/main/java/pl/roseru/kalorie/core/sync/ServerDiaryValues.kt",
+      "group": "android",
+      "bytes": 3435,
+      "sha256": "ecb0c1631ff9424275d85b5ca02fcc548f4212da31c5b9a8efb87a9f6363b423"
+    },
+    {
+      "path": "android/app/src/main/java/pl/roseru/kalorie/core/sync/SnapshotProtocol.kt",
+      "group": "android",
+      "bytes": 3264,
+      "sha256": "aa475c80839c82fc3bddc3434259a02416aea6deee958cf71161e17e4e11d3b3"
+    },
+    {
+      "path": "android/app/src/main/java/pl/roseru/kalorie/core/sync/SyncWireSchema.kt",
+      "group": "android",
+      "bytes": 8153,
+      "sha256": "28d1ebb707496fafc2fa0565a25e12ff385121dac0765917790e96e4dd8f5318"
+    },
+    {
+      "path": "android/app/src/main/java/pl/roseru/kalorie/core/sync/WeightWire.kt",
+      "group": "android",
+      "bytes": 2655,
+      "sha256": "0ebfaf2faa757eac70f157c5641ff2a2dda4349320b86822d9313366a432a098"
+    },
+    {
+      "path": "android/app/src/main/java/pl/roseru/kalorie/data/AccountBootstrapStore.kt",
+      "group": "android",
+      "bytes": 5561,
+      "sha256": "1219d1278f2fb8182531a8b8a646fa2188950cb22a5af84f34e3ed11c3b19132"
+    },
+    {
+      "path": "android/app/src/main/java/pl/roseru/kalorie/data/AchievementRepository.kt",
+      "group": "android",
+      "bytes": 2053,
+      "sha256": "89ba2591424efc12a8bcf080ae3a801348b6c5165dff5f4f72a71f0f86d81a10"
+    },
+    {
+      "path": "android/app/src/main/java/pl/roseru/kalorie/data/AnalyticsRepository.kt",
+      "group": "android",
+      "bytes": 1492,
+      "sha256": "129618cc21a50546b8941660fa27b970586835dbefd3e527af9d06572f071aca"
+    },
+    {
+      "path": "android/app/src/main/java/pl/roseru/kalorie/data/CanonicalMealMigration.kt",
+      "group": "android",
+      "bytes": 2596,
+      "sha256": "36f4053f2e1387235850c6c4a687d34073f2f3838b904b56d479b5aeb842ef37"
+    },
+    {
+      "path": "android/app/src/main/java/pl/roseru/kalorie/data/CanonicalMeals.kt",
+      "group": "android",
+      "bytes": 6672,
+      "sha256": "854579957720dcdb025cee729ce6dca664734e2db625d6126c4ca9c564cca745"
+    },
+    {
+      "path": "android/app/src/main/java/pl/roseru/kalorie/data/CanonicalWeights.kt",
+      "group": "android",
+      "bytes": 6668,
+      "sha256": "06a2bfd5f9307e98d3c2f5be54b20b9e9cec1bc833941c057ba038c1045a4d30"
+    },
+    {
+      "path": "android/app/src/main/java/pl/roseru/kalorie/data/CatalogDatabase.kt",
+      "group": "android",
+      "bytes": 4543,
+      "sha256": "69cd9eb06a77287e198d7db9615c554b2307cad181f457c528c2bc50e8004956"
+    },
+    {
+      "path": "android/app/src/main/java/pl/roseru/kalorie/data/CatalogStore.kt",
+      "group": "android",
+      "bytes": 5867,
+      "sha256": "e6a8b8b6a6b393497938f8f9b7260622f3fe8203feb9fbc908a34796849d019e"
+    },
+    {
+      "path": "android/app/src/main/java/pl/roseru/kalorie/data/Database.kt",
+      "group": "android",
+      "bytes": 19892,
+      "sha256": "11d616b697f05c9a3a4dce95f982e10d5e88e74b7c01f7bf9f92c4e0d6c7791b"
+    },
+    {
+      "path": "android/app/src/main/java/pl/roseru/kalorie/data/DatabaseV6.kt",
+      "group": "android",
+      "bytes": 3546,
+      "sha256": "b4674c67f975c5b5f24f74b139e12742af8bb41dc0ea642cd50a88e49355446b"
+    },
+    {
+      "path": "android/app/src/main/java/pl/roseru/kalorie/data/DiaryRepository.kt",
+      "group": "android",
+      "bytes": 25711,
+      "sha256": "45bc561a7631e34ba2d85f065292c1b6453f797e568db4a9cc2da76fe9815c41"
+    },
+    {
+      "path": "android/app/src/main/java/pl/roseru/kalorie/data/LocalOwners.kt",
+      "group": "android",
+      "bytes": 5296,
+      "sha256": "3cfb508e947aa85aaa873bd5d50f18f8ba0e7e44f8d6ebcbee7d5298cc3918a9"
+    },
+    {
+      "path": "android/app/src/main/java/pl/roseru/kalorie/data/MealPushStore.kt",
+      "group": "android",
+      "bytes": 21205,
+      "sha256": "2009963fb82ae71d2d45ffb0025ad4d902bd6b2291c5d6af103a1f2467320cff"
+    },
+    {
+      "path": "android/app/src/main/java/pl/roseru/kalorie/data/Preferences.kt",
+      "group": "android",
+      "bytes": 787,
+      "sha256": "0a9f7494a79f74e130d1b14eb99f128a0c11f23255015ce0ea493bb4535fc0b9"
+    },
+    {
+      "path": "android/app/src/main/java/pl/roseru/kalorie/data/ServerDiaryDatabase.kt",
+      "group": "android",
+      "bytes": 5495,
+      "sha256": "3c03005d20b4896d0c7d50b9f40d2a75b1d3ef454fb8c7093c2692e3f7a2ebea"
+    },
+    {
+      "path": "android/app/src/main/java/pl/roseru/kalorie/data/ServerDiaryStore.kt",
+      "group": "android",
+      "bytes": 16974,
+      "sha256": "86c28ae67c593009389f9f2440b163466367e41a8316a69f0f63de714d29daff"
+    },
+    {
+      "path": "android/app/src/main/java/pl/roseru/kalorie/data/ServerSnapshotStore.kt",
+      "group": "android",
+      "bytes": 15093,
+      "sha256": "1316f90ebdebc9d29e15509e297e3001fe5c786d87021fc872c763175c574d03"
+    },
+    {
+      "path": "android/app/src/main/java/pl/roseru/kalorie/data/SyncConflictStore.kt",
+      "group": "android",
+      "bytes": 16982,
+      "sha256": "5a1992278c87947bea248e0be2b2d31f25a67942198b74e0c18afdde237df55f"
+    },
+    {
+      "path": "android/app/src/main/java/pl/roseru/kalorie/photo/MealPhotoPreparation.kt",
+      "group": "android",
+      "bytes": 5536,
+      "sha256": "032b8608113e778e02d98ac324ca94b08cae703d1cb949a1de8f328a5a78158e"
+    },
+    {
+      "path": "android/app/src/main/java/pl/roseru/kalorie/photo/MealPhotoStore.kt",
+      "group": "android",
+      "bytes": 6055,
+      "sha256": "e8b3ef77867821aff16451cae194d8f25284ab52163808bbbd26198076e46f3d"
+    },
+    {
+      "path": "android/app/src/main/java/pl/roseru/kalorie/photo/MealPhotoViewModel.kt",
+      "group": "android",
+      "bytes": 6700,
+      "sha256": "255c4fbf0faabd1d710bfc367a9f1d2912df4964ebc3dbcb4436313c1c237db3"
+    },
+    {
+      "path": "android/app/src/main/java/pl/roseru/kalorie/photo/PhotoAnalysisStore.kt",
+      "group": "android",
+      "bytes": 33933,
+      "sha256": "d8548a931a5b53f8560e5089342eda25d44e83b19e8b9072a2e35a665f1da8db"
+    },
+    {
+      "path": "android/app/src/main/java/pl/roseru/kalorie/photo/PhotoConfirmationHistory.kt",
+      "group": "android",
+      "bytes": 3372,
+      "sha256": "780e810395d300ebcff66702556523d5be3ddae8c85599fc291a9ccb2d80f538"
+    },
+    {
+      "path": "android/app/src/main/java/pl/roseru/kalorie/session/ApiReadProof.kt",
+      "group": "android",
+      "bytes": 209,
+      "sha256": "d4f81419b8547b1b6bb8a2ac401579cddd7b673641f14bac48e39b3f91085b34"
+    },
+    {
+      "path": "android/app/src/main/java/pl/roseru/kalorie/session/BootstrapGateway.kt",
+      "group": "android",
+      "bytes": 15906,
+      "sha256": "c3ce3f09d3140b5414d9bf420bb8c214cec76a7a12787e236dd234344553654d"
+    },
+    {
+      "path": "android/app/src/main/java/pl/roseru/kalorie/session/MealPushGateway.kt",
+      "group": "android",
+      "bytes": 1057,
+      "sha256": "146660d395c34464cb5ce75d6cdce494d3c7851fc7d19287fe74b9f708069f99"
+    },
+    {
+      "path": "android/app/src/main/java/pl/roseru/kalorie/session/MealPushPanel.kt",
+      "group": "android",
+      "bytes": 3018,
+      "sha256": "a8625d68bd85476ee9020c12cc22384a2841ed1dc17b396e89c5eca12c6edfe8"
+    },
+    {
+      "path": "android/app/src/main/java/pl/roseru/kalorie/session/OAuthRedirectActivity.kt",
+      "group": "android",
+      "bytes": 876,
+      "sha256": "487e5f596c0266f0902e0857887aa7ddfaba44975d112e9511fe8f51104c1b76"
+    },
+    {
+      "path": "android/app/src/main/java/pl/roseru/kalorie/session/OidcGateway.kt",
+      "group": "android",
+      "bytes": 2384,
+      "sha256": "a8bb3c6e171428c3b14d39185eb645631b13eb2768844a239bf38861c5a94727"
+    },
+    {
+      "path": "android/app/src/main/java/pl/roseru/kalorie/session/PhotoAnalysisGateway.kt",
+      "group": "android",
+      "bytes": 1340,
+      "sha256": "232b2e802d1d9f53dafe6a59ef366c09b9035f19febed7895fedc33c6f7c5e8f"
+    },
+    {
+      "path": "android/app/src/main/java/pl/roseru/kalorie/session/PhotoAnalysisPreview.kt",
+      "group": "android",
+      "bytes": 2264,
+      "sha256": "c7540367117ac0341f910ecdf2695ac7bd9b91b79945be96d7548000b7d0c515"
+    },
+    {
+      "path": "android/app/src/main/java/pl/roseru/kalorie/session/PhotoCancellationStatus.kt",
+      "group": "android",
+      "bytes": 1086,
+      "sha256": "9a5db49ed59e83575c13e13de8c411ed882bcb5c6995f6127be95e586342baf2"
+    },
+    {
+      "path": "android/app/src/main/java/pl/roseru/kalorie/session/PhotoConfirmationStatus.kt",
+      "group": "android",
+      "bytes": 1105,
+      "sha256": "462873114d3f1ca938ab6c2d8e31a9e28bf9dfef7ae2943e928cbe0fed9a2b52"
+    },
+    {
+      "path": "android/app/src/main/java/pl/roseru/kalorie/session/PhotoMealDraftPreview.kt",
+      "group": "android",
+      "bytes": 2157,
+      "sha256": "e37e62d894c7bebc3222e2b4e9cb5fd20faa86c75f31be444b06a38b09f8cbee"
+    },
+    {
+      "path": "android/app/src/main/java/pl/roseru/kalorie/session/PhotoUploadStatus.kt",
+      "group": "android",
+      "bytes": 637,
+      "sha256": "f5d7408ddebeb0964a353d7d7259a490487959b1414416c7a5298d06aeb67fc4"
+    },
+    {
+      "path": "android/app/src/main/java/pl/roseru/kalorie/session/SessionController.kt",
+      "group": "android",
+      "bytes": 161149,
+      "sha256": "fdae0be058f10f9df8ef1420fb082a42544b673a2ed1ad261a6c20ec541ac7cc"
+    },
+    {
+      "path": "android/app/src/main/java/pl/roseru/kalorie/session/SessionScreen.kt",
+      "group": "android",
+      "bytes": 12738,
+      "sha256": "a59236918113281efe0c3b45648e650480967f1bf80c460bb245714cde314f11"
+    },
+    {
+      "path": "android/app/src/main/java/pl/roseru/kalorie/session/SessionVault.kt",
+      "group": "android",
+      "bytes": 3336,
+      "sha256": "2bf67743f6722ce7bd883fcdb181eece7aa1a4ad28319619141625eb892e03cc"
+    },
+    {
+      "path": "android/app/src/main/java/pl/roseru/kalorie/session/SyncConflictPanel.kt",
+      "group": "android",
+      "bytes": 8740,
+      "sha256": "d23f9141d967f8e63bfefff68d3449ce6d43889b5b90715678b576d3231a8884"
+    },
+    {
+      "path": "android/app/src/main/java/pl/roseru/kalorie/ui/AchievementsScreen.kt",
+      "group": "android",
+      "bytes": 11053,
+      "sha256": "4a6b03171b67f18a4568ac61f0855221a7f9bea4bea76a22debb0263252dc669"
+    },
+    {
+      "path": "android/app/src/main/java/pl/roseru/kalorie/ui/AnalyticsScreen.kt",
+      "group": "android",
+      "bytes": 22176,
+      "sha256": "c689d4c005f05c01b91850ac72deafe02347a49ab71c69463acd5e4e7b3af1d2"
+    },
+    {
+      "path": "android/app/src/main/java/pl/roseru/kalorie/ui/App.kt",
+      "group": "android",
+      "bytes": 7299,
+      "sha256": "a66cfd1c4d2b3477f846aebb4f44e6f7ef0e54fd38363e246a69ef32b1f67529"
+    },
+    {
+      "path": "android/app/src/main/java/pl/roseru/kalorie/ui/Components.kt",
+      "group": "android",
+      "bytes": 4050,
+      "sha256": "6efaa4943bf94e5b8444f3477bf88cccec84ce8a55b88cda58954665fd2345b6"
+    },
+    {
+      "path": "android/app/src/main/java/pl/roseru/kalorie/ui/CustomFoodScreen.kt",
+      "group": "android",
+      "bytes": 5960,
+      "sha256": "a3d5a0b147129f03c2a91e2cd7ac1329603fbb53e4d7411cda348a970c0467dc"
+    },
+    {
+      "path": "android/app/src/main/java/pl/roseru/kalorie/ui/DiaryScreen.kt",
+      "group": "android",
+      "bytes": 14335,
+      "sha256": "fb2be89236819292d8257fcb0c87cb565b6f57af4f157304fd235b032d49bf56"
+    },
+    {
+      "path": "android/app/src/main/java/pl/roseru/kalorie/ui/FoodScreen.kt",
+      "group": "android",
+      "bytes": 11040,
+      "sha256": "a21705d42239d3bb1d800067f194021de978452947fbad52f45796ac4f5d6499"
+    },
+    {
+      "path": "android/app/src/main/java/pl/roseru/kalorie/ui/Keyboard.kt",
+      "group": "android",
+      "bytes": 597,
+      "sha256": "7aedf1bf7234008d84e763e0c2cc528bb9f3897a7ab04d3bafc223fce3f7a400"
+    },
+    {
+      "path": "android/app/src/main/java/pl/roseru/kalorie/ui/MealPhotoScreen.kt",
+      "group": "android",
+      "bytes": 11654,
+      "sha256": "b88a0f34a5fdce370e06c10bef9d83299fba49e1b48644404e5a01ca68185000"
+    },
+    {
+      "path": "android/app/src/main/java/pl/roseru/kalorie/ui/NemesisMutationPanel.kt",
+      "group": "android",
+      "bytes": 13508,
+      "sha256": "ccf3ab428e2f78ca1a17a8d747484865efe2fe095ec3e4600d7c6af59dd465f0"
+    },
+    {
+      "path": "android/app/src/main/java/pl/roseru/kalorie/ui/NemesisScreen.kt",
+      "group": "android",
+      "bytes": 11738,
+      "sha256": "0335aff3774d972016a29e4776cae99b61e9294fd9469057040bce825ec6be57"
+    },
+    {
+      "path": "android/app/src/main/java/pl/roseru/kalorie/ui/PhotoAnalysisPanel.kt",
+      "group": "android",
+      "bytes": 3882,
+      "sha256": "e82a892c06a2852fadbd23e33b7f2fd6aeffe0d4ddd750a02fb0b44fc4287495"
+    },
+    {
+      "path": "android/app/src/main/java/pl/roseru/kalorie/ui/PhotoCancellationPanel.kt",
+      "group": "android",
+      "bytes": 4654,
+      "sha256": "6ff6433f537fb16c3c53407662297cf1c8b2ccd93570d0af142d928ee1fcc44a"
+    },
+    {
+      "path": "android/app/src/main/java/pl/roseru/kalorie/ui/PhotoCapabilitiesPanel.kt",
+      "group": "android",
+      "bytes": 3591,
+      "sha256": "5f701275ad76d6552b10d245efe2be3caa51c790c2a8e63311ff6d79dd73c6da"
+    },
+    {
+      "path": "android/app/src/main/java/pl/roseru/kalorie/ui/PhotoConfirmationPanel.kt",
+      "group": "android",
+      "bytes": 5243,
+      "sha256": "c0f4de324940dd1107c3903058ba1743db7379b33150ac29fe3ed1b0e9267166"
+    },
+    {
+      "path": "android/app/src/main/java/pl/roseru/kalorie/ui/PhotoMealDraftPanel.kt",
+      "group": "android",
+      "bytes": 10865,
+      "sha256": "dccce0645e245f90b25654f8705ed8e8b7ddf2c37d374cddc65cffb7c9d5e0dd"
+    },
+    {
+      "path": "android/app/src/main/java/pl/roseru/kalorie/ui/PhotoUploadPanel.kt",
+      "group": "android",
+      "bytes": 3584,
+      "sha256": "d51798272374fb3cabfa582a7f163ee3b1c640367e4177704dc815bf09c39834"
+    },
+    {
+      "path": "android/app/src/main/java/pl/roseru/kalorie/ui/Previews.kt",
+      "group": "android",
+      "bytes": 1122,
+      "sha256": "f2fad7a2b1a8105849faba7e760853248d2fe4f18c239883f985ae24b2ffff00"
+    },
+    {
+      "path": "android/app/src/main/java/pl/roseru/kalorie/ui/ProfileScreen.kt",
+      "group": "android",
+      "bytes": 11184,
+      "sha256": "01148ad7b376af843b1fb6e478091ff6075797ae804ada66e01c4834ab9d6112"
+    },
+    {
+      "path": "android/app/src/main/java/pl/roseru/kalorie/ui/RankingConsentScreen.kt",
+      "group": "android",
+      "bytes": 7706,
+      "sha256": "834783338ac19160eb58f5dae684bdddd0a81fa8167686997cbbf6305aec870d"
+    },
+    {
+      "path": "android/app/src/main/java/pl/roseru/kalorie/ui/RankingScreen.kt",
+      "group": "android",
+      "bytes": 6391,
+      "sha256": "e0517048e3cd5bcc790e76d8d3cd90381eacd9786ab334578887a220a9e6d912"
+    },
+    {
+      "path": "android/app/src/main/java/pl/roseru/kalorie/ui/RationScreen.kt",
+      "group": "android",
+      "bytes": 12421,
+      "sha256": "d375297b0b7d855e0d5cedf10c2603b4781217b77c7936a615c7dd84dacfa36a"
+    },
+    {
+      "path": "android/app/src/main/java/pl/roseru/kalorie/ui/ServerMotivationPanel.kt",
+      "group": "android",
+      "bytes": 7008,
+      "sha256": "96333f2b4387cc18b2c4a73fb83a2ecdd39443ffafb4da6d64451930f7a99883"
+    },
+    {
+      "path": "android/app/src/main/java/pl/roseru/kalorie/ui/SettingsScreen.kt",
+      "group": "android",
+      "bytes": 4224,
+      "sha256": "1ac3c3ca69eb68f257e6f8eb9519a826eb2a118c7d3664e15e0db522b0fcde12"
+    },
+    {
+      "path": "android/app/src/main/java/pl/roseru/kalorie/ui/SoldierIcon.kt",
+      "group": "android",
+      "bytes": 3511,
+      "sha256": "def583865ef85ca67fd837ad4659d8ed9d821349cb53d49eee90b2babc242721"
+    },
+    {
+      "path": "android/app/src/main/java/pl/roseru/kalorie/ui/Theme.kt",
+      "group": "android",
+      "bytes": 1492,
+      "sha256": "3adc0d5cc9888555e8a4098379483e45bbb2aa22a0cd017c38c925162a38d7cc"
+    },
+    {
+      "path": "android/app/src/main/res/drawable/ic_launcher.xml",
+      "group": "android",
+      "bytes": 410,
+      "sha256": "c4d4b962e8cc31a566f3411d023a73de098a652b1805ac412e60455e19e88acc"
+    },
+    {
+      "path": "android/app/src/main/res/values/strings.xml",
+      "group": "android",
+      "bytes": 72,
+      "sha256": "1e80d31c7f01164b94781392b0f8f7d5c332bd41def6baeab738a79fd370b0db"
+    },
+    {
+      "path": "android/app/src/main/res/values/themes.xml",
+      "group": "android",
+      "bytes": 306,
+      "sha256": "08223109e7dccc209ff99f3e01a105e056a8b513acebb046752fbab9bc021fe5"
+    },
+    {
+      "path": "android/app/src/main/res/xml/data_extraction_rules.xml",
+      "group": "android",
+      "bytes": 630,
+      "sha256": "eda9dddce1e895de1efd716fe75e244187bf8f91a3bb7444c6ea1731e51c74a8"
+    },
+    {
+      "path": "android/app/src/main/res/xml/photo_capture_paths.xml",
+      "group": "android",
+      "bytes": 172,
+      "sha256": "771c2c44ec3e2c242fb61417c616af6e7caf213596806a6405f6d88a5df2515e"
+    },
+    {
+      "path": "android/app/src/standard/java/pl/roseru/kalorie/session/ApiReadObservation.kt",
+      "group": "android",
+      "bytes": 541,
+      "sha256": "7e81690a3fbf79e74a2b490cd3a7a21c31d2ee470d5ab1acddc537368dd39042"
+    },
+    {
+      "path": "android/app/src/test/java/pl/roseru/kalorie/AchievementsTest.kt",
+      "group": "android",
+      "bytes": 8607,
+      "sha256": "236ac7aed250c3f847d6f093f8b39f147ee7944fc5f9e471a16e431731dc662c"
+    },
+    {
+      "path": "android/app/src/test/java/pl/roseru/kalorie/AnalyticsMidnightTest.kt",
+      "group": "android",
+      "bytes": 3115,
+      "sha256": "b324b783ef8fa508fa2699de79d469930f6b0a0b6410aaef78a0cdeedf354acf"
+    },
+    {
+      "path": "android/app/src/test/java/pl/roseru/kalorie/AnalyticsTest.kt",
+      "group": "android",
+      "bytes": 8374,
+      "sha256": "918d9472a32c6189fddc3ebaa008d7275cecf07ccbaf7469857fd3102635ab3a"
+    },
+    {
+      "path": "android/app/src/test/java/pl/roseru/kalorie/BootstrapHttpTest.kt",
+      "group": "android",
+      "bytes": 14092,
+      "sha256": "8cc54cd0653a9042b934f0b421b4bf0ec7915f726096db473dfbdc7ee5df7e68"
+    },
+    {
+      "path": "android/app/src/test/java/pl/roseru/kalorie/BootstrapProtocolTest.kt",
+      "group": "android",
+      "bytes": 3247,
+      "sha256": "c8e7fa40e05a2fe5a048301b8bd1760dec82793a907693f51ff5c038c2fcd96a"
+    },
+    {
+      "path": "android/app/src/test/java/pl/roseru/kalorie/CatalogMealWireTest.kt",
+      "group": "android",
+      "bytes": 5229,
+      "sha256": "f4b9820dc4d5eb22c75a307512e63c420424e1160a7590e05cc2e644c77e53cc"
+    },
+    {
+      "path": "android/app/src/test/java/pl/roseru/kalorie/CatalogPackageTest.kt",
+      "group": "android",
+      "bytes": 8551,
+      "sha256": "f67ec416e5d8a492a9e61114cb8c096399564fb8fa6536a0814a30f2f09f51ef"
+    },
+    {
+      "path": "android/app/src/test/java/pl/roseru/kalorie/ConflictProtocolTest.kt",
+      "group": "android",
+      "bytes": 5550,
+      "sha256": "0608db315c9d403b5becc25449490e494d507a88dfe8e9449205bb8e51e791f5"
+    },
+    {
+      "path": "android/app/src/test/java/pl/roseru/kalorie/DiaryCompletenessTest.kt",
+      "group": "android",
+      "bytes": 1067,
+      "sha256": "306dc2e8ff160aa5015455d62dc85cb05a7068d4e7d93794be6278a4c2943fba"
+    },
+    {
+      "path": "android/app/src/test/java/pl/roseru/kalorie/ManualMealWireTest.kt",
+      "group": "android",
+      "bytes": 4475,
+      "sha256": "7d33699088d58bf2eb136393c9ea98c12f6ffc1500fb795b75cb5a292e7c9a69"
+    },
+    {
+      "path": "android/app/src/test/java/pl/roseru/kalorie/MealPushHttpTest.kt",
+      "group": "android",
+      "bytes": 10069,
+      "sha256": "d4f39c0c221384aefe3de6d8cf2f30e6e551b07cd95ce7c25b287d4dadabe30b"
+    },
+    {
+      "path": "android/app/src/test/java/pl/roseru/kalorie/MealWireTest.kt",
+      "group": "android",
+      "bytes": 5118,
+      "sha256": "bcc3b735dad6f2e6656ee5d17f4b95e82c1180703c1f5d863ce8e992e0280911"
+    },
+    {
+      "path": "android/app/src/test/java/pl/roseru/kalorie/MotivationReadTest.kt",
+      "group": "android",
+      "bytes": 8074,
+      "sha256": "11820d395435c2948e81bc97bc5328e82b2353be458ac8f257becfa819458806"
+    },
+    {
+      "path": "android/app/src/test/java/pl/roseru/kalorie/NemesisHttpTest.kt",
+      "group": "android",
+      "bytes": 4787,
+      "sha256": "299d8c338392d4e576cc4464199c42afe72d97049f89b1e4d7ad4f5bfecb346c"
+    },
+    {
+      "path": "android/app/src/test/java/pl/roseru/kalorie/NemesisMutationHttpTest.kt",
+      "group": "android",
+      "bytes": 5687,
+      "sha256": "1d6d53032b3976e1a22250fad788530e76bfc5dab9a0ea64b4e18dcafdf4ee47"
+    },
+    {
+      "path": "android/app/src/test/java/pl/roseru/kalorie/NemesisMutationProtocolTest.kt",
+      "group": "android",
+      "bytes": 6655,
+      "sha256": "8e761747570debc6bd3659f5fbf0cf4b6d2e7042cc90663b739845eae414e4b8"
+    },
+    {
+      "path": "android/app/src/test/java/pl/roseru/kalorie/NemesisReadProtocolTest.kt",
+      "group": "android",
+      "bytes": 8542,
+      "sha256": "50d154c5bef46ecbbe872a70a11e7d4d0f4598e3e9e6f32f471ecbcbf26a46d4"
+    },
+    {
+      "path": "android/app/src/test/java/pl/roseru/kalorie/NutritionTest.kt",
+      "group": "android",
+      "bytes": 1702,
+      "sha256": "35d82d67a1103a717b346b5507cf7a0ff818fb72381e54f55919c7c4b755f7c1"
+    },
+    {
+      "path": "android/app/src/test/java/pl/roseru/kalorie/NutritionV1Test.kt",
+      "group": "android",
+      "bytes": 4461,
+      "sha256": "8f4ae723c7965ac3fe17b5138183faae2c371109132f0bdb2cdc3350fa5bb420"
+    },
+    {
+      "path": "android/app/src/test/java/pl/roseru/kalorie/PhotoAnalysisHttpTest.kt",
+      "group": "android",
+      "bytes": 10674,
+      "sha256": "1a886d2b73372be5f40013045cbd5773f98599e908725deb1da0b009c044909b"
+    },
+    {
+      "path": "android/app/src/test/java/pl/roseru/kalorie/PhotoAnalysisPreviewTest.kt",
+      "group": "android",
+      "bytes": 3328,
+      "sha256": "bde728d0f58f7eccc1cea6fd6279f73b96445ef905102c17259890ba41feb48c"
+    },
+    {
+      "path": "android/app/src/test/java/pl/roseru/kalorie/PhotoAnalysisProgressTest.kt",
+      "group": "android",
+      "bytes": 9883,
+      "sha256": "db927f1f751f4a244b676d0e57dcf7150152f3db798b38dd8eabed52f84c2a15"
+    },
+    {
+      "path": "android/app/src/test/java/pl/roseru/kalorie/PhotoAnalysisProtocolTest.kt",
+      "group": "android",
+      "bytes": 7867,
+      "sha256": "47dcc82406162cb9e36c107121ae67a1ec8c57e5d0c9b25d4a6181a2e22bc35a"
+    },
+    {
+      "path": "android/app/src/test/java/pl/roseru/kalorie/PhotoAnalysisReadProtocolTest.kt",
+      "group": "android",
+      "bytes": 14237,
+      "sha256": "7135372d2dd9fa9136b4dd9efece672f40c8603e565490f21b627b46c7b6351e"
+    },
+    {
+      "path": "android/app/src/test/java/pl/roseru/kalorie/PhotoAnalysisSnapshotTest.kt",
+      "group": "android",
+      "bytes": 6901,
+      "sha256": "f376b8acf3cdc4435f4b1e5b0ec7bac5c4556fb8c2610944f87f6424889d6bc5"
+    },
+    {
+      "path": "android/app/src/test/java/pl/roseru/kalorie/PhotoCancellationTest.kt",
+      "group": "android",
+      "bytes": 9775,
+      "sha256": "1eae42d4ddedcb51efa2a3cac4d412380746680eed5b7ff7759878df37a8917b"
+    },
+    {
+      "path": "android/app/src/test/java/pl/roseru/kalorie/PhotoCapabilitiesProtocolTest.kt",
+      "group": "android",
+      "bytes": 2874,
+      "sha256": "0580763e440ef1231983cedb7424448adf267bda9424eadc768e7ad75dc9a168"
+    },
+    {
+      "path": "android/app/src/test/java/pl/roseru/kalorie/PhotoConfirmationTest.kt",
+      "group": "android",
+      "bytes": 12194,
+      "sha256": "52ddf94a14da9c1155e743c0ea0901508d198796885449cada70f3a5936e5321"
+    },
+    {
+      "path": "android/app/src/test/java/pl/roseru/kalorie/PhotoMealDraftTest.kt",
+      "group": "android",
+      "bytes": 11355,
+      "sha256": "ad83e041dbb43f43323000f7e9d52de1ab03ebe18fee7685cbb14d3f45c6bd9e"
+    },
+    {
+      "path": "android/app/src/test/java/pl/roseru/kalorie/ProfileReadTest.kt",
+      "group": "android",
+      "bytes": 3815,
+      "sha256": "3515a1dc787b0ff7e05e490f73c81315c7116c8409e7efea069f317498d64f2d"
+    },
+    {
+      "path": "android/app/src/test/java/pl/roseru/kalorie/PushProtocolTest.kt",
+      "group": "android",
+      "bytes": 11838,
+      "sha256": "4934e895df7cbd66ae0b3d0ec34f79c053453aff0418e67e0ec35218179457d5"
+    },
+    {
+      "path": "android/app/src/test/java/pl/roseru/kalorie/RankingConsentHttpTest.kt",
+      "group": "android",
+      "bytes": 5405,
+      "sha256": "6817d177e742574ec01ebd7fb79faa417cbb8676c3728e23e867f847a9ac8607"
+    },
+    {
+      "path": "android/app/src/test/java/pl/roseru/kalorie/RankingConsentProtocolTest.kt",
+      "group": "android",
+      "bytes": 4341,
+      "sha256": "89f159052515f31ce3055af55bd04a14394dd5dd5cb4f9a5d38e10c75b405c42"
+    },
+    {
+      "path": "android/app/src/test/java/pl/roseru/kalorie/RankingHttpTest.kt",
+      "group": "android",
+      "bytes": 4291,
+      "sha256": "fb6156a84e5028f06408fe33e769d122f77d931b5cb50742360506c9efcc86a9"
+    },
+    {
+      "path": "android/app/src/test/java/pl/roseru/kalorie/RankingReadProtocolTest.kt",
+      "group": "android",
+      "bytes": 4911,
+      "sha256": "5b597e63f0e28c3700516abbc606f19cc4e2e76576bdf61e81611a1892c7692b"
+    },
+    {
+      "path": "android/app/src/test/java/pl/roseru/kalorie/ServerDiaryProtocolTest.kt",
+      "group": "android",
+      "bytes": 6082,
+      "sha256": "41aca9ca891c7a34e74a8addf4a8efd0f83c95a3ecac120586a1f0594ece5d95"
+    },
+    {
+      "path": "android/app/src/test/java/pl/roseru/kalorie/SessionIdentityTest.kt",
+      "group": "android",
+      "bytes": 4303,
+      "sha256": "13a1d8afb407a5d4457a8f1379d880b541815240dbd4d9235e367acfdb1da88b"
+    },
+    {
+      "path": "android/app/src/test/java/pl/roseru/kalorie/SnapshotProtocolTest.kt",
+      "group": "android",
+      "bytes": 3781,
+      "sha256": "faa23770dfe4bc664879981b666d73ec7b040b7aaebce7932c03b507c42c7912"
+    },
+    {
+      "path": "android/app/src/test/java/pl/roseru/kalorie/SyncWireSchemaTest.kt",
+      "group": "android",
+      "bytes": 7721,
+      "sha256": "805592be7bb1b7f73babc104b134eb64c40efd7008a2213ba7cad46d81fa13ad"
+    },
+    {
+      "path": "android/app/src/test/java/pl/roseru/kalorie/WeightWireTest.kt",
+      "group": "android",
+      "bytes": 3007,
+      "sha256": "d6f1a48ba83c745f8fe2365a3d282ae4917a4af051938dba62649427577cee42"
+    },
+    {
+      "path": "android/app/src/test/java/pl/roseru/kalorie/core/ActivityGoalTest.kt",
+      "group": "android",
+      "bytes": 1219,
+      "sha256": "5a8832c2587a60f3b43b900b36c45825fe0c62f278e43ff4a1741c05320ff90b"
+    },
+    {
+      "path": "android/app/src/test/resources/catalog/base-pl.1.json.gz",
+      "group": "android",
+      "bytes": 3099,
+      "sha256": "65f4aae8002fd5522d0edb4689e05682103b80fbe3e6dbc68f4bf02c645b2bef"
+    },
+    {
+      "path": "android/app/src/test/resources/catalog/catalog.schema.json",
+      "group": "android",
+      "bytes": 14080,
+      "sha256": "91eaac7aaeeda723d5ee7911fa41cc77fe12c47195d3f022ad79231b79048cf0"
+    },
+    {
+      "path": "android/app/src/test/resources/catalog/common.schema.json",
+      "group": "android",
+      "bytes": 3754,
+      "sha256": "991dca36b6a358b14eb064e0817cb5510eb518327115a5c681c4509961299dac"
+    },
+    {
+      "path": "android/app/src/test/resources/catalog/manifest.json",
+      "group": "android",
+      "bytes": 434,
+      "sha256": "fee1d2c9f96922c0c16ea35170a4c19c65ce96c3a0ecf0b6a74bf30d7f74048e"
+    },
+    {
+      "path": "android/app/src/test/resources/contracts/nutrition-v1.json",
+      "group": "android",
+      "bytes": 18287,
+      "sha256": "7c4ac28fbc5270532fd21eb0acfc6e2d891661cf7df2537b06b20c7447056cae"
+    },
+    {
+      "path": "android/app/src/test/resources/e3/bootstrap.json",
+      "group": "android",
+      "bytes": 183,
+      "sha256": "7279d02b384a8bbb747f2a6615dd6fcbe87434850ecccefe181db8175dfff1f7"
+    },
+    {
+      "path": "android/app/src/test/resources/motivation/motivation-final.json",
+      "group": "android",
+      "bytes": 1535,
+      "sha256": "7ab5437e7eb652d28b2435c672200532bf5fef6c55e864c71e16aa2fa64e804e"
+    },
+    {
+      "path": "android/app/src/test/resources/motivation/motivation-pending-backfill.json",
+      "group": "android",
+      "bytes": 1541,
+      "sha256": "306d000cf72aba5efdd7ec77009740aa651be90e9142b1ef8c85733fda88c9fa"
+    },
+    {
+      "path": "android/app/src/test/resources/motivation/motivation-pending-materialization.json",
+      "group": "android",
+      "bytes": 1553,
+      "sha256": "d5c466bdcaf8c029441a72e15eba78d2b1592707a7ddeafee6e5ca6d5cef8b07"
+    },
+    {
+      "path": "android/app/src/test/resources/motivation/motivation-revoked.json",
+      "group": "android",
+      "bytes": 1586,
+      "sha256": "bffb94768e49db2a5364f081e6f21c7894ea3c7da7764eac6cf63308fb636989"
+    },
+    {
+      "path": "android/app/src/test/resources/nemesis/final.json",
+      "group": "android",
+      "bytes": 1129,
+      "sha256": "5478d0ed53a20b3977515a6373c56b58e58db176568dda36d61ad03117ba4fb6"
+    },
+    {
+      "path": "android/app/src/test/resources/nemesis/hidden.json",
+      "group": "android",
+      "bytes": 809,
+      "sha256": "e03b7dba03ab5ab1bf5fb2a976bec93f083eb29ddef98c4f4813a1ba2dd12e6b"
+    },
+    {
+      "path": "android/app/src/test/resources/nemesis/metadata.json",
+      "group": "android",
+      "bytes": 719,
+      "sha256": "ca08b36ae66377014319ad0df68cf03bb049ea4de86cefa4220e3aeb66a04df1"
+    },
+    {
+      "path": "android/app/src/test/resources/nemesis/pending.json",
+      "group": "android",
+      "bytes": 289,
+      "sha256": "20569ae0d5c8c0fc2588056c49800193512c551449b21fd6149ce055e4ad1fd9"
+    },
+    {
+      "path": "android/app/src/test/resources/nemesis/provisional.json",
+      "group": "android",
+      "bytes": 1085,
+      "sha256": "02b6745114e1668036a8c286eeb242f70f62268272fa5f4384f2ab1259015802"
+    },
+    {
+      "path": "android/app/src/test/resources/photo/analysis-read-succeeded.json",
+      "group": "android",
+      "bytes": 2378,
+      "sha256": "d4e4c0b63a9c5501efe6a87e14e94412e783ca7ab626be256c87bb3d73168c6f"
+    },
+    {
+      "path": "android/app/src/test/resources/photo/corrected-meal-confirm.json",
+      "group": "android",
+      "bytes": 1028,
+      "sha256": "4081478ca5976622a5984a620d7b16a27c59997a41ff2370741be3a4b27be59d"
+    },
+    {
+      "path": "android/app/src/test/resources/photo/corrected-meal-confirmed.json",
+      "group": "android",
+      "bytes": 1613,
+      "sha256": "cb7decf2c44219c71eb3021f3e42bddd8c2b5bf1d6bbfd6f17cc1994e4e92631"
+    },
+    {
+      "path": "android/app/src/test/resources/photo/create-accepted.json",
+      "group": "android",
+      "bytes": 453,
+      "sha256": "6c54b24785b40da49b5f295ecd77d9a24f81717bb49c53559e2f94ff4e84cf9a"
+    },
+    {
+      "path": "android/app/src/test/resources/photo/materialized-meal-operation.json",
+      "group": "android",
+      "bytes": 1092,
+      "sha256": "e05df77a76f202a8bdd352d9457fcca41afa71229e205c1c622b7cef52a24211"
+    },
+    {
+      "path": "android/app/src/test/resources/photo/materialized-meal-push-response.json",
+      "group": "android",
+      "bytes": 333,
+      "sha256": "06ed3082ea308b010dc8db8a47cd856becfeacfa3e7f3fb75c65f6ef4d8c9084"
+    },
+    {
+      "path": "android/app/src/test/resources/photo/photo-capabilities.json",
+      "group": "android",
+      "bytes": 701,
+      "sha256": "4adc6a906b731257c3d8c91289a22567b977b106f5ae7016e29adf03b9f1f3b4"
+    },
+    {
+      "path": "android/app/src/test/resources/profile-read.json",
+      "group": "android",
+      "bytes": 542,
+      "sha256": "4f6918c2e3e2957020506edca166d5450b8683fdb93bc031c134943c0ab4b144"
+    },
+    {
+      "path": "android/app/src/test/resources/sync/common.schema.json",
+      "group": "android",
+      "bytes": 4732,
+      "sha256": "1da6f3135570b5c812af64c2287d0c79029acb23262b38aa345e04ae5767fc2e"
+    },
+    {
+      "path": "android/app/src/test/resources/sync/diary-day.json",
+      "group": "android",
+      "bytes": 94,
+      "sha256": "19f5f79d58c6a298111f5171815c77b2263433ed4961752e5d789df0b30ef73f"
+    },
+    {
+      "path": "android/app/src/test/resources/sync/domain.schema.json",
+      "group": "android",
+      "bytes": 77073,
+      "sha256": "3286a3c09d7c2959479eb082fe8fc274f1101b01d6c51dc6bf5f036e01e0decb"
+    },
+    {
+      "path": "android/app/src/test/resources/sync/goal.json",
+      "group": "android",
+      "bytes": 351,
+      "sha256": "72dc2d9c384376d7f2d5f2c3504a68ffa849cd275017f3b10dae7235ae84ab90"
+    },
+    {
+      "path": "android/app/src/test/resources/sync/meal.json",
+      "group": "android",
+      "bytes": 796,
+      "sha256": "0489b4c96645470e357de73c570d87c65249f39de960430a1167625ad39114c3"
+    },
+    {
+      "path": "android/app/src/test/resources/sync/product-draft.json",
+      "group": "android",
+      "bytes": 389,
+      "sha256": "d8242df0dccf135750b4ee085df6c0c61ec7b89777007c226b2fe84cf7a46c0d"
+    },
+    {
+      "path": "android/app/src/test/resources/sync/profile.json",
+      "group": "android",
+      "bytes": 120,
+      "sha256": "bd6af4f7afb3f1c9a50751e7706bbc558fb46888a0e9edeb8418c9a360e2e440"
+    },
+    {
+      "path": "android/app/src/test/resources/sync/sync-pull-response.json",
+      "group": "android",
+      "bytes": 643,
+      "sha256": "fe8aaba34568980dfd437348e5aef5c83ef590c05ec808839725f0a2bc39a98b"
+    },
+    {
+      "path": "android/app/src/test/resources/sync/sync-push-request.json",
+      "group": "android",
+      "bytes": 602,
+      "sha256": "d8369e2138957777d6d8b750c1cff1636e179624bba89eb35d0d8cd3fed1e355"
+    },
+    {
+      "path": "android/app/src/test/resources/sync/sync-push-response.json",
+      "group": "android",
+      "bytes": 333,
+      "sha256": "d1fad8d7bfc474d421fb0255b3007d55e528abbe27d7341df47d2900ff35d3e2"
+    },
+    {
+      "path": "android/app/src/test/resources/sync/sync.schema.json",
+      "group": "android",
+      "bytes": 53575,
+      "sha256": "c08464421bff7661489c06d4fd5a20b227eff74ed048cc0ded737f56e1a85004"
+    },
+    {
+      "path": "android/app/src/test/resources/sync/weight.json",
+      "group": "android",
+      "bytes": 127,
+      "sha256": "57a11aa1b6d426c5154a99e852ce543ad3ec4683088d3e6c79f6ada2bec4d99b"
+    },
+    {
+      "path": "android/app/src/testValidation/java/pl/roseru/kalorie/session/ApiReadReceiptTest.kt",
+      "group": "android",
+      "bytes": 1636,
+      "sha256": "d9129614509abeefe7ffdb46ea5b805b915c1a78d9aec948c79ec23ad0fa27fc"
+    },
+    {
+      "path": "android/app/src/testValidation/java/pl/roseru/kalorie/session/LateReadGateTest.kt",
+      "group": "android",
+      "bytes": 3141,
+      "sha256": "1ae81183514e9eee8821ed897045fd53e4678eebcad61361505c360a516d547c"
+    },
+    {
+      "path": "android/app/src/testValidation/java/pl/roseru/kalorie/session/LateReadProofTest.kt",
+      "group": "android",
+      "bytes": 3165,
+      "sha256": "87a1fbb3b57c9ec0626ed0894e3105c65a6d21bbdf96293382f8c14dafa9dfe4"
+    },
+    {
+      "path": "android/app/src/validation/java/pl/roseru/kalorie/session/ApiReadObservation.kt",
+      "group": "android",
+      "bytes": 1927,
+      "sha256": "4fd5c8d832b28ab234cfadef0657572a09d1d6e5d77f862af367360ec904d736"
+    },
+    {
+      "path": "android/app/src/validation/java/pl/roseru/kalorie/session/LateReadGate.kt",
+      "group": "android",
+      "bytes": 3665,
+      "sha256": "d3838ae911c561a44b189b5b0e62cc0e3e68d1cde2a710f6f31fca23753ab22f"
+    },
+    {
+      "path": "android/build.gradle.kts",
+      "group": "android",
+      "bytes": 210,
+      "sha256": "4326ba24516727cf1a15d0e1b93a196903d21cf72c40de3fc4e0172ad787573e"
+    },
+    {
+      "path": "android/gradle.properties",
+      "group": "android",
+      "bytes": 125,
+      "sha256": "812af58c7fe21273b9c59ea2e22ec17423a5ca503fa590758bab7b08104bfb64"
+    },
+    {
+      "path": "android/gradle/libs.versions.toml",
+      "group": "android",
+      "bytes": 2266,
+      "sha256": "c555c57672c233fd65ed6b543072c622166ac3d13d345dd871bfd4342a6541da"
+    },
+    {
+      "path": "android/gradle/wrapper/gradle-wrapper.jar",
+      "group": "android",
+      "bytes": 43583,
+      "sha256": "2db75c40782f5e8ba1fc278a5574bab070adccb2d21ca5a6e5ed840888448046"
+    },
+    {
+      "path": "android/gradle/wrapper/gradle-wrapper.properties",
+      "group": "android",
+      "bytes": 340,
+      "sha256": "145bf797299c8cfecaeac8801d5aa6f6b7678a80d5c8e12802734ab0393a411e"
+    },
+    {
+      "path": "android/gradlew",
+      "group": "android",
+      "bytes": 8784,
+      "sha256": "9cbbb4d68ff7fb5211c4d58f598ac9d8664c05fdcd1e5f59b7f2c3ac1ee00af0"
+    },
+    {
+      "path": "android/gradlew.bat",
+      "group": "android",
+      "bytes": 2894,
+      "sha256": "0f3ed8f03b50934cb8c48b15a470d5c20a30a5385825e48b55bcc8ea3d8f8e18"
+    },
+    {
+      "path": "android/settings.gradle.kts",
+      "group": "android",
+      "bytes": 285,
+      "sha256": "2a5705b2c8a8296ea2b52e37027b2f9196e37e2ae5c1c89f883c005ba078c49f"
+    },
+    {
+      "path": "backend/pyproject.toml",
+      "group": "backend_reference",
+      "bytes": 1124,
+      "sha256": "ffb8b12d4f00adb96f01304c36b78bcc4f41fc5a63231df55a094ebe1397436a"
+    },
+    {
+      "path": "backend/src/calorie_app/__init__.py",
+      "group": "backend_reference",
+      "bytes": 102,
+      "sha256": "f4bdcad389b1f2bc25204322e1203ff6e67c07b6dfe7c7807f91a6a44673248c"
+    },
+    {
+      "path": "backend/src/calorie_app/core/__init__.py",
+      "group": "backend_reference",
+      "bytes": 60,
+      "sha256": "0d1d6480877239ad04b667ae49b1115b7d0d8132ffbbd4fc9d561c5570f83a31"
+    },
+    {
+      "path": "backend/src/calorie_app/core/config.py",
+      "group": "backend_reference",
+      "bytes": 4338,
+      "sha256": "fe2af3a5001ec1928304e816a607bf55999007ef1a611818d8a6eed9667310c1"
+    },
+    {
+      "path": "backend/src/calorie_app/core/errors.py",
+      "group": "backend_reference",
+      "bytes": 4028,
+      "sha256": "c5b2aebe317cfc5c16f5117392d06b657297a52e8d8983da444c125986711adc"
+    },
+    {
+      "path": "backend/src/calorie_app/core/logging.py",
+      "group": "backend_reference",
+      "bytes": 625,
+      "sha256": "9addf8d961fbb225ca0fb7758b02aebc7f51a704b86930374b9dd32cfa5f73ee"
+    },
+    {
+      "path": "backend/src/calorie_app/core/wire.py",
+      "group": "backend_reference",
+      "bytes": 1583,
+      "sha256": "c0eccee68ffebce8c5bec87e1b52176648297f42a45ca87082c385c1046425dc"
+    },
+    {
+      "path": "backend/src/calorie_app/db/__init__.py",
+      "group": "backend_reference",
+      "bytes": 77,
+      "sha256": "a8205ea055c1b4f8835f76ede49b2c39d686c77b5c213f0cb97a0ba94a0f27fd"
+    },
+    {
+      "path": "backend/src/calorie_app/db/base.py",
+      "group": "backend_reference",
+      "bytes": 491,
+      "sha256": "9df815650b19259d1606e43193d9a781be2fe153e75e5876c594dbb04ecb483a"
+    },
+    {
+      "path": "backend/src/calorie_app/db/models.py",
+      "group": "backend_reference",
+      "bytes": 256,
+      "sha256": "d3c6aef3e14cda1490d7019d1774fdac8fecebbf2a19efc312bd3d195c69deb2"
+    },
+    {
+      "path": "backend/src/calorie_app/db/session.py",
+      "group": "backend_reference",
+      "bytes": 792,
+      "sha256": "09b9cd169a79be81dbaf8b4828cbc8d8234b5c8c35c7afdf8b5b25c5ffd463bf"
+    },
+    {
+      "path": "backend/src/calorie_app/health.py",
+      "group": "backend_reference",
+      "bytes": 1322,
+      "sha256": "0042974b3b484c0eed069575438ec26e9cd19707ac9eba02247a95e8a977e29c"
+    },
+    {
+      "path": "backend/src/calorie_app/integrations/__init__.py",
+      "group": "backend_reference",
+      "bytes": 35,
+      "sha256": "2ff0f5c21c6f74653f0d038726bc574c10fbe5a7f4979b42068efe0ed622de77"
+    },
+    {
+      "path": "backend/src/calorie_app/integrations/gemini/__init__.py",
+      "group": "backend_reference",
+      "bytes": 78,
+      "sha256": "edb65b966ebdb618e6dd02f82b88a214cc8634f11bbd7934fd04d80003cfcb6b"
+    },
+    {
+      "path": "backend/src/calorie_app/integrations/gemini/adapter.py",
+      "group": "backend_reference",
+      "bytes": 10899,
+      "sha256": "c3bb44ed7d22b553ac07445d835ba4823248ed5c84d45e950d41cbbb6ade6579"
+    },
+    {
+      "path": "backend/src/calorie_app/integrations/gemini/energy.py",
+      "group": "backend_reference",
+      "bytes": 2302,
+      "sha256": "620627d80ab1b823f28c60d7efc32289da0b58dd8ed9bde67c6801dbc22d4254"
+    },
+    {
+      "path": "backend/src/calorie_app/integrations/gemini/mock.py",
+      "group": "backend_reference",
+      "bytes": 4265,
+      "sha256": "dc8127190ab04e603043f740b0ac41e02e9887bd1d5cc6942b37e0cf2baf271b"
+    },
+    {
+      "path": "backend/src/calorie_app/integrations/gemini/process.py",
+      "group": "backend_reference",
+      "bytes": 2120,
+      "sha256": "77d1d80f07c2119808ccee36ac7ac81fdc33b14f8cafffc02e4313f616094b5d"
+    },
+    {
+      "path": "backend/src/calorie_app/integrations/gemini/protocol.py",
+      "group": "backend_reference",
+      "bytes": 12679,
+      "sha256": "92103e6b27a0e20cc11dd6401fd43ade3b209804dc7be632a1e271a6bfb250ed"
+    },
+    {
+      "path": "backend/src/calorie_app/integrations/gemini/transport.py",
+      "group": "backend_reference",
+      "bytes": 5891,
+      "sha256": "f232950a75681c61b7d2ba3d34d2722251aefc4553c5d49805ca52cc4896ebe7"
+    },
+    {
+      "path": "backend/src/calorie_app/integrations/keycloak/__init__.py",
+      "group": "backend_reference",
+      "bytes": 111,
+      "sha256": "5ba0b3731db0f94ac143d111ef5663bee895e3f77b0d34138862aefab148fc46"
+    },
+    {
+      "path": "backend/src/calorie_app/integrations/keycloak/admin.py",
+      "group": "backend_reference",
+      "bytes": 5104,
+      "sha256": "0c3ade3b1abeffc4a52338f0f1504b211cfd2379eb15c7475a8cc67b3a1b9bf9"
+    },
+    {
+      "path": "backend/src/calorie_app/integrations/keycloak/oidc.py",
+      "group": "backend_reference",
+      "bytes": 8338,
+      "sha256": "53c4b8fa46b09e0c35426a972d5c3854a1f9d6e7870863047ce859b4a0dc8dad"
+    },
+    {
+      "path": "backend/src/calorie_app/main.py",
+      "group": "backend_reference",
+      "bytes": 5508,
+      "sha256": "bc4ab71c15d04460f9689998cb138f28d2ee80e351f585e0f42253a49d9e6ca0"
+    },
+    {
+      "path": "backend/src/calorie_app/modules/__init__.py",
+      "group": "backend_reference",
+      "bytes": 36,
+      "sha256": "ac89c05b2449c23c3d674f585f64453d1faec82b1b84e7d7d982d63f2c812c6b"
+    },
+    {
+      "path": "backend/src/calorie_app/modules/ai/__init__.py",
+      "group": "backend_reference",
+      "bytes": 78,
+      "sha256": "cd925a124eb1304fe80232efeb5dcaa7d96d6a2e7bc9957f556eea0a3e8d27f7"
+    },
+    {
+      "path": "backend/src/calorie_app/modules/ai/cleanup.py",
+      "group": "backend_reference",
+      "bytes": 3458,
+      "sha256": "4c1429d244f749e90a17ed5e52a19aae82ebb9cf2a65eb883dd66a491577ae4b"
+    },
+    {
+      "path": "backend/src/calorie_app/modules/ai/cli.py",
+      "group": "backend_reference",
+      "bytes": 5815,
+      "sha256": "51da919c43795178d45ab1623685ba13a341c50622ba78d458897c6a7f0588fa"
+    },
+    {
+      "path": "backend/src/calorie_app/modules/ai/configuration.py",
+      "group": "backend_reference",
+      "bytes": 4139,
+      "sha256": "e41523fcca4026922ca8012771bd523200e73fa15e8a9e2396a452cda1b89168"
+    },
+    {
+      "path": "backend/src/calorie_app/modules/ai/decisions.py",
+      "group": "backend_reference",
+      "bytes": 6533,
+      "sha256": "ff4fd0b367128cb3b3acea11fb6f2ba37c86ae76a898418f4ab0b41c626868f6"
+    },
+    {
+      "path": "backend/src/calorie_app/modules/ai/food_analysis.py",
+      "group": "backend_reference",
+      "bytes": 3060,
+      "sha256": "89f5eac14f6fffcef40096a72b19982fa14f63e7e1213993c003807170de795f"
+    },
+    {
+      "path": "backend/src/calorie_app/modules/ai/idempotency.py",
+      "group": "backend_reference",
+      "bytes": 3342,
+      "sha256": "c7f4ee088bc6af7b16e9b958092b15eaef917a4b4657291552fd89cdb9791a2d"
+    },
+    {
+      "path": "backend/src/calorie_app/modules/ai/image_preparation.py",
+      "group": "backend_reference",
+      "bytes": 26315,
+      "sha256": "be100878192aafbed06adc599de3a0e36a8ed4ac5920b6ac3c703be902fe87f4"
+    },
+    {
+      "path": "backend/src/calorie_app/modules/ai/models.py",
+      "group": "backend_reference",
+      "bytes": 4436,
+      "sha256": "034c744f1568392cf822addfe5f354781dde96bf43d76268a503b10373120576"
+    },
+    {
+      "path": "backend/src/calorie_app/modules/ai/prompts/__init__.py",
+      "group": "backend_reference",
+      "bytes": 2381,
+      "sha256": "d7adb7519b9188f81b515a87cc397da158b247b3e653af8010b838cdca30a262"
+    },
+    {
+      "path": "backend/src/calorie_app/modules/ai/prompts/food_photo_v1.txt",
+      "group": "backend_reference",
+      "bytes": 1723,
+      "sha256": "e8c08bee7299b83bed7ad5c2373d42d624e1455a94b4edd45886cfa48165919b"
+    },
+    {
+      "path": "backend/src/calorie_app/modules/ai/repository.py",
+      "group": "backend_reference",
+      "bytes": 3016,
+      "sha256": "b50ac7d92c179c581a4e10fcd4e06262627649947213576aae9613b2beb76aa1"
+    },
+    {
+      "path": "backend/src/calorie_app/modules/ai/result.py",
+      "group": "backend_reference",
+      "bytes": 4088,
+      "sha256": "a444e6469d05500fc1131e5f3cd17d494bca243a3ea8f7e85ee8948ff906ce2b"
+    },
+    {
+      "path": "backend/src/calorie_app/modules/ai/router.py",
+      "group": "backend_reference",
+      "bytes": 7947,
+      "sha256": "e1f111641d8add7fc50d3e005b5c89421a9ca5a047b62bac70f8b501ef83f271"
+    },
+    {
+      "path": "backend/src/calorie_app/modules/ai/schemas.py",
+      "group": "backend_reference",
+      "bytes": 5777,
+      "sha256": "f79b6b03f42169072838dca1f0dfcc6d2792e4215f6aa75c2ac27647fbebb7df"
+    },
+    {
+      "path": "backend/src/calorie_app/modules/ai/service.py",
+      "group": "backend_reference",
+      "bytes": 9061,
+      "sha256": "9d23edef2ae1ef79e24b1e9d9bf8d28878ec697721ec970ac71451e74f3fa3ac"
+    },
+    {
+      "path": "backend/src/calorie_app/modules/ai/storage.py",
+      "group": "backend_reference",
+      "bytes": 17045,
+      "sha256": "9685f0622fd01903db3532a8ec01237a0d8e1e99e976d70494e774b2557ccf96"
+    },
+    {
+      "path": "backend/src/calorie_app/modules/ai/transport.py",
+      "group": "backend_reference",
+      "bytes": 8456,
+      "sha256": "e72047a04a8105cb8e930a60073bc396575bd6a9f289b45e7a687d29f288fa8f"
+    },
+    {
+      "path": "backend/src/calorie_app/modules/analytics/__init__.py",
+      "group": "backend_reference",
+      "bytes": 32,
+      "sha256": "f90c5b548047e1e0fffa793d32337fe9e19b1c1c7d66c0c4e1c7292c012eacbd"
+    },
+    {
+      "path": "backend/src/calorie_app/modules/analytics/motivation/__init__.py",
+      "group": "backend_reference",
+      "bytes": 80,
+      "sha256": "aa72f91c994afc3923a2136e82ca2e7474d579e84ca63f3f89613966695daefc"
+    },
+    {
+      "path": "backend/src/calorie_app/modules/analytics/motivation/context.py",
+      "group": "backend_reference",
+      "bytes": 1322,
+      "sha256": "17bf74315db5dc10b70c4a090de783dc38fac7529235d5c6ab2d456e54b683d7"
+    },
+    {
+      "path": "backend/src/calorie_app/modules/analytics/motivation/models.py",
+      "group": "backend_reference",
+      "bytes": 5363,
+      "sha256": "fbe74c370d2c8232ec4e80534532e5a23b4a3d2ee199541b000002cc1783fb8f"
+    },
+    {
+      "path": "backend/src/calorie_app/modules/analytics/motivation/ranking.py",
+      "group": "backend_reference",
+      "bytes": 9460,
+      "sha256": "80d8042b2699d269d54d91256adf8a737fb8fcf61289e0272781eb19f154e213"
+    },
+    {
+      "path": "backend/src/calorie_app/modules/analytics/motivation/repository.py",
+      "group": "backend_reference",
+      "bytes": 2206,
+      "sha256": "4631cb161b5b766344dca344d4845a2239f7bc742f9f713d5470da91f63edf7c"
+    },
+    {
+      "path": "backend/src/calorie_app/modules/analytics/motivation/router.py",
+      "group": "backend_reference",
+      "bytes": 2674,
+      "sha256": "1145c91bfebd3082ce79e65d9f70dbf804f47058fb0f4811cce53d3ddaa7252e"
+    },
+    {
+      "path": "backend/src/calorie_app/modules/analytics/motivation/rules.py",
+      "group": "backend_reference",
+      "bytes": 5663,
+      "sha256": "6c61b25e975713e42499681cab7611e61d08f77f4f08f14d5514db6d3ec96421"
+    },
+    {
+      "path": "backend/src/calorie_app/modules/analytics/motivation/schemas.py",
+      "group": "backend_reference",
+      "bytes": 2536,
+      "sha256": "b7198e689614d4010f0d525c27bec90a21a6a998c3bf1dfe1a522b4eebdb7770"
+    },
+    {
+      "path": "backend/src/calorie_app/modules/analytics/motivation/service.py",
+      "group": "backend_reference",
+      "bytes": 4097,
+      "sha256": "9c45e09dd4c99e1143cde1811545631033f48902615add8ed4bf60f48ef0ac7b"
+    },
+    {
+      "path": "backend/src/calorie_app/modules/analytics/motivation/time.py",
+      "group": "backend_reference",
+      "bytes": 2172,
+      "sha256": "b9b412cf4191d2700fc5e70fdfce15b61f2dc16d93dbac785fd7f020d0bf86f2"
+    },
+    {
+      "path": "backend/src/calorie_app/modules/analytics/repository.py",
+      "group": "backend_reference",
+      "bytes": 4884,
+      "sha256": "34e646c9b69544c605bb459b9a6fede503622d5b1abd3393e582621985ba5972"
+    },
+    {
+      "path": "backend/src/calorie_app/modules/analytics/router.py",
+      "group": "backend_reference",
+      "bytes": 2448,
+      "sha256": "21a7a1089a0804caf726e5dfe2e223ea6afdcb075529399af30025de7b63c803"
+    },
+    {
+      "path": "backend/src/calorie_app/modules/analytics/schemas.py",
+      "group": "backend_reference",
+      "bytes": 3662,
+      "sha256": "f5f3b2984cd59a61ba49deb59311cc5a19b9644a9586ae1b84ac991f5b37e53d"
+    },
+    {
+      "path": "backend/src/calorie_app/modules/analytics/service.py",
+      "group": "backend_reference",
+      "bytes": 8636,
+      "sha256": "330310b0c19e0a1590fde8c92daeecc32d7c9c564e39041bc3e1ac0de617c228"
+    },
+    {
+      "path": "backend/src/calorie_app/modules/catalog/__init__.py",
+      "group": "backend_reference",
+      "bytes": 295,
+      "sha256": "c4f8ed866c5dcb9597f010118f7a06fee8f8c3b43572f73729832b0d715a0495"
+    },
+    {
+      "path": "backend/src/calorie_app/modules/catalog/cli.py",
+      "group": "backend_reference",
+      "bytes": 4018,
+      "sha256": "6f57561766176d599441aeb795626b786d45d87199bbda77031055d831d9ff1f"
+    },
+    {
+      "path": "backend/src/calorie_app/modules/catalog/community/feedback.py",
+      "group": "backend_reference",
+      "bytes": 3691,
+      "sha256": "f5d136f069ae47dc7dbe2f078b6f22857044ad40f33b7df0c245d89a0d383a35"
+    },
+    {
+      "path": "backend/src/calorie_app/modules/catalog/community/feedback_router.py",
+      "group": "backend_reference",
+      "bytes": 6152,
+      "sha256": "fe670051381386ce9e3d7082a9a49eba46c8f9c2531f85b3873b648e1a692bc8"
+    },
+    {
+      "path": "backend/src/calorie_app/modules/catalog/community/idempotency.py",
+      "group": "backend_reference",
+      "bytes": 4538,
+      "sha256": "cec6fb0d9e1f5b80292041994dcc2599dc0d7dd9de9591c4c4ab91950a5aaf6c"
+    },
+    {
+      "path": "backend/src/calorie_app/modules/catalog/community/models.py",
+      "group": "backend_reference",
+      "bytes": 10644,
+      "sha256": "4778a2a741a94490b5e593e4f3c8feb6adbcb076f6447fdcf7f5cd489773de7e"
+    },
+    {
+      "path": "backend/src/calorie_app/modules/catalog/community/repository.py",
+      "group": "backend_reference",
+      "bytes": 10900,
+      "sha256": "b1e118fca2775498d5c583135efed29ed5c7325b6b90fe4e77c132d7c9447477"
+    },
+    {
+      "path": "backend/src/calorie_app/modules/catalog/community/router.py",
+      "group": "backend_reference",
+      "bytes": 5581,
+      "sha256": "04b5c2d78ad85a07455a652127f14f8f5011c6b95522e363de31756567b9fd09"
+    },
+    {
+      "path": "backend/src/calorie_app/modules/catalog/community/schemas.py",
+      "group": "backend_reference",
+      "bytes": 8247,
+      "sha256": "3588a52f5ca64575c02b6bbff9539d0286ea20a0da14b36b70be7c18cd54f1bc"
+    },
+    {
+      "path": "backend/src/calorie_app/modules/catalog/community/service.py",
+      "group": "backend_reference",
+      "bytes": 16459,
+      "sha256": "04a185169a8bfaa967f6887599132f6166396ef827f2b7674ef33bc4741a3c97"
+    },
+    {
+      "path": "backend/src/calorie_app/modules/catalog/community/tokens.py",
+      "group": "backend_reference",
+      "bytes": 3595,
+      "sha256": "0760ca1ed2c6a5ed1146367194de5b6f06dc31a18b50156ea8af43c1107c8769"
+    },
+    {
+      "path": "backend/src/calorie_app/modules/catalog/community/transport.py",
+      "group": "backend_reference",
+      "bytes": 4072,
+      "sha256": "cd44c3b6007ba32ccd6e21f4a2e5e3c9f5cd981806eed532e24d8c84856ec243"
+    },
+    {
+      "path": "backend/src/calorie_app/modules/catalog/export.py",
+      "group": "backend_reference",
+      "bytes": 7234,
+      "sha256": "6b142198b5c6ea0d411b02aa6117621575296bf216e8dd35b94715ff4bd7c174"
+    },
+    {
+      "path": "backend/src/calorie_app/modules/catalog/locking.py",
+      "group": "backend_reference",
+      "bytes": 503,
+      "sha256": "4162321f09207b0d53b1a25f67aa8ef7af0f7d2de8f07b9013905d56311c1a77"
+    },
+    {
+      "path": "backend/src/calorie_app/modules/catalog/matching.py",
+      "group": "backend_reference",
+      "bytes": 10653,
+      "sha256": "25bfbf4264c2d3a25750c70cc78a664bceca03f1d37b0b90160690578505489b"
+    },
+    {
+      "path": "backend/src/calorie_app/modules/catalog/models.py",
+      "group": "backend_reference",
+      "bytes": 16334,
+      "sha256": "d252c3d1fe1617f42bdddd70da99ee42c5f856aa90d3b53f100670c139fc7544"
+    },
+    {
+      "path": "backend/src/calorie_app/modules/catalog/moderation/__init__.py",
+      "group": "backend_reference",
+      "bytes": 65,
+      "sha256": "9878b64a85c5c68d305d47faa4214624274f0d3b04ef200c3e831ade1ed3c4ee"
+    },
+    {
+      "path": "backend/src/calorie_app/modules/catalog/moderation/reads.py",
+      "group": "backend_reference",
+      "bytes": 3692,
+      "sha256": "ff8953da5df4a190e6c5a72f9a2cc4ee48a5761cb633a44ff725a58556b6889d"
+    },
+    {
+      "path": "backend/src/calorie_app/modules/catalog/moderation/router.py",
+      "group": "backend_reference",
+      "bytes": 5369,
+      "sha256": "f5c1cf9b65507e628296ecc08b808268db1bfd767b1f9023b6b5262c714ebf85"
+    },
+    {
+      "path": "backend/src/calorie_app/modules/catalog/moderation/schemas.py",
+      "group": "backend_reference",
+      "bytes": 3163,
+      "sha256": "5ed4ca9631758e1d2f2b94da104f58abb08c6eb2d412a5e7a6db9da8f4873b68"
+    },
+    {
+      "path": "backend/src/calorie_app/modules/catalog/moderation/service.py",
+      "group": "backend_reference",
+      "bytes": 13649,
+      "sha256": "39ebea53dd6e0fae2f3acad2506894a5b1a9a28972045074abc4e4c3c1b87e29"
+    },
+    {
+      "path": "backend/src/calorie_app/modules/catalog/nutrition.py",
+      "group": "backend_reference",
+      "bytes": 4868,
+      "sha256": "7216922bca6e109ed10f8b33fa9c2e4cf457bda1a58f6e3ce199d109b6017e15"
+    },
+    {
+      "path": "backend/src/calorie_app/modules/catalog/offline_import.py",
+      "group": "backend_reference",
+      "bytes": 22114,
+      "sha256": "3089a208b48622427d9d9676e51a43f842bb70a5918ac81f725858094af5ef86"
+    },
+    {
+      "path": "backend/src/calorie_app/modules/catalog/pagination.py",
+      "group": "backend_reference",
+      "bytes": 4164,
+      "sha256": "2eaff39ffe2a74b7b8f8ab51899312fe240628ed22ba46adc7c5abc77bd2d459"
+    },
+    {
+      "path": "backend/src/calorie_app/modules/catalog/product_pages.py",
+      "group": "backend_reference",
+      "bytes": 2413,
+      "sha256": "2d19eb9b93e97685aef879e022c4a14c4f6f914eb49e79d498bb324f0d73d0b7"
+    },
+    {
+      "path": "backend/src/calorie_app/modules/catalog/protected_router.py",
+      "group": "backend_reference",
+      "bytes": 7579,
+      "sha256": "842b7ccc8265e7f242c80282b3569bf8580dc76b23b4767b575a83fd27b715d7"
+    },
+    {
+      "path": "backend/src/calorie_app/modules/catalog/repository.py",
+      "group": "backend_reference",
+      "bytes": 8633,
+      "sha256": "c7b4edd6f1ec2bb924cdffaa215ed096d6e73fed89a27f5a9ba027d9e754c5f1"
+    },
+    {
+      "path": "backend/src/calorie_app/modules/catalog/resources/__init__.py",
+      "group": "backend_reference",
+      "bytes": 83,
+      "sha256": "bab1b2a2a6c5458f0fb4a12b88d6937cf3a1cd850ea7eca9654c2f912fbbd42e"
+    },
+    {
+      "path": "backend/src/calorie_app/modules/catalog/resources/ai.schema.json",
+      "group": "backend_reference",
+      "bytes": 52353,
+      "sha256": "c6b240b51a7e3d9aeaf3e2c3801c36e57b2fd124537d6b1d4abcc6a0f1f84d28"
+    },
+    {
+      "path": "backend/src/calorie_app/modules/catalog/resources/catalog.schema.json",
+      "group": "backend_reference",
+      "bytes": 16558,
+      "sha256": "4f4074c0c687793e1b54e3bc124198b21200d568908ada925a4f51c333633fd9"
+    },
+    {
+      "path": "backend/src/calorie_app/modules/catalog/resources/common.schema.json",
+      "group": "backend_reference",
+      "bytes": 4732,
+      "sha256": "1da6f3135570b5c812af64c2287d0c79029acb23262b38aa345e04ae5767fc2e"
+    },
+    {
+      "path": "backend/src/calorie_app/modules/catalog/resources/community.schema.json",
+      "group": "backend_reference",
+      "bytes": 30588,
+      "sha256": "e73037986237e7d84ee29622e45161f6e41ac238e93bf08ff18134417c8966e8"
+    },
+    {
+      "path": "backend/src/calorie_app/modules/catalog/resources/domain.schema.json",
+      "group": "backend_reference",
+      "bytes": 77073,
+      "sha256": "3286a3c09d7c2959479eb082fe8fc274f1101b01d6c51dc6bf5f036e01e0decb"
+    },
+    {
+      "path": "backend/src/calorie_app/modules/catalog/resources/energy.schema.json",
+      "group": "backend_reference",
+      "bytes": 118925,
+      "sha256": "54baca27ddc062b8de98386dde964cd8259998e1c30cdb3e44ab4de9b0cb7764"
+    },
+    {
+      "path": "backend/src/calorie_app/modules/catalog/resources/motivation.schema.json",
+      "group": "backend_reference",
+      "bytes": 9677,
+      "sha256": "1cfb91ef4180c0b5ac93497a26e28b8fc69e2ea7c03d8555ae7250b5f042b0b7"
+    },
+    {
+      "path": "backend/src/calorie_app/modules/catalog/resources/nemesis.schema.json",
+      "group": "backend_reference",
+      "bytes": 12427,
+      "sha256": "fc7050110bf5e8baf8eeaded8910fa391b5e9796607853cc5bb70c8b453851b6"
+    },
+    {
+      "path": "backend/src/calorie_app/modules/catalog/resources/sync.schema.json",
+      "group": "backend_reference",
+      "bytes": 53575,
+      "sha256": "c08464421bff7661489c06d4fd5a20b227eff74ed048cc0ded737f56e1a85004"
+    },
+    {
+      "path": "backend/src/calorie_app/modules/catalog/router.py",
+      "group": "backend_reference",
+      "bytes": 11092,
+      "sha256": "b2fbfbe61fb10a2abe7ecd8f3927e0c43f4b8d23862ebb5799194f882c14ec68"
+    },
+    {
+      "path": "backend/src/calorie_app/modules/catalog/schemas.py",
+      "group": "backend_reference",
+      "bytes": 6212,
+      "sha256": "804601e0b98ec0a1c444e50dfa31c77048a18cb91dc087ac4fdef45027d28615"
+    },
+    {
+      "path": "backend/src/calorie_app/modules/catalog/search_metadata.py",
+      "group": "backend_reference",
+      "bytes": 1466,
+      "sha256": "41f6d54638c8b7add48d321c802b2fa13ba9075ad428751863aaa7188f8c6377"
+    },
+    {
+      "path": "backend/src/calorie_app/modules/catalog/service.py",
+      "group": "backend_reference",
+      "bytes": 14962,
+      "sha256": "d567db95b8768378440adca42501cc0fd48669561819c1f0ceecb0e265800d41"
+    },
+    {
+      "path": "backend/src/calorie_app/modules/catalog/timestamps.py",
+      "group": "backend_reference",
+      "bytes": 445,
+      "sha256": "d06190133dfef1db4694a5eed4b46591af5c67873741d5a5cd720f85a046234b"
+    },
+    {
+      "path": "backend/src/calorie_app/modules/catalog/validation.py",
+      "group": "backend_reference",
+      "bytes": 10802,
+      "sha256": "18ab49e8098c3aa7de32d0e70b5c397a429c44370460d2449e80aded79ad78ab"
+    },
+    {
+      "path": "backend/src/calorie_app/modules/diary/__init__.py",
+      "group": "backend_reference",
+      "bytes": 78,
+      "sha256": "1c671236beb899435793d9495fa38acf77255bb63d0da05afc5abbde8f2c0a8a"
+    },
+    {
+      "path": "backend/src/calorie_app/modules/diary/models.py",
+      "group": "backend_reference",
+      "bytes": 9129,
+      "sha256": "9244516e50dc11930164ece4858ea0536663fb888b8ff620bbf49d49ca4c028e"
+    },
+    {
+      "path": "backend/src/calorie_app/modules/diary/read_models.py",
+      "group": "backend_reference",
+      "bytes": 2897,
+      "sha256": "26c5b73871ad74244265cc6ddb3b616b10d08c1a50024c9c03e433ce0ee383bf"
+    },
+    {
+      "path": "backend/src/calorie_app/modules/diary/read_repository.py",
+      "group": "backend_reference",
+      "bytes": 4804,
+      "sha256": "7b84207a5d767a8bee2978c7b5ac934cac4a3a9258941fe2bdccf69758b04f1c"
+    },
+    {
+      "path": "backend/src/calorie_app/modules/diary/read_router.py",
+      "group": "backend_reference",
+      "bytes": 3028,
+      "sha256": "bd5da05aa3a9ea06ae8578d88b0a3283d4bade26269a2ee99468dee7bca916f6"
+    },
+    {
+      "path": "backend/src/calorie_app/modules/diary/read_schemas.py",
+      "group": "backend_reference",
+      "bytes": 2725,
+      "sha256": "1fd4d5d9a7387029f069b86771a7b5fed2239011c8917e489979f540c58c1572"
+    },
+    {
+      "path": "backend/src/calorie_app/modules/diary/read_service.py",
+      "group": "backend_reference",
+      "bytes": 9339,
+      "sha256": "0b8b68312f9f5488c27c88eae0597a842cab703118460b811aa8ab3a6f0dd528"
+    },
+    {
+      "path": "backend/src/calorie_app/modules/diary/read_tokens.py",
+      "group": "backend_reference",
+      "bytes": 1234,
+      "sha256": "16a462faa2c0ee0a9a834f6a2de65792be12634428ef2d642055c76bb344ba8d"
+    },
+    {
+      "path": "backend/src/calorie_app/modules/diary/repository.py",
+      "group": "backend_reference",
+      "bytes": 1613,
+      "sha256": "874667bcd3686e8b42df44dc202516af151648ff0ae49f003b4e4f655e7dd804"
+    },
+    {
+      "path": "backend/src/calorie_app/modules/diary/service.py",
+      "group": "backend_reference",
+      "bytes": 12071,
+      "sha256": "5d3332e1cd2e3f3100f2d3e54446191c59606a2bd7296b70582ddce71c2fb316"
+    },
+    {
+      "path": "backend/src/calorie_app/modules/diary/validation.py",
+      "group": "backend_reference",
+      "bytes": 4206,
+      "sha256": "692438ff01fac6bae291af1cdff6036b8374f0f1cb27a1a05a56f2540ecfee28"
+    },
+    {
+      "path": "backend/src/calorie_app/modules/energy/__init__.py",
+      "group": "backend_reference",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": "backend/src/calorie_app/modules/energy/models.py",
+      "group": "backend_reference",
+      "bytes": 3617,
+      "sha256": "c794a95b0c14c18d93e84eef9ded708d2e2d8aca505698eede01d05b54b072f8"
+    },
+    {
+      "path": "backend/src/calorie_app/modules/energy/repository.py",
+      "group": "backend_reference",
+      "bytes": 2241,
+      "sha256": "037c2dac852dcd5de4972801eee7d564f2dd20186aa77062ba2f3abf0376819f"
+    },
+    {
+      "path": "backend/src/calorie_app/modules/energy/router.py",
+      "group": "backend_reference",
+      "bytes": 5262,
+      "sha256": "02bae76b340c9a37c2789deaceeb6a4da46957f2359cd2aa280f01f12b779edb"
+    },
+    {
+      "path": "backend/src/calorie_app/modules/energy/rules.py",
+      "group": "backend_reference",
+      "bytes": 4915,
+      "sha256": "293bd08812c3b71095847b65d189cb10f64a6ed44d793138bd3cab54c0cf8e1a"
+    },
+    {
+      "path": "backend/src/calorie_app/modules/energy/schemas.py",
+      "group": "backend_reference",
+      "bytes": 5116,
+      "sha256": "178dddaf221e76f8bb97e6882707d8315c9863f17609bdc00cd9f33a27a4218d"
+    },
+    {
+      "path": "backend/src/calorie_app/modules/energy/service.py",
+      "group": "backend_reference",
+      "bytes": 1466,
+      "sha256": "3af6d93b85e89926f5a437a838fe0e0207a7a9d350c1319b903992b80a477ab7"
+    },
+    {
+      "path": "backend/src/calorie_app/modules/energy/sync.py",
+      "group": "backend_reference",
+      "bytes": 2072,
+      "sha256": "fb084afad0a911c7e48ade981441d58a1b957027a585ea93fe551a9a140e2bdb"
+    },
+    {
+      "path": "backend/src/calorie_app/modules/identity/__init__.py",
+      "group": "backend_reference",
+      "bytes": 77,
+      "sha256": "d1174ea6488e3a2b7da76483a75043cd98b664bf9c603fff285263287cf73d9d"
+    },
+    {
+      "path": "backend/src/calorie_app/modules/identity/deletion.py",
+      "group": "backend_reference",
+      "bytes": 6907,
+      "sha256": "5a947bf72e236be41a6d1bf3118dbefada61e336e6b3a0145a0834d8f044bd00"
+    },
+    {
+      "path": "backend/src/calorie_app/modules/identity/deletion_models.py",
+      "group": "backend_reference",
+      "bytes": 3207,
+      "sha256": "1559bf4a5591a0b0defd658575902487ad49b5d0a6080617e14837c769586ef2"
+    },
+    {
+      "path": "backend/src/calorie_app/modules/identity/dependencies.py",
+      "group": "backend_reference",
+      "bytes": 966,
+      "sha256": "0b12f0d196d11a9c7029ab2366c30547cc35376c282558ef0f24887fb4551341"
+    },
+    {
+      "path": "backend/src/calorie_app/modules/identity/ledger_contract.py",
+      "group": "backend_reference",
+      "bytes": 14446,
+      "sha256": "8000420b6e365e1b71ed017a34d062d1ecef4e57263100d660ca3aa01c38a956"
+    },
+    {
+      "path": "backend/src/calorie_app/modules/identity/ledger_export.py",
+      "group": "backend_reference",
+      "bytes": 1072,
+      "sha256": "7c79e7345d209db56806ac659ed25677f1f044c343be3ba8f9c2048a07344cc2"
+    },
+    {
+      "path": "backend/src/calorie_app/modules/identity/ledger_restore.py",
+      "group": "backend_reference",
+      "bytes": 6046,
+      "sha256": "e698eb0b0b274da5d8cf5c045eba9c91cf09410d990c42bb20573b4ed2610884"
+    },
+    {
+      "path": "backend/src/calorie_app/modules/identity/ledger_transport.py",
+      "group": "backend_reference",
+      "bytes": 3339,
+      "sha256": "fdbc71141debde55f8cbd4c7e750f6e8a2be7863928b882e17fe51a1659cfbb2"
+    },
+    {
+      "path": "backend/src/calorie_app/modules/identity/models.py",
+      "group": "backend_reference",
+      "bytes": 2831,
+      "sha256": "e1abd69152d0cdd41a47b1149c8ddae71c9398f59ecae9bd5b46283ddc64a5fc"
+    },
+    {
+      "path": "backend/src/calorie_app/modules/identity/router.py",
+      "group": "backend_reference",
+      "bytes": 1799,
+      "sha256": "634a926de81af8872b9bca7d9829c98fd8d1a50e88da19e51d2c4c4f81200359"
+    },
+    {
+      "path": "backend/src/calorie_app/modules/identity/service.py",
+      "group": "backend_reference",
+      "bytes": 4684,
+      "sha256": "de91007c38a92bae968967505021fb847b3e5cde1d5e886b247cf2ba5a3bc423"
+    },
+    {
+      "path": "backend/src/calorie_app/modules/jobs/__init__.py",
+      "group": "backend_reference",
+      "bytes": 56,
+      "sha256": "d2eabe50d9cc84de2f125bf1e7012ba3b0d8048488e17732658845e8ce5d4bf1"
+    },
+    {
+      "path": "backend/src/calorie_app/modules/jobs/models.py",
+      "group": "backend_reference",
+      "bytes": 3138,
+      "sha256": "e64140e91e063bcb489c9933b8d20bfb82bfc6dbbd1f3b86f87affccdee832d2"
+    },
+    {
+      "path": "backend/src/calorie_app/modules/jobs/repository.py",
+      "group": "backend_reference",
+      "bytes": 1512,
+      "sha256": "78419056a7aad2eb8d1bc472b972d02706fb5af0fcea78ddd82b55acff167b32"
+    },
+    {
+      "path": "backend/src/calorie_app/modules/jobs/runner.py",
+      "group": "backend_reference",
+      "bytes": 10686,
+      "sha256": "b1de9d1cbb5b3ee3c1ad33364cd874247e749d23d7e4d903eca0fa872a3e5fae"
+    },
+    {
+      "path": "backend/src/calorie_app/modules/nemesis/__init__.py",
+      "group": "backend_reference",
+      "bytes": 86,
+      "sha256": "7d825f9c87070e4357c321e2e59c5b1463f4d5745ae2fbe98d05e630ab94691e"
+    },
+    {
+      "path": "backend/src/calorie_app/modules/nemesis/addressing.py",
+      "group": "backend_reference",
+      "bytes": 1871,
+      "sha256": "fe3865b6a2a27ead4d5cae8fe9a9a52c769f3f6e9333ca466bb957dfba58083e"
+    },
+    {
+      "path": "backend/src/calorie_app/modules/nemesis/aggregates.py",
+      "group": "backend_reference",
+      "bytes": 7013,
+      "sha256": "5170f3dce92a1aee3aa38c8e8b079eef9a8fef60b392036817380fc6316d54a8"
+    },
+    {
+      "path": "backend/src/calorie_app/modules/nemesis/finalization.py",
+      "group": "backend_reference",
+      "bytes": 2245,
+      "sha256": "84e7e2b7216194d8ee0450f97c156d6cc7eaad7a9bba818a08e66f81d1613043"
+    },
+    {
+      "path": "backend/src/calorie_app/modules/nemesis/maintenance.py",
+      "group": "backend_reference",
+      "bytes": 1778,
+      "sha256": "135820fb14d8543d941fb3ee1f3ff95011d85375cf6d069e4a500ae6f1745484"
+    },
+    {
+      "path": "backend/src/calorie_app/modules/nemesis/models.py",
+      "group": "backend_reference",
+      "bytes": 9559,
+      "sha256": "bac4a508a5a7efac24f76423fd2ffeef9aa54b2bfb28d7a71041a828c71d61f1"
+    },
+    {
+      "path": "backend/src/calorie_app/modules/nemesis/repository.py",
+      "group": "backend_reference",
+      "bytes": 1436,
+      "sha256": "3d09aa1bc4f036effbc5f92969a24ec9c32802210b7edd65bc23ae9241948f72"
+    },
+    {
+      "path": "backend/src/calorie_app/modules/nemesis/restore.py",
+      "group": "backend_reference",
+      "bytes": 1906,
+      "sha256": "64275f7e85f316fb67327333a4be63429f092f99bbce8ab80b46136bc292db10"
+    },
+    {
+      "path": "backend/src/calorie_app/modules/nemesis/router.py",
+      "group": "backend_reference",
+      "bytes": 9460,
+      "sha256": "891fec7b1a7b1b574086a5203971cdb3ec35f94a186fb1fff099f8b797456745"
+    },
+    {
+      "path": "backend/src/calorie_app/modules/nemesis/rules.py",
+      "group": "backend_reference",
+      "bytes": 4523,
+      "sha256": "1f8c6c2eaac4ba6e08fd8ac78c949ef3fbf52656e77b57ec50a9eb29a0ebb630"
+    },
+    {
+      "path": "backend/src/calorie_app/modules/nemesis/schemas.py",
+      "group": "backend_reference",
+      "bytes": 10247,
+      "sha256": "e1abf79ccff15eaf4cfb3059a52ca0ec4bfc6bf953f806d06992130e41361b46"
+    },
+    {
+      "path": "backend/src/calorie_app/modules/nemesis/service.py",
+      "group": "backend_reference",
+      "bytes": 3937,
+      "sha256": "344130b7a743bb6e6b87d4047f8959952b90e3215da246837a123fd06d037ffa"
+    },
+    {
+      "path": "backend/src/calorie_app/modules/nemesis/source_guard.py",
+      "group": "backend_reference",
+      "bytes": 7056,
+      "sha256": "c7f2d0851a3770a45a3d2df53e48ce14a8ae9b83686f961f65e0e4fb0f04a712"
+    },
+    {
+      "path": "backend/src/calorie_app/modules/profiles/__init__.py",
+      "group": "backend_reference",
+      "bytes": 86,
+      "sha256": "32dbfbd8f531506349a23c738c3b6efe3888f156ded329e5ac62fa00be199e53"
+    },
+    {
+      "path": "backend/src/calorie_app/modules/profiles/models.py",
+      "group": "backend_reference",
+      "bytes": 5587,
+      "sha256": "5cccc41bcf9ab04bf9e0ea29e9c20697e17211f2ec0610b2573b069d8c414070"
+    },
+    {
+      "path": "backend/src/calorie_app/modules/profiles/pagination.py",
+      "group": "backend_reference",
+      "bytes": 4795,
+      "sha256": "f663ac8cf48b7597b2d048a0c1a4711b7cb3fa33b4f5f83e718162c4ec72c377"
+    },
+    {
+      "path": "backend/src/calorie_app/modules/profiles/router.py",
+      "group": "backend_reference",
+      "bytes": 5172,
+      "sha256": "e92a7ecd9b9dba012a63b8aa46b04003d51a2abf75685b39f172216ca7ddffd6"
+    },
+    {
+      "path": "backend/src/calorie_app/modules/profiles/schemas.py",
+      "group": "backend_reference",
+      "bytes": 5875,
+      "sha256": "4d17b654b7066bf286ead32dced2b895e9626996631733465e36d3dad9e2febb"
+    },
+    {
+      "path": "backend/src/calorie_app/modules/profiles/service.py",
+      "group": "backend_reference",
+      "bytes": 13506,
+      "sha256": "8db0cf4ee5407c9211b2bab89f900aba9672f52d57ae9c3b77584ca1e57610bb"
+    },
+    {
+      "path": "backend/src/calorie_app/modules/sync/__init__.py",
+      "group": "backend_reference",
+      "bytes": 49,
+      "sha256": "b17c218a9aa6950db9466f4498600f7af9826107a622afe26b578e8858e2838a"
+    },
+    {
+      "path": "backend/src/calorie_app/modules/sync/errors.py",
+      "group": "backend_reference",
+      "bytes": 261,
+      "sha256": "75c687d1d2b04be8280c108a7d9fca193e98097cf8e7a8109b45c93a9ade8d19"
+    },
+    {
+      "path": "backend/src/calorie_app/modules/sync/models.py",
+      "group": "backend_reference",
+      "bytes": 3190,
+      "sha256": "1b6790b92d701a97cac77224fa9190b28b4c58e8fd0e4b0dd9da0b927dfda6c6"
+    },
+    {
+      "path": "backend/src/calorie_app/modules/sync/repository.py",
+      "group": "backend_reference",
+      "bytes": 3705,
+      "sha256": "f310e0686e07fe509a28068ceca6a4548631d0d3acc4b08c0796ae96f2d5bdad"
+    },
+    {
+      "path": "backend/src/calorie_app/modules/sync/retention.py",
+      "group": "backend_reference",
+      "bytes": 1441,
+      "sha256": "08f2a41bb6a5d833d8e404f4ebf91145fe637be99506c13fca9c0df1139680e9"
+    },
+    {
+      "path": "backend/src/calorie_app/modules/sync/router.py",
+      "group": "backend_reference",
+      "bytes": 6910,
+      "sha256": "9ea288baf827b0aafe30811829b58a23c952446f38b921f5f84703b1b8781523"
+    },
+    {
+      "path": "backend/src/calorie_app/modules/sync/schemas.py",
+      "group": "backend_reference",
+      "bytes": 4032,
+      "sha256": "57b4ba105046ed174bee90851cd42dee4e518846cc9b004d424bda7b188bc79c"
+    },
+    {
+      "path": "backend/src/calorie_app/modules/sync/service.py",
+      "group": "backend_reference",
+      "bytes": 20281,
+      "sha256": "8c8350e4b26bbdb248e07d194501015f7a0c30974e1ffc100e59bcbf5a599967"
+    },
+    {
+      "path": "backend/src/calorie_app/modules/sync/snapshot_models.py",
+      "group": "backend_reference",
+      "bytes": 3046,
+      "sha256": "be5eda92a820ad664cba63a2bf988cff25668b3f8d685ccfa3de90e92de8b617"
+    },
+    {
+      "path": "backend/src/calorie_app/modules/sync/snapshots.py",
+      "group": "backend_reference",
+      "bytes": 16505,
+      "sha256": "bed08384e70728c0cc6d5786e3452d6a4be3d3a07424a9b028c050126d4c8575"
+    },
+    {
+      "path": "backend/src/calorie_app/modules/sync/tokens.py",
+      "group": "backend_reference",
+      "bytes": 5709,
+      "sha256": "38deda25b8303cf5bdb9eb2ae67f96e19f9cc9e087d635874885077e3e53bc14"
+    },
+    {
+      "path": "backend/src/calorie_app/modules/sync/transport.py",
+      "group": "backend_reference",
+      "bytes": 4333,
+      "sha256": "288a3c43b9374a8b50cedc4401dd83000259a77c5515d18295567042c3230ce1"
+    },
+    {
+      "path": "backend/src/calorie_app/motivation_worker.py",
+      "group": "backend_reference",
+      "bytes": 4803,
+      "sha256": "fc3389651c0bb6d46ac768fb86afd5e8f81e48cdf36cdc01e756296fecf58f6f"
+    },
+    {
+      "path": "backend/src/calorie_app/worker.py",
+      "group": "backend_reference",
+      "bytes": 4252,
+      "sha256": "3c60b984525102fbbace5e66c1c75957a30c112e4306a44d2be265bd2fbd2a53"
+    },
+    {
+      "path": "backend/sync_catalog_schemas.py",
+      "group": "backend_reference",
+      "bytes": 1122,
+      "sha256": "0a009db029d3ed57b1703650bf565b9cfc4509e476ee5b40330856b70125ea96"
+    },
+    {
+      "path": "backend/tests/integration/conftest.py",
+      "group": "backend_reference",
+      "bytes": 4723,
+      "sha256": "d28e222a86171e392f24ddc0db972bb5c508e2422a1a88f70c8521080a02e023"
+    },
+    {
+      "path": "backend/tests/integration/test_catalog_delivery.py",
+      "group": "backend_reference",
+      "bytes": 25033,
+      "sha256": "6da6fed1e06a2b533974e67e30742ca9d0047834568866d01c8d6a261f146f47"
+    },
+    {
+      "path": "backend/tests/integration/test_catalog_migration.py",
+      "group": "backend_reference",
+      "bytes": 20365,
+      "sha256": "daebabd8e0896db03f3dd6d7fcb125ff8e1450bf388bdf9486959297e7d088ea"
+    },
+    {
+      "path": "backend/tests/integration/test_catalog_pagination.py",
+      "group": "backend_reference",
+      "bytes": 16485,
+      "sha256": "4f1272426450436bc37eb81d4567abf88638406026a33616108aad1c7fbc6bbf"
+    },
+    {
+      "path": "backend/tests/integration/test_catalog_timestamps.py",
+      "group": "backend_reference",
+      "bytes": 14673,
+      "sha256": "811f3161b887ecf16714965815e410cd3be6b565666684a6e256067d0dcac02a"
+    },
+    {
+      "path": "backend/tests/integration/test_deletion_ledger.py",
+      "group": "backend_reference",
+      "bytes": 31363,
+      "sha256": "ac702ac17e273980bf3cd7364c2a4fd6d6e1ff5df57767fe8e71da20cacab1fe"
+    },
+    {
+      "path": "backend/tests/integration/test_deletion_ledger_review.py",
+      "group": "backend_reference",
+      "bytes": 14878,
+      "sha256": "689545e65d9a970e840ebf1a39cf2c9b303cf566c2b99ef5bc22837beba90a6c"
+    },
+    {
+      "path": "backend/tests/integration/test_e3_delete_protection.py",
+      "group": "backend_reference",
+      "bytes": 22346,
+      "sha256": "6ab45d7cc315995717ebd577caf3802e8297d102cb82a28b3deeea05da4d8456"
+    },
+    {
+      "path": "backend/tests/integration/test_e3_diary.py",
+      "group": "backend_reference",
+      "bytes": 15749,
+      "sha256": "06b1f8958d72e3fdb5751a79772153c42cf6f413a2b9be297e83d0f56d544aeb"
+    },
+    {
+      "path": "backend/tests/integration/test_e3_identity.py",
+      "group": "backend_reference",
+      "bytes": 38200,
+      "sha256": "58a03cd825146d48049992439e9891139d48c9f1df7eb0b68c630a7de23b3f90"
+    },
+    {
+      "path": "backend/tests/integration/test_e3_products.py",
+      "group": "backend_reference",
+      "bytes": 8202,
+      "sha256": "3ea77ca17c278648c4917f4941d8b587a6af8d4098ca5e5ea62c4b22e7dfb02f"
+    },
+    {
+      "path": "backend/tests/integration/test_e4_client_fix_http.py",
+      "group": "backend_reference",
+      "bytes": 12850,
+      "sha256": "e1f3234e9fbd4539f644f6f6d20a0dff372b5c0d414c12a983ddc23bc1448404"
+    },
+    {
+      "path": "backend/tests/integration/test_e4_client_http.py",
+      "group": "backend_reference",
+      "bytes": 16320,
+      "sha256": "93b5c8e13e4ade30b79c51290ec0aad94b271c83aaa31b38a14dc7ee8ad15a25"
+    },
+    {
+      "path": "backend/tests/integration/test_e4_deletion.py",
+      "group": "backend_reference",
+      "bytes": 22615,
+      "sha256": "f4107140a7661536ff14626d7d0411e448a00463a12aa905199f13f9b3fb3fdd"
+    },
+    {
+      "path": "backend/tests/integration/test_e4_independent_regressions.py",
+      "group": "backend_reference",
+      "bytes": 11274,
+      "sha256": "f51d8747cc2793cf318be3dc7cdfbc6e4f7cfd552ec678f343ae098315a55af8"
+    },
+    {
+      "path": "backend/tests/integration/test_e4_operator_columns.py",
+      "group": "backend_reference",
+      "bytes": 19109,
+      "sha256": "da1f8125240502ce7a27ae903383869c14053bcd4a3b885baf47e33e28994841"
+    },
+    {
+      "path": "backend/tests/integration/test_e4_operator_login.py",
+      "group": "backend_reference",
+      "bytes": 17150,
+      "sha256": "e0a1ba49f53d8ae81d1cb940a2dd6c3692e4455c120922b7471d8f12d02a55cb"
+    },
+    {
+      "path": "backend/tests/integration/test_e4_operator_secrets.py",
+      "group": "backend_reference",
+      "bytes": 30703,
+      "sha256": "54ca32429d3415cfe95be555b86b6cddd563adca59b197d21e3d83e1b8dd3bd6"
+    },
+    {
+      "path": "backend/tests/integration/test_e4_preflight_fix.py",
+      "group": "backend_reference",
+      "bytes": 5762,
+      "sha256": "5c9fdd8be878fa6bc3ca077ad9dae57c2d7bec3aa95ad6f3cec7b2217deed1be"
+    },
+    {
+      "path": "backend/tests/integration/test_e4_push.py",
+      "group": "backend_reference",
+      "bytes": 22760,
+      "sha256": "9bcf9cb4232fb7378bd299a415e68b5de9e127ca4e363ac76db14d7c033b5390"
+    },
+    {
+      "path": "backend/tests/integration/test_e4_restore.py",
+      "group": "backend_reference",
+      "bytes": 4752,
+      "sha256": "a5454321a89c8648ab06d398a40d2880b57ae6245261ac48ea7dd0fe61976d7e"
+    },
+    {
+      "path": "backend/tests/integration/test_e4_snapshots.py",
+      "group": "backend_reference",
+      "bytes": 20350,
+      "sha256": "86e53ef4c886645c8ed3f19b33a612655f337f2f2c3886d191d6b27cf26f8f6e"
+    },
+    {
+      "path": "backend/tests/integration/test_e5_reads.py",
+      "group": "backend_reference",
+      "bytes": 22449,
+      "sha256": "10be27e6cbf5e96246ac71312260f57262150611ee4bf678d5959ff31bbcb991"
+    },
+    {
+      "path": "backend/tests/integration/test_e5_statistics.py",
+      "group": "backend_reference",
+      "bytes": 26502,
+      "sha256": "506aea79d038ba5bd933ac506fde0cc15016d8c37b40b52753a87407e73da5c4"
+    },
+    {
+      "path": "backend/tests/integration/test_e5_upgrade.py",
+      "group": "backend_reference",
+      "bytes": 17767,
+      "sha256": "9bd3a6ff4a9557e8e1961b07b59db75769033db544f8fae691ab02459b092c89"
+    },
+    {
+      "path": "backend/tests/integration/test_e6_community_publication.py",
+      "group": "backend_reference",
+      "bytes": 33095,
+      "sha256": "742a6d901ae0a1b0d9e351e85dab0a1b89c21b66912ee3c385444d9d3c505fde"
+    },
+    {
+      "path": "backend/tests/integration/test_e6_database.py",
+      "group": "backend_reference",
+      "bytes": 23288,
+      "sha256": "16225b6954a8d948229e6c127a84fc5ddcb3071386df6b27e15304015829dfb6"
+    },
+    {
+      "path": "backend/tests/integration/test_e6_feedback_moderation.py",
+      "group": "backend_reference",
+      "bytes": 14835,
+      "sha256": "b5fc935bf91e50142e0e37c0a15a2de6bdc7ebbc028f0d9a2c304b049a30bd77"
+    },
+    {
+      "path": "backend/tests/integration/test_e6_feedback_races.py",
+      "group": "backend_reference",
+      "bytes": 4077,
+      "sha256": "f76ba3c52b1c32a97ef4a69c196d864ab7479a55faa72471ea6ff9b9826c3932"
+    },
+    {
+      "path": "backend/tests/integration/test_e6_matching_pg.py",
+      "group": "backend_reference",
+      "bytes": 4875,
+      "sha256": "376aceaadea722a9057683a889c1d924bb3dfa5bf08432a0d12dd5f1ae3e186d"
+    },
+    {
+      "path": "backend/tests/integration/test_e6_official_races_history.py",
+      "group": "backend_reference",
+      "bytes": 10061,
+      "sha256": "b0941416a536eaa0af110fc3c33f62c8ca406f747ea0e4934d0915583a26c7bd"
+    },
+    {
+      "path": "backend/tests/integration/test_e6_official_unicode.py",
+      "group": "backend_reference",
+      "bytes": 18279,
+      "sha256": "bbc45a8db253b26dfacd2564a05e49efc8c8e66b15d8393c68ffeb99847c5fdc"
+    },
+    {
+      "path": "backend/tests/integration/test_e6_queue_correction.py",
+      "group": "backend_reference",
+      "bytes": 10990,
+      "sha256": "991bf4343842222a9016e8042a3337973839f359ad5afd6257fcd53152a2a1ae"
+    },
+    {
+      "path": "backend/tests/integration/test_e6_token_context_pg.py",
+      "group": "backend_reference",
+      "bytes": 4023,
+      "sha256": "2d0cee811c11e2eddcc03c6324d5fc789826147230ba93a4dd5e29df6daaf8ee"
+    },
+    {
+      "path": "backend/tests/integration/test_e7_acceptance_races.py",
+      "group": "backend_reference",
+      "bytes": 5621,
+      "sha256": "05ff2f8df09ec9bd5077110c838b73d0c60c93a802f43d46c2815ad1a17f98b9"
+    },
+    {
+      "path": "backend/tests/integration/test_e7_maintenance.py",
+      "group": "backend_reference",
+      "bytes": 17821,
+      "sha256": "cc15c5c1e1500be39fd00d5878947e95e92d90a901a0b4cbd0534215e58ca04d"
+    },
+    {
+      "path": "backend/tests/integration/test_e7_migration.py",
+      "group": "backend_reference",
+      "bytes": 6751,
+      "sha256": "2eecd8c121ddde01861740286fd7f6f36ac6b90a7eeabce362b6b0b4890695bf"
+    },
+    {
+      "path": "backend/tests/integration/test_e7_processes.py",
+      "group": "backend_reference",
+      "bytes": 22156,
+      "sha256": "43b2f3e766ad36b707f46d6d922caf2ed80304bbd8af18cf5929854b09e532af"
+    },
+    {
+      "path": "backend/tests/integration/test_e7_provider_metadata.py",
+      "group": "backend_reference",
+      "bytes": 14458,
+      "sha256": "48d7718c961035cf8ffbb81797b32451669c875c4b1c0456a523aa4b0b515cd0"
+    },
+    {
+      "path": "backend/tests/integration/test_e7_quota.py",
+      "group": "backend_reference",
+      "bytes": 30991,
+      "sha256": "64fb68e47cb2888df3516991b0fd49c04144a23b2fdc607c2e748313c2fb030c"
+    },
+    {
+      "path": "backend/tests/integration/test_e7_runtime.py",
+      "group": "backend_reference",
+      "bytes": 16582,
+      "sha256": "61ee75d1d4c0e2b3ffd154d6a98ddae9608b56bf224394b8c6f2c4d59263b8c8"
+    },
+    {
+      "path": "backend/tests/integration/test_e7_worker_login.py",
+      "group": "backend_reference",
+      "bytes": 20641,
+      "sha256": "651abe91c53a6bd85dc72e5cb0e052502e7844f1b6592c4ff9fc55bcad100650"
+    },
+    {
+      "path": "backend/tests/integration/test_e8_3_chain.py",
+      "group": "backend_reference",
+      "bytes": 16205,
+      "sha256": "a4fe264d73ba4a2bf2f7fcce60c9672d899bb10c1cfd959ba0bca2756858a044"
+    },
+    {
+      "path": "backend/tests/integration/test_e8_3_database.py",
+      "group": "backend_reference",
+      "bytes": 39501,
+      "sha256": "9ce5e39111ef56429df98590bfe81eb7e59721ee9d6423d2f3f69cc01e0aa626"
+    },
+    {
+      "path": "backend/tests/integration/test_e8_3_http.py",
+      "group": "backend_reference",
+      "bytes": 15115,
+      "sha256": "833431470ac892c559e9c9a2488b9c9224c46a0673b102b3445d1cfad9c102c8"
+    },
+    {
+      "path": "backend/tests/integration/test_e8_3_integrated_source.py",
+      "group": "backend_reference",
+      "bytes": 28338,
+      "sha256": "e726f58d8c8d79ad9bcb712f902817919ab44d36951d87ab6f4fd3cd4afe2da1"
+    },
+    {
+      "path": "backend/tests/integration/test_e8_3_integration_deletion.py",
+      "group": "backend_reference",
+      "bytes": 29350,
+      "sha256": "2347e88999755c0f0fe9de6c10d0d06919afe17a1d58da7393a9661de977c4fa"
+    },
+    {
+      "path": "backend/tests/integration/test_e8_3_maintenance.py",
+      "group": "backend_reference",
+      "bytes": 24614,
+      "sha256": "b0ebb50a239cd0ee9c2df955c0cf38d91295c97c60aa5ea519a027fff3184e8f"
+    },
+    {
+      "path": "backend/tests/integration/test_e8_3_network.py",
+      "group": "backend_reference",
+      "bytes": 6225,
+      "sha256": "84faeb1b61f7c8b9a2ca5d97ba60b4e5955e162f3805a4d6bc1af1b85be0c666"
+    },
+    {
+      "path": "backend/tests/integration/test_e8_3_parent_regression.py",
+      "group": "backend_reference",
+      "bytes": 15184,
+      "sha256": "d0ae131b554472d30bb65605f2ce6de86f19effda3a0e905e79b57a0c3d83e06"
+    },
+    {
+      "path": "backend/tests/integration/test_e8_3_process.py",
+      "group": "backend_reference",
+      "bytes": 4267,
+      "sha256": "c67d9dd8121c3504e1e6e989d7686273fa21a99d050b28cc6802cac4f8346931"
+    },
+    {
+      "path": "backend/tests/integration/test_e8_3_source_guard_pg.py",
+      "group": "backend_reference",
+      "bytes": 29787,
+      "sha256": "6a12a053deb4b44d3aaba7da4cd7eeb8405b29d82f14496a151266807ca02326"
+    },
+    {
+      "path": "backend/tests/integration/test_e8_4_exact_mean.py",
+      "group": "backend_reference",
+      "bytes": 4823,
+      "sha256": "d6d7d2e0bb7bb5f76ece3ed099f0be54d166bf27b9b7d08bd8062f611a19b37c"
+    },
+    {
+      "path": "backend/tests/integration/test_e8_4_migration.py",
+      "group": "backend_reference",
+      "bytes": 11390,
+      "sha256": "db1f02797e867207da0511831414572b6377604a8a7c940c36df3be9838ada9a"
+    },
+    {
+      "path": "backend/tests/integration/test_e8_4_network.py",
+      "group": "backend_reference",
+      "bytes": 6588,
+      "sha256": "135691e7b0eb15e1ff15f6a0ca96550fb1249933f39fddff49b10433d5cd3643"
+    },
+    {
+      "path": "backend/tests/integration/test_e8_4_projections.py",
+      "group": "backend_reference",
+      "bytes": 22944,
+      "sha256": "9260b4e7405548df139a4cc865fb1faed83906610ff5a40dc70b437291b7383e"
+    },
+    {
+      "path": "backend/tests/integration/test_e8_4_purge_restore.py",
+      "group": "backend_reference",
+      "bytes": 12534,
+      "sha256": "0f0fcd22da94c6aa6ae19fa15edf0b7edf4c51fd28b0289d568ef6ec9ba6359e"
+    },
+    {
+      "path": "backend/tests/integration/test_e8_4_statistics_finalizer.py",
+      "group": "backend_reference",
+      "bytes": 29778,
+      "sha256": "eb557b486f6e3c4b6c153e0b5d641dbc184615e857b763227c07396f0bda0c99"
+    },
+    {
+      "path": "backend/tests/integration/test_e8_acl.py",
+      "group": "backend_reference",
+      "bytes": 7640,
+      "sha256": "ef5dd95c36c5008b51c326ee48cda83370d05bd9a995578973bcd4668ee8aa34"
+    },
+    {
+      "path": "backend/tests/integration/test_e8_consent_pg.py",
+      "group": "backend_reference",
+      "bytes": 10950,
+      "sha256": "6f7367d1a155c3c2c07292c31d24e43cd9fb4e2f47bfd8ea5b8bd01eca4ece42"
+    },
+    {
+      "path": "backend/tests/integration/test_e8_goal_history.py",
+      "group": "backend_reference",
+      "bytes": 12542,
+      "sha256": "66f2ac6c5bb91e40fe909f1662aaf487a67c8073482f81f75d9fe12ebb3bb336"
+    },
+    {
+      "path": "backend/tests/integration/test_e8_history_restore.py",
+      "group": "backend_reference",
+      "bytes": 17556,
+      "sha256": "dfe0cb3970bbac76c103fb6f7fe5f95fcf5dd250a5a0d42a7a08fb2e94937963"
+    },
+    {
+      "path": "backend/tests/integration/test_e8_migration.py",
+      "group": "backend_reference",
+      "bytes": 11463,
+      "sha256": "2805fb099535a01deee447302d352214602483b90f0657d8605961079350bd69"
+    },
+    {
+      "path": "backend/tests/integration/test_e8_purge_commit.py",
+      "group": "backend_reference",
+      "bytes": 28374,
+      "sha256": "117fa94528351654e9c1fa8cd1a7089872d7c0c227b49868af20f7bfd9463193"
+    },
+    {
+      "path": "backend/tests/integration/test_e8_ranking_pg.py",
+      "group": "backend_reference",
+      "bytes": 20704,
+      "sha256": "c259bb0493e0e18b088217d6697cf9499bab774a05c91e1e21bdb830f38c0362"
+    },
+    {
+      "path": "backend/tests/integration/test_e8_source_pg.py",
+      "group": "backend_reference",
+      "bytes": 12071,
+      "sha256": "0a7ccaf9faf0b80df727ebc3f554d880c19c935c749219e2833720641aaea706"
+    },
+    {
+      "path": "backend/tests/integration/test_e8_worker_pg.py",
+      "group": "backend_reference",
+      "bytes": 8778,
+      "sha256": "a1914de7e62be13e8b9cce7ae8300bd72559f2f98c4158b70d88ead3400abbef"
+    },
+    {
+      "path": "backend/tests/integration/test_e9_e8.py",
+      "group": "backend_reference",
+      "bytes": 12194,
+      "sha256": "d4740fae334840d7d8c1f25e0adafd517e069e5e7e2dad5c82e28a6f445093a9"
+    },
+    {
+      "path": "backend/tests/integration/test_e9_energy.py",
+      "group": "backend_reference",
+      "bytes": 25190,
+      "sha256": "c0fa82d4f69f221cff012b20162ec71ebe978a51ea70092ea2607ff9166219ad"
+    },
+    {
+      "path": "backend/tests/integration/test_e9_final_edges.py",
+      "group": "backend_reference",
+      "bytes": 4590,
+      "sha256": "aded8033659bbe00c0580c2a1082fbcd1ff9cd9f921df827dbe349c0c8fde1c5"
+    },
+    {
+      "path": "backend/tests/integration/test_e9_migration.py",
+      "group": "backend_reference",
+      "bytes": 28570,
+      "sha256": "078ebe979a11e58c1bf2849d98001619fca12c429a59bb19c872b55f41743f9a"
+    },
+    {
+      "path": "backend/tests/integration/test_e9_processes.py",
+      "group": "backend_reference",
+      "bytes": 5363,
+      "sha256": "febffcce35e761609520b50e323a07e5ad5ff8fafac16113c5380454bc459255"
+    },
+    {
+      "path": "backend/tests/integration/test_e9_rules_pg.py",
+      "group": "backend_reference",
+      "bytes": 4099,
+      "sha256": "f423eb828ee13871f6fe46670af6886c59cf255c26d97514ba99de07cb79c165"
+    },
+    {
+      "path": "backend/tests/integration/test_e9_sync.py",
+      "group": "backend_reference",
+      "bytes": 3992,
+      "sha256": "1ff7e38f7fdaafecf205f1d13e8f93097a11a803d2b7f7297aa976edd80e73b4"
+    },
+    {
+      "path": "backend/tests/integration/test_e9_worker.py",
+      "group": "backend_reference",
+      "bytes": 10973,
+      "sha256": "fa74722f40fc0ad501fb16fa7bc58dc7bf20c78dc89cd4db5521c2b4d37c1b89"
+    },
+    {
+      "path": "backend/tests/integration/test_finite_nutrition.py",
+      "group": "backend_reference",
+      "bytes": 11772,
+      "sha256": "e67104007d3fc8accea3fdb8c7fa92a548ee051790c633d84d59951823940da7"
+    },
+    {
+      "path": "backend/tests/integration/test_foundation.py",
+      "group": "backend_reference",
+      "bytes": 7589,
+      "sha256": "84b67d78bb13f1b6332194afca093b4ed62ad34874a1fba98dc460a4970b1ccb"
+    },
+    {
+      "path": "backend/tests/integration/test_o3_e4_observer.py",
+      "group": "backend_reference",
+      "bytes": 5559,
+      "sha256": "bd684801a633214400755f3927be1a5e08bc8d9bc1056f795e002bb114c57ca8"
+    },
+    {
+      "path": "backend/tests/integration/test_o3_ledger_https.py",
+      "group": "backend_reference",
+      "bytes": 7455,
+      "sha256": "2381873722b7f474b97948969cdfa45c857c3c9bd288a8b6cf329cd05cacc6a4"
+    },
+    {
+      "path": "backend/tests/integration/test_o3_retention_worker.py",
+      "group": "backend_reference",
+      "bytes": 14751,
+      "sha256": "3531f743b70bbd39cdfc5379562784d6c7c0c7fedbf3821a0b6257426ff6de1d"
+    },
+    {
+      "path": "backend/tests/integration/test_provisioning.py",
+      "group": "backend_reference",
+      "bytes": 3252,
+      "sha256": "6dd3c0e98e246b801544dd656c727e4d937d986c51b53ddf3e1fd85dd9cb4b6c"
+    },
+    {
+      "path": "backend/tests/keycloak/conftest.py",
+      "group": "backend_reference",
+      "bytes": 2160,
+      "sha256": "ffb391f668f1bcd5153df10c6c722ff3142b47244302861c5b17d74cb7818b79"
+    },
+    {
+      "path": "backend/tests/keycloak/test_real_deletion.py",
+      "group": "backend_reference",
+      "bytes": 6136,
+      "sha256": "18e9114eb18f832c421d9721d81ff6953d72547b4e4274475a3b29f8c8e2e6b8"
+    },
+    {
+      "path": "backend/tests/keycloak/test_real_e6_roles.py",
+      "group": "backend_reference",
+      "bytes": 8293,
+      "sha256": "2760e5d2b89e640bf6f8f2476e37a89e5bbbd270307023d05b38e881eca9633a"
+    },
+    {
+      "path": "backend/tests/keycloak/test_real_e7_photo.py",
+      "group": "backend_reference",
+      "bytes": 4733,
+      "sha256": "46014d1d7f0e8ba40581ac598d6a00fc1e8216b4af9fe5112ab9357df033cf50"
+    },
+    {
+      "path": "backend/tests/keycloak/test_real_pkce.py",
+      "group": "backend_reference",
+      "bytes": 11707,
+      "sha256": "de8c03cc405f6ac03ee4288264de586cd7e3f5007fe87589652dd9fface509a2"
+    },
+    {
+      "path": "backend/tests/keycloak/test_real_sync.py",
+      "group": "backend_reference",
+      "bytes": 1930,
+      "sha256": "655334b4bccc2ce275e8e72bd60b937d695b5d547a98f6f90112a40f33fbf193"
+    },
+    {
+      "path": "backend/tests/support/deletion_regression.py",
+      "group": "backend_reference",
+      "bytes": 3986,
+      "sha256": "a694b9a948b8702866bcd81111cb706161722345892d3d783b0df848239f7dce"
+    },
+    {
+      "path": "backend/tests/support/e7_worker_child.py",
+      "group": "backend_reference",
+      "bytes": 4076,
+      "sha256": "1db2f5926af389dfdb220dfb08daee906f089e84d3eca4307f70b01f5102ff7a"
+    },
+    {
+      "path": "backend/tests/support/e8_3_app.py",
+      "group": "backend_reference",
+      "bytes": 917,
+      "sha256": "9dccd21fe145ba8202c912776de8b8e9fe66614bf9a161f17d73251c70c04df3"
+    },
+    {
+      "path": "backend/tests/support/e8_3_archive.py",
+      "group": "backend_reference",
+      "bytes": 2533,
+      "sha256": "893a8ac53248e1487261c9ead4d990c55faf45b8f6b5c51603b36733f101998d"
+    },
+    {
+      "path": "backend/tests/support/e8_3_ci.py",
+      "group": "backend_reference",
+      "bytes": 6865,
+      "sha256": "abad96218c193497c0bfca1900eebd3d15432fa3778f8ae39a3313e7db764e10"
+    },
+    {
+      "path": "backend/tests/support/e8_3_http_server.py",
+      "group": "backend_reference",
+      "bytes": 1843,
+      "sha256": "ffc5fecf6cbd6e58c65f0defdb944117f634c4277df872664bfdafdfab9fec8c"
+    },
+    {
+      "path": "backend/tests/support/e8_3_jwt.py",
+      "group": "backend_reference",
+      "bytes": 1763,
+      "sha256": "01341b4ca81f401b66d218c0542869c0bfbed985e08f855eb0c7aa18d6d785f3"
+    },
+    {
+      "path": "backend/tests/support/e8_3_postgres.py",
+      "group": "backend_reference",
+      "bytes": 7376,
+      "sha256": "8e90db789255710fc2422323b0c48b244225daa1cdaecb4b6bb0d556bd2f7f3e"
+    },
+    {
+      "path": "backend/tests/support/e8_3_process_child.py",
+      "group": "backend_reference",
+      "bytes": 1400,
+      "sha256": "bd1c8dfe028a1ef4e65790d17aeb70ba287d17c8114b1e8901ee0bf69f22fa76"
+    },
+    {
+      "path": "backend/tests/support/e8_4_postgres.py",
+      "group": "backend_reference",
+      "bytes": 20706,
+      "sha256": "9311dbf85d62827ddad174500a9b652e7261085682ad08b51773921d7d57e8da"
+    },
+    {
+      "path": "backend/tests/support/e9_worker_child.py",
+      "group": "backend_reference",
+      "bytes": 2112,
+      "sha256": "23f2224b7bcf5af05eb8dc190b2fae2d986dc0c8cf8c3d6dafbb53e9b0079cca"
+    },
+    {
+      "path": "backend/tests/support/historical_database.py",
+      "group": "backend_reference",
+      "bytes": 3450,
+      "sha256": "fe65803e47c6c900f380000a8923bf4cedd6203d156e86eca7ccbd8e5cf186ea"
+    },
+    {
+      "path": "backend/tests/support/ledger.py",
+      "group": "backend_reference",
+      "bytes": 2722,
+      "sha256": "f4db328254727bbc82efadc68a5379e2b17976787bcb41dd1c6b473c814df0eb"
+    },
+    {
+      "path": "backend/tests/support/ledger_sink.py",
+      "group": "backend_reference",
+      "bytes": 4217,
+      "sha256": "bf7e532a7c904ef5591731f58df39db840b4a3811e16ff50dea15bf8e1165456"
+    },
+    {
+      "path": "backend/tests/support/legacy_deletion.py",
+      "group": "backend_reference",
+      "bytes": 4678,
+      "sha256": "dd36ca56f588d93001b29737b0f0001f499754b350ed8c2489e43560cc2b7ba9"
+    },
+    {
+      "path": "backend/tests/unit/test_catalog_contract.py",
+      "group": "backend_reference",
+      "bytes": 8506,
+      "sha256": "273cfa1b1a9b6c7d0c9271d30f66b4739ba68ee9af0ab61a14ee7c8f20eb94b9"
+    },
+    {
+      "path": "backend/tests/unit/test_catalog_cursors.py",
+      "group": "backend_reference",
+      "bytes": 4150,
+      "sha256": "a5700941c7b606e823047582a3f3b4f13384d952df82b8f7adf35cc445395114"
+    },
+    {
+      "path": "backend/tests/unit/test_catalog_nutrition.py",
+      "group": "backend_reference",
+      "bytes": 3457,
+      "sha256": "e30af183a05b4291e3ed2fa5ead7e58a061e49fe9ee561e5420e873be79c0d97"
+    },
+    {
+      "path": "backend/tests/unit/test_catalog_validation.py",
+      "group": "backend_reference",
+      "bytes": 7923,
+      "sha256": "0cd8411a4f2472d73e7cca68a0a1b05593e58f32864de950b84121c8473c497e"
+    },
+    {
+      "path": "backend/tests/unit/test_deletion_ledger_contract.py",
+      "group": "backend_reference",
+      "bytes": 9487,
+      "sha256": "bd8418c351b020cf64a2f77c70da64397e7b610188af0fa1f7455fbe4812a26c"
+    },
+    {
+      "path": "backend/tests/unit/test_e3_diary.py",
+      "group": "backend_reference",
+      "bytes": 5432,
+      "sha256": "18800b6560e6d077404b0c7f374604aedeaa2b36f428805968017a8486bcb1f5"
+    },
+    {
+      "path": "backend/tests/unit/test_e3_oidc.py",
+      "group": "backend_reference",
+      "bytes": 10342,
+      "sha256": "7f65fbea77cb688f1932408042b5ca964daf325696f1cf31a0adbdc7bf47fd30"
+    },
+    {
+      "path": "backend/tests/unit/test_e3_profiles.py",
+      "group": "backend_reference",
+      "bytes": 6526,
+      "sha256": "ee82b4640b3acf250490e73b3158ee8760357b9548eef749712fbe01ac99a4a5"
+    },
+    {
+      "path": "backend/tests/unit/test_e4_client.py",
+      "group": "backend_reference",
+      "bytes": 20931,
+      "sha256": "7f491b22138a849e5822257cfae87c09c6cb99e9d1a9a8679c5238239f95945b"
+    },
+    {
+      "path": "backend/tests/unit/test_e4_client_fix_unit.py",
+      "group": "backend_reference",
+      "bytes": 16792,
+      "sha256": "4b9526a94fd0874b29cb431069d4d6cdbfde5ac13a9d5ad0417d70d26ecb8ebc"
+    },
+    {
+      "path": "backend/tests/unit/test_e4_deletion_adapter.py",
+      "group": "backend_reference",
+      "bytes": 5150,
+      "sha256": "c2efd92fbe81914189c46067d29928c72b6bbc73ff34c5f99f17d8fdbd347c81"
+    },
+    {
+      "path": "backend/tests/unit/test_e4_operator_provision_unit.py",
+      "group": "backend_reference",
+      "bytes": 4490,
+      "sha256": "139dc2998e0c7c272018f7543981e40ef8d35a59b13b29ba9649afe77c434e40"
+    },
+    {
+      "path": "backend/tests/unit/test_e4_tokens.py",
+      "group": "backend_reference",
+      "bytes": 4282,
+      "sha256": "4ee5846cf7c6b6aedba8ea067a4d55f90ca3834ab061607564f98c94965ea114"
+    },
+    {
+      "path": "backend/tests/unit/test_e4_transport.py",
+      "group": "backend_reference",
+      "bytes": 2501,
+      "sha256": "bb632f739f94d3fbc1675e9eefd47fb78c5a223750e4b0877ea213f6de6a609e"
+    },
+    {
+      "path": "backend/tests/unit/test_e4_wire_constraints.py",
+      "group": "backend_reference",
+      "bytes": 3576,
+      "sha256": "f6fdfc1e3dcc25653da0115f6b179d9bf4317df93ec59800821fde5c30b00eaf"
+    },
+    {
+      "path": "backend/tests/unit/test_e5_http_privacy.py",
+      "group": "backend_reference",
+      "bytes": 1339,
+      "sha256": "72be946059587c34ea04714a5b2f2352c28f1ab9a77f8ff1a0d66aa2116c3d96"
+    },
+    {
+      "path": "backend/tests/unit/test_e5_reads_unit.py",
+      "group": "backend_reference",
+      "bytes": 2333,
+      "sha256": "b6ab4af26e8c4440f5db14689f1168ba6e97c03583bfbcc4dc49ca03882b311c"
+    },
+    {
+      "path": "backend/tests/unit/test_e5_statistics_unit.py",
+      "group": "backend_reference",
+      "bytes": 11239,
+      "sha256": "b3584a4bb2cd350b0ca12b5b5773880492dcf4fda7239078dcde0235b473a157"
+    },
+    {
+      "path": "backend/tests/unit/test_e6_community_tokens.py",
+      "group": "backend_reference",
+      "bytes": 5112,
+      "sha256": "6ab8188f1c2ba0f031ca31bd8bf464bbd959047816fc5f5754f49f5790735656"
+    },
+    {
+      "path": "backend/tests/unit/test_e6_matching.py",
+      "group": "backend_reference",
+      "bytes": 8459,
+      "sha256": "de4c0c85b7a10dff3ff42cf56dbea700df5a7fa6713d9187c71aa3232a753276"
+    },
+    {
+      "path": "backend/tests/unit/test_e6_official_normalization.py",
+      "group": "backend_reference",
+      "bytes": 1388,
+      "sha256": "3fabe4d24e8876f293a87c3f9598efac2f77c96639c3a464b2f77b58abf8c2af"
+    },
+    {
+      "path": "backend/tests/unit/test_e6_schema_export.py",
+      "group": "backend_reference",
+      "bytes": 2694,
+      "sha256": "b6a9f9e4f35f926e30b9b1200138863d999eff9f2cd61df84128d9865b9dee87"
+    },
+    {
+      "path": "backend/tests/unit/test_e6_schemas.py",
+      "group": "backend_reference",
+      "bytes": 10806,
+      "sha256": "9ac177cf4e857949c7c9cab3c4337aeac68bcafd6f603a58c819cfe7bdef86b8"
+    },
+    {
+      "path": "backend/tests/unit/test_e7_image_preparation.py",
+      "group": "backend_reference",
+      "bytes": 10833,
+      "sha256": "78268906b29748d467bd6bd378f5df5d2d6aba13e4dc735a8c1a08bae545749f"
+    },
+    {
+      "path": "backend/tests/unit/test_e7_provider_result.py",
+      "group": "backend_reference",
+      "bytes": 12895,
+      "sha256": "7faf76f8b5732152e707aa6208b907334997d5a242da0ef5e03a95161c457f8e"
+    },
+    {
+      "path": "backend/tests/unit/test_e7_provider_transport.py",
+      "group": "backend_reference",
+      "bytes": 16094,
+      "sha256": "b96001a286ce5a7e574ebc32aa9ffbf9cd12d66cf35b8bee90f8abb1d5eca67d"
+    },
+    {
+      "path": "backend/tests/unit/test_e7_reference_runner.py",
+      "group": "backend_reference",
+      "bytes": 25835,
+      "sha256": "605464c835340c93a6aed11a2e4dc653e3dbe9375059a3602941753873a68e27"
+    },
+    {
+      "path": "backend/tests/unit/test_e7_response_metadata.py",
+      "group": "backend_reference",
+      "bytes": 7576,
+      "sha256": "6f51f7d7cc82e198832ff28cc5372f36e5252190de8d47503cef52a051b9c832"
+    },
+    {
+      "path": "backend/tests/unit/test_e7_storage.py",
+      "group": "backend_reference",
+      "bytes": 8785,
+      "sha256": "6fe45f877bc6ab30a0f1457bc4c40938a62f04c9221a203f0a3abe749b087d9e"
+    },
+    {
+      "path": "backend/tests/unit/test_e7_transport.py",
+      "group": "backend_reference",
+      "bytes": 6698,
+      "sha256": "8c8ec988f6fc6e349c67218c511e145b521c4a244e1e1b83fab2ab4e2d7024e3"
+    },
+    {
+      "path": "backend/tests/unit/test_e7_worker_provision.py",
+      "group": "backend_reference",
+      "bytes": 5249,
+      "sha256": "8ee2aefabbc93c80372a45df0bc04d9ce38caec827a4765f4c11fb8166c3a2bd"
+    },
+    {
+      "path": "backend/tests/unit/test_e8_3_archive.py",
+      "group": "backend_reference",
+      "bytes": 5048,
+      "sha256": "b7d21ab9d398816c419df692dce2f906ead186c7806bca2e1a3eb5d63ed3f812"
+    },
+    {
+      "path": "backend/tests/unit/test_e8_3_ci_bootstrap.py",
+      "group": "backend_reference",
+      "bytes": 7582,
+      "sha256": "01b1a1ebca5be349fd96073073f6181aae68fe5d0d6b068c73b055543e9a5b91"
+    },
+    {
+      "path": "backend/tests/unit/test_e8_3_contract.py",
+      "group": "backend_reference",
+      "bytes": 7335,
+      "sha256": "06fa939f690e10af957e98712db3c9bfe22da7428b43876cf33f9de6089a9fea"
+    },
+    {
+      "path": "backend/tests/unit/test_e8_3_source_guard.py",
+      "group": "backend_reference",
+      "bytes": 7759,
+      "sha256": "45e7ffeb8c8e756e850aca7650b6e1e042e5f0a7837721b8d1f6bc6c658c1c71"
+    },
+    {
+      "path": "backend/tests/unit/test_e8_3_time.py",
+      "group": "backend_reference",
+      "bytes": 5089,
+      "sha256": "11490e0c698ff2422719410c1fa738246a9e3d069c5fddc183a6e9ffd3777a85"
+    },
+    {
+      "path": "backend/tests/unit/test_e8_3_transport.py",
+      "group": "backend_reference",
+      "bytes": 5175,
+      "sha256": "93c9bf479e74c9b3cc4cec9013471b814e6f188f15de8378657d43f633e2f7bb"
+    },
+    {
+      "path": "backend/tests/unit/test_e8_4_aggregates.py",
+      "group": "backend_reference",
+      "bytes": 11528,
+      "sha256": "d3ece102789cab6c679def4e52e5acb8e8983f7276aed679cc89b9c396c87bde"
+    },
+    {
+      "path": "backend/tests/unit/test_e8_4_contract.py",
+      "group": "backend_reference",
+      "bytes": 8965,
+      "sha256": "aaa1fd3daeeb2915a1e23e720c2616ccff8ba96e149b5ad65a316b21391150ca"
+    },
+    {
+      "path": "backend/tests/unit/test_e8_consent.py",
+      "group": "backend_reference",
+      "bytes": 2003,
+      "sha256": "10c4af8f6d556446d7f669a6a522f10fbcfadf35e8b01949c11e73d1fcfbaaa6"
+    },
+    {
+      "path": "backend/tests/unit/test_e8_ranking.py",
+      "group": "backend_reference",
+      "bytes": 5484,
+      "sha256": "90a39000e4f62cf7b8434bb86160ad865db694ed490a5effc002730bac19194a"
+    },
+    {
+      "path": "backend/tests/unit/test_e8_rules.py",
+      "group": "backend_reference",
+      "bytes": 8332,
+      "sha256": "0df0163857a70716a493cc624811f4bf6367e16b7bc00d082057318d674cc5d1"
+    },
+    {
+      "path": "backend/tests/unit/test_e8_time.py",
+      "group": "backend_reference",
+      "bytes": 2325,
+      "sha256": "c9ac8bbb9a4997423491d232a89c81b8145b68a98af5cff2c752fd3b5d7ed8db"
+    },
+    {
+      "path": "backend/tests/unit/test_e9_provider.py",
+      "group": "backend_reference",
+      "bytes": 2406,
+      "sha256": "f6e41bcad96958d0073e19e78116c04dc57edfabfab2b2602ee0de25549884a5"
+    },
+    {
+      "path": "backend/tests/unit/test_e9_rules.py",
+      "group": "backend_reference",
+      "bytes": 5486,
+      "sha256": "f37e324beb6f0d5004bc2f1014c1eee170abb12c3717d78383fe7ed36edddc0f"
+    },
+    {
+      "path": "backend/tests/unit/test_e9_schema.py",
+      "group": "backend_reference",
+      "bytes": 686,
+      "sha256": "c28b734f6467bffcf04aaca3e5844985a91b3a08e5a2b6876fa05d4e96fd7d10"
+    },
+    {
+      "path": "backend/tests/unit/test_health.py",
+      "group": "backend_reference",
+      "bytes": 5484,
+      "sha256": "cac002c16c9277c6143a1cefd4587e33578f34784b8e4d9d1e699519bf727fcb"
+    },
+    {
+      "path": "backend/tests/unit/test_offline_import.py",
+      "group": "backend_reference",
+      "bytes": 22248,
+      "sha256": "41d0c4b1c2cde2285e5add7ba681101967fc179cddb9a3a3e6577b745a67e321"
+    },
+    {
+      "path": "backend/uv.lock",
+      "group": "backend_reference",
+      "bytes": 82853,
+      "sha256": "09544c6cbcbc709d1c9273e3a9ba35419d1ac4d6198ca69bd22d6e2cf5e53251"
+    },
+    {
+      "path": "contracts/README.md",
+      "group": "contract_reference",
+      "bytes": 7053,
+      "sha256": "10cc51f8687cc2d7beeecbee77d2420e6a03482d14e29b11def5e154c1438be7"
+    },
+    {
+      "path": "contracts/examples/e6/e6-publish.json",
+      "group": "contract_reference",
+      "bytes": 655,
+      "sha256": "509aaf202e9a22463d89efa9791b058a6afb388854cb22a3b1854350449a08a7"
+    },
+    {
+      "path": "contracts/examples/e6/e6_community_merged.json",
+      "group": "contract_reference",
+      "bytes": 1281,
+      "sha256": "756d3ed1f07610d56aa0402a07812a7061bdf4f9ff196b189d765f429c691af9"
+    },
+    {
+      "path": "contracts/examples/e6/e6_community_product.json",
+      "group": "contract_reference",
+      "bytes": 1281,
+      "sha256": "7f3553ba6cfc1ce4ae271a254c10d69b3294fdc45a719ba4ce28566005041147"
+    },
+    {
+      "path": "contracts/examples/e6/e6_feedback.json",
+      "group": "contract_reference",
+      "bytes": 217,
+      "sha256": "e4683a5e84f4ce4cc89fa3b3751dbf4c62cc7765a3e0fa2f18ea359da9e390e9"
+    },
+    {
+      "path": "contracts/examples/e6/e6_invalid_owner.json",
+      "group": "contract_reference",
+      "bytes": 731,
+      "sha256": "e3f6b4e60a975949d6e25fd231bd9c32ab1dd3e1349834b8c6792e4d75282e6b"
+    },
+    {
+      "path": "contracts/examples/e6/e6_invalid_vote.json",
+      "group": "contract_reference",
+      "bytes": 17,
+      "sha256": "eb8fd8d93731b4b3658a905f46a22133950c3d0109b694ad1993a030e4f8514c"
+    },
+    {
+      "path": "contracts/examples/e6/e6_matches_existing.json",
+      "group": "contract_reference",
+      "bytes": 519,
+      "sha256": "d37c8c003e433a0e42e45c6a27aa32a1545dfe63e427f003d2ee43a01dbb4a5f"
+    },
+    {
+      "path": "contracts/examples/e6/e6_matches_request.json",
+      "group": "contract_reference",
+      "bytes": 569,
+      "sha256": "8ad409529970145f13f4b5546dec1f8ee414bba4371ef5186d2d3b89e082bc0f"
+    },
+    {
+      "path": "contracts/examples/e6/e6_matches_response.json",
+      "group": "contract_reference",
+      "bytes": 162,
+      "sha256": "15f703992936331facef16b1f55691647455732987e52066bfd677a69a6535e2"
+    },
+    {
+      "path": "contracts/examples/e6/e6_merge_request.json",
+      "group": "contract_reference",
+      "bytes": 282,
+      "sha256": "1c6be2801c93551f63da0c0ef0e67daf96d0c1ebf0b1da6b3c64d459c8532ca1"
+    },
+    {
+      "path": "contracts/examples/e6/e6_moderation_request.json",
+      "group": "contract_reference",
+      "bytes": 162,
+      "sha256": "67864ceb07b70b98b8e5ff7542454ea854932a7c4a735731a28bef0f859bf3d4"
+    },
+    {
+      "path": "contracts/examples/e6/e6_publish_request.json",
+      "group": "contract_reference",
+      "bytes": 494,
+      "sha256": "e9576003723857b3dd77f989c9271b79689fe6c4b918d335d3258055ad56b42d"
+    },
+    {
+      "path": "contracts/examples/e6/e6_publish_response.json",
+      "group": "contract_reference",
+      "bytes": 103,
+      "sha256": "f7c1079580b2ba7214cee7037951109267bdb72070069ec2b1e142562ac7a641"
+    },
+    {
+      "path": "contracts/examples/e6/e6_report_request.json",
+      "group": "contract_reference",
+      "bytes": 197,
+      "sha256": "7508406f5e9023aecd49bbde2f99094a64b1ae0507a85c3eba1bcd6593d1a02e"
+    },
+    {
+      "path": "contracts/examples/e6/e6_report_resolution.json",
+      "group": "contract_reference",
+      "bytes": 149,
+      "sha256": "ed7561bb73d8696688222d1c710db295295157ef3e2bb38a5963568094b47316"
+    },
+    {
+      "path": "contracts/examples/e6/e6_report_response.json",
+      "group": "contract_reference",
+      "bytes": 95,
+      "sha256": "7f480ad5bf65444e81b42e419f6d30fb4c8be88ce75aef81171f045a75fa579e"
+    },
+    {
+      "path": "contracts/examples/e6/e6_vote_request.json",
+      "group": "contract_reference",
+      "bytes": 11,
+      "sha256": "48208f9428d64634bd8e28ff345bf0eab60d53c18fa2fbdb0b9bc1e84df2b5f6"
+    },
+    {
+      "path": "contracts/examples/e7/cancel-zero.json",
+      "group": "contract_reference",
+      "bytes": 29,
+      "sha256": "dbc44e0966b82d769135f37fdd101d778c1a7ad40475b7926643dbab7816e949"
+    },
+    {
+      "path": "contracts/examples/e7/cancel.json",
+      "group": "contract_reference",
+      "bytes": 29,
+      "sha256": "4bd5e1c791b1008da26d8cc355608ba8de6872267a4ffac0d4f24dd515ebadda"
+    },
+    {
+      "path": "contracts/examples/e7/confirm-31-items.json",
+      "group": "contract_reference",
+      "bytes": 20707,
+      "sha256": "a0ecc9a05c8e495ee092149936c31d584cf059b47e19886a8aa3d7dcf9903efb"
+    },
+    {
+      "path": "contracts/examples/e7/confirm.json",
+      "group": "contract_reference",
+      "bytes": 1057,
+      "sha256": "06a4859f0543f9cc34db674240f45286d06b4bd9da96139570d46923ae75456a"
+    },
+    {
+      "path": "contracts/examples/e7/consent-false.json",
+      "group": "contract_reference",
+      "bytes": 142,
+      "sha256": "9ae157ec27b734752d7f27fdc0cb33e73727c245af8feaf6d55ed0d3f09c6b87"
+    },
+    {
+      "path": "contracts/examples/e7/consent-scope.json",
+      "group": "contract_reference",
+      "bytes": 141,
+      "sha256": "60a5fe51960c605468e00a1bf422177ff10e661fab6b32a2147142a068e71130"
+    },
+    {
+      "path": "contracts/examples/e7/create-accepted.json",
+      "group": "contract_reference",
+      "bytes": 453,
+      "sha256": "6c54b24785b40da49b5f295ecd77d9a24f81717bb49c53559e2f94ff4e84cf9a"
+    },
+    {
+      "path": "contracts/examples/e7/create-metadata.json",
+      "group": "contract_reference",
+      "bytes": 109,
+      "sha256": "7b7338d3183810500c33466df05b10bfef146465df175d7a7951926fd07d1d93"
+    },
+    {
+      "path": "contracts/examples/e7/provider-result.json",
+      "group": "contract_reference",
+      "bytes": 443,
+      "sha256": "bc98ec958a8e38993f768c470b00c7eba1ed137b4f3d35bc6ab22007344b4802"
+    },
+    {
+      "path": "contracts/examples/e8/motivation-client-authority.json",
+      "group": "contract_reference",
+      "bytes": 1589,
+      "sha256": "44e1dbba64d5654e6167a82c51f228f574bc0de94d6cd2e71992a614fca53f14"
+    },
+    {
+      "path": "contracts/examples/e8/motivation-final.json",
+      "group": "contract_reference",
+      "bytes": 1535,
+      "sha256": "7ab5437e7eb652d28b2435c672200532bf5fef6c55e864c71e16aa2fa64e804e"
+    },
+    {
+      "path": "contracts/examples/e8/motivation-pending-backfill.json",
+      "group": "contract_reference",
+      "bytes": 1541,
+      "sha256": "306d000cf72aba5efdd7ec77009740aa651be90e9142b1ef8c85733fda88c9fa"
+    },
+    {
+      "path": "contracts/examples/e8/motivation-pending-materialization.json",
+      "group": "contract_reference",
+      "bytes": 1553,
+      "sha256": "d5c466bdcaf8c029441a72e15eba78d2b1592707a7ddeafee6e5ca6d5cef8b07"
+    },
+    {
+      "path": "contracts/examples/e8/motivation-revoked.json",
+      "group": "contract_reference",
+      "bytes": 1586,
+      "sha256": "bffb94768e49db2a5364f081e6f21c7894ea3c7da7764eac6cf63308fb636989"
+    },
+    {
+      "path": "contracts/examples/e8/ranking-boolean-points.json",
+      "group": "contract_reference",
+      "bytes": 333,
+      "sha256": "fb0f7e30231a4808c3bc97294ce0d0244775fadceba5b169ee42cb9bba6bd1b3"
+    },
+    {
+      "path": "contracts/examples/e8/ranking-next-page.json",
+      "group": "contract_reference",
+      "bytes": 660,
+      "sha256": "f17902c8358b5245015809d57fd75b6f7eb5200727619be9bbd8973727d12bfd"
+    },
+    {
+      "path": "contracts/examples/e8/ranking-private-authority.json",
+      "group": "contract_reference",
+      "bytes": 652,
+      "sha256": "3bf636cdae6af165932df2a1cf3ae32d1545a0624611c923a61caf0463bb1627"
+    },
+    {
+      "path": "contracts/examples/e8/ranking-ties.json",
+      "group": "contract_reference",
+      "bytes": 598,
+      "sha256": "be67db1622f34850c6914e7bcafeebae415973a6eb6f0e8e3655c70d8b6410c8"
+    },
+    {
+      "path": "contracts/examples/index.json",
+      "group": "contract_reference",
+      "bytes": 74244,
+      "sha256": "8a43a31806fe04d6ab6f5fe5d14557fa836195ae81748fcd3456c1cfa5a06594"
+    },
+    {
+      "path": "contracts/examples/invalid/catalog-counts.json",
+      "group": "contract_reference",
+      "bytes": 23844,
+      "sha256": "e71509aa5f59528ed49ccbeab81e3032aee68e71c1d46b6d6f05fa43d43ad607"
+    },
+    {
+      "path": "contracts/examples/invalid/catalog-duplicate.json",
+      "group": "contract_reference",
+      "bytes": 24482,
+      "sha256": "4646c3768002dc5b4bdcb999ecd9e03058dd82acaad57587459dc7a5d8d36aac"
+    },
+    {
+      "path": "contracts/examples/invalid/catalog-official.json",
+      "group": "contract_reference",
+      "bytes": 23848,
+      "sha256": "5314d4162c2f46ff492a89aea224544e08f9af6ac27c26d219ecb70d64fdcc71"
+    },
+    {
+      "path": "contracts/examples/invalid/catalog-reference.json",
+      "group": "contract_reference",
+      "bytes": 23844,
+      "sha256": "192339685641821917e1aa23fd6b173a1aec2eebe07e04fb0b32b9c747eb8363"
+    },
+    {
+      "path": "contracts/examples/invalid/catalog-unit.json",
+      "group": "contract_reference",
+      "bytes": 23846,
+      "sha256": "19f9a138ae5dc06cb0ea7bf189ce2dd0b465d424a1fda6fd64f095ec81a4b3dd"
+    },
+    {
+      "path": "contracts/examples/invalid/decimal-final-crlf.json",
+      "group": "contract_reference",
+      "bytes": 131,
+      "sha256": "25a660dad432bc47129b426141526d87196a45e2f74b31342b0c7984076c7fff"
+    },
+    {
+      "path": "contracts/examples/invalid/decimal-final-lf.json",
+      "group": "contract_reference",
+      "bytes": 128,
+      "sha256": "da64e4360336169451013f41061622a92714fabc821432dbd59ecb0cd49f92e5"
+    },
+    {
+      "path": "contracts/examples/invalid/decimal-number.json",
+      "group": "contract_reference",
+      "bytes": 125,
+      "sha256": "68c458a69de6d363ff11ea6715952546083783e4fdae1e55ce2508f91b333caf"
+    },
+    {
+      "path": "contracts/examples/invalid/decimal-zero-quantity.json",
+      "group": "contract_reference",
+      "bytes": 794,
+      "sha256": "ed463842b055e0bad3466296c3787455afb09f3fe6d21ac432e67667d91c2d1e"
+    },
+    {
+      "path": "contracts/examples/invalid/draft-package-density.json",
+      "group": "contract_reference",
+      "bytes": 428,
+      "sha256": "b17b4846ef02abc9e71556da64479b1168f1a1d737ee85d42a6b87a8ac50b07f"
+    },
+    {
+      "path": "contracts/examples/invalid/duplicate-meal-item.json",
+      "group": "contract_reference",
+      "bytes": 1362,
+      "sha256": "aa127604ba1b09f7e606ef26fe4c9840b581eeacb568f642b9581e866f71bb11"
+    },
+    {
+      "path": "contracts/examples/invalid/goal-year-underflow.json",
+      "group": "contract_reference",
+      "bytes": 348,
+      "sha256": "d67dcd39b0c047ff8786cb8eec376cd047a18fd168fd024aeadfc648219dd4e8"
+    },
+    {
+      "path": "contracts/examples/invalid/invalid-date.json",
+      "group": "contract_reference",
+      "bytes": 127,
+      "sha256": "a99884005b09d83527946dd7d95dc8092b9412ac971147406a4acf7736ce7a02"
+    },
+    {
+      "path": "contracts/examples/invalid/invalid-uuid.json",
+      "group": "contract_reference",
+      "bytes": 767,
+      "sha256": "7637b92dbc44e746912d830a905ba743769fe3cb2439cb8b19755cf1800ec060"
+    },
+    {
+      "path": "contracts/examples/invalid/local-date-mismatch.json",
+      "group": "contract_reference",
+      "bytes": 796,
+      "sha256": "ca586f1e44123c7e4b640893ade1f8f3cc47759d58b6e3d2beedddd9ad4f6b19"
+    },
+    {
+      "path": "contracts/examples/invalid/meal-nul.json",
+      "group": "contract_reference",
+      "bytes": 785,
+      "sha256": "14b890803133aa27057b63528b11327cf1698062d6d2233de87b137b654d4cfb"
+    },
+    {
+      "path": "contracts/examples/invalid/meal-unpaired-surrogate.json",
+      "group": "contract_reference",
+      "bytes": 785,
+      "sha256": "5c5f8400ec3b5c9cb6b4a9fbc63f40086c3358ab24ee9be74a2af5cad79e15d6"
+    },
+    {
+      "path": "contracts/examples/invalid/missing-density.json",
+      "group": "contract_reference",
+      "bytes": 797,
+      "sha256": "5db6b01060b9babb719e98cddbe3e9240989c69f3e06efdb2d9dd0a2a64de508"
+    },
+    {
+      "path": "contracts/examples/invalid/missing-is-not-null.json",
+      "group": "contract_reference",
+      "bytes": 719,
+      "sha256": "2a16d172d44f348533fe3f950d1a9d4ebfb5675b968f8c5a568939e8f897d985"
+    },
+    {
+      "path": "contracts/examples/invalid/profile-read-height.json",
+      "group": "contract_reference",
+      "bytes": 545,
+      "sha256": "ff3bdacaa1eea27a83a7722a577aab9d06933f7c6a8fe875757767c6b5dd2c2e"
+    },
+    {
+      "path": "contracts/examples/invalid/sync-duplicate-entity.json",
+      "group": "contract_reference",
+      "bytes": 1056,
+      "sha256": "3bf2eb179fe54ec1159a8f47c8ac3ac3d58e03e27ffc4d05387338f25412f278"
+    },
+    {
+      "path": "contracts/examples/invalid/sync-mixed-epochs.json",
+      "group": "contract_reference",
+      "bytes": 602,
+      "sha256": "afc69881b6a3430561f87f877ff3579d1cf8f24cbdd99b8dc37ca7382d706412"
+    },
+    {
+      "path": "contracts/examples/invalid/sync-result-entity.json",
+      "group": "contract_reference",
+      "bytes": 5196,
+      "sha256": "cd83777758d74df9a81d3b0f8fe911ee5f9f187bfab2979bf6def828fcc7b22e"
+    },
+    {
+      "path": "contracts/examples/invalid/sync-wrong-payload.json",
+      "group": "contract_reference",
+      "bytes": 595,
+      "sha256": "bfd9840ee357201fb121061dfe5fc51e58baf66ecce1ab13d5ce1c17227ff7b4"
+    },
+    {
+      "path": "contracts/examples/invalid/unknown-timezone.json",
+      "group": "contract_reference",
+      "bytes": 116,
+      "sha256": "6c02f2d1d365352a9f11916b551eeee1b5f7288630f050276293719ef70011a3"
+    },
+    {
+      "path": "contracts/examples/invalid/weight-year-overflow.json",
+      "group": "contract_reference",
+      "bytes": 132,
+      "sha256": "209e030d7714705b84db70914ab3e9a43712102bf1efc5015b91e01133458783"
+    },
+    {
+      "path": "contracts/examples/nemesis-statistics-final.json",
+      "group": "contract_reference",
+      "bytes": 1129,
+      "sha256": "5478d0ed53a20b3977515a6373c56b58e58db176568dda36d61ad03117ba4fb6"
+    },
+    {
+      "path": "contracts/examples/nemesis-statistics-hidden.json",
+      "group": "contract_reference",
+      "bytes": 809,
+      "sha256": "e03b7dba03ab5ab1bf5fb2a976bec93f083eb29ddef98c4f4813a1ba2dd12e6b"
+    },
+    {
+      "path": "contracts/examples/nemesis-statistics-pending.json",
+      "group": "contract_reference",
+      "bytes": 289,
+      "sha256": "20569ae0d5c8c0fc2588056c49800193512c551449b21fd6149ce055e4ad1fd9"
+    },
+    {
+      "path": "contracts/examples/nemesis-statistics-provisional.json",
+      "group": "contract_reference",
+      "bytes": 1085,
+      "sha256": "02b6745114e1668036a8c286eeb242f70f62268272fa5f4384f2ab1259015802"
+    },
+    {
+      "path": "contracts/examples/scenarios/account_switch.json",
+      "group": "contract_reference",
+      "bytes": 4346,
+      "sha256": "8b4229e131878d33389ae9bf0874c2cb13b372f6ec1df0bb023f524b825c7f53"
+    },
+    {
+      "path": "contracts/examples/scenarios/checkpoint_30_days.json",
+      "group": "contract_reference",
+      "bytes": 3117,
+      "sha256": "794760dcacdba723bbc775751f41e370dda76161b732337885e9b320467f0fcb"
+    },
+    {
+      "path": "contracts/examples/scenarios/checkpoint_30_days_plus_one.json",
+      "group": "contract_reference",
+      "bytes": 4264,
+      "sha256": "350f6d7655b78bfa24e31cfed6ec55f132a1c67947579d3213fa6cfda75c8d2c"
+    },
+    {
+      "path": "contracts/examples/scenarios/delete_and_stale_edit.json",
+      "group": "contract_reference",
+      "bytes": 7059,
+      "sha256": "61ea3c56a246574552203ab98b5eacb1bc7423b877d8fa7a5584b8150f1371b6"
+    },
+    {
+      "path": "contracts/examples/scenarios/expired_session.json",
+      "group": "contract_reference",
+      "bytes": 3638,
+      "sha256": "e696ea0faf483d3c1849da6140a0fd54736bd6a5a4e87f6b941ac43e7cdf02b2"
+    },
+    {
+      "path": "contracts/examples/scenarios/goal_immutable_and_timeline.json",
+      "group": "contract_reference",
+      "bytes": 6500,
+      "sha256": "5e2e71a0a2eb1cdebe93deec83a8f6b219df5186ad5f7a6011bfce7a0c38da12"
+    },
+    {
+      "path": "contracts/examples/scenarios/guest_unknown_epoch.json",
+      "group": "contract_reference",
+      "bytes": 3670,
+      "sha256": "b73fd71a165b5b4b671844616402bab0067f48464558d3472636a8bc512b9a25"
+    },
+    {
+      "path": "contracts/examples/scenarios/lost_response.json",
+      "group": "contract_reference",
+      "bytes": 5196,
+      "sha256": "630b41ff566319b14c8b11b2bde8c0eb1a3ee8c16f3d4ee4299f086307f7a2f9"
+    },
+    {
+      "path": "contracts/examples/scenarios/minimal_receipts_after_61_days.json",
+      "group": "contract_reference",
+      "bytes": 6663,
+      "sha256": "97cb760065a4c96c7647f85ac6adcf064b51c0b5b66d1dc5f971a316e4126cd3"
+    },
+    {
+      "path": "contracts/examples/scenarios/operation_id_changed_content.json",
+      "group": "contract_reference",
+      "bytes": 2415,
+      "sha256": "d780929ee8ae510771d0328a0f49832ac8d61bc2a487cdc12d930353780a8b7e"
+    },
+    {
+      "path": "contracts/examples/scenarios/restore_missing_profile.json",
+      "group": "contract_reference",
+      "bytes": 6165,
+      "sha256": "b91dc4a80c96744e02d0dfc42a9f474f7a2dd168d0e1fbeb34c8f796050d3855"
+    },
+    {
+      "path": "contracts/examples/scenarios/restore_missing_record.json",
+      "group": "contract_reference",
+      "bytes": 5910,
+      "sha256": "bdcceaf787a37d1fd5cb193e91c3c31e94d6207a129616a3ab14f743bbe9ad62"
+    },
+    {
+      "path": "contracts/examples/scenarios/restore_same_revision.json",
+      "group": "contract_reference",
+      "bytes": 2801,
+      "sha256": "1a3c3be13bf2344870c7d87eccfad2ac1775933f6364eaf9f1a5c4a01c50a4c0"
+    },
+    {
+      "path": "contracts/examples/scenarios/restore_second_device.json",
+      "group": "contract_reference",
+      "bytes": 5898,
+      "sha256": "ab9a9dc9496e89a57996356d491ca7c83e35ba4bc8eae0ff556084ae336ffadf"
+    },
+    {
+      "path": "contracts/examples/scenarios/revision_conflict.json",
+      "group": "contract_reference",
+      "bytes": 2787,
+      "sha256": "53558aa2718e6bdc21e4aac3802ba9289a7d9dbde2ca0709d96f2be14b67f954"
+    },
+    {
+      "path": "contracts/examples/scenarios/snapshot_expired.json",
+      "group": "contract_reference",
+      "bytes": 2356,
+      "sha256": "d41f3afbb400e17c3f4b77814986456b1f5f83c8df944fd56dd9c1ab998f0192"
+    },
+    {
+      "path": "contracts/examples/scenarios/snapshot_pagination.json",
+      "group": "contract_reference",
+      "bytes": 4320,
+      "sha256": "591527368bde68a76d1aa7b9d0463dd96ae39f57ea0a5d06ebca3a7950fb2eac"
+    },
+    {
+      "path": "contracts/examples/valid/base-pl.1.json.gz",
+      "group": "contract_reference",
+      "bytes": 3278,
+      "sha256": "307360b84fdac192f434969a323728ec835795e474095d0a1f0c0807a952f7f0"
+    },
+    {
+      "path": "contracts/examples/valid/bootstrap.json",
+      "group": "contract_reference",
+      "bytes": 183,
+      "sha256": "7279d02b384a8bbb747f2a6615dd6fcbe87434850ecccefe181db8175dfff1f7"
+    },
+    {
+      "path": "contracts/examples/valid/catalog-demo.json",
+      "group": "contract_reference",
+      "bytes": 24695,
+      "sha256": "e0b70e1c0b1f24d2a3d3e098c4bb3838b63f0a948567d601cb00ea199124d928"
+    },
+    {
+      "path": "contracts/examples/valid/catalog-manifest.json",
+      "group": "contract_reference",
+      "bytes": 517,
+      "sha256": "e5504e0605b67f4323cc04c10835633d959b8be9ac203633f86b93747b115030"
+    },
+    {
+      "path": "contracts/examples/valid/consent-input.json",
+      "group": "contract_reference",
+      "bytes": 63,
+      "sha256": "6ce596bc71147cc7d05abc0c36c258be9e1385c20a3a19f373b754e8ad1be4d7"
+    },
+    {
+      "path": "contracts/examples/valid/consent.json",
+      "group": "contract_reference",
+      "bytes": 120,
+      "sha256": "cd86671ede8f18d32ad00c9b3e3f7ed6fb615e976bda1d9b96b8f78364793d96"
+    },
+    {
+      "path": "contracts/examples/valid/deletion-ledger-v1-ack.json",
+      "group": "contract_reference",
+      "bytes": 447,
+      "sha256": "64f6c9ffc02d42ca96bffe76fff41f105ce94794dee3d749ff5111dfef32cf66"
+    },
+    {
+      "path": "contracts/examples/valid/deletion-ledger-v1-batch.json",
+      "group": "contract_reference",
+      "bytes": 8790,
+      "sha256": "065be3de3507de339f215ca95c2832e21044adce460e9c1eb3afb8f147393fb9"
+    },
+    {
+      "path": "contracts/examples/valid/deletion-ledger-v1-cutoff.json",
+      "group": "contract_reference",
+      "bytes": 618,
+      "sha256": "d9af0ef98026be1d9de323f67c8166330ad627f850c5674772ee0ce71189eadb"
+    },
+    {
+      "path": "contracts/examples/valid/diary-day-page.json",
+      "group": "contract_reference",
+      "bytes": 641,
+      "sha256": "ee07c1bbc7d2a92e477e17ace660cb04734732eaf07a1b3dc5e1cf00045cbe68"
+    },
+    {
+      "path": "contracts/examples/valid/diary-day.json",
+      "group": "contract_reference",
+      "bytes": 94,
+      "sha256": "19f5f79d58c6a298111f5171815c77b2263433ed4961752e5d789df0b30ef73f"
+    },
+    {
+      "path": "contracts/examples/valid/error-401.json",
+      "group": "contract_reference",
+      "bytes": 147,
+      "sha256": "cc43d96ce9bb3a305c28855ebd6c3ee99a52eea9ab0a3e6bdf423600804c3dbe"
+    },
+    {
+      "path": "contracts/examples/valid/error-403.json",
+      "group": "contract_reference",
+      "bytes": 144,
+      "sha256": "3bf344b367c9b6f909b6acaf966d175f6f72342a453e26209df2e5db0e5ced97"
+    },
+    {
+      "path": "contracts/examples/valid/error-404.json",
+      "group": "contract_reference",
+      "bytes": 144,
+      "sha256": "cef17e6b761c8e40e497790bb0a17eff4128baa86beaddf52cc5bcb977b7157c"
+    },
+    {
+      "path": "contracts/examples/valid/error-409.json",
+      "group": "contract_reference",
+      "bytes": 151,
+      "sha256": "5922ef1dc07a55df67b7c82234682b8d1ccdd96092949287f6c3cb56a9e01a4b"
+    },
+    {
+      "path": "contracts/examples/valid/error-410.json",
+      "group": "contract_reference",
+      "bytes": 147,
+      "sha256": "e404338d2887fad7599b108fde23d6af4cfdae67383a44dbacd2fc2c164f24cc"
+    },
+    {
+      "path": "contracts/examples/valid/error-413.json",
+      "group": "contract_reference",
+      "bytes": 152,
+      "sha256": "8072610c2aa9658dc5f68951c3f9194dfd6df318d2f4f9ad8975fe2ed5accd30"
+    },
+    {
+      "path": "contracts/examples/valid/error-422.json",
+      "group": "contract_reference",
+      "bytes": 150,
+      "sha256": "1623ced5f7e7e88d224257859cc04c66832ebc8dfc743450e4ff13a0fc02bc36"
+    },
+    {
+      "path": "contracts/examples/valid/error-429.json",
+      "group": "contract_reference",
+      "bytes": 147,
+      "sha256": "e344b0838ffd68a14f1dd3076e67738aa73d5e9b447fb68c270219138b66c110"
+    },
+    {
+      "path": "contracts/examples/valid/error-503.json",
+      "group": "contract_reference",
+      "bytes": 154,
+      "sha256": "1b2d6a44bac41b8cf26da32bab70d76c3db9d10542bd9c4e9ade1b61707ee1d3"
+    },
+    {
+      "path": "contracts/examples/valid/error-bootstrap-epoch.json",
+      "group": "contract_reference",
+      "bytes": 258,
+      "sha256": "7fb8176ee5fb17f6155f97b56045e4853c41f8ef10d087efdd8ef0a4d2dd6f4f"
+    },
+    {
+      "path": "contracts/examples/valid/error-bootstrap-generation.json",
+      "group": "contract_reference",
+      "bytes": 239,
+      "sha256": "85641f4869ab2457b479082ddac898d2b6a3eed797e8be8fb673818a7ea9dcc7"
+    },
+    {
+      "path": "contracts/examples/valid/error-bootstrap-required.json",
+      "group": "contract_reference",
+      "bytes": 166,
+      "sha256": "37558c2c74dc1ff63eca4557e3686a3e1d5c571a40adffd69767f9e1ecd1698d"
+    },
+    {
+      "path": "contracts/examples/valid/estimate-input.json",
+      "group": "contract_reference",
+      "bytes": 125,
+      "sha256": "b39fa5caf935d108af0e0b3c4a8fc5d9bfe7a48d7335f26f1f957b9609b43a19"
+    },
+    {
+      "path": "contracts/examples/valid/estimate-submicro.json",
+      "group": "contract_reference",
+      "bytes": 321,
+      "sha256": "be284b04924fc8886584539061d5099349a0c51d2307d16a943e2f6dc0e156bd"
+    },
+    {
+      "path": "contracts/examples/valid/estimate.json",
+      "group": "contract_reference",
+      "bytes": 296,
+      "sha256": "0d51b94be326ef6dc3a848027af6317b9be8e2459b21f6f5fade9e9d54ac9d0f"
+    },
+    {
+      "path": "contracts/examples/valid/goal-page.json",
+      "group": "contract_reference",
+      "bytes": 648,
+      "sha256": "ddf7fb367594e46902b9b4f0c5d52a8fc761e7f812ef10a21ea3ab75fb3ca27f"
+    },
+    {
+      "path": "contracts/examples/valid/goal.json",
+      "group": "contract_reference",
+      "bytes": 351,
+      "sha256": "72dc2d9c384376d7f2d5f2c3504a68ffa849cd275017f3b10dae7235ae84ab90"
+    },
+    {
+      "path": "contracts/examples/valid/meal-page.json",
+      "group": "contract_reference",
+      "bytes": 1471,
+      "sha256": "718f67fba0154e3f921fa3cb751651b57d66bed1750228b7efa1bf0bd90eb4ef"
+    },
+    {
+      "path": "contracts/examples/valid/meal-unicode.json",
+      "group": "contract_reference",
+      "bytes": 800,
+      "sha256": "f378f0bada7d746f5189b7aeaf03d4bfa603dfe067e17f7a57155e4136100a9f"
+    },
+    {
+      "path": "contracts/examples/valid/meal.json",
+      "group": "contract_reference",
+      "bytes": 796,
+      "sha256": "0489b4c96645470e357de73c570d87c65249f39de960430a1167625ad39114c3"
+    },
+    {
+      "path": "contracts/examples/valid/product-draft.json",
+      "group": "contract_reference",
+      "bytes": 389,
+      "sha256": "d8242df0dccf135750b4ee085df6c0c61ec7b89777007c226b2fe84cf7a46c0d"
+    },
+    {
+      "path": "contracts/examples/valid/product-page.json",
+      "group": "contract_reference",
+      "bytes": 685,
+      "sha256": "35b78fde56aeb6e774a27102dcb2a557fe57636a4ba63d154317c06adbe2093d"
+    },
+    {
+      "path": "contracts/examples/valid/product.json",
+      "group": "contract_reference",
+      "bytes": 541,
+      "sha256": "b4729496953c6c2df83a315a5c287beec5d59acd210fda15e6cf303bc904bb12"
+    },
+    {
+      "path": "contracts/examples/valid/profile-read.json",
+      "group": "contract_reference",
+      "bytes": 542,
+      "sha256": "4f6918c2e3e2957020506edca166d5450b8683fdb93bc031c134943c0ab4b144"
+    },
+    {
+      "path": "contracts/examples/valid/profile.json",
+      "group": "contract_reference",
+      "bytes": 120,
+      "sha256": "bd6af4f7afb3f1c9a50751e7706bbc558fb46888a0e9edeb8418c9a360e2e440"
+    },
+    {
+      "path": "contracts/examples/valid/ration-page.json",
+      "group": "contract_reference",
+      "bytes": 10023,
+      "sha256": "a1a0ddae19e9967270dca5c08a50520a84cb1e3b322b7bfa550efa3d5638e78b"
+    },
+    {
+      "path": "contracts/examples/valid/ration.json",
+      "group": "contract_reference",
+      "bytes": 8491,
+      "sha256": "0078a21356b13de732d230e2a83175b53d41d3410698ee9ae9e9fbe94e1591b4"
+    },
+    {
+      "path": "contracts/examples/valid/statistics.json",
+      "group": "contract_reference",
+      "bytes": 7530,
+      "sha256": "3ea6f9e7375c27d2ed9fd5a9cdd66af906394fad2657598dd0cdca28a0c0504d"
+    },
+    {
+      "path": "contracts/examples/valid/sync-error-401.json",
+      "group": "contract_reference",
+      "bytes": 185,
+      "sha256": "bbc9274f66dd904117456d7f230e5244066129dc31061cbd750301305cd426b4"
+    },
+    {
+      "path": "contracts/examples/valid/sync-error-403.json",
+      "group": "contract_reference",
+      "bytes": 182,
+      "sha256": "2262cd9546309b573c6528a0533b613cb6377a7dc38bb6c1d2c32c28c420c79a"
+    },
+    {
+      "path": "contracts/examples/valid/sync-error-413.json",
+      "group": "contract_reference",
+      "bytes": 190,
+      "sha256": "70a00db8062d8c628fd636cc969ddc5304653a990416c26095b12624b0cdf303"
+    },
+    {
+      "path": "contracts/examples/valid/sync-error-422.json",
+      "group": "contract_reference",
+      "bytes": 191,
+      "sha256": "e6864ab42af3c21ba3570cc27d9d8ef698401a9818a38d80e1f74b55fbd2204e"
+    },
+    {
+      "path": "contracts/examples/valid/sync-error-429.json",
+      "group": "contract_reference",
+      "bytes": 185,
+      "sha256": "539be28b3eeba6e8a6b2c824900c9f183cedb449dd13bbdceceb7a5bcc996880"
+    },
+    {
+      "path": "contracts/examples/valid/sync-error-503.json",
+      "group": "contract_reference",
+      "bytes": 192,
+      "sha256": "449b6acad16b85ffaf9d6a44c5aff237170add303f07f29f32ae0401046eed40"
+    },
+    {
+      "path": "contracts/examples/valid/sync-error.json",
+      "group": "contract_reference",
+      "bytes": 366,
+      "sha256": "e5773a657af571627977dcf47e19d549ecb8c39293ab620c09922c11a2a13977"
+    },
+    {
+      "path": "contracts/examples/valid/sync-expired.json",
+      "group": "contract_reference",
+      "bytes": 185,
+      "sha256": "e455e9d90fa99dfa388da5923108ae8d4699f389967145b3680a5b1015e522ba"
+    },
+    {
+      "path": "contracts/examples/valid/sync-pull-response.json",
+      "group": "contract_reference",
+      "bytes": 643,
+      "sha256": "fe8aaba34568980dfd437348e5aef5c83ef590c05ec808839725f0a2bc39a98b"
+    },
+    {
+      "path": "contracts/examples/valid/sync-push-request.json",
+      "group": "contract_reference",
+      "bytes": 602,
+      "sha256": "d8369e2138957777d6d8b750c1cff1636e179624bba89eb35d0d8cd3fed1e355"
+    },
+    {
+      "path": "contracts/examples/valid/sync-push-response.json",
+      "group": "contract_reference",
+      "bytes": 333,
+      "sha256": "d1fad8d7bfc474d421fb0255b3007d55e528abbe27d7341df47d2900ff35d3e2"
+    },
+    {
+      "path": "contracts/examples/valid/weight-dst-first.json",
+      "group": "contract_reference",
+      "bytes": 127,
+      "sha256": "ea59ac37332d4e9d822b519807ba02d85e43427e11a1e0092474012e4d30ed69"
+    },
+    {
+      "path": "contracts/examples/valid/weight-dst-second.json",
+      "group": "contract_reference",
+      "bytes": 127,
+      "sha256": "415a8828a6a89151d2927358db37582b3a723a1b27607bc082da20a647e5fbdb"
+    },
+    {
+      "path": "contracts/examples/valid/weight-dst-spring.json",
+      "group": "contract_reference",
+      "bytes": 127,
+      "sha256": "e7dc20311e07071b14cd8d8ef94c8703182f3bfee88a43c221bb456df0620857"
+    },
+    {
+      "path": "contracts/examples/valid/weight-page.json",
+      "group": "contract_reference",
+      "bytes": 646,
+      "sha256": "17e07b8459fdf67cd327d0eefc220eea8606022ade12fe803400189072722bab"
+    },
+    {
+      "path": "contracts/examples/valid/weight-utc-midnight.json",
+      "group": "contract_reference",
+      "bytes": 127,
+      "sha256": "5b15be31eb0caf10b80526a36f93f863ea8c6b84f7b78f3c72b194617faa4716"
+    },
+    {
+      "path": "contracts/examples/valid/weight.json",
+      "group": "contract_reference",
+      "bytes": 127,
+      "sha256": "57a11aa1b6d426c5154a99e852ce543ad3ec4683088d3e6c79f6ada2bec4d99b"
+    },
+    {
+      "path": "contracts/openapi/design-v1.yaml",
+      "group": "contract_reference",
+      "bytes": 989,
+      "sha256": "5451a0034f1ed194adc16c2578e0d10ab61bd68325b19cc11948cda971232eb3"
+    },
+    {
+      "path": "contracts/schemas/ai.schema.json",
+      "group": "contract_reference",
+      "bytes": 52353,
+      "sha256": "c6b240b51a7e3d9aeaf3e2c3801c36e57b2fd124537d6b1d4abcc6a0f1f84d28"
+    },
+    {
+      "path": "contracts/schemas/catalog.schema.json",
+      "group": "contract_reference",
+      "bytes": 16558,
+      "sha256": "4f4074c0c687793e1b54e3bc124198b21200d568908ada925a4f51c333633fd9"
+    },
+    {
+      "path": "contracts/schemas/common.schema.json",
+      "group": "contract_reference",
+      "bytes": 4732,
+      "sha256": "1da6f3135570b5c812af64c2287d0c79029acb23262b38aa345e04ae5767fc2e"
+    },
+    {
+      "path": "contracts/schemas/community.schema.json",
+      "group": "contract_reference",
+      "bytes": 30588,
+      "sha256": "e73037986237e7d84ee29622e45161f6e41ac238e93bf08ff18134417c8966e8"
+    },
+    {
+      "path": "contracts/schemas/deletion-ledger-v1.schema.json",
+      "group": "contract_reference",
+      "bytes": 8999,
+      "sha256": "0fff0adfbc5ab1c13a40f867480955a94cfadca58f8e937580a054b042dc2d6f"
+    },
+    {
+      "path": "contracts/schemas/domain.schema.json",
+      "group": "contract_reference",
+      "bytes": 77073,
+      "sha256": "3286a3c09d7c2959479eb082fe8fc274f1101b01d6c51dc6bf5f036e01e0decb"
+    },
+    {
+      "path": "contracts/schemas/energy.schema.json",
+      "group": "contract_reference",
+      "bytes": 118925,
+      "sha256": "54baca27ddc062b8de98386dde964cd8259998e1c30cdb3e44ab4de9b0cb7764"
+    },
+    {
+      "path": "contracts/schemas/fixtures.schema.json",
+      "group": "contract_reference",
+      "bytes": 18436,
+      "sha256": "0381e8f64b5ed36faa6b3edafe1670b98cd40bdb6280875a1079fbeca80eeb9e"
+    },
+    {
+      "path": "contracts/schemas/motivation.schema.json",
+      "group": "contract_reference",
+      "bytes": 9677,
+      "sha256": "1cfb91ef4180c0b5ac93497a26e28b8fc69e2ea7c03d8555ae7250b5f042b0b7"
+    },
+    {
+      "path": "contracts/schemas/nemesis.schema.json",
+      "group": "contract_reference",
+      "bytes": 12427,
+      "sha256": "fc7050110bf5e8baf8eeaded8910fa391b5e9796607853cc5bb70c8b453851b6"
+    },
+    {
+      "path": "contracts/schemas/sync.schema.json",
+      "group": "contract_reference",
+      "bytes": 53575,
+      "sha256": "c08464421bff7661489c06d4fd5a20b227eff74ed048cc0ded737f56e1a85004"
+    },
+    {
+      "path": "contracts/test-vectors/e6_matching.json",
+      "group": "contract_reference",
+      "bytes": 1429,
+      "sha256": "e3f126d8b673e707ce7137a5b1d29cfedde5bb96c4750930dcc1cdf5f2768602"
+    },
+    {
+      "path": "contracts/test-vectors/nutrition-v1.json",
+      "group": "contract_reference",
+      "bytes": 17587,
+      "sha256": "04c6a42d879d886b914ecd438695fd00a9fe0b40676b58675540a2564bab2329"
+    },
+    {
+      "path": "contracts/test-vectors/statistics-v1.json",
+      "group": "contract_reference",
+      "bytes": 17507,
+      "sha256": "aaaf78876b85a45790a1be0a2f861d840ff19bddc549d6bddd127ed871fac098"
+    },
+    {
+      "path": "docs/ARCHITEKTURA.md",
+      "group": "project_reference",
+      "bytes": 23101,
+      "sha256": "9daac4db5cc7e56bc5b14576fbd41821643cd35046e65fdc9cd6445b7efa2f0a"
+    },
+    {
+      "path": "docs/KOMUNIKACJA_AGENTOW.md",
+      "group": "project_reference",
+      "bytes": 770797,
+      "sha256": "8beb2533368a3d47f6cf51d77200bf7bae3773952db5b0e0cf07991db53b4b49"
+    },
+    {
+      "path": "docs/PLAN_PRAC.md",
+      "group": "project_reference",
+      "bytes": 24465,
+      "sha256": "7f1e12a24b1cf058413d24b853bba06a88d865174b929dde6f6a54cd437a5737"
+    },
+    {
+      "path": "docs/WORKFLOW.md",
+      "group": "project_reference",
+      "bytes": 13207,
+      "sha256": "05dfac73214d9cec78236de0b75b86741a3c98f9d6e4aaf249beab49e5341a97"
+    },
+    {
+      "path": "docs/e2/INTEGRACJA_O1.md",
+      "group": "project_reference",
+      "bytes": 18154,
+      "sha256": "d17de055ee96705b1afdb5f07faa9ae9f21610ad0b446fbef65db4c14487546b"
+    },
+    {
+      "path": "docs/e2/RAPORT_E2.md",
+      "group": "project_reference",
+      "bytes": 20675,
+      "sha256": "26d4bdd461cc5338ae5c9908a14f3bcbc2f41938a2569d10537d30d88ecbafed"
+    },
+    {
+      "path": "docs/e4/DECYZJE_V1.md",
+      "group": "project_reference",
+      "bytes": 4246,
+      "sha256": "5ac8f9c28793e4f8fb9f97f943ee719949788223448b1d473694712ccca26800"
+    },
+    {
+      "path": "docs/e4/INTEGRACJA_O1.md",
+      "group": "project_reference",
+      "bytes": 5344,
+      "sha256": "06cc08d6246939c7087358f975366d45dac1b68e2e02cbbd0ccb5a5f019d1935"
+    },
+    {
+      "path": "docs/e4/KONFIGURACJA_O3.md",
+      "group": "project_reference",
+      "bytes": 10475,
+      "sha256": "bc1d571d38a8b44ba7c805bb895c0abdb7daa96c37e1e5feb4ac206e1a0fb376"
+    },
+    {
+      "path": "docs/e4/RAPORT_E4.md",
+      "group": "project_reference",
+      "bytes": 19961,
+      "sha256": "da23c71f9c996e8cdbf6a2476517d51fe34c5caa578409c0f2beab8fa45236de"
+    },
+    {
+      "path": "docs/e4/RECENZJA_O2.md",
+      "group": "project_reference",
+      "bytes": 11270,
+      "sha256": "f4eb9f31204a32b60c11dd4ab91fc6b2714172e6a05f51ffee0cbea0b67f29d7"
+    },
+    {
+      "path": "docs/e4/USUNIECIE_KONTA.md",
+      "group": "project_reference",
+      "bytes": 6410,
+      "sha256": "f51fad596ff4ca6d3d11cfcfcfaa400f324e385f8bde9fea19be96ded4c66980"
+    },
+    {
+      "path": "tools/contracts/catalog_checks.py",
+      "group": "contract_reference",
+      "bytes": 3472,
+      "sha256": "871beac28ca0d6d6289c6c6880429ff16b226f713da08e786207a0cc04bb1cca"
+    },
+    {
+      "path": "tools/contracts/domain_checks.py",
+      "group": "contract_reference",
+      "bytes": 4252,
+      "sha256": "a7f554f748eb66b05d35f468b1370cc1ba9b922511ed7228a727b6e3e3d9832c"
+    },
+    {
+      "path": "tools/contracts/nutrition_checks.py",
+      "group": "contract_reference",
+      "bytes": 2903,
+      "sha256": "e8756e5486c9b04ddf8c91dd18f49715d107a2453015e4c4b1e9f680443da390"
+    },
+    {
+      "path": "tools/contracts/pyproject.toml",
+      "group": "contract_reference",
+      "bytes": 312,
+      "sha256": "e085bf6fd66b183928ec3c0ffbd520a34cf843b83610ca10f0a2c555fe7a0c61"
+    },
+    {
+      "path": "tools/contracts/source_checks.py",
+      "group": "contract_reference",
+      "bytes": 1889,
+      "sha256": "8e8bef51d95a1334eccc435142f1dadeb9ecf0804ed9ef2bbab66efa653866ba"
+    },
+    {
+      "path": "tools/contracts/sync_checks.py",
+      "group": "contract_reference",
+      "bytes": 5554,
+      "sha256": "a65ce627b528727c82af664600b31d1e8126faf55488d664478cc43f1c3cc0f7"
+    },
+    {
+      "path": "tools/contracts/uv.lock",
+      "group": "contract_reference",
+      "bytes": 59849,
+      "sha256": "55fe094550a3e3079996098d4ec54589b3f37d8bef758afeeac15a7782ba9024"
+    },
+    {
+      "path": "tools/contracts/validate.ps1",
+      "group": "contract_reference",
+      "bytes": 690,
+      "sha256": "054a2eabf4d33f6251ecf3e4256ff286289c1103b8b9d4f0a669d1ce41b30014"
+    },
+    {
+      "path": "tools/contracts/validate.py",
+      "group": "contract_reference",
+      "bytes": 24986,
+      "sha256": "faab0d31e50fbcd3b591b0d0e9c1bb568d0f6869be07b26eb3e1a8027b45377e"
+    },
+    {
+      "path": "tools/sync_client/README.md",
+      "group": "contract_reference",
+      "bytes": 10190,
+      "sha256": "ef922fcb50ce0f45f538fe07342773194aef1db2cd07fb45873cd826cb6604e7"
+    },
+    {
+      "path": "tools/sync_client/__init__.py",
+      "group": "contract_reference",
+      "bytes": 215,
+      "sha256": "898560fb7741848b20add61a201f83d7f4ad93ca3dc9e2698821ab92c283b89f"
+    },
+    {
+      "path": "tools/sync_client/__main__.py",
+      "group": "contract_reference",
+      "bytes": 4358,
+      "sha256": "a9a9aa09730cacb45aef4ad17e2ddc292f29bb263a3aea97528ce8469b7438c0"
+    },
+    {
+      "path": "tools/sync_client/store.py",
+      "group": "contract_reference",
+      "bytes": 43523,
+      "sha256": "8d8779679155d9dd9c37c28692a7c1fcd3c3d3a7d223a0378aaadaadcf93f2af"
+    },
+    {
+      "path": "tools/sync_client/transport.py",
+      "group": "contract_reference",
+      "bytes": 3484,
+      "sha256": "9064fc76d72f07145e1bf0cb0e56e6d21a7ecb51ec4183cd739734bebbd7eae9"
+    },
+    {
+      "path": "tools/sync_client/wire.py",
+      "group": "contract_reference",
+      "bytes": 6128,
+      "sha256": "c44e2b6ec498aac34b6dc0113f9e5349892573486568b92eaaa9c2cf4253b860"
+    }
+  ],
+  "byte_source": "git cat-file --batch (binary stdout; object framing and Git blob SHA-1 verified)",
+  "correction": {
+    "previous_total_source_bytes": 9198358,
+    "previous_crlf_converted_entries": 819,
+    "reason": "The original git archive applied Windows checkout line endings; its checksums described archive members, not raw Git blobs."
+  }
+}
