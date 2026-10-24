@@ -54,7 +54,7 @@ internal class AppAuthGateway(context: Context,private val connectionBuilder:Con
             if (continuation.isActive) {
                 try{network.requireCurrent(permit)}catch(error:NetworkAccessDenied){continuation.resumeWithException(error);return@performTokenRequest}
                 if (response != null && error == null) continuation.resume(response)
-                else continuation.resumeWithException(IllegalStateException("OIDC token request rejected"))
+                else continuation.resumeWithException(error ?: IllegalStateException("OIDC token request rejected"))
             }
         }
         }

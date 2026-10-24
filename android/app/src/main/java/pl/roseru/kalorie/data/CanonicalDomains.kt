@@ -35,6 +35,8 @@ data class CanonicalGoalTimeline(@PrimaryKey val ownerScope: String, val wireCon
     @Query("SELECT * FROM canonical_domains WHERE ownerScope=:owner AND entityType=:type AND localId=:id")
     suspend fun local(owner: String, type: String, id: String): CanonicalDomainState?
     @Upsert suspend fun save(state: CanonicalDomainState)
+    @Query("DELETE FROM canonical_domains WHERE ownerScope=:owner AND entityType=:type AND entityId=:id")
+    suspend fun retire(owner:String,type:String,id:String)
     @Query("SELECT * FROM canonical_goal_timelines WHERE ownerScope=:owner")
     suspend fun timeline(owner: String): CanonicalGoalTimeline?
     @Upsert suspend fun save(timeline: CanonicalGoalTimeline)
@@ -107,11 +109,25 @@ internal class CanonicalDomainEditor(private val db: CalorieDatabase, private va
         return save("product_draft", row.id, payload, isNew)
     }
 
+    /** A retained local historical goal is not necessarily an entity in the current server epoch. */
+    suspend fun goalPredecessor(previous:GoalEntity?):GoalEntity? {
+        if(previous==null)return null
+        val binding=binding() ?: return previous // Guest/recovery work keeps its local historical relationship.
+        return previous.takeIf {legalGoalReference(it,CanonicalMealRows.context(binding))!=null}
+    }
+    private suspend fun legalGoalReference(previous:GoalEntity,wireContext:String):CanonicalDomainState? {
+        val state=dao.local(lease.storageScope,"goal",previous.id) ?: return null
+        if(state.wireContext!=wireContext || state.deleted)return null
+        val ownPending=dao.operations(lease.storageScope,"goal",state.entityId).any {
+            it.wireContext==wireContext && it.action=="upsert" && it.status in setOf("pending","waiting_timeline","waiting_revision")}
+        return state.takeIf {it.serverRevision>0 || ownPending}
+    }
+
     /** New immutable goal versions serialize against the last confirmed axis, in creation order. */
     suspend fun goal(row: GoalEntity, previous: GoalEntity?): Boolean {
         val binding = binding() ?: return false
-        if (previous != null && dao.local(lease.storageScope, "goal", previous.id) == null) return false
         val wireContext = CanonicalMealRows.context(binding)
+        val reference=previous?.let {legalGoalReference(it,wireContext) ?: return false}
         val known = dao.timeline(lease.storageScope) ?: run {
             val gate = try { MealPushStore(db, schema).gate(lease) } catch (_: IllegalStateException) { return false }
             CanonicalGoalTimeline(lease.storageScope, wireContext, Math.toIntExact(checkNotNull(gate.run.timelineRevision)))
@@ -128,7 +144,7 @@ internal class CanonicalDomainEditor(private val db: CalorieDatabase, private va
             .put("energy_kcal", decimal(row.kcal)).put("protein_g", decimal(row.protein)).put("fat_g", decimal(row.fat))
             .put("carbs_g", decimal(row.carbs)).put("activity_class", activity(profile?.activityClass ?: ActivityClass.GARRISON.name))
             .put("estimate", JSONObject.NULL).put("timeline_base_revision", base).put("reason", row.reason)
-            .put("correction_of", previous?.let { dao.local(lease.storageScope, "goal", it.id)?.entityId } ?: JSONObject.NULL)
+            .put("correction_of", reference?.entityId ?: JSONObject.NULL)
         val payload = try { PrivateDomainsWire.read("goal", StrictJson.canonical(value), schema) }
             catch (_: SyncWireException) { return false }
         val operationId = UUID.randomUUID().toString()

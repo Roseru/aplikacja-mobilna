@@ -123,7 +123,11 @@ import java.time.*
         ActivityClass.entries.forEach { option -> FilterChip(selected = activityName == option.name, onClick = { activityName = option.name },
             leadingIcon = { SoldierIcon(option) }, label = { Text(option.label) }, enabled = !busy,
             modifier = Modifier.fillMaxWidth().testTag("activity-${option.name}")) }
-        Text(if (target != null) "Cel po zapisaniu: ${decimal(target)} kcal" else "Nie można przeliczyć celu. Ustaw kcal w Ustawieniach.",
+        Text(when {
+            target != null->"Cel po zapisaniu: ${decimal(target)} kcal"
+            currentKcal == null->"Możesz zapisać profil bez celu. Pierwszy cel kcal ustaw w Ustawieniach."
+            else->"Nie można przeliczyć celu. Ustaw kcal w Ustawieniach."
+        },
             style = MaterialTheme.typography.titleSmall, modifier = Modifier.testTag("activity-goal-preview"))
         Text("Zmiana trybu przelicza bieżący cel: etat ×1,00, Linia ×1,25, Komandos ×1,50. Cel możesz później poprawić w Ustawieniach.",
             style = MaterialTheme.typography.bodySmall)
@@ -134,7 +138,7 @@ import java.time.*
         }
         Text("B/T/W ustawisz oddzielnie w Ustawieniach. Zmiana samego pseudonimu lub wzrostu zachowuje cel kcal.", style = MaterialTheme.typography.bodySmall)
         Button(onClick = { cm?.let { onSave(nickname, it, ActivityClass.valueOf(activityName), DietAim.valueOf(aimName)) } },
-            enabled = nickname.trim().length in 2..40 && cm != null && target != null && !busy, modifier = Modifier.fillMaxWidth().testTag("confirm-profile")) {
+            enabled = nickname.trim().length in 2..40 && cm != null && (currentKcal == null || target != null) && !busy, modifier = Modifier.fillMaxWidth().testTag("confirm-profile")) {
             Text(if (busy) "Zapisuję…" else "Zapisz profil")
         }
     }

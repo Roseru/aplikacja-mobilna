@@ -23,6 +23,7 @@ sealed interface DiaryEvent {
 @OptIn(ExperimentalCoroutinesApi::class)
 class DiaryViewModel(private val repository: DiaryRepository, private val preferences: Preferences, saved: SavedStateHandle,
     private val clock: LocalDayClock = LocalDayClock()) : ViewModel() {
+    val isGuest: Boolean = repository.owner == DiaryRepository.GUEST
     private val dateText = saved.getStateFlow("date", clock.today().toString())
     private val savedState = saved
     val ready = MutableStateFlow(false)
@@ -106,7 +107,7 @@ class DiaryViewModel(private val repository: DiaryRepository, private val prefer
         mutate { repository.addCustomProduct(draft, grams, type, date, mealId, productId); channel.send(DiaryEvent.MealSaved) }
     }
     fun setProfile(nickname: String, height: Double, activity: ActivityClass, aim: DietAim) = mutate {
-        repository.setProfileAndActivityGoal(nickname, height, activity, aim); channel.send(DiaryEvent.Message("Profil i cel zapisane na urządzeniu."))
+        repository.setProfileAndActivityGoal(nickname, height, activity, aim); channel.send(DiaryEvent.Message("Profil zapisany na urządzeniu."))
     }
     fun addWeight(kg: Double, date: LocalDate) = mutate {
         repository.addWeight(kg, date)

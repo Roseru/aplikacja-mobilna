@@ -9,8 +9,13 @@ class SnapshotQuery internal constructor(internal val canonical: String) {
     internal fun json() = StrictJson.read(canonical.toByteArray(Charsets.UTF_8))
     fun encoded(): String {
         val value = json()
-        return value.keys().asSequence().toList().sorted().joinToString("&") { key ->
-            "$key=${URLEncoder.encode(value.get(key).toString(), "UTF-8")}" }
+        return value.keys().asSequence().toList().sorted().flatMap { key ->
+            if (key == "recovery_operation_ids") {
+                val ids = value.getJSONArray(key)
+                (0 until ids.length()).map { ids.getString(it) }
+                    .map { "$key=${URLEncoder.encode(it, "UTF-8")}" }
+            } else listOf("$key=${URLEncoder.encode(value.get(key).toString(), "UTF-8")}")
+        }.joinToString("&")
     }
     override fun toString() = "SnapshotQuery(redacted)"
 }
@@ -22,8 +27,12 @@ class SnapshotPage internal constructor(internal val canonical: String) {
 }
 
 class SnapshotProtocol(private val schema: SyncWireSchema) {
-    fun query(epoch: String, limit: Int = 100, snapshot: String? = null, page: String? = null): SnapshotQuery {
+    internal fun validateFull(epoch:String,pages:List<ArchivedDiaryPage>) { ServerDiaryProtocol(schema).read(epoch,pages) }
+    fun query(epoch: String, limit: Int = 100, snapshot: String? = null, page: String? = null,
+        recoveryOperationIds: List<String> = emptyList()): SnapshotQuery {
+        require(recoveryOperationIds.isEmpty() || (snapshot == null && page == null))
         val json = JSONObject().put("sync_epoch", epoch).put("limit", limit)
+        if (recoveryOperationIds.isNotEmpty()) json.put("recovery_operation_ids", org.json.JSONArray(recoveryOperationIds))
         snapshot?.let { json.put("snapshot_token", it) }
         page?.let { json.put("page_token", it) }
         val canonical = StrictJson.canonical(json)
