@@ -1,19 +1,28 @@
 package pl.roseru.kalorie.sync
 
 import androidx.room.withTransaction
-import kotlinx.coroutines.CancellationException
+import kotlinx.coroutines.*
+import kotlinx.coroutines.flow.collect
+import pl.roseru.kalorie.core.network.*
 import kotlinx.coroutines.sync.Mutex
 import pl.roseru.kalorie.core.sync.SyncWireSchema
 import pl.roseru.kalorie.data.*
 import java.util.UUID
 
+/** A pure evidence drain must never refresh credentials, create a run, or call a gateway. */
+enum class SavedSyncEvidenceResult { APPLIED, NO_LOCAL_WORK, BUSY, STALE_CONTEXT, FAILURE }
+fun interface SavedSyncEvidenceDrainer {
+    suspend fun drainSavedSyncEvidence(expectedLease:OwnerLease,expectedContext:AccountBindingEntity):SavedSyncEvidenceResult
+}
+
 /** Shared manual/background state machine. Authentication and physical-send fences belong to O1. */
 class SyncCoordinator(private val db:CalorieDatabase,private val schema:SyncWireSchema,
-    private val executor:SyncStepExecutor,private val now:()->Long=System::currentTimeMillis) {
+    private val executor:SyncStepExecutor,val networkGate:NetworkAccessGate=ClosedNetworkAccessGate,
+    private val savedEvidence:SavedSyncEvidenceDrainer?=null,private val now:()->Long=System::currentTimeMillis) {
     companion object {
         // One application process, including multiple entry points/coordinator instances.
         private val execution=Mutex()
-        private val blocked=setOf("login","reconciliation","not_configured","storage")
+        private val blocked=setOf("login","reconciliation","not_configured","storage","local_evidence")
     }
     sealed interface Outcome {
         data class Deferred(val epochMillis:Long):Outcome
@@ -50,14 +59,46 @@ class SyncCoordinator(private val db:CalorieDatabase,private val schema:SyncWire
         return state.copy(status="ready",phase="pull_before",activeVersion=0,cycleId=UUID.randomUUID().toString(),
             acknowledged=0,refused=0,reconciliationBaseline=null)
     }
+    fun captureNetworkPermit():NetworkPermit?=try {networkGate.captureAllowed()}catch(_:NetworkAccessDenied){null}
+    private fun authorized(permit:NetworkPermit?):Boolean=try {
+        if(permit==null)false else {networkGate.requireCurrent(permit);true}
+    }catch(_:NetworkAccessDenied){false}
+    private fun networkWaitReason()=when(networkGate.state.value) {
+        NetworkAccessState.Blocked->"network_blocked"
+        NetworkAccessState.Unavailable->"network_unavailable"
+        is NetworkAccessState.Allowed->"network_changed"
+    }
+    private suspend fun waitForNetwork(lease:OwnerLease,binding:AccountBindingEntity):Outcome {
+        val state=save(lease,binding){if(it.status in blocked)it else it.copy(status=networkWaitReason())}
+        return Outcome.Stopped(state.status)
+    }
+    private class PolicyRevoked:CancellationException("Network policy revoked this execution")
+    private suspend fun networkStep(lease:OwnerLease,binding:AccountBindingEntity,step:SyncStep,permit:NetworkPermit):SyncStepResult=coroutineScope {
+        networkGate.requireCurrent(permit)
+        val work=async(start=CoroutineStart.LAZY) {
+            ensureActive();networkGate.requireCurrent(permit)
+            executor.executeSyncStep(lease,binding,step).also {ensureActive();networkGate.requireCurrent(permit)}
+        }
+        val monitor=launch(start=CoroutineStart.UNDISPATCHED) {
+            networkGate.state.collect {
+                try {networkGate.requireCurrent(permit)}catch(_:NetworkAccessDenied){work.cancel(PolicyRevoked())}
+            }
+        }
+        try {work.await()}finally{monitor.cancel()}
+    }
+
     /** Explicit/manual or an eligible-write signal. Neither can shorten a stored Retry-After. */
-    suspend fun request(lease:OwnerLease,binding:AccountBindingEntity,resumeBlocked:Boolean=false,resumeReasons:Set<String> = emptySet()):SyncWorkState=db.withTransaction {
+    suspend fun request(lease:OwnerLease,binding:AccountBindingEntity,resumeBlocked:Boolean=false,resumeReasons:Set<String> = emptySet(),
+        permit:NetworkPermit?=captureNetworkPermit()):SyncWorkState=db.withTransaction {
         val current=guard(lease,binding);val old=db.syncWorkDao().state(lease.storageScope)
         var state=if(old!=null && matches(old,lease,current))old else initial(lease,current,old)
         state=recover(state,current)
+        val allowed=authorized(permit)
+        val mayResume=allowed && (resumeBlocked || state.status!="reconciliation" && state.status in resumeReasons)
         val status=when {
             current.requiresRecovery->"reconciliation"
-            state.status in blocked && !resumeBlocked && (state.status=="reconciliation" || state.status !in resumeReasons)->state.status
+            state.status in blocked && !mayResume->state.status
+            !allowed->networkWaitReason()
             else->"ready"
         }
         state=state.copy(requestedVersion=Math.addExact(state.requestedVersion,1),retryAtMillis=lowerBound(lease.storageScope,state),
@@ -83,7 +124,8 @@ class SyncCoordinator(private val db:CalorieDatabase,private val schema:SyncWire
     }
     private fun backoff(failures:Int):Long=10_000L*(1L shl failures.coerceIn(0,11))
 
-    suspend fun run(lease:OwnerLease,binding:AccountBindingEntity):Outcome {
+    suspend fun run(lease:OwnerLease,binding:AccountBindingEntity,permit:NetworkPermit?=captureNetworkPermit()):Outcome {
+        currentCoroutineContext().ensureActive()
         if(!execution.tryLock())return Outcome.Busy
         try {
             var state=db.withTransaction {
@@ -93,7 +135,30 @@ class SyncCoordinator(private val db:CalorieDatabase,private val schema:SyncWire
                 val value=recovered.copy(retryAtMillis=lowerBound(lease.storageScope,recovered))
                 db.syncWorkDao().save(value);value
             } ?: return Outcome.Stale
+            // Local-only evidence is independent of policy/deadline/business blocks and never
+            // advances a phase or claims a fresh PULL. The O1 adapter owns its saved-session guard.
+            val localResult=savedEvidence?.drainSavedSyncEvidence(lease,binding) ?: SavedSyncEvidenceResult.NO_LOCAL_WORK
+            currentCoroutineContext().ensureActive()
+            state=db.withTransaction {
+                val current=guard(lease,binding);val old=checkNotNull(db.syncWorkDao().state(lease.storageScope))
+                if(!matches(old,lease,current))throw StaleOwnerException()
+                recover(old,current).copy(retryAtMillis=lowerBound(lease.storageScope,old)).also {db.syncWorkDao().save(it)}
+            }
+            when(localResult) {
+                SavedSyncEvidenceResult.BUSY->return Outcome.Busy
+                SavedSyncEvidenceResult.STALE_CONTEXT->return Outcome.Stale
+                SavedSyncEvidenceResult.FAILURE->{
+                    val failed=save(lease,binding){if(it.status in blocked)it else it.copy(status="local_evidence")}
+                    return Outcome.Stopped(failed.status)
+                }
+                SavedSyncEvidenceResult.APPLIED,SavedSyncEvidenceResult.NO_LOCAL_WORK->Unit
+            }
             if(state.status in blocked)return Outcome.Stopped(state.status)
+            if(!authorized(permit))return waitForNetwork(lease,binding)
+            val granted=checkNotNull(permit)
+            if(state.status.startsWith("network_"))state=save(lease,binding) {
+                it.copy(status=if(it.retryAtMillis>now())"deferred" else if(it.activeVersion==0L)"ready" else "running")
+            }
             if(state.retryAtMillis>now())return Outcome.Deferred(state.retryAtMillis)
             if(state.status=="idle" && state.requestedVersion<=state.handledVersion)return Outcome.Complete
             if(state.activeVersion==0L || state.status=="idle")state=save(lease,binding) {
@@ -103,7 +168,8 @@ class SyncCoordinator(private val db:CalorieDatabase,private val schema:SyncWire
             repeat(32) {
                 db.withTransaction {guard(lease,binding)}
                 val step=if(state.phase=="push")SyncStep.PUSH else SyncStep.PULL
-                val result=executor.executeSyncStep(lease,binding,step)
+                val result=networkStep(lease,binding,step,granted)
+                currentCoroutineContext().ensureActive();networkGate.requireCurrent(granted)
                 // A late response for A->B->A cannot move this machine or apply a projection.
                 db.withTransaction {guard(lease,binding)}
                 when(result) {
@@ -153,7 +219,11 @@ class SyncCoordinator(private val db:CalorieDatabase,private val schema:SyncWire
                 }
             }
             return defer(lease,binding,Math.addExact(now(),1_000))
+        }catch(error:PolicyRevoked){
+            currentCoroutineContext().ensureActive()
+            return try{waitForNetwork(lease,binding)}catch(_:StaleOwnerException){Outcome.Stale}
         }catch(error:CancellationException){throw error}
+        catch(_:NetworkAccessDenied){return try{waitForNetwork(lease,binding)}catch(_:StaleOwnerException){Outcome.Stale}}
         catch(_:StaleOwnerException){return Outcome.Stale}
         catch(_:SnapshotCapacityException){return try{stop(lease,binding,"storage")}catch(_:StaleOwnerException){Outcome.Stale}}
         catch(_:Exception){

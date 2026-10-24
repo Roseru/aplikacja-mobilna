@@ -45,27 +45,38 @@ class SyncWakeStorageTest {
     private suspend fun jobs(work:WorkManager,ticket:SyncWorkTicket,predicate:(List<WorkInfo>)->Boolean)=withTimeout(15_000) {
         work.getWorkInfosForUniqueWorkFlow(ticket.uniqueName()).first(predicate)
     }
-    private suspend fun ticket(db:CalorieDatabase,lease:OwnerLease)=SyncWorkTicket(lease.storageScope,lease.generation,CanonicalMealRows.context(db.bootstrapDao().binding(lease.storageScope)!!))
+    private suspend fun ticket(db:CalorieDatabase,lease:OwnerLease)=SyncWorkTicket(lease.storageScope,lease.generation,CanonicalMealRows.context(db.bootstrapDao().binding(lease.storageScope)!!),policyRevision=1)
 
     @Test fun restartKeepsOneWatchAndEligibleWriteSchedulesWorkThatWaitsForNetworkConstraint()=runBlocking<Unit> {
         val db=memory();val scope=CoroutineScope(SupervisorJob()+Dispatchers.Default);lateinit var runtime:SyncWorkRuntime;val work=manager {runtime}
         try {
             val lease=account(db);val ticket=ticket(db,lease);val calls=AtomicInteger()
             val executor=SyncStepExecutor {_,_,_->calls.incrementAndGet();SyncStepResult.LoginRequired}
-            val sessions=MutableStateFlow(SyncSessionSignal(lease,false));val coordinator=SyncCoordinator(db,schema,executor)
+            val sessions=MutableStateFlow(SyncSessionSignal(lease,false));val coordinator=SyncCoordinator(db,schema,executor,networkGate=RuntimeAllowedNetwork)
             runtime=SyncWorkRuntime(db,coordinator,SyncWorkScheduler(work))
             var observer=runtime.observe(scope,sessions)
             state(db,lease){it.requestedVersion>0};val first=jobs(work,ticket){it.isNotEmpty()}.single()
             assertEquals(WorkInfo.State.ENQUEUED,first.state);assertEquals(0,calls.get())
             val watch=withContext(Dispatchers.IO){work.getWorkInfosForUniqueWork(SyncWorkScheduler.WATCH).get()};assertEquals(1,watch.size)
             observer.cancelAndJoin()
-            runtime=SyncWorkRuntime(db,SyncCoordinator(db,schema,executor),SyncWorkScheduler(work));observer=runtime.observe(scope,sessions)
+            runtime=SyncWorkRuntime(db,SyncCoordinator(db,schema,executor,networkGate=RuntimeAllowedNetwork),SyncWorkScheduler(work));observer=runtime.observe(scope,sessions)
             val restarted=state(db,lease){it.requestedVersion>1}
             assertEquals(1,withContext(Dispatchers.IO){work.getWorkInfosForUniqueWork(SyncWorkScheduler.WATCH).get()}.size)
+            val restartedJobs=jobs(work,ticket){rows->rows.any {it.id!=first.id && it.state==WorkInfo.State.ENQUEUED}}
+            val restartedIds=restartedJobs.map {it.id}.toSet()
             DiaryRepository(db,context,lease).addWeight(80.0,LocalDate.of(2026,10,21))
             state(db,lease){it.requestedVersion>restarted.requestedVersion}
-            jobs(work,ticket){it.size>=3};assertEquals(0,calls.get())
-            WorkManagerTestInitHelper.getTestDriver(context)!!.setAllConstraintsMet(first.id)
+            val afterWrite=jobs(work,ticket){rows->rows.any {it.id !in restartedIds && it.id!=first.id}}
+            val successor=afterWrite.single {it.id !in restartedIds && it.id!=first.id}
+            // APPEND depends on the still constrained predecessor. It must not become runnable yet.
+            println("restart after write: "+afterWrite.joinToString {"${it.id}:${it.state}"})
+            assertEquals(WorkInfo.State.BLOCKED,successor.state)
+            assertEquals(0,calls.get())
+            // APPEND_OR_REPLACE may prune a cancelled predecessor; no surviving old work may run.
+            val oldInfo=withContext(Dispatchers.IO){work.getWorkInfoById(first.id).get()}
+            assertTrue(oldInfo==null || oldInfo.state==WorkInfo.State.CANCELLED)
+            val fresh=afterWrite.first {it.id in restartedIds && it.state==WorkInfo.State.ENQUEUED}
+            WorkManagerTestInitHelper.getTestDriver(context)!!.setAllConstraintsMet(fresh.id)
             state(db,lease){it.status=="login"};assertEquals(1,calls.get())
             observer.cancelAndJoin()
         }finally{scope.cancel();work.cancelAllWork().result.get();db.close()}
@@ -74,7 +85,7 @@ class SyncWakeStorageTest {
         val db=memory();val scope=CoroutineScope(SupervisorJob()+Dispatchers.Default);lateinit var runtime:SyncWorkRuntime;val work=manager {runtime}
         try {
             val lease=account(db);val ticket=ticket(db,lease);val calls=AtomicInteger()
-            val coordinator=SyncCoordinator(db,schema,SyncStepExecutor {_,_,_->calls.incrementAndGet();SyncStepResult.LoginRequired})
+            val coordinator=SyncCoordinator(db,schema,SyncStepExecutor {_,_,_->calls.incrementAndGet();SyncStepResult.LoginRequired},networkGate=RuntimeAllowedNetwork)
             val sessions=MutableStateFlow(SyncSessionSignal(lease,false));runtime=SyncWorkRuntime(db,coordinator,SyncWorkScheduler(work))
             runtime.observe(scope,sessions)
             val first=jobs(work,ticket){it.isNotEmpty()}.single();val driver=WorkManagerTestInitHelper.getTestDriver(context)!!
@@ -96,7 +107,7 @@ class SyncWakeStorageTest {
         val db=memory();val scope=CoroutineScope(SupervisorJob()+Dispatchers.Default);lateinit var runtime:SyncWorkRuntime;val work=manager {runtime}
         try {
             val a=account(db);val oldTicket=ticket(db,a);val calls=mutableListOf<OwnerLease>()
-            val coordinator=SyncCoordinator(db,schema,SyncStepExecutor {lease,_,_->calls+=lease;SyncStepResult.LoginRequired})
+            val coordinator=SyncCoordinator(db,schema,SyncStepExecutor {lease,_,_->calls+=lease;SyncStepResult.LoginRequired},networkGate=RuntimeAllowedNetwork)
             val sessions=MutableStateFlow(SyncSessionSignal(a,false));runtime=SyncWorkRuntime(db,coordinator,SyncWorkScheduler(work));runtime.observe(scope,sessions)
             val old=jobs(work,oldTicket){it.isNotEmpty()}.single()
             val b=account(db);val bTicket=ticket(db,b)
@@ -120,7 +131,7 @@ class SyncWakeStorageTest {
             val db=memory();val scope=CoroutineScope(SupervisorJob()+Dispatchers.Default);lateinit var runtime:SyncWorkRuntime;val work=manager {runtime}
             try {
                 val lease=account(db);val ticket=ticket(db,lease);val calls=AtomicInteger()
-                val coordinator=SyncCoordinator(db,schema,SyncStepExecutor {_,_,_->calls.incrementAndGet();if(loginBlocked)SyncStepResult.LoginRequired else SyncStepResult.NotConfigured})
+                val coordinator=SyncCoordinator(db,schema,SyncStepExecutor {_,_,_->calls.incrementAndGet();if(loginBlocked)SyncStepResult.LoginRequired else SyncStepResult.NotConfigured},networkGate=RuntimeAllowedNetwork)
                 val sessions=MutableStateFlow(SyncSessionSignal(lease,loginBlocked,false));runtime=SyncWorkRuntime(db,coordinator,SyncWorkScheduler(work));runtime.observe(scope,sessions)
                 val first=jobs(work,ticket){it.isNotEmpty()}.single();val driver=WorkManagerTestInitHelper.getTestDriver(context)!!
                 driver.setAllConstraintsMet(first.id)

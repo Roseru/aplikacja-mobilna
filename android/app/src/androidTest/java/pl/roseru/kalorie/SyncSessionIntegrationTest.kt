@@ -92,11 +92,11 @@ class SyncSessionIntegrationTest {
                 }
                 WorkManagerTestInitHelper.initializeTestWorkManager(context,Configuration.Builder().setExecutor(SynchronousExecutor()).setTaskExecutor(SynchronousExecutor()).setWorkerFactory(factory).build())
                 work=WorkManager.getInstance(context)
-                val coordinator=SyncCoordinator(db,schema,controller){clock};val scheduler=SyncWorkScheduler(work){clock}
+                val coordinator=SyncCoordinator(db,schema,controller,networkGate=RuntimeAllowedNetwork){clock};val scheduler=SyncWorkScheduler(work){clock}
                 runtime=SyncWorkRuntime(db,coordinator,scheduler)
                 if(!worker)assertEquals(SyncCoordinator.Outcome.Complete,runtime.manual(lease)) else {
                     coordinator.request(lease,binding)
-                    val request=scheduler.enqueue(SyncWorkTicket(lease.storageScope,lease.generation,CanonicalMealRows.context(binding)))
+                    val request=scheduler.enqueue(SyncWorkTicket(lease.storageScope,lease.generation,CanonicalMealRows.context(binding),policyRevision=1))
                     WorkManagerTestInitHelper.getTestDriver(context)!!.setAllConstraintsMet(request.id)
                     assertEquals(WorkInfo.State.SUCCEEDED,withTimeout(15_000){work.getWorkInfoByIdFlow(request.id).filterNotNull().first {it.state.isFinished}}.state)
                 }
