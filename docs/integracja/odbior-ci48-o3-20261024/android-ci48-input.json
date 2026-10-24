@@ -1,0 +1,16 @@
+{
+  "result": "NOT_CONFIGURED_FOR_LIVE_ACCEPTANCE",
+  "method": "aapt dump --values resources original APK; no installation or execution",
+  "commit": "48bc4217f3f3da27923563ab275db18e999c62bc",
+  "apk_sha256": "3d8610313728ae011bb7ef81d95253232fe7a59f70a09fb5765de5f1376db8ba",
+  "version_name": "0.8.28",
+  "version_code": 39,
+  "resources": {
+    "api_base_url": "",
+    "oidc_issuer": ""
+  },
+  "android_acceptance": "MISSING",
+  "original_apk_preserved": true,
+  "replacement": "REQUESTED_FUTURE_CONFIGURED_O1_DELIVERY_AFTER_INTEGRATION",
+  "room20_receipt_substituted": false
+}

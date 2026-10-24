@@ -1,0 +1,170 @@
+{
+  "publication_date": "2026-10-24",
+  "state": "PUSHED_WIP_WAITING_O1_PORTS_NOT_ACCEPTED",
+  "branch": "codex/android-o2-polityka-runtime",
+  "head": "be6c42303b5af5c6e62cafb804b38b558a5ddb09",
+  "parent": "4f6bb841818daa5b0823132a2120106dd97c3c61",
+  "tree": "868e8ceaba64d9b4d550064e527378141839c224",
+  "url": "https://github.com/Roseru/aplikacja-mobilna/commit/be6c42303b5af5c6e62cafb804b38b558a5ddb09",
+  "remote_sha_verified": true,
+  "product_pr_created": false,
+  "merged_to_main_or_O1": false,
+  "scope": "Human-authorized WIP source snapshot for integration and review; two known P2 counterexamples remain. No WF05/full runtime acceptance.",
+  "source_files": [
+    {
+      "path": "android/SYNCHRONIZACJA_W_TLE.md",
+      "bytes": 14715,
+      "git_blob_sha256": "956e77f674aec386f6f930edb0a3d7800a3918eaf079d9515b399dec91e7ce2f"
+    },
+    {
+      "path": "android/app/src/androidTest/java/pl/roseru/kalorie/RuntimeAllowedNetwork.kt",
+      "bytes": 360,
+      "git_blob_sha256": "1cf308c52af50e7e9d6107fda00a22a58e76a099f9ee1f60f04434e99cf234c4"
+    },
+    {
+      "path": "android/app/src/androidTest/java/pl/roseru/kalorie/SyncCoordinatorStorageTest.kt",
+      "bytes": 16357,
+      "git_blob_sha256": "025a27f80ecaa39923e6d427c545c8988305c906c3abb8adc6154d3df1e6eda1"
+    },
+    {
+      "path": "android/app/src/androidTest/java/pl/roseru/kalorie/SyncNetworkPolicyStorageTest.kt",
+      "bytes": 26111,
+      "git_blob_sha256": "280bbae5d45c022e0fc9aaadb5948273b64d95dc1bf89239554dbc5f721b21e2"
+    },
+    {
+      "path": "android/app/src/androidTest/java/pl/roseru/kalorie/SyncRecoveryResumeTest.kt",
+      "bytes": 11072,
+      "git_blob_sha256": "5ad21bd67c81f4ee2deef12fc8ca4d47ab89500ecc7fb9177858417d928bfbb2"
+    },
+    {
+      "path": "android/app/src/androidTest/java/pl/roseru/kalorie/SyncSessionIntegrationTest.kt",
+      "bytes": 9335,
+      "git_blob_sha256": "0798b9e26b2245d8a801b632bc9d7b1c9b252c8af8bcaea41f1d5dc82f221be7"
+    },
+    {
+      "path": "android/app/src/androidTest/java/pl/roseru/kalorie/SyncWakeStorageTest.kt",
+      "bytes": 12187,
+      "git_blob_sha256": "97565025ed75e481d87ff4110e96a775a99c60b1bf2e40e049d8a7ae0a3e103d"
+    },
+    {
+      "path": "android/app/src/androidTest/java/pl/roseru/kalorie/SyncWorkStorageTest.kt",
+      "bytes": 10139,
+      "git_blob_sha256": "6bdb885bc4b4b0322f50fdf68c36953b84b861e23fb2518f3b4ec6eda3856bb4"
+    },
+    {
+      "path": "android/app/src/main/java/pl/roseru/kalorie/sync/SyncCoordinator.kt",
+      "bytes": 16346,
+      "git_blob_sha256": "f0dfd40db5027ff08f6708db6958734b85bb0627f21e1536facfc08ed9cb5b1f"
+    },
+    {
+      "path": "android/app/src/main/java/pl/roseru/kalorie/sync/SyncWork.kt",
+      "bytes": 12237,
+      "git_blob_sha256": "3c853686831a3619f979785eef9cd27556662efe96232b3781768dde340fd00a"
+    },
+    {
+      "path": "android/app/src/main/java/pl/roseru/kalorie/sync/SyncWorkPresentation.kt",
+      "bytes": 1806,
+      "git_blob_sha256": "33000ff10b6ab2d256745507780fb393d3edc3cbdb31c0fe91fb909f7c93f8db"
+    }
+  ],
+  "published_byte_hashes": "Hashes above cover Git blob bytes. Prior local test receipts keep their original hashes and source scopes.",
+  "publication_change": "Only the documentation WIP notice changed after the final local test series. The ten Kotlin source/test files retain their reviewed content; no test rerun for publication.",
+  "constructors": [
+    "SyncCoordinator(db:CalorieDatabase,schema:SyncWireSchema,executor:SyncStepExecutor,networkGate:NetworkAccessGate=ClosedNetworkAccessGate,savedEvidence:SavedSyncEvidenceDrainer?=null,now:()->Long=System::currentTimeMillis)",
+    "SyncWorkRuntime(db:CalorieDatabase,coordinator:SyncCoordinator,scheduler:SyncWorkScheduler); networkGate derives coordinator.networkGate",
+    "SavedSyncEvidenceDrainer.drainSavedSyncEvidence(expectedLease:OwnerLease,expectedContext:AccountBindingEntity):SavedSyncEvidenceResult",
+    "SavedSyncEvidenceResult=APPLIED|NO_LOCAL_WORK|BUSY|STALE_CONTEXT|FAILURE; APPLIED is not fresh PULL/cycle completion"
+  ],
+  "fixed_scope": [
+    "Cancel captured old unique chain plus legacy name; no cancelAllWorkByTag.",
+    "Unique chain includes owner/lease generation, SHA256(wireContext) and policyRevision.",
+    "After awaiting local saved evidence, uniformly recheck cancellation, owner lease and wire context.",
+    "Restart fixture drives the real constrained successor and asserts exactly one executor call."
+  ],
+  "local_test_series_not_additive": [
+    {
+      "name": "initial independent counterexamples",
+      "tests": 3,
+      "pass": 0,
+      "failures": 3,
+      "errors": 0,
+      "skipped": 0,
+      "evidence_availability": "retained_private",
+      "xml_sha256": "e2dfd0db1aec13675db9773610a551ec1d5c59ef73c75065a0333370fe922c44"
+    },
+    {
+      "name": "native after cancel correction",
+      "tests": 33,
+      "pass": 29,
+      "failures": 4,
+      "errors": 0,
+      "skipped": 0,
+      "failures_scope": "Two known ABA failures and two fixture failures; later fixture corrections are separate scopes.",
+      "evidence_availability": "retained_private",
+      "xml_sha256": "54e2cfc7ef63a6afd6bfdd9b395ed6a4368feb8e6922224f0fd61bd67ac4b8b1"
+    },
+    {
+      "name": "affected tests after narrow corrections",
+      "tests": 12,
+      "pass": 11,
+      "failures": 1,
+      "errors": 0,
+      "skipped": 0,
+      "failure_scope": "Restart fixture expected ENQUEUED, but constrained APPEND successor correctly remained BLOCKED.",
+      "evidence_availability": "retained_private",
+      "xml_sha256": "259a4d0ba1f6b237cd2ed8c498ed572599a4a0192530a70f7734863a2d9dd89b"
+    },
+    {
+      "name": "final repaired restart fixture",
+      "tests": 1,
+      "pass": 1,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 0,
+      "evidence_availability": "retained_private",
+      "xml_sha256": "a4e0700ff393aa7df13ade86320b2146dfa207807f7c17525fe1babb0b2685ab"
+    }
+  ],
+  "lint": {
+    "errors": 0,
+    "fatal": 0,
+    "warnings": 46,
+    "information": 1,
+    "scope": "Final production; before the last test-only restart assertion repair.",
+    "evidence_availability": "retained_private",
+    "xml_sha256": "100ab7cb4a6bf37652d820c26e00a51b5b72c3beeb598e72c944c5c374cc42cd"
+  },
+  "boundary_probe": {
+    "methods": 1,
+    "variants": 2,
+    "result": "PASS: ordinary PULL can issue GET/refresh even with saved raw; it cannot implement a guaranteed local-only drain."
+  },
+  "remaining_P2": [
+    "A stale ticket may obtain a new same-revision permit after Allowed(7)->Blocked->Allowed(7). Ticket, execute and reschedule must bind the original issuance instance/generation.",
+    "StateFlow may conflate same-revision ABA and leave a suspended executor holding the mutex. The revocation generation must remain observable."
+  ],
+  "waiting_external": [
+    {
+      "owner": "O1",
+      "input": "Typed local-only SavedSyncEvidenceDrainer session adapter for saved ACK/raw, with existing owner/context guards and zero refresh/HTTP.",
+      "resume_condition": "Pinned source delivery or explicit bounded delegation; O2 then integrates and tests the real adapter."
+    },
+    {
+      "owner": "O1",
+      "input": "Observable issuance generation/instance on the one shared network gate, surviving same-revision ABA.",
+      "resume_condition": "Pinned provider contract and implementation; O2 binds runtime tickets/execute/reschedule to the original capability and reruns the counterexamples."
+    }
+  ],
+  "request_url": "https://github.com/Roseru/aplikacja-mobilna/pull/146#issuecomment-6382259951",
+  "integration_requirements": "O1 wires the same app.networkPolicy. O2 does not change reserved provider/core/session/root/Room23 without delivery or bounded delegation. APPLIED saved evidence is not fresh PULL/cycle completion.",
+  "not_qualified": [
+    "full native suite at final source",
+    "real O1 saved-session adapter integration",
+    "WF05 runtime acceptance",
+    "Room22 live E4",
+    "phone",
+    "v1.0"
+  ],
+  "new_tests_for_publication": false,
+  "github_ci_for_wip_branch": "No run triggered: Project CI runs on pull_request to main or push main. The WIP branch has no PR; local failures remain explicit."
+}

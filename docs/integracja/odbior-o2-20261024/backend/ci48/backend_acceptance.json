@@ -1,0 +1,9 @@
+{
+  "result": "PASS",
+  "commit": "48bc4217f3f3da27923563ab275db18e999c62bc",
+  "image": "sha256:020b20b65652c56abedbfad970753acbe59b566118b3e821707669b25e64c35e",
+  "schema_revision": "0026_ledger_review",
+  "scope": "owned HTTPS meal recovery; see recovery-o2.json and compatibility matrix",
+  "android_acceptance": "NOT_RUN",
+  "full_ko32": "WAITING_EXTERNAL"
+}

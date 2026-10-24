@@ -1,0 +1,11 @@
+{
+  "result": "PASS",
+  "release_id": 422629205,
+  "release_url": "https://github.com/Roseru/aplikacja-mobilna/releases/tag/untagged-d85ad9133083bfcca3ca",
+  "asset_id": 672032818,
+  "archive": "O3-CI48-SZCZEGOLOWE-DOWODY-20261024.zip",
+  "bytes": 40993,
+  "sha256": "291957b3f59b58dc162d08d120e52f44cee5c29f8072b893f030aaf2d4e46a7a",
+  "files": 33,
+  "independent_audit": "PENDING"
+}

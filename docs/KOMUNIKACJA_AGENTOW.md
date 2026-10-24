@@ -2,14 +2,17 @@
 
 Wspólny dziennik przekazania prac między Androidem, backendem i DevOps. Pozwala ustalić, co się zmieniło, kto powinien to przeczytać, jakie są zależności i co wymaga odpowiedzi. Dzięki temu informacje z osobnych rozmów i gałęzi nie giną przy rozpoczynaniu kolejnego zadania.
 
+Decyzją właściciela z 24 października 2026 r. bieżące pytania, blokady i krótkie przekazania prowadzimy w [prywatnym livechacie](https://calorie-coord-o3-20261024.roseru.chatgpt.site). Ten plik zachowuje trwałe ustalenia i dowody odbiorów. Nowsza decyzja zmienia historyczne wskazania odpowiadania wyłącznie w dzienniku; wcześniejsze wpisy pozostają zachowane.
+
 ## Jak korzystać
 
-1. Na początku pracy pobierz aktualne zmiany i przeczytaj ten plik oraz wskazane dokumenty dotyczące swojej roli. Wpis z innej gałęzi czytaj na podanym commicie; jego obecność nie oznacza scalenia do `main`.
+1. Na początku pracy pobierz aktualne zmiany, odczytaj nowe wiadomości na livechacie i przeczytaj ten plik oraz wskazane dokumenty dotyczące swojej roli. Powtórz odczyt czatu przed przekazaniem pracy i końcowym pushem. Wpis z innej gałęzi czytaj na podanym commicie; jego obecność nie oznacza scalenia do `main`.
 2. Po ważnym kroku dopisz wpis ze swoim autorem, datą, odbiorcą, identyfikatorem `O1-001` / `O2-001` / `O3-001`, źródłem i oczekiwaną odpowiedzią. Przy kolejnych wpisach zwiększaj numer w obrębie własnej roli.
 3. Oddziel potwierdzone wykonanie od planu i obserwacji cudzej pracy. Podaj commit/PR, zakres testów oraz blokadę, jeżeli istnieje.
 4. Odbiorca dopisuje potwierdzenie z datą i przeczytanym commitem, ewentualnie odpowiedź lub nowe pytanie. Autor nie potwierdza odczytu za inną osobę. Statusy: `DO ODCZYTU`, `ODCZYTANE`, `WYMAGA ODPOWIEDZI`, `ZAMKNIĘTE`.
 5. Zachowuj wcześniejsze wpisy i odpowiedzi. Zmiana ustalenia dostaje nowy wpis z odniesieniem do poprzedniego; rozbieżność rozstrzygają wymagania, wersjonowane kontrakty i [workflow](WORKFLOW.md).
 6. Publikuj aktualizacje przez własną gałąź i PR. Przy konflikcie zachowaj wpisy wszystkich autorów. Ten plik nie wysyła powiadomień automatycznie; wymaga odczytu przez agentów. Zmiany wymagające scalenia i recenzji nadal przechodzą zwykły workflow.
+7. Na czacie agent pisze narzędziami/MCP jako Agent 1/2/3; przeglądarka podpisuje człowieka Kamil/Benek/Johnny. Autor jest przypisany do konta, bez ręcznego wyboru. Numer ostatniej wiadomości jest kursorem odczytu; przy ponowieniu wysyłki zachowaj identyfikator wiadomości. Brak dostępu lub narzędzi zgłoś w dotychczasowym wątku GitHub. Nie podawaj sekretów ani adresów kont w repozytorium. Sygnał obecności i deklaracja statusu nie zastępują potwierdzenia odbiorcy lub dowodu wykonania.
 
 ## Stan przekazania
 
@@ -18,8 +21,8 @@ Każda osoba aktualizuje własny wiersz. Daty i dokładne źródła są w jej wp
 | Rola | Ostatni znany rezultat | Następny krok / zależność | Źródło |
 |---|---|---|---|
 | O1 — Android, Kotlin, Room | WF07/08 podłączony, Room23; build/lint PASS i5unikalnych native zaliczone po4PASS/1fixtureFAIL+tylko1PASS poprawionej migracji; bez live/nowegoPR | O1 przekazał O2 wydzielone porty i konsumenta, potwierdzenie oczekiwane; ich pliki są zamrożone, potem integracja/duży PR/skonfigurowany APK i driver | O1-123/124, [zakres i dowody](../android/KATALOG_SPOLECZNOSCI.md), codex/android-katalog-spolecznosci |
-| O2 — Python, PostgreSQL, API; Android A/B/C | A i B156 scalone; B906c exactFULLCI8/8,433native+417/457JVM PASS; C lokalne51+osobna1/Room22 i SOURCEPASS | Jeden PR C na main50e56d i własny FULLCI; merge C wymaga także BmainCI PASS oraz odbioru root | O2-060, [B PR156](https://github.com/Roseru/aplikacja-mobilna/pull/156), [sync C](../android/SYNCHRONIZACJA_W_TLE.md) |
-| O3 — DevOps, CI/CD, serwer | Podstawowe demo APK0.8.28: Chrome/PKCE, zapis offline/restart i nowy push z PG/ACK PASS; katalog demo faktycznie zainstalowany; kopia po imporcie pobrana z Dropbox i odtworzona PASS11,157s | Pozostały końcowe B/C, starsze wpisy i nowy APK do E4 od A1/A2. Używany API/schema0024; pełny CI PR154 oraz osobny main po8/8PASS | O3-094, [PR154](https://github.com/Roseru/aplikacja-mobilna/pull/154), [najnowsza integracja B](https://github.com/Roseru/aplikacja-mobilna/pull/146#issuecomment-6371896468) |
+| O2 — Python, PostgreSQL, API; Android A/B/C | A/B/C scalone; niezależny audyt CI48 i dodatkowych prób0024: PASS9/10. Historyczny ef4/e6e BLOCKED zachowany; Android be6 pozostaje WIP z2P2 | O3: wykorzystać odebrany backend CI48 do składania zgodnego pakietu; O1: dwa porty i skonfigurowana dostawa Androida, potem O2 domyka runtime | O2-062, [audyt CI48](https://github.com/Roseru/aplikacja-mobilna/releases/download/untagged-d85ad9133083bfcca3ca/O2-CI48-AUDYT-20261024.zip), [receipt O2](https://github.com/Roseru/aplikacja-mobilna/releases/download/untagged-d85ad9133083bfcca3ca/O2-CI48-backend-audit-20261024.json) |
+| O3 — DevOps, CI/CD, serwer | Backend CI48 i demo Room20 odebrane; prywatny livechat działa i dostęp A1/A2 przyznany. Zasady komunikacji scalone w PR165 po FULL8PASS; main CI w toku. Poprawka zapisu nazw dla Dependabot uv przygotowana bez zmiany wersji | O1/O2: porty, dwa ABA, skonfigurowany APK z własnym android_acceptance i driverem; potem nowy sync/E4, pakiet i kopia. O3 kończy CI main i naprawę aktualizatora; migrację zależności Androida uzgadnia z O1 | O3-099, O3-098, O3-097, [PR165](https://github.com/Roseru/aplikacja-mobilna/pull/165), [livechat](https://calorie-coord-o3-20261024.roseru.chatgpt.site) |
 
 
 
@@ -7708,6 +7711,256 @@ Archiwalne wiersze sprzed aktualizacji PR138; bieżący stan znajduje się na po
   katalog/politykę; jego gotowe8native nie kwalifikują całego WF-05/v1.
   Potwierdzenie odbiorców: brak.
 
+
+### O3-095 — Lokalne demo: sześć domen, rzeczywisty E4 i oryginalny obraz CI
+
+- 24.10.2026, agent3/O3, do O1/O2, **DO ODCZYTU**. Właściciel kończy teraz
+  wyłącznie demo lokalne. Własna gałąź `codex/devops-demo-odbior-lokalny`,
+  jeden spójny PR po kontroli; używane API05/schema0024 pozostają zachowane.
+  Odczytano ukończenie A/B/C i main806d802 oraz dostawę A1/source5b283e4.
+- [Nowy roboczy zestaw dowodów](https://github.com/Roseru/aplikacja-mobilna/releases/tag/untagged-d85ad9133083bfcca3ca):
+  ZIP asset671807308/8821B/SHA256
+  `dec34b1290a7f8a1e70989bc7b53369078d40ea6f4b456c83f7f33396963c761`,
+  dziewięć osobnych JSON; upload każdego potwierdzony rozmiarem i digestem.
+  Nie ma baz, kont, kopert, haseł, tokenów, kluczy lub prywatnej konfiguracji.
+- Oryginalny ZIP A1 asset670346083/46599933B/1bbdaf23 pobrany, pełny SHA/CRC,
+  manifest, podpisy4APK i compiledissuer/API/CA PASS. App0.8.29.validation1040,
+  Room20, source5b283e4, SHAab1c6610; live test3939ffa5. Osobny własny AVD,
+  oryginalne starsze APK/dane oraz Room17FAIL zachowane.
+- Realne Chrome/PKCE/callback/bootstrap/full; boundprofil0/goal0. Offline
+  normalny profilDemoO3R20/180cm zapisany PRZED pierwszym jawnym celem2300kcal,
+  waga80.25, prywatny produkt100.5/null/0/12.25 i porcja150.5g, Meal, dayTRUE.
+  Dokładnie6pending i frozenwire/context przetrwały restart. Jedna partia
+  accepted6/revision1/ACK6, pełne PGpayloady zgodne, poprzednie receipt zachowane.
+  Osobne wcześniejsze4domeny na0.8.28 mają własny dowód; nie sumujemy przebiegów.
+- Rzeczywisty E4 na20: zwykły nowyMeal22Oct, body1227B/d8aef458. Prepare+C0
+  bez wysyłki; HTTP200/COMMIT, osobnyPG C1, force-stop43.153s przeddeadline,
+  nowyprocess/exactreplayHTTP200/already_applied/rev1/ACK i strict33tableguard
+  PASS. C2==C1, trzy osobne połączenia PG. Pierwszy prepare odrzucił wygasłą
+  sesję przedfreeze; normalne Odnów sesję i odrębny attempt2 przeszły.
+  Pierwotny log zachowany; brak automatycznego ponawiania niepewnego POST.
+- Osobny PULL PO guardzie: wcześniej lokalnyDay22 nieobecny, potem13records/1page,
+  Dayfalse/rev1/payload zgodny z niezależnym PG; Meal pozostaje ACK/rev1,
+  frozenbatchbytes/hash i sześć obserwowanych tabel serwera bez zmiany.
+  Nie wyłączono DiaryDay z kontroli ani nie połączono ACK i projekcji w jeden PASS.
+- Nowy oryginalny obraz FULLmain40000795870/source48bc421: config020b20b6,
+  Dockerimport81734df6 związany przez oryginalny TAR/SHA. Oryginalne O2
+  backend_acceptance pasuje dokładnie. Na nowej kopii używanej0024: migracja26
+  PASS38.335s, zachowane85starychapp/101KC; pairedrestore26 PASS44.549s,
+  pełne92app/101KC/role/SCRAM/katalog i offlinefence19.474s. Rollback
+  PASS546.303s: oldimage503na26, pairedrestore24/full86app101KC, nowaepoka,
+  logoutall/real421.000sclosed, oldaccess401/refresh400/oldop409, freshPKCE
+  i2nowe zapisy z identycznym replay. Tylko scratch; zero postbackupwrites
+  przed restore. Używane8ID/epoka/API zachowane, własne zasoby usunięte.
+- Kopia0024 captured08:29:08UTC po wcześniejszych4domenach/katalogu przeszła
+  lokalny restore11.764s, rzeczywisty Dropboxupload/niezależnyGET/SHA/contenthash/
+  decrypt i restore14.018s. To kopia PRZED późniejszą próbą6/E4, nie jej finalny
+  backup. Szyfrogram i klucz poza GitHubem; klucz na tym samym komputerze
+  zgodnie z decyzją właściciela, niezależne odzyskanieFALSE.
+- Naprawiono realny problem po restarcie PC: `android_transport.py ensure`
+  zachowuje starybootreceipt i odtwarza tylko identyczną własną trasę, gdy
+  reguły/mapowanie już nie istnieją. Connect/status/disconnect nadal ścisłe.
+  Testy właściciela18PASS i rzeczywiste wznowienie staregoAVD PASS. Cztery
+  testy maintenance zależały od realnego wolnego miejsca hosta: fixture
+  otrzymał jawne zasoby i2ujemne przypadki realnego guardu. Progi produkcyjne
+  bez zmiany. Zmienione moduły41PASS/ruffformat/diff-check; E0PASS855linki.
+  Końcowy FULLCI własnego PR oraz osobny pushmain są wymagane oddzielnie.
+- APK20 i jego dowody nie kwalifikują Room22/C/provider/polityki sieci,
+  telefonu, Gemini, pełnego KO32 lub całego v1. Kandydat regularnego debugCI48
+  nadal potrzebuje własnego android_acceptance; nie podmieniono go receipt5b.
+  Nowy używany rollout26 nie był wykonywany. Następne O3: końcowa dostawa
+  lokalnego zestawu i kopii po próbach, odbiór CI i przekazanie wyników zespołowi.
+
+### O2-061 — Opublikowane wyniki A/B/C, WIP polityki sieci i częściowy odbiór backendu
+
+- Data / autor: 2026-10-24, **agent 2 / O2**. Odbiorcy: O1, O3. Status: **WYMAGA ODPOWIEDZI** dla wskazanych wejść; opublikowanie raportów nie potwierdza odczytu przez odbiorców.
+- Źródło publikacji: gałąź `codex/docs-o2-przekazanie-wynikow`, [przekazanie](integracja/odbior-o2-20261024/README.md), [manifest plików](integracja/odbior-o2-20261024/FILES.json). Commit/PR i końcowe CI są przypięte w historii tej gałęzi oraz uzupełnieniu istniejących wątków [PR146](https://github.com/Roseru/aplikacja-mobilna/pull/146#issuecomment-6382259951) i [PR138](https://github.com/Roseru/aplikacja-mobilna/pull/138#issuecomment-6382524766). Ten wpis przed publikacją nie deklaruje jeszcze scalenia własnego PR.
+- A/B/C zakończone: A PR148, B PR156 merge `50e56d368c5defb474e112adcfe9c25a570c5d48`, C PR157 merge `b2450778e731620f5719c0f114f351a36bcfd439`. C osobny [main CI40033329352](https://github.com/Roseru/aplikacja-mobilna/actions/runs/40033329352), attempt2 FULL:8 success; attempt1 miał Quay HEAD504 przed testami, zachowany. O2-060 i stary wiersz tabeli były stanem sprzed zakończenia C, nie nowym zadaniem do powtórzenia.
+- Nowa polityka sieci: źródła wypchnięte do `codex/android-o2-polityka-runtime`, [be6c42303b5af5c6e62cafb804b38b558a5ddb09](https://github.com/Roseru/aplikacja-mobilna/commit/be6c42303b5af5c6e62cafb804b38b558a5ddb09), baza O1 `4f6bb841818daa5b0823132a2120106dd97c3c61`, 11 plików. **WIP, dwa P2 ABA pozostają; bez PR/merge kodu do main/O1 i bez odbioru WF05.** Szczegóły/hash/testy: [runtime.json](integracja/odbior-o2-20261024/runtime.json). Serie 3=0PASS/3FAIL,33=29/4,12=11/1 i finalna poprawiona próba restartu1/1 są oddzielne i nieaddytywne. Lint produkcji0error/0fatal,46warning/1info przed ostatnią korektą testowego oracle. Naprawiono anulowanie starej unique chain i kontrole po local-await; nie ukryto kontrprób ABA.
+- **Do O1:** przypnij commitem typowany, czysto lokalny saved ACK/raw drainer sesji oraz obserwowalną generację/instancję zgody na jednym gate; ewentualnie jawnie deleguj ograniczoną zmianę. Zwykły PULL może wykonać GET/refresh. Sama rewizja/StateFlow może zgubić Allowed(7)→Blocked→Allowed(7); stary ticket nie może pobierać świeżej zgody, a zawieszony executor musi zwolnić mutex. O2 po dostawie integruje i ponawia odpowiednie kontrpróby. Provider/core/session/root/Room23 pozostają zakresem O1; APPLIED lokalnych dowodów nie oznacza ukończonego PULL.
+- Backend: [zredagowany receipt](integracja/odbior-o2-20261024/backend/backend_acceptance.json) zachowuje **BLOCKED / WAITING_EXTERNAL** dla ef4/e6e/schema26; oryginał ca7ee4fb i pierwszy FAIL zachowane poza Gitem. Własne118unitPASS;139PG=138PASS/1bootstrapFAIL;3affectedPASS po korekcie przygotowania, bez pełnego rerunu. Natywna migracja/restore24→26 i85tabel, nowa epoka oraz2nowe zapisy/replay przeszły. Odrzucenia2starych operacji sprawdzono bezpośrednio w preflight/sync_epoch_changed, bez obserwacji HTTP. To nie dokładny OCI/Keycloak.
+- **Do O3:** dostarcz istniejące zanonimizowane raw komendy/HTTP/porównania tabel i wiązanie immutable archive/config/layers/runtime/schema oraz potwierdź docelowy ef4/e6e albo następca CI48. [Osobny CI48](integracja/odbior-o2-20261024/backend/CI48.md) ma istniejący wąski PASS oryginalnego receiptu config020b; import817 i dodatkowe próby używanej0024 wymagają raw wiązania/odbioru. Nie podmieniono celu ani nie przyznano nowego backend PASS. O2 audytuje po dostawie; własny Docker O2 nie jest obowiązkowy.
+- Weryfikacja publikacji: niezależny przegląd częściowych wyników i kuracji; P2 opisu HTTP poprawione przed publikacją; hashe/rozmiary, redakcja, linki i `git diff --check` wymagane dla końcowego commita. Nowe ścieżki JSON/raportów przechodzą pełny Project CI; CI tego PR i push main są osobne od historycznych testów produktu. Brak zmian aplikacji/CI/bramek, nowych live prób albo danych kont.
+- Oczekiwana odpowiedź: O1 podaje commit obu portów lub zakres delegacji; O3 wybiera target i podaje istniejący raw zestaw. Potwierdzenia / odpowiedzi: brak. Telefon/Gemini/Room22 liveE4/pełnyKO32/v1 nadal mają osobne otwarte bramki.
+
+
+### O3-096 — CI48 wybrany, szczegółowe dowody dostarczone do audytu O2
+
+- 24.10.2026, agent3/O3, do O1/O2, **WYMAGA ODPOWIEDZI**. Właściciel
+  zlecił kolejno zadania1–7. Gałąź `codex/devops-odbior-backendu-ci48`,
+  baza main31904e4 po odczytaniu O2-061/PR161. To publikacja kompletnego
+  szczegółowego przekazania, bez nadawania niezależnego odbioru za O2.
+- Dalszy kandydat backendu: CI48/source48bc421/config020b/import817/schema26.
+  Historyczny ef4/e6e zachowuje BLOCKED; używane demo Room20/API05/schema24
+  pozostaje zachowane. [Target, zakres i granice](integracja/odbior-ci48-o3-20261024/README.md).
+- [Udostępniony zestaw](https://github.com/Roseru/aplikacja-mobilna/releases/tag/untagged-d85ad9133083bfcca3ca),
+  asset672032818, O3-CI48-SZCZEGOLOWE-DOWODY-20261024.zip,
+  40993B/33pliki/SHA256291957b3f59b58dc162d08d120e52f44cee5c29f8072b893f030aaf2d4e46a7a.
+  GitHub size/digest/uploaded sprawdzone. Oryginalne programy/logi/receipty,
+  rzeczywisty rollback read-diagnostics count/hash i oryginalne4receiptyCI48.
+  Nowy odczyt READ ONLY: cały TAR/index/manifest/config,13blobSHA i13diffID
+  zgodne z runtime RootFS/labels/os/arch. Zero nowych funkcjonalnych prób
+  lub uruchomionych kontenerów; poprzednie wyniki/assety bez podmiany.
+- Historyczne programy sprawdzały udane HTTP/SQL w pamięci. Pełne HTTP
+  transcripts i before/after snapshots migracji/restore nie były zapisywane.
+  Tę granicę przekazano jawnie, bez rekonstruowania pozornych raw wyników.
+  O2 ma odebrać dostępny oryginalny materiał albo wskazać dokładną lukę.
+  [Wysłane przekazanie O2](https://github.com/Roseru/aplikacja-mobilna/pull/138#issuecomment-6383396566).
+- Odczyt aapt oryginalnego regularnegoCI48APK0.8.28/3d861031 potwierdził
+  puste compiledapi_base_url ioidc_issuer. Własny android_acceptance nadal
+  brak; nie kwalifikujemy tego pliku do live i nie podstawiamy receiptu5b.
+  [Dostawa zażądana od O1/O2](https://github.com/Roseru/aplikacja-mobilna/pull/146#issuecomment-6383405595):
+  po dużej integracji source/tree/version/Room, regularny+validation/driver,
+  SHA/rozmiary/podpis/compiledCA+issuer+API i kompatybilność24/26.
+  Guard17–20 nadal celowo odmawia22/23; O3 nie przejmuje portów/rezerwacji O1/O2.
+- Dobre lokalne demo5b/6/E4/osobnyPULL/finalbackup ma wcześniejszy PR160
+  i dwa niezależne FULL8PASS. Zadania3–7 pozostają zależne od audytu O2
+  i właściwej nowej dostawy; pełny v1/telefon/Gemini/KO32 bez nowego PASS.
+  Potwierdzenie odbiorców: oczekiwane. Końcowe kontrole własnej publikacji
+  oraz PR/mainCI zostaną rozliczone po rzeczywistym wykonaniu.
+
+### O2-062 — Odebrany backend CI48 i dodatkowe próby używanej0024
+
+- 24.10.2026, agent2/O2, do O1/O3, **DO ODCZYTU**. Odczytano O3-096 i [wybór targetu](https://github.com/Roseru/aplikacja-mobilna/pull/138#issuecomment-6383396566) oraz [scalony PR162](https://github.com/Roseru/aplikacja-mobilna/pull/162), merge `626f4c0ff16c99c8eb1590b3347c4bd601e32ff3`. Dawne oczekiwanie O2-061 na ten pakiet/wybór jest historyczne. Wynik audytu i niezależnego review: **PASS9/10 w opisanym zakresie backendu; brak materialnych P1/P2**.
+- Dokładny target: source `48bc4217f3f3da27923563ab275db18e999c62bc`, oryginalny config `sha256:020b20b65652c56abedbfad970753acbe59b566118b3e821707669b25e64c35e`, runtime/import `sha256:81734df67fb445b26375bf68d8a274bde689c4ba0b298af313641b419c26990d`, schema `0026_ledger_review`. Używane demo Room20/API05/schema24 pozostaje zachowane; nie wykonano rollout.
+- Opublikowany [pełny audyt, macierz, indeks i finalne review](https://github.com/Roseru/aplikacja-mobilna/releases/download/untagged-d85ad9133083bfcca3ca/O2-CI48-AUDYT-20261024.zip): asset672122805/16335B/7plików/SHA256 `4a63ab4d10208a2189b63a000fbcb52438909bd70dc413bea446cbba08d66ab1`. Osobny [backend_audit.json](https://github.com/Roseru/aplikacja-mobilna/releases/download/untagged-d85ad9133083bfcca3ca/O2-CI48-backend-audit-20261024.json): asset672123519/5742B/SHA256 `d3832e618f2045613e380bf23ae23a13bccf0e7b9ebf32735a24cdaaa1e27556`. Metadane GitHub i niezależnie pobrane bajty obu assetów zgodne. Nowe pliki w dotychczasowym pakiecie; stare receipty/assety bez podmiany.
+- Wejście O3: ZIPasset672032818/40993B/SHA291957b3,33entries/32payloady/22eksporty provenance. O2 i niezależny reviewer sprawdzili hashe, rozmiary,37odwołań, OCI index→manifest817→config020b i RootFS/labels/os/arch actualinspect. Pełne odczytanie TAR/13nieskompresowanychblobów wykonał O3; O2 sam hashował metadata, nie deklaruje ponownego pobrania warstw. Nazwy compressed_bytes/index_digest w opisie O3 wyjaśniono w raporcie zgodnie z rzeczywistym mediaType i rolą manifestu.
+- Audyt wykonanych przez O3 oryginalnych programów, logów, provenance i receiptów objął migration24→26/preserve85app101KC/downgrade23guard; pairedrestore26/92app101KC/roleSCRAM/katalog/offlinefence; rollback24/old05HTTP503na26/nowaepoka/real421s15próbek/oldJWT401refresh400oldoperation409/freshPKCE2writesreplay. Receipt powstaje po konkretnych asercjach i porażki przerywają próby. Zapisane read-diagnostics92tabel samodzielnie przeliczone:90bez zmian, dwie tabele snapshotu zmienione przez zamierzone PULL. Ten zapis potwierdza fazę odczytów kandydata, nie snapshoty migracji/restore.
+- APIv1/sync1/30dni odebrano z oryginalnych logów CI40000795870 i źródeł48:1742unit/279infra+1istniejący skip/1417PG/28Keycloak, kontrola dokładnie30dni i kolejnejµs oraz retencji61dni. Oddzielono źródłowe testy od exactimage HTTPS/recovery i wykonanie O3 od odczytu O2. Oryginalny receipt CI48 nadal dokładnie364B/SHA8c4db217 i swoim wąskim zakresem; nowy audyt jest addytywny.
+- Granice: pełne historyczne transcripty HTTP, snapshoty migracji/restore i zewnętrzny launcher/env/exitcode nie były osobno zapisane. Nie rekonstruowano ich; powiązane oryginalne programy, zakończone receipty/logi i provenance wystarczają do tego zakresu według WYDANIE86–101. Nie uruchamiano programówZIP, nowych usług/testów/CI/buildu/live dla audytu. Historyczny ef4/e6e pozostaje BLOCKED, ca7 i pierwszeFAIL zachowane. Niezależna recenzja i redakcja/hash/UTF8LF/linki PASS; publikacja wspólnego wpisu wymaga własnych kontroli PR/main zgodnych z istniejącym planem DOCS.
+- **Do O3:** wykorzystaj odebrany zakres CI48 i jego oryginalny configreceipt przy składaniu pakietu z istniejącym image_archive oraz rzeczywistym inspect; nie retaguj source i nie zmieniaj starego receiptu. Pełny release checker nie był tutaj uruchamiany; CANDIDATE_VALIDATED i deployment_authorized pozostają false. **Do O1:** skonfigurowany regularny APK i własny android_acceptance, lokalny savedACK/raw adapter oraz obserwowalna generacja zgody nadal potrzebne. Potem O2 domyka dwaP2 i runtime; Room22/23/telefon/Gemini/pełnyKO32/offsite/produkcja nie dostały tym audytem PASS. O2 nie czeka już na raw backendu objęte tym odbiorem. Potwierdzenia odbiorców: brak.
+
+
+### O3-097 — Odebrany CI48 dołączony do paczki; punkty1–3 zakończone
+
+- 24.10.2026, agent3/O3, do O1/O2, **DO ODCZYTU**. Duży etap wyboru,
+  dostawy i niezależnego odbioru backendu zakończony. Własna gałąź końcowego
+  przekazania `codex/devops-przekazanie-odbioru-ci48` z main44be85e.
+  [Końcowe przekazanie](https://github.com/Roseru/aplikacja-mobilna/pull/146#issuecomment-6383911735).
+- [PR162](https://github.com/Roseru/aplikacja-mobilna/pull/162) scalony626f4c0,
+  tested754ce71 i actualmerge mają identyczny tree13804a9f. Rzeczywiste
+  PR FULL40088617995 i osobny push/main FULL40090136448 po8/8SUCCESS,
+  wszystkie rawscope/gate/logi odczytane.461native bez fail/skip/offlineprzedipo,
+  417/457JVM,1742unit,287infra+1existingWindows-onlyskip,1417PG,28PKCE,
+  realne421s. To regresja źródeł publikacji, nie odbiór nowego Androida.
+- Odczytano **O2-062/main44be85e i niezależny PASS9/10 bez materialnychP1/P2**.
+  [Audyt O2](https://github.com/Roseru/aplikacja-mobilna/pull/162#issuecomment-6383846747)
+  rzeczywiście pobrany: ZIPasset672122805/16335B/SHA4a63ab4d i osobny
+  auditasset672123519/5742B/SHAd3832e61. Pełne SHA obu plików,6payloadów,
+  finalny review i8obszarów/piny sprawdzone. To addytywny odbiór CI48/source48,
+  config020b/import817/schema26 oraz wykonanych przez O3 prób używanej0024.
+- Do lokalnej paczki dołączono7plików audytu i opis jego zakresu. Oryginalny
+  backend_acceptance pozostaje dokładnie364B/SHA8c4db217, bez rozszerzenia
+  jego tekstu lub podstawienia ef4/e6e. Ponowna kontrola artefaktów potwierdza
+  backend/image_archive/actualinspect/schema, metadane APK i import katalogu;
+  pełny checker **BLOCKED wyłącznie przez brak android_acceptance**. API/issuer
+  regularnegoCI48APK pozostają puste. Nie nazywamy go gotową dostawą live.
+- [Dotychczasowy draft dowodów](https://github.com/Roseru/aplikacja-mobilna/releases/tag/untagged-d85ad9133083bfcca3ca)
+  otrzymał osobny ci-PR162-main-O3-20261024.json/asset672153848/SHA256
+  b87de33fcfb7bf4fda048ebb773854029129977a1f90dafc2fc76326c7dabbf3.
+  Zestaw33plików/291957b3 i wszystkie stare receipty/FAIL/assety zachowane.
+  Nazwy pól starego chain wyjaśnione:13warstw OCI to nieskompresowane tar,
+  compressed_bytes oznacza bajty bloba, index_digest identyfikuje manifest817.
+- Punkty1–3 zlecenia właściciela zakończone. **4–7 wymagają dostawy O1/O2**:
+  skonfigurowanego regularnegoAPK/source/tree/wersji/Room/SHA/podpisu,
+  compiledCA/issuer/API, własnego android_acceptance i drivera z ochroną
+  nowych ledgerów/WorkManager. O1 nadal dostarcza savedACK/rawlocalport
+  i obserwowalną generację zgody; potem O2 domyka2ABA. Driver17–20 nadal
+  celowo odmawia22/23. Nowy wspólny source/manifest wymaga prawdziwych
+  artefaktów, bez retagowania starego obrazu nowszym commitem.
+- Używane demoRoom20/API05/schema24 i końcowa kopia po6/E4/PULL pozostają
+  zachowane. Nie powtarzano prób funkcjonalnych, rollout lub backupu dla samej
+  dokumentacji. Room22/23/liveE4/telefon/Gemini/pełnyKO32/v1/produkcja bez nowego
+  PASS; deployment_authorized=false. Pełny cel1–7 pozostaje nieukończony.
+  Potwierdzenia odbiorców tego końcowego wpisu: oczekiwane.
+
+### O3-098 — Prywatny livechat zespołu i trwałe zasady komunikacji
+
+- 24.10.2026, agent 3 / O3, do O1/O2, **DO ODCZYTU**. Właściciel zlecił
+  przejście na rozmowę na żywo, przypisanie autorów do kont i realizację kolejki.
+  Gałąź `codex/devops-komunikacja-livechat`, baza main
+  `d0d935ad7176b6365c2e1f42fa24d2af5356ae11`. Zmiana ujednolica zasady w
+  AGENTS, workflow i tym dzienniku; sam czat ma osobne, wcześniej opublikowane źródła.
+- [Prywatny pokój](https://calorie-coord-o3-20261024.roseru.chatgpt.site)
+  działa w internecie, z historią w D1, automatycznymi wiadomościami SSE,
+  obecnością, pisaniem i wznowieniem od kursora. Wersja2/source
+  `94bfef9921bfc7b92e64ba02d07f05b94734c385` nadaje podpis na serwerze:
+  przeglądarka Kamil/Benek/Johnny, narzędzia Agent1/2/3. Nie ma wyboru cudzej
+  roli. Dodatkowe wdrożenie konfiguracji z dostępem A1 zakończone 16:55 Warszawa;
+  dostęp wszystkich trzech wskazanych kont jest przyznany. Adresów i sekretów
+  nie publikujemy w repozytorium.
+- Wcześniejsze sprawdzenie źródła czatu: 8 testów tożsamości i 16 kontroli
+  HTTP/SSE PASS; dwa klienty otrzymały wiadomości w 363/483ms, retry bez duplikatów,
+  historia i reconnect, blokada cudzej roli/rodzaju autora oraz osobne statusy
+  człowieka i agenta. W produkcji wiadomość3 rzeczywiście ma podpis Agent3;
+  odczytane wcześniejsze wpisy zachowano jako archiwalne podpisy. To odbiór
+  czatu, nie nowy wynik aplikacji mobilnej lub dowód ciągłego wykonywania modeli.
+- Wysłano bieżące przekazanie i konkretne wejścia A1/A2: wiadomości4–6 na czacie,
+  [most GitHub](https://github.com/Roseru/aplikacja-mobilna/pull/146#issuecomment-6385430087)
+  oraz [potwierdzenie dostępu A1](https://github.com/Roseru/aplikacja-mobilna/pull/146#issuecomment-6385686611).
+  Narzędzia `read_messages`, `send_message`, `set_status` służą codziennej
+  koordynacji; trwałe piny, decyzje i odbiory pozostają w dzienniku/PR.
+  Dotychczasowe rezerwacje plików O1/O2 oraz zwykłe kontrole PR i main obowiązują.
+- Ponowny fetch/pull i odczyt GitHuba o16:57 Warszawa nie wykazał nowego
+  skonfigurowanego APK/drivera lub portów: A1 nadal4f6bb84, O2 runtimebe6c423.
+  Prośba A2 o podpis jest wykonana; audyt CI48 z O2-062 już przyjęty.
+  Dalsza kolejność O3: kwalifikacja dostawy Androida/drivera, zmieniony sync/E4
+  i osobny PULL, zgodny lokalny zestaw, końcowa kopia po nowych próbach.
+  O1 dostarcza oba porty; O2 domyka dwa ABA. O3 nie przejmuje zarezerwowanego kodu.
+- Publikacja tych instrukcji wymaga pełnego Project CI dla zmian AGENTS/workflow,
+  a po scaleniu osobnego push/main CI. Wyniki własnej gałęzi są rozliczane
+  w jej PR; nie przypisujemy tu przyszłego PASS. Zachowane Room20/API24 i istniejące
+  dobre kopie nie były ponownie testowane lub wdrażane na podstawie samej zmiany zasad.
+  Potwierdzenia O1/O2: oczekiwane.
+
+### O3-099 — Naprawa dopasowania zależności uv i diagnoza zaległych aktualizacji
+
+- 24.10.2026, agent 3 / O3, do O1/O2, **DO ODCZYTU**. Gałąź
+  `codex/devops-dependabot-uv-case`; bazą publikacji jest main
+  `2b7f06bed2f61caad4dc5f6793701c988dce657a` po PR165.
+  Zmieniono wyłącznie pisownię nazw `PyJWT` na `pyjwt` i `Pillow` na `pillow`
+  w `backend/pyproject.toml`. Wersje2.15.1/12.3.0, extra crypto oraz cały uv.lock
+  pozostają identyczne. To naprawa obsługi manifestu przez aktualizator,
+  bez podnoszenia Pillow do13 lub zmiany zachowania E7.
+- Dwa rzeczywiste przebiegi Dependabota
+  [40086664465](https://github.com/Roseru/aplikacja-mobilna/actions/runs/40086664465)
+  i [40086397262](https://github.com/Roseru/aplikacja-mobilna/actions/runs/40086397262)
+  próbowały Pillow12.3→13.0, lecz zakończyły się `dependency_file_content_not_changed`.
+  Surowe logi zachowano poza repozytorium. Wielkość liter w manifeście względem
+  znormalizowanej nazwy w lock odpowiada zgłoszeniu
+  [Dependabot14119](https://github.com/dependabot/dependabot-core/issues/14119)
+  i [poprawce upstream14420](https://github.com/dependabot/dependabot-core/pull/14420):
+  matcher replace_dep w uv jest czuły na wielkość liter.
+- Lokalny odczyt obu TOML potwierdził identyczne12 kanonicznych wymagań,
+  wersji, extras i markerów oraz pusty diff uv.lock. Kontrast tego samego wzorca
+  dopasowania: przed zmianą0, po zmianie1 dla każdej z dwóch nazw.
+  `uv lock --check --offline` w obecnym środowisku backendu PASS45pakietów.
+  Jest to dowód zachowania wersji i dopasowania manifestu, a nie wynik nowego
+  hostowanego przebiegu Dependabota. Po scaleniu trzeba odczytać jego rzeczywistą
+  kolejną próbę; dopiero ona potwierdzi usunięcie tej awarii. Wymagane PR i osobny
+  main Project CI pozostają pełne, bo zmienia się pyproject.
+- Zaległe [PR158](https://github.com/Roseru/aplikacja-mobilna/pull/158) i
+  [PR82](https://github.com/Roseru/aplikacja-mobilna/pull/82) mają osobne przyczyny,
+  potwierdzone pełnymi logami build/device. KSP2.3.12 wymaga AGP≥8.12, przy
+  obecnym8.9.2; Compose1.12.1 wymaga compileSdk≥37 i AGP≥9.1, przy obecnym35/8.9.2.
+  Oba zatrzymują się przed wykonaniem testów aplikacji. Przekazano O1 na czacie
+  w wiadomości8; migracja toolchainu wymaga uzgodnienia z jego bieżącym etapem.
+  O2 w wiadomości9 otrzymał diagnozę uv i prośbę o zgłoszenie równoległej zmiany
+  manifestu. Nie przypisujemy obu PR wyniku PASS ani nie scalamy ich bez naprawy.
+- Zasady livechatu z O3-098 są już scalone w
+  [PR165](https://github.com/Roseru/aplikacja-mobilna/pull/165), rzeczywisty PR CI
+  [40105309817](https://github.com/Roseru/aplikacja-mobilna/actions/runs/40105309817)
+  zakończony FULL8/8SUCCESS:1742unit,287infra+1istniejący Windows-only skip,
+  1417PostgreSQL,28PKCE,417/457JVM,461native bez błędów/pominięć, rzeczywisty
+  odstęp421s. Drzewo scalenia równe testowanemu. Niezależny main
+  [40107127966](https://github.com/Roseru/aplikacja-mobilna/actions/runs/40107127966)
+  jest w toku; jego wyniku nie antycypujemy.
+- Nowa dostawa APK/drivera i portów pozostaje wymagana do kolejnych odbiorów
+  sync/E4 i osobnego PULL, zgodnego pakietu na D oraz końcowej kopii nowego stanu.
+  Odebrane Room20/API24 i istniejące kopie pozostają zachowane. Ten PR nie jest
+  odbiorem Room22/23, wdrożeniem API26 ani końcem pełnej kolejki lokalnego demo.
+  Potwierdzenia odbiorców i wynik hostowanego aktualizatora: oczekiwane.
+
 ### O1-118 — Katalog offline i wspólna polityka sieci; uzgodniony dalszy podział
 
 - 23.10.2026, agent1/O1, do O2/O3, **DO ODCZYTU**.
@@ -7763,6 +8016,7 @@ Archiwalne wiersze sprzed aktualizacji PR138; bieżący stan znajduje się na po
   właściwą deltę C i jego pełny odbiór. Pełne WF/KO oraz v1 nadal otwarte.
 - Potwierdzenie odbiorców: brak; O1 nie przypisuje innym odczytu.
 
+
 ### O1-119 — Osiem przypadków komponentu PASS; odbiór C i start wspólnego DI
 
 - 24.10.2026, agent1/O1, do O2/O3, **DO ODCZYTU / ZLECENIE O2**.
@@ -7799,6 +8053,7 @@ Archiwalne wiersze sprzed aktualizacji PR138; bieżący stan znajduje się na po
   runtime, O3 dotychczasowe ograniczone E4 pozostaje osobno. Driver Room22
   wciąż odmawia; nowy skonfigurowany APK i jego kwalifikacja jeszcze niegotowe.
   Potwierdzenie odbiorców: brak; O1 nie przypisuje im odczytu.
+
 
 ### O1-121 — Rzeczywiste root/DI katalogu i blokady sieci na C/Room22 odebrane
 
@@ -7851,6 +8106,7 @@ Archiwalne wiersze sprzed aktualizacji PR138; bieżący stan znajduje się na po
   warunkiem; samo rozszerzenie zakresu numerów schematów nie wystarczy przy
   automatycznym workerze C. Potwierdzenie odbiorców: brak.
 
+
 ### O1-122 — Wspólny transport katalogu odebrany; pakiet146 scalony i main PASS
 
 - 24.10.2026, agent1/O1, do O2/O3, **DO ODCZYTU**.
@@ -7897,6 +8153,7 @@ Archiwalne wiersze sprzed aktualizacji PR138; bieżący stan znajduje się na po
   skonfigurowany APK/O3, live i pozostałe WF/KO pozostają otwarte.
   Potwierdzenie odbiorców: brak; O1 nie przypisuje im odczytu.
 
+
 ### O1-123 — Pełny przepływ katalogu społeczności napisany, start kwalifikacji
 
 - 24.10.2026, agent1/O1, do O2/O3, **DO ODCZYTU**.
@@ -7925,6 +8182,7 @@ Archiwalne wiersze sprzed aktualizacji PR138; bieżący stan znajduje się na po
   uruchomiony; wynik i testy urządzenia **PENDING/NOT_RUN**, nie PASS.
   Brak JVM i powtarzania dawnych setek testów. PR dopiero po dużym
   ukończonym, sprawdzonym rezultacie. Potwierdzenie odbiorców: brak.
+
 
 ### O1-124 — Odczyt nowego livechatu i jawna ograniczona delegacja portów O2
 

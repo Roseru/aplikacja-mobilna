@@ -1,0 +1,52 @@
+{
+  "publication_date": "2026-10-24",
+  "paths_relative_to": "directory containing this manifest",
+  "encoding": "UTF-8/LF; exact Git blob bytes; manifest excludes itself",
+  "files": [
+    {
+      "path": "backend/acceptance_matrix.json",
+      "bytes": 4906,
+      "sha256": "4a0f638a33665044075a9ec5bb8e73b398a7e4de34a7fd985e64d51829a3812b"
+    },
+    {
+      "path": "backend/backend_acceptance.json",
+      "bytes": 3773,
+      "sha256": "03f91c80358fcb2305e0c816eb63d98e7fab6abb36a13a389eb5a1fbd02691bb"
+    },
+    {
+      "path": "backend/ci48/backend_acceptance.json",
+      "bytes": 364,
+      "sha256": "8c4db21735d6c1985f494e0826c383f8db947607c99a3e942ab6c8c2442b753e"
+    },
+    {
+      "path": "backend/CI48.md",
+      "bytes": 3052,
+      "sha256": "c4ceea1267861266ad123a001d4eb95ec7ce0a907dbff8e987a9e39fb29af832"
+    },
+    {
+      "path": "backend/evidence-index.json",
+      "bytes": 8135,
+      "sha256": "d713c688372fefdfee5d05ae84189c9ecf8c0e9dec1948a199f8380d4b2cb6b0"
+    },
+    {
+      "path": "backend/PUBLIC_FILES.json",
+      "bytes": 1986,
+      "sha256": "99cfef5e7b35b303d3bbc74a09083668ad1ff361d00863a9f6a3b28ce17ba1e4"
+    },
+    {
+      "path": "backend/README.md",
+      "bytes": 2710,
+      "sha256": "6cf24feb215259cbf5437ce5afe2fd1fea1cc7b013795916b2a0000da4633442"
+    },
+    {
+      "path": "README.md",
+      "bytes": 5616,
+      "sha256": "ea91687a93a1b3754f54995668c55cf46c2f0959813b5a354e509ae4ec9b567e"
+    },
+    {
+      "path": "runtime.json",
+      "bytes": 8179,
+      "sha256": "6078ff36600f9297c66644a444deb44e3dec1d0eee54f14c6b3f379a0940552d"
+    }
+  ]
+}
