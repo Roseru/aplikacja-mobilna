@@ -1,5 +1,104 @@
 # Driver wybranej partii E4 — przygotowanie O1
 
+## Room23 — trwała izolacja runtime, przygotowanie24.10.2026
+
+Gałąź `codex/android-driver-room23` zależy od dokładnego
+`5f56cfc09c48f484b8e3edb76426510d4aacc307` katalogu społeczności.
+To osobny etap narzędzia. Nie podmienia wydanej0.8.29/Room20,
+nie uruchamia liveHTTP i nie potwierdza nowego E4/WF05/v1.
+
+Nowy `SyncRuntimeAdmission` definiuje granicę całego wejścia runtime:
+od żądania i lokalnych ledgerów, przez drainer, po enqueue/cancel/reschedule.
+W regularnym APK fabryka zwraca zawsze `OpenSyncRuntimeAdmission`.
+W validation powstaje jedna `ReplayRuntimeIsolation` w Application.
+Zapisuje tylko prywatną blokadę w `noBackupFilesDir/e4-replay/runtime-fence.json`,
+z UUID próby, hashami właściciela/kontekstu, stałym terminem i stanem gotowości.
+Nie zapisuje tokenu ani nie modyfikuje Room. Zapis jest atomowy z fsync.
+
+**Punkt integracji O2 pozostaje wymagany.** Samo zdefiniowanie fabryki nie
+oznacza, że istniejący SyncWork został nią objęty. O2 rezerwuje ten plik:
+ma dodać ostatni parametr `admission: SyncRuntimeAdmission = OpenSyncRuntimeAdmission`,
+wywołać `attach(1)` oraz osłonić wszystkie mutujące wejścia i schedulera przez
+`run`. `Paused` nie może dopisywać stanu ani planować ponowienia poza granicą.
+`changes` sygnalizuje odblokowanie/wygaśnięcie; nie jest polityką sieci.
+Nie zagnieżdżać osłon. O1 po odbiorze poda jedną instancję z Application.
+Żądanie integracji: [6387175572](https://github.com/Roseru/aplikacja-mobilna/pull/146#issuecomment-6387175572).
+Do tego czasu nowe fazy drivera odmawiają pracy na braku `attach`.
+
+Fazy aktualnego drivera, każda osobno z dotychczasowym opt-in i jawnym
+potwierdzeniem syntetycznego konta:
+
+| Faza | Nowy warunek |
+|---|---|
+| `isolate` | Przed zamrożeniem wybranej operacji utrwala blokadę, anuluje dopuszczone wejścia i czeka do45s na ich finally. Dopiero wtedy zapisuje gotowość i `isolated.json`. Brak połączenia runtime/timeout oznacza odmowę przygotowania baseline. |
+| `prepare` | Wymaga gotowej izolacji tego konta i kontekstu. Zapisuje `driver_guard_version=2`, niezmienny termin oraz pełen zakres danych i definicji SQL. Reszta wyboru jednej operacji jest zachowana. |
+| `hold` | Sprawdza tę samą izolację przed odciskami i po HTTP/barierze. Wymagane są niezależne PG C1 i rzeczywisty kill procesu. |
+| `replay` | Nowy proces odczytuje trwałą blokadę przed dopuszczeniem runtime. Sprawdza stały termin/konto/kontekst; chroni identyczny zakres przed wysyłką i po ACK. Osobny PULL nadal nie należy do tego wyniku. |
+| `release` | Osobna jawna faza z `allow_runtime_resume=true`; usuwa wyłącznie blokadę zgodnej próby i sygnalizuje runtime. Może służyć przerwaniu próby. Nie potwierdza replay/PG ani późniejszego PULL. |
+
+Termin to20min, maksymalnie30min, bez odnawiania przez restart/ponowienie
+tego samego trial. Po wygaśnięciu runtime może działać, ale driver odmawia
+uznania próby; potrzebny nowy UUID i nowy baseline. Cofnięcie zegara blokuje
+uznanie izolacji. Błędny/uszkodzony plik blokuje runtime validation i wymaga
+osobnej interwencji operatora po zachowaniu prywatnych dowodów. Nie czyścić
+danych aplikacji, dziennika ani historycznych prób w celu uzyskania PASS.
+
+Room21 chroni35tabel: wcześniejsze33 oraz `snapshot_archive_receipts`
+i `sync_work_state`. Room22 chroni36 po dodaniu `reconciliation_completions`.
+Room23 chroni39 po dodaniu `community_cache`, `community_attempts`
+i `community_backoff`. Każda kolumna/wiersz nowych ledgerów jest ścisła,
+także lease/generacja/wersje/RetryAfter/stany i obce konta. Nie normalizujemy
+`sync_work_state`. Odcisk `__schema__` obejmuje definicje tabel, indeksów
+i triggerów, również przy pustych tabelach. Nieznany Room24 lub brak jawnej
+izolacji dla21–23 jest odrzucany. Historycznych planów nie aktualizuje się
+w miejscu. Dopuszczone pola ACK pozostają dokładnie te same, co poniżej.
+
+Testy nowej blokady/schematu mogą potwierdzić jedynie izolowany mechanizm.
+Rzeczywisty WorkManager po kill, integracja O2, TLS/OIDC, skonfigurowane4APK,
+nowy `android_acceptance` i wspólne PG C1/C2 wymagają osobnego odbioru.
+Poniższa historia Room17–20 zachowuje wyniki i ograniczenia swoich źródeł.
+
+### Lokalna kwalifikacja tego przygotowania
+
+- Wspólny interfejs ma osobny pin **be21a9ac2794faf34b1cda548bbedbe01f50a1a0**
+  (wyłącznie1plik/27linii). [Przekazanie6387420883](https://github.com/Roseru/aplikacja-mobilna/pull/146#issuecomment-6387420883)
+  pozwala O2 pobrać samą deltę bez przejęcia całej gałęzi katalogu/drivera.
+  O3 potwierdził granicę w [6387222511](https://github.com/Roseru/aplikacja-mobilna/pull/146#issuecomment-6387222511).
+- Build validation, opt-in testAPK, standard Kotlin i lint **PASS851,844s**,
+  94executed,0error/fatal,8warnings/1info. Log SHA256:
+  `0628bddb989e77c97e004dda619c7f50c76d9234eb4ce69b1abc0de8aadd41c4`.
+  Wyłącznie6celowanych JVM odcisków **6PASS/0FAIL/0SKIP**,0,094s.
+- Pierwsza instrumentacja **2PASS/1fixtureFAIL/0SKIP**,0,504s.
+  Quiescence/anulowanie/finally i odczyt blokady po ponownym utworzeniu obiektu,
+  nieodnawialny termin, obce konto/kontekst i uszkodzony plik: PASS.
+  Odczyt eksportów Room próbował pobrać testowe assets z kontekstu aplikacji.
+  Log SHA256 `dd3540536961c899b423979d0e8f01f0ddf562316db40c75a4f3a8534608131e`.
+- Poprawiono tylko kontekst assets w teście. Build wyłącznie testAPK
+  **PASS219,829s**,5executed/41up-to-date, logSHA
+  `f9a964abd5d86a7d24a54ca7ec5443aab1a98669aa492815a7128a1a53cdec92`.
+  AppAPK pozostał byte-identical. Powtórzono wyłącznie niezaliczony przypadek:
+  **1PASS/0FAIL/0SKIP**,0,220s, logSHA
+  `4ba9537c54bb9c98c8c9952e49c380bbc54211b62fc0e0b477a488c6f7bac591`.
+  Nie zastępuje to pierwszego wyniku jednym przebiegiem3/3.
+- AppAPK izolowany `pl.roseru.kalorie.validation.replaycheck`,0.8.32.validation/
+  1043/Room23,22218632B/SHA256
+  `1c07d2079eb7494aed7e4debf1d3d2768c8145bc0b881618e8429d93471eba00`.
+  TestAPK pierwszej próby3075761B/SHA
+  `89d17efa7f9433af95a7ce531d9c33877199604532fc8ee9fec90e1d67cadcb8`;
+  po poprawce4877990B/SHA
+  `d4373442566bb71994334104dfef5578a4af4850cc1c7468f6934ddfa863bd3f`.
+  To prywatne, nieskonfigurowane artefakty komponentowe; nie4APK dla O3.
+- Przed instalacją sprawdzono binarne manifesty i SHA. Obie próby całkowicie
+  offline na własnym5564, oryginalny APK/test i trzy pliki DB niezmienione
+  również po cleanup. Usunięto tylko syntetyczną parę, własny AVD zatrzymano
+  bezwipe. Pierwszy preflight helpera zatrzymał się jeszcze przed instalacją
+  na kodzie wyjścia `pm path` dla nieobecnego pakietu; poprawiono sprawdzenie
+  braku pakietu bez przebudowy aplikacji. Oryginalny wynik zachowano.
+- E0 **PASS** (889lokalnych linków), diff-check PASS. To3unikalne przypadki
+  komponentowe w dwóch jawnych zakresach oraz6JVM. Bez ponawiania starych
+  testów społeczności/A/B/C, pełnego runtime, liveAPI/PG, nowego GitHub CI
+  albo akceptacji Androida. Do podłączenia O2 driver odmawia na braku attach.
+
 ## Poprawka w przygotowaniu po rzeczywistym replay Room17
 
 23.10.2026: [operator O3 zgłosił FAIL nowego pakietu](https://github.com/Roseru/aplikacja-mobilna/pull/138#issuecomment-6364652003).

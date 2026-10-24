@@ -14,6 +14,14 @@ class MealReplayFingerprintTest {
             "import_origins","import_decisions","reconciliation_batches","reconciliation_evidence","reconciliation_pulls")))
         assertThrows(IllegalArgumentException::class.java){MealReplayFingerprint.tables(16)}
         assertThrows(IllegalArgumentException::class.java){MealReplayFingerprint.tables(21)}
+        assertThrows(IllegalArgumentException::class.java){MealReplayFingerprint.tables(23)}
+        assertThrows(IllegalArgumentException::class.java){MealReplayFingerprint.tables(24, runtimeIsolated = true)}
+        assertEquals(35,MealReplayFingerprint.tables(21, runtimeIsolated = true).size)
+        assertEquals(36,MealReplayFingerprint.tables(22, runtimeIsolated = true).size)
+        val latest=MealReplayFingerprint.tables(23, runtimeIsolated = true)
+        assertEquals(39,latest.size);assertEquals(latest.size,latest.toSet().size)
+        assertEquals(listOf("snapshot_archive_receipts","sync_work_state","reconciliation_completions",
+            "community_cache","community_attempts","community_backoff"), latest.drop(tables.size))
     }
     private fun value(table: String, id: String?, column: String, text: String?) =
         MealReplayFingerprint.normalize(table,id,column,text,"meal","operation","batch")
@@ -37,8 +45,10 @@ class MealReplayFingerprintTest {
             assertEquals("changed",value("sync_push_batches","batch",column,"changed"))
     }
     @Test fun OtherRowsAndTablesPreserveEvenSimilarColumnNames() {
-        for(table in MealReplayFingerprint.tables(20).filterNot{it in setOf("meals","outbox","sync_push_batches")})
-            for(column in listOf("status","serverRevision","attempted","state"))assertEquals("original",value(table,"meal",column,"original"))
+        for(table in MealReplayFingerprint.tables(23, runtimeIsolated = true).filterNot{it in setOf("meals","outbox","sync_push_batches")})
+            for(column in listOf("status","serverRevision","attempted","state","wireContext","leaseGeneration","requestJson",
+                "responseJson","requestedVersion","activeVersion","handledVersion","retryAtMillis","reconciliationBaseline"))
+                assertEquals("original",value(table,"meal",column,"original"))
         assertEquals("ACK",value("sync_push_batches","other","responseJson","ACK"))
     }
     @Test fun UnknownValuesRemainMissingAndContentMutationsRemainDetectable() {

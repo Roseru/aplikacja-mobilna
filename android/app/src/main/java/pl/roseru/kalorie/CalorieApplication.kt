@@ -20,6 +20,8 @@ class CalorieApplication : Application(), SyncWorkRuntimeOwner {
     val syncSchema by lazy { CanonicalMealRows.schema(this) }
     val reconciliationStore by lazy { ReconciliationStore(database,syncSchema) }
     val sessionScope = CoroutineScope(SupervisorJob() + Dispatchers.Main.immediate)
+    // Variant-specific: regular builds are always open; validation can fence a private E4 trial.
+    val syncRuntimeAdmission by lazy { SyncRuntimeAdmissionFactory.create(this, sessionScope) }
     // Device-wide instances outlive owner-specific screens and are shared by every network consumer.
     val networkPolicy by lazy {DeviceNetworkPolicy(this,sessionScope)}
     val networkConnections by lazy {PolicyConnectionFactory(sessionScope,networkPolicy)}
