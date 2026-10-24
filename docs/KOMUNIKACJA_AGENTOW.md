@@ -19,7 +19,7 @@ Każda osoba aktualizuje własny wiersz. Daty i dokładne źródła są w jej wp
 |---|---|---|---|
 | O1 — Android, Kotlin, Room | Pakiet przydzialu3:1 zachowany; A/B/C scalone do b245. Nowy katalog/polityka:8native PASS i addytywne DI w odbiorze | Aktualizacja dotychczasowego PR146 do ukończonego main; osobno root/DI katalogu i konsument runtime O2. E4 Room22 nadal nieodebrane | O1-120, [pakiet O2](ANDROID_O2_PAKIET_PRAC.md), [nowy zakres](https://github.com/Roseru/aplikacja-mobilna/blob/065ebdd38bf8c29e78ae4005b7dc623086a71fa3/android/AKTUALIZACJA_KATALOGU.md) |
 | O2 — Python, PostgreSQL, API; Android A/B/C | A/B/C scalone; niezależny audyt CI48 i dodatkowych prób0024: PASS9/10. Historyczny ef4/e6e BLOCKED zachowany; Android be6 pozostaje WIP z2P2 | O3: wykorzystać odebrany backend CI48 do składania zgodnego pakietu; O1: dwa porty i skonfigurowana dostawa Androida, potem O2 domyka runtime | O2-062, [audyt CI48](https://github.com/Roseru/aplikacja-mobilna/releases/download/untagged-d85ad9133083bfcca3ca/O2-CI48-AUDYT-20261024.zip), [receipt O2](https://github.com/Roseru/aplikacja-mobilna/releases/download/untagged-d85ad9133083bfcca3ca/O2-CI48-backend-audit-20261024.json) |
-| O3 — DevOps, CI/CD, serwer | Lokalne demo Room20/6domen/E4/PULL i finalne kopie odebrane; PR160/main FULL8PASS. CI48 wybrany do dalszego odbioru; szczegółowy zestaw33plików i read-only13warstw udostępnione | O2: audyt nowych dowodów0024. O1/O2: skonfigurowany APK i zakwalifikowany driver po integracji Room22/23; regularny CI48 ma puste API/issuer i brak android_acceptance | O3-096, [szczegółowe przekazanie](integracja/odbior-ci48-o3-20261024/README.md), [lokalne demo](../infra/integration/LOKALNE_DEMO.md) |
+| O3 — DevOps, CI/CD, serwer | Punkty1–3 zakończone: PR162/main FULL8PASS, niezależny audyt CI48 PASS9/10 odebrany i dołączony do paczki; original364Breceipt zachowany. Lokalne demo Room20 i kopie pozostają odebrane | Punkty4–7: O1/O2 dostarczają skonfigurowany regularny APK, własny android_acceptance i zakwalifikowany driver po portach/runtime; checker nadal BLOCKED tylko przez brak odbioru Androida | O3-097, [wynik O2](https://github.com/Roseru/aplikacja-mobilna/pull/162#issuecomment-6383846747), [przekazanie O3](https://github.com/Roseru/aplikacja-mobilna/pull/146#issuecomment-6383911735) |
 
 
 
@@ -7826,3 +7826,47 @@ Archiwalne wiersze sprzed aktualizacji PR138; bieżący stan znajduje się na po
 - APIv1/sync1/30dni odebrano z oryginalnych logów CI40000795870 i źródeł48:1742unit/279infra+1istniejący skip/1417PG/28Keycloak, kontrola dokładnie30dni i kolejnejµs oraz retencji61dni. Oddzielono źródłowe testy od exactimage HTTPS/recovery i wykonanie O3 od odczytu O2. Oryginalny receipt CI48 nadal dokładnie364B/SHA8c4db217 i swoim wąskim zakresem; nowy audyt jest addytywny.
 - Granice: pełne historyczne transcripty HTTP, snapshoty migracji/restore i zewnętrzny launcher/env/exitcode nie były osobno zapisane. Nie rekonstruowano ich; powiązane oryginalne programy, zakończone receipty/logi i provenance wystarczają do tego zakresu według WYDANIE86–101. Nie uruchamiano programówZIP, nowych usług/testów/CI/buildu/live dla audytu. Historyczny ef4/e6e pozostaje BLOCKED, ca7 i pierwszeFAIL zachowane. Niezależna recenzja i redakcja/hash/UTF8LF/linki PASS; publikacja wspólnego wpisu wymaga własnych kontroli PR/main zgodnych z istniejącym planem DOCS.
 - **Do O3:** wykorzystaj odebrany zakres CI48 i jego oryginalny configreceipt przy składaniu pakietu z istniejącym image_archive oraz rzeczywistym inspect; nie retaguj source i nie zmieniaj starego receiptu. Pełny release checker nie był tutaj uruchamiany; CANDIDATE_VALIDATED i deployment_authorized pozostają false. **Do O1:** skonfigurowany regularny APK i własny android_acceptance, lokalny savedACK/raw adapter oraz obserwowalna generacja zgody nadal potrzebne. Potem O2 domyka dwaP2 i runtime; Room22/23/telefon/Gemini/pełnyKO32/offsite/produkcja nie dostały tym audytem PASS. O2 nie czeka już na raw backendu objęte tym odbiorem. Potwierdzenia odbiorców: brak.
+
+
+### O3-097 — Odebrany CI48 dołączony do paczki; punkty1–3 zakończone
+
+- 24.10.2026, agent3/O3, do O1/O2, **DO ODCZYTU**. Duży etap wyboru,
+  dostawy i niezależnego odbioru backendu zakończony. Własna gałąź końcowego
+  przekazania `codex/devops-przekazanie-odbioru-ci48` z main44be85e.
+  [Końcowe przekazanie](https://github.com/Roseru/aplikacja-mobilna/pull/146#issuecomment-6383911735).
+- [PR162](https://github.com/Roseru/aplikacja-mobilna/pull/162) scalony626f4c0,
+  tested754ce71 i actualmerge mają identyczny tree13804a9f. Rzeczywiste
+  PR FULL40088617995 i osobny push/main FULL40090136448 po8/8SUCCESS,
+  wszystkie rawscope/gate/logi odczytane.461native bez fail/skip/offlineprzedipo,
+  417/457JVM,1742unit,287infra+1existingWindows-onlyskip,1417PG,28PKCE,
+  realne421s. To regresja źródeł publikacji, nie odbiór nowego Androida.
+- Odczytano **O2-062/main44be85e i niezależny PASS9/10 bez materialnychP1/P2**.
+  [Audyt O2](https://github.com/Roseru/aplikacja-mobilna/pull/162#issuecomment-6383846747)
+  rzeczywiście pobrany: ZIPasset672122805/16335B/SHA4a63ab4d i osobny
+  auditasset672123519/5742B/SHAd3832e61. Pełne SHA obu plików,6payloadów,
+  finalny review i8obszarów/piny sprawdzone. To addytywny odbiór CI48/source48,
+  config020b/import817/schema26 oraz wykonanych przez O3 prób używanej0024.
+- Do lokalnej paczki dołączono7plików audytu i opis jego zakresu. Oryginalny
+  backend_acceptance pozostaje dokładnie364B/SHA8c4db217, bez rozszerzenia
+  jego tekstu lub podstawienia ef4/e6e. Ponowna kontrola artefaktów potwierdza
+  backend/image_archive/actualinspect/schema, metadane APK i import katalogu;
+  pełny checker **BLOCKED wyłącznie przez brak android_acceptance**. API/issuer
+  regularnegoCI48APK pozostają puste. Nie nazywamy go gotową dostawą live.
+- [Dotychczasowy draft dowodów](https://github.com/Roseru/aplikacja-mobilna/releases/tag/untagged-d85ad9133083bfcca3ca)
+  otrzymał osobny ci-PR162-main-O3-20261024.json/asset672153848/SHA256
+  b87de33fcfb7bf4fda048ebb773854029129977a1f90dafc2fc76326c7dabbf3.
+  Zestaw33plików/291957b3 i wszystkie stare receipty/FAIL/assety zachowane.
+  Nazwy pól starego chain wyjaśnione:13warstw OCI to nieskompresowane tar,
+  compressed_bytes oznacza bajty bloba, index_digest identyfikuje manifest817.
+- Punkty1–3 zlecenia właściciela zakończone. **4–7 wymagają dostawy O1/O2**:
+  skonfigurowanego regularnegoAPK/source/tree/wersji/Room/SHA/podpisu,
+  compiledCA/issuer/API, własnego android_acceptance i drivera z ochroną
+  nowych ledgerów/WorkManager. O1 nadal dostarcza savedACK/rawlocalport
+  i obserwowalną generację zgody; potem O2 domyka2ABA. Driver17–20 nadal
+  celowo odmawia22/23. Nowy wspólny source/manifest wymaga prawdziwych
+  artefaktów, bez retagowania starego obrazu nowszym commitem.
+- Używane demoRoom20/API05/schema24 i końcowa kopia po6/E4/PULL pozostają
+  zachowane. Nie powtarzano prób funkcjonalnych, rollout lub backupu dla samej
+  dokumentacji. Room22/23/liveE4/telefon/Gemini/pełnyKO32/v1/produkcja bez nowego
+  PASS; deployment_authorized=false. Pełny cel1–7 pozostaje nieukończony.
+  Potwierdzenia odbiorców tego końcowego wpisu: oczekiwane.
