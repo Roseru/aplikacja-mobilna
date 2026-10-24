@@ -55,8 +55,9 @@ oraz gate; ich domyślne wartości są zamknięte. **Tego roboczego źródła ni
 należy traktować jako gotowego APK przed rzeczywistym wpięciem DI**.
 
 SettingsScreen przyjmuje opcjonalne CatalogUpdateViewModel oraz
-NetworkPolicyViewModel. Root/DI/nawigacja nadal czekają na uzgodnienie
-własności trzech plików z O2. O1 [podał dokładny nowy zakres i typy](https://github.com/Roseru/aplikacja-mobilna/pull/146#issuecomment-6374865798),
+NetworkPolicyViewModel. O2 zakończył A/B/C i [zwolnił root/DI na mainb245077](https://github.com/Roseru/aplikacja-mobilna/pull/146#issuecomment-6376449465).
+O1 dołączył tę bazę zwykłym merge589e3c9 i wykonuje wąskie addytywne wpięcie.
+O1 [podał dokładny nowy zakres i typy](https://github.com/Roseru/aplikacja-mobilna/pull/146#issuecomment-6374865798),
 nie nadpisując MainActivity/CalorieApplication/App ani Workera C.
 B/C kontynuują niezależnie. Pełny WF-05 wymaga wszystkich konsumentów:
 katalogu, API, logowania i wspólnego runtime/workera, w tym wybudzenia po
@@ -75,7 +76,8 @@ publiczne żądania bez sesji, niezgodny hash/rozmiar/identity,404 z zachowaniem
 demo, Retry-After po restarcie, cancel/blokada w trakcie, atomowa aktywacja,
 równoległy nowszy release, zachowanie dziennika/outbox i podgląd źródeł offline.
 Bez seryjnego uruchamiania małych zestawów podczas pisania. Duży końcowy PR
-dopiero po podłączeniu i odbiorze; te scenariusze nie mają jeszcze wyniku PASS.
+dopiero po podłączeniu i odbiorze. Poniższy odbiór komponentu nie zastępuje
+odbioru gotowej aplikacji na Room22.
 
 ## Checkpoint kompilacji portu
 
@@ -91,3 +93,58 @@ a nie podmiany ze starszego checkoutu. rememberDeviceNetworkModels przyjmuje
 jawny activity ViewModelStoreOwner, dzięki czemu modele urządzenia nie są
 kasowane przy zmianie właściciela dziennika. Schemat katalogu jest ładowany
 leniwie w jego operacjach IO, a nie podczas tworzenia modeli na wątku UI.
+
+## Odbiór niezależnego komponentu — 24.10.2026
+
+Dokładne źródło723cd920ac796056570ad63acadbf2bd05cc724c:
+build aplikacji/pakietu testowego i lint PASS408,968s;0error/fatal,6warning,
+1info. LogSHA256 `e7bce1e07162053e5742b245aea06280c0d2ed45334f8db8c05a5aa357d2b8df`.
+Osiem nowych native API35 **8/8PASS,0fail/skip**, czas instrumentacji35,444s,
+logSHA256 `ceae0afc5535e5fb8ced41bcbdc3f6045cb7123762d5296005476311004d5db4`.
+Pięć CatalogUpdateStorageTest, dwa NetworkPolicyStorageTest i jeden
+CatalogUpdateScreenTest. Realne Room/DataStore/Settings, syntetyczny publiczny
+transport: trwałość, źródła offline, hash/cancel, ABA, nowszy release,
+trwały Retry-After, blokada socketu/flush oraz wyścig AppAuth token request.
+NetworkAccessDenied jest IOException zgodnym z obsługą błędów Java AppAuth.
+
+Odbiór korzystał z odrębnego pakietu komponentu na własnym AVD, przy braku
+aktywnej sieci przed/po. Dotychczasowe APK i pliki dziennika zachowały sumy
+SHA256; usunięto jedynie zweryfikowane syntetyczne pakiety po próbie.
+Nie uruchamiano JVM lub starych zestawów. Próba nowego AVD zatrzymała się
+przed testami na braku miejsca, a pierwszy setup wykrywania pakietu wymagał
+obsługi pustej odpowiedzi pm/exit1; nie były to wyniki testów aplikacji.
+To komponent sprzed C/Room22, **bez odbioru root/DI, HTTP live, E4 lub WF-05**.
+589e3c9 zachowuje ten core i dodaje odebrane C; nowa integracja ma osobny odbiór.
+
+## Następna dostawa O2 — konsument polityki w runtime
+
+O1: core/network, DataStore/provider, katalog, API/AppAuth i addytywne
+MainActivity/CalorieApplication/ui/App/Settings; nie modyfikuje równolegle
+SyncWork.kt, SyncCoordinator.kt lub SyncWorkPresentation.kt.
+O2: te trzy pliki runtime, konieczne własne testy oraz aktualizacja swojego
+SYNCHRONIZACJA_W_TLE.md. Bez nowej preferencji albo innego providera.
+Wspólny dziennik nadal jest jedynym dziennikiem przekazania.
+
+- Konsument przyjmuje NetworkAccessGate z core/network. O1 poda tę samą
+  instancję co katalog/API/AppAuth w DI; domyślny brak konfiguracji ma być
+  zamknięty. Unavailable oraz Blocked nie pozwalają uruchamiać transportu.
+- Zmiana rewizji unieważnia rozpoczęty permit, również Allowed→Blocked→Allowed.
+  Runtime ma anulować własną trwającą pracę i unieważnić zaplanowane wysyłki,
+  zachowując outbox, request/body/hash/operation_id, lease/context i Retry-After.
+  Nie wolno ACK lub wywołań token refresh tylko z powodu włączenia trybu.
+- Ręczny start, worker, watch i zdarzenie kolejki sprawdzają ten sam gate.
+  Brak sieci ma czytelny stan oczekiwania, bez pętli retry/pollingu transportu.
+- Po nowym Allowed runtime wybudza właściwy bieżący lease/context i kontynuuje
+  jeden istniejący PULL→PUSH→PULL, honorując trwały termin ponowienia. Stary
+  sygnał konta nie może wybudzać innego konta; blokady login/reconciliation/
+  storage nie znikają wskutek samego odblokowania sieci.
+- Nie blokować czysto lokalnego odczytu/zapisu ani zastosowania zapisanego
+  zatwierdzenia/kopii; bariera dotyczy pracy wymagającej sieci.
+- Odbiór po całej delcie: trwała blokada po odtworzeniu procesu, zero wywołań
+  executora we wszystkich wejściach, anulowanie/ABA, właściwy automatyczny
+  powrót i Retry-After oraz zachowanie kolejki/dowodów. Nie powtarzać lokalnie
+  odebranych A/B/C w całości bez materialnej potrzeby. Końcowy duży PR/CI
+  obejmie zintegrowaną funkcję; brak osobnego małego PR na ten konsument.
+
+O2 zwraca przypięty commit oraz rzeczywistą sygnaturę DI i wynik całej delty.
+O1 integruje ją zwykłym merge na tej samej gałęzi dużego etapu.
