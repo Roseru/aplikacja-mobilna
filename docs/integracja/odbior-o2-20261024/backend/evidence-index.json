@@ -1,0 +1,181 @@
+{
+  "publication_date": "2026-10-24",
+  "availability_note": "Evidence IDs are labels, not repository paths. retained_private content is held by O2 and is not included in Git. GitHub Actions artifacts/logs are subject to retention and repository access; links do not promise permanent storage. Only public assets and neutral log/JUnit artifact hashes are exposed; no private identities, data-row hashes or backup hashes are published.",
+  "public_sources": [
+    {
+      "id": "ef4_o3_original_package",
+      "availability": "public",
+      "url": "https://github.com/Roseru/aplikacja-mobilna/releases/tag/untagged-4cbe4b5562fd750f23a1",
+      "asset_id": 669158018,
+      "bytes": 116234812,
+      "sha256": "6b78b97d38b935bdb148120eb2ff7249aae2dcac6a11ba5ae4ba8a28ef42bb65",
+      "meaning": "Original O3 package; independently downloaded/hashed and safely audited by O2."
+    },
+    {
+      "id": "ef4_ci_original_receipts",
+      "availability": "public",
+      "url": "https://github.com/Roseru/aplikacja-mobilna/actions/runs/39939638736/artifacts/12497115124",
+      "artifact_id": 12497115124,
+      "bytes": 4467,
+      "sha256": "444a89599015e9aeca38a6601a0bc09465a1121d0bf5fa425a1ee3f03912c196",
+      "meaning": "Seven original CI receipts match packaged CI reports; different image8d93, not e6e."
+    },
+    {
+      "id": "ef4_ci_original_image_artifact",
+      "availability": "public",
+      "url": "https://github.com/Roseru/aplikacja-mobilna/actions/runs/39939638736/artifacts/12496576740",
+      "artifact_id": 12496576740,
+      "bytes": 194361882,
+      "sha256": "973ee67e09119a40ce9d451b80d3e870dc105bd05018ba016717c2c5979a3576",
+      "meaning": "Original CI image artifact; independently compared with candidate e6e."
+    },
+    {
+      "id": "ci48_o3_neutral_package",
+      "availability": "public",
+      "url": "https://github.com/Roseru/aplikacja-mobilna/releases/tag/untagged-d85ad9133083bfcca3ca",
+      "asset_id": 671807308,
+      "bytes": 8821,
+      "sha256": "dec34b1290a7f8a1e70989bc7b53369078d40ea6f4b456c83f7f33396963c761",
+      "meaning": "Nine O3 summary JSONs plus README/SHA256SUMS; ten listed hashes verified. Not raw runtime proof."
+    },
+    {
+      "id": "ci48_original_receipts",
+      "availability": "public",
+      "url": "https://github.com/Roseru/aplikacja-mobilna/actions/runs/40000795870/artifacts/12522508942",
+      "artifact_id": 12522508942,
+      "bytes": 4469,
+      "sha256": "f9a2883ab9827ec7b3e54a8d6570aa0c76729b05adfafbc9bb34730f78c7dc7f",
+      "meaning": "Original CI receipt ZIP; independently downloaded/hashed. Exact backend receipt copied under ci48/."
+    },
+    {
+      "id": "ci48_original_image_artifact",
+      "availability": "public",
+      "url": "https://github.com/Roseru/aplikacja-mobilna/actions/runs/40000795870/artifacts/12523436539",
+      "artifact_id": 12523436539,
+      "bytes": 194362584,
+      "sha256": "382144c9d8d0cfe130fa77be6fde42ef4187c9515ddf823c324d8c8e55cee6f1",
+      "meaning": "Metadata and raw upload log checked. Large ZIP/TAR NOT downloaded in bounded CI48 analysis."
+    },
+    {
+      "id": "ef4_ci_quality_log",
+      "availability": "public",
+      "url": "https://github.com/Roseru/aplikacja-mobilna/actions/runs/39939638736/job/120367730026",
+      "bytes": 69678,
+      "sha256": "e6544bcee9c0c079df0b736573926723b6089c17d0630aa0380db289909bc59f",
+      "meaning": "Original GitHub Actions raw job log read by O2; execution belongs to existing CI."
+    },
+    {
+      "id": "ef4_ci_postgres_log",
+      "availability": "public",
+      "url": "https://github.com/Roseru/aplikacja-mobilna/actions/runs/39939638736/job/120367730307",
+      "bytes": 520937,
+      "sha256": "6dd4f5d31c4204e54cd5db6be345044c1248c8de3c37ef8db1016081eb15f6ee",
+      "meaning": "Original GitHub Actions raw job log read by O2; execution belongs to existing CI."
+    },
+    {
+      "id": "ef4_ci_local-integration_log",
+      "availability": "public",
+      "url": "https://github.com/Roseru/aplikacja-mobilna/actions/runs/39939638736/job/120367730133",
+      "bytes": 48498,
+      "sha256": "9c51706e7e64fefef92efcdcda879428b19db823550920f50ea24c20b02b9407",
+      "meaning": "Original GitHub Actions raw job log read by O2; execution belongs to existing CI."
+    },
+    {
+      "id": "ef4_ci_keycloak-pkce_log",
+      "availability": "public",
+      "url": "https://github.com/Roseru/aplikacja-mobilna/actions/runs/39939638736/job/120367730162",
+      "bytes": 50514,
+      "sha256": "34a246bbcc978fb3cfe7e17193ab2ef41359a9576e82fcc89a39e825fe1786d4",
+      "meaning": "Original GitHub Actions raw job log read by O2; execution belongs to existing CI."
+    },
+    {
+      "id": "ci48_local_integration_log",
+      "availability": "public",
+      "url": "https://github.com/Roseru/aplikacja-mobilna/actions/runs/40000795870/job/120576200518",
+      "bytes": 48492,
+      "sha256": "e89dc30661f89c00922c170ab3b4f7cda198692cf8498106223190fb385fb179",
+      "meaning": "Original raw CI job log downloaded and checked; no new test execution."
+    }
+  ],
+  "retained_private": [
+    {
+      "id": "initial_pg_stdout",
+      "availability": "retained_private",
+      "sha256": "4c3a4887a6f241e718211f8f8c95107cd471fe8290237528ddfe3b98f620cc8f",
+      "bytes": 1820,
+      "content_published": false
+    },
+    {
+      "id": "initial_pg_junit",
+      "availability": "retained_private",
+      "sha256": "23f0942318801c30e00b21ea0e93e1faa3c6c97269f354352339ff85bf7250bb",
+      "bytes": 22678,
+      "content_published": false
+    },
+    {
+      "id": "unit_stdout",
+      "availability": "retained_private",
+      "sha256": "1687fc5fe20b19478e8a632e01a02e62a0770d6589fcab8ab5c7ca2758b66679",
+      "bytes": 184,
+      "content_published": false
+    },
+    {
+      "id": "unit_junit",
+      "availability": "retained_private",
+      "sha256": "dfbf345bc88f52ea4ca719bd6336f6a434cbc6a696d15c5849e59e918cbde1d7",
+      "bytes": 17126,
+      "content_published": false
+    },
+    {
+      "id": "affected_pg_retest_stdout",
+      "availability": "retained_private",
+      "sha256": "85236dbd33af30173ff7356c07bb2450ed214b6f503330ebfbcc5df196355bb1",
+      "bytes": 115,
+      "content_published": false
+    },
+    {
+      "id": "affected_pg_retest_junit",
+      "availability": "retained_private",
+      "sha256": "4741c3429022b1ab0e25369e978c38c2f26a4ba867b3bc26b4e586e93e3bea06",
+      "bytes": 860,
+      "content_published": false
+    },
+    {
+      "id": "native_migration_stdout",
+      "availability": "retained_private",
+      "sha256": "32f778a89161e68ca885eeb3ff469f872c757abe4a73c4ec1d274949b6aa3a4d",
+      "bytes": 871,
+      "content_published": false
+    }
+  ],
+  "private_aggregate_origins": [
+    {
+      "id": "original_o2_blocked_receipt",
+      "availability": "retained_private",
+      "sha256": "ca7ee4fb9edc698ab87bc747c5b72981eb722d70c7451171920c3723354491b8"
+    },
+    {
+      "id": "original_o2_matrix",
+      "availability": "retained_private",
+      "sha256": "4cf5ec1ca2ead1b9dba3cfac71be9143b38b4d09cbe9a089c6acf07cf0dcb47a"
+    },
+    {
+      "id": "original_archive_audit",
+      "availability": "retained_private",
+      "sha256": "fb22ab82c6f8c9e1569fe4258635f12c59d8234e1c2c3ba5a6b9a4b8e18233e7"
+    },
+    {
+      "id": "original_ci48_analysis",
+      "availability": "retained_private",
+      "sha256": "12ae5c0b42b6904787506b56b545be2b9da7cf870554960496c3fd248667d6c6"
+    }
+  ],
+  "source_references": {
+    "target_commit": "https://github.com/Roseru/aplikacja-mobilna/commit/ef4bb4f91ab89abc20b44f3c41b7f8c163f8adfb",
+    "tested_equivalent_checkout": "https://github.com/Roseru/aplikacja-mobilna/commit/806d802e5faf6f16eba48fe66b36f98f020c5e92",
+    "ci48_commit": "https://github.com/Roseru/aplikacja-mobilna/commit/48bc4217f3f3da27923563ab275db18e999c62bc",
+    "original_o2_raw_request": "https://github.com/Roseru/aplikacja-mobilna/pull/138#issuecomment-6382347620",
+    "target_selection_and_missing_input_request": "https://github.com/Roseru/aplikacja-mobilna/pull/138#issuecomment-6382524766",
+    "o3_ci48_delivery": "https://github.com/Roseru/aplikacja-mobilna/pull/146#issuecomment-6382467774"
+  }
+}

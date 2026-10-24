@@ -1,0 +1,44 @@
+{
+  "publication_date": "2026-10-24",
+  "paths_relative_to": "directory containing this manifest",
+  "allowlist": [
+    {
+      "path": "backend_acceptance.json",
+      "bytes": 3773,
+      "sha256": "03f91c80358fcb2305e0c816eb63d98e7fab6abb36a13a389eb5a1fbd02691bb",
+      "purpose": "Public redacted BLOCKED receipt for exact ef4/e6e/schema26; original hash and current limits."
+    },
+    {
+      "path": "acceptance_matrix.json",
+      "bytes": 4906,
+      "sha256": "4a0f638a33665044075a9ec5bb8e73b398a7e4de34a7fd985e64d51829a3812b",
+      "purpose": "Scoped executor/evidence matrix; original matrix hash, explicit waiting owner."
+    },
+    {
+      "path": "evidence-index.json",
+      "bytes": 8135,
+      "sha256": "d713c688372fefdfee5d05ae84189c9ecf8c0e9dec1948a199f8380d4b2cb6b0",
+      "purpose": "Public source URLs and neutral retained_private artifact hashes; availability is explicit."
+    },
+    {
+      "path": "ci48/backend_acceptance.json",
+      "bytes": 364,
+      "sha256": "8c4db21735d6c1985f494e0826c383f8db947607c99a3e942ab6c8c2442b753e",
+      "purpose": "Exact unmodified original public CI48 receipt; existing scoped PASS, not new acceptance."
+    },
+    {
+      "path": "CI48.md",
+      "bytes": 3052,
+      "sha256": "c4ceea1267861266ad123a001d4eb95ec7ce0a907dbff8e987a9e39fb29af832",
+      "purpose": "Separate CI48 provenance, reusable existing scope, import817 identity gap and target selection."
+    },
+    {
+      "path": "README.md",
+      "bytes": 2710,
+      "sha256": "6cf24feb215259cbf5437ce5afe2fd1fea1cc7b013795916b2a0000da4633442",
+      "purpose": "Reader entry point, preserved FAIL, scope and O3/O2 next steps."
+    }
+  ],
+  "manifest_note": "Manifest lists payload files only, excludes itself and ROOT_HANDOFF.json. Root may publish this manifest after review. ROOT_HANDOFF.json is coordinator-only, not allowlisted.",
+  "published_encoding": "UTF-8/LF; hashes cover the exact published bytes. Original CI48 receipt is byte-identical."
+}
