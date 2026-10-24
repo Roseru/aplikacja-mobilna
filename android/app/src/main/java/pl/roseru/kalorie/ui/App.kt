@@ -18,7 +18,7 @@ import pl.roseru.kalorie.DiaryViewModel
 import pl.roseru.kalorie.session.*
 
 @Composable fun CalorieApp(model: DiaryViewModel, session: SessionView, actions: SessionActions, photoModel: pl.roseru.kalorie.photo.MealPhotoViewModel, importModel:pl.roseru.kalorie.importing.ImportViewModel?=null,syncStatus:String?=null,
-    deviceNetworkModels:DeviceNetworkModels?=null) {
+    deviceNetworkModels:DeviceNetworkModels?=null,communityModel:pl.roseru.kalorie.community.CommunityViewModel?=null) {
     val ready by model.ready.collectAsStateWithLifecycle()
     val error by model.startupError.collectAsStateWithLifecycle()
     val nav = rememberNavController()
@@ -37,7 +37,7 @@ import pl.roseru.kalorie.session.*
     }
     LaunchedEffect(model) {
         model.events.collect { event -> when (event) {
-            DiaryEvent.MealSaved -> if (nav.currentDestination?.route in listOf("food", "rations", "custom")) nav.popBackStack("diary", false)
+            DiaryEvent.MealSaved -> if (nav.currentDestination?.route in listOf("food", "rations", "custom", "community")) nav.popBackStack("diary", false)
             is DiaryEvent.Message -> snackbar.showSnackbar(event.text)
         } }
     }
@@ -53,11 +53,11 @@ import pl.roseru.kalorie.session.*
     Scaffold(
         snackbarHost = { SnackbarHost(snackbar) },
         topBar = {
-            if(networkState!=null && route in listOf("photo","account","import","achievements","ranking-consent","ranking","nemesis"))
+            if(networkState!=null && route in listOf("photo","account","import","achievements","ranking-consent","ranking","nemesis","community"))
                 NetworkModeNotice(networkState,onSettings={nav.navigate("settings"){launchSingleTop=true}})
         },
         bottomBar = {
-            if (route !in listOf("food", "rations", "custom", "photo")) NavigationBar(containerColor = MaterialTheme.colorScheme.surface) {
+            if (route !in listOf("food", "rations", "custom", "photo", "community")) NavigationBar(containerColor = MaterialTheme.colorScheme.surface) {
                 NavigationBarItem(selected = route == "diary", onClick = { nav.navigate("diary") { popUpTo("diary"); launchSingleTop = true } },
                     icon = { Icon(Icons.AutoMirrored.Outlined.Assignment, contentDescription = null) }, label = { Text("Dziennik") }, modifier=Modifier.testTag("open-diary"))
                 NavigationBarItem(selected = route == "analytics", onClick = { nav.navigate("analytics") { launchSingleTop = true } },
@@ -72,7 +72,12 @@ import pl.roseru.kalorie.session.*
         NavHost(nav, startDestination = "diary", modifier = Modifier.padding(padding).consumeWindowInsets(padding)) {
             composable("diary") { DiaryScreen(model, onAdd = { nav.navigate("food") }, onSettings = { nav.navigate("settings") { launchSingleTop = true } },
                 networkState=networkState,catalogSummary=catalogSummary,lastServerCopy=session.snapshot?.completedTime,refusedChanges=session.mealPush?.refused) }
-            composable("food") { FoodScreen(model, onBack = { nav.popBackStack() }, onRations = { nav.navigate("rations") }, onCustom = { nav.navigate("custom") }, onPhoto = { nav.navigate("photo") }) }
+            composable("food") { FoodScreen(model, onBack = { nav.popBackStack() }, onRations = { nav.navigate("rations") }, onCustom = { nav.navigate("custom") }, onPhoto = { nav.navigate("photo") },
+                onCommunity=communityModel?.let {{nav.navigate("community")}}) }
+            composable("community") {
+                communityModel?.let {CommunityScreen(it,model,session,networkState,onBack={nav.popBackStack()},
+                    onAccount={nav.navigate("account")},onCustom={nav.navigate("custom")})}
+            }
             composable("rations") { RationScreen(model, onBack = { nav.popBackStack() }) }
             composable("photo") {
                 val day by model.day.collectAsStateWithLifecycle()

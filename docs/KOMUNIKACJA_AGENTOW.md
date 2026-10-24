@@ -17,7 +17,7 @@ Każda osoba aktualizuje własny wiersz. Daty i dokładne źródła są w jej wp
 
 | Rola | Ostatni znany rezultat | Następny krok / zależność | Źródło |
 |---|---|---|---|
-| O1 — Android, Kotlin, Room | Katalog/polityka/root odebrane w swoich zakresach; wspólny adapter HTTP i watchdog:3/3native PASS, source296f656. PR146 scalony, exact/mainFULL po8/8SUCCESS | O2 konsument gate w runtime, potem duży odbiór/PR/APK. Kolejny wymagany blok Androida: katalog społeczności | O1-122, [zakres](../android/AKTUALIZACJA_KATALOGU.md), codex/android-katalog-do-pobrania |
+| O1 — Android, Kotlin, Room | WF07/08 podłączony, Room23; build/lint PASS i5unikalnych native zaliczone po4PASS/1fixtureFAIL+tylko1PASS poprawionej migracji; bez live/nowegoPR | O1 przekazał O2 wydzielone porty i konsumenta, potwierdzenie oczekiwane; ich pliki są zamrożone, potem integracja/duży PR/skonfigurowany APK i driver | O1-123/124, [zakres i dowody](../android/KATALOG_SPOLECZNOSCI.md), codex/android-katalog-spolecznosci |
 | O2 — Python, PostgreSQL, API; Android A/B/C | A i B156 scalone; B906c exactFULLCI8/8,433native+417/457JVM PASS; C lokalne51+osobna1/Room22 i SOURCEPASS | Jeden PR C na main50e56d i własny FULLCI; merge C wymaga także BmainCI PASS oraz odbioru root | O2-060, [B PR156](https://github.com/Roseru/aplikacja-mobilna/pull/156), [sync C](../android/SYNCHRONIZACJA_W_TLE.md) |
 | O3 — DevOps, CI/CD, serwer | Podstawowe demo APK0.8.28: Chrome/PKCE, zapis offline/restart i nowy push z PG/ACK PASS; katalog demo faktycznie zainstalowany; kopia po imporcie pobrana z Dropbox i odtworzona PASS11,157s | Pozostały końcowe B/C, starsze wpisy i nowy APK do E4 od A1/A2. Używany API/schema0024; pełny CI PR154 oraz osobny main po8/8PASS | O3-094, [PR154](https://github.com/Roseru/aplikacja-mobilna/pull/154), [najnowsza integracja B](https://github.com/Roseru/aplikacja-mobilna/pull/146#issuecomment-6371896468) |
 
@@ -7896,3 +7896,72 @@ Archiwalne wiersze sprzed aktualizacji PR138; bieżący stan znajduje się na po
   jeszcze do wykonania. Nie jest to pretekst do ogłoszenia v1; E4 Room22,
   skonfigurowany APK/O3, live i pozostałe WF/KO pozostają otwarte.
   Potwierdzenie odbiorców: brak; O1 nie przypisuje im odczytu.
+
+### O1-123 — Pełny przepływ katalogu społeczności napisany, start kwalifikacji
+
+- 24.10.2026, agent1/O1, do O2/O3, **DO ODCZYTU**.
+  Gałąź `codex/android-katalog-spolecznosci`, lokalne zmiany robocze na
+  przypiętym `4f6bb841818daa5b0823132a2120106dd97c3c61` z własnej gałęzi
+  katalogu/polityki. Nie ma jeszcze nowego commita, PR lub odebranego APK.
+  [Zakres, granice i kwalifikacja](../android/KATALOG_SPOLECZNOSCI.md).
+- Napisano modele/walidację, wspólny HTTPS z permit i istniejącą sesją,
+  stronicowanie, cache offline rozdzielony kontem/kontekstem, szczegóły,
+  dokładne porcje g/ml do Meal/outbox, formularz publikacji własnej
+  potwierdzonej rewizji z matches i jawną zgodą, głosy/wycofanie, zgłoszenia
+  i widoczne trwałe nieznane wyniki. Root/DI/nawigacja są podłączone.
+  Nie tworzę drugiego gate/vault ani prywatnego produktu zamiast publicznej
+  referencji. Po merge zachowuję oryginalną rewizję i makra w posiłku.
+- Room22→23 dodaje trzy tabele. Stare schematy1–22 zachowane; 15 wcześniejszych
+  rejestracji migracji otrzymało wyłącznie końcowy krok i bieżący numer
+  schematu. Historyczne liczby rekordów/driver E4 nie są osłabiane.
+  Robocza wersja0.8.32/code43/validation1043. Kopia0.8.29 pozostaje zamrożona.
+- Rezerwacja23 i podział przekazane [6379040261](https://github.com/Roseru/aplikacja-mobilna/pull/146#issuecomment-6379040261).
+  O2 nadal posiada SyncWork/SyncCoordinator/SyncWorkPresentation; tych plików
+  nie edytowano. O2 konsument gate i sygnatura pozostają osobnym wejściem.
+  O3: nie otwieram liveE4/relay i nie deklaruję aktualnego drivera23.
+- Zgodnie z decyzją właściciela najpierw powstał cały przepływ, potem
+  przygotowano pięć celowanych nowych przypadków native i uruchomiono
+  jeden build validation/testAPK/standard Kotlin/lint. Build faktycznie
+  uruchomiony; wynik i testy urządzenia **PENDING/NOT_RUN**, nie PASS.
+  Brak JVM i powtarzania dawnych setek testów. PR dopiero po dużym
+  ukończonym, sprawdzonym rezultacie. Potwierdzenie odbiorców: brak.
+
+### O1-124 — Odczyt nowego livechatu i jawna ograniczona delegacja portów O2
+
+- 24.10.2026, agent1/O1, do O2/O3, **DO ODCZYTU**. Pobrano main5642675
+  i przeczytano O2-061/062 oraz O3-095–099, PR165 i konkretne6384033419/
+  6384033633/6382259951. Audytu backendu CI48 nie powtarzam; pozostaje
+  odebrany w swoim zakresie, bez nowego Androida/drivera23/live.
+- Aktualne zasady przenoszą bieżące rozmowy na prywatny portal; właściciel
+  potwierdził logowanie w otwartym browserze. Ta sesja nadal nie otrzymała
+  read_messages/send_message/set_status, a kontroler przeglądarki zgłasza
+  błąd inicjalizacji zasobów także po pojedynczym resecie kontrolera.
+  Nie wysłano jako Kamil, nie wybierano cudzej roli, nie pobierano cookies
+  i nie restartowano komputera. Zgłoszenie wymaganej integracji narzędzi:
+  [6386556558](https://github.com/Roseru/aplikacja-mobilna/pull/146#issuecomment-6386556558),
+  [uzupełnienie po zalogowaniu6386592612](https://github.com/Roseru/aplikacja-mobilna/pull/146#issuecomment-6386592612).
+  To przewidziany w nowych zasadach most GitHub, nie drugi dziennik.
+- **Jawna ograniczona delegacja O2** [6386626395](https://github.com/Roseru/aplikacja-mobilna/pull/146#issuecomment-6386626395):
+  addytywny local-only savedACK/raw drainer SessionController/SyncExecution,
+  obserwowalny znacznik instancji/wydania/generacji NetworkAccessGate i
+  konieczne odseparowane testy. O2 kontynuuje be6c423 na4f6, domyka własny
+  konsument i oba P2 ABA; zwraca finalny commit/sygnatury/dowody do O1.
+  APPLIED lokalnych dowodów nie oznacza świeżego PULL/ukończonego cyklu.
+- O1 od przekazania nie edytuje tych trzech plików do zwrotu rezerwacji.
+  Dotychczasowa communitySession/withCommunitySession/deferCommunity przy
+  apiSession jest już zapisana i zamrożona; O2 pracuje na swoim pinie,
+  bez całoplikowej podmiany. O1 potem scala zwykłym merge oba fragmenty.
+  Pozostałe provider/factory/root, community i migracja22→23 pozostają O1.
+  Dokładna granica utrwalona w AGENTS; potwierdzenie O2: oczekiwane.
+- Pierwszy build całej WF07/08 rzeczywiście **PASS726,437s**, validation/
+  testAPK/standard Kotlin/lint,0error/fatal,8warnings/1info, logSHA256
+  a51be0d5f2ad8e368db658e3672719414d9461c16c641df9b813314c6c61559a.
+  Schemat23 wygenerowany, istniejące wejścia niezmienione w czasie buildu.
+  Potem dopisano wspólny RetryAfter, ścisłe receipt/value/revision/status,
+  wymóg no-store, pełny podgląd makr przed publikacją oraz poprawny UUID
+  syntetycznego Meal. Drugi incremental build jest uruchomiony dla tej
+  konkretnej delty; jego wyniku ani native nie antycypuję.
+- Emulator O1Session35/5564 uruchomiony bezwipe, normalny emulator/oryginalne
+  APK nietknięte. Brak nowego skonfigurowanego pakietu użytkownika, liveAPI,
+  drivera23 lub v1PASS. Funkcjonalny duży PR nadal dopiero po zakończeniu
+  etapu, integracji i właściwych kontrolach. Rezerwacja mig23 zachowana.

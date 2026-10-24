@@ -74,6 +74,10 @@ class MainActivity : ComponentActivity() {
                 initializer { pl.roseru.kalorie.photo.MealPhotoViewModel(app,
                     pl.roseru.kalorie.photo.MealPhotoStore(app, app.database, binding.lease), createSavedStateHandle()) }
             })
+            val communityModel:pl.roseru.kalorie.community.CommunityViewModel = viewModel(viewModelStoreOwner=store,key="$ownerKey:community",
+                extras=defaultViewModelCreationExtras,factory=viewModelFactory {initializer {
+                    pl.roseru.kalorie.community.CommunityViewModel(app.community,binding.lease)
+                }})
             val importModel: pl.roseru.kalorie.importing.ImportViewModel? = if(binding.owner.kind=="account") {
                 viewModel(viewModelStoreOwner=store,key="$ownerKey:import",extras=defaultViewModelCreationExtras,
                     factory=viewModelFactory {initializer {
@@ -154,7 +158,7 @@ class MainActivity : ComponentActivity() {
                     confirm={id,revision,edit->app.sessionScope.launch {app.sessions.confirmPhotoMeal(binding.lease,id,revision,edit)}},
                     retryConfirmation={id->app.sessionScope.launch {app.sessions.retryPhotoConfirmation(binding.lease,id)}},
                     reopen={id,revision,edit->app.sessionScope.launch {app.sessions.reopenPhotoConfirmation(binding.lease,id,revision,edit)}}))
-            CalorieTheme(dark) { CalorieApp(model, session, actions, photoModel, importModel, syncState?.userStatus(),deviceModels) }
+            CalorieTheme(dark) { CalorieApp(model, session, actions, photoModel, importModel, syncState?.userStatus(),deviceModels,communityModel) }
             }
         }
     }

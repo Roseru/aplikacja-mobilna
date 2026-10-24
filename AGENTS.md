@@ -23,9 +23,10 @@
 
 ## Komunikacja między agentami
 
-- Jedynym wspólnym dziennikiem jest [docs/KOMUNIKACJA_AGENTOW.md](docs/KOMUNIKACJA_AGENTOW.md), według schematu zaproponowanego przez Agenta 1.
-- Przed pracą przeczytaj aktualne wpisy. Po zadaniu stosuj zasady i wzór wiadomości z tego dokumentu; nie twórz drugiej tablicy ani osobnego pliku zasad.
-- Numer agenta wynika z ustalenia z właścicielem i lokalnej tożsamości poza repozytorium; wspólny dokument nie przypisuje numeru konkretnej rozmowie.
+- Decyzją właściciela z 24 października 2026 r. bieżące pytania, blokady i przekazania prowadzimy w [prywatnym livechacie zespołu](https://calorie-coord-o3-20261024.roseru.chatgpt.site). Przed pracą odczytaj nowe wiadomości oraz aktualny [dziennik](docs/KOMUNIKACJA_AGENTOW.md). Ten dziennik pozostaje jedynym wersjonowanym zapisem trwałych decyzji i odbiorów; po zadaniu dopisz w nim wynik według istniejącego schematu. Nie twórz drugiej tablicy wyników.
+- Agent korzysta z narzędzi czatu: `read_messages(after_id)` do odczytu od ostatniego otrzymanego ID, `send_message(body, client_message_id)` do odpowiedzi i `set_status` do deklaracji własnego stanu. Przy ponowieniu wysyłki zachowaj `client_message_id`. Odczytuj czat przy rozpoczęciu i przekazaniu pracy oraz przed końcowym pushem. Strona nie uruchamia ani nie budzi zatrzymanej sesji agenta.
+- Autor wynika z zaproszonego konta. Przeglądarka podpisuje człowieka: A1 — Kamil, A2 — Benek, A3 — Johnny; narzędzia podpisują odpowiednio Agent 1, Agent 2, Agent 3. Nie wybieraj innej roli ani nie wysyłaj jako człowiek, aby zastąpić brakujące narzędzie agenta. Gdy brakuje dostępu lub narzędzi, zgłoś konkretny problem w dotychczasowym wątku GitHub i uzgodnij dostęp z właścicielem. Adresy kont, poświadczenia i przypisania serwerowe pozostają poza repozytorium.
+- Podawaj krótko aktualny commit, wykonywany krok, konkretną blokadę i najbliższą dostawę. Obecność w czacie oznacza niedawny sygnał z klienta, a stan pracy jest deklaracją. Nie potwierdzaj odczytu lub pracy za innego agenta. Ustalenia zmieniające interfejsy, rezerwacje plików albo kryteria odbioru utrwal w dzienniku i właściwym PR; sam wpis na czacie nie jest dowodem testu lub scalenia.
 
 ## Przydział Androida O1/O2 — historia i aktualny podział
 
@@ -34,4 +35,11 @@
 - W historycznym przydziale O1 edytował SessionController, BootstrapGateway, obserwatory/bariery E4, liveReplay, SessionSecurityTest i diagnostykę MealPhotoScreenTest; O2 implementuje dane, migracje, własne ekrany i WorkManager w zakresie pakietu. Potrzebną zmianę w zarezerwowanym pliku zgłasza z konkretnym punktem integracji w jedynym dzienniku. Nie nadpisuje drugiego checkoutu.
 - Aktualny uzgodniony zakres po A/B/C: O1 prowadzi katalog, jedyny device-wide provider polityki sieci, API/AppAuth oraz addytywne MainActivity/CalorieApplication/ui/App/Settings. O2 prowadzi konsument tego samego gate w SyncWork/SyncCoordinator/SyncWorkPresentation, konieczne testy i własny opis. Bez drugiej preferencji lub równoległej edycji zarezerwowanych plików. Przypięty kontrakt i warunki przekazania są w jedynym dzienniku oraz [zakresie O1/O2](https://github.com/Roseru/aplikacja-mobilna/blob/065ebdd38bf8c29e78ae4005b7dc623086a71fa3/android/AKTUALIZACJA_KATALOGU.md).
 - Najnowsza decyzja właściciela: najpierw duży spójny etap, potem właściwe testy i poprawki; PR dopiero po dużym ukończonym rezultacie. Nie tworzymy małych PR dla samych checkpointów lub statusów. Wymagane kontrole końcowe i GitHub CI pozostają obowiązujące.
-- Ten pakiet jest instrukcją zadania, nie drugim kanałem komunikacji. Odpowiedzi i postępy nadal trafiają wyłącznie do `docs/KOMUNIKACJA_AGENTOW.md`.
+- Ten pakiet jest instrukcją zadania. Bieżące odpowiedzi i postępy przekazujemy na livechacie, a trwałe decyzje i wyniki utrwalamy w `docs/KOMUNIKACJA_AGENTOW.md` według zasad powyżej.
+
+## Ograniczona delegacja dwóch portów O1 do O2 — 24.10.2026
+
+- O1 jawnie przekazał O2 wyłącznie addytywny local-only drainer w SessionController/SyncExecution oraz obserwowalny znacznik wystawienia/generacji w core/network/NetworkAccessGate.kt, wraz z koniecznymi osobnymi testami. Dokładny zakres i wejścia: [delegacja6386626395](https://github.com/Roseru/aplikacja-mobilna/pull/146#issuecomment-6386626395).
+- O2 kontynuuje codex/android-o2-polityka-runtime od be6c42303b5af5c6e62cafb804b38b558a5ddb09, na bazie4f6bb841818daa5b0823132a2120106dd97c3c61. Oddaje finalny spójny commit portów i konsumenta, podpisy DI, wyniki obu ABA i rzeczywistego lokalnego adaptera. Applied lokalnych dowodów nie kończy PULL lub całego cyklu.
+- Od przekazania do zwrotu rezerwacji O1 nie edytuje SessionController.kt, SyncExecution.kt ani NetworkAccessGate.kt. O1 ma już zapisaną i zamrożoną odrębną deltę communitySession/withCommunitySession/deferCommunity przy apiSession w swoim dziecku; O2 nie nadpisuje pliku z innego checkoutu. Po odbiorze O1 wykona zwykły merge obu fragmentów. Trwający build O1 jest odczytem źródeł, nie równoległą edycją.
+- Pozostałe provider/factory/AppAuth/root, moduł community oraz jedyna migracja22→23 pozostają O1. Zmiana poza wydzielonymi portami wymaga konkretnego zgłoszenia. Bez drugiego gate/preferencji, migracji23 O2, przejęcia SessionSecurityTest/drivera lub małego PR statusowego.

@@ -93,6 +93,11 @@ class DiaryViewModel(private val repository: DiaryRepository, private val prefer
         mutate { repository.add(productId, grams, type, date, id, amountText); channel.send(DiaryEvent.MealSaved) }
     }
     fun edit(id: String, grams: Double) = mutate { repository.edit(id, grams) }
+    fun addCommunity(scope:pl.roseru.kalorie.data.CommunityScope,product:pl.roseru.kalorie.community.CommunityProduct,
+        amount:String,unit:String,type:MealType) {
+        val date=LocalDate.parse(dateText.value);val id=UUID.randomUUID().toString()
+        mutate {repository.addCommunity(scope,product,amount,unit,type,date,id);channel.send(DiaryEvent.MealSaved)}
+    }
     fun addRation(rationId: String, quantities: Map<String, Double>, type: MealType, exactQuantities: Map<String, String> = emptyMap()) {
         val date = LocalDate.parse(dateText.value)
         val id = UUID.randomUUID().toString()

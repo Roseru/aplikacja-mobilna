@@ -106,6 +106,28 @@ class DiaryRepository(private val db: CalorieDatabase, private val context: Cont
         enqueue(meal, listOf(item), "create")
     }
 
+    /** Saved catalogue fragment works offline; its public reference and snapshot remain immutable. */
+    suspend fun addCommunity(scope:CommunityScope,product:pl.roseru.kalorie.community.CommunityProduct,amount:String,
+        unit:String,type:MealType,date:LocalDate,id:String=UUID.randomUUID().toString())=ownerTransaction {
+        require(scope.lease==boundLease && scope.lease.storageScope==owner)
+        require(db.bootstrapDao().binding(owner)==scope.binding)
+        if(dao.meal(id,owner)!=null)return@ownerTransaction
+        val zone=ZoneId.systemDefault()
+        val time=date.atTime(LocalTime.now()).atZone(zone).toInstant()
+        val schema=CanonicalMealRows.schema(context)
+        val wire=pl.roseru.kalorie.community.CommunityMeal.create(product,amount,unit,UUID.randomUUID().toString(),
+            time,zone,type.name.lowercase(java.util.Locale.ROOT),schema)
+        val operationId=UUID.randomUUID().toString()
+        val status=if(scope.binding.requiresRecovery)"waiting_recovery" else "pending"
+        val operation=if(status=="pending")MealWire.operation(operationId,id,scope.binding.syncEpoch,null,wire.canonical,schema) else null
+        dao.insertMeal(CanonicalMealRows.meal(id,owner,wire,scope.wireContext))
+        val localSnapshot=StrictJson.canonical(JSONObject().put("community_product",product.json())
+            .put("quantity",JSONObject().put("amount",amount).put("unit",unit)).put("formula_version",NutritionV1.FORMULA))
+        CanonicalMealRows.items(id,wire).forEach {dao.insertItem(it.copy(snapshotJson=localSnapshot))}
+        dao.enqueue(OutboxEntity(operationId,owner,"meal",id,"upsert",null,wire.canonical,Instant.now().toString(),
+            status,"sync-v1",operation,scope.wireContext))
+    }
+
     /** Called inside ownerTransaction: diary row, exact item and operation commit together. */
     private suspend fun saveCanonicalManualMeal(meal: MealEntity, item: MealItemEntity,
         product: ProductEntity, amount: String): Boolean {

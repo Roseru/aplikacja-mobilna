@@ -29,7 +29,7 @@ import pl.roseru.kalorie.data.ProductEntity
 import java.math.BigDecimal
 
 @OptIn(ExperimentalMaterial3Api::class)
-@Composable fun FoodScreen(model: DiaryViewModel, onBack: () -> Unit, onRations: () -> Unit, onCustom: () -> Unit, onPhoto: () -> Unit) {
+@Composable fun FoodScreen(model: DiaryViewModel, onBack: () -> Unit, onRations: () -> Unit, onCustom: () -> Unit, onPhoto: () -> Unit,onCommunity:(()->Unit)?=null) {
     val products by model.products.collectAsStateWithLifecycle()
     val recent by model.recent.collectAsStateWithLifecycle()
     val day by model.day.collectAsStateWithLifecycle()
@@ -78,6 +78,11 @@ import java.math.BigDecimal
             item(key = "custom-food") {
                 TextButton(onClick = { keyboard?.hide(); onCustom() }, modifier = Modifier.testTag("open-custom-food")) {
                     Icon(Icons.Outlined.EditNote, null); Spacer(Modifier.width(8.dp)); Text("Dodaj własny produkt")
+                }
+            }
+            if(onCommunity!=null)item(key="community-food") {
+                OutlinedButton(onClick={keyboard?.hide();onCommunity()},modifier=Modifier.fillMaxWidth().testTag("open-community")) {
+                    Icon(Icons.Outlined.Groups,null);Spacer(Modifier.width(8.dp));Text("Katalog społeczności")
                 }
             }
             item(key = "offline") {

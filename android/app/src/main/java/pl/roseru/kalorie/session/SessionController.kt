@@ -664,6 +664,27 @@ class SessionController internal constructor(private val db: CalorieDatabase, pr
         check(current.identity == ticket.identity && current.authState == ticket.authState && current.revision == ticket.revision)
     }
     internal suspend fun apiSession(lease: OwnerLease): ApiSession = mutex.withLock { captureApi(lease) }
+    /** Community uses the existing session and refresh fence, never a second token vault. */
+    internal suspend fun communitySession(scope:CommunityScope,forceRefresh:Boolean=false):ApiSession {
+        val fence=SyncContextFence(scope.lease,scope.binding)
+        val fresh=mutex.withLock {db.withTransaction {
+            requireSyncContext(fence);check(!scope.binding.requiresRecovery)
+            val session=checkNotNull(sessionFor(binding()))
+            if(session.optLong("apiRetryAt")>now())throw pl.roseru.kalorie.community.CommunityUnavailable("retry_after")
+            val auth=AuthState.jsonDeserialize(session.getString("authState"))
+            (auth.accessTokenExpirationTime?:0)>now()+30_000
+        }}
+        if(forceRefresh || !fresh)check(refreshFor(scope.lease,fence))
+        return apiSession(fence)
+    }
+    internal suspend fun <T> withCommunitySession(ticket:ApiSession,scope:CommunityScope,block:suspend ()->T):T =
+        withApiSession(ticket) {requireSyncContext(SyncContextFence(scope.lease,scope.binding));block()}
+    internal suspend fun deferCommunity(ticket:ApiSession,scope:CommunityScope,deadline:Long) = withCommunitySession(ticket,scope) {
+        val current=checkNotNull(sessionFor(binding()))
+        val until=maxOf(deadline,current.optLong("apiRetryAt"))
+        persist(copyRecord().put("session",JSONObject(current.toString()).put("apiRetryAt",until)))
+        publish()
+    }
     private suspend fun apiSession(fence: SyncContextFence): ApiSession = mutex.withLock {
         db.withTransaction { requireSyncContext(fence); captureApi(fence.lease) }
     }
