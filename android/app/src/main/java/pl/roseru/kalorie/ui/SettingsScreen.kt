@@ -48,8 +48,8 @@ import pl.roseru.kalorie.data.ThemeMode
         Text(if(model.isGuest) "Korzystasz bez konta. Posiłki i ustawienia są zapisywane lokalnie. Odinstalowanie aplikacji usuwa tę kopię danych."
             else "Korzystasz z profilu konta. Zmiany zapisujemy najpierw na urządzeniu, a synchronizacja odbywa się osobno. Odinstalowanie aplikacji usuwa lokalną kopię danych.",
             modifier=Modifier.testTag("settings-owner-info"),color = MaterialTheme.colorScheme.onSurfaceVariant)
-        Text(if(model.isGuest) "Baza demonstracyjna v1. Wartości produktów i początkowy cel służą do sprawdzenia aplikacji. Ustaw własny cel i zweryfikuj dane przed użytkowaniem."
-            else "Baza demonstracyjna v1. Wartości produktów służą do sprawdzenia aplikacji. Cel konta ustawiasz samodzielnie; zweryfikuj dane przed użytkowaniem.",
+        Text(if(model.isGuest) "Wersję i źródła zapisanej bazy sprawdzisz powyżej. Dane DEMO oraz początkowy cel służą do sprawdzenia aplikacji. Ustaw własny cel przed użytkowaniem."
+            else "Wersję i źródła zapisanej bazy sprawdzisz powyżej. Dane DEMO służą do sprawdzenia aplikacji. Cel konta ustawiasz samodzielnie.",
             style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
     }
 }

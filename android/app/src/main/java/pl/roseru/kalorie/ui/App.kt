@@ -17,13 +17,24 @@ import pl.roseru.kalorie.DiaryEvent
 import pl.roseru.kalorie.DiaryViewModel
 import pl.roseru.kalorie.session.*
 
-@Composable fun CalorieApp(model: DiaryViewModel, session: SessionView, actions: SessionActions, photoModel: pl.roseru.kalorie.photo.MealPhotoViewModel, importModel:pl.roseru.kalorie.importing.ImportViewModel?=null,syncStatus:String?=null) {
+@Composable fun CalorieApp(model: DiaryViewModel, session: SessionView, actions: SessionActions, photoModel: pl.roseru.kalorie.photo.MealPhotoViewModel, importModel:pl.roseru.kalorie.importing.ImportViewModel?=null,syncStatus:String?=null,
+    deviceNetworkModels:DeviceNetworkModels?=null) {
     val ready by model.ready.collectAsStateWithLifecycle()
     val error by model.startupError.collectAsStateWithLifecycle()
     val nav = rememberNavController()
     val snackbar = remember { SnackbarHostState() }
     val backStack by nav.currentBackStackEntryAsState()
     val route = backStack?.destination?.route
+    val networkState=deviceNetworkModels?.policy?.state?.collectAsStateWithLifecycle()?.value?.access
+    val catalogState=deviceNetworkModels?.catalog?.state?.collectAsStateWithLifecycle()?.value
+    val catalogSummary=catalogState?.let { state->
+        val saved=state.installed.filterIsInstance<pl.roseru.kalorie.catalogupdate.InstalledCatalog.Ready>()
+        when {
+            state.localReadFailed || state.installed.any{it is pl.roseru.kalorie.catalogupdate.InstalledCatalog.Unreadable}->"Opis zapisanej bazy jest niedostępny"
+            saved.isEmpty()->"Odczytuję wersję zapisanej bazy…"
+            else->"Baza: "+saved.joinToString(" · "){(if(it.manifest.kind=="official")"oficjalna" else "DEMO")+" v${it.manifest.release}"}
+        }
+    }
     LaunchedEffect(model) {
         model.events.collect { event -> when (event) {
             DiaryEvent.MealSaved -> if (nav.currentDestination?.route in listOf("food", "rations", "custom")) nav.popBackStack("diary", false)
@@ -41,21 +52,26 @@ import pl.roseru.kalorie.session.*
     }
     Scaffold(
         snackbarHost = { SnackbarHost(snackbar) },
+        topBar = {
+            if(networkState!=null && route in listOf("photo","account","import","achievements","ranking-consent","ranking","nemesis"))
+                NetworkModeNotice(networkState,onSettings={nav.navigate("settings"){launchSingleTop=true}})
+        },
         bottomBar = {
             if (route !in listOf("food", "rations", "custom", "photo")) NavigationBar(containerColor = MaterialTheme.colorScheme.surface) {
                 NavigationBarItem(selected = route == "diary", onClick = { nav.navigate("diary") { popUpTo("diary"); launchSingleTop = true } },
-                    icon = { Icon(Icons.AutoMirrored.Outlined.Assignment, contentDescription = null) }, label = { Text("Dziennik") })
+                    icon = { Icon(Icons.AutoMirrored.Outlined.Assignment, contentDescription = null) }, label = { Text("Dziennik") }, modifier=Modifier.testTag("open-diary"))
                 NavigationBarItem(selected = route == "analytics", onClick = { nav.navigate("analytics") { launchSingleTop = true } },
                     icon = { Icon(Icons.Outlined.BarChart, contentDescription = null) }, label = { Text("Postępy") }, modifier = Modifier.testTag("open-analytics"))
                 NavigationBarItem(selected = route == "settings", onClick = { nav.navigate("settings") { launchSingleTop = true } },
-                    icon = { Icon(Icons.Outlined.Tune, contentDescription = null) }, label = { Text("Ustawienia") })
+                    icon = { Icon(Icons.Outlined.Tune, contentDescription = null) }, label = { Text("Ustawienia") }, modifier=Modifier.testTag("open-settings"))
                 NavigationBarItem(selected = route in listOf("profile", "achievements", "ranking-consent", "ranking", "nemesis"), onClick = { nav.navigate("profile") { launchSingleTop = true } },
                     icon = { Icon(Icons.Outlined.PersonOutline, contentDescription = null) }, label = { Text("Profil") }, modifier = Modifier.testTag("open-profile"))
             }
         }
     ) { padding ->
         NavHost(nav, startDestination = "diary", modifier = Modifier.padding(padding).consumeWindowInsets(padding)) {
-            composable("diary") { DiaryScreen(model, onAdd = { nav.navigate("food") }, onSettings = { nav.navigate("settings") { launchSingleTop = true } }) }
+            composable("diary") { DiaryScreen(model, onAdd = { nav.navigate("food") }, onSettings = { nav.navigate("settings") { launchSingleTop = true } },
+                networkState=networkState,catalogSummary=catalogSummary,lastServerCopy=session.snapshot?.completedTime,refusedChanges=session.mealPush?.refused) }
             composable("food") { FoodScreen(model, onBack = { nav.popBackStack() }, onRations = { nav.navigate("rations") }, onCustom = { nav.navigate("custom") }, onPhoto = { nav.navigate("photo") }) }
             composable("rations") { RationScreen(model, onBack = { nav.popBackStack() }) }
             composable("photo") {
@@ -68,7 +84,7 @@ import pl.roseru.kalorie.session.*
                     onCancelAnalysis=actions.cancelPhotoAnalysis,onRetryCancellation=actions.retryPhotoCancellation,onReleaseCancelled=actions.releaseCancelledPhoto,draftActions=actions.photoDraft)
             }
             composable("custom") { CustomFoodScreen(model, onBack = { nav.popBackStack() }) }
-            composable("settings") { SettingsScreen(model) }
+            composable("settings") { SettingsScreen(model,deviceNetworkModels?.catalog,deviceNetworkModels?.policy) }
             composable("profile") { ProfileScreen(model, onAccount = { nav.navigate("account") { launchSingleTop = true } },
                 onAchievements = { nav.navigate("achievements") { launchSingleTop = true } },
                 onNemesis = { nav.navigate("nemesis") { launchSingleTop = true } }) }

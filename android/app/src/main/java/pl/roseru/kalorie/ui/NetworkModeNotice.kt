@@ -15,12 +15,12 @@ import pl.roseru.kalorie.core.network.NetworkAccessState
 @Composable fun NetworkModeNotice(state:NetworkAccessState,onSettings:()->Unit) {
     if(state is NetworkAccessState.Allowed)return
     Surface(color=MaterialTheme.colorScheme.surfaceContainerHigh) {
-        Row(Modifier.fillMaxWidth().padding(horizontal=16.dp,vertical=4.dp).testTag("network-mode-notice"),
+        Row(Modifier.fillMaxWidth().statusBarsPadding().padding(horizontal=16.dp,vertical=4.dp).testTag("network-mode-notice"),
             verticalAlignment=Alignment.CenterVertically,horizontalArrangement=Arrangement.spacedBy(8.dp)) {
             Icon(Icons.Outlined.CloudOff,contentDescription=null)
             Text(if(state==NetworkAccessState.Blocked)"Tryb poligonowy · bez połączeń" else "Połączenia aplikacji wstrzymane",
                 modifier=Modifier.weight(1f),style=MaterialTheme.typography.bodySmall)
-            TextButton(onClick=onSettings){Text("Ustawienia")}
+            TextButton(onClick=onSettings,modifier=Modifier.testTag("network-mode-settings")){Text("Ustawienia")}
         }
     }
 }

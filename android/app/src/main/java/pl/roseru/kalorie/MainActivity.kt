@@ -21,6 +21,7 @@ import androidx.lifecycle.ViewModelStore
 import androidx.lifecycle.ViewModelStoreOwner
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.CancellationException
 import pl.roseru.kalorie.data.DiaryRepository
 import pl.roseru.kalorie.sync.userStatus
 import pl.roseru.kalorie.session.SessionActions
@@ -28,6 +29,7 @@ import pl.roseru.kalorie.session.PhotoDraftActions
 import pl.roseru.kalorie.data.ThemeMode
 import pl.roseru.kalorie.ui.CalorieApp
 import pl.roseru.kalorie.ui.CalorieTheme
+import pl.roseru.kalorie.ui.rememberDeviceNetworkModels
 
 class MainActivity : ComponentActivity() {
     private val ownerModels: OwnerViewModels by viewModels()
@@ -42,6 +44,8 @@ class MainActivity : ComponentActivity() {
         enableEdgeToEdge()
         val app = application as CalorieApplication
         setContent {
+            // Kept in the activity store, outside the diary owner/generation key.
+            val deviceModels=rememberDeviceNetworkModels(this@MainActivity,app.catalogUpdates,app.networkPolicy)
             val session by app.sessions.view.collectAsStateWithLifecycle()
             val binding = session.binding
             if (binding == null) {
@@ -86,9 +90,16 @@ class MainActivity : ComponentActivity() {
                 enableEdgeToEdge(statusBarStyle = style, navigationBarStyle = style)
             }
             val actions = SessionActions(
-                login = { app.sessionScope.launch { app.sessions.beginLogin()?.let { intent ->
-                    try { login.launch(intent) } catch (_: Exception) { app.sessions.cancelLogin() }
-                } } },
+                login = { app.sessionScope.launch {
+                    try {
+                        val permit=app.networkPolicy.captureAllowed()
+                        app.sessions.beginLogin()?.let { intent ->
+                            app.networkPolicy.requireCurrent(permit)
+                            login.launch(intent)
+                        }
+                    } catch(error:CancellationException){throw error}
+                    catch (_: Exception) { app.sessions.cancelLogin() }
+                } },
                 logout = { app.sessionScope.launch { app.sessions.logout() } },
                 refresh = { app.sessionScope.launch { app.sessions.refresh() } },
                 cancel = { app.sessionScope.launch { app.sessions.cancelLogin() } },
@@ -143,7 +154,7 @@ class MainActivity : ComponentActivity() {
                     confirm={id,revision,edit->app.sessionScope.launch {app.sessions.confirmPhotoMeal(binding.lease,id,revision,edit)}},
                     retryConfirmation={id->app.sessionScope.launch {app.sessions.retryPhotoConfirmation(binding.lease,id)}},
                     reopen={id,revision,edit->app.sessionScope.launch {app.sessions.reopenPhotoConfirmation(binding.lease,id,revision,edit)}}))
-            CalorieTheme(dark) { CalorieApp(model, session, actions, photoModel, importModel, syncState?.userStatus()) }
+            CalorieTheme(dark) { CalorieApp(model, session, actions, photoModel, importModel, syncState?.userStatus(),deviceModels) }
             }
         }
     }
