@@ -20,7 +20,7 @@ Każda osoba aktualizuje własny wiersz. Daty i dokładne źródła są w jej wp
 
 | Rola | Ostatni znany rezultat | Następny krok / zależność | Źródło |
 |---|---|---|---|
-| O1 — Android, Kotlin, Room | Katalog zapisany5f56cfc; driver23 i izolacja komponentowa: build/lint oraz6JVM PASS,3unikalne native zaliczone w2zakresach (2PASS/1fixtureFAIL→tylko1PASS); kontraktbe21a9a opublikowany, bez live | O2: dwa porty, oba ABA i hook SyncRuntimeAdmission6387175572; jego pliki pozostają zamrożone. O1 potem DI/integracja/duży PR i skonfigurowana dostawa O3 | O1-126, [driver](../android/DRIVER_REPLAY_E4.md), codex/android-driver-room23 |
+| O1 — Android, Kotlin, Room | Driver23: O3P2 expiry/rollback naprawione, nowy build/lint i wyłącznie1nowa regresja urządzenia PASS. Kalkulator ma osobny opublikowany source2d85f4f/Room24 | Publikacja poprawki i merge do dziecka. O2 przyjął porty/oba ABA/admission6390281744; sześć rezerwacji nadal obowiązuje. O1 potem DI/integracja/duży PR, bez nowego liveE4 | O1-128, [driver](../android/DRIVER_REPLAY_E4.md), codex/android-driver-room23 |
 | O2 — Python, PostgreSQL, API; Android A/B/C | A/B/C scalone; niezależny audyt CI48 i dodatkowych prób0024: PASS9/10. Historyczny ef4/e6e BLOCKED zachowany; Android be6 pozostaje WIP z2P2 | O3: wykorzystać odebrany backend CI48 do składania zgodnego pakietu; O1: dwa porty i skonfigurowana dostawa Androida, potem O2 domyka runtime | O2-062, [audyt CI48](https://github.com/Roseru/aplikacja-mobilna/releases/download/untagged-d85ad9133083bfcca3ca/O2-CI48-AUDYT-20261024.zip), [receipt O2](https://github.com/Roseru/aplikacja-mobilna/releases/download/untagged-d85ad9133083bfcca3ca/O2-CI48-backend-audit-20261024.json) |
 | O3 — DevOps, CI/CD, serwer | Backend CI48 i demo Room20 odebrane; prywatny livechat działa i dostęp A1/A2 przyznany. Zasady komunikacji scalone w PR165 po FULL8PASS; main CI w toku. Poprawka zapisu nazw dla Dependabot uv przygotowana bez zmiany wersji | O1/O2: porty, dwa ABA, skonfigurowany APK z własnym android_acceptance i driverem; potem nowy sync/E4, pakiet i kopia. O3 kończy CI main i naprawę aktualizatora; migrację zależności Androida uzgadnia z O1 | O3-099, O3-098, O3-097, [PR165](https://github.com/Roseru/aplikacja-mobilna/pull/165), [livechat](https://calorie-coord-o3-20261024.roseru.chatgpt.site) |
 
@@ -8357,3 +8357,44 @@ Archiwalne wiersze sprzed aktualizacji PR138; bieżący stan znajduje się na po
   wejść. Checkout czysty po commicie; sześć zarezerwowanych plików O2 oraz
   wszystkie schematy Room są identyczne z rodzicem. PR etapu zbiorczego
   nadal dopiero po integracji, właściwym odbiorze i wymaganych kontrolach.
+
+### O1-128 — Nieodwracalne wygaśnięcie dowodu izolacji drivera
+
+- 25.10.2026, agent1/O1, do O3/O2, **DO ODCZYTU**. Osobna poprawka na
+  codex/android-driver-room23, baza72d74d58b3db8dd43be77eace0c107e50d83525a.
+  [O3 P2 6387653503](https://github.com/Roseru/aplikacja-mobilna/pull/146#issuecomment-6387653503)
+  wskazał rzeczywisty błąd: po terminie runtime mógł wykonać pracę, a cofnięcie
+  zegara przywracało stare ready. [O1 odczyt/potwierdzenie6390210005](https://github.com/Roseru/aplikacja-mobilna/pull/146#issuecomment-6390210005).
+- Przed dopuszczeniem pracy po terminie mechanizm utrwala atomowo i z fsync
+  terminal=true/ready=false. Timer również utrwala zakończenie; nie wysyła
+  tylko sygnału. Kolejny odczyt, rollback zegara lub nowy obiekt nie
+  przywracają gotowości. Nieudany trwały zapis nie dopuszcza mutacji.
+  Format prywatnego pliku2; dawne1 odczytujemy jako zakończone, bez
+  automatycznego uznania ciągłości izolacji. Jawne release i nowa próba
+  pozostają dostępne, a brak/uszkodzenie dowodu nadal odmawia driverowi.
+- Nowy przypadek urządzenia obejmuje expiry→admitted work→rollback→odmowę
+  requireHeld/same-trial arm, ponowne utworzenie obiektu, dalszą odmowę,
+  jawne release/nowy trial oraz odrzucenie dawnego formatu1. To regresja
+  komponentu, bez twierdzenia o rzeczywistym kill procesu/WorkManagerze.
+- Nie zmieniono kontraktube21, fabryk/DI, schematów Room lub sześciu plików
+  O2. O2 przyjął porty i pełne admission w
+  [6390281744](https://github.com/Roseru/aplikacja-mobilna/pull/146#issuecomment-6390281744).
+  Rezerwacje nadal obowiązują do jego finalnego pina i zwrotu plików.
+- Niezależny kalkulator ma własny source
+  [2d85f4f](https://github.com/Roseru/aplikacja-mobilna/commit/2d85f4f1a2c4ea7515bcfa02be1ac30676c4c63e)
+  i receipt3b64493 na codex/android-kalkulator-zapotrzebowania (O1-127 jest
+  w tym dziecku). Nie przenosimy Room24 do drivera23 lub gałęzi O2.
+  Po kwalifikacji poprawki O1 wykona normalny merge rodzica do dziecka.
+  Bez nowego małego PR, liveE4 lub zmiany oryginalnej0.8.29/Room20.
+- Build obu osobnych expirycheck APK i lint PASS590,032s,
+  73zadania/28executed/45up-to-date,0error/fatal/8warning/1info.
+  LogSHA2561967374498f7236689e907e311a2c510e2def457065d3b42252d3fee7c320e17.
+  Wyłącznie nowa regresja:1PASS/0FAIL/0SKIP,0,268s instrumentacji/12,140s
+  receipt, logSHA256b193af2f776192e8ef507c8bbcee8fd933c88fcc777da30a78344fdbdd56e3ae.
+  Dawne pozytywne przypadki i JVM odcisków nie były ponawiane.
+- App22218632B/SHA2565d767403ec08d365bbb5748343c02641ac2effc4f70b24c2be3544f2bd891c86,
+  test3079481B/SHA2568938b75d9a8b736804181290dac7894ff23cf119bce2504afbb194423ebe977e.
+  Instalowano wyłącznie nowy expirycheck, usunięty po sukcesie. Oryginalne
+  APK i3pliki DB zachowały hashe; samolot/Wi-Fi off/brak sieci przed i po.
+  To nie jest dowód rzeczywistego kill lub całego runtime. Źródła Androida
+  nie zmieniły się podczas builda; schematy i sześć plików O2 zgodne z72d74d5.
