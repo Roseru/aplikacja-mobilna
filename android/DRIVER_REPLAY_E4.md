@@ -38,8 +38,15 @@ potwierdzeniem syntetycznego konta:
 
 Termin to20min, maksymalnie30min, bez odnawiania przez restart/ponowienie
 tego samego trial. Po wygaśnięciu runtime może działać, ale driver odmawia
-uznania próby; potrzebny nowy UUID i nowy baseline. Cofnięcie zegara blokuje
-uznanie izolacji. Błędny/uszkodzony plik blokuje runtime validation i wymaga
+uznania próby; potrzebny nowy UUID i nowy baseline. W formacie prywatnego
+pliku v2 koniec próby jest nieodwracalny: przed dopuszczeniem pierwszej
+pracy po terminie utrwalamy terminal=true/ready=false. Timer również
+utrwala koniec po swoim monotonicznym odliczeniu. Cofnięcie zegara i
+ponowne utworzenie obiektu nie przywracają zakończonego dowodu. Dawny plik
+v1 nie dowodzi ciągłości izolacji i jest odczytywany jako zakończony;
+operator może go jawnie zwolnić i rozpocząć nową próbę z nowym baseline.
+Zgłoszenie: [O3 P2](https://github.com/Roseru/aplikacja-mobilna/pull/146#issuecomment-6387653503).
+Błędny/uszkodzony plik blokuje runtime validation i wymaga
 osobnej interwencji operatora po zachowaniu prywatnych dowodów. Nie czyścić
 danych aplikacji, dziennika ani historycznych prób w celu uzyskania PASS.
 
@@ -58,7 +65,29 @@ Rzeczywisty WorkManager po kill, integracja O2, TLS/OIDC, skonfigurowane4APK,
 nowy `android_acceptance` i wspólne PG C1/C2 wymagają osobnego odbioru.
 Poniższa historia Room17–20 zachowuje wyniki i ograniczenia swoich źródeł.
 
-### Lokalna kwalifikacja tego przygotowania
+### Poprawka wygaśnięcia — kwalifikacja 25.10.2026
+
+Zgłoszenie O3P2 z6387653503 jest naprawione lokalnie. Build validation i
+opt-in testAPK oraz lint PASS590,032s,73zadania/28executed/45up-to-date,
+0error/fatal/8warning/1info. LogSHA256
+`1967374498f7236689e907e311a2c510e2def457065d3b42252d3fee7c320e17`.
+Nie wykonywano ponownie JVM ani wcześniej zaliczonych przypadków urządzenia.
+
+Wyłącznie nowa regresja expiry/admission/rollback/rekonstrukcji/v1:
+**1PASS/0FAIL/0SKIP**,0,268s instrumentacji/12,140s receipt. LogSHA256
+`b193af2f776192e8ef507c8bbcee8fd933c88fcc777da30a78344fdbdd56e3ae`.
+Osobne expirycheck appAPK22218632B/SHA256
+`5d767403ec08d365bbb5748343c02641ac2effc4f70b24c2be3544f2bd891c86`,
+testAPK3079481B/SHA256
+`8938b75d9a8b736804181290dac7894ff23cf119bce2504afbb194423ebe977e`.
+Pakiety tej próby usunięto po wyniku; oryginalne APK i3pliki DB zachowały
+hashe. Przed i po: samolot, Wi-Fi off, brak sieci domyślnej.
+
+To dowód komponentu na urządzeniu. Nie zawiera rzeczywistego kill procesu,
+podłączonego WorkManagera O2, TLS/OIDC/HTTP lub nowego liveE4. Kontraktbe21,
+fabryki/DI, schematy i sześć plików O2 pozostają bez zmian.
+
+### Lokalna kwalifikacja wcześniejszego przygotowania22bb639
 
 - Source **22bb639215b530add7d84e21cf0093cf13b5e44a**, tree android/app
   **b4c222eb07aef7affe531226e861acc58624cb1e**, wypchnięte na

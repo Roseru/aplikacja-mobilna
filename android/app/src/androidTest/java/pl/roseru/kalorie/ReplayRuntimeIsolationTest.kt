@@ -112,4 +112,34 @@ class ReplayRuntimeIsolationTest {
             }
         }
     }
+
+    @Test fun expiredEvidenceNeverRevivesAfterAdmittedWorkRollbackAndReconstruction() = runBlocking {
+        fixture {file,scope->
+            val start=1_800_000_000_000L;var instant=start
+            val trial=UUID.randomUUID().toString()
+            val gate=ReplayRuntimeIsolation(file,scope){instant}.also {it.attach(1)}
+            gate.arm(trial,"owner","epoch-1",60_000)
+            gate.requireHeld(trial,"owner","epoch-1")
+            instant=start+60_001
+            var writes=0
+            assertEquals(SyncRuntimeEntry.Admitted(1),gate.run {++writes})
+            instant=start+50_000
+            assertThrows(IllegalStateException::class.java){gate.requireHeld(trial,"owner","epoch-1")}
+            assertTrue(runCatching {gate.arm(trial,"owner","epoch-1")}.isFailure)
+            val restored=ReplayRuntimeIsolation(file,scope){instant}.also {it.attach(1)}
+            assertThrows(IllegalStateException::class.java){restored.requireHeld(trial,"owner","epoch-1")}
+            assertTrue(runCatching {restored.arm(trial,"owner","epoch-1")}.isFailure)
+            assertEquals(SyncRuntimeEntry.Admitted(2),restored.run {++writes})
+            restored.release(trial,"owner","epoch-1")
+            val fresh=UUID.randomUUID().toString()
+            restored.arm(fresh,"owner","epoch-1",60_000)
+            restored.requireHeld(fresh,"owner","epoch-1")
+            // A version1 ready record never becomes proof of continuity after an application upgrade.
+            val legacy=JSONObject(file.readText()).put("version",1).also {it.remove("terminal")}
+            file.writeText(legacy.toString())
+            val upgraded=ReplayRuntimeIsolation(file,scope){instant}.also {it.attach(1)}
+            assertThrows(IllegalStateException::class.java){upgraded.requireHeld(fresh,"owner","epoch-1")}
+            assertTrue(upgraded.run {Unit} is SyncRuntimeEntry.Admitted)
+        }
+    }
 }
