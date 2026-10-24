@@ -66,14 +66,22 @@ dawny zakres. Nie ignoruje niepustej wartości lub innych nowych pól.
 Robocza wersja0.8.33/code44/validation1044, Room24. Driver24 ma nadal39tabel:
 nowa kolumna istniejących goals jest hashowana ściśle. Obsługa wymaga tej
 samej podłączonej izolacji runtime; bez attach odmawia przygotowania.
-Nieznany25 pozostaje odrzucony. Źródło drivera23/22bb639/remote72d74d5
-nie jest podmieniane i nie staje się zależne od tego etapu.
+Nieznany25 pozostaje odrzucony. Historyczna kwalifikacja drivera23/22bb639
+pozostaje zachowana. Poprawka expiry/rollback ma niezależny source526deb4
+na gałęzi rodzica i własną regresję; połączono ją z kalkulatorem zwykłym
+merge8140ba1, razem z maina779d00. Rodzic pozostaje Room23 i nie przyjmuje
+całego kalkulatora. Nie utożsamiamy osobnych kwalifikacji z nowym odbiorem
+połączonego runtime; ten nastąpi po finalnej dostawie O2.
 
 O2 nadal posiada SyncWork/SyncCoordinator/SyncWorkPresentation oraz trzy
 delegowane porty. Żaden z tych sześciu plików nie jest edytowany. Nie ma
 Gemini/admission AI, automatycznych korekt E9, nowego consent/automatu,
 energy_estimates_v1 sync lub nowej akceptacji pełnego E9. To działający
 przepływ oszacowania początkowego, potrzebny do jego dalszej implementacji.
+
+25.10 do rezerwacji O2 doszedł wyłącznie sygnał watchdoga w
+PolicyConnectionFactory (uzgodnienie6390371437). Także ten siódmy plik
+pozostaje zamrożony dla O1 do finalnego pina wykonawcy.
 
 Zgodnie z decyzją właściciela cały przepływ powstał przed uruchomieniem
 kontroli. Pierwszy build validation/opt-in testAPK, standard Kotlin i lint

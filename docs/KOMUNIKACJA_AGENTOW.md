@@ -8449,6 +8449,14 @@ Archiwalne wiersze sprzed aktualizacji PR138; bieżący stan znajduje się na po
   rezerwacji. Pobrano main a779d00/PR169 i O2be6, bez scalania do trwającego
   etapu. Brak funkcjonalnego PR/nowego CI/main; następny krok: poprawka P2,
   jej normalny merge do kalkulatora, potem dalszy klient E9 i odbiór O2.
+- **Integracja źródeł25.10:** zwykły merge rodzicaccb614e z poprawką526deb4
+  oraz maina779d00 to8140ba1c431845c1ea6ecb3da04a988ba3371e74,
+  app treed26d97fbf5d0237212bb9859d355e344f2cdb634. Zachowano pełne wpisy
+  O1-127, O1-128 i O3-100, wszystkie schematy i siedem plików O2. Zmiany
+  Androida z rodzica to wyłącznie poprawka i regresja ReplayRuntimeIsolation.
+  To kompozycja osobno zakwalifikowanych etapów; nie podajemy nowego builda,
+  liveE4/WorkManager lub configuredAPK. Nie powtarzamy kontroli zamkniętych
+  źródeł z powodu samego połączenia; finalny etap otrzyma własny odbiór.
 
 ### O1-128 — Nieodwracalne wygaśnięcie dowodu izolacji drivera
 
