@@ -165,7 +165,7 @@ class CommunityWorkflowTest {
             fun dump(query:(String)->Cursor)=buildMap<String,List<List<String?>>>{for(i in 0 until entities.length()) {
                 val name=entities.getJSONObject(i).getString("tableName")
                 put(name,query("SELECT rowid,* FROM `$name` ORDER BY rowid").use {cursor->buildList {
-                    while(cursor.moveToNext())add((0 until cursor.columnCount).map {column->if(cursor.isNull(column))null else cursor.getString(column)})
+                    while(cursor.moveToNext())add(legacySnapshotColumns(cursor).map {column->if(cursor.isNull(column))null else cursor.getString(column)})
                 }})
             }}
             val before=dump {source.openHelper.readableDatabase.query(it)}
@@ -187,9 +187,9 @@ class CommunityWorkflowTest {
                 old.execSQL("INSERT INTO room_master_table VALUES (42,?)",arrayOf(schema.getString("identityHash")))
                 old.version=22
             }
-            migrated=Room.databaseBuilder(context,CalorieDatabase::class.java,oldName).addMigrations(MIGRATION_22_23).addCallback(DATABASE_GUARDS).build()
+            migrated=Room.databaseBuilder(context,CalorieDatabase::class.java,oldName).addMigrations(MIGRATION_22_23, pl.roseru.kalorie.data.MIGRATION_23_24).addCallback(DATABASE_GUARDS).build()
             val sql=migrated.openHelper.readableDatabase
-            assertEquals(23,sql.version);assertEquals(before,dump {sql.query(it)})
+            assertEquals(24,sql.version);assertEquals(before,dump {sql.query(it)})
             assertFalse(sql.query("PRAGMA foreign_key_check").use {it.moveToFirst()})
             listOf("community_cache","community_attempts","community_backoff").forEach {table ->
                 assertEquals(0,sql.query("SELECT count(*) FROM $table").use {it.moveToFirst();it.getInt(0)})

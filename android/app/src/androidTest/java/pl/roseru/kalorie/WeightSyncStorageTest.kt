@@ -154,7 +154,7 @@ class WeightSyncStorageTest {
                     val e=entities.getJSONObject(i);val fields=e.getJSONArray("fields")
                     val columns=(0 until fields.length()).joinToString(","){"`"+fields.getJSONObject(it).getString("columnName")+"`"}
                     put(e.getString("tableName"),query("SELECT $columns FROM `${e.getString("tableName")}` ORDER BY rowid").use {c->buildList {
-                        while(c.moveToNext())add((0 until c.columnCount).map {
+                        while(c.moveToNext())add(legacySnapshotColumns(c).map {
                             when {
                                 c.isNull(it)->null
                                 c.getType(it)==android.database.Cursor.FIELD_TYPE_FLOAT->c.getDouble(it).toString()
@@ -183,8 +183,8 @@ class WeightSyncStorageTest {
                     assertTrue(it.moveToFirst());it.getDouble(0)
                 },0.0)
             }
-            target=Room.databaseBuilder(context,CalorieDatabase::class.java,name).addMigrations(MIGRATION_14_15, pl.roseru.kalorie.data.MIGRATION_15_16, pl.roseru.kalorie.data.MIGRATION_16_17, pl.roseru.kalorie.data.MIGRATION_17_18, pl.roseru.kalorie.data.MIGRATION_18_19, pl.roseru.kalorie.data.MIGRATION_19_20, pl.roseru.kalorie.data.MIGRATION_20_21, pl.roseru.kalorie.data.MIGRATION_21_22, pl.roseru.kalorie.data.MIGRATION_22_23).addCallback(DATABASE_GUARDS).build()
-            val sql=target!!.openHelper.readableDatabase;assertEquals(23,sql.version);assertEquals(before,dump {sql.query(it)})
+            target=Room.databaseBuilder(context,CalorieDatabase::class.java,name).addMigrations(MIGRATION_14_15, pl.roseru.kalorie.data.MIGRATION_15_16, pl.roseru.kalorie.data.MIGRATION_16_17, pl.roseru.kalorie.data.MIGRATION_17_18, pl.roseru.kalorie.data.MIGRATION_18_19, pl.roseru.kalorie.data.MIGRATION_19_20, pl.roseru.kalorie.data.MIGRATION_20_21, pl.roseru.kalorie.data.MIGRATION_21_22, pl.roseru.kalorie.data.MIGRATION_22_23, pl.roseru.kalorie.data.MIGRATION_23_24).addCallback(DATABASE_GUARDS).build()
+            val sql=target!!.openHelper.readableDatabase;assertEquals(24,sql.version);assertEquals(before,dump {sql.query(it)})
             assertEquals(80.123456789,target!!.dao().weight(weight,lease.storageScope)!!.kg,0.0)
             assertNull(target!!.weightSyncDao().state(lease.storageScope,weight))
             assertEquals(100L,sql.query("SELECT rowid FROM weights WHERE id=?",arrayOf(weight)).use {assertTrue(it.moveToFirst());it.getLong(0)})

@@ -306,6 +306,10 @@ class LegacyImportStore(private val db:CalorieDatabase,private val schema:SyncWi
         val extracted=tables.flatMap {(type,table)->
             val order=if(type=="goal")"localSequence,rowid" else "rowid"
             query("SELECT * FROM $table WHERE ownerScope=? ORDER BY $order",arrayOf(scope)).mapNotNull {row->
+                // A new absent audit column must not change the identity of an already captured legacy row.
+                if(type=="goal" && row.isNull("estimateJson")) {
+                    row.remove("estimateJson");row.optJSONObject("__sqlite_types")?.remove("estimateJson")
+                }
                 val id=row.getString("id")
                 if(type=="goal" && id in resolvedGoals)return@mapNotNull null
                 if(db.importDao().retired(scope,type,id)!=null)return@mapNotNull null

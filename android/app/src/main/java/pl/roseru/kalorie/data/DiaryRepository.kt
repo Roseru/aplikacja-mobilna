@@ -5,6 +5,9 @@ import androidx.room.withTransaction
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import kotlinx.coroutines.flow.first
+import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.flowOf
+import kotlinx.coroutines.flow.map
 import org.json.JSONArray
 import org.json.JSONObject
 import pl.roseru.kalorie.core.*
@@ -17,6 +20,23 @@ import java.util.UUID
 class DiaryRepository(private val db: CalorieDatabase, private val context: Context, lease: OwnerLease? = null) {
     val dao = db.dao()
     fun achievements(clock: LocalDayClock) = AchievementRepository(db, clock).observe(owner)
+    /** Old immutable rows can expose their already archived exact audit without backfilling a value. */
+    fun observeGoalEstimate(row: GoalEntity?): Flow<GoalEntity?> {
+        if(row==null)return flowOf(null)
+        require(row.ownerScope==owner)
+        return db.domainSyncDao().observeLocal(owner,"goal",row.id).map { state->
+            try {ownerTransaction {
+                if(row.estimateJson!=null)return@ownerTransaction row
+                val binding=db.bootstrapDao().binding(owner) ?: return@ownerTransaction row
+                val canonical=state ?: return@ownerTransaction row
+                if(canonical.wireContext!=CanonicalMealRows.context(binding))return@ownerTransaction row
+                val value=canonical.wirePayload?.let {StrictJson.read(it.toByteArray(Charsets.UTF_8))}
+                row.copy(estimateJson=if(value==null || value.isNull("estimate"))null else StrictJson.canonical(value.getJSONObject("estimate")))
+            }}catch(error:kotlinx.coroutines.CancellationException){throw error}
+            catch(_:StaleOwnerException){null}
+            catch(_:Exception){row}
+        }
+    }
     companion object { const val GUEST = "guest" }
     val owner: String = lease?.storageScope ?: GUEST
     private var boundLease: OwnerLease? = lease
@@ -274,29 +294,42 @@ class DiaryRepository(private val db: CalorieDatabase, private val context: Cont
         }
     }
 
-    suspend fun setGoal(kcal: Double, protein: Double?, fat: Double?, carbs: Double?, id: String = UUID.randomUUID().toString()) = ownerTransaction {
+    suspend fun setGoal(kcal: Double, protein: Double?, fat: Double?, carbs: Double?, id: String = UUID.randomUUID().toString()) =
+        saveGoal(kcal, protein, fat, carbs, id, null, null)
+
+    suspend fun setCalculatedGoal(estimate: MaintenanceEstimate, kcal: Double, protein: Double?, fat: Double?, carbs: Double?,
+        aim: DietAim, qualifiedForV1: Boolean, id: String = UUID.randomUUID().toString()) {
+        require(qualifiedForV1) { "Confirm calculator scope before saving" }
+        val validated=MaintenanceEstimate.read(estimate.stored())
+        saveGoal(kcal, protein, fat, carbs, id, validated, aim)
+    }
+
+    private suspend fun saveGoal(kcal: Double, protein: Double?, fat: Double?, carbs: Double?, id: String,
+        estimate: MaintenanceEstimate?, selectedAim: DietAim?) = ownerTransaction {
         require(kcal.isFinite() && kcal > 0 && kcal <= 20_000)
         listOfNotNull(protein, fat, carbs).forEach { require(it.isFinite() && it >= 0 && it <= 5000) }
         val today = LocalDate.now().toString()
         dao.goalById(owner, id)?.let { saved ->
-            require(saved.validFrom == today && saved.kcal == kcal && saved.protein == protein && saved.fat == fat && saved.carbs == carbs)
+            require(saved.validFrom == today && saved.kcal == kcal && saved.protein == protein && saved.fat == fat && saved.carbs == carbs &&
+                saved.estimateJson == estimate?.stored())
             return@ownerTransaction
         }
         val existing = canonicalDomains().goalPredecessor(dao.goalOn(owner, today))
         val sequence = Math.addExact(dao.goalSequence(owner), 1)
         val goal = GoalEntity(id, owner, today, kcal, protein, fat, carbs, sequence, Instant.now().truncatedTo(java.time.temporal.ChronoUnit.MICROS).toString(), ZoneId.systemDefault().id,
-            if (existing == null) "user_decision" else "history_correction", existing?.id)
+            if (existing == null) "user_decision" else "history_correction", existing?.id, estimate?.stored())
         dao.saveGoal(goal)
-        if (canonicalDomains().goal(goal, existing)) return@ownerTransaction
+        if (canonicalDomains().goal(goal, existing, selectedAim)) return@ownerTransaction
         // Capture the intent of this decision now; future import must not infer historical aim
         // from a later profile. Older legacy payloads remain untouched and may need a decision.
         val profile = dao.currentProfile(owner)
-        val goalType: Any = when (profile?.dietAim) {
+        val goalType: Any = when (selectedAim?.name ?: profile?.dietAim) {
             DietAim.REDUCE.name -> "reduce"; DietAim.MAINTAIN.name -> "maintain"; DietAim.SURPLUS.name -> "gain"
             else -> JSONObject.NULL
         }
         val payload = JSONObject().put("id", goal.id).put("valid_from", today).put("kcal", kcal)
-            .put("goal_type", goalType).put("activity_class", profile?.activityClass ?: JSONObject.NULL)
+            .put("goal_type", goalType).put("activity_class", estimate?.input?.activity?.name ?: profile?.activityClass ?: JSONObject.NULL)
+            .put("estimate",estimate?.json() ?: JSONObject.NULL)
             .put("protein", protein ?: JSONObject.NULL).put("fat", fat ?: JSONObject.NULL).put("carbs", carbs ?: JSONObject.NULL)
             .put("decided_at", goal.decidedAt).put("zone_id", goal.zoneId).put("reason", goal.reason)
             .put("correction_of", goal.correctionOf ?: JSONObject.NULL).put("local_timeline_base", sequence - 1)

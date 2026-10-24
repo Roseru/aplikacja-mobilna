@@ -93,7 +93,10 @@ data class GoalEntity(@PrimaryKey val id: String, val ownerScope: String, val va
     val kcal: Double, val protein: Double?, val fat: Double?, val carbs: Double?,
     @ColumnInfo(defaultValue = "0") val localSequence: Int = 0,
     val decidedAt: String? = null, val zoneId: String? = null,
-    @ColumnInfo(defaultValue = "'legacy'") val reason: String = "legacy", val correctionOf: String? = null)
+    @ColumnInfo(defaultValue = "'legacy'") val reason: String = "legacy", val correctionOf: String? = null,
+    @ColumnInfo(defaultValue = "NULL") val estimateJson: String? = null) {
+    override fun toString() = "GoalEntity(redacted)"
+}
 
 @Entity(tableName = "outbox", indices = [Index("ownerScope"), Index("entityId")])
 data class OutboxEntity(@PrimaryKey val operationId: String, val ownerScope: String, val entityType: String,
@@ -182,7 +185,7 @@ interface CalorieDao {
     RationEntity::class, RationComponentEntity::class, ProfileEntity::class, WeightEntity::class, DiaryDayEntity::class,
     CatalogGenerationEntity::class, CatalogRecordEntity::class, CatalogMemberEntity::class, CatalogActiveEntity::class,
     LocalOwnerEntity::class, LocalActiveOwnerEntity::class, AccountBindingEntity::class,
-    BootstrapAttemptEntity::class, ServerSnapshotRun::class, ServerSnapshotPage::class, ServerSnapshotAccess::class, ServerSnapshotIdentity::class, pl.roseru.kalorie.photo.MealPhotoDraft::class, pl.roseru.kalorie.photo.PhotoAnalysisRequestEntity::class, PhotoMaterialization::class, SyncPushBatch::class, pl.roseru.kalorie.photo.PhotoConfirmationHistory::class, CanonicalWeightState::class, SyncConflictDecision::class, ServerDiaryRecord::class, ServerDiaryApplication::class, CanonicalDomainState::class, CanonicalGoalTimeline::class, ImportPlan::class, GuestAssignment::class, ImportSource::class, ImportIdentity::class, ImportItemIdentity::class, ImportDecision::class, ReconciliationBatch::class, ReconciliationEvidence::class, ReconciliationPull::class, ImportOrigin::class, SnapshotArchiveReceipt::class, SyncWorkState::class, ReconciliationCompletion::class, CommunityCacheEntity::class, CommunityAttemptEntity::class, CommunityBackoffEntity::class], version = 23, exportSchema = true)
+    BootstrapAttemptEntity::class, ServerSnapshotRun::class, ServerSnapshotPage::class, ServerSnapshotAccess::class, ServerSnapshotIdentity::class, pl.roseru.kalorie.photo.MealPhotoDraft::class, pl.roseru.kalorie.photo.PhotoAnalysisRequestEntity::class, PhotoMaterialization::class, SyncPushBatch::class, pl.roseru.kalorie.photo.PhotoConfirmationHistory::class, CanonicalWeightState::class, SyncConflictDecision::class, ServerDiaryRecord::class, ServerDiaryApplication::class, CanonicalDomainState::class, CanonicalGoalTimeline::class, ImportPlan::class, GuestAssignment::class, ImportSource::class, ImportIdentity::class, ImportItemIdentity::class, ImportDecision::class, ReconciliationBatch::class, ReconciliationEvidence::class, ReconciliationPull::class, ImportOrigin::class, SnapshotArchiveReceipt::class, SyncWorkState::class, ReconciliationCompletion::class, CommunityCacheEntity::class, CommunityAttemptEntity::class, CommunityBackoffEntity::class], version = 24, exportSchema = true)
 abstract class CalorieDatabase : RoomDatabase() {
     abstract fun communityDao():CommunityDao
     abstract fun snapshotArchiveDao():SnapshotArchiveDao

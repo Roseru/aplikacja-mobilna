@@ -4,7 +4,7 @@ package pl.roseru.kalorie.session
 internal object MealReplayFingerprint {
     /** Business rows are explicit per supported schema; an unknown migration must be reviewed. */
     fun tables(room:Int, runtimeIsolated:Boolean = false):List<String> {
-        require(room in 17..23 && (room <= 20 || runtimeIsolated)) {
+        require(room in 17..24 && (room <= 20 || runtimeIsolated)) {
             "Unsupported replay schema or missing runtime isolation"
         }
         return buildList {

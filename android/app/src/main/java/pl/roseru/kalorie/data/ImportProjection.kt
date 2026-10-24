@@ -42,7 +42,8 @@ internal class ImportProjection(private val db:CalorieDatabase,private val schem
                         if(old==null)db.dao().saveGoal(GoalEntity(id,owner,value.getString("effective_from"),checkNotNull(number("energy_kcal")),
                             number("protein_g"),number("fat_g"),number("carbs_g"),Math.addExact(db.dao().goalSequence(owner),1),
                             value.getString("decided_at"),value.getString("time_zone"),value.getString("reason"),
-                            if(value.isNull("correction_of"))null else db.localSyncId(owner,"goal",value.getString("correction_of"))))
+                            if(value.isNull("correction_of"))null else db.localSyncId(owner,"goal",value.getString("correction_of")),
+                            if(value.isNull("estimate"))null else StrictJson.canonical(value.getJSONObject("estimate"))))
                         // Existing immutable legacy goal remains byte-for-byte; canonical sidecar owns confirmed audit.
                     }
                     "diary_day"->{

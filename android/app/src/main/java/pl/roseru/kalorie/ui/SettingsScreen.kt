@@ -19,7 +19,7 @@ import pl.roseru.kalorie.data.GoalEntity
 import pl.roseru.kalorie.data.ThemeMode
 
 @Composable fun SettingsScreen(model: DiaryViewModel,catalogModel:pl.roseru.kalorie.catalogupdate.CatalogUpdateViewModel?=null,
-    networkModel:pl.roseru.kalorie.core.network.NetworkPolicyViewModel?=null) {
+    networkModel:pl.roseru.kalorie.core.network.NetworkPolicyViewModel?=null,onCalculator:(()->Unit)?=null) {
     val theme by model.theme.collectAsStateWithLifecycle()
     val goal by model.todayGoal.collectAsStateWithLifecycle()
     val busy by model.busy.collectAsStateWithLifecycle()
@@ -35,6 +35,10 @@ import pl.roseru.kalorie.data.ThemeMode
         if(goal==null) Text("Nie masz jeszcze celu. Wpisz własną liczbę kcal; B/T/W możesz pozostawić puste.",
             modifier=Modifier.testTag("first-goal-hint"),color=MaterialTheme.colorScheme.onSurfaceVariant)
         GoalEditor(goal, busy, onSave = model::setGoal)
+        SavedMaintenanceEstimate(goal?.estimateJson)
+        if(onCalculator!=null)OutlinedButton(onClick=onCalculator,enabled=!busy,modifier=Modifier.fillMaxWidth().testTag("open-maintenance")) {
+            Text("Oblicz zapotrzebowanie i wybierz cel")
+        }
         HorizontalDivider()
         if(networkModel!=null) {
             NetworkPolicyPanel(networkModel)

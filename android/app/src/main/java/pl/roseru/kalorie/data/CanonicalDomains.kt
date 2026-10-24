@@ -34,6 +34,8 @@ data class CanonicalGoalTimeline(@PrimaryKey val ownerScope: String, val wireCon
     suspend fun state(owner: String, type: String, id: String): CanonicalDomainState?
     @Query("SELECT * FROM canonical_domains WHERE ownerScope=:owner AND entityType=:type AND localId=:id")
     suspend fun local(owner: String, type: String, id: String): CanonicalDomainState?
+    @Query("SELECT * FROM canonical_domains WHERE ownerScope=:owner AND entityType=:type AND localId=:id")
+    fun observeLocal(owner: String, type: String, id: String): kotlinx.coroutines.flow.Flow<CanonicalDomainState?>
     @Upsert suspend fun save(state: CanonicalDomainState)
     @Query("DELETE FROM canonical_domains WHERE ownerScope=:owner AND entityType=:type AND entityId=:id")
     suspend fun retire(owner:String,type:String,id:String)
@@ -124,7 +126,7 @@ internal class CanonicalDomainEditor(private val db: CalorieDatabase, private va
     }
 
     /** New immutable goal versions serialize against the last confirmed axis, in creation order. */
-    suspend fun goal(row: GoalEntity, previous: GoalEntity?): Boolean {
+    suspend fun goal(row: GoalEntity, previous: GoalEntity?, selectedAim: DietAim? = null): Boolean {
         val binding = binding() ?: return false
         val wireContext = CanonicalMealRows.context(binding)
         val reference=previous?.let {legalGoalReference(it,wireContext) ?: return false}
@@ -138,12 +140,13 @@ internal class CanonicalDomainEditor(private val db: CalorieDatabase, private va
         val base = try { Math.addExact(known.revision, pending.size) } catch (_: ArithmeticException) { return false }
         if (base == Int.MAX_VALUE) return false
         val profile = db.dao().currentProfile(lease.storageScope)
+        val estimate=row.estimateJson?.let(MaintenanceEstimate::read)
         val value = JSONObject().put("effective_from", row.validFrom).put("decided_at", row.decidedAt)
-            .put("time_zone", row.zoneId).put("goal_type", when (profile?.dietAim ?: DietAim.MAINTAIN.name) {
+            .put("time_zone", row.zoneId).put("goal_type", when (selectedAim?.name ?: profile?.dietAim ?: DietAim.MAINTAIN.name) {
                 DietAim.REDUCE.name -> "reduce"; DietAim.SURPLUS.name -> "gain"; else -> "maintain" })
             .put("energy_kcal", decimal(row.kcal)).put("protein_g", decimal(row.protein)).put("fat_g", decimal(row.fat))
-            .put("carbs_g", decimal(row.carbs)).put("activity_class", activity(profile?.activityClass ?: ActivityClass.GARRISON.name))
-            .put("estimate", JSONObject.NULL).put("timeline_base_revision", base).put("reason", row.reason)
+            .put("carbs_g", decimal(row.carbs)).put("activity_class", activity(estimate?.input?.activity?.name ?: profile?.activityClass ?: ActivityClass.GARRISON.name))
+            .put("estimate", estimate?.json() ?: JSONObject.NULL).put("timeline_base_revision", base).put("reason", row.reason)
             .put("correction_of", reference?.entityId ?: JSONObject.NULL)
         val payload = try { PrivateDomainsWire.read("goal", StrictJson.canonical(value), schema) }
             catch (_: SyncWireException) { return false }

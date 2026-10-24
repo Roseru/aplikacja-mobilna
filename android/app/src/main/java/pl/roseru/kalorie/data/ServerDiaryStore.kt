@@ -221,12 +221,14 @@ class ServerDiaryStore(private val db: CalorieDatabase, private val schema: Sync
             ServerDiaryValues.decimal(value, "fat_g"), ServerDiaryValues.decimal(value, "carbs_g"),
             Math.addExact(value.getInt("timeline_base_revision"), 1), value.getString("decided_at"),
             value.getString("time_zone"), value.getString("reason"),
-            if (value.isNull("correction_of")) null else db.localSyncId(row.ownerScope,"goal",value.getString("correction_of")))
+            if (value.isNull("correction_of")) null else db.localSyncId(row.ownerScope,"goal",value.getString("correction_of")),
+            if (value.isNull("estimate")) null else pl.roseru.kalorie.core.catalog.StrictJson.canonical(value.getJSONObject("estimate")))
         if (current == null) dao.saveGoal(fresh) else if (current != fresh) {
             val state = db.domainSyncDao().state(row.ownerScope, "goal", row.entityId)
             // localSequence is local ordering; the exact canonical payload owns the server axis base.
             if (state?.wireContext != row.wireContext || state.wirePayload != row.payload ||
-                (current != fresh.copy(localSequence = current.localSequence) && db.importDao().local(row.ownerScope,"goal",localId)==null)) throw DiaryProjectionChangedException()
+                (current != fresh.copy(localSequence = current.localSequence,
+                    estimateJson=if(current.estimateJson==null)null else fresh.estimateJson) && db.importDao().local(row.ownerScope,"goal",localId)==null)) throw DiaryProjectionChangedException()
         }
         return localId
     }

@@ -15,7 +15,9 @@ class MealReplayFingerprintTest {
         assertThrows(IllegalArgumentException::class.java){MealReplayFingerprint.tables(16)}
         assertThrows(IllegalArgumentException::class.java){MealReplayFingerprint.tables(21)}
         assertThrows(IllegalArgumentException::class.java){MealReplayFingerprint.tables(23)}
-        assertThrows(IllegalArgumentException::class.java){MealReplayFingerprint.tables(24, runtimeIsolated = true)}
+        assertThrows(IllegalArgumentException::class.java){MealReplayFingerprint.tables(24)}
+        assertThrows(IllegalArgumentException::class.java){MealReplayFingerprint.tables(25, runtimeIsolated = true)}
+        assertEquals(39,MealReplayFingerprint.tables(24, runtimeIsolated = true).size)
         assertEquals(35,MealReplayFingerprint.tables(21, runtimeIsolated = true).size)
         assertEquals(36,MealReplayFingerprint.tables(22, runtimeIsolated = true).size)
         val latest=MealReplayFingerprint.tables(23, runtimeIsolated = true)
@@ -30,6 +32,7 @@ class MealReplayFingerprintTest {
         assertEquals("0",value("meals","meal","serverRevision","1"))
         assertEquals("1",value("meals","other","serverRevision","1"))
         assertEquals("2",value("meals","meal","localRevision","2"))
+        assertEquals("exact-estimate",value("goals","meal","estimateJson","exact-estimate"))
     }
     @Test fun selectedQueueStatusIsNormalizedButItsOperationAndPayloadAreNot() {
         assertEquals("pending",value("outbox","operation","status","acked"))

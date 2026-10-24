@@ -57,7 +57,7 @@ import pl.roseru.kalorie.session.*
                 NetworkModeNotice(networkState,onSettings={nav.navigate("settings"){launchSingleTop=true}})
         },
         bottomBar = {
-            if (route !in listOf("food", "rations", "custom", "photo", "community")) NavigationBar(containerColor = MaterialTheme.colorScheme.surface) {
+            if (route !in listOf("food", "rations", "custom", "photo", "community", "maintenance")) NavigationBar(containerColor = MaterialTheme.colorScheme.surface) {
                 NavigationBarItem(selected = route == "diary", onClick = { nav.navigate("diary") { popUpTo("diary"); launchSingleTop = true } },
                     icon = { Icon(Icons.AutoMirrored.Outlined.Assignment, contentDescription = null) }, label = { Text("Dziennik") }, modifier=Modifier.testTag("open-diary"))
                 NavigationBarItem(selected = route == "analytics", onClick = { nav.navigate("analytics") { launchSingleTop = true } },
@@ -89,7 +89,8 @@ import pl.roseru.kalorie.session.*
                     onCancelAnalysis=actions.cancelPhotoAnalysis,onRetryCancellation=actions.retryPhotoCancellation,onReleaseCancelled=actions.releaseCancelledPhoto,draftActions=actions.photoDraft)
             }
             composable("custom") { CustomFoodScreen(model, onBack = { nav.popBackStack() }) }
-            composable("settings") { SettingsScreen(model,deviceNetworkModels?.catalog,deviceNetworkModels?.policy) }
+            composable("settings") { SettingsScreen(model,deviceNetworkModels?.catalog,deviceNetworkModels?.policy,onCalculator={nav.navigate("maintenance"){launchSingleTop=true}}) }
+            composable("maintenance") {MaintenanceScreen(model,onBack={nav.popBackStack()})}
             composable("profile") { ProfileScreen(model, onAccount = { nav.navigate("account") { launchSingleTop = true } },
                 onAchievements = { nav.navigate("achievements") { launchSingleTop = true } },
                 onNemesis = { nav.navigate("nemesis") { launchSingleTop = true } }) }
@@ -119,5 +120,5 @@ import pl.roseru.kalorie.session.*
             }) }
         }
     }
-    if (route in listOf("photo", "settings", "profile", "analytics", "account", "import", "achievements", "ranking-consent", "ranking", "nemesis")) BackHandler { nav.popBackStack() }
+    if (route in listOf("photo", "settings", "maintenance", "profile", "analytics", "account", "import", "achievements", "ranking-consent", "ranking", "nemesis")) BackHandler { nav.popBackStack() }
 }
