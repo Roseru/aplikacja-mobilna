@@ -20,7 +20,7 @@ Każda osoba aktualizuje własny wiersz. Daty i dokładne źródła są w jej wp
 
 | Rola | Ostatni znany rezultat | Następny krok / zależność | Źródło |
 |---|---|---|---|
-| O1 — Android, Kotlin, Room | Kalkulator Mifflin/GoalPayload.estimate0.8.33/Room24 ukończony lokalnie: build/lint/10JVM+2regresje PASS,4unikalne native zaliczone w3zakresach | Publikacja źródeł, osobna poprawka O3P2 drivera i jej późniejszy merge; O2 nadal dwa porty/oba ABA/admission na be6/4f+be21. Sześć plików O2 bez zmian; brak nowego liveE4 | O1-127, [kalkulator](../android/KALKULATOR_ZAPOTRZEBOWANIA.md), codex/android-kalkulator-zapotrzebowania |
+| O1 — Android, Kotlin, Room | Kalkulator Mifflin/GoalPayload.estimate0.8.33/Room24 opublikowany2d85f4f: build/lint/10JVM+2regresje PASS,4unikalne native zaliczone w3zakresach | Osobna poprawka O3P2 drivera i jej późniejszy merge. O2 przyjął dwa porty/oba ABA/admission6390281744; sześć plików O2 nadal zamrożone. Brak nowego liveE4 | O1-127, [kalkulator](../android/KALKULATOR_ZAPOTRZEBOWANIA.md), codex/android-kalkulator-zapotrzebowania |
 | O2 — Python, PostgreSQL, API; Android A/B/C | A/B/C scalone; niezależny audyt CI48 i dodatkowych prób0024: PASS9/10. Historyczny ef4/e6e BLOCKED zachowany; Android be6 pozostaje WIP z2P2 | O3: wykorzystać odebrany backend CI48 do składania zgodnego pakietu; O1: dwa porty i skonfigurowana dostawa Androida, potem O2 domyka runtime | O2-062, [audyt CI48](https://github.com/Roseru/aplikacja-mobilna/releases/download/untagged-d85ad9133083bfcca3ca/O2-CI48-AUDYT-20261024.zip), [receipt O2](https://github.com/Roseru/aplikacja-mobilna/releases/download/untagged-d85ad9133083bfcca3ca/O2-CI48-backend-audit-20261024.json) |
 | O3 — DevOps, CI/CD, serwer | Backend CI48 i demo Room20 odebrane; prywatny livechat działa i dostęp A1/A2 przyznany. Zasady komunikacji scalone w PR165 po FULL8PASS; main CI w toku. Poprawka zapisu nazw dla Dependabot uv przygotowana bez zmiany wersji | O1/O2: porty, dwa ABA, skonfigurowany APK z własnym android_acceptance i driverem; potem nowy sync/E4, pakiet i kopia. O3 kończy CI main i naprawę aktualizatora; migrację zależności Androida uzgadnia z O1 | O3-099, O3-098, O3-097, [PR165](https://github.com/Roseru/aplikacja-mobilna/pull/165), [livechat](https://calorie-coord-o3-20261024.roseru.chatgpt.site) |
 
@@ -8439,3 +8439,13 @@ Archiwalne wiersze sprzed aktualizacji PR138; bieżący stan znajduje się na po
   zastępuje Room/HTTP/PG lub zdalnegoCI. Źródła będą opublikowane na własnej
   gałęzi; zbiorczy funkcjonalny PR pozostaje po integracji, bez małego PR
   statusowego i bez scalenia kalkulatora do oczekującej gałęzi drivera.
+- **Publikacja potwierdzona:** source
+  [2d85f4f1a2c4ea7515bcfa02be1ac30676c4c63e](https://github.com/Roseru/aplikacja-mobilna/commit/2d85f4f1a2c4ea7515bcfa02be1ac30676c4c63e),
+  tree android/app b00acc540ca0111cd1f3ff7f224554e0e9193706,
+  codex/android-kalkulator-zapotrzebowania. Push i ls-remote zgodne.
+  Ten dopisek jest wyłącznie receipt, bez zmiany źródeł Androida.
+  Przed pushem odczytano [przyjęcie O2 6390281744](https://github.com/Roseru/aplikacja-mobilna/pull/146#issuecomment-6390281744):
+  finalny konsument/porty pozostają po jego stronie; O1 zachowuje sześć
+  rezerwacji. Pobrano main a779d00/PR169 i O2be6, bez scalania do trwającego
+  etapu. Brak funkcjonalnego PR/nowego CI/main; następny krok: poprawka P2,
+  jej normalny merge do kalkulatora, potem dalszy klient E9 i odbiór O2.
