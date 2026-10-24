@@ -2,14 +2,17 @@
 
 Wspólny dziennik przekazania prac między Androidem, backendem i DevOps. Pozwala ustalić, co się zmieniło, kto powinien to przeczytać, jakie są zależności i co wymaga odpowiedzi. Dzięki temu informacje z osobnych rozmów i gałęzi nie giną przy rozpoczynaniu kolejnego zadania.
 
+Decyzją właściciela z 24 października 2026 r. bieżące pytania, blokady i krótkie przekazania prowadzimy w [prywatnym livechacie](https://calorie-coord-o3-20261024.roseru.chatgpt.site). Ten plik zachowuje trwałe ustalenia i dowody odbiorów. Nowsza decyzja zmienia historyczne wskazania odpowiadania wyłącznie w dzienniku; wcześniejsze wpisy pozostają zachowane.
+
 ## Jak korzystać
 
-1. Na początku pracy pobierz aktualne zmiany i przeczytaj ten plik oraz wskazane dokumenty dotyczące swojej roli. Wpis z innej gałęzi czytaj na podanym commicie; jego obecność nie oznacza scalenia do `main`.
+1. Na początku pracy pobierz aktualne zmiany, odczytaj nowe wiadomości na livechacie i przeczytaj ten plik oraz wskazane dokumenty dotyczące swojej roli. Powtórz odczyt czatu przed przekazaniem pracy i końcowym pushem. Wpis z innej gałęzi czytaj na podanym commicie; jego obecność nie oznacza scalenia do `main`.
 2. Po ważnym kroku dopisz wpis ze swoim autorem, datą, odbiorcą, identyfikatorem `O1-001` / `O2-001` / `O3-001`, źródłem i oczekiwaną odpowiedzią. Przy kolejnych wpisach zwiększaj numer w obrębie własnej roli.
 3. Oddziel potwierdzone wykonanie od planu i obserwacji cudzej pracy. Podaj commit/PR, zakres testów oraz blokadę, jeżeli istnieje.
 4. Odbiorca dopisuje potwierdzenie z datą i przeczytanym commitem, ewentualnie odpowiedź lub nowe pytanie. Autor nie potwierdza odczytu za inną osobę. Statusy: `DO ODCZYTU`, `ODCZYTANE`, `WYMAGA ODPOWIEDZI`, `ZAMKNIĘTE`.
 5. Zachowuj wcześniejsze wpisy i odpowiedzi. Zmiana ustalenia dostaje nowy wpis z odniesieniem do poprzedniego; rozbieżność rozstrzygają wymagania, wersjonowane kontrakty i [workflow](WORKFLOW.md).
 6. Publikuj aktualizacje przez własną gałąź i PR. Przy konflikcie zachowaj wpisy wszystkich autorów. Ten plik nie wysyła powiadomień automatycznie; wymaga odczytu przez agentów. Zmiany wymagające scalenia i recenzji nadal przechodzą zwykły workflow.
+7. Na czacie agent pisze narzędziami/MCP jako Agent 1/2/3; przeglądarka podpisuje człowieka Kamil/Benek/Johnny. Autor jest przypisany do konta, bez ręcznego wyboru. Numer ostatniej wiadomości jest kursorem odczytu; przy ponowieniu wysyłki zachowaj identyfikator wiadomości. Brak dostępu lub narzędzi zgłoś w dotychczasowym wątku GitHub. Nie podawaj sekretów ani adresów kont w repozytorium. Sygnał obecności i deklaracja statusu nie zastępują potwierdzenia odbiorcy lub dowodu wykonania.
 
 ## Stan przekazania
 
@@ -19,7 +22,7 @@ Każda osoba aktualizuje własny wiersz. Daty i dokładne źródła są w jej wp
 |---|---|---|---|
 | O1 — Android, Kotlin, Room | Pakiet przydzialu3:1 zachowany; A/B/C scalone do b245. Nowy katalog/polityka:8native PASS i addytywne DI w odbiorze | Aktualizacja dotychczasowego PR146 do ukończonego main; osobno root/DI katalogu i konsument runtime O2. E4 Room22 nadal nieodebrane | O1-120, [pakiet O2](ANDROID_O2_PAKIET_PRAC.md), [nowy zakres](https://github.com/Roseru/aplikacja-mobilna/blob/065ebdd38bf8c29e78ae4005b7dc623086a71fa3/android/AKTUALIZACJA_KATALOGU.md) |
 | O2 — Python, PostgreSQL, API; Android A/B/C | A/B/C scalone; niezależny audyt CI48 i dodatkowych prób0024: PASS9/10. Historyczny ef4/e6e BLOCKED zachowany; Android be6 pozostaje WIP z2P2 | O3: wykorzystać odebrany backend CI48 do składania zgodnego pakietu; O1: dwa porty i skonfigurowana dostawa Androida, potem O2 domyka runtime | O2-062, [audyt CI48](https://github.com/Roseru/aplikacja-mobilna/releases/download/untagged-d85ad9133083bfcca3ca/O2-CI48-AUDYT-20261024.zip), [receipt O2](https://github.com/Roseru/aplikacja-mobilna/releases/download/untagged-d85ad9133083bfcca3ca/O2-CI48-backend-audit-20261024.json) |
-| O3 — DevOps, CI/CD, serwer | Punkty1–3 zakończone: PR162/main FULL8PASS, niezależny audyt CI48 PASS9/10 odebrany i dołączony do paczki; original364Breceipt zachowany. Lokalne demo Room20 i kopie pozostają odebrane | Punkty4–7: O1/O2 dostarczają skonfigurowany regularny APK, własny android_acceptance i zakwalifikowany driver po portach/runtime; checker nadal BLOCKED tylko przez brak odbioru Androida | O3-097, [wynik O2](https://github.com/Roseru/aplikacja-mobilna/pull/162#issuecomment-6383846747), [przekazanie O3](https://github.com/Roseru/aplikacja-mobilna/pull/146#issuecomment-6383911735) |
+| O3 — DevOps, CI/CD, serwer | Punkty1–3 i odbiór backendu CI48 zakończone; lokalne demo Room20 i kopie odebrane. Prywatny livechat v2 działa, podpisy kont przypisane, dostęp A1/A2 przyznany | Punkty4–7 czekają na porty/integrację O1/O2 oraz skonfigurowany regularny APK z własnym android_acceptance i zakwalifikowany driver. Bieżąca koordynacja na czacie; finalny checker nadal wymaga odbioru Androida | O3-098, O3-097, [wynik O2](https://github.com/Roseru/aplikacja-mobilna/pull/162#issuecomment-6383846747), [livechat](https://calorie-coord-o3-20261024.roseru.chatgpt.site) |
 
 
 
@@ -7870,3 +7873,42 @@ Archiwalne wiersze sprzed aktualizacji PR138; bieżący stan znajduje się na po
   dokumentacji. Room22/23/liveE4/telefon/Gemini/pełnyKO32/v1/produkcja bez nowego
   PASS; deployment_authorized=false. Pełny cel1–7 pozostaje nieukończony.
   Potwierdzenia odbiorców tego końcowego wpisu: oczekiwane.
+
+### O3-098 — Prywatny livechat zespołu i trwałe zasady komunikacji
+
+- 24.10.2026, agent 3 / O3, do O1/O2, **DO ODCZYTU**. Właściciel zlecił
+  przejście na rozmowę na żywo, przypisanie autorów do kont i realizację kolejki.
+  Gałąź `codex/devops-komunikacja-livechat`, baza main
+  `d0d935ad7176b6365c2e1f42fa24d2af5356ae11`. Zmiana ujednolica zasady w
+  AGENTS, workflow i tym dzienniku; sam czat ma osobne, wcześniej opublikowane źródła.
+- [Prywatny pokój](https://calorie-coord-o3-20261024.roseru.chatgpt.site)
+  działa w internecie, z historią w D1, automatycznymi wiadomościami SSE,
+  obecnością, pisaniem i wznowieniem od kursora. Wersja2/source
+  `94bfef9921bfc7b92e64ba02d07f05b94734c385` nadaje podpis na serwerze:
+  przeglądarka Kamil/Benek/Johnny, narzędzia Agent1/2/3. Nie ma wyboru cudzej
+  roli. Dodatkowe wdrożenie konfiguracji z dostępem A1 zakończone 16:55 Warszawa;
+  dostęp wszystkich trzech wskazanych kont jest przyznany. Adresów i sekretów
+  nie publikujemy w repozytorium.
+- Wcześniejsze sprawdzenie źródła czatu: 8 testów tożsamości i 16 kontroli
+  HTTP/SSE PASS; dwa klienty otrzymały wiadomości w 363/483ms, retry bez duplikatów,
+  historia i reconnect, blokada cudzej roli/rodzaju autora oraz osobne statusy
+  człowieka i agenta. W produkcji wiadomość3 rzeczywiście ma podpis Agent3;
+  odczytane wcześniejsze wpisy zachowano jako archiwalne podpisy. To odbiór
+  czatu, nie nowy wynik aplikacji mobilnej lub dowód ciągłego wykonywania modeli.
+- Wysłano bieżące przekazanie i konkretne wejścia A1/A2: wiadomości4–6 na czacie,
+  [most GitHub](https://github.com/Roseru/aplikacja-mobilna/pull/146#issuecomment-6385430087)
+  oraz [potwierdzenie dostępu A1](https://github.com/Roseru/aplikacja-mobilna/pull/146#issuecomment-6385686611).
+  Narzędzia `read_messages`, `send_message`, `set_status` służą codziennej
+  koordynacji; trwałe piny, decyzje i odbiory pozostają w dzienniku/PR.
+  Dotychczasowe rezerwacje plików O1/O2 oraz zwykłe kontrole PR i main obowiązują.
+- Ponowny fetch/pull i odczyt GitHuba o16:57 Warszawa nie wykazał nowego
+  skonfigurowanego APK/drivera lub portów: A1 nadal4f6bb84, O2 runtimebe6c423.
+  Prośba A2 o podpis jest wykonana; audyt CI48 z O2-062 już przyjęty.
+  Dalsza kolejność O3: kwalifikacja dostawy Androida/drivera, zmieniony sync/E4
+  i osobny PULL, zgodny lokalny zestaw, końcowa kopia po nowych próbach.
+  O1 dostarcza oba porty; O2 domyka dwa ABA. O3 nie przejmuje zarezerwowanego kodu.
+- Publikacja tych instrukcji wymaga pełnego Project CI dla zmian AGENTS/workflow,
+  a po scaleniu osobnego push/main CI. Wyniki własnej gałęzi są rozliczane
+  w jej PR; nie przypisujemy tu przyszłego PASS. Zachowane Room20/API24 i istniejące
+  dobre kopie nie były ponownie testowane lub wdrażane na podstawie samej zmiany zasad.
+  Potwierdzenia O1/O2: oczekiwane.
