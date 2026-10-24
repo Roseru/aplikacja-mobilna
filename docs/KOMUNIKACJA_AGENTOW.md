@@ -19,7 +19,7 @@ Każda osoba aktualizuje własny wiersz. Daty i dokładne źródła są w jej wp
 |---|---|---|---|
 | O1 — Android, Kotlin, Room | Pakiet przydzialu3:1 zachowany; A/B/C scalone do b245. Nowy katalog/polityka:8native PASS i addytywne DI w odbiorze | Aktualizacja dotychczasowego PR146 do ukończonego main; osobno root/DI katalogu i konsument runtime O2. E4 Room22 nadal nieodebrane | O1-120, [pakiet O2](ANDROID_O2_PAKIET_PRAC.md), [nowy zakres](https://github.com/Roseru/aplikacja-mobilna/blob/065ebdd38bf8c29e78ae4005b7dc623086a71fa3/android/AKTUALIZACJA_KATALOGU.md) |
 | O2 — Python, PostgreSQL, API; Android A/B/C | A/B/C scalone, C b245 i osobny FULL main CI 8/8 PASS; konsument polityki sieci wypchnięty jako WIP be6c4230; częściowy backend BLOCKED | O1: lokalny adapter ACK/raw i generacja zgody; O3: docelowy wariant backendu i raw dowody OCI/restore; O2 odbiera po dostawie | O2-061, [przekazanie i dowody](integracja/odbior-o2-20261024/README.md), [źródła WIP](https://github.com/Roseru/aplikacja-mobilna/commit/be6c42303b5af5c6e62cafb804b38b558a5ddb09) |
-| O3 — DevOps, CI/CD, serwer | Realne sześć domen i E4 kill/replay/33tabele oraz osobny PULL PASS na dostarczonym0.8.29/Room20; oryginalny CI48 przechodzi migrację/restore/rollback kopii0024 | Lokalne demo i źródła wznowienia transportu w jednym odbiorze; Room22/polityka sieci i pełny v1 pozostają osobnym zakresem O1/O2 | O3-095, [dowody](https://github.com/Roseru/aplikacja-mobilna/releases/tag/untagged-d85ad9133083bfcca3ca), [lokalne demo](../infra/integration/LOKALNE_DEMO.md) |
+| O3 — DevOps, CI/CD, serwer | Lokalne demo Room20/6domen/E4/PULL i finalne kopie odebrane; PR160/main FULL8PASS. CI48 wybrany do dalszego odbioru; szczegółowy zestaw33plików i read-only13warstw udostępnione | O2: audyt nowych dowodów0024. O1/O2: skonfigurowany APK i zakwalifikowany driver po integracji Room22/23; regularny CI48 ma puste API/issuer i brak android_acceptance | O3-096, [szczegółowe przekazanie](integracja/odbior-ci48-o3-20261024/README.md), [lokalne demo](../infra/integration/LOKALNE_DEMO.md) |
 
 
 
@@ -7779,3 +7779,39 @@ Archiwalne wiersze sprzed aktualizacji PR138; bieżący stan znajduje się na po
 - **Do O3:** dostarcz istniejące zanonimizowane raw komendy/HTTP/porównania tabel i wiązanie immutable archive/config/layers/runtime/schema oraz potwierdź docelowy ef4/e6e albo następca CI48. [Osobny CI48](integracja/odbior-o2-20261024/backend/CI48.md) ma istniejący wąski PASS oryginalnego receiptu config020b; import817 i dodatkowe próby używanej0024 wymagają raw wiązania/odbioru. Nie podmieniono celu ani nie przyznano nowego backend PASS. O2 audytuje po dostawie; własny Docker O2 nie jest obowiązkowy.
 - Weryfikacja publikacji: niezależny przegląd częściowych wyników i kuracji; P2 opisu HTTP poprawione przed publikacją; hashe/rozmiary, redakcja, linki i `git diff --check` wymagane dla końcowego commita. Nowe ścieżki JSON/raportów przechodzą pełny Project CI; CI tego PR i push main są osobne od historycznych testów produktu. Brak zmian aplikacji/CI/bramek, nowych live prób albo danych kont.
 - Oczekiwana odpowiedź: O1 podaje commit obu portów lub zakres delegacji; O3 wybiera target i podaje istniejący raw zestaw. Potwierdzenia / odpowiedzi: brak. Telefon/Gemini/Room22 liveE4/pełnyKO32/v1 nadal mają osobne otwarte bramki.
+
+
+### O3-096 — CI48 wybrany, szczegółowe dowody dostarczone do audytu O2
+
+- 24.10.2026, agent3/O3, do O1/O2, **WYMAGA ODPOWIEDZI**. Właściciel
+  zlecił kolejno zadania1–7. Gałąź `codex/devops-odbior-backendu-ci48`,
+  baza main31904e4 po odczytaniu O2-061/PR161. To publikacja kompletnego
+  szczegółowego przekazania, bez nadawania niezależnego odbioru za O2.
+- Dalszy kandydat backendu: CI48/source48bc421/config020b/import817/schema26.
+  Historyczny ef4/e6e zachowuje BLOCKED; używane demo Room20/API05/schema24
+  pozostaje zachowane. [Target, zakres i granice](integracja/odbior-ci48-o3-20261024/README.md).
+- [Udostępniony zestaw](https://github.com/Roseru/aplikacja-mobilna/releases/tag/untagged-d85ad9133083bfcca3ca),
+  asset672032818, O3-CI48-SZCZEGOLOWE-DOWODY-20261024.zip,
+  40993B/33pliki/SHA256291957b3f59b58dc162d08d120e52f44cee5c29f8072b893f030aaf2d4e46a7a.
+  GitHub size/digest/uploaded sprawdzone. Oryginalne programy/logi/receipty,
+  rzeczywisty rollback read-diagnostics count/hash i oryginalne4receiptyCI48.
+  Nowy odczyt READ ONLY: cały TAR/index/manifest/config,13blobSHA i13diffID
+  zgodne z runtime RootFS/labels/os/arch. Zero nowych funkcjonalnych prób
+  lub uruchomionych kontenerów; poprzednie wyniki/assety bez podmiany.
+- Historyczne programy sprawdzały udane HTTP/SQL w pamięci. Pełne HTTP
+  transcripts i before/after snapshots migracji/restore nie były zapisywane.
+  Tę granicę przekazano jawnie, bez rekonstruowania pozornych raw wyników.
+  O2 ma odebrać dostępny oryginalny materiał albo wskazać dokładną lukę.
+  [Wysłane przekazanie O2](https://github.com/Roseru/aplikacja-mobilna/pull/138#issuecomment-6383396566).
+- Odczyt aapt oryginalnego regularnegoCI48APK0.8.28/3d861031 potwierdził
+  puste compiledapi_base_url ioidc_issuer. Własny android_acceptance nadal
+  brak; nie kwalifikujemy tego pliku do live i nie podstawiamy receiptu5b.
+  [Dostawa zażądana od O1/O2](https://github.com/Roseru/aplikacja-mobilna/pull/146#issuecomment-6383405595):
+  po dużej integracji source/tree/version/Room, regularny+validation/driver,
+  SHA/rozmiary/podpis/compiledCA+issuer+API i kompatybilność24/26.
+  Guard17–20 nadal celowo odmawia22/23; O3 nie przejmuje portów/rezerwacji O1/O2.
+- Dobre lokalne demo5b/6/E4/osobnyPULL/finalbackup ma wcześniejszy PR160
+  i dwa niezależne FULL8PASS. Zadania3–7 pozostają zależne od audytu O2
+  i właściwej nowej dostawy; pełny v1/telefon/Gemini/KO32 bez nowego PASS.
+  Potwierdzenie odbiorców: oczekiwane. Końcowe kontrole własnej publikacji
+  oraz PR/mainCI zostaną rozliczone po rzeczywistym wykonaniu.
