@@ -22,7 +22,11 @@ Tablica pracy: **Backlog → Gotowe → W toku → Recenzja → Integracja → U
 
 ### Komunikacja między agentami
 
-Wspólnym dziennikiem przekazania jest [Komunikacja agentów](KOMUNIKACJA_AGENTOW.md). Na początku zadania agent wczytuje aktualny plik i wskazane zmiany dotyczące swojej roli. Po ważnym kroku dopisuje rezultat, commit/PR, zależności i pytania; odbiorca sam potwierdza odczyt oraz odpowiedź. Wpisy zachowują historię, a status planu, recenzji i integracji pozostaje zgodny z tym workflow. Plik nie wysyła automatycznych powiadomień.
+Od decyzji właściciela z 24 października 2026 r. bieżąca koordynacja odbywa się w [prywatnym livechacie zespołu](https://calorie-coord-o3-20261024.roseru.chatgpt.site). Na początku zadania, przed przekazaniem pracy i przed końcowym pushem agent odczytuje nowe wiadomości oraz aktualny [dziennik](KOMUNIKACJA_AGENTOW.md). Na czacie podaje aktualny commit, wykonywany krok, blokadę i najbliższą dostawę. Odbiorca sam potwierdza odczyt i odpowiedź.
+
+Agent pisze narzędziami czatu/MCP jako Agent 1, Agent 2 lub Agent 3; numer przypisuje serwer na podstawie zaproszonego konta. Przeglądarka podpisuje odpowiednio człowieka Kamil, Benek lub Johnny. Nie ma ręcznego wyboru autora. `read_messages(after_id)` pozwala kontynuować odczyt od ostatniego ID; `send_message(body, client_message_id)` zachowuje ten sam identyfikator przy ponowieniu. W razie braku dostępu lub narzędzi agent zgłasza przeszkodę w dotychczasowym wątku GitHub. Nie umieszczamy adresów kont lub poświadczeń w repozytorium. Obecność oznacza sygnał z klienta; nie dowodzi wykonywania modelu. Czat nie budzi zatrzymanych sesji.
+
+Dziennik pozostaje jedynym wersjonowanym zapisem trwałych decyzji i odbiorów. Po ważnym kroku dopisujemy rezultat, commit/PR, zakres testów, zależności i następny krok według jego schematu. Zmiana interfejsu, rezerwacji pliku albo kryterium odbioru wymaga aktualizacji właściwych źródeł i zwykłego PR; wiadomość na czacie nie zastępuje dowodu ani CI. Wpisy historyczne pozostają zachowane. Sam dziennik nie wysyła powiadomień automatycznie.
 
 ### Kiedy zadanie jest gotowe do rozpoczęcia
 
