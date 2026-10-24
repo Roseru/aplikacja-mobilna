@@ -61,6 +61,26 @@ Reguła `.gitattributes` zachowuje jego bajty LF również na Windows.
 Po odtworzeniu uruchom osobny projekt poczty powyższymi poleceniami w tej
 samej sieci; zawartość skrzynki jest celowo nietrwała.
 
+## Powrót do demo po restarcie emulatora
+
+Zachowaj dane własnego AVD i uruchom go ponownie bez `-wipe-data`.
+Po pełnym starcie i `adb root` użyj `android_transport.py ensure` z tym samym
+`--adb`, `--serial`, `--avd`, `--state` i prywatnym `--lease` co wcześniej.
+Oryginalny adres HTTPS, issuer i CA pozostają takie same.
+
+`ensure` sprawdza istniejące połączenie z bieżącego uruchomienia. Po restarcie
+może odtworzyć transport, jeśli stary zapis ma dokładnie tę samą tożsamość
+AVD i adresu, inny boot ID, a jego łańcuch NAT i mapowanie reverse już nie
+istnieją. Najpierw zachowuje cały stary plik jako `*.stale-<sha256>.json`.
+Istniejący plik archiwum, obce reguły lub inne dane właściciela zatrzymują
+operację. Nie usuwa istniejących tras w celu wymuszenia połączenia.
+
+Po pokazie użyj `disconnect` z tymi samymi argumentami, a potem zatrzymaj AVD.
+`connect`, `status` i `disconnect` zachowują ścisłą kontrolę bieżącego boot ID;
+`ensure` jest osobnym działaniem do wznowienia. Próba na własnym emulatorze
+po restarcie komputera oraz 18 testów kontroli właściciela przeszły
+24 października 2026. Sam transport nie potwierdza logowania ani synchronizacji.
+
 ## Wykonany odbiór O3, 23 października 2026
 
 Na istniejącym API/schema `0024_e9_history_graph` wykonano prawdziwy formularz
@@ -83,6 +103,33 @@ CA, hostname i issuer; błędne CA odrzucone, transport zamknięty po teście.
 Ta próba sprawdza łączność Android VM. Końcowy skonfigurowany APK oraz
 logowanie z aplikacji, synchronizacja i E4 wymagają odbioru właściwej wersji
 Androida. Lokalna poczta nie potwierdza dostarczania email w produkcji.
+
+## Odbiór lokalnego APK, 24 października 2026
+
+Oryginalny pakiet A1 `5b283e4`, 0.8.29.validation/code1040/Room20, przeszedł
+niezależną kontrolę czterech APK, podpisów oraz rzeczywistej konfiguracji CA,
+issuer i API. [Manifest wejścia](../../android/KANDYDAT_E4_0_8_29.json) zachowuje
+sumy dostarczonych plików. [Neutralne dowody operatora O3](https://github.com/Roseru/aplikacja-mobilna/releases/tag/untagged-d85ad9133083bfcca3ca)
+są w roboczym wydaniu wymagającym dostępu do repozytorium.
+
+Na własnym AVD i używanym API05/schema0024 wykonano Chrome/PKCE, bootstrap
+i pełną kopię. Profil zapisano przed pierwszym celem; użytkownik jawnie podał
+2300 kcal. Normalny interfejs utworzył offline profil, cel, wagę, produkt
+prywatny, posiłek i kompletność dnia. Kolejka przetrwała restart. Jedna partia
+otrzymała sześć `accepted`, revision1 i sześć trwałych lokalnych ACK.
+Pełna treść w PostgreSQL odpowiada utrwalonym operacjom, w tym wartościom null.
+
+Osobny E4 dotyczył jednej nowej operacji Meal. Po HTTP200 i niezależnym PG C1
+rzeczywiście zatrzymano proces przed ACK. Restart wysłał identyczną partię,
+otrzymał `already_applied`/revision1 i zapisał ACK; kontrola33tabel przeszła.
+PG C2 zachował stan C1. Dopiero osobny późniejszy pełny PULL zmaterializował
+nowy DiaryDay. Przed nim dnia nie było lokalnie; po nim payload i revision1
+odpowiadały serwerowi, bez kolejnego POST lub duplikatu.
+
+Te wyniki kwalifikują wskazane APK/Room20 do opisanych lokalnych prób.
+Nie zastępują odbioru nowszego Room22, WorkManagera z docelową polityką sieci,
+fizycznego telefonu, Gemini, pełnego KO32 lub wdrożenia produkcyjnego.
+Historyczny FAIL E4 Room17 pozostaje osobnym wynikiem.
 
 Źródła konfiguracji Mailpit: [Docker](https://mailpit.axllent.org/docs/install/docker/),
 [API skrzynki](https://mailpit.axllent.org/docs/api-v1/),
