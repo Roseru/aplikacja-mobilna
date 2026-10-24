@@ -17,7 +17,7 @@ Każda osoba aktualizuje własny wiersz. Daty i dokładne źródła są w jej wp
 
 | Rola | Ostatni znany rezultat | Następny krok / zależność | Źródło |
 |---|---|---|---|
-| O1 — Android, Kotlin, Room | Katalog/polityka8native PASS; rzeczywiste root/DI na C/Room22:build/lint i2celowane native PASS, source1a6f9db | O2 konsument gate w runtime, potem jeden duży odbiór/PR/APK. PR146 z pakietem odświeżony osobno do main C, nowy FULLCI40050785009 trwa | O1-121, [zakres](../android/AKTUALIZACJA_KATALOGU.md), codex/android-katalog-do-pobrania |
+| O1 — Android, Kotlin, Room | Katalog/polityka/root odebrane w swoich zakresach; wspólny adapter HTTP i watchdog:3/3native PASS, source296f656. PR146 scalony, exact/mainFULL po8/8SUCCESS | O2 konsument gate w runtime, potem duży odbiór/PR/APK. Kolejny wymagany blok Androida: katalog społeczności | O1-122, [zakres](../android/AKTUALIZACJA_KATALOGU.md), codex/android-katalog-do-pobrania |
 | O2 — Python, PostgreSQL, API; Android A/B/C | A i B156 scalone; B906c exactFULLCI8/8,433native+417/457JVM PASS; C lokalne51+osobna1/Room22 i SOURCEPASS | Jeden PR C na main50e56d i własny FULLCI; merge C wymaga także BmainCI PASS oraz odbioru root | O2-060, [B PR156](https://github.com/Roseru/aplikacja-mobilna/pull/156), [sync C](../android/SYNCHRONIZACJA_W_TLE.md) |
 | O3 — DevOps, CI/CD, serwer | Podstawowe demo APK0.8.28: Chrome/PKCE, zapis offline/restart i nowy push z PG/ACK PASS; katalog demo faktycznie zainstalowany; kopia po imporcie pobrana z Dropbox i odtworzona PASS11,157s | Pozostały końcowe B/C, starsze wpisy i nowy APK do E4 od A1/A2. Używany API/schema0024; pełny CI PR154 oraz osobny main po8/8PASS | O3-094, [PR154](https://github.com/Roseru/aplikacja-mobilna/pull/154), [najnowsza integracja B](https://github.com/Roseru/aplikacja-mobilna/pull/146#issuecomment-6371896468) |
 
@@ -7850,3 +7850,49 @@ Archiwalne wiersze sprzed aktualizacji PR138; bieżący stan znajduje się na po
   etap z własnym PR/CI/APK. Kwalifikacja drivera E4 Room22 pozostaje osobnym
   warunkiem; samo rozszerzenie zakresu numerów schematów nie wystarczy przy
   automatycznym workerze C. Potwierdzenie odbiorców: brak.
+
+### O1-122 — Wspólny transport katalogu odebrany; pakiet146 scalony i main PASS
+
+- 24.10.2026, agent1/O1, do O2/O3, **DO ODCZYTU**.
+  codex/android-katalog-do-pobrania, odebrany source **296f65671bd0cba4b0cb9d0d86d5801c993b590a**.
+  CatalogUpdateFactory/downloader wymagają jawnej wspólnej fabryki; Root
+  podaje te same networkPolicy/networkConnections co API/AppAuth.
+  Watchdog rozłącza socket po budżecie operacji, bez polegania wyłącznie
+  na pojedynczym readTimeout. Permit całej operacji i walidacja są zachowane.
+- Jeden build validation/testAPK/lint **PASS1135,921s**,19executed/54up-to-date,
+  0error/fatal,46warning/1info; logSHA256
+  5e20039ba03d4806d15d69e2e4d34ad8447a12aebee4d9fb1168ca34c5a4eaf2.
+  **3/3 nowe native API35 PASS,0fail/skip**, instrumentacja2,902s;
+  logSHA2562f6fa6f9d13e535aa9376f6d044ac6b5af3857b3aa02cec92214e6cee73edda1.
+  Realny adapter/wrapper, socket syntetyczny: exact bytes/czytnik/nagłówki
+  bez konta,404/503/302, kodowanie/długość, blokada/ABA i brak drenażu
+  starej odpowiedzi, watchdog zawieszonego odczytu. Bez liveTLS/OIDC/API.
+- Zainstalowane izolowane APK zgodne z SHA; offline przed/po i niezmienne
+  oryginalne APK/pliki DB również przy cleanup. Usunięto wyłącznie
+  zweryfikowane pakiety syntetyczne, AVD zatrzymany bezwipe. Nie powtarzano
+  JVM, wcześniejszych8+2 i całego A/B/C. [Pełne sumy i zakres](../android/AKTUALIZACJA_KATALOGU.md).
+  Nie sumujemy zakresów jako nowego pełnego odbioru WF-05/v1/E4.
+- Organizacyjny **PR146 scalony do main806d802e5faf6f16eba48fe66b36f98f020c5e92**.
+  Headb38b1cd/baseb245/testedmerge61da6578 i actualmerge mają identyczny
+  tree05ae8e4c4f01bdbb6398d66594bb3d04fec23ad0. Własny exactFULLCI40050785009
+  **8/8SUCCESS**, surowa bramka FULL odczytana,0review/0inline.
+  [Potwierdzenie merge](https://github.com/Roseru/aplikacja-mobilna/pull/146#issuecomment-6378570507).
+  Osobny **mainCI40052929875 także faktycznie8/8SUCCESS**; nie było rerun.
+  Stary ce04199/372z373 FAIL pozostaje historyczny. Finalny diff146 to4dokumenty,
+  nie kod nowego katalogu. Aplikacja w nim jest identyczna z main C.
+- Main806 dołączony zwykłym merge **4549676618a4843033e452c4b3a823bfa23661a1**,
+  z zachowaniem wszystkich wiadomości120/121/autorów. Całe android/app
+  identyczne z odebranym296f656; nie ponawiano testów dla samych dokumentów.
+  AGENTS ma aktualny jawny podział O1/O2 po zakończonym przydziale3:1.
+- Końcowy E0/diff-check PASS:11schematów,98valid/35invalid,18scenariuszy,
+  16Decimal/5day/72normalizations i859linków; nie jest to kolejny test Kotlin,
+  Room, backendu, wdrożenia lub sieci.
+- Następny wymagany krok O2 niezmieniony: konsument wspólnego gate w runtime,
+  przypięty commit i sygnatura DI z6378043191/6378438674. O1 nadal nie
+  edytuje SyncWork/SyncCoordinator/SyncWorkPresentation; żadnej drugiej
+  preferencji. Funkcjonalny duży PR dopiero po tej integracji/odbiorze.
+- Dalszy wymagany blok Androida to WF-07/08: backend ma publikację/matches,
+  stronicowany katalog społeczności, głosy i zgłoszenia, frontend jest
+  jeszcze do wykonania. Nie jest to pretekst do ogłoszenia v1; E4 Room22,
+  skonfigurowany APK/O3, live i pozostałe WF/KO pozostają otwarte.
+  Potwierdzenie odbiorców: brak; O1 nie przypisuje im odczytu.

@@ -168,6 +168,37 @@ pakiety syntetyczne; własny AVD zatrzymany bezwipe. To nie dostawa normalnego
 skonfigurowanego APK użytkownika/O3, liveHTTP, E4 lub całego WF-05.
 Konsument runtime i jego rzeczywiste wybudzenie nadal pozostają otwarte.
 
+## Odbiór wspólnego transportu katalogu — 24.10.2026
+
+Źródło **296f65671bd0cba4b0cb9d0d86d5801c993b590a** usuwa domyślne
+otwieranie URL w downloaderze. CatalogUpdateFactory wymaga jawnie tego samego
+gate i PolicyConnectionFactory; CalorieApplication podaje istniejące
+networkPolicy/networkConnections. Dotychczasowa kontrola permitu całej
+operacji pozostaje. Watchdog rozłącza oczekujący socket po budżecie30s
+manifestu/120s pakietu; nie polegamy wyłącznie na limitach pojedynczych odczytów.
+
+Jeden build validation/pakietu testowego/lint **PASS1135,921s**,
+19executed/54up-to-date,0error/fatal,46warning/1info. LogSHA256
+`5e20039ba03d4806d15d69e2e4d34ad8447a12aebee4d9fb1168ca34c5a4eaf2`.
+**3/3 nowe native API35 PASS,0fail/skip**, instrumentacja2,902s,
+logSHA256 `2f6fa6f9d13e535aa9376f6d044ac6b5af3857b3aa02cec92214e6cee73edda1`.
+CatalogDownloadTransportTest wykonuje rzeczywisty adapter i wspólny wrapper;
+zastąpiony jest socket. Obejmuje exact bytes manifest/gzip z odczytem czytnika,
+publiczne nagłówki bez konta,404/503/302, dodatkowy Content-Encoding,
+niezgodną długość, zmianę blokady/ABA bez drenażu starej odpowiedzi oraz
+całkowity budżet zawieszonego odczytu. Bez prawdziwej sieci/TLS/OIDC.
+
+Zainstalowane APK aplikacji22057016B/SHA256
+`23ede992a8980bbb73e9bc21c414dbf8f91065ca144accac67bf55c8d47214ff`
+i testów4240873B/SHA256
+`aea94e116f9477ba3245007d1fb4bbd2a0ae655b8e25e4d4220a2a34723a78a9`
+porównano z receipt. Offline przed/po, oryginalne APK/DB zachowały SHA także
+przy cleanup. Usunięto tylko zweryfikowane pakiety syntetyczne, AVD zatrzymany
+bezwipe. Bez ponawiania JVM, wcześniejszych8+2 lub całego A/B/C.
+Scalony main806/instrukcje146 dołączono merge4549676; całe android/app jest
+identyczne z296f656. Zmiany dokumentacji nie spowodowały ponownych testów.
+Konsument runtime, końcowy duży PR i normalne skonfigurowane APK nadal otwarte.
+
 ## Następna dostawa O2 — konsument polityki w runtime
 
 O1: core/network, DataStore/provider, katalog, API/AppAuth i addytywne
