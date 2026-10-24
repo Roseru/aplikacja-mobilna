@@ -5,6 +5,7 @@ import shutil
 import sys
 import tarfile
 from pathlib import Path
+from types import SimpleNamespace
 
 import pytest
 
@@ -369,3 +370,299 @@ def test_apk_inspector_preserves_unicode_directory_and_verifies_signature(tmp_pa
     )
     assert inspector.apk(apk)["signer_sha256"] == SIGNER
     assert len(calls) == 2
+
+
+def report_candidate(candidate, blocked=False):
+    path, spec, inspector, _ = imported_candidate(candidate)
+    if blocked:
+        receipt = path.parent / spec["evidence"]["restore"]["path"]
+        value = json.loads(receipt.read_text())
+        value["result"] = "FAIL"
+        write(receipt, value)
+        spec["evidence"]["restore"]["sha256"] = release.file_digest(receipt)
+        write(path, spec)
+    expected = "BLOCKED" if blocked else "CANDIDATE_VALIDATED"
+    assert release.validate(path, inspector)["result"] == expected
+    sources = {
+        "manifest": path,
+        "apk": path.parent / spec["android"]["apk"],
+        "android_manifest": path.parent / spec["android"]["manifest"],
+        "backend_archive": path.parent / spec["backend"]["image_archive"]["path"],
+        "catalog_manifest": path.parent / spec["catalog"]["manifest"],
+        "catalog_package": path.parent / spec["catalog"]["package"],
+        **{name: path.parent / entry["path"] for name, entry in spec["evidence"].items()},
+    }
+    return path, spec, inspector, sources
+
+
+def report_arguments(monkeypatch, manifest, output, **tools):
+    arguments = ["release.py", "--manifest", str(manifest), "--output", str(output)]
+    for flag in ("docker", "aapt", "java", "apksigner-jar"):
+        arguments.extend(["--" + flag, str(tools.get(flag, "unused-report-test-" + flag))])
+    monkeypatch.setattr(sys, "argv", arguments)
+
+
+def report_alias(source, kind):
+    if kind == "direct":
+        return source
+    target = source.parent / (source.name + ".report-" + kind)
+    try:
+        if kind == "symlink":
+            target.symlink_to(source.name)
+        else:
+            target.hardlink_to(source)
+    except OSError as error:
+        pytest.skip(f"File {kind} unavailable: {error}")
+    return target
+
+
+def forbid_report_inspection(monkeypatch):
+    def forbidden(**_kwargs):
+        pytest.fail("An input collision must be rejected before constructing the inspector")
+
+    monkeypatch.setattr(release, "Inspector", forbidden)
+
+
+@pytest.mark.parametrize("blocked", [False, True], ids=["valid", "blocked"])
+@pytest.mark.parametrize(
+    "source",
+    [
+        "manifest",
+        "apk",
+        "android_manifest",
+        "backend_archive",
+        "catalog_manifest",
+        "catalog_package",
+        "android_acceptance",
+        "backend_acceptance",
+        "migration",
+        "rollback",
+        "restore",
+    ],
+)
+def test_report_output_preserves_each_release_input(candidate, monkeypatch, source, blocked):
+    path, _, _, sources = report_candidate(candidate, blocked)
+    before = {item: item.read_bytes() for item in sources.values()}
+    report_arguments(monkeypatch, path, sources[source])
+    forbid_report_inspection(monkeypatch)
+    with pytest.raises(ValueError, match="Report must not overwrite"):
+        release.main()
+    assert all(item.read_bytes() == content for item, content in before.items())
+
+
+@pytest.mark.parametrize("source", ["manifest", "apk", "backend_archive", "restore"])
+@pytest.mark.parametrize("kind", ["symlink", "hardlink"])
+def test_report_output_preserves_input_aliases(candidate, monkeypatch, source, kind):
+    path, _, inspector, sources = report_candidate(candidate, blocked=True)
+    before = {item: item.read_bytes() for item in sources.values()}
+    output = report_alias(sources[source], kind)
+    report_arguments(monkeypatch, path, output)
+    # Also prove preservation with a working inspector, not only an inspection sentinel.
+    monkeypatch.setattr(release, "Inspector", lambda **_kwargs: inspector)
+    with pytest.raises(ValueError, match="Report must not overwrite"):
+        release.main()
+    assert all(item.read_bytes() == content for item, content in before.items())
+    assert output.read_bytes() == before[sources[source]]
+
+
+@pytest.mark.parametrize("tool", ["docker", "aapt", "java", "apksigner-jar"])
+def test_report_output_preserves_explicit_inspection_tools(candidate, monkeypatch, tool):
+    path, _, _, _ = report_candidate(candidate)
+    binary = path.parent / "inspection-tool"
+    binary.write_bytes(b"synthetic inspection tool, never executed")
+    report_arguments(monkeypatch, path, binary, **{tool: binary})
+    forbid_report_inspection(monkeypatch)
+    with pytest.raises(ValueError, match="Report must not overwrite"):
+        release.main()
+    assert binary.read_bytes() == b"synthetic inspection tool, never executed"
+
+
+@pytest.mark.parametrize("kind", ["symlink", "hardlink"])
+def test_report_output_preserves_inspection_tool_aliases(candidate, monkeypatch, kind):
+    path, _, _, _ = report_candidate(candidate)
+    binary = path.parent / "java-tool"
+    binary.write_bytes(b"synthetic Java tool")
+    report_arguments(monkeypatch, path, report_alias(binary, kind), java=binary)
+    forbid_report_inspection(monkeypatch)
+    with pytest.raises(ValueError, match="Report must not overwrite"):
+        release.main()
+    assert binary.read_bytes() == b"synthetic Java tool"
+
+
+def test_report_output_preserves_tool_resolved_from_path(candidate, monkeypatch):
+    path, _, _, _ = report_candidate(candidate)
+    directory = path.parent / "bin"
+    directory.mkdir()
+    binary = directory / "report-tool.exe"
+    binary.write_bytes(b"synthetic PATH tool")
+    binary.chmod(0o700)
+    monkeypatch.setenv("PATH", str(directory))
+    report_arguments(monkeypatch, path, binary, docker=binary.name)
+    forbid_report_inspection(monkeypatch)
+    with pytest.raises(ValueError, match="Report must not overwrite"):
+        release.main()
+    assert binary.read_bytes() == b"synthetic PATH tool"
+
+
+@pytest.mark.parametrize("tool", ["aapt", "java"])
+def test_report_output_preserves_relative_apk_inspection_tools(candidate, monkeypatch, tool):
+    path, _, _, _ = report_candidate(candidate)
+    binary = path.parent / "relative-inspection-tool.exe"
+    binary.write_bytes(b"synthetic APK directory tool")
+    binary.chmod(0o700)
+    report_arguments(monkeypatch, path, binary, **{tool: binary.name})
+    forbid_report_inspection(monkeypatch)
+    with pytest.raises(ValueError, match="Report must not overwrite"):
+        release.main()
+    assert binary.read_bytes() == b"synthetic APK directory tool"
+
+
+def test_report_output_preserves_tool_from_relative_apk_path(candidate, monkeypatch):
+    path, _, _, _ = report_candidate(candidate)
+    directory = path.parent / "bin"
+    directory.mkdir()
+    binary = directory / "report-tool.exe"
+    binary.write_bytes(b"synthetic relative PATH tool")
+    binary.chmod(0o700)
+    monkeypatch.setenv("PATH", "bin")
+    report_arguments(monkeypatch, path, binary, aapt=binary.name)
+    forbid_report_inspection(monkeypatch)
+    with pytest.raises(ValueError, match="Report must not overwrite"):
+        release.main()
+    assert binary.read_bytes() == b"synthetic relative PATH tool"
+
+
+@pytest.mark.parametrize("context", ["cli", "apk"])
+def test_report_output_preserves_windows_exe_when_pathext_prefers_com(
+    candidate, monkeypatch, context
+):
+    path, _, _, _ = report_candidate(candidate)
+    cli = path.parent / "cli"
+    cli.mkdir()
+    monkeypatch.chdir(cli)
+    directory = (cli if context == "cli" else path.parent) / "bin"
+    directory.mkdir()
+    executable = directory / "review-inspector.exe"
+    executable.write_bytes(b"synthetic CreateProcess executable")
+    preferred = directory / "review-inspector.com"
+    preferred.write_bytes(b"synthetic PATHEXT preferred executable")
+    monkeypatch.setattr(release, "os", SimpleNamespace(name="nt", get_exec_path=lambda: ["bin"]))
+    monkeypatch.setattr(
+        shutil,
+        "which",
+        lambda name: str(preferred) if Path(name) == directory / "review-inspector" else None,
+    )
+    report_arguments(monkeypatch, path, executable, java="review-inspector")
+    forbid_report_inspection(monkeypatch)
+    with pytest.raises(ValueError, match="Report must not overwrite"):
+        release.main()
+    assert executable.read_bytes() == b"synthetic CreateProcess executable"
+    assert preferred.read_bytes() == b"synthetic PATHEXT preferred executable"
+
+
+def test_report_output_preserves_relative_jar_used_by_real_apk_inspector(candidate, monkeypatch):
+    path, spec, _, _ = report_candidate(candidate)
+    apk = path.parent / spec["android"]["apk"]
+    jar = apk.parent / "review-relative-apksigner.jar"
+    jar.write_bytes(b"synthetic JAR beside APK")
+    calls = []
+
+    def run(arguments, *, cwd=None):
+        calls.append(arguments)
+        assert cwd == apk.parent
+        if arguments[1:3] == ["dump", "badging"]:
+            return "package: name='pl.roseru.kalorie' versionCode='21' versionName='0.8.10'\n"
+        assert arguments[1:3] == ["-jar", jar.name]
+        assert (cwd / arguments[2]).read_bytes() == b"synthetic JAR beside APK"
+        return "Signer #1 certificate SHA-256 digest: " + SIGNER + "\n"
+
+    def inspect(_manifest, inspector):
+        assert inspector.apk(apk)["signer_sha256"] == SIGNER
+        return {"result": "BLOCKED", "deployment_authorized": False}
+
+    monkeypatch.setattr(release, "command", run)
+    monkeypatch.setattr(release, "validate", inspect)
+    report_arguments(monkeypatch, path, jar, **{"apksigner-jar": jar.name})
+    with pytest.raises(ValueError, match="Report must not overwrite"):
+        release.main()
+    assert jar.read_bytes() == b"synthetic JAR beside APK"
+    assert calls == []
+
+
+@pytest.mark.parametrize("blocked", [False, True], ids=["valid", "blocked"])
+@pytest.mark.parametrize("existing", [False, True], ids=["new-report", "old-report"])
+def test_report_output_still_creates_and_updates_reports(candidate, monkeypatch, blocked, existing):
+    path, _, inspector, sources = report_candidate(candidate, blocked)
+    before = {item: item.read_bytes() for item in sources.values()}
+    output = path.parent / "report.json"
+    if existing:
+        write(output, {"previous": "report"})
+    report_arguments(monkeypatch, path, output)
+    monkeypatch.setattr(release, "Inspector", lambda **_kwargs: inspector)
+    assert release.main() == int(blocked)
+    report = json.loads(output.read_text())
+    assert report["result"] == ("BLOCKED" if blocked else "CANDIDATE_VALIDATED")
+    assert report["deployment_authorized"] is False
+    assert all(item.read_bytes() == content for item, content in before.items())
+
+
+def test_report_output_ignores_unavailable_unused_path_entries(candidate, monkeypatch):
+    path, _, inspector, _ = report_candidate(candidate)
+    unavailable = path.parent / "unavailable-bin"
+    output = path.parent / "report.json"
+    write(output, {"previous": "report"})
+    resolve = Path.resolve
+
+    def inaccessible(self, *args, **kwargs):
+        if unavailable in self.parents:
+            raise PermissionError("Unused PATH directory cannot be inspected")
+        return resolve(self, *args, **kwargs)
+
+    monkeypatch.setenv("PATH", str(unavailable))
+    monkeypatch.setattr(Path, "resolve", inaccessible)
+    monkeypatch.setattr(release, "Inspector", lambda **_kwargs: inspector)
+    report_arguments(monkeypatch, path, output)
+    assert release.main() == 0
+    assert json.loads(output.read_text())["result"] == "CANDIDATE_VALIDATED"
+
+
+@pytest.mark.parametrize("source", ["apk", "restore", "old_report"])
+def test_report_output_malformed_manifest_preserves_existing_targets(
+    candidate, monkeypatch, source
+):
+    path, _, _, sources = report_candidate(candidate)
+    path.write_text("{broken JSON", encoding="utf-8")
+    if source == "old_report":
+        sources[source] = path.parent / "old-report.json"
+        write(sources[source], {"result": "BLOCKED", "deployment_authorized": False})
+    before = {item: item.read_bytes() for item in sources.values()}
+    report_arguments(monkeypatch, path, sources[source])
+    forbid_report_inspection(monkeypatch)
+    with pytest.raises(ValueError, match="Unreadable release specification"):
+        release.main()
+    assert all(item.read_bytes() == content for item, content in before.items())
+
+
+def test_report_output_malformed_manifest_allows_new_blocked_report(candidate, monkeypatch):
+    path, _, _, _ = report_candidate(candidate)
+    path.write_text("{broken JSON", encoding="utf-8")
+    output = path.parent / "new-report.json"
+    before = path.read_bytes()
+    report_arguments(monkeypatch, path, output)
+    assert release.main() == 1
+    assert json.loads(output.read_text())["result"] == "BLOCKED"
+    assert path.read_bytes() == before
+
+
+@pytest.mark.parametrize("selected", ["first.apk", "second.apk"])
+def test_report_output_protects_both_duplicate_artifact_references(tmp_path, monkeypatch, selected):
+    path = tmp_path / "duplicate.json"
+    path.write_text('{"android":{"apk":"first.apk","apk":"second.apk"}}', encoding="utf-8")
+    for name in ("first.apk", "second.apk"):
+        (tmp_path / name).write_bytes(name.encode())
+    before = {item: item.read_bytes() for item in tmp_path.iterdir()}
+    report_arguments(monkeypatch, path, tmp_path / selected)
+    forbid_report_inspection(monkeypatch)
+    with pytest.raises(ValueError, match="Report must not overwrite"):
+        release.main()
+    assert all(item.read_bytes() == content for item, content in before.items())

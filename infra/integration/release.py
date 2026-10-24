@@ -5,6 +5,7 @@ import hashlib
 import json
 import os
 import re
+import shutil
 import subprocess
 import tarfile
 import tempfile
@@ -370,6 +371,67 @@ def validate(manifest, inspector):
     }
 
 
+def protect_report_inputs(manifest, output, tools):
+    """Reject input aliases before inspection, including an already blocked candidate."""
+    inputs = [manifest]
+    root = manifest.resolve().parent
+    contexts = {Path.cwd()}
+
+    def references(pairs):
+        # Collect every occurrence, including duplicate keys in rejected specifications.
+        for key, value in pairs:
+            if key in {"apk", "manifest", "package", "path"} and isinstance(value, str):
+                inputs.append(root / value)
+                if key == "apk":
+                    contexts.add((root / value).resolve().parent)
+        return dict(pairs)
+
+    complete = False
+    try:
+        if manifest.stat().st_size <= 1024**2:
+            json.loads(manifest.read_text(encoding="utf-8"), object_pairs_hook=references)
+            complete = True
+    except (OSError, ValueError):
+        pass
+    # APK commands use apk.parent, while Docker and SDK normalization use the CLI cwd.
+    # Resolve relative tools and PATH entries in both contexts without changing commands.
+    for tool in tools:
+        directories = ("", *os.get_exec_path()) if Path(tool).name == tool else ("",)
+        for context in contexts:
+            inputs.append(context / tool)
+            for directory in directories:
+                candidate = context / directory / tool
+                try:
+                    # CreateProcess can select .exe even when PATHEXT/which prefers .com.
+                    if os.name == "nt" and not Path(tool).suffix:
+                        executable = candidate.with_name(candidate.name + ".exe")
+                        if executable.is_file():
+                            inputs.append(executable)
+                    located = shutil.which(str(candidate))
+                except (OSError, ValueError):
+                    # Unavailable PATH entries do not identify tools that can be run.
+                    continue
+                if located:
+                    inputs.append(Path(located))
+
+    destination = output.resolve()
+    for source in inputs:
+        try:
+            collision = destination == source.resolve() or (
+                output.exists() and source.exists() and output.samefile(source)
+            )
+        except (OSError, ValueError):
+            # Unknown input identity cannot justify overwriting an existing destination.
+            complete = False
+            continue
+        if collision:
+            raise InvalidCandidate("Report must not overwrite a release input or inspection tool")
+    if not complete and (output.exists() or output.is_symlink()):
+        raise InvalidCandidate(
+            "Unreadable release specification cannot overwrite an existing report target"
+        )
+
+
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--manifest", type=Path, required=True)
@@ -379,6 +441,9 @@ def main():
     parser.add_argument("--java", required=True)
     parser.add_argument("--apksigner-jar", required=True)
     args = parser.parse_args()
+    protect_report_inputs(
+        args.manifest, args.output, (args.docker, args.aapt, args.java, args.apksigner_jar)
+    )
     try:
         result = validate(
             args.manifest,
@@ -394,8 +459,6 @@ def main():
             ],
             "deployment_authorized": False,
         }
-    if args.output.resolve() == args.manifest.resolve():
-        raise ValueError("Report must not overwrite the release specification")
     args.output.parent.mkdir(parents=True, exist_ok=True)
     args.output.write_text(json.dumps(result, indent=2) + "\n", encoding="utf-8")
     print(json.dumps(result))

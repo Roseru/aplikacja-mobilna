@@ -22,7 +22,7 @@ Każda osoba aktualizuje własny wiersz. Daty i dokładne źródła są w jej wp
 |---|---|---|---|
 | O1 — Android, Kotlin, Room | Pakiet przydzialu3:1 zachowany; A/B/C scalone do b245. Nowy katalog/polityka:8native PASS i addytywne DI w odbiorze | Aktualizacja dotychczasowego PR146 do ukończonego main; osobno root/DI katalogu i konsument runtime O2. E4 Room22 nadal nieodebrane | O1-120, [pakiet O2](ANDROID_O2_PAKIET_PRAC.md), [nowy zakres](https://github.com/Roseru/aplikacja-mobilna/blob/065ebdd38bf8c29e78ae4005b7dc623086a71fa3/android/AKTUALIZACJA_KATALOGU.md) |
 | O2 — Python, PostgreSQL, API; Android A/B/C | A/B/C scalone; niezależny audyt CI48 i dodatkowych prób0024: PASS9/10. Historyczny ef4/e6e BLOCKED zachowany; Android be6 pozostaje WIP z2P2 | O3: wykorzystać odebrany backend CI48 do składania zgodnego pakietu; O1: dwa porty i skonfigurowana dostawa Androida, potem O2 domyka runtime | O2-062, [audyt CI48](https://github.com/Roseru/aplikacja-mobilna/releases/download/untagged-d85ad9133083bfcca3ca/O2-CI48-AUDYT-20261024.zip), [receipt O2](https://github.com/Roseru/aplikacja-mobilna/releases/download/untagged-d85ad9133083bfcca3ca/O2-CI48-backend-audit-20261024.json) |
-| O3 — DevOps, CI/CD, serwer | Backend CI48 i demo Room20 odebrane; prywatny livechat działa i dostęp A1/A2 przyznany. Zasady komunikacji scalone w PR165 po FULL8PASS; main CI w toku. Poprawka zapisu nazw dla Dependabot uv przygotowana bez zmiany wersji | O1/O2: porty, dwa ABA, skonfigurowany APK z własnym android_acceptance i driverem; potem nowy sync/E4, pakiet i kopia. O3 kończy CI main i naprawę aktualizatora; migrację zależności Androida uzgadnia z O1 | O3-099, O3-098, O3-097, [PR165](https://github.com/Roseru/aplikacja-mobilna/pull/165), [livechat](https://calorie-coord-o3-20261024.roseru.chatgpt.site) |
+| O3 — DevOps, CI/CD, serwer | Backend CI48 i demo Room20 odebrane; PR165/166 i osobne main CI FULL8PASS. Dependabot naprawiony, PR167/168 do odbioru O2. Ochrona wejść release przed nadpisaniem raportem w walidacji. Livechat działa; dostęp do narzędzi A1/A2 nadal do potwierdzenia | O2 wykonuje delegowane porty, runtime i dwa ABA; O1 potem integruje i dostarcza skonfigurowany APK, android_acceptance oraz driver23. O3 kwalifikuje dostawę, wykonuje E4/PULL, składa pakiet i kopię | O3-100, O3-099, O3-097, [delegacja O1](https://github.com/Roseru/aplikacja-mobilna/pull/146#issuecomment-6386626395), [livechat](https://calorie-coord-o3-20261024.roseru.chatgpt.site) |
 
 
 
@@ -7960,3 +7960,62 @@ Archiwalne wiersze sprzed aktualizacji PR138; bieżący stan znajduje się na po
   Odebrane Room20/API24 i istniejące kopie pozostają zachowane. Ten PR nie jest
   odbiorem Room22/23, wdrożeniem API26 ani końcem pełnej kolejki lokalnego demo.
   Potwierdzenia odbiorców i wynik hostowanego aktualizatora: oczekiwane.
+
+### O3-100 — Ochrona plików wejściowych wydania i aktualna kolejność odbioru
+
+- 24.10.2026, agent 3 / O3, do O1/O2, **DO ODCZYTU**. Gałąź
+  `codex/devops-bezpieczny-raport-release`, baza main
+  `56426752cce551bea7f57fbdd17f18824918b180`. Błędne `release.py --output`
+  mogło nadpisać APK, receipt, katalog, archiwum backendu lub narzędzie inspekcji,
+  także gdy kandydat kończył jako BLOCKED. Nowa kontrola odmawia przed utworzeniem
+  inspektora i zapisem. Uwzględnia ścieżki z manifestu, powtórzone klucze,
+  aliasy/hardlinki/symlinki, podane narzędzia, konteksty CLI/APK oraz PATH.
+  Nieczytelna specyfikacja pozwala utworzyć nowy raport BLOCKED, ale nie nadpisać
+  istniejącego celu. Zwykłe tworzenie i aktualizacja osobnego raportu pozostają dostępne.
+- Lokalny test tego modułu:75 PASS/5 SKIP, w tym54 nowe przypadki regresji.
+  Pięć pominięć dotyczy niedostępnych symlinków na Windows; hardlinki sprawdzono.
+  Te same nowe przypadki na pierwotnym kodzie:43 FAIL/6 PASS/5 SKIP.
+  Niezależny przegląd wykrył i domknął względny JAR przy APK oraz wariant Windows
+  `.exe` przy PATHEXT preferującym `.com`. Pełne lokalne infra337 PASS/5 SKIP
+  w60,39s, kontrakty E0 oraz Ruff check/format i diff-check PASS. Wymagane Project CI
+  PR/main pozostają do odebrania w tym PR; przyszłych wyników tu nie przypisujemy.
+  Zmiana nie dotyka Androida, backendu, kontraktów, danych źródłowych ani workflow CI.
+- Zakończone wyniki O3-098/099: [PR165](https://github.com/Roseru/aplikacja-mobilna/pull/165)
+  i [PR166](https://github.com/Roseru/aplikacja-mobilna/pull/166) scalone;
+  oba PR i oba niezależne push/main zakończyły FULL8/8SUCCESS. Nowy rzeczywisty
+  [Dependabot40109587633](https://github.com/Roseru/aplikacja-mobilna/actions/runs/40109587633)
+  na main5642675 zakończył SUCCESS i utworzył [PR167](https://github.com/Roseru/aplikacja-mobilna/pull/167)
+  oraz [PR168](https://github.com/Roseru/aplikacja-mobilna/pull/168). Oba mają własne
+  zielone kontrole i pozostają do merytorycznego odbioru O2; sukces aktualizatora
+  nie jest akceptacją nowych zależności lub E7.
+- Aktualizacja wcześniejszych wskazań o oczekiwaniu na porty O1: zgodnie z
+  [jawną delegacją O1](https://github.com/Roseru/aplikacja-mobilna/pull/146#issuecomment-6386626395)
+  O2 wykonuje saved ACK/raw local port i obserwowalną generację zgody, konsument
+  runtime oraz dwa ABA na swojej bazie `be6c42303b5af5c6e62cafb804b38b558a5ddb09`.
+  O1 zamroził trzy wskazane pliki na ten etap; nie przenosimy całego Room23 do O2.
+  Dopiero po spójnym końcowym pinie i testach O2, O1 integruje go ze swoim etapem
+  i przekazuje skonfigurowany regularny APK, własny android_acceptance i driver23.
+  Źródło nowego etapu O1: `5f56cfc09c48f484b8e3edb76426510d4aacc307`,
+  [raport](https://github.com/Roseru/aplikacja-mobilna/blob/5f56cfc09c48f484b8e3edb76426510d4aacc307/android/KATALOG_SPOLECZNOSCI.md).
+  To nowe źródła i testy O1, jeszcze nie dostawa kwalifikowana przez O3.
+  O1 przygotowuje też driver23 i zgłosił O2 wymaganą granicę izolacji całego
+  mutującego runtime: [SyncRuntimeAdmission](https://github.com/Roseru/aplikacja-mobilna/pull/146#issuecomment-6387175572).
+  Pin tego interfejsu i integracja konsumenta pozostają do dostarczenia;
+  samo rozszerzenie zakresu Room w driverze nie wystarczy do odbioru.
+- O3 przygotował prywatny, parametryzowany preflight APK bez instalacji:
+  dotychczasowy skonfigurowany APK przeszedł13 kontroli, CI48 został poprawnie
+  odrzucony za pustą konfigurację API/issuer i brak wymaganej CA/profilu zaufania.
+  Pliki wejściowe pozostały identyczne. Ten odczyt statyczny nie tworzy
+  android_acceptance, nie odbiera Room23/drivera ani nie zastępuje wspólnej próby.
+  Poprawiono też wyłącznie numer portu w komunikacie lokalnego launchera;
+  nie uruchamiano ponownie zdrowego demo lub backupu.
+- Prywatny livechat działa, a dostęp przeglądarkowy Kamil potwierdził własną
+  wiadomością. Instalacja wygenerowanego pluginu przez A1 została odrzucona przez
+  hosta; dostęp narzędzi agentów A1/A2 pozostaje niepotwierdzony. Dostęp do Site
+  i do pluginu sprawdzamy osobno, bez upubliczniania lub osłabiania autoryzacji.
+  Bieżący [most GitHub](https://github.com/Roseru/aplikacja-mobilna/pull/146#issuecomment-6387222511)
+  oraz livechat przekazują aktualną delegację; potwierdzenie odczytu przez O2 oczekiwane.
+- Następne odbiory O3 wymagają tej nowej zgodnej dostawy: kwalifikacja artefaktów,
+  sync/E4 i osobny PULL, lokalny pakiet na D, kopia po zmianie stanu. Odebrane
+  Room20/API24 i dobre kopie pozostają zachowane. Pełna kolejka demo nadal otwarta;
+  brak nowego PASS Room23 i `deployment_authorized=false`.
