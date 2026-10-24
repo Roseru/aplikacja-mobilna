@@ -91,3 +91,51 @@ def test_wrong_avd_refused_before_mutation(monkeypatch, tmp_path):
     with pytest.raises(RuntimeError, match="owned AVD"):
         transport.connect(tmp_path / "lease.json")
     assert calls == [("emu", "avd", "name")]
+
+
+def test_ensure_preserves_old_boot_receipt_before_new_connect(monkeypatch, tmp_path):
+    transport, mutations = tunnel(monkeypatch)
+    lease = tmp_path / "lease.json"
+    original = json.dumps(transport.specification("old-boot")).encode()
+    lease.write_bytes(original)
+    connected = []
+    monkeypatch.setattr(transport, "connect", lambda path: connected.append(path))
+    transport.ensure(lease)
+    assert connected == [lease] and mutations == [] and not lease.exists()
+    assert [p.read_bytes() for p in tmp_path.glob("lease.json.stale-*.json")] == [original]
+
+
+@pytest.mark.parametrize("collision", ["chain", "reverse", "foreign", "archive"])
+def test_ensure_never_retires_ambiguous_ownership(monkeypatch, tmp_path, collision):
+    transport, mutations = tunnel(monkeypatch)
+    lease = tmp_path / "lease.json"
+    record = transport.specification("old-boot")
+    if collision == "foreign":
+        record["avd"] = "someone-else"
+    raw = json.dumps(record).encode()
+    lease.write_bytes(raw)
+    if collision == "chain":
+        monkeypatch.setattr(transport, "rules", lambda: ["-N O3_APK_18443"])
+    if collision == "reverse":
+        monkeypatch.setattr(transport, "reverse", lambda: [["host-1", "tcp:18443", "tcp:19999"]])
+    if collision == "archive":
+        import hashlib
+
+        archive = lease.with_name(
+            lease.name + ".stale-" + hashlib.sha256(raw).hexdigest() + ".json"
+        )
+        archive.write_text("preserved")
+    with pytest.raises((RuntimeError, FileExistsError)):
+        transport.ensure(lease)
+    assert lease.read_bytes() == raw and mutations == []
+
+
+def test_ensure_rechecks_current_boot_instead_of_replacing_it(monkeypatch, tmp_path):
+    transport, mutations = tunnel(monkeypatch)
+    lease = tmp_path / "lease.json"
+    lease.write_text(json.dumps(transport.specification("current-boot")))
+    checked = []
+    monkeypatch.setattr(transport, "check", lambda path: checked.append(path))
+    transport.ensure(lease)
+    assert checked == [lease] and mutations == []
+    assert not list(tmp_path.glob("*.stale-*"))

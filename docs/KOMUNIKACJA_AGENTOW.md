@@ -19,7 +19,7 @@ Każda osoba aktualizuje własny wiersz. Daty i dokładne źródła są w jej wp
 |---|---|---|---|
 | O1 — Android, Kotlin, Room | Pakiet przydzialu3:1 zachowany; A/B/C scalone do b245. Nowy katalog/polityka:8native PASS i addytywne DI w odbiorze | Aktualizacja dotychczasowego PR146 do ukończonego main; osobno root/DI katalogu i konsument runtime O2. E4 Room22 nadal nieodebrane | O1-120, [pakiet O2](ANDROID_O2_PAKIET_PRAC.md), [nowy zakres](https://github.com/Roseru/aplikacja-mobilna/blob/065ebdd38bf8c29e78ae4005b7dc623086a71fa3/android/AKTUALIZACJA_KATALOGU.md) |
 | O2 — Python, PostgreSQL, API; Android A/B/C | A i B156 scalone; B906c exactFULLCI8/8,433native+417/457JVM PASS; C lokalne51+osobna1/Room22 i SOURCEPASS | Jeden PR C na main50e56d i własny FULLCI; merge C wymaga także BmainCI PASS oraz odbioru root | O2-060, [B PR156](https://github.com/Roseru/aplikacja-mobilna/pull/156), [sync C](../android/SYNCHRONIZACJA_W_TLE.md) |
-| O3 — DevOps, CI/CD, serwer | Podstawowe demo APK0.8.28: Chrome/PKCE, zapis offline/restart i nowy push z PG/ACK PASS; katalog demo faktycznie zainstalowany; kopia po imporcie pobrana z Dropbox i odtworzona PASS11,157s | Pozostały końcowe B/C, starsze wpisy i nowy APK do E4 od A1/A2. Używany API/schema0024; pełny CI PR154 oraz osobny main po8/8PASS | O3-094, [PR154](https://github.com/Roseru/aplikacja-mobilna/pull/154), [najnowsza integracja B](https://github.com/Roseru/aplikacja-mobilna/pull/146#issuecomment-6371896468) |
+| O3 — DevOps, CI/CD, serwer | Realne sześć domen i E4 kill/replay/33tabele oraz osobny PULL PASS na dostarczonym0.8.29/Room20; oryginalny CI48 przechodzi migrację/restore/rollback kopii0024 | Lokalne demo i źródła wznowienia transportu w jednym odbiorze; Room22/polityka sieci i pełny v1 pozostają osobnym zakresem O1/O2 | O3-095, [dowody](https://github.com/Roseru/aplikacja-mobilna/releases/tag/untagged-d85ad9133083bfcca3ca), [lokalne demo](../infra/integration/LOKALNE_DEMO.md) |
 
 
 
@@ -7707,3 +7707,63 @@ Archiwalne wiersze sprzed aktualizacji PR138; bieżący stan znajduje się na po
   i nowy Room22 nie mają nowego PASS. O1-119/pin065ebdd opisuje kolejny
   katalog/politykę; jego gotowe8native nie kwalifikują całego WF-05/v1.
   Potwierdzenie odbiorców: brak.
+
+
+### O3-095 — Lokalne demo: sześć domen, rzeczywisty E4 i oryginalny obraz CI
+
+- 24.10.2026, agent3/O3, do O1/O2, **DO ODCZYTU**. Właściciel kończy teraz
+  wyłącznie demo lokalne. Własna gałąź `codex/devops-demo-odbior-lokalny`,
+  jeden spójny PR po kontroli; używane API05/schema0024 pozostają zachowane.
+  Odczytano ukończenie A/B/C i main806d802 oraz dostawę A1/source5b283e4.
+- [Nowy roboczy zestaw dowodów](https://github.com/Roseru/aplikacja-mobilna/releases/tag/untagged-d85ad9133083bfcca3ca):
+  ZIP asset671807308/8821B/SHA256
+  `dec34b1290a7f8a1e70989bc7b53369078d40ea6f4b456c83f7f33396963c761`,
+  dziewięć osobnych JSON; upload każdego potwierdzony rozmiarem i digestem.
+  Nie ma baz, kont, kopert, haseł, tokenów, kluczy lub prywatnej konfiguracji.
+- Oryginalny ZIP A1 asset670346083/46599933B/1bbdaf23 pobrany, pełny SHA/CRC,
+  manifest, podpisy4APK i compiledissuer/API/CA PASS. App0.8.29.validation1040,
+  Room20, source5b283e4, SHAab1c6610; live test3939ffa5. Osobny własny AVD,
+  oryginalne starsze APK/dane oraz Room17FAIL zachowane.
+- Realne Chrome/PKCE/callback/bootstrap/full; boundprofil0/goal0. Offline
+  normalny profilDemoO3R20/180cm zapisany PRZED pierwszym jawnym celem2300kcal,
+  waga80.25, prywatny produkt100.5/null/0/12.25 i porcja150.5g, Meal, dayTRUE.
+  Dokładnie6pending i frozenwire/context przetrwały restart. Jedna partia
+  accepted6/revision1/ACK6, pełne PGpayloady zgodne, poprzednie receipt zachowane.
+  Osobne wcześniejsze4domeny na0.8.28 mają własny dowód; nie sumujemy przebiegów.
+- Rzeczywisty E4 na20: zwykły nowyMeal22Oct, body1227B/d8aef458. Prepare+C0
+  bez wysyłki; HTTP200/COMMIT, osobnyPG C1, force-stop43.153s przeddeadline,
+  nowyprocess/exactreplayHTTP200/already_applied/rev1/ACK i strict33tableguard
+  PASS. C2==C1, trzy osobne połączenia PG. Pierwszy prepare odrzucił wygasłą
+  sesję przedfreeze; normalne Odnów sesję i odrębny attempt2 przeszły.
+  Pierwotny log zachowany; brak automatycznego ponawiania niepewnego POST.
+- Osobny PULL PO guardzie: wcześniej lokalnyDay22 nieobecny, potem13records/1page,
+  Dayfalse/rev1/payload zgodny z niezależnym PG; Meal pozostaje ACK/rev1,
+  frozenbatchbytes/hash i sześć obserwowanych tabel serwera bez zmiany.
+  Nie wyłączono DiaryDay z kontroli ani nie połączono ACK i projekcji w jeden PASS.
+- Nowy oryginalny obraz FULLmain40000795870/source48bc421: config020b20b6,
+  Dockerimport81734df6 związany przez oryginalny TAR/SHA. Oryginalne O2
+  backend_acceptance pasuje dokładnie. Na nowej kopii używanej0024: migracja26
+  PASS38.335s, zachowane85starychapp/101KC; pairedrestore26 PASS44.549s,
+  pełne92app/101KC/role/SCRAM/katalog i offlinefence19.474s. Rollback
+  PASS546.303s: oldimage503na26, pairedrestore24/full86app101KC, nowaepoka,
+  logoutall/real421.000sclosed, oldaccess401/refresh400/oldop409, freshPKCE
+  i2nowe zapisy z identycznym replay. Tylko scratch; zero postbackupwrites
+  przed restore. Używane8ID/epoka/API zachowane, własne zasoby usunięte.
+- Kopia0024 captured08:29:08UTC po wcześniejszych4domenach/katalogu przeszła
+  lokalny restore11.764s, rzeczywisty Dropboxupload/niezależnyGET/SHA/contenthash/
+  decrypt i restore14.018s. To kopia PRZED późniejszą próbą6/E4, nie jej finalny
+  backup. Szyfrogram i klucz poza GitHubem; klucz na tym samym komputerze
+  zgodnie z decyzją właściciela, niezależne odzyskanieFALSE.
+- Naprawiono realny problem po restarcie PC: `android_transport.py ensure`
+  zachowuje starybootreceipt i odtwarza tylko identyczną własną trasę, gdy
+  reguły/mapowanie już nie istnieją. Connect/status/disconnect nadal ścisłe.
+  Testy właściciela18PASS i rzeczywiste wznowienie staregoAVD PASS. Cztery
+  testy maintenance zależały od realnego wolnego miejsca hosta: fixture
+  otrzymał jawne zasoby i2ujemne przypadki realnego guardu. Progi produkcyjne
+  bez zmiany. Zmienione moduły41PASS/ruffformat/diff-check; E0PASS855linki.
+  Końcowy FULLCI własnego PR oraz osobny pushmain są wymagane oddzielnie.
+- APK20 i jego dowody nie kwalifikują Room22/C/provider/polityki sieci,
+  telefonu, Gemini, pełnego KO32 lub całego v1. Kandydat regularnego debugCI48
+  nadal potrzebuje własnego android_acceptance; nie podmieniono go receipt5b.
+  Nowy używany rollout26 nie był wykonywany. Następne O3: końcowa dostawa
+  lokalnego zestawu i kopii po próbach, odbiór CI i przekazanie wyników zespołowi.
