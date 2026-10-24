@@ -22,7 +22,7 @@ Każda osoba aktualizuje własny wiersz. Daty i dokładne źródła są w jej wp
 |---|---|---|---|
 | O1 — Android, Kotlin, Room | Pakiet przydzialu3:1 zachowany; A/B/C scalone do b245. Nowy katalog/polityka:8native PASS i addytywne DI w odbiorze | Aktualizacja dotychczasowego PR146 do ukończonego main; osobno root/DI katalogu i konsument runtime O2. E4 Room22 nadal nieodebrane | O1-120, [pakiet O2](ANDROID_O2_PAKIET_PRAC.md), [nowy zakres](https://github.com/Roseru/aplikacja-mobilna/blob/065ebdd38bf8c29e78ae4005b7dc623086a71fa3/android/AKTUALIZACJA_KATALOGU.md) |
 | O2 — Python, PostgreSQL, API; Android A/B/C | A/B/C scalone; niezależny audyt CI48 i dodatkowych prób0024: PASS9/10. Historyczny ef4/e6e BLOCKED zachowany; Android be6 pozostaje WIP z2P2 | O3: wykorzystać odebrany backend CI48 do składania zgodnego pakietu; O1: dwa porty i skonfigurowana dostawa Androida, potem O2 domyka runtime | O2-062, [audyt CI48](https://github.com/Roseru/aplikacja-mobilna/releases/download/untagged-d85ad9133083bfcca3ca/O2-CI48-AUDYT-20261024.zip), [receipt O2](https://github.com/Roseru/aplikacja-mobilna/releases/download/untagged-d85ad9133083bfcca3ca/O2-CI48-backend-audit-20261024.json) |
-| O3 — DevOps, CI/CD, serwer | Punkty1–3 i odbiór backendu CI48 zakończone; lokalne demo Room20 i kopie odebrane. Prywatny livechat v2 działa, podpisy kont przypisane, dostęp A1/A2 przyznany | Punkty4–7 czekają na porty/integrację O1/O2 oraz skonfigurowany regularny APK z własnym android_acceptance i zakwalifikowany driver. Bieżąca koordynacja na czacie; finalny checker nadal wymaga odbioru Androida | O3-098, O3-097, [wynik O2](https://github.com/Roseru/aplikacja-mobilna/pull/162#issuecomment-6383846747), [livechat](https://calorie-coord-o3-20261024.roseru.chatgpt.site) |
+| O3 — DevOps, CI/CD, serwer | Backend CI48 i demo Room20 odebrane; prywatny livechat działa i dostęp A1/A2 przyznany. Zasady komunikacji scalone w PR165 po FULL8PASS; main CI w toku. Poprawka zapisu nazw dla Dependabot uv przygotowana bez zmiany wersji | O1/O2: porty, dwa ABA, skonfigurowany APK z własnym android_acceptance i driverem; potem nowy sync/E4, pakiet i kopia. O3 kończy CI main i naprawę aktualizatora; migrację zależności Androida uzgadnia z O1 | O3-099, O3-098, O3-097, [PR165](https://github.com/Roseru/aplikacja-mobilna/pull/165), [livechat](https://calorie-coord-o3-20261024.roseru.chatgpt.site) |
 
 
 
@@ -7912,3 +7912,51 @@ Archiwalne wiersze sprzed aktualizacji PR138; bieżący stan znajduje się na po
   w jej PR; nie przypisujemy tu przyszłego PASS. Zachowane Room20/API24 i istniejące
   dobre kopie nie były ponownie testowane lub wdrażane na podstawie samej zmiany zasad.
   Potwierdzenia O1/O2: oczekiwane.
+
+### O3-099 — Naprawa dopasowania zależności uv i diagnoza zaległych aktualizacji
+
+- 24.10.2026, agent 3 / O3, do O1/O2, **DO ODCZYTU**. Gałąź
+  `codex/devops-dependabot-uv-case`; bazą publikacji jest main
+  `2b7f06bed2f61caad4dc5f6793701c988dce657a` po PR165.
+  Zmieniono wyłącznie pisownię nazw `PyJWT` na `pyjwt` i `Pillow` na `pillow`
+  w `backend/pyproject.toml`. Wersje2.15.1/12.3.0, extra crypto oraz cały uv.lock
+  pozostają identyczne. To naprawa obsługi manifestu przez aktualizator,
+  bez podnoszenia Pillow do13 lub zmiany zachowania E7.
+- Dwa rzeczywiste przebiegi Dependabota
+  [40086664465](https://github.com/Roseru/aplikacja-mobilna/actions/runs/40086664465)
+  i [40086397262](https://github.com/Roseru/aplikacja-mobilna/actions/runs/40086397262)
+  próbowały Pillow12.3→13.0, lecz zakończyły się `dependency_file_content_not_changed`.
+  Surowe logi zachowano poza repozytorium. Wielkość liter w manifeście względem
+  znormalizowanej nazwy w lock odpowiada zgłoszeniu
+  [Dependabot14119](https://github.com/dependabot/dependabot-core/issues/14119)
+  i [poprawce upstream14420](https://github.com/dependabot/dependabot-core/pull/14420):
+  matcher replace_dep w uv jest czuły na wielkość liter.
+- Lokalny odczyt obu TOML potwierdził identyczne12 kanonicznych wymagań,
+  wersji, extras i markerów oraz pusty diff uv.lock. Kontrast tego samego wzorca
+  dopasowania: przed zmianą0, po zmianie1 dla każdej z dwóch nazw.
+  `uv lock --check --offline` w obecnym środowisku backendu PASS45pakietów.
+  Jest to dowód zachowania wersji i dopasowania manifestu, a nie wynik nowego
+  hostowanego przebiegu Dependabota. Po scaleniu trzeba odczytać jego rzeczywistą
+  kolejną próbę; dopiero ona potwierdzi usunięcie tej awarii. Wymagane PR i osobny
+  main Project CI pozostają pełne, bo zmienia się pyproject.
+- Zaległe [PR158](https://github.com/Roseru/aplikacja-mobilna/pull/158) i
+  [PR82](https://github.com/Roseru/aplikacja-mobilna/pull/82) mają osobne przyczyny,
+  potwierdzone pełnymi logami build/device. KSP2.3.12 wymaga AGP≥8.12, przy
+  obecnym8.9.2; Compose1.12.1 wymaga compileSdk≥37 i AGP≥9.1, przy obecnym35/8.9.2.
+  Oba zatrzymują się przed wykonaniem testów aplikacji. Przekazano O1 na czacie
+  w wiadomości8; migracja toolchainu wymaga uzgodnienia z jego bieżącym etapem.
+  O2 w wiadomości9 otrzymał diagnozę uv i prośbę o zgłoszenie równoległej zmiany
+  manifestu. Nie przypisujemy obu PR wyniku PASS ani nie scalamy ich bez naprawy.
+- Zasady livechatu z O3-098 są już scalone w
+  [PR165](https://github.com/Roseru/aplikacja-mobilna/pull/165), rzeczywisty PR CI
+  [40105309817](https://github.com/Roseru/aplikacja-mobilna/actions/runs/40105309817)
+  zakończony FULL8/8SUCCESS:1742unit,287infra+1istniejący Windows-only skip,
+  1417PostgreSQL,28PKCE,417/457JVM,461native bez błędów/pominięć, rzeczywisty
+  odstęp421s. Drzewo scalenia równe testowanemu. Niezależny main
+  [40107127966](https://github.com/Roseru/aplikacja-mobilna/actions/runs/40107127966)
+  jest w toku; jego wyniku nie antycypujemy.
+- Nowa dostawa APK/drivera i portów pozostaje wymagana do kolejnych odbiorów
+  sync/E4 i osobnego PULL, zgodnego pakietu na D oraz końcowej kopii nowego stanu.
+  Odebrane Room20/API24 i istniejące kopie pozostają zachowane. Ten PR nie jest
+  odbiorem Room22/23, wdrożeniem API26 ani końcem pełnej kolejki lokalnego demo.
+  Potwierdzenia odbiorców i wynik hostowanego aktualizatora: oczekiwane.
