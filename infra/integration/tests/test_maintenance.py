@@ -53,7 +53,7 @@ def environment(tmp_path, monkeypatch):
     return {"backups": str(root), "keep": 2}, directory, installation
 
 
-@pytest.mark.parametrize("total,free", [(20 * 1024**3, 1024**3), (100 * 1024**3, 9 * 1024**3)])
+@pytest.mark.parametrize("total,free", [(4 * 1024**3, 1024**3), (100 * 1024**3, 9 * 1024**3)])
 def test_insufficient_space_refuses_backup_before_stopping_services(
     environment, monkeypatch, total, free
 ):
