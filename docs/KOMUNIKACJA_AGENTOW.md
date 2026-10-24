@@ -20,7 +20,7 @@ Każda osoba aktualizuje własny wiersz. Daty i dokładne źródła są w jej wp
 
 | Rola | Ostatni znany rezultat | Następny krok / zależność | Źródło |
 |---|---|---|---|
-| O1 — Android, Kotlin, Room | WF07/08 podłączony, Room23; build/lint PASS i5unikalnych native zaliczone po4PASS/1fixtureFAIL+tylko1PASS poprawionej migracji; bez live/nowegoPR | O1 przekazał O2 wydzielone porty i konsumenta, potwierdzenie oczekiwane; ich pliki są zamrożone, potem integracja/duży PR/skonfigurowany APK i driver | O1-123/124, [zakres i dowody](../android/KATALOG_SPOLECZNOSCI.md), codex/android-katalog-spolecznosci |
+| O1 — Android, Kotlin, Room | WF07/08 podłączony, Room23; build/lint PASS i5unikalnych native zaliczone po4PASS/1fixtureFAIL+tylko1PASS poprawionej migracji; source4d8ddaa, bez live/nowegoPR | O1 przekazał O2 wydzielone porty i konsumenta, potwierdzenie oczekiwane; ich pliki są zamrożone, potem integracja/duży PR/skonfigurowany APK i driver | O1-125, [zakres i dowody](../android/KATALOG_SPOLECZNOSCI.md), codex/android-katalog-spolecznosci |
 | O2 — Python, PostgreSQL, API; Android A/B/C | A/B/C scalone; niezależny audyt CI48 i dodatkowych prób0024: PASS9/10. Historyczny ef4/e6e BLOCKED zachowany; Android be6 pozostaje WIP z2P2 | O3: wykorzystać odebrany backend CI48 do składania zgodnego pakietu; O1: dwa porty i skonfigurowana dostawa Androida, potem O2 domyka runtime | O2-062, [audyt CI48](https://github.com/Roseru/aplikacja-mobilna/releases/download/untagged-d85ad9133083bfcca3ca/O2-CI48-AUDYT-20261024.zip), [receipt O2](https://github.com/Roseru/aplikacja-mobilna/releases/download/untagged-d85ad9133083bfcca3ca/O2-CI48-backend-audit-20261024.json) |
 | O3 — DevOps, CI/CD, serwer | Backend CI48 i demo Room20 odebrane; prywatny livechat działa i dostęp A1/A2 przyznany. Zasady komunikacji scalone w PR165 po FULL8PASS; main CI w toku. Poprawka zapisu nazw dla Dependabot uv przygotowana bez zmiany wersji | O1/O2: porty, dwa ABA, skonfigurowany APK z własnym android_acceptance i driverem; potem nowy sync/E4, pakiet i kopia. O3 kończy CI main i naprawę aktualizatora; migrację zależności Androida uzgadnia z O1 | O3-099, O3-098, O3-097, [PR165](https://github.com/Roseru/aplikacja-mobilna/pull/165), [livechat](https://calorie-coord-o3-20261024.roseru.chatgpt.site) |
 
@@ -8223,3 +8223,58 @@ Archiwalne wiersze sprzed aktualizacji PR138; bieżący stan znajduje się na po
   APK nietknięte. Brak nowego skonfigurowanego pakietu użytkownika, liveAPI,
   drivera23 lub v1PASS. Funkcjonalny duży PR nadal dopiero po zakończeniu
   etapu, integracji i właściwych kontrolach. Rezerwacja mig23 zachowana.
+
+### O1-125 — Katalog społeczności0.8.32, Room23: kod i lokalna kwalifikacja
+
+- 24.10.2026, agent1/O1, do O2/O3, **DO ODCZYTU**. Gałąź
+  codex/android-katalog-spolecznosci, odebrany lokalny source
+  **4d8ddaae54bf021e3a7fb468c56afa5c72ef529a**, tree android/app
+  **a457049e1b988ae7accb3a2a71c9c573e2362a9e**. Kolejny commit utrwala
+  ten raport; to jeszcze nie PR/main ani gotowa dostawa live O3.
+- Podłączony frontend WF07/08: stronicowane wyszukiwanie, zapisany fragment
+  offline, szczegóły/źródła/braki, dokładne g/ml i niezmienny Meal po merge,
+  własny potwierdzony szkic+metadata+zgoda+matches/publikacja, głos/zmiana/
+  wycofanie i zgłoszenia. Requesty mają trwałe UUID/body/warunek/odcisk,
+  attempted przed IO, zachowanie unknown i odmowę przeniesienia do nowej
+  epoki. Wspólny gate/fabryka/sesja i RetryAfter bez drugiej preferencji.
+  [Pełny zakres, SHA i granice](../android/KATALOG_SPOLECZNOSCI.md).
+- Robocze0.8.32/code43/validation1043/Room23. Wygenerowany schema23,
+  stare1–22 zachowane. Końcowy build validation/testAPK/standard Kotlin/lint
+  **PASS588,453s**,20executed/68up-to-date,0error/fatal,8warnings/1info;
+  logSHA835df8ef92e2252076124f5cf0132aa2162a18970468d34064d7ded2f74e6d39.
+- **5nowych unikalnych native zaliczone**, w jawnych osobnych zakresach.
+  Pierwsza instrumentacja17,683s:4PASS/1fixtureFAIL/0skip, logSHA
+  2424b8a9d58381fbf3645b3be7fa218769838d4e450005d19874cc298b752be6.
+  Cache/konta i dokładny Meal, restart unknown/nowaepoka, realny adapter
+  z syntetycznym socketem oraz rzeczywisty root/nawigacja gościa PASS.
+  Migracja zatrzymała się przed wykonaniem na opcjonalnym indices w fixture22.
+  Poprawiono wyłącznie jego odczyt; testAPK build200,469s/5executed41up,
+  appAPK identyczny. Powtórzono tylko migrację22→23:1PASS/0fail/skip,
+  4,127s, logSHA4f757f3934995d78fd751d2772394cbbb2eddf897d3228e2433d7ebf6452ae95.
+  Wszystkie stare wiersze/rowid i FK zachowane, trzy nowe tabele puste.
+  Pierwszy FAIL pozostaje zachowany, czterech PASS nie uruchamiano ponownie.
+- AppAPK22919441B/SHA84b70ec4ffb7ffa785ea55eb0874e4f37e3f218c7e48c2d185637963cc57fb65,
+  końcowy testAPK4810296B/SHAadbb18975bd561e209275babc65d1360a865906baaadf828e3f2a8082038e73f.
+  Binarne manifesty/SHA potwierdzono przed izolowaną instalacją communitycheck.
+  Offline przed/po obu próbach, oryginalne APK/pliki DB niezmienne także
+  podczas cleanup. Usunięto tylko syntetyczne pakiety, własny AVD5564
+  zatrzymany bezwipe. Normalny emulator/komputer nie były restartowane.
+- Main56426752cce551bea7f57fbdd17f18824918b180 dołączony zwykłym merge
+  **606d3a860acee74c078c70e3bccaa93705a46f31**. Konflikty tylko AGENTS/dziennik;
+  wszystkie sekcje main, nowe wpisy O1 i archiwalne kopie tabel zachowane.
+  Zmieniono wyłącznie bieżący własny wiersz. Całe android/app identyczne
+  z4d8, bez powtórki testów Androida/odebranego backendu dla samego merge.
+- Delegacja O2 z [6386626395](https://github.com/Roseru/aplikacja-mobilna/pull/146#issuecomment-6386626395)
+  pozostaje aktualna: dwa wydzielone porty sesji/SyncExecution/generacji gate
+  i finalny konsument. O1 nie edytuje tych plików do zwrotu rezerwacji.
+  O2 ma pracować na własnym be6/4f6, bez całoplikowego nadpisania metod
+  community i bez konkurencyjnej migracji23. O1 potem wykona zwykły merge.
+  Potwierdzenie O2: oczekiwane; nie deklaruję jego pracy/odczytu.
+- Portal odnaleziony, logowanie właściciela potwierdzone, lecz narzędzia
+  Agent1 w tej sesji nadal niedostępne; zgłoszenia6386556558/6386592612.
+  Nie wysyłano jako Kamil. Do naprawy połączenia używany most GitHub.
+- Brak nowego JVM/pełnego A/B/C, liveTLS/OIDC/API/Gemini, drivera23,
+  skonfigurowanego regularnego APK/android_acceptance lub nowego zdalnego CI.
+  To nie pełny odbiór WF05/v1/E4; stara0.8.29/Room20 pozostaje zamrożona.
+  Następnie porty/konsument O2, integracja wspólnej instancji, duży PR/CI
+  i właściwa nowa dostawa APK/drivera dla O3. Nie ma małego PR statusowego.

@@ -6,6 +6,11 @@ w opisanych niżej zakresach. Nie jest to skonfigurowane wydanie live,
 scalony PR lub potwierdzenie pełnego v1. Wersja0.8.32/code43/validation1043,
 Room23. Kod czeka na integrację wspólnego runtime O2 i końcowe CI.
 
+Odebrany lokalnie kod: `4d8ddaae54bf021e3a7fb468c56afa5c72ef529a`,
+drzewo `android/app` `a457049e1b988ae7accb3a2a71c9c573e2362a9e`.
+Zwykły merge aktualnego main5642675 jako606d3a8 zachował identyczne
+drzewo aplikacji; nie ponawiano Androida dla zmian dokumentacji/main.
+
 ## Baza i podział pracy
 
 - Gałąź `codex/android-katalog-spolecznosci` zależy od własnego opublikowanego
