@@ -51,12 +51,15 @@ po walidacji oraz przed stage/activate. Podgląd źródeł nie wymaga pozwolenia
 
 PolicyConnectionFactory osłania HTTPS dla API/AppAuth z oryginalnym TLS,
 zamykając połączenia przy zmianie polityki. AppAuthGateway przyjmuje builder
-oraz gate; ich domyślne wartości są zamknięte. **Tego roboczego źródła nie
-należy traktować jako gotowego APK przed rzeczywistym wpięciem DI**.
+oraz gate; ich domyślne wartości są zamknięte. Faktyczny CalorieApplication
+podaje wspólny provider i builder wszystkim jedenastu gatewayom API oraz
+AppAuth. Kontrola obejmuje także zamknięcie strumieni odpowiedzi/żądania.
+**Odbiór gotowej aplikacji i wpięcie tego gate do runtime nadal są wymagane**.
 
 SettingsScreen przyjmuje opcjonalne CatalogUpdateViewModel oraz
 NetworkPolicyViewModel. O2 zakończył A/B/C i [zwolnił root/DI na mainb245077](https://github.com/Roseru/aplikacja-mobilna/pull/146#issuecomment-6376449465).
-O1 dołączył tę bazę zwykłym merge589e3c9 i wykonuje wąskie addytywne wpięcie.
+O1 dołączył tę bazę zwykłym merge589e3c9. Addytywne wpięcie jest zapisane
+w be2b91c i poprawione w1a6f9db; zakres O1 ma opisany niżej odbiór integracyjny.
 O1 [podał dokładny nowy zakres i typy](https://github.com/Roseru/aplikacja-mobilna/pull/146#issuecomment-6374865798),
 nie nadpisując MainActivity/CalorieApplication/App ani Workera C.
 B/C kontynuują niezależnie. Pełny WF-05 wymaga wszystkich konsumentów:
@@ -68,6 +71,26 @@ połączeń dla aplikacji; oba modele ekranów żyją poza kluczem właściciela
 CatalogUpdateFactory.repository otrzymuje ten sam provider co API/AppAuth
 oraz runtime, bez stałego `true` i bez osobnego przełącznika.
 Kompilacja portu jest osobnym zakresem; nie zastępuje testu gotowej funkcji.
+
+W kodzie O1 na C/Room22 istnieją po jednej instancji DeviceNetworkPolicy,
+PolicyConnectionFactory oraz repozytorium katalogu w Application.
+Modele ustawień/katalogu używają jawnego activity ViewModelStoreOwner poza
+kluczem właściciela dziennika. Przed fizycznym otwarciem przeglądarki MainActivity
+ponownie sprawdza permit; logout oraz lokalne zastosowanie kopii pozostają
+oddzielnymi działaniami. Nawigacja zachowuje import i status synchronizacji C.
+Ekrany serwerowe pokazują blokadę oraz skrót do Ustawień, z uwzględnieniem
+obszaru paska systemu. Dziennik pokazuje faktyczny stan polityki i zapisane
+wersje baz, liczbę zmian oraz odmowy serwera. Data ostatniej pełnej kopii
+jest datą kopii; nie oznaczamy nią zakończenia całego cyklu PULL→PUSH→PULL.
+
+Jedyny nowy scenariusz nawigacji używa rzeczywistych Application/MainActivity:
+ustawienie poligonowe, źródła, odtworzenie activity, nowa generacja gościa,
+skrót z konta, zapis posiłku i ponowne odtworzenie. Drugi wybrany przypadek
+rozszerza istniejący test transportu o zamykanie odpowiedzi po ABA.
+Pierwszy build be2b91c zatrzymał się przed Kotlin na brakującym w lokalnym
+cache przypiętym WorkManager2.10.5 z C. Wynik jest zachowany, bez testów.
+Nowy build1a6f9db pobrał brakującą zależność ze skonfigurowanych repozytoriów;
+wyniki obu scenariuszy są poniżej. Nie zmieniono wersji zależności z C.
 
 ## Odbiór po ukończeniu etapu
 
@@ -115,6 +138,35 @@ przed testami na braku miejsca, a pierwszy setup wykrywania pakietu wymagał
 obsługi pustej odpowiedzi pm/exit1; nie były to wyniki testów aplikacji.
 To komponent sprzed C/Room22, **bez odbioru root/DI, HTTP live, E4 lub WF-05**.
 589e3c9 zachowuje ten core i dodaje odebrane C; nowa integracja ma osobny odbiór.
+
+## Odbiór podłączenia O1 na Room22 — 24.10.2026
+
+Dokładne źródło **1a6f9dbb200a4dad584aee1cff1bae73fe53fdf0**:
+assembleValidation + assembleValidationAndroidTest + lintValidation
+**PASS1075,813s**,42taski wykonane/31up-to-date. Lint0error/fatal,
+46warning/1info;38ostrzeżeń to dostępność nowszych wersji AGP/zależności,
+pozostałe wskazówki naming/DataExtractionRules/KTX/TOML. Nie aktualizowano
+przy tym zależności lub konfiguracji C. LogSHA256
+`000376dd0fbf133483d763bbc9db79435cf412225a5cfa0dd36e076b5206fd55`.
+
+**2/2 celowane native API35 PASS,0fail/skip**, instrumentacja54,016s,
+logSHA256 `726ca28c5d00842074277f09001f7ccc574ef3754404980cee520bb40c8e2909`.
+Pierwszy to nowy NetworkPolicyNavigationTest na rzeczywistym root C/Room22:
+ustawienia i źródła, rotacja, nowa generacja gościa, skrót z konta,
+nowy zapis banana w Room/outbox mimo blokady i zachowanie po odtworzeniu.
+Drugi to tylko rozszerzony istniejący przypadek transportu, w tym close
+odpowiedzi po ABA. Nie sumujemy go z wcześniejszym odbiorem jako nowego testu.
+Pozostałych siedmiu przypadków komponentu ani JVM/A/B/C nie powtarzano.
+
+Izolowane APK aplikacji22005636B/SHA256
+`5c2e9c711582094d519fa71969ab09558cd969fb465ffbbf78dc31ca97380997`
+i testów4223838B/SHA256
+`52422b4d7f0dcd618038e471551f29854e51fab30bc19d114c388b47545e994c`
+zostały faktycznie zainstalowane i porównane. Offline przed/po, oryginalne
+APK/pliki DB niezmienione także przy cleanup. Usunięto jedynie zweryfikowane
+pakiety syntetyczne; własny AVD zatrzymany bezwipe. To nie dostawa normalnego
+skonfigurowanego APK użytkownika/O3, liveHTTP, E4 lub całego WF-05.
+Konsument runtime i jego rzeczywiste wybudzenie nadal pozostają otwarte.
 
 ## Następna dostawa O2 — konsument polityki w runtime
 
