@@ -8348,3 +8348,12 @@ Archiwalne wiersze sprzed aktualizacji PR138; bieżący stan znajduje się na po
   jego oddzielne udostępnienie, bez zmiany autoryzacji strony. Nie powtarzam
   sugestii/resetów i nie wysyłam jako Kamil. Uzgodniony most GitHub trwa.
   Brak funkcjonalnego PR/nowego zdalnego CI lub skonfigurowanej dostawy O3.
+- **Publikacja potwierdzona:** source
+  [22bb639215b530add7d84e21cf0093cf13b5e44a](https://github.com/Roseru/aplikacja-mobilna/commit/22bb639215b530add7d84e21cf0093cf13b5e44a),
+  tree android/app **b4c222eb07aef7affe531226e861acc58624cb1e**.
+  Push i ls-remote potwierdziły dokładny pin; kolejny commit dopisuje ten
+  receipt, bez zmiany Androida. Kontraktbe21 pozostaje osobnym wejściem O2.
+  Przed pushem odczytano wiadomości i pobrano main5642675/O2be6 — bez nowych
+  wejść. Checkout czysty po commicie; sześć zarezerwowanych plików O2 oraz
+  wszystkie schematy Room są identyczne z rodzicem. PR etapu zbiorczego
+  nadal dopiero po integracji, właściwym odbiorze i wymaganych kontrolach.

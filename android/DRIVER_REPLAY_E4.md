@@ -60,6 +60,9 @@ Poniższa historia Room17–20 zachowuje wyniki i ograniczenia swoich źródeł.
 
 ### Lokalna kwalifikacja tego przygotowania
 
+- Source **22bb639215b530add7d84e21cf0093cf13b5e44a**, tree android/app
+  **b4c222eb07aef7affe531226e861acc58624cb1e**, wypchnięte na
+  `codex/android-driver-room23`; commit z tym receipt nie zmienia Androida.
 - Wspólny interfejs ma osobny pin **be21a9ac2794faf34b1cda548bbedbe01f50a1a0**
   (wyłącznie1plik/27linii). [Przekazanie6387420883](https://github.com/Roseru/aplikacja-mobilna/pull/146#issuecomment-6387420883)
   pozwala O2 pobrać samą deltę bez przejęcia całej gałęzi katalogu/drivera.
