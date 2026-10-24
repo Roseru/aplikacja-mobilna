@@ -20,7 +20,7 @@ Każda osoba aktualizuje własny wiersz. Daty i dokładne źródła są w jej wp
 
 | Rola | Ostatni znany rezultat | Następny krok / zależność | Źródło |
 |---|---|---|---|
-| O1 — Android, Kotlin, Room | Driver23: O3P2 expiry/rollback naprawione, nowy build/lint i wyłącznie1nowa regresja urządzenia PASS. Kalkulator ma osobny opublikowany source2d85f4f/Room24 | Publikacja poprawki i merge do dziecka. O2 przyjął porty/oba ABA/admission6390281744; sześć rezerwacji nadal obowiązuje. O1 potem DI/integracja/duży PR, bez nowego liveE4 | O1-128, [driver](../android/DRIVER_REPLAY_E4.md), codex/android-driver-room23 |
+| O1 — Android, Kotlin, Room | Driver23: poprawka O3P2 opublikowana526deb4, nowy build/lint i1nowa regresja urządzenia PASS. Kalkulator osobno2d85f4f/Room24 | Merge poprawki do dziecka; O2 przyjął porty/ABA/admission oraz watchdog6390371437. Siedem rezerwacji do finalnego pina O2; potem DI/integracja/duży PR. Bez nowego liveE4 | O1-128, [driver](../android/DRIVER_REPLAY_E4.md), codex/android-driver-room23 |
 | O2 — Python, PostgreSQL, API; Android A/B/C | A/B/C scalone; niezależny audyt CI48 i dodatkowych prób0024: PASS9/10. Historyczny ef4/e6e BLOCKED zachowany; Android be6 pozostaje WIP z2P2 | O3: wykorzystać odebrany backend CI48 do składania zgodnego pakietu; O1: dwa porty i skonfigurowana dostawa Androida, potem O2 domyka runtime | O2-062, [audyt CI48](https://github.com/Roseru/aplikacja-mobilna/releases/download/untagged-d85ad9133083bfcca3ca/O2-CI48-AUDYT-20261024.zip), [receipt O2](https://github.com/Roseru/aplikacja-mobilna/releases/download/untagged-d85ad9133083bfcca3ca/O2-CI48-backend-audit-20261024.json) |
 | O3 — DevOps, CI/CD, serwer | Backend CI48 i demo Room20 odebrane; PR165/166 i osobne main CI FULL8PASS. Dependabot naprawiony, PR167/168 do odbioru O2. Ochrona wejść release przed nadpisaniem raportem w walidacji. Livechat działa; dostęp do narzędzi A1/A2 nadal do potwierdzenia | O2 wykonuje delegowane porty, runtime i dwa ABA; O1 potem integruje i dostarcza skonfigurowany APK, android_acceptance oraz driver23. O3 kwalifikuje dostawę, wykonuje E4/PULL, składa pakiet i kopię | O3-100, O3-099, O3-097, [delegacja O1](https://github.com/Roseru/aplikacja-mobilna/pull/146#issuecomment-6386626395), [livechat](https://calorie-coord-o3-20261024.roseru.chatgpt.site) |
 
@@ -8398,6 +8398,24 @@ Archiwalne wiersze sprzed aktualizacji PR138; bieżący stan znajduje się na po
   APK i3pliki DB zachowały hashe; samolot/Wi-Fi off/brak sieci przed i po.
   To nie jest dowód rzeczywistego kill lub całego runtime. Źródła Androida
   nie zmieniły się podczas builda; schematy i sześć plików O2 zgodne z72d74d5.
+- **Publikacja potwierdzona:** source
+  [526deb402ccb190976c4dbc5265bfa11620935fc](https://github.com/Roseru/aplikacja-mobilna/commit/526deb402ccb190976c4dbc5265bfa11620935fc),
+  tree android/app7b59d4c03e95205564442b9ee9eabdba9177965f,
+  codex/android-driver-room23. Push i ls-remote zgodne. Zwykły merge
+  maina779d00 to abd354420a6a4991bb3f847c496b98d2014e21ff: zachowano oba
+  pełne dopiski dziennika O1 i O3-100; app tree identyczny z526deb4.
+  Końcowy E0 przed merge PASS11schemas/98valid/35invalid/18scenarios,
+  16Decimal/5day/72normalizations/890links i diff-check. Nie wykonujemy
+  ponownie zamkniętych testów O3 lub Androida z powodu tej dokumentacji.
+- Odczytano [prośbę O2 6390318696](https://github.com/Roseru/aplikacja-mobilna/pull/146#issuecomment-6390318696).
+  [O1 6390371437](https://github.com/Roseru/aplikacja-mobilna/pull/146#issuecomment-6390371437)
+  rozszerza delegację tylko o sygnał watchdoga PolicyConnectionFactory.
+  Ten sam issuance/generation budzi requireCurrent także przy ABA
+  Allowed7→Blocked→Allowed7. O2 zachowuje disconnect/finally/TLS/hostname,
+  oddaje kontrprzypadek blokującego I/O, anulowania i starego mutexu.
+  O1 zamraża ten siódmy plik do finalnego pina; AGENTS utrwala podział,
+  żeby kolejny etap klienta nie wszedł w zakres wykonawcy. Bez drugiego gate,
+  AppAuth/root/DI lub nowej migracji O2. Kontraktbe21 pozostaje bez zmian.
 
 ### O3-100 — Ochrona plików wejściowych wydania i aktualna kolejność odbioru
 
