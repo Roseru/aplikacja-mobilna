@@ -1,0 +1,103 @@
+{
+  "result": "BLOCKED",
+  "target": {
+    "commit": "ef4bb4f91ab89abc20b44f3c41b7f8c163f8adfb",
+    "image": "sha256:e6e80d58e79194da0569fada30c2ad1260456f18c8390106548b6f37f2e8e6f2",
+    "schema_revision": "0026_ledger_review"
+  },
+  "original_matrix_sha256": "4cf5ec1ca2ead1b9dba3cfac71be9143b38b4d09cbe9a089c6acf07cf0dcb47a",
+  "evidence_index": {
+    "path": "evidence-index.json",
+    "sha256": "d713c688372fefdfee5d05ae84189c9ecf8c0e9dec1948a199f8380d4b2cb6b0"
+  },
+  "rows": [
+    {
+      "area": "Identity of ef4/e6e archive",
+      "status": "PASS_STATIC_ONLY",
+      "executor": "O2 independent archive audit",
+      "evidence_ids": [
+        "ef4_o3_original_package",
+        "original_archive_audit"
+      ],
+      "facts": "20/20 package file hashes; complete OCI graph/blob hashes,13 compressed layers and RootFS diffIDs, labels and242/242 installed source/migration files verified. No loaded runtime probe."
+    },
+    {
+      "area": "API/sync30days/recovery on equivalent sources",
+      "status": "PASS_PARTIAL_NATIVE",
+      "executor": "O2 native Python/PostgreSQL17 with synthetic Principal/TestClient fixtures",
+      "evidence_ids": [
+        "unit_junit",
+        "initial_pg_junit",
+        "affected_pg_retest_junit"
+      ],
+      "facts": "118 unit PASS; initial139 PG=138PASS/1fixtureFAIL; after private bootstrap correction3affected PASS. Inclusive30*24h boundary,next microsecond expiry,same-epoch61d reconciliation,new-epoch409. No real PKCE/OCI execution; retest overlaps, counts are not additive."
+    },
+    {
+      "area": "24->26 migration and app-only restore24",
+      "status": "PASS_PARTIAL_NATIVE",
+      "executor": "O2 isolated native PostgreSQL17 experiment",
+      "evidence_ids": [
+        "native_migration_stdout"
+      ],
+      "facts": "All85 prior application tables preserved by counts/canonical hashes; real pg_dump/pg_restore24; new committed epoch;2old operations rejected by direct preflight() with SyncFailure.code=sync_epoch_changed; no HTTP response observed in this experiment; fresh writes/replays for2synthetic subjects. No paired Keycloak/globals restore or real JWT/refresh."
+    },
+    {
+      "area": "Catalog demo backend import",
+      "status": "PASS_BACKEND_IMPORT_ONLY",
+      "executor": "O2 existing SQLite catalog importer",
+      "evidence_ids": [
+        "ef4_o3_original_package"
+      ],
+      "facts": "Original schema1/reader1 demo catalog imported; no installed APK acceptance."
+    },
+    {
+      "area": "Exact-source existing CI",
+      "status": "SOURCE_CI_NOT_EXACT_CANDIDATE_IMAGE",
+      "executor": "Existing GitHub Actions, independently read by O2",
+      "evidence_ids": [
+        "ef4_ci_original_receipts",
+        "ef4_ci_original_image_artifact",
+        "ef4_ci_local-integration_log",
+        "ef4_ci_quality_log",
+        "ef4_ci_postgres_log",
+        "ef4_ci_keycloak-pkce_log"
+      ],
+      "facts": "8/8 jobs success;1742unit,279infra+1existing skip,1417PG,28PKCE. CI8d93 config and9/13 RootFS layers differ from e6e; it cannot prove e6e runtime."
+    },
+    {
+      "area": "O3 exacte6e runtime/migration/pairedrestore/rollback",
+      "status": "READ_O3_RAW_CHAIN_INCOMPLETE",
+      "executor": "O3; summaries read by O2",
+      "evidence_ids": [
+        "ef4_o3_original_package"
+      ],
+      "facts": "O3 reports real PKCE,24->26,pairedrestore26 and rollback24/new epoch/421s/JWT401/refresh400/oldop409/fresh writes/replay. Full raw commands/HTTP/table comparisons were not available in delivered public packet."
+    },
+    {
+      "area": "Independent exacte6e backend acceptance",
+      "status": "WAITING_EXTERNAL",
+      "executor": "O3 supplies existing evidence; O2 then audits independently",
+      "evidence_ids": [],
+      "facts": "Missing anonymized raw chain archive/config/layers -> executed immutable e6e/schema and required scenario coverage. Own Docker/Keycloak O2 is not mandatory; no global installation/new CI/full repeat implied."
+    },
+    {
+      "area": "CI48/020b existing acceptance and imported817",
+      "status": "SEPARATE_VARIANT_EXISTING_CI_ACCEPTANCE_REUSABLE_PENDING_BINDING",
+      "executor": "Existing O2-authored GitHub Actions runner; O3 import/trials separately attributed",
+      "evidence_ids": [
+        "ci48_original_receipts",
+        "ci48_local_integration_log",
+        "ci48_o3_neutral_package",
+        "ci48_original_image_artifact"
+      ],
+      "facts": "Original scoped CI48 receipt PASS matches020b/schema26; unmodified copy under ci48/. Import817 chain and added used0024 trial raw proof remain unverified. No substitution for ef4/e6e; target selection belongs to O3/root."
+    }
+  ],
+  "outside_backend_scope": [
+    "current regular Android acceptance",
+    "phone/full KO32",
+    "Room20 versus Room22/23 qualification",
+    "production/deployment authorization",
+    "offsite independent key recovery and production RPO/RTO"
+  ]
+}

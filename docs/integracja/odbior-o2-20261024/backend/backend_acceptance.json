@@ -1,0 +1,86 @@
+{
+  "result": "BLOCKED",
+  "commit": "ef4bb4f91ab89abc20b44f3c41b7f8c163f8adfb",
+  "image": "sha256:e6e80d58e79194da0569fada30c2ad1260456f18c8390106548b6f37f2e8e6f2",
+  "schema_revision": "0026_ledger_review",
+  "publication_date": "2026-10-24",
+  "publication_kind": "REDACTED_PUBLIC_DERIVATIVE_NOT_ORIGINAL_RECEIPT",
+  "original_receipt_sha256": "ca7ee4fb9edc698ab87bc747c5b72981eb722d70c7451171920c3723354491b8",
+  "scope": "O2 static exact-candidate archive audit and native tests of equivalent sources; independent runtime acceptance waiting for existing O3 raw evidence. No exact-image runtime PASS.",
+  "deployment_authorized": false,
+  "api_version": "/api/v1",
+  "sync_protocol_version": 1,
+  "offline_guarantee": "30*24h inclusive; expiry at next microsecond; same-epoch61d retention/reconciliation and new-epoch409 verified in native source tests only.",
+  "tested_versions": {
+    "target_source": "ef4bb4f91ab89abc20b44f3c41b7f8c163f8adfb",
+    "native_checkout": "806d802e5faf6f16eba48fe66b36f98f020c5e92",
+    "backend_and_contract_diff": "empty; source equivalence is not image equivalence",
+    "python": "3.13.9 Windows",
+    "postgresql": "17.11 isolated native",
+    "catalog_schema": 1,
+    "catalog_reader": 1,
+    "keycloak": "not executed by O2 in this acceptance; existing CI/O3 separate",
+    "exact_candidate_runtime": "not executed by O2; no complete raw O3 chain accepted"
+  },
+  "own_execution": {
+    "unit": {
+      "tests": 118,
+      "passed": 118,
+      "failed": 0,
+      "errors": 0,
+      "skipped": 0
+    },
+    "initial_native_pg": {
+      "tests": 139,
+      "passed": 138,
+      "failed": 1,
+      "errors": 0,
+      "skipped": 0
+    },
+    "affected_pg_retest": {
+      "tests": 3,
+      "passed": 3,
+      "failed": 0,
+      "errors": 0,
+      "skipped": 0,
+      "whole_suite_rerun": false,
+      "overlaps_initial_suite": true
+    },
+    "first_fail_preserved": true,
+    "fixture_cause": "Private bootstrap omitted finalizer base role before migrations. Corrected only private bootstrap to mirror project init-db.sh; no product change.",
+    "migration_restore": {
+      "result": "PASS_NATIVE_APP_ONLY",
+      "from_schema": "0024_e9_history_graph",
+      "to_schema": "0026_ledger_review",
+      "prior_tables_preserved": 85,
+      "real_pg_dump_restore24": true,
+      "new_epoch_committed": true,
+      "fresh_write_replay_subjects": 2,
+      "paired_keycloak_restore": false,
+      "real_pkce_jwt_refresh": false,
+      "old_operations_rejected_sync_epoch_changed": 2,
+      "old_operation_observation": "Direct preflight() calls raised SyncFailure.code=sync_epoch_changed; this experiment did not observe HTTP responses."
+    }
+  },
+  "blockers": [
+    {
+      "state": "WAITING_EXTERNAL",
+      "owner": "O3 supplies raw input; O2 independently accepts it",
+      "missing": "Existing anonymized raw commands,HTTP results and table comparisons binding archive/config/layers to executed immutable e6e/schema and required API/sync/migration/pairedrestore/session-fence/rollback coverage.",
+      "resume_condition": "O3 provides existing raw evidence or verifiable location; O2 audits identity,scope and results.",
+      "request_url": "https://github.com/Roseru/aplikacja-mobilna/pull/138#issuecomment-6382347620",
+      "own_docker_keycloak_required": false
+    }
+  ],
+  "evidence_index": {
+    "path": "evidence-index.json",
+    "sha256": "d713c688372fefdfee5d05ae84189c9ecf8c0e9dec1948a199f8380d4b2cb6b0"
+  },
+  "matrix": {
+    "path": "acceptance_matrix.json",
+    "sha256": "4a0f638a33665044075a9ec5bb8e73b398a7e4de34a7fd985e64d51829a3812b"
+  },
+  "product_changes": false,
+  "new_test_execution_for_publication": false,
+  "ci48_scope": "Separate original receipt, not a replacement of this target; see CI48.md."
+}
