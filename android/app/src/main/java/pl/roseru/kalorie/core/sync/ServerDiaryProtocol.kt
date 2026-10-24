@@ -16,7 +16,7 @@ internal class ServerDiaryEntity(val id: String, val type: String, val revision:
 /** A full validated copy is a read source, never proof that a pending operation was accepted. */
 internal class ServerDiarySnapshot(val epoch: String, val checkpoint: String,
     val serverTime: String, val firstServerTime: String, val timelineRevision: Int,
-    entities: List<ServerDiaryEntity>) {
+    entities: List<ServerDiaryEntity>, val mappings:List<String> = emptyList(), val receipts:List<String> = emptyList()) {
     val entities: List<ServerDiaryEntity> = Collections.unmodifiableList(entities.toList())
     override fun toString() = "ServerDiarySnapshot(redacted)"
 }
@@ -35,10 +35,13 @@ internal class ServerDiaryProtocol(private val schema: SyncWireSchema) {
         schema.validate(firstBytes, "PullRequest")
         val firstQuery = StrictJson.read(firstBytes)
         val limit = firstQuery.getInt("limit")
-        var expected = snapshots.query(epoch, limit)
+        val recoveryIds=firstQuery.optJSONArray("recovery_operation_ids")?.let {rows ->
+            (0 until rows.length()).map {rows.getString(it)} } ?: emptyList()
+        var expected = snapshots.query(epoch, limit, recoveryOperationIds=recoveryIds)
         val seenQueries = mutableSetOf<String>()
         val identities = SnapshotProtocol.IDENTITIES.mapValues { mutableSetOf<String>() }
         val entities = mutableListOf<ServerDiaryEntity>()
+        val mappings=mutableListOf<String>(); val receipts=mutableListOf<String>()
         var timeline: Int? = null
         var firstTime: String? = null
         var lastTime: String? = null
@@ -66,7 +69,12 @@ internal class ServerDiaryProtocol(private val schema: SyncWireSchema) {
                     val row = rows.getJSONObject(i)
                     val identity = keys.joinToString(":") { row.getString(it) }
                     require(identities.getValue(field).add(identity))
-                    if (field != "entities") continue // Retain receipt/mapping evidence in the archive; never ACK here.
+                    if(field=="recovery_mappings")mappings+=StrictJson.canonical(row)
+                    if(field=="operation_receipts") {
+                        require(row.getString("operation_id") in recoveryIds)
+                        receipts+=StrictJson.canonical(row)
+                    }
+                    if (field != "entities") continue // Typed evidence is separate; no ACK here.
                     val type = row.getString("entity_type")
                     val deleted = row.getBoolean("deleted")
                     val payload = if (deleted) null else StrictJson.canonical(row.getJSONObject("payload"))
@@ -92,7 +100,7 @@ internal class ServerDiaryProtocol(private val schema: SyncWireSchema) {
         }
         ServerDiaryValues.validateSnapshot(entities, checkNotNull(timeline))
         ServerDiarySnapshot(epoch, checkNotNull(checkpoint), checkNotNull(lastTime), checkNotNull(firstTime),
-            checkNotNull(timeline), entities)
+            checkNotNull(timeline), entities, mappings.toList(), receipts.toList())
     }
 
     private inline fun <T> safe(action: () -> T): T = try { action() }

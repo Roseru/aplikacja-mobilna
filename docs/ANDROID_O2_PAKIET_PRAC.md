@@ -2,6 +2,21 @@
 
 23.10.2026. Zlecenie właściciela: Agent 2 pomaga Agentowi 1 i otrzymuje trzy razy więcej dużych etapów. Dokument jest instrukcją wykonania, a nie drugim dziennikiem komunikacji. Potwierdzenia, pytania i wyniki dopisujemy wyłącznie do [KOMUNIKACJA_AGENTOW.md](KOMUNIKACJA_AGENTOW.md).
 
+## Status po wykonaniu — 24.10.2026
+
+To zachowana instrukcja historycznego przydziału, nie nowa lista zadań do
+ponownego wykonania. O2 zakończył A/B/C: [PR148](https://github.com/Roseru/aplikacja-mobilna/pull/148),
+[PR156](https://github.com/Roseru/aplikacja-mobilna/pull/156) oraz
+[PR157](https://github.com/Roseru/aplikacja-mobilna/pull/157). Aktualna baza po
+C to **b2450778e731620f5719c0f114f351a36bcfd439**,0.8.31/Room22.
+[Końcowy receipt O2 i osobne bramki PR/main](https://github.com/Roseru/aplikacja-mobilna/pull/146#issuecomment-6376449465)
+zachowują pierwsze nieudane przebiegi oraz właściwe zakresy dowodów.
+
+Poniższy punkt startu84d3, indeks raw836plików i sumy pozostają niezmienione.
+O1-I/liveE4 i pełne v1 nie zostały przez A/B/C automatycznie odebrane.
+Nowe katalog/polityka O1 i konsument runtime O2 mają osobny uzgodniony zakres;
+aktualny przydział sprawdzaj w AGENTS i jedynym dzienniku, nie w dawnej liście.
+
 ## 1. Przydział: trzy duże etapy O2 i jeden etap O1
 
 | Wykonawca | Etap | Ukończony rezultat |

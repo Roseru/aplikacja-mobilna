@@ -17,7 +17,7 @@ import pl.roseru.kalorie.DiaryEvent
 import pl.roseru.kalorie.DiaryViewModel
 import pl.roseru.kalorie.session.*
 
-@Composable fun CalorieApp(model: DiaryViewModel, session: SessionView, actions: SessionActions, photoModel: pl.roseru.kalorie.photo.MealPhotoViewModel) {
+@Composable fun CalorieApp(model: DiaryViewModel, session: SessionView, actions: SessionActions, photoModel: pl.roseru.kalorie.photo.MealPhotoViewModel, importModel:pl.roseru.kalorie.importing.ImportViewModel?=null,syncStatus:String?=null) {
     val ready by model.ready.collectAsStateWithLifecycle()
     val error by model.startupError.collectAsStateWithLifecycle()
     val nav = rememberNavController()
@@ -80,9 +80,16 @@ import pl.roseru.kalorie.session.*
             composable("ranking") { RankingScreen(session, actions, onBack = { nav.popBackStack() },
                 onAccount = { nav.navigate("account") { launchSingleTop = true } }, onConsent = { nav.navigate("ranking-consent") { launchSingleTop = true } }) }
             composable("account") { SessionScreen(session, actions, back = { nav.popBackStack() },
+                onImport=importModel?.let { {nav.navigate("import") {launchSingleTop=true}} },syncStatus=syncStatus,
                 backLabel = when (nav.previousBackStackEntry?.destination?.route) {
                     "achievements" -> "Wróć do osiągnięć"; "ranking-consent" -> "Wróć do zgód rankingu"; "ranking" -> "Wróć do rankingu"; "nemesis" -> "Wróć do Nemesis"; else -> "Wróć do profilu"
                 }) }
+            composable("import") {
+                if(importModel!=null) {
+                    LaunchedEffect(importModel,syncStatus) {importModel.refresh()}
+                    ImportScreen(importModel,back={nav.popBackStack()},sendOrdinary={session.binding?.lease?.let(actions.synchronizeMeals)},ordinaryConfigured=session.mealPushConfigured,syncStatus=syncStatus)
+                } else TextButton(onClick={nav.popBackStack()}) {Text("Wróć do konta")}
+            }
             composable("nemesis") { NemesisScreen(session, actions, onBack = { nav.popBackStack() },
                 onAccount = { nav.navigate("account") { launchSingleTop = true } }) }
             composable("analytics") { AnalyticsScreen(model, onDay = { date ->
@@ -91,5 +98,5 @@ import pl.roseru.kalorie.session.*
             }) }
         }
     }
-    if (route in listOf("photo", "settings", "profile", "analytics", "account", "achievements", "ranking-consent", "ranking", "nemesis")) BackHandler { nav.popBackStack() }
+    if (route in listOf("photo", "settings", "profile", "analytics", "account", "import", "achievements", "ranking-consent", "ranking", "nemesis")) BackHandler { nav.popBackStack() }
 }

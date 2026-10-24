@@ -42,7 +42,7 @@ internal class AppAuthGateway(context: Context) : OidcGateway {
         service.performTokenRequest(request) { response, error ->
             if (continuation.isActive) {
                 if (response != null && error == null) continuation.resume(response)
-                else continuation.resumeWithException(IllegalStateException("OIDC token request rejected"))
+                else continuation.resumeWithException(error ?: IllegalStateException("OIDC token request rejected"))
             }
         }
     }

@@ -66,11 +66,11 @@ class SyncConflictStore(private val db: CalorieDatabase, private val schema: Syn
     }
 
     private suspend fun entity(lease: OwnerLease, operation: OutboxEntity): PushEntitySource = when (operation.entityType) {
-        "meal" -> MealPushEntitySource(checkNotNull(db.dao().meal(operation.entityId, lease.storageScope)),
-            db.dao().canonicalMealOperations(lease.storageScope, operation.entityId))
-        "weight" -> WeightPushEntitySource(checkNotNull(db.dao().weight(operation.entityId, lease.storageScope)),
-            checkNotNull(db.weightSyncDao().state(lease.storageScope, operation.entityId)),
-            db.weightSyncDao().operations(lease.storageScope, operation.entityId))
+        "meal" -> MealPushEntitySource(checkNotNull(db.dao().meal(db.localSyncId(lease.storageScope,"meal",operation.entityId), lease.storageScope)),
+            db.dao().canonicalMealOperations(lease.storageScope, operation.entityId),operation.entityId)
+        "weight" -> WeightPushEntitySource(checkNotNull(db.dao().weight(db.localSyncId(lease.storageScope,"weight",operation.entityId), lease.storageScope)),
+            checkNotNull(db.weightSyncDao().state(lease.storageScope, db.localSyncId(lease.storageScope,"weight",operation.entityId))),
+            db.weightSyncDao().operations(lease.storageScope, operation.entityId),operation.entityId)
         else -> error("Unsupported conflict")
     }
 
@@ -178,16 +178,17 @@ class SyncConflictStore(private val db: CalorieDatabase, private val schema: Syn
                 is MealPushEntitySource -> {
                     val old = entity.meal.meal
                     if (restore) db.dao().updateMeal(old.copy(deleted = true, localRevision = Math.addExact(old.localRevision, 1)))
-                    val row = mealWire?.let { CanonicalMealRows.meal(target, lease.storageScope, it, source.batch.wireContext,
+                    val localTarget=if(restore)target else old.id
+                    val row = mealWire?.let { CanonicalMealRows.meal(localTarget, lease.storageScope, it, source.batch.wireContext,
                         if (restore) 0 else revision, if (restore) 1 else Math.addExact(old.localRevision, 1)) }
                         ?: old.copy(deleted = true, serverRevision = revision, localRevision = Math.addExact(old.localRevision, 1))
                     if (restore) db.dao().insertMeal(row) else db.dao().updateMeal(row)
                     if (mealWire != null) {
-                        val items = CanonicalMealRows.items(target, mealWire).map { fresh ->
+                        val items = db.localMealItems(lease.storageScope,localTarget,mealWire).map { fresh ->
                             val original = entity.meal.items.singleOrNull { it.id == fresh.id }
                             if (localWins && !restore && original != null) original.copy(grams = fresh.grams, wirePayload = fresh.wirePayload) else fresh
                         }
-                        items.forEach { fresh -> check(db.dao().itemById(fresh.id)?.mealId.let { it == null || it == target }) }
+                        items.forEach { fresh -> check(db.dao().itemById(fresh.id)?.mealId.let { it == null || it == localTarget }) }
                         if (!restore) entity.meal.items.forEach { db.dao().removeItem(it) }
                         items.forEach { db.dao().insertItem(it) }
                     }
@@ -197,11 +198,11 @@ class SyncConflictStore(private val db: CalorieDatabase, private val schema: Syn
                     if (restore) db.dao().saveWeight(old.copy(deleted = true, localRevision = Math.addExact(old.localRevision, 1)))
                     val value = weightWire?.json()
                     val row = if (value == null) old.copy(deleted = true, localRevision = Math.addExact(old.localRevision, 1))
-                        else WeightEntity(target, lease.storageScope, value.getString("local_date"), value.getString("occurred_at"),
+                        else WeightEntity(if(restore)target else old.id, lease.storageScope, value.getString("local_date"), value.getString("occurred_at"),
                             value.getString("time_zone"), value.getString("weight_kg").toDouble(), false,
                             if (restore) 1 else Math.addExact(old.localRevision, 1))
                     db.dao().saveWeight(row)
-                    val state = CanonicalWeightState(target, lease.storageScope, payload, source.batch.wireContext, if (restore) 0 else revision)
+                    val state = CanonicalWeightState(if(restore)target else old.id, lease.storageScope, payload, source.batch.wireContext, if (restore) 0 else revision)
                     if (restore) db.weightSyncDao().insert(state) else db.weightSyncDao().update(state)
                 }
                 is DomainPushEntitySource -> error("Private-domain reconciliation requires its explicit adapter")

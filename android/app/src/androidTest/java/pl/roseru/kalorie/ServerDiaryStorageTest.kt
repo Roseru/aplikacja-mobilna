@@ -137,6 +137,12 @@ class ServerDiaryStorageTest {
                     val foreign=LocalOwnerStore(db).registerIdentity("https://fixture.example/realms/diary","B")
                     db.dao().saveWeight(WeightEntity(rows.id("weight"),foreign.storageScope,"2026-10-21","2026-10-21T08:00:00Z","Europe/Warsaw",90.0))
                 }
+                if(invalid=="height") {
+                    refused{snapshot(db,lease,rows)}
+                    assertNull(ServerSnapshotStore(db,SnapshotProtocol(schema)).active(lease))
+                    assertTrue(db.snapshotDao().pages(db.snapshotDao().runs(lease.storageScope).single().id).isEmpty())
+                    continue
+                }
                 val run=snapshot(db,lease,rows)
                 refused{ServerDiaryStore(db,schema).apply(lease)}
                 assertNull(db.serverDiaryDao().application(run));assertTrue(db.serverDiaryDao().records(lease.storageScope).isEmpty())

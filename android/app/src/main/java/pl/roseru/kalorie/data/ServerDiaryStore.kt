@@ -25,9 +25,22 @@ class ServerDiaryStore(private val db: CalorieDatabase, private val schema: Sync
         records.latest(lease.storageScope)?.takeIf { it.wireContext == CanonicalMealRows.context(binding) }
     }
 
-    suspend fun apply(lease: OwnerLease, expectedRun: String? = null): ServerDiaryApplication = withContext(Dispatchers.IO) {
+    suspend fun apply(lease:OwnerLease,expectedRun:String?=null):ServerDiaryApplication = applyCopy(lease,expectedRun,null)
+    internal suspend fun applyReconciled(lease:OwnerLease,expectedRun:String,planId:String):ServerDiaryApplication = applyCopy(lease,expectedRun,planId)
+    private suspend fun applyCopy(lease: OwnerLease, expectedRun: String?, planId:String?): ServerDiaryApplication = withContext(Dispatchers.IO) {
+        // A compacted historical application is a saved result, never a reason to reapply old data.
+        if(expectedRun!=null) {
+            val saved=db.withTransaction {
+                LocalOwnerStore(db).requireCurrent(lease)
+                val binding=checkNotNull(db.bootstrapDao().binding(lease.storageScope))
+                records.application(expectedRun)?.also {
+                    check(it.ownerScope==lease.storageScope && it.wireContext==CanonicalMealRows.context(binding))
+                }
+            }
+            if(saved!=null)return@withContext saved
+        }
         val source = db.withTransaction {
-            val gate = push.gate(lease)
+            val gate = push.gate(lease,planId)
             if (expectedRun != null && gate.run.id != expectedRun) throw DiaryProjectionChangedException()
             gate to db.snapshotDao().pages(gate.run.id)
         }
@@ -37,7 +50,7 @@ class ServerDiaryStore(private val db: CalorieDatabase, private val schema: Sync
         require(copy.checkpoint == gate.run.checkpoint && copy.serverTime == gate.run.serverTime &&
             copy.timelineRevision.toLong() == gate.run.timelineRevision)
         db.withTransaction {
-            if (push.gate(lease) != gate || db.snapshotDao().pages(gate.run.id) != pages) throw DiaryProjectionChangedException()
+            if (push.gate(lease,planId) != gate || db.snapshotDao().pages(gate.run.id) != pages) throw DiaryProjectionChangedException()
             val context = CanonicalMealRows.context(gate.binding)
             records.application(gate.run.id)?.let { saved ->
                 check(saved.ownerScope == lease.storageScope && saved.wireContext == context)
@@ -46,19 +59,26 @@ class ServerDiaryStore(private val db: CalorieDatabase, private val schema: Sync
             val previous = records.records(lease.storageScope)
             check(previous.all { it.wireContext == context }) // Epoch recovery is a separate, explicit operation.
             records.latest(lease.storageScope)?.let { old ->
-                if (old.wireContext != context || Instant.parse(copy.firstServerTime) < Instant.parse(old.serverTime) ||
-                    copy.timelineRevision < old.timelineRevision) throw DiaryProjectionChangedException()
+                val sameEpoch=pl.roseru.kalorie.core.catalog.StrictJson.read(old.wireContext.toByteArray()).getString("sync_epoch")==gate.binding.syncEpoch
+                if ((old.wireContext != context && planId==null) || (sameEpoch &&
+                    (Instant.parse(copy.firstServerTime) < Instant.parse(old.serverTime) || copy.timelineRevision < old.timelineRevision)))
+                    throw DiaryProjectionChangedException()
             }
             val known = previous.associateBy { it.entityType to it.entityId }
             val queue = records.unsettled(lease.storageScope)
-            val queuedIds = queue.map { it.entityType to it.entityId }.toSet()
-            val pendingProfile = queue.any { it.entityType == "profile" }
-            val pendingDays = queue.filter { it.entityType == "diary_day" }.map { it.entityId }.toSet()
+            val retained=db.retainedSyncSources(lease.storageScope)
+            val retainedIds=retained.flatMap {row->listOf(row.entityType to db.wireSyncId(lease.storageScope,row.entityType,row.sourceId),
+                row.entityType to pl.roseru.kalorie.core.catalog.StrictJson.read(row.sourceJson.toByteArray()).getString("wire_id"))}
+            val queuedIds = queue.map { it.entityType to it.entityId }.toSet()+retainedIds
+            val pendingProfile = queue.any { it.entityType == "profile" } || retained.any {it.entityType=="profile"}
+            val pendingDays = queue.filter { it.entityType == "diary_day" }.map { it.entityId }.toSet()+
+                retained.filter {it.entityType=="diary_day"}.flatMap {listOf(it.wireId,it.localId,it.sourceId)}
             val mappedGoals = previous.filter { it.entityType == "goal" }.mapNotNull { it.localId }.toSet()
             val localGoals = records.allGoals(lease.storageScope)
+            val resolvedOriginals=db.resolvedOriginalGoals(lease.storageScope)
             // Goal versions are immutable. Preserve an entire pending timeline until it is reconciled.
             val holdGoals = queue.any { it.entityType == "goal" } || localGoals.any {
-                it.id !in mappedGoals && db.domainSyncDao().local(lease.storageScope, "goal", it.id)?.serverRevision?.let { revision -> revision > 0 } != true
+                it.id !in mappedGoals && it.id !in resolvedOriginals && retained.none {row->row.entityType=="goal" && (row.localId==it.id || row.sourceId==it.id)} && db.domainSyncDao().local(lease.storageScope, "goal", it.id)?.serverRevision?.let { revision -> revision > 0 } != true
             }
             val incoming = copy.entities.associateBy { it.type to it.id }
             val observations = copy.entities.map { entity ->
@@ -137,8 +157,9 @@ class ServerDiaryStore(private val db: CalorieDatabase, private val schema: Sync
     }
 
     private suspend fun meal(row: ServerDiaryRecord, old: ServerDiaryRecord?): String? {
-        val owner = records.mealOwner(row.entityId); check(owner == null || owner == row.ownerScope)
-        val current = dao.meal(row.entityId, row.ownerScope)
+        val localId=db.localSyncId(row.ownerScope,"meal",row.entityId)
+        val owner = records.mealOwner(localId); check(owner == null || owner == row.ownerScope)
+        val current = dao.meal(localId, row.ownerScope)
         if (current != null && (current.meal.wirePayload == null || current.meal.wireContext != row.wireContext)) return null
         if (current != null && current.meal.serverRevision > row.knownRevision) throw DiaryProjectionChangedException()
         if (row.deleted) {
@@ -147,12 +168,12 @@ class ServerDiaryStore(private val db: CalorieDatabase, private val schema: Sync
             return current?.meal?.id ?: old?.localId
         }
         val wire = MealWire.read(checkNotNull(row.payload), schema)
-        val fresh = CanonicalMealRows.meal(row.entityId, row.ownerScope, wire, row.wireContext,
+        val fresh = CanonicalMealRows.meal(localId, row.ownerScope, wire, row.wireContext,
             row.knownRevision, current?.meal?.localRevision ?: 1)
         if (current != null && current.meal.serverRevision == row.knownRevision &&
             (current.meal.wirePayload != wire.canonical || current.meal.deleted)) throw DiaryProjectionChangedException()
-        val items = CanonicalMealRows.items(row.entityId, wire)
-        items.forEach { item -> check(dao.itemById(item.id)?.mealId.let { it == null || it == row.entityId }) }
+        val items = db.localMealItems(row.ownerScope,localId,wire)
+        items.forEach { item -> check(dao.itemById(item.id)?.mealId.let { it == null || it == localId }) }
         if (current == null) dao.insertMeal(fresh) else dao.updateMeal(fresh)
         val ids = items.map { it.id }.toSet()
         current?.items?.filter { it.id !in ids }?.forEach { dao.removeItem(it) }
@@ -162,13 +183,14 @@ class ServerDiaryStore(private val db: CalorieDatabase, private val schema: Sync
                 if (prior.wirePayload == item.wirePayload) item.copy(productId = prior.productId,
                     rationComponentId = prior.rationComponentId, snapshotJson = prior.snapshotJson) else item)
         }
-        return row.entityId
+        return localId
     }
 
     private suspend fun weight(row: ServerDiaryRecord, old: ServerDiaryRecord?): String? {
-        val owner = dao.weightOwner(row.entityId); check(owner == null || owner == row.ownerScope)
-        val current = dao.weight(row.entityId, row.ownerScope)
-        val state = db.weightSyncDao().state(row.ownerScope, row.entityId)
+        val localId=db.localSyncId(row.ownerScope,"weight",row.entityId)
+        val owner = dao.weightOwner(localId); check(owner == null || owner == row.ownerScope)
+        val current = dao.weight(localId, row.ownerScope)
+        val state = db.weightSyncDao().state(row.ownerScope, localId)
         if (current != null && (state == null || state.wireContext != row.wireContext)) return null
         if (state != null && state.serverRevision > row.knownRevision) throw DiaryProjectionChangedException()
         if (row.deleted) {
@@ -181,31 +203,32 @@ class ServerDiaryStore(private val db: CalorieDatabase, private val schema: Sync
         val wire = WeightWire.read(checkNotNull(row.payload), schema); val value = wire.json()
         if (state != null && state.serverRevision == row.knownRevision &&
             (state.wirePayload != wire.canonical || current?.deleted == true)) throw DiaryProjectionChangedException()
-        dao.saveWeight(WeightEntity(row.entityId, row.ownerScope, value.getString("local_date"),
+        dao.saveWeight(WeightEntity(localId, row.ownerScope, value.getString("local_date"),
             value.getString("occurred_at"), value.getString("time_zone"), value.getString("weight_kg").toDouble(),
             localRevision = current?.localRevision ?: 1))
-        val fresh = CanonicalWeightState(row.entityId, row.ownerScope, wire.canonical, row.wireContext, row.knownRevision)
+        val fresh = CanonicalWeightState(localId, row.ownerScope, wire.canonical, row.wireContext, row.knownRevision)
         if (state == null) db.weightSyncDao().insert(fresh) else db.weightSyncDao().update(fresh)
-        return row.entityId
+        return localId
     }
 
     private suspend fun goal(row: ServerDiaryRecord, old: ServerDiaryRecord?): String? {
-        val current = records.goal(row.entityId); check(current == null || current.ownerScope == row.ownerScope)
+        val localId=db.localSyncId(row.ownerScope,"goal",row.entityId)
+        val current = records.goal(localId); check(current == null || current.ownerScope == row.ownerScope)
         if (row.deleted) return current?.id ?: old?.localId // Filter via sidecar; never mutate an immutable goal.
         val value = ServerDiaryValues.json(entity(row))
-        val fresh = GoalEntity(row.entityId, row.ownerScope, value.getString("effective_from"),
+        val fresh = GoalEntity(localId, row.ownerScope, value.getString("effective_from"),
             checkNotNull(ServerDiaryValues.decimal(value, "energy_kcal")), ServerDiaryValues.decimal(value, "protein_g"),
             ServerDiaryValues.decimal(value, "fat_g"), ServerDiaryValues.decimal(value, "carbs_g"),
             Math.addExact(value.getInt("timeline_base_revision"), 1), value.getString("decided_at"),
             value.getString("time_zone"), value.getString("reason"),
-            if (value.isNull("correction_of")) null else value.getString("correction_of"))
+            if (value.isNull("correction_of")) null else db.localSyncId(row.ownerScope,"goal",value.getString("correction_of")))
         if (current == null) dao.saveGoal(fresh) else if (current != fresh) {
             val state = db.domainSyncDao().state(row.ownerScope, "goal", row.entityId)
             // localSequence is local ordering; the exact canonical payload owns the server axis base.
             if (state?.wireContext != row.wireContext || state.wirePayload != row.payload ||
-                current != fresh.copy(localSequence = current.localSequence)) throw DiaryProjectionChangedException()
+                (current != fresh.copy(localSequence = current.localSequence) && db.importDao().local(row.ownerScope,"goal",localId)==null)) throw DiaryProjectionChangedException()
         }
-        return row.entityId
+        return localId
     }
 
     private suspend fun profile(row: ServerDiaryRecord, old: ServerDiaryRecord?, copy: ServerDiarySnapshot): String? {
@@ -222,14 +245,14 @@ class ServerDiaryStore(private val db: CalorieDatabase, private val schema: Sync
         val current = dao.currentProfile(row.ownerScope)
         if (current != null && old?.localId != current.id &&
             db.domainSyncDao().state(row.ownerScope, "profile", row.entityId)?.localId != current.id) return null
-        val collision = records.profile(row.entityId); check(collision == null || collision.ownerScope == row.ownerScope)
+        val collision = records.profile(db.localSyncId(row.ownerScope,"profile",row.entityId)); check(collision == null || collision.ownerScope == row.ownerScope)
         val value = ServerDiaryValues.json(entity(row)); val zone = value.getString("time_zone")
         val today = LocalDate.now(ZoneId.of(zone)).toString()
         val goal = copy.entities.filter { it.type == "goal" && !it.deleted }
             .map { ServerDiaryValues.json(it) }.filter { it.getString("effective_from") <= today }
             .maxWithOrNull(compareBy({ it.getString("effective_from") }, { it.getInt("timeline_base_revision") }))
         val aim = goal?.let(ServerDiaryValues::aim)?.name ?: current?.dietAim ?: DietAim.MAINTAIN.name
-        val localId = current?.id ?: row.entityId
+        val localId = current?.id ?: db.localSyncId(row.ownerScope,"profile",row.entityId)
         dao.saveProfile(ProfileEntity(localId, row.ownerScope, value.getString("pseudonym"),
             ServerDiaryValues.decimal(value, "height_cm"), ServerDiaryValues.activity(value).name, aim,
             zone, current?.localRevision ?: 1))
@@ -250,14 +273,15 @@ class ServerDiaryStore(private val db: CalorieDatabase, private val schema: Sync
         val current = dao.currentDiaryDay(row.ownerScope, date)
         if (current != null && ((old?.localId != current.id &&
                 db.domainSyncDao().state(row.ownerScope, "diary_day", row.entityId)?.localId != current.id) || current.id in pendingDays)) return null
-        val collision = records.day(row.entityId); check(collision == null || collision.ownerScope == row.ownerScope)
-        val id = current?.id ?: row.entityId
+        val collision = records.day(db.localSyncId(row.ownerScope,"diary_day",row.entityId)); check(collision == null || collision.ownerScope == row.ownerScope)
+        val id = current?.id ?: db.localSyncId(row.ownerScope,"diary_day",row.entityId)
         dao.saveDiaryDay(DiaryDayEntity(id, row.ownerScope, date, value.getBoolean("declared_complete"), current?.localRevision ?: 1))
         return id
     }
 
     private suspend fun product(row: ServerDiaryRecord, old: ServerDiaryRecord?): String? {
-        val current = records.product(row.entityId)
+        val localId=db.localSyncId(row.ownerScope,"product_draft",row.entityId)
+        val current = records.product(localId)
         check(current == null || (current.ownerScope == row.ownerScope && current.catalogJson == null))
         if (current != null && old?.localId != current.id &&
             db.domainSyncDao().state(row.ownerScope, "product_draft", row.entityId)?.localId != current.id) return null
@@ -267,11 +291,11 @@ class ServerDiaryStore(private val db: CalorieDatabase, private val schema: Sync
         val pack = value.optJSONObject("package_quantity")
         val defaultAmount = if (pack?.getString("unit") == value.getString("basis_unit")) pack.getString("amount").toDouble() else 100.0
         // REAL is a search projection only; exact wirePayload owns all nutrition, including null energy.
-        val fresh = ProductEntity(row.entityId, name, normalizeSearch(name), ServerDiaryValues.decimal(nutrition, "energy_kcal") ?: 0.0,
+        val fresh = ProductEntity(localId, name, normalizeSearch(name), ServerDiaryValues.decimal(nutrition, "energy_kcal") ?: 0.0,
             ServerDiaryValues.decimal(nutrition, "protein_g"), ServerDiaryValues.decimal(nutrition, "fat_g"),
             ServerDiaryValues.decimal(nutrition, "carbs_g"), defaultAmount, "Twoje produkty", value.getString("source_description"),
             0, row.ownerScope, wirePayload = row.payload)
         if (current == null) dao.insertProduct(fresh) else records.update(fresh)
-        return row.entityId
+        return localId
     }
 }
