@@ -23,7 +23,7 @@ class CalorieApplication : Application(), SyncWorkRuntimeOwner {
     // Device-wide instances outlive owner-specific screens and are shared by every network consumer.
     val networkPolicy by lazy {DeviceNetworkPolicy(this,sessionScope)}
     val networkConnections by lazy {PolicyConnectionFactory(sessionScope,networkPolicy)}
-    val catalogUpdates by lazy {CatalogUpdateFactory.repository(this,database,networkPolicy)}
+    val catalogUpdates by lazy {CatalogUpdateFactory.repository(this,database,networkPolicy,networkConnections)}
     val syncCoordinator by lazy { SyncCoordinator(database,syncSchema,sessions) }
     override val syncWorkRuntime by lazy {SyncWorkRuntime(database,syncCoordinator,SyncWorkScheduler(androidx.work.WorkManager.getInstance(this)))}
     val sessions by lazy { SessionController(database, SessionVault(this),

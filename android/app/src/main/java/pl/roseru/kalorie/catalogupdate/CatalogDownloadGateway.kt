@@ -26,12 +26,14 @@ internal interface CatalogDownloadGateway {
 
 /** Public same-origin GET only: no session, bearer, redirects, cookies or arbitrary manifest URL. */
 internal class HttpsCatalogDownloadGateway(base:String,private val gate:NetworkAccessGate,
-    private val open:(URL)->HttpsURLConnection={it.openConnection() as HttpsURLConnection}):CatalogDownloadGateway {
+    private val open:(URL)->HttpsURLConnection,
+    private val manifestTimeoutMillis:Long=30_000,private val downloadTimeoutMillis:Long=120_000):CatalogDownloadGateway {
+    init {require(manifestTimeoutMillis in 1L..30_000L && downloadTimeoutMillis in 1L..120_000L)}
     private val base=BootstrapHttpProtocol.endpoint(base).toString().removeSuffix("/me/bootstrap")
     override suspend fun manifest(permit:NetworkPermit):CatalogHttpResult {
         val output=ByteArrayOutputStream()
         val result=request(URL("$base/offline-package/manifest"),"application/json",CatalogPackageReader.MAX_MANIFEST,
-            30_000,output,null,permit){_,_->}
+            manifestTimeoutMillis,output,null,permit){_,_->}
         return if(result is CatalogHttpResult.Success)CatalogHttpResult.Success(output.toByteArray()) else result
     }
     override suspend fun download(manifest:CatalogManifest,target:File,permit:NetworkPermit,progress:(Long,Long)->Unit):CatalogHttpResult {
@@ -39,7 +41,7 @@ internal class HttpsCatalogDownloadGateway(base:String,private val gate:NetworkA
         require(manifest.path=="base-pl.${manifest.release}.json.gz" && manifest.release>0)
         return target.outputStream().use { output->
             request(URL("$base/offline-package/${manifest.path}"),"application/gzip",manifest.compressedBytes,
-                120_000,output,manifest.sha256,permit,progress)
+                downloadTimeoutMillis,output,manifest.sha256,permit,progress)
         }
     }
     private suspend fun request(url:URL,type:String,limit:Int,timeout:Long,output:OutputStream,
@@ -51,6 +53,10 @@ internal class HttpsCatalogDownloadGateway(base:String,private val gate:NetworkA
         val policy=launch(Dispatchers.IO,start=CoroutineStart.UNDISPATCHED) {
             try {gate.state.first{try{gate.requireCurrent(permit);false}catch(_:NetworkAccessDenied){true}}}
             finally {connection.disconnect()}
+        }
+        // A per-read timeout alone lets a trickling response outlive the operation budget.
+        val deadline=launch(Dispatchers.IO,start=CoroutineStart.UNDISPATCHED) {
+            delay(timeout);connection.disconnect()
         }
         try {withContext(Dispatchers.IO) {
             val started=System.nanoTime()
@@ -99,6 +105,6 @@ internal class HttpsCatalogDownloadGateway(base:String,private val gate:NetworkA
             if(hash!=null && received!=limit.toLong())throw CatalogTransferRejected("compressed_size")
             if(length>=0 && received!=length)throw CatalogTransferRejected("catalog_size")
             CatalogHttpResult.Success()
-        }} finally {policy.cancel();connection.disconnect()}
+        }} finally {deadline.cancel();policy.cancel();connection.disconnect()}
     }
 }
