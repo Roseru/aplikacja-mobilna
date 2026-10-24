@@ -93,7 +93,7 @@ class NetworkPolicyStorageTest {
 
     private class Connection(url:URL,private val hold:Boolean):HttpsURLConnection(url) {
         val entered=CountDownLatch(1);val released=CountDownLatch(1)
-        val disconnects=AtomicInteger();val outputCloses=AtomicInteger();val outputOpens=AtomicInteger()
+        val disconnects=AtomicInteger();val outputCloses=AtomicInteger();val outputOpens=AtomicInteger();val inputCloses=AtomicInteger()
         override fun disconnect(){disconnects.incrementAndGet();released.countDown()}
         override fun usingProxy()=false
         override fun connect(){}
@@ -101,7 +101,9 @@ class NetworkPolicyStorageTest {
         override fun getLocalCertificates():Array<Certificate>?=null
         override fun getServerCertificates():Array<Certificate> = emptyArray()
         override fun getInputStream():InputStream {
-            if(!hold)return ByteArrayInputStream("ok".toByteArray())
+            if(!hold)return object:ByteArrayInputStream("ok".toByteArray()) {
+                override fun close(){inputCloses.incrementAndGet();super.close()}
+            }
             return object:InputStream() {
                 override fun read():Int {
                     entered.countDown()
@@ -143,6 +145,13 @@ class NetworkPolicyStorageTest {
             denied{output.close()}
             assertEquals(0,third.outputCloses.get())
             pending.disconnect();old.disconnect()
+            val response=factory.open(url);val input=response.inputStream
+            val fourth=connections.last()
+            gate.block();gate.allow(4)
+            denied{input.close()}
+            assertEquals(0,fourth.inputCloses.get())
+            assertEquals(1,fourth.disconnects.get())
+            response.disconnect()
             // AppAuth catches IOException on its background thread. A policy race must reach
             // its callback normally instead of escaping as an unchecked AsyncTask failure.
             val authGate=CatalogUpdateFixtures.Gate().apply{allow()}

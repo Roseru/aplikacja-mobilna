@@ -56,7 +56,11 @@ class PolicyConnectionFactory(private val scope:CoroutineScope,private val gate:
             override fun read(bytes:ByteArray,offset:Int,length:Int):Int=io{value.read(bytes,offset,length)}
             override fun skip(count:Long):Long=io{value.skip(count)}
             override fun available():Int=io{value.available()}
-            override fun close(){value.close()}
+            override fun close(){
+                // A transport stream may drain a body on close; never start that with a revoked permit.
+                try{io{value.close()}}
+                catch(error:NetworkAccessDenied){closeDelegate();throw error}
+            }
         }
         override fun getInputStream():InputStream=input(io{delegate.inputStream})
         override fun getErrorStream():InputStream?=io{delegate.errorStream}?.let(::input)
