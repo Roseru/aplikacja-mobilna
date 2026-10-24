@@ -1,0 +1,12 @@
+{
+  "selected_next_integration_candidate": "CI48",
+  "commit": "48bc4217f3f3da27923563ab275db18e999c62bc",
+  "image": "sha256:81734df67fb445b26375bf68d8a274bde689c4ba0b298af313641b419c26990d",
+  "receipt_config_digest": "sha256:020b20b65652c56abedbfad970753acbe59b566118b3e821707669b25e64c35e",
+  "schema": "0026_ledger_review",
+  "previous_ef4_e6e_acceptance": "HISTORICAL_BLOCKED_RETAINED_NO_RECEIPT_SUBSTITUTION",
+  "current_used_local_demo": "ROOM20_API05_SCHEMA0024_UNCHANGED",
+  "regular_ci48_android_acceptance": "MISSING",
+  "production_rollout": false,
+  "independent_O2_acceptance_for_added_used0024_scope": "REQUESTED_NOT_CLAIMED"
+}
