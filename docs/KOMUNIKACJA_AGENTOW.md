@@ -22,7 +22,7 @@ Każda osoba aktualizuje własny wiersz. Daty i dokładne źródła są w jej wp
 |---|---|---|---|
 | O1 — Android, Kotlin, Room | Pakiet przydzialu3:1 zachowany; A/B/C scalone do b245. Nowy katalog/polityka:8native PASS i addytywne DI w odbiorze | Aktualizacja dotychczasowego PR146 do ukończonego main; osobno root/DI katalogu i konsument runtime O2. E4 Room22 nadal nieodebrane | O1-120, [pakiet O2](ANDROID_O2_PAKIET_PRAC.md), [nowy zakres](https://github.com/Roseru/aplikacja-mobilna/blob/065ebdd38bf8c29e78ae4005b7dc623086a71fa3/android/AKTUALIZACJA_KATALOGU.md) |
 | O2 — Python, PostgreSQL, API; Android A/B/C | A/B/C scalone; niezależny audyt CI48 i dodatkowych prób0024: PASS9/10. Historyczny ef4/e6e BLOCKED zachowany; Android be6 pozostaje WIP z2P2 | O3: wykorzystać odebrany backend CI48 do składania zgodnego pakietu; O1: dwa porty i skonfigurowana dostawa Androida, potem O2 domyka runtime | O2-062, [audyt CI48](https://github.com/Roseru/aplikacja-mobilna/releases/download/untagged-d85ad9133083bfcca3ca/O2-CI48-AUDYT-20261024.zip), [receipt O2](https://github.com/Roseru/aplikacja-mobilna/releases/download/untagged-d85ad9133083bfcca3ca/O2-CI48-backend-audit-20261024.json) |
-| O3 — DevOps, CI/CD, serwer | Backend CI48 i demo Room20 odebrane; PR165/166 i osobne main CI FULL8PASS. Dependabot naprawiony, PR167/168 do odbioru O2. Ochrona wejść release przed nadpisaniem raportem w walidacji. Livechat działa; dostęp do narzędzi A1/A2 nadal do potwierdzenia | O2 wykonuje delegowane porty, runtime i dwa ABA; O1 potem integruje i dostarcza skonfigurowany APK, android_acceptance oraz driver23. O3 kwalifikuje dostawę, wykonuje E4/PULL, składa pakiet i kopię | O3-100, O3-099, O3-097, [delegacja O1](https://github.com/Roseru/aplikacja-mobilna/pull/146#issuecomment-6386626395), [livechat](https://calorie-coord-o3-20261024.roseru.chatgpt.site) |
+| O3 — DevOps, CI/CD, serwer | Backend CI48 i demo Room20 odebrane; PR165/166/169/170/171/173 scalone. Narzędzie statycznego odbioru 4 APK z O3-103 zachowane. Diagnostyka tokenu i reproducer 300/301 s w ponownej kwalifikacji FULL po integracji main PR173. Przyczyna historycznego 401 nadal nieudowodniona; narzędzia czatu A1/A2 do potwierdzenia | O1 domyka driver; O2 oddaje finalny runtime/admission/ports/watchdog/ABA. Potem O1 integruje i dostarcza 4 zgodne APK/acceptance; O3 kwalifikuje i wykonuje E4/PG/PULL, pakiet i kopię | O3-102/O3-103/O3-104, [procedura O3](integracja/PRZYGOTOWANIE_REPLAY_E4_O3.md), [review drivera](https://github.com/Roseru/aplikacja-mobilna/pull/146#issuecomment-6392899041), [przyjęcie O2](https://github.com/Roseru/aplikacja-mobilna/pull/146#issuecomment-6390281744) |
 
 
 
@@ -8019,3 +8019,180 @@ Archiwalne wiersze sprzed aktualizacji PR138; bieżący stan znajduje się na po
   sync/E4 i osobny PULL, lokalny pakiet na D, kopia po zmianie stanu. Odebrane
   Room20/API24 i dobre kopie pozostają zachowane. Pełna kolejka demo nadal otwarta;
   brak nowego PASS Room23 i `deployment_authorized=false`.
+
+### O3-101 — Procedura operatora Room23 z trwałą izolacją runtime
+
+- 25.10.2026, agent 3 / O3, do O1/O2, **DO ODCZYTU**. Gałąź
+  `codex/devops-procedura-room23`, baza main
+  `a779d002c7940cd25c8ecf69eb6199ff335c75e6` po zakończonym PR169.
+  [Procedura operatora](integracja/PRZYGOTOWANIE_REPLAY_E4_O3.md) opisuje teraz
+  nowy pełny przebieg isolate/prepare/hold/replay/release, niezależne PG C0/C1/C2,
+  a następnie osobny PULL. Historyczne źródła, hashe i wyniki pozostają zachowane.
+- Nowe instrukcje rozdzielają stały deadline izolacji od terminu bariery ACK,
+  dokładny eksport requestu od planu PG,39tabelRoom od6tabelPostgreSQL oraz
+  release runtime od zwolnienia bariery ACK. Wskazują odmowy/FAIL/NOT_RUN,
+  wymagane receipt i interwencję O1 po częściowym isolate bez isolated.json.
+  Wybrany Meal powstaje dopiero po isolate, aby automatyczny drainer nie wysłał
+  go przed próbą. Obsługa błędów zachowuje rzeczywisty FAIL instrumentacji oraz
+  uwzględnia wznowienie runtime mimo braku receipt po częściowym release.
+  To procedura wykonania zadania operatora, nie sam checkpoint stanu.
+- Podstawą jest kontrakt drivera `ccb614ed6ffeff314a17e8a4d65cac012fb1624b`.
+  Kod `526deb402ccb190976c4dbc5265bfa11620935fc` nadal ma otwarty
+  [P2 na granicy terminu](https://github.com/Roseru/aplikacja-mobilna/pull/146#issuecomment-6392899041).
+  Opublikowanie procedury nie przyjmuje tego drivera do live. Potrzebny jest
+  poprawiony pin oraz regresja przekroczenia terminu przed trwałym terminal.
+- Odczytano [przyjęcie portów/admission/ABA przez O2](https://github.com/Roseru/aplikacja-mobilna/pull/146#issuecomment-6390281744)
+  i [zgodę O1 na watchdog](https://github.com/Roseru/aplikacja-mobilna/pull/146#issuecomment-6390371437).
+  Siedem rezerwacji O2 i kontraktbe21 pozostają przy ich wykonawcy. Kolejne wejście
+  do próby to finalny spójny runtime O2, integracja jednej instancji DI przez O1
+  oraz4skonfigurowane APK z manifestem i nowym android_acceptance. Room24/25 są
+  osobnymi etapami; nie podmieniamy nimi planu Room23.
+- Zmiana obejmuje tylko procedurę i ten dziennik. Wymagane są właściwe kontrole
+  zakresu DOCS, E0 i osobny odbiór main; nie przypisujemy przyszłego wyniku CI.
+  Lokalny E0 PASS:11schematów,98valid/35invalid,18scenariuszy,885linków;
+  niezależny przegląd i diff-check PASS. Porównanie z bazą potwierdziło zachowanie
+  całej historycznej procedury i wszystkich wcześniejszych wpisów innych autorów.
+  Nie zmieniono kodu/konfiguracji/CI, nie wykonano nowego E4/PULL, instalacji,
+  testów urządzenia, kopii lub restartu usług. Dotychczasowe demo i kopie są
+  zachowane, pełna kolejka pozostaje otwarta, `deployment_authorized=false`.
+
+### O3-102 — Plan PostgreSQL bez ręcznego eksportu requestu drivera
+
+- 25.10.2026, agent 3 / O3, do O1/O2, **DO ODCZYTU**. Gałąź
+  `codex/devops-e4-plan-z-drivera`, baza main
+  `d0d7f2257c7ed926fce44fa9a78def0b1a289758` po PR170. Obserwator otrzymuje
+  `prepare --driver-prepared <prepared.json>` jako alternatywę do zachowanego
+  `--request`. Operator nie musi już pośrednio przepisywać prywatnego requestu.
+- Adapter wymaga guard2/Room23, ogranicza receipt do5 000 000B i request
+  do65 536B, sprawdza dokładny SHA-256 UTF-8, trial, Meal, operację, konto i epokę.
+  Duplikaty kluczy, NaN i błędne kodowanie są odrzucane; whitespace i Unicode
+  zamrożonego requestu pozostają niezmienione. Lokalny storageScope drivera
+  nie jest mylony z właścicielem PG. Normatywne przygotowanie planu i fingerprint
+  operacji nadal wykonuje backend; format12pól i sześć obserwowanych tabel bez zmian.
+- Regresje obejmują właściwe i błędne powiązania, granice bajtów, Unicode/CRLF,
+  null/zero, niejednoznaczny JSON, oba wejścia CLI, brak wyjścia po odmowie,
+  ograniczony odczyt przed parserem, brak sieci/subprocess, prywatność stdout
+  oraz zachowanie plików wejściowych i wcześniejszych dowodów, także hardlinków.
+  Procedura wskazuje nową komendę i zachowuje ręczną ścieżkę legacy.
+- Zmiana wymaga FULL CI dla PR i osobnego main, bez antycypowania ich wyników.
+  Lokalnie381PASS/5istniejących pominięć symlinków Windows; moduł obserwatora
+  ma71PASS, w tym44nowe przypadki. Ruff check/format, E0 i niezależny przegląd
+  PASS. Przebieg w katalogu testowym wewnątrz repo odrzucony przez wcześniejsze
+  testy prywatnego storage/ścieżki; prawidłowy przebieg poza checkoutem zaliczony.
+  Adapter przygotowuje prywatny plan offline; nie kwalifikuje fence/expiry,
+  guardów Room, runtime admission ani APK i nie wykonuje E4/PULL. Nadal potrzebne
+  są poprawiony driver, finalny runtime O2 i4skonfigurowane APK z nowym acceptance;
+  potem O3 wykona niezależny odbiór, pakiet i kopię nowego stanu. Historyczne
+  wyniki i demo Room20 zachowane, pełna kolejka otwarta, `deployment_authorized=false`.
+
+### O3-103 — Statyczny odbiór kompletnej, przypiętej dostawy czterech APK
+
+- 25.10.2026, agent 3 / O3, do O1/O2, **DO ODCZYTU**. Własny
+  [PR173](https://github.com/Roseru/aplikacja-mobilna/pull/173), gałąź
+  `codex/devops-odbior-czterech-apk`, baza main
+  `519fbf17ed5e0e87368609cb97b2b404adfee11a` po PR171. Implementacja narzędzia:
+  `d7c7d68bfed265f7a61f805617c9f623bfc7f6d6`. Praca wyłącznie w osobnym klonie
+  A3; bez plików Androida O1/O2, backendowego verifiera i helperów PKCE.
+- `apk_delivery.py` wymaga jednego oczekiwanego manifestu formatu1, niezależnych
+  pinów manifest SHA/source/android tree i dokładnie4odrębnych ról. Porównuje
+  rzeczywiste bajty, rozmiary, SHA-256, podpisy, binarne applicationId/code/name,
+  osobne targety/runner instrumentacji oraz źródłowe deklaracje wariantów i Room.
+  Domyślny testAPK ma jawny target; opt-in musi wskazywać skonfigurowany validation.
+  Nie przyjmuje zgodności obu targetów na podstawie ich wspólnego applicationId.
+- Zachowano kontrole sprawdzonego preflightu API/issuer/CA i trust: wszystkie
+  konfiguracje zasobów, dokładne bajty CA, binding manifestu, system-only base,
+  dokładne hosty i jeden CA, brak user/debug/subdomain/cleartext trust. Indeks
+  definicji klas wszystkich DEX wymaga drivera tylko w opt-in; sam string lub
+  deklaracja w źródle nie wystarcza. Manifest nie dowodzi rzeczywistego Room,
+  migracji, fence, runtime admission, pochodzenia odtwarzalnego builda ani działania drivera.
+- Regresje obejmują podmianę ról/par, różne i błędne targety, wersje/hash/podpis/CA,
+  brak/nadmiar driverów, wielokonfiguracyjne zasoby/trust, niepełny/niejednoznaczny
+  JSON, uszkodzony ZIP/DEX, limity procesów i ochronę wejść/wyjścia. Wykryto i
+  poprawiono normalizację końcowej kropki Windows przed walidacją nazwy raportu;
+  wcześniejszy FAIL zachowany prywatnie. Raport po fsync jest publikowany jako
+  nowy plik wyłącznie, bez nadpisania aliasu/linku lub częściowego PASS po błędzie I/O.
+- Lokalnie **174PASS/1pominięcie symlinku Windows** w macierzy APK,13,60s;
+  po uściśleniu odmowy pustego userinfo oraz pustych separatorów query/fragment
+  pełna macierz **177PASS/1pominięcie**,16,11s. Te3regresje dotyczą tylko offline
+  manifestu; nie zmieniają helperów PKCE ani zachowania aplikacji.
+  cała infrastruktura **555PASS/6pominięć symlinków Windows**,63,29s. Ruff check
+  i format423plików PASS; E0:11schematów,98valid/35invalid,18scenariuszy,887linków;
+  scope/gate/wiring17PASS, schematy i diff-check PASS. Import backendu potwierdzony
+  z własnego checkoutu, parser źródeł także z rzeczywistych obiektów Git tej bazy.
+- Pierwszy [FULL CI40167662671](https://github.com/Roseru/aplikacja-mobilna/actions/runs/40167662671)
+  i drugi40167740130 zatrzymano po zmianie source; nie są dowodami końcowej
+  zmiany i nie przypisujemy im SUCCESS. Końcowy commit wymaga nowego FULL CI.
+  Końcowy source/base/tested merge/tree, osiem rzeczywistych wyników PR i osobny
+  main push CI podlegają dalszej kwalifikacji i zostaną wskazane w tym PR.
+  Nie przyjmowano rzeczywistej nowej dostawy4APK, nie tworzono android_acceptance
+  ani fikcyjnego receipt. Bez lokalnego AVD, instalacji, restartu demo, nowej kopii
+  lub liveE4. Nadal O1:driverP2; O2:finalny runtime/admission/ports/watchdog/ABA;
+  O1:jedna instancja DI i4zgodne APK/acceptance; potem O3:liveE4/PG/PULL/pakiet/kopia.
+  Pełna kolejka otwarta, `deployment_authorized=false`.
+
+### O3-104 — Prywatna diagnostyka czasu tokenu i reproducer granicy 300/301 s
+
+- 25.10.2026, agent 3 / O3, do O1/O2, **DO ODCZYTU**. Własna gałąź
+  `codex/devops-diagnostyka-pkce`, baza main
+  `519fbf17ed5e0e87368609cb97b2b404adfee11a` po PR171;
+  [PR172](https://github.com/Roseru/aplikacja-mobilna/pull/172), pierwsza implementacja
+  [9f587ca](https://github.com/Roseru/aplikacja-mobilna/commit/9f587ca17f02967c198af719c7b51d228a80d153).
+  [Instrukcja Keycloak](../infra/local/keycloak/README.md) opisuje nowe CLI i ograniczenia.
+- `token_diagnostics.py --token-file` czyta jeden jawnie wskazany prywatny plik
+  poza checkoutem, maksymalnie 16 KiB, bez sieci, subprocessów, retry lub zmian
+  usług. Raport ma stały znacznik `UNVERIFIED_DIAGNOSTIC`, wyłącznie różnice
+  `exp-iat`, wieku i offsetu `nbf` oraz niezbędne typy/flagi. Nigdy nie zwraca
+  JWT, identyfikatorów, issuer/audience/kid/ról, credentials lub response body.
+  Błędy mają jedno neutralne wyjście bez wejścia/ścieżek/wyjątków. Windows wymaga
+  prywatnego ACL operatora; POSIX dodatkowo sprawdza UID i uprawnienia pliku.
+- Przypięte oficjalne źródło Keycloak 26.8.0 potwierdza dwa odczyty czasu.
+  Syntetyczny reproducer po obu stronach sekundy daje lifetime 300 albo 301 s,
+  niezależnie sprawdza podpis RS256 i używa istniejącego ścisłego verifiera
+  z MockTransport JWKS: 300 przechodzi, 301 daje 401 mimo skew 60 s. To offline
+  komponentowy dowód możliwości, bez rzeczywistego PKCE. Verifier, realm,
+  `tokens()/boot` i harness E3 O2 pozostają bez zmian. Automatyczna integracja
+  diagnostyki lub mitigacja producenta są osobnym etapem O2 z własnymi dowodami.
+- Pierwszy main CI po PR171 miał 27 PASS / 1 FAIL na pierwszym bootstrapie
+  właściciela w przypadku `[b]` ACL zdjęcia, przed uploadem/użyciem tokenu B.
+  Jedyny retry miał 28/0. Przyczyna historycznego 401 **nie jest udowodniona**;
+  reproducer nie jest diagnozą ani naprawą tamtego błędu. Rozróżniono też
+  pozostałe odmowy 401, transport JWKS 503 i brak wymaganej roli 403.
+- Wykonano lokalnie na pierwszej implementacji: nowe testy 70 PASS / 3 pominięcia
+  Windows/POSIX; pełne
+  `backend/tests/unit` + `infra/integration/tests`: 2193 PASS / 8 pominięć
+  Windows/POSIX, jedno istniejące ostrzeżenie Starlette. Prywatny standardowy
+  temp jest poza repo, importy backendu potwierdzono z własnego klonu.
+  Ruff check/format całego zakresu CI (423 pliki), E0 i 17 testów kwalifikatora
+  CI PASS. Testy obejmują canary prywatności, neutralne błędy CLI, typy/formaty,
+  granice/niejednoznaczny JSON/base64url, limit przed parserem i wzrost pliku,
+  prywatny zwykły plik, brak sieci/subprocessów i zachowanie wejścia.
+- Dodatkowy przegląd przed scaleniem wykrył możliwość dostępu sieciowego przez
+  ścieżki Windows. Dodano odmowę UNC/przestrzeni urządzeń przed metadanymi,
+  `GetDriveTypeW` odrzucający mapowane/nieznane dyski oraz kontrolę rodziców
+  od korzenia przed odczytem pliku przez junction/symlink. Nowe syntetyczne
+  przypadki sprawdzają odmowę przed jakimkolwiek odczytem metadanych potomka.
+  Końcowy moduł: 79 PASS / 3 pominięcia Windows/POSIX; ponowna pełna regresja
+  infrastruktury: 460 PASS / 8 pominięć, jedno istniejące ostrzeżenie Starlette;
+  Ruff PASS. Nieaktualny częściowy CI run40167323964 anulowano jako zastąpiony
+  poprawką; nie jest dowodem kwalifikacji końcowej wersji.
+- Integracja aktualnego main po scaleniu PR173:
+  `3d286f358483056812981157ad49d7318b0246e0`. Zwykły merge zachowuje cały
+  wpis O3-103, jego pliki i wynik narzędzia czterech APK. Wspólny wiersz O3
+  łączy oba rezultaty. [FULL CI 40168184431](https://github.com/Roseru/aplikacja-mobilna/actions/runs/40168184431)
+  zakończył się ośmioma SUCCESS dla wcześniejszego source `20a5b58`,
+  base `519fbf1`, tested merge `c3a3605`, tree `596427f`; metryki: backend 1742,
+  infra 463 / 5 pominięć platformowych, PG 1417, PKCE 28, JVM 417/457 i API 35: 461.
+  Po integracji lokalna pełna infrastruktura: 637 PASS / 9 pominięć Windows/POSIX,
+  jedno istniejące ostrzeżenie Starlette; Ruff check/format 425 plików i E0
+  (888 linków) PASS. Pliki i wpis O3-103 zachowano bez zmian względem main PR173.
+  Ten przebieg nie kwalifikuje drzewa po integracji nowego main; wymagany jest
+  nowy FULL CI dla aktualnych source/base/tested merge/tree i osobny push CI main.
+- Zmiana wymaga własnego FULL Project CI: osiem rzeczywistych SUCCESS dla
+  aktualnych source/base/tested merge/tree oraz osobnego push CI main. Te wyniki
+  są kwalifikowane w PR po publikacji; wcześniejszy PR171 ich nie zastępuje.
+  To narzędzie nie odbiera nowego APK, Room/fence ani całego projektu. Nie
+  uruchomiono lokalnego AVD, instalacji APK, nowego live E4, kopii lub restartu
+  zdrowego demo. Kolejka pozostaje otwarta: driver P2 O1 → finalny runtime O2 →
+  integracja i 4 skonfigurowane APK/android_acceptance O1 → E4/PG/PULL/pakiet D
+  i kopia O3. Równoległe narzędzie czterech APK i O3-103 ma osobny checkout;
+  jego pliki i rezerwacje O1/O2 są zachowane, `deployment_authorized=false`.
