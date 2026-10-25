@@ -12,6 +12,175 @@ transport/zamknięcie PASS niezależnie O3; całość PARTIAL w granicach raport
 Nowa próba zapisu E4 pozostaje NOT_RUN. Zachowujemy poniżej pierwotny oracle
 i historię bez przypisywania nowych dowodów wcześniejszym próbom.
 
+## Automatyczny odbiór statyczny kompletu czterech APK — O3, 25.10.2026
+
+[apk_delivery.py](../../infra/integration/apk_delivery.py) sprawdza **jeden kompletny,
+niezmienny zestaw** przed instalacją. To rozszerzenie sprawdzonego prywatnego
+preflightu pojedynczego APK: zachowuje kontrolę skompilowanych API/issuer/CA,
+powiązania manifestu z polityką sieci i ścisłego trust, a dodaje role, pary,
+metadane, podpisy i definicje drivera. Nie uruchamia Gradle, APK, AVD, adb,
+sieci, usług, kopii ani próby E4. Regresje korzystają z syntetycznych ZIP/DEX
+i wyjść SDK; nie są nowym odbiorem rzeczywistego kandydata.
+
+Wejścia operatora: nowy oczekiwany manifest formatu1, cztery pliki APK w tym
+samym katalogu, jeden publiczny CA PEM oraz przypięty checkout źródeł.
+Niezależnie od manifestu operator podaje jego oczekiwany SHA-256, source commit
+i tree katalogu `android`. Muszą pochodzić z uzgodnionego przekazania O1;
+obliczenie nowego hasha po nieuzgodnionej podmianie nie ustanawia zaufania.
+Kontrakt operatora Room23 i nadal otwarte wejścia opisuje
+[przygotowanie E4](PRZYGOTOWANIE_REPLAY_E4_O3.md), na podstawie
+[przypiętego kontraktu drivera ccb614e](https://github.com/Roseru/aplikacja-mobilna/blob/ccb614ed6ffeff314a17e8a4d65cac012fb1624b/android/DRIVER_REPLAY_E4.md).
+Ten pin kontraktu nie zastępuje poprawionego source commita dostarczanych APK.
+
+Manifest ma **dokładnie** następujące pola; dodatkowe pola, duplikaty kluczy,
+NaN/Infinity, błędny UTF-8, brakujące wartości i nieznane role oznaczają odmowę.
+Starszy manifest kandydata bez targetów/podpisów nie spełnia tego formatu.
+Narzędzie nie uzupełnia braków historycznymi receiptami.
+
+| Obiekt | Wymagane pola i znaczenie |
+|---|---|
+| Korzeń | `schema_version`: liczba1; `source`, `configuration`, `artifacts` |
+| `source` | `commit`: pełny40-znakowy SHA; `android_tree`: pełny40-znakowy tree; `room`: dodatnia liczba całkowita |
+| `configuration` | `api_base_url`, `oidc_issuer`: dokładne HTTPS bez credentials/query/fragment, API ze ścieżką `/api/v1` lub `/api/v1/`; `ca_sha256`: hash dokładnych bajtów dostarczonego PEM; `ca_entry`, `network_xml_entry`: względne ścieżki POSIX wewnątrz APK |
+| Każdy z4rekordów `artifacts` | `role`, `filename`, `bytes`, `sha256`, `signer_sha256`, `application_id`, `version_code`, `version_name`, `endpoints`, `instrumentation` |
+| Tożsamość pliku | `filename`: zwykła nazwa ASCII zakończona `.apk`, bez ścieżki/ADS/nazwy urządzenia; dodatnie `bytes`; wszystkie SHA-256 mają64małe znaki hex |
+| `endpoints` aplikacji | Dokładnie `api_base_url` i `oidc_issuer`. Validation musi odpowiadać `configuration`. Debug deklaruje obie wartości puste albo tę samą parę co validation; testAPK mają `null` |
+| `instrumentation` testAPK | Dokładnie `target_role`, `target_package`, `runner`. Oba testAPK mają własną jawną deklarację; aplikacje mają `null` |
+
+Role występują po jednym razie, bez dodatkowych APK w manifeście. Nazwy, bajty
+i fizyczne pliki ról muszą być odrębne. Nie sumujemy ani nie łączymy receiptów
+z innych dostaw. W katalogu mogą pozostać inne dowody, ale nie są członkami zestawu.
+
+| `role` | Pakiet / wersja | Target i driver |
+|---|---|---|
+| `debug` | Regularny applicationId i wersja z przypiętej deklaracji Gradle | Bez instrumentacji i obu driverów live; bez overlay validation, jawny zakaz cleartext i systemowe CA przy targetSdk≥24 |
+| `validation-configured` | ApplicationId z sufiksem validation; osobny versionCode/versionName z deklaracji wariantu | Bez instrumentacji i driverów live; skompilowane endpointy, dokładny CA i ścisła polityka O3 |
+| `test-default` | Własny jawny applicationId i metadane wersji testAPK | Jawny target `debug` **albo** `validation-configured`, zgodny z tą konkretną kompilacją; bez driverów live |
+| `test-liveReplay-optin` | Własny jawny applicationId i metadane wersji testAPK | Wymaga targetu `validation-configured` i zdefiniowanej klasy `LiveMealReplayTest`; bez dodatkowego `LiveApiLateReceiptTest` |
+
+Dla testAPK `version_code`/`version_name` mogą być `null` wyłącznie jako jawne
+oczekiwanie braku danego atrybutu w binarnym manifeście. Nie kopiować do nich
+wersji aplikacji. Każdy test jest osobno porównywany z binarnymi `targetPackage`
+i nazwą runnera, także gdy oba testy deklarują ten sam target. Podpis testAPK
+musi odpowiadać podpisowi jego wskazanej aplikacji. Samo jednakowe applicationId
+obu testAPK nie dowodzi zgodności targetów. Gradle generuje osobny manifest
+instrumentacji; [zasady Androida](https://developer.android.com/studio/test/advanced-test-setup#configure-instrumentation-manifest-settings)
+pozwalają konfigurować wariant testowany. Dlatego źródłowe `testBuildType` jest
+raportowane oddzielnie, a oczekiwanie dla każdej rzeczywistej pary wymaga
+uzgodnionego manifestu dostawy, uwzględniającego użyte nadpisania builda.
+
+Przykłady kształtu rekordów (placeholdery wymagają zastąpienia danymi O1;
+to **nie jest** manifest ani receipt istniejącej dostawy):
+
+```json
+{
+  "role": "validation-configured",
+  "filename": "validation-configured.apk",
+  "bytes": 123,
+  "sha256": "<64 lowercase hex>",
+  "signer_sha256": "<64 lowercase hex>",
+  "application_id": "pl.roseru.kalorie.validation",
+  "version_code": 1042,
+  "version_name": "0.8.31.validation",
+  "endpoints": {
+    "api_base_url": "https://<approved-host>:<port>/api/v1",
+    "oidc_issuer": "https://<approved-host>:<port>/realms/calorie-dev"
+  },
+  "instrumentation": null
+}
+```
+
+```json
+{
+  "role": "test-liveReplay-optin",
+  "filename": "test-liveReplay-optin.apk",
+  "bytes": 123,
+  "sha256": "<64 lowercase hex>",
+  "signer_sha256": "<same signer as target>",
+  "application_id": "pl.roseru.kalorie.validation.test",
+  "version_code": null,
+  "version_name": null,
+  "endpoints": null,
+  "instrumentation": {
+    "target_role": "validation-configured",
+    "target_package": "pl.roseru.kalorie.validation",
+    "runner": "androidx.test.runner.AndroidJUnitRunner"
+  }
+}
+```
+
+Znany profil źródeł jest odczytywany przez `git show`/`rev-parse` dla konkretnego
+commita, bez checkoutu obcej gałęzi i wykonywania skryptów źródłowych. Weryfikuje
+tree Androida, deklaracje wariantów, runner, domyślnie wyłączoną bramkę Gradle
+liveReplay, deklarowany Room i jego eksport JSON. Nieobsługiwany lub
+niejednoznaczny zapis blokuje kontrolę. Źródłowy Room i zgodny tree są
+**deklaracjami pochodzenia**, a nie dowodem rzeczywistego Room z APK,
+migracji, fence, admission lub działania drivera. Bez odtwarzalnego builda
+sam podpis/hash również nie dowodzi, że APK zbudowano z deklarowanego commita.
+
+Inspekcja binarna używa wyłącznie odczytów `aapt dump` oraz
+`java -jar <apksigner.jar> verify --verbose --print-certs`. Wskazać pełne ścieżki
+zaufanych narzędzi, na Windows pliki `.exe`, nie skrypty powłoki. Nazwa APK jest
+przekazywana jako osobny argument, z jego katalogiem jako cwd;
+obsługuje to polskie ścieżki starego aapt bez kopiowania APK. Każdy signer jest
+kryptograficznie sprawdzany; pusty/wielokrotny/inny signer nie przechodzi.
+Driver jest wykrywany przez indeks **definicji klas** wszystkich `classes*.dex`,
+bez wykonywania kodu. Wystąpienie nazwy w stringach nie wystarcza. Obsługiwany
+jest standardowy little-endian DEX035/037/038/039/040; uszkodzony, ukryty lub
+nieobsługiwany DEX blokuje wynik. To czytnik indeksu, nie pełny walidator bytecode;
+[format DEX](https://source.android.com/docs/core/runtime/dex-format#file-layout)
+rozdziela stringi, typy i definicje klas.
+
+W validation każda skompilowana konfiguracja `string/api_base_url`,
+`string/oidc_issuer`, `raw/o3_local_ca` i `xml/o3_network_security` musi wskazywać
+oczekiwane dane. Manifest musi wiązać sprawdzony zasób sieci. Polityka O3 wymaga
+jednego base-config z wyłącznie system CA, dokładnych hostów endpointów z
+wyłącznie wskazanym CA, jawnego zakazu cleartext/subdomains oraz braku
+userCA/debug-overrides/nested lub dodatkowych polityk. Osobne debug endpointy
+także są sprawdzane we wszystkich konfiguracjach. Debug bez override trust
+korzysta z [domyślnego zaufania Androida targetSdk≥24](https://developer.android.com/privacy-and-security/security-config#base-config).
+Statyczny PASS nie dowodzi działania łańcucha TLS w procesie APK/Chrome.
+
+Limity odmowy: manifest/CA/źródłowy plik JSON lub tekst do1MiB, APK do256MiB,
+pojedynczy DEX do64MiB i suma DEX do256MiB, do100000 wpisów ZIP; wyjście narzędzia
+do16MiB, stderr do1MiB, każde wywołanie do30s. Odczyty i potoki mają ograniczenia
+przed parsowaniem. Surowe diagnostyki pozostają wyłącznie w pamięci i nie trafiają
+do stdout/raportu. Zmienne opcji Java są usuwane z procesu inspekcji.
+
+Z własnego checkoutu O3, po przygotowaniu zależności backendu z lockfile:
+
+```powershell
+uv run --project backend --locked python infra/integration/apk_delivery.py `
+  --manifest "$Delivery/delivery.json" --expected-manifest-sha256 "$ApprovedManifestSha256" `
+  --source-commit "$ApprovedSourceCommit" --source-android-tree "$ApprovedAndroidTree" `
+  --checkout "$OwnCheckout" --ca "$Delivery/ca.pem" `
+  --aapt "$AaptExe" --java "$JavaExe" --apksigner-jar "$ApksignerJar" --git "$GitExe" `
+  --report "$PrivateEvidence/new-static-report.json"
+```
+
+Manifest, APK, CA i narzędzia są tylko odczytywane; hashe wejść są porównywane
+przed/po. Alias dwóch ról, hardlink do innego wejścia, symlink lub junction
+w ścieżce są odrzucane. Raport ma nową zwykłą nazwę `.json` i istniejący katalog
+nadrzędny. Kompletny raport po fsync jest publikowany wyłącznym hardlinkiem
+NTFS/POSIX; plik roboczy jest usuwany także po błędzie. Odmowa zapisu nie zostawia
+częściowego raportu PASS. Publikacja nigdy nie nadpisuje pliku, linku, narzędzia
+lub wcześniejszego dowodu. Nie przekierowywać stdout do wejść ani do wcześniejszych
+receiptów. Błąd zapisu/wyścig o istniejący plik nie daje PASS.
+
+| Wynik / exit code | Znaczenie |
+|---|---|
+| `STATIC_PASS` /0 | Wszystkie wymagane inspekcje wykonane i zgodne z przypiętym manifestem |
+| `STATIC_FAIL` /1 | Kompletna inspekcja wykazała niezgodność; zapisany raport zachowuje FAIL |
+| `STATIC_BLOCKED` /2 | Brak danych/narzędzia, niejednoznaczność, limit lub niepełna inspekcja; nie tworzy nowego raportu |
+
+Raport zawiera hash oczekiwanego manifestu, źródłowe deklaracje, hashe narzędzi,
+wyniki kontroli i tożsamość bajtów4APK. Zawsze pozostawia
+`android_acceptance=NOT_CREATED`, `live_trial=NOT_RUN`, `driver_execution=NOT_RUN`,
+`room_runtime=NOT_CHECKED`, `runtime_tls_chain=NOT_CHECKED`,
+`apk_source_provenance=DECLARED_NOT_REPRODUCED`, `deployment_authorized=false`.
+Nowe poprawione driver/runtime/DI, rzeczywiste4APK, osobny android_acceptance,
+live E4/PG/PULL i pakiet z kopią pozostają kolejnymi odbiorami właściwych właścicieli.
+
 ## Krótki stan i największa niewiadoma
 
 - O1-023 określa pierwszy przebieg: APK, rzeczywiste konto A/Chrome/PKCE, bootstrap, GET me/motivation, potem logout/restart i B→A. Same odczyty nie potwierdzają zgody ani nie synchronizują dziennika.
