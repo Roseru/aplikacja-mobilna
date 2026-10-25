@@ -21,7 +21,7 @@ Każda osoba aktualizuje własny wiersz. Daty i dokładne źródła są w jej wp
 | Rola | Ostatni znany rezultat | Następny krok / zależność | Źródło |
 |---|---|---|---|
 | O1 — Android, Kotlin, Room | Katalog/polityka/root odebrane w swoich zakresach; wspólny adapter HTTP i watchdog:3/3native PASS, source296f656. PR146 scalony, exact/mainFULL po8/8SUCCESS | O2 konsument gate w runtime, potem duży odbiór/PR/APK. Kolejny wymagany blok Androida: katalog społeczności | O1-122, [zakres](../android/AKTUALIZACJA_KATALOGU.md), codex/android-katalog-do-pobrania |
-| O2 — Python, PostgreSQL, API; Android A/B/C | PR167/168/174 odebrane i scalone. Runtime325446b0 odebrany; O1 potwierdził pin i lifecycle oraz integruje Room23. Przegląd E9 REST: raport 9,3/10, historyczny P2 naprawiony w źródle, P3 ETag do O1; pełny E9 HOLD | O1: kwalifikacja integracji i 4 APK Room23, osobno E9/Room25. O3: aktualne publiczne API/issuer/CA do tej dostawy, następnie odbiór zestawu i live E4. Styk SyncWork/Coordinator do uzgodnienia z O2; historyczny OIDC401 niewyjaśniony | O2-063–065, [ACK O1](https://github.com/Roseru/aplikacja-mobilna/pull/146#issuecomment-6398434885), [przegląd E9](integracja/RECENZJA_ZGOD_O2.md#przegląd-e9--25102026) |
+| O2 — Python, PostgreSQL, API; Android A/B/C | PR167/168/174 scalone; runtime325446b0 odebrany i włączony przez O1 do źródła Room23. Delegowana poprawka ETag E9 wypchnięta: 4cc2d4db, 13/13 native PASS, review 9,5/10. Pełny E9 HOLD | O1 włącza osobną deltę ETag do E9; zwrot 4 rezerwacji. Osobno O1/O3: 4 skonfigurowane APK Room23, aktualne API/issuer/CA i odbiór live E4. Styk SyncWork/Coordinator do uzgodnienia z O2; historyczny OIDC401 niewyjaśniony | O2-063–066, [pin ETag](https://github.com/Roseru/aplikacja-mobilna/commit/4cc2d4db43b5022244772e43313d63e45a7c9b9c), [przegląd E9](integracja/RECENZJA_ZGOD_O2.md#przegląd-e9--25102026) |
 | O3 — DevOps, CI/CD, serwer | Backend CI48 i demo Room20 odebrane; PR165/166/169/170/171/173 scalone. Narzędzie statycznego odbioru 4 APK z O3-103 zachowane. Diagnostyka tokenu i reproducer 300/301 s w ponownej kwalifikacji FULL po integracji main PR173. Przyczyna historycznego 401 nadal nieudowodniona; narzędzia czatu A1/A2 do potwierdzenia | O1 domyka driver; O2 oddaje finalny runtime/admission/ports/watchdog/ABA. Potem O1 integruje i dostarcza 4 zgodne APK/acceptance; O3 kwalifikuje i wykonuje E4/PG/PULL, pakiet i kopię | O3-102/O3-103/O3-104, [procedura O3](integracja/PRZYGOTOWANIE_REPLAY_E4_O3.md), [review drivera](https://github.com/Roseru/aplikacja-mobilna/pull/146#issuecomment-6392899041), [przyjęcie O2](https://github.com/Roseru/aplikacja-mobilna/pull/146#issuecomment-6390281744) |
 
 
@@ -8577,3 +8577,34 @@ Archiwalne wiersze sprzed aktualizacji PR138; bieżący stan znajduje się na po
   Pełny E9 pozostaje **HOLD** do scope sync i rzeczywistego odbioru APK/API.
   Następna dostawa O1/O3 według aktualnego planu; odbiorcy potwierdzają odczyt
   samodzielnie.
+
+### O2-066 — Delegowany ETag E9: poprawka odebrana i wypchnięta
+
+- Data / autor: 25.10.2026, **agent 2 / O2**. Do O1/O3, **DO ODCZYTU**.
+  [Delegacja O1](https://github.com/Roseru/aplikacja-mobilna/pull/146#issuecomment-6398843748),
+  [odbiór w istniejącym raporcie](integracja/RECENZJA_ZGOD_O2.md#p3-etag-przy-potwierdzeniu-energy-consent--poprawka-o2).
+- Osobna gałąź `codex/android-o2-etag-energia`, wypchnięty
+  [pin `4cc2d4db43b5022244772e43313d63e45a7c9b9c`](https://github.com/Roseru/aplikacja-mobilna/commit/4cc2d4db43b5022244772e43313d63e45a7c9b9c),
+  jedyny rodzic `e16f317f75379ced9ac1d8e2241fdffaab9316f3`.
+  Dokładnie cztery dozwolone pliki; bez zmian fixture, schematu, snapshotu,
+  Room/migracji, sesji, UI i build/version. Stary runtime325 pozostaje zachowany.
+- Opcjonalny rzeczywisty ETag przechodzi przez transport. ACK PUT zgód wymaga
+  silnego cytowanego revision zgodnego z body, obok statusu 200, obu boolów
+  i `If-Match + 1`. Błędny receipt zachowuje trwałe `unknown`; po reopen
+  poprawny jawny retry kończy tę samą próbę UUID/body/fingerprint/If-Match.
+- Rzeczywiste Room/store/repository, syntetyczna granica API/sesji:
+  **13 unikalnych native PASS: 11 receipt + 2 transport, 0 failure/error/skip**.
+  Build validation app/test, compileDebugKotlin i lint PASS; lint: 0 błędów,
+  8 ostrzeżeń i 2 informacje poza zmienionymi plikami. Osobny namespace,
+  AVD API35 offline; poprzednie pakiety i artefakty zachowane.
+  **Niezależny odbiór 9,5/10, brak materialnych P1/P2.** Root potwierdził
+  zgodność czterech blobów z testowanym/recenzowanym manifestem i zdalnym pinem.
+- **Zwrot rezerwacji do O1:** EnergyGateway.kt, ACK consent EnergyRepository.kt,
+  EnergyTransportTest.kt oraz nowy EnergyConsentReceiptTest.kt. O1 włącza
+  tę deltę do dużego E9. Nie tworzono nowego PR ani merge do main/O1;
+  dokumentacja na dotychczasowym carrierze nie przenosi do niego Room25.
+- Odczytano też [publikację integracji Room23 O1](https://github.com/Roseru/aplikacja-mobilna/pull/146#issuecomment-6399203852):
+  source eacc8f19 / receipt 2319357d i osobne wyniki lokalne, bez nadawania
+  remote CI/live PASS. Cztery APK i aktualną konfigurację dostarczają O1/O3.
+  Ten odbiór ETag nie dowodzi TLS/live API lub pełnego E9; nie powtarzano
+  54 runtime/full REST/backend/CI. Odbiorcy potwierdzają odczyt samodzielnie.

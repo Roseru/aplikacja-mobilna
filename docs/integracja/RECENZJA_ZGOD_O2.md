@@ -119,7 +119,9 @@ To osobny czas od admission `accepted_at`. Klient sprawdza relację dat
 i używa `expiresAt` do dopuszczenia accept
 ([EnergyProtocol:39](https://github.com/Roseru/aplikacja-mobilna/blob/e16f317f75379ced9ac1d8e2241fdffaab9316f3/android/app/src/main/java/pl/roseru/kalorie/energy/EnergyProtocol.kt#L39)).
 
-### P3 do O1: ETag przy potwierdzeniu energy consent
+### P3 ETag przy potwierdzeniu energy consent — poprawka O2
+
+Stan początkowego przeglądu, na pinie `e16f317f`:
 
 Nowy [EnergyGateway](https://github.com/Roseru/aplikacja-mobilna/blob/e16f317f75379ced9ac1d8e2241fdffaab9316f3/android/app/src/main/java/pl/roseru/kalorie/energy/EnergyGateway.kt#L15)
 nie przenosi ETag odpowiedzi. ACK sprawdza status 200, oba booleany i
@@ -132,6 +134,33 @@ operacja zostaje uznana za zakończoną. Nie wykonano tej próby na Androidzie.
 O1 powinien przenieść i sprawdzić ETag przed zakończeniem próby oraz zachować
 ten sam UUID/body przy brakującym lub błędnym nagłówku. To drobne uzupełnienie
 walidacji odpowiedzi dla E9, nie nowy blocker bieżącego odbioru Room23.
+
+**Aktualizacja 25.10.2026: poprawka wykonana i odebrana lokalnie.** O1
+[delegował ją O2](https://github.com/Roseru/aplikacja-mobilna/pull/146#issuecomment-6398843748).
+Wypchnięty [commit `4cc2d4db43b5022244772e43313d63e45a7c9b9c`](https://github.com/Roseru/aplikacja-mobilna/commit/4cc2d4db43b5022244772e43313d63e45a7c9b9c)
+na `codex/android-o2-etag-energia` ma dokładnie rodzica `e16f317f` i cztery
+dozwolone pliki: EnergyGateway, ACK consent w EnergyRepository,
+EnergyTransportTest i nowy EnergyConsentReceiptTest. Pozostałe źródła,
+fixture i pięć JSON, Room/migracje oraz konfiguracja buildu są zachowane.
+
+Transport przenosi surowy opcjonalny nagłówek. Przed zakończeniem próby
+repozytorium wymaga silnego cytowanego ETag zgodnego z body revision;
+zachowuje kontrolę statusu 200, obu boolów i `If-Match + 1`. Brakujący,
+błędny, weak, niecytowany, niekanoniczny, padded lub wielokrotny ETag
+pozostawia trwałe `unknown`. Zamknięcie/otwarcie rzeczywistego Room i jawny
+poprawny retry zachowują UUID/body/fingerprint/If-Match tej samej operacji.
+Nie powstaje automatyczna afirmacja lub nowa zgoda.
+
+Wykonano **13 unikalnych testów urządzeniowych PASS: 11 receipt + 2 transport,
+0 failure/error/skip**, na osobnym pakiecie i AVD API35 offline. Build app/test
+validation, compileDebugKotlin i lint PASS; lint: 0 błędów, 8 ostrzeżeń,
+2 informacje poza zmienionymi plikami. Niezależny przegląd źródeł i surowych
+XML/logów: **9,5/10, brak materialnych P1/P2**. Root porównał cztery bloby
+finalnego commita z recenzowanym i testowanym manifestem oraz zdalnym pinem.
+To lokalny odbiór komponentu z syntetyczną granicą API/sesji; bez dowodu
+TLS/live API, zdalnego CI lub pełnego E9. Rezerwacja czterech plików wraca
+do O1, który włączy deltę do swojego dużego E9. Osobny carrier runtime/Room23
+nie zawiera tej zmiany Room25; nie utworzono checkpoint-PR.
 
 ### Synchronizacja, własność i następny odbiór
 
@@ -150,7 +179,11 @@ Runtime O2 `325446b0` został już dostarczony i odebrany. O1
 i rozpoczął integrację carrier11fac87a z osobnym driverem Room23.
 Jego [nowsze przekazanie](https://github.com/Roseru/aplikacja-mobilna/pull/146#issuecomment-6398540989)
 wymaga potwierdzenia publicznego API/issuer/CA przez O3 przed dostawą czterech
-APK; wyniki lokalnej integracji pozostają PENDING.
+APK. [Opublikowana integracja Room23](https://github.com/Roseru/aplikacja-mobilna/pull/146#issuecomment-6399203852)
+ma source `eacc8f19` i receipt `2319357d`: O1 raportuje build/lint/JVM PASS
+oraz 7 native z wynikiem 6 PASS/1 FAIL, a po poprawieniu fixture osobny
+1 PASS. Nie opisujemy tego jako jednego przebiegu 7/7. Cztery skonfigurowane
+APK, android_acceptance, remote CI i live pozostają osobnym odbiorem O1/O3.
 Nowa encja, walidator i gateway E9 są zakresem O1; ewentualne zmiany
 `SyncWork/SyncCoordinator` wymagają uzgodnienia styku O2. Ten przegląd
 nie przydziela tych plików ponownie. Nie obejmuje też nieopublikowanego
