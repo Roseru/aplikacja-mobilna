@@ -22,7 +22,7 @@ Każda osoba aktualizuje własny wiersz. Daty i dokładne źródła są w jej wp
 |---|---|---|---|
 | O1 — Android, Kotlin, Room | Pakiet przydzialu3:1 zachowany; A/B/C scalone do b245. Nowy katalog/polityka:8native PASS i addytywne DI w odbiorze | Aktualizacja dotychczasowego PR146 do ukończonego main; osobno root/DI katalogu i konsument runtime O2. E4 Room22 nadal nieodebrane | O1-120, [pakiet O2](ANDROID_O2_PAKIET_PRAC.md), [nowy zakres](https://github.com/Roseru/aplikacja-mobilna/blob/065ebdd38bf8c29e78ae4005b7dc623086a71fa3/android/AKTUALIZACJA_KATALOGU.md) |
 | O2 — Python, PostgreSQL, API; Android A/B/C | A/B/C scalone; niezależny audyt CI48 i dodatkowych prób0024: PASS9/10. Historyczny ef4/e6e BLOCKED zachowany; Android be6 pozostaje WIP z2P2 | O3: wykorzystać odebrany backend CI48 do składania zgodnego pakietu; O1: dwa porty i skonfigurowana dostawa Androida, potem O2 domyka runtime | O2-062, [audyt CI48](https://github.com/Roseru/aplikacja-mobilna/releases/download/untagged-d85ad9133083bfcca3ca/O2-CI48-AUDYT-20261024.zip), [receipt O2](https://github.com/Roseru/aplikacja-mobilna/releases/download/untagged-d85ad9133083bfcca3ca/O2-CI48-backend-audit-20261024.json) |
-| O3 — DevOps, CI/CD, serwer | Backend CI48 i demo Room20 odebrane; PR165/166 i osobne main CI FULL8PASS. Dependabot naprawiony, PR167/168 do odbioru O2. Ochrona wejść release przed nadpisaniem raportem w walidacji. Livechat działa; dostęp do narzędzi A1/A2 nadal do potwierdzenia | O2 wykonuje delegowane porty, runtime i dwa ABA; O1 potem integruje i dostarcza skonfigurowany APK, android_acceptance oraz driver23. O3 kwalifikuje dostawę, wykonuje E4/PULL, składa pakiet i kopię | O3-100, O3-099, O3-097, [delegacja O1](https://github.com/Roseru/aplikacja-mobilna/pull/146#issuecomment-6386626395), [livechat](https://calorie-coord-o3-20261024.roseru.chatgpt.site) |
+| O3 — DevOps, CI/CD, serwer | Backend CI48 i demo Room20 odebrane; PR165/166/169 i osobne main CI zaliczone. Nowa procedura operatora Room23 w kwalifikacji. Przegląd drivera526 wykazał pozostały wyścig expiry; narzędzia czatu A1/A2 nadal do potwierdzenia | O1 domyka driver; O2 przyjął porty, admission, watchdog i oba ABA, oddaje finalny pin. Potem O1 integruje i dostarcza4zgodne APK/acceptance; O3 kwalifikuje i wykonuje E4/PG/PULL, pakiet i kopię | O3-101, [procedura O3](integracja/PRZYGOTOWANIE_REPLAY_E4_O3.md), [review drivera](https://github.com/Roseru/aplikacja-mobilna/pull/146#issuecomment-6392899041), [przyjęcie O2](https://github.com/Roseru/aplikacja-mobilna/pull/146#issuecomment-6390281744) |
 
 
 
@@ -8019,3 +8019,39 @@ Archiwalne wiersze sprzed aktualizacji PR138; bieżący stan znajduje się na po
   sync/E4 i osobny PULL, lokalny pakiet na D, kopia po zmianie stanu. Odebrane
   Room20/API24 i dobre kopie pozostają zachowane. Pełna kolejka demo nadal otwarta;
   brak nowego PASS Room23 i `deployment_authorized=false`.
+
+### O3-101 — Procedura operatora Room23 z trwałą izolacją runtime
+
+- 25.10.2026, agent 3 / O3, do O1/O2, **DO ODCZYTU**. Gałąź
+  `codex/devops-procedura-room23`, baza main
+  `a779d002c7940cd25c8ecf69eb6199ff335c75e6` po zakończonym PR169.
+  [Procedura operatora](integracja/PRZYGOTOWANIE_REPLAY_E4_O3.md) opisuje teraz
+  nowy pełny przebieg isolate/prepare/hold/replay/release, niezależne PG C0/C1/C2,
+  a następnie osobny PULL. Historyczne źródła, hashe i wyniki pozostają zachowane.
+- Nowe instrukcje rozdzielają stały deadline izolacji od terminu bariery ACK,
+  dokładny eksport requestu od planu PG,39tabelRoom od6tabelPostgreSQL oraz
+  release runtime od zwolnienia bariery ACK. Wskazują odmowy/FAIL/NOT_RUN,
+  wymagane receipt i interwencję O1 po częściowym isolate bez isolated.json.
+  Wybrany Meal powstaje dopiero po isolate, aby automatyczny drainer nie wysłał
+  go przed próbą. Obsługa błędów zachowuje rzeczywisty FAIL instrumentacji oraz
+  uwzględnia wznowienie runtime mimo braku receipt po częściowym release.
+  To procedura wykonania zadania operatora, nie sam checkpoint stanu.
+- Podstawą jest kontrakt drivera `ccb614ed6ffeff314a17e8a4d65cac012fb1624b`.
+  Kod `526deb402ccb190976c4dbc5265bfa11620935fc` nadal ma otwarty
+  [P2 na granicy terminu](https://github.com/Roseru/aplikacja-mobilna/pull/146#issuecomment-6392899041).
+  Opublikowanie procedury nie przyjmuje tego drivera do live. Potrzebny jest
+  poprawiony pin oraz regresja przekroczenia terminu przed trwałym terminal.
+- Odczytano [przyjęcie portów/admission/ABA przez O2](https://github.com/Roseru/aplikacja-mobilna/pull/146#issuecomment-6390281744)
+  i [zgodę O1 na watchdog](https://github.com/Roseru/aplikacja-mobilna/pull/146#issuecomment-6390371437).
+  Siedem rezerwacji O2 i kontraktbe21 pozostają przy ich wykonawcy. Kolejne wejście
+  do próby to finalny spójny runtime O2, integracja jednej instancji DI przez O1
+  oraz4skonfigurowane APK z manifestem i nowym android_acceptance. Room24/25 są
+  osobnymi etapami; nie podmieniamy nimi planu Room23.
+- Zmiana obejmuje tylko procedurę i ten dziennik. Wymagane są właściwe kontrole
+  zakresu DOCS, E0 i osobny odbiór main; nie przypisujemy przyszłego wyniku CI.
+  Lokalny E0 PASS:11schematów,98valid/35invalid,18scenariuszy,885linków;
+  niezależny przegląd i diff-check PASS. Porównanie z bazą potwierdziło zachowanie
+  całej historycznej procedury i wszystkich wcześniejszych wpisów innych autorów.
+  Nie zmieniono kodu/konfiguracji/CI, nie wykonano nowego E4/PULL, instalacji,
+  testów urządzenia, kopii lub restartu usług. Dotychczasowe demo i kopie są
+  zachowane, pełna kolejka pozostaje otwarta, `deployment_authorized=false`.

@@ -1,5 +1,161 @@
 # Przygotowanie obserwacji PostgreSQL dla replay E4 — O3
 
+## Procedura operatora Room23 — 25.10.2026
+
+Ta procedura opisuje odbiór nowego drivera z trwałą izolacją runtime.
+Jej opublikowanie nie oznacza wykonania próby ani przyjęcia nowych APK.
+Poniższe historyczne wyniki Room14/17–20 zachowują swoje źródła i zakresy.
+
+Podstawą interfejsu jest [kontrakt drivera ccb614e](https://github.com/Roseru/aplikacja-mobilna/blob/ccb614ed6ffeff314a17e8a4d65cac012fb1624b/android/DRIVER_REPLAY_E4.md).
+Kod `526deb402ccb190976c4dbc5265bfa11620935fc` pozostaje **niedopuszczony do live**:
+[przegląd O3](https://github.com/Roseru/aplikacja-mobilna/pull/146#issuecomment-6392899041)
+wykazał możliwość dopuszczenia pracy przy przekroczeniu terminu między
+`observed()` i `paused()` bez trwałego zakończenia izolacji. Wymagany jest
+kolejny poprawiony pin i odbiór regresji tej granicy. Samo pole `terminal`
+oraz komponentowy receipt jednej próby A1 nie zamykają tego warunku.
+
+### Warunki otwarcia nowego okna
+
+Przed instalacją i nową próbą operator zbiera następujące dowody:
+
+- **O1:** poprawiony driver, jego dokładny source/tree oraz wynik regresji
+  przekroczenia terminu, dopuszczenia pracy, rollbacku i rekonstrukcji.
+  Wygasła izolacja nie może odżyć po mutacji runtime.
+- **O2 i O1:** finalne porty saved ACK/raw, oba ABA, anulowanie/mutex,
+  watchdog i pełna granica `SyncRuntimeAdmission`. O1 przekazuje jedną
+  instancję z Application; runtime wykonuje `attach(1)`, obserwuje `changes`
+  i obejmuje przez `run` wszystkie mutujące wejścia, obserwatory oraz scheduler.
+  Wynik `Paused` nie może powodować zapisu ani retry poza tą granicą.
+  [Przyjęcie O2](https://github.com/Roseru/aplikacja-mobilna/pull/146#issuecomment-6390281744)
+  i [zgoda na watchdog](https://github.com/Roseru/aplikacja-mobilna/pull/146#issuecomment-6390371437)
+  ustalają zakres prac; do odbioru potrzebny jest także finalny pin i wyniki.
+- **O1:** spójna dostawa czterech APK: regularny debug, skonfigurowany validation,
+  domyślny testAPK oraz opt-in liveReplay testAPK. Manifest wiąże ich source/tree,
+  applicationId, target instrumentacji, wersję/code/Room, rozmiar, SHA-256 i podpis.
+  Operator sprawdza skompilowane API/issuer/CA i nowy `android_acceptance`.
+  Nieskonfigurowane pary `replaycheck` lub `expirycheck` nie są tą dostawą.
+- **O3 z zespołem:** aktualny obraz API, schemat, epoka i prywatne powiązanie
+  konta syntetycznego z właścicielem PG, uzgodniony peer oraz ograniczone okno.
+  Dane logowania pozostają poza Git i argumentami instrumentacji. Odbiór
+  transportu/TLS i konta poprzedza trial; dawny adres lub stare okno nie
+  potwierdzają dzisiejszej gotowości.
+
+Nie podmienia się numeru Room lub hashy w starym planie. Room24 kalkulatora
+i Room25 korekt energii wymagają własnego zgodnego kontraktu i kwalifikacji.
+
+### Argumenty i kolejność operatora
+
+Opt-in testAPK powstaje z `O1_LIVE_E4_REPLAY_TEST=true`. Każda faza jest osobnym
+wywołaniem `LiveMealReplayTest` z literalnymi `live_e4_replay=true`,
+`synthetic_account=true`, właściwym `phase` i tym samym nowym kanonicznym
+`trial_id`. Tylko `prepare` otrzymuje `meal_id` i `operation_id`; tylko `replay`
+otrzymuje niezależny `external_kill_utc`; tylko `release` wymaga
+`allow_runtime_resume=true`. Nie ma argumentu przedłużającego izolację.
+
+| Krok | Działanie | Dowód przed następnym krokiem |
+|---|---|---|
+| 1. Sesja | Na osobnym środowisku: sesja, bootstrap i zastosowana najnowsza pełna kopia. | Potwierdzone konto i kontekst, bez tworzenia wybranej operacji przed izolacją runtime. |
+| 2. `isolate` | Przed freeze utrwalić prywatną blokadę, anulować dopuszczone wejścia i poczekać na ich finally. | `isolated.json`, gotowa izolacja oraz brak aktywnych mutacji; brak attach lub timeout blokuje baseline. |
+| 3. Nowy Meal | Dopiero przy gotowej izolacji normalnym UI utworzyć jedną świeżą pending kanoniczną `Meal/create`, `base_revision=null`. | Dokładnie jedna eligible operacja i jej trwałe `meal_id`/`operation_id`; bez seed SQL/Room. Automatyczny drainer nie może jej wcześniej zamrozić, oznaczyć attempted lub wysłać. |
+| 4. `prepare` | Zamrozić wybraną kopertę bez HTTP i zapisać ścisły baseline. | `prepared.json`, `driver_guard_version=2`, ten sam trial/konto/kontekst i stały `isolation_deadline`. |
+| 5. Plan PG i C0 | Wyeksportować dokładne bajty requestu; utworzyć osobny plan PG w zgodnym runtime backendu, następnie wykonać niezależny read-only C0. | Plan powstały przed C0, hash koperty i operacji, oczekiwana treść Meal oraz C0 bez docelowej mutacji. |
+| 6. `hold` | Wykonać rzeczywisty POST; poprawny ACK zatrzymać przed lokalnym zapisem. | `held.json`, HTTP200/no-store, attempted=true, revision0 i brak lokalnego ACK; zapisany rzeczywisty termin kill. |
+| 7. C1 i kill | Osobnym połączeniem PG potwierdzić COMMIT, następnie naprawdę zatrzymać proces przed terminem hold. | C1 oraz niezależny receipt operatora z czasem rzeczywistego kill. Hold kończy się przerwaniem instrumentacji. |
+| 8. `replay` | W nowym procesie, przy nadal ważnej izolacji, ponownie wysłać identyczną utrwaloną kopertę i zastosować oryginalną rewizję. | `replayed.json`: inny PID/późniejszy start, świeży HTTP receipt, `already_applied`/revision1, trwały ACK i ścisły guard. |
+| 9. C2 i compare | Przed release i wygaśnięciem izolacji zebrać trzeci niezależny odczyt PG i porównać C0/C1/C2 z tym samym planem. | C1=C2 także dla treści i odcisków; osobny wynik obserwatora PG oraz dowody Androida/HTTP/kill. |
+| 10. `release` | Po zebraniu dowodów osobno, jawnie wznowić runtime zgodnej próby. | `released.json`; ten receipt nie nadaje PASS replay, PG ani PULL. |
+| 11. PULL | Wykonać i odebrać zwykły PULL jako osobną operację, następnie składać pakiet i kopię zmienionego stanu. | Oddzielny wynik PULL; nie dopisywać go do wcześniejszego odcisku ACK. |
+
+### Dwa niezależne terminy
+
+| Termin | Sposób użycia |
+|---|---|
+| `isolation_deadline` | Epoch millis ustalone przy isolate: domyślnie20 minut, limit mechanizmu30 minut. Obejmuje utworzenie operacji w UI, plan PG, C0, hold, restart/replay i C2. Restart/ponowienie nie odnawia terminu. |
+| `held.json.deadline_utc` | Rzeczywisty termin bariery ACK z pozostałego czasu monotonicznego, maksymalnie45 sekund. C1 i kill muszą zakończyć się przed nim. Nie wyliczać `held_utc+45s` ani45 sekund od odczytu pliku. |
+
+Driver wymaga co najmniej20 sekund pozostałych po lokalnych kontrolach hold.
+Osobne45 sekund oczekiwania na quiescence,90 sekund na odpowiedź i120 sekund
+TTL uzbrojenia bariery nie zastępują terminu kill. Wymagane jest
+`held_utc <= external_kill_utc < deadline_utc`. Nowy PID i HTTP200 nie dowodzą
+odpowiednio rzeczywistego kill ani serwerowego COMMIT.
+
+### Koperta drivera i osobny plan PostgreSQL
+
+`prepared.json` nie jest planem [obserwatora PG](../../infra/integration/e4_observer.py).
+Jego `request` jest stringiem z utrwaloną kopertą: eksportować dokładne UTF-8,
+bez BOM i dodatkowego newline, po czym porównać SHA bajtów z driverowym `hash`.
+Nie serializować ponownie obiektu JSON ani nie używać domyślnego PowerShell
+`Out-File` do tego eksportu.
+
+Prywatny kontekst dla `e4_observer.py prepare` ma dokładnie `trial_id`, `owner_id`,
+`expected_schema`, `expected_api_image`. Obserwator wyprowadza pozostałe pola
+w zgodnym runtime backendu. `prepared.json.context` jest kontekstem wire
+i nie zastępuje tego pliku. `operation_sha256=fingerprint(operation)` jest
+odrębny od `envelope_sha256`; `expected_meal` pochodzi z requestu przed C0,
+nigdy z odczytu C1. Po C0 nie zmieniać planu.
+
+Interfejs istniejącego CLI, z prywatnymi plikami dostarczonymi przez operatora:
+
+```text
+e4_observer.py --plan <context.json> prepare --request <request.bin> --output <pg-plan.json>
+e4_observer.py --plan <pg-plan.json> capture --settings <settings.json> --phase C0 --output <C0.json>
+e4_observer.py --plan <pg-plan.json> capture --settings <settings.json> --phase C1 --output <C1.json>
+e4_observer.py --plan <pg-plan.json> capture --settings <settings.json> --phase C2 --output <C2.json>
+e4_observer.py --plan <pg-plan.json> compare <C0.json> <C1.json> <C2.json>
+```
+
+Capture C1/C2 następują wyłącznie w odpowiednich miejscach powyższej sekwencji.
+Plany, snapshots i driver receipts mają różne formaty. Raw request, identyfikatory
+konta i prywatne pliki dowodowe pozostają poza repozytorium i publicznymi logami.
+
+### Zakres guardów i odmowy
+
+Android Room23 chroni39 tabel oraz dodatkowy `__schema__`: wszystkie wiersze,
+kolumny, rowid, konta/gościa, wspólny katalog i definicje tabel/indeksów/triggerów,
+także przy pustych tabelach. Listę definiuje [MealReplayFingerprint](https://github.com/Roseru/aplikacja-mobilna/blob/526deb402ccb190976c4dbc5265bfa11620935fc/android/app/src/validation/java/pl/roseru/kalorie/session/MealReplayFingerprint.kt).
+`sync_work_state`, pozostałe nowe ledgery i `diary_days` pozostają ścisłe.
+Normalizacja dotyczy wyłącznie wybranych pól ACK:
+
+- `meals.serverRevision`, z osobną kontrolą0 przed ACK i1 po replay;
+- `outbox.status`, z osobnym wymaganiem pending/acked;
+- `sync_push_batches.attempted/responseJson/state`, sprawdzanych według fazy.
+
+PG obserwuje sześć tabel serwera. Nie rozszerza się jego listy do39 tabel Room.
+PASS jednej strony nie zastępuje drugiej. Wersja prywatnego fence2, driver guard2
+i admission contract1 to trzy odrębne oznaczenia. Nowy odebrany driver ma wymagać
+`ready=true, terminal=false` podczas chronionej obserwacji oraz nieodwracalnego
+zakończenia przed dopuszczeniem pracy po expiry. Dawny fence v1 nie dowodzi
+ciągłości izolacji i nie jest aktualizowany w miejscu do gotowego dowodu.
+
+Zachować rzeczywisty wynik instrumentacji. Kontrakt referencyjny zapisuje
+`not-run.json` i kończy jako pominięty NOT_RUN po timeout oczekiwania na hold
+albo gdy proces przeżył hold. Wygaśnięcie izolacji w `requireHeld`, timeout
+bariery podczas replay oraz naruszenia assertions propagują FAIL; nie
+reinterpretować ich jako pominięcia. Brak warunków wejściowych przed uruchomieniem
+próby oznacza, że próby nie wykonano, bez tworzenia zastępczego driver receipt.
+`not-run.json` i `guard-failed-<phase>.json` zachować.
+`replayed.json` pozostawia PULL jako `NOT_RUN_SEPARATE_OPERATION`.
+Receipts `isolated/prepared/held/replayed/released.json` powstają wyłącznie jako
+nowe pliki. Chwilowo pusty lub istniejący plik nie uzasadnia ponownego wysłania
+tej samej fazy. Nie nadpisywać dowodów ani nie odnawiać starego trialu/baseline.
+
+Release runtime jest odrębny od wewnętrznego zwolnienia bariery ACK w replay.
+Driverowy release/abort wymaga poprawnego `isolated.json`. Gdy isolate utrwali
+fence, lecz timeout nastąpi przed zapisaniem tego receipt, zwykłe release nie
+jest uniwersalnym abortem: zachować dowody i uzgodnić osobną interwencję O1.
+Nie dopisywać ręcznie receipt, nie usuwać fence ani nie czyścić danych aplikacji.
+Wygaśnięcie, anulowanie lub disarm bariery nie dostarczają zatrzymanego ACK.
+
+W release fence jest usuwany przed zapisem `released.json`. Brak lub częściowy
+receipt po awarii zapisu nie dowodzi, że izolacja nadal trwa: runtime może już
+działać. Zachować stan i dowody, uzgodnić interwencję O1 bez automatycznego retry,
+odtwarzania fence lub ręcznego dopisywania receipt.
+
+---
+
+Poniżej zachowano historię wcześniejszych odbiorów z ich pierwotnymi datami,
+kandydatami i ograniczeniami. Do nowego trialu Room23 służy procedura powyżej.
+
 ## Próba operatora O3 — 23.10.2026, 12:53–12:54 CEST
 
 **Jedna rzeczywista próba Meal/utrata ACK/restart/identyczny replay na własnym
