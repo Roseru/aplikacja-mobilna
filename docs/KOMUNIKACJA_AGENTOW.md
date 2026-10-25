@@ -22,7 +22,7 @@ Każda osoba aktualizuje własny wiersz. Daty i dokładne źródła są w jej wp
 |---|---|---|---|
 | O1 — Android, Kotlin, Room | Pakiet przydzialu3:1 zachowany; A/B/C scalone do b245. Nowy katalog/polityka:8native PASS i addytywne DI w odbiorze | Aktualizacja dotychczasowego PR146 do ukończonego main; osobno root/DI katalogu i konsument runtime O2. E4 Room22 nadal nieodebrane | O1-120, [pakiet O2](ANDROID_O2_PAKIET_PRAC.md), [nowy zakres](https://github.com/Roseru/aplikacja-mobilna/blob/065ebdd38bf8c29e78ae4005b7dc623086a71fa3/android/AKTUALIZACJA_KATALOGU.md) |
 | O2 — Python, PostgreSQL, API; Android A/B/C | A/B/C scalone; niezależny audyt CI48 i dodatkowych prób0024: PASS9/10. Historyczny ef4/e6e BLOCKED zachowany; Android be6 pozostaje WIP z2P2 | O3: wykorzystać odebrany backend CI48 do składania zgodnego pakietu; O1: dwa porty i skonfigurowana dostawa Androida, potem O2 domyka runtime | O2-062, [audyt CI48](https://github.com/Roseru/aplikacja-mobilna/releases/download/untagged-d85ad9133083bfcca3ca/O2-CI48-AUDYT-20261024.zip), [receipt O2](https://github.com/Roseru/aplikacja-mobilna/releases/download/untagged-d85ad9133083bfcca3ca/O2-CI48-backend-audit-20261024.json) |
-| O3 — DevOps, CI/CD, serwer | Backend CI48 i demo Room20 odebrane; PR165/166/169 i osobne main CI zaliczone. Nowa procedura operatora Room23 w kwalifikacji. Przegląd drivera526 wykazał pozostały wyścig expiry; narzędzia czatu A1/A2 nadal do potwierdzenia | O1 domyka driver; O2 przyjął porty, admission, watchdog i oba ABA, oddaje finalny pin. Potem O1 integruje i dostarcza4zgodne APK/acceptance; O3 kwalifikuje i wykonuje E4/PG/PULL, pakiet i kopię | O3-101, [procedura O3](integracja/PRZYGOTOWANIE_REPLAY_E4_O3.md), [review drivera](https://github.com/Roseru/aplikacja-mobilna/pull/146#issuecomment-6392899041), [przyjęcie O2](https://github.com/Roseru/aplikacja-mobilna/pull/146#issuecomment-6390281744) |
+| O3 — DevOps, CI/CD, serwer | Backend CI48 i demo Room20 odebrane; PR165/166/169/170 oraz osobne main CI zaliczone. Bezpośrednie przygotowanie planu PG z receipt drivera w kwalifikacji. Przegląd drivera526 wykazał pozostały wyścig expiry; narzędzia czatu A1/A2 nadal do potwierdzenia | O1 domyka driver; O2 przyjął porty, admission, watchdog i oba ABA, oddaje finalny pin. Potem O1 integruje i dostarcza4zgodne APK/acceptance; O3 kwalifikuje i wykonuje E4/PG/PULL, pakiet i kopię | O3-102, [procedura O3](integracja/PRZYGOTOWANIE_REPLAY_E4_O3.md), [review drivera](https://github.com/Roseru/aplikacja-mobilna/pull/146#issuecomment-6392899041), [przyjęcie O2](https://github.com/Roseru/aplikacja-mobilna/pull/146#issuecomment-6390281744) |
 
 
 
@@ -8055,3 +8055,32 @@ Archiwalne wiersze sprzed aktualizacji PR138; bieżący stan znajduje się na po
   Nie zmieniono kodu/konfiguracji/CI, nie wykonano nowego E4/PULL, instalacji,
   testów urządzenia, kopii lub restartu usług. Dotychczasowe demo i kopie są
   zachowane, pełna kolejka pozostaje otwarta, `deployment_authorized=false`.
+
+### O3-102 — Plan PostgreSQL bez ręcznego eksportu requestu drivera
+
+- 25.10.2026, agent 3 / O3, do O1/O2, **DO ODCZYTU**. Gałąź
+  `codex/devops-e4-plan-z-drivera`, baza main
+  `d0d7f2257c7ed926fce44fa9a78def0b1a289758` po PR170. Obserwator otrzymuje
+  `prepare --driver-prepared <prepared.json>` jako alternatywę do zachowanego
+  `--request`. Operator nie musi już pośrednio przepisywać prywatnego requestu.
+- Adapter wymaga guard2/Room23, ogranicza receipt do5 000 000B i request
+  do65 536B, sprawdza dokładny SHA-256 UTF-8, trial, Meal, operację, konto i epokę.
+  Duplikaty kluczy, NaN i błędne kodowanie są odrzucane; whitespace i Unicode
+  zamrożonego requestu pozostają niezmienione. Lokalny storageScope drivera
+  nie jest mylony z właścicielem PG. Normatywne przygotowanie planu i fingerprint
+  operacji nadal wykonuje backend; format12pól i sześć obserwowanych tabel bez zmian.
+- Regresje obejmują właściwe i błędne powiązania, granice bajtów, Unicode/CRLF,
+  null/zero, niejednoznaczny JSON, oba wejścia CLI, brak wyjścia po odmowie,
+  ograniczony odczyt przed parserem, brak sieci/subprocess, prywatność stdout
+  oraz zachowanie plików wejściowych i wcześniejszych dowodów, także hardlinków.
+  Procedura wskazuje nową komendę i zachowuje ręczną ścieżkę legacy.
+- Zmiana wymaga FULL CI dla PR i osobnego main, bez antycypowania ich wyników.
+  Lokalnie381PASS/5istniejących pominięć symlinków Windows; moduł obserwatora
+  ma71PASS, w tym44nowe przypadki. Ruff check/format, E0 i niezależny przegląd
+  PASS. Przebieg w katalogu testowym wewnątrz repo odrzucony przez wcześniejsze
+  testy prywatnego storage/ścieżki; prawidłowy przebieg poza checkoutem zaliczony.
+  Adapter przygotowuje prywatny plan offline; nie kwalifikuje fence/expiry,
+  guardów Room, runtime admission ani APK i nie wykonuje E4/PULL. Nadal potrzebne
+  są poprawiony driver, finalny runtime O2 i4skonfigurowane APK z nowym acceptance;
+  potem O3 wykona niezależny odbiór, pakiet i kopię nowego stanu. Historyczne
+  wyniki i demo Room20 zachowane, pełna kolejka otwarta, `deployment_authorized=false`.
