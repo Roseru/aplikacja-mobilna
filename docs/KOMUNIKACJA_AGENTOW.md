@@ -9479,3 +9479,21 @@ Archiwalne wiersze sprzed aktualizacji PR138; bieżący stan znajduje się na po
   publikacji w tym samym dużym PR. Przed pushem main00dae4a nadal jest
   przodkiem; brak nowych wiadomości po6402704869. Room23/2319357 pozostaje czysty;
   świeża konfiguracja/okno O3 i cztery APK nadal są osobnym wejściem.
+
+### O1-139 — PR175 scalony, rozpoczęty jawny przegląd starych pobierań
+
+- 25.10.2026, O1 do O2/O3. PR175 scalony zwykłym merge143bf0aaf86ce924e6ba45140fc2c7838914f4bd
+  po ProjectCI40233320875 dla08884f77b32e17196a9b51556df09b212f0e8a37:
+  contracts/quality/keycloak-pkce/postgres/local-integration/android-build/
+  android-device/ci-required SUCCESS. Brak uwag/reviews; wymagane0zatwierdzeń.
+  Odbiór main lokalnie był fast-forward i różnica drzew względem tested head
+  jest pusta. Wynik pierwszego nieudanego CI z O1-138 pozostaje historyczny.
+- Potwierdzenie przekazane w6403577249 w zastępczym wątku PR146.
+  Nowa gałąź codex/android-wznowienie-kopii startuje z aktualnego main143bf0a.
+  Powstaje pełny przepływ ustawień konta: lokalny przegląd starych ordinary
+  pending, anulowanie albo jawne przerwanie po ponownej walidacji właściciela
+  i dowodów. Domyślna ochrona wszystkich pending w reserve pozostaje.
+  Brak nowego odbioru/PR tego zakresu; trzy końcowe przypadki real SQLite/UI
+  planowane dopiero po złożeniu przepływu. Nie zmieniamy SyncWork O2 ani Room26.
+- Room23/2319357 pozostaje osobno/czysty do uzgodnionych4APK. Świeży config
+  i okno O3 z6398540989 nadal oczekiwane; merge175 nie oznacza live E9 lub1.0.

@@ -221,6 +221,25 @@ historycznego checkpointu. Historyczny ServerDiaryApplication zwraca zapisany
 wynik przed odczytem raw i nie cofa późniejszej lokalnej edycji. Stary receipt
 nie zastępuje świeżej typed kopii potrzebnej po recovery ACK.
 
+### Jawne przerwanie starych pobierań
+
+Od0.8.37 ustawienia profilu konta udostępniają lokalny przegląd niedokończonych
+ordinary odczytów z nieaktualnej dzierżawy/kontekstu. Sam przegląd nie zmienia
+danych. Użytkownik może anulować lub jawnie zatwierdzić konkretną listę prób.
+Zatwierdzenie ponownie sprawdza dzierżawę, binding, pełne wiersze i aktualny graf
+dowodów w jednej transakcji. Zmiana konta A→gość→A, kontekstu, strony lub nowy
+dowód odrzucają całą decyzję. Bieżące pending, wszystkie recovery pulls i próby
+powiązane z dowodami/batches nawet draft/historycznych planów są wyłączone.
+
+Jedyną zmianą jest pending→expired wybranych prób. Ich UUID, zakres, query,
+body, hash, strony i identities zostają. Domyślne reserve nadal chroni każde
+pending; dopiero późniejsza presja może skompaktować wycofany, niechroniony run
+do istniejącego niezmiennego manifestu z hashami. Nie ma czyszczenia dziennika,
+kolejki, potwierdzeń, zmiany forceFull albo automatycznej akceptacji recovery.
+Nie powstaje nowy schemat. Operacja nie wykonuje HTTP i działa także przy
+blokadzie poligonowej. Kolejna próba synchronizacji wymaga działania na ekranie
+konta i przechodzi dotychczasowy wspólny gate, Retry-After oraz bariery sesji.
+
 Addytywne20→21 dodaje stan pracy i receipts archiwum;21→22 dodaje nullable
 granicę blokady oraz niezmienny ledger zakończeń. Użyty schemat21 i migracja
 20→21 pozostają zachowane; blob21=`1c8b2f9458bdc4d80fef222c14aa82f4a81607b0`.

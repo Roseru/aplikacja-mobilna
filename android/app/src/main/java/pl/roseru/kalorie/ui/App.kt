@@ -19,7 +19,7 @@ import pl.roseru.kalorie.session.*
 
 @Composable fun CalorieApp(model: DiaryViewModel, session: SessionView, actions: SessionActions, photoModel: pl.roseru.kalorie.photo.MealPhotoViewModel, importModel:pl.roseru.kalorie.importing.ImportViewModel?=null,syncStatus:String?=null,
     deviceNetworkModels:DeviceNetworkModels?=null,communityModel:pl.roseru.kalorie.community.CommunityViewModel?=null,
-    energyModel:pl.roseru.kalorie.energy.EnergyViewModel?=null) {
+    energyModel:pl.roseru.kalorie.energy.EnergyViewModel?=null,snapshotMaintenanceModel:pl.roseru.kalorie.sync.SnapshotMaintenanceViewModel?=null) {
     val ready by model.ready.collectAsStateWithLifecycle()
     val error by model.startupError.collectAsStateWithLifecycle()
     val nav = rememberNavController()
@@ -92,7 +92,8 @@ import pl.roseru.kalorie.session.*
             }
             composable("custom") { CustomFoodScreen(model, onBack = { nav.popBackStack() }) }
             composable("settings") { SettingsScreen(model,deviceNetworkModels?.catalog,deviceNetworkModels?.policy,
-                onCalculator={nav.navigate("maintenance"){launchSingleTop=true}},onEnergy=energyModel?.let {{nav.navigate("energy"){launchSingleTop=true}}}) }
+                onCalculator={nav.navigate("maintenance"){launchSingleTop=true}},onEnergy=energyModel?.let {{nav.navigate("energy"){launchSingleTop=true}}},
+                snapshotMaintenanceModel=snapshotMaintenanceModel,onAccount={nav.navigate("account"){launchSingleTop=true}}) }
             composable("maintenance") {MaintenanceScreen(model,onBack={nav.popBackStack()})}
             composable("energy") {energyModel?.let {EnergyScreen(it,model,session,networkState,onBack={nav.popBackStack()},onAccount={nav.navigate("account"){launchSingleTop=true}},
                 onConsents={nav.navigate("ranking-consent"){launchSingleTop=true}})}}
