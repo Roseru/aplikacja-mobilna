@@ -19,7 +19,7 @@ import pl.roseru.kalorie.data.GoalEntity
 import pl.roseru.kalorie.data.ThemeMode
 
 @Composable fun SettingsScreen(model: DiaryViewModel,catalogModel:pl.roseru.kalorie.catalogupdate.CatalogUpdateViewModel?=null,
-    networkModel:pl.roseru.kalorie.core.network.NetworkPolicyViewModel?=null,onCalculator:(()->Unit)?=null) {
+    networkModel:pl.roseru.kalorie.core.network.NetworkPolicyViewModel?=null,onCalculator:(()->Unit)?=null,onEnergy:(()->Unit)?=null) {
     val theme by model.theme.collectAsStateWithLifecycle()
     val goal by model.todayGoal.collectAsStateWithLifecycle()
     val busy by model.busy.collectAsStateWithLifecycle()
@@ -38,6 +38,9 @@ import pl.roseru.kalorie.data.ThemeMode
         SavedMaintenanceEstimate(goal?.estimateJson)
         if(onCalculator!=null)OutlinedButton(onClick=onCalculator,enabled=!busy,modifier=Modifier.fillMaxWidth().testTag("open-maintenance")) {
             Text("Oblicz zapotrzebowanie i wybierz cel")
+        }
+        if(onEnergy!=null)OutlinedButton(onClick=onEnergy,enabled=!busy,modifier=Modifier.fillMaxWidth().testTag("open-energy")) {
+            Text("Analizy i korekty zapotrzebowania")
         }
         HorizontalDivider()
         if(networkModel!=null) {

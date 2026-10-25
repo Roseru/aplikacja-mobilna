@@ -18,7 +18,8 @@ import pl.roseru.kalorie.DiaryViewModel
 import pl.roseru.kalorie.session.*
 
 @Composable fun CalorieApp(model: DiaryViewModel, session: SessionView, actions: SessionActions, photoModel: pl.roseru.kalorie.photo.MealPhotoViewModel, importModel:pl.roseru.kalorie.importing.ImportViewModel?=null,syncStatus:String?=null,
-    deviceNetworkModels:DeviceNetworkModels?=null,communityModel:pl.roseru.kalorie.community.CommunityViewModel?=null) {
+    deviceNetworkModels:DeviceNetworkModels?=null,communityModel:pl.roseru.kalorie.community.CommunityViewModel?=null,
+    energyModel:pl.roseru.kalorie.energy.EnergyViewModel?=null) {
     val ready by model.ready.collectAsStateWithLifecycle()
     val error by model.startupError.collectAsStateWithLifecycle()
     val nav = rememberNavController()
@@ -57,7 +58,7 @@ import pl.roseru.kalorie.session.*
                 NetworkModeNotice(networkState,onSettings={nav.navigate("settings"){launchSingleTop=true}})
         },
         bottomBar = {
-            if (route !in listOf("food", "rations", "custom", "photo", "community", "maintenance")) NavigationBar(containerColor = MaterialTheme.colorScheme.surface) {
+            if (route !in listOf("food", "rations", "custom", "photo", "community", "maintenance", "energy")) NavigationBar(containerColor = MaterialTheme.colorScheme.surface) {
                 NavigationBarItem(selected = route == "diary", onClick = { nav.navigate("diary") { popUpTo("diary"); launchSingleTop = true } },
                     icon = { Icon(Icons.AutoMirrored.Outlined.Assignment, contentDescription = null) }, label = { Text("Dziennik") }, modifier=Modifier.testTag("open-diary"))
                 NavigationBarItem(selected = route == "analytics", onClick = { nav.navigate("analytics") { launchSingleTop = true } },
@@ -89,8 +90,11 @@ import pl.roseru.kalorie.session.*
                     onCancelAnalysis=actions.cancelPhotoAnalysis,onRetryCancellation=actions.retryPhotoCancellation,onReleaseCancelled=actions.releaseCancelledPhoto,draftActions=actions.photoDraft)
             }
             composable("custom") { CustomFoodScreen(model, onBack = { nav.popBackStack() }) }
-            composable("settings") { SettingsScreen(model,deviceNetworkModels?.catalog,deviceNetworkModels?.policy,onCalculator={nav.navigate("maintenance"){launchSingleTop=true}}) }
+            composable("settings") { SettingsScreen(model,deviceNetworkModels?.catalog,deviceNetworkModels?.policy,
+                onCalculator={nav.navigate("maintenance"){launchSingleTop=true}},onEnergy=energyModel?.let {{nav.navigate("energy"){launchSingleTop=true}}}) }
             composable("maintenance") {MaintenanceScreen(model,onBack={nav.popBackStack()})}
+            composable("energy") {energyModel?.let {EnergyScreen(it,model,session,networkState,onBack={nav.popBackStack()},onAccount={nav.navigate("account"){launchSingleTop=true}},
+                onConsents={nav.navigate("ranking-consent"){launchSingleTop=true}})}}
             composable("profile") { ProfileScreen(model, onAccount = { nav.navigate("account") { launchSingleTop = true } },
                 onAchievements = { nav.navigate("achievements") { launchSingleTop = true } },
                 onNemesis = { nav.navigate("nemesis") { launchSingleTop = true } }) }

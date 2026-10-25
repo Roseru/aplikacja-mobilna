@@ -20,7 +20,7 @@ Każda osoba aktualizuje własny wiersz. Daty i dokładne źródła są w jej wp
 
 | Rola | Ostatni znany rezultat | Następny krok / zależność | Źródło |
 |---|---|---|---|
-| O1 — Android, Kotlin, Room | Kalkulator2d85f4f/Room24 oraz poprawka O3P2 drivera526deb4 opublikowane; własne kwalifikacje PASS, połączone zwykłym merge z maina779d00 | Dalszy E9 poza siedmioma rezerwacjami O2. O2 oddaje porty/ABA/admission/watchdog, potem O1 integruje i odbiera całość; brak nowego liveE4/CI/main lub configuredAPK | O1-127/128, [kalkulator](../android/KALKULATOR_ZAPOTRZEBOWANIA.md), codex/android-kalkulator-zapotrzebowania |
+| O1 — Android, Kotlin, Room | REST/cache/UI korekt energii0.8.34/Room25:build/lint/4nowe JVM/6zmienionych odcisków/6native PASS; syntetyczna granica API/sesji | Dalej pełna encja/capability E9 i integracja portów O2, w tym UnicodeText nowego pull. Siedem rezerwacji wykonawcy zamrożone; brak nowego liveE4/CI/main | O1-129, [etap E9](../android/KOREKTY_ZAPOTRZEBOWANIA.md), codex/android-korekty-energii |
 | O2 — Python, PostgreSQL, API; Android A/B/C | A/B/C scalone; niezależny audyt CI48 i dodatkowych prób0024: PASS9/10. Historyczny ef4/e6e BLOCKED zachowany; Android be6 pozostaje WIP z2P2 | O3: wykorzystać odebrany backend CI48 do składania zgodnego pakietu; O1: dwa porty i skonfigurowana dostawa Androida, potem O2 domyka runtime | O2-062, [audyt CI48](https://github.com/Roseru/aplikacja-mobilna/releases/download/untagged-d85ad9133083bfcca3ca/O2-CI48-AUDYT-20261024.zip), [receipt O2](https://github.com/Roseru/aplikacja-mobilna/releases/download/untagged-d85ad9133083bfcca3ca/O2-CI48-backend-audit-20261024.json) |
 | O3 — DevOps, CI/CD, serwer | Backend CI48 i demo Room20 odebrane; PR165/166 i osobne main CI FULL8PASS. Dependabot naprawiony, PR167/168 do odbioru O2. Ochrona wejść release przed nadpisaniem raportem w walidacji. Livechat działa; dostęp do narzędzi A1/A2 nadal do potwierdzenia | O2 wykonuje delegowane porty, runtime i dwa ABA; O1 potem integruje i dostarcza skonfigurowany APK, android_acceptance oraz driver23. O3 kwalifikuje dostawę, wykonuje E4/PULL, składa pakiet i kopię | O3-100, O3-099, O3-097, [delegacja O1](https://github.com/Roseru/aplikacja-mobilna/pull/146#issuecomment-6386626395), [livechat](https://calorie-coord-o3-20261024.roseru.chatgpt.site) |
 
@@ -8575,3 +8575,129 @@ Archiwalne wiersze sprzed aktualizacji PR138; bieżący stan znajduje się na po
   sync/E4 i osobny PULL, lokalny pakiet na D, kopia po zmianie stanu. Odebrane
   Room20/API24 i dobre kopie pozostają zachowane. Pełna kolejka demo nadal otwarta;
   brak nowego PASS Room23 i `deployment_authorized=false`.
+
+### O1-129 — Duży etap klienta korekt energii E9, implementacja w toku
+
+- 25.10.2026, agent1/O1, do O2/O3, **DO ODCZYTU**. Nowa gałąź
+  codex/android-korekty-energii z dokładnego17c388edfd915355d398d7b33deb65a1f7a0d5d3.
+  Rodzic kalkulatora i source poprawki526deb4 są opublikowane; nowe E9
+  jest osobnym lokalnym WIP, bez PR lub kwalifikacji. Zakres pełny:
+  [klient E9](e9/INTEGRACJA_O1.md), wymagania11.5 i KO15/24;
+  [opis wdrażanego przepływu](../android/KOREKTY_ZAPOTRZEBOWANIA.md).
+- Powstały EnergySchema i EnergyProtocol oraz dokładny asset wygenerowanego
+  kontraktu SHA2560ab9b9a795151e16989b131d9f64947150b0907916ee6339b79c8e76bb2187d4.
+  Typowane state/history/analysis, snapshot/notice, kwoty BigDecimal,
+  kanoniczne requesty analysis/accept/reject/revert/affirm. Pusta historia
+  zachowuje int after_revision zgodnie z rzeczywistym routerem. Stan
+  requested nie jest utożsamiany z effective. Odczyt nie udziela zgody.
+- Kolejne implementowane części: wspólna sesja/TLS/gate, trwały cache,
+  niezmienne próby mutacji/retry po niepewnym ACK, formularze/notice,
+  podgląd i decyzje, historia/plan/revert, osobna afirmacja automatu.
+  Integracja energy_estimates_v1 pozostaje wymaganiem pełnego E9;
+  nie zmieniamy cicho scope istniejącego sync-v1 lub UUID/body outboxu.
+- O1 rezerwuje wyłącznie addytywną migrację24→25 dla lokalnego modułu
+  energii. Rezerwacja nie jest wykonaną migracją; bieżąca baza nadal24.
+  Siedem plików O2 nadal zamrożone, w tym watchdog z6390371437. O2 nie
+  pobiera całej nowej gałęzi lub Room25 do be6/4f i oddaje bieżący etap
+  niezależnie. Nie powstaje drugi gate lub magazyn tokenów.
+- Zgodnie z decyzją właściciela najpierw cały przepływ, potem celowane
+  kontrole i poprawki. Nowego modułu jeszcze nie kompilowano/testowano;
+  transport, Room, UI, serwer/Gemini i opt-in sync **DO WYKONANIA**.
+  Poprzednich wyników kalkulatora/drivera nie przypisujemy temu etapowi.
+
+#### O1-129 — cały przepływ napisany, końcowe kontrole uruchomione
+
+- Powstały transport/shared-session adapter, EnergyStore z3tabelami i
+  niezmiennymi próbami, repozytorium/VM, ekran/route Ustawienia, historia,
+  osobne notice, decyzje/revert oraz deklaracja i afirmacja automatu.
+  Kod nie zmienia celu/makr/profilu po przyjęciu E. Nowy PUT zgód unieważnia
+  lokalny podgląd effective; nie uruchamia afirmacji. Zmiany/niepewność
+  zgód rankingu także są obserwowane, bez edycji SessionController.
+- Próba utrwala leaseGeneration/body/key/If-Match/fingerprint. Late ACK
+  wymaga tego samego bieżącego lease/context. Jawny retry po ponownym
+  logowaniu do tego samego kontekstu nie przepisuje starego requestu;
+  inny kontekst pozostaje do uzgodnienia. Zachowane wspólne gate/TLS,
+  no-store, deadline/disconnect, refresh tej samej sesji i backoff.
+- Migracja24→25 dodaje tylko energy_cache/energy_attempts/energy_backoff
+  i guardy;18rejestracji otrzymało końcowy krok. Robocze0.8.34/code45/
+  validation1045. Driver25 chroni42tabele, nowe3i ich pola są ścisłe,
+  nieznany26 odmówiony; brak nowych normalizacji ACK. Qualification
+  źródeł23/24 pozostaje oddzielna od tego nowego etapu.
+- Dopiero po całym przepływie uruchomiono build validation i opt-in
+  testAPK, standard Kotlin, lint i tylko4nowe JVM+6zmienionych odcisków.
+  Wyniki **PENDING**. Przygotowane5native: trwały niepewny replay/reopen/
+  obce konto, actual24→25 z wszystkimi dawnymi polami/rowid/requestami,
+  transport headers/cancel, Compose explicit notice/create/accept,
+  actual export25/zakres ledgerów. Granica API/sesji w tych przypadkach
+  jest syntetyczna; Room, VM, protokół i UI są rzeczywiste. Bez Keycloak,
+  prawdziwego HTTPS/Gemini lub zamknięcia pełnego E9.
+- Siedem plików O2 pozostaje zamrożone. Encja i capability
+  energy_estimates_v1 z migracją signed scope/full snapshot oraz
+  zachowaniem starych UUID/body pozostają **DO WYKONANIA** po odbiorze
+  jego portów. Sam REST/cache nie zastępuje tego kryterium. Nie ma nowego
+  PR, remoteCI, skonfigurowanej dostawy lub android_acceptance.
+- Pierwszy build **FAIL314,469s**: jedna kolizja nazwy typu wyjątku z DTO
+  EnergyUnavailable spowodowała błędy Kotlin obu wariantów. LogSHA256
+  72397a9d1cacd3b4f8c88f12db779dc92ad09e9f9599d0abaea9aa589926a1d9,
+  wejścia pozostały niezmienione. Testy JVM/lint/native nie zdążyły się
+  wykonać. Nazwa wyjątku poprawiona na EnergyAccessFailure, DTO bez zmiany.
+- Domknięto też trwałą niepewność zgód: marker w istniejącym energy_cache,
+  Root przed ranking PUT/retry, nonce i aktywny kontekst odczytu, usunięcie
+  dopiero przy potwierdzonym fresh GET poza mutacją. Własna pending/unknown
+  próba zgód również wyłącza effective; checkbox nie jest przywracany.
+  Nie edytowano zarezerwowanego SessionController. Dodatkowy native
+  sprawdza ten marker przez reopen, równoległy GET i własny unknown PUT.
+  Teraz6celowanych native, bez ponawiania zamkniętych dawnych przypadków.
+  Poprawiony build uruchomiony, **PENDING**; pierwszy log zachowany.
+
+#### O1-129 — protokół skompilowany, naprawa przenośności konfiguracji
+
+- Drugi build FAIL631,359s: oba warianty i źródła testów skompilowane,
+  6JVM odcisków PASS;4JVM protokołu FAIL przy statycznym schemacie z0.0.
+  Oddzielono zaufaną przypiętą konfigurację od StrictJson odpowiedzi.
+  Sześć PASS zachowano i nie powtarzano. LogSHA256
+  22aaeca70cf5d863a71d86710aaa00054769720bf6ab2099e2c3e0e8f53644fe.
+- Trzeci build PASS895,281s: validation i testAPK, standard Kotlin,
+  4JVM protokołu PASS, lint0Error/0Fatal/8Warning/2Information,
+  wejścia niezmienione. LogSHA256
+  c5aa8ecce7e4cbab8088c9288c890d72898ac991995f1fb8533326ec4b3ced28.
+  Rzeczywisty eksport25:52encje, identityHash
+  bebca9f9db0ceb7b48ac008643af5fb4. Native jeszcze nie uruchomiono.
+- Przed publikacją poprawiono pin statycznej konfiguracji na SHA256
+  reprezentacji LF54baca27ddc062b8de98386dde964cd8259998e1c30cdb3e44ab4de9b0cb7764.
+  Surowy Windows CRLF ma wcześniejszy0ab9b9a7; samo Git może zmienić końce
+  linii. Ta normalizacja nie dotyczy odpowiedzi, requestów ani audytu.
+  Istniejący przypadek sprawdza teraz LF i CRLF oraz odmowę innego schematu.
+  Czwarty build/4JVM **PENDING**. Dopiero jego APK trafi na6nowych native;
+  bez przypisywania wyników trzeciego APK nowemu źródłu lub pełnemu E9.
+
+#### O1-129 — REST/cache/UI i actual Room25: lokalny odbiór PASS
+
+- Czwarty końcowy build PASS618,172s: validation/testAPK i standard Kotlin,
+  4JVM protokołu PASS, w tym LF/CRLF oraz odmowa zmienionej konfiguracji.
+  Lint0Error/0Fatal/8Warning/2Information, wejścia niezmienione. LogSHA256
+  a850572311b35852c1882b8845c93fdad864fba1b8006e7e9594b349b8c7b23b.
+  Sześć wcześniejszych PASS odcisków pozostaje zachowane, bez ponowienia.
+- Własny AVD5564, osobne energycheck1045/0.8.34.validation:
+  6native PASS/0FAIL/0SKIP w28,357s instrumentacji/44,703s receipt.
+  Actual24→25 zachowuje wszystkie stare pola/rowid/requesty, reopen/retry
+  używa pierwotnego key/body/fingerprint/generation, późne obce konto nie
+  zapisuje ACK. Compose notice/create/accept nie zmienia celu i nie afirmuje
+  automatu. Transport zachowuje headers/bajty i odblokowuje I/O przy cancel.
+  Trwała niepewność zgód przeżywa restart/GET, actual25 obejmuje42ledgery.
+  LogSHA25604b1e48ee2b9ea37aadd9dbf3e1a4d359c035a8dab20c658ee7aabbe3d07ad3a.
+- Oryginalne app/test APK i3pliki DB mają identyczne hashe przed/po;
+  samolot1/Wi-Fi off/brak defaultnetwork zachowane. App23397089B/
+  SHA2563607ac057bb251665d9cca140fa2c4433b8463554c09fa08d77f2edc1f5c90a5;
+  test3177974B/SHA2566cc7185acd0700c3077b056773ee6d51facb3e1f44456fc51dc047823332a8ae.
+  To komponentowy odbiór z syntetycznym API/sesją; bez rzeczywistego
+  Keycloak/Gemini/HTTPS, configured regular APK lub android_acceptance.
+- E0 PASS11schemas/98valid/35invalid/18scenarios/16Decimal/5day/
+  72normalizations/894links. Siedem plików O2, stare eksporty Room i dane
+  źródłowe są niezmienione. Brak PR/remoteCI/merge; przygotowanie publikacji
+  gałęzi następuje po tym odbiorze. Pełne E9 nadal wymaga opt-in sync.
+- Reprodukcja przed nowym etapem: rekurencyjny UnicodeText w definicji
+  EnergyPullResponse przepełnia stos JVM dla2048/4096poprawnych znaków.
+  Ta definicja nie jest wywoływana przez obecny REST/allowlist transportu.
+  O1 przeniesie jej kontrolę na istniejącą iteracyjną walidację znaków w ramach
+  pełnego opt-in sync. Nie powtarzamy całego zamkniętego odbioru REST.

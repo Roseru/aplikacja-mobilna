@@ -39,6 +39,20 @@ class MainActivity : ComponentActivity() {
         // the saved session record; the controller serializes them with its mutex.
         app.sessionScope.launch(Dispatchers.Main) { app.sessions.completeLogin(result.data) }
     }
+    private fun consentChange(app:CalorieApplication,lease:pl.roseru.kalorie.data.OwnerLease,block:suspend ()->Unit) {
+        app.sessionScope.launch {
+            val change=try {app.energy.beginConsentChange(lease)}
+            catch(error:kotlinx.coroutines.CancellationException){throw error}
+            catch(_:Exception) {
+                android.widget.Toast.makeText(this@MainActivity,"Nie udało się przygotować zmiany zgód. Spróbuj ponownie.",android.widget.Toast.LENGTH_LONG).show()
+                return@launch
+            }
+            try {block()}
+            catch(error:kotlinx.coroutines.CancellationException){throw error}
+            catch(_:Exception){android.widget.Toast.makeText(this@MainActivity,"Nie udało się potwierdzić zmiany zgód. Sprawdź jej wynik.",android.widget.Toast.LENGTH_LONG).show()}
+            finally {app.energy.finishConsentChange(change)}
+        }
+    }
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         enableEdgeToEdge()
@@ -77,6 +91,10 @@ class MainActivity : ComponentActivity() {
             val communityModel:pl.roseru.kalorie.community.CommunityViewModel = viewModel(viewModelStoreOwner=store,key="$ownerKey:community",
                 extras=defaultViewModelCreationExtras,factory=viewModelFactory {initializer {
                     pl.roseru.kalorie.community.CommunityViewModel(app.community,binding.lease)
+                }})
+            val energyModel:pl.roseru.kalorie.energy.EnergyViewModel = viewModel(viewModelStoreOwner=store,key="$ownerKey:energy",
+                extras=defaultViewModelCreationExtras,factory=viewModelFactory {initializer {
+                    pl.roseru.kalorie.energy.EnergyViewModel(app.energy,binding.lease)
                 }})
             val importModel: pl.roseru.kalorie.importing.ImportViewModel? = if(binding.owner.kind=="account") {
                 viewModel(viewModelStoreOwner=store,key="$ownerKey:import",extras=defaultViewModelCreationExtras,
@@ -120,8 +138,8 @@ class MainActivity : ComponentActivity() {
                 resolveConflict = { lease,key,choice -> app.sessionScope.launch { app.sessions.resolveConflict(lease,key,choice) } },
                 readMotivation = { app.sessionScope.launch { app.sessions.readMotivation() } },
                 readRankingConsents = { app.sessionScope.launch { app.sessions.readRankingConsents() } },
-                confirmRankingConsent = { id, enabled -> app.sessionScope.launch { app.sessions.confirmRankingConsent(id, enabled) } },
-                retryRankingConsent = { app.sessionScope.launch { app.sessions.retryRankingConsent() } },
+                confirmRankingConsent = { id, enabled -> consentChange(app,binding.lease) {app.sessions.confirmRankingConsent(id, enabled)} },
+                retryRankingConsent = { consentChange(app,binding.lease) {app.sessions.retryRankingConsent()} },
                 readRanking = { app.sessionScope.launch { app.sessions.readRanking() } },
                 nextRankingPage = { app.sessionScope.launch { app.sessions.nextRankingPage() } },
                 retryRankingPage = { app.sessionScope.launch { app.sessions.retryRankingPage() } },
@@ -158,7 +176,7 @@ class MainActivity : ComponentActivity() {
                     confirm={id,revision,edit->app.sessionScope.launch {app.sessions.confirmPhotoMeal(binding.lease,id,revision,edit)}},
                     retryConfirmation={id->app.sessionScope.launch {app.sessions.retryPhotoConfirmation(binding.lease,id)}},
                     reopen={id,revision,edit->app.sessionScope.launch {app.sessions.reopenPhotoConfirmation(binding.lease,id,revision,edit)}}))
-            CalorieTheme(dark) { CalorieApp(model, session, actions, photoModel, importModel, syncState?.userStatus(),deviceModels,communityModel) }
+            CalorieTheme(dark) { CalorieApp(model, session, actions, photoModel, importModel, syncState?.userStatus(),deviceModels,communityModel,energyModel) }
             }
         }
     }

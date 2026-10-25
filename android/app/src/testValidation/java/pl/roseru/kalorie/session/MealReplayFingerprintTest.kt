@@ -16,7 +16,10 @@ class MealReplayFingerprintTest {
         assertThrows(IllegalArgumentException::class.java){MealReplayFingerprint.tables(21)}
         assertThrows(IllegalArgumentException::class.java){MealReplayFingerprint.tables(23)}
         assertThrows(IllegalArgumentException::class.java){MealReplayFingerprint.tables(24)}
-        assertThrows(IllegalArgumentException::class.java){MealReplayFingerprint.tables(25, runtimeIsolated = true)}
+        assertThrows(IllegalArgumentException::class.java){MealReplayFingerprint.tables(25)}
+        assertThrows(IllegalArgumentException::class.java){MealReplayFingerprint.tables(26, runtimeIsolated = true)}
+        assertEquals(42,MealReplayFingerprint.tables(25, runtimeIsolated = true).size)
+        assertEquals(listOf("energy_cache","energy_attempts","energy_backoff"),MealReplayFingerprint.tables(25, runtimeIsolated = true).takeLast(3))
         assertEquals(39,MealReplayFingerprint.tables(24, runtimeIsolated = true).size)
         assertEquals(35,MealReplayFingerprint.tables(21, runtimeIsolated = true).size)
         assertEquals(36,MealReplayFingerprint.tables(22, runtimeIsolated = true).size)
@@ -48,7 +51,7 @@ class MealReplayFingerprintTest {
             assertEquals("changed",value("sync_push_batches","batch",column,"changed"))
     }
     @Test fun OtherRowsAndTablesPreserveEvenSimilarColumnNames() {
-        for(table in MealReplayFingerprint.tables(23, runtimeIsolated = true).filterNot{it in setOf("meals","outbox","sync_push_batches")})
+        for(table in MealReplayFingerprint.tables(25, runtimeIsolated = true).filterNot{it in setOf("meals","outbox","sync_push_batches")})
             for(column in listOf("status","serverRevision","attempted","state","wireContext","leaseGeneration","requestJson",
                 "responseJson","requestedVersion","activeVersion","handledVersion","retryAtMillis","reconciliationBaseline"))
                 assertEquals("original",value(table,"meal",column,"original"))

@@ -143,9 +143,9 @@ class MaintenanceStorageTest {
                 old.execSQL("DETACH DATABASE origin");old.execSQL("CREATE TABLE room_master_table (id INTEGER PRIMARY KEY,identity_hash TEXT)")
                 old.execSQL("INSERT INTO room_master_table VALUES (42,?)",arrayOf(exported.getString("identityHash")));old.version=23
             }
-            migrated=Room.databaseBuilder(context,CalorieDatabase::class.java,oldName).addMigrations(MIGRATION_23_24).addCallback(DATABASE_GUARDS).build()
+            migrated=Room.databaseBuilder(context,CalorieDatabase::class.java,oldName).addMigrations(MIGRATION_23_24, pl.roseru.kalorie.energy.MIGRATION_24_25).addCallback(DATABASE_GUARDS).build()
             val sql=migrated.openHelper.readableDatabase
-            assertEquals(24,sql.version);assertEquals(before,dump {sql.query(it)})
+            assertEquals(25,sql.version);assertEquals(before,dump {sql.query(it)})
             assertEquals(0,sql.query("SELECT count(*) FROM goals WHERE estimateJson IS NOT NULL").use {it.moveToFirst();it.getInt(0)})
             assertFalse(sql.query("PRAGMA foreign_key_check").use {it.moveToFirst()})
             // The exact previously archived canonical audit remains readable without updating the immutable old row.

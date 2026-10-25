@@ -96,11 +96,11 @@ class ReplayRuntimeIsolationTest {
                 (0 until array.length()).map { array.getJSONObject(it) }
             }
         val old = tables(20).map { it.getString("tableName") }.toSet()
-        val latest = tables(23)
+        val latest = tables(25)
         val new = latest.filter { it.getString("tableName") !in old }
-        val protected = MealReplayFingerprint.tables(23, runtimeIsolated = true)
+        val protected = MealReplayFingerprint.tables(25, runtimeIsolated = true)
         assertEquals(new.map { it.getString("tableName") }.toSet(), protected.toSet() - MealReplayFingerprint.tables(20).toSet())
-        assertEquals(6, new.size)
+        assertEquals(9, new.size)
         for (table in new) {
             val fields = table.getJSONArray("fields")
             for (index in 0 until fields.length()) {
