@@ -15,7 +15,7 @@ dependencies = [
   "pyjwt[crypto]==2.15.1",
   "httpx>=0.28,<1",
   "tzdata==2026.5",
-  "pillow==12.3.0",
+  "pillow==13.0.0",
 ]
 
 [dependency-groups]
