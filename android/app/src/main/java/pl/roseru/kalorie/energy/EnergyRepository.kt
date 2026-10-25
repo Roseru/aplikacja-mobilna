@@ -257,6 +257,7 @@ internal class EnergyRepository(private val store:EnergyStore,private val protoc
                     val consent=ProfileReadProtocol.parseConsents(result.bytes);val request=StrictJson.read(row.body.toByteArray())
                     val revision=checkNotNull(row.ifMatch).removeSurrounding("\"").toInt()
                     require(consent.revision==Math.addExact(revision,1) && consent.ranking==request.getBoolean("ranking") && consent.automaticEnergyAdjustment==request.getBoolean("automatic_energy_adjustment"))
+                    require(result.etag=="\"${consent.revision}\"")
                     guard(response,scope){store.invalidateState(scope);store.invalidateProfile(scope);store.finish(scope,id,"succeeded",wire,null)}
                 }
                 else->error("Unsupported energy operation")

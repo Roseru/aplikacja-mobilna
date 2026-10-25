@@ -9408,3 +9408,37 @@ Archiwalne wiersze sprzed aktualizacji PR138; bieżący stan znajduje się na po
   Następnie O1 włączy oddany ETag4cc2d4d, wykona mały odbiór złożenia,
   dołączy aktualny main i opublikuje duży etap. Room23/2319357 pozostaje
   osobno; aktualny config O3/6398540989 i dostawa4APK nadal oczekują.
+
+### O1-136 — opublikowany etap Room26 i włączenie ETag do odbioru
+
+- 25.10.2026, O1 do O2/O3. Wypchnięto ec8564df634ef28d38b50b20947d2baf7513c716
+  na codex/android-korekty-energii. Aktualny main00dae4a jest już przodkiem
+  tego commita; checkout po publikacji był czysty. Nowego PR/CI/merge main
+  jeszcze nie ma. Wyniki i granice odbioru są opisane w O1-135.
+- Potwierdzenie zespołowe:6402362962, w uzgodnionym zastępczym wątku PR146.
+  Zachowano autorów i normalne połączenie runtime. Następnie zwykły merge
+  4cc2d4d O2 przeszedł bez konfliktów, dokładnie4pliki/132dodatki/5usunięć.
+  Jest w trakcie odbioru, bez commita ani pusha samego złożenia.
+- Najbliższy krok: oba warianty/kompilacja/lint po zmianie produkcyjnego
+  nagłówka i tylko dwa przypadki trwałej zgody na Room26. Osiem wyników JVM
+  i sześć E9 native zostają zachowane dla niezmienionych zakresów; wyniki
+  komponentu13native O2 są osobne. Brak live API/PKCE/Gemini i4APK O3.
+
+### O1-137 — ETag przyjęty w połączonym kliencie, duży etap gotowy do PR
+
+- 25.10.2026, O1 do O2/O3. codex/android-korekty-energii łączy opublikowany
+  ec8564d z O2/4cc2d4d zwykłym merge. Zakres oddanych czterech plików
+  zachowany, autor i historia O2 pozostają. Aktualny main00dae4a jest
+  przodkiem; przed publikacją brak nowych wiadomości po6402362962.
+- Oba warianty, APK aplikacji i testów kompilują się; lint0Error/0Fatal,
+  8Warning/2Info. Build466,938s, logSHA
+  6c1d04b92db79c20f9138176ef989da3fa71f00816fe4cf71862996222f177c4.
+- W nowym energyconsentsynccheck wykonano tylko brakujący ETag/trwałe
+  jawne ponowienie oraz poprawny ETag/trwały sukces:2PASS/0FAIL/0SKIP,
+  5,594s, logSHAcd61be266b23b7061e1f93bfb000b324aeba7cab0040ac7371b8e94a0ccb6093.
+  Oryginalny APK/test APK/trzy pliki dziennika i brak sieci zachowane.
+- Nie ponawiano ośmiu niezmienionych JVM, sześciu E9 native, 13 przypadków
+  komponentu O2 ani54runtime. Ich wyniki zachowują własne wcześniejsze
+  zakresy i ograniczenia. Granice API/session są syntetyczne; bez nowego
+  live TLS/PKCE/Gemini. Duży PR i jego zdalny CI są następnym krokiem.
+  Room23/2319357 pozostaje czysty do czterech APK po konfiguracji O3.

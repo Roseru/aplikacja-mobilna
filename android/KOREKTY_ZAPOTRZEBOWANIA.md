@@ -5,15 +5,22 @@
 nie ukończony odbiór E9. Kontrakt: [O1](../docs/e9/INTEGRACJA_O1.md),
 [wymagania11.5](../WYMAGANIA_PROJEKTOWE.md#115-zapotrzebowanie-i-korekty).
 
-Status: REST/cache/UI i migracja Room25 mają lokalne wyniki PASS opisane
-poniżej. Pełne E9 nadal wymaga integracji opt-in synchronizacji i odbioru
-z rzeczywistym serwerem. Zbudowany APK używa osobnego pakietu energycheck
-i syntetycznej granicy API/sesji w instrumentacji.
-Opublikowane źródło:50eb470c25a76dbd523cb722838b5369117764c7,
-tree android/app:d1f5d621f4aadf5560e5c46c11fbf9f574953183.
-Gałąź jest wypchnięta, bez PR/remoteCI/scalenia do main.
+Status bieżący: pełna i przyrostowa synchronizacja, lokalna oś E oraz
+migracja Room26 mają odbiór lokalny opisany na końcu dokumentu. Osiem
+unikalnych JVM i sześć native mają pozytywne wyniki w rozdzielonych
+zakresach. Nie powtarzano niezmienionych przypadków. Opublikowane źródło:
+ec8564df634ef28d38b50b20947d2baf7513c716 na codex/android-korekty-energii.
+Poprawka ETag O2/4cc2d4d jest włączona zwykłym merge i ma osobny
+odbiór złożenia: dwa przypadki zgód PASS na Room26.
+Pełne E9 wymaga również rzeczywistego serwera i pełnego odbioru końcowego.
+Brak nowego PR, zdalnego CI lub scalenia do main.
 
-## Zakres do ukończenia
+Wcześniejszy osobny odbiór REST/cache/UI Room25 zachowuje źródło
+50eb470c25a76dbd523cb722838b5369117764c7 i tree android/app
+d1f5d621f4aadf5560e5c46c11fbf9f574953183. Pakiet energycheck miał
+syntetyczne granice API/sesji; późniejszy odbiór Room26 użył energysynccheck.
+
+## Zakres klienta i kryteria pełnego odbioru
 
 - Własny ekran stanu E, historii niezmiennych wersji oraz analiz i ich
   przyczyn odmowy. Oszacowanie E pozostaje odrębne od celu kcal/B/T/W.
@@ -293,3 +300,28 @@ APK, jego testy i trzy pliki dziennika ponownie pozostały bez zmian,
 a emulator pozostał offline. Źródła aplikacji, schemat 26 i osiem wyników
 JVM z wcześniejszego odbioru są niezmienione. ETag O2 i prawdziwy odbiór
 połączenia pozostają kolejnymi krokami; to nadal nie odbiór live E9.
+
+### Złożenie poprawki ETag Agenta 2 z Room26
+
+Pin 4cc2d4db43b5022244772e43313d63e45a7c9b9c włączono zwykłym merge,
+bez konfliktów, wyłącznie w czterech oddanych plikach. HTTP przekazuje
+rzeczywisty ETag; ACK zgód wymaga dokładnego cytowanego numeru zgodnego
+z rewizją odpowiedzi oraz dotychczasowych warunków statusu i wartości.
+Brak lub błędny nagłówek pozostawia unknown, oryginalne UUID/body/hash
+i jawne ponowienie; odczyt nie tworzy nowej zgody ani afirmacji.
+
+Odbiór złożenia: oba warianty i APK testowe PASS, 466,938 s;
+lint 0 Error / 0 Fatal / 8 Warning / 2 Information. Log SHA-256:
+6c1d04b92db79c20f9138176ef989da3fa71f00816fe4cf71862996222f177c4.
+Ponowiono tylko dwa przypadki zgód: 2 PASS / 0 FAIL / 0 SKIP, 5,594 s.
+Log SHA-256: cd61be266b23b7061e1f93bfb000b324aeba7cab0040ac7371b8e94a0ccb6093.
+Osiem wcześniejszych wyników JVM i sześć przepływu E9 zachowano dla
+niezmienionych zakresów. Osobne 13 native z komponentu O2 nie oznacza
+kolejnych 13 nowych wykonań O1. Nie powtarzano 54 zamkniętych runtime.
+
+Osobny pakiet energyconsentsynccheck ma APK aplikacji SHA-256
+af760e958e7659894e44fd4013b8d39f4b4b71c300dfe157cbaf07daa6123c1e,
+a APK testów ed6b729cbe0a74eaf2c6ffc88f2fe2e63a9506bbb37b561ef9d5654fa0c51ee1.
+Schemat26, tożsamość bazy i 54 encje pozostają niezmienione. Oryginalny
+APK, jego testowy APK i trzy pliki dziennika zachowały identyczne hashe;
+emulator pozostał offline. Nie wykonano live API/TLS/PKCE/Gemini.

@@ -76,3 +76,9 @@
   To wyniki syntetycznych granic API/sesji, bez live TLS/PKCE/Gemini.
   Pin ETag4cc2d4d jest gotowy do zwykłego merge; Room23/2319357 nadal
   pozostaje osobnym czystym źródłem uzgodnionej dostawy czterech APK.
+
+- Aktualizacja integracji ETag: cztery pliki pina4cc2d4d włączone zwykłym
+  merge do Room26, bez konfliktów. Odbiór złożenia: oba warianty i APK testowe
+  PASS, lint0Error/0Fatal, tylko dwa wybrane przypadki zgód2PASS/0FAIL/0SKIP.
+  Wcześniejsze osiem JVM, sześć E9 native i13komponentu O2 mają osobne
+  zakresy; nie uruchamiano ich ponownie. Brak nowego live lub4APK O3.

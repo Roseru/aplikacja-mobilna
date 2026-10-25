@@ -26,7 +26,7 @@ class EnergyTransportTest {
             val gateway=HttpsEnergyGateway("https://energy.fixture/api/v1"){socket}
             var checked=0
             val response=gateway.request(session,scope.binding.syncEpoch,"POST","/me/energy/analyses",body,key,null){checked++}
-            assertEquals(1,checked);assertArrayEquals(reply,response.bytes)
+            assertEquals(1,checked);assertArrayEquals(reply,response.bytes);assertNull(response.etag)
             assertEquals(body,socket.sent.toString("UTF-8"));assertEquals(key,socket.getRequestProperty("Idempotency-Key"))
             assertEquals(scope.binding.syncEpoch,socket.getRequestProperty("X-Sync-Epoch"))
             assertEquals("Bearer synthetic-access",socket.getRequestProperty("Authorization"))
@@ -42,7 +42,20 @@ class EnergyTransportTest {
             }finally {held.disconnect();pending.cancelAndJoin()}
         }finally {db.close();EnergyFixture.context.deleteDatabase(name)}
     }
-    private class Socket(url:URL,private val reply:ByteArray,private val blocked:Boolean=false):HttpsURLConnection(url) {
+    @Test fun responseEtagIsCarriedVerbatimWithoutExposingItInDiagnostics()=runBlocking<Unit> {
+        val name="energy-etag-http-${UUID.randomUUID()}";val db=EnergyFixture.database(name)
+        try {
+            val scope=EnergyFixture.account(db);val session=EnergyFixture.Sessions(db,scope).session(scope)
+            for(etag in listOf("\"3\"","W/\"3\"","3")) {
+                val socket=Socket(URL("https://energy.fixture/api/v1/me/consents"),"{}".toByteArray(),etag=etag)
+                val response=HttpsEnergyGateway("https://energy.fixture/api/v1"){socket}
+                    .request(session,scope.binding.syncEpoch,"PUT","/me/consents","{}",UUID.randomUUID().toString(),"\"2\""){}
+                assertEquals(etag,response.etag);assertEquals("\"2\"",socket.getRequestProperty("If-Match"))
+                assertEquals("EnergyHttpResult(status=200)",response.toString());assertTrue(socket.disconnected)
+            }
+        }finally {db.close();EnergyFixture.context.deleteDatabase(name)}
+    }
+    private class Socket(url:URL,private val reply:ByteArray,private val blocked:Boolean=false,private val etag:String?=null):HttpsURLConnection(url) {
         val sent=ByteArrayOutputStream();val entered=CountDownLatch(1);private val released=CountDownLatch(1)
         @Volatile var disconnected=false
         override fun connect(){}
@@ -53,7 +66,7 @@ class EnergyTransportTest {
         override fun getInputStream():InputStream=if(!blocked)ByteArrayInputStream(reply)else object:InputStream() {
             override fun read():Int {entered.countDown();check(released.await(35,TimeUnit.SECONDS));return -1}
         }
-        override fun getHeaderField(name:String):String?=when(name.lowercase()){"content-type"->"application/json";"content-length"->reply.size.toString();"cache-control"->"no-store";else->null}
+        override fun getHeaderField(name:String):String?=when(name.lowercase()){"etag"->etag;"content-type"->"application/json";"content-length"->reply.size.toString();"cache-control"->"no-store";else->null}
         override fun getContentType()="application/json"
         override fun getCipherSuite()="SYNTHETIC"
         override fun getLocalCertificates():Array<Certificate>?=null
