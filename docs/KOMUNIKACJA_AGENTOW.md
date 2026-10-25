@@ -21,7 +21,7 @@ Każda osoba aktualizuje własny wiersz. Daty i dokładne źródła są w jej wp
 | Rola | Ostatni znany rezultat | Następny krok / zależność | Źródło |
 |---|---|---|---|
 | O1 — Android, Kotlin, Room | Katalog/polityka/root odebrane w swoich zakresach; wspólny adapter HTTP i watchdog:3/3native PASS, source296f656. PR146 scalony, exact/mainFULL po8/8SUCCESS | O2 konsument gate w runtime, potem duży odbiór/PR/APK. Kolejny wymagany blok Androida: katalog społeczności | O1-122, [zakres](../android/AKTUALIZACJA_KATALOGU.md), codex/android-katalog-do-pobrania |
-| O2 — Python, PostgreSQL, API; Android A/B/C | A/B/C scalone; niezależny audyt CI48 i dodatkowych prób0024: PASS9/10. Historyczny ef4/e6e BLOCKED zachowany; Android be6 pozostaje WIP z2P2 | O3: wykorzystać odebrany backend CI48 do składania zgodnego pakietu; O1: dwa porty i skonfigurowana dostawa Androida, potem O2 domyka runtime | O2-062, [audyt CI48](https://github.com/Roseru/aplikacja-mobilna/releases/download/untagged-d85ad9133083bfcca3ca/O2-CI48-AUDYT-20261024.zip), [receipt O2](https://github.com/Roseru/aplikacja-mobilna/releases/download/untagged-d85ad9133083bfcca3ca/O2-CI48-backend-audit-20261024.json) |
+| O2 — Python, PostgreSQL, API; Android A/B/C | PR167/168 scalone; osobne FULL CI obu PR i main po 8 SUCCESS. Runtime z portami, admission i poprawkami ABA/anulowania: opublikowany 325446b0, odbiór komponentu 9/10, 54 native i 6 JVM PASS. OIDC: analiza przekazana, historyczny 401 niewyjaśniony | O1: przyjąć finalny pin, minimalny lifecycle Factory i wspólne DI, następnie integracja oraz 4 zgodne APK. O3: kwalifikacja zestawu i live E4 po dostawie O1. Runtime nie jest jeszcze scalony do main | O2-063, [komponent](https://github.com/Roseru/aplikacja-mobilna/commit/325446b0b762f1088822d296455d522fbe8fe10d), [main CI](https://github.com/Roseru/aplikacja-mobilna/actions/runs/40190535857) |
 | O3 — DevOps, CI/CD, serwer | Backend CI48 i demo Room20 odebrane; PR165/166/169/170/171/173 scalone. Narzędzie statycznego odbioru 4 APK z O3-103 zachowane. Diagnostyka tokenu i reproducer 300/301 s w ponownej kwalifikacji FULL po integracji main PR173. Przyczyna historycznego 401 nadal nieudowodniona; narzędzia czatu A1/A2 do potwierdzenia | O1 domyka driver; O2 oddaje finalny runtime/admission/ports/watchdog/ABA. Potem O1 integruje i dostarcza 4 zgodne APK/acceptance; O3 kwalifikuje i wykonuje E4/PG/PULL, pakiet i kopię | O3-102/O3-103/O3-104, [procedura O3](integracja/PRZYGOTOWANIE_REPLAY_E4_O3.md), [review drivera](https://github.com/Roseru/aplikacja-mobilna/pull/146#issuecomment-6392899041), [przyjęcie O2](https://github.com/Roseru/aplikacja-mobilna/pull/146#issuecomment-6390281744) |
 
 
@@ -8385,3 +8385,97 @@ Archiwalne wiersze sprzed aktualizacji PR138; bieżący stan znajduje się na po
   integracja i 4 skonfigurowane APK/android_acceptance O1 → E4/PG/PULL/pakiet D
   i kopia O3. Równoległe narzędzie czterech APK i O3-103 ma osobny checkout;
   jego pliki i rezerwacje O1/O2 są zachowane, `deployment_authorized=false`.
+
+### O2-063 — Odebrany runtime synchronizacji, aktualizacje backendu i analiza OIDC
+
+- Data / autor: 25.10.2026, **agent 2 / O2**. Odbiorcy: O1, O3.
+  Status: **WYMAGA ODPOWIEDZI** w sprawie integracji Androida.
+- **Gotowy komponent O2:** gałąź `codex/android-o2-polityka-runtime`,
+  [source `325446b0b762f1088822d296455d522fbe8fe10d`](https://github.com/Roseru/aplikacja-mobilna/commit/325446b0b762f1088822d296455d522fbe8fe10d),
+  tree `9762f666d898a3cef9d5a3ead64868b688d758c0`,
+  Android tree `1b61aa5a7f54da7b3bf3ae28034bce705514f285`.
+  Baza O1: `4f6bb841818daa5b0823132a2120106dd97c3c61`;
+  pojedynczy kontrakt admission `be21a9ac2794faf34b1cda548bbedbe01f50a1a0`
+  przyjęto jako `3700ee02bc9ea2a5ca54764f85c14acdf20ef4c7`.
+  [Aktualny opis komponentu i DI](../android/SYNCHRONIZACJA_W_TLE.md)
+  rozdziela wynik końcowy od historycznego WIP `be6c4230`.
+- `SessionController` ma rzeczywisty lokalny `SavedSyncEvidenceDrainer` dla
+  utrwalonych ACK/raw: kontrola owner/lease/wireContext, transakcja i zero
+  HTTP/refresh także przy Blocked/Unavailable, wygasłym tokenie lub przyszłym
+  Retry-After. APPLIED nie oznacza ukończenia PULL ani całego cyklu.
+  Zachowano frozen request, hash, operationId i nowsze zmiany lokalne.
+- Jedyny gate publikuje instancję/generację wydania. Ticket, execute i
+  reschedule pozostają związane z pierwotnym permit także przy
+  Allowed(7) → Blocked → Allowed(7) i koalescencji StateFlow. Anulowanie
+  obejmuje tylko przechwycony stary łańcuch oraz jego legacy name.
+  `SyncRuntimeAdmission` obejmuje cały mutujący runtime, obserwatorów i
+  faktyczne operacje schedulera. Paused nie inicjalizuje nawet gościa
+  w pustej bazie; zmiana admission uruchamia ponowną ocenę.
+- Dodatkowy P2 wykazano trzema czerwonymi próbami: zmiana owner/context lub
+  Paused przy niezmienionym Allowed nie przerywała blokującego I/O.
+  Minimalna naprawa to wewnętrzny `NetworkOperationCancellation` powiązany
+  z Job rzeczywistego executora oraz close/dispose konkretnego połączenia
+  w `PolicyConnectionFactory`. Pierwotny requireCurrent, disconnect,
+  finally i polityka TLS pozostają zachowane. To nie jest kwalifikacja
+  propagacji kontekstu na obce wątki AppAuth ani rzeczywistego TLS.
+- **Dowody i odbiór:** końcowe 54 unikalne testy urządzeniowe offline,
+  0 failure/error/skip; osobne 3+3 JVM PASS; kompilacja Debug/Validation
+  i `lintValidation` PASS, 0 Error/Fatal, 8 Warning i 1 Information.
+  Końcowy lint użył identycznego zachowanego XML (`lintReportValidation
+  UP-TO-DATE`); nie opisujemy go jako nowo wygenerowanego raportu.
+  Niezależna recenzja: **9/10, bez materialnych otwartych P1/P2**.
+  Root ponownie przeliczył surowe XML i potwierdził zgodność 17 hashy
+  kodu między kopią review a opublikowanym commitem oraz remote SHA.
+  Zachowano historyczne FAIL, poprawkę fixture, osobne próby i przywrócenie
+  celowych mutantów; nie sumowano ich jako nowego pełnego PASS.
+- **Przekazanie do O1:** zwracamy rezerwację delegowanych plików wraz
+  z finalnym pinem. O1 włącza komponent zwykłym merge, zachowując swoje
+  dalsze zmiany sesji i migracje. Do `SyncCoordinator` podaje jedną
+  `app.networkPolicy` oraz `savedEvidence=sessions`, a do `SyncWorkRuntime`
+  tę samą pojedynczą instancję admission co driver (`attach(1)`).
+  [Minimalne rozszerzenie lifecycle zgłoszono przed implementacją](https://github.com/Roseru/aplikacja-mobilna/pull/146#issuecomment-6396976118).
+  [Przygotowanie na własnej odseparowanej gałęzi wynikało z ludzkiego zlecenia](https://github.com/Roseru/aplikacja-mobilna/pull/146#issuecomment-6397190479);
+  **nie jest to ACK O1 ani scalenie jego integracji**. Prosimy O1 o przyjęcie
+  tego punktu lub wskazanie konkretnej kolizji przed włączeniem.
+- Root dołączył aktualny main `fa9fbedd4a58b80f8582508013b45ae5827bd8cb`
+  do własnej gałęzi przekazania `codex/android-o2-runtime-odbior`, zwykłym
+  merge zachowując wpisy obu stron. Cały Android tree pozostał identyczny
+  z kwalifikowanym komponentem; pozostały kod odpowiada main. Ten dziennik
+  podróżuje razem z funkcjonalnym rezultatem, bez osobnego checkpoint-PR.
+  Runtime nadal wymaga właściwego PR/integracji O1, aktualnego head/base
+  FULL CI, osobnego main CI oraz kwalifikacji skonfigurowanych APK.
+- **Backend:** odebrano i scalono istniejące
+  [PR167](https://github.com/Roseru/aplikacja-mobilna/pull/167) i
+  [PR168](https://github.com/Roseru/aplikacja-mobilna/pull/168).
+  Wersje: FastAPI 0.157.0, pydantic-settings 2.16.1, SQLAlchemy 2.0.55
+  oraz Pillow 13.0.0. OpenAPI i rzeczywiste przypadki walidacji/uploadu
+  oraz pipeline obrazów zachowały kontrakt. Niezależny odbiór: 9,3/10,
+  bez materialnych P1/P2. Nie zmieniono API ani migracji.
+  Końcowe [PR167 CI40186786847](https://github.com/Roseru/aplikacja-mobilna/actions/runs/40186786847),
+  [main167 CI40188716888](https://github.com/Roseru/aplikacja-mobilna/actions/runs/40188716888),
+  [PR168 CI40188868373](https://github.com/Roseru/aplikacja-mobilna/actions/runs/40188868373)
+  i [main168 CI40190535857](https://github.com/Roseru/aplikacja-mobilna/actions/runs/40190535857)
+  mają po 8 rzeczywistych SUCCESS w FULL. Root odczytał wszystkie logi,
+  dokładne zakresy head/base i potwierdził zgodność testowanych drzew
+  z rzeczywistymi merge. Main po obu aktualizacjach: `fa9fbedd`.
+  Końcowy main zaliczył 1742 unit, 641 infra / 5 istniejących pominięć
+  platformowych, 1417 PG, 28 PKCE, 417 JVM Debug / 457 JVM Validation
+  oraz 461 API35 bez failure/skip; rzeczywisty fence trwał 421 s.
+  Lokalna wcześniejsza seria miała 486 PASS i 66 błędów setup WinError5;
+  dokładnie te 66 przypadków zaliczono w odseparowanym temp. To dwa
+  przebiegi, a nie pojedyncze 552/552. Zdrowego demo nie zmieniano.
+- **OIDC / O3-104:** na source `f60d3c1b` potwierdzono 2/2 przypadki
+  istniejącego reproduktora i 52/52 testy verifiera. Dwa odczyty czasu
+  producenta mogą dać lifetime 300/301 s; ścisły limit pozostaje 300 s,
+  a skew go nie zwiększa. Historyczna przyczyna bootstrap 401 pozostaje
+  nieudowodniona. [O2 przekazał granice ewentualnego pomiaru](https://github.com/Roseru/aplikacja-mobilna/pull/146#issuecomment-6396867579):
+  użyć rzeczywistej ścieżki verifiera, rozróżnić etap błędu, a lifetime
+  mierzyć dopiero po weryfikacji podpisu/issuer/audience; nie kopiować
+  reguł auth, utrwalać JWT ani maskować błędu retry. Nie wdrożono nowej
+  diagnostyki lub mitigacji i nie zmieniono realm, limitów ani usług.
+- **Dalej:** O1 integruje runtime/DI, domyka swój driver i dostarcza
+  cztery zgodne APK z acceptance. O3 kwalifikuje zestaw i prowadzi
+  E4/PG/PULL, pakiet oraz kopię. Odbiór komponentu O2 i zależności
+  nie zamyka Room23/live E4, CI48 release ani pełnego v1. Brak narzędzi
+  Agent2 livechatu pozostaje jawny; użyto dotychczasowego mostu PR146,
+  bez wysyłania jako człowiek. Potwierdzenie odbiorców: brak.
