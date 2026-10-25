@@ -21,7 +21,7 @@ Każda osoba aktualizuje własny wiersz. Daty i dokładne źródła są w jej wp
 | Rola | Ostatni znany rezultat | Następny krok / zależność | Źródło |
 |---|---|---|---|
 | O1 — Android, Kotlin, Room | Katalog/polityka/root odebrane w swoich zakresach; wspólny adapter HTTP i watchdog:3/3native PASS, source296f656. PR146 scalony, exact/mainFULL po8/8SUCCESS | O2 konsument gate w runtime, potem duży odbiór/PR/APK. Kolejny wymagany blok Androida: katalog społeczności | O1-122, [zakres](../android/AKTUALIZACJA_KATALOGU.md), codex/android-katalog-do-pobrania |
-| O2 — Python, PostgreSQL, API; Android A/B/C | PR167/168 scalone; osobne FULL CI obu PR i main po 8 SUCCESS. Runtime z portami, admission i poprawkami ABA/anulowania: opublikowany 325446b0, odbiór komponentu 9/10, 54 native i 6 JVM PASS. OIDC: analiza przekazana, historyczny 401 niewyjaśniony | O1: przyjąć finalny pin, minimalny lifecycle Factory i wspólne DI, następnie integracja oraz 4 zgodne APK. O3: kwalifikacja zestawu i live E4 po dostawie O1. Runtime nie jest jeszcze scalony do main | O2-063, [komponent](https://github.com/Roseru/aplikacja-mobilna/commit/325446b0b762f1088822d296455d522fbe8fe10d), [main CI](https://github.com/Roseru/aplikacja-mobilna/actions/runs/40190535857) |
+| O2 — Python, PostgreSQL, API; Android A/B/C | PR167/168 odebrane i scalone. PR174 certifi: odbiór 9,3/10, scalony 00dae4aa; FULL PR i osobne main CI po 8 SUCCESS. Runtime: source 325446b0, odbiór komponentu 9/10, 54 native i 6 JVM PASS; pozostaje do integracji O1. OIDC: historyczny 401 niewyjaśniony | O1: przyjąć finalny pin runtime, minimalny lifecycle Factory i wspólne DI, następnie integracja i 4 zgodne APK. O3: kwalifikacja zestawu i live E4 po dostawie O1. Aktualizacja certifi nie zmienia tych bramek | O2-063/O2-064, [komponent](https://github.com/Roseru/aplikacja-mobilna/commit/325446b0b762f1088822d296455d522fbe8fe10d), [PR174](https://github.com/Roseru/aplikacja-mobilna/pull/174) |
 | O3 — DevOps, CI/CD, serwer | Backend CI48 i demo Room20 odebrane; PR165/166/169/170/171/173 scalone. Narzędzie statycznego odbioru 4 APK z O3-103 zachowane. Diagnostyka tokenu i reproducer 300/301 s w ponownej kwalifikacji FULL po integracji main PR173. Przyczyna historycznego 401 nadal nieudowodniona; narzędzia czatu A1/A2 do potwierdzenia | O1 domyka driver; O2 oddaje finalny runtime/admission/ports/watchdog/ABA. Potem O1 integruje i dostarcza 4 zgodne APK/acceptance; O3 kwalifikuje i wykonuje E4/PG/PULL, pakiet i kopię | O3-102/O3-103/O3-104, [procedura O3](integracja/PRZYGOTOWANIE_REPLAY_E4_O3.md), [review drivera](https://github.com/Roseru/aplikacja-mobilna/pull/146#issuecomment-6392899041), [przyjęcie O2](https://github.com/Roseru/aplikacja-mobilna/pull/146#issuecomment-6390281744) |
 
 
@@ -8479,3 +8479,56 @@ Archiwalne wiersze sprzed aktualizacji PR138; bieżący stan znajduje się na po
   nie zamyka Room23/live E4, CI48 release ani pełnego v1. Brak narzędzi
   Agent2 livechatu pozostaje jawny; użyto dotychczasowego mostu PR146,
   bez wysyłania jako człowiek. Potwierdzenie odbiorców: brak.
+
+### O2-064 — Certifi: odebrany zestaw CA i scalenie istniejącego PR174
+
+- Data / autor: 25.10.2026, **agent 2 / O2**. Odbiorcy: O1, O3.
+  Status: **DO ODCZYTU**. Kolejny mały odbiór zależności po O2-063,
+  wykonany w istniejącym czacie backendu i z jednym niezależnym recenzentem.
+- [PR174](https://github.com/Roseru/aplikacja-mobilna/pull/174): certifi
+  2026.7.22 → 2026.10.19, wyłącznie `backend/uv.lock` (3 dodania/3 usunięcia).
+  Source `d83a992b3505e8161edde6fe8159c07f01472792`,
+  base `fa9fbedd4a58b80f8582508013b45ae5827bd8cb`,
+  [merge `00dae4aa1e89fcc9de8ac24b2391daa1f6d06707`](https://github.com/Roseru/aplikacja-mobilna/commit/00dae4aa1e89fcc9de8ac24b2391daa1f6d06707).
+  Rzeczywisty tree `b1d4c99fe6289bf7a69829d5863997bf621fb66d` jest identyczny
+  z testowanym merge `ad63890e3668d5ac499aa35de708ac606d72a03b`.
+- Oba wheels odpowiadają hashom locka, a pliki instalacji bajtom wheels.
+  Spośród 44 dystrybucji zmienia się tylko certifi; kod produktu i niezależny
+  lock `tools/contracts` pozostają bez zmian. Nie było potrzeby naprawy
+  produktu ani nowego commita/PR do samej aktualizacji.
+- Zestaw CA: **121 → 120**, bez dodatków i duplikatów; 120 wspólnych DER
+  jest identycznych. Usunięto jedynie **emSign ECC Root CA - G3**,
+  SHA256 DER `86a1ecba089c4a8d3bbe2734c612ba341d813e043cf9e8a862cd5c57a36bbe6b`.
+  To oczekiwany skutek [końcowej zmiany upstream](https://github.com/certifi/python-certifi/pull/440),
+  nie wygaśnięcie certyfikatu. Łańcuch zależny wyłącznie od tego korzenia
+  bez alternatywnej ścieżki przestaje być zaufany przez nowy domyślny bundle.
+- Te same **41 testów PASS osobno dla baseline i candidate** oraz po
+  **11 odrębnych prób TLS** na wersję. Rzeczywiste konstruktory i transporty,
+  jawny private CA, odmowa obcego CA/hostname, env/proxy i magazyny zaufania;
+  bez zastępowania handshake przez MockTransport lub osłabienia verify.
+  JWKS/private CA nie jest dowodem pozytywnego publicznego TLS Gemini/admina.
+  Próba Gemini zmieniała jedynie routing na syntetyczny HTTPS loopback;
+  ograniczenie jest jawne. `SyncHTTP` ma istniejące `trust_env=True`,
+  odróżnione od klientów jawnie ignorujących ustawienia środowiska.
+- **Niezależny odbiór 9,3/10, brak materialnych P1/P2 i koniecznych poprawek.**
+  Recenzent sprawdził rzeczywiste bundle, instalacje, raw testów i manifest
+  36/36. Wcześniejsze dowody deps 67/67 oraz OIDC 12/12 pozostały niezmienione.
+  Prywatne raporty i syntetyczne środowiska nie są materiałem publikacyjnym.
+- [FULL PR CI40190719569](https://github.com/Roseru/aplikacja-mobilna/actions/runs/40190719569)
+  ma 8 rzeczywistych SUCCESS dla dokładnego head/base; root odczytał wszystkie
+  logi i plan/gate. Nie powtarzano go bez zmiany źródeł lub bazy.
+  [Osobne push/main CI40194823995](https://github.com/Roseru/aplikacja-mobilna/actions/runs/40194823995)
+  dla `fa9fbedd → 00dae4aa`: **8 rzeczywistych SUCCESS w FULL**.
+  Root odczytał wszystkie logi i plan/gate także tego przebiegu: 1742 unit,
+  641 infra / 5 istniejących pominięć platformowych, 1417 PG, 28 PKCE,
+  417/457 JVM, 461 API35 bez failure/skip i rzeczywisty fence 421 s.
+- Wynik dołączamy do istniejącej funkcjonalnej gałęzi przekazania
+  `codex/android-o2-runtime-odbior`, bez checkpoint-PR. Zwykły merge main
+  zmienił tylko backendowy lock; cały Android tree pozostał
+  `1b61aa5a7f54da7b3bf3ae28034bce705514f285`, jak w odebranym komponencie
+  `325446b0`. Własność integracji, DI i czterech APK nadal pozostaje przy O1.
+- O3 uwzględnia nowy bundle w kolejnym uzgodnionym obrazie; używanego demo,
+  CA systemowego, usług i kwalifikowanego pakietu CI48 nie podmieniano.
+  Nie wykonywano live Google/publicznego JWKS/admina ani nowego odbioru
+  Androida. To odbiór zależności i źródeł, nie dostępności każdego endpointu
+  lub całego wydania. Potwierdzenie odbiorców: brak.
