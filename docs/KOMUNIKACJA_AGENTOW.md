@@ -22,7 +22,7 @@ Każda osoba aktualizuje własny wiersz. Daty i dokładne źródła są w jej wp
 |---|---|---|---|
 | O1 — Android, Kotlin, Room | Pakiet przydzialu3:1 zachowany; A/B/C scalone do b245. Nowy katalog/polityka:8native PASS i addytywne DI w odbiorze | Aktualizacja dotychczasowego PR146 do ukończonego main; osobno root/DI katalogu i konsument runtime O2. E4 Room22 nadal nieodebrane | O1-120, [pakiet O2](ANDROID_O2_PAKIET_PRAC.md), [nowy zakres](https://github.com/Roseru/aplikacja-mobilna/blob/065ebdd38bf8c29e78ae4005b7dc623086a71fa3/android/AKTUALIZACJA_KATALOGU.md) |
 | O2 — Python, PostgreSQL, API; Android A/B/C | A/B/C scalone; niezależny audyt CI48 i dodatkowych prób0024: PASS9/10. Historyczny ef4/e6e BLOCKED zachowany; Android be6 pozostaje WIP z2P2 | O3: wykorzystać odebrany backend CI48 do składania zgodnego pakietu; O1: dwa porty i skonfigurowana dostawa Androida, potem O2 domyka runtime | O2-062, [audyt CI48](https://github.com/Roseru/aplikacja-mobilna/releases/download/untagged-d85ad9133083bfcca3ca/O2-CI48-AUDYT-20261024.zip), [receipt O2](https://github.com/Roseru/aplikacja-mobilna/releases/download/untagged-d85ad9133083bfcca3ca/O2-CI48-backend-audit-20261024.json) |
-| O3 — DevOps, CI/CD, serwer | Backend CI48 i demo Room20 odebrane; PR165/166/169/170 oraz osobne main CI zaliczone. Bezpośrednie przygotowanie planu PG z receipt drivera w kwalifikacji. Przegląd drivera526 wykazał pozostały wyścig expiry; narzędzia czatu A1/A2 nadal do potwierdzenia | O1 domyka driver; O2 przyjął porty, admission, watchdog i oba ABA, oddaje finalny pin. Potem O1 integruje i dostarcza4zgodne APK/acceptance; O3 kwalifikuje i wykonuje E4/PG/PULL, pakiet i kopię | O3-102, [procedura O3](integracja/PRZYGOTOWANIE_REPLAY_E4_O3.md), [review drivera](https://github.com/Roseru/aplikacja-mobilna/pull/146#issuecomment-6392899041), [przyjęcie O2](https://github.com/Roseru/aplikacja-mobilna/pull/146#issuecomment-6390281744) |
+| O3 — DevOps, CI/CD, serwer | Backend CI48 i demo Room20 odebrane; PR165/166/169/170/171 scalone. Diagnostyka czasu tokenu i reproducer 300/301 s zaliczone lokalnie, wymagają własnego FULL CI. Przyczyna historycznego 401 nadal nieudowodniona; narzędzia czatu A1/A2 do potwierdzenia | O1 domyka driver; O2 oddaje finalny runtime/admission/ports/watchdog/ABA. Potem O1 integruje i dostarcza 4 zgodne APK/acceptance; O3 kwalifikuje i wykonuje E4/PG/PULL, pakiet i kopię | O3-102, O3-104, [procedura O3](integracja/PRZYGOTOWANIE_REPLAY_E4_O3.md), [review drivera](https://github.com/Roseru/aplikacja-mobilna/pull/146#issuecomment-6392899041), [przyjęcie O2](https://github.com/Roseru/aplikacja-mobilna/pull/146#issuecomment-6390281744) |
 
 
 
@@ -8084,3 +8084,47 @@ Archiwalne wiersze sprzed aktualizacji PR138; bieżący stan znajduje się na po
   są poprawiony driver, finalny runtime O2 i4skonfigurowane APK z nowym acceptance;
   potem O3 wykona niezależny odbiór, pakiet i kopię nowego stanu. Historyczne
   wyniki i demo Room20 zachowane, pełna kolejka otwarta, `deployment_authorized=false`.
+
+### O3-104 — Prywatna diagnostyka czasu tokenu i reproducer granicy 300/301 s
+
+- 25.10.2026, agent 3 / O3, do O1/O2, **DO ODCZYTU**. Własna gałąź
+  `codex/devops-diagnostyka-pkce`, baza main
+  `519fbf17ed5e0e87368609cb97b2b404adfee11a` po PR171; implementacja
+  [9f587ca](https://github.com/Roseru/aplikacja-mobilna/commit/9f587ca17f02967c198af719c7b51d228a80d153).
+  [Instrukcja Keycloak](../infra/local/keycloak/README.md) opisuje nowe CLI i ograniczenia.
+- `token_diagnostics.py --token-file` czyta jeden jawnie wskazany prywatny plik
+  poza checkoutem, maksymalnie 16 KiB, bez sieci, subprocessów, retry lub zmian
+  usług. Raport ma stały znacznik `UNVERIFIED_DIAGNOSTIC`, wyłącznie różnice
+  `exp-iat`, wieku i offsetu `nbf` oraz niezbędne typy/flagi. Nigdy nie zwraca
+  JWT, identyfikatorów, issuer/audience/kid/ról, credentials lub response body.
+  Błędy mają jedno neutralne wyjście bez wejścia/ścieżek/wyjątków. Windows wymaga
+  prywatnego ACL operatora; POSIX dodatkowo sprawdza UID i uprawnienia pliku.
+- Przypięte oficjalne źródło Keycloak 26.8.0 potwierdza dwa odczyty czasu.
+  Syntetyczny reproducer po obu stronach sekundy daje lifetime 300 albo 301 s,
+  niezależnie sprawdza podpis RS256 i używa istniejącego ścisłego verifiera
+  z MockTransport JWKS: 300 przechodzi, 301 daje 401 mimo skew 60 s. To offline
+  komponentowy dowód możliwości, bez rzeczywistego PKCE. Verifier, realm,
+  `tokens()/boot` i harness E3 O2 pozostają bez zmian. Automatyczna integracja
+  diagnostyki lub mitigacja producenta są osobnym etapem O2 z własnymi dowodami.
+- Pierwszy main CI po PR171 miał 27 PASS / 1 FAIL na pierwszym bootstrapie
+  właściciela w przypadku `[b]` ACL zdjęcia, przed uploadem/użyciem tokenu B.
+  Jedyny retry miał 28/0. Przyczyna historycznego 401 **nie jest udowodniona**;
+  reproducer nie jest diagnozą ani naprawą tamtego błędu. Rozróżniono też
+  pozostałe odmowy 401, transport JWKS 503 i brak wymaganej roli 403.
+- Wykonano lokalnie: nowe testy 70 PASS / 3 pominięcia Windows/POSIX; pełne
+  `backend/tests/unit` + `infra/integration/tests`: 2193 PASS / 8 pominięć
+  Windows/POSIX, jedno istniejące ostrzeżenie Starlette. Prywatny standardowy
+  temp jest poza repo, importy backendu potwierdzono z własnego klonu.
+  Ruff check/format całego zakresu CI (423 pliki), E0 i 17 testów kwalifikatora
+  CI PASS. Testy obejmują canary prywatności, neutralne błędy CLI, typy/formaty,
+  granice/niejednoznaczny JSON/base64url, limit przed parserem i wzrost pliku,
+  prywatny zwykły plik, brak sieci/subprocessów i zachowanie wejścia.
+- Zmiana wymaga własnego FULL Project CI: osiem rzeczywistych SUCCESS dla
+  aktualnych source/base/tested merge/tree oraz osobnego push CI main. Te wyniki
+  są kwalifikowane w PR po publikacji; wcześniejszy PR171 ich nie zastępuje.
+  To narzędzie nie odbiera nowego APK, Room/fence ani całego projektu. Nie
+  uruchomiono lokalnego AVD, instalacji APK, nowego live E4, kopii lub restartu
+  zdrowego demo. Kolejka pozostaje otwarta: driver P2 O1 → finalny runtime O2 →
+  integracja i 4 skonfigurowane APK/android_acceptance O1 → E4/PG/PULL/pakiet D
+  i kopia O3. Równoległe narzędzie czterech APK i O3-103 ma osobny checkout;
+  jego pliki i rezerwacje O1/O2 są zachowane, `deployment_authorized=false`.
