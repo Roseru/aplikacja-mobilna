@@ -8,6 +8,7 @@ import java.security.MessageDigest
 import java.time.Instant
 import java.time.LocalDate
 import java.time.LocalDateTime
+import java.time.ZoneId
 import java.util.UUID
 
 class EnergyProtocolException : IllegalArgumentException("Niepoprawna odpowiedź dotycząca zapotrzebowania")
@@ -83,6 +84,7 @@ class EnergySchema(bytes:ByteArray) {
                 ""->Unit
                 "uuid"->if(UUID.fromString(value).toString()!=value)fail()
                 "date"->if(LocalDate.parse(value).year !in 1..9999)fail()
+                "iana-time-zone"->if(value !in ZoneId.getAvailableZoneIds())fail()
                 "date-time"->{
                     if(!value.endsWith('Z') || LocalDateTime.parse(value.dropLast(1)).year !in 1..9999)fail()
                     Instant.parse(value)

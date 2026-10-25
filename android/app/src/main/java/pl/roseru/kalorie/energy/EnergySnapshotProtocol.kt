@@ -3,6 +3,7 @@ package pl.roseru.kalorie.energy
 import pl.roseru.kalorie.core.catalog.StrictJson
 import pl.roseru.kalorie.core.sync.SnapshotProtocol
 import pl.roseru.kalorie.core.sync.SnapshotQuery
+import pl.roseru.kalorie.core.sync.SyncProtocolScope
 
 /** Separate opt-in types prevent a seven-domain page from entering the legacy parser. */
 internal class EnergySnapshotQuery internal constructor(internal val legacy:SnapshotQuery) {
@@ -28,7 +29,7 @@ internal class EnergySnapshotProtocol(private val legacy:SnapshotProtocol,privat
 
     fun query(epoch:String,limit:Int=100,snapshot:String?=null,page:String?=null,
         recoveryOperationIds:List<String> = emptyList()):EnergySnapshotQuery =
-        EnergySnapshotQuery(legacy.query(epoch,limit,snapshot,page,recoveryOperationIds))
+        EnergySnapshotQuery(SnapshotQuery(legacy.query(epoch,limit,snapshot,page,recoveryOperationIds).canonical,SyncProtocolScope.ENERGY_V1))
 
     fun response(query:EnergySnapshotQuery,bytes:ByteArray):EnergySnapshotPage {
         val value=schema.read(bytes,"EnergyPullResponse",SnapshotProtocol.MAX_BYTES)

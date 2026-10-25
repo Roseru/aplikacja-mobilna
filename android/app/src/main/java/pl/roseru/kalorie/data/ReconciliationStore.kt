@@ -13,9 +13,12 @@ import java.util.UUID
 open class ReconciliationProofException:IllegalStateException("Uzgodnienie wymaga aktualnej pełnej kopii i rozstrzygnięcia źródeł")
 
 /** Full snapshots, receipts and user choices have a durable ledger independent of ordinary push. */
-class ReconciliationStore(internal val db:CalorieDatabase,internal val schema:SyncWireSchema) {
+class ReconciliationStore(internal val db:CalorieDatabase,internal val schema:SyncWireSchema,
+    internal val energySchema:pl.roseru.kalorie.energy.EnergySchema?=null) {
     internal val dao get()=db.importDao()
-    private val snapshots get()=ServerSnapshotStore(db,SnapshotProtocol(schema))
+    private val snapshots get()=ServerSnapshotStore(db,SnapshotProtocol(schema,energySchema))
+    private suspend fun readScope(lease:OwnerLease,expected:AccountBindingEntity,planId:String)=
+        SyncProtocolStore(db).readScope(lease,expected,energySchema!=null,planId)
     internal suspend fun context(lease:OwnerLease,expected:AccountBindingEntity):AccountBindingEntity {
         LocalOwnerStore(db).requireCurrent(lease)
         val actual=checkNotNull(db.bootstrapDao().binding(lease.storageScope))
@@ -85,7 +88,7 @@ class ReconciliationStore(internal val db:CalorieDatabase,internal val schema:Sy
         val plan=plan(lease,expected,id);check(plan.approvedAt!=null)
         val groups=groups(plan);val done=dao.evidence(id).filter {it.kind=="receipt_group"}.map {it.identity}.toSet()
         val index=groups.indices.firstOrNull {it.toString() !in done}
-        if(index!=null)return@withTransaction snapshots.begin(lease,groups[index],id,index)
+        if(index!=null)return@withTransaction snapshots.begin(lease,groups[index],id,index,readScope(lease,expected,id))
         // A different-device ACK target must be proven by a newer typed snapshot before local ACK.
         if(plan.state=="complete")return@withTransaction null
         val batches=dao.batches(id)
@@ -94,7 +97,7 @@ class ReconciliationStore(internal val db:CalorieDatabase,internal val schema:Sy
         val activePlan=active?.id?.let {dao.pull(it)?.planId}
         if(activePlan!=id || batches.any {it.state=="awaiting_snapshot"} ||
             (batches.any {it.state=="complete"} && active?.id in batches.map {it.snapshotRunId}))
-            return@withTransaction snapshots.begin(lease,emptyList(),id,groups.size)
+            return@withTransaction snapshots.begin(lease,emptyList(),id,groups.size,readScope(lease,expected,id))
         null
     }
     suspend fun pendingSnapshotAcceptance(lease:OwnerLease,expected:AccountBindingEntity,id:String):String?=
@@ -175,6 +178,6 @@ class ReconciliationStore(internal val db:CalorieDatabase,internal val schema:Sy
         val plan=plan(lease,expected,id);check(groupsComplete(plan))
         val run=checkNotNull(snapshots.active(lease));val pull=checkNotNull(dao.pull(run.id));check(pull.planId==id)
         val pages=db.snapshotDao().pages(run.id)
-        return run to ServerDiaryProtocol(schema).read(expected.syncEpoch,pages.map {ArchivedDiaryPage(it.queryJson,it.responseJson)})
+        return run to ServerDiaryProtocol(schema,energySchema).read(expected.syncEpoch,pages.map {ArchivedDiaryPage(it.queryJson,it.responseJson)},SyncProtocolScope.parse(run.protocolScope))
     }
 }

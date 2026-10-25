@@ -5,6 +5,7 @@ import androidx.room.migration.Migration
 import androidx.room.withTransaction
 import androidx.sqlite.db.SupportSQLiteDatabase
 import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.map
 import pl.roseru.kalorie.data.*
 import java.security.MessageDigest
 import java.util.UUID
@@ -63,6 +64,7 @@ class EnergyStore(private val db:CalorieDatabase) {
     private val owners=LocalOwnerStore(db)
     private val dao get()=db.energyDao()
     fun observeBinding(lease:OwnerLease)=dao.observeBinding(lease.storageScope)
+    fun localChanges():Flow<Unit> = db.invalidationTracker.createFlow("energy_cache","energy_attempts","canonical_energy_versions","sync_protocol_states").map {Unit}
     suspend fun scope(lease:OwnerLease):EnergyScope?=db.withTransaction {
         owners.requireCurrent(lease)
         if(db.ownerDao().byScope(lease.storageScope)?.kind!="account")return@withTransaction null
@@ -73,7 +75,15 @@ class EnergyStore(private val db:CalorieDatabase) {
         if(db.bootstrapDao().binding(scope.lease.storageScope)!=scope.binding)throw EnergyAccessFailure("stale_context")
     }
     suspend fun cached(scope:EnergyScope):List<EnergyCacheEntity> = db.withTransaction {
-        requireScope(scope);dao.cache(scope.lease.storageScope,scope.wireContext)
+        requireScope(scope)
+        val preview=dao.cache(scope.lease.storageScope,scope.wireContext)
+        val canonical=db.canonicalEnergyDao().latest(scope.lease.storageScope,scope.wireContext)
+        val versions=preview.filter {it.kind=="version"}.associateBy {it.recordId}.toMutableMap()
+        for(row in canonical) {
+            versions[row.entityId]?.let {require(it.revision==row.revision && it.wire==row.wire)}
+            versions[row.entityId]=EnergyCacheEntity(row.ownerScope,row.wireContext,"version",row.entityId,row.revision,row.wire,row.recordedAt)
+        }
+        preview.filter {it.kind!="version"}+versions.values
     }
     internal suspend fun <T> transaction(scope:EnergyScope,block:suspend ()->T):T=db.withTransaction {requireScope(scope);block()}
     suspend fun cache(scope:EnergyScope,kind:String,id:String,revision:Int,wire:String,now:Long)=db.withTransaction {
@@ -82,6 +92,9 @@ class EnergyStore(private val db:CalorieDatabase) {
         require(wire.toByteArray(Charsets.UTF_8).size in 1..1_048_576)
         val old=dao.cache(scope.lease.storageScope,scope.wireContext,kind,id)
         if(kind=="version" && old!=null)require(old.revision==revision && old.wire==wire)
+        if(kind=="version")db.canonicalEnergyDao().version(scope.lease.storageScope,scope.wireContext,id)?.let {
+            require(it.revision==revision && it.wire==wire)
+        }
         if(old!=null && revision<old.revision)return@withTransaction
         val row=EnergyCacheEntity(scope.lease.storageScope,scope.wireContext,kind,id,revision,wire,now)
         if(old==null)dao.insert(row)else dao.update(row)

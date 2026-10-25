@@ -96,11 +96,11 @@ class ReplayRuntimeIsolationTest {
                 (0 until array.length()).map { array.getJSONObject(it) }
             }
         val old = tables(20).map { it.getString("tableName") }.toSet()
-        val latest = tables(25)
+        val latest = tables(26)
         val new = latest.filter { it.getString("tableName") !in old }
-        val protected = MealReplayFingerprint.tables(25, runtimeIsolated = true)
+        val protected = MealReplayFingerprint.tables(26, runtimeIsolated = true)
         assertEquals(new.map { it.getString("tableName") }.toSet(), protected.toSet() - MealReplayFingerprint.tables(20).toSet())
-        assertEquals(9, new.size)
+        assertEquals(11, new.size)
         for (table in new) {
             val fields = table.getJSONArray("fields")
             for (index in 0 until fields.length()) {
@@ -110,6 +110,39 @@ class ReplayRuntimeIsolationTest {
                         "mutated", "meal", "operation", "batch"))
                 }
             }
+        }
+    }
+
+    @Test fun crossingExpiryBetweenObservationAndDecisionCannotLeaveReadyEvidenceAfterAdmittedWork() = runBlocking {
+        fixture {file,scope->
+            val start=1_800_000_000_000L
+            val deadline=start+60_000
+            var instant=start
+            var crossing=false
+            var reads=0
+            val trial=UUID.randomUUID().toString()
+            val gate=ReplayRuntimeIsolation(file,scope) {
+                if(crossing && reads++==0)deadline-1 else instant
+            }.also {it.attach(1)}
+            gate.arm(trial,"owner","epoch-1",60_000)
+            assertEquals(deadline,gate.requireHeld(trial,"owner","epoch-1"))
+
+            // No timer can fire: only the injected clock crosses the deadline.
+            instant=deadline;crossing=true;reads=0
+            var writes=0
+            assertEquals(SyncRuntimeEntry.Paused,gate.run {++writes})
+            assertEquals(0,writes)
+            crossing=false
+            assertEquals(SyncRuntimeEntry.Admitted(1),gate.run {++writes})
+            assertTrue(JSONObject(file.readText()).getBoolean("terminal"))
+            assertFalse(JSONObject(file.readText()).getBoolean("ready"))
+
+            instant=start+50_000
+            assertThrows(IllegalStateException::class.java){gate.requireHeld(trial,"owner","epoch-1")}
+            val restored=ReplayRuntimeIsolation(file,scope){instant}.also {it.attach(1)}
+            assertThrows(IllegalStateException::class.java){restored.requireHeld(trial,"owner","epoch-1")}
+            assertTrue(runCatching {restored.arm(trial,"owner","epoch-1")}.isFailure)
+            assertEquals(SyncRuntimeEntry.Admitted(2),restored.run {++writes})
         }
     }
 

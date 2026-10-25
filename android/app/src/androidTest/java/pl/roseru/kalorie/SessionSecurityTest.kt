@@ -80,8 +80,9 @@ class SessionSecurityTest {
     }
     private fun client(db: CalorieDatabase, vault: SessionVault, fixture: FixtureGateway, api: BootstrapGateway? = null,
         profiles: ProfileGateway? = null, snapshots: SnapshotGateway? = null, motivation: MotivationGateway? = null,
-        consents: RankingConsentGateway? = null, ranking: RankingGateway? = null, nemesis: NemesisGateway? = null, nemesisWrites: NemesisWriteGateway? = null, photos: PhotoCapabilitiesGateway? = null, photoWrites:PhotoAnalysisGateway?=null, pushes:MealPushGateway?=null, projectDiary:Boolean=false,reconcile:Boolean=false) = SessionController(
-        db, vault, fixture, issuer, context.packageName, now = { fixture.time }, bootstrapGateway = api, profileGateway = profiles, snapshotGateway = snapshots,
+        consents: RankingConsentGateway? = null, ranking: RankingGateway? = null, nemesis: NemesisGateway? = null, nemesisWrites: NemesisWriteGateway? = null, photos: PhotoCapabilitiesGateway? = null, photoWrites:PhotoAnalysisGateway?=null, pushes:MealPushGateway?=null, projectDiary:Boolean=false,reconcile:Boolean=false,
+        oidcApplicationId:String=context.packageName) = SessionController(
+        db, vault, fixture, issuer, oidcApplicationId, now = { fixture.time }, bootstrapGateway = api, profileGateway = profiles, snapshotGateway = snapshots,
         snapshotProtocol = snapshots?.let { snapshotProtocol() }, motivationGateway = motivation, rankingConsentGateway = consents, rankingGateway = ranking, nemesisGateway = nemesis, nemesisWriteGateway = nemesisWrites, photoCapabilitiesGateway = photos,
         photoAnalysisGateway=photoWrites,photoAnalysisStores=if(photoWrites!=null) { lease:OwnerLease->PhotoAnalysisStore(context,db,lease) } else null,
         mealPushGateway=pushes,mealPushStore=pushes?.let {MealPushStore(db,CanonicalMealRows.schema(context))},
@@ -2621,7 +2622,7 @@ class SessionSecurityTest {
     }
 
 
-    private inner class PushHarness(private val projectDiary:Boolean=false) {
+    private inner class PushHarness(private val projectDiary:Boolean=false,private val oidcApplicationId:String=context.packageName) {
         val db=memory();val vault=SessionVault(context,name());val fixture=FixtureGateway();val api=ApiFixture();val copies=SnapshotFixture()
         val calls=mutableListOf<PushBatch>();var before:suspend()->Unit={}
         var answer:suspend(PushBatch,Int)->BootstrapHttpResult={batch,_->BootstrapHttpResult(200,receipt(batch))}
@@ -2633,7 +2634,7 @@ class SessionSecurityTest {
             }
         }
         lateinit var c:SessionController;lateinit var lease:OwnerLease;lateinit var meal:String;lateinit var item:String
-        fun again()=client(db,vault,fixture,api,snapshots=copies,pushes=transport,projectDiary=projectDiary)
+        fun again()=client(db,vault,fixture,api,snapshots=copies,pushes=transport,projectDiary=projectDiary,oidcApplicationId=oidcApplicationId)
         suspend fun prepare(full:Boolean=true) {
             c=again();c.start();login(c,fixture,"fixture-A");c.bootstrap();lease=c.view.value.binding!!.lease
             if(full)c.downloadSnapshot()
@@ -2670,7 +2671,8 @@ class SessionSecurityTest {
         fun close(){vault.clear();db.close()}
     }
     @Test fun manualConsumptionAndAckGatePreserveFrozenWireAcrossCancelledAcknowledgementAndReplay()=runBlocking<Unit> {
-        val h=PushHarness(projectDiary=true);var pending:Job?=null;var ticket:MealPushAckGate.Ticket?=null
+        // Synthetic OIDC keeps its supported logical client identity while Room/vault use the isolated APK package.
+        val h=PushHarness(projectDiary=true,oidcApplicationId="pl.roseru.kalorie.validation");var pending:Job?=null;var ticket:MealPushAckGate.Ticket?=null
         try {
             val day=LocalDate.now();val guestId=UUID.randomUUID().toString()
             val guest=DiaryRepository(h.db,context).apply {initialize()}

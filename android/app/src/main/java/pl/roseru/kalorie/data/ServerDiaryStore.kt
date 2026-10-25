@@ -13,9 +13,10 @@ import java.time.ZoneId
 class DiaryProjectionChangedException : IllegalStateException("Kopia wymaga ponownego pobrania; dziennik zachowany")
 
 /** Applies a completed full copy atomically. No pending operation is acknowledged or rewritten. */
-class ServerDiaryStore(private val db: CalorieDatabase, private val schema: SyncWireSchema) {
+class ServerDiaryStore(private val db: CalorieDatabase, private val schema: SyncWireSchema,
+    private val energySchema:pl.roseru.kalorie.energy.EnergySchema?=null) {
     private val push = MealPushStore(db, schema)
-    private val protocol = ServerDiaryProtocol(schema)
+    private val protocol = ServerDiaryProtocol(schema,energySchema)
     private val records = db.serverDiaryDao()
     private val dao = db.dao()
 
@@ -25,7 +26,8 @@ class ServerDiaryStore(private val db: CalorieDatabase, private val schema: Sync
         records.latest(lease.storageScope)?.takeIf { it.wireContext == CanonicalMealRows.context(binding) }
     }
 
-    suspend fun apply(lease:OwnerLease,expectedRun:String?=null):ServerDiaryApplication = applyCopy(lease,expectedRun,null)
+    suspend fun apply(lease:OwnerLease,expectedRun:String?=null):ServerDiaryApplication = applyCopy(lease,
+        expectedRun?:ServerSnapshotStore(db,SnapshotProtocol(schema,energySchema)).pendingProjection(lease)?.id,null)
     internal suspend fun applyReconciled(lease:OwnerLease,expectedRun:String,planId:String):ServerDiaryApplication = applyCopy(lease,expectedRun,planId)
     private suspend fun applyCopy(lease: OwnerLease, expectedRun: String?, planId:String?): ServerDiaryApplication = withContext(Dispatchers.IO) {
         // A compacted historical application is a saved result, never a reason to reapply old data.
@@ -40,23 +42,47 @@ class ServerDiaryStore(private val db: CalorieDatabase, private val schema: Sync
             if(saved!=null)return@withContext saved
         }
         val source = db.withTransaction {
-            val gate = push.gate(lease,planId)
+            val gate = push.gate(lease,planId,expectedRun)
             if (expectedRun != null && gate.run.id != expectedRun) throw DiaryProjectionChangedException()
-            gate to db.snapshotDao().pages(gate.run.id)
+            val base=if(gate.run.readMode=="incremental") {
+                val prior=checkNotNull(gate.run.baseRunId?.let {db.snapshotDao().run(it)})
+                val application=checkNotNull(records.application(prior.id))
+                check(gate.access.activeRunId==prior.id && prior.protocolScope==gate.run.protocolScope &&
+                    prior.checkpoint==gate.run.startingCheckpoint && application.wireContext==CanonicalMealRows.context(gate.binding))
+                val entries=records.records(lease.storageScope).map {row->
+                    check(row.wireContext==application.wireContext)
+                    ServerDiaryEntity(row.entityId,row.entityType,row.knownRevision,row.deleted||row.absent,row.payload)
+                }
+                val energy=pl.roseru.kalorie.energy.EnergyProtocol(checkNotNull(energySchema))
+                val versions=db.canonicalEnergyDao().all(lease.storageScope,application.wireContext).map {energy.version(pl.roseru.kalorie.core.catalog.StrictJson.read(it.wire.toByteArray(Charsets.UTF_8)))}
+                ServerDiarySnapshot(prior.syncEpoch,checkNotNull(prior.checkpoint),application.serverTime,application.serverTime,
+                    application.timelineRevision,entries,energyVersions=versions,protocolScope=SyncProtocolScope.parse(prior.protocolScope))
+            }else null
+            Triple(gate,db.snapshotDao().pages(gate.run.id),base)
         }
-        val (gate, pages) = source
+        val (gate,pages,base) = source
         require(pages.map { it.pageIndex } == pages.indices.toList() && pages.size == gate.run.pageCount)
-        val copy = protocol.read(gate.binding.syncEpoch, pages.map { ArchivedDiaryPage(it.queryJson, it.responseJson) })
+        val archived=pages.map {ArchivedDiaryPage(it.queryJson,it.responseJson)}
+        val copy = try {
+            if(base!=null)IncrementalDiaryProtocol(schema,checkNotNull(energySchema)).read(gate.binding.syncEpoch,
+                archived,base,checkNotNull(gate.run.startingCheckpoint))
+            else protocol.read(gate.binding.syncEpoch,archived,SyncProtocolScope.parse(gate.run.protocolScope))
+        }catch(error:SyncWireException) {
+            if(base!=null)ServerSnapshotStore(db,SnapshotProtocol(schema,energySchema)).rejectStagedProjection(lease,gate.run.id)
+            throw error
+        }
         require(copy.checkpoint == gate.run.checkpoint && copy.serverTime == gate.run.serverTime &&
             copy.timelineRevision.toLong() == gate.run.timelineRevision)
         db.withTransaction {
-            if (push.gate(lease,planId) != gate || db.snapshotDao().pages(gate.run.id) != pages) throw DiaryProjectionChangedException()
+            if (push.gate(lease,planId,expectedRun) != gate || db.snapshotDao().pages(gate.run.id) != pages) throw DiaryProjectionChangedException()
             val context = CanonicalMealRows.context(gate.binding)
             records.application(gate.run.id)?.let { saved ->
                 check(saved.ownerScope == lease.storageScope && saved.wireContext == context)
                 return@withTransaction saved // A replay cannot undo an edit made after the first application.
             }
             val previous = records.records(lease.storageScope)
+            if(base!=null)check(previous.map {ServerDiaryEntity(it.entityId,it.entityType,it.knownRevision,it.deleted||it.absent,it.payload)}
+                .map {listOf(it.id,it.type,it.revision,it.deleted,it.payload)}==base.entities.map {listOf(it.id,it.type,it.revision,it.deleted,it.payload)})
             check(previous.all { it.wireContext == context }) // Epoch recovery is a separate, explicit operation.
             records.latest(lease.storageScope)?.let { old ->
                 val sameEpoch=pl.roseru.kalorie.core.catalog.StrictJson.read(old.wireContext.toByteArray()).getString("sync_epoch")==gate.binding.syncEpoch
@@ -89,8 +115,11 @@ class ServerDiaryStore(private val db: CalorieDatabase, private val schema: Sync
                         (entity.revision == old.knownRevision && !old.absent &&
                             (entity.payload != old.payload || entity.deleted != old.deleted))) throw DiaryProjectionChangedException()
                 }
+                // Folding an unchanged absence into a delta does not prove a deletion revision.
+                val remainsAbsent=base!=null && old?.absent==true && entity.deleted &&
+                    entity.revision==old.knownRevision && entity.payload==null
                 ServerDiaryRecord(lease.storageScope, entity.type, entity.id, old?.localId, context,
-                    entity.revision, entity.deleted, false, entity.payload, gate.run.id, "pending_local")
+                    entity.revision, entity.deleted, remainsAbsent, entity.payload, gate.run.id, "pending_local")
             } + previous.filter { (it.entityType to it.entityId) !in incoming }.map {
                 // Absence in a new full copy means deletion in this epoch, with unknown deletion revision.
                 it.copy(deleted = true, absent = true, payload = null, runId = gate.run.id, disposition = "pending_local")
@@ -139,6 +168,11 @@ class ServerDiaryStore(private val db: CalorieDatabase, private val schema: Sync
             val saved = ServerDiaryApplication(gate.run.id, lease.storageScope, context, copy.serverTime,
                 copy.timelineRevision, included, held, Instant.now().toString())
             records.insert(saved)
+            if(copy.protocolScope==SyncProtocolScope.ENERGY_V1) {
+                pl.roseru.kalorie.energy.CanonicalEnergyStore(db).applyFull(lease,gate.binding,gate.run,copy.energyVersions)
+                db.snapshotDao().save(ServerSnapshotAccess(lease.storageScope,gate.run.id,false))
+                SyncProtocolStore(db).acceptProjection(lease,gate.binding,gate.run)
+            }
             saved
         }
     }

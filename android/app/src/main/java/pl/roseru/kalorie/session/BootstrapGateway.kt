@@ -18,6 +18,7 @@ import pl.roseru.kalorie.data.OwnerLease
 import pl.roseru.kalorie.core.sync.SnapshotQuery
 import pl.roseru.kalorie.core.sync.SnapshotProtocol
 import pl.roseru.kalorie.core.sync.PushBatch
+import pl.roseru.kalorie.core.sync.SyncProtocolScope
 import java.io.ByteArrayOutputStream
 import java.io.InputStream
 import java.net.URL
@@ -141,7 +142,8 @@ internal class HttpsSnapshotGateway(base: String,
     private val open: (URL) -> HttpsURLConnection = { it.openConnection() as HttpsURLConnection }) : SnapshotGateway {
     private val endpoint = BootstrapHttpProtocol.endpoint(base).toString().removeSuffix("/me/bootstrap") + "/sync/pull"
     override suspend fun get(session: ApiSession, query: SnapshotQuery, beforeSend: suspend () -> Unit) =
-        HttpsJsonTransport.request(URL(endpoint + "?" + query.encoded()), "GET", session, null, open, beforeSend, SnapshotProtocol.MAX_BYTES)
+        HttpsJsonTransport.request(URL(endpoint + "?" + query.encoded()), "GET", session, null, open, beforeSend, SnapshotProtocol.MAX_BYTES,
+            requireNoStore=true,privateErrors=true,syncScope=query.protocolScope)
 }
 
 internal class HttpsRankingConsentGateway(base: String,
@@ -180,7 +182,8 @@ internal object HttpsJsonTransport {
         open: (URL) -> HttpsURLConnection, beforeSend: suspend () -> Unit,
         maxBytes: Int = BootstrapHttpProtocol.MAX_BYTES, requireNoStore: Boolean = false,
         consent: RankingConsentAttempt? = null, syncEpoch: String? = null, privateErrors: Boolean = false,
-        nemesis: NemesisAttempt? = null, photo: PhotoHttpRequest? = null, push: PushBatch? = null) = withContext(Dispatchers.IO) {
+        nemesis: NemesisAttempt? = null, photo: PhotoHttpRequest? = null, push: PushBatch? = null,
+        syncScope:SyncProtocolScope?=null) = withContext(Dispatchers.IO) {
         syncEpoch?.let(NemesisReadProtocol::uuid)
         require(listOfNotNull(consent, nemesis, photo, push).size <= 1)
         if (nemesis != null) require(key == nemesis.key && syncEpoch == nemesis.epoch && method == nemesis.command.method)
@@ -188,6 +191,8 @@ internal object HttpsJsonTransport {
             url.path == "/api/v1" + photo.path)
         if (push != null) require(method == "POST" && key == null && syncEpoch == null &&
             url.path == "/api/v1/sync/push" && url.query == null)
+        if(syncScope!=null)require(method=="GET" && url.path=="/api/v1/sync/pull" &&
+            key==null && syncEpoch==null && listOfNotNull(consent,nemesis,photo,push).isEmpty())
         val payload = consent?.body() ?: nemesis?.command?.body() ?: photo?.body() ?: push?.body()
         require(session.accessToken.isNotBlank() && session.accessToken.length <= 65_536 &&
             session.accessToken.none { it.isWhitespace() || it.isISOControl() })
@@ -205,6 +210,7 @@ internal object HttpsJsonTransport {
             connection.setRequestProperty("Accept-Encoding", "identity")
             connection.setRequestProperty("Cache-Control", "no-store")
             syncEpoch?.let { connection.setRequestProperty("X-Sync-Epoch", it) }
+            (push?.protocolScope?:syncScope)?.capability?.let {connection.setRequestProperty("X-Sync-Capability",it)}
             if (consent != null) {
                 require(method == "PUT" && key == consent.key)
                 connection.setRequestProperty("Content-Type", "application/json; charset=utf-8")

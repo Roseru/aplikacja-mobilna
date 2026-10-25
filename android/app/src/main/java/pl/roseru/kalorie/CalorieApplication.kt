@@ -13,12 +13,13 @@ import pl.roseru.kalorie.core.network.PolicyConnectionFactory
 import pl.roseru.kalorie.catalogupdate.CatalogUpdateFactory
 
 class CalorieApplication : Application(), SyncWorkRuntimeOwner {
-    val database by lazy { Room.databaseBuilder(this, CalorieDatabase::class.java, "calorie-diary.db").addMigrations(MIGRATION_1_2, MIGRATION_2_3, MIGRATION_3_4, MIGRATION_4_5, MIGRATION_5_6, MIGRATION_6_7, MIGRATION_7_8, pl.roseru.kalorie.photo.MIGRATION_8_9, pl.roseru.kalorie.photo.MIGRATION_9_10, pl.roseru.kalorie.data.MIGRATION_10_11, pl.roseru.kalorie.data.MIGRATION_11_12, pl.roseru.kalorie.photo.MIGRATION_12_13, pl.roseru.kalorie.data.MIGRATION_13_14, pl.roseru.kalorie.data.MIGRATION_14_15, pl.roseru.kalorie.data.MIGRATION_15_16, pl.roseru.kalorie.data.MIGRATION_16_17, pl.roseru.kalorie.data.MIGRATION_17_18, pl.roseru.kalorie.data.MIGRATION_18_19, pl.roseru.kalorie.data.MIGRATION_19_20, pl.roseru.kalorie.data.MIGRATION_20_21, pl.roseru.kalorie.data.MIGRATION_21_22, pl.roseru.kalorie.data.MIGRATION_22_23, pl.roseru.kalorie.data.MIGRATION_23_24, pl.roseru.kalorie.energy.MIGRATION_24_25).addCallback(DATABASE_GUARDS).build() }
+    val database by lazy { Room.databaseBuilder(this, CalorieDatabase::class.java, "calorie-diary.db").addMigrations(MIGRATION_1_2, MIGRATION_2_3, MIGRATION_3_4, MIGRATION_4_5, MIGRATION_5_6, MIGRATION_6_7, MIGRATION_7_8, pl.roseru.kalorie.photo.MIGRATION_8_9, pl.roseru.kalorie.photo.MIGRATION_9_10, pl.roseru.kalorie.data.MIGRATION_10_11, pl.roseru.kalorie.data.MIGRATION_11_12, pl.roseru.kalorie.photo.MIGRATION_12_13, pl.roseru.kalorie.data.MIGRATION_13_14, pl.roseru.kalorie.data.MIGRATION_14_15, pl.roseru.kalorie.data.MIGRATION_15_16, pl.roseru.kalorie.data.MIGRATION_16_17, pl.roseru.kalorie.data.MIGRATION_17_18, pl.roseru.kalorie.data.MIGRATION_18_19, pl.roseru.kalorie.data.MIGRATION_19_20, pl.roseru.kalorie.data.MIGRATION_20_21, pl.roseru.kalorie.data.MIGRATION_21_22, pl.roseru.kalorie.data.MIGRATION_22_23, pl.roseru.kalorie.data.MIGRATION_23_24, pl.roseru.kalorie.energy.MIGRATION_24_25, pl.roseru.kalorie.data.MIGRATION_25_26).addCallback(DATABASE_GUARDS).build() }
     // Legacy guest setup API. UI repositories always use the active, captured lease.
     val repository get() = DiaryRepository(database, this)
     val preferences by lazy { Preferences(this) }
     val syncSchema by lazy { CanonicalMealRows.schema(this) }
-    val reconciliationStore by lazy { ReconciliationStore(database,syncSchema) }
+    val energySchema by lazy {pl.roseru.kalorie.energy.EnergySchema(assets.open("energy/energy.schema.json").use {it.readBytes()})}
+    val reconciliationStore by lazy { ReconciliationStore(database,syncSchema,energySchema) }
     val sessionScope = CoroutineScope(SupervisorJob() + Dispatchers.Main.immediate)
     // Variant-specific: regular builds are always open; validation can fence a private E4 trial.
     val syncRuntimeAdmission by lazy { SyncRuntimeAdmissionFactory.create(this, sessionScope) }
@@ -30,15 +31,16 @@ class CalorieApplication : Application(), SyncWorkRuntimeOwner {
         getString(R.string.api_base_url).takeIf {it.isNotEmpty()}?.let {base ->
             try {pl.roseru.kalorie.community.HttpsCommunityGateway(base,networkConnections::open)}catch(_:Exception){null}
         })}
-    val energyProtocol by lazy {pl.roseru.kalorie.energy.EnergyProtocol(pl.roseru.kalorie.energy.EnergySchema(
-        assets.open("energy/energy.schema.json").use {it.readBytes()}))}
+    val energyProtocol by lazy {pl.roseru.kalorie.energy.EnergyProtocol(energySchema)}
     internal val energy by lazy {pl.roseru.kalorie.energy.EnergyRepository(pl.roseru.kalorie.energy.EnergyStore(database),energyProtocol,
         pl.roseru.kalorie.energy.ControllerEnergySessionAccess(sessions),networkPolicy,
         getString(R.string.api_base_url).takeIf {it.isNotEmpty()}?.let {base->
             try {pl.roseru.kalorie.energy.HttpsEnergyGateway(base,networkConnections::open)}catch(_:Exception){null}
         })}
-    val syncCoordinator by lazy { SyncCoordinator(database,syncSchema,sessions) }
-    override val syncWorkRuntime by lazy {SyncWorkRuntime(database,syncCoordinator,SyncWorkScheduler(androidx.work.WorkManager.getInstance(this)))}
+    val syncCoordinator by lazy { SyncCoordinator(database,syncSchema,sessions,
+        networkGate=networkPolicy,savedEvidence=sessions) }
+    override val syncWorkRuntime by lazy {SyncWorkRuntime(database,syncCoordinator,
+        SyncWorkScheduler(androidx.work.WorkManager.getInstance(this)),admission=syncRuntimeAdmission)}
     val sessions by lazy { SessionController(database, SessionVault(this),
         AppAuthGateway(this,PolicyAppAuthConnectionBuilder(networkConnections),networkPolicy),getString(R.string.oidc_issuer),packageName,
         bootstrapGateway = getString(R.string.api_base_url).takeIf { it.isNotEmpty() }?.let {
@@ -68,10 +70,10 @@ class CalorieApplication : Application(), SyncWorkRuntimeOwner {
         mealPushProtocol = PushProtocol(CanonicalMealRows.schema(this)),
         conflictStore = SyncConflictStore(database,CanonicalMealRows.schema(this)),
         reconciliationStore = reconciliationStore,
-        diaryStore = ServerDiaryStore(database,CanonicalMealRows.schema(this)),
+        diaryStore = ServerDiaryStore(database,CanonicalMealRows.schema(this),energySchema),
         photoAnalysisStores = { lease -> pl.roseru.kalorie.photo.PhotoAnalysisStore(this,database,lease) }, snapshotProtocol = SnapshotProtocol(SyncWireSchema(SyncWireSchema.FILES.associateWith { file ->
             assets.open("sync/$file").use { it.readBytes() }
-        }))) }
+        }),energySchema)) }
     override fun onCreate() {
         super.onCreate()
         // Finish process attachment before lazy Room initialization; Main.immediate

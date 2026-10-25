@@ -183,4 +183,113 @@ Do napisania: trwałe fazy zmiany scope, zachowanie/uzgodnienie wszystkich
 starych prób, nowy pełny snapshot z atomową akceptacją7domen, następnie
 incremental/push z utrwalonym scope żądania. Integracja ze wspólnym
 controller/runtime nastąpi po zwrocie7rezerwacji i finalnym pinie O2.
-Nie ma nowej migracji poza25 ani włączenia capability w transporcie.
+Nie ma jeszcze włączenia capability w transporcie.
+
+### Lokalny fundament Room26 — w trakcie, bez odbioru
+
+Po zachowaniu parsera w e291bc4 trwa zwykły merge opublikowanego runtime
+2319357 z Room23. Cztery konflikty rozwiązano zachowując obie strony;
+merge nie został jeszcze zatwierdzony ani opublikowany. Lokalnie wybrano
+0.8.36/code47/validation1047. Nie łączymy wyników oddzielnych Room23 i25
+w domniemany wynik całego Room26.
+
+Dodano addytywną migrację25→26. Trzy istniejące tabele run/ordinary/recovery
+otrzymują niezmienny protocolScope z domyślnym legacy calorie-app.
+ALTER nie odtwarza wierszy i nie zmienia UUID/body/hash/checkpointu.
+Nowe sync_protocol_states przechowują fazy draining/snapshot/active;
+canonical_energy_versions zachowuje pełną niezmienną oś niezależnie od
+ograniczonego cache podglądu REST. Rejestracja migracji obejmuje19miejsc.
+SQL odmawia zmiany scope zamrożonego żądania, powiązania z checkpointem
+innego zakresu, cofania fazy i nadpisania/usunięcia kanonicznej wersji E.
+
+SnapshotProtocol ma jawny typowany zakres, domyślnie legacy. Parser pełnego
+archiwum7domen odseparowuje wersje E od istniejącej projekcji6domen,
+zachowuje granice tokenów/liczności i sprawdza unikalność rewizji oraz
+wcześniejsze supersedes. Metadane zakresu nie są dopisywane do query JSON
+ani body push, więc nie zmieniają ich istniejącego fingerprintu.
+
+Powyższy fundament powstał bez wcześniejszych kontroli pośrednich.
+Następny opis przedstawia już złożony kod; jego odbiór jest w toku.
+
+### Złożony przepływ pełny i przyrostowy — odbiór w toku
+
+SessionController i ReconciliationStore korzystają z jednego parsera
+rozszerzonego o E. Stare próby są odtwarzane ze swoim zapisanym scope;
+nowe nie zamrażają się w fazie przejścia. Pierwszy nowy odczyt jest pełny.
+Zapis ostatniej strony nie aktywuje nowego ordinary checkpointu: cała
+projekcja6domen, niezmienne E i aktywacja zakresu/checkpointu mają jedną
+transakcję. Gotowy lokalny staging można zastosować po restarcie bez HTTP.
+Jawne uzgadnianie konta zachowuje własny ledger decyzji i receipts.
+
+Następne odczyty używają checkpointu dokładnie zastosowanego źródła.
+Run utrwala readMode/baseRunId/startingCheckpoint i trwały forceFull po
+wygaśnięciu kursora. Przyrostowy change log dopuszcza kolejne rewizje tego
+samego ID, sprawdza ich porządek i składa je z kanoniczną kopią serwera;
+brak encji w delcie nie usuwa jej. Nie potwierdza operacji outbox. Wadliwa
+delta pozostawia aktywną kopię/kolejkę, zachowuje raw jako odrzucone
+i wymaga nowego pełnego odczytu. Późniejsze lokalne edycje są nadal chronione.
+
+HTTPS wysyła capability wyłącznie z typowanego scope konkretnego query
+lub zamrożonego batcha. UI łączy ograniczony podgląd REST z lokalną osią E,
+obserwuje jej zmiany i unieważnia stary stan decyzji po nowej wersji osi.
+Driver obejmuje44tabele biznesowe Room26, bez normalizowania ich zawartości;
+nieznany27 jest odrzucany. To obsługa kodu, nie nowa kwalifikacja liveE4.
+
+Pierwszy końcowy build zakończył się po192,265s dwoma błędami typów Kotlin,
+przed wykonaniem testów. Poprawiono Long/Int przy rewizji oraz wymaganie
+niepustego bindingu w pull. LogSHA256
+20beb9e9175486a1a7c228cb45fbcc20f2e5faea8cc109f489b11beb130ec17a.
+Przerwany kolejny build pozostawił sześć zaliczonych przypadków odcisku
+oraz dwa błędy parserów. Powodem był brak obsługi formatu iana-time-zone
+w walidatorze E, który sprawdza również sześć dotychczasowych domen.
+Dodano ścisłe sprawdzenie ZoneId zgodne z dotychczasowym protokołem.
+Build po tej poprawce: PASS, 886,797 s, oba warianty i APK testowe;
+lint 0 Error / 0 Fatal / 8 Warning / 2 Information. Log SHA-256:
+7bc79fe1653f65a2ed5e359dbcf737730460016d10b4dd0aa45b600ba58909f4.
+Oba ponowione parsery przeszły bez skipów. Łącznie osiem unikalnych
+przypadków JVM ma pozytywne wyniki w dwóch uruchomieniach; sześciu
+niezmienionych przypadków odcisku nie wykonywano ponownie.
+
+Przegląd wykrył jeszcze utratę oznaczenia nieznanej rewizji usunięcia:
+rekord nieobecny w pełnej kopii musi zachować ten stan również wtedy,
+gdy kolejna delta go nie dotyczy. Poprawiono składanie projekcji i dodano
+odpowiednią asercję do istniejącego przypadku przepływu. Trwa kompilacja
+tej poprawki bez powtarzania JVM. Przygotowano pięć przypadków native
+pełnego przepływu, migracji, zakresu i transportu oraz jeden odcisku.
+Native, prawdziwe API, PKCE i Gemini nie mają jeszcze nowego wyniku.
+
+O2 przekazał ETag4cc2d4d/6400515465; O1 przyjął pin w6401008024.
+Przed zakończeniem trwającego builda nie podmieniamy jego źródeł. Ten pin
+ma osobne13native i przegląd9,5/10 według O2; zwykły merge i ograniczony
+odbiór złożenia pozostają następne. Room23/2319357 jest zachowany do4APK.
+
+Kompilacja poprawki zachowania nieznanej rewizji: PASS, 474,875 s;
+lint 0 Error / 0 Fatal / 8 Warning / 2 Information. Osiem poprzednich
+przypadków JVM zachowano po porównaniu źródeł, bez ponownego wykonania.
+Log SHA-256: 83ba91516385339b043907338c5c0a637d72d99351318a0b8ab032831b6dbd84.
+
+Pierwszy odbiór urządzenia: 4 PASS / 2 FAIL / 0 SKIP, 8,968 s.
+Przeszły: pełny i przyrostowy przepływ z późniejszą edycją, wygaśnięcie
+kursora i odrzucenie delty, zmiana konta A–gość–A oraz odciski Room 26.
+Dwie awarie dotyczą przygotowania testów: sztuczny adres transportu
+nie zawierał wymaganego /api/v1, a klon starego schematu traktował pustą,
+opcjonalną listę indeksów jako wymaganą. Poprawiono wyłącznie te miejsca
+w testach; trwa kompilacja samego testowego APK. Ponowione będą tylko
+dwa niezaliczone przypadki. Log SHA-256:
+2bd2d9a0c844833dd64bf9e97f98710ad60414e0c594cd05bb7da1efa50b5475.
+Hash oryginalnego APK, jego testowego APK i trzech plików dziennika
+pozostał identyczny przed i po odbiorze; emulator zachował brak sieci.
+To granice syntetycznego API/session/HTTPSConnection, bez live TLS/AI.
+
+Ponowiono wyłącznie dwa poprawione przypadki przygotowania danych:
+2 PASS / 0 FAIL / 0 SKIP, 6,406 s. Migracja zachowała wszystkie stare
+kolumny i rowid w 52 tabelach, a transport zachował zakres i bajty próby.
+APK produkcyjne pozostało identyczne (SHA-256
+d500edb9cdc43892ab99f4b78225f1f5ede0dfa1ebe39ad283611fb14e181606).
+Log SHA-256: e6818ba532d4d9acce0910740c0722e2743d03a074840b817fe81a87da6e4fa1.
+Razem sześć unikalnych przypadków urządzenia ma wynik pozytywny w dwóch
+uruchomieniach; czterech wcześniej zaliczonych nie powtarzano. Oryginalny
+APK, jego testy i trzy pliki dziennika ponownie pozostały bez zmian,
+a emulator pozostał offline. Źródła aplikacji, schemat 26 i osiem wyników
+JVM z wcześniejszego odbioru są niezmienione. ETag O2 i prawdziwy odbiór
+połączenia pozostają kolejnymi krokami; to nadal nie odbiór live E9.

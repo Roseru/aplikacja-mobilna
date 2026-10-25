@@ -19,11 +19,15 @@ data class EnergyViewState(val local:EnergyLocalState?=null,val loaded:Boolean=f
     }
     override fun toString()="EnergyViewState(redacted)"
 }
-class EnergyViewModel internal constructor(private val repository:EnergyRepository,private val lease:OwnerLease):ViewModel() {
+class EnergyViewModel internal constructor(private val repository:EnergyRepository,private val lease:OwnerLease,
+    localChanges:Flow<Unit>?=null):ViewModel() {
     private val mutable=MutableStateFlow(EnergyViewState(configured=repository.configured))
     val state=mutable.asStateFlow()
     private var operation:Job?=null
     init {
+        localChanges?.let {changes->viewModelScope.launch {
+            changes.collect {if(!mutable.value.busy)reloadLocal()}
+        }}
         viewModelScope.launch {
             repository.observeBinding(lease).distinctUntilChanged().collectLatest {
                 operation?.cancel()

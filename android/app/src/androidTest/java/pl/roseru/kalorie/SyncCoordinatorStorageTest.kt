@@ -70,7 +70,7 @@ class SyncCoordinatorStorageTest {
         try {
             val lease=account(db);val binding=db.bootstrapDao().binding(lease.storageScope)!!
             repeat(125){DiaryRepository(db,context,lease).addWeight(80.0,LocalDate.of(2026,10,21))}
-            val server=Server(db);val coordinator=SyncCoordinator(db,schema,server)
+            val server=Server(db);val coordinator=SyncCoordinator(db,schema,server,networkGate=RuntimeAllowedNetwork)
             coordinator.request(lease,binding);assertEquals(SyncCoordinator.Outcome.Complete,coordinator.run(lease,binding))
             assertTrue(server.sent.size>=2)
             assertEquals(0,db.serverDiaryDao().unsettled(lease.storageScope).size)
@@ -87,13 +87,13 @@ class SyncCoordinatorStorageTest {
         try {
             val lease=account(db);val binding=db.bootstrapDao().binding(lease.storageScope)!!
             DiaryRepository(db,context,lease).addWeight(82.0,LocalDate.of(2026,10,21))
-            val server=Server(db).apply {loseNextAck=true};val coordinator=SyncCoordinator(db,schema,server)
+            val server=Server(db).apply {loseNextAck=true};val coordinator=SyncCoordinator(db,schema,server,networkGate=RuntimeAllowedNetwork)
             coordinator.request(lease,binding)
             try{coordinator.run(lease,binding);fail("Cancellation must propagate")}catch(_:CancellationException){}
             assertEquals("push",coordinator.state(lease)!!.phase)
             val batch=db.pushDao().pending(lease.storageScope).single();val queue=db.serverDiaryDao().unsettled(lease.storageScope)
             assertTrue(batch.attempted);assertNull(batch.responseJson)
-            assertEquals(SyncCoordinator.Outcome.Complete,SyncCoordinator(db,schema,server).run(lease,binding))
+            assertEquals(SyncCoordinator.Outcome.Complete,SyncCoordinator(db,schema,server,networkGate=RuntimeAllowedNetwork).run(lease,binding))
             assertEquals(server.sent[0],server.sent[1]);assertEquals(1,server.records.size)
             assertTrue(queue.all {db.dao().operation(it.operationId)!!.status=="acked"})
         }finally{db.close()}
@@ -103,29 +103,39 @@ class SyncCoordinatorStorageTest {
         var db=open();var clock=1_000L;var calls=0
         try {
             var lease=account(db);val binding=db.bootstrapDao().binding(lease.storageScope)!!
-            val first=SyncCoordinator(db,schema,SyncStepExecutor {_,_,_->calls++;SyncStepResult.RetryAt(90_000)},{clock})
+            val first=SyncCoordinator(db,schema,SyncStepExecutor {_,_,_->calls++;SyncStepResult.RetryAt(90_000)},networkGate=RuntimeAllowedNetwork,now={clock})
             first.request(lease,binding);assertEquals(SyncCoordinator.Outcome.Deferred(90_000),first.run(lease,binding))
             db.close();db=open()
             val owners=LocalOwnerStore(db);owners.select(owners.ensureGuest().id);lease=owners.select(db.ownerDao().byScope(lease.storageScope)!!.id)
-            val second=SyncCoordinator(db,schema,SyncStepExecutor {_,_,_->calls++;SyncStepResult.LoginRequired},{clock})
+            val second=SyncCoordinator(db,schema,SyncStepExecutor {_,_,_->calls++;SyncStepResult.LoginRequired},networkGate=RuntimeAllowedNetwork,now={clock})
             second.request(lease,binding,true);assertEquals(SyncCoordinator.Outcome.Deferred(90_000),second.run(lease,binding));assertEquals(1,calls)
             clock=90_000;assertEquals(SyncCoordinator.Outcome.Stopped("login"),second.run(lease,binding));assertEquals(2,calls)
             assertEquals(90_000,second.state(lease)!!.retryAtMillis)
         }finally{db.close();context.deleteDatabase(name)}
     }
     @Test fun accountAbaWhileExecutorIsInFlightCannotAdvanceDurablePhaseOrApplyLateResult()=runBlocking<Unit> {
-        val db=memory()
+        val db=memory();val entered=CompletableDeferred<Unit>();val release=CompletableDeferred<Unit>();val finished=CompletableDeferred<Unit>()
+        var active:Deferred<SyncCoordinator.Outcome>?=null
         try {
             val lease=account(db);val binding=db.bootstrapDao().binding(lease.storageScope)!!
-            val owners=LocalOwnerStore(db);var returned:OwnerLease?=null
+            val owners=LocalOwnerStore(db);val accountId=db.ownerDao().byScope(lease.storageScope)!!.id
             val coordinator=SyncCoordinator(db,schema,SyncStepExecutor {_,_,_->
-                owners.select(owners.ensureGuest().id);returned=owners.select(db.ownerDao().byScope(lease.storageScope)!!.id)
-                SyncStepResult.Completed(runId=uuid())
-            })
-            coordinator.request(lease,binding);assertEquals(SyncCoordinator.Outcome.Stale,coordinator.run(lease,binding))
-            assertEquals("pull_before",coordinator.state(returned!!)!!.phase)
+                entered.complete(Unit)
+                // A late response may ignore cancellation; it still cannot advance the old cycle.
+                try {withContext(NonCancellable){release.await()};SyncStepResult.Completed(runId=uuid())}
+                finally {finished.complete(Unit)}
+            },networkGate=RuntimeAllowedNetwork)
+            coordinator.request(lease,binding);active=async {coordinator.run(lease,binding)}
+            withTimeout(10000){entered.await()}
+            // The test controls account changes outside the executor being revoked.
+            owners.select(owners.ensureGuest().id);val returned=owners.select(accountId)
+            release.complete(Unit)
+            assertEquals(SyncCoordinator.Outcome.Stale,withTimeout(10000){active.await()})
+            withTimeout(10000){finished.await()}
+            assertEquals("pull_before",coordinator.state(returned)!!.phase)
+            assertEquals(0,coordinator.state(returned)!!.acknowledged)
             assertNull(db.serverDiaryDao().latest(lease.storageScope))
-        }finally{db.close()}
+        }finally{release.complete(Unit);active?.cancelAndJoin();db.close()}
     }
     @Test fun sharedManualWorkerMutexPreventsConcurrentExecutorLoopsWithoutSleeps()=runBlocking<Unit> {
         val db=memory()
@@ -133,7 +143,7 @@ class SyncCoordinatorStorageTest {
             val lease=account(db);val binding=db.bootstrapDao().binding(lease.storageScope)!!
             val entered=CompletableDeferred<Unit>();val release=CompletableDeferred<Unit>();var calls=0
             val executor=SyncStepExecutor {_,_,_->calls++;entered.complete(Unit);release.await();SyncStepResult.LoginRequired}
-            val manual=SyncCoordinator(db,schema,executor);val worker=SyncCoordinator(db,schema,executor)
+            val manual=SyncCoordinator(db,schema,executor,networkGate=RuntimeAllowedNetwork);val worker=SyncCoordinator(db,schema,executor,networkGate=RuntimeAllowedNetwork)
             manual.request(lease,binding)
             coroutineScope {
                 val running=async {manual.run(lease,binding)};entered.await()
@@ -147,7 +157,7 @@ class SyncCoordinatorStorageTest {
             val db=memory()
             try {
                 val lease=account(db);val binding=db.bootstrapDao().binding(lease.storageScope)!!;var calls=0
-                val coordinator=SyncCoordinator(db,schema,SyncStepExecutor {_,_,_->calls++;result})
+                val coordinator=SyncCoordinator(db,schema,SyncStepExecutor {_,_,_->calls++;result},networkGate=RuntimeAllowedNetwork)
                 coordinator.request(lease,binding);assertTrue(coordinator.run(lease,binding) is SyncCoordinator.Outcome.Stopped)
                 repeat(3){coordinator.request(lease,binding);assertTrue(coordinator.run(lease,binding) is SyncCoordinator.Outcome.Stopped)}
                 assertEquals(1,calls)
@@ -165,7 +175,7 @@ class SyncCoordinatorStorageTest {
                 val original=db.serverDiaryDao().unsettled(lease.storageScope).single()
                 val waiting=original.copy(status="waiting_revision")
                 db.dao().updateOperation(waiting)
-                val server=Server(db);val coordinator=SyncCoordinator(db,schema,server){clock}
+                val server=Server(db);val coordinator=SyncCoordinator(db,schema,server,networkGate=RuntimeAllowedNetwork){clock}
                 coordinator.request(lease,binding)
                 assertEquals(SyncCoordinator.Outcome.Deferred(11_000),coordinator.run(lease,binding))
                 assertEquals(listOf(SyncStep.PULL,SyncStep.PUSH,SyncStep.PULL),server.calls)
@@ -181,7 +191,7 @@ class SyncCoordinatorStorageTest {
                 assertEquals(snapshot,db.snapshotDao().access(lease.storageScope)!!.activeRunId)
                 assertEquals(checkpoint,db.snapshotDao().run(snapshot)!!.checkpoint)
                 server.calls.clear();clock=11_000
-                val resumed=SyncCoordinator(db,schema,server){clock}.run(lease,binding)
+                val resumed=SyncCoordinator(db,schema,server,networkGate=RuntimeAllowedNetwork){clock}.run(lease,binding)
                 assertEquals(SyncStep.PUSH,server.calls.first())
                 assertEquals(1,server.sent.size);assertEquals(setOf(readyId),server.records.keys)
                 val sentOperation=checkNotNull(db.dao().operation(readyOperationId))
@@ -203,18 +213,18 @@ class SyncCoordinatorStorageTest {
             val executor=SyncStepExecutor {_,_,_->calls++;SyncStepResult.RetryAt(if(past)0 else clock)}
             try {
                 val lease=account(db);val binding=db.bootstrapDao().binding(lease.storageScope)!!
-                val first=SyncCoordinator(db,schema,executor){clock}
+                val first=SyncCoordinator(db,schema,executor,networkGate=RuntimeAllowedNetwork){clock}
                 first.request(lease,binding)
                 assertEquals(SyncCoordinator.Outcome.Deferred(11_000),first.run(lease,binding));assertEquals(1,calls)
                 db.close();db=open()
-                val resumed=SyncCoordinator(db,schema,executor){clock}
+                val resumed=SyncCoordinator(db,schema,executor,networkGate=RuntimeAllowedNetwork){clock}
                 resumed.request(lease,binding)
                 assertEquals(SyncCoordinator.Outcome.Deferred(11_000),resumed.run(lease,binding));assertEquals(1,calls)
                 clock=11_000
                 assertEquals(SyncCoordinator.Outcome.Deferred(31_000),resumed.run(lease,binding));assertEquals(2,calls)
                 assertEquals(2,resumed.state(lease)!!.consecutiveFailures)
                 clock=31_000
-                val future=SyncCoordinator(db,schema,SyncStepExecutor {_,_,_->calls++;SyncStepResult.RetryAt(121_000)}){clock}
+                val future=SyncCoordinator(db,schema,SyncStepExecutor {_,_,_->calls++;SyncStepResult.RetryAt(121_000)},networkGate=RuntimeAllowedNetwork){clock}
                 assertEquals(SyncCoordinator.Outcome.Deferred(121_000),future.run(lease,binding));assertEquals(3,calls)
                 future.request(lease,binding)
                 assertEquals(SyncCoordinator.Outcome.Deferred(121_000),future.run(lease,binding));assertEquals(3,calls)

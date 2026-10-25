@@ -104,11 +104,11 @@ internal class ReconciliationPushStore(private val owner:ReconciliationStore) {
                 .put("decision",if(resolve)"resolve_existing" else "recreate_missing"))
             val opId=UUID.randomUUID().toString()
             val operation=recovery.operation(opId,source.entityType,proposed,expected.syncEpoch,base,payload,sourceMeta)
-            val batch=recovery.prepare(expected.syncEpoch,checkNotNull(run.checkpoint),listOf(operation))
+            val batch=recovery.prepare(expected.syncEpoch,checkNotNull(run.checkpoint),listOf(operation)).withScope(SyncProtocolScope.parse(run.protocolScope))
             val outbox=OutboxEntity(opId,lease.storageScope,source.entityType,proposed,"upsert",base,payload,Instant.now().toString(),
                 "recovery_pending","sync-recovery-v1",operation,plan.wireContext,true)
             val envelope=ReconciliationBatch(UUID.randomUUID().toString(),id,"epoch_recovery",plan.wireContext,run.id,
-                batch.canonical,batch.sha256,null,Instant.now().toString())
+                batch.canonical,batch.sha256,null,Instant.now().toString(),protocolScope=batch.protocolScope.installationId)
             db.dao().enqueue(outbox);dao.insert(envelope)
             dao.update(source.copy(state="queued",operationId=opId,appliedPayload=payload))
             ReconciliationPushRequest(envelope.id,lease,expected,id,batch,envelope,listOf(outbox))
@@ -137,7 +137,7 @@ internal class ReconciliationPushStore(private val owner:ReconciliationStore) {
             }
         }
         if(operationTexts.isEmpty())return null
-        val batch=ordinary.prepare(expected.syncEpoch,checkNotNull(run.checkpoint),operationTexts)
+        val batch=ordinary.prepare(expected.syncEpoch,checkNotNull(run.checkpoint),operationTexts).withScope(SyncProtocolScope.parse(run.protocolScope))
         val wire=batch.json().getJSONArray("operations")
         val operations=(0 until wire.length()).map {i->
             val op=wire.getJSONObject(i);val row=checkNotNull(db.dao().operation(op.getString("operation_id")))
@@ -147,7 +147,7 @@ internal class ReconciliationPushStore(private val owner:ReconciliationStore) {
             row.copy(attempted=true).also {db.dao().updateOperation(it)}
         }
         val envelope=ReconciliationBatch(UUID.randomUUID().toString(),plan.id,"checkpoint_replay",plan.wireContext,run.id,
-            batch.canonical,batch.sha256,original?.id,Instant.now().toString())
+            batch.canonical,batch.sha256,original?.id,Instant.now().toString(),protocolScope=batch.protocolScope.installationId)
         dao.insert(envelope)
         for(row in operations) {
             val match=sources.single {it.entityType==row.entityType && StrictJson.read(it.sourceJson.toByteArray()).getString("wire_id")==row.entityId}
@@ -169,8 +169,10 @@ internal class ReconciliationPushStore(private val owner:ReconciliationStore) {
     suspend fun open(lease:OwnerLease,expected:AccountBindingEntity,planId:String,id:String):ReconciliationPushRequest=db.withTransaction {
         owner.plan(lease,expected,planId)
         val row=checkNotNull(dao.batch(id));check(row.planId==planId && row.wireContext==CanonicalMealRows.context(expected))
-        val batch=if(row.kind=="epoch_recovery")recovery.restore(row.requestJson.toByteArray()) else ordinary.restore(row.requestJson.toByteArray())
+        val batch=(if(row.kind=="epoch_recovery")recovery.restore(row.requestJson.toByteArray()) else ordinary.restore(row.requestJson.toByteArray()))
+            .withScope(SyncProtocolScope.parse(row.protocolScope))
         check(batch.sha256==row.requestHash)
+        check(db.snapshotDao().run(row.snapshotRunId)?.protocolScope==row.protocolScope)
         val wire=batch.json().getJSONArray("operations")
         val operations=(0 until wire.length()).map {i->val op=wire.getJSONObject(i)
             checkNotNull(db.dao().operation(op.getString("operation_id"))).also {outbox->
@@ -181,6 +183,7 @@ internal class ReconciliationPushStore(private val owner:ReconciliationStore) {
         owner.plan(request.lease,request.binding,request.planId)
         val row=checkNotNull(dao.batch(request.id))
         check(row.copy(attempted=request.row.attempted,responseJson=request.row.responseJson,state=request.row.state,retryAtMillis=request.row.retryAtMillis)==request.row)
+        check(row.protocolScope==request.batch.protocolScope.installationId && db.snapshotDao().run(row.snapshotRunId)?.protocolScope==row.protocolScope)
         request.operations.forEach {old->check(db.dao().operation(old.operationId)?.copy(status=old.status)==old)}
         return row
     }

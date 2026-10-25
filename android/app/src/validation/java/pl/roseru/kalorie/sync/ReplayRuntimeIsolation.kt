@@ -119,7 +119,9 @@ class ReplayRuntimeIsolation(
     private fun paused(stored: Stored) = when (stored) {
         Stored.Empty -> false
         Stored.Invalid -> true
-        is Stored.Present -> !stored.fence.terminal && now() < stored.fence.expires
+        // Only observed() may retire an existing fence after persisting its terminal state.
+        // A second clock read here could cross expiry and admit work while ready remains on disk.
+        is Stored.Present -> !stored.fence.terminal
     }
     private fun changed() { notifications.value = Math.addExact(notifications.value, 1L) }
 

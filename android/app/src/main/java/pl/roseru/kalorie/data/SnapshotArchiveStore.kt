@@ -36,6 +36,12 @@ class SnapshotArchiveStore(private val db:CalorieDatabase) {
         val result=mutableSetOf<String>()
         db.snapshotDao().access(owner)?.activeRunId?.let(result::add)
         result+=db.snapshotDao().runs(owner).filter {it.state=="pending"}.map {it.id}
+        val binding=db.bootstrapDao().binding(owner)
+        result+=db.snapshotDao().runs(owner).filter {binding!=null && it.state=="complete" &&
+            it.protocolScope==pl.roseru.kalorie.core.sync.SyncProtocolScope.ENERGY_V1.installationId &&
+            it.accountId==binding.accountId && it.accountGeneration==binding.accountGeneration &&
+            it.syncEpoch==binding.syncEpoch && it.contextRevision==binding.contextRevision &&
+            db.serverDiaryDao().application(it.id)==null && db.importDao().pull(it.id)==null}.map {it.id}
         db.serverDiaryDao().latest(owner)?.runId?.let(result::add)
         result+=archive.frozenOrigins(owner)
         result+=archive.unresolvedOrigins(owner)
@@ -67,6 +73,9 @@ class SnapshotArchiveStore(private val db:CalorieDatabase) {
         val manifest=StrictJson.canonical(JSONObject().put("version",1).put("run_id",run.id).put("owner_scope",run.ownerScope)
             .put("lease_generation",run.leaseGeneration).put("account_id",run.accountId).put("account_generation",run.accountGeneration)
             .put("sync_epoch",run.syncEpoch).put("context_revision",run.contextRevision).put("state",run.state)
+            .put("protocol_scope",run.protocolScope)
+            .put("read_mode",run.readMode).put("base_run_id",run.baseRunId?:JSONObject.NULL)
+            .put("starting_checkpoint",run.startingCheckpoint?:JSONObject.NULL).put("force_full",run.forceFull)
             .put("checkpoint",run.checkpoint ?: JSONObject.NULL).put("snapshot_token",run.snapshotToken ?: JSONObject.NULL)
             .put("next_page",run.nextPage ?: JSONObject.NULL).put("server_time",run.serverTime ?: JSONObject.NULL)
             .put("timeline_revision",run.timelineRevision ?: JSONObject.NULL).put("page_count",run.pageCount)

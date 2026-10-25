@@ -94,7 +94,8 @@ class MainActivity : ComponentActivity() {
                 }})
             val energyModel:pl.roseru.kalorie.energy.EnergyViewModel = viewModel(viewModelStoreOwner=store,key="$ownerKey:energy",
                 extras=defaultViewModelCreationExtras,factory=viewModelFactory {initializer {
-                    pl.roseru.kalorie.energy.EnergyViewModel(app.energy,binding.lease)
+                    pl.roseru.kalorie.energy.EnergyViewModel(app.energy,binding.lease,
+                        pl.roseru.kalorie.energy.EnergyStore(app.database).localChanges())
                 }})
             val importModel: pl.roseru.kalorie.importing.ImportViewModel? = if(binding.owner.kind=="account") {
                 viewModel(viewModelStoreOwner=store,key="$ownerKey:import",extras=defaultViewModelCreationExtras,
