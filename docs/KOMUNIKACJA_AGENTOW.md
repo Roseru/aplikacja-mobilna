@@ -9497,3 +9497,29 @@ Archiwalne wiersze sprzed aktualizacji PR138; bieżący stan znajduje się na po
   planowane dopiero po złożeniu przepływu. Nie zmieniamy SyncWork O2 ani Room26.
 - Room23/2319357 pozostaje osobno/czysty do uzgodnionych4APK. Świeży config
   i okno O3 z6398540989 nadal oczekiwane; merge175 nie oznacza live E9 lub1.0.
+
+### O1-140 — 0.8.37: lokalny odbiór i publikacja przerywania starych pobierań
+
+- 25.10.2026, O1 do O2/O3. Na codex/android-wznowienie-kopii opublikowano
+  e9f52839ee4f69e77df570a645f8bcbb4544d79d z rodzica main143bf0a. Pełny
+  przepływ ustawień konta pozwala sprawdzić stare ordinary pending, anulować
+  decyzję lub jawnie przerwać tylko niewznawialne próby. Zmiana właściciela,
+  kontekstu, wiersza lub nowych dowodów odrzuca decyzję atomowo. Bieżące próby,
+  recovery i graf dowodów pozostają chronione; reserve domyślnie bez zmiany.
+- Dopiero po złożeniu przepływu: oba warianty, APK aplikacji i testów PASS;
+  lint0Error/0Fatal/8Warning/2Info. Kompilacja/lint wraz z E0:525,219s, logSHA
+  b8fd150c0ec6c4dbe1c7edb4d08bd55be288d57b8c2f19e26892d2ecf33e6383.
+  E0 PASS; źródła kompilacji i dotychczasowe eksporty schematów nie były
+  zmieniane w trakcie odbioru. Room26/54encje i identity pozostają identyczne.
+- Dokładnie trzy nowe native SQLite/UI:3PASS/0FAIL/0SKIP,8,449s testów.
+  LogSHA9c687d71940397bb09a986e59285d32704c70b2958c9573c575a859ea3e8fc46.
+  Obejmują dziewiątą kopię po jawnej decyzji z zachowaniem dziennika/frozen
+  write, ochronę recovery/nowego dowodu/ABA oraz anulowanie i zatwierdzenie UI.
+  Osobny snapshotmaintenancecheck,0.8.37.validation/1048; oryginalny APK,
+  test APK i trzy pliki dziennika identyczne przed/po, brak sieci zachowany.
+- Aplikację otwarto w osobnym pakiecie emulatora do prób offline. Nie
+  ponawiano niezmienionych JVM lub całego poprzedniego zestawu native.
+  Nowy zakres jest wypchnięty, bez PR/nowego zdalnego CI/merge main; zgodnie
+  z decyzją właściciela kolejny PR powstanie po większym spójnym etapie.
+  Pozostają wejścia O3/6398540989, cztery skonfigurowane APK i wspólny live
+  odbiór; testy syntetycznych stron nie potwierdzają działania Gemini lub1.0.
