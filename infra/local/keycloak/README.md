@@ -40,7 +40,7 @@ z kompaktowym JWT. Przykład z katalogu głównego repozytorium:
 uv run --project backend --locked --offline python infra/local/keycloak/token_diagnostics.py --token-file C:\prywatne-dowody\access-token.txt
 ```
 
-Token umieść w pliku poza checkoutem, w katalogu dostępnym tylko operatorowi.
+Token umieść w lokalnym pliku poza checkoutem, w katalogu dostępnym tylko operatorowi.
 Na Windows operator odpowiada za prywatny ACL katalogu i pliku; narzędzie nie
 sprawdza ani nie zmienia DACL. Na POSIX plik musi należeć do bieżącego UID i nie
 mieć żadnych uprawnień grupy/innych. Wejście musi być zwykłym plikiem z jednym
@@ -51,6 +51,9 @@ pliku. W pliku ma być sam JWT: bez `Bearer`, JSON odpowiedzi lub BOM.
 JWT, hasła i odpowiedzi HTTP nigdy nie są argumentami polecenia. Narzędzie nie
 czyta stdin ani zmiennych środowiskowych jako źródła tokenu, nie wykonuje sieci,
 retry, subprocessów ani zmian usług. Nie zapisuje raportu lub tokenu na dysku.
+Ścieżki UNC/urządzeń są odrzucane przed odczytem metadanych. Na Windows
+`GetDriveTypeW` dodatkowo dopuszcza tylko lokalny dysk stały, wymienny lub RAM;
+mapowane dyski sieciowe i nieznane typy są odrzucane przed operacjami na pliku.
 
 Każdy raport JSON ma znacznik **`UNVERIFIED_DIAGNOSTIC`**. Kod wyjścia 0 i
 `status=DECODED` oznaczają wyłącznie zakończenie parsowania. Podpis, issuer,

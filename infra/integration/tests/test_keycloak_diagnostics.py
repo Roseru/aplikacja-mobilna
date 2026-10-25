@@ -260,6 +260,68 @@ def test_only_selected_private_regular_file_is_accepted(token_file, monkeypatch,
     assert str(error.value) == "diagnostic input rejected"
 
 
+@pytest.mark.parametrize(
+    "path",
+    [
+        r"\\offline-canary.invalid\share\token.jwt",
+        "//offline-canary.invalid/share/token.jwt",
+        r"\\?\UNC\offline-canary.invalid\share\token.jwt",
+        r"\\.\pipe\token",
+    ],
+)
+def test_network_and_device_paths_rejected_before_filesystem_metadata(path, monkeypatch):
+    def forbidden(*args, **kwargs):
+        pytest.fail("network/device input reached filesystem metadata or drive lookup")
+
+    monkeypatch.setattr(Path, "is_symlink", forbidden)
+    monkeypatch.setattr(Path, "is_junction", forbidden)
+    monkeypatch.setattr(Path, "resolve", forbidden)
+    monkeypatch.setattr(Path, "lstat", forbidden)
+    monkeypatch.setattr(diagnostics, "_drive_type", forbidden)
+    with pytest.raises(diagnostics.DiagnosticInputError):
+        diagnostics.diagnose_file(path)
+
+
+@pytest.mark.skipif(os.name != "nt", reason="Windows mapped/unknown drive refusal")
+@pytest.mark.parametrize("drive_type", [0, 1, 4, 5])
+def test_windows_network_and_unknown_drives_rejected_before_metadata(
+    token_file,
+    monkeypatch,
+    drive_type,
+):
+    roots = []
+
+    def classify(root):
+        roots.append(root)
+        return drive_type
+
+    def forbidden(*args, **kwargs):
+        pytest.fail("non-local input reached filesystem metadata")
+
+    monkeypatch.setattr(diagnostics, "_drive_type", classify)
+    monkeypatch.setattr(Path, "is_symlink", forbidden)
+    with pytest.raises(diagnostics.DiagnosticInputError):
+        diagnostics.diagnose_file(token_file)
+    assert roots == [token_file.anchor]
+
+
+def test_redirected_parent_is_refused_before_leaf_lookup(token_file, monkeypatch):
+    parent = token_file.parent / "redirect"
+    leaf = parent / "token.jwt"
+    original = Path.is_symlink
+    inspected = []
+
+    def inspect(path):
+        assert path != leaf, "leaf lookup through a redirected parent is forbidden"
+        inspected.append(path)
+        return True if path == parent else original(path)
+
+    monkeypatch.setattr(Path, "is_symlink", inspect)
+    with pytest.raises(diagnostics.DiagnosticInputError):
+        diagnostics.diagnose_file(leaf)
+    assert inspected[-1] == parent
+
+
 @pytest.mark.skipif(
     os.name == "nt", reason="POSIX permission/owner checks; Windows uses operator ACL"
 )

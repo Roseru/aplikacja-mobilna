@@ -39,9 +39,32 @@ def _regular_private(info):
         raise DiagnosticInputError()
 
 
+def _drive_type(root):
+    import ctypes
+
+    drive_type = ctypes.WinDLL("kernel32", use_last_error=True).GetDriveTypeW
+    drive_type.argtypes = [ctypes.c_wchar_p]
+    drive_type.restype = ctypes.c_uint
+    return drive_type(root)
+
+
 def _read_file(path):
+    # Reject network/device namespaces before any filesystem metadata lookup.
+    if os.fspath(path).replace("/", "\\").startswith("\\\\"):
+        raise DiagnosticInputError()
     requested = Path(path).absolute()
-    if any(part.is_symlink() or part.is_junction() for part in (requested, *requested.parents)):
+    if os.name == "nt" and (
+        requested.anchor.startswith("\\\\") or _drive_type(requested.anchor) not in (2, 3, 6)
+    ):
+        # Only local removable/fixed/RAM drives. Unknown and mapped network
+        # drives fail closed; querying the local drive type does not read a file.
+        raise DiagnosticInputError()
+    # Inspect ancestors first so a redirected parent cannot cause a lookup of
+    # the leaf on a remote filesystem before that parent is refused.
+    if any(
+        part.is_symlink() or part.is_junction()
+        for part in reversed((requested, *requested.parents))
+    ):
         raise DiagnosticInputError()
     resolved = requested.resolve(strict=True)
     if resolved == ROOT or ROOT in resolved.parents:

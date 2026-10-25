@@ -8089,7 +8089,8 @@ Archiwalne wiersze sprzed aktualizacji PR138; bieżący stan znajduje się na po
 
 - 25.10.2026, agent 3 / O3, do O1/O2, **DO ODCZYTU**. Własna gałąź
   `codex/devops-diagnostyka-pkce`, baza main
-  `519fbf17ed5e0e87368609cb97b2b404adfee11a` po PR171; implementacja
+  `519fbf17ed5e0e87368609cb97b2b404adfee11a` po PR171;
+  [PR172](https://github.com/Roseru/aplikacja-mobilna/pull/172), pierwsza implementacja
   [9f587ca](https://github.com/Roseru/aplikacja-mobilna/commit/9f587ca17f02967c198af719c7b51d228a80d153).
   [Instrukcja Keycloak](../infra/local/keycloak/README.md) opisuje nowe CLI i ograniczenia.
 - `token_diagnostics.py --token-file` czyta jeden jawnie wskazany prywatny plik
@@ -8111,7 +8112,8 @@ Archiwalne wiersze sprzed aktualizacji PR138; bieżący stan znajduje się na po
   Jedyny retry miał 28/0. Przyczyna historycznego 401 **nie jest udowodniona**;
   reproducer nie jest diagnozą ani naprawą tamtego błędu. Rozróżniono też
   pozostałe odmowy 401, transport JWKS 503 i brak wymaganej roli 403.
-- Wykonano lokalnie: nowe testy 70 PASS / 3 pominięcia Windows/POSIX; pełne
+- Wykonano lokalnie na pierwszej implementacji: nowe testy 70 PASS / 3 pominięcia
+  Windows/POSIX; pełne
   `backend/tests/unit` + `infra/integration/tests`: 2193 PASS / 8 pominięć
   Windows/POSIX, jedno istniejące ostrzeżenie Starlette. Prywatny standardowy
   temp jest poza repo, importy backendu potwierdzono z własnego klonu.
@@ -8119,6 +8121,15 @@ Archiwalne wiersze sprzed aktualizacji PR138; bieżący stan znajduje się na po
   CI PASS. Testy obejmują canary prywatności, neutralne błędy CLI, typy/formaty,
   granice/niejednoznaczny JSON/base64url, limit przed parserem i wzrost pliku,
   prywatny zwykły plik, brak sieci/subprocessów i zachowanie wejścia.
+- Dodatkowy przegląd przed scaleniem wykrył możliwość dostępu sieciowego przez
+  ścieżki Windows. Dodano odmowę UNC/przestrzeni urządzeń przed metadanymi,
+  `GetDriveTypeW` odrzucający mapowane/nieznane dyski oraz kontrolę rodziców
+  od korzenia przed odczytem pliku przez junction/symlink. Nowe syntetyczne
+  przypadki sprawdzają odmowę przed jakimkolwiek odczytem metadanych potomka.
+  Końcowy moduł: 79 PASS / 3 pominięcia Windows/POSIX; ponowna pełna regresja
+  infrastruktury: 460 PASS / 8 pominięć, jedno istniejące ostrzeżenie Starlette;
+  Ruff PASS. Nieaktualny częściowy CI run40167323964 anulowano jako zastąpiony
+  poprawką; nie jest dowodem kwalifikacji końcowej wersji.
 - Zmiana wymaga własnego FULL Project CI: osiem rzeczywistych SUCCESS dla
   aktualnych source/base/tested merge/tree oraz osobnego push CI main. Te wyniki
   są kwalifikowane w PR po publikacji; wcześniejszy PR171 ich nie zastępuje.
