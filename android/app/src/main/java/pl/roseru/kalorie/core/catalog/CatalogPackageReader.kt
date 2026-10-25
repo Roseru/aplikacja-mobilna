@@ -12,20 +12,44 @@ class ValidatedCatalog internal constructor(val packageId: String, val kind: Str
     fun payload() = JSONObject(payloadJson)
 }
 
+/** Public release metadata only; the exact validated JSON pins a later download. */
+class CatalogManifest internal constructor(val packageId:String,val kind:String,val release:Int,
+    val publishedAt:String,val path:String,val compressedBytes:Int,val uncompressedBytes:Int,
+    val sha256:String,val products:Int,val rations:Int,val components:Int,val sources:Int,
+    internal val json:String) {
+    override fun toString()="CatalogManifest(kind=$kind, release=$release)"
+}
+
 class CatalogPackageReader(private val schema: CatalogSchema, private val expectedId: String, private val expectedKind: String) {
     companion object {
         const val DEMO_ID = "47bdff67-e58b-5437-919b-ec00159afbc5"
+        const val OFFICIAL_ID = "c12631e2-1a02-547c-a7f9-ebf87bb42e55"
         const val MAX_MANIFEST = 1024 * 1024
         const val MAX_GZIP = 10 * 1024 * 1024
         const val MAX_JSON = 50 * 1024 * 1024
     }
-    fun read(manifestStream: InputStream, packageStream: InputStream): ValidatedCatalog {
+    private fun manifest(manifestStream:InputStream):JSONObject {
         val manifest = StrictJson.read(manifestStream.use { bounded(it, MAX_MANIFEST) })
         header(manifest); schema.validate(manifest, "Manifest"); identity(manifest)
         val sourceIds = manifest.getJSONArray("source_ids")
         val sourceSet = (0 until sourceIds.length()).map { sourceIds.getString(it) }.toSet()
         if (sourceSet.size != sourceIds.length() || sourceSet.size != manifest.getJSONObject("counts").getInt("sources")) fail("catalog_counts")
         if (manifest.getString("path") != "base-pl.${manifest.getInt("release")}.json.gz") fail("catalog_manifest")
+        return manifest
+    }
+    fun inspect(manifestStream:InputStream):CatalogManifest {
+        val value=manifest(manifestStream);val counts=value.getJSONObject("counts")
+        return CatalogManifest(value.getString("package_id"),value.getString("kind"),value.getInt("release"),
+            value.getString("published_at"),value.getString("path"),value.getInt("compressed_bytes"),value.getInt("uncompressed_bytes"),
+            value.getString("sha256"),counts.getInt("products"),counts.getInt("rations"),counts.getInt("components"),counts.getInt("sources"),
+            StrictJson.canonical(value))
+    }
+    fun read(manifest:CatalogManifest,packageStream:InputStream):ValidatedCatalog =
+        read(manifest.json.byteInputStream(Charsets.UTF_8),packageStream)
+    fun read(manifestStream: InputStream, packageStream: InputStream): ValidatedCatalog {
+        val manifest=manifest(manifestStream)
+        val sourceIds=manifest.getJSONArray("source_ids")
+        val sourceSet=(0 until sourceIds.length()).map{sourceIds.getString(it)}.toSet()
         val bytes = packageStream.use { bounded(it, minOf(MAX_GZIP, manifest.getInt("compressed_bytes"))) }
         if (bytes.size != manifest.getInt("compressed_bytes")) fail("compressed_size")
         val hash = MessageDigest.getInstance("SHA-256").digest(bytes).joinToString("") { (it.toInt() and 255).toString(16).padStart(2, '0') }

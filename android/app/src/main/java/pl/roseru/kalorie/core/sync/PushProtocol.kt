@@ -6,11 +6,13 @@ import pl.roseru.kalorie.core.catalog.StrictJson
 import java.security.MessageDigest
 
 /** Immutable wire envelope. A database must persist it before the first HTTP attempt. */
-class PushBatch internal constructor(internal val canonical: String) {
+class PushBatch internal constructor(internal val canonical: String,
+    val protocolScope:SyncProtocolScope=SyncProtocolScope.LEGACY) {
     fun body(): ByteArray = canonical.toByteArray(Charsets.UTF_8)
     val sha256: String get() = MessageDigest.getInstance("SHA-256").digest(body())
         .joinToString("") { "%02x".format(it) }
     internal fun json() = StrictJson.read(body())
+    internal fun withScope(scope:SyncProtocolScope)=PushBatch(canonical,scope)
     override fun toString() = "PushBatch(redacted)"
 }
 

@@ -28,6 +28,7 @@ import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import pl.roseru.kalorie.DiaryViewModel
 import pl.roseru.kalorie.core.*
+import pl.roseru.kalorie.core.network.NetworkAccessState
 import pl.roseru.kalorie.data.MealWithItems
 import pl.roseru.kalorie.data.MealItemEntity
 import java.time.*
@@ -35,7 +36,8 @@ import java.time.format.DateTimeFormatter
 import java.util.Locale
 
 @OptIn(ExperimentalMaterial3Api::class)
-@Composable fun DiaryScreen(model: DiaryViewModel, onAdd: () -> Unit, onSettings: () -> Unit) {
+@Composable fun DiaryScreen(model: DiaryViewModel, onAdd: () -> Unit, onSettings: () -> Unit,
+    networkState:NetworkAccessState?=null,catalogSummary:String?=null,lastServerCopy:String?=null,refusedChanges:Int?=null) {
     val day by model.day.collectAsStateWithLifecycle()
     val pending by model.pending.collectAsStateWithLifecycle()
     val busy by model.busy.collectAsStateWithLifecycle()
@@ -64,10 +66,25 @@ import java.util.Locale
         item {
             Surface(color = MaterialTheme.colorScheme.surfaceVariant, shape = RoundedCornerShape(14.dp)) {
                 Row(Modifier.fillMaxWidth().padding(14.dp), verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(12.dp)) {
-                    Icon(Icons.Outlined.CloudOff, contentDescription = null, tint = MaterialTheme.colorScheme.primary)
+                    Icon(if(networkState==NetworkAccessState.Blocked)Icons.Outlined.CloudOff else Icons.Outlined.Storage,
+                        contentDescription = null,tint = MaterialTheme.colorScheme.primary)
                     Column {
-                        Text("Tryb poligonowy · zapis lokalny", style = MaterialTheme.typography.labelLarge)
+                        Text(when(networkState) {
+                            NetworkAccessState.Blocked->"Tryb poligonowy · bez połączeń"
+                            NetworkAccessState.Unavailable->"Zapis lokalny · sieć wstrzymana"
+                            is NetworkAccessState.Allowed->"Zapis lokalny · sieć dozwolona"
+                            null->"Zapis lokalny · dostępny offline"
+                        },style = MaterialTheme.typography.labelLarge,modifier=Modifier.testTag("diary-network-mode"))
                         Text("${pending} zmian w kolejce · dane na tym urządzeniu", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                        if(refusedChanges!=null && refusedChanges>0)Text("Odmowy serwera: $refusedChanges · szczegóły na ekranie konta",
+                            style=MaterialTheme.typography.bodySmall,color=MaterialTheme.colorScheme.error)
+                        catalogSummary?.let{Text(it,style=MaterialTheme.typography.bodySmall,color=MaterialTheme.colorScheme.onSurfaceVariant,
+                            modifier=Modifier.testTag("diary-catalog-version"))}
+                        lastServerCopy?.let { value->
+                            val label=runCatching {Instant.parse(value).atZone(ZoneId.systemDefault()).format(DateTimeFormatter.ofPattern("dd.MM.yyyy HH:mm"))}.getOrNull()
+                            if(label!=null)Text("Ostatnia pełna kopia: $label",style=MaterialTheme.typography.bodySmall,
+                                color=MaterialTheme.colorScheme.onSurfaceVariant,modifier=Modifier.testTag("diary-server-copy-time"))
+                        }
                     }
                 }
             }

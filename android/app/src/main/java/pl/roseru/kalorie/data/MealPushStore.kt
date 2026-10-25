@@ -17,7 +17,8 @@ import java.util.UUID
 data class SyncPushBatch(@PrimaryKey val id: String, val ownerScope: String, val wireContext: String,
     val snapshotRunId: String, val requestJson: String, val requestHash: String, val createdAt: String,
     val attempted: Boolean = false, val responseJson: String? = null, val state: String = "pending",
-    @ColumnInfo(defaultValue="0") val retryAtMillis:Long=0) {
+    @ColumnInfo(defaultValue="0") val retryAtMillis:Long=0,
+    @ColumnInfo(defaultValue="'calorie-app'") val protocolScope:String="calorie-app") {
     override fun toString() = "SyncPushBatch(redacted)"
 }
 
@@ -135,7 +136,7 @@ class MealPushStore(private val db: CalorieDatabase, private val schema: SyncWir
         }
     }
 
-    internal suspend fun gate(lease: OwnerLease, reconciliationPlanId:String?=null): MealPushGate {
+    internal suspend fun gate(lease: OwnerLease, reconciliationPlanId:String?=null,stagedRunId:String?=null): MealPushGate {
         owners.requireCurrent(lease)
         check(db.ownerDao().byScope(lease.storageScope)?.kind == "account")
         val binding = checkNotNull(db.bootstrapDao().binding(lease.storageScope))
@@ -146,12 +147,17 @@ class MealPushStore(private val db: CalorieDatabase, private val schema: SyncWir
         }
         val bootstrap = checkNotNull(db.bootstrapDao().attempt(lease.storageScope))
         check(bootstrap.responseJson != null)
-        val access = checkNotNull(db.snapshotDao().access(lease.storageScope))
+        val access = db.snapshotDao().access(lease.storageScope) ?: if(stagedRunId!=null)
+            ServerSnapshotAccess(lease.storageScope,null,false) else error("Missing server snapshot")
         check(!access.blocked && access.bootstrapAttemptId != bootstrap.operationId)
-        val run = checkNotNull(access.activeRunId?.let { db.snapshotDao().run(it) })
+        val run = checkNotNull((stagedRunId?:access.activeRunId)?.let { db.snapshotDao().run(it) })
         check(run.ownerScope == lease.storageScope && run.state == "complete" && run.checkpoint != null &&
             run.accountId == binding.accountId && run.accountGeneration == binding.accountGeneration &&
             run.syncEpoch == binding.syncEpoch && run.contextRevision == binding.contextRevision)
+        if(stagedRunId!=null && stagedRunId!=access.activeRunId) {
+            check(run.protocolScope==SyncProtocolScope.ENERGY_V1.installationId)
+            SyncProtocolStore(db).requireReadScope(lease,binding,SyncProtocolScope.ENERGY_V1)
+        }
         return MealPushGate(binding, access, run, bootstrap)
     }
 
@@ -160,8 +166,9 @@ class MealPushStore(private val db: CalorieDatabase, private val schema: SyncWir
         val source = db.withTransaction {
             val gate = gate(lease)
             val pending = dao.pending(lease.storageScope); check(pending.size <= 1)
+            if(pending.isEmpty() && !newPushAllowed(lease,gate))return@withTransaction null
             Triple(gate, pending.singleOrNull(), dao.eligible(lease.storageScope))
-        }
+        } ?: return@withContext null
         source.second?.let { return@withContext open(lease, it.id) }
         if (source.third.isEmpty()) return@withContext null
         val context = CanonicalMealRows.context(source.first.binding)
@@ -169,7 +176,7 @@ class MealPushStore(private val db: CalorieDatabase, private val schema: SyncWir
         // this unattempted batch must establish its identity first; no operation bytes change.
         val candidates = source.third.sortedBy { if (it.entityType == "diary_day" && it.baseRevision == null) 0 else 1 }
         val batch = protocol.prepare(source.first.binding.syncEpoch, checkNotNull(source.first.run.checkpoint),
-            candidates.map { checkNotNull(it.wireJson) })
+            candidates.map { checkNotNull(it.wireJson) }).withScope(SyncProtocolScope.parse(source.first.run.protocolScope))
         val wire = batch.json().getJSONArray("operations")
         val selected = (0 until wire.length()).map { candidates[it] }
         selected.forEachIndexed { i, row ->
@@ -177,10 +184,10 @@ class MealPushStore(private val db: CalorieDatabase, private val schema: SyncWir
             check(!row.attempted)
         }
         val row = SyncPushBatch(UUID.randomUUID().toString(), lease.storageScope, context, source.first.run.id,
-            batch.canonical, batch.sha256, Instant.now().toString())
+            batch.canonical, batch.sha256, Instant.now().toString(),protocolScope=batch.protocolScope.installationId)
         val frozen = selected.map { it.copy(attempted = true) }
         db.withTransaction {
-            check(gate(lease) == source.first && dao.pending(lease.storageScope).isEmpty())
+            check(gate(lease) == source.first && dao.pending(lease.storageScope).isEmpty() && newPushAllowed(lease,source.first))
             selected.forEach { expected ->
                 check(db.dao().operation(expected.operationId) == expected)
                 val entity = entity(lease.storageScope, expected)
@@ -198,7 +205,7 @@ class MealPushStore(private val db: CalorieDatabase, private val schema: SyncWir
         val source = db.withTransaction { gate(lease) to checkNotNull(dao.batch(id)) }
         val row = source.second
         check(row.ownerScope == lease.storageScope && row.wireContext == CanonicalMealRows.context(source.first.binding))
-        val batch = protocol.restore(row.requestJson.toByteArray(Charsets.UTF_8)); check(batch.sha256 == row.requestHash)
+        val batch = protocol.restore(row.requestJson.toByteArray(Charsets.UTF_8)).withScope(SyncProtocolScope.parse(row.protocolScope)); check(batch.sha256 == row.requestHash)
         val wire = batch.json().getJSONArray("operations")
         val ids = (0 until wire.length()).map { wire.getJSONObject(it).getString("operation_id") }
         val operations = db.withTransaction {
@@ -219,6 +226,10 @@ class MealPushStore(private val db: CalorieDatabase, private val schema: SyncWir
         check(row.operationId == value.getString("operation_id") && row.entityId == value.getString("entity_id") &&
             row.action == value.getString("action") && row.payload == StrictJson.canonical(value.get("payload")))
         check(row.baseRevision == if (value.isNull("base_revision")) null else value.getInt("base_revision"))
+    }
+    private suspend fun newPushAllowed(lease:OwnerLease,gate:MealPushGate):Boolean {
+        val state=SyncProtocolStore(db).current(lease,gate.binding)?:return gate.run.protocolScope==SyncProtocolScope.LEGACY.installationId
+        return state.phase=="active" && state.activeScope==gate.run.protocolScope
     }
 
     private suspend fun entity(owner: String, operation: OutboxEntity): PushEntitySource = when (operation.entityType) {
@@ -249,7 +260,8 @@ class MealPushStore(private val db: CalorieDatabase, private val schema: SyncWir
         check(original.ownerScope == request.lease.storageScope && original.state == "complete" &&
             original.accountId == gate.binding.accountId && original.accountGeneration == gate.binding.accountGeneration &&
             original.syncEpoch == gate.binding.syncEpoch && original.contextRevision == gate.binding.contextRevision &&
-            original.checkpoint == request.checkpoint && request.epoch == gate.binding.syncEpoch)
+            original.checkpoint == request.checkpoint && request.epoch == gate.binding.syncEpoch &&
+            original.protocolScope==row.protocolScope && request.batch.protocolScope.installationId==row.protocolScope)
         request.operations.forEach { expected ->
             val actual = checkNotNull(db.dao().operation(expected.operationId))
             check(actual.copy(status = "pending") == expected.copy(status = "pending") && actual.attempted)

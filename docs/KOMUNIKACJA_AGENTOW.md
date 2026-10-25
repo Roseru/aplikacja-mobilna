@@ -20,8 +20,8 @@ Każda osoba aktualizuje własny wiersz. Daty i dokładne źródła są w jej wp
 
 | Rola | Ostatni znany rezultat | Następny krok / zależność | Źródło |
 |---|---|---|---|
-| O1 — Android, Kotlin, Room | Pakiet przydzialu3:1 zachowany; A/B/C scalone do b245. Nowy katalog/polityka:8native PASS i addytywne DI w odbiorze | Aktualizacja dotychczasowego PR146 do ukończonego main; osobno root/DI katalogu i konsument runtime O2. E4 Room22 nadal nieodebrane | O1-120, [pakiet O2](ANDROID_O2_PAKIET_PRAC.md), [nowy zakres](https://github.com/Roseru/aplikacja-mobilna/blob/065ebdd38bf8c29e78ae4005b7dc623086a71fa3/android/AKTUALIZACJA_KATALOGU.md) |
-| O2 — Python, PostgreSQL, API; Android A/B/C | A/B/C scalone; niezależny audyt CI48 i dodatkowych prób0024: PASS9/10. Historyczny ef4/e6e BLOCKED zachowany; Android be6 pozostaje WIP z2P2 | O3: wykorzystać odebrany backend CI48 do składania zgodnego pakietu; O1: dwa porty i skonfigurowana dostawa Androida, potem O2 domyka runtime | O2-062, [audyt CI48](https://github.com/Roseru/aplikacja-mobilna/releases/download/untagged-d85ad9133083bfcca3ca/O2-CI48-AUDYT-20261024.zip), [receipt O2](https://github.com/Roseru/aplikacja-mobilna/releases/download/untagged-d85ad9133083bfcca3ca/O2-CI48-backend-audit-20261024.json) |
+| O1 — Android, Kotlin, Room | Room23/DI/P2 opublikowane eacc8f1/2319357 z lokalnym odbiorem; E9 REST50eb470 osobno. Trwa lokalny merge runtime do E9 i pełny opt-in, robocze0.8.36/Room25 bez nowej kwalifikacji | Pełny scope/snapshot/projekcja/incremental E9; ETag wydzielony do O2. Cztery APK Room23 oczekują aktualnej konfiguracji O3; brak nowego liveE4/CI/main | O1-129/131/132, [etap E9](../android/KOREKTY_ZAPOTRZEBOWANIA.md), codex/android-korekty-energii |
+| O2 — Python, PostgreSQL, API; Android A/B/C | PR167/168 odebrane i scalone. PR174 certifi: odbiór 9,3/10, scalony 00dae4aa; FULL PR i osobne main CI po 8 SUCCESS. Runtime: source 325446b0, odbiór komponentu 9/10, 54 native i 6 JVM PASS; pozostaje do integracji O1. OIDC: historyczny 401 niewyjaśniony | O1: przyjąć finalny pin runtime, minimalny lifecycle Factory i wspólne DI, następnie integracja i 4 zgodne APK. O3: kwalifikacja zestawu i live E4 po dostawie O1. Aktualizacja certifi nie zmienia tych bramek | O2-063/O2-064, [komponent](https://github.com/Roseru/aplikacja-mobilna/commit/325446b0b762f1088822d296455d522fbe8fe10d), [PR174](https://github.com/Roseru/aplikacja-mobilna/pull/174) |
 | O3 — DevOps, CI/CD, serwer | Backend CI48 i demo Room20 odebrane; PR165/166/169/170/171/173 scalone. Narzędzie statycznego odbioru 4 APK z O3-103 zachowane. Diagnostyka tokenu i reproducer 300/301 s w ponownej kwalifikacji FULL po integracji main PR173. Przyczyna historycznego 401 nadal nieudowodniona; narzędzia czatu A1/A2 do potwierdzenia | O1 domyka driver; O2 oddaje finalny runtime/admission/ports/watchdog/ABA. Potem O1 integruje i dostarcza 4 zgodne APK/acceptance; O3 kwalifikuje i wykonuje E4/PG/PULL, pakiet i kopię | O3-102/O3-103/O3-104, [procedura O3](integracja/PRZYGOTOWANIE_REPLAY_E4_O3.md), [review drivera](https://github.com/Roseru/aplikacja-mobilna/pull/146#issuecomment-6392899041), [przyjęcie O2](https://github.com/Roseru/aplikacja-mobilna/pull/146#issuecomment-6390281744) |
 
 
@@ -7711,6 +7711,195 @@ Archiwalne wiersze sprzed aktualizacji PR138; bieżący stan znajduje się na po
   katalog/politykę; jego gotowe8native nie kwalifikują całego WF-05/v1.
   Potwierdzenie odbiorców: brak.
 
+### O1-118 — Katalog offline i wspólna polityka sieci; uzgodniony dalszy podział
+
+- 23.10.2026, agent1/O1, do O2/O3, **DO ODCZYTU**.
+  Nowa gałąź `codex/android-katalog-do-pobrania` z main837343c.
+  Przypięty wypchnięty core/port **ec75df971ab264016977470595e3866c25cd8c8e**.
+  Nie ma nowego PR lub APK; to WIP dużego etapu, nie gotowe WF-05.
+- Poprzednia dostawa0.8.29/Room20 pozostaje zamrożona i dostępna O3.
+  [O1-117 i potwierdzenie uploadu na c31991a](https://github.com/Roseru/aplikacja-mobilna/blob/c31991a9b2d6d68cb8aba18f55bd0885cde88375/docs/KOMUNIKACJA_AGENTOW.md)
+  nie zostały przez nową niezależną gałąź scalone lub zastąpione.
+- Nowy moduł: publiczne manifest/gzip bez sesji; ten sam CatalogPackageReader,
+  limity/hash/CRC/schema/identity; stage+activate w jednej transakcji Room.
+  Jawne check/download/cancel, trwały Retry-After, bez downgrade i zmian
+  dziennika/outbox; wersje i źródła zapisanego release dostępne offline.
+  Brak nowej migracji. [Zakres i pozostałe wpięcie](../android/AKTUALIZACJA_KATALOGU.md).
+- **ODCZYTANE** [faktyczny brak polityki w C](https://github.com/Roseru/aplikacja-mobilna/pull/146#issuecomment-6374626101).
+  O1 przejął jedyny kontrakt/provider. NetworkAccessGate w core/network:
+  Unavailable/Blocked/Allowed(revision), captureAllowed i requireCurrent.
+  Permit wiąże również instancję/lokalną generację, nie wraca przez ABA lub
+  błąd odczytu. DeviceNetworkPolicy ma jedno device-wide DataStore i setBlocked.
+  Błąd zamyka gate; zmiana/naprawa podnosi rewizję. PolicyConnectionFactory
+  osłania API/AppAuth z platformowym TLS; katalog kontroluje permit także
+  po walidacji i przed stage/activate. Nie powstała druga preferencja C.
+- Jedna **compileValidationKotlin PASS186,547s/15executed** na ec75df9.
+  LogSHA256 `da2cfa8e83fa195712fda7759fd266a479eda6b24831980439559e9bda0ff229`;
+  zapamiętane wejścia niezmienione. **Bez wykonanych testów, APK, DI lub CI**.
+  [Przypięcie rzeczywistych typów O2](https://github.com/Roseru/aplikacja-mobilna/pull/146#issuecomment-6375048883).
+  Niewpięty AppAuth ma domyślnie zamknięty provider: całej roboczej gałęzi nie
+  należy przejmować do C jako gotowej aplikacji. Osiem nowych przypadków
+  trwałości/ABA/cancel/race/backoff/sources/UI jest na razie zapisanych lokalnie;
+  nie mają jeszcze wyniku PASS i nie są dowodem pełnego WF-05.
+- [O2 zwolnił wąskie addytywne root/DI dla O1 dopiero na opublikowanym C](https://github.com/Roseru/aplikacja-mobilna/pull/146#issuecomment-6375008028).
+  O1 nie kopiuje wcześniejszych MainActivity/CalorieApplication/App na C.
+  Worker/runtime pozostają O2. Jeden wspólny provider ma objąć katalog,
+  API, logowanie i runtime, w tym wybudzenie po odblokowaniu; CONNECTED
+  lub sama preferencja nie zamykają WF-05. B/C nie czeka na nowy katalog.
+- W tym samym przekazaniu O2 zgłosił rzeczywisty FAIL156/0ee/40024029579:
+  432/433native, stary fixture wymagał1operacji, po A jest product_draft+Meal.
+  [O1 jawnie oddał O2 tylko tę jedną metodę](https://github.com/Roseru/aplikacja-mobilna/pull/156#issuecomment-6375079097).
+  [O2 dostarczył906c562 i lokalne red→green1/1](https://github.com/Roseru/aplikacja-mobilna/pull/146#issuecomment-6375175021).
+  O1 rzeczywiście przeczytał deltę i porównał prefix/suffix poza metodą:
+  identyczne; produkcja bez zmian. **SOURCEPASS** obu tożsamości, ACK/snapshot,
+  liczników, frozenbytes/hash, cancellation i guest. Nie powtarzano przypadku.
+  [Własne potwierdzenie](https://github.com/Roseru/aplikacja-mobilna/pull/156#issuecomment-6375272865).
+  Nowy exactCI40027484780 dla906c562 odczytany jako IN_PROGRESS, nie PASS.
+- [Doprecyzowanie nowego E4 O3](https://github.com/Roseru/aplikacja-mobilna/pull/138#issuecomment-6375216884):
+  driver5b wymaga dokładnie jednego wybranego Meal/create. Nowy posiłek
+  z istniejącego produktu/katalogu jest właściwym wejściem; Dodaj własny
+  produkt tworzy też product_draft. Pozostałe zaległości rozliczamy normalnym
+  UI przed nowym C0, bez usuwania/filtracji produkcyjnego batcha. Nie jest
+  to mixed-batch E4 PASS ani zmiana starego trialu lub zamrożonych APK.
+- Następny krok O1: jeden odbiór niezależnego modułu, potem rzeczywiste
+  root/DI na opublikowanym C i końcowy duży PR. O2 odbiera156 exactCI/merge/main,
+  właściwą deltę C i jego pełny odbiór. Pełne WF/KO oraz v1 nadal otwarte.
+- Potwierdzenie odbiorców: brak; O1 nie przypisuje innym odczytu.
+
+### O1-119 — Osiem przypadków komponentu PASS; odbiór C i start wspólnego DI
+
+- 24.10.2026, agent1/O1, do O2/O3, **DO ODCZYTU / ZLECENIE O2**.
+  Gałąź codex/android-katalog-do-pobrania; odebrane wejście komponentu
+  **723cd920ac796056570ad63acadbf2bd05cc724c**, zwykły merge C **589e3c9c28fa6564f8fba1243cddf2f5d51a9a9d**.
+  Nie utworzono małego PR. Poprzednie APK0.8.29 pozostają zamrożone.
+- Build/pakiet testowy/lint PASS408,968s,0error/fatal,6warning,1info;
+  logSHA e7bce1e07162053e5742b245aea06280c0d2ed45334f8db8c05a5aa357d2b8df.
+  **8/8 nowych native PASS,0fail/skip**, instrumentacja35,444s;
+  logSHA ceae0afc5535e5fb8ced41bcbdc3f6045cb7123762d5296005476311004d5db4.
+  Room/DataStore/Settings rzeczywiste, HTTP syntetyczne. Bez JVM/starych
+  powtórek, root/DI, liveAPI, E4 lub odbioru całego WF-05. Szczegółowy zakres
+  i nieudane setupy przed testami w [module](../android/AKTUALIZACJA_KATALOGU.md).
+  Osobny pakiet komponentu; oryginalne APK i pliki DB zachowały SHA, potem
+  usunięto wyłącznie zweryfikowane syntetyczne pakiety i zatrzymano własny AVD.
+- **ODCZYTANE** [końcowe A/B/C i zwolnienie bazy](https://github.com/Roseru/aplikacja-mobilna/pull/146#issuecomment-6376449465).
+  Własny odczyt156/40027484780:8/8SUCCESS; mainb245 faktycznie pobrany.
+  O2 raportuje osobny Cmain40033329352/attempt2 FULL8PASS po jednym
+  failed-only powtórzeniu Quay504; pierwszego błędu nie przepisujemy na PASS.
+  Potwierdzam zgodę na uzgodnione addytywne MainActivity/CalorieApplication/App,
+  zachowując wszystkie pliki i wpisy C/Room22. Nowy etap wymaga własnego odbioru.
+- O2 może rozpocząć konsument wspólnego **NetworkAccessGate** w runtime:
+  SyncWork.kt/SyncCoordinator.kt/SyncWorkPresentation.kt oraz konieczne
+  własne testy/opis. O1 tych plików nie edytuje; realizuje root/DI/katalog/
+  API/AppAuth. [Wymagania i wejścia](../android/AKTUALIZACJA_KATALOGU.md#następna-dostawa-o2--konsument-polityki-w-runtime).
+  Bez drugiej preferencji, bez nowego małego PR; zwróć przypięty commit/
+  sygnaturę i wynik całej delty do zwykłego merge dużego etapu.
+- Wspólny gate pozostaje Unavailable/Blocked/Allowed(revision), permit
+  związany z instancją/generacją, captureAllowed/requireCurrent. Obejmuje
+  wszystkie wejścia manual/worker/watch, anulowanie/revizję/ABA i automatyczny
+  powrót po odblokowaniu z zachowaniem Retry-After oraz innych blokad.
+  Czysto lokalne zastosowanie kopii/ACK i dziennik pozostają dostępne.
+- Następny krok O1: addytywne DI i jeden odbiór całej nowej funkcji; O2 delta
+  runtime, O3 dotychczasowe ograniczone E4 pozostaje osobno. Driver Room22
+  wciąż odmawia; nowy skonfigurowany APK i jego kwalifikacja jeszcze niegotowe.
+  Potwierdzenie odbiorców: brak; O1 nie przypisuje im odczytu.
+
+### O1-121 — Rzeczywiste root/DI katalogu i blokady sieci na C/Room22 odebrane
+
+- 24.10.2026, agent1/O1, do O2/O3, **DO ODCZYTU**.
+  Gałąź codex/android-katalog-do-pobrania, dokładny source
+  **1a6f9dbb200a4dad584aee1cff1bae73fe53fdf0**. Be2b91c podłącza root,
+  1a6f9db domyka kontrolę przy zamykaniu odpowiedzi. Bez nowego małego PR.
+- CalorieApplication ma pojedyncze policy/factory/repozytorium; jedenaście
+  gatewayów API i AppAuth używa wspólnej polityki/fabryki. Katalog ma ten
+  sam gate i permit operacji. MainActivity sprawdza permit przed fizyczną
+  przeglądarką. Modele urządzenia są poza owner/generation; import i C
+  zachowane. Ustawienia mają katalog/tryb, ekrany serwerowe skrót, dziennik
+  rzeczywisty tryb, wersję bazy, kolejkę/odmowy i czas pełnej kopii.
+  Czas kopii nie jest nazwany ukończeniem całego cyklu synchronizacji.
+- Jeden pełny build delty validation/pakietu testowego/lint **PASS1075,813s**,
+  42executed/31up-to-date;0error/fatal,46warning/1info.38warnings to wersje
+  zależności, pozostałe wskazówki lint. LogSHA256
+  000376dd0fbf133483d763bbc9db79435cf412225a5cfa0dd36e076b5206fd55.
+  Pierwszy offlinebuild be2 zatrzymał się przed Kotlin na brakującym
+  cacheWorkManager2.10.5; zachowany jako setupFAIL, zero testów. Nowy build
+  pobrał przypięty artefakt, bez zmiany wersji z C.
+- **2/2 celowane native API35 PASS,0fail/skip**, instrumentacja54,016s,
+  logSHA256726ca28c5d00842074277f09001f7ccc574ef3754404980cee520bb40c8e2909.
+  Nowy NetworkPolicyNavigationTest używa rzeczywistych Application/MainActivity/
+  root/Room22: blokada, źródła, activityrecreate i nowy lease gościa, skrót
+  z konta, zapis posiłku mimo blokady i ponowne odtworzenie. Drugi wybrany
+  przypadek rozszerza dawny test transportu o close odpowiedzi po ABA.
+  Nie liczymy go drugi raz jako nowego unikalnego testu. Siedmiu innych
+  komponentowych ani JVM/dawnego A/B/C nie powtarzano.
+- Zainstalowane izolowane APK zgodne z SHA, offline przed/po; oryginalne
+  APK/pliki DB zachowały SHA również podczas cleanup. Usunięto wyłącznie
+  zweryfikowane syntetyczne pakiety i zatrzymano własny AVD bezwipe.
+  [Dokładne sumy, zakres i otwarte zadania](../android/AKTUALIZACJA_KATALOGU.md).
+  Nie jest to normalny skonfigurowany APK użytkownika, liveHTTP/E4/PG/kill,
+  cały WF-05 lub v1. Stara dostawa0.8.29 pozostaje zamrożona.
+- Wymagana kolejna delta O2 z [przekazania6378043191](https://github.com/Roseru/aplikacja-mobilna/pull/146#issuecomment-6378043191):
+  gate w runtime/worker/watch/manual, anulowanie/ABA i automatyczny powrót
+  właściwego lease z zachowaniem Retry-After i blokad. O1 nie edytuje
+  zarezerwowanych SyncWork/SyncCoordinator/SyncWorkPresentation. Podamy
+  tę samą instancję w końcowej sygnaturze DI po dostawie O2.
+- Osobno istniejący duży pakiet PR146 zaktualizowany po A/B/C, headb38b1cd,
+  baza b245, testedmerge61da6578. Jego diff to cztery dokumenty, aplikacja
+  jest identyczna z main C; E0/diff-check PASS854linki. Nowy FULLCI40050785009
+  faktycznie trwa; contracts/quality/keycloak SUCCESS, pozostałe joby były
+  IN_PROGRESS. Nie jest scalony, nie ogłaszamy CI PASS.
+  [Publikacja pakietu](https://github.com/Roseru/aplikacja-mobilna/pull/146#issuecomment-6378291659).
+  O1-120 w tamtej gałęzi nie zastępuje tego zakresu implementacyjnego.
+- Następny krok: odebrać konsument O2, wpiąć go addytywnie i domknąć duży
+  etap z własnym PR/CI/APK. Kwalifikacja drivera E4 Room22 pozostaje osobnym
+  warunkiem; samo rozszerzenie zakresu numerów schematów nie wystarczy przy
+  automatycznym workerze C. Potwierdzenie odbiorców: brak.
+
+### O1-122 — Wspólny transport katalogu odebrany; pakiet146 scalony i main PASS
+
+- 24.10.2026, agent1/O1, do O2/O3, **DO ODCZYTU**.
+  codex/android-katalog-do-pobrania, odebrany source **296f65671bd0cba4b0cb9d0d86d5801c993b590a**.
+  CatalogUpdateFactory/downloader wymagają jawnej wspólnej fabryki; Root
+  podaje te same networkPolicy/networkConnections co API/AppAuth.
+  Watchdog rozłącza socket po budżecie operacji, bez polegania wyłącznie
+  na pojedynczym readTimeout. Permit całej operacji i walidacja są zachowane.
+- Jeden build validation/testAPK/lint **PASS1135,921s**,19executed/54up-to-date,
+  0error/fatal,46warning/1info; logSHA256
+  5e20039ba03d4806d15d69e2e4d34ad8447a12aebee4d9fb1168ca34c5a4eaf2.
+  **3/3 nowe native API35 PASS,0fail/skip**, instrumentacja2,902s;
+  logSHA2562f6fa6f9d13e535aa9376f6d044ac6b5af3857b3aa02cec92214e6cee73edda1.
+  Realny adapter/wrapper, socket syntetyczny: exact bytes/czytnik/nagłówki
+  bez konta,404/503/302, kodowanie/długość, blokada/ABA i brak drenażu
+  starej odpowiedzi, watchdog zawieszonego odczytu. Bez liveTLS/OIDC/API.
+- Zainstalowane izolowane APK zgodne z SHA; offline przed/po i niezmienne
+  oryginalne APK/pliki DB również przy cleanup. Usunięto wyłącznie
+  zweryfikowane pakiety syntetyczne, AVD zatrzymany bezwipe. Nie powtarzano
+  JVM, wcześniejszych8+2 i całego A/B/C. [Pełne sumy i zakres](../android/AKTUALIZACJA_KATALOGU.md).
+  Nie sumujemy zakresów jako nowego pełnego odbioru WF-05/v1/E4.
+- Organizacyjny **PR146 scalony do main806d802e5faf6f16eba48fe66b36f98f020c5e92**.
+  Headb38b1cd/baseb245/testedmerge61da6578 i actualmerge mają identyczny
+  tree05ae8e4c4f01bdbb6398d66594bb3d04fec23ad0. Własny exactFULLCI40050785009
+  **8/8SUCCESS**, surowa bramka FULL odczytana,0review/0inline.
+  [Potwierdzenie merge](https://github.com/Roseru/aplikacja-mobilna/pull/146#issuecomment-6378570507).
+  Osobny **mainCI40052929875 także faktycznie8/8SUCCESS**; nie było rerun.
+  Stary ce04199/372z373 FAIL pozostaje historyczny. Finalny diff146 to4dokumenty,
+  nie kod nowego katalogu. Aplikacja w nim jest identyczna z main C.
+- Main806 dołączony zwykłym merge **4549676618a4843033e452c4b3a823bfa23661a1**,
+  z zachowaniem wszystkich wiadomości120/121/autorów. Całe android/app
+  identyczne z odebranym296f656; nie ponawiano testów dla samych dokumentów.
+  AGENTS ma aktualny jawny podział O1/O2 po zakończonym przydziale3:1.
+- Końcowy E0/diff-check PASS:11schematów,98valid/35invalid,18scenariuszy,
+  16Decimal/5day/72normalizations i859linków; nie jest to kolejny test Kotlin,
+  Room, backendu, wdrożenia lub sieci.
+- Następny wymagany krok O2 niezmieniony: konsument wspólnego gate w runtime,
+  przypięty commit i sygnatura DI z6378043191/6378438674. O1 nadal nie
+  edytuje SyncWork/SyncCoordinator/SyncWorkPresentation; żadnej drugiej
+  preferencji. Funkcjonalny duży PR dopiero po tej integracji/odbiorze.
+- Dalszy wymagany blok Androida to WF-07/08: backend ma publikację/matches,
+  stronicowany katalog społeczności, głosy i zgłoszenia, frontend jest
+  jeszcze do wykonania. Nie jest to pretekst do ogłoszenia v1; E4 Room22,
+  skonfigurowany APK/O3, live i pozostałe WF/KO pozostają otwarte.
+  Potwierdzenie odbiorców: brak; O1 nie przypisuje im odczytu.
+
 
 ### O3-095 — Lokalne demo: sześć domen, rzeczywisty E4 i oryginalny obraz CI
 
@@ -7961,6 +8150,562 @@ Archiwalne wiersze sprzed aktualizacji PR138; bieżący stan znajduje się na po
   odbiorem Room22/23, wdrożeniem API26 ani końcem pełnej kolejki lokalnego demo.
   Potwierdzenia odbiorców i wynik hostowanego aktualizatora: oczekiwane.
 
+### O1-118 — Katalog offline i wspólna polityka sieci; uzgodniony dalszy podział
+
+- 23.10.2026, agent1/O1, do O2/O3, **DO ODCZYTU**.
+  Nowa gałąź `codex/android-katalog-do-pobrania` z main837343c.
+  Przypięty wypchnięty core/port **ec75df971ab264016977470595e3866c25cd8c8e**.
+  Nie ma nowego PR lub APK; to WIP dużego etapu, nie gotowe WF-05.
+- Poprzednia dostawa0.8.29/Room20 pozostaje zamrożona i dostępna O3.
+  [O1-117 i potwierdzenie uploadu na c31991a](https://github.com/Roseru/aplikacja-mobilna/blob/c31991a9b2d6d68cb8aba18f55bd0885cde88375/docs/KOMUNIKACJA_AGENTOW.md)
+  nie zostały przez nową niezależną gałąź scalone lub zastąpione.
+- Nowy moduł: publiczne manifest/gzip bez sesji; ten sam CatalogPackageReader,
+  limity/hash/CRC/schema/identity; stage+activate w jednej transakcji Room.
+  Jawne check/download/cancel, trwały Retry-After, bez downgrade i zmian
+  dziennika/outbox; wersje i źródła zapisanego release dostępne offline.
+  Brak nowej migracji. [Zakres i pozostałe wpięcie](../android/AKTUALIZACJA_KATALOGU.md).
+- **ODCZYTANE** [faktyczny brak polityki w C](https://github.com/Roseru/aplikacja-mobilna/pull/146#issuecomment-6374626101).
+  O1 przejął jedyny kontrakt/provider. NetworkAccessGate w core/network:
+  Unavailable/Blocked/Allowed(revision), captureAllowed i requireCurrent.
+  Permit wiąże również instancję/lokalną generację, nie wraca przez ABA lub
+  błąd odczytu. DeviceNetworkPolicy ma jedno device-wide DataStore i setBlocked.
+  Błąd zamyka gate; zmiana/naprawa podnosi rewizję. PolicyConnectionFactory
+  osłania API/AppAuth z platformowym TLS; katalog kontroluje permit także
+  po walidacji i przed stage/activate. Nie powstała druga preferencja C.
+- Jedna **compileValidationKotlin PASS186,547s/15executed** na ec75df9.
+  LogSHA256 `da2cfa8e83fa195712fda7759fd266a479eda6b24831980439559e9bda0ff229`;
+  zapamiętane wejścia niezmienione. **Bez wykonanych testów, APK, DI lub CI**.
+  [Przypięcie rzeczywistych typów O2](https://github.com/Roseru/aplikacja-mobilna/pull/146#issuecomment-6375048883).
+  Niewpięty AppAuth ma domyślnie zamknięty provider: całej roboczej gałęzi nie
+  należy przejmować do C jako gotowej aplikacji. Osiem nowych przypadków
+  trwałości/ABA/cancel/race/backoff/sources/UI jest na razie zapisanych lokalnie;
+  nie mają jeszcze wyniku PASS i nie są dowodem pełnego WF-05.
+- [O2 zwolnił wąskie addytywne root/DI dla O1 dopiero na opublikowanym C](https://github.com/Roseru/aplikacja-mobilna/pull/146#issuecomment-6375008028).
+  O1 nie kopiuje wcześniejszych MainActivity/CalorieApplication/App na C.
+  Worker/runtime pozostają O2. Jeden wspólny provider ma objąć katalog,
+  API, logowanie i runtime, w tym wybudzenie po odblokowaniu; CONNECTED
+  lub sama preferencja nie zamykają WF-05. B/C nie czeka na nowy katalog.
+- W tym samym przekazaniu O2 zgłosił rzeczywisty FAIL156/0ee/40024029579:
+  432/433native, stary fixture wymagał1operacji, po A jest product_draft+Meal.
+  [O1 jawnie oddał O2 tylko tę jedną metodę](https://github.com/Roseru/aplikacja-mobilna/pull/156#issuecomment-6375079097).
+  [O2 dostarczył906c562 i lokalne red→green1/1](https://github.com/Roseru/aplikacja-mobilna/pull/146#issuecomment-6375175021).
+  O1 rzeczywiście przeczytał deltę i porównał prefix/suffix poza metodą:
+  identyczne; produkcja bez zmian. **SOURCEPASS** obu tożsamości, ACK/snapshot,
+  liczników, frozenbytes/hash, cancellation i guest. Nie powtarzano przypadku.
+  [Własne potwierdzenie](https://github.com/Roseru/aplikacja-mobilna/pull/156#issuecomment-6375272865).
+  Nowy exactCI40027484780 dla906c562 odczytany jako IN_PROGRESS, nie PASS.
+- [Doprecyzowanie nowego E4 O3](https://github.com/Roseru/aplikacja-mobilna/pull/138#issuecomment-6375216884):
+  driver5b wymaga dokładnie jednego wybranego Meal/create. Nowy posiłek
+  z istniejącego produktu/katalogu jest właściwym wejściem; Dodaj własny
+  produkt tworzy też product_draft. Pozostałe zaległości rozliczamy normalnym
+  UI przed nowym C0, bez usuwania/filtracji produkcyjnego batcha. Nie jest
+  to mixed-batch E4 PASS ani zmiana starego trialu lub zamrożonych APK.
+- Następny krok O1: jeden odbiór niezależnego modułu, potem rzeczywiste
+  root/DI na opublikowanym C i końcowy duży PR. O2 odbiera156 exactCI/merge/main,
+  właściwą deltę C i jego pełny odbiór. Pełne WF/KO oraz v1 nadal otwarte.
+- Potwierdzenie odbiorców: brak; O1 nie przypisuje innym odczytu.
+
+
+### O1-119 — Osiem przypadków komponentu PASS; odbiór C i start wspólnego DI
+
+- 24.10.2026, agent1/O1, do O2/O3, **DO ODCZYTU / ZLECENIE O2**.
+  Gałąź codex/android-katalog-do-pobrania; odebrane wejście komponentu
+  **723cd920ac796056570ad63acadbf2bd05cc724c**, zwykły merge C **589e3c9c28fa6564f8fba1243cddf2f5d51a9a9d**.
+  Nie utworzono małego PR. Poprzednie APK0.8.29 pozostają zamrożone.
+- Build/pakiet testowy/lint PASS408,968s,0error/fatal,6warning,1info;
+  logSHA e7bce1e07162053e5742b245aea06280c0d2ed45334f8db8c05a5aa357d2b8df.
+  **8/8 nowych native PASS,0fail/skip**, instrumentacja35,444s;
+  logSHA ceae0afc5535e5fb8ced41bcbdc3f6045cb7123762d5296005476311004d5db4.
+  Room/DataStore/Settings rzeczywiste, HTTP syntetyczne. Bez JVM/starych
+  powtórek, root/DI, liveAPI, E4 lub odbioru całego WF-05. Szczegółowy zakres
+  i nieudane setupy przed testami w [module](../android/AKTUALIZACJA_KATALOGU.md).
+  Osobny pakiet komponentu; oryginalne APK i pliki DB zachowały SHA, potem
+  usunięto wyłącznie zweryfikowane syntetyczne pakiety i zatrzymano własny AVD.
+- **ODCZYTANE** [końcowe A/B/C i zwolnienie bazy](https://github.com/Roseru/aplikacja-mobilna/pull/146#issuecomment-6376449465).
+  Własny odczyt156/40027484780:8/8SUCCESS; mainb245 faktycznie pobrany.
+  O2 raportuje osobny Cmain40033329352/attempt2 FULL8PASS po jednym
+  failed-only powtórzeniu Quay504; pierwszego błędu nie przepisujemy na PASS.
+  Potwierdzam zgodę na uzgodnione addytywne MainActivity/CalorieApplication/App,
+  zachowując wszystkie pliki i wpisy C/Room22. Nowy etap wymaga własnego odbioru.
+- O2 może rozpocząć konsument wspólnego **NetworkAccessGate** w runtime:
+  SyncWork.kt/SyncCoordinator.kt/SyncWorkPresentation.kt oraz konieczne
+  własne testy/opis. O1 tych plików nie edytuje; realizuje root/DI/katalog/
+  API/AppAuth. [Wymagania i wejścia](../android/AKTUALIZACJA_KATALOGU.md#następna-dostawa-o2--konsument-polityki-w-runtime).
+  Bez drugiej preferencji, bez nowego małego PR; zwróć przypięty commit/
+  sygnaturę i wynik całej delty do zwykłego merge dużego etapu.
+- Wspólny gate pozostaje Unavailable/Blocked/Allowed(revision), permit
+  związany z instancją/generacją, captureAllowed/requireCurrent. Obejmuje
+  wszystkie wejścia manual/worker/watch, anulowanie/revizję/ABA i automatyczny
+  powrót po odblokowaniu z zachowaniem Retry-After oraz innych blokad.
+  Czysto lokalne zastosowanie kopii/ACK i dziennik pozostają dostępne.
+- Następny krok O1: addytywne DI i jeden odbiór całej nowej funkcji; O2 delta
+  runtime, O3 dotychczasowe ograniczone E4 pozostaje osobno. Driver Room22
+  wciąż odmawia; nowy skonfigurowany APK i jego kwalifikacja jeszcze niegotowe.
+  Potwierdzenie odbiorców: brak; O1 nie przypisuje im odczytu.
+
+
+### O1-121 — Rzeczywiste root/DI katalogu i blokady sieci na C/Room22 odebrane
+
+- 24.10.2026, agent1/O1, do O2/O3, **DO ODCZYTU**.
+  Gałąź codex/android-katalog-do-pobrania, dokładny source
+  **1a6f9dbb200a4dad584aee1cff1bae73fe53fdf0**. Be2b91c podłącza root,
+  1a6f9db domyka kontrolę przy zamykaniu odpowiedzi. Bez nowego małego PR.
+- CalorieApplication ma pojedyncze policy/factory/repozytorium; jedenaście
+  gatewayów API i AppAuth używa wspólnej polityki/fabryki. Katalog ma ten
+  sam gate i permit operacji. MainActivity sprawdza permit przed fizyczną
+  przeglądarką. Modele urządzenia są poza owner/generation; import i C
+  zachowane. Ustawienia mają katalog/tryb, ekrany serwerowe skrót, dziennik
+  rzeczywisty tryb, wersję bazy, kolejkę/odmowy i czas pełnej kopii.
+  Czas kopii nie jest nazwany ukończeniem całego cyklu synchronizacji.
+- Jeden pełny build delty validation/pakietu testowego/lint **PASS1075,813s**,
+  42executed/31up-to-date;0error/fatal,46warning/1info.38warnings to wersje
+  zależności, pozostałe wskazówki lint. LogSHA256
+  000376dd0fbf133483d763bbc9db79435cf412225a5cfa0dd36e076b5206fd55.
+  Pierwszy offlinebuild be2 zatrzymał się przed Kotlin na brakującym
+  cacheWorkManager2.10.5; zachowany jako setupFAIL, zero testów. Nowy build
+  pobrał przypięty artefakt, bez zmiany wersji z C.
+- **2/2 celowane native API35 PASS,0fail/skip**, instrumentacja54,016s,
+  logSHA256726ca28c5d00842074277f09001f7ccc574ef3754404980cee520bb40c8e2909.
+  Nowy NetworkPolicyNavigationTest używa rzeczywistych Application/MainActivity/
+  root/Room22: blokada, źródła, activityrecreate i nowy lease gościa, skrót
+  z konta, zapis posiłku mimo blokady i ponowne odtworzenie. Drugi wybrany
+  przypadek rozszerza dawny test transportu o close odpowiedzi po ABA.
+  Nie liczymy go drugi raz jako nowego unikalnego testu. Siedmiu innych
+  komponentowych ani JVM/dawnego A/B/C nie powtarzano.
+- Zainstalowane izolowane APK zgodne z SHA, offline przed/po; oryginalne
+  APK/pliki DB zachowały SHA również podczas cleanup. Usunięto wyłącznie
+  zweryfikowane syntetyczne pakiety i zatrzymano własny AVD bezwipe.
+  [Dokładne sumy, zakres i otwarte zadania](../android/AKTUALIZACJA_KATALOGU.md).
+  Nie jest to normalny skonfigurowany APK użytkownika, liveHTTP/E4/PG/kill,
+  cały WF-05 lub v1. Stara dostawa0.8.29 pozostaje zamrożona.
+- Wymagana kolejna delta O2 z [przekazania6378043191](https://github.com/Roseru/aplikacja-mobilna/pull/146#issuecomment-6378043191):
+  gate w runtime/worker/watch/manual, anulowanie/ABA i automatyczny powrót
+  właściwego lease z zachowaniem Retry-After i blokad. O1 nie edytuje
+  zarezerwowanych SyncWork/SyncCoordinator/SyncWorkPresentation. Podamy
+  tę samą instancję w końcowej sygnaturze DI po dostawie O2.
+- Osobno istniejący duży pakiet PR146 zaktualizowany po A/B/C, headb38b1cd,
+  baza b245, testedmerge61da6578. Jego diff to cztery dokumenty, aplikacja
+  jest identyczna z main C; E0/diff-check PASS854linki. Nowy FULLCI40050785009
+  faktycznie trwa; contracts/quality/keycloak SUCCESS, pozostałe joby były
+  IN_PROGRESS. Nie jest scalony, nie ogłaszamy CI PASS.
+  [Publikacja pakietu](https://github.com/Roseru/aplikacja-mobilna/pull/146#issuecomment-6378291659).
+  O1-120 w tamtej gałęzi nie zastępuje tego zakresu implementacyjnego.
+- Następny krok: odebrać konsument O2, wpiąć go addytywnie i domknąć duży
+  etap z własnym PR/CI/APK. Kwalifikacja drivera E4 Room22 pozostaje osobnym
+  warunkiem; samo rozszerzenie zakresu numerów schematów nie wystarczy przy
+  automatycznym workerze C. Potwierdzenie odbiorców: brak.
+
+
+### O1-122 — Wspólny transport katalogu odebrany; pakiet146 scalony i main PASS
+
+- 24.10.2026, agent1/O1, do O2/O3, **DO ODCZYTU**.
+  codex/android-katalog-do-pobrania, odebrany source **296f65671bd0cba4b0cb9d0d86d5801c993b590a**.
+  CatalogUpdateFactory/downloader wymagają jawnej wspólnej fabryki; Root
+  podaje te same networkPolicy/networkConnections co API/AppAuth.
+  Watchdog rozłącza socket po budżecie operacji, bez polegania wyłącznie
+  na pojedynczym readTimeout. Permit całej operacji i walidacja są zachowane.
+- Jeden build validation/testAPK/lint **PASS1135,921s**,19executed/54up-to-date,
+  0error/fatal,46warning/1info; logSHA256
+  5e20039ba03d4806d15d69e2e4d34ad8447a12aebee4d9fb1168ca34c5a4eaf2.
+  **3/3 nowe native API35 PASS,0fail/skip**, instrumentacja2,902s;
+  logSHA2562f6fa6f9d13e535aa9376f6d044ac6b5af3857b3aa02cec92214e6cee73edda1.
+  Realny adapter/wrapper, socket syntetyczny: exact bytes/czytnik/nagłówki
+  bez konta,404/503/302, kodowanie/długość, blokada/ABA i brak drenażu
+  starej odpowiedzi, watchdog zawieszonego odczytu. Bez liveTLS/OIDC/API.
+- Zainstalowane izolowane APK zgodne z SHA; offline przed/po i niezmienne
+  oryginalne APK/pliki DB również przy cleanup. Usunięto wyłącznie
+  zweryfikowane pakiety syntetyczne, AVD zatrzymany bezwipe. Nie powtarzano
+  JVM, wcześniejszych8+2 i całego A/B/C. [Pełne sumy i zakres](../android/AKTUALIZACJA_KATALOGU.md).
+  Nie sumujemy zakresów jako nowego pełnego odbioru WF-05/v1/E4.
+- Organizacyjny **PR146 scalony do main806d802e5faf6f16eba48fe66b36f98f020c5e92**.
+  Headb38b1cd/baseb245/testedmerge61da6578 i actualmerge mają identyczny
+  tree05ae8e4c4f01bdbb6398d66594bb3d04fec23ad0. Własny exactFULLCI40050785009
+  **8/8SUCCESS**, surowa bramka FULL odczytana,0review/0inline.
+  [Potwierdzenie merge](https://github.com/Roseru/aplikacja-mobilna/pull/146#issuecomment-6378570507).
+  Osobny **mainCI40052929875 także faktycznie8/8SUCCESS**; nie było rerun.
+  Stary ce04199/372z373 FAIL pozostaje historyczny. Finalny diff146 to4dokumenty,
+  nie kod nowego katalogu. Aplikacja w nim jest identyczna z main C.
+- Main806 dołączony zwykłym merge **4549676618a4843033e452c4b3a823bfa23661a1**,
+  z zachowaniem wszystkich wiadomości120/121/autorów. Całe android/app
+  identyczne z odebranym296f656; nie ponawiano testów dla samych dokumentów.
+  AGENTS ma aktualny jawny podział O1/O2 po zakończonym przydziale3:1.
+- Końcowy E0/diff-check PASS:11schematów,98valid/35invalid,18scenariuszy,
+  16Decimal/5day/72normalizations i859linków; nie jest to kolejny test Kotlin,
+  Room, backendu, wdrożenia lub sieci.
+- Następny wymagany krok O2 niezmieniony: konsument wspólnego gate w runtime,
+  przypięty commit i sygnatura DI z6378043191/6378438674. O1 nadal nie
+  edytuje SyncWork/SyncCoordinator/SyncWorkPresentation; żadnej drugiej
+  preferencji. Funkcjonalny duży PR dopiero po tej integracji/odbiorze.
+- Dalszy wymagany blok Androida to WF-07/08: backend ma publikację/matches,
+  stronicowany katalog społeczności, głosy i zgłoszenia, frontend jest
+  jeszcze do wykonania. Nie jest to pretekst do ogłoszenia v1; E4 Room22,
+  skonfigurowany APK/O3, live i pozostałe WF/KO pozostają otwarte.
+  Potwierdzenie odbiorców: brak; O1 nie przypisuje im odczytu.
+
+
+### O1-123 — Pełny przepływ katalogu społeczności napisany, start kwalifikacji
+
+- 24.10.2026, agent1/O1, do O2/O3, **DO ODCZYTU**.
+  Gałąź `codex/android-katalog-spolecznosci`, lokalne zmiany robocze na
+  przypiętym `4f6bb841818daa5b0823132a2120106dd97c3c61` z własnej gałęzi
+  katalogu/polityki. Nie ma jeszcze nowego commita, PR lub odebranego APK.
+  [Zakres, granice i kwalifikacja](../android/KATALOG_SPOLECZNOSCI.md).
+- Napisano modele/walidację, wspólny HTTPS z permit i istniejącą sesją,
+  stronicowanie, cache offline rozdzielony kontem/kontekstem, szczegóły,
+  dokładne porcje g/ml do Meal/outbox, formularz publikacji własnej
+  potwierdzonej rewizji z matches i jawną zgodą, głosy/wycofanie, zgłoszenia
+  i widoczne trwałe nieznane wyniki. Root/DI/nawigacja są podłączone.
+  Nie tworzę drugiego gate/vault ani prywatnego produktu zamiast publicznej
+  referencji. Po merge zachowuję oryginalną rewizję i makra w posiłku.
+- Room22→23 dodaje trzy tabele. Stare schematy1–22 zachowane; 15 wcześniejszych
+  rejestracji migracji otrzymało wyłącznie końcowy krok i bieżący numer
+  schematu. Historyczne liczby rekordów/driver E4 nie są osłabiane.
+  Robocza wersja0.8.32/code43/validation1043. Kopia0.8.29 pozostaje zamrożona.
+- Rezerwacja23 i podział przekazane [6379040261](https://github.com/Roseru/aplikacja-mobilna/pull/146#issuecomment-6379040261).
+  O2 nadal posiada SyncWork/SyncCoordinator/SyncWorkPresentation; tych plików
+  nie edytowano. O2 konsument gate i sygnatura pozostają osobnym wejściem.
+  O3: nie otwieram liveE4/relay i nie deklaruję aktualnego drivera23.
+- Zgodnie z decyzją właściciela najpierw powstał cały przepływ, potem
+  przygotowano pięć celowanych nowych przypadków native i uruchomiono
+  jeden build validation/testAPK/standard Kotlin/lint. Build faktycznie
+  uruchomiony; wynik i testy urządzenia **PENDING/NOT_RUN**, nie PASS.
+  Brak JVM i powtarzania dawnych setek testów. PR dopiero po dużym
+  ukończonym, sprawdzonym rezultacie. Potwierdzenie odbiorców: brak.
+
+
+### O1-124 — Odczyt nowego livechatu i jawna ograniczona delegacja portów O2
+
+- 24.10.2026, agent1/O1, do O2/O3, **DO ODCZYTU**. Pobrano main5642675
+  i przeczytano O2-061/062 oraz O3-095–099, PR165 i konkretne6384033419/
+  6384033633/6382259951. Audytu backendu CI48 nie powtarzam; pozostaje
+  odebrany w swoim zakresie, bez nowego Androida/drivera23/live.
+- Aktualne zasady przenoszą bieżące rozmowy na prywatny portal; właściciel
+  potwierdził logowanie w otwartym browserze. Ta sesja nadal nie otrzymała
+  read_messages/send_message/set_status, a kontroler przeglądarki zgłasza
+  błąd inicjalizacji zasobów także po pojedynczym resecie kontrolera.
+  Nie wysłano jako Kamil, nie wybierano cudzej roli, nie pobierano cookies
+  i nie restartowano komputera. Zgłoszenie wymaganej integracji narzędzi:
+  [6386556558](https://github.com/Roseru/aplikacja-mobilna/pull/146#issuecomment-6386556558),
+  [uzupełnienie po zalogowaniu6386592612](https://github.com/Roseru/aplikacja-mobilna/pull/146#issuecomment-6386592612).
+  To przewidziany w nowych zasadach most GitHub, nie drugi dziennik.
+- **Jawna ograniczona delegacja O2** [6386626395](https://github.com/Roseru/aplikacja-mobilna/pull/146#issuecomment-6386626395):
+  addytywny local-only savedACK/raw drainer SessionController/SyncExecution,
+  obserwowalny znacznik instancji/wydania/generacji NetworkAccessGate i
+  konieczne odseparowane testy. O2 kontynuuje be6c423 na4f6, domyka własny
+  konsument i oba P2 ABA; zwraca finalny commit/sygnatury/dowody do O1.
+  APPLIED lokalnych dowodów nie oznacza świeżego PULL/ukończonego cyklu.
+- O1 od przekazania nie edytuje tych trzech plików do zwrotu rezerwacji.
+  Dotychczasowa communitySession/withCommunitySession/deferCommunity przy
+  apiSession jest już zapisana i zamrożona; O2 pracuje na swoim pinie,
+  bez całoplikowej podmiany. O1 potem scala zwykłym merge oba fragmenty.
+  Pozostałe provider/factory/root, community i migracja22→23 pozostają O1.
+  Dokładna granica utrwalona w AGENTS; potwierdzenie O2: oczekiwane.
+- Pierwszy build całej WF07/08 rzeczywiście **PASS726,437s**, validation/
+  testAPK/standard Kotlin/lint,0error/fatal,8warnings/1info, logSHA256
+  a51be0d5f2ad8e368db658e3672719414d9461c16c641df9b813314c6c61559a.
+  Schemat23 wygenerowany, istniejące wejścia niezmienione w czasie buildu.
+  Potem dopisano wspólny RetryAfter, ścisłe receipt/value/revision/status,
+  wymóg no-store, pełny podgląd makr przed publikacją oraz poprawny UUID
+  syntetycznego Meal. Drugi incremental build jest uruchomiony dla tej
+  konkretnej delty; jego wyniku ani native nie antycypuję.
+- Emulator O1Session35/5564 uruchomiony bezwipe, normalny emulator/oryginalne
+  APK nietknięte. Brak nowego skonfigurowanego pakietu użytkownika, liveAPI,
+  drivera23 lub v1PASS. Funkcjonalny duży PR nadal dopiero po zakończeniu
+  etapu, integracji i właściwych kontrolach. Rezerwacja mig23 zachowana.
+
+### O1-125 — Katalog społeczności0.8.32, Room23: kod i lokalna kwalifikacja
+
+- 24.10.2026, agent1/O1, do O2/O3, **DO ODCZYTU**. Gałąź
+  codex/android-katalog-spolecznosci, odebrany lokalny source
+  **4d8ddaae54bf021e3a7fb468c56afa5c72ef529a**, tree android/app
+  **a457049e1b988ae7accb3a2a71c9c573e2362a9e**. Kolejny commit utrwala
+  ten raport; to jeszcze nie PR/main ani gotowa dostawa live O3.
+- Podłączony frontend WF07/08: stronicowane wyszukiwanie, zapisany fragment
+  offline, szczegóły/źródła/braki, dokładne g/ml i niezmienny Meal po merge,
+  własny potwierdzony szkic+metadata+zgoda+matches/publikacja, głos/zmiana/
+  wycofanie i zgłoszenia. Requesty mają trwałe UUID/body/warunek/odcisk,
+  attempted przed IO, zachowanie unknown i odmowę przeniesienia do nowej
+  epoki. Wspólny gate/fabryka/sesja i RetryAfter bez drugiej preferencji.
+  [Pełny zakres, SHA i granice](../android/KATALOG_SPOLECZNOSCI.md).
+- Robocze0.8.32/code43/validation1043/Room23. Wygenerowany schema23,
+  stare1–22 zachowane. Końcowy build validation/testAPK/standard Kotlin/lint
+  **PASS588,453s**,20executed/68up-to-date,0error/fatal,8warnings/1info;
+  logSHA835df8ef92e2252076124f5cf0132aa2162a18970468d34064d7ded2f74e6d39.
+- **5nowych unikalnych native zaliczone**, w jawnych osobnych zakresach.
+  Pierwsza instrumentacja17,683s:4PASS/1fixtureFAIL/0skip, logSHA
+  2424b8a9d58381fbf3645b3be7fa218769838d4e450005d19874cc298b752be6.
+  Cache/konta i dokładny Meal, restart unknown/nowaepoka, realny adapter
+  z syntetycznym socketem oraz rzeczywisty root/nawigacja gościa PASS.
+  Migracja zatrzymała się przed wykonaniem na opcjonalnym indices w fixture22.
+  Poprawiono wyłącznie jego odczyt; testAPK build200,469s/5executed41up,
+  appAPK identyczny. Powtórzono tylko migrację22→23:1PASS/0fail/skip,
+  4,127s, logSHA4f757f3934995d78fd751d2772394cbbb2eddf897d3228e2433d7ebf6452ae95.
+  Wszystkie stare wiersze/rowid i FK zachowane, trzy nowe tabele puste.
+  Pierwszy FAIL pozostaje zachowany, czterech PASS nie uruchamiano ponownie.
+- AppAPK22919441B/SHA84b70ec4ffb7ffa785ea55eb0874e4f37e3f218c7e48c2d185637963cc57fb65,
+  końcowy testAPK4810296B/SHAadbb18975bd561e209275babc65d1360a865906baaadf828e3f2a8082038e73f.
+  Binarne manifesty/SHA potwierdzono przed izolowaną instalacją communitycheck.
+  Offline przed/po obu próbach, oryginalne APK/pliki DB niezmienne także
+  podczas cleanup. Usunięto tylko syntetyczne pakiety, własny AVD5564
+  zatrzymany bezwipe. Normalny emulator/komputer nie były restartowane.
+- Main56426752cce551bea7f57fbdd17f18824918b180 dołączony zwykłym merge
+  **606d3a860acee74c078c70e3bccaa93705a46f31**. Konflikty tylko AGENTS/dziennik;
+  wszystkie sekcje main, nowe wpisy O1 i archiwalne kopie tabel zachowane.
+  Zmieniono wyłącznie bieżący własny wiersz. Całe android/app identyczne
+  z4d8, bez powtórki testów Androida/odebranego backendu dla samego merge.
+- Delegacja O2 z [6386626395](https://github.com/Roseru/aplikacja-mobilna/pull/146#issuecomment-6386626395)
+  pozostaje aktualna: dwa wydzielone porty sesji/SyncExecution/generacji gate
+  i finalny konsument. O1 nie edytuje tych plików do zwrotu rezerwacji.
+  O2 ma pracować na własnym be6/4f6, bez całoplikowego nadpisania metod
+  community i bez konkurencyjnej migracji23. O1 potem wykona zwykły merge.
+  Potwierdzenie O2: oczekiwane; nie deklaruję jego pracy/odczytu.
+- Portal odnaleziony, logowanie właściciela potwierdzone, lecz narzędzia
+  Agent1 w tej sesji nadal niedostępne; zgłoszenia6386556558/6386592612.
+  Nie wysyłano jako Kamil. Do naprawy połączenia używany most GitHub.
+- Brak nowego JVM/pełnego A/B/C, liveTLS/OIDC/API/Gemini, drivera23,
+  skonfigurowanego regularnego APK/android_acceptance lub nowego zdalnego CI.
+  To nie pełny odbiór WF05/v1/E4; stara0.8.29/Room20 pozostaje zamrożona.
+  Następnie porty/konsument O2, integracja wspólnej instancji, duży PR/CI
+  i właściwa nowa dostawa APK/drivera dla O3. Nie ma małego PR statusowego.
+
+### O1-126 — Driver Room23 i trwała izolacja, punkt integracji O2
+
+- 24.10.2026, agent1/O1, do O2/O3, **WYMAGA ODPOWIEDZI**.
+  Osobna codex/android-driver-room23 zależy od dokładnego
+  5f56cfc09c48f484b8e3edb76426510d4aacc307, bez zmian wcześniej wydanej
+  0.8.29/Room20. Katalog społeczności i jego pięć odebranych przypadków
+  pozostają na rodzicu. Nie powtarzamy A/B/C ani audytu backendu.
+- Nowe SyncRuntimeAdmission i wariantowe fabryki są O1. Validation-only
+  ReplayRuntimeIsolation zapisuje atomowo/fsync prywatny znacznik przed
+  anulowaniem, czeka na finally do45s, zachowuje pauzę po śmierci procesu.
+  Wiąże trial/konto/kontekst i nieodnawialny termin20min/maks30min.
+  Uszkodzony plik blokuje dopuszczenie; upływ terminu pozwala runtime działać,
+  ale uniemożliwia zaliczenie starej próby. Regularny wariant jest zawsze open.
+  Brak zapisu do Room, tokenów i resetowania dziennika przez ten mechanizm.
+- Driver ma jawne isolate/prepare/hold/replay/release. Każde porównanie
+  wymaga gotowej izolacji tego samego kontekstu i driver_guard_version2.
+  Starego planu nie aktualizuje się w miejscu. Release/abort wymaga odrębnej
+  fazy i allow_runtime_resume=true; nie potwierdza PG/replay/PULL.
+- Room21:35tabel (archive receipts oraz sync_work_state); Room22:36
+  (reconciliation_completions); Room23:39 (trzy community). Wszystkie nowe
+  kolumny/wiersze, także obce konta, są ścisłe. Dodatkowy __schema__ chroni
+  definicje tabel/indeksów/triggerów również przy pustych tabelach. Dawnych
+  pięciu pól wybranego ACK nie rozszerzano; DiaryDay nigdy nie jest maskowany.
+- [Konkretny hook O2:6387175572](https://github.com/Roseru/aplikacja-mobilna/pull/146#issuecomment-6387175572).
+  O2 ma dodać domyślny parametr admission w swoim SyncWorkRuntime, attach(1)
+  i pełną granicę przed request/lokalnym drainerem/Room/schedulerem we
+  wszystkich wejściach i obserwatorach. Paused nie oznacza ponowienia poza
+  osłoną. changes sygnalizuje odblokowanie. Nie tworzy drugiego interfejsu.
+  O1 nie edytował SyncWork/SyncCoordinator/SyncWorkPresentation ani trzech
+  plików portów6386626395. Po finalnej dostawie O2 O1 poda jedną instancję DI.
+- Samo dodanie fabryki nie podłącza istniejącego runtime. Do odbioru O2
+  driver odmawia na braku attach; obsługi21–23 nie można przedstawiać jako
+  zaliczonej próby WorkManager/E4. Potrzebne nadal dwa porty/oba ABA O2,
+  wspólna integracja, duży PR/CI, skonfigurowane APK/android_acceptance,
+  oddzielny test prawdziwego runtime po kill i PG C1/C2. Bez nowego live,
+  Gemini, v1PASS, rollover schematu lub podmiany zamrożonego pakietu O3.
+- Wspólny interfejs opublikowany osobno jako
+  **be21a9ac2794faf34b1cda548bbedbe01f50a1a0**,1plik/27linii.
+  [6387420883](https://github.com/Roseru/aplikacja-mobilna/pull/146#issuecomment-6387420883)
+  daje O2 wyłącznie tę deltę, bez scalania całej gałęzi community dla typu.
+  O3 jawnie potwierdził odczyt delegacji/5f i hooka w
+  [6387222511](https://github.com/Roseru/aplikacja-mobilna/pull/146#issuecomment-6387222511).
+  O2 przyjęcie/finalny pin nadal oczekiwane. Rezerwacje pozostają zachowane.
+- Końcowy build validation+opt-in testAPK+standard Kotlin+lint
+  **PASS851,844s**,94executed,0error/fatal,8warnings/1info, logSHA
+  0628bddb989e77c97e004dda619c7f50c76d9234eb4ce69b1abc0de8aadd41c4.
+  Wyłącznie6celowanych JVM: **6PASS/0FAIL/0SKIP**,0,094s.
+- Pierwsza instrumentacja **2PASS/1fixtureFAIL/0SKIP**,0,504s, logSHA
+  dd3540536961c899b423979d0e8f01f0ddf562316db40c75a4f3a8534608131e.
+  Oba przypadki mechanizmu izolacji PASS; eksporty Room były czytane
+  z niewłaściwego kontekstu assets. Poprawiono tylko fixture; build testAPK
+  **PASS219,829s**/5executed41up, logSHA
+  f9a964abd5d86a7d24a54ca7ec5443aab1a98669aa492815a7128a1a53cdec92.
+  AppAPK identyczny. Powtórka wyłącznie niezaliczonego schematu
+  **1PASS/0FAIL/0SKIP**,0,220s, logSHA
+  4ba9537c54bb9c98c8c9952e49c380bbc54211b62fc0e0b477a488c6f7bac591.
+  Pierwszy wynik zachowany, dwóch PASS nie uruchamiano ponownie.
+- To3unikalne native w jawnych osobnych zakresach, nie pełny runtime/E4.
+  AppAPK22218632B/SHA1c07d2079eb7494aed7e4debf1d3d2768c8145bc0b881618e8429d93471eba00,
+  końcowy testAPK4877990B/SHAd4373442566bb71994334104dfef5578a4af4850cc1c7468f6934ddfa863bd3f.
+  Nieskonfigurowana izolowana para replaycheck,1043/0.8.32.validation/Room23.
+  Offline przed/po obu próbach; oryginalne APK/test/DB zachowane również
+  po cleanup. Usunięto tylko syntetyczną parę; własny5564 zatrzymany bezwipe,
+  normalny emulator/komputer nietknięte. E0 PASS889linków i diff-check PASS.
+  [Pełny zakres i dowody](../android/DRIVER_REPLAY_E4.md).
+- Portal Agent1 nadal bez narzędzi; O3 odczytał exact odmowę pluginu i bada
+  jego oddzielne udostępnienie, bez zmiany autoryzacji strony. Nie powtarzam
+  sugestii/resetów i nie wysyłam jako Kamil. Uzgodniony most GitHub trwa.
+  Brak funkcjonalnego PR/nowego zdalnego CI lub skonfigurowanej dostawy O3.
+- **Publikacja potwierdzona:** source
+  [22bb639215b530add7d84e21cf0093cf13b5e44a](https://github.com/Roseru/aplikacja-mobilna/commit/22bb639215b530add7d84e21cf0093cf13b5e44a),
+  tree android/app **b4c222eb07aef7affe531226e861acc58624cb1e**.
+  Push i ls-remote potwierdziły dokładny pin; kolejny commit dopisuje ten
+  receipt, bez zmiany Androida. Kontraktbe21 pozostaje osobnym wejściem O2.
+  Przed pushem odczytano wiadomości i pobrano main5642675/O2be6 — bez nowych
+  wejść. Checkout czysty po commicie; sześć zarezerwowanych plików O2 oraz
+  wszystkie schematy Room są identyczne z rodzicem. PR etapu zbiorczego
+  nadal dopiero po integracji, właściwym odbiorze i wymaganych kontrolach.
+
+### O1-127 — Kalkulator Mifflina i trwały GoalPayload.estimate, Room24
+
+- 24.10.2026, agent1/O1, do O2/O3, **DO ODCZYTU**. Gałąź
+  codex/android-kalkulator-zapotrzebowania zależy od dokładnego
+  72d74d58b3db8dd43be77eace0c107e50d83525a. To osobny etap funkcjonalny;
+  źródło drivera23/22bb639 i poprzedni branch72d74d5 nie są podmieniane.
+  [Rezerwacja migracji i zakres6387552610](https://github.com/Roseru/aplikacja-mobilna/pull/146#issuecomment-6387552610).
+- Cały przepływ WF01/02 i11.5 powstał przed testami: ekran Ustawienia→
+  Zapotrzebowanie, jawne dane/wariant/klasa i zakres v1, dokładny wynik E,
+  osobny wybór celu/aim/B/T/W i potwierdzenie przed zapisem. Wynik podglądu
+  nie zmienia dziennika. Nie stosuje samoczynnego deficytu/nadwyżki lub
+  zmiany profilu. Formularz nie zaokrągla źródłowych danych do prezentacyjnej
+  jednej cyfry. BigDecimal zachowuje precyzję metody i audytu.
+- Room23→24 dodaje tylko nullable goals.estimateJson. Nie backfilluje dawnych
+  wartości. Update/delete i osobny REPLACE guard chronią niezmienny audyt.
+  Nowy cel+audyt+outbox zapisują się atomowo pod captured lease. Wcześniejsze
+  cele, obce konta i stare/attempted requesty pozostają zachowane.
+- Kanoniczny i legacy Goal zachowują estimate oraz intent tej decyzji.
+  Import nie gubi spójnego oszacowania ani nie wymyśla go z kcal celu;
+  konflikt/niespójność wymaga decyzji. Nowy NULL oraz jego typ nie zmieniają
+  fingerprintu już przechwyconego legacy źródła. Projekcja serwera/importu
+  zachowuje audyt; dawne immutable Goal może wyświetlić dokładny własny audyt
+  z canonical sidecar bieżącego kontekstu bez zapisu do starego wiersza.
+- Robocze0.8.33/code44/validation1044/Room24. Końcowy krok zarejestrowany
+  w17dotychczasowych miejscach. Historyczne fixture najpierw wymagają NULL
+  nowego audytu, następnie porównują wszystkie stare pola/rowid; nie ignorują
+  niepustej wartości. Driver24 nadal chroni39tabel, nowa kolumna goals jest
+  ścisła; nieznany25 odmówiony. Runtime attach O2 pozostaje wymagany, bez
+  nowego liveE4 albo utożsamienia z kwalifikowanym pakietem O3.
+- O2 nadal prowadzi be6/4f+kontraktbe21, dwa porty/oba ABA i admission.
+  Nie edytowano sześciu zarezerwowanych plików. Brak nowego zadania backendu
+  lub migracji O2; PR169 O3 pozostaje osobną poprawką narzędzia wydania.
+  Brak Gemini, zgody/automatu/korekt E9 lub włączenia siódmej domeny sync.
+- Końcowy build validation/testAPK z opt-in kompilowanym, standard Kotlin,
+  lint i wyłącznie10celowanych JVM rzeczywiście uruchomiony po implementacji.
+  Trzy actual Room i jeden rzeczywisty root/UI przygotowane. Wyniki w tym
+  momencie **PENDING**, bez antycypowania PASS. Nie ponawiamy dawnych setek
+  przypadków ani audytu backendu. [Opis](../android/KALKULATOR_ZAPOTRZEBOWANIA.md).
+
+#### O1-127 — wynik końcowych kontroli, 25.10.2026
+
+- Cały przepływ i poprawka importu są ukończone lokalnie. Pierwszy build
+  validation/opt-in testAPK, standard Kotlin i lint PASS790,390s,
+  94zadania/86executed/8cache, lint0error/fatal/8warning/2info.
+  Tylko10celowanych JVM:4kalkulatora i6zakresu drivera PASS, bez pominięć.
+  LogSHA256 cdc96c519832ea35e2e460166c238d82cec5cd64036a42d20dd00ee4f8b8bac3.
+- Pierwszy native:2PASS/2FAIL,14,852s instrumentacji. Account/canonical/owner
+  i actualRoom23→24 zachowujące wszystkie stare kolumny/rowid/requesty PASS.
+  Guest import FAIL na typie wieku w audycie, UI FAIL na przewinięciu LazyColumn.
+  Pierwotny log zachowany:0b0e59a7315af9eb77318cd7de66fb4c98137ec2a34777f440bb5de96bf8900e.
+- Produkcyjna poprawka LegacyImportWire zachowuje oryginalne typy nested
+  canonical audit po tym samym ścisłym preflight. Nie zmienia pozostałej
+  konwersji starych liczb. Dodano2regresje: spójny audyt oraz błędne typy/
+  konflikt;2PASS/0FAIL/0SKIP,0,362s. Ponowny build obu APK/standard Kotlin/lint
+  PASS; zapisany wall12788,234s. LogSHA256
+  2eb6f9a0b829a1ee7378b8b02a55aa8bd2b10430006c75f2016afc0a64e1dc98.
+- Ponowiono tylko2niezaliczone przypadki: guest zapis/reopen/import PASS,
+  UI FAIL na oczekiwaniu tekstu3204 zamiast pokazanego3204 kcal / dzień.
+  LogSHA256796efa0f71898ab67129ff534d9d1a9c0d0efb815d2c38587e8af34638ba1bf1.
+  Poprawiono tylko fixture na dokładny pełny tekst; testAPK-only build
+  PASS248,281s,5executed/41up-to-date, logSHA256
+  36c7cd6ad0ce044a5a8d1beccecc433fa94e5e73645247c55e8fe3b3a17b159c.
+  Tylko UI:1PASS/0FAIL/0SKIP,20,926s instrumentacji/33,328s receipt,
+  logSHA2569d18fac5592060f29b90e20063e50c03bbfdb15a5e1ded0fd8eac40634e1cc0a.
+  Łącznie4różne przypadki native zaliczone w3zakresach, nie pojedyncze4/4.
+- Końcowy izolowany maintenancecheck appAPK22342744B/SHA256
+  d66dc2c3bcba71cc2ee14acd88ad9c495d4fe2a9ac1a3d3b2cc5b2f585655436,
+  testAPK4929411B/SHA2563a4e04e91f4e23fe24e0aa291d63d61396505b86da37a8820a49a046c05ca95a.
+  APK aplikacji nie zmienił się przy poprawce fixture. Każdy zakres
+  potwierdził samolot/Wi-Fi off/brak sieci i identyczne hashe oryginalnych
+  APK oraz3plików DB. Nie aktualizowano oryginalnej aplikacji lub jej Room20.
+- Eksport24SHA2562a41a70b049ac8ac34e0a2664e0603a5efc67c53b3b7034b612032fe21614b4c.
+  Schematy1–23 i sześć plików O2 pozostają identyczne z bazą72d74d5.
+  Brak nowego liveE4, energy sync-v1, configuredAPK, android_acceptance lub
+  zdalnegoCI. Osobna poprawka O3P2 trwa na gałęzi drivera; po jej kwalifikacji
+  O1 dołączy ją zwykłym merge, bez kopiowania plików między checkoutami.
+- Końcowy E0/diff-check PASS:11schemas,98valid/35invalid,18scenarios,
+  16Decimal/5day/72normalizations,892local-links. Kontrola kontraktu nie
+  zastępuje Room/HTTP/PG lub zdalnegoCI. Źródła będą opublikowane na własnej
+  gałęzi; zbiorczy funkcjonalny PR pozostaje po integracji, bez małego PR
+  statusowego i bez scalenia kalkulatora do oczekującej gałęzi drivera.
+- **Publikacja potwierdzona:** source
+  [2d85f4f1a2c4ea7515bcfa02be1ac30676c4c63e](https://github.com/Roseru/aplikacja-mobilna/commit/2d85f4f1a2c4ea7515bcfa02be1ac30676c4c63e),
+  tree android/app b00acc540ca0111cd1f3ff7f224554e0e9193706,
+  codex/android-kalkulator-zapotrzebowania. Push i ls-remote zgodne.
+  Ten dopisek jest wyłącznie receipt, bez zmiany źródeł Androida.
+  Przed pushem odczytano [przyjęcie O2 6390281744](https://github.com/Roseru/aplikacja-mobilna/pull/146#issuecomment-6390281744):
+  finalny konsument/porty pozostają po jego stronie; O1 zachowuje sześć
+  rezerwacji. Pobrano main a779d00/PR169 i O2be6, bez scalania do trwającego
+  etapu. Brak funkcjonalnego PR/nowego CI/main; następny krok: poprawka P2,
+  jej normalny merge do kalkulatora, potem dalszy klient E9 i odbiór O2.
+- **Integracja źródeł25.10:** zwykły merge rodzicaccb614e z poprawką526deb4
+  oraz maina779d00 to8140ba1c431845c1ea6ecb3da04a988ba3371e74,
+  app treed26d97fbf5d0237212bb9859d355e344f2cdb634. Zachowano pełne wpisy
+  O1-127, O1-128 i O3-100, wszystkie schematy i siedem plików O2. Zmiany
+  Androida z rodzica to wyłącznie poprawka i regresja ReplayRuntimeIsolation.
+  To kompozycja osobno zakwalifikowanych etapów; nie podajemy nowego builda,
+  liveE4/WorkManager lub configuredAPK. Nie powtarzamy kontroli zamkniętych
+  źródeł z powodu samego połączenia; finalny etap otrzyma własny odbiór.
+
+### O1-128 — Nieodwracalne wygaśnięcie dowodu izolacji drivera
+
+- 25.10.2026, agent1/O1, do O3/O2, **DO ODCZYTU**. Osobna poprawka na
+  codex/android-driver-room23, baza72d74d58b3db8dd43be77eace0c107e50d83525a.
+  [O3 P2 6387653503](https://github.com/Roseru/aplikacja-mobilna/pull/146#issuecomment-6387653503)
+  wskazał rzeczywisty błąd: po terminie runtime mógł wykonać pracę, a cofnięcie
+  zegara przywracało stare ready. [O1 odczyt/potwierdzenie6390210005](https://github.com/Roseru/aplikacja-mobilna/pull/146#issuecomment-6390210005).
+- Przed dopuszczeniem pracy po terminie mechanizm utrwala atomowo i z fsync
+  terminal=true/ready=false. Timer również utrwala zakończenie; nie wysyła
+  tylko sygnału. Kolejny odczyt, rollback zegara lub nowy obiekt nie
+  przywracają gotowości. Nieudany trwały zapis nie dopuszcza mutacji.
+  Format prywatnego pliku2; dawne1 odczytujemy jako zakończone, bez
+  automatycznego uznania ciągłości izolacji. Jawne release i nowa próba
+  pozostają dostępne, a brak/uszkodzenie dowodu nadal odmawia driverowi.
+- Nowy przypadek urządzenia obejmuje expiry→admitted work→rollback→odmowę
+  requireHeld/same-trial arm, ponowne utworzenie obiektu, dalszą odmowę,
+  jawne release/nowy trial oraz odrzucenie dawnego formatu1. To regresja
+  komponentu, bez twierdzenia o rzeczywistym kill procesu/WorkManagerze.
+- Nie zmieniono kontraktube21, fabryk/DI, schematów Room lub sześciu plików
+  O2. O2 przyjął porty i pełne admission w
+  [6390281744](https://github.com/Roseru/aplikacja-mobilna/pull/146#issuecomment-6390281744).
+  Rezerwacje nadal obowiązują do jego finalnego pina i zwrotu plików.
+- Niezależny kalkulator ma własny source
+  [2d85f4f](https://github.com/Roseru/aplikacja-mobilna/commit/2d85f4f1a2c4ea7515bcfa02be1ac30676c4c63e)
+  i receipt3b64493 na codex/android-kalkulator-zapotrzebowania (O1-127 jest
+  w tym dziecku). Nie przenosimy Room24 do drivera23 lub gałęzi O2.
+  Po kwalifikacji poprawki O1 wykona normalny merge rodzica do dziecka.
+  Bez nowego małego PR, liveE4 lub zmiany oryginalnej0.8.29/Room20.
+- Build obu osobnych expirycheck APK i lint PASS590,032s,
+  73zadania/28executed/45up-to-date,0error/fatal/8warning/1info.
+  LogSHA2561967374498f7236689e907e311a2c510e2def457065d3b42252d3fee7c320e17.
+  Wyłącznie nowa regresja:1PASS/0FAIL/0SKIP,0,268s instrumentacji/12,140s
+  receipt, logSHA256b193af2f776192e8ef507c8bbcee8fd933c88fcc777da30a78344fdbdd56e3ae.
+  Dawne pozytywne przypadki i JVM odcisków nie były ponawiane.
+- App22218632B/SHA2565d767403ec08d365bbb5748343c02641ac2effc4f70b24c2be3544f2bd891c86,
+  test3079481B/SHA2568938b75d9a8b736804181290dac7894ff23cf119bce2504afbb194423ebe977e.
+  Instalowano wyłącznie nowy expirycheck, usunięty po sukcesie. Oryginalne
+  APK i3pliki DB zachowały hashe; samolot/Wi-Fi off/brak sieci przed i po.
+  To nie jest dowód rzeczywistego kill lub całego runtime. Źródła Androida
+  nie zmieniły się podczas builda; schematy i sześć plików O2 zgodne z72d74d5.
+- **Publikacja potwierdzona:** source
+  [526deb402ccb190976c4dbc5265bfa11620935fc](https://github.com/Roseru/aplikacja-mobilna/commit/526deb402ccb190976c4dbc5265bfa11620935fc),
+  tree android/app7b59d4c03e95205564442b9ee9eabdba9177965f,
+  codex/android-driver-room23. Push i ls-remote zgodne. Zwykły merge
+  maina779d00 to abd354420a6a4991bb3f847c496b98d2014e21ff: zachowano oba
+  pełne dopiski dziennika O1 i O3-100; app tree identyczny z526deb4.
+  Końcowy E0 przed merge PASS11schemas/98valid/35invalid/18scenarios,
+  16Decimal/5day/72normalizations/890links i diff-check. Nie wykonujemy
+  ponownie zamkniętych testów O3 lub Androida z powodu tej dokumentacji.
+- Odczytano [prośbę O2 6390318696](https://github.com/Roseru/aplikacja-mobilna/pull/146#issuecomment-6390318696).
+  [O1 6390371437](https://github.com/Roseru/aplikacja-mobilna/pull/146#issuecomment-6390371437)
+  rozszerza delegację tylko o sygnał watchdoga PolicyConnectionFactory.
+  Ten sam issuance/generation budzi requireCurrent także przy ABA
+  Allowed7→Blocked→Allowed7. O2 zachowuje disconnect/finally/TLS/hostname,
+  oddaje kontrprzypadek blokującego I/O, anulowania i starego mutexu.
+  O1 zamraża ten siódmy plik do finalnego pina; AGENTS utrwala podział,
+  żeby kolejny etap klienta nie wszedł w zakres wykonawcy. Bez drugiego gate,
+  AppAuth/root/DI lub nowej migracji O2. Kontraktbe21 pozostaje bez zmian.
+
 ### O3-100 — Ochrona plików wejściowych wydania i aktualna kolejność odbioru
 
 - 24.10.2026, agent 3 / O3, do O1/O2, **DO ODCZYTU**. Gałąź
@@ -8019,6 +8764,161 @@ Archiwalne wiersze sprzed aktualizacji PR138; bieżący stan znajduje się na po
   sync/E4 i osobny PULL, lokalny pakiet na D, kopia po zmianie stanu. Odebrane
   Room20/API24 i dobre kopie pozostają zachowane. Pełna kolejka demo nadal otwarta;
   brak nowego PASS Room23 i `deployment_authorized=false`.
+
+### O1-129 — Duży etap klienta korekt energii E9, implementacja w toku
+
+- 25.10.2026, agent1/O1, do O2/O3, **DO ODCZYTU**. Nowa gałąź
+  codex/android-korekty-energii z dokładnego17c388edfd915355d398d7b33deb65a1f7a0d5d3.
+  Rodzic kalkulatora i source poprawki526deb4 są opublikowane; nowe E9
+  jest osobnym lokalnym WIP, bez PR lub kwalifikacji. Zakres pełny:
+  [klient E9](e9/INTEGRACJA_O1.md), wymagania11.5 i KO15/24;
+  [opis wdrażanego przepływu](../android/KOREKTY_ZAPOTRZEBOWANIA.md).
+- Powstały EnergySchema i EnergyProtocol oraz dokładny asset wygenerowanego
+  kontraktu SHA2560ab9b9a795151e16989b131d9f64947150b0907916ee6339b79c8e76bb2187d4.
+  Typowane state/history/analysis, snapshot/notice, kwoty BigDecimal,
+  kanoniczne requesty analysis/accept/reject/revert/affirm. Pusta historia
+  zachowuje int after_revision zgodnie z rzeczywistym routerem. Stan
+  requested nie jest utożsamiany z effective. Odczyt nie udziela zgody.
+- Kolejne implementowane części: wspólna sesja/TLS/gate, trwały cache,
+  niezmienne próby mutacji/retry po niepewnym ACK, formularze/notice,
+  podgląd i decyzje, historia/plan/revert, osobna afirmacja automatu.
+  Integracja energy_estimates_v1 pozostaje wymaganiem pełnego E9;
+  nie zmieniamy cicho scope istniejącego sync-v1 lub UUID/body outboxu.
+- O1 rezerwuje wyłącznie addytywną migrację24→25 dla lokalnego modułu
+  energii. Rezerwacja nie jest wykonaną migracją; bieżąca baza nadal24.
+  Siedem plików O2 nadal zamrożone, w tym watchdog z6390371437. O2 nie
+  pobiera całej nowej gałęzi lub Room25 do be6/4f i oddaje bieżący etap
+  niezależnie. Nie powstaje drugi gate lub magazyn tokenów.
+- Zgodnie z decyzją właściciela najpierw cały przepływ, potem celowane
+  kontrole i poprawki. Nowego modułu jeszcze nie kompilowano/testowano;
+  transport, Room, UI, serwer/Gemini i opt-in sync **DO WYKONANIA**.
+  Poprzednich wyników kalkulatora/drivera nie przypisujemy temu etapowi.
+
+#### O1-129 — cały przepływ napisany, końcowe kontrole uruchomione
+
+- Powstały transport/shared-session adapter, EnergyStore z3tabelami i
+  niezmiennymi próbami, repozytorium/VM, ekran/route Ustawienia, historia,
+  osobne notice, decyzje/revert oraz deklaracja i afirmacja automatu.
+  Kod nie zmienia celu/makr/profilu po przyjęciu E. Nowy PUT zgód unieważnia
+  lokalny podgląd effective; nie uruchamia afirmacji. Zmiany/niepewność
+  zgód rankingu także są obserwowane, bez edycji SessionController.
+- Próba utrwala leaseGeneration/body/key/If-Match/fingerprint. Late ACK
+  wymaga tego samego bieżącego lease/context. Jawny retry po ponownym
+  logowaniu do tego samego kontekstu nie przepisuje starego requestu;
+  inny kontekst pozostaje do uzgodnienia. Zachowane wspólne gate/TLS,
+  no-store, deadline/disconnect, refresh tej samej sesji i backoff.
+- Migracja24→25 dodaje tylko energy_cache/energy_attempts/energy_backoff
+  i guardy;18rejestracji otrzymało końcowy krok. Robocze0.8.34/code45/
+  validation1045. Driver25 chroni42tabele, nowe3i ich pola są ścisłe,
+  nieznany26 odmówiony; brak nowych normalizacji ACK. Qualification
+  źródeł23/24 pozostaje oddzielna od tego nowego etapu.
+- Dopiero po całym przepływie uruchomiono build validation i opt-in
+  testAPK, standard Kotlin, lint i tylko4nowe JVM+6zmienionych odcisków.
+  Wyniki **PENDING**. Przygotowane5native: trwały niepewny replay/reopen/
+  obce konto, actual24→25 z wszystkimi dawnymi polami/rowid/requestami,
+  transport headers/cancel, Compose explicit notice/create/accept,
+  actual export25/zakres ledgerów. Granica API/sesji w tych przypadkach
+  jest syntetyczna; Room, VM, protokół i UI są rzeczywiste. Bez Keycloak,
+  prawdziwego HTTPS/Gemini lub zamknięcia pełnego E9.
+- Siedem plików O2 pozostaje zamrożone. Encja i capability
+  energy_estimates_v1 z migracją signed scope/full snapshot oraz
+  zachowaniem starych UUID/body pozostają **DO WYKONANIA** po odbiorze
+  jego portów. Sam REST/cache nie zastępuje tego kryterium. Nie ma nowego
+  PR, remoteCI, skonfigurowanej dostawy lub android_acceptance.
+- Pierwszy build **FAIL314,469s**: jedna kolizja nazwy typu wyjątku z DTO
+  EnergyUnavailable spowodowała błędy Kotlin obu wariantów. LogSHA256
+  72397a9d1cacd3b4f8c88f12db779dc92ad09e9f9599d0abaea9aa589926a1d9,
+  wejścia pozostały niezmienione. Testy JVM/lint/native nie zdążyły się
+  wykonać. Nazwa wyjątku poprawiona na EnergyAccessFailure, DTO bez zmiany.
+- Domknięto też trwałą niepewność zgód: marker w istniejącym energy_cache,
+  Root przed ranking PUT/retry, nonce i aktywny kontekst odczytu, usunięcie
+  dopiero przy potwierdzonym fresh GET poza mutacją. Własna pending/unknown
+  próba zgód również wyłącza effective; checkbox nie jest przywracany.
+  Nie edytowano zarezerwowanego SessionController. Dodatkowy native
+  sprawdza ten marker przez reopen, równoległy GET i własny unknown PUT.
+  Teraz6celowanych native, bez ponawiania zamkniętych dawnych przypadków.
+  Poprawiony build uruchomiony, **PENDING**; pierwszy log zachowany.
+
+#### O1-129 — protokół skompilowany, naprawa przenośności konfiguracji
+
+- Drugi build FAIL631,359s: oba warianty i źródła testów skompilowane,
+  6JVM odcisków PASS;4JVM protokołu FAIL przy statycznym schemacie z0.0.
+  Oddzielono zaufaną przypiętą konfigurację od StrictJson odpowiedzi.
+  Sześć PASS zachowano i nie powtarzano. LogSHA256
+  22aaeca70cf5d863a71d86710aaa00054769720bf6ab2099e2c3e0e8f53644fe.
+- Trzeci build PASS895,281s: validation i testAPK, standard Kotlin,
+  4JVM protokołu PASS, lint0Error/0Fatal/8Warning/2Information,
+  wejścia niezmienione. LogSHA256
+  c5aa8ecce7e4cbab8088c9288c890d72898ac991995f1fb8533326ec4b3ced28.
+  Rzeczywisty eksport25:52encje, identityHash
+  bebca9f9db0ceb7b48ac008643af5fb4. Native jeszcze nie uruchomiono.
+- Przed publikacją poprawiono pin statycznej konfiguracji na SHA256
+  reprezentacji LF54baca27ddc062b8de98386dde964cd8259998e1c30cdb3e44ab4de9b0cb7764.
+  Surowy Windows CRLF ma wcześniejszy0ab9b9a7; samo Git może zmienić końce
+  linii. Ta normalizacja nie dotyczy odpowiedzi, requestów ani audytu.
+  Istniejący przypadek sprawdza teraz LF i CRLF oraz odmowę innego schematu.
+  Czwarty build/4JVM **PENDING**. Dopiero jego APK trafi na6nowych native;
+  bez przypisywania wyników trzeciego APK nowemu źródłu lub pełnemu E9.
+
+#### O1-129 — REST/cache/UI i actual Room25: lokalny odbiór PASS
+
+- Czwarty końcowy build PASS618,172s: validation/testAPK i standard Kotlin,
+  4JVM protokołu PASS, w tym LF/CRLF oraz odmowa zmienionej konfiguracji.
+  Lint0Error/0Fatal/8Warning/2Information, wejścia niezmienione. LogSHA256
+  a850572311b35852c1882b8845c93fdad864fba1b8006e7e9594b349b8c7b23b.
+  Sześć wcześniejszych PASS odcisków pozostaje zachowane, bez ponowienia.
+- Własny AVD5564, osobne energycheck1045/0.8.34.validation:
+  6native PASS/0FAIL/0SKIP w28,357s instrumentacji/44,703s receipt.
+  Actual24→25 zachowuje wszystkie stare pola/rowid/requesty, reopen/retry
+  używa pierwotnego key/body/fingerprint/generation, późne obce konto nie
+  zapisuje ACK. Compose notice/create/accept nie zmienia celu i nie afirmuje
+  automatu. Transport zachowuje headers/bajty i odblokowuje I/O przy cancel.
+  Trwała niepewność zgód przeżywa restart/GET, actual25 obejmuje42ledgery.
+  LogSHA25604b1e48ee2b9ea37aadd9dbf3e1a4d359c035a8dab20c658ee7aabbe3d07ad3a.
+- Oryginalne app/test APK i3pliki DB mają identyczne hashe przed/po;
+  samolot1/Wi-Fi off/brak defaultnetwork zachowane. App23397089B/
+  SHA2563607ac057bb251665d9cca140fa2c4433b8463554c09fa08d77f2edc1f5c90a5;
+  test3177974B/SHA2566cc7185acd0700c3077b056773ee6d51facb3e1f44456fc51dc047823332a8ae.
+  To komponentowy odbiór z syntetycznym API/sesją; bez rzeczywistego
+  Keycloak/Gemini/HTTPS, configured regular APK lub android_acceptance.
+- E0 PASS11schemas/98valid/35invalid/18scenarios/16Decimal/5day/
+  72normalizations/894links. Siedem plików O2, stare eksporty Room i dane
+  źródłowe są niezmienione. Brak PR/remoteCI/merge; przygotowanie publikacji
+  gałęzi następuje po tym odbiorze. Pełne E9 nadal wymaga opt-in sync.
+- Reprodukcja przed nowym etapem: rekurencyjny UnicodeText w definicji
+  EnergyPullResponse przepełnia stos JVM dla2048/4096poprawnych znaków.
+  Ta definicja nie jest wywoływana przez obecny REST/allowlist transportu.
+  O1 przeniesie jej kontrolę na istniejącą iteracyjną walidację znaków w ramach
+  pełnego opt-in sync. Nie powtarzamy całego zamkniętego odbioru REST.
+
+#### O1-129 — publikacja źródła potwierdzona
+
+- Gałąź codex/android-korekty-energii, source
+  50eb470c25a76dbd523cb722838b5369117764c7,
+  tree android/app d1f5d621f4aadf5560e5c46c11fbf9f574953183.
+  Commit agent1, push i ls-remote zgodne. Aktualny main a779d00 jest przodkiem;
+  nie wymagał nowego merge. Przed publikacją odczytano komunikację PR146,
+  bez nowych wiadomości po6390501855; pin O2 nadal be6c423.
+- Wyniki dokładnego źródła/artefaktów są powyżej oraz w opisie etapu.
+  Nie utworzono małego PR: pełna integracja E9 i portów O2 nadal otwarta.
+  Ten receipt utrwala identyfikację dostawy dla O2/O3; nie zmienia źródeł,
+  nie jest nową kwalifikacją i nie wymaga ponawiania zamkniętych testów.
+
+### O1-130 — rozpoczęcie pełnego opt-in sync energii, lokalny WIP
+
+- O2/O3 otrzymali potwierdzenie źródła50eb470 i receipte16f317 przez
+  autoryzowany most PR146, komentarz6391359811. Zachowano7rezerwacji;
+  O2 oddaje finalny port/runtime na be6/4f+be21 bez przejmowania Room25.
+- Na tej samej gałęzi powstała lokalna poprawka UnicodeText z iteracyjną
+  kontrolą oraz EnergySnapshotProtocol. Osobne typy opt-in zapobiegają
+  podaniu strony7domen staremu parserowi. Zachowany cały wire, limit,
+  tożsamości i tokeny; bez zapisu checkpointu lub ACK i bez automatycznego
+  nagłówka. Nowy pojedynczy przypadek4096/4097i duplikatu ID przygotowany.
+- Ten dalszy WIP nie jest kompilowany/testowany ani publikowany; sprawdzimy
+  większy ukończony przepływ zgodnie z decyzją właściciela. Wyników APK50eb470
+  nie przypisujemy lokalnej poprawce. Trwała zmiana scope/full snapshot,
+  7domen i starych prób, incremental/push oraz wspólny runtime nadal otwarte.
+  Nowej migracji po25jeszcze nie wprowadzono; nie edytowano7plików O2.
 
 ### O3-101 — Procedura operatora Room23 z trwałą izolacją runtime
 
@@ -8196,3 +9096,386 @@ Archiwalne wiersze sprzed aktualizacji PR138; bieżący stan znajduje się na po
   integracja i 4 skonfigurowane APK/android_acceptance O1 → E4/PG/PULL/pakiet D
   i kopia O3. Równoległe narzędzie czterech APK i O3-103 ma osobny checkout;
   jego pliki i rezerwacje O1/O2 są zachowane, `deployment_authorized=false`.
+
+### O2-063 — Odebrany runtime synchronizacji, aktualizacje backendu i analiza OIDC
+
+- Data / autor: 25.10.2026, **agent 2 / O2**. Odbiorcy: O1, O3.
+  Status: **WYMAGA ODPOWIEDZI** w sprawie integracji Androida.
+- **Gotowy komponent O2:** gałąź `codex/android-o2-polityka-runtime`,
+  [source `325446b0b762f1088822d296455d522fbe8fe10d`](https://github.com/Roseru/aplikacja-mobilna/commit/325446b0b762f1088822d296455d522fbe8fe10d),
+  tree `9762f666d898a3cef9d5a3ead64868b688d758c0`,
+  Android tree `1b61aa5a7f54da7b3bf3ae28034bce705514f285`.
+  Baza O1: `4f6bb841818daa5b0823132a2120106dd97c3c61`;
+  pojedynczy kontrakt admission `be21a9ac2794faf34b1cda548bbedbe01f50a1a0`
+  przyjęto jako `3700ee02bc9ea2a5ca54764f85c14acdf20ef4c7`.
+  [Aktualny opis komponentu i DI](../android/SYNCHRONIZACJA_W_TLE.md)
+  rozdziela wynik końcowy od historycznego WIP `be6c4230`.
+- `SessionController` ma rzeczywisty lokalny `SavedSyncEvidenceDrainer` dla
+  utrwalonych ACK/raw: kontrola owner/lease/wireContext, transakcja i zero
+  HTTP/refresh także przy Blocked/Unavailable, wygasłym tokenie lub przyszłym
+  Retry-After. APPLIED nie oznacza ukończenia PULL ani całego cyklu.
+  Zachowano frozen request, hash, operationId i nowsze zmiany lokalne.
+- Jedyny gate publikuje instancję/generację wydania. Ticket, execute i
+  reschedule pozostają związane z pierwotnym permit także przy
+  Allowed(7) → Blocked → Allowed(7) i koalescencji StateFlow. Anulowanie
+  obejmuje tylko przechwycony stary łańcuch oraz jego legacy name.
+  `SyncRuntimeAdmission` obejmuje cały mutujący runtime, obserwatorów i
+  faktyczne operacje schedulera. Paused nie inicjalizuje nawet gościa
+  w pustej bazie; zmiana admission uruchamia ponowną ocenę.
+- Dodatkowy P2 wykazano trzema czerwonymi próbami: zmiana owner/context lub
+  Paused przy niezmienionym Allowed nie przerywała blokującego I/O.
+  Minimalna naprawa to wewnętrzny `NetworkOperationCancellation` powiązany
+  z Job rzeczywistego executora oraz close/dispose konkretnego połączenia
+  w `PolicyConnectionFactory`. Pierwotny requireCurrent, disconnect,
+  finally i polityka TLS pozostają zachowane. To nie jest kwalifikacja
+  propagacji kontekstu na obce wątki AppAuth ani rzeczywistego TLS.
+- **Dowody i odbiór:** końcowe 54 unikalne testy urządzeniowe offline,
+  0 failure/error/skip; osobne 3+3 JVM PASS; kompilacja Debug/Validation
+  i `lintValidation` PASS, 0 Error/Fatal, 8 Warning i 1 Information.
+  Końcowy lint użył identycznego zachowanego XML (`lintReportValidation
+  UP-TO-DATE`); nie opisujemy go jako nowo wygenerowanego raportu.
+  Niezależna recenzja: **9/10, bez materialnych otwartych P1/P2**.
+  Root ponownie przeliczył surowe XML i potwierdził zgodność 17 hashy
+  kodu między kopią review a opublikowanym commitem oraz remote SHA.
+  Zachowano historyczne FAIL, poprawkę fixture, osobne próby i przywrócenie
+  celowych mutantów; nie sumowano ich jako nowego pełnego PASS.
+- **Przekazanie do O1:** zwracamy rezerwację delegowanych plików wraz
+  z finalnym pinem. O1 włącza komponent zwykłym merge, zachowując swoje
+  dalsze zmiany sesji i migracje. Do `SyncCoordinator` podaje jedną
+  `app.networkPolicy` oraz `savedEvidence=sessions`, a do `SyncWorkRuntime`
+  tę samą pojedynczą instancję admission co driver (`attach(1)`).
+  [Minimalne rozszerzenie lifecycle zgłoszono przed implementacją](https://github.com/Roseru/aplikacja-mobilna/pull/146#issuecomment-6396976118).
+  [Przygotowanie na własnej odseparowanej gałęzi wynikało z ludzkiego zlecenia](https://github.com/Roseru/aplikacja-mobilna/pull/146#issuecomment-6397190479);
+  **nie jest to ACK O1 ani scalenie jego integracji**. Prosimy O1 o przyjęcie
+  tego punktu lub wskazanie konkretnej kolizji przed włączeniem.
+- Root dołączył aktualny main `fa9fbedd4a58b80f8582508013b45ae5827bd8cb`
+  do własnej gałęzi przekazania `codex/android-o2-runtime-odbior`, zwykłym
+  merge zachowując wpisy obu stron. Cały Android tree pozostał identyczny
+  z kwalifikowanym komponentem; pozostały kod odpowiada main. Ten dziennik
+  podróżuje razem z funkcjonalnym rezultatem, bez osobnego checkpoint-PR.
+  Runtime nadal wymaga właściwego PR/integracji O1, aktualnego head/base
+  FULL CI, osobnego main CI oraz kwalifikacji skonfigurowanych APK.
+- **Backend:** odebrano i scalono istniejące
+  [PR167](https://github.com/Roseru/aplikacja-mobilna/pull/167) i
+  [PR168](https://github.com/Roseru/aplikacja-mobilna/pull/168).
+  Wersje: FastAPI 0.157.0, pydantic-settings 2.16.1, SQLAlchemy 2.0.55
+  oraz Pillow 13.0.0. OpenAPI i rzeczywiste przypadki walidacji/uploadu
+  oraz pipeline obrazów zachowały kontrakt. Niezależny odbiór: 9,3/10,
+  bez materialnych P1/P2. Nie zmieniono API ani migracji.
+  Końcowe [PR167 CI40186786847](https://github.com/Roseru/aplikacja-mobilna/actions/runs/40186786847),
+  [main167 CI40188716888](https://github.com/Roseru/aplikacja-mobilna/actions/runs/40188716888),
+  [PR168 CI40188868373](https://github.com/Roseru/aplikacja-mobilna/actions/runs/40188868373)
+  i [main168 CI40190535857](https://github.com/Roseru/aplikacja-mobilna/actions/runs/40190535857)
+  mają po 8 rzeczywistych SUCCESS w FULL. Root odczytał wszystkie logi,
+  dokładne zakresy head/base i potwierdził zgodność testowanych drzew
+  z rzeczywistymi merge. Main po obu aktualizacjach: `fa9fbedd`.
+  Końcowy main zaliczył 1742 unit, 641 infra / 5 istniejących pominięć
+  platformowych, 1417 PG, 28 PKCE, 417 JVM Debug / 457 JVM Validation
+  oraz 461 API35 bez failure/skip; rzeczywisty fence trwał 421 s.
+  Lokalna wcześniejsza seria miała 486 PASS i 66 błędów setup WinError5;
+  dokładnie te 66 przypadków zaliczono w odseparowanym temp. To dwa
+  przebiegi, a nie pojedyncze 552/552. Zdrowego demo nie zmieniano.
+- **OIDC / O3-104:** na source `f60d3c1b` potwierdzono 2/2 przypadki
+  istniejącego reproduktora i 52/52 testy verifiera. Dwa odczyty czasu
+  producenta mogą dać lifetime 300/301 s; ścisły limit pozostaje 300 s,
+  a skew go nie zwiększa. Historyczna przyczyna bootstrap 401 pozostaje
+  nieudowodniona. [O2 przekazał granice ewentualnego pomiaru](https://github.com/Roseru/aplikacja-mobilna/pull/146#issuecomment-6396867579):
+  użyć rzeczywistej ścieżki verifiera, rozróżnić etap błędu, a lifetime
+  mierzyć dopiero po weryfikacji podpisu/issuer/audience; nie kopiować
+  reguł auth, utrwalać JWT ani maskować błędu retry. Nie wdrożono nowej
+  diagnostyki lub mitigacji i nie zmieniono realm, limitów ani usług.
+- **Dalej:** O1 integruje runtime/DI, domyka swój driver i dostarcza
+  cztery zgodne APK z acceptance. O3 kwalifikuje zestaw i prowadzi
+  E4/PG/PULL, pakiet oraz kopię. Odbiór komponentu O2 i zależności
+  nie zamyka Room23/live E4, CI48 release ani pełnego v1. Brak narzędzi
+  Agent2 livechatu pozostaje jawny; użyto dotychczasowego mostu PR146,
+  bez wysyłania jako człowiek. Potwierdzenie odbiorców: brak.
+
+### O2-064 — Certifi: odebrany zestaw CA i scalenie istniejącego PR174
+
+- Data / autor: 25.10.2026, **agent 2 / O2**. Odbiorcy: O1, O3.
+  Status: **DO ODCZYTU**. Kolejny mały odbiór zależności po O2-063,
+  wykonany w istniejącym czacie backendu i z jednym niezależnym recenzentem.
+- [PR174](https://github.com/Roseru/aplikacja-mobilna/pull/174): certifi
+  2026.7.22 → 2026.10.19, wyłącznie `backend/uv.lock` (3 dodania/3 usunięcia).
+  Source `d83a992b3505e8161edde6fe8159c07f01472792`,
+  base `fa9fbedd4a58b80f8582508013b45ae5827bd8cb`,
+  [merge `00dae4aa1e89fcc9de8ac24b2391daa1f6d06707`](https://github.com/Roseru/aplikacja-mobilna/commit/00dae4aa1e89fcc9de8ac24b2391daa1f6d06707).
+  Rzeczywisty tree `b1d4c99fe6289bf7a69829d5863997bf621fb66d` jest identyczny
+  z testowanym merge `ad63890e3668d5ac499aa35de708ac606d72a03b`.
+- Oba wheels odpowiadają hashom locka, a pliki instalacji bajtom wheels.
+  Spośród 44 dystrybucji zmienia się tylko certifi; kod produktu i niezależny
+  lock `tools/contracts` pozostają bez zmian. Nie było potrzeby naprawy
+  produktu ani nowego commita/PR do samej aktualizacji.
+- Zestaw CA: **121 → 120**, bez dodatków i duplikatów; 120 wspólnych DER
+  jest identycznych. Usunięto jedynie **emSign ECC Root CA - G3**,
+  SHA256 DER `86a1ecba089c4a8d3bbe2734c612ba341d813e043cf9e8a862cd5c57a36bbe6b`.
+  To oczekiwany skutek [końcowej zmiany upstream](https://github.com/certifi/python-certifi/pull/440),
+  nie wygaśnięcie certyfikatu. Łańcuch zależny wyłącznie od tego korzenia
+  bez alternatywnej ścieżki przestaje być zaufany przez nowy domyślny bundle.
+- Te same **41 testów PASS osobno dla baseline i candidate** oraz po
+  **11 odrębnych prób TLS** na wersję. Rzeczywiste konstruktory i transporty,
+  jawny private CA, odmowa obcego CA/hostname, env/proxy i magazyny zaufania;
+  bez zastępowania handshake przez MockTransport lub osłabienia verify.
+  JWKS/private CA nie jest dowodem pozytywnego publicznego TLS Gemini/admina.
+  Próba Gemini zmieniała jedynie routing na syntetyczny HTTPS loopback;
+  ograniczenie jest jawne. `SyncHTTP` ma istniejące `trust_env=True`,
+  odróżnione od klientów jawnie ignorujących ustawienia środowiska.
+- **Niezależny odbiór 9,3/10, brak materialnych P1/P2 i koniecznych poprawek.**
+  Recenzent sprawdził rzeczywiste bundle, instalacje, raw testów i manifest
+  36/36. Wcześniejsze dowody deps 67/67 oraz OIDC 12/12 pozostały niezmienione.
+  Prywatne raporty i syntetyczne środowiska nie są materiałem publikacyjnym.
+- [FULL PR CI40190719569](https://github.com/Roseru/aplikacja-mobilna/actions/runs/40190719569)
+  ma 8 rzeczywistych SUCCESS dla dokładnego head/base; root odczytał wszystkie
+  logi i plan/gate. Nie powtarzano go bez zmiany źródeł lub bazy.
+  [Osobne push/main CI40194823995](https://github.com/Roseru/aplikacja-mobilna/actions/runs/40194823995)
+  dla `fa9fbedd → 00dae4aa`: **8 rzeczywistych SUCCESS w FULL**.
+  Root odczytał wszystkie logi i plan/gate także tego przebiegu: 1742 unit,
+  641 infra / 5 istniejących pominięć platformowych, 1417 PG, 28 PKCE,
+  417/457 JVM, 461 API35 bez failure/skip i rzeczywisty fence 421 s.
+- Wynik dołączamy do istniejącej funkcjonalnej gałęzi przekazania
+  `codex/android-o2-runtime-odbior`, bez checkpoint-PR. Zwykły merge main
+  zmienił tylko backendowy lock; cały Android tree pozostał
+  `1b61aa5a7f54da7b3bf3ae28034bce705514f285`, jak w odebranym komponencie
+  `325446b0`. Własność integracji, DI i czterech APK nadal pozostaje przy O1.
+- O3 uwzględnia nowy bundle w kolejnym uzgodnionym obrazie; używanego demo,
+  CA systemowego, usług i kwalifikowanego pakietu CI48 nie podmieniano.
+  Nie wykonywano live Google/publicznego JWKS/admina ani nowego odbioru
+  Androida. To odbiór zależności i źródeł, nie dostępności każdego endpointu
+  lub całego wydania. Potwierdzenie odbiorców: brak.
+
+### O1-131 — przyjęcie finalnego runtime O2 i wspólna integracja Room23
+
+- 25.10.2026, agent1/O1, do O2/O3, DO ODCZYTU. Przyjęto source
+  325446b0b762f1088822d296455d522fbe8fe10d i zwrot rezerwacji,
+  z minimalnym NetworkOperationCancellation/lifecycle konkretnego Factory.
+  ACK O1 6398434885 potwierdza zakres, nie przypisuje mu nowego livePASS.
+- Zwykły merge11fac87 do czystego ccb614e na codex/android-driver-room23.
+  Kod sesji scalił się automatycznie, zachowując community O1 i drainer O2.
+  Jedyny konflikt dziennika rozwiązano zachowując wszystkie nagłówki oraz
+  oba dopiski; własny aktualny wiersz O1 i nowsze O2/O3 pozostają.
+- Application podaje tę samą networkPolicy, savedEvidence=sessions i tę
+  samą syncRuntimeAdmission co driver. attach(1) pozostaje w runtime O2.
+  Room23 i stare migracje zachowane; Room24/25 oraz dalszy lokalny WIP
+  E9 z e16f317 pozostają osobno. Nie przejęto nowej historii innego agenta.
+- Odczytano dokładny O3P2 6392899041. Poprawiono decyzję paused na trwały
+  terminal z observed(), bez późniejszego odczytu czasu. Nowa regresja
+  wymusza expires-1→expires między obserwacją a decyzją, następnie trwałe
+  zakończenie/admitted work/rollback/rekonstrukcję bez czekania na timer.
+  Wynik jeszcze PENDING; nie przypisujemy staremu526 pełnego zamknięcia P2.
+- Cały etap napisany przed kontrolami: robocze0.8.35/code46/validation1046.
+  Planowana kompilacja obu wariantów/testów i7celowanych native, bez
+  powtarzania54testów odebranego komponentu O2. Następnie4zgodne APK,
+  aktualne head/base/main CI i android_acceptance; nie ma jeszcze ich PASS.
+- W6398540989 poproszono O3 o potwierdzenie aktualnego publicznego
+  API/issuer/CA. Nie zakładamy gotowości starego adresu Room20, nie otwieramy
+  starych portów i nie zmieniamy zdrowego demo. Po dostawie O3 prowadzi
+  kwalifikację, liveE4/PG i osobny PULL, pakiet i kopię.
+
+### O1-132 — przyjęty przegląd E9 i wydzielona poprawka ETag dla O2
+
+- Odczytano6398655282 / raport98c5dfb: niezależny przegląd źródeł E9
+  e16f317/50eb470 z backend00dae4a,9,3/10, bez nowego materialnego P1/P2
+  w prześledzonym REST. P3 braku kontroli ETag pozostaje do poprawy.
+  To nie uruchomienie Kotlin/Room/transportu, realnego E9 lub kwalifikacja
+  zachowanego lokalnego szkicu opt-in. Nie przenosimy tych dowodów na Room23.
+- O1 przekazał O2 konkretną wąską implementację w6398843748, z bazy e16f317,
+  jako dalsze wsparcie Androida zlecone przez właściciela. Zarezerwowano
+  EnergyGateway.kt, EnergyRepository.kt, EnergyTransportTest.kt i nowy
+  EnergyConsentReceiptTest.kt. Ścisłe quoted ETag, revision/If-Match,
+  brak/wrong/weak header po200 zachowuje unknown oraz pierwotny UUID/body;
+  poprawny header może zakończyć dopiero tę samą operację. ACK O2 oczekiwane.
+- O1 pozostawia te3istniejące pliki bez zmian, prowadzi osobno parser/Unicode
+  i pełny opt-in, a obecnie domyka Room23/DI/P2/4APK. O2 nie edytuje fixture,
+  Room, root/session/sync, UI, wersji lub plików parsera O1. Wynik w jednym
+  źródle/odbiorze, bez małego PR i powtarzania zamkniętych dużych zestawów.
+  Końcowy merge należy do O1. AGENTS w obu własnych checkoutach utrwala podział.
+
+#### O1-131 — odbiór komponentów integracji i poprawki O3P2
+
+- Build całości PASS1051,234s: standard/validation Kotlin, źródła JVM,
+  opt-in testAPK i lint0Error/0Fatal/8Warning/1Information. LogSHA256
+  a57cc4deabe8052f185e18208fbe633884ede219892a914498749842e97a352e.
+  Bez nowych wykonań6JVM/54native O2. E0 PASS11schemas/98valid/35invalid/
+  18scenarios/16Decimal/5day/72normalizations/902links.
+- Pierwsza celowana seria:6PASS/1FAIL/0SKIP,29,170s instrumentacji,
+  54,141s receipt. Nowy crossing expiry, quiescence, zapisane ordinary/recovery
+  raw/ACK i paused runtime/worker/obserwator/finally PASS. Siódmy przypadek
+  zatrzymał się w fixture beginLogin, przed body replay. LogSHA256
+  967e1f4a65534af84ca967e7601a03000d27176011fe9a39c9b91912562630f8.
+- Przyczyna: własny runtimecheck nie jest wspieranym callback applicationId.
+  Tylko w tym syntetycznym PushHarness wskazano logiczny ID validation,
+  nadal przechowując Room/vault w osobnym pakiecie. AuthReturn bez zmian.
+  Zmienił się tylko SessionSecurityTest; test-only build325,454s PASS,
+  log0d3de5f35ec00c70997c253532e3610d4806b9713663ca36fb6f48c6de5255fb.
+- Tylko niezaliczony manualConsumption/hold/cancel/replay1PASS,
+  10,886s instrumentacji/35,640s receipt. LogSHA256
+  7ab796dd1ef08d534ef725fc45e49720627352ec93d08feebafb25030ac3b598.
+  To7unikalnych przypadków w2zakresach, nie jeden przebieg7/7. Dawne FAIL
+  zachowane; sześć wcześniejszych PASS niepowtarzane. Lint/oba warianty
+  dotyczą niezmienionego kodu produkcyjnego; po fixture tylko testAPK i1native.
+- App22251400B/SHA4b17bcfc34823035ce82fed9eec1d69f073190c762de7e330da70092fcda9a20,
+  finalny test5246984B/SHA96d91c4f26e79be3f7ef0101a04451a198b1ae2f8fed2beef6c501b3fd4a16d5.
+  AVD5564/nowy runtimecheck1046/.35.validation, offline przed/po,
+  oryginalne APK/test/3DB identyczne. AppAPK identyczny po naprawie fixture.
+  Granica API/sesji syntetyczna; bez realnego Keycloak/TLS/liveE4.
+- Cały etap kodu gotowy do commita merge. Cztery skonfigurowane artefakty,
+  aktualne head/base/main FULLCI i android_acceptance pozostają osobnymi
+  bramkami, aktualny API/issuer/CA wciąż do potwierdzenia O3 z6398540989.
+
+#### O1-131 — publikacja dużej integracji potwierdzona
+
+- Source merge eacc8f192ed9c9cd5c8e45e38f44385b18b6774d,
+  rodzice ccb614ed6ffeff314a17e8a4d65cac012fb1624b oraz
+  11fac87ab9c3e01b793671ff5fdf1f0599854f29. Branch codex/android-driver-room23,
+  push i ls-remote zgodne. Android tree0c83ee386de48335a49ac3061523befcfe1de073,
+  app tree5a63736906747d220d3f29394192283ac08e5eec. Zachowana zwykła historia.
+- Przed publikacją odczytano main00dae4a i komunikację do6398843748.
+  No new main, brak odpowiedzi konfiguracji O3. Nowy carrier98c5dfb ma tylko
+  przegląd E9/dziennik i nie zmienia przyjętego Androida325446b;
+  odczytano jego wynik, nie podmieniano kwalifikowanego pina11fac87.
+- Wyniki i ograniczenia są powyżej. Nie ma jeszcze PR/remoteCI/merge main
+  ani czterech skonfigurowanych APK. Receipt utrwala źródło dla odbioru O3,
+  bez zmiany Android tree i bez ponawiania wykonanych kontroli.
+
+### O1-133 — lokalna kontynuacja pełnego scope E9, rezerwacja Room26
+
+- 25.10.2026, O1 do O2/O3. Trwa lokalny zwykły merge2319357 runtime
+  z Room23 do codex/android-korekty-energii/e291bc4;4konflikty rozwiązane,
+  merge niezatwierdzony/niewypchnięty. Zachowano obie strony historii
+  oraz jedną networkPolicy/admission. Kwalifikowany Room23/2319357
+  pozostaje czysty i osobny do dostawy4APK, konfiguracja6398540989 oczekiwana.
+- O1 rezerwuje25→26: niezmienny protocolScope na3tabelach run/prób,
+  trwałe fazy draining/snapshot/active i canonical_energy_versions.
+  Domyślne legacy zachowuje istniejące wiersze/body/hash/UUID/checkpointy.
+  Oddzielny parser pełnego archiwum7domen utrzymuje dotychczasową walidację
+  projekcji6domen i odseparowuje niezmienne E. Metadane nie zmieniają wire.
+- Lokalnie0.8.36/code47/validation1047/Room26; brak build/test/eksport26,
+  podłączenia scope do controller/HTTP/projekcji i pełnego E9. Nie przypisujemy
+  wcześniejszych wyników Room23/25 do tego WIP; driver26 nadal zamknięty.
+  Najpierw cała większa funkcjonalność, potem właściwy ograniczony odbiór.
+- Wąska rezerwacja ETag O2 z6398843748 zachowana; O1 nie edytuje trzech
+  zarezerwowanych plików. Main00dae4a niezmieniony, brak nowych wiadomości
+  po6399203852. Dalszy krok O1: podłączyć pełny snapshot, atomową akceptację
+  osi i zakresy starych recovery/retry, następnie odczyt przyrostowy.
+
+### O1-134 — złożenie pełnego/przyrostowego E9 i odbiór pina ETag O2
+
+- 25.10.2026, O1 do O2/O3. Na lokalnym Room26 podłączono controller,
+  pełny staging i atomową projekcję7domen, scope frozen ordinary/recovery,
+  przyrostowy change log z porządkiem rewizji, zachowanie lokalnych edycji,
+  trwały fallback pełnego odczytu oraz historię offline. Migracja26 obejmuje
+  także stałe źródło/cursor/mode runu; dotychczasowe wiersze są legacy.
+- Dopiero po złożeniu przepływu uruchomiono końcowe kontrole. Pierwszy
+  build FAIL192,265s przed testami: dwa błędy typów, poprawione.
+  LogSHA20beb9e9175486a1a7c228cb45fbcc20f2e5faea8cc109f489b11beb130ec17a.
+  Osobny build po poprawce trwa. Plan8JVM i6native ma ograniczony zakres,
+  bez powtarzania54runtime i całego REST; brak nowego PASS do tej chwili.
+- Odczytano O2start6400287894 i final6400515465. Pobrano4cc2d4d,
+  potwierdzono jedynego rodzicae16f317 i4dozwolone pliki. Odczytano też
+  O2-066/cb018fa. ACK O1:6401008024; rezerwacja zwrócona. Wyniki13native
+  i9,5/10 należą do komponentu O2. Zwykły merge po zakończeniu obecnego
+  merge/odbioru O1, bez podmiany źródeł w trwającym buildzie.
+- Room23/2319357 nadal czysty/osobny. O3config6398540989 oczekiwana;
+  brak4APK, liveAPI/PKCE/Gemini, zdalnego CI, nowego PR lub merge main.
+  Sam kod nowego scope nie zamyka pełnego E9 ani odbioru wydania.
+
+### O1-135 — pełna i przyrostowa synchronizacja E, lokalny odbiór Room26
+
+- 25.10.2026, O1 do O2/O3. Gałąź codex/android-korekty-energii; domknięcie
+  dużego lokalnego etapu nad e291bc4 i normalnym merge Room23/2319357.
+  Nowa kopia siedmiu domen aktywuje się atomowo wraz z niezmienną osią E;
+  późniejsze odczyty przyrostowe zachowują bazowy checkpoint, kolejkę,
+  lokalne edycje i informację o nieznanej rewizji usunięcia. Stare próby
+  zachowują swój zakres, UUID, body i hash. Historia E jest dostępna offline.
+- Migracja25→26 i eksport26/54 encje. Identity17cc6b884e81274ad78ed315d3c69d06,
+  SHA b9ff075b6d382b9b048ac93ce0cab449a000ac3bd0e21b7a5e8d1a4f265b7ca6.
+  Dotychczasowe kolumny i rowid w52tabelach zachowane w odbiorze migracji.
+- Po złożeniu kodu poprawiono dwa błędy kompilacji oraz brak walidacji
+  iana-time-zone. Osiem unikalnych JVM ma wyniki pozytywne: sześć odcisku
+  z pierwszego uruchomienia i dwa poprawione parsery z kolejnego.
+  Kompilacja obu wariantów i APK testowego PASS, lint0Error/0Fatal/8Warning/2Info.
+  Ostatni pełny build474,875s, logSHA83ba91516385339b043907338c5c0a637d72d99351318a0b8ab032831b6dbd84.
+- Native: pierwsze4PASS/2FAIL/0SKIP. Dwie awarie przygotowania testów
+  poprawiono wyłącznie w testach; ponowiono tylko te dwa przypadki:
+  2PASS/0FAIL/0SKIP,6,406s, logSHAe6818ba532d4d9acce0910740c0722e2743d03a074840b817fe81a87da6e4fa1.
+  Łącznie sześć unikalnych native ma wynik pozytywny w dwóch zakresach;
+  to nie jedno uruchomienie6/6. APK aplikacji było identyczne, oryginalny
+  APK/test APK/trzy pliki dziennika i brak sieci zachowane przed/po.
+- Granice API, sesji i HTTPSConnection były syntetyczne. Brak nowego live
+  TLS/PKCE/Gemini, zdalnego CI, PR lub merge main. Odczytano GitHub po
+  6401008024: brak nowych wiadomości, tylko PR158 i82 dotyczące zależności.
+  Następnie O1 włączy oddany ETag4cc2d4d, wykona mały odbiór złożenia,
+  dołączy aktualny main i opublikuje duży etap. Room23/2319357 pozostaje
+  osobno; aktualny config O3/6398540989 i dostawa4APK nadal oczekują.
+
+### O1-136 — opublikowany etap Room26 i włączenie ETag do odbioru
+
+- 25.10.2026, O1 do O2/O3. Wypchnięto ec8564df634ef28d38b50b20947d2baf7513c716
+  na codex/android-korekty-energii. Aktualny main00dae4a jest już przodkiem
+  tego commita; checkout po publikacji był czysty. Nowego PR/CI/merge main
+  jeszcze nie ma. Wyniki i granice odbioru są opisane w O1-135.
+- Potwierdzenie zespołowe:6402362962, w uzgodnionym zastępczym wątku PR146.
+  Zachowano autorów i normalne połączenie runtime. Następnie zwykły merge
+  4cc2d4d O2 przeszedł bez konfliktów, dokładnie4pliki/132dodatki/5usunięć.
+  Jest w trakcie odbioru, bez commita ani pusha samego złożenia.
+- Najbliższy krok: oba warianty/kompilacja/lint po zmianie produkcyjnego
+  nagłówka i tylko dwa przypadki trwałej zgody na Room26. Osiem wyników JVM
+  i sześć E9 native zostają zachowane dla niezmienionych zakresów; wyniki
+  komponentu13native O2 są osobne. Brak live API/PKCE/Gemini i4APK O3.
+
+### O1-137 — ETag przyjęty w połączonym kliencie, duży etap gotowy do PR
+
+- 25.10.2026, O1 do O2/O3. codex/android-korekty-energii łączy opublikowany
+  ec8564d z O2/4cc2d4d zwykłym merge. Zakres oddanych czterech plików
+  zachowany, autor i historia O2 pozostają. Aktualny main00dae4a jest
+  przodkiem; przed publikacją brak nowych wiadomości po6402362962.
+- Oba warianty, APK aplikacji i testów kompilują się; lint0Error/0Fatal,
+  8Warning/2Info. Build466,938s, logSHA
+  6c1d04b92db79c20f9138176ef989da3fa71f00816fe4cf71862996222f177c4.
+- W nowym energyconsentsynccheck wykonano tylko brakujący ETag/trwałe
+  jawne ponowienie oraz poprawny ETag/trwały sukces:2PASS/0FAIL/0SKIP,
+  5,594s, logSHAcd61be266b23b7061e1f93bfb000b324aeba7cab0040ac7371b8e94a0ccb6093.
+  Oryginalny APK/test APK/trzy pliki dziennika i brak sieci zachowane.
+- Nie ponawiano ośmiu niezmienionych JVM, sześciu E9 native, 13 przypadków
+  komponentu O2 ani54runtime. Ich wyniki zachowują własne wcześniejsze
+  zakresy i ograniczenia. Granice API/session są syntetyczne; bez nowego
+  live TLS/PKCE/Gemini. Duży PR i jego zdalny CI są następnym krokiem.
+  Room23/2319357 pozostaje czysty do czterech APK po konfiguracji O3.
+
+### O1-138 — PR175, wynik pierwszego CI i poprawki odbioru
+
+- 25.10.2026, O1 do O2/O3. Opublikowano6cab8b69a618a001b3686efc8741d40d712c3593
+  i [duży PR175](https://github.com/Roseru/aplikacja-mobilna/pull/175)
+  z codex/android-korekty-energii do main. PR podpięty do zadania.
+  ACK dla O2 i wejścia oczekiwane od O3 przekazano w6402704869.
+- Pierwszy ProjectCI40229085563, head6cab8b6 i checkout merge8b882960c1f7d6fbc6b0635328fe449e42273845:
+  contracts/quality/keycloak-pkce/postgres/local-integration PASS.
+  android-build:434PASS/1FAIL z435JVM. Starszy fixture GET snapshotu
+  pomijał wymagane no-store; poprawiono odpowiedź i powiązany test limitu,
+  który teraz sprawdza rzeczywisty odczyt body. Lokalnie tylko te dwa
+  przypadki:2PASS/0FAIL/0SKIP,88,812s; kod transportu bez zmian.
+  LogSHAd08473bbbe838b83e2102b9871f6d9256a54a7383693da87f03f218b814f0b69.
+- android-device:542PASS/1FAIL/0SKIP z543. Jedyny błąd to oczekiwanie
+  na podgląd po odtworzeniu Activity w MealPhotoScreenTest, linia75.
+  Raport ZIP SHA1e6a1ac751972996e33445b4832edea4d17f5001dc13f34b48cbead8bc32ba40.
+  Wyszukiwanie w całej liście zmieniono na oczekiwanie na zdekodowany
+  obraz i przewinięcie dokładnego elementu; zachowano limit15s i wszystkie
+  asercje trwałości wyboru/usunięcia oraz dziennika. Odbiór tylko tego
+  przypadku:1PASS/0FAIL/0SKIP,11s, logSHA
+  c36b1a0693eb5d734d6379dd5c595f45e5aaa34cc831a16036ab7362a94a5bb7.
+  Osobny photorecreatecheck; nie ponawiano pozostałych542 lokalnie.
+  APK aplikacji/testów skompilowano bez nowych JVM/lint,364,953s,
+  logSHA543d2e63eead318a81c39511fd4e1d1167d9ef2790ed45592fdf132169305536.
+- Otwarta widoczna0.8.36.validation w osobnym energyconsentsynccheck,
+  emulatorO1Session35/5564. Bez API, tylko manualne funkcje offline.
+  Oryginalny APK/test APK/trzy pliki dziennika pozostały identyczne także
+  po przełączeniu własnego emulatora na okno; komputer nie był restartowany.
+  W podglądzie znaleziono brak rozróżnienia pustego i wczytywanego katalogu.
+  Dodano lokalny stan zakończonego odczytu; sama kompilacja debug PASS,
+  bez nowych testów lub zmian Room/synchronizacji.
+- Globalny CI i ci-required pozostają FAIL; nie ma merge main ani pełnego
+  live E9. Obie poprawki odbioru i stan pustego katalogu są gotowe do
+  publikacji w tym samym dużym PR. Przed pushem main00dae4a nadal jest
+  przodkiem; brak nowych wiadomości po6402704869. Room23/2319357 pozostaje czysty;
+  świeża konfiguracja/okno O3 i cztery APK nadal są osobnym wejściem.

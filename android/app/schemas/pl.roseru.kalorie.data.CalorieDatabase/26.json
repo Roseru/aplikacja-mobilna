@@ -1,0 +1,4765 @@
+{
+  "formatVersion": 1,
+  "database": {
+    "version": 26,
+    "identityHash": "17cc6b884e81274ad78ed315d3c69d06",
+    "entities": [
+      {
+        "tableName": "products",
+        "createSql": "CREATE TABLE IF NOT EXISTS `${TABLE_NAME}` (`id` TEXT NOT NULL, `name` TEXT NOT NULL, `searchName` TEXT NOT NULL, `kcal` REAL NOT NULL, `protein` REAL, `fat` REAL, `carbs` REAL, `defaultGrams` REAL NOT NULL, `category` TEXT NOT NULL, `source` TEXT NOT NULL, `catalogVersion` INTEGER NOT NULL, `ownerScope` TEXT, `catalogJson` TEXT, `wirePayload` TEXT, PRIMARY KEY(`id`))",
+        "fields": [
+          {
+            "fieldPath": "id",
+            "columnName": "id",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "name",
+            "columnName": "name",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "searchName",
+            "columnName": "searchName",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "kcal",
+            "columnName": "kcal",
+            "affinity": "REAL",
+            "notNull": true
+          },
+          {
+            "fieldPath": "protein",
+            "columnName": "protein",
+            "affinity": "REAL"
+          },
+          {
+            "fieldPath": "fat",
+            "columnName": "fat",
+            "affinity": "REAL"
+          },
+          {
+            "fieldPath": "carbs",
+            "columnName": "carbs",
+            "affinity": "REAL"
+          },
+          {
+            "fieldPath": "defaultGrams",
+            "columnName": "defaultGrams",
+            "affinity": "REAL",
+            "notNull": true
+          },
+          {
+            "fieldPath": "category",
+            "columnName": "category",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "source",
+            "columnName": "source",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "catalogVersion",
+            "columnName": "catalogVersion",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "ownerScope",
+            "columnName": "ownerScope",
+            "affinity": "TEXT"
+          },
+          {
+            "fieldPath": "catalogJson",
+            "columnName": "catalogJson",
+            "affinity": "TEXT"
+          },
+          {
+            "fieldPath": "wirePayload",
+            "columnName": "wirePayload",
+            "affinity": "TEXT"
+          }
+        ],
+        "primaryKey": {
+          "autoGenerate": false,
+          "columnNames": [
+            "id"
+          ]
+        }
+      },
+      {
+        "tableName": "meals",
+        "createSql": "CREATE TABLE IF NOT EXISTS `${TABLE_NAME}` (`id` TEXT NOT NULL, `ownerScope` TEXT NOT NULL, `localDate` TEXT NOT NULL, `occurredAt` TEXT NOT NULL, `zoneId` TEXT NOT NULL, `mealType` TEXT NOT NULL, `serverRevision` INTEGER NOT NULL, `localRevision` INTEGER NOT NULL, `deleted` INTEGER NOT NULL, `rationId` TEXT, `rationName` TEXT, `wirePayload` TEXT, `wireContext` TEXT, PRIMARY KEY(`id`))",
+        "fields": [
+          {
+            "fieldPath": "id",
+            "columnName": "id",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "ownerScope",
+            "columnName": "ownerScope",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "localDate",
+            "columnName": "localDate",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "occurredAt",
+            "columnName": "occurredAt",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "zoneId",
+            "columnName": "zoneId",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "mealType",
+            "columnName": "mealType",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "serverRevision",
+            "columnName": "serverRevision",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "localRevision",
+            "columnName": "localRevision",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "deleted",
+            "columnName": "deleted",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "rationId",
+            "columnName": "rationId",
+            "affinity": "TEXT"
+          },
+          {
+            "fieldPath": "rationName",
+            "columnName": "rationName",
+            "affinity": "TEXT"
+          },
+          {
+            "fieldPath": "wirePayload",
+            "columnName": "wirePayload",
+            "affinity": "TEXT"
+          },
+          {
+            "fieldPath": "wireContext",
+            "columnName": "wireContext",
+            "affinity": "TEXT"
+          }
+        ],
+        "primaryKey": {
+          "autoGenerate": false,
+          "columnNames": [
+            "id"
+          ]
+        },
+        "indices": [
+          {
+            "name": "index_meals_ownerScope_localDate_deleted",
+            "unique": false,
+            "columnNames": [
+              "ownerScope",
+              "localDate",
+              "deleted"
+            ],
+            "orders": [],
+            "createSql": "CREATE INDEX IF NOT EXISTS `index_meals_ownerScope_localDate_deleted` ON `${TABLE_NAME}` (`ownerScope`, `localDate`, `deleted`)"
+          }
+        ]
+      },
+      {
+        "tableName": "meal_items",
+        "createSql": "CREATE TABLE IF NOT EXISTS `${TABLE_NAME}` (`id` TEXT NOT NULL, `mealId` TEXT NOT NULL, `productId` TEXT, `productName` TEXT NOT NULL, `grams` REAL NOT NULL, `kcalPer100` REAL, `proteinPer100` REAL, `fatPer100` REAL, `carbsPer100` REAL, `rationComponentId` TEXT, `snapshotJson` TEXT, `rationComponentPosition` INTEGER, `wirePayload` TEXT, PRIMARY KEY(`id`), FOREIGN KEY(`mealId`) REFERENCES `meals`(`id`) ON UPDATE NO ACTION ON DELETE RESTRICT )",
+        "fields": [
+          {
+            "fieldPath": "id",
+            "columnName": "id",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "mealId",
+            "columnName": "mealId",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "productId",
+            "columnName": "productId",
+            "affinity": "TEXT"
+          },
+          {
+            "fieldPath": "productName",
+            "columnName": "productName",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "grams",
+            "columnName": "grams",
+            "affinity": "REAL",
+            "notNull": true
+          },
+          {
+            "fieldPath": "kcalPer100",
+            "columnName": "kcalPer100",
+            "affinity": "REAL"
+          },
+          {
+            "fieldPath": "proteinPer100",
+            "columnName": "proteinPer100",
+            "affinity": "REAL"
+          },
+          {
+            "fieldPath": "fatPer100",
+            "columnName": "fatPer100",
+            "affinity": "REAL"
+          },
+          {
+            "fieldPath": "carbsPer100",
+            "columnName": "carbsPer100",
+            "affinity": "REAL"
+          },
+          {
+            "fieldPath": "rationComponentId",
+            "columnName": "rationComponentId",
+            "affinity": "TEXT"
+          },
+          {
+            "fieldPath": "snapshotJson",
+            "columnName": "snapshotJson",
+            "affinity": "TEXT"
+          },
+          {
+            "fieldPath": "rationComponentPosition",
+            "columnName": "rationComponentPosition",
+            "affinity": "INTEGER"
+          },
+          {
+            "fieldPath": "wirePayload",
+            "columnName": "wirePayload",
+            "affinity": "TEXT"
+          }
+        ],
+        "primaryKey": {
+          "autoGenerate": false,
+          "columnNames": [
+            "id"
+          ]
+        },
+        "indices": [
+          {
+            "name": "index_meal_items_mealId",
+            "unique": false,
+            "columnNames": [
+              "mealId"
+            ],
+            "orders": [],
+            "createSql": "CREATE INDEX IF NOT EXISTS `index_meal_items_mealId` ON `${TABLE_NAME}` (`mealId`)"
+          }
+        ],
+        "foreignKeys": [
+          {
+            "table": "meals",
+            "onDelete": "RESTRICT",
+            "onUpdate": "NO ACTION",
+            "columns": [
+              "mealId"
+            ],
+            "referencedColumns": [
+              "id"
+            ]
+          }
+        ]
+      },
+      {
+        "tableName": "goals",
+        "createSql": "CREATE TABLE IF NOT EXISTS `${TABLE_NAME}` (`id` TEXT NOT NULL, `ownerScope` TEXT NOT NULL, `validFrom` TEXT NOT NULL, `kcal` REAL NOT NULL, `protein` REAL, `fat` REAL, `carbs` REAL, `localSequence` INTEGER NOT NULL DEFAULT 0, `decidedAt` TEXT, `zoneId` TEXT, `reason` TEXT NOT NULL DEFAULT 'legacy', `correctionOf` TEXT, `estimateJson` TEXT DEFAULT NULL, PRIMARY KEY(`id`), FOREIGN KEY(`ownerScope`, `correctionOf`) REFERENCES `goals`(`ownerScope`, `id`) ON UPDATE NO ACTION ON DELETE RESTRICT )",
+        "fields": [
+          {
+            "fieldPath": "id",
+            "columnName": "id",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "ownerScope",
+            "columnName": "ownerScope",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "validFrom",
+            "columnName": "validFrom",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "kcal",
+            "columnName": "kcal",
+            "affinity": "REAL",
+            "notNull": true
+          },
+          {
+            "fieldPath": "protein",
+            "columnName": "protein",
+            "affinity": "REAL"
+          },
+          {
+            "fieldPath": "fat",
+            "columnName": "fat",
+            "affinity": "REAL"
+          },
+          {
+            "fieldPath": "carbs",
+            "columnName": "carbs",
+            "affinity": "REAL"
+          },
+          {
+            "fieldPath": "localSequence",
+            "columnName": "localSequence",
+            "affinity": "INTEGER",
+            "notNull": true,
+            "defaultValue": "0"
+          },
+          {
+            "fieldPath": "decidedAt",
+            "columnName": "decidedAt",
+            "affinity": "TEXT"
+          },
+          {
+            "fieldPath": "zoneId",
+            "columnName": "zoneId",
+            "affinity": "TEXT"
+          },
+          {
+            "fieldPath": "reason",
+            "columnName": "reason",
+            "affinity": "TEXT",
+            "notNull": true,
+            "defaultValue": "'legacy'"
+          },
+          {
+            "fieldPath": "correctionOf",
+            "columnName": "correctionOf",
+            "affinity": "TEXT"
+          },
+          {
+            "fieldPath": "estimateJson",
+            "columnName": "estimateJson",
+            "affinity": "TEXT",
+            "defaultValue": "NULL"
+          }
+        ],
+        "primaryKey": {
+          "autoGenerate": false,
+          "columnNames": [
+            "id"
+          ]
+        },
+        "indices": [
+          {
+            "name": "index_goals_ownerScope_validFrom_localSequence",
+            "unique": false,
+            "columnNames": [
+              "ownerScope",
+              "validFrom",
+              "localSequence"
+            ],
+            "orders": [],
+            "createSql": "CREATE INDEX IF NOT EXISTS `index_goals_ownerScope_validFrom_localSequence` ON `${TABLE_NAME}` (`ownerScope`, `validFrom`, `localSequence`)"
+          },
+          {
+            "name": "index_goals_ownerScope_id",
+            "unique": true,
+            "columnNames": [
+              "ownerScope",
+              "id"
+            ],
+            "orders": [],
+            "createSql": "CREATE UNIQUE INDEX IF NOT EXISTS `index_goals_ownerScope_id` ON `${TABLE_NAME}` (`ownerScope`, `id`)"
+          },
+          {
+            "name": "index_goals_ownerScope_correctionOf",
+            "unique": false,
+            "columnNames": [
+              "ownerScope",
+              "correctionOf"
+            ],
+            "orders": [],
+            "createSql": "CREATE INDEX IF NOT EXISTS `index_goals_ownerScope_correctionOf` ON `${TABLE_NAME}` (`ownerScope`, `correctionOf`)"
+          }
+        ],
+        "foreignKeys": [
+          {
+            "table": "goals",
+            "onDelete": "RESTRICT",
+            "onUpdate": "NO ACTION",
+            "columns": [
+              "ownerScope",
+              "correctionOf"
+            ],
+            "referencedColumns": [
+              "ownerScope",
+              "id"
+            ]
+          }
+        ]
+      },
+      {
+        "tableName": "outbox",
+        "createSql": "CREATE TABLE IF NOT EXISTS `${TABLE_NAME}` (`operationId` TEXT NOT NULL, `ownerScope` TEXT NOT NULL, `entityType` TEXT NOT NULL, `entityId` TEXT NOT NULL, `action` TEXT NOT NULL, `baseRevision` INTEGER, `payload` TEXT NOT NULL, `createdAt` TEXT NOT NULL, `status` TEXT NOT NULL, `wireFormat` TEXT NOT NULL DEFAULT 'legacy', `wireJson` TEXT, `wireContext` TEXT, `attempted` INTEGER NOT NULL DEFAULT 0, PRIMARY KEY(`operationId`))",
+        "fields": [
+          {
+            "fieldPath": "operationId",
+            "columnName": "operationId",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "ownerScope",
+            "columnName": "ownerScope",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "entityType",
+            "columnName": "entityType",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "entityId",
+            "columnName": "entityId",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "action",
+            "columnName": "action",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "baseRevision",
+            "columnName": "baseRevision",
+            "affinity": "INTEGER"
+          },
+          {
+            "fieldPath": "payload",
+            "columnName": "payload",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "createdAt",
+            "columnName": "createdAt",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "status",
+            "columnName": "status",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "wireFormat",
+            "columnName": "wireFormat",
+            "affinity": "TEXT",
+            "notNull": true,
+            "defaultValue": "'legacy'"
+          },
+          {
+            "fieldPath": "wireJson",
+            "columnName": "wireJson",
+            "affinity": "TEXT"
+          },
+          {
+            "fieldPath": "wireContext",
+            "columnName": "wireContext",
+            "affinity": "TEXT"
+          },
+          {
+            "fieldPath": "attempted",
+            "columnName": "attempted",
+            "affinity": "INTEGER",
+            "notNull": true,
+            "defaultValue": "0"
+          }
+        ],
+        "primaryKey": {
+          "autoGenerate": false,
+          "columnNames": [
+            "operationId"
+          ]
+        },
+        "indices": [
+          {
+            "name": "index_outbox_ownerScope",
+            "unique": false,
+            "columnNames": [
+              "ownerScope"
+            ],
+            "orders": [],
+            "createSql": "CREATE INDEX IF NOT EXISTS `index_outbox_ownerScope` ON `${TABLE_NAME}` (`ownerScope`)"
+          },
+          {
+            "name": "index_outbox_entityId",
+            "unique": false,
+            "columnNames": [
+              "entityId"
+            ],
+            "orders": [],
+            "createSql": "CREATE INDEX IF NOT EXISTS `index_outbox_entityId` ON `${TABLE_NAME}` (`entityId`)"
+          }
+        ]
+      },
+      {
+        "tableName": "rations",
+        "createSql": "CREATE TABLE IF NOT EXISTS `${TABLE_NAME}` (`id` TEXT NOT NULL, `name` TEXT NOT NULL, `description` TEXT NOT NULL, `source` TEXT NOT NULL, `catalogVersion` INTEGER NOT NULL, `catalogJson` TEXT, PRIMARY KEY(`id`))",
+        "fields": [
+          {
+            "fieldPath": "id",
+            "columnName": "id",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "name",
+            "columnName": "name",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "description",
+            "columnName": "description",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "source",
+            "columnName": "source",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "catalogVersion",
+            "columnName": "catalogVersion",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "catalogJson",
+            "columnName": "catalogJson",
+            "affinity": "TEXT"
+          }
+        ],
+        "primaryKey": {
+          "autoGenerate": false,
+          "columnNames": [
+            "id"
+          ]
+        }
+      },
+      {
+        "tableName": "ration_components",
+        "createSql": "CREATE TABLE IF NOT EXISTS `${TABLE_NAME}` (`id` TEXT NOT NULL, `rationId` TEXT NOT NULL, `productId` TEXT NOT NULL, `packageGrams` REAL NOT NULL, `position` INTEGER NOT NULL, `quantityText` TEXT, `quantityUnit` TEXT NOT NULL DEFAULT 'g', PRIMARY KEY(`id`), FOREIGN KEY(`rationId`) REFERENCES `rations`(`id`) ON UPDATE NO ACTION ON DELETE RESTRICT , FOREIGN KEY(`productId`) REFERENCES `products`(`id`) ON UPDATE NO ACTION ON DELETE RESTRICT )",
+        "fields": [
+          {
+            "fieldPath": "id",
+            "columnName": "id",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "rationId",
+            "columnName": "rationId",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "productId",
+            "columnName": "productId",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "packageGrams",
+            "columnName": "packageGrams",
+            "affinity": "REAL",
+            "notNull": true
+          },
+          {
+            "fieldPath": "position",
+            "columnName": "position",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "quantityText",
+            "columnName": "quantityText",
+            "affinity": "TEXT"
+          },
+          {
+            "fieldPath": "quantityUnit",
+            "columnName": "quantityUnit",
+            "affinity": "TEXT",
+            "notNull": true,
+            "defaultValue": "'g'"
+          }
+        ],
+        "primaryKey": {
+          "autoGenerate": false,
+          "columnNames": [
+            "id"
+          ]
+        },
+        "indices": [
+          {
+            "name": "index_ration_components_rationId",
+            "unique": false,
+            "columnNames": [
+              "rationId"
+            ],
+            "orders": [],
+            "createSql": "CREATE INDEX IF NOT EXISTS `index_ration_components_rationId` ON `${TABLE_NAME}` (`rationId`)"
+          },
+          {
+            "name": "index_ration_components_productId",
+            "unique": false,
+            "columnNames": [
+              "productId"
+            ],
+            "orders": [],
+            "createSql": "CREATE INDEX IF NOT EXISTS `index_ration_components_productId` ON `${TABLE_NAME}` (`productId`)"
+          }
+        ],
+        "foreignKeys": [
+          {
+            "table": "rations",
+            "onDelete": "RESTRICT",
+            "onUpdate": "NO ACTION",
+            "columns": [
+              "rationId"
+            ],
+            "referencedColumns": [
+              "id"
+            ]
+          },
+          {
+            "table": "products",
+            "onDelete": "RESTRICT",
+            "onUpdate": "NO ACTION",
+            "columns": [
+              "productId"
+            ],
+            "referencedColumns": [
+              "id"
+            ]
+          }
+        ]
+      },
+      {
+        "tableName": "profiles",
+        "createSql": "CREATE TABLE IF NOT EXISTS `${TABLE_NAME}` (`id` TEXT NOT NULL, `ownerScope` TEXT NOT NULL, `nickname` TEXT NOT NULL, `heightCm` REAL, `activityClass` TEXT NOT NULL, `dietAim` TEXT NOT NULL, `zoneId` TEXT NOT NULL, `localRevision` INTEGER NOT NULL, PRIMARY KEY(`id`))",
+        "fields": [
+          {
+            "fieldPath": "id",
+            "columnName": "id",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "ownerScope",
+            "columnName": "ownerScope",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "nickname",
+            "columnName": "nickname",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "heightCm",
+            "columnName": "heightCm",
+            "affinity": "REAL"
+          },
+          {
+            "fieldPath": "activityClass",
+            "columnName": "activityClass",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "dietAim",
+            "columnName": "dietAim",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "zoneId",
+            "columnName": "zoneId",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "localRevision",
+            "columnName": "localRevision",
+            "affinity": "INTEGER",
+            "notNull": true
+          }
+        ],
+        "primaryKey": {
+          "autoGenerate": false,
+          "columnNames": [
+            "id"
+          ]
+        },
+        "indices": [
+          {
+            "name": "index_profiles_ownerScope",
+            "unique": true,
+            "columnNames": [
+              "ownerScope"
+            ],
+            "orders": [],
+            "createSql": "CREATE UNIQUE INDEX IF NOT EXISTS `index_profiles_ownerScope` ON `${TABLE_NAME}` (`ownerScope`)"
+          }
+        ]
+      },
+      {
+        "tableName": "weights",
+        "createSql": "CREATE TABLE IF NOT EXISTS `${TABLE_NAME}` (`id` TEXT NOT NULL, `ownerScope` TEXT NOT NULL, `localDate` TEXT NOT NULL, `occurredAt` TEXT NOT NULL, `zoneId` TEXT NOT NULL, `kg` REAL NOT NULL, `deleted` INTEGER NOT NULL, `localRevision` INTEGER NOT NULL, PRIMARY KEY(`id`))",
+        "fields": [
+          {
+            "fieldPath": "id",
+            "columnName": "id",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "ownerScope",
+            "columnName": "ownerScope",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "localDate",
+            "columnName": "localDate",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "occurredAt",
+            "columnName": "occurredAt",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "zoneId",
+            "columnName": "zoneId",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "kg",
+            "columnName": "kg",
+            "affinity": "REAL",
+            "notNull": true
+          },
+          {
+            "fieldPath": "deleted",
+            "columnName": "deleted",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "localRevision",
+            "columnName": "localRevision",
+            "affinity": "INTEGER",
+            "notNull": true
+          }
+        ],
+        "primaryKey": {
+          "autoGenerate": false,
+          "columnNames": [
+            "id"
+          ]
+        },
+        "indices": [
+          {
+            "name": "index_weights_ownerScope_localDate_deleted",
+            "unique": false,
+            "columnNames": [
+              "ownerScope",
+              "localDate",
+              "deleted"
+            ],
+            "orders": [],
+            "createSql": "CREATE INDEX IF NOT EXISTS `index_weights_ownerScope_localDate_deleted` ON `${TABLE_NAME}` (`ownerScope`, `localDate`, `deleted`)"
+          }
+        ]
+      },
+      {
+        "tableName": "diary_days",
+        "createSql": "CREATE TABLE IF NOT EXISTS `${TABLE_NAME}` (`id` TEXT NOT NULL, `ownerScope` TEXT NOT NULL, `localDate` TEXT NOT NULL, `declaredComplete` INTEGER NOT NULL, `localRevision` INTEGER NOT NULL, PRIMARY KEY(`id`))",
+        "fields": [
+          {
+            "fieldPath": "id",
+            "columnName": "id",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "ownerScope",
+            "columnName": "ownerScope",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "localDate",
+            "columnName": "localDate",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "declaredComplete",
+            "columnName": "declaredComplete",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "localRevision",
+            "columnName": "localRevision",
+            "affinity": "INTEGER",
+            "notNull": true
+          }
+        ],
+        "primaryKey": {
+          "autoGenerate": false,
+          "columnNames": [
+            "id"
+          ]
+        },
+        "indices": [
+          {
+            "name": "index_diary_days_ownerScope_localDate",
+            "unique": true,
+            "columnNames": [
+              "ownerScope",
+              "localDate"
+            ],
+            "orders": [],
+            "createSql": "CREATE UNIQUE INDEX IF NOT EXISTS `index_diary_days_ownerScope_localDate` ON `${TABLE_NAME}` (`ownerScope`, `localDate`)"
+          }
+        ]
+      },
+      {
+        "tableName": "catalog_generations",
+        "createSql": "CREATE TABLE IF NOT EXISTS `${TABLE_NAME}` (`id` TEXT NOT NULL, `packageId` TEXT NOT NULL, `kind` TEXT NOT NULL, `release` INTEGER NOT NULL, `sha256` TEXT NOT NULL, `manifestJson` TEXT NOT NULL, `payloadJson` TEXT NOT NULL, `complete` INTEGER NOT NULL, PRIMARY KEY(`id`))",
+        "fields": [
+          {
+            "fieldPath": "id",
+            "columnName": "id",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "packageId",
+            "columnName": "packageId",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "kind",
+            "columnName": "kind",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "release",
+            "columnName": "release",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "sha256",
+            "columnName": "sha256",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "manifestJson",
+            "columnName": "manifestJson",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "payloadJson",
+            "columnName": "payloadJson",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "complete",
+            "columnName": "complete",
+            "affinity": "INTEGER",
+            "notNull": true
+          }
+        ],
+        "primaryKey": {
+          "autoGenerate": false,
+          "columnNames": [
+            "id"
+          ]
+        },
+        "indices": [
+          {
+            "name": "index_catalog_generations_packageId_kind_release",
+            "unique": true,
+            "columnNames": [
+              "packageId",
+              "kind",
+              "release"
+            ],
+            "orders": [],
+            "createSql": "CREATE UNIQUE INDEX IF NOT EXISTS `index_catalog_generations_packageId_kind_release` ON `${TABLE_NAME}` (`packageId`, `kind`, `release`)"
+          }
+        ]
+      },
+      {
+        "tableName": "catalog_records",
+        "createSql": "CREATE TABLE IF NOT EXISTS `${TABLE_NAME}` (`id` TEXT NOT NULL, `entityType` TEXT NOT NULL, `payloadJson` TEXT NOT NULL, PRIMARY KEY(`id`))",
+        "fields": [
+          {
+            "fieldPath": "id",
+            "columnName": "id",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "entityType",
+            "columnName": "entityType",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "payloadJson",
+            "columnName": "payloadJson",
+            "affinity": "TEXT",
+            "notNull": true
+          }
+        ],
+        "primaryKey": {
+          "autoGenerate": false,
+          "columnNames": [
+            "id"
+          ]
+        }
+      },
+      {
+        "tableName": "catalog_members",
+        "createSql": "CREATE TABLE IF NOT EXISTS `${TABLE_NAME}` (`generationId` TEXT NOT NULL, `recordId` TEXT NOT NULL, PRIMARY KEY(`generationId`, `recordId`), FOREIGN KEY(`generationId`) REFERENCES `catalog_generations`(`id`) ON UPDATE NO ACTION ON DELETE RESTRICT , FOREIGN KEY(`recordId`) REFERENCES `catalog_records`(`id`) ON UPDATE NO ACTION ON DELETE RESTRICT )",
+        "fields": [
+          {
+            "fieldPath": "generationId",
+            "columnName": "generationId",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "recordId",
+            "columnName": "recordId",
+            "affinity": "TEXT",
+            "notNull": true
+          }
+        ],
+        "primaryKey": {
+          "autoGenerate": false,
+          "columnNames": [
+            "generationId",
+            "recordId"
+          ]
+        },
+        "indices": [
+          {
+            "name": "index_catalog_members_recordId",
+            "unique": false,
+            "columnNames": [
+              "recordId"
+            ],
+            "orders": [],
+            "createSql": "CREATE INDEX IF NOT EXISTS `index_catalog_members_recordId` ON `${TABLE_NAME}` (`recordId`)"
+          }
+        ],
+        "foreignKeys": [
+          {
+            "table": "catalog_generations",
+            "onDelete": "RESTRICT",
+            "onUpdate": "NO ACTION",
+            "columns": [
+              "generationId"
+            ],
+            "referencedColumns": [
+              "id"
+            ]
+          },
+          {
+            "table": "catalog_records",
+            "onDelete": "RESTRICT",
+            "onUpdate": "NO ACTION",
+            "columns": [
+              "recordId"
+            ],
+            "referencedColumns": [
+              "id"
+            ]
+          }
+        ]
+      },
+      {
+        "tableName": "catalog_active",
+        "createSql": "CREATE TABLE IF NOT EXISTS `${TABLE_NAME}` (`packageId` TEXT NOT NULL, `kind` TEXT NOT NULL, `release` INTEGER NOT NULL, `generationId` TEXT NOT NULL, PRIMARY KEY(`packageId`), FOREIGN KEY(`generationId`) REFERENCES `catalog_generations`(`id`) ON UPDATE NO ACTION ON DELETE RESTRICT )",
+        "fields": [
+          {
+            "fieldPath": "packageId",
+            "columnName": "packageId",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "kind",
+            "columnName": "kind",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "release",
+            "columnName": "release",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "generationId",
+            "columnName": "generationId",
+            "affinity": "TEXT",
+            "notNull": true
+          }
+        ],
+        "primaryKey": {
+          "autoGenerate": false,
+          "columnNames": [
+            "packageId"
+          ]
+        },
+        "indices": [
+          {
+            "name": "index_catalog_active_generationId",
+            "unique": false,
+            "columnNames": [
+              "generationId"
+            ],
+            "orders": [],
+            "createSql": "CREATE INDEX IF NOT EXISTS `index_catalog_active_generationId` ON `${TABLE_NAME}` (`generationId`)"
+          }
+        ],
+        "foreignKeys": [
+          {
+            "table": "catalog_generations",
+            "onDelete": "RESTRICT",
+            "onUpdate": "NO ACTION",
+            "columns": [
+              "generationId"
+            ],
+            "referencedColumns": [
+              "id"
+            ]
+          }
+        ]
+      },
+      {
+        "tableName": "local_owners",
+        "createSql": "CREATE TABLE IF NOT EXISTS `${TABLE_NAME}` (`id` TEXT NOT NULL, `storageScope` TEXT NOT NULL, `kind` TEXT NOT NULL, `issuer` TEXT, `subject` TEXT, PRIMARY KEY(`id`))",
+        "fields": [
+          {
+            "fieldPath": "id",
+            "columnName": "id",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "storageScope",
+            "columnName": "storageScope",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "kind",
+            "columnName": "kind",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "issuer",
+            "columnName": "issuer",
+            "affinity": "TEXT"
+          },
+          {
+            "fieldPath": "subject",
+            "columnName": "subject",
+            "affinity": "TEXT"
+          }
+        ],
+        "primaryKey": {
+          "autoGenerate": false,
+          "columnNames": [
+            "id"
+          ]
+        },
+        "indices": [
+          {
+            "name": "index_local_owners_storageScope",
+            "unique": true,
+            "columnNames": [
+              "storageScope"
+            ],
+            "orders": [],
+            "createSql": "CREATE UNIQUE INDEX IF NOT EXISTS `index_local_owners_storageScope` ON `${TABLE_NAME}` (`storageScope`)"
+          },
+          {
+            "name": "index_local_owners_issuer_subject",
+            "unique": true,
+            "columnNames": [
+              "issuer",
+              "subject"
+            ],
+            "orders": [],
+            "createSql": "CREATE UNIQUE INDEX IF NOT EXISTS `index_local_owners_issuer_subject` ON `${TABLE_NAME}` (`issuer`, `subject`)"
+          }
+        ]
+      },
+      {
+        "tableName": "local_active_owner",
+        "createSql": "CREATE TABLE IF NOT EXISTS `${TABLE_NAME}` (`id` INTEGER NOT NULL, `storageScope` TEXT NOT NULL, `generation` INTEGER NOT NULL, PRIMARY KEY(`id`), FOREIGN KEY(`storageScope`) REFERENCES `local_owners`(`storageScope`) ON UPDATE NO ACTION ON DELETE RESTRICT )",
+        "fields": [
+          {
+            "fieldPath": "id",
+            "columnName": "id",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "storageScope",
+            "columnName": "storageScope",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "generation",
+            "columnName": "generation",
+            "affinity": "INTEGER",
+            "notNull": true
+          }
+        ],
+        "primaryKey": {
+          "autoGenerate": false,
+          "columnNames": [
+            "id"
+          ]
+        },
+        "indices": [
+          {
+            "name": "index_local_active_owner_storageScope",
+            "unique": false,
+            "columnNames": [
+              "storageScope"
+            ],
+            "orders": [],
+            "createSql": "CREATE INDEX IF NOT EXISTS `index_local_active_owner_storageScope` ON `${TABLE_NAME}` (`storageScope`)"
+          }
+        ],
+        "foreignKeys": [
+          {
+            "table": "local_owners",
+            "onDelete": "RESTRICT",
+            "onUpdate": "NO ACTION",
+            "columns": [
+              "storageScope"
+            ],
+            "referencedColumns": [
+              "storageScope"
+            ]
+          }
+        ]
+      },
+      {
+        "tableName": "account_bindings",
+        "createSql": "CREATE TABLE IF NOT EXISTS `${TABLE_NAME}` (`ownerScope` TEXT NOT NULL, `accountId` TEXT NOT NULL, `accountGeneration` INTEGER NOT NULL, `syncEpoch` TEXT NOT NULL, `serverTime` TEXT NOT NULL, `contextRevision` INTEGER NOT NULL, `requiresRecovery` INTEGER NOT NULL, PRIMARY KEY(`ownerScope`), FOREIGN KEY(`ownerScope`) REFERENCES `local_owners`(`storageScope`) ON UPDATE NO ACTION ON DELETE RESTRICT )",
+        "fields": [
+          {
+            "fieldPath": "ownerScope",
+            "columnName": "ownerScope",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "accountId",
+            "columnName": "accountId",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "accountGeneration",
+            "columnName": "accountGeneration",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "syncEpoch",
+            "columnName": "syncEpoch",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "serverTime",
+            "columnName": "serverTime",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "contextRevision",
+            "columnName": "contextRevision",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "requiresRecovery",
+            "columnName": "requiresRecovery",
+            "affinity": "INTEGER",
+            "notNull": true
+          }
+        ],
+        "primaryKey": {
+          "autoGenerate": false,
+          "columnNames": [
+            "ownerScope"
+          ]
+        },
+        "indices": [
+          {
+            "name": "index_account_bindings_accountId",
+            "unique": true,
+            "columnNames": [
+              "accountId"
+            ],
+            "orders": [],
+            "createSql": "CREATE UNIQUE INDEX IF NOT EXISTS `index_account_bindings_accountId` ON `${TABLE_NAME}` (`accountId`)"
+          }
+        ],
+        "foreignKeys": [
+          {
+            "table": "local_owners",
+            "onDelete": "RESTRICT",
+            "onUpdate": "NO ACTION",
+            "columns": [
+              "ownerScope"
+            ],
+            "referencedColumns": [
+              "storageScope"
+            ]
+          }
+        ]
+      },
+      {
+        "tableName": "bootstrap_attempts",
+        "createSql": "CREATE TABLE IF NOT EXISTS `${TABLE_NAME}` (`ownerScope` TEXT NOT NULL, `operationId` TEXT NOT NULL, `leaseGeneration` INTEGER NOT NULL, `responseJson` TEXT, PRIMARY KEY(`ownerScope`), FOREIGN KEY(`ownerScope`) REFERENCES `local_owners`(`storageScope`) ON UPDATE NO ACTION ON DELETE RESTRICT )",
+        "fields": [
+          {
+            "fieldPath": "ownerScope",
+            "columnName": "ownerScope",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "operationId",
+            "columnName": "operationId",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "leaseGeneration",
+            "columnName": "leaseGeneration",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "responseJson",
+            "columnName": "responseJson",
+            "affinity": "TEXT"
+          }
+        ],
+        "primaryKey": {
+          "autoGenerate": false,
+          "columnNames": [
+            "ownerScope"
+          ]
+        },
+        "indices": [
+          {
+            "name": "index_bootstrap_attempts_operationId",
+            "unique": true,
+            "columnNames": [
+              "operationId"
+            ],
+            "orders": [],
+            "createSql": "CREATE UNIQUE INDEX IF NOT EXISTS `index_bootstrap_attempts_operationId` ON `${TABLE_NAME}` (`operationId`)"
+          }
+        ],
+        "foreignKeys": [
+          {
+            "table": "local_owners",
+            "onDelete": "RESTRICT",
+            "onUpdate": "NO ACTION",
+            "columns": [
+              "ownerScope"
+            ],
+            "referencedColumns": [
+              "storageScope"
+            ]
+          }
+        ]
+      },
+      {
+        "tableName": "server_snapshot_runs",
+        "createSql": "CREATE TABLE IF NOT EXISTS `${TABLE_NAME}` (`id` TEXT NOT NULL, `ownerScope` TEXT NOT NULL, `leaseGeneration` INTEGER NOT NULL, `accountId` TEXT NOT NULL, `accountGeneration` INTEGER NOT NULL, `syncEpoch` TEXT NOT NULL, `contextRevision` INTEGER NOT NULL, `snapshotToken` TEXT, `nextPage` TEXT, `checkpoint` TEXT, `serverTime` TEXT, `timelineRevision` INTEGER, `pageCount` INTEGER NOT NULL, `itemCount` INTEGER NOT NULL, `byteCount` INTEGER NOT NULL, `limit` INTEGER NOT NULL, `state` TEXT NOT NULL, `protocolScope` TEXT NOT NULL DEFAULT 'calorie-app', `readMode` TEXT NOT NULL DEFAULT 'snapshot', `baseRunId` TEXT, `startingCheckpoint` TEXT, `forceFull` INTEGER NOT NULL DEFAULT 0, PRIMARY KEY(`id`), FOREIGN KEY(`ownerScope`) REFERENCES `local_owners`(`storageScope`) ON UPDATE NO ACTION ON DELETE RESTRICT , FOREIGN KEY(`baseRunId`) REFERENCES `server_snapshot_runs`(`id`) ON UPDATE NO ACTION ON DELETE RESTRICT )",
+        "fields": [
+          {
+            "fieldPath": "id",
+            "columnName": "id",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "ownerScope",
+            "columnName": "ownerScope",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "leaseGeneration",
+            "columnName": "leaseGeneration",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "accountId",
+            "columnName": "accountId",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "accountGeneration",
+            "columnName": "accountGeneration",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "syncEpoch",
+            "columnName": "syncEpoch",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "contextRevision",
+            "columnName": "contextRevision",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "snapshotToken",
+            "columnName": "snapshotToken",
+            "affinity": "TEXT"
+          },
+          {
+            "fieldPath": "nextPage",
+            "columnName": "nextPage",
+            "affinity": "TEXT"
+          },
+          {
+            "fieldPath": "checkpoint",
+            "columnName": "checkpoint",
+            "affinity": "TEXT"
+          },
+          {
+            "fieldPath": "serverTime",
+            "columnName": "serverTime",
+            "affinity": "TEXT"
+          },
+          {
+            "fieldPath": "timelineRevision",
+            "columnName": "timelineRevision",
+            "affinity": "INTEGER"
+          },
+          {
+            "fieldPath": "pageCount",
+            "columnName": "pageCount",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "itemCount",
+            "columnName": "itemCount",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "byteCount",
+            "columnName": "byteCount",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "limit",
+            "columnName": "limit",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "state",
+            "columnName": "state",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "protocolScope",
+            "columnName": "protocolScope",
+            "affinity": "TEXT",
+            "notNull": true,
+            "defaultValue": "'calorie-app'"
+          },
+          {
+            "fieldPath": "readMode",
+            "columnName": "readMode",
+            "affinity": "TEXT",
+            "notNull": true,
+            "defaultValue": "'snapshot'"
+          },
+          {
+            "fieldPath": "baseRunId",
+            "columnName": "baseRunId",
+            "affinity": "TEXT"
+          },
+          {
+            "fieldPath": "startingCheckpoint",
+            "columnName": "startingCheckpoint",
+            "affinity": "TEXT"
+          },
+          {
+            "fieldPath": "forceFull",
+            "columnName": "forceFull",
+            "affinity": "INTEGER",
+            "notNull": true,
+            "defaultValue": "0"
+          }
+        ],
+        "primaryKey": {
+          "autoGenerate": false,
+          "columnNames": [
+            "id"
+          ]
+        },
+        "indices": [
+          {
+            "name": "index_server_snapshot_runs_ownerScope",
+            "unique": false,
+            "columnNames": [
+              "ownerScope"
+            ],
+            "orders": [],
+            "createSql": "CREATE INDEX IF NOT EXISTS `index_server_snapshot_runs_ownerScope` ON `${TABLE_NAME}` (`ownerScope`)"
+          },
+          {
+            "name": "index_server_snapshot_runs_baseRunId",
+            "unique": false,
+            "columnNames": [
+              "baseRunId"
+            ],
+            "orders": [],
+            "createSql": "CREATE INDEX IF NOT EXISTS `index_server_snapshot_runs_baseRunId` ON `${TABLE_NAME}` (`baseRunId`)"
+          }
+        ],
+        "foreignKeys": [
+          {
+            "table": "local_owners",
+            "onDelete": "RESTRICT",
+            "onUpdate": "NO ACTION",
+            "columns": [
+              "ownerScope"
+            ],
+            "referencedColumns": [
+              "storageScope"
+            ]
+          },
+          {
+            "table": "server_snapshot_runs",
+            "onDelete": "RESTRICT",
+            "onUpdate": "NO ACTION",
+            "columns": [
+              "baseRunId"
+            ],
+            "referencedColumns": [
+              "id"
+            ]
+          }
+        ]
+      },
+      {
+        "tableName": "server_snapshot_pages",
+        "createSql": "CREATE TABLE IF NOT EXISTS `${TABLE_NAME}` (`runId` TEXT NOT NULL, `pageIndex` INTEGER NOT NULL, `queryJson` TEXT NOT NULL, `responseJson` TEXT NOT NULL, PRIMARY KEY(`runId`, `pageIndex`), FOREIGN KEY(`runId`) REFERENCES `server_snapshot_runs`(`id`) ON UPDATE NO ACTION ON DELETE RESTRICT )",
+        "fields": [
+          {
+            "fieldPath": "runId",
+            "columnName": "runId",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "pageIndex",
+            "columnName": "pageIndex",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "queryJson",
+            "columnName": "queryJson",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "responseJson",
+            "columnName": "responseJson",
+            "affinity": "TEXT",
+            "notNull": true
+          }
+        ],
+        "primaryKey": {
+          "autoGenerate": false,
+          "columnNames": [
+            "runId",
+            "pageIndex"
+          ]
+        },
+        "foreignKeys": [
+          {
+            "table": "server_snapshot_runs",
+            "onDelete": "RESTRICT",
+            "onUpdate": "NO ACTION",
+            "columns": [
+              "runId"
+            ],
+            "referencedColumns": [
+              "id"
+            ]
+          }
+        ]
+      },
+      {
+        "tableName": "server_snapshot_access",
+        "createSql": "CREATE TABLE IF NOT EXISTS `${TABLE_NAME}` (`ownerScope` TEXT NOT NULL, `activeRunId` TEXT, `blocked` INTEGER NOT NULL, `bootstrapAttemptId` TEXT, PRIMARY KEY(`ownerScope`), FOREIGN KEY(`ownerScope`) REFERENCES `local_owners`(`storageScope`) ON UPDATE NO ACTION ON DELETE RESTRICT )",
+        "fields": [
+          {
+            "fieldPath": "ownerScope",
+            "columnName": "ownerScope",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "activeRunId",
+            "columnName": "activeRunId",
+            "affinity": "TEXT"
+          },
+          {
+            "fieldPath": "blocked",
+            "columnName": "blocked",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "bootstrapAttemptId",
+            "columnName": "bootstrapAttemptId",
+            "affinity": "TEXT"
+          }
+        ],
+        "primaryKey": {
+          "autoGenerate": false,
+          "columnNames": [
+            "ownerScope"
+          ]
+        },
+        "foreignKeys": [
+          {
+            "table": "local_owners",
+            "onDelete": "RESTRICT",
+            "onUpdate": "NO ACTION",
+            "columns": [
+              "ownerScope"
+            ],
+            "referencedColumns": [
+              "storageScope"
+            ]
+          }
+        ]
+      },
+      {
+        "tableName": "server_snapshot_identities",
+        "createSql": "CREATE TABLE IF NOT EXISTS `${TABLE_NAME}` (`runId` TEXT NOT NULL, `field` TEXT NOT NULL, `identity` TEXT NOT NULL, PRIMARY KEY(`runId`, `field`, `identity`), FOREIGN KEY(`runId`) REFERENCES `server_snapshot_runs`(`id`) ON UPDATE NO ACTION ON DELETE RESTRICT )",
+        "fields": [
+          {
+            "fieldPath": "runId",
+            "columnName": "runId",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "field",
+            "columnName": "field",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "identity",
+            "columnName": "identity",
+            "affinity": "TEXT",
+            "notNull": true
+          }
+        ],
+        "primaryKey": {
+          "autoGenerate": false,
+          "columnNames": [
+            "runId",
+            "field",
+            "identity"
+          ]
+        },
+        "foreignKeys": [
+          {
+            "table": "server_snapshot_runs",
+            "onDelete": "RESTRICT",
+            "onUpdate": "NO ACTION",
+            "columns": [
+              "runId"
+            ],
+            "referencedColumns": [
+              "id"
+            ]
+          }
+        ]
+      },
+      {
+        "tableName": "meal_photo_drafts",
+        "createSql": "CREATE TABLE IF NOT EXISTS `${TABLE_NAME}` (`ownerScope` TEXT NOT NULL, `id` TEXT NOT NULL, `localDate` TEXT NOT NULL, `createdAt` TEXT NOT NULL, `source` TEXT NOT NULL, `sha256` TEXT NOT NULL, `byteCount` INTEGER NOT NULL, `width` INTEGER NOT NULL, `height` INTEGER NOT NULL, PRIMARY KEY(`ownerScope`, `id`), FOREIGN KEY(`ownerScope`) REFERENCES `local_owners`(`storageScope`) ON UPDATE NO ACTION ON DELETE RESTRICT )",
+        "fields": [
+          {
+            "fieldPath": "ownerScope",
+            "columnName": "ownerScope",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "id",
+            "columnName": "id",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "localDate",
+            "columnName": "localDate",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "createdAt",
+            "columnName": "createdAt",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "source",
+            "columnName": "source",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "sha256",
+            "columnName": "sha256",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "byteCount",
+            "columnName": "byteCount",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "width",
+            "columnName": "width",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "height",
+            "columnName": "height",
+            "affinity": "INTEGER",
+            "notNull": true
+          }
+        ],
+        "primaryKey": {
+          "autoGenerate": false,
+          "columnNames": [
+            "ownerScope",
+            "id"
+          ]
+        },
+        "foreignKeys": [
+          {
+            "table": "local_owners",
+            "onDelete": "RESTRICT",
+            "onUpdate": "NO ACTION",
+            "columns": [
+              "ownerScope"
+            ],
+            "referencedColumns": [
+              "storageScope"
+            ]
+          }
+        ]
+      },
+      {
+        "tableName": "photo_analysis_requests",
+        "createSql": "CREATE TABLE IF NOT EXISTS `${TABLE_NAME}` (`ownerScope` TEXT NOT NULL, `operationId` TEXT NOT NULL, `accountId` TEXT NOT NULL, `accountGeneration` INTEGER NOT NULL, `syncEpoch` TEXT NOT NULL, `contextRevision` INTEGER NOT NULL, `sourcePhotoId` TEXT NOT NULL, `provider` TEXT NOT NULL, `model` TEXT NOT NULL, `noticeVersion` TEXT NOT NULL, `imageLimit` INTEGER NOT NULL, `imageSha256` TEXT NOT NULL, `imageBytes` INTEGER NOT NULL, `acceptedAt` TEXT NOT NULL, `attempted` INTEGER NOT NULL, `receiptJson` TEXT, `retryAtMillis` INTEGER NOT NULL, `blockedCode` TEXT, PRIMARY KEY(`ownerScope`), FOREIGN KEY(`ownerScope`) REFERENCES `local_owners`(`storageScope`) ON UPDATE NO ACTION ON DELETE RESTRICT )",
+        "fields": [
+          {
+            "fieldPath": "ownerScope",
+            "columnName": "ownerScope",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "operationId",
+            "columnName": "operationId",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "accountId",
+            "columnName": "accountId",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "accountGeneration",
+            "columnName": "accountGeneration",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "syncEpoch",
+            "columnName": "syncEpoch",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "contextRevision",
+            "columnName": "contextRevision",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "sourcePhotoId",
+            "columnName": "sourcePhotoId",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "provider",
+            "columnName": "provider",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "model",
+            "columnName": "model",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "noticeVersion",
+            "columnName": "noticeVersion",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "imageLimit",
+            "columnName": "imageLimit",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "imageSha256",
+            "columnName": "imageSha256",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "imageBytes",
+            "columnName": "imageBytes",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "acceptedAt",
+            "columnName": "acceptedAt",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "attempted",
+            "columnName": "attempted",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "receiptJson",
+            "columnName": "receiptJson",
+            "affinity": "TEXT"
+          },
+          {
+            "fieldPath": "retryAtMillis",
+            "columnName": "retryAtMillis",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "blockedCode",
+            "columnName": "blockedCode",
+            "affinity": "TEXT"
+          }
+        ],
+        "primaryKey": {
+          "autoGenerate": false,
+          "columnNames": [
+            "ownerScope"
+          ]
+        },
+        "indices": [
+          {
+            "name": "index_photo_analysis_requests_operationId",
+            "unique": true,
+            "columnNames": [
+              "operationId"
+            ],
+            "orders": [],
+            "createSql": "CREATE UNIQUE INDEX IF NOT EXISTS `index_photo_analysis_requests_operationId` ON `${TABLE_NAME}` (`operationId`)"
+          }
+        ],
+        "foreignKeys": [
+          {
+            "table": "local_owners",
+            "onDelete": "RESTRICT",
+            "onUpdate": "NO ACTION",
+            "columns": [
+              "ownerScope"
+            ],
+            "referencedColumns": [
+              "storageScope"
+            ]
+          }
+        ]
+      },
+      {
+        "tableName": "photo_materializations",
+        "createSql": "CREATE TABLE IF NOT EXISTS `${TABLE_NAME}` (`ownerScope` TEXT NOT NULL, `analysisId` TEXT NOT NULL, `mealId` TEXT NOT NULL, `sourceOperationId` TEXT NOT NULL, `sourcePhotoId` TEXT NOT NULL, `confirmationKey` TEXT NOT NULL, `receiptJson` TEXT NOT NULL, `snapshotJson` TEXT NOT NULL, `provenanceJson` TEXT NOT NULL, `wireContext` TEXT NOT NULL, `firstOutboxId` TEXT NOT NULL, `createdAt` TEXT NOT NULL, PRIMARY KEY(`ownerScope`, `analysisId`), FOREIGN KEY(`ownerScope`) REFERENCES `local_owners`(`storageScope`) ON UPDATE NO ACTION ON DELETE RESTRICT , FOREIGN KEY(`mealId`) REFERENCES `meals`(`id`) ON UPDATE NO ACTION ON DELETE RESTRICT )",
+        "fields": [
+          {
+            "fieldPath": "ownerScope",
+            "columnName": "ownerScope",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "analysisId",
+            "columnName": "analysisId",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "mealId",
+            "columnName": "mealId",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "sourceOperationId",
+            "columnName": "sourceOperationId",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "sourcePhotoId",
+            "columnName": "sourcePhotoId",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "confirmationKey",
+            "columnName": "confirmationKey",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "receiptJson",
+            "columnName": "receiptJson",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "snapshotJson",
+            "columnName": "snapshotJson",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "provenanceJson",
+            "columnName": "provenanceJson",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "wireContext",
+            "columnName": "wireContext",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "firstOutboxId",
+            "columnName": "firstOutboxId",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "createdAt",
+            "columnName": "createdAt",
+            "affinity": "TEXT",
+            "notNull": true
+          }
+        ],
+        "primaryKey": {
+          "autoGenerate": false,
+          "columnNames": [
+            "ownerScope",
+            "analysisId"
+          ]
+        },
+        "indices": [
+          {
+            "name": "index_photo_materializations_mealId",
+            "unique": true,
+            "columnNames": [
+              "mealId"
+            ],
+            "orders": [],
+            "createSql": "CREATE UNIQUE INDEX IF NOT EXISTS `index_photo_materializations_mealId` ON `${TABLE_NAME}` (`mealId`)"
+          }
+        ],
+        "foreignKeys": [
+          {
+            "table": "local_owners",
+            "onDelete": "RESTRICT",
+            "onUpdate": "NO ACTION",
+            "columns": [
+              "ownerScope"
+            ],
+            "referencedColumns": [
+              "storageScope"
+            ]
+          },
+          {
+            "table": "meals",
+            "onDelete": "RESTRICT",
+            "onUpdate": "NO ACTION",
+            "columns": [
+              "mealId"
+            ],
+            "referencedColumns": [
+              "id"
+            ]
+          }
+        ]
+      },
+      {
+        "tableName": "sync_push_batches",
+        "createSql": "CREATE TABLE IF NOT EXISTS `${TABLE_NAME}` (`id` TEXT NOT NULL, `ownerScope` TEXT NOT NULL, `wireContext` TEXT NOT NULL, `snapshotRunId` TEXT NOT NULL, `requestJson` TEXT NOT NULL, `requestHash` TEXT NOT NULL, `createdAt` TEXT NOT NULL, `attempted` INTEGER NOT NULL, `responseJson` TEXT, `state` TEXT NOT NULL, `retryAtMillis` INTEGER NOT NULL DEFAULT 0, `protocolScope` TEXT NOT NULL DEFAULT 'calorie-app', PRIMARY KEY(`id`), FOREIGN KEY(`ownerScope`) REFERENCES `local_owners`(`storageScope`) ON UPDATE NO ACTION ON DELETE RESTRICT , FOREIGN KEY(`snapshotRunId`) REFERENCES `server_snapshot_runs`(`id`) ON UPDATE NO ACTION ON DELETE RESTRICT )",
+        "fields": [
+          {
+            "fieldPath": "id",
+            "columnName": "id",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "ownerScope",
+            "columnName": "ownerScope",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "wireContext",
+            "columnName": "wireContext",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "snapshotRunId",
+            "columnName": "snapshotRunId",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "requestJson",
+            "columnName": "requestJson",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "requestHash",
+            "columnName": "requestHash",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "createdAt",
+            "columnName": "createdAt",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "attempted",
+            "columnName": "attempted",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "responseJson",
+            "columnName": "responseJson",
+            "affinity": "TEXT"
+          },
+          {
+            "fieldPath": "state",
+            "columnName": "state",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "retryAtMillis",
+            "columnName": "retryAtMillis",
+            "affinity": "INTEGER",
+            "notNull": true,
+            "defaultValue": "0"
+          },
+          {
+            "fieldPath": "protocolScope",
+            "columnName": "protocolScope",
+            "affinity": "TEXT",
+            "notNull": true,
+            "defaultValue": "'calorie-app'"
+          }
+        ],
+        "primaryKey": {
+          "autoGenerate": false,
+          "columnNames": [
+            "id"
+          ]
+        },
+        "indices": [
+          {
+            "name": "index_sync_push_batches_ownerScope",
+            "unique": false,
+            "columnNames": [
+              "ownerScope"
+            ],
+            "orders": [],
+            "createSql": "CREATE INDEX IF NOT EXISTS `index_sync_push_batches_ownerScope` ON `${TABLE_NAME}` (`ownerScope`)"
+          },
+          {
+            "name": "index_sync_push_batches_snapshotRunId",
+            "unique": false,
+            "columnNames": [
+              "snapshotRunId"
+            ],
+            "orders": [],
+            "createSql": "CREATE INDEX IF NOT EXISTS `index_sync_push_batches_snapshotRunId` ON `${TABLE_NAME}` (`snapshotRunId`)"
+          }
+        ],
+        "foreignKeys": [
+          {
+            "table": "local_owners",
+            "onDelete": "RESTRICT",
+            "onUpdate": "NO ACTION",
+            "columns": [
+              "ownerScope"
+            ],
+            "referencedColumns": [
+              "storageScope"
+            ]
+          },
+          {
+            "table": "server_snapshot_runs",
+            "onDelete": "RESTRICT",
+            "onUpdate": "NO ACTION",
+            "columns": [
+              "snapshotRunId"
+            ],
+            "referencedColumns": [
+              "id"
+            ]
+          }
+        ]
+      },
+      {
+        "tableName": "photo_confirmation_history",
+        "createSql": "CREATE TABLE IF NOT EXISTS `${TABLE_NAME}` (`ownerScope` TEXT NOT NULL, `confirmationKey` TEXT NOT NULL, `sourceOperationId` TEXT NOT NULL, `analysisId` TEXT NOT NULL, `wireContext` TEXT NOT NULL, `decisionJson` TEXT NOT NULL, `archivedAt` TEXT NOT NULL, `lastReadSnapshotHash` TEXT, `reopenedEditRevision` INTEGER, PRIMARY KEY(`ownerScope`, `confirmationKey`), FOREIGN KEY(`ownerScope`) REFERENCES `local_owners`(`storageScope`) ON UPDATE NO ACTION ON DELETE RESTRICT )",
+        "fields": [
+          {
+            "fieldPath": "ownerScope",
+            "columnName": "ownerScope",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "confirmationKey",
+            "columnName": "confirmationKey",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "sourceOperationId",
+            "columnName": "sourceOperationId",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "analysisId",
+            "columnName": "analysisId",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "wireContext",
+            "columnName": "wireContext",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "decisionJson",
+            "columnName": "decisionJson",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "archivedAt",
+            "columnName": "archivedAt",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "lastReadSnapshotHash",
+            "columnName": "lastReadSnapshotHash",
+            "affinity": "TEXT"
+          },
+          {
+            "fieldPath": "reopenedEditRevision",
+            "columnName": "reopenedEditRevision",
+            "affinity": "INTEGER"
+          }
+        ],
+        "primaryKey": {
+          "autoGenerate": false,
+          "columnNames": [
+            "ownerScope",
+            "confirmationKey"
+          ]
+        },
+        "indices": [
+          {
+            "name": "index_photo_confirmation_history_ownerScope_sourceOperationId",
+            "unique": false,
+            "columnNames": [
+              "ownerScope",
+              "sourceOperationId"
+            ],
+            "orders": [],
+            "createSql": "CREATE INDEX IF NOT EXISTS `index_photo_confirmation_history_ownerScope_sourceOperationId` ON `${TABLE_NAME}` (`ownerScope`, `sourceOperationId`)"
+          }
+        ],
+        "foreignKeys": [
+          {
+            "table": "local_owners",
+            "onDelete": "RESTRICT",
+            "onUpdate": "NO ACTION",
+            "columns": [
+              "ownerScope"
+            ],
+            "referencedColumns": [
+              "storageScope"
+            ]
+          }
+        ]
+      },
+      {
+        "tableName": "canonical_weights",
+        "createSql": "CREATE TABLE IF NOT EXISTS `${TABLE_NAME}` (`id` TEXT NOT NULL, `ownerScope` TEXT NOT NULL, `wirePayload` TEXT NOT NULL, `wireContext` TEXT NOT NULL, `serverRevision` INTEGER NOT NULL, PRIMARY KEY(`id`), FOREIGN KEY(`id`) REFERENCES `weights`(`id`) ON UPDATE NO ACTION ON DELETE RESTRICT )",
+        "fields": [
+          {
+            "fieldPath": "id",
+            "columnName": "id",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "ownerScope",
+            "columnName": "ownerScope",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "wirePayload",
+            "columnName": "wirePayload",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "wireContext",
+            "columnName": "wireContext",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "serverRevision",
+            "columnName": "serverRevision",
+            "affinity": "INTEGER",
+            "notNull": true
+          }
+        ],
+        "primaryKey": {
+          "autoGenerate": false,
+          "columnNames": [
+            "id"
+          ]
+        },
+        "indices": [
+          {
+            "name": "index_canonical_weights_ownerScope",
+            "unique": false,
+            "columnNames": [
+              "ownerScope"
+            ],
+            "orders": [],
+            "createSql": "CREATE INDEX IF NOT EXISTS `index_canonical_weights_ownerScope` ON `${TABLE_NAME}` (`ownerScope`)"
+          }
+        ],
+        "foreignKeys": [
+          {
+            "table": "weights",
+            "onDelete": "RESTRICT",
+            "onUpdate": "NO ACTION",
+            "columns": [
+              "id"
+            ],
+            "referencedColumns": [
+              "id"
+            ]
+          }
+        ]
+      },
+      {
+        "tableName": "sync_conflict_decisions",
+        "createSql": "CREATE TABLE IF NOT EXISTS `${TABLE_NAME}` (`operationId` TEXT NOT NULL, `ownerScope` TEXT NOT NULL, `batchId` TEXT NOT NULL, `entityType` TEXT NOT NULL, `entityId` TEXT NOT NULL, `wireContext` TEXT NOT NULL, `choice` TEXT NOT NULL, `localPayload` TEXT NOT NULL, `localDeleted` INTEGER NOT NULL, `serverPayload` TEXT, `serverState` TEXT NOT NULL, `serverRevision` INTEGER, `resultJson` TEXT NOT NULL, `snapshotRunId` TEXT, `replacementId` TEXT, `newOperationId` TEXT, `decidedAt` TEXT NOT NULL, PRIMARY KEY(`operationId`), FOREIGN KEY(`ownerScope`) REFERENCES `local_owners`(`storageScope`) ON UPDATE NO ACTION ON DELETE RESTRICT , FOREIGN KEY(`operationId`) REFERENCES `outbox`(`operationId`) ON UPDATE NO ACTION ON DELETE RESTRICT , FOREIGN KEY(`batchId`) REFERENCES `sync_push_batches`(`id`) ON UPDATE NO ACTION ON DELETE RESTRICT )",
+        "fields": [
+          {
+            "fieldPath": "operationId",
+            "columnName": "operationId",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "ownerScope",
+            "columnName": "ownerScope",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "batchId",
+            "columnName": "batchId",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "entityType",
+            "columnName": "entityType",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "entityId",
+            "columnName": "entityId",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "wireContext",
+            "columnName": "wireContext",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "choice",
+            "columnName": "choice",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "localPayload",
+            "columnName": "localPayload",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "localDeleted",
+            "columnName": "localDeleted",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "serverPayload",
+            "columnName": "serverPayload",
+            "affinity": "TEXT"
+          },
+          {
+            "fieldPath": "serverState",
+            "columnName": "serverState",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "serverRevision",
+            "columnName": "serverRevision",
+            "affinity": "INTEGER"
+          },
+          {
+            "fieldPath": "resultJson",
+            "columnName": "resultJson",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "snapshotRunId",
+            "columnName": "snapshotRunId",
+            "affinity": "TEXT"
+          },
+          {
+            "fieldPath": "replacementId",
+            "columnName": "replacementId",
+            "affinity": "TEXT"
+          },
+          {
+            "fieldPath": "newOperationId",
+            "columnName": "newOperationId",
+            "affinity": "TEXT"
+          },
+          {
+            "fieldPath": "decidedAt",
+            "columnName": "decidedAt",
+            "affinity": "TEXT",
+            "notNull": true
+          }
+        ],
+        "primaryKey": {
+          "autoGenerate": false,
+          "columnNames": [
+            "operationId"
+          ]
+        },
+        "indices": [
+          {
+            "name": "index_sync_conflict_decisions_ownerScope",
+            "unique": false,
+            "columnNames": [
+              "ownerScope"
+            ],
+            "orders": [],
+            "createSql": "CREATE INDEX IF NOT EXISTS `index_sync_conflict_decisions_ownerScope` ON `${TABLE_NAME}` (`ownerScope`)"
+          },
+          {
+            "name": "index_sync_conflict_decisions_batchId",
+            "unique": false,
+            "columnNames": [
+              "batchId"
+            ],
+            "orders": [],
+            "createSql": "CREATE INDEX IF NOT EXISTS `index_sync_conflict_decisions_batchId` ON `${TABLE_NAME}` (`batchId`)"
+          }
+        ],
+        "foreignKeys": [
+          {
+            "table": "local_owners",
+            "onDelete": "RESTRICT",
+            "onUpdate": "NO ACTION",
+            "columns": [
+              "ownerScope"
+            ],
+            "referencedColumns": [
+              "storageScope"
+            ]
+          },
+          {
+            "table": "outbox",
+            "onDelete": "RESTRICT",
+            "onUpdate": "NO ACTION",
+            "columns": [
+              "operationId"
+            ],
+            "referencedColumns": [
+              "operationId"
+            ]
+          },
+          {
+            "table": "sync_push_batches",
+            "onDelete": "RESTRICT",
+            "onUpdate": "NO ACTION",
+            "columns": [
+              "batchId"
+            ],
+            "referencedColumns": [
+              "id"
+            ]
+          }
+        ]
+      },
+      {
+        "tableName": "server_diary_records",
+        "createSql": "CREATE TABLE IF NOT EXISTS `${TABLE_NAME}` (`ownerScope` TEXT NOT NULL, `entityType` TEXT NOT NULL, `entityId` TEXT NOT NULL, `localId` TEXT, `wireContext` TEXT NOT NULL, `knownRevision` INTEGER NOT NULL, `deleted` INTEGER NOT NULL, `absent` INTEGER NOT NULL, `payload` TEXT, `runId` TEXT NOT NULL, `disposition` TEXT NOT NULL, PRIMARY KEY(`ownerScope`, `entityType`, `entityId`), FOREIGN KEY(`ownerScope`) REFERENCES `local_owners`(`storageScope`) ON UPDATE NO ACTION ON DELETE RESTRICT , FOREIGN KEY(`runId`) REFERENCES `server_snapshot_runs`(`id`) ON UPDATE NO ACTION ON DELETE RESTRICT )",
+        "fields": [
+          {
+            "fieldPath": "ownerScope",
+            "columnName": "ownerScope",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "entityType",
+            "columnName": "entityType",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "entityId",
+            "columnName": "entityId",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "localId",
+            "columnName": "localId",
+            "affinity": "TEXT"
+          },
+          {
+            "fieldPath": "wireContext",
+            "columnName": "wireContext",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "knownRevision",
+            "columnName": "knownRevision",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "deleted",
+            "columnName": "deleted",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "absent",
+            "columnName": "absent",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "payload",
+            "columnName": "payload",
+            "affinity": "TEXT"
+          },
+          {
+            "fieldPath": "runId",
+            "columnName": "runId",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "disposition",
+            "columnName": "disposition",
+            "affinity": "TEXT",
+            "notNull": true
+          }
+        ],
+        "primaryKey": {
+          "autoGenerate": false,
+          "columnNames": [
+            "ownerScope",
+            "entityType",
+            "entityId"
+          ]
+        },
+        "indices": [
+          {
+            "name": "index_server_diary_records_runId",
+            "unique": false,
+            "columnNames": [
+              "runId"
+            ],
+            "orders": [],
+            "createSql": "CREATE INDEX IF NOT EXISTS `index_server_diary_records_runId` ON `${TABLE_NAME}` (`runId`)"
+          }
+        ],
+        "foreignKeys": [
+          {
+            "table": "local_owners",
+            "onDelete": "RESTRICT",
+            "onUpdate": "NO ACTION",
+            "columns": [
+              "ownerScope"
+            ],
+            "referencedColumns": [
+              "storageScope"
+            ]
+          },
+          {
+            "table": "server_snapshot_runs",
+            "onDelete": "RESTRICT",
+            "onUpdate": "NO ACTION",
+            "columns": [
+              "runId"
+            ],
+            "referencedColumns": [
+              "id"
+            ]
+          }
+        ]
+      },
+      {
+        "tableName": "server_diary_applications",
+        "createSql": "CREATE TABLE IF NOT EXISTS `${TABLE_NAME}` (`runId` TEXT NOT NULL, `ownerScope` TEXT NOT NULL, `wireContext` TEXT NOT NULL, `serverTime` TEXT NOT NULL, `timelineRevision` INTEGER NOT NULL, `included` INTEGER NOT NULL, `held` INTEGER NOT NULL, `appliedAt` TEXT NOT NULL, PRIMARY KEY(`runId`), FOREIGN KEY(`ownerScope`) REFERENCES `local_owners`(`storageScope`) ON UPDATE NO ACTION ON DELETE RESTRICT , FOREIGN KEY(`runId`) REFERENCES `server_snapshot_runs`(`id`) ON UPDATE NO ACTION ON DELETE RESTRICT )",
+        "fields": [
+          {
+            "fieldPath": "runId",
+            "columnName": "runId",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "ownerScope",
+            "columnName": "ownerScope",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "wireContext",
+            "columnName": "wireContext",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "serverTime",
+            "columnName": "serverTime",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "timelineRevision",
+            "columnName": "timelineRevision",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "included",
+            "columnName": "included",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "held",
+            "columnName": "held",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "appliedAt",
+            "columnName": "appliedAt",
+            "affinity": "TEXT",
+            "notNull": true
+          }
+        ],
+        "primaryKey": {
+          "autoGenerate": false,
+          "columnNames": [
+            "runId"
+          ]
+        },
+        "indices": [
+          {
+            "name": "index_server_diary_applications_ownerScope",
+            "unique": false,
+            "columnNames": [
+              "ownerScope"
+            ],
+            "orders": [],
+            "createSql": "CREATE INDEX IF NOT EXISTS `index_server_diary_applications_ownerScope` ON `${TABLE_NAME}` (`ownerScope`)"
+          }
+        ],
+        "foreignKeys": [
+          {
+            "table": "local_owners",
+            "onDelete": "RESTRICT",
+            "onUpdate": "NO ACTION",
+            "columns": [
+              "ownerScope"
+            ],
+            "referencedColumns": [
+              "storageScope"
+            ]
+          },
+          {
+            "table": "server_snapshot_runs",
+            "onDelete": "RESTRICT",
+            "onUpdate": "NO ACTION",
+            "columns": [
+              "runId"
+            ],
+            "referencedColumns": [
+              "id"
+            ]
+          }
+        ]
+      },
+      {
+        "tableName": "canonical_domains",
+        "createSql": "CREATE TABLE IF NOT EXISTS `${TABLE_NAME}` (`ownerScope` TEXT NOT NULL, `entityType` TEXT NOT NULL, `entityId` TEXT NOT NULL, `localId` TEXT NOT NULL, `wirePayload` TEXT, `wireContext` TEXT NOT NULL, `serverRevision` INTEGER NOT NULL, `deleted` INTEGER NOT NULL, PRIMARY KEY(`ownerScope`, `entityType`, `entityId`), FOREIGN KEY(`ownerScope`) REFERENCES `local_owners`(`storageScope`) ON UPDATE NO ACTION ON DELETE RESTRICT )",
+        "fields": [
+          {
+            "fieldPath": "ownerScope",
+            "columnName": "ownerScope",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "entityType",
+            "columnName": "entityType",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "entityId",
+            "columnName": "entityId",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "localId",
+            "columnName": "localId",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "wirePayload",
+            "columnName": "wirePayload",
+            "affinity": "TEXT"
+          },
+          {
+            "fieldPath": "wireContext",
+            "columnName": "wireContext",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "serverRevision",
+            "columnName": "serverRevision",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "deleted",
+            "columnName": "deleted",
+            "affinity": "INTEGER",
+            "notNull": true
+          }
+        ],
+        "primaryKey": {
+          "autoGenerate": false,
+          "columnNames": [
+            "ownerScope",
+            "entityType",
+            "entityId"
+          ]
+        },
+        "indices": [
+          {
+            "name": "index_canonical_domains_ownerScope_entityType_localId",
+            "unique": true,
+            "columnNames": [
+              "ownerScope",
+              "entityType",
+              "localId"
+            ],
+            "orders": [],
+            "createSql": "CREATE UNIQUE INDEX IF NOT EXISTS `index_canonical_domains_ownerScope_entityType_localId` ON `${TABLE_NAME}` (`ownerScope`, `entityType`, `localId`)"
+          }
+        ],
+        "foreignKeys": [
+          {
+            "table": "local_owners",
+            "onDelete": "RESTRICT",
+            "onUpdate": "NO ACTION",
+            "columns": [
+              "ownerScope"
+            ],
+            "referencedColumns": [
+              "storageScope"
+            ]
+          }
+        ]
+      },
+      {
+        "tableName": "canonical_goal_timelines",
+        "createSql": "CREATE TABLE IF NOT EXISTS `${TABLE_NAME}` (`ownerScope` TEXT NOT NULL, `wireContext` TEXT NOT NULL, `revision` INTEGER NOT NULL, PRIMARY KEY(`ownerScope`), FOREIGN KEY(`ownerScope`) REFERENCES `local_owners`(`storageScope`) ON UPDATE NO ACTION ON DELETE RESTRICT )",
+        "fields": [
+          {
+            "fieldPath": "ownerScope",
+            "columnName": "ownerScope",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "wireContext",
+            "columnName": "wireContext",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "revision",
+            "columnName": "revision",
+            "affinity": "INTEGER",
+            "notNull": true
+          }
+        ],
+        "primaryKey": {
+          "autoGenerate": false,
+          "columnNames": [
+            "ownerScope"
+          ]
+        },
+        "foreignKeys": [
+          {
+            "table": "local_owners",
+            "onDelete": "RESTRICT",
+            "onUpdate": "NO ACTION",
+            "columns": [
+              "ownerScope"
+            ],
+            "referencedColumns": [
+              "storageScope"
+            ]
+          }
+        ]
+      },
+      {
+        "tableName": "import_plans",
+        "createSql": "CREATE TABLE IF NOT EXISTS `${TABLE_NAME}` (`id` TEXT NOT NULL, `sourceScope` TEXT NOT NULL, `targetScope` TEXT NOT NULL, `targetAccountId` TEXT NOT NULL, `issuer` TEXT NOT NULL, `subject` TEXT NOT NULL, `kind` TEXT NOT NULL, `fingerprint` TEXT NOT NULL, `wireContext` TEXT NOT NULL, `createdAt` TEXT NOT NULL, `approvedAt` TEXT, `state` TEXT NOT NULL, PRIMARY KEY(`id`))",
+        "fields": [
+          {
+            "fieldPath": "id",
+            "columnName": "id",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "sourceScope",
+            "columnName": "sourceScope",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "targetScope",
+            "columnName": "targetScope",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "targetAccountId",
+            "columnName": "targetAccountId",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "issuer",
+            "columnName": "issuer",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "subject",
+            "columnName": "subject",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "kind",
+            "columnName": "kind",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "fingerprint",
+            "columnName": "fingerprint",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "wireContext",
+            "columnName": "wireContext",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "createdAt",
+            "columnName": "createdAt",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "approvedAt",
+            "columnName": "approvedAt",
+            "affinity": "TEXT"
+          },
+          {
+            "fieldPath": "state",
+            "columnName": "state",
+            "affinity": "TEXT",
+            "notNull": true
+          }
+        ],
+        "primaryKey": {
+          "autoGenerate": false,
+          "columnNames": [
+            "id"
+          ]
+        },
+        "indices": [
+          {
+            "name": "index_import_plans_sourceScope_targetScope_kind_fingerprint_wireContext",
+            "unique": true,
+            "columnNames": [
+              "sourceScope",
+              "targetScope",
+              "kind",
+              "fingerprint",
+              "wireContext"
+            ],
+            "orders": [],
+            "createSql": "CREATE UNIQUE INDEX IF NOT EXISTS `index_import_plans_sourceScope_targetScope_kind_fingerprint_wireContext` ON `${TABLE_NAME}` (`sourceScope`, `targetScope`, `kind`, `fingerprint`, `wireContext`)"
+          },
+          {
+            "name": "index_import_plans_targetScope",
+            "unique": false,
+            "columnNames": [
+              "targetScope"
+            ],
+            "orders": [],
+            "createSql": "CREATE INDEX IF NOT EXISTS `index_import_plans_targetScope` ON `${TABLE_NAME}` (`targetScope`)"
+          }
+        ]
+      },
+      {
+        "tableName": "guest_assignments",
+        "createSql": "CREATE TABLE IF NOT EXISTS `${TABLE_NAME}` (`sourceScope` TEXT NOT NULL, `targetScope` TEXT NOT NULL, `accountId` TEXT NOT NULL, `issuer` TEXT NOT NULL, `subject` TEXT NOT NULL, `planId` TEXT NOT NULL, `consentAt` TEXT NOT NULL, PRIMARY KEY(`sourceScope`), FOREIGN KEY(`planId`) REFERENCES `import_plans`(`id`) ON UPDATE NO ACTION ON DELETE RESTRICT )",
+        "fields": [
+          {
+            "fieldPath": "sourceScope",
+            "columnName": "sourceScope",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "targetScope",
+            "columnName": "targetScope",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "accountId",
+            "columnName": "accountId",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "issuer",
+            "columnName": "issuer",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "subject",
+            "columnName": "subject",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "planId",
+            "columnName": "planId",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "consentAt",
+            "columnName": "consentAt",
+            "affinity": "TEXT",
+            "notNull": true
+          }
+        ],
+        "primaryKey": {
+          "autoGenerate": false,
+          "columnNames": [
+            "sourceScope"
+          ]
+        },
+        "indices": [
+          {
+            "name": "index_guest_assignments_planId",
+            "unique": false,
+            "columnNames": [
+              "planId"
+            ],
+            "orders": [],
+            "createSql": "CREATE INDEX IF NOT EXISTS `index_guest_assignments_planId` ON `${TABLE_NAME}` (`planId`)"
+          }
+        ],
+        "foreignKeys": [
+          {
+            "table": "import_plans",
+            "onDelete": "RESTRICT",
+            "onUpdate": "NO ACTION",
+            "columns": [
+              "planId"
+            ],
+            "referencedColumns": [
+              "id"
+            ]
+          }
+        ]
+      },
+      {
+        "tableName": "import_sources",
+        "createSql": "CREATE TABLE IF NOT EXISTS `${TABLE_NAME}` (`planId` TEXT NOT NULL, `entityType` TEXT NOT NULL, `sourceId` TEXT NOT NULL, `ordinal` INTEGER NOT NULL, `sourceJson` TEXT NOT NULL, `sourceHash` TEXT NOT NULL, `outboxesJson` TEXT NOT NULL, `localId` TEXT NOT NULL, `wireId` TEXT NOT NULL, `sourceEpoch` TEXT, `sourceRevision` INTEGER, `sourceOperationId` TEXT, `metadataJson` TEXT NOT NULL, `state` TEXT NOT NULL, `decisionCode` TEXT, `operationId` TEXT, `appliedPayload` TEXT, `originFingerprint` TEXT NOT NULL DEFAULT '', PRIMARY KEY(`planId`, `entityType`, `sourceId`), FOREIGN KEY(`planId`) REFERENCES `import_plans`(`id`) ON UPDATE NO ACTION ON DELETE RESTRICT )",
+        "fields": [
+          {
+            "fieldPath": "planId",
+            "columnName": "planId",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "entityType",
+            "columnName": "entityType",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "sourceId",
+            "columnName": "sourceId",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "ordinal",
+            "columnName": "ordinal",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "sourceJson",
+            "columnName": "sourceJson",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "sourceHash",
+            "columnName": "sourceHash",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "outboxesJson",
+            "columnName": "outboxesJson",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "localId",
+            "columnName": "localId",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "wireId",
+            "columnName": "wireId",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "sourceEpoch",
+            "columnName": "sourceEpoch",
+            "affinity": "TEXT"
+          },
+          {
+            "fieldPath": "sourceRevision",
+            "columnName": "sourceRevision",
+            "affinity": "INTEGER"
+          },
+          {
+            "fieldPath": "sourceOperationId",
+            "columnName": "sourceOperationId",
+            "affinity": "TEXT"
+          },
+          {
+            "fieldPath": "metadataJson",
+            "columnName": "metadataJson",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "state",
+            "columnName": "state",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "decisionCode",
+            "columnName": "decisionCode",
+            "affinity": "TEXT"
+          },
+          {
+            "fieldPath": "operationId",
+            "columnName": "operationId",
+            "affinity": "TEXT"
+          },
+          {
+            "fieldPath": "appliedPayload",
+            "columnName": "appliedPayload",
+            "affinity": "TEXT"
+          },
+          {
+            "fieldPath": "originFingerprint",
+            "columnName": "originFingerprint",
+            "affinity": "TEXT",
+            "notNull": true,
+            "defaultValue": "''"
+          }
+        ],
+        "primaryKey": {
+          "autoGenerate": false,
+          "columnNames": [
+            "planId",
+            "entityType",
+            "sourceId"
+          ]
+        },
+        "indices": [
+          {
+            "name": "index_import_sources_operationId",
+            "unique": false,
+            "columnNames": [
+              "operationId"
+            ],
+            "orders": [],
+            "createSql": "CREATE INDEX IF NOT EXISTS `index_import_sources_operationId` ON `${TABLE_NAME}` (`operationId`)"
+          }
+        ],
+        "foreignKeys": [
+          {
+            "table": "import_plans",
+            "onDelete": "RESTRICT",
+            "onUpdate": "NO ACTION",
+            "columns": [
+              "planId"
+            ],
+            "referencedColumns": [
+              "id"
+            ]
+          }
+        ]
+      },
+      {
+        "tableName": "import_identities",
+        "createSql": "CREATE TABLE IF NOT EXISTS `${TABLE_NAME}` (`ownerScope` TEXT NOT NULL, `entityType` TEXT NOT NULL, `localId` TEXT NOT NULL, `wireId` TEXT NOT NULL, `sourceScope` TEXT NOT NULL, `sourceId` TEXT NOT NULL, `reason` TEXT NOT NULL, PRIMARY KEY(`ownerScope`, `entityType`, `localId`))",
+        "fields": [
+          {
+            "fieldPath": "ownerScope",
+            "columnName": "ownerScope",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "entityType",
+            "columnName": "entityType",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "localId",
+            "columnName": "localId",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "wireId",
+            "columnName": "wireId",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "sourceScope",
+            "columnName": "sourceScope",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "sourceId",
+            "columnName": "sourceId",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "reason",
+            "columnName": "reason",
+            "affinity": "TEXT",
+            "notNull": true
+          }
+        ],
+        "primaryKey": {
+          "autoGenerate": false,
+          "columnNames": [
+            "ownerScope",
+            "entityType",
+            "localId"
+          ]
+        },
+        "indices": [
+          {
+            "name": "index_import_identities_ownerScope_entityType_wireId",
+            "unique": true,
+            "columnNames": [
+              "ownerScope",
+              "entityType",
+              "wireId"
+            ],
+            "orders": [],
+            "createSql": "CREATE UNIQUE INDEX IF NOT EXISTS `index_import_identities_ownerScope_entityType_wireId` ON `${TABLE_NAME}` (`ownerScope`, `entityType`, `wireId`)"
+          }
+        ]
+      },
+      {
+        "tableName": "import_item_identities",
+        "createSql": "CREATE TABLE IF NOT EXISTS `${TABLE_NAME}` (`ownerScope` TEXT NOT NULL, `localId` TEXT NOT NULL, `wireId` TEXT NOT NULL, `mealLocalId` TEXT NOT NULL, `sourceId` TEXT NOT NULL, PRIMARY KEY(`ownerScope`, `localId`))",
+        "fields": [
+          {
+            "fieldPath": "ownerScope",
+            "columnName": "ownerScope",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "localId",
+            "columnName": "localId",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "wireId",
+            "columnName": "wireId",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "mealLocalId",
+            "columnName": "mealLocalId",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "sourceId",
+            "columnName": "sourceId",
+            "affinity": "TEXT",
+            "notNull": true
+          }
+        ],
+        "primaryKey": {
+          "autoGenerate": false,
+          "columnNames": [
+            "ownerScope",
+            "localId"
+          ]
+        },
+        "indices": [
+          {
+            "name": "index_import_item_identities_ownerScope_wireId",
+            "unique": true,
+            "columnNames": [
+              "ownerScope",
+              "wireId"
+            ],
+            "orders": [],
+            "createSql": "CREATE UNIQUE INDEX IF NOT EXISTS `index_import_item_identities_ownerScope_wireId` ON `${TABLE_NAME}` (`ownerScope`, `wireId`)"
+          },
+          {
+            "name": "index_import_item_identities_ownerScope_mealLocalId",
+            "unique": false,
+            "columnNames": [
+              "ownerScope",
+              "mealLocalId"
+            ],
+            "orders": [],
+            "createSql": "CREATE INDEX IF NOT EXISTS `index_import_item_identities_ownerScope_mealLocalId` ON `${TABLE_NAME}` (`ownerScope`, `mealLocalId`)"
+          }
+        ]
+      },
+      {
+        "tableName": "import_decisions",
+        "createSql": "CREATE TABLE IF NOT EXISTS `${TABLE_NAME}` (`id` TEXT NOT NULL, `planId` TEXT NOT NULL, `entityType` TEXT NOT NULL, `sourceId` TEXT NOT NULL, `sourceHash` TEXT NOT NULL, `choiceJson` TEXT NOT NULL, `decidedAt` TEXT NOT NULL, PRIMARY KEY(`id`), FOREIGN KEY(`planId`) REFERENCES `import_plans`(`id`) ON UPDATE NO ACTION ON DELETE RESTRICT )",
+        "fields": [
+          {
+            "fieldPath": "id",
+            "columnName": "id",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "planId",
+            "columnName": "planId",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "entityType",
+            "columnName": "entityType",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "sourceId",
+            "columnName": "sourceId",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "sourceHash",
+            "columnName": "sourceHash",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "choiceJson",
+            "columnName": "choiceJson",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "decidedAt",
+            "columnName": "decidedAt",
+            "affinity": "TEXT",
+            "notNull": true
+          }
+        ],
+        "primaryKey": {
+          "autoGenerate": false,
+          "columnNames": [
+            "id"
+          ]
+        },
+        "indices": [
+          {
+            "name": "index_import_decisions_planId",
+            "unique": false,
+            "columnNames": [
+              "planId"
+            ],
+            "orders": [],
+            "createSql": "CREATE INDEX IF NOT EXISTS `index_import_decisions_planId` ON `${TABLE_NAME}` (`planId`)"
+          }
+        ],
+        "foreignKeys": [
+          {
+            "table": "import_plans",
+            "onDelete": "RESTRICT",
+            "onUpdate": "NO ACTION",
+            "columns": [
+              "planId"
+            ],
+            "referencedColumns": [
+              "id"
+            ]
+          }
+        ]
+      },
+      {
+        "tableName": "reconciliation_batches",
+        "createSql": "CREATE TABLE IF NOT EXISTS `${TABLE_NAME}` (`id` TEXT NOT NULL, `planId` TEXT NOT NULL, `kind` TEXT NOT NULL, `wireContext` TEXT NOT NULL, `snapshotRunId` TEXT NOT NULL, `requestJson` TEXT NOT NULL, `requestHash` TEXT NOT NULL, `originalBatchId` TEXT, `createdAt` TEXT NOT NULL, `attempted` INTEGER NOT NULL, `responseJson` TEXT, `state` TEXT NOT NULL, `retryAtMillis` INTEGER NOT NULL, `protocolScope` TEXT NOT NULL DEFAULT 'calorie-app', PRIMARY KEY(`id`), FOREIGN KEY(`planId`) REFERENCES `import_plans`(`id`) ON UPDATE NO ACTION ON DELETE RESTRICT , FOREIGN KEY(`snapshotRunId`) REFERENCES `server_snapshot_runs`(`id`) ON UPDATE NO ACTION ON DELETE RESTRICT )",
+        "fields": [
+          {
+            "fieldPath": "id",
+            "columnName": "id",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "planId",
+            "columnName": "planId",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "kind",
+            "columnName": "kind",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "wireContext",
+            "columnName": "wireContext",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "snapshotRunId",
+            "columnName": "snapshotRunId",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "requestJson",
+            "columnName": "requestJson",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "requestHash",
+            "columnName": "requestHash",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "originalBatchId",
+            "columnName": "originalBatchId",
+            "affinity": "TEXT"
+          },
+          {
+            "fieldPath": "createdAt",
+            "columnName": "createdAt",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "attempted",
+            "columnName": "attempted",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "responseJson",
+            "columnName": "responseJson",
+            "affinity": "TEXT"
+          },
+          {
+            "fieldPath": "state",
+            "columnName": "state",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "retryAtMillis",
+            "columnName": "retryAtMillis",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "protocolScope",
+            "columnName": "protocolScope",
+            "affinity": "TEXT",
+            "notNull": true,
+            "defaultValue": "'calorie-app'"
+          }
+        ],
+        "primaryKey": {
+          "autoGenerate": false,
+          "columnNames": [
+            "id"
+          ]
+        },
+        "indices": [
+          {
+            "name": "index_reconciliation_batches_planId",
+            "unique": false,
+            "columnNames": [
+              "planId"
+            ],
+            "orders": [],
+            "createSql": "CREATE INDEX IF NOT EXISTS `index_reconciliation_batches_planId` ON `${TABLE_NAME}` (`planId`)"
+          },
+          {
+            "name": "index_reconciliation_batches_snapshotRunId",
+            "unique": false,
+            "columnNames": [
+              "snapshotRunId"
+            ],
+            "orders": [],
+            "createSql": "CREATE INDEX IF NOT EXISTS `index_reconciliation_batches_snapshotRunId` ON `${TABLE_NAME}` (`snapshotRunId`)"
+          }
+        ],
+        "foreignKeys": [
+          {
+            "table": "import_plans",
+            "onDelete": "RESTRICT",
+            "onUpdate": "NO ACTION",
+            "columns": [
+              "planId"
+            ],
+            "referencedColumns": [
+              "id"
+            ]
+          },
+          {
+            "table": "server_snapshot_runs",
+            "onDelete": "RESTRICT",
+            "onUpdate": "NO ACTION",
+            "columns": [
+              "snapshotRunId"
+            ],
+            "referencedColumns": [
+              "id"
+            ]
+          }
+        ]
+      },
+      {
+        "tableName": "reconciliation_evidence",
+        "createSql": "CREATE TABLE IF NOT EXISTS `${TABLE_NAME}` (`planId` TEXT NOT NULL, `kind` TEXT NOT NULL, `identity` TEXT NOT NULL, `json` TEXT NOT NULL, `sha256` TEXT NOT NULL, `runId` TEXT NOT NULL, PRIMARY KEY(`planId`, `kind`, `identity`), FOREIGN KEY(`planId`) REFERENCES `import_plans`(`id`) ON UPDATE NO ACTION ON DELETE RESTRICT , FOREIGN KEY(`runId`) REFERENCES `server_snapshot_runs`(`id`) ON UPDATE NO ACTION ON DELETE RESTRICT )",
+        "fields": [
+          {
+            "fieldPath": "planId",
+            "columnName": "planId",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "kind",
+            "columnName": "kind",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "identity",
+            "columnName": "identity",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "json",
+            "columnName": "json",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "sha256",
+            "columnName": "sha256",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "runId",
+            "columnName": "runId",
+            "affinity": "TEXT",
+            "notNull": true
+          }
+        ],
+        "primaryKey": {
+          "autoGenerate": false,
+          "columnNames": [
+            "planId",
+            "kind",
+            "identity"
+          ]
+        },
+        "indices": [
+          {
+            "name": "index_reconciliation_evidence_runId",
+            "unique": false,
+            "columnNames": [
+              "runId"
+            ],
+            "orders": [],
+            "createSql": "CREATE INDEX IF NOT EXISTS `index_reconciliation_evidence_runId` ON `${TABLE_NAME}` (`runId`)"
+          }
+        ],
+        "foreignKeys": [
+          {
+            "table": "import_plans",
+            "onDelete": "RESTRICT",
+            "onUpdate": "NO ACTION",
+            "columns": [
+              "planId"
+            ],
+            "referencedColumns": [
+              "id"
+            ]
+          },
+          {
+            "table": "server_snapshot_runs",
+            "onDelete": "RESTRICT",
+            "onUpdate": "NO ACTION",
+            "columns": [
+              "runId"
+            ],
+            "referencedColumns": [
+              "id"
+            ]
+          }
+        ]
+      },
+      {
+        "tableName": "reconciliation_pulls",
+        "createSql": "CREATE TABLE IF NOT EXISTS `${TABLE_NAME}` (`runId` TEXT NOT NULL, `planId` TEXT NOT NULL, `groupIndex` INTEGER NOT NULL, `operationIdsJson` TEXT NOT NULL, PRIMARY KEY(`runId`), FOREIGN KEY(`runId`) REFERENCES `server_snapshot_runs`(`id`) ON UPDATE NO ACTION ON DELETE RESTRICT , FOREIGN KEY(`planId`) REFERENCES `import_plans`(`id`) ON UPDATE NO ACTION ON DELETE RESTRICT )",
+        "fields": [
+          {
+            "fieldPath": "runId",
+            "columnName": "runId",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "planId",
+            "columnName": "planId",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "groupIndex",
+            "columnName": "groupIndex",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "operationIdsJson",
+            "columnName": "operationIdsJson",
+            "affinity": "TEXT",
+            "notNull": true
+          }
+        ],
+        "primaryKey": {
+          "autoGenerate": false,
+          "columnNames": [
+            "runId"
+          ]
+        },
+        "indices": [
+          {
+            "name": "index_reconciliation_pulls_planId",
+            "unique": false,
+            "columnNames": [
+              "planId"
+            ],
+            "orders": [],
+            "createSql": "CREATE INDEX IF NOT EXISTS `index_reconciliation_pulls_planId` ON `${TABLE_NAME}` (`planId`)"
+          }
+        ],
+        "foreignKeys": [
+          {
+            "table": "server_snapshot_runs",
+            "onDelete": "RESTRICT",
+            "onUpdate": "NO ACTION",
+            "columns": [
+              "runId"
+            ],
+            "referencedColumns": [
+              "id"
+            ]
+          },
+          {
+            "table": "import_plans",
+            "onDelete": "RESTRICT",
+            "onUpdate": "NO ACTION",
+            "columns": [
+              "planId"
+            ],
+            "referencedColumns": [
+              "id"
+            ]
+          }
+        ]
+      },
+      {
+        "tableName": "import_origins",
+        "createSql": "CREATE TABLE IF NOT EXISTS `${TABLE_NAME}` (`sourceScope` TEXT NOT NULL, `entityType` TEXT NOT NULL, `sourceId` TEXT NOT NULL, `targetScope` TEXT NOT NULL, `firstPlanId` TEXT NOT NULL, `firstOperationId` TEXT NOT NULL, `firstFingerprint` TEXT NOT NULL, PRIMARY KEY(`sourceScope`, `entityType`, `sourceId`), FOREIGN KEY(`firstPlanId`) REFERENCES `import_plans`(`id`) ON UPDATE NO ACTION ON DELETE RESTRICT , FOREIGN KEY(`firstOperationId`) REFERENCES `outbox`(`operationId`) ON UPDATE NO ACTION ON DELETE RESTRICT )",
+        "fields": [
+          {
+            "fieldPath": "sourceScope",
+            "columnName": "sourceScope",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "entityType",
+            "columnName": "entityType",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "sourceId",
+            "columnName": "sourceId",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "targetScope",
+            "columnName": "targetScope",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "firstPlanId",
+            "columnName": "firstPlanId",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "firstOperationId",
+            "columnName": "firstOperationId",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "firstFingerprint",
+            "columnName": "firstFingerprint",
+            "affinity": "TEXT",
+            "notNull": true
+          }
+        ],
+        "primaryKey": {
+          "autoGenerate": false,
+          "columnNames": [
+            "sourceScope",
+            "entityType",
+            "sourceId"
+          ]
+        },
+        "indices": [
+          {
+            "name": "index_import_origins_targetScope",
+            "unique": false,
+            "columnNames": [
+              "targetScope"
+            ],
+            "orders": [],
+            "createSql": "CREATE INDEX IF NOT EXISTS `index_import_origins_targetScope` ON `${TABLE_NAME}` (`targetScope`)"
+          },
+          {
+            "name": "index_import_origins_firstPlanId",
+            "unique": false,
+            "columnNames": [
+              "firstPlanId"
+            ],
+            "orders": [],
+            "createSql": "CREATE INDEX IF NOT EXISTS `index_import_origins_firstPlanId` ON `${TABLE_NAME}` (`firstPlanId`)"
+          },
+          {
+            "name": "index_import_origins_firstOperationId",
+            "unique": false,
+            "columnNames": [
+              "firstOperationId"
+            ],
+            "orders": [],
+            "createSql": "CREATE INDEX IF NOT EXISTS `index_import_origins_firstOperationId` ON `${TABLE_NAME}` (`firstOperationId`)"
+          }
+        ],
+        "foreignKeys": [
+          {
+            "table": "import_plans",
+            "onDelete": "RESTRICT",
+            "onUpdate": "NO ACTION",
+            "columns": [
+              "firstPlanId"
+            ],
+            "referencedColumns": [
+              "id"
+            ]
+          },
+          {
+            "table": "outbox",
+            "onDelete": "RESTRICT",
+            "onUpdate": "NO ACTION",
+            "columns": [
+              "firstOperationId"
+            ],
+            "referencedColumns": [
+              "operationId"
+            ]
+          }
+        ]
+      },
+      {
+        "tableName": "snapshot_archive_receipts",
+        "createSql": "CREATE TABLE IF NOT EXISTS `${TABLE_NAME}` (`runId` TEXT NOT NULL, `originalPages` INTEGER NOT NULL, `originalItems` INTEGER NOT NULL, `originalByteCount` INTEGER NOT NULL, `releasedRawBytes` INTEGER NOT NULL, `manifestJson` TEXT NOT NULL, `manifestHash` TEXT NOT NULL, `compactedAt` TEXT NOT NULL, PRIMARY KEY(`runId`), FOREIGN KEY(`runId`) REFERENCES `server_snapshot_runs`(`id`) ON UPDATE NO ACTION ON DELETE RESTRICT )",
+        "fields": [
+          {
+            "fieldPath": "runId",
+            "columnName": "runId",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "originalPages",
+            "columnName": "originalPages",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "originalItems",
+            "columnName": "originalItems",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "originalByteCount",
+            "columnName": "originalByteCount",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "releasedRawBytes",
+            "columnName": "releasedRawBytes",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "manifestJson",
+            "columnName": "manifestJson",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "manifestHash",
+            "columnName": "manifestHash",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "compactedAt",
+            "columnName": "compactedAt",
+            "affinity": "TEXT",
+            "notNull": true
+          }
+        ],
+        "primaryKey": {
+          "autoGenerate": false,
+          "columnNames": [
+            "runId"
+          ]
+        },
+        "foreignKeys": [
+          {
+            "table": "server_snapshot_runs",
+            "onDelete": "RESTRICT",
+            "onUpdate": "NO ACTION",
+            "columns": [
+              "runId"
+            ],
+            "referencedColumns": [
+              "id"
+            ]
+          }
+        ]
+      },
+      {
+        "tableName": "sync_work_state",
+        "createSql": "CREATE TABLE IF NOT EXISTS `${TABLE_NAME}` (`ownerScope` TEXT NOT NULL, `leaseGeneration` INTEGER NOT NULL, `wireContext` TEXT NOT NULL, `cycleId` TEXT NOT NULL, `phase` TEXT NOT NULL, `status` TEXT NOT NULL, `retryAtMillis` INTEGER NOT NULL, `consecutiveFailures` INTEGER NOT NULL, `requestedVersion` INTEGER NOT NULL, `activeVersion` INTEGER NOT NULL, `handledVersion` INTEGER NOT NULL, `acknowledged` INTEGER NOT NULL, `refused` INTEGER NOT NULL, `updatedAtMillis` INTEGER NOT NULL, `reconciliationBaseline` INTEGER DEFAULT NULL, PRIMARY KEY(`ownerScope`), FOREIGN KEY(`ownerScope`) REFERENCES `local_owners`(`storageScope`) ON UPDATE NO ACTION ON DELETE RESTRICT )",
+        "fields": [
+          {
+            "fieldPath": "ownerScope",
+            "columnName": "ownerScope",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "leaseGeneration",
+            "columnName": "leaseGeneration",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "wireContext",
+            "columnName": "wireContext",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "cycleId",
+            "columnName": "cycleId",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "phase",
+            "columnName": "phase",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "status",
+            "columnName": "status",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "retryAtMillis",
+            "columnName": "retryAtMillis",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "consecutiveFailures",
+            "columnName": "consecutiveFailures",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "requestedVersion",
+            "columnName": "requestedVersion",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "activeVersion",
+            "columnName": "activeVersion",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "handledVersion",
+            "columnName": "handledVersion",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "acknowledged",
+            "columnName": "acknowledged",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "refused",
+            "columnName": "refused",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "updatedAtMillis",
+            "columnName": "updatedAtMillis",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "reconciliationBaseline",
+            "columnName": "reconciliationBaseline",
+            "affinity": "INTEGER",
+            "defaultValue": "NULL"
+          }
+        ],
+        "primaryKey": {
+          "autoGenerate": false,
+          "columnNames": [
+            "ownerScope"
+          ]
+        },
+        "foreignKeys": [
+          {
+            "table": "local_owners",
+            "onDelete": "RESTRICT",
+            "onUpdate": "NO ACTION",
+            "columns": [
+              "ownerScope"
+            ],
+            "referencedColumns": [
+              "storageScope"
+            ]
+          }
+        ]
+      },
+      {
+        "tableName": "reconciliation_completions",
+        "createSql": "CREATE TABLE IF NOT EXISTS `${TABLE_NAME}` (`sequence` INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL, `ownerScope` TEXT NOT NULL, `wireContext` TEXT NOT NULL, `planId` TEXT NOT NULL, `runId` TEXT NOT NULL, FOREIGN KEY(`ownerScope`) REFERENCES `local_owners`(`storageScope`) ON UPDATE NO ACTION ON DELETE RESTRICT , FOREIGN KEY(`planId`) REFERENCES `import_plans`(`id`) ON UPDATE NO ACTION ON DELETE RESTRICT , FOREIGN KEY(`runId`) REFERENCES `server_diary_applications`(`runId`) ON UPDATE NO ACTION ON DELETE RESTRICT )",
+        "fields": [
+          {
+            "fieldPath": "sequence",
+            "columnName": "sequence",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "ownerScope",
+            "columnName": "ownerScope",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "wireContext",
+            "columnName": "wireContext",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "planId",
+            "columnName": "planId",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "runId",
+            "columnName": "runId",
+            "affinity": "TEXT",
+            "notNull": true
+          }
+        ],
+        "primaryKey": {
+          "autoGenerate": true,
+          "columnNames": [
+            "sequence"
+          ]
+        },
+        "indices": [
+          {
+            "name": "index_reconciliation_completions_planId",
+            "unique": true,
+            "columnNames": [
+              "planId"
+            ],
+            "orders": [],
+            "createSql": "CREATE UNIQUE INDEX IF NOT EXISTS `index_reconciliation_completions_planId` ON `${TABLE_NAME}` (`planId`)"
+          },
+          {
+            "name": "index_reconciliation_completions_runId",
+            "unique": false,
+            "columnNames": [
+              "runId"
+            ],
+            "orders": [],
+            "createSql": "CREATE INDEX IF NOT EXISTS `index_reconciliation_completions_runId` ON `${TABLE_NAME}` (`runId`)"
+          },
+          {
+            "name": "index_reconciliation_completions_ownerScope_wireContext",
+            "unique": false,
+            "columnNames": [
+              "ownerScope",
+              "wireContext"
+            ],
+            "orders": [],
+            "createSql": "CREATE INDEX IF NOT EXISTS `index_reconciliation_completions_ownerScope_wireContext` ON `${TABLE_NAME}` (`ownerScope`, `wireContext`)"
+          }
+        ],
+        "foreignKeys": [
+          {
+            "table": "local_owners",
+            "onDelete": "RESTRICT",
+            "onUpdate": "NO ACTION",
+            "columns": [
+              "ownerScope"
+            ],
+            "referencedColumns": [
+              "storageScope"
+            ]
+          },
+          {
+            "table": "import_plans",
+            "onDelete": "RESTRICT",
+            "onUpdate": "NO ACTION",
+            "columns": [
+              "planId"
+            ],
+            "referencedColumns": [
+              "id"
+            ]
+          },
+          {
+            "table": "server_diary_applications",
+            "onDelete": "RESTRICT",
+            "onUpdate": "NO ACTION",
+            "columns": [
+              "runId"
+            ],
+            "referencedColumns": [
+              "runId"
+            ]
+          }
+        ]
+      },
+      {
+        "tableName": "community_cache",
+        "createSql": "CREATE TABLE IF NOT EXISTS `${TABLE_NAME}` (`ownerScope` TEXT NOT NULL, `wireContext` TEXT NOT NULL, `productId` TEXT NOT NULL, `revision` INTEGER NOT NULL, `searchName` TEXT NOT NULL, `productJson` TEXT NOT NULL, `feedbackJson` TEXT, `fetchedAt` INTEGER NOT NULL, PRIMARY KEY(`ownerScope`, `wireContext`, `productId`, `revision`), FOREIGN KEY(`ownerScope`) REFERENCES `local_owners`(`storageScope`) ON UPDATE NO ACTION ON DELETE RESTRICT )",
+        "fields": [
+          {
+            "fieldPath": "ownerScope",
+            "columnName": "ownerScope",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "wireContext",
+            "columnName": "wireContext",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "productId",
+            "columnName": "productId",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "revision",
+            "columnName": "revision",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "searchName",
+            "columnName": "searchName",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "productJson",
+            "columnName": "productJson",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "feedbackJson",
+            "columnName": "feedbackJson",
+            "affinity": "TEXT"
+          },
+          {
+            "fieldPath": "fetchedAt",
+            "columnName": "fetchedAt",
+            "affinity": "INTEGER",
+            "notNull": true
+          }
+        ],
+        "primaryKey": {
+          "autoGenerate": false,
+          "columnNames": [
+            "ownerScope",
+            "wireContext",
+            "productId",
+            "revision"
+          ]
+        },
+        "indices": [
+          {
+            "name": "index_community_cache_ownerScope_wireContext_fetchedAt",
+            "unique": false,
+            "columnNames": [
+              "ownerScope",
+              "wireContext",
+              "fetchedAt"
+            ],
+            "orders": [],
+            "createSql": "CREATE INDEX IF NOT EXISTS `index_community_cache_ownerScope_wireContext_fetchedAt` ON `${TABLE_NAME}` (`ownerScope`, `wireContext`, `fetchedAt`)"
+          }
+        ],
+        "foreignKeys": [
+          {
+            "table": "local_owners",
+            "onDelete": "RESTRICT",
+            "onUpdate": "NO ACTION",
+            "columns": [
+              "ownerScope"
+            ],
+            "referencedColumns": [
+              "storageScope"
+            ]
+          }
+        ]
+      },
+      {
+        "tableName": "community_attempts",
+        "createSql": "CREATE TABLE IF NOT EXISTS `${TABLE_NAME}` (`id` TEXT NOT NULL, `ownerScope` TEXT NOT NULL, `wireContext` TEXT NOT NULL, `resource` TEXT NOT NULL, `kind` TEXT NOT NULL, `method` TEXT NOT NULL, `path` TEXT NOT NULL, `body` TEXT, `ifMatch` TEXT, `fingerprint` TEXT NOT NULL, `createdAt` INTEGER NOT NULL, `attempted` INTEGER NOT NULL, `state` TEXT NOT NULL, `retryAt` INTEGER NOT NULL, `responseJson` TEXT, `errorCode` TEXT, PRIMARY KEY(`id`), FOREIGN KEY(`ownerScope`) REFERENCES `local_owners`(`storageScope`) ON UPDATE NO ACTION ON DELETE RESTRICT )",
+        "fields": [
+          {
+            "fieldPath": "id",
+            "columnName": "id",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "ownerScope",
+            "columnName": "ownerScope",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "wireContext",
+            "columnName": "wireContext",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "resource",
+            "columnName": "resource",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "kind",
+            "columnName": "kind",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "method",
+            "columnName": "method",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "path",
+            "columnName": "path",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "body",
+            "columnName": "body",
+            "affinity": "TEXT"
+          },
+          {
+            "fieldPath": "ifMatch",
+            "columnName": "ifMatch",
+            "affinity": "TEXT"
+          },
+          {
+            "fieldPath": "fingerprint",
+            "columnName": "fingerprint",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "createdAt",
+            "columnName": "createdAt",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "attempted",
+            "columnName": "attempted",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "state",
+            "columnName": "state",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "retryAt",
+            "columnName": "retryAt",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "responseJson",
+            "columnName": "responseJson",
+            "affinity": "TEXT"
+          },
+          {
+            "fieldPath": "errorCode",
+            "columnName": "errorCode",
+            "affinity": "TEXT"
+          }
+        ],
+        "primaryKey": {
+          "autoGenerate": false,
+          "columnNames": [
+            "id"
+          ]
+        },
+        "indices": [
+          {
+            "name": "index_community_attempts_ownerScope_wireContext_resource_createdAt",
+            "unique": false,
+            "columnNames": [
+              "ownerScope",
+              "wireContext",
+              "resource",
+              "createdAt"
+            ],
+            "orders": [],
+            "createSql": "CREATE INDEX IF NOT EXISTS `index_community_attempts_ownerScope_wireContext_resource_createdAt` ON `${TABLE_NAME}` (`ownerScope`, `wireContext`, `resource`, `createdAt`)"
+          }
+        ],
+        "foreignKeys": [
+          {
+            "table": "local_owners",
+            "onDelete": "RESTRICT",
+            "onUpdate": "NO ACTION",
+            "columns": [
+              "ownerScope"
+            ],
+            "referencedColumns": [
+              "storageScope"
+            ]
+          }
+        ]
+      },
+      {
+        "tableName": "community_backoff",
+        "createSql": "CREATE TABLE IF NOT EXISTS `${TABLE_NAME}` (`ownerScope` TEXT NOT NULL, `wireContext` TEXT NOT NULL, `retryAt` INTEGER NOT NULL, PRIMARY KEY(`ownerScope`, `wireContext`), FOREIGN KEY(`ownerScope`) REFERENCES `local_owners`(`storageScope`) ON UPDATE NO ACTION ON DELETE RESTRICT )",
+        "fields": [
+          {
+            "fieldPath": "ownerScope",
+            "columnName": "ownerScope",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "wireContext",
+            "columnName": "wireContext",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "retryAt",
+            "columnName": "retryAt",
+            "affinity": "INTEGER",
+            "notNull": true
+          }
+        ],
+        "primaryKey": {
+          "autoGenerate": false,
+          "columnNames": [
+            "ownerScope",
+            "wireContext"
+          ]
+        },
+        "foreignKeys": [
+          {
+            "table": "local_owners",
+            "onDelete": "RESTRICT",
+            "onUpdate": "NO ACTION",
+            "columns": [
+              "ownerScope"
+            ],
+            "referencedColumns": [
+              "storageScope"
+            ]
+          }
+        ]
+      },
+      {
+        "tableName": "energy_cache",
+        "createSql": "CREATE TABLE IF NOT EXISTS `${TABLE_NAME}` (`ownerScope` TEXT NOT NULL, `wireContext` TEXT NOT NULL, `kind` TEXT NOT NULL, `recordId` TEXT NOT NULL, `revision` INTEGER NOT NULL, `wire` TEXT NOT NULL, `fetchedAt` INTEGER NOT NULL, PRIMARY KEY(`ownerScope`, `wireContext`, `kind`, `recordId`), FOREIGN KEY(`ownerScope`) REFERENCES `local_owners`(`storageScope`) ON UPDATE NO ACTION ON DELETE RESTRICT )",
+        "fields": [
+          {
+            "fieldPath": "ownerScope",
+            "columnName": "ownerScope",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "wireContext",
+            "columnName": "wireContext",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "kind",
+            "columnName": "kind",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "recordId",
+            "columnName": "recordId",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "revision",
+            "columnName": "revision",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "wire",
+            "columnName": "wire",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "fetchedAt",
+            "columnName": "fetchedAt",
+            "affinity": "INTEGER",
+            "notNull": true
+          }
+        ],
+        "primaryKey": {
+          "autoGenerate": false,
+          "columnNames": [
+            "ownerScope",
+            "wireContext",
+            "kind",
+            "recordId"
+          ]
+        },
+        "foreignKeys": [
+          {
+            "table": "local_owners",
+            "onDelete": "RESTRICT",
+            "onUpdate": "NO ACTION",
+            "columns": [
+              "ownerScope"
+            ],
+            "referencedColumns": [
+              "storageScope"
+            ]
+          }
+        ]
+      },
+      {
+        "tableName": "energy_attempts",
+        "createSql": "CREATE TABLE IF NOT EXISTS `${TABLE_NAME}` (`id` TEXT NOT NULL, `ownerScope` TEXT NOT NULL, `wireContext` TEXT NOT NULL, `leaseGeneration` INTEGER NOT NULL, `resource` TEXT NOT NULL, `kind` TEXT NOT NULL, `method` TEXT NOT NULL, `path` TEXT NOT NULL, `body` TEXT NOT NULL, `ifMatch` TEXT, `fingerprint` TEXT NOT NULL, `createdAt` INTEGER NOT NULL, `attempted` INTEGER NOT NULL, `state` TEXT NOT NULL, `retryAt` INTEGER NOT NULL, `responseJson` TEXT, `errorCode` TEXT, PRIMARY KEY(`id`), FOREIGN KEY(`ownerScope`) REFERENCES `local_owners`(`storageScope`) ON UPDATE NO ACTION ON DELETE RESTRICT )",
+        "fields": [
+          {
+            "fieldPath": "id",
+            "columnName": "id",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "ownerScope",
+            "columnName": "ownerScope",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "wireContext",
+            "columnName": "wireContext",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "leaseGeneration",
+            "columnName": "leaseGeneration",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "resource",
+            "columnName": "resource",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "kind",
+            "columnName": "kind",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "method",
+            "columnName": "method",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "path",
+            "columnName": "path",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "body",
+            "columnName": "body",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "ifMatch",
+            "columnName": "ifMatch",
+            "affinity": "TEXT"
+          },
+          {
+            "fieldPath": "fingerprint",
+            "columnName": "fingerprint",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "createdAt",
+            "columnName": "createdAt",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "attempted",
+            "columnName": "attempted",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "state",
+            "columnName": "state",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "retryAt",
+            "columnName": "retryAt",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "responseJson",
+            "columnName": "responseJson",
+            "affinity": "TEXT"
+          },
+          {
+            "fieldPath": "errorCode",
+            "columnName": "errorCode",
+            "affinity": "TEXT"
+          }
+        ],
+        "primaryKey": {
+          "autoGenerate": false,
+          "columnNames": [
+            "id"
+          ]
+        },
+        "indices": [
+          {
+            "name": "index_energy_attempts_ownerScope_wireContext_resource_createdAt",
+            "unique": false,
+            "columnNames": [
+              "ownerScope",
+              "wireContext",
+              "resource",
+              "createdAt"
+            ],
+            "orders": [],
+            "createSql": "CREATE INDEX IF NOT EXISTS `index_energy_attempts_ownerScope_wireContext_resource_createdAt` ON `${TABLE_NAME}` (`ownerScope`, `wireContext`, `resource`, `createdAt`)"
+          }
+        ],
+        "foreignKeys": [
+          {
+            "table": "local_owners",
+            "onDelete": "RESTRICT",
+            "onUpdate": "NO ACTION",
+            "columns": [
+              "ownerScope"
+            ],
+            "referencedColumns": [
+              "storageScope"
+            ]
+          }
+        ]
+      },
+      {
+        "tableName": "energy_backoff",
+        "createSql": "CREATE TABLE IF NOT EXISTS `${TABLE_NAME}` (`ownerScope` TEXT NOT NULL, `wireContext` TEXT NOT NULL, `retryAt` INTEGER NOT NULL, PRIMARY KEY(`ownerScope`, `wireContext`), FOREIGN KEY(`ownerScope`) REFERENCES `local_owners`(`storageScope`) ON UPDATE NO ACTION ON DELETE RESTRICT )",
+        "fields": [
+          {
+            "fieldPath": "ownerScope",
+            "columnName": "ownerScope",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "wireContext",
+            "columnName": "wireContext",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "retryAt",
+            "columnName": "retryAt",
+            "affinity": "INTEGER",
+            "notNull": true
+          }
+        ],
+        "primaryKey": {
+          "autoGenerate": false,
+          "columnNames": [
+            "ownerScope",
+            "wireContext"
+          ]
+        },
+        "foreignKeys": [
+          {
+            "table": "local_owners",
+            "onDelete": "RESTRICT",
+            "onUpdate": "NO ACTION",
+            "columns": [
+              "ownerScope"
+            ],
+            "referencedColumns": [
+              "storageScope"
+            ]
+          }
+        ]
+      },
+      {
+        "tableName": "sync_protocol_states",
+        "createSql": "CREATE TABLE IF NOT EXISTS `${TABLE_NAME}` (`ownerScope` TEXT NOT NULL, `wireContext` TEXT NOT NULL, `activeScope` TEXT NOT NULL, `phase` TEXT NOT NULL, `transitionId` TEXT NOT NULL, `runId` TEXT, `updatedAt` INTEGER NOT NULL, PRIMARY KEY(`ownerScope`, `wireContext`), FOREIGN KEY(`ownerScope`) REFERENCES `local_owners`(`storageScope`) ON UPDATE NO ACTION ON DELETE RESTRICT , FOREIGN KEY(`runId`) REFERENCES `server_snapshot_runs`(`id`) ON UPDATE NO ACTION ON DELETE RESTRICT )",
+        "fields": [
+          {
+            "fieldPath": "ownerScope",
+            "columnName": "ownerScope",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "wireContext",
+            "columnName": "wireContext",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "activeScope",
+            "columnName": "activeScope",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "phase",
+            "columnName": "phase",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "transitionId",
+            "columnName": "transitionId",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "runId",
+            "columnName": "runId",
+            "affinity": "TEXT"
+          },
+          {
+            "fieldPath": "updatedAt",
+            "columnName": "updatedAt",
+            "affinity": "INTEGER",
+            "notNull": true
+          }
+        ],
+        "primaryKey": {
+          "autoGenerate": false,
+          "columnNames": [
+            "ownerScope",
+            "wireContext"
+          ]
+        },
+        "indices": [
+          {
+            "name": "index_sync_protocol_states_runId",
+            "unique": false,
+            "columnNames": [
+              "runId"
+            ],
+            "orders": [],
+            "createSql": "CREATE INDEX IF NOT EXISTS `index_sync_protocol_states_runId` ON `${TABLE_NAME}` (`runId`)"
+          }
+        ],
+        "foreignKeys": [
+          {
+            "table": "local_owners",
+            "onDelete": "RESTRICT",
+            "onUpdate": "NO ACTION",
+            "columns": [
+              "ownerScope"
+            ],
+            "referencedColumns": [
+              "storageScope"
+            ]
+          },
+          {
+            "table": "server_snapshot_runs",
+            "onDelete": "RESTRICT",
+            "onUpdate": "NO ACTION",
+            "columns": [
+              "runId"
+            ],
+            "referencedColumns": [
+              "id"
+            ]
+          }
+        ]
+      },
+      {
+        "tableName": "canonical_energy_versions",
+        "createSql": "CREATE TABLE IF NOT EXISTS `${TABLE_NAME}` (`ownerScope` TEXT NOT NULL, `wireContext` TEXT NOT NULL, `entityId` TEXT NOT NULL, `revision` INTEGER NOT NULL, `wire` TEXT NOT NULL, `sourceRunId` TEXT NOT NULL, `recordedAt` INTEGER NOT NULL, PRIMARY KEY(`ownerScope`, `wireContext`, `entityId`), FOREIGN KEY(`ownerScope`) REFERENCES `local_owners`(`storageScope`) ON UPDATE NO ACTION ON DELETE RESTRICT , FOREIGN KEY(`sourceRunId`) REFERENCES `server_snapshot_runs`(`id`) ON UPDATE NO ACTION ON DELETE RESTRICT )",
+        "fields": [
+          {
+            "fieldPath": "ownerScope",
+            "columnName": "ownerScope",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "wireContext",
+            "columnName": "wireContext",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "entityId",
+            "columnName": "entityId",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "revision",
+            "columnName": "revision",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "wire",
+            "columnName": "wire",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "sourceRunId",
+            "columnName": "sourceRunId",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "recordedAt",
+            "columnName": "recordedAt",
+            "affinity": "INTEGER",
+            "notNull": true
+          }
+        ],
+        "primaryKey": {
+          "autoGenerate": false,
+          "columnNames": [
+            "ownerScope",
+            "wireContext",
+            "entityId"
+          ]
+        },
+        "indices": [
+          {
+            "name": "index_canonical_energy_versions_ownerScope_wireContext_revision",
+            "unique": true,
+            "columnNames": [
+              "ownerScope",
+              "wireContext",
+              "revision"
+            ],
+            "orders": [],
+            "createSql": "CREATE UNIQUE INDEX IF NOT EXISTS `index_canonical_energy_versions_ownerScope_wireContext_revision` ON `${TABLE_NAME}` (`ownerScope`, `wireContext`, `revision`)"
+          },
+          {
+            "name": "index_canonical_energy_versions_sourceRunId",
+            "unique": false,
+            "columnNames": [
+              "sourceRunId"
+            ],
+            "orders": [],
+            "createSql": "CREATE INDEX IF NOT EXISTS `index_canonical_energy_versions_sourceRunId` ON `${TABLE_NAME}` (`sourceRunId`)"
+          }
+        ],
+        "foreignKeys": [
+          {
+            "table": "local_owners",
+            "onDelete": "RESTRICT",
+            "onUpdate": "NO ACTION",
+            "columns": [
+              "ownerScope"
+            ],
+            "referencedColumns": [
+              "storageScope"
+            ]
+          },
+          {
+            "table": "server_snapshot_runs",
+            "onDelete": "RESTRICT",
+            "onUpdate": "NO ACTION",
+            "columns": [
+              "sourceRunId"
+            ],
+            "referencedColumns": [
+              "id"
+            ]
+          }
+        ]
+      }
+    ],
+    "setupQueries": [
+      "CREATE TABLE IF NOT EXISTS room_master_table (id INTEGER PRIMARY KEY,identity_hash TEXT)",
+      "INSERT OR REPLACE INTO room_master_table (id,identity_hash) VALUES(42, '17cc6b884e81274ad78ed315d3c69d06')"
+    ]
+  }
+}

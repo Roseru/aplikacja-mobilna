@@ -201,8 +201,38 @@ object LegacyImportWire {
             .put("fat_g", decimal(row, "fat_g", "fat", "fat_g"))
             .put("carbs_g", decimal(row, "carbs_g", "carbs", "carbs_g"))
             .put("activity_class", goalActivity)
-            .put("estimate", JSONObject.NULL).put("timeline_base_revision", base).put("reason", reason)
+            .put("estimate", goalEstimate(source) ?: JSONObject.NULL).put("timeline_base_revision", base).put("reason", reason)
             .put("correction_of", correction?.let { dependency(ids, "goal", it, dependencies) } ?: JSONObject.NULL)
+    }
+    /** Missing legacy estimates stay missing; conflicting evidence requires an explicit new decision. */
+    private fun goalEstimate(source: LegacyImportSource): JSONObject? {
+        // Legacy decimal conversion quotes numeric lexemes. Check syntax through that same strict
+        // preflight, then retain the original JSON types for the nested, already canonical audit.
+        fun original(raw:String):JSONObject {legacy(raw);return JSONObject(raw)}
+        val evidence=buildList {
+            add(original(source.row))
+            source.originalOutboxes.forEach { raw->
+                val outbox=original(raw)
+                if(optional(outbox,"entityType","entity_type")=="goal" && optional(outbox,"entityId","entity_id")==source.localId) {
+                    when(val payload=outbox.opt("payload")) {is String->add(original(payload));is JSONObject->add(payload)}
+                }
+            }
+        }
+        val estimates=buildList<String> {
+            for(row in evidence)for(key in listOf("estimateJson","estimate")) {
+                if(row.isNull(key))continue
+                val raw=row.get(key)
+                val json=try {
+                    val value=when(raw) {is String->StrictJson.read(raw.toByteArray(Charsets.UTF_8));is JSONObject->raw;else->error("Invalid estimate")}
+                    val canonical=StrictJson.canonical(value)
+                    pl.roseru.kalorie.core.MaintenanceEstimate.read(canonical)
+                    canonical
+                }catch(_:Exception){review("estimate_review","estimate")}
+                add(json)
+            }
+        }.distinct()
+        if(estimates.size>1)review("estimate_review","estimate")
+        return estimates.singleOrNull()?.let {StrictJson.read(it.toByteArray(Charsets.UTF_8))}
     }
     /** GoalEntity has no aim: only this goal's immutable original intent is evidence. */
     private fun goalEvidence(source: LegacyImportSource, row: JSONObject): List<JSONObject> = buildList {

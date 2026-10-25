@@ -45,7 +45,8 @@ data class ImportDecision(@PrimaryKey val id:String,val planId:String,val entity
 @Entity(tableName="reconciliation_batches",foreignKeys=[ForeignKey(entity=ImportPlan::class,parentColumns=["id"],childColumns=["planId"],onDelete=ForeignKey.RESTRICT),ForeignKey(entity=ServerSnapshotRun::class,parentColumns=["id"],childColumns=["snapshotRunId"],onDelete=ForeignKey.RESTRICT)],indices=[Index("planId"),Index("snapshotRunId")])
 data class ReconciliationBatch(@PrimaryKey val id:String,val planId:String,val kind:String,val wireContext:String,
     val snapshotRunId:String,val requestJson:String,val requestHash:String,val originalBatchId:String?,
-    val createdAt:String,val attempted:Boolean=false,val responseJson:String?=null,val state:String="pending",val retryAtMillis:Long=0) {
+    val createdAt:String,val attempted:Boolean=false,val responseJson:String?=null,val state:String="pending",val retryAtMillis:Long=0,
+    @ColumnInfo(defaultValue="'calorie-app'") val protocolScope:String="calorie-app") {
     override fun toString()="ReconciliationBatch(redacted)"
 }
 @Entity(tableName="reconciliation_evidence",primaryKeys=["planId","kind","identity"],

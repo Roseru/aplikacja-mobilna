@@ -322,7 +322,7 @@ class MealPushStorageTest {
                     val entity=entities.getJSONObject(i);val table=entity.getString("tableName");val fields=entity.getJSONArray("fields")
                     val columns=(0 until fields.length()).joinToString(","){"`"+fields.getJSONObject(it).getString("columnName")+"`"}
                     put(table,sql.query("SELECT $columns FROM `$table` ORDER BY rowid").use {cursor->buildList {
-                        while(cursor.moveToNext())add((0 until cursor.columnCount).map {if(cursor.isNull(it))null else cursor.getString(it)})
+                        while(cursor.moveToNext())add(legacySnapshotColumns(cursor).map {if(cursor.isNull(it))null else cursor.getString(it)})
                     }})
                 }
             }
@@ -347,9 +347,9 @@ class MealPushStorageTest {
                 old.execSQL("INSERT INTO room_master_table VALUES (42,?)",arrayOf(oldSchema.getString("identityHash")));old.version=13
                 rowids=old.rawQuery("SELECT id,rowid FROM meal_items",null).use {c->buildMap {while(c.moveToNext())put(c.getString(0),c.getLong(1))}}
             }
-            target=Room.databaseBuilder(context,CalorieDatabase::class.java,name).addMigrations(MIGRATION_13_14, MIGRATION_14_15, pl.roseru.kalorie.data.MIGRATION_15_16, pl.roseru.kalorie.data.MIGRATION_16_17, pl.roseru.kalorie.data.MIGRATION_17_18, pl.roseru.kalorie.data.MIGRATION_18_19, pl.roseru.kalorie.data.MIGRATION_19_20, pl.roseru.kalorie.data.MIGRATION_20_21, pl.roseru.kalorie.data.MIGRATION_21_22).addCallback(DATABASE_GUARDS).build()
+            target=Room.databaseBuilder(context,CalorieDatabase::class.java,name).addMigrations(MIGRATION_13_14, MIGRATION_14_15, pl.roseru.kalorie.data.MIGRATION_15_16, pl.roseru.kalorie.data.MIGRATION_16_17, pl.roseru.kalorie.data.MIGRATION_17_18, pl.roseru.kalorie.data.MIGRATION_18_19, pl.roseru.kalorie.data.MIGRATION_19_20, pl.roseru.kalorie.data.MIGRATION_20_21, pl.roseru.kalorie.data.MIGRATION_21_22, pl.roseru.kalorie.data.MIGRATION_22_23, pl.roseru.kalorie.data.MIGRATION_23_24, pl.roseru.kalorie.energy.MIGRATION_24_25, pl.roseru.kalorie.data.MIGRATION_25_26).addCallback(DATABASE_GUARDS).build()
             val migrated=target!!;val sql=migrated.openHelper.readableDatabase
-            assertEquals(22, sql.version);assertEquals(before,snapshot(sql))
+            assertEquals(26, sql.version);assertEquals(before,snapshot(sql))
             assertEquals(rowids,sql.query("SELECT id,rowid FROM meal_items").use {c->buildMap<String,Long>{while(c.moveToNext())put(c.getString(0),c.getLong(1))}})
             assertFalse(sql.query("PRAGMA foreign_key_check").use {it.moveToFirst()})
             val row=migrated.pushDao().batch(request.id)!!;assertEquals(0L,row.retryAtMillis)

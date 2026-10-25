@@ -1,0 +1,26 @@
+{
+  "provider": "mock",
+  "profile": {
+    "provider": "mock",
+    "model": "mock-food-v1",
+    "prompt_version": "fixture-v1",
+    "schema_version": "fixture-v1",
+    "preparation_version": "fixture-v1",
+    "rest_profile_version": "fixture-v1",
+    "mock_scenario": "balanced_meal"
+  },
+  "notice_version": "food-photo-notice-v1",
+  "available": true,
+  "unavailable_reason": null,
+  "manual_entry_available": true,
+  "image_bytes": 5242880,
+  "body_bytes": 6291456,
+  "ingredients": 30,
+  "daily_photos": 10,
+  "queue_seconds": 300,
+  "attempt_seconds": 45,
+  "total_seconds": 120,
+  "max_generate_attempts": 2,
+  "max_outbound_calls": 2,
+  "active_jobs_per_account": 1
+}

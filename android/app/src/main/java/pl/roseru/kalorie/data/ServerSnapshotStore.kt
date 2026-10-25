@@ -9,12 +9,19 @@ import pl.roseru.kalorie.core.sync.*
 import java.util.UUID
 
 @Entity(tableName = "server_snapshot_runs", foreignKeys = [ForeignKey(entity = LocalOwnerEntity::class,
-    parentColumns = ["storageScope"], childColumns = ["ownerScope"], onDelete = ForeignKey.RESTRICT)], indices = [Index("ownerScope")])
+    parentColumns = ["storageScope"], childColumns = ["ownerScope"], onDelete = ForeignKey.RESTRICT),
+    ForeignKey(entity=ServerSnapshotRun::class,parentColumns=["id"],childColumns=["baseRunId"],onDelete=ForeignKey.RESTRICT)],
+    indices = [Index("ownerScope"),Index("baseRunId")])
 data class ServerSnapshotRun(@PrimaryKey val id: String, val ownerScope: String, val leaseGeneration: Long,
     val accountId: String, val accountGeneration: Int, val syncEpoch: String, val contextRevision: Long,
     val snapshotToken: String?, val nextPage: String?, val checkpoint: String?, val serverTime: String?,
     val timelineRevision: Long?, val pageCount: Int, val itemCount: Int, val byteCount: Long,
-    val limit: Int, val state: String) { override fun toString() = "ServerSnapshotRun(state=$state, pages=$pageCount)" }
+    val limit: Int, val state: String,
+    @ColumnInfo(defaultValue="'calorie-app'") val protocolScope:String="calorie-app",
+    @ColumnInfo(defaultValue="'snapshot'") val readMode:String="snapshot",val baseRunId:String?=null,
+    val startingCheckpoint:String?=null,@ColumnInfo(defaultValue="0") val forceFull:Boolean=false) {
+    override fun toString() = "ServerSnapshotRun(state=$state, pages=$pageCount)"
+}
 
 @Entity(tableName = "server_snapshot_pages", primaryKeys = ["runId", "pageIndex"],
     foreignKeys = [ForeignKey(entity = ServerSnapshotRun::class, parentColumns = ["id"], childColumns = ["runId"], onDelete = ForeignKey.RESTRICT)])
@@ -82,31 +89,66 @@ class ServerSnapshotStore(private val db: CalorieDatabase, private val protocol:
         val saved=if(run.pageCount==0)db.importDao().pull(run.id) else null
         val ids=saved?.let { org.json.JSONArray(it.operationIdsJson) }?.let { rows ->
             (0 until rows.length()).map { rows.getString(it) } } ?: emptyList()
-        return SnapshotRequest(run.id, run.pageCount, lease, value,
-            protocol.query(run.syncEpoch, run.limit, run.snapshotToken, run.nextPage,ids))
+        val scope=SyncProtocolScope.parse(run.protocolScope)
+        val query=when(run.readMode) {
+            "snapshot"->protocol.query(run.syncEpoch,run.limit,run.snapshotToken,run.nextPage,ids,scope)
+            "incremental"->{check(ids.isEmpty());protocol.incrementalQuery(run.syncEpoch,checkNotNull(run.startingCheckpoint),run.limit,run.nextPage,scope)}
+            else->error("Unsupported server copy mode")
+        }
+        return SnapshotRequest(run.id,run.pageCount,lease,value,query)
+    }
+
+    /** Capability upgrade always starts with a full copy. Later cycles may use only an applied,
+     * same-scope checkpoint. Recovery keeps its separate explicit full-copy/receipt workflow.
+     */
+    suspend fun beginRead(lease:OwnerLease,scope:SyncProtocolScope):SnapshotRequest=db.withTransaction {
+        val value=context(lease)
+        SyncProtocolStore(db).requireReadScope(lease,value,scope)
+        val runs=dao.runs(lease.storageScope)
+        runs.firstOrNull {it.state=="pending" && same(it,lease,value) && it.protocolScope==scope.installationId && db.importDao().pull(it.id)==null}
+            ?.let {SyncProtocolStore(db).captureRun(lease,value,it);return@withTransaction request(it,lease,value)}
+        val base=active(lease)
+        val state=SyncProtocolStore(db).current(lease,value)
+        val fullRequired=runs.firstOrNull {it.ownerScope==lease.storageScope && it.accountId==value.accountId &&
+            it.accountGeneration==value.accountGeneration && it.syncEpoch==value.syncEpoch && it.contextRevision==value.contextRevision &&
+            db.importDao().pull(it.id)==null}?.let {it.state=="expired" && it.forceFull && (it.readMode=="snapshot" || it.baseRunId==base?.id)}==true
+        if(scope!=SyncProtocolScope.ENERGY_V1 || value.requiresRecovery || state?.phase!="active" || base==null ||
+            base.protocolScope!=scope.installationId || db.serverDiaryDao().application(base.id)==null || fullRequired)
+            return@withTransaction begin(lease,scope=scope)
+        protocol.incrementalQuery(value.syncEpoch,checkNotNull(base.checkpoint),scope=scope)
+        val application=checkNotNull(db.serverDiaryDao().application(base.id))
+        check(application.ownerScope==lease.storageScope && application.wireContext==CanonicalMealRows.context(value))
+        SnapshotArchiveStore(db).reserve(lease,value,extraRuns=1)
+        val run=ServerSnapshotRun(UUID.randomUUID().toString(),lease.storageScope,lease.generation,value.accountId,
+            value.accountGeneration,value.syncEpoch,value.contextRevision,null,null,null,null,null,0,0,0,100,"pending",
+            scope.installationId,"incremental",base.id,base.checkpoint)
+        dao.insert(run);SyncProtocolStore(db).captureRun(lease,value,run)
+        request(run,lease,value)
     }
 
     suspend fun begin(lease: OwnerLease, recoveryOperationIds:List<String> = emptyList(),
-        planId:String? = null, groupIndex:Int = 0): SnapshotRequest = db.withTransaction {
+        planId:String? = null, groupIndex:Int = 0,scope:SyncProtocolScope=SyncProtocolScope.LEGACY): SnapshotRequest = db.withTransaction {
         require(groupIndex>=0 && (recoveryOperationIds.isEmpty() || planId!=null))
         // Validate first-query bounds before persisting any run.
-        protocol.query(checkNotNull(db.bootstrapDao().binding(lease.storageScope)).syncEpoch, recoveryOperationIds=recoveryOperationIds)
+        protocol.query(checkNotNull(db.bootstrapDao().binding(lease.storageScope)).syncEpoch, recoveryOperationIds=recoveryOperationIds,scope=scope)
         if(planId!=null) {
             val plan=checkNotNull(db.importDao().plan(planId))
             check(plan.targetScope==lease.storageScope && plan.approvedAt!=null)
         }
         val value = context(lease)
+        SyncProtocolStore(db).requireReadScope(lease,value,scope)
         val runs = dao.runs(lease.storageScope)
         runs.firstOrNull { run ->
             val pull=db.importDao().pull(run.id)
-            run.state == "pending" && same(run, lease, value) &&
+            run.state == "pending" && run.readMode=="snapshot" && same(run, lease, value) && run.protocolScope==scope.installationId &&
                 pull?.planId==planId && (pull==null || (pull.groupIndex==groupIndex &&
                 pull.operationIdsJson==pl.roseru.kalorie.core.catalog.StrictJson.canonical(org.json.JSONArray(recoveryOperationIds))))
-        }?.let { return@withTransaction request(it, lease, value) }
+        }?.let { SyncProtocolStore(db).captureRun(lease,value,it);return@withTransaction request(it, lease, value) }
         SnapshotArchiveStore(db).reserve(lease,value,extraRuns=1)
         val run = ServerSnapshotRun(UUID.randomUUID().toString(), lease.storageScope, lease.generation, value.accountId,
-            value.accountGeneration, value.syncEpoch, value.contextRevision, null, null, null, null, null, 0, 0, 0, 100, "pending")
+            value.accountGeneration, value.syncEpoch, value.contextRevision, null, null, null, null, null, 0, 0, 0, 100, "pending",scope.installationId)
         dao.insert(run)
+        SyncProtocolStore(db).captureRun(lease,value,run)
         if(planId!=null)db.importDao().insert(ReconciliationPull(run.id,planId,groupIndex,
             pl.roseru.kalorie.core.catalog.StrictJson.canonical(org.json.JSONArray(recoveryOperationIds))))
         request(run, lease, value)
@@ -114,7 +156,9 @@ class ServerSnapshotStore(private val db: CalorieDatabase, private val protocol:
     suspend fun requireCurrent(request: SnapshotRequest) = db.withTransaction {
         val value = context(request.lease, request.binding)
         val run = checkNotNull(dao.run(request.runId))
+        SyncProtocolStore(db).requireReadScope(request.lease,value,request.query.protocolScope)
         if (!same(run, request.lease, value) || run.state != "pending" || run.pageCount != request.pageIndex ||
+            run.protocolScope!=request.query.protocolScope.installationId ||
             this@ServerSnapshotStore.request(run, request.lease, value).query.canonical != request.query.canonical) throw SnapshotConflictException()
     }
     suspend fun apply(request: SnapshotRequest, bytes: ByteArray): SnapshotRequest? {
@@ -123,7 +167,7 @@ class ServerSnapshotStore(private val db: CalorieDatabase, private val protocol:
         return db.withTransaction {
             val value = context(request.lease, request.binding)
             val run = checkNotNull(dao.run(request.runId))
-            if (!same(run, request.lease, value)) throw SnapshotConflictException()
+            if (!same(run, request.lease, value) || run.protocolScope!=request.query.protocolScope.installationId) throw SnapshotConflictException()
             if(db.snapshotArchiveDao().receipt(run.id)!=null) {
                 if(run.state=="complete" && SnapshotArchiveStore(db).verifiesPage(run.id,request.pageIndex,request.query.canonical,page.canonical))
                     return@withTransaction null
@@ -142,6 +186,7 @@ class ServerSnapshotStore(private val db: CalorieDatabase, private val protocol:
             for ((field, keys) in SnapshotProtocol.IDENTITIES) {
                 val records = json.getJSONArray(field)
                 for (i in 0 until records.length()) identities.add(ServerSnapshotIdentity(run.id, field,
+                    (if(run.readMode=="incremental" && field=="entities")"${request.pageIndex}:$i:" else "")+
                     keys.joinToString(":") { records.getJSONObject(i).getString(it) }))
             }
             val timeline = json.getLong("goal_timeline_revision")
@@ -155,7 +200,7 @@ class ServerSnapshotStore(private val db: CalorieDatabase, private val protocol:
                 throw SnapshotCapacityException()
             SnapshotArchiveStore(db).reserve(request.lease,value,extraBytes=newRawBytes)
             val final = json.isNull("page_token")
-            val next = run.copy(snapshotToken = json.getString("snapshot_token"), nextPage = if (final) null else json.getString("page_token"),
+            val next = run.copy(snapshotToken = if(json.isNull("snapshot_token"))null else json.getString("snapshot_token"), nextPage = if (final) null else json.getString("page_token"),
                 checkpoint = if (final) json.getString("checkpoint") else null, serverTime = json.getString("server_time"),
                 timelineRevision = timeline, pageCount = run.pageCount + 1, itemCount = itemCount, byteCount = bytesCount,
                 state = if (final) "complete" else "pending")
@@ -167,16 +212,27 @@ class ServerSnapshotStore(private val db: CalorieDatabase, private val protocol:
             dao.update(next)
             // Reconciliation raw pages are staging. Its semantic ledger validates the complete
             // copy/receipts before atomically publishing the active checkpoint and typed evidence.
-            if (final && db.importDao().pull(run.id)==null) {
-                protocol.validateFull(value.syncEpoch,dao.pages(run.id).map { ArchivedDiaryPage(it.queryJson,it.responseJson) })
-                dao.save(ServerSnapshotAccess(run.ownerScope, run.id, false))
+            if (final && run.readMode=="snapshot" && db.importDao().pull(run.id)==null) {
+                protocol.validateFull(value.syncEpoch,dao.pages(run.id).map { ArchivedDiaryPage(it.queryJson,it.responseJson) },request.query.protocolScope)
+                // The energy checkpoint becomes active only with the entire diary/E projection.
+                if(request.query.protocolScope==SyncProtocolScope.LEGACY)dao.save(ServerSnapshotAccess(run.ownerScope, run.id, false))
             }
             nextRequest
         }
     }
-    suspend fun expire(request: SnapshotRequest) = db.withTransaction {
+    suspend fun expire(request: SnapshotRequest,fullRequired:Boolean=false) = db.withTransaction {
         requireCurrent(request)
-        dao.update(checkNotNull(dao.run(request.runId)).copy(state = "expired"))
+        dao.update(checkNotNull(dao.run(request.runId)).copy(state = "expired",forceFull=fullRequired))
+    }
+    /** Keep rejected raw evidence, but allow a fresh full read instead of replaying it forever. */
+    internal suspend fun rejectStagedProjection(lease:OwnerLease,runId:String)=db.withTransaction {
+        val value=context(lease)
+        val run=checkNotNull(dao.run(runId))
+        check(run.ownerScope==lease.storageScope && run.accountId==value.accountId && run.accountGeneration==value.accountGeneration &&
+            run.syncEpoch==value.syncEpoch && run.contextRevision==value.contextRevision && run.state=="complete" &&
+            run.protocolScope==SyncProtocolScope.ENERGY_V1.installationId && db.serverDiaryDao().application(runId)==null &&
+            dao.access(lease.storageScope)?.activeRunId!=runId && db.importDao().pull(runId)==null)
+        dao.update(run.copy(state="expired",forceFull=true))
     }
     suspend fun block(request: SnapshotRequest) = db.withTransaction {
         requireCurrent(request)
@@ -204,6 +260,16 @@ class ServerSnapshotStore(private val db: CalorieDatabase, private val protocol:
         val id = dao.access(lease.storageScope)?.activeRunId ?: return@withTransaction null
         dao.run(id)?.takeIf { it.state == "complete" && it.ownerScope == lease.storageScope && it.accountId == value.accountId &&
             it.accountGeneration == value.accountGeneration && it.syncEpoch == value.syncEpoch && it.contextRevision == value.contextRevision }
+    }
+    /** Complete local staging after process death, without refreshing a token or sending HTTP. */
+    suspend fun pendingProjection(lease:OwnerLease):ServerSnapshotRun?=db.withTransaction {
+        owners.requireCurrent(lease)
+        val value=db.bootstrapDao().binding(lease.storageScope)?:return@withTransaction null
+        if(value.requiresRecovery)return@withTransaction null
+        dao.runs(lease.storageScope).firstOrNull {run->run.state=="complete" && run.ownerScope==lease.storageScope &&
+            run.accountId==value.accountId && run.accountGeneration==value.accountGeneration && run.syncEpoch==value.syncEpoch &&
+            run.contextRevision==value.contextRevision && run.protocolScope==SyncProtocolScope.ENERGY_V1.installationId &&
+            db.importDao().pull(run.id)==null && db.serverDiaryDao().application(run.id)==null && db.snapshotArchiveDao().receipt(run.id)==null}
     }
     suspend fun status(lease: OwnerLease): SnapshotStatus? = db.withTransaction {
         owners.requireCurrent(lease)

@@ -12,8 +12,8 @@ android {
         applicationId = "pl.roseru.kalorie"
         minSdk = 26
         targetSdk = 35
-        versionCode = 42
-        versionName = "0.8.31"
+        versionCode = 47
+        versionName = "0.8.36"
         // Public deployment configuration only. No credentials or client secret in the APK.
         val issuer = providers.gradleProperty("CALORIE_OIDC_ISSUER").orElse("").get()
         require(issuer.none { it == '\n' || it == '\r' || it == '"' || it == '\\' })
@@ -38,6 +38,8 @@ android {
     sourceSets.getByName("release").java.srcDir("src/standard/java")
     sourceSets.getByName("androidTest").assets.srcDir("$projectDir/schemas")
     sourceSets.getByName("androidTest").assets.srcDir("src/test/resources/photo")
+    sourceSets.getByName("androidTest").assets.srcDir("src/test/resources/community")
+    sourceSets.getByName("androidTest").assets.srcDir("src/test/resources/energy")
     // Real API driver is deliberately excluded from ordinary CI/device fixtures.
     if (providers.gradleProperty("O1_LIVE_API_RECEIPT_TEST").orElse("false").get() == "true") {
         sourceSets.getByName("androidTest").java.srcDir("src/liveReceipt/java")
@@ -54,6 +56,9 @@ android {
 }
 
 ksp { arg("room.schemaLocation", "$projectDir/schemas") }
+
+// New migration fixtures must include the schema exported by the application compilation.
+tasks.matching {it.name=="mergeValidationAndroidTestAssets"}.configureEach {dependsOn("kspValidationKotlin")}
 
 dependencies {
     implementation(platform(libs.compose.bom))

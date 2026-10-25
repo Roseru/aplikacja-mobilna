@@ -65,7 +65,7 @@ internal class ReconciliationSnapshotAcceptance(private val store:Reconciliation
                 dao.sources(id),dao.evidence(id),db.serverDiaryDao().records(lease.storageScope))
         }
         if(accepted(captured.known,runId,captured.access))return@withContext PreparedReconciliationSnapshot(captured,emptyList(),emptyList(),false,true)
-        val copy=ServerDiaryProtocol(store.schema).read(expected.syncEpoch,captured.pages.map {ArchivedDiaryPage(it.queryJson,it.responseJson)})
+        val copy=ServerDiaryProtocol(store.schema,store.energySchema).read(expected.syncEpoch,captured.pages.map {ArchivedDiaryPage(it.queryJson,it.responseJson)},SyncProtocolScope.parse(captured.run.protocolScope))
         check(copy.checkpoint==captured.run.checkpoint && copy.timelineRevision.toLong()==captured.run.timelineRevision)
         val groups=groups(captured.sources);val pull=captured.pull
         val requested=JSONArray(pull.operationIdsJson).let {rows->(0 until rows.length()).map {rows.getString(it)}}

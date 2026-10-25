@@ -3,9 +3,13 @@ package pl.roseru.kalorie.core.sync
 import org.json.JSONObject
 import pl.roseru.kalorie.core.catalog.StrictJson
 import java.net.URLEncoder
+import pl.roseru.kalorie.energy.EnergySchema
+import pl.roseru.kalorie.energy.EnergySnapshotProtocol
+import pl.roseru.kalorie.energy.EnergySnapshotQuery
 
 /** Immutable validated query. Tokens and private data never appear in diagnostic strings. */
-class SnapshotQuery internal constructor(internal val canonical: String) {
+class SnapshotQuery internal constructor(internal val canonical: String,
+    val protocolScope:SyncProtocolScope=SyncProtocolScope.LEGACY) {
     internal fun json() = StrictJson.read(canonical.toByteArray(Charsets.UTF_8))
     fun encoded(): String {
         val value = json()
@@ -21,15 +25,20 @@ class SnapshotQuery internal constructor(internal val canonical: String) {
 }
 
 /** Raw validated server archive, not a local diary projection or permission to ACK outbox. */
-class SnapshotPage internal constructor(internal val canonical: String) {
+class SnapshotPage internal constructor(internal val canonical: String,
+    val protocolScope:SyncProtocolScope=SyncProtocolScope.LEGACY) {
     internal fun json() = StrictJson.read(canonical.toByteArray(Charsets.UTF_8))
     override fun toString() = "SnapshotPage(redacted)"
 }
 
-class SnapshotProtocol(private val schema: SyncWireSchema) {
-    internal fun validateFull(epoch:String,pages:List<ArchivedDiaryPage>) { ServerDiaryProtocol(schema).read(epoch,pages) }
+class SnapshotProtocol(private val schema: SyncWireSchema,private val energySchema:EnergySchema?=null) {
+    val supportsEnergy:Boolean get()=energySchema!=null
+    internal fun validateFull(epoch:String,pages:List<ArchivedDiaryPage>,scope:SyncProtocolScope=SyncProtocolScope.LEGACY) {
+        ServerDiaryProtocol(schema,energySchema).read(epoch,pages,scope)
+    }
     fun query(epoch: String, limit: Int = 100, snapshot: String? = null, page: String? = null,
-        recoveryOperationIds: List<String> = emptyList()): SnapshotQuery {
+        recoveryOperationIds: List<String> = emptyList(),scope:SyncProtocolScope=SyncProtocolScope.LEGACY): SnapshotQuery {
+        require(scope==SyncProtocolScope.LEGACY || supportsEnergy)
         require(recoveryOperationIds.isEmpty() || (snapshot == null && page == null))
         val json = JSONObject().put("sync_epoch", epoch).put("limit", limit)
         if (recoveryOperationIds.isNotEmpty()) json.put("recovery_operation_ids", org.json.JSONArray(recoveryOperationIds))
@@ -37,9 +46,14 @@ class SnapshotProtocol(private val schema: SyncWireSchema) {
         page?.let { json.put("page_token", it) }
         val canonical = StrictJson.canonical(json)
         schema.validate(canonical.toByteArray(Charsets.UTF_8), "PullRequest")
-        return SnapshotQuery(canonical)
+        return SnapshotQuery(canonical,scope)
     }
     fun response(query: SnapshotQuery, bytes: ByteArray): SnapshotPage {
+        if(query.json().has("checkpoint"))return IncrementalDiaryProtocol(schema,checkNotNull(energySchema)).response(query,bytes)
+        if(query.protocolScope==SyncProtocolScope.ENERGY_V1) {
+            val page=EnergySnapshotProtocol(this,checkNotNull(energySchema)).response(EnergySnapshotQuery(query),bytes)
+            return SnapshotPage(page.wire,query.protocolScope)
+        }
         schema.validate(bytes, "PullResponse", MAX_BYTES)
         val value = StrictJson.read(bytes)
         val request = query.json()
@@ -58,6 +72,15 @@ class SnapshotProtocol(private val schema: SyncWireSchema) {
             require(ids.toSet().size == ids.size)
         }
         return SnapshotPage(StrictJson.canonical(value))
+    }
+    fun incrementalQuery(epoch:String,checkpoint:String,limit:Int=100,page:String?=null,
+        scope:SyncProtocolScope=SyncProtocolScope.ENERGY_V1):SnapshotQuery {
+        require(supportsEnergy && scope==SyncProtocolScope.ENERGY_V1)
+        val value=JSONObject().put("sync_epoch",epoch).put("checkpoint",checkpoint).put("limit",limit)
+        page?.let {value.put("page_token",it)}
+        val canonical=StrictJson.canonical(value)
+        schema.validate(canonical.toByteArray(Charsets.UTF_8),"PullRequest")
+        return SnapshotQuery(canonical,scope)
     }
     fun errorCode(bytes: ByteArray): String {
         schema.validate(bytes, "SyncError", 65_536)

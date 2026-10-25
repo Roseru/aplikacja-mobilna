@@ -18,7 +18,8 @@ import pl.roseru.kalorie.core.decimal
 import pl.roseru.kalorie.data.GoalEntity
 import pl.roseru.kalorie.data.ThemeMode
 
-@Composable fun SettingsScreen(model: DiaryViewModel) {
+@Composable fun SettingsScreen(model: DiaryViewModel,catalogModel:pl.roseru.kalorie.catalogupdate.CatalogUpdateViewModel?=null,
+    networkModel:pl.roseru.kalorie.core.network.NetworkPolicyViewModel?=null,onCalculator:(()->Unit)?=null,onEnergy:(()->Unit)?=null) {
     val theme by model.theme.collectAsStateWithLifecycle()
     val goal by model.todayGoal.collectAsStateWithLifecycle()
     val busy by model.busy.collectAsStateWithLifecycle()
@@ -34,13 +35,28 @@ import pl.roseru.kalorie.data.ThemeMode
         if(goal==null) Text("Nie masz jeszcze celu. Wpisz własną liczbę kcal; B/T/W możesz pozostawić puste.",
             modifier=Modifier.testTag("first-goal-hint"),color=MaterialTheme.colorScheme.onSurfaceVariant)
         GoalEditor(goal, busy, onSave = model::setGoal)
+        SavedMaintenanceEstimate(goal?.estimateJson)
+        if(onCalculator!=null)OutlinedButton(onClick=onCalculator,enabled=!busy,modifier=Modifier.fillMaxWidth().testTag("open-maintenance")) {
+            Text("Oblicz zapotrzebowanie i wybierz cel")
+        }
+        if(onEnergy!=null)OutlinedButton(onClick=onEnergy,enabled=!busy,modifier=Modifier.fillMaxWidth().testTag("open-energy")) {
+            Text("Analizy i korekty zapotrzebowania")
+        }
         HorizontalDivider()
+        if(networkModel!=null) {
+            NetworkPolicyPanel(networkModel)
+            HorizontalDivider()
+        }
+        if(catalogModel!=null) {
+            CatalogUpdatePanel(catalogModel)
+            HorizontalDivider()
+        }
         SectionTitle("Dane na urządzeniu")
         Text(if(model.isGuest) "Korzystasz bez konta. Posiłki i ustawienia są zapisywane lokalnie. Odinstalowanie aplikacji usuwa tę kopię danych."
             else "Korzystasz z profilu konta. Zmiany zapisujemy najpierw na urządzeniu, a synchronizacja odbywa się osobno. Odinstalowanie aplikacji usuwa lokalną kopię danych.",
             modifier=Modifier.testTag("settings-owner-info"),color = MaterialTheme.colorScheme.onSurfaceVariant)
-        Text(if(model.isGuest) "Baza demonstracyjna v1. Wartości produktów i początkowy cel służą do sprawdzenia aplikacji. Ustaw własny cel i zweryfikuj dane przed użytkowaniem."
-            else "Baza demonstracyjna v1. Wartości produktów służą do sprawdzenia aplikacji. Cel konta ustawiasz samodzielnie; zweryfikuj dane przed użytkowaniem.",
+        Text(if(model.isGuest) "Wersję i źródła zapisanej bazy sprawdzisz powyżej. Dane DEMO oraz początkowy cel służą do sprawdzenia aplikacji. Ustaw własny cel przed użytkowaniem."
+            else "Wersję i źródła zapisanej bazy sprawdzisz powyżej. Dane DEMO służą do sprawdzenia aplikacji. Cel konta ustawiasz samodzielnie.",
             style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
     }
 }

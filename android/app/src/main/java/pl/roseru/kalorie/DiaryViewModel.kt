@@ -30,6 +30,7 @@ class DiaryViewModel(private val repository: DiaryRepository, private val prefer
     val startupError = MutableStateFlow<String?>(null)
     val busy = MutableStateFlow(false)
     val weightSaveVersion = MutableStateFlow(0)
+    val calculatedGoalSaveVersion = MutableStateFlow(0)
     private val channel = Channel<DiaryEvent>(Channel.BUFFERED)
     val events = channel.receiveAsFlow()
     private val policy = SharingStarted.WhileSubscribed(5000)
@@ -54,7 +55,8 @@ class DiaryViewModel(private val repository: DiaryRepository, private val prefer
     val weights = repository.dao.weights(repository.owner).stateIn(viewModelScope, policy, emptyList())
     val recent = repository.dao.recent(repository.owner).stateIn(viewModelScope, policy, emptyList())
     val pending = repository.dao.pending(repository.owner).stateIn(viewModelScope, policy, 0)
-    val todayGoal = currentDay.flatMapLatest { repository.dao.goal(repository.owner, it.toString()) }.stateIn(viewModelScope, policy, null)
+    val todayGoal = currentDay.flatMapLatest { repository.dao.goal(repository.owner, it.toString()) }
+        .flatMapLatest {repository.observeGoalEstimate(it)}.stateIn(viewModelScope, policy, null)
     val day = dateText.flatMapLatest { text ->
         combine(repository.dao.day(repository.owner, text), repository.dao.goal(repository.owner, text),
             repository.dao.diaryDay(repository.owner, text)) { meals, goal, status -> DayState(LocalDate.parse(text), meals, goal, status) }
@@ -93,6 +95,11 @@ class DiaryViewModel(private val repository: DiaryRepository, private val prefer
         mutate { repository.add(productId, grams, type, date, id, amountText); channel.send(DiaryEvent.MealSaved) }
     }
     fun edit(id: String, grams: Double) = mutate { repository.edit(id, grams) }
+    fun addCommunity(scope:pl.roseru.kalorie.data.CommunityScope,product:pl.roseru.kalorie.community.CommunityProduct,
+        amount:String,unit:String,type:MealType) {
+        val date=LocalDate.parse(dateText.value);val id=UUID.randomUUID().toString()
+        mutate {repository.addCommunity(scope,product,amount,unit,type,date,id);channel.send(DiaryEvent.MealSaved)}
+    }
     fun addRation(rationId: String, quantities: Map<String, Double>, type: MealType, exactQuantities: Map<String, String> = emptyMap()) {
         val date = LocalDate.parse(dateText.value)
         val id = UUID.randomUUID().toString()
@@ -124,6 +131,12 @@ class DiaryViewModel(private val repository: DiaryRepository, private val prefer
     fun setGoal(kcal: Double, protein: Double?, fat: Double?, carbs: Double?) = mutate {
         repository.setGoal(kcal, protein, fat, carbs)
         channel.send(DiaryEvent.Message("Cel zapisany. Obowiązuje od dzisiaj."))
+    }
+    fun setCalculatedGoal(estimate: MaintenanceEstimate, kcal: Double, protein: Double?, fat: Double?, carbs: Double?,
+        aim: DietAim, qualifiedForV1: Boolean) = mutate {
+        repository.setCalculatedGoal(estimate,kcal,protein,fat,carbs,aim,qualifiedForV1)
+        calculatedGoalSaveVersion.value += 1
+        channel.send(DiaryEvent.Message("Cel i oszacowanie zapisane od dzisiaj. Wcześniejsze wersje są zachowane."))
     }
     private fun mutate(action: suspend () -> Unit) {
         if (busy.value) return

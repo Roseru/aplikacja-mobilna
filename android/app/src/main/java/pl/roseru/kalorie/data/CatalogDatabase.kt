@@ -22,6 +22,10 @@ data class CatalogMemberEntity(val generationId: String, val recordId: String)
 data class CatalogActiveEntity(@PrimaryKey val packageId: String, val kind: String, val release: Int, val generationId: String)
 
 @Dao interface CatalogDao {
+    @Query("SELECT g.* FROM catalog_generations g JOIN catalog_active a ON a.generationId=g.id WHERE g.complete=1 ORDER BY g.kind,g.packageId")
+    fun activeGenerations():kotlinx.coroutines.flow.Flow<List<CatalogGenerationEntity>>
+    @Query("SELECT r.* FROM catalog_records r JOIN catalog_members m ON m.recordId=r.id WHERE m.generationId=:generationId AND r.entityType='source' ORDER BY r.id LIMIT :limit OFFSET :offset")
+    suspend fun generationSources(generationId:String,limit:Int,offset:Int):List<CatalogRecordEntity>
     @Query("SELECT * FROM catalog_generations WHERE packageId = :packageId AND release = :release LIMIT 1") suspend fun generation(packageId: String, release: Int): CatalogGenerationEntity?
     @Query("SELECT * FROM catalog_generations WHERE id = :id") suspend fun generationById(id: String): CatalogGenerationEntity?
     @Query("SELECT * FROM catalog_generations WHERE packageId = :packageId AND kind != :kind LIMIT 1") suspend fun otherKind(packageId: String, kind: String): CatalogGenerationEntity?

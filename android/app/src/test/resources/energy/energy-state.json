@@ -1,0 +1,12 @@
+{
+  "sync_epoch": "11111111-1111-4111-8111-111111111111",
+  "account_generation": 1,
+  "axis_revision": 3,
+  "current_id": "22222222-2222-4222-8222-222222222222",
+  "baseline_id": null,
+  "automatic_requested": true,
+  "automatic_effective": false,
+  "automatic_notice": null,
+  "last_applied_at": null,
+  "next_apply_at": null
+}

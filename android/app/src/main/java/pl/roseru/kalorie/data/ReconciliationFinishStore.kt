@@ -158,7 +158,7 @@ internal class ReconciliationFinishStore(private val owner:ReconciliationStore) 
             }
             db.domainSyncDao().save(CanonicalGoalTimeline(lease.storageScope,context,source.copy.timelineRevision))
             ensureServerAliases(lease.storageScope,source.copy)
-            val application=ServerDiaryStore(db,owner.schema).applyReconciled(lease,source.run.id,id)
+            val application=ServerDiaryStore(db,owner.schema,owner.energySchema).applyReconciled(lease,source.run.id,id)
             check(owner.context(lease,expected)==expected)
             val completion=StrictJson.canonical(JSONObject().put("run_id",application.runId).put("included",application.included).put("held",application.held))
             dao.insert(ReconciliationEvidence(id,"completion","application",completion,LegacyImportStore.digest(completion),source.run.id))

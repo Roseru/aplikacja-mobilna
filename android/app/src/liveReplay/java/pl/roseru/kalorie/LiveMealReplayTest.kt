@@ -16,6 +16,7 @@ import org.junit.runner.RunWith
 import pl.roseru.kalorie.core.catalog.StrictJson
 import pl.roseru.kalorie.data.*
 import pl.roseru.kalorie.session.*
+import pl.roseru.kalorie.sync.ReplayRuntimeIsolation
 import java.io.File
 import java.io.FileOutputStream
 import java.security.MessageDigest
@@ -64,6 +65,15 @@ class LiveMealReplayTest {
         return current
     }
     private fun store() = MealPushStore(app.database, CanonicalMealRows.schema(app))
+    private fun isolation(): ReplayRuntimeIsolation = app.syncRuntimeAdmission as? ReplayRuntimeIsolation
+        ?: error("Only the validation application supports a private replay trial")
+    private fun requireIsolated(plan: JSONObject) {
+        check(plan.getInt("driver_guard_version") == 2 && plan.getString("trial") == uuid("trial_id")) {
+            "Use a new trial; historical evidence cannot be upgraded"
+        }
+        val expiry = isolation().requireHeld(uuid("trial_id"), plan.getString("owner"), plan.getString("context"))
+        check(expiry == plan.getLong("isolation_deadline")) { "Private trial deadline changed" }
+    }
     private suspend fun verifySelected(request: MealPushRequest, meal: String, operation: String) {
         val operations = request.batch.json().getJSONArray("operations")
         assertTrue("Trial must contain exactly the selected Meal/create", operations.length() == 1)
@@ -85,12 +95,27 @@ class LiveMealReplayTest {
     }
     /** Fingerprints include every protected row, including guests/other accounts and shared catalogue. */
     private suspend fun protected(plan: JSONObject): String = app.database.withTransaction {
+        requireIsolated(plan)
         val database=app.database.openHelper.readableDatabase
-        val tables=MealReplayFingerprint.tables(database.version)
+        val tables=MealReplayFingerprint.tables(database.version, runtimeIsolated = true)
         val planned=plan.getJSONArray("protected_tables")
         assertTrue("Database schema changed during the selected trial",plan.getInt("room")==database.version &&
             planned.length()==tables.size && tables.indices.all{planned.getString(it)==tables[it]})
         val result = JSONObject()
+        // Empty tables still protect their columns, indexes and triggers, in addition to rows.
+        val definitions = org.json.JSONArray()
+        val placeholders = tables.joinToString(",") { "?" }
+        database.query("SELECT type,name,tbl_name,sql FROM sqlite_master WHERE tbl_name IN ($placeholders) ORDER BY type,name",
+            tables.toTypedArray()).use { cursor ->
+            while (cursor.moveToNext()) {
+                val definition = org.json.JSONArray()
+                for (index in 0 until cursor.columnCount)
+                    definition.put(if (cursor.isNull(index)) JSONObject.NULL else cursor.getString(index))
+                definitions.put(definition)
+            }
+        }
+        result.put("__schema__", MessageDigest.getInstance("SHA-256").digest(definitions.toString().toByteArray(Charsets.UTF_8))
+            .joinToString("") { "%02x".format(it) })
         for (table in tables) {
             val digest = MessageDigest.getInstance("SHA-256")
             app.database.openHelper.readableDatabase.query("SELECT rowid AS __rowid__, * FROM `$table` ORDER BY rowid").use { cursor ->
@@ -111,6 +136,7 @@ class LiveMealReplayTest {
             result.put(table, digest.digest().joinToString("") { "%02x".format(it) })
         }
         assertTrue("Foreign key check failed", !app.database.openHelper.readableDatabase.query("PRAGMA foreign_key_check").use { it.moveToFirst() })
+        requireIsolated(plan)
         StrictJson.canonical(result)
     }
     /** Preserve the exact hash comparison point without exporting any row content to logs. */
@@ -121,10 +147,34 @@ class LiveMealReplayTest {
         if(actual==expected)return
         val before=StrictJson.read(expected.toByteArray(Charsets.UTF_8))
         val after=StrictJson.read(actual.toByteArray(Charsets.UTF_8))
-        val changed=MealReplayFingerprint.tables(plan.getInt("room")).filter{before.getString(it)!=after.getString(it)}
+        val changed=(MealReplayFingerprint.tables(plan.getInt("room"), runtimeIsolated = true) + "__schema__")
+            .filter{before.getString(it)!=after.getString(it)}
         save("guard-failed-$phaseName.json",JSONObject().put("phase",phaseName).put("room",plan.getInt("room"))
             .put("changed_tables",org.json.JSONArray(changed)).put("expected",before).put("actual",after))
         assertTrue("Protected data changed at $phaseName: ${changed.joinToString(",")}",false)
+    }
+
+    @Test fun isolateRuntimeBeforeFreezingAnySelectedOperation() = runBlocking<Unit> {
+        phase("isolate")
+        val current = lease()
+        val context = store().gate(current).binding.let(CanonicalMealRows::context)
+        isolation().arm(uuid("trial_id"), current.storageScope, context)
+        val expiry = isolation().requireHeld(uuid("trial_id"), current.storageScope, context)
+        save("isolated.json", JSONObject().put("trial", uuid("trial_id")).put("owner", current.storageScope)
+            .put("context", context).put("isolation_deadline", expiry).put("driver_guard_version", 2))
+        marker("runtime_isolated")
+    }
+
+    @Test fun releaseRuntimeOnlyAsASeparateExplicitOperatorPhase() = runBlocking<Unit> {
+        phase("release")
+        assertTrue("Explicit permission to resume normal runtime is required", args.getString("allow_runtime_resume") == "true")
+        val saved = load("isolated.json")
+        check(saved.getString("trial") == uuid("trial_id") && saved.getInt("driver_guard_version") == 2)
+        // A release/abort is not a PASS receipt for replay, PostgreSQL or following PULL.
+        isolation().release(uuid("trial_id"), saved.getString("owner"), saved.getString("context"))
+        save("released.json", JSONObject().put("trial", uuid("trial_id")).put("utc", Instant.now().toString())
+            .put("replay_status", "NOT_ASSESSED_BY_RELEASE").put("following_pull", "SEPARATE_OPERATION"))
+        marker("runtime_released")
     }
     private fun marker(name: String, run: String? = null) {
         // Fixed marker names and validated/random trial references only.
@@ -134,8 +184,11 @@ class LiveMealReplayTest {
     @Test fun prepareSelectedExistingMealWithoutSending() = runBlocking<Unit> {
         phase("prepare")
         val current = lease(); val meal = uuid("meal_id"); val operation = uuid("operation_id")
+        val isolated = load("isolated.json")
+        requireIsolated(isolated)
+        assertTrue("Wrong account for isolated trial", current.storageScope == isolated.getString("owner"))
         val room=app.database.openHelper.readableDatabase.version
-        val tables=MealReplayFingerprint.tables(room)
+        val tables=MealReplayFingerprint.tables(room, runtimeIsolated = true)
         val eligible = app.database.pushDao().eligible(current.storageScope)
         assertTrue("Exactly one selected pending canonical operation is required", eligible.size == 1 &&
             eligible.single().entityId == meal && eligible.single().operationId == operation &&
@@ -143,6 +196,7 @@ class LiveMealReplayTest {
         val request = checkNotNull(store().prepare(current))
         verifySelected(request, meal, operation)
         val plan = JSONObject().put("trial", uuid("trial_id")).put("owner", current.storageScope)
+            .put("driver_guard_version", 2).put("isolation_deadline", isolated.getLong("isolation_deadline"))
             .put("meal", meal).put("operation", operation).put("batch", request.id)
             .put("request", request.row.requestJson).put("hash", request.row.requestHash).put("context", request.row.wireContext)
             .put("room",room).put("protected_tables",org.json.JSONArray(tables))
@@ -155,6 +209,7 @@ class LiveMealReplayTest {
     @Test fun holdValidatedAckForExternalC1AndRealProcessKill() = runBlocking<Unit> {
         phase("hold")
         val plan = load("prepared.json"); val current = lease()
+        requireIsolated(plan)
         assertTrue("Wrong account for selected trial", plan.getString("owner") == current.storageScope)
         pending(plan, current)
         assertProtected(plan,"before-send")
@@ -173,6 +228,7 @@ class LiveMealReplayTest {
                 http.requestId != "missing" && http.requestId != "invalid")
             val row = pending(plan, current)
             assertTrue("Network attempt was not persisted", row.attempted)
+            requireIsolated(plan)
             val deadline = checkNotNull(ticket.holdDeadlineNanos)
             assertTrue("Insufficient time for independent C1 and kill", deadline - System.nanoTime() >= 20_000_000_000)
             val heldUtc = Instant.now()
@@ -196,6 +252,7 @@ class LiveMealReplayTest {
     @Test fun restartResendsIdenticalPersistedBatchAndAppliesOriginalRevision() = runBlocking<Unit> {
         phase("replay")
         val plan = load("prepared.json"); val held = load("held.json"); val current = lease()
+        requireIsolated(plan)
         assertTrue("Previous hold expired or completed without real kill", !File(directory(), "not-run.json").exists())
         assertTrue("Client process was not restarted", Process.myPid() != held.getInt("pid") &&
             Process.getStartElapsedRealtime() > held.getLong("process_start"))
