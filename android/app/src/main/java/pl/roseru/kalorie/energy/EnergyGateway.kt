@@ -12,7 +12,7 @@ import java.util.concurrent.atomic.AtomicBoolean
 import javax.net.ssl.HttpsURLConnection
 import kotlin.coroutines.coroutineContext
 
-internal class EnergyHttpResult(val status:Int,val bytes:ByteArray,val retryAfter:String?) {
+internal class EnergyHttpResult(val status:Int,val bytes:ByteArray,val retryAfter:String?,val etag:String?=null) {
     override fun toString()="EnergyHttpResult(status=$status)"
 }
 internal interface EnergyGateway {
@@ -72,7 +72,7 @@ internal class HttpsEnergyGateway(base:String,private val open:(URL)->HttpsURLCo
                 }
             }.toByteArray()
             alive();require(bytes.isNotEmpty() && (length==null || length==bytes.size.toLong()))
-            EnergyHttpResult(status,bytes,connection.getHeaderField("Retry-After"))
+            EnergyHttpResult(status,bytes,connection.getHeaderField("Retry-After"),connection.getHeaderField("ETag"))
         }finally {timeout.cancel(false);cancellation.cancel();connection.disconnect()}
     }}
     companion object {
