@@ -1,5 +1,10 @@
 # Niezależny ograniczony przegląd zgód rankingu i styku E9 - osoba 2
 
+**Aktualizacja 25.10.2026:** [przegląd klienta E9](#przegląd-e9--25102026)
+potwierdza naprawę historycznego P2 na poziomie przypiętych źródeł O1.
+Pełny E9 nadal wymaga synchronizacji i rzeczywistego odbioru APK/API.
+Poniższy pierwotny raport z 13.10 zachowuje swój historyczny zakres.
+
 Data: 13.10.2026. Zakres: PR50 na wskazanym main; read-only styk nieodebranego PR54/E9. Raport nie jest odbiorem całego E9 ani rzeczywistej integracji APK/API.
 
 **Ocena PR50 na obecnym main: 9,3/10; brak znalezionych P1/P2 w jego działającym kontrakcie. Integracja z E9 wymaga zamknięcia poniższego P2 po stronie komunikatu/statusu klienta.**
@@ -54,3 +59,108 @@ Uwagi przekazano [O1 w PR50](https://github.com/Roseru/aplikacja-mobilna/pull/50
 Drugi zakres tego samego recenzenta,13.10.2026:9,3/10,brak nowych P1/P2 w pakiecie. Nie ponawiał audytu PR50/E9 lub runtime. Potwierdził30 plików i unikalnych source IDs/hashów,8/8/10/4,10 558 270B,16 dokładnych Nutrition5k records i primary Commons provenance. Zatwierdzenia/zgody/uploady0 oraz brak prywatnych ścieżek/sekretów są jawne. Galeria ma te same30 plików;60 lokalnych celów Markdown istnieje. Zmienił się wyłącznie własny wiersz O2,dopiski zachowują cudzą historię. Dwie opcjonalne P3 — puste linki Public domain i nieoznaczony historyczny inventory/checklista — poprawiono tekstowo. Istniejący P2 integracyjny E9 nadal otwarty.
 
 Koordynator wykonał istniejący E0:9schemas/95valid/35invalid/18scenarios/561links oraz diff-check PASS. Walidator nie wykonuje PG/Room/OIDC/deployment. Hashe/rozmiary obrazów sprawdzono niezależnie przy składaniu pakietu; kwalifikacja człowieka i rzeczywisty runner pozostają osobno. Publikacja ma własne wymagane final-head CI; przygotowanie nie jest pełnym APK/E7-R/E9 PASS.
+
+## Przegląd E9 — 25.10.2026
+
+Ograniczony przegląd zgodności komponentu O1 z API: **nie wykazano nowego
+materialnego P1/P2 w prześledzonym REST/UI; historyczny P2 requested/effective
+jest naprawiony w źródłach. Pełny E9: HOLD.** Niezależny odbiór raportu po
+korektach: **9,3/10**, bez istotnych nierozwiązanych uwag do publikacji.
+Nie jest to ogólny audyt bezpieczeństwa ani odbiór live.
+
+### Piny i rzeczywisty zakres dowodów
+
+- Backend: `00dae4aa1e89fcc9de8ac24b2391daa1f6d06707`,
+  tree `b1d4c99fe6289bf7a69829d5863997bf621fb66d`.
+  Android: dostawa `e16f317f75379ced9ac1d8e2241fdffaab9316f3`,
+  code `50eb470c25a76dbd523cb722838b5369117764c7`,
+  android/app tree `d1f5d621f4aadf5560e5c46c11fbf9f574953183`.
+  Oba piny Androida mają identyczne drzewo aplikacji; różnią się dokumentacją.
+- Źródła czytano z Git blobs, bez cudzego working tree. Niezależnie sprawdzono
+  manifest 73/73 plików: blob, SHA-256 i rozmiar. Nie zmieniono produktu.
+- Wykonano **14/14 oczekiwanych wyników DTO**: 5 fixture O1 i 5 ręcznie
+  odtworzonych kształtów requestów przyjętych przez rzeczywiste modele
+  Pydantic oraz 4 negatywne granice odrzucone. To nie wykonanie builderów
+  Kotlin, routera, SQL lub transportu. Istniejący test schematu: **1 PASS**.
+- Kopia schematu O1 jest semantycznie zgodna z aktualnym schematem backendu.
+  Poprawiony analizator zbadał 148 wzorców inline: 17 osiągalnych przez REST,
+  0 problematycznych w REST; wszystkie 78 problematycznych wystąpień leży
+  pod `EnergyPullResponse`. Samo sprawdzenie nazwy `$ref/UnicodeText` nie
+  wystarczało, ponieważ wygenerowany schemat zawiera ten wzorzec inline.
+  Korekta metody nie wymagała nowych testów produktu. V1 raportu zachowano.
+- Nie wykonywano JVM/Gradle/Room/AVD/PG, realnego APK/API, OAuth lub Gemini.
+  Sześć przypadków instrumentacji O1 to cudzy, osobny wynik na code50eb470,
+  opisany w [jego raporcie](https://github.com/Roseru/aplikacja-mobilna/blob/e16f317f75379ced9ac1d8e2241fdffaab9316f3/android/KOREKTY_ZAPOTRZEBOWANIA.md).
+
+### Rozstrzygnięcie zgód i zgodności REST
+
+Historyczny komunikat obiecujący zachowanie aktywnego automatu zastąpiono
+informacją o zachowaniu deklaracji i konieczności osobnego potwierdzenia
+([RankingConsentScreen:68](https://github.com/Roseru/aplikacja-mobilna/blob/e16f317f75379ced9ac1d8e2241fdffaab9316f3/android/app/src/main/java/pl/roseru/kalorie/ui/RankingConsentScreen.kt#L68)).
+Klient rozdziela requested/effective, traktuje cache jako ostatni podgląd,
+blokuje effective przy niepewnej zmianie zgód i zachowuje trwały nonce.
+Compare-and-clear nie pozwala spóźnionemu GET skasować nowszego znacznika
+lub znacznika aktywnej mutacji
+([EnergyRepository:98](https://github.com/Roseru/aplikacja-mobilna/blob/e16f317f75379ced9ac1d8e2241fdffaab9316f3/android/app/src/main/java/pl/roseru/kalorie/energy/EnergyRepository.kt#L98)).
+Odtworzenie pending zgody i guards lease/binding/session są uwzględnione
+w analizie źródłowej. Nie jest to wykonany realny scenariusz po restarcie.
+
+Nowy PUT zgód unieważnia afirmację i baseline zgodnie z polityką backendu;
+identyczny replay wraca z receipt przed kolejnym zapisem revision.
+Nie dodano automatycznej afirmacji po odczycie lub zmianie rankingu.
+Prześledzono ścieżki REST, null/Decimal/paginację, zamrożone UUID/body/If-Match,
+kontekst konta i niezmienną historię E. Accept/revert zmienia E, nie cel
+kcal/B/T/W, klasę ani wcześniejszy dziennik.
+
+Expiry propozycji odnosi się do gotowego wyniku: backend ustawia `created_at`
+przy zakończeniu generacji i `expires_at` o 24 h później
+([worker.sql:118,134–135](https://github.com/Roseru/aplikacja-mobilna/blob/00dae4aa1e89fcc9de8ac24b2391daa1f6d06707/backend/migrations/versions/e9_0022/worker.sql#L118)).
+To osobny czas od admission `accepted_at`. Klient sprawdza relację dat
+i używa `expiresAt` do dopuszczenia accept
+([EnergyProtocol:39](https://github.com/Roseru/aplikacja-mobilna/blob/e16f317f75379ced9ac1d8e2241fdffaab9316f3/android/app/src/main/java/pl/roseru/kalorie/energy/EnergyProtocol.kt#L39)).
+
+### P3 do O1: ETag przy potwierdzeniu energy consent
+
+Nowy [EnergyGateway](https://github.com/Roseru/aplikacja-mobilna/blob/e16f317f75379ced9ac1d8e2241fdffaab9316f3/android/app/src/main/java/pl/roseru/kalorie/energy/EnergyGateway.kt#L15)
+nie przenosi ETag odpowiedzi. ACK sprawdza status 200, oba booleany i
+`revision = If-Match + 1`, lecz pomija zgodność cytowanego ETag
+([EnergyRepository:256](https://github.com/Roseru/aplikacja-mobilna/blob/e16f317f75379ced9ac1d8e2241fdffaab9316f3/android/app/src/main/java/pl/roseru/kalorie/energy/EnergyRepository.kt#L256)).
+Poprawna odpowiedź przypiętego backendu jest kompatybilna. Źródłowy
+kontrprzypadek to 200 z poprawnym body, ale bez ETag lub z innym ETag:
+operacja zostaje uznana za zakończoną. Nie wykonano tej próby na Androidzie.
+
+O1 powinien przenieść i sprawdzić ETag przed zakończeniem próby oraz zachować
+ten sam UUID/body przy brakującym lub błędnym nagłówku. To drobne uzupełnienie
+walidacji odpowiedzi dla E9, nie nowy blocker bieżącego odbioru Room23.
+
+### Synchronizacja, własność i następny odbiór
+
+Opublikowany klient nadal obsługuje poprzednie sześć typów sync. Nie ma
+projekcji `energy_estimate` ani opt-in `energy_estimates_v1`; ten stan
+jest jawnie opisany przez O1. Przed włączeniem nowego zakresu wymagane są
+walidacja/projekcja encji, zgodne push i pull oraz pełny snapshot z nowymi
+podpisanymi tokenami. Dopisanie nagłówka do starego tokenu nie wystarcza.
+Outbox, frozen bytes, UUID i odzyskiwane operacje muszą pozostać zachowane.
+Przed użyciem `EnergyPullResponse` potrzebna jest iteracyjna walidacja znaków
+i regresja długich tokenów, w tym 4096 znaków. To znana blokada przyszłego
+sync, nie wykazany aktualny trigger REST.
+
+Runtime O2 `325446b0` został już dostarczony i odebrany. O1
+[potwierdził jego przyjęcie wraz z lifecycle Factory](https://github.com/Roseru/aplikacja-mobilna/pull/146#issuecomment-6398434885)
+i rozpoczął integrację carrier11fac87a z osobnym driverem Room23.
+Jego [nowsze przekazanie](https://github.com/Roseru/aplikacja-mobilna/pull/146#issuecomment-6398540989)
+wymaga potwierdzenia publicznego API/issuer/CA przez O3 przed dostawą czterech
+APK; wyniki lokalnej integracji pozostają PENDING.
+Nowa encja, walidator i gateway E9 są zakresem O1; ewentualne zmiany
+`SyncWork/SyncCoordinator` wymagają uzgodnienia styku O2. Ten przegląd
+nie przydziela tych plików ponownie. Nie obejmuje też nieopublikowanego
+szkicu opt-in O1, oddzielonego od aktualnego odbioru Room23.
+
+Realny E9/Room25 wymaga własnego zgodnego zestawu APK, kontraktu i kwalifikacji;
+zamrożony driver Room23 ich nie zastępuje. Po uzgodnieniu wersji kolejny
+wspólny scenariusz to PKCE/bootstrap → state/history → rank-only PUT przy
+aktywnym automacie → requested=true/effective=false → osobny notice/affirm
+→ lost ACK/restart/exact retry → A→B→A i późna odpowiedź, a następnie nowy
+scope snapshot z zachowanym outboxem. O1 dostarcza integrację/APK, O3
+konfigurację i odbiór środowiska, O2 sprawdza zgodność handshake/replay.
+Wynik musi wiązać konkretne APK/backend SHA i epokę.

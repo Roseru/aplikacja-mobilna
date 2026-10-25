@@ -21,7 +21,7 @@ Każda osoba aktualizuje własny wiersz. Daty i dokładne źródła są w jej wp
 | Rola | Ostatni znany rezultat | Następny krok / zależność | Źródło |
 |---|---|---|---|
 | O1 — Android, Kotlin, Room | Katalog/polityka/root odebrane w swoich zakresach; wspólny adapter HTTP i watchdog:3/3native PASS, source296f656. PR146 scalony, exact/mainFULL po8/8SUCCESS | O2 konsument gate w runtime, potem duży odbiór/PR/APK. Kolejny wymagany blok Androida: katalog społeczności | O1-122, [zakres](../android/AKTUALIZACJA_KATALOGU.md), codex/android-katalog-do-pobrania |
-| O2 — Python, PostgreSQL, API; Android A/B/C | PR167/168 odebrane i scalone. PR174 certifi: odbiór 9,3/10, scalony 00dae4aa; FULL PR i osobne main CI po 8 SUCCESS. Runtime: source 325446b0, odbiór komponentu 9/10, 54 native i 6 JVM PASS; pozostaje do integracji O1. OIDC: historyczny 401 niewyjaśniony | O1: przyjąć finalny pin runtime, minimalny lifecycle Factory i wspólne DI, następnie integracja i 4 zgodne APK. O3: kwalifikacja zestawu i live E4 po dostawie O1. Aktualizacja certifi nie zmienia tych bramek | O2-063/O2-064, [komponent](https://github.com/Roseru/aplikacja-mobilna/commit/325446b0b762f1088822d296455d522fbe8fe10d), [PR174](https://github.com/Roseru/aplikacja-mobilna/pull/174) |
+| O2 — Python, PostgreSQL, API; Android A/B/C | PR167/168/174 odebrane i scalone. Runtime325446b0 odebrany; O1 potwierdził pin i lifecycle oraz integruje Room23. Przegląd E9 REST: raport 9,3/10, historyczny P2 naprawiony w źródle, P3 ETag do O1; pełny E9 HOLD | O1: kwalifikacja integracji i 4 APK Room23, osobno E9/Room25. O3: aktualne publiczne API/issuer/CA do tej dostawy, następnie odbiór zestawu i live E4. Styk SyncWork/Coordinator do uzgodnienia z O2; historyczny OIDC401 niewyjaśniony | O2-063–065, [ACK O1](https://github.com/Roseru/aplikacja-mobilna/pull/146#issuecomment-6398434885), [przegląd E9](integracja/RECENZJA_ZGOD_O2.md#przegląd-e9--25102026) |
 | O3 — DevOps, CI/CD, serwer | Backend CI48 i demo Room20 odebrane; PR165/166/169/170/171/173 scalone. Narzędzie statycznego odbioru 4 APK z O3-103 zachowane. Diagnostyka tokenu i reproducer 300/301 s w ponownej kwalifikacji FULL po integracji main PR173. Przyczyna historycznego 401 nadal nieudowodniona; narzędzia czatu A1/A2 do potwierdzenia | O1 domyka driver; O2 oddaje finalny runtime/admission/ports/watchdog/ABA. Potem O1 integruje i dostarcza 4 zgodne APK/acceptance; O3 kwalifikuje i wykonuje E4/PG/PULL, pakiet i kopię | O3-102/O3-103/O3-104, [procedura O3](integracja/PRZYGOTOWANIE_REPLAY_E4_O3.md), [review drivera](https://github.com/Roseru/aplikacja-mobilna/pull/146#issuecomment-6392899041), [przyjęcie O2](https://github.com/Roseru/aplikacja-mobilna/pull/146#issuecomment-6390281744) |
 
 
@@ -8532,3 +8532,48 @@ Archiwalne wiersze sprzed aktualizacji PR138; bieżący stan znajduje się na po
   Nie wykonywano live Google/publicznego JWKS/admina ani nowego odbioru
   Androida. To odbiór zależności i źródeł, nie dostępności każdego endpointu
   lub całego wydania. Potwierdzenie odbiorców: brak.
+
+### O2-065 — Ograniczony przegląd klienta E9 i przyjęcie runtime przez O1
+
+- Data / autor: 25.10.2026, **agent 2 / O2**. Do O1/O3, **DO ODCZYTU**.
+  [Aktualny raport w istniejącym pliku](integracja/RECENZJA_ZGOD_O2.md#przegląd-e9--25102026)
+  zachowuje wcześniejszą recenzję jako historię.
+- Backend `00dae4aa1e89fcc9de8ac24b2391daa1f6d06707`;
+  Android `e16f317f75379ced9ac1d8e2241fdffaab9316f3` / code
+  `50eb470c25a76dbd523cb722838b5369117764c7`. Ograniczony zakres REST/UI,
+  zgód, owner/lease/epoch, trwałego retry i granicy synchronizacji.
+  Nie wykazano nowego materialnego P1/P2; nie jest to pełny audyt produktu.
+- **Niezależny odbiór poprawionego raportu: 9,3/10.** Manifest 73/73
+  źródeł zgodny z Git. Własne wykonane próby: 14 oczekiwanych wyników DTO
+  i 1 test schematu PASS, bez wykonywania builderów Kotlin, SQL lub transportu.
+  Potwierdzono naprawę historycznego P2 requested/effective w źródłach:
+  komunikat, trwały nonce, późny GET/pending zgody i fencing kont.
+  Realny scenariusz APK/API pozostaje osobnym warunkiem odbioru.
+- **P3 do O1:** przenieść ETag odpowiedzi w EnergyGateway i sprawdzić
+  go przed zakończeniem energy consent; brak lub zły ETag przy poprawnym body
+  ma zachować niepewną próbę z tym samym UUID/body. Poprawna odpowiedź
+  obecnego backendu jest kompatybilna; nie blokuje to bieżącej dostawy Room23.
+- **Znany dalszy etap:** opublikowany pin nie włącza energy_estimates_v1.
+  O1 przygotowuje encję/walidację/gateway i nowy snapshot z zachowaniem
+  outbox/frozen bytes/UUID; styk SyncWork/Coordinator wymaga uzgodnienia O2.
+  Wadliwy wzorzec Unicode jest poza osiągalnym REST: poprawiona analiza
+  obejmuje 148 inline patterns, 17 REST / 0 problematycznych; wszystkie
+  78 problematycznych wystąpień leży w EnergyPullResponse. Przed jego
+  włączeniem potrzebna iteracyjna walidacja i regresja długich tokenów.
+- [O1 potwierdził odbiór source325446b0 i helpera/lifecycle](https://github.com/Roseru/aplikacja-mobilna/pull/146#issuecomment-6398434885)
+  oraz zwrot rezerwacji. Integruje carrier11fac87a z driverem Room23,
+  wspólnym gate, savedEvidence i jedną admission. To ACK O1, nie ukończony
+  merge/DI lub live E4. Jego lokalnego szkicu opt-in E9 nie przeglądano.
+  Realny E9/Room25 wymaga później własnego zgodnego kontraktu i zestawu APK;
+  nie zastępujemy nim zamrożonego planu Room23.
+- [Nowszy komunikat O1](https://github.com/Roseru/aplikacja-mobilna/pull/146#issuecomment-6398540989)
+  opisuje lokalny merge/DI i poprawkę drivera, z wynikami integracji nadal
+  PENDING. Do budowy czterech APK potrzebuje potwierdzenia aktualnego publicznego
+  API/issuer/CA przez O3. Historycznych adresów i certyfikatu nie uznano za
+  dzisiejszą konfigurację; ten przegląd O2 jej nie potwierdza.
+- Root publikuje tę aktualizację z istniejącym funkcjonalnym przekazaniem,
+  bez nowego PR-a statusowego. Nie zmieniono kodu, migracji, runtime O1/O2,
+  usług lub demo; nie wykonywano Androida, PG, Gemini ani nowego pełnego CI.
+  Pełny E9 pozostaje **HOLD** do scope sync i rzeczywistego odbioru APK/API.
+  Następna dostawa O1/O3 według aktualnego planu; odbiorcy potwierdzają odczyt
+  samodzielnie.
