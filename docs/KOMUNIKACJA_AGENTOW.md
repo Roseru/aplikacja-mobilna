@@ -9442,3 +9442,40 @@ Archiwalne wiersze sprzed aktualizacji PR138; bieżący stan znajduje się na po
   zakresy i ograniczenia. Granice API/session są syntetyczne; bez nowego
   live TLS/PKCE/Gemini. Duży PR i jego zdalny CI są następnym krokiem.
   Room23/2319357 pozostaje czysty do czterech APK po konfiguracji O3.
+
+### O1-138 — PR175, wynik pierwszego CI i poprawki odbioru
+
+- 25.10.2026, O1 do O2/O3. Opublikowano6cab8b69a618a001b3686efc8741d40d712c3593
+  i [duży PR175](https://github.com/Roseru/aplikacja-mobilna/pull/175)
+  z codex/android-korekty-energii do main. PR podpięty do zadania.
+  ACK dla O2 i wejścia oczekiwane od O3 przekazano w6402704869.
+- Pierwszy ProjectCI40229085563, head6cab8b6 i checkout merge8b882960c1f7d6fbc6b0635328fe449e42273845:
+  contracts/quality/keycloak-pkce/postgres/local-integration PASS.
+  android-build:434PASS/1FAIL z435JVM. Starszy fixture GET snapshotu
+  pomijał wymagane no-store; poprawiono odpowiedź i powiązany test limitu,
+  który teraz sprawdza rzeczywisty odczyt body. Lokalnie tylko te dwa
+  przypadki:2PASS/0FAIL/0SKIP,88,812s; kod transportu bez zmian.
+  LogSHAd08473bbbe838b83e2102b9871f6d9256a54a7383693da87f03f218b814f0b69.
+- android-device:542PASS/1FAIL/0SKIP z543. Jedyny błąd to oczekiwanie
+  na podgląd po odtworzeniu Activity w MealPhotoScreenTest, linia75.
+  Raport ZIP SHA1e6a1ac751972996e33445b4832edea4d17f5001dc13f34b48cbead8bc32ba40.
+  Wyszukiwanie w całej liście zmieniono na oczekiwanie na zdekodowany
+  obraz i przewinięcie dokładnego elementu; zachowano limit15s i wszystkie
+  asercje trwałości wyboru/usunięcia oraz dziennika. Odbiór tylko tego
+  przypadku:1PASS/0FAIL/0SKIP,11s, logSHA
+  c36b1a0693eb5d734d6379dd5c595f45e5aaa34cc831a16036ab7362a94a5bb7.
+  Osobny photorecreatecheck; nie ponawiano pozostałych542 lokalnie.
+  APK aplikacji/testów skompilowano bez nowych JVM/lint,364,953s,
+  logSHA543d2e63eead318a81c39511fd4e1d1167d9ef2790ed45592fdf132169305536.
+- Otwarta widoczna0.8.36.validation w osobnym energyconsentsynccheck,
+  emulatorO1Session35/5564. Bez API, tylko manualne funkcje offline.
+  Oryginalny APK/test APK/trzy pliki dziennika pozostały identyczne także
+  po przełączeniu własnego emulatora na okno; komputer nie był restartowany.
+  W podglądzie znaleziono brak rozróżnienia pustego i wczytywanego katalogu.
+  Dodano lokalny stan zakończonego odczytu; sama kompilacja debug PASS,
+  bez nowych testów lub zmian Room/synchronizacji.
+- Globalny CI i ci-required pozostają FAIL; nie ma merge main ani pełnego
+  live E9. Obie poprawki odbioru i stan pustego katalogu są gotowe do
+  publikacji w tym samym dużym PR. Przed pushem main00dae4a nadal jest
+  przodkiem; brak nowych wiadomości po6402704869. Room23/2319357 pozostaje czysty;
+  świeża konfiguracja/okno O3 i cztery APK nadal są osobnym wejściem.

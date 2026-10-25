@@ -32,7 +32,8 @@ import pl.roseru.kalorie.session.*
         val saved=state.installed.filterIsInstance<pl.roseru.kalorie.catalogupdate.InstalledCatalog.Ready>()
         when {
             state.localReadFailed || state.installed.any{it is pl.roseru.kalorie.catalogupdate.InstalledCatalog.Unreadable}->"Opis zapisanej bazy jest niedostępny"
-            saved.isEmpty()->"Odczytuję wersję zapisanej bazy…"
+            !state.localReadComplete->"Odczytuję wersję zapisanej bazy…"
+            saved.isEmpty()->"Nie pobrano jeszcze katalogu"
             else->"Baza: "+saved.joinToString(" · "){(if(it.manifest.kind=="official")"oficjalna" else "DEMO")+" v${it.manifest.release}"}
         }
     }

@@ -27,15 +27,17 @@ class MealPhotoScreenTest {
         compose.onNodeWithText("Zdjęcie posiłku").assertExists()
     }
     private fun revealPreview() {
-        // The image loads asynchronously and changes the lazy item's height. After
-        // restoring scroll state it can be outside the composed viewport again.
-        compose.waitUntil(15_000) {
-            try {
-                compose.onNodeWithTag("photo-content").performScrollToNode(hasTestTag("photo-preview"))
+        // The selected card is already composed. Wait for its decoded image before
+        // scrolling: a whole-list search can recycle it while its height changes.
+        try {
+            compose.waitUntil(15_000) {
                 compose.onAllNodesWithTag("photo-preview").fetchSemanticsNodes().isNotEmpty()
-            } catch (_: AssertionError) { false }
+            }
+        } catch (timeout:ComposeTimeoutException) {
+            compose.onRoot(useUnmergedTree=true).printToLog("PhotoPreviewState")
+            throw timeout
         }
-        compose.onNodeWithTag("photo-preview").assertIsDisplayed()
+        compose.onNodeWithTag("photo-preview").performScrollTo().assertIsDisplayed()
     }
     @Test fun guestPhotoNavigationManualFallbackAndRotationDoNotChangeDiaryOrGrantConsent() {
         ready()

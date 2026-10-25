@@ -13,7 +13,11 @@ ec8564df634ef28d38b50b20947d2baf7513c716 na codex/android-korekty-energii.
 Poprawka ETag O2/4cc2d4d jest włączona zwykłym merge i ma osobny
 odbiór złożenia: dwa przypadki zgód PASS na Room26.
 Pełne E9 wymaga również rzeczywistego serwera i pełnego odbioru końcowego.
-Brak nowego PR, zdalnego CI lub scalenia do main.
+Duży [PR175](https://github.com/Roseru/aplikacja-mobilna/pull/175) jest
+otwarty. Pierwszy CI ma dwa opisane w O1-138 problemy odbioru Androida;
+pozostałe pięć zadań zaliczono. Dwa dobrane JVM i pojedynczy przypadek
+foto po poprawkach mają lokalne PASS; następny zdalny przebieg pozostaje
+do odczytania. Brak merge main.
 
 Wcześniejszy osobny odbiór REST/cache/UI Room25 zachowuje źródło
 50eb470c25a76dbd523cb722838b5369117764c7 i tree android/app

@@ -14,7 +14,7 @@ enum class CatalogUpdatePhase { IDLE,CHECKING,AVAILABLE,DOWNLOADING,VERIFYING,IN
 data class CatalogUpdateState(val installed:List<InstalledCatalog> = emptyList(),val localReadFailed:Boolean=false,
     val configured:Boolean=false,val networkAllowed:Boolean=false,val networkUnavailable:Boolean=true,val phase:CatalogUpdatePhase=CatalogUpdatePhase.IDLE,
     val available:CatalogManifest?=null,val received:Long=0,val expected:Long=0,val retryAt:Long=0,
-    val checkedAt:Long?=null,val serverOlder:Boolean=false) {
+    val checkedAt:Long?=null,val serverOlder:Boolean=false,val localReadComplete:Boolean=false) {
     val busy:Boolean get()=phase in setOf(CatalogUpdatePhase.CHECKING,CatalogUpdatePhase.DOWNLOADING,CatalogUpdatePhase.VERIFYING)
 }
 
@@ -47,8 +47,8 @@ class CatalogUpdateViewModel(private val repository:CatalogUpdateRepository,
         localReadJob=viewModelScope.launch {
             repository.installed.catch {error->
                 if(error is CancellationException)throw error
-                mutable.update{it.copy(installed=emptyList(),localReadFailed=true)}
-            }.collect {rows->mutable.update{it.copy(installed=rows,localReadFailed=false)}}
+                mutable.update{it.copy(installed=emptyList(),localReadFailed=true,localReadComplete=true)}
+            }.collect {rows->mutable.update{it.copy(installed=rows,localReadFailed=false,localReadComplete=true)}}
         }
     }
     fun check()=begin(CatalogUpdatePhase.CHECKING) { id->
