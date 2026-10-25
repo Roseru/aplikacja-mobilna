@@ -8112,12 +8112,16 @@ Archiwalne wiersze sprzed aktualizacji PR138; bieżący stan znajduje się na po
   wcześniejszy FAIL zachowany prywatnie. Raport po fsync jest publikowany jako
   nowy plik wyłącznie, bez nadpisania aliasu/linku lub częściowego PASS po błędzie I/O.
 - Lokalnie **174PASS/1pominięcie symlinku Windows** w macierzy APK,13,60s;
+  po uściśleniu odmowy pustego userinfo oraz pustych separatorów query/fragment
+  pełna macierz **177PASS/1pominięcie**,16,11s. Te3regresje dotyczą tylko offline
+  manifestu; nie zmieniają helperów PKCE ani zachowania aplikacji.
   cała infrastruktura **555PASS/6pominięć symlinków Windows**,63,29s. Ruff check
   i format423plików PASS; E0:11schematów,98valid/35invalid,18scenariuszy,887linków;
   scope/gate/wiring17PASS, schematy i diff-check PASS. Import backendu potwierdzony
   z własnego checkoutu, parser źródeł także z rzeczywistych obiektów Git tej bazy.
 - Pierwszy [FULL CI40167662671](https://github.com/Roseru/aplikacja-mobilna/actions/runs/40167662671)
-  rozpoczęty dla commita implementacji; nie przypisujemy przyszłego SUCCESS.
+  i drugi40167740130 zatrzymano po zmianie source; nie są dowodami końcowej
+  zmiany i nie przypisujemy im SUCCESS. Końcowy commit wymaga nowego FULL CI.
   Końcowy source/base/tested merge/tree, osiem rzeczywistych wyników PR i osobny
   main push CI podlegają dalszej kwalifikacji i zostaną wskazane w tym PR.
   Nie przyjmowano rzeczywistej nowej dostawy4APK, nie tworzono android_acceptance

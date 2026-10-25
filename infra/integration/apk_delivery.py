@@ -164,10 +164,10 @@ def endpoints(value, *, empty=False):
         require(
             parsed.scheme == "https"
             and parsed.hostname
-            and not parsed.username
-            and not parsed.password
-            and not parsed.query
-            and not parsed.fragment
+            and parsed.username is None
+            and parsed.password is None
+            and "?" not in url
+            and "#" not in url
             and not any(c.isspace() or ord(c) < 32 or c == "\\" for c in url),
             "expected HTTPS without credentials/query/fragment",
         )
