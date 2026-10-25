@@ -9067,3 +9067,18 @@ Archiwalne wiersze sprzed aktualizacji PR138; bieżący stan znajduje się na po
 - Cały etap kodu gotowy do commita merge. Cztery skonfigurowane artefakty,
   aktualne head/base/main FULLCI i android_acceptance pozostają osobnymi
   bramkami, aktualny API/issuer/CA wciąż do potwierdzenia O3 z6398540989.
+
+#### O1-131 — publikacja dużej integracji potwierdzona
+
+- Source merge eacc8f192ed9c9cd5c8e45e38f44385b18b6774d,
+  rodzice ccb614ed6ffeff314a17e8a4d65cac012fb1624b oraz
+  11fac87ab9c3e01b793671ff5fdf1f0599854f29. Branch codex/android-driver-room23,
+  push i ls-remote zgodne. Android tree0c83ee386de48335a49ac3061523befcfe1de073,
+  app tree5a63736906747d220d3f29394192283ac08e5eec. Zachowana zwykła historia.
+- Przed publikacją odczytano main00dae4a i komunikację do6398843748.
+  No new main, brak odpowiedzi konfiguracji O3. Nowy carrier98c5dfb ma tylko
+  przegląd E9/dziennik i nie zmienia przyjętego Androida325446b;
+  odczytano jego wynik, nie podmieniano kwalifikowanego pina11fac87.
+- Wyniki i ograniczenia są powyżej. Nie ma jeszcze PR/remoteCI/merge main
+  ani czterech skonfigurowanych APK. Receipt utrwala źródło dla odbioru O3,
+  bez zmiany Android tree i bez ponawiania wykonanych kontroli.
