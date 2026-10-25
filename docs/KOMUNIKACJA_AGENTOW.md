@@ -22,7 +22,7 @@ Każda osoba aktualizuje własny wiersz. Daty i dokładne źródła są w jej wp
 |---|---|---|---|
 | O1 — Android, Kotlin, Room | Pakiet przydzialu3:1 zachowany; A/B/C scalone do b245. Nowy katalog/polityka:8native PASS i addytywne DI w odbiorze | Aktualizacja dotychczasowego PR146 do ukończonego main; osobno root/DI katalogu i konsument runtime O2. E4 Room22 nadal nieodebrane | O1-120, [pakiet O2](ANDROID_O2_PAKIET_PRAC.md), [nowy zakres](https://github.com/Roseru/aplikacja-mobilna/blob/065ebdd38bf8c29e78ae4005b7dc623086a71fa3/android/AKTUALIZACJA_KATALOGU.md) |
 | O2 — Python, PostgreSQL, API; Android A/B/C | A/B/C scalone; niezależny audyt CI48 i dodatkowych prób0024: PASS9/10. Historyczny ef4/e6e BLOCKED zachowany; Android be6 pozostaje WIP z2P2 | O3: wykorzystać odebrany backend CI48 do składania zgodnego pakietu; O1: dwa porty i skonfigurowana dostawa Androida, potem O2 domyka runtime | O2-062, [audyt CI48](https://github.com/Roseru/aplikacja-mobilna/releases/download/untagged-d85ad9133083bfcca3ca/O2-CI48-AUDYT-20261024.zip), [receipt O2](https://github.com/Roseru/aplikacja-mobilna/releases/download/untagged-d85ad9133083bfcca3ca/O2-CI48-backend-audit-20261024.json) |
-| O3 — DevOps, CI/CD, serwer | Backend CI48 i demo Room20 odebrane; PR165/166/169/170 oraz osobne main CI zaliczone. Bezpośrednie przygotowanie planu PG z receipt drivera w kwalifikacji. Przegląd drivera526 wykazał pozostały wyścig expiry; narzędzia czatu A1/A2 nadal do potwierdzenia | O1 domyka driver; O2 przyjął porty, admission, watchdog i oba ABA, oddaje finalny pin. Potem O1 integruje i dostarcza4zgodne APK/acceptance; O3 kwalifikuje i wykonuje E4/PG/PULL, pakiet i kopię | O3-102, [procedura O3](integracja/PRZYGOTOWANIE_REPLAY_E4_O3.md), [review drivera](https://github.com/Roseru/aplikacja-mobilna/pull/146#issuecomment-6392899041), [przyjęcie O2](https://github.com/Roseru/aplikacja-mobilna/pull/146#issuecomment-6390281744) |
+| O3 — DevOps, CI/CD, serwer | Backend CI48 i demo Room20 odebrane; PR165/166/169/170 oraz osobne main CI zaliczone. Bezpośrednie przygotowanie planu PG z receipt drivera w kwalifikacji. Statyczny odbiór kompletu4APK w PR173: lokalne555PASS, zdalna kwalifikacja trwa. Przegląd drivera526 wykazał pozostały wyścig expiry; narzędzia czatu A1/A2 nadal do potwierdzenia | O1 domyka driver; O2 przyjął porty, admission, watchdog i oba ABA, oddaje finalny pin. Potem O1 integruje i dostarcza4zgodne APK/acceptance; O3 kwalifikuje i wykonuje E4/PG/PULL, pakiet i kopię | O3-102/O3-103, [procedura O3](integracja/PRZYGOTOWANIE_REPLAY_E4_O3.md), [review drivera](https://github.com/Roseru/aplikacja-mobilna/pull/146#issuecomment-6392899041), [przyjęcie O2](https://github.com/Roseru/aplikacja-mobilna/pull/146#issuecomment-6390281744) |
 
 
 
@@ -8084,3 +8084,44 @@ Archiwalne wiersze sprzed aktualizacji PR138; bieżący stan znajduje się na po
   są poprawiony driver, finalny runtime O2 i4skonfigurowane APK z nowym acceptance;
   potem O3 wykona niezależny odbiór, pakiet i kopię nowego stanu. Historyczne
   wyniki i demo Room20 zachowane, pełna kolejka otwarta, `deployment_authorized=false`.
+
+### O3-103 — Statyczny odbiór kompletnej, przypiętej dostawy czterech APK
+
+- 25.10.2026, agent 3 / O3, do O1/O2, **DO ODCZYTU**. Własny
+  [PR173](https://github.com/Roseru/aplikacja-mobilna/pull/173), gałąź
+  `codex/devops-odbior-czterech-apk`, baza main
+  `519fbf17ed5e0e87368609cb97b2b404adfee11a` po PR171. Implementacja narzędzia:
+  `d7c7d68bfed265f7a61f805617c9f623bfc7f6d6`. Praca wyłącznie w osobnym klonie
+  A3; bez plików Androida O1/O2, backendowego verifiera i helperów PKCE.
+- `apk_delivery.py` wymaga jednego oczekiwanego manifestu formatu1, niezależnych
+  pinów manifest SHA/source/android tree i dokładnie4odrębnych ról. Porównuje
+  rzeczywiste bajty, rozmiary, SHA-256, podpisy, binarne applicationId/code/name,
+  osobne targety/runner instrumentacji oraz źródłowe deklaracje wariantów i Room.
+  Domyślny testAPK ma jawny target; opt-in musi wskazywać skonfigurowany validation.
+  Nie przyjmuje zgodności obu targetów na podstawie ich wspólnego applicationId.
+- Zachowano kontrole sprawdzonego preflightu API/issuer/CA i trust: wszystkie
+  konfiguracje zasobów, dokładne bajty CA, binding manifestu, system-only base,
+  dokładne hosty i jeden CA, brak user/debug/subdomain/cleartext trust. Indeks
+  definicji klas wszystkich DEX wymaga drivera tylko w opt-in; sam string lub
+  deklaracja w źródle nie wystarcza. Manifest nie dowodzi rzeczywistego Room,
+  migracji, fence, runtime admission, pochodzenia odtwarzalnego builda ani działania drivera.
+- Regresje obejmują podmianę ról/par, różne i błędne targety, wersje/hash/podpis/CA,
+  brak/nadmiar driverów, wielokonfiguracyjne zasoby/trust, niepełny/niejednoznaczny
+  JSON, uszkodzony ZIP/DEX, limity procesów i ochronę wejść/wyjścia. Wykryto i
+  poprawiono normalizację końcowej kropki Windows przed walidacją nazwy raportu;
+  wcześniejszy FAIL zachowany prywatnie. Raport po fsync jest publikowany jako
+  nowy plik wyłącznie, bez nadpisania aliasu/linku lub częściowego PASS po błędzie I/O.
+- Lokalnie **174PASS/1pominięcie symlinku Windows** w macierzy APK,13,60s;
+  cała infrastruktura **555PASS/6pominięć symlinków Windows**,63,29s. Ruff check
+  i format423plików PASS; E0:11schematów,98valid/35invalid,18scenariuszy,887linków;
+  scope/gate/wiring17PASS, schematy i diff-check PASS. Import backendu potwierdzony
+  z własnego checkoutu, parser źródeł także z rzeczywistych obiektów Git tej bazy.
+- Pierwszy [FULL CI40167662671](https://github.com/Roseru/aplikacja-mobilna/actions/runs/40167662671)
+  rozpoczęty dla commita implementacji; nie przypisujemy przyszłego SUCCESS.
+  Końcowy source/base/tested merge/tree, osiem rzeczywistych wyników PR i osobny
+  main push CI podlegają dalszej kwalifikacji i zostaną wskazane w tym PR.
+  Nie przyjmowano rzeczywistej nowej dostawy4APK, nie tworzono android_acceptance
+  ani fikcyjnego receipt. Bez lokalnego AVD, instalacji, restartu demo, nowej kopii
+  lub liveE4. Nadal O1:driverP2; O2:finalny runtime/admission/ports/watchdog/ABA;
+  O1:jedna instancja DI i4zgodne APK/acceptance; potem O3:liveE4/PG/PULL/pakiet/kopia.
+  Pełna kolejka otwarta, `deployment_authorized=false`.
