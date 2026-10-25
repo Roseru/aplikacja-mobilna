@@ -1,0 +1,31 @@
+{
+  "files": [
+    {
+      "path": "android-ci48-input.json",
+      "bytes": 584,
+      "sha256": "b13cbb48ff399a6c7f0e15f64b31cbd4bcd4458120c7b66cded0dfba23d6b6af"
+    },
+    {
+      "path": "archive-chain.json",
+      "bytes": 4811,
+      "sha256": "14ce39469bed3f49f8f1534a8f55f5ea804dd4f571c49c1d1771b0cc1e72793f"
+    },
+    {
+      "path": "publication.json",
+      "bytes": 385,
+      "sha256": "2b4e2df1cbc9288734ac9974dec8f899ae6066916d731c80d6214c89c32487e4"
+    },
+    {
+      "path": "README.md",
+      "bytes": 6940,
+      "sha256": "eb2f524cf40e0c20112cd663c0a496498a3dfaca23e761cd19184abd6278669c"
+    },
+    {
+      "path": "target.json",
+      "bytes": 644,
+      "sha256": "e7793be645e042194e5324bcce0c655c8da3777eb47f8423c1a997708f80068a"
+    }
+  ],
+  "hash_scope": "Git blob bytes (UTF-8/LF); a Windows working copy may use CRLF",
+  "raw_archive_in_git": false
+}

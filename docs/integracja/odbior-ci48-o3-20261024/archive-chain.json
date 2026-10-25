@@ -1,0 +1,113 @@
+{
+  "result": "PASS",
+  "checked_at": "2026-10-24T10:59:53.022592+00:00",
+  "method": "READ_ONLY_ORIGINAL_ARCHIVE_AND_CURRENT_DOCKER_IMAGE_INSPECT",
+  "source_commit": "48bc4217f3f3da27923563ab275db18e999c62bc",
+  "original_actions_run": 40000795870,
+  "original_image_artifact_id": 12523436539,
+  "archive_sha256": "0cbd8d71a3927aff8e262679c0f63e28d3b087c979e25c9bfbcb270a3fa7e47b",
+  "archive_bytes": 284108800,
+  "index_digest": "sha256:81734df67fb445b26375bf68d8a274bde689c4ba0b298af313641b419c26990d",
+  "config_digest": "sha256:020b20b65652c56abedbfad970753acbe59b566118b3e821707669b25e64c35e",
+  "runtime_id": "sha256:81734df67fb445b26375bf68d8a274bde689c4ba0b298af313641b419c26990d",
+  "revision_label": "48bc4217f3f3da27923563ab275db18e999c62bc",
+  "os": "linux",
+  "architecture": "amd64",
+  "layers": [
+    {
+      "index": 0,
+      "blob_digest": "sha256:15f1c8eb1ab18eae260c7fb6296434cbe1ff0e1e30fd814ae92a80dd54005e62",
+      "compressed_bytes": 81254400,
+      "diff_id": "sha256:15f1c8eb1ab18eae260c7fb6296434cbe1ff0e1e30fd814ae92a80dd54005e62",
+      "runtime_layer_matches": true
+    },
+    {
+      "index": 1,
+      "blob_digest": "sha256:285510654d1d6a26507ed6576cae8fa995ba16469050787032499e9a34cbe9f5",
+      "compressed_bytes": 4127744,
+      "diff_id": "sha256:285510654d1d6a26507ed6576cae8fa995ba16469050787032499e9a34cbe9f5",
+      "runtime_layer_matches": true
+    },
+    {
+      "index": 2,
+      "blob_digest": "sha256:acbf34fa608c522642659b109edfd70959b7c26593ea51141f3d339cc1875cfd",
+      "compressed_bytes": 37050368,
+      "diff_id": "sha256:acbf34fa608c522642659b109edfd70959b7c26593ea51141f3d339cc1875cfd",
+      "runtime_layer_matches": true
+    },
+    {
+      "index": 3,
+      "blob_digest": "sha256:d175833b7147479e4e08f4f5d9dd2055b5ee746dc2f73520462468538d168bf6",
+      "compressed_bytes": 5120,
+      "diff_id": "sha256:d175833b7147479e4e08f4f5d9dd2055b5ee746dc2f73520462468538d168bf6",
+      "runtime_layer_matches": true
+    },
+    {
+      "index": 4,
+      "blob_digest": "sha256:6428571d1deccf0a06e61f47f24bcaa5cbc012179d99b92fc2b0af4b07be463c",
+      "compressed_bytes": 1536,
+      "diff_id": "sha256:6428571d1deccf0a06e61f47f24bcaa5cbc012179d99b92fc2b0af4b07be463c",
+      "runtime_layer_matches": true
+    },
+    {
+      "index": 5,
+      "blob_digest": "sha256:d205e12b89cf8a579eed9dad6f18b047b3659023f728febd0722c588a0a39b94",
+      "compressed_bytes": 62200832,
+      "diff_id": "sha256:d205e12b89cf8a579eed9dad6f18b047b3659023f728febd0722c588a0a39b94",
+      "runtime_layer_matches": true
+    },
+    {
+      "index": 6,
+      "blob_digest": "sha256:a3f699796192fd3bc6bd24ccdb558f53f405c82e37a2e8624df25dd2b9f56d44",
+      "compressed_bytes": 87040,
+      "diff_id": "sha256:a3f699796192fd3bc6bd24ccdb558f53f405c82e37a2e8624df25dd2b9f56d44",
+      "runtime_layer_matches": true
+    },
+    {
+      "index": 7,
+      "blob_digest": "sha256:03418b9085c619a2af2d15859ebb484885112e7bccc8b5def4ae464d66d45353",
+      "compressed_bytes": 91305984,
+      "diff_id": "sha256:03418b9085c619a2af2d15859ebb484885112e7bccc8b5def4ae464d66d45353",
+      "runtime_layer_matches": true
+    },
+    {
+      "index": 8,
+      "blob_digest": "sha256:626901f689775ec40f9c278072c9aed0d489501f75308b872a8fcc9a5d48aa1f",
+      "compressed_bytes": 2404352,
+      "diff_id": "sha256:626901f689775ec40f9c278072c9aed0d489501f75308b872a8fcc9a5d48aa1f",
+      "runtime_layer_matches": true
+    },
+    {
+      "index": 9,
+      "blob_digest": "sha256:e6a29da3ef0fb5b172ff74011f0fc767870a700fd0a99744f2987f1f057ca5ae",
+      "compressed_bytes": 855040,
+      "diff_id": "sha256:e6a29da3ef0fb5b172ff74011f0fc767870a700fd0a99744f2987f1f057ca5ae",
+      "runtime_layer_matches": true
+    },
+    {
+      "index": 10,
+      "blob_digest": "sha256:c270e661d01e6f933f90e77bd70c3588bc6e56872f01b1a9cb0ad17c525ba785",
+      "compressed_bytes": 2560,
+      "diff_id": "sha256:c270e661d01e6f933f90e77bd70c3588bc6e56872f01b1a9cb0ad17c525ba785",
+      "runtime_layer_matches": true
+    },
+    {
+      "index": 11,
+      "blob_digest": "sha256:81c894f65fc6626583e226716f1207025162baf289074c0300fd6d3f4f1afdb6",
+      "compressed_bytes": 28160,
+      "diff_id": "sha256:81c894f65fc6626583e226716f1207025162baf289074c0300fd6d3f4f1afdb6",
+      "runtime_layer_matches": true
+    },
+    {
+      "index": 12,
+      "blob_digest": "sha256:8ab240b802cdaa4d91d6820f0f88e2478e49eb4c71ca132c9fa9c1ce6581b753",
+      "compressed_bytes": 4742656,
+      "diff_id": "sha256:8ab240b802cdaa4d91d6820f0f88e2478e49eb4c71ca132c9fa9c1ce6581b753",
+      "runtime_layer_matches": true
+    }
+  ],
+  "config_rootfs_labels_os_arch_equal_runtime": true,
+  "historical_schema_verified_by_original_experiment_assertions": "0026_ledger_review",
+  "functional_scenarios_repeated": false,
+  "container_started_for_this_check": false
+}

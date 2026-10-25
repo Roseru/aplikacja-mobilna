@@ -5,6 +5,7 @@ import subprocess
 import sys
 from datetime import UTC, datetime, timedelta
 from pathlib import Path
+from types import SimpleNamespace
 
 import pytest
 
@@ -34,7 +35,13 @@ class Installation:
 
 
 @pytest.fixture
-def environment(tmp_path):
+def environment(tmp_path, monkeypatch):
+    # These recovery scenarios exercise their own failure, independent of host storage.
+    monkeypatch.setattr(
+        maintenance.shutil,
+        "disk_usage",
+        lambda _: SimpleNamespace(total=20 * 1024**3, free=10 * 1024**3),
+    )
     directory = tmp_path / "operations"
     root = tmp_path / "copies"
     directory.mkdir()
@@ -44,6 +51,21 @@ def environment(tmp_path):
         json.dumps({"owner": maintenance.OWNER, "project": installation.project})
     )
     return {"backups": str(root), "keep": 2}, directory, installation
+
+
+@pytest.mark.parametrize("total,free", [(4 * 1024**3, 1024**3), (100 * 1024**3, 9 * 1024**3)])
+def test_insufficient_space_refuses_backup_before_stopping_services(
+    environment, monkeypatch, total, free
+):
+    settings, directory, installation = environment
+    monkeypatch.setattr(
+        maintenance.shutil, "disk_usage", lambda _: SimpleNamespace(total=total, free=free)
+    )
+    with pytest.raises(RuntimeError, match="Insufficient free space"):
+        maintenance.perform_backup(settings, directory, installation=installation)
+    assert installation.calls == []
+    assert not (directory / "transaction.json").exists()
+    assert not (directory / "backup-receipt.json").exists()
 
 
 def archive(path):

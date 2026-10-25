@@ -129,6 +129,37 @@ class Transport:
         if len(mapping) != 1 or mapping[0][2] != f"tcp:{self.port}":
             raise RuntimeError("Reverse mapping changed; refusing to remove it")
 
+    def ensure(self, lease: Path):
+        """Reuse a checked tunnel, or preserve an expired boot's absent tunnel record."""
+        if lease.exists():
+            raw = lease.read_bytes()
+            recorded = json.loads(raw)
+            current = self.specification(self.guard())
+            if recorded == current:
+                self.check(lease)
+                return
+            if (
+                not isinstance(recorded, dict)
+                or not isinstance(recorded.get("boot"), str)
+                or not recorded["boot"]
+                or recorded != self.specification(recorded["boot"])
+                or recorded["boot"] == current["boot"]
+            ):
+                raise RuntimeError("Lease belongs to another transport; no mutation")
+            if any(self.chain in rule.split() for rule in self.rules()) or any(
+                row[1] == f"tcp:{self.port}" for row in self.reverse()
+            ):
+                raise RuntimeError("Previous boot lease has an existing route; no mutation")
+            archive = lease.with_name(
+                lease.name + ".stale-" + hashlib.sha256(raw).hexdigest() + ".json"
+            )
+            with archive.open("xb") as stream:
+                stream.write(raw)
+            if lease.read_bytes() != raw:
+                raise RuntimeError("Lease changed while preserving it; no route mutation")
+            lease.unlink()
+        self.connect(lease)
+
     def disconnect(self, lease: Path):
         self.check(lease)
         self.ipt("-D", "OUTPUT", "-j", self.chain)
@@ -140,7 +171,7 @@ class Transport:
 
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument("action", choices=("connect", "status", "disconnect"))
+    parser.add_argument("action", choices=("connect", "ensure", "status", "disconnect"))
     parser.add_argument("--adb", required=True)
     parser.add_argument("--serial", required=True)
     parser.add_argument("--adb-server-port", type=int, default=5037)
