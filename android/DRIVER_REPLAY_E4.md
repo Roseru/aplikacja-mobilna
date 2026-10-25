@@ -1,5 +1,61 @@
 # Driver wybranej partii E4 — przygotowanie O1
 
+## Integracja runtime25.10.2026 — lokalny odbiór komponentów
+
+O1 przyjął końcowy komponent O2 source325446b i gałąź przekazania11fac87,
+zwykłym merge do rodzica ccb614e/Room23. Minimalny helper anulowania Job
+i lifecycle Factory przyjęto w6398434885. Kod sesji zachowuje zarówno
+community O1, jak i lokalny drainer O2. Application podaje tę samą
+networkPolicy, savedEvidence=sessions oraz tę samą syncRuntimeAdmission
+do całego runtime. Rezerwacje plików O2 zostały zwrócone.
+
+Poprawka O3P2 z6392899041: paused decyduje tylko według trwałego terminal
+z observed(), bez drugiego odczytu zegara. Samo przejście expires-1→expires
+nie dopuszcza już pracy z ready pozostającym na dysku. Nowa celowana
+regresja wymusza tę granicę, potem dopuszczenie po trwałym zakończeniu,
+rollback i rekonstrukcję, bez czekania na timer.
+
+Wersja0.8.35/code46/validation1046/Room23. Cały merge/DI/poprawka powstały
+przed kontrolami. Build obu wariantów, źródeł JVM i opt-in testAPK PASS
+1051,234s; lint0Error/0Fatal/8Warning/1Information, wejścia niezmienione.
+LogSHA256a57cc4deabe8052f185e18208fbe633884ede219892a914498749842e97a352e.
+Nie uruchamiano ponownie6JVM/54native odebranego komponentu O2.
+
+Siedem unikalnych przypadków native ma PASS w dwóch zachowanych seriach:
+6PASS/1FAIL, potem wyłącznie poprawiony niezaliczony fixture1PASS.
+Pierwszy FAIL nastąpił w pomocniczym beginLogin przed właściwym replay:
+wydzielony pakiet runtimecheck nie jest dozwolonym callbackiem OIDC.
+W tym syntetycznym przypadku jawnie wskazano logiczny identyfikator
+pl.roseru.kalorie.validation; Room/vault pozostają we własnym pakiecie.
+Produkcyjny AuthReturn i jego lista callbacków są bez zmian.
+
+Nowa granica terminu i quiescence, ordinary/recovery saved ACK/raw oraz
+paused runtime/obserwatory/worker i finally przeszły w pierwszej serii
+(29,170s instrumentacji/54,141s receipt). LogSHA256
+967e1f4a65534af84ca967e7601a03000d27176011fe9a39c9b91912562630f8.
+Po zmianie tylko SessionSecurityTest zbudowano tylko testAPK325,454s,
+logSHA2560d3de5f35ec00c70997c253532e3610d4806b9713663ca36fb6f48c6de5255fb.
+Ten sam APK aplikacji, bez powtórki6PASS. Manual producer/hold/cancel/replay
+1PASS:10,886s instrumentacji/35,640s receipt, logSHA256
+7ab796dd1ef08d534ef725fc45e49720627352ec93d08feebafb25030ac3b598.
+
+App22251400B/SHA2564b17bcfc34823035ce82fed9eec1d69f073190c762de7e330da70092fcda9a20;
+końcowy test5246984B/SHA25696d91c4f26e79be3f7ef0101a04451a198b1ae2f8fed2beef6c501b3fd4a16d5.
+Nowy pakiet runtimecheck na własnym API35/AVD5564 pozostał offline;
+oryginalne app/test APK i3pliki DB mają identyczne hashe przed/po.
+E0 PASS11schemas/98valid/35invalid/18scenarios/16Decimal/5day/
+72normalizations/902links. To syntetyczna granica API/sesji i komponenty
+Room/WorkManager/SessionController, nie nowy live Keycloak/TLS/E4.
+
+O3 otrzyma cztery zgodne skonfigurowane APK i android_acceptance po ich
+kwalifikacji. Aktualną publiczną konfigurację API/issuer/CA uzgadniamy
+w6398540989; historyczny adres dostawy Room20 nie otwiera nowego okna.
+Wyników komponentu O2, wcześniejszego526deb4 ani osobnych Room24/25 nie
+przypisujemy tym nowym artefaktom. RemoteCI i live E4/PULL pozostają otwarte.
+
+Poniższe sekcje zachowują wcześniejsze zakresy i odmowę przed integracją;
+nie zastępują bieżącego komponentowego odbioru nowym live E4.
+
 ## Room23 — trwała izolacja runtime, przygotowanie24.10.2026
 
 Gałąź `codex/android-driver-room23` zależy od dokładnego

@@ -4,6 +4,8 @@ import android.content.Intent
 import android.net.Uri
 import androidx.room.withTransaction
 import kotlinx.coroutines.CancellationException
+import kotlinx.coroutines.currentCoroutineContext
+import kotlinx.coroutines.ensureActive
 import kotlinx.coroutines.NonCancellable
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -76,7 +78,7 @@ class SessionController internal constructor(private val db: CalorieDatabase, pr
     private val mealPushProtocol:pl.roseru.kalorie.core.sync.PushProtocol?=null,
     private val conflictStore:SyncConflictStore?=null,
     private val diaryStore:ServerDiaryStore?=null,
-    private val reconciliationStore:ReconciliationStore?=null):SyncStepExecutor,ReconciliationStepExecutor {
+    private val reconciliationStore:ReconciliationStore?=null):SyncStepExecutor,ReconciliationStepExecutor,SavedSyncEvidenceDrainer {
     private val owners = LocalOwnerStore(db)
     private val mutex = Mutex()
     /** A nullable server binding is also an expectation: the first bootstrap must still be first. */
@@ -743,6 +745,82 @@ class SessionController internal constructor(private val db: CalorieDatabase, pr
             SyncCommandOutcome.NotConfigured->SyncStepResult.NotConfigured
             is SyncCommandOutcome.Bootstrapped->error("Bootstrap cannot complete an ordinary synchronization step")
         }
+    }
+
+    /**
+     * Complete only evidence already durably received. The existing session mutex is the
+     * exclusive reservation for this whole local transaction; no token capture/refresh or
+     * gateway is reachable, even when there is no work. Expired credentials are sufficient
+     * for their saved identity, never for a new request. Cancellation rolls back the drain.
+     */
+    override suspend fun drainSavedSyncEvidence(expectedLease:OwnerLease,
+        expectedContext:AccountBindingEntity):SavedSyncEvidenceResult {
+        currentCoroutineContext().ensureActive()
+        if(!mutex.tryLock())return SavedSyncEvidenceResult.BUSY
+        try {
+            return db.withTransaction {
+                val fence=SyncContextFence(expectedLease,expectedContext)
+                requireSyncContext(fence)
+                val owner=checkNotNull(db.ownerDao().byScope(expectedLease.storageScope))
+                val saved=SessionBinding(owner,expectedLease)
+                if(owner.kind!="account" || sessionFor(saved)==null)return@withTransaction SavedSyncEvidenceResult.STALE_CONTEXT
+                if(mealPushOperation!=null || snapshotOperation!=null || bootstrapOperation!=null || profileOperation!=null ||
+                    consentOperation!=null || operation!=null || photoUploadOperation!=null || nemesisMutationOperation!=null ||
+                    conflictBusy || record.has("pending"))return@withTransaction SavedSyncEvidenceResult.BUSY
+                val revision=sessionRevision
+                suspend fun guardSaved() {
+                    currentCoroutineContext().ensureActive()
+                    requireSyncContext(fence)
+                    if(sessionRevision!=revision || sessionFor(saved)==null)throw SyncContextChangedException()
+                }
+                var applied=false
+                val reconciliation=reconciliationStore
+                if(expectedContext.requiresRecovery && reconciliation!=null) {
+                    // Never preparePush/nextSnapshot here: they can create a new envelope/run.
+                    // Plans are newest-first. A later approved capture supersedes an older
+                    // pending plan for automatic draining; never reactivate its historical raw.
+                    val plans=db.importDao().plans(expectedLease.storageScope).filter {
+                        it.kind in setOf("reconcile_same_epoch","reconcile_epoch") && it.approvedAt!=null &&
+                            it.wireContext==CanonicalMealRows.context(expectedContext)
+                    }.take(1).filter {it.state!="complete"}
+                    for(plan in plans) {
+                        // Each successful acceptance consumes one already-complete local pull.
+                        while(true) {
+                            guardSaved()
+                            val run=reconciliation.pendingSnapshotAcceptance(expectedLease,expectedContext,plan.id)?:break
+                            val prepared=reconciliation.prepareCompletedSnapshot(expectedLease,expectedContext,plan.id,run)
+                            guardSaved();reconciliation.applyCompletedSnapshot(prepared);applied=true
+                        }
+                        val stored=db.importDao().batches(plan.id).filter {it.state=="awaiting_snapshot" && it.responseJson!=null}
+                        for(batch in stored) {
+                            guardSaved()
+                            val request=ReconciliationPushStore(reconciliation).open(expectedLease,expectedContext,plan.id,batch.id)
+                            val prepared=reconciliation.prepareAck(request,200,checkNotNull(request.savedResponse()))
+                            guardSaved()
+                            // A still missing target proof remains pending; do not rewrite it or send.
+                            if(!prepared.result.awaitingSnapshot) {
+                                reconciliation.applyAck(prepared);applied=true
+                            }
+                        }
+                    }
+                } else if(!expectedContext.requiresRecovery && diaryStore!=null) {
+                    val active=snapshots?.active(expectedLease)
+                    if(active!=null && db.serverDiaryDao().application(active.id)==null) {
+                        guardSaved();diaryStore.apply(expectedLease,active.id);guardSaved();applied=true
+                    }
+                    // Ordinary ACK response and projection/queue ACK are committed atomically
+                    // by MealPushStore. A complete ACK is already applied, not fresh local work;
+                    // replaying every historical receipt could wrongly revive old context/data.
+                }
+                guardSaved()
+                if(applied)SavedSyncEvidenceResult.APPLIED else SavedSyncEvidenceResult.NO_LOCAL_WORK
+            }
+        }catch(error:CancellationException){throw error}
+        catch(_:StaleOwnerException){return SavedSyncEvidenceResult.STALE_CONTEXT}
+        catch(_:SyncContextChangedException){return SavedSyncEvidenceResult.STALE_CONTEXT}
+        catch(_:ImportContextChangedException){return SavedSyncEvidenceResult.STALE_CONTEXT}
+        catch(_:Exception){return SavedSyncEvidenceResult.FAILURE}
+        finally {mutex.unlock()}
     }
 
     private class RecoveryReservation(val id:String,val fence:SyncContextFence,val planId:String,

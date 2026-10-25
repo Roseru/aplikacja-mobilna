@@ -47,7 +47,7 @@ class SyncRecoveryResumeTest {
         val old=db.bootstrapDao().binding(lease.storageScope)!!
         val binding=bootstrap.apply(bootstrap.begin(lease),BootstrapResponse(old.accountId,epoch,1,"2026-10-23T13:00:00Z"))
         assertTrue(binding.requiresRecovery)
-        val coordinator=SyncCoordinator(db,schema,SyncStepExecutor {_,_,_->error("Recovery must not send")}) {1000L}
+        val coordinator=SyncCoordinator(db,schema,SyncStepExecutor {_,_,_->error("Recovery must not send")},networkGate=RuntimeAllowedNetwork) {1000L}
         val blocked=coordinator.request(lease,binding);assertEquals("reconciliation",blocked.status)
         assertEquals(0L,blocked.reconciliationBaseline)
         db.syncWorkDao().save(blocked.copy(retryAtMillis=90000L,phase="push",activeVersion=blocked.requestedVersion))
@@ -95,13 +95,13 @@ class SyncRecoveryResumeTest {
             assertFalse(healthy.requiresRecovery);assertEquals(CanonicalMealRows.context(f.binding),CanonicalMealRows.context(healthy))
             assertEquals(1L,db.syncWorkDao().completionSequence(f.lease.storageScope,previous.wireContext));preserved(db,f)
             db.close();db=open(name)
-            val coordinator=SyncCoordinator(db,schema,SyncStepExecutor {_,_,_->calls.incrementAndGet();SyncStepResult.LoginRequired}) {now}
+            val coordinator=SyncCoordinator(db,schema,SyncStepExecutor {_,_,_->calls.incrementAndGet();SyncStepResult.LoginRequired},networkGate=RuntimeAllowedNetwork) {now}
             runtime=SyncWorkRuntime(db,coordinator,SyncWorkScheduler(work){now})
             val observer=runtime.observe(scope,flowOf(SyncSessionSignal(f.lease,true,true)))
             val resumed=state(db,f.lease){it.requestedVersion>previous.requestedVersion}
             assertEquals("ready",resumed.status);assertEquals("pull_before",resumed.phase);assertEquals(0L,resumed.activeVersion)
             assertNull(resumed.reconciliationBaseline);assertEquals(90000L,resumed.retryAtMillis);assertEquals(0,calls.get())
-            val ticket=SyncWorkTicket(f.lease.storageScope,f.lease.generation,previous.wireContext)
+            val ticket=SyncWorkTicket(f.lease.storageScope,f.lease.generation,previous.wireContext,policyRevision=1,issuance=RuntimeAllowedNetwork.captureAllowed().issuance)
             withTimeout(15000){work.getWorkInfosForUniqueWorkFlow(ticket.uniqueName()).first {it.isNotEmpty()}}
             assertEquals(SyncCoordinator.Outcome.Deferred(90000L),runtime.execute(ticket));assertEquals(0,calls.get())
             now=90000L
@@ -117,19 +117,19 @@ class SyncRecoveryResumeTest {
         try {
             val f=prepare(db);ReconciliationStore(db,schema).finish(f.lease,f.binding,f.plan)
             val healthy=db.bootstrapDao().binding(f.lease.storageScope)!!
-            val coordinator=SyncCoordinator(db,schema,SyncStepExecutor {_,_,_->calls.incrementAndGet();SyncStepResult.ReconciliationRequired("conflict")}) {90000L}
+            val coordinator=SyncCoordinator(db,schema,SyncStepExecutor {_,_,_->calls.incrementAndGet();SyncStepResult.ReconciliationRequired("conflict")},networkGate=RuntimeAllowedNetwork) {90000L}
             coordinator.request(f.lease,healthy)
             assertEquals(SyncCoordinator.Outcome.Stopped("reconciliation"),coordinator.run(f.lease,healthy))
             val blocked=db.syncWorkDao().state(f.lease.storageScope)!!;assertEquals(1L,blocked.reconciliationBaseline);assertEquals(1,calls.get())
             ReconciliationStore(db,schema).finish(f.lease,healthy,f.plan) // Genuine idempotent B replay must not mint a new sequence.
             assertEquals(1L,db.syncWorkDao().completionSequence(f.lease.storageScope,blocked.wireContext))
             db.close();db=open(name)
-            runtime=SyncWorkRuntime(db,SyncCoordinator(db,schema,SyncStepExecutor {_,_,_->calls.incrementAndGet();SyncStepResult.LoginRequired}) {90000L},SyncWorkScheduler(work){90000L})
+            runtime=SyncWorkRuntime(db,SyncCoordinator(db,schema,SyncStepExecutor {_,_,_->calls.incrementAndGet();SyncStepResult.LoginRequired},networkGate=RuntimeAllowedNetwork) {90000L},SyncWorkScheduler(work){90000L})
             val observer=runtime.observe(scope,flowOf(SyncSessionSignal(f.lease,true,true)))
             val restarted=state(db,f.lease){it.requestedVersion>blocked.requestedVersion};assertEquals("reconciliation",restarted.status)
             runtime.signal(resumeReasons=setOf("reconciliation","login","not_configured"))
             runtime.signal() // The periodic watch uses this same durable entry.
-            val ticket=SyncWorkTicket(f.lease.storageScope,f.lease.generation,blocked.wireContext)
+            val ticket=SyncWorkTicket(f.lease.storageScope,f.lease.generation,blocked.wireContext,policyRevision=1,issuance=RuntimeAllowedNetwork.captureAllowed().issuance)
             assertEquals(SyncCoordinator.Outcome.Stopped("reconciliation"),runtime.execute(ticket));assertEquals(1,calls.get())
             assertTrue(withContext(Dispatchers.IO){work.getWorkInfosForUniqueWork(ticket.uniqueName()).get()}.isEmpty())
             assertEquals(1L,db.syncWorkDao().state(f.lease.storageScope)!!.reconciliationBaseline);preserved(db,f)

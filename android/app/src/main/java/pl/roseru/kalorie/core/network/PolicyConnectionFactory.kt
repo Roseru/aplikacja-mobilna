@@ -27,15 +27,20 @@ class PolicyConnectionFactory(private val scope:CoroutineScope,private val gate:
     }
     private inner class PolicyConnection(private val delegate:HttpsURLConnection,private val permit:NetworkPermit):HttpsURLConnection(delegate.url) {
         private val closed=AtomicBoolean(false)
-        private var watcher:Job?=null
+        @Volatile private var watcher:Job?=null
+        @Volatile private var cancellation:DisposableHandle?=null
         init {
             val observing=scope.launch(Dispatchers.IO,start=CoroutineStart.UNDISPATCHED) {
                 try {
-                    gate.state.first {try{gate.requireCurrent(permit);false}catch(_:NetworkAccessDenied){true}}
+                    gate.changes.first {try{gate.requireCurrent(permit);false}catch(_:NetworkAccessDenied){true}}
                 } finally {closeDelegate()}
             }
             watcher=observing
-            if(closed.get())observing.cancel()
+            cancellation=NetworkOperationCancellation.subscribeOnCancelling {
+                closeDelegate()
+                watcher?.cancel()
+            }
+            if(closed.get()) {observing.cancel();cancellation?.dispose()}
         }
         private fun current() {
             if(closed.get())throw NetworkAccessDenied(NetworkDenial.STALE_PERMIT)
@@ -49,7 +54,10 @@ class PolicyConnectionFactory(private val scope:CoroutineScope,private val gate:
             return result
         }
         private fun closeDelegate() {
-            if(closed.compareAndSet(false,true))try{delegate.disconnect()}catch(_:Exception){}
+            if(closed.compareAndSet(false,true)) {
+                try{delegate.disconnect()}catch(_:Exception){}
+                finally{cancellation?.dispose()}
+            }
         }
         private fun input(value:InputStream)=object:InputStream() {
             override fun read():Int=io{value.read()}

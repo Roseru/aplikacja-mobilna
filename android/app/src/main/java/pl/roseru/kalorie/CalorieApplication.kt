@@ -30,8 +30,10 @@ class CalorieApplication : Application(), SyncWorkRuntimeOwner {
         getString(R.string.api_base_url).takeIf {it.isNotEmpty()}?.let {base ->
             try {pl.roseru.kalorie.community.HttpsCommunityGateway(base,networkConnections::open)}catch(_:Exception){null}
         })}
-    val syncCoordinator by lazy { SyncCoordinator(database,syncSchema,sessions) }
-    override val syncWorkRuntime by lazy {SyncWorkRuntime(database,syncCoordinator,SyncWorkScheduler(androidx.work.WorkManager.getInstance(this)))}
+    val syncCoordinator by lazy { SyncCoordinator(database,syncSchema,sessions,
+        networkGate=networkPolicy,savedEvidence=sessions) }
+    override val syncWorkRuntime by lazy {SyncWorkRuntime(database,syncCoordinator,
+        SyncWorkScheduler(androidx.work.WorkManager.getInstance(this)),admission=syncRuntimeAdmission)}
     val sessions by lazy { SessionController(database, SessionVault(this),
         AppAuthGateway(this,PolicyAppAuthConnectionBuilder(networkConnections),networkPolicy),getString(R.string.oidc_issuer),packageName,
         bootstrapGateway = getString(R.string.api_base_url).takeIf { it.isNotEmpty() }?.let {

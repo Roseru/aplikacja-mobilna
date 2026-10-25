@@ -34,6 +34,8 @@ FIELDS = {
     "envelope_sha256",
     "expected_meal",
 }
+MAX_DRIVER_PREPARED_BYTES = 5_000_000
+MAX_DRIVER_REQUEST_BYTES = 65_536
 
 
 def meal_content(payload):
@@ -95,6 +97,49 @@ def prepare_plan(context, raw_request):
         "expected_meal": operation["payload"],
     }
     validate_plan(plan)
+    return plan
+
+
+def prepare_driver_plan(context, raw_prepared: bytes):
+    """Bind the driver's exact request bytes to a PG plan, without accepting the trial."""
+    if (
+        not isinstance(raw_prepared, bytes)
+        or not 1 <= len(raw_prepared) <= MAX_DRIVER_PREPARED_BYTES
+    ):
+        raise ValueError("Invalid driver preparation size")
+
+    from calorie_app.modules.catalog.validation import parse_json
+
+    prepared = parse_json(raw_prepared)
+    if (
+        type(prepared.get("driver_guard_version")) is not int
+        or prepared["driver_guard_version"] != 2
+        or type(prepared.get("room")) is not int
+        or prepared["room"] != 23
+        or any(
+            not isinstance(prepared.get(key), str)
+            for key in ("trial", "meal", "operation", "request", "hash", "context")
+        )
+        or re.fullmatch(r"[0-9a-f]{64}", prepared["hash"]) is None
+    ):
+        raise ValueError("Invalid driver preparation metadata")
+    raw_request = prepared["request"].encode("utf-8")
+    if (
+        not 1 <= len(raw_request) <= MAX_DRIVER_REQUEST_BYTES
+        or hashlib.sha256(raw_request).hexdigest() != prepared["hash"]
+    ):
+        raise ValueError("Driver request size or digest mismatch")
+
+    wire_context = parse_json(prepared["context"].encode("utf-8"))
+    plan = prepare_plan(context, raw_request)
+    if (
+        prepared["trial"] != plan["trial_id"]
+        or prepared["meal"] != plan["entity_id"]
+        or prepared["operation"] != plan["operation_id"]
+        or wire_context.get("account_id") != plan["owner_id"]
+        or wire_context.get("sync_epoch") != plan["sync_epoch"]
+    ):
+        raise ValueError("Driver metadata differs from the observation context or frozen request")
     return plan
 
 
@@ -339,7 +384,9 @@ def main():
     parser.add_argument("--plan", type=Path, required=True)
     sub = parser.add_subparsers(dest="action", required=True)
     prepare = sub.add_parser("prepare", help="Use matching backend runtime before C0")
-    prepare.add_argument("--request", type=Path, required=True)
+    source = prepare.add_mutually_exclusive_group(required=True)
+    source.add_argument("--request", type=Path)
+    source.add_argument("--driver-prepared", type=Path)
     prepare.add_argument("--output", type=Path, required=True)
     save = sub.add_parser("capture")
     save.add_argument("--settings", type=Path, required=True)
@@ -351,7 +398,12 @@ def main():
     try:
         plan = json.loads(args.plan.read_text(encoding="utf-8-sig"))
         if args.action == "prepare":
-            plan = prepare_plan(plan, args.request.read_bytes())
+            if args.driver_prepared is not None:
+                with args.driver_prepared.open("rb") as source:
+                    raw_prepared = source.read(MAX_DRIVER_PREPARED_BYTES + 1)
+                plan = prepare_driver_plan(plan, raw_prepared)
+            else:
+                plan = prepare_plan(plan, args.request.read_bytes())
             with args.output.open("x", encoding="utf-8") as output:
                 os.chmod(args.output, 0o600)
                 json.dump(plan, output, indent=2)
