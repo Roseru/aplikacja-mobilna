@@ -9,6 +9,9 @@ Status: REST/cache/UI i migracja Room25 mają lokalne wyniki PASS opisane
 poniżej. Pełne E9 nadal wymaga integracji opt-in synchronizacji i odbioru
 z rzeczywistym serwerem. Zbudowany APK używa osobnego pakietu energycheck
 i syntetycznej granicy API/sesji w instrumentacji.
+Opublikowane źródło:50eb470c25a76dbd523cb722838b5369117764c7,
+tree android/app:d1f5d621f4aadf5560e5c46c11fbf9f574953183.
+Gałąź jest wypchnięta, bez PR/remoteCI/scalenia do main.
 
 ## Zakres do ukończenia
 

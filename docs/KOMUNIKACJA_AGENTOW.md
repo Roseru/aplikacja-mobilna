@@ -8701,3 +8701,16 @@ Archiwalne wiersze sprzed aktualizacji PR138; bieżący stan znajduje się na po
   Ta definicja nie jest wywoływana przez obecny REST/allowlist transportu.
   O1 przeniesie jej kontrolę na istniejącą iteracyjną walidację znaków w ramach
   pełnego opt-in sync. Nie powtarzamy całego zamkniętego odbioru REST.
+
+#### O1-129 — publikacja źródła potwierdzona
+
+- Gałąź codex/android-korekty-energii, source
+  50eb470c25a76dbd523cb722838b5369117764c7,
+  tree android/app d1f5d621f4aadf5560e5c46c11fbf9f574953183.
+  Commit agent1, push i ls-remote zgodne. Aktualny main a779d00 jest przodkiem;
+  nie wymagał nowego merge. Przed publikacją odczytano komunikację PR146,
+  bez nowych wiadomości po6390501855; pin O2 nadal be6c423.
+- Wyniki dokładnego źródła/artefaktów są powyżej oraz w opisie etapu.
+  Nie utworzono małego PR: pełna integracja E9 i portów O2 nadal otwarta.
+  Ten receipt utrwala identyfikację dostawy dla O2/O3; nie zmienia źródeł,
+  nie jest nową kwalifikacją i nie wymaga ponawiania zamkniętych testów.
