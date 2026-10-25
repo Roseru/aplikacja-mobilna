@@ -73,7 +73,12 @@ class EnergySchema(bytes:ByteArray) {
             }
             val length=value.codePointCount(0,value.length)
             if(length<schema.optInt("minLength",0) || length>schema.optInt("maxLength",Int.MAX_VALUE))fail()
-            if(schema.has("pattern") && !Regex(schema.getString("pattern")).matches(value))fail()
+            if(schema.has("pattern")) {
+                val pattern=schema.getString("pattern")
+                // This exact UnicodeText language was checked iteratively above. Java's
+                // recursive alternation overflows on valid 4096-character sync tokens.
+                if(pattern!=UNICODE_TEXT_PATTERN && !Regex(pattern).matches(value))fail()
+            }
             try {when(schema.optString("format")) {
                 ""->Unit
                 "uuid"->if(UUID.fromString(value).toString()!=value)fail()
@@ -106,6 +111,7 @@ class EnergySchema(bytes:ByteArray) {
     private fun fail():Nothing=throw EnergyProtocolException()
     companion object {
         const val SCHEMA_SHA256="54baca27ddc062b8de98386dde964cd8259998e1c30cdb3e44ab4de9b0cb7764"
+        private const val UNICODE_TEXT_PATTERN="^(?:[^\\u0000\\uD800-\\uDFFF]|[\\uD800-\\uDBFF][\\uDC00-\\uDFFF])*(?![\\s\\S])"
         private val KEYWORDS=setOf("\$ref","description","title","default","type","properties","required","additionalProperties",
             "allOf","anyOf","oneOf","not","if","then","else","const","enum","minimum","maximum","minLength","maxLength",
             "pattern","format","items","minItems","maxItems","uniqueItems")

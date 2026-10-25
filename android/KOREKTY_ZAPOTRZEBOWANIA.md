@@ -161,3 +161,26 @@ Reprodukcja wzorca JVM:1024znaki PASS,2048i4096 StackOverflowError.
 Dotyczy m.in. tokenów4096znaków nowej synchronizacji. Bieżący EnergyProtocol
 wywołuje wyłącznie definicje REST, a transport nie dopuszcza ścieżki sync;
 wyników powyżej nie rozszerzamy na jeszcze niewłączoną definicję sync.
+
+## Następny lokalny etap: pełna synchronizacja E9
+
+Po źródle50eb470/receipte16f317 rozpoczęto lokalny, niepublikowany WIP.
+EnergySchema pomija rekurencyjny regex wyłącznie dla dokładnego znanego
+UnicodeText, po istniejącej iteracyjnej kontroli NUL i par surrogate.
+Pozostałe wzorce zachowują walidację. Powstał EnergySnapshotProtocol:
+osobne typy opt-in, wspólny format query, walidacja pełnych7domen,
+limit sumy encji/mapowań/receipts, tożsamości i ciągłości tokenów.
+Cały dokument odpowiedzi jest zachowany; parser nie zapisuje checkpointu,
+nie potwierdza outboxu i nie wysyła nowego nagłówka automatycznie.
+
+Dodano jeden przypadek do późniejszego odbioru:4096znaków opaque token,
+obecność starej encji i E, odmowa powtórzonego ID oraz4097znaków.
+Zgodnie z decyzją właściciela tego WIP jeszcze nie kompilowano/testowano;
+kontrole nastąpią po złożeniu większego przepływu. Bieżący zainstalowany
+APK i powyższe wyniki nadal dotyczą dokładnego źródła50eb470.
+
+Do napisania: trwałe fazy zmiany scope, zachowanie/uzgodnienie wszystkich
+starych prób, nowy pełny snapshot z atomową akceptacją7domen, następnie
+incremental/push z utrwalonym scope żądania. Integracja ze wspólnym
+controller/runtime nastąpi po zwrocie7rezerwacji i finalnym pinie O2.
+Nie ma nowej migracji poza25 ani włączenia capability w transporcie.

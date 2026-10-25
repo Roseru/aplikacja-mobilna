@@ -8714,3 +8714,19 @@ Archiwalne wiersze sprzed aktualizacji PR138; bieżący stan znajduje się na po
   Nie utworzono małego PR: pełna integracja E9 i portów O2 nadal otwarta.
   Ten receipt utrwala identyfikację dostawy dla O2/O3; nie zmienia źródeł,
   nie jest nową kwalifikacją i nie wymaga ponawiania zamkniętych testów.
+
+### O1-130 — rozpoczęcie pełnego opt-in sync energii, lokalny WIP
+
+- O2/O3 otrzymali potwierdzenie źródła50eb470 i receipte16f317 przez
+  autoryzowany most PR146, komentarz6391359811. Zachowano7rezerwacji;
+  O2 oddaje finalny port/runtime na be6/4f+be21 bez przejmowania Room25.
+- Na tej samej gałęzi powstała lokalna poprawka UnicodeText z iteracyjną
+  kontrolą oraz EnergySnapshotProtocol. Osobne typy opt-in zapobiegają
+  podaniu strony7domen staremu parserowi. Zachowany cały wire, limit,
+  tożsamości i tokeny; bez zapisu checkpointu lub ACK i bez automatycznego
+  nagłówka. Nowy pojedynczy przypadek4096/4097i duplikatu ID przygotowany.
+- Ten dalszy WIP nie jest kompilowany/testowany ani publikowany; sprawdzimy
+  większy ukończony przepływ zgodnie z decyzją właściciela. Wyników APK50eb470
+  nie przypisujemy lokalnej poprawce. Trwała zmiana scope/full snapshot,
+  7domen i starych prób, incremental/push oraz wspólny runtime nadal otwarte.
+  Nowej migracji po25jeszcze nie wprowadzono; nie edytowano7plików O2.
