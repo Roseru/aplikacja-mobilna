@@ -72,19 +72,28 @@ class SyncCoordinator(private val db:CalorieDatabase,private val schema:SyncWire
         val state=save(lease,binding){if(it.status in blocked)it else it.copy(status=networkWaitReason())}
         return Outcome.Stopped(state.status)
     }
+    private class ContextRevoked:CancellationException("Synchronization context changed")
     private class PolicyRevoked:CancellationException("Network policy revoked this execution")
     private suspend fun networkStep(lease:OwnerLease,binding:AccountBindingEntity,step:SyncStep,permit:NetworkPermit):SyncStepResult=coroutineScope {
         networkGate.requireCurrent(permit)
         val work=async(start=CoroutineStart.LAZY) {
-            ensureActive();networkGate.requireCurrent(permit)
-            executor.executeSyncStep(lease,binding,step).also {ensureActive();networkGate.requireCurrent(permit)}
+            withContext(NetworkOperationCancellation(currentCoroutineContext().job)) {
+                ensureActive();networkGate.requireCurrent(permit)
+                executor.executeSyncStep(lease,binding,step).also {ensureActive();networkGate.requireCurrent(permit)}
+            }
         }
         val monitor=launch(start=CoroutineStart.UNDISPATCHED) {
-            networkGate.state.collect {
+            networkGate.changes.collect {
                 try {networkGate.requireCurrent(permit)}catch(_:NetworkAccessDenied){work.cancel(PolicyRevoked())}
             }
         }
-        try {work.await()}finally{monitor.cancel()}
+        val ownerMonitor=launch(start=CoroutineStart.UNDISPATCHED) {
+            db.syncWorkDao().contexts().collect {current->
+                if(current==null || current.lease()!=lease || CanonicalMealRows.context(current.binding)!=CanonicalMealRows.context(binding))
+                    work.cancel(ContextRevoked())
+            }
+        }
+        try {work.await()}finally{monitor.cancel();ownerMonitor.cancel()}
     }
 
     /** Explicit/manual or an eligible-write signal. Neither can shorten a stored Retry-After. */
@@ -219,6 +228,8 @@ class SyncCoordinator(private val db:CalorieDatabase,private val schema:SyncWire
                 }
             }
             return defer(lease,binding,Math.addExact(now(),1_000))
+        }catch(error:ContextRevoked){
+            currentCoroutineContext().ensureActive();return Outcome.Stale
         }catch(error:PolicyRevoked){
             currentCoroutineContext().ensureActive()
             return try{waitForNetwork(lease,binding)}catch(_:StaleOwnerException){Outcome.Stale}

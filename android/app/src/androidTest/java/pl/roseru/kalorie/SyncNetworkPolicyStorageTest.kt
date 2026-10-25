@@ -45,7 +45,7 @@ class SyncNetworkPolicyStorageTest {
         .put("snapshot_token","synthetic-${uuid()}").put("page_token",JSONObject.NULL).put("checkpoint","synthetic-${uuid()}")
         .put("server_time","2026-10-24T12:00:00Z").put("goal_timeline_revision",0).put("entities",JSONArray(entities))
         .put("recovery_mappings",JSONArray()).put("operation_receipts",JSONArray()).toString().toByteArray()
-    private inner class Harness(val gate:NetworkAccessGate,val name:String?=null) {
+    private inner class Harness(val gate:NetworkAccessGate,val name:String?=null,val admission:SyncRuntimeAdmission=OpenSyncRuntimeAdmission) {
         val db=if(name==null)Room.inMemoryDatabaseBuilder(context,CalorieDatabase::class.java).addCallback(DATABASE_GUARDS).build()
             else Room.databaseBuilder(context,CalorieDatabase::class.java,name).addCallback(DATABASE_GUARDS).build()
         val scope=CoroutineScope(SupervisorJob()+Dispatchers.Default)
@@ -78,12 +78,12 @@ class SyncNetworkPolicyStorageTest {
             } else {lease=LocalOwnerStore(db).currentLease();binding=db.bootstrapDao().binding(lease.storageScope)!!}
             val executor=SyncStepExecutor {l,b,s->calls.incrementAndGet();steps+=s;answer(l,b,s)}
             coordinator=SyncCoordinator(db,schema,executor,networkGate=gate,savedEvidence=SavedSyncEvidenceDrainer {l,b->localCalls.incrementAndGet();drain(l,b)}) {clock}
-            runtime=SyncWorkRuntime(db,coordinator,SyncWorkScheduler(work){clock})
+            runtime=SyncWorkRuntime(db,coordinator,SyncWorkScheduler(work){clock},admission)
             sessions=MutableStateFlow(SyncSessionSignal(lease,true,true))
             assertSame(gate,coordinator.networkGate);assertSame(gate,runtime.networkGate)
         }
         fun observe()=runtime.observe(scope,sessions)
-        fun ticket(revision:Long?=coordinator.captureNetworkPermit()?.revision)=SyncWorkTicket(lease.storageScope,lease.generation,CanonicalMealRows.context(binding),revision)
+        fun ticket(revision:Long?=coordinator.captureNetworkPermit()?.revision)=SyncWorkTicket(lease.storageScope,lease.generation,CanonicalMealRows.context(binding),revision,gate.changes.value.issuance)
         suspend fun state(predicate:(SyncWorkState)->Boolean)=withTimeout(15_000){db.syncWorkDao().observe(lease.storageScope).filterNotNull().first(predicate)}
         suspend fun jobs(ticket:SyncWorkTicket,predicate:(List<WorkInfo>)->Boolean)=withTimeout(15_000){work.getWorkInfosForUniqueWorkFlow(ticket.uniqueName()).first(predicate)}
         suspend fun worker(ticket:SyncWorkTicket)=TestListenableWorkerBuilder<DiarySyncWorker>(context).setWorkerFactory(factory).setInputData(ticket.data()).build().doWork()
@@ -113,6 +113,68 @@ class SyncNetworkPolicyStorageTest {
             h.runtime.reschedule(old,SyncCoordinator.Outcome.Deferred(90000))
             assertTrue(withContext(Dispatchers.IO){h.work.getWorkInfosForUniqueWork(old.uniqueName()).get()}.isEmpty())
             assertEquals(0,h.calls.get())
+        }finally{h.close()}
+    }
+    @Test fun staleRescheduleCannotEnqueueAfterSameRevisionAbaOrProviderRecreation()=runBlocking<Unit> {
+        val gate=ReusedRevisionGate();val h=Harness(gate)
+        try {
+            h.start();h.checkpoint();val old=h.ticket();gate.aba()
+            h.runtime.reschedule(old,SyncCoordinator.Outcome.Deferred(90000))
+            assertTrue(withContext(Dispatchers.IO){h.work.getWorkInfosForUniqueWork(old.uniqueName()).get()}.isEmpty())
+            val fresh=h.ticket();assertNotEquals(old.uniqueName(),fresh.uniqueName())
+            val scheduler=SyncWorkScheduler(h.work){h.clock}
+            val oldJob=scheduler.enqueue(old,90000);val newJob=scheduler.enqueue(fresh,90000)
+            scheduler.revokeScheduled(old)
+            assertEquals(WorkInfo.State.ENQUEUED,withContext(Dispatchers.IO){h.work.getWorkInfoById(newJob.id).get()}!!.state)
+            val oldInfo=withContext(Dispatchers.IO){h.work.getWorkInfoById(oldJob.id).get()}
+            assertTrue(oldInfo==null || oldInfo.state==WorkInfo.State.CANCELLED)
+            val other=ReusedRevisionGate()
+            val restarted=SyncWorkRuntime(h.db,SyncCoordinator(h.db,schema,SyncStepExecutor {_,_,_->fail("Old provider ticket must be stale");SyncStepResult.LoginRequired},networkGate=other),scheduler)
+            assertEquals(SyncCoordinator.Outcome.Stale,restarted.execute(fresh))
+            restarted.reschedule(fresh,SyncCoordinator.Outcome.Deferred(90000))
+            assertEquals(0,h.calls.get())
+        }finally{h.close()}
+    }
+    @Test fun ownerAndWireContextChangesCancelSuspendedStepAndReleaseMutex()=runBlocking<Unit> {
+        for(changeOwner in listOf(false,true)) {
+            val gate=ReusedRevisionGate();val h=Harness(gate)
+            val entered=CompletableDeferred<Unit>();val done=CompletableDeferred<Unit>();var active:Deferred<SyncCoordinator.Outcome>?=null
+            try {
+                h.start();val frozen=h.frozen();val before=h.checkpoint();val oldBinding=h.binding
+                h.answer={_,_,_->entered.complete(Unit);try{awaitCancellation()}finally{done.complete(Unit)}}
+                active=async {h.runtime.manual(h.lease)};withTimeout(10000){entered.await()}
+                if(changeOwner) {
+                    val owners=LocalOwnerStore(h.db);val a=h.db.ownerDao().byScope(h.lease.storageScope)!!
+                    owners.select(owners.ensureGuest().id);h.lease=owners.select(a.id)
+                } else {
+                    val next=oldBinding.copy(accountGeneration=oldBinding.accountGeneration+1)
+                    h.db.bootstrapDao().update(next);h.binding=next
+                }
+                withTimeout(10000){done.await()};assertEquals(SyncCoordinator.Outcome.Stale,withTimeout(10000){active.await()})
+                val state=h.db.syncWorkDao().state(h.lease.storageScope)!!
+                assertEquals(before.phase,state.phase);assertEquals(0,state.acknowledged)
+                assertArrayEquals(frozen.batch.body(),h.db.pushDao().batch(frozen.id)!!.requestJson.toByteArray())
+                h.answer={_,_,_->SyncStepResult.LoginRequired}
+                assertEquals(SyncCoordinator.Outcome.Stopped("login"),h.runtime.manual(h.lease));assertEquals(2,h.calls.get())
+            }finally{active?.cancelAndJoin();h.close()}
+        }
+    }
+    @Test fun sameRevisionFrameAutomaticallyReplacesOnlyOldChainAndHonorsFutureDeadline()=runBlocking<Unit> {
+        val gate=ReusedRevisionGate();val h=Harness(gate)
+        try {
+            h.start();val frozen=h.frozen();MealPushStore(h.db,schema).defer(frozen,90000);h.checkpoint(deadline=90000)
+            h.observe();val old=h.ticket();val original=h.jobs(old){it.isNotEmpty()}.first()
+            gate.aba();val fresh=h.ticket();assertNotEquals(old.uniqueName(),fresh.uniqueName())
+            val job=h.jobs(fresh){rows->rows.any {it.state==WorkInfo.State.ENQUEUED}}.first {it.state==WorkInfo.State.ENQUEUED}
+            val previous=withContext(Dispatchers.IO){h.work.getWorkInfoById(original.id).get()}
+            assertTrue(previous==null || previous.state==WorkInfo.State.CANCELLED)
+            h.runtime.reschedule(old,SyncCoordinator.Outcome.Deferred(90000))
+            assertEquals(SyncCoordinator.Outcome.Stale,h.runtime.execute(old));assertEquals(0,h.calls.get())
+            val state=h.coordinator.state(h.lease)!!;assertEquals("push",state.phase);assertEquals(90000L,state.retryAtMillis)
+            h.clock=90000;val driver=WorkManagerTestInitHelper.getTestDriver(context)!!
+            driver.setAllConstraintsMet(job.id);driver.setInitialDelayMet(job.id)
+            h.state {it.status=="login"};assertEquals(listOf(SyncStep.PUSH),h.steps.toList())
+            assertArrayEquals(frozen.batch.body(),h.db.pushDao().batch(frozen.id)!!.requestJson.toByteArray())
         }finally{h.close()}
     }
     @Test fun coalescedSameRevisionAbaCancelsSuspendedExecutorAndReleasesMutex()=runBlocking<Unit> {
@@ -313,5 +375,130 @@ class SyncNetworkPolicyStorageTest {
             val after=h.coordinator.state(h.lease)!!;assertEquals(before.phase,after.phase);assertEquals(before.handledVersion,after.handledVersion)
             h.runtime.manual(h.lease);assertEquals(1,h.calls.get())
         }finally{release.complete(Unit);pending?.cancelAndJoin();h.close();p.close()}
+    }
+    /** Delays only legacy state delivery until after the burst, exactly modelling conflation.
+     * value remains the real gate value, and the new generation stream is the real gate stream. */
+    @OptIn(kotlinx.coroutines.InternalCoroutinesApi::class)
+    private class CoalescedLegacyGate(private val source:NetworkAccessGate,val release:CompletableDeferred<Unit>):NetworkAccessGate by source {
+        override val state:StateFlow<NetworkAccessState> = object:StateFlow<NetworkAccessState> {
+            override val value get()=source.state.value
+            override val replayCache get()=listOf(value)
+            override suspend fun collect(collector:FlowCollector<NetworkAccessState>):Nothing {
+                var previous=value;collector.emit(previous);release.await()
+                source.state.collect {next->if(next!=previous){previous=next;collector.emit(next)}}
+                error("StateFlow cannot complete")
+            }
+        }
+    }
+    private class BlockingConnection(val entered:CompletableDeferred<Unit>):javax.net.ssl.HttpsURLConnection(java.net.URL("https://fixture.example/synthetic")) {
+        private val released=java.util.concurrent.CountDownLatch(1)
+        private val closed=java.util.concurrent.atomic.AtomicBoolean(false)
+        val disconnects=AtomicInteger()
+        override fun getInputStream()=object:java.io.InputStream() {
+            override fun read():Int {entered.complete(Unit);released.await();return -1}
+        }
+        override fun disconnect(){if(closed.compareAndSet(false,true)){disconnects.incrementAndGet();released.countDown()}}
+        override fun connect()=Unit
+        override fun usingProxy()=false
+        override fun getCipherSuite()="synthetic"
+        override fun getLocalCertificates():Array<java.security.cert.Certificate>?=null
+        override fun getServerCertificates():Array<java.security.cert.Certificate> = emptyArray()
+    }
+    @Test fun coalescedAbaDisconnectsActualBlockingConnectionCancelsExecutorAndReleasesMutex()=runBlocking<Unit> {
+        val source=ReusedRevisionGate();val deliverLegacy=CompletableDeferred<Unit>()
+        val gate=CoalescedLegacyGate(source,deliverLegacy);val h=Harness(gate)
+        val entered=CompletableDeferred<Unit>();val connection=BlockingConnection(entered)
+        val sockets=CoroutineScope(SupervisorJob()+Dispatchers.Default)
+        var pending:Deferred<SyncCoordinator.Outcome>?=null
+        try {
+            h.start();val frozen=h.frozen();h.checkpoint()
+            val factory=PolicyConnectionFactory(sockets,gate){connection}
+            h.answer={_,_,_->
+                withContext(Dispatchers.IO){factory.open(java.net.URL("https://fixture.example/synthetic")).inputStream.read()}
+                SyncStepResult.Completed(acknowledged=1)
+            }
+            pending=async {h.runtime.manual(h.lease)};withTimeout(10000){entered.await()}
+            source.aba();deliverLegacy.complete(Unit)
+            assertEquals(SyncCoordinator.Outcome.Stopped("network_changed"),withTimeout(3000){pending.await()})
+            assertEquals(1,connection.disconnects.get())
+            assertEquals(0,h.coordinator.state(h.lease)!!.acknowledged)
+            assertNull(h.db.pushDao().batch(frozen.id)!!.responseJson)
+            assertArrayEquals(frozen.batch.body(),h.db.pushDao().batch(frozen.id)!!.requestJson.toByteArray())
+            h.answer={_,_,_->SyncStepResult.LoginRequired}
+            assertEquals(SyncCoordinator.Outcome.Stopped("login"),h.runtime.manual(h.lease));assertEquals(2,h.calls.get())
+        }finally{deliverLegacy.complete(Unit);connection.disconnect();pending?.cancelAndJoin();sockets.coroutineContext.job.cancelAndJoin();h.close()}
+    }
+    private class BlockingTrialAdmission:SyncRuntimeAdmission {
+        override val changes=MutableStateFlow(0L)
+        private val jobs=java.util.concurrent.CopyOnWriteArrayList<Job>()
+        @Volatile private var paused=false
+        override fun attach(contractVersion:Int){require(contractVersion==1)}
+        override suspend fun <T> run(block:suspend ()->T):SyncRuntimeEntry<T> = coroutineScope {
+            if(paused)SyncRuntimeEntry.Paused else {
+                val job=currentCoroutineContext().job;jobs+=job
+                try{SyncRuntimeEntry.Admitted(block())}finally{jobs-=job}
+            }
+        }
+        suspend fun pause(){paused=true;val old=jobs.toList();old.forEach {it.cancel()};old.joinAll()}
+        fun open(){paused=false;changes.value++}
+    }
+    private suspend fun blockingLifecycle(mode:String)=coroutineScope {
+        val source=ReusedRevisionGate();val trial=BlockingTrialAdmission();val h=Harness(source,admission=trial)
+        val entered=CompletableDeferred<Unit>();val connection=BlockingConnection(entered)
+        val sockets=CoroutineScope(SupervisorJob()+Dispatchers.Default)
+        var pending:Deferred<SyncCoordinator.Outcome>?=null;var pause:Deferred<Unit>?=null
+        try {
+            h.start();val frozen=h.frozen();h.checkpoint();val unchangedAllowed=source.changes.value
+            val factory=PolicyConnectionFactory(sockets,source){connection}
+            h.answer={_,_,_->withContext(Dispatchers.IO){factory.open(java.net.URL("https://fixture.example/synthetic")).inputStream.read()};SyncStepResult.Completed(acknowledged=1)}
+            pending=async {h.runtime.manual(h.lease)};withTimeout(10000){entered.await()}
+            when(mode) {
+                "owner"->{
+                    val owners=LocalOwnerStore(h.db);val id=h.db.ownerDao().byScope(h.lease.storageScope)!!.id
+                    owners.select(owners.ensureGuest().id);h.lease=owners.select(id)
+                }
+                "context"->{h.binding=h.binding.copy(accountGeneration=h.binding.accountGeneration+1);h.db.bootstrapDao().update(h.binding)}
+                "pause"->{pause=async {trial.pause()};withTimeout(3000){pause.await()}}
+                else->error("Unknown lifecycle fixture")
+            }
+            if(mode=="pause")assertTrue(pending.isCancelled)
+            else assertEquals(SyncCoordinator.Outcome.Stale,withTimeout(3000){pending.await()})
+            assertEquals("Cancellation is local to the request, not a device policy change",unchangedAllowed,source.changes.value)
+            assertEquals(1,connection.disconnects.get())
+            assertEquals(0,h.db.syncWorkDao().state(h.lease.storageScope)!!.acknowledged)
+            assertNull(h.db.pushDao().batch(frozen.id)!!.responseJson)
+            assertArrayEquals(frozen.batch.body(),h.db.pushDao().batch(frozen.id)!!.requestJson.toByteArray())
+            trial.open();h.answer={_,_,_->SyncStepResult.LoginRequired}
+            assertEquals(SyncCoordinator.Outcome.Stopped("login"),h.runtime.manual(h.lease));assertEquals(2,h.calls.get())
+        }finally{connection.disconnect();pending?.cancelAndJoin();pause?.cancelAndJoin();sockets.coroutineContext.job.cancelAndJoin();h.close()}
+    }
+    @Test fun ownerChangeDisconnectsBlockingIoUnderUnchangedAllowed()=runBlocking<Unit>{blockingLifecycle("owner")}
+    @Test fun contextChangeDisconnectsBlockingIoUnderUnchangedAllowed()=runBlocking<Unit>{blockingLifecycle("context")}
+    @Test fun admissionPauseDisconnectsBlockingIoUnderUnchangedAllowed()=runBlocking<Unit>{blockingLifecycle("pause")}
+    @Test fun requestCancellationRegistrationInitDisposeAndNormalCompletionStayConnectionLocal()=runBlocking<Unit> {
+        val gate=ReusedRevisionGate();val sockets=CoroutineScope(SupervisorJob()+Dispatchers.Default)
+        val created=java.util.concurrent.CopyOnWriteArrayList<BlockingConnection>()
+        val factory=PolicyConnectionFactory(sockets,gate){BlockingConnection(CompletableDeferred()).also {created+=it}}
+        val url=java.net.URL("https://fixture.example/synthetic")
+        try {
+            val cancelled=Job();cancelled.cancel()
+            val initClosed=withContext(NonCancellable+NetworkOperationCancellation(cancelled)){factory.open(url)}
+            assertEquals(1,created.last().disconnects.get())
+            denied {initClosed.connect()};assertFalse(created.last().entered.isCompleted)
+
+            val completed=Job()
+            val normal=withContext(NetworkOperationCancellation(completed)){factory.open(url)}
+            val normalDelegate=created.last();completed.complete()
+            assertEquals(0,normalDelegate.disconnects.get());normal.connect()
+            normal.disconnect();assertEquals(1,normalDelegate.disconnects.get())
+
+            val old=Job();val oldConnection=withContext(NetworkOperationCancellation(old)){factory.open(url)}
+            val oldDelegate=created.last();oldConnection.disconnect()
+            val fresh=Job();val freshConnection=withContext(NetworkOperationCancellation(fresh)){factory.open(url)}
+            val freshDelegate=created.last();old.cancel()
+            assertEquals(1,oldDelegate.disconnects.get());assertEquals(0,freshDelegate.disconnects.get())
+            freshConnection.connect();fresh.cancel();assertEquals(1,freshDelegate.disconnects.get())
+            assertEquals(NetworkAccessState.Allowed(7),gate.state.value)
+        }finally{created.forEach {it.disconnect()};sockets.coroutineContext.job.cancelAndJoin()}
     }
 }

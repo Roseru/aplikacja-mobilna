@@ -101,7 +101,7 @@ class SyncRecoveryResumeTest {
             val resumed=state(db,f.lease){it.requestedVersion>previous.requestedVersion}
             assertEquals("ready",resumed.status);assertEquals("pull_before",resumed.phase);assertEquals(0L,resumed.activeVersion)
             assertNull(resumed.reconciliationBaseline);assertEquals(90000L,resumed.retryAtMillis);assertEquals(0,calls.get())
-            val ticket=SyncWorkTicket(f.lease.storageScope,f.lease.generation,previous.wireContext,policyRevision=1)
+            val ticket=SyncWorkTicket(f.lease.storageScope,f.lease.generation,previous.wireContext,policyRevision=1,issuance=RuntimeAllowedNetwork.captureAllowed().issuance)
             withTimeout(15000){work.getWorkInfosForUniqueWorkFlow(ticket.uniqueName()).first {it.isNotEmpty()}}
             assertEquals(SyncCoordinator.Outcome.Deferred(90000L),runtime.execute(ticket));assertEquals(0,calls.get())
             now=90000L
@@ -129,7 +129,7 @@ class SyncRecoveryResumeTest {
             val restarted=state(db,f.lease){it.requestedVersion>blocked.requestedVersion};assertEquals("reconciliation",restarted.status)
             runtime.signal(resumeReasons=setOf("reconciliation","login","not_configured"))
             runtime.signal() // The periodic watch uses this same durable entry.
-            val ticket=SyncWorkTicket(f.lease.storageScope,f.lease.generation,blocked.wireContext,policyRevision=1)
+            val ticket=SyncWorkTicket(f.lease.storageScope,f.lease.generation,blocked.wireContext,policyRevision=1,issuance=RuntimeAllowedNetwork.captureAllowed().issuance)
             assertEquals(SyncCoordinator.Outcome.Stopped("reconciliation"),runtime.execute(ticket));assertEquals(1,calls.get())
             assertTrue(withContext(Dispatchers.IO){work.getWorkInfosForUniqueWork(ticket.uniqueName()).get()}.isEmpty())
             assertEquals(1L,db.syncWorkDao().state(f.lease.storageScope)!!.reconciliationBaseline);preserved(db,f)

@@ -45,7 +45,7 @@ class SyncWakeStorageTest {
     private suspend fun jobs(work:WorkManager,ticket:SyncWorkTicket,predicate:(List<WorkInfo>)->Boolean)=withTimeout(15_000) {
         work.getWorkInfosForUniqueWorkFlow(ticket.uniqueName()).first(predicate)
     }
-    private suspend fun ticket(db:CalorieDatabase,lease:OwnerLease)=SyncWorkTicket(lease.storageScope,lease.generation,CanonicalMealRows.context(db.bootstrapDao().binding(lease.storageScope)!!),policyRevision=1)
+    private suspend fun ticket(db:CalorieDatabase,lease:OwnerLease)=SyncWorkTicket(lease.storageScope,lease.generation,CanonicalMealRows.context(db.bootstrapDao().binding(lease.storageScope)!!),policyRevision=1,issuance=RuntimeAllowedNetwork.captureAllowed().issuance)
 
     @Test fun restartKeepsOneWatchAndEligibleWriteSchedulesWorkThatWaitsForNetworkConstraint()=runBlocking<Unit> {
         val db=memory();val scope=CoroutineScope(SupervisorJob()+Dispatchers.Default);lateinit var runtime:SyncWorkRuntime;val work=manager {runtime}

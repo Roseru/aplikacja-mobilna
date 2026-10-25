@@ -114,18 +114,28 @@ class SyncCoordinatorStorageTest {
         }finally{db.close();context.deleteDatabase(name)}
     }
     @Test fun accountAbaWhileExecutorIsInFlightCannotAdvanceDurablePhaseOrApplyLateResult()=runBlocking<Unit> {
-        val db=memory()
+        val db=memory();val entered=CompletableDeferred<Unit>();val release=CompletableDeferred<Unit>();val finished=CompletableDeferred<Unit>()
+        var active:Deferred<SyncCoordinator.Outcome>?=null
         try {
             val lease=account(db);val binding=db.bootstrapDao().binding(lease.storageScope)!!
-            val owners=LocalOwnerStore(db);var returned:OwnerLease?=null
+            val owners=LocalOwnerStore(db);val accountId=db.ownerDao().byScope(lease.storageScope)!!.id
             val coordinator=SyncCoordinator(db,schema,SyncStepExecutor {_,_,_->
-                owners.select(owners.ensureGuest().id);returned=owners.select(db.ownerDao().byScope(lease.storageScope)!!.id)
-                SyncStepResult.Completed(runId=uuid())
+                entered.complete(Unit)
+                // A late response may ignore cancellation; it still cannot advance the old cycle.
+                try {withContext(NonCancellable){release.await()};SyncStepResult.Completed(runId=uuid())}
+                finally {finished.complete(Unit)}
             },networkGate=RuntimeAllowedNetwork)
-            coordinator.request(lease,binding);assertEquals(SyncCoordinator.Outcome.Stale,coordinator.run(lease,binding))
-            assertEquals("pull_before",coordinator.state(returned!!)!!.phase)
+            coordinator.request(lease,binding);active=async {coordinator.run(lease,binding)}
+            withTimeout(10000){entered.await()}
+            // The test controls account changes outside the executor being revoked.
+            owners.select(owners.ensureGuest().id);val returned=owners.select(accountId)
+            release.complete(Unit)
+            assertEquals(SyncCoordinator.Outcome.Stale,withTimeout(10000){active.await()})
+            withTimeout(10000){finished.await()}
+            assertEquals("pull_before",coordinator.state(returned)!!.phase)
+            assertEquals(0,coordinator.state(returned)!!.acknowledged)
             assertNull(db.serverDiaryDao().latest(lease.storageScope))
-        }finally{db.close()}
+        }finally{release.complete(Unit);active?.cancelAndJoin();db.close()}
     }
     @Test fun sharedManualWorkerMutexPreventsConcurrentExecutorLoopsWithoutSleeps()=runBlocking<Unit> {
         val db=memory()

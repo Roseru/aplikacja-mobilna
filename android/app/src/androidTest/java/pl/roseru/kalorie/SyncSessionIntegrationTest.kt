@@ -96,7 +96,7 @@ class SyncSessionIntegrationTest {
                 runtime=SyncWorkRuntime(db,coordinator,scheduler)
                 if(!worker)assertEquals(SyncCoordinator.Outcome.Complete,runtime.manual(lease)) else {
                     coordinator.request(lease,binding)
-                    val request=scheduler.enqueue(SyncWorkTicket(lease.storageScope,lease.generation,CanonicalMealRows.context(binding),policyRevision=1))
+                    val request=scheduler.enqueue(SyncWorkTicket(lease.storageScope,lease.generation,CanonicalMealRows.context(binding),policyRevision=1,issuance=RuntimeAllowedNetwork.captureAllowed().issuance))
                     WorkManagerTestInitHelper.getTestDriver(context)!!.setAllConstraintsMet(request.id)
                     assertEquals(WorkInfo.State.SUCCEEDED,withTimeout(15_000){work.getWorkInfoByIdFlow(request.id).filterNotNull().first {it.state.isFinished}}.state)
                 }
