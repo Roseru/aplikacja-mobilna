@@ -58,7 +58,7 @@ otrzymuje niezależny `external_kill_utc`; tylko `release` wymaga
 | 2. `isolate` | Przed freeze utrwalić prywatną blokadę, anulować dopuszczone wejścia i poczekać na ich finally. | `isolated.json`, gotowa izolacja oraz brak aktywnych mutacji; brak attach lub timeout blokuje baseline. |
 | 3. Nowy Meal | Dopiero przy gotowej izolacji normalnym UI utworzyć jedną świeżą pending kanoniczną `Meal/create`, `base_revision=null`. | Dokładnie jedna eligible operacja i jej trwałe `meal_id`/`operation_id`; bez seed SQL/Room. Automatyczny drainer nie może jej wcześniej zamrozić, oznaczyć attempted lub wysłać. |
 | 4. `prepare` | Zamrozić wybraną kopertę bez HTTP i zapisać ścisły baseline. | `prepared.json`, `driver_guard_version=2`, ten sam trial/konto/kontekst i stały `isolation_deadline`. |
-| 5. Plan PG i C0 | Wyeksportować dokładne bajty requestu; utworzyć osobny plan PG w zgodnym runtime backendu, następnie wykonać niezależny read-only C0. | Plan powstały przed C0, hash koperty i operacji, oczekiwana treść Meal oraz C0 bez docelowej mutacji. |
+| 5. Plan PG i C0 | Wczytać `prepared.json` przez `prepare --driver-prepared` i utworzyć osobny plan PG w zgodnym runtime backendu, następnie wykonać niezależny read-only C0. | Plan powstały przed C0, hash koperty i operacji, oczekiwana treść Meal oraz C0 bez docelowej mutacji. |
 | 6. `hold` | Wykonać rzeczywisty POST; poprawny ACK zatrzymać przed lokalnym zapisem. | `held.json`, HTTP200/no-store, attempted=true, revision0 i brak lokalnego ACK; zapisany rzeczywisty termin kill. |
 | 7. C1 i kill | Osobnym połączeniem PG potwierdzić COMMIT, następnie naprawdę zatrzymać proces przed terminem hold. | C1 oraz niezależny receipt operatora z czasem rzeczywistego kill. Hold kończy się przerwaniem instrumentacji. |
 | 8. `replay` | W nowym procesie, przy nadal ważnej izolacji, ponownie wysłać identyczną utrwaloną kopertę i zastosować oryginalną rewizję. | `replayed.json`: inny PID/późniejszy start, świeży HTTP receipt, `already_applied`/revision1, trwały ACK i ścisły guard. |
@@ -82,10 +82,18 @@ odpowiednio rzeczywistego kill ani serwerowego COMMIT.
 ### Koperta drivera i osobny plan PostgreSQL
 
 `prepared.json` nie jest planem [obserwatora PG](../../infra/integration/e4_observer.py).
-Jego `request` jest stringiem z utrwaloną kopertą: eksportować dokładne UTF-8,
-bez BOM i dodatkowego newline, po czym porównać SHA bajtów z driverowym `hash`.
-Nie serializować ponownie obiektu JSON ani nie używać domyślnego PowerShell
-`Out-File` do tego eksportu.
+Do przygotowania planu służy bezpośrednie wejście `--driver-prepared`.
+Adapter wymaga `driver_guard_version=2` i `room=23`; odczytuje najwyżej
+5 000 001 bajtów, odrzucając receipt większy niż5 000 000 bajtów. String
+`request` koduje dokładnie jako UTF-8, bez dodawania BOM/newline, usuwania
+whitespace lub ponownej serializacji JSON. Żądanie musi mieć od1 do65 536
+bajtów, a SHA-256 tych bajtów musi odpowiadać driverowemu `hash`.
+
+Adapter wiąże `trial` z kontekstem PG, `meal` i `operation` z zamrożoną
+operacją, a `context.account_id` i `context.sync_epoch` z właścicielem PG
+i epoką koperty. Driverowe `owner` to lokalny storageScope i może różnić się
+od `owner_id` PostgreSQL. Niejednoznaczny JSON, błędne UTF-8, duplikaty kluczy
+i niefinitywne liczby są odrzucane przez wspólny parser backendu.
 
 Prywatny kontekst dla `e4_observer.py prepare` ma dokładnie `trial_id`, `owner_id`,
 `expected_schema`, `expected_api_image`. Obserwator wyprowadza pozostałe pola
@@ -94,15 +102,26 @@ i nie zastępuje tego pliku. `operation_sha256=fingerprint(operation)` jest
 odrębny od `envelope_sha256`; `expected_meal` pochodzi z requestu przed C0,
 nigdy z odczytu C1. Po C0 nie zmieniać planu.
 
-Interfejs istniejącego CLI, z prywatnymi plikami dostarczonymi przez operatora:
+Interfejs CLI, z prywatnymi plikami dostarczonymi przez operatora:
 
 ```text
-e4_observer.py --plan <context.json> prepare --request <request.bin> --output <pg-plan.json>
+e4_observer.py --plan <context.json> prepare --driver-prepared <prepared.json> --output <pg-plan.json>
 e4_observer.py --plan <pg-plan.json> capture --settings <settings.json> --phase C0 --output <C0.json>
 e4_observer.py --plan <pg-plan.json> capture --settings <settings.json> --phase C1 --output <C1.json>
 e4_observer.py --plan <pg-plan.json> capture --settings <settings.json> --phase C2 --output <C2.json>
 e4_observer.py --plan <pg-plan.json> compare <C0.json> <C1.json> <C2.json>
 ```
+
+Stare wejście `prepare --request <request.bin> --output <pg-plan.json>` pozostaje
+dostępne zamiast `--driver-prepared`. Wtedy operator sam eksportuje dokładne
+bajty UTF-8 stringa `request` i sprawdza ich SHA względem `hash`; nie używa
+domyślnego PowerShell `Out-File` ani ponownej serializacji obiektu JSON.
+Obu wejść nie można podać jednocześnie. Wynikowy format planu pozostaje ten sam;
+wyjście jest nowym prywatnym plikiem i nie nadpisuje wcześniejszych dowodów.
+
+Przygotowanie planu działa offline. Sprawdzenie bajtów i powiązań nie odbiera
+guardów Room, fence, terminu izolacji, runtime admission, APK ani całej próby.
+Warunki otwarcia okna i niezależne dowody Androida nadal obowiązują.
 
 Capture C1/C2 następują wyłącznie w odpowiednich miejscach powyższej sekwencji.
 Plany, snapshots i driver receipts mają różne formaty. Raw request, identyfikatory
