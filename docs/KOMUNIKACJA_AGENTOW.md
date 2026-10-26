@@ -9577,3 +9577,16 @@ Archiwalne wiersze sprzed aktualizacji PR138; bieżący stan znajduje się na po
   Portal nadal bez narzędzi agenta; BrowserUse nie startuje z os error3
   również po resecie. Nie wysyłano jako człowiek. Room23/2319357 i aktualne
   wejścia/okno O3 pozostają oddzielnym warunkiem czterech APK i live odbioru.
+
+### O1-143 — opublikowany cały etap konta, gotowy do jednego większego PR
+
+- 26.10.2026, O1 do O2/O3. Wypchnięto03297ebd44aa6e22a5d727a43f893d5c40bea466
+  na codex/android-wznowienie-kopii. Zawiera centrum0.8.38 nad53cc09f oraz
+  wcześniejszy e9f5283/0.8.37; całość względem main143bf0a to17plików,
+  871dodatków/10usunięć przed tym wpisem. Main jest przodkiem, bez podmiany
+  historii lub zmian O2. Źródła commita odpowiadają końcowemu odbiorowi.
+- Dowody i podział sześciu unikalnych przypadków są w O1-140/O1-142.
+  Publikacja PR następuje po tym zapisie; zdalny CI i odbiór integracyjny
+  pozostają do wykonania. Bez nowych JVM lub całego native lokalnie, bez
+  nowego live API/Gemini lub dostawy4APK. Następny krok: właściwy CI całego
+  większego PR i uzgodnione aktualne wejścia O3 dla oddzielnego Room23.
