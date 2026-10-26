@@ -11,16 +11,24 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import pl.roseru.kalorie.core.*
 import pl.roseru.kalorie.session.SessionView
+import androidx.lifecycle.Lifecycle
+import androidx.lifecycle.compose.LocalLifecycleOwner
+import androidx.lifecycle.repeatOnLifecycle
+import kotlinx.coroutines.awaitCancellation
 import java.time.ZoneId
 import java.time.format.DateTimeFormatter
 
 /** Private, explicit GET. Rendering never changes ranking consent or the local diary. */
-@Composable internal fun ServerMotivationPanel(view: SessionView, onRead: () -> Unit, onAccount: () -> Unit, onRanking: (() -> Unit)? = null) {
+@Composable internal fun ServerMotivationPanel(view: SessionView, onRead: () -> Unit, onAccount: () -> Unit, onRanking: (() -> Unit)? = null,onRestore:(()->Unit)?=null,onClearSaved:(()->Unit)?=null) {
+    val lifecycle=LocalLifecycleOwner.current.lifecycle
+    val restore by rememberUpdatedState(onRestore)
+    LaunchedEffect(lifecycle,view.binding?.lease) {lifecycle.repeatOnLifecycle(Lifecycle.State.STARTED) {restore?.invoke();awaitCancellation()}}
     val account = view.binding?.owner?.kind == "account"
     val ready = account && view.motivationConfigured && view.serverLinked && !view.requiresRecovery && !view.pendingLogin
     val canRead = ready && !view.busy && !view.bootstrapBusy && !view.profileBusy && !view.mealPushBusy && !view.snapshotBusy && !view.motivationBusy && !view.rankingConsentBusy && !view.rankingBusy
     // The controller fences the result; this also hides it immediately during a visible transition.
-    val state = if (ready && !view.busy) view.motivation else MotivationState.NotRequested
+    val visible=account && view.serverLinked && !view.requiresRecovery && !view.pendingLogin && !view.busy
+    val state = if (visible && (ready || view.motivation is MotivationState.Saved)) view.motivation else MotivationState.NotRequested
     Card(Modifier.fillMaxWidth(), shape = RoundedCornerShape(18.dp),
         colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface)) {
         Column(Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
@@ -41,7 +49,13 @@ import java.time.format.DateTimeFormatter
                 }
                 is MotivationState.Failed -> Text(state.message, Modifier.testTag("achievement-server-state"), style = MaterialTheme.typography.bodySmall)
                 is MotivationState.Ready -> ServerResult(state.read)
+                is MotivationState.Saved -> {
+                    SavedPreviewNotice(state.fetchedAtMillis,state.warning)
+                    ServerResult(state.read,historical=true)
+                    onClearSaved?.let {TextButton(onClick=it,modifier=Modifier.testTag("achievement-saved-clear")){Text("Usuń zapisany podgląd")}}
+                }
             }
+            if(visible && state is MotivationState.Failed)onRestore?.let {TextButton(onClick=it,modifier=Modifier.testTag("achievement-saved-open")){Text("Pokaż zapisany podgląd")}}
             if (ready) {
                 FilledTonalButton(onClick = onRead, enabled = canRead, modifier = Modifier.testTag("achievement-server-read")) {
                     Text(if (state is MotivationState.Ready) "Odśwież potwierdzenie" else "Pobierz z serwera")
@@ -52,11 +66,11 @@ import java.time.format.DateTimeFormatter
     }
 }
 
-@Composable private fun ServerResult(read: MotivationRead) {
+@Composable private fun ServerResult(read: MotivationRead,historical:Boolean=false) {
     val status = when (read.status) {
         MotivationStatus.PENDING_BACKFILL -> "Serwer odtwarza historię"
         MotivationStatus.PENDING_MATERIALIZATION -> "Serwer przygotowuje aktualizację"
-        MotivationStatus.FINAL -> "Potwierdzone przez serwer"
+        MotivationStatus.FINAL -> if(historical)"Potwierdzone przy pobraniu" else "Potwierdzone przez serwer"
     }
     Text(status, Modifier.testTag("achievement-server-state"), style = MaterialTheme.typography.labelLarge, color = MaterialTheme.colorScheme.primary)
     if (read.points == null) Text("Punkty i ranga jeszcze niedostępne", Modifier.testTag("achievement-server-points"), style = MaterialTheme.typography.bodySmall)
@@ -67,6 +81,7 @@ import java.time.format.DateTimeFormatter
     val zone = ZoneId.systemDefault()
     Text("Stan na: ${read.asOf.atZone(zone).format(DateTimeFormatter.ofPattern("dd.MM.yyyy · HH:mm"))} · ${zone.id}",
         Modifier.testTag("achievement-server-updated"), style = MaterialTheme.typography.labelSmall)
+    if(historical)Text("Status udziału w rankingu przy pobraniu:",style=MaterialTheme.typography.labelSmall)
     Text(when {
         read.ranking.pendingConsentRefresh -> "Ranking czeka na ponowne potwierdzenie zgody. Ten odczyt jej nie odnawia."
         read.ranking.effective && read.ranking.ownPosition != null -> "Twoje miejsce w rankingu: ${read.ranking.ownPosition}"

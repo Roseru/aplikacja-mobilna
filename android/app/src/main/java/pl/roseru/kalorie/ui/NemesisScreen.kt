@@ -13,6 +13,7 @@ import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.LifecycleEventObserver
 import androidx.lifecycle.compose.LocalLifecycleOwner
 import androidx.lifecycle.repeatOnLifecycle
+import kotlinx.coroutines.awaitCancellation
 import kotlinx.coroutines.delay
 import pl.roseru.kalorie.core.*
 import pl.roseru.kalorie.session.*
@@ -28,18 +29,30 @@ import java.time.format.DateTimeFormatter
     val available = account && view.nemesisConfigured && view.serverLinked && !view.requiresRecovery && !view.pendingLogin
     val busy = view.mealPushBusy || view.busy || view.nemesisBusy || view.bootstrapBusy || view.profileBusy || view.snapshotBusy ||
         view.motivationBusy || view.rankingBusy || view.rankingConsentBusy || view.nemesisMutationBusy
-    val state = if (available && !view.busy) view.nemesis else NemesisState.NotRequested
-    fun refresh() { selected?.let(liveActions.readNemesisChallenge) ?: liveActions.readNemesis() }
+    val visible=account && view.serverLinked && !view.requiresRecovery && !view.pendingLogin && !view.busy
+    val state = if (visible && (available || view.nemesis is NemesisState.Saved)) view.nemesis else NemesisState.NotRequested
+    val page=when(state){is NemesisState.ListReady->state.page;is NemesisState.ListSaved->state.page;else->null}
+    val detail=when(state){is NemesisState.DetailReady->state.challenge;is NemesisState.DetailSaved->state.challenge;else->null}
+    val stats=when(state){is NemesisState.DetailReady->state.statistics;is NemesisState.DetailSaved->state.statistics;else->null}
+    fun refresh() { (selected?:detail?.id)?.let(liveActions.readNemesisChallenge) ?: liveActions.readNemesis() }
     DisposableEffect(lifecycle) {
         val observer = LifecycleEventObserver { _, event -> if (event == Lifecycle.Event.ON_STOP) liveActions.clearNemesis() }
         lifecycle.addObserver(observer)
         onDispose { lifecycle.removeObserver(observer); liveActions.clearNemesis() }
     }
-    // Navigation is the intent to read. A resume always revalidates sharing; only foreground polling.
-    LaunchedEffect(lifecycle, available, view.binding?.lease) {
-        if (available) lifecycle.repeatOnLifecycle(Lifecycle.State.RESUMED) {
-            refresh()
-            while (true) { delay(45_000); selected?.let(liveActions.readNemesisChallenge) }
+    // Entry/resume restores a dated local copy. Network refresh and all decisions stay explicit.
+    LaunchedEffect(lifecycle,available,view.binding?.lease) {lifecycle.repeatOnLifecycle(Lifecycle.State.STARTED) {
+        view.binding?.lease?.let {
+            if(available)liveActions.enterNemesisPreview(it)
+            else liveActions.restorePrivatePreview(it,PrivatePreviewKind.NEMESIS_LIST,null)
+        }
+        awaitCancellation()
+    }}
+    val liveResult=state is NemesisState.ListReady || state is NemesisState.DetailReady
+    val pollTarget by rememberUpdatedState(selected?:detail?.id)
+    LaunchedEffect(lifecycle,available,view.binding?.lease,liveResult) {
+        if(available && liveResult)lifecycle.repeatOnLifecycle(Lifecycle.State.RESUMED) {
+            while(true){delay(45_000);pollTarget?.let(liveActions.readNemesisChallenge)}
         }
     }
     LazyColumn(Modifier.fillMaxSize().testTag("nemesis-content"), contentPadding = PaddingValues(16.dp), verticalArrangement = Arrangement.spacedBy(10.dp)) {
@@ -49,7 +62,7 @@ import java.time.format.DateTimeFormatter
             Text("Regularność we dwoje", color = MaterialTheme.colorScheme.onSurfaceVariant)
             Text("Punkty za kompletne dni i realizację własnego celu. Większy deficyt nie daje przewagi.", style = MaterialTheme.typography.bodySmall)
         }
-        if (available && view.nemesisMutationConfigured) item { NemesisMutationPanel(view, liveActions, busy) }
+        if (available && view.nemesisMutationConfigured && state !is NemesisState.Saved) item { NemesisMutationPanel(view, liveActions, busy) }
         item { when (state) {
             NemesisState.NotRequested -> Text(when {
                 !account -> "Zaloguj się, aby zobaczyć swoje rywalizacje. Dziennik i osiągnięcia są dostępne offline."
@@ -59,6 +72,15 @@ import java.time.format.DateTimeFormatter
             }, Modifier.testTag("nemesis-state"))
             NemesisState.Loading -> { LinearProgressIndicator(Modifier.fillMaxWidth()); Text("Sprawdzam aktualne udostępnianie…", Modifier.testTag("nemesis-state")) }
             is NemesisState.Failed -> Text(state.message, Modifier.testTag("nemesis-state"))
+            is NemesisState.ListSaved -> {
+                SavedPreviewNotice(state.fetchedAtMillis,state.warning)
+                Text("Zapisana lista rywalizacji",Modifier.testTag("nemesis-state"),style=MaterialTheme.typography.titleMedium)
+                if(state.page.items.isEmpty())Text("Zapisana lista jest pusta.",Modifier.testTag("nemesis-empty"))
+            }
+            is NemesisState.DetailSaved -> {
+                SavedPreviewNotice(state.fetchedAtMillis,state.warning)
+                Text(statusLabel(state.challenge.status),Modifier.testTag("nemesis-state"),style=MaterialTheme.typography.titleMedium)
+            }
             is NemesisState.ListReady -> {
                 Text("Twoje rywalizacje", Modifier.testTag("nemesis-state"), style = MaterialTheme.typography.titleMedium)
                 if (state.page.items.isEmpty()) Text("Na tej stronie nie ma rywalizacji. Zaproszenie rozpocznie rywalizację dopiero po akceptacji drugiej osoby.", Modifier.testTag("nemesis-empty"))
@@ -66,19 +88,23 @@ import java.time.format.DateTimeFormatter
             }
             is NemesisState.DetailReady -> Text(statusLabel(state.challenge.status), Modifier.testTag("nemesis-state"), style = MaterialTheme.typography.titleMedium)
         } }
-        if (state is NemesisState.ListReady) itemsIndexed(state.page.items, key = { _, item -> item.id }) { index, challenge ->
+        if (page!=null) itemsIndexed(page.items, key = { _, item -> item.id }) { index, challenge ->
             Card(Modifier.fillMaxWidth().testTag("nemesis-entry-$index")) {
                 Column(Modifier.padding(12.dp), verticalArrangement = Arrangement.spacedBy(4.dp)) {
                     Text(if (challenge.status == "cancelled") "Zakończone udostępnianie" else challenge.partner ?: "Uczestnik Nemesis",
                         style = MaterialTheme.typography.titleMedium, maxLines = 2, overflow = TextOverflow.Ellipsis)
                     Text("${statusLabel(challenge.status)} · ${challenge.terms.days} dni", style = MaterialTheme.typography.bodySmall)
-                    TextButton(onClick = { selected = challenge.id; liveActions.readNemesisChallenge(challenge.id) }, enabled = !busy,
+                    val cached=state as? NemesisState.ListSaved
+                    TextButton(onClick = { selected = challenge.id
+                        if(cached==null)liveActions.readNemesisChallenge(challenge.id)
+                        else view.binding?.lease?.let {liveActions.restorePrivatePreview(it,PrivatePreviewKind.NEMESIS_DETAIL,challenge.id)}
+                    }, enabled = !busy && (cached==null || challenge.id in cached.cachedDetails),
                         modifier = Modifier.testTag("nemesis-open-$index")) { Text("Zobacz szczegóły") }
                 }
             }
         }
-        if (state is NemesisState.DetailReady) {
-            val challenge = state.challenge
+        if (detail!=null) {
+            val challenge = detail
             item {
                 Card(Modifier.fillMaxWidth()) { Column(Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(6.dp)) {
                     if (challenge.status != "cancelled") Text(challenge.partner ?: "Uczestnik Nemesis", style = MaterialTheme.typography.titleLarge,
@@ -93,7 +119,7 @@ import java.time.format.DateTimeFormatter
                     if (challenge.status == "cancelled") Text("Udostępnianie zakończone. Dane drugiej osoby są niedostępne.")
                 } }
             }
-            state.statistics?.let { statistics ->
+            stats?.let { statistics ->
                 item {
                     Text(when (statistics.status) { "pending" -> "Czekamy na pierwszy zamknięty dzień"; "final" -> "Wynik ostateczny"; else -> "Wynik wstępny" },
                         Modifier.testTag("nemesis-result-state"), style = MaterialTheme.typography.titleLarge)
@@ -112,6 +138,11 @@ import java.time.format.DateTimeFormatter
             }
         }
         item {
+            if(state is NemesisState.Saved) {
+                if(detail!=null)TextButton(onClick={selected=null;view.binding?.lease?.let {liveActions.restorePrivatePreview(it,PrivatePreviewKind.NEMESIS_LIST,null)}},enabled=!busy,modifier=Modifier.testTag("nemesis-saved-list")){Text("Zapisana lista")}
+                TextButton(onClick={view.binding?.lease?.let {liveActions.clearSavedPrivatePreview(it,PrivatePreviewKind.NEMESIS_LIST)}},modifier=Modifier.testTag("nemesis-saved-clear")){Text("Usuń zapisane podglądy Nemesis")}
+            }
+            if(visible && state is NemesisState.Failed)TextButton(onClick={view.binding?.lease?.let {liveActions.restorePrivatePreview(it,PrivatePreviewKind.NEMESIS_LIST,null)}},modifier=Modifier.testTag("nemesis-saved-open")){Text("Pokaż zapisany podgląd")}
             if (available) {
                 if (state is NemesisState.ListReady && state.page.nextCursor != null) Button(onClick = liveActions.nextNemesisPage,
                     enabled = !busy, modifier = Modifier.testTag("nemesis-next")) { Text("Następna strona") }

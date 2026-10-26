@@ -14,6 +14,8 @@ import androidx.compose.ui.unit.dp
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.LifecycleEventObserver
 import androidx.lifecycle.compose.LocalLifecycleOwner
+import androidx.lifecycle.repeatOnLifecycle
+import kotlinx.coroutines.awaitCancellation
 import pl.roseru.kalorie.core.*
 import pl.roseru.kalorie.session.*
 import java.time.ZoneId
@@ -21,7 +23,12 @@ import java.time.format.DateTimeFormatter
 
 @Composable internal fun RankingScreen(view: SessionView, actions: SessionActions, onBack: () -> Unit, onAccount: () -> Unit, onConsent: () -> Unit) {
     val lifecycle = LocalLifecycleOwner.current.lifecycle
+    val liveActions by rememberUpdatedState(actions)
     val clear by rememberUpdatedState(actions.clearRanking)
+    LaunchedEffect(lifecycle,view.binding?.lease) {lifecycle.repeatOnLifecycle(Lifecycle.State.STARTED) {
+        view.binding?.lease?.let {liveActions.restorePrivatePreview(it,PrivatePreviewKind.RANKING,null)}
+        awaitCancellation()
+    }}
     DisposableEffect(lifecycle) {
         val observer = LifecycleEventObserver { _, event -> if (event == Lifecycle.Event.ON_STOP) clear() }
         lifecycle.addObserver(observer)
@@ -30,9 +37,10 @@ import java.time.format.DateTimeFormatter
     val account = view.binding?.owner?.kind == "account"
     val available = account && view.rankingConfigured && view.serverLinked && !view.requiresRecovery && !view.pendingLogin
     val busy = view.mealPushBusy || view.busy || view.bootstrapBusy || view.profileBusy || view.motivationBusy || view.snapshotBusy || view.rankingConsentBusy || view.rankingBusy
-    val state = if (available && !view.busy) view.ranking else RankingState.NotRequested
+    val visible=account && view.serverLinked && !view.requiresRecovery && !view.pendingLogin && !view.busy
+    val state = if (visible && (available || view.ranking is RankingState.Saved)) view.ranking else RankingState.NotRequested
     val listState = rememberLazyListState()
-    val page = (state as? RankingState.Ready)?.page
+    val page = when(state){is RankingState.Ready->state.page;is RankingState.Saved->state.page;else->null}
     LaunchedEffect(page) { if (page != null) listState.scrollToItem(0) }
     LazyColumn(Modifier.fillMaxSize().testTag("ranking-content"), state = listState, contentPadding = PaddingValues(16.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
         item { TextButton(onClick = onBack) { Text("Wróć") } }
@@ -51,13 +59,19 @@ import java.time.format.DateTimeFormatter
             }, Modifier.testTag("ranking-state"))
             RankingState.Loading -> { LinearProgressIndicator(Modifier.fillMaxWidth()); Text("Pobieram bieżącą stronę…", Modifier.testTag("ranking-state")) }
             is RankingState.Failed -> Text(state.message, Modifier.testTag("ranking-state"))
+            is RankingState.Saved -> {
+                SavedPreviewNotice(state.fetchedAtMillis,state.warning)
+                Text("Zapisana strona rankingu",Modifier.testTag("ranking-state"),style=MaterialTheme.typography.labelLarge)
+                if(state.page.items.isEmpty())Text("Zapisana strona jest pusta.",Modifier.testTag("ranking-empty"))
+                TextButton(onClick={view.binding?.lease?.let {actions.clearSavedPrivatePreview(it,PrivatePreviewKind.RANKING)}},modifier=Modifier.testTag("ranking-saved-clear")){Text("Usuń zapisany podgląd")}
+            }
             is RankingState.Ready -> {
                 Text("Odczyt: " + state.page.asOf.atZone(ZoneId.systemDefault()).format(DateTimeFormatter.ofPattern("dd.MM.yyyy HH:mm")), Modifier.testTag("ranking-state"), style = MaterialTheme.typography.labelLarge)
                 Text("Remisy mają wspólną pozycję. Lista jest zmienna: między stronami możliwe powtórzenia lub pominięcia.", style = MaterialTheme.typography.bodySmall)
                 if (state.page.items.isEmpty()) Text("Na tej stronie nie ma osób do wyświetlenia. Możesz odświeżyć listę od początku.", Modifier.testTag("ranking-empty"))
             }
         } }
-        if (state is RankingState.Ready) itemsIndexed(state.page.items, key = { index, _ -> index }) { index, entry ->
+        if (page!=null) itemsIndexed(page.items, key = { index, _ -> index }) { index, entry ->
             Card(Modifier.fillMaxWidth().testTag("ranking-entry-$index")) {
                 Column(Modifier.padding(horizontal = 12.dp, vertical = 8.dp), verticalArrangement = Arrangement.spacedBy(2.dp)) {
                     // Keep long server counts readable without squeezing the name or clipping digits.
@@ -76,6 +90,7 @@ import java.time.format.DateTimeFormatter
             }
         }
         item {
+            if(visible && state is RankingState.Failed)TextButton(onClick={view.binding?.lease?.let {actions.restorePrivatePreview(it,PrivatePreviewKind.RANKING,null)}},modifier=Modifier.testTag("ranking-saved-open")){Text("Pokaż zapisany podgląd")}
             if (available) {
                 if (state is RankingState.Ready && state.page.hasMore) Button(onClick = actions.nextRankingPage, enabled = !busy, modifier = Modifier.testTag("ranking-next")) { Text("Następna strona") }
                 if (state is RankingState.Failed && state.canRetry) OutlinedButton(onClick = actions.retryRankingPage, enabled = !busy, modifier = Modifier.testTag("ranking-retry")) { Text("Ponów tę samą stronę") }
