@@ -40,6 +40,8 @@ Każda osoba aktualizuje własny wiersz. Daty i dokładne źródła są w jej wp
   `5d385fadc854c26cd991c99c6a09760c86affbf2`. Odczytano livechat po26
   i aktualny PR146, w tym6398540989/6410773651 oraz naprawę PR178
   abe31e7 z6411139699. Nie przejmowano Androida O1/O2 ani przeglądu O3-106.
+  Źródło wyniku `32e3cf5f68d3a774fb46c3761dd76136a2452c99`,
+  [PR179](https://github.com/Roseru/aplikacja-mobilna/pull/179).
 - **Własne wykonanie:**26.10 08:17UTC readiness/discovery200 przez loopback
   z właściwym CA i oryginalnym hostname, issuer/authorization endpoint zgodne,
   S256 advertised; `/api/v1/me` bez tokenu401, obce CA/hostname odrzucone.
