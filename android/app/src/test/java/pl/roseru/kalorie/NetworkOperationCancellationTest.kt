@@ -5,7 +5,9 @@ import org.junit.Assert.*
 import org.junit.Test
 import pl.roseru.kalorie.core.network.NetworkOperationCancellation
 import java.util.concurrent.CountDownLatch
+import java.util.concurrent.Executors
 import java.util.concurrent.atomic.AtomicInteger
+import java.util.concurrent.atomic.AtomicReference
 
 class NetworkOperationCancellationTest {
     @Test fun closeCallbackFailureCannotInterruptCancellationOrFinally()=runBlocking<Unit> {
@@ -39,10 +41,12 @@ class NetworkOperationCancellationTest {
     @Test fun disposedOldSubscriptionCannotCloseNewOperationAndThreadContextDoesNotLeak()=runBlocking<Unit> {
         val firstReady=CompletableDeferred<Unit>();val secondReady=CompletableDeferred<Unit>()
         val oldCloses=AtomicInteger();val newCloses=AtomicInteger()
+        val secondHandle=AtomicReference<DisposableHandle?>()
+        val io=Executors.newSingleThreadExecutor().asCoroutineDispatcher()
         val scope=CoroutineScope(SupervisorJob()+Dispatchers.Default)
         val first=scope.async {
             withContext(NetworkOperationCancellation(currentCoroutineContext().job)) {
-                withContext(Dispatchers.IO){NetworkOperationCancellation.subscribeOnCancelling {oldCloses.incrementAndGet()}!!.dispose()}
+                withContext(io){NetworkOperationCancellation.subscribeOnCancelling {oldCloses.incrementAndGet()}!!.dispose()}
                 firstReady.complete(Unit);awaitCancellation()
             }
         }
@@ -51,14 +55,19 @@ class NetworkOperationCancellationTest {
             firstReady.await()
             second=scope.async {
                 withContext(NetworkOperationCancellation(currentCoroutineContext().job)) {
-                    val handle=withContext(Dispatchers.IO){NetworkOperationCancellation.subscribeOnCancelling {newCloses.incrementAndGet()}}
-                    try{secondReady.complete(Unit);awaitCancellation()}finally{handle?.dispose()}
+                    val handle=withContext(io){NetworkOperationCancellation.subscribeOnCancelling {newCloses.incrementAndGet()}}
+                    secondHandle.set(checkNotNull(handle))
+                    // Keep registration alive until its cancelling callback has been observed.
+                    // Child finally may run before the parent invokes its remaining handlers.
+                    secondReady.complete(Unit);awaitCancellation()
                 }
             }
             secondReady.await();first.cancelAndJoin()
             assertEquals(0,oldCloses.get());assertEquals(0,newCloses.get());assertTrue(second.isActive)
             second.cancelAndJoin();assertEquals(1,newCloses.get())
-            withContext(Dispatchers.IO){assertNull(NetworkOperationCancellation.subscribeOnCancelling {fail("No operation outside context")} )}
-        }finally{first.cancelAndJoin();second?.cancelAndJoin();scope.coroutineContext.job.cancelAndJoin()}
+            secondHandle.getAndSet(null)?.dispose()
+            // Probe the same quiescent thread that installed the contexts, not a random pool worker.
+            withContext(io){assertNull(NetworkOperationCancellation.subscribeOnCancelling {fail("No operation outside context")} )}
+        }finally{first.cancelAndJoin();second?.cancelAndJoin();secondHandle.getAndSet(null)?.dispose();scope.coroutineContext.job.cancelAndJoin();io.close()}
     }
 }

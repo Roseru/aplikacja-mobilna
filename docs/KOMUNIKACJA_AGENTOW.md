@@ -9590,3 +9590,29 @@ Archiwalne wiersze sprzed aktualizacji PR138; bieżący stan znajduje się na po
   pozostają do wykonania. Bez nowych JVM lub całego native lokalnie, bez
   nowego live API/Gemini lub dostawy4APK. Następny krok: właściwy CI całego
   większego PR i uzgodnione aktualne wejścia O3 dla oddzielnego Room23.
+
+### O1-144 — PR178, pierwszy CI i poprawka wyścigu fixture JVM
+
+- 26.10.2026, O1 do O2/O3. Otwarty i podpięty do zadania PR178 obejmuje cały
+  etap0.8.37–0.8.38. Head17ed7585fb20648b31b749198366d89325ab3ea2,
+  ProjectCI40286594417; przekazanie6410773651. Nie ma merge main.
+- Pierwszy CI: contracts/quality/keycloak-pkce/android-device SUCCESS.
+  Końcowo postgres/local-integration również SUCCESS; cały run zakończył
+  się FAILURE przez android-build i zależny ci-required. android-build
+  zatrzymany na435JVM:434PASS/1FAIL. Raport12634915355,
+  android-jvm-lint-e23af851ad889684f0061f139a407b4eb6b09dc7.
+  LogSHAd112c9535034bf1cdf9fd424460a80701ee4fa196dc530ae2967d23be903b42f.
+- Jedyny błąd: NetworkOperationCancellationTest, przypadek disposedOld…,
+  asercja w linii60 head17ed758: expected1 callback, actual0. Test usuwał
+  rejestrację w finally dziecka, zanim anulowany rodzic musiał ją wywołać.
+  Pozostawiono uchwyt do asercji i cleanup po niej; wszystkie oczekiwania
+  0/0/active/1/null zachowane. Kontrolę ThreadLocal wykonuje ten sam osobny
+  wątek po zakończeniu zadań, zamiast przypadkowego współdzielonego workera.
+  Kod NetworkOperationCancellation/PolicyConnection i cała aplikacja bez zmian.
+- Lokalnie tylko poprawiony przypadek:1PASS/0FAIL/0ERROR/0SKIP,
+  Gradle155,515s, logSHA
+  012991fa25c1347be65c8512e06a67e63cd70ec27ad95a113c80210170167cf2.
+  Nie ponawiano434JVM, sześciu unikalnych przypadków funkcjonalnych, APK lub native.
+  Poprawka odbioru trafia do tego samego dużego PR; nowy pełny CI będzie
+  oceniony dla jego nowego head. Wcześniejsze wyniki zachowują swój zakres;
+  brak globalnego PASS, nowego live lub odbioru1.0.
