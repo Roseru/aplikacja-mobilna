@@ -92,6 +92,12 @@
   Nie zmienia SyncWork O2, gate lub recovery ACK. Room23/2319357 jest nadal
   osobnym czystym źródłem dostawy4APK po aktualnej konfiguracji/oknie O3;
   scalenie175 nie potwierdza live E9 ani pełnego wydania1.0.
+- Kontynuacja tego samego większego etapu O1: AccountSyncOverviewStore.kt,
+  sync/AccountSyncOverviewViewModel.kt, ui/AccountSyncOverviewScreen.kt,
+  androidTest/AccountSyncOverviewFlowTest.kt oraz addytywne SessionScreen/
+  MainActivity/ui App. O1 nie zmienia SyncWork/SyncCoordinator ani prezentacji
+  O2; nowe centrum tylko odczytuje istniejące fakty i wywołuje już podłączony
+  driver po jawnym działaniu użytkownika. Bez nowego schematu/gate/preferencji.
 
 - Aktualizacja integracji ETag: cztery pliki pina4cc2d4d włączone zwykłym
   merge do Room26, bez konfliktów. Odbiór złożenia: oba warianty i APK testowe

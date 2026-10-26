@@ -109,7 +109,17 @@ class MainActivity : ComponentActivity() {
                         pl.roseru.kalorie.sync.SnapshotMaintenanceViewModel(pl.roseru.kalorie.data.SnapshotMaintenanceStore(app.database),binding.lease)
                     }})
             } else null
-            val syncFlow=remember(ownerKey) {app.database.syncWorkDao().observe(binding.lease.storageScope)}
+            val syncFlow=remember(ownerKey) {kotlinx.coroutines.flow.combine(
+                app.database.syncWorkDao().observe(binding.lease.storageScope),app.database.syncWorkDao().contexts()) {work,current->
+                    work?.takeIf {current!=null && current.lease()==binding.lease && it.ownerScope==binding.lease.storageScope &&
+                        it.leaseGeneration==binding.lease.generation && it.wireContext==pl.roseru.kalorie.data.CanonicalMealRows.context(current.binding)}
+                }}
+            val syncOverviewModel:pl.roseru.kalorie.sync.AccountSyncOverviewViewModel? = if(binding.owner.kind=="account") {
+                viewModel(viewModelStoreOwner=store,key="$ownerKey:sync-overview",extras=defaultViewModelCreationExtras,
+                    factory=viewModelFactory {initializer {
+                        pl.roseru.kalorie.sync.AccountSyncOverviewViewModel(binding.lease,pl.roseru.kalorie.data.AccountSyncOverviewStore(app.database))
+                    }})
+            } else null
             val syncState by syncFlow.collectAsStateWithLifecycle(initialValue=null)
             val mode by model.theme.collectAsStateWithLifecycle()
             val dark = when (mode) { ThemeMode.SYSTEM -> isSystemInDarkTheme(); ThemeMode.LIGHT -> false; ThemeMode.DARK -> true }
@@ -183,7 +193,7 @@ class MainActivity : ComponentActivity() {
                     confirm={id,revision,edit->app.sessionScope.launch {app.sessions.confirmPhotoMeal(binding.lease,id,revision,edit)}},
                     retryConfirmation={id->app.sessionScope.launch {app.sessions.retryPhotoConfirmation(binding.lease,id)}},
                     reopen={id,revision,edit->app.sessionScope.launch {app.sessions.reopenPhotoConfirmation(binding.lease,id,revision,edit)}}))
-            CalorieTheme(dark) { CalorieApp(model, session, actions, photoModel, importModel, syncState?.userStatus(),deviceModels,communityModel,energyModel,snapshotMaintenanceModel) }
+            CalorieTheme(dark) { CalorieApp(model, session, actions, photoModel, importModel, syncState?.userStatus(),deviceModels,communityModel,energyModel,snapshotMaintenanceModel,syncOverviewModel) }
             }
         }
     }

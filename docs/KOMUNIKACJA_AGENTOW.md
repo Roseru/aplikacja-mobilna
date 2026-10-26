@@ -9523,3 +9523,57 @@ Archiwalne wiersze sprzed aktualizacji PR138; bieżący stan znajduje się na po
   z decyzją właściciela kolejny PR powstanie po większym spójnym etapie.
   Pozostają wejścia O3/6398540989, cztery skonfigurowane APK i wspólny live
   odbiór; testy syntetycznych stron nie potwierdzają działania Gemini lub1.0.
+
+### O1-141 — centrum synchronizacji i pomoc, kontynuacja większego etapu
+
+- 25.10.2026, O1 do O2/O3. Kontynuuję codex/android-wznowienie-kopii/53cc09f,
+  bez nowego małego PR. Złożony w kodzie lokalny przegląd kolejki/domen,
+  ostatniego zastosowania kopii, niepotwierdzonych prób i niedokończonych
+  pobierań; ekran konta prowadzi do centrum pomocy i dotychczasowego przeglądu.
+- Nowy odczyt i banner root wymagają zgodności właściciela/dzierżawy/kontekstu.
+  Przycisk jawnego drivera obsługuje także pustą kolejkę i respektuje politykę,
+  recovery, blokadę konta, brak sesji/konfiguracji i najpóźniejszy Retry-After.
+  Otwarcie ekranu/nawigacja/odczyt nie wykonują HTTP ani przygotowania/ACK.
+  Nowe pliki i addytywne SessionScreen/MainActivity/App są zarezerwowane O1;
+  SyncWork/SyncCoordinator/SyncWorkPresentation O2 pozostają bez zmian.
+- To lokalny WIP0.8.38, brak nowego PASS/PR/CI. Cały przepływ jest złożony;
+  teraz końcowa kompilacja/lint i tylko trzy nowe przypadki SQLite/UI.
+  Wcześniejsze trzy maintenance0.8.37 zachowują własny zakres i niezmienione
+  źródła; bez ponawiania ich lokalnie, starych JVM lub całego native.
+  Źródło Room23/2319357 i wejścia O3/6398540989 nadal osobno.
+
+### O1-142 — 0.8.38: centrum synchronizacji gotowe po odbiorze
+
+- 26.10.2026, O1 do O2/O3. Domknięto cały przepływ z O1-141 na
+  codex/android-wznowienie-kopii nad53cc09f. Konto prowadzi do lokalnego
+  centrum stanu, odczytów kolejki/domen/kopii, pomocy i przeglądu pobierań
+  z0.8.37. Odczyt nie przygotowuje/ACK operacji i nie uruchamia HTTP.
+  Główna prezentacja i centrum sprawdzają owner/lease/context. Retry korzysta
+  z istniejącego drivera oraz zachowuje najpóźniejszy termin partii/zadania.
+- Pierwszy pełny odbiór: oba warianty i APK aplikacji/testów PASS;
+  lint0Error/0Fatal/8Warning/2Info. Kompilacja/lint z E0:570,453s,
+  logSHAed6f79386154e84dccd99c2bd8b94a61a8c9da6cfd3913c0344c9e444a5735db.
+  Trzy nowe SQLite/UI:3PASS/0FAIL/0SKIP,29,074s, logSHA
+  4bf89f1309b0cfba1f4c8d02b494bf48d0c1c2a9720bab5016e1de7eaaa9e804.
+- Przy przeglądzie dodano usunięcie cache po zatrzymaniu obserwacji, aby
+  powrót po zmianie kontekstu nie wyświetlał poprzedniego podglądu.
+  Ponowiono kompilację obu wariantów/APK, bez JVM/lint:658,750s,
+  logSHAe1e3199356655aed0a8aed238a0ae120a1f0b2905fe7117e890f2074092737c7.
+  Tylko rozszerzony scenariusz UI z wyjściem, zatrzymaniem obserwacji,
+  zmianą kontekstu i ponownym wejściem:1PASS/0FAIL/0SKIP,17,113s,
+  logSHA6186212afc64be0fbeda61465f27c14e71dcd3e8d081869643e159e0ca99f5df.
+  Dwa poprzednie readonly zachowane: store i pozostałe źródła są identyczne;
+  usunięcie dokładnie dodanego bloku UI odtwarza SHA całego starego testu.
+- Razem sześć unikalnych przypadków ma wynik pozytywny w oddzielnych
+  zakresach:3maintenance z0.8.37 oraz2readonly i1rozszerzony UI centrum.
+  To nie nowe wspólne6/6. Oryginalny APK/test APK/trzy pliki dziennika oraz
+  brak sieci zachowane. Room26/54 encje/identity i eksporty bez zmian.
+  Aktualny syncoverviewreentrycheck0.8.38.validation/1049 otwarto do offline.
+- Kod obu funkcjonalności jest gotowy do jednego większego PR. W tym wpisie
+  nie ma jeszcze nowego zdalnego CI lub merge main; granice są syntetyczne,
+  bez live TLS/PKCE/Gemini lub1.0. Rezerwacja i ograniczenia przekazane
+  w6410393840. Wcześniejsza wysyłka nie wykonała się z powodu limitu
+  automatycznej kontroli; po wznowieniu dostęp GitHub/ADB ponownie działa.
+  Portal nadal bez narzędzi agenta; BrowserUse nie startuje z os error3
+  również po resecie. Nie wysyłano jako człowiek. Room23/2319357 i aktualne
+  wejścia/okno O3 pozostają oddzielnym warunkiem czterech APK i live odbioru.
