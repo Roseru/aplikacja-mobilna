@@ -7,6 +7,8 @@ import subprocess
 import sys
 import tarfile
 import time
+from dataclasses import dataclass
+from enum import Enum
 from uuid import uuid4
 
 from backup import private_directory, private_write, verify_archive
@@ -33,17 +35,53 @@ PYTHON_IMAGE = (
 )
 
 
-def command(root, arguments, *, env=None):
+class CommandAction(Enum):
+    FETCH_PREDECESSOR = "fetch_predecessor"
+    ARCHIVE_PREDECESSOR = "archive_predecessor"
+    BUILD_PREDECESSOR = "build_predecessor"
+    CAPTURE = "capture"
+    REHEARSE = "rehearse"
+    TAG_CURRENT_IMAGE = "tag_current_image"
+    TAG_PREDECESSOR_IMAGE = "tag_predecessor_image"
+    SAVE_PREDECESSOR_IMAGE = "save_predecessor_image"
+
+
+@dataclass(frozen=True)
+class CommandFailure:
+    action: CommandAction
+    returncode: int | None
+    timed_out: bool
+
+    def public_fields(self):
+        return {
+            "action": self.action.value,
+            "returncode": self.returncode,
+            "timed_out": self.timed_out,
+        }
+
+
+def command(root, arguments, *, action: CommandAction, env=None):
+    # Labels come from callsites, never from argv, environment or exception text.
+    if type(action) is not CommandAction:
+        raise TypeError("Invalid rollback command action")
     with (root / "experiment-private.log").open("ab") as log:
-        subprocess.run(
-            arguments,
-            cwd=ROOT,
-            env=env,
-            stdout=log,
-            stderr=log,
-            check=True,
-            timeout=600,
-        )
+        try:
+            subprocess.run(
+                arguments,
+                cwd=ROOT,
+                env=env,
+                stdout=log,
+                stderr=log,
+                check=True,
+                timeout=600,
+            )
+        except (subprocess.CalledProcessError, subprocess.TimeoutExpired) as error:
+            timed_out = isinstance(error, subprocess.TimeoutExpired)
+            returncode = None if timed_out else error.returncode
+            error.rollback_command_failure = CommandFailure(
+                action, returncode if type(returncode) is int else None, timed_out
+            )
+            raise
 
 
 def inspect(image, template):
@@ -111,7 +149,11 @@ def rehearse_predecessor(root, commit, current_image):
     source = root / "historical-source"
     source.mkdir()
     # Checkout is shallow in CI. Fetch only the named immutable predecessor, never merge it.
-    command(root, ["git", "fetch", "--no-tags", "origin", PREDECESSOR])
+    command(
+        root,
+        ["git", "fetch", "--no-tags", "origin", PREDECESSOR],
+        action=CommandAction.FETCH_PREDECESSOR,
+    )
     archive = root / "source.tar"
     command(
         root,
@@ -125,6 +167,7 @@ def rehearse_predecessor(root, commit, current_image):
             "backend",
             "infra",
         ],
+        action=CommandAction.ARCHIVE_PREDECESSOR,
     )
     with tarfile.open(archive) as stream:
         stream.extractall(source, filter="data")
@@ -164,6 +207,7 @@ def rehearse_predecessor(root, commit, current_image):
                 tag,
                 str(source / "backend"),
             ],
+            action=CommandAction.BUILD_PREDECESSOR,
         )
         old_image = inspect(tag, "{{.Id}}")
         check(
@@ -222,17 +266,17 @@ def rehearse_predecessor(root, commit, current_image):
         stage = "historical_capture_and_globals_rehearsal"
         environment = os.environ | {"PYTHONPATH": str(source / "backend/src")}
         backup = root / "paired-predecessor"
-        for action in ("capture", "rehearse"):
+        for action in (CommandAction.CAPTURE, CommandAction.REHEARSE):
             args = [
                 sys.executable,
                 str(source / "infra/integration/backup.py"),
-                action,
+                action.value,
                 "--backup",
                 str(backup),
             ]
-            if action == "capture":
+            if action is CommandAction.CAPTURE:
                 args += ["--state", str(state)]
-            command(root, args, env=environment)
+            command(root, args, action=action, env=environment)
         manifest = verify_archive(backup)
         check(manifest["revision"] == REVISION, "Wrong predecessor backup")
         receipt["backup_revision"] = manifest["revision"]
@@ -240,7 +284,11 @@ def rehearse_predecessor(root, commit, current_image):
         stage = "upgrade_to0024"
         current = Stack(state)
         # Use the actual already-tested C2 image, preserving historical Keycloak26.8.0.
-        command(root, ["docker", "image", "tag", current_image, tag])
+        command(
+            root,
+            ["docker", "image", "tag", current_image, tag],
+            action=CommandAction.TAG_CURRENT_IMAGE,
+        )
         quiet_sql(
             stack,
             "calorie_app",
@@ -334,7 +382,11 @@ def rehearse_predecessor(root, commit, current_image):
         else:
             raise RuntimeError("Predecessor cleanup incomplete")
         # Correct source/image, not a retagged current image. Keep ingress/issuance closed.
-        command(root, ["docker", "image", "tag", old_image, tag])
+        command(
+            root,
+            ["docker", "image", "tag", old_image, tag],
+            action=CommandAction.TAG_PREDECESSOR_IMAGE,
+        )
         stack.compose("up", "--detach", "--no-deps", "--wait", "keycloak")
         maintenance(stack)
         wait_maintenance(probe)
@@ -410,6 +462,7 @@ def rehearse_predecessor(root, commit, current_image):
                 str(root.parent / "predecessor-image.tar"),
                 old_image,
             ],
+            action=CommandAction.SAVE_PREDECESSOR_IMAGE,
         )
         receipt.update(
             result="PASS",
@@ -427,6 +480,9 @@ def rehearse_predecessor(root, commit, current_image):
         return receipt
     except Exception as error:
         receipt.update(stage=stage, error_kind=type(error).__name__)
+        failure = getattr(error, "rollback_command_failure", None)
+        if type(failure) is CommandFailure:
+            receipt["command_failure"] = failure.public_fields()
         raise
     finally:
         try:
