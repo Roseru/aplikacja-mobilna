@@ -19,7 +19,8 @@ import pl.roseru.kalorie.data.GoalEntity
 import pl.roseru.kalorie.data.ThemeMode
 
 @Composable fun SettingsScreen(model: DiaryViewModel,catalogModel:pl.roseru.kalorie.catalogupdate.CatalogUpdateViewModel?=null,
-    networkModel:pl.roseru.kalorie.core.network.NetworkPolicyViewModel?=null,onCalculator:(()->Unit)?=null,onEnergy:(()->Unit)?=null) {
+    networkModel:pl.roseru.kalorie.core.network.NetworkPolicyViewModel?=null,onCalculator:(()->Unit)?=null,onEnergy:(()->Unit)?=null,
+    snapshotMaintenanceModel:pl.roseru.kalorie.sync.SnapshotMaintenanceViewModel?=null,onAccount:(()->Unit)?=null) {
     val theme by model.theme.collectAsStateWithLifecycle()
     val goal by model.todayGoal.collectAsStateWithLifecycle()
     val busy by model.busy.collectAsStateWithLifecycle()
@@ -52,6 +53,7 @@ import pl.roseru.kalorie.data.ThemeMode
             HorizontalDivider()
         }
         SectionTitle("Dane na urządzeniu")
+        if(snapshotMaintenanceModel!=null)SnapshotMaintenancePanel(snapshotMaintenanceModel,onAccount)
         Text(if(model.isGuest) "Korzystasz bez konta. Posiłki i ustawienia są zapisywane lokalnie. Odinstalowanie aplikacji usuwa tę kopię danych."
             else "Korzystasz z profilu konta. Zmiany zapisujemy najpierw na urządzeniu, a synchronizacja odbywa się osobno. Odinstalowanie aplikacji usuwa lokalną kopię danych.",
             modifier=Modifier.testTag("settings-owner-info"),color = MaterialTheme.colorScheme.onSurfaceVariant)

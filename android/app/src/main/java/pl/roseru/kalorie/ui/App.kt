@@ -19,7 +19,8 @@ import pl.roseru.kalorie.session.*
 
 @Composable fun CalorieApp(model: DiaryViewModel, session: SessionView, actions: SessionActions, photoModel: pl.roseru.kalorie.photo.MealPhotoViewModel, importModel:pl.roseru.kalorie.importing.ImportViewModel?=null,syncStatus:String?=null,
     deviceNetworkModels:DeviceNetworkModels?=null,communityModel:pl.roseru.kalorie.community.CommunityViewModel?=null,
-    energyModel:pl.roseru.kalorie.energy.EnergyViewModel?=null) {
+    energyModel:pl.roseru.kalorie.energy.EnergyViewModel?=null,snapshotMaintenanceModel:pl.roseru.kalorie.sync.SnapshotMaintenanceViewModel?=null,
+    syncOverviewModel:pl.roseru.kalorie.sync.AccountSyncOverviewViewModel?=null) {
     val ready by model.ready.collectAsStateWithLifecycle()
     val error by model.startupError.collectAsStateWithLifecycle()
     val nav = rememberNavController()
@@ -92,7 +93,8 @@ import pl.roseru.kalorie.session.*
             }
             composable("custom") { CustomFoodScreen(model, onBack = { nav.popBackStack() }) }
             composable("settings") { SettingsScreen(model,deviceNetworkModels?.catalog,deviceNetworkModels?.policy,
-                onCalculator={nav.navigate("maintenance"){launchSingleTop=true}},onEnergy=energyModel?.let {{nav.navigate("energy"){launchSingleTop=true}}}) }
+                onCalculator={nav.navigate("maintenance"){launchSingleTop=true}},onEnergy=energyModel?.let {{nav.navigate("energy"){launchSingleTop=true}}},
+                snapshotMaintenanceModel=snapshotMaintenanceModel,onAccount={nav.navigate("account"){launchSingleTop=true}}) }
             composable("maintenance") {MaintenanceScreen(model,onBack={nav.popBackStack()})}
             composable("energy") {energyModel?.let {EnergyScreen(it,model,session,networkState,onBack={nav.popBackStack()},onAccount={nav.navigate("account"){launchSingleTop=true}},
                 onConsents={nav.navigate("ranking-consent"){launchSingleTop=true}})}}
@@ -108,9 +110,16 @@ import pl.roseru.kalorie.session.*
                 onAccount = { nav.navigate("account") { launchSingleTop = true } }, onConsent = { nav.navigate("ranking-consent") { launchSingleTop = true } }) }
             composable("account") { SessionScreen(session, actions, back = { nav.popBackStack() },
                 onImport=importModel?.let { {nav.navigate("import") {launchSingleTop=true}} },syncStatus=syncStatus,
+                onSyncOverview=syncOverviewModel?.let {{nav.navigate("sync-overview"){launchSingleTop=true}}},
                 backLabel = when (nav.previousBackStackEntry?.destination?.route) {
                     "achievements" -> "Wróć do osiągnięć"; "ranking-consent" -> "Wróć do zgód rankingu"; "ranking" -> "Wróć do rankingu"; "nemesis" -> "Wróć do Nemesis"; else -> "Wróć do profilu"
                 }) }
+            composable("sync-overview") {
+                syncOverviewModel?.let {AccountSyncOverviewScreen(it,session,actions,networkState,snapshotMaintenanceModel,
+                    onBack={nav.popBackStack()},onAccount={nav.navigate("account"){launchSingleTop=true}},
+                    onSettings={nav.navigate("settings"){launchSingleTop=true}},
+                    onImport=importModel?.let {{nav.navigate("import"){launchSingleTop=true}}})}
+            }
             composable("import") {
                 if(importModel!=null) {
                     LaunchedEffect(importModel,syncStatus) {importModel.refresh()}

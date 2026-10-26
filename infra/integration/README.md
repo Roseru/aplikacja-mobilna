@@ -284,6 +284,25 @@ Archiwa, konfiguracja, manifest i raw logs są prywatne i zawierają dane/sekret
 CI publikuje wyłącznie neutralny receipt. Wymagania przed rzeczywistym reopen,
 wykonane pomiary i granice RPO/RTO opisuje [raport](../../docs/e8/KOPIA_ODTWORZENIE_O3.md).
 
+W syntetycznej próbie poprzednika `rollback.json` zachowuje `result=FAIL`,
+`stage` i `error_kind`. Przy błędzie procesu dodaje `command_failure`:
+`action` z zamkniętej listy etykiet callsite, `returncode` jako liczbę całkowitą
+(także ujemny kod sygnału) oraz `timed_out` jako boolean. W etapie
+`historical_capture_and_globals_rehearsal` akcje `capture` i `rehearse`
+są rozróżnione. Timeout nadal wynosi600s: wtedy `returncode=null`,
+`timed_out=true`, a oryginalny `TimeoutExpired` jest propagowany. Błąd
+zakończenia procesu zachowuje rzeczywisty kod i `CalledProcessError`.
+Receipt nie kopiuje argv/env, tekstu wyjątku, stdout/stderr, ścieżek ani
+danych kont/JWT/DSN/SQL. Późniejsza asercja nie dziedziczy etykiety udanej
+komendy. Istniejący upload CI już zawiera `rollback.json`; prywatnego
+`experiment-private.log` nie publikujemy ani nie odtwarzamy z receipt.
+Początkowy fetch/archive pozostaje poza dotychczasową granicą tego receipt.
+Diagnostyka nie ustala wstecz przyczyny historycznego FAIL: brak akcji/kodu
+w starym raporcie oznacza UNKNOWN, również po późniejszym PASS.
+
+Syntetyczne regresje kontraktu (bez uruchamiania lokalnych kopii/Dockera):
+`uv run --project backend --locked python -m pytest infra/integration/tests/test_rollback_o2.py infra/integration/tests/test_recovery_o2.py`.
+
 Osobna [pełna lokalna próba odtworzenia](../../docs/e8/ODTWORZENIE_SESJE_I_KLIENT_O3.md)
 obejmuje prawdziwe sesje HTTPS/PKCE, deletion wykonaną po kopii, niezależny
 lokalny rejestr, odcięcie starego JWT/refresh i świadome recovery po zmianie epoki.
