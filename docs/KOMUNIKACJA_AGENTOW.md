@@ -86,6 +86,137 @@ Każda osoba aktualizuje własny wiersz. Daty i dokładne źródła są w jej wp
   zachowano ją osobno, a poprawne wykonanie z dostępem zakończyło się17PASS
   bez zmiany testów. To kontrole dokumentacji, nie testy nowego APK lub live.
 
+### O3-107 — Neutralna diagnostyka błędu historycznej próby rollbacku
+
+- Data / autor:26.10.2026, agent3/O3, do O1/O2, **DO ODCZYTU**.
+  Gałąź `codex/devops-diagnostyka-rollback-20261026`, wydzielony checkout,
+  baza c5b9a6c, następnie zwykłe dołączenie maina867ef8 z pełnymi O3-105/106.
+  Rezerwacja livechat33: rollback_o2.py, syntetyczne testy i istniejąca instrukcja.
+  Nie przejęto Androida/PR178 ani lokalnej instalacji. Źródło kodu i testów:
+  `18b1b9436d2ff0d8453fe8be4646e9c8b33a52e9`.
+- **Pierwotny FAIL zachowany:** PR178/head
+  `abe31e7b8e45410357eebd36fce9c88fb3302b52`, run40289197916/attempt1,
+  local-integration121460106389 i ci-required121467001806 FAILURE,
+  pozostałe6jobów SUCCESS. Odczytano [zgłoszenie A1](https://github.com/Roseru/aplikacja-mobilna/pull/146#issuecomment-6411619683).
+  Przed pobraniem rzeczywiste metadane artefaktu12635632074 potwierdziły
+  run/head,3393B i SHA256
+  `5681202b6b5bdd42ee60bb60f063723f967823daa0fb5e472d3dade694853eea`.
+  Wskazany receipt nie zawiera akcji ani kodu wyjścia; historyczna przyczyna
+  pozostaje **UNKNOWN**. Compare17ed758→abe31e7 potwierdza wyłącznie fixture
+  Androida i dziennik, bez zmian infra/backend/.github. Poprzedni wynik
+  local-integration40286594417 SUCCESS jest osobnym dowodem.
+- **Zmiana kontraktu:** publiczny `rollback.json` przy błędzie procesu
+  zachowuje FAIL/stage/error_kind i dodaje `command_failure` z zamkniętą
+  etykietą callsite (w tym osobno capture/rehearse), integer returncode
+  lub null przy timeout oraz boolean timed_out. Oryginalny wyjątek jest
+  propagowany; późniejsza asercja i cleanup nie nadpisują diagnozy procesu.
+  Brak kopiowania argv/env/tekstu wyjątku/stdout/stderr/ścieżek/kont/JWT/DSN/SQL.
+  Prywatny log pozostaje prywatny; początkowy fetch/archive pozostaje poza
+  istniejącą granicą receipt. recovery_o2.py i definicja workflow bez zmian.
+- **Kontrole lokalne:**14nowych syntetycznych regresji i27dotychczasowych
+  recovery, razem41PASS; Ruff check/format całego infra/integration PASS,
+  generowane schematy i E0 PASS (11schematów/98valid/35invalid/18scenariuszy,
+  16Decimal/5kompletności/72normalizacje/910linków), diff-check PASS.
+  Pierwsze uruchomienia pytest nie utworzyły fixture przez uprawnienia
+  sandbox/temp Windows; właściwy przebieg po udostępnieniu temp PASS,
+  bez osłabiania asercji. Dzieci Python w2testach są wyłącznie syntetyczne;
+  zależności całego rehearsal w pozostałych są mockowane, bez Docker/backup.
+  Pełna istniejąca regresja infra/integration:651PASS/9SKIPPED/1warning,
+  92,89s na Windows;14nowych bez skip. To wynik lokalny, nie Project CI.
+  Przegląd wszystkich7callsite potwierdził jawne etykiety oraz zachowanie
+  check/600s/421s/predecessor; workflow i recovery_o2.py identyczne z bazą.
+- **Zachowane warunki:** check=True, timeout600s, pełny wait421s,
+  bramki/trafficclosed, źródło a522471 i archive/image piny, tworzenie oraz
+  odtwarzanie kopii bez zmiany. Brak retry, maskowania, skracania/pomijania
+  próby, lokalnego recovery/rollback/backup lub AVD. Zdrowe demo i VPS bez zmian.
+- **Rerun A1 osobno:** odczytano terminalny attempt2,
+  local-integration121471659361 i ci-required121479882391 SUCCESS,
+  pozostałe6jobów SUCCESS. O3 nie uruchamiał ani nie anulował tego CI.
+  PASS nie ustala przyczyny attempt1. Nowy neutralny artefakt12638315032
+  ma według metadanych4465B/SHA256
+  `a80cb5143ff5436646e5eaf831993b3025aefd36e8b6f95c174a919ca5e2ce44`;
+  oryginalny12635632074 jest nadal dostępny oddzielnie.
+  Własny nowy kod wymaga osobnego FULL Project CI oraz niezależnego push main;
+  wcześniejsze PR172/173/179/180 nie kwalifikują tej zmiany. To diagnostyka
+  narzędzia, bez nowej dostawy APK/liveE4/PULL lub odbioru całego projektu.
+- **Autoryzacja publikacji:** automatyczna kontrola odrzuciła pierwotny
+  i skrócony neutralny komentarz PR146 jako rozszerzenie wcześniejszej zgody.
+  Właściciel następnie jawnie zatwierdził cały zakres O3-107: push/PR,
+  pełny CI/merge i neutralne przekazania PR146/livechat. Dopiero po tej zgodzie
+  ponowiono zapis; natywny konektor zwrócił techniczne403. Fallback GCM jest
+  dopuszczony wyłącznie po tej nowej zgodzie, bez obchodzenia automatycznej odmowy.
+- **Pierwotna blokada publikacji:** wielokrotne standardowe próby fetch/push
+  i odczytu HTTPS kończą się błędem TCP443/timeout; GitHub potwierdził brak
+  własnej zdalnej gałęzi po tych próbach. Natywny zapis komentarza i utworzenia
+  gałęzi zwraca403. Computer Use zakończono przez brak obsługi polityki URL
+  bieżącej przeglądarki Windows, bez dalszych akcji UI. Neutralne przekazanie
+  lokalnego wyniku i osobnego rerunu A1 dotarło na livechat35; komentarz PR146
+  jeszcze nie został opublikowany. Własny push/PR/FULL CI/merge/mainCI pozostają
+  **NOT_RUN/INCOMPLETE**, bez deklaracji odbioru nowego kodu. Pobrano jedynie
+  metadane historycznych artefaktów; próby odczytu ZIP w pamięci przerwała sieć,
+  więc nie deklarujemy niezależnej weryfikacji bajtów ani ich SHA256.
+- **Publikacja przywrócona:** gałąź wypchnięta, [PR181](https://github.com/Roseru/aplikacja-mobilna/pull/181)
+  utworzony klientem GCM po technicznym403. Własny [Project CI40297959657](https://github.com/Roseru/aplikacja-mobilna/actions/runs/40297959657)
+  uruchomił FULL dla d99e4ff/merge5d87c12, rodzice a867ef8+d99e4ff,
+  treef5b77b4af2fa76a767372d4355e3e8682bb51b0c zgodny z checkoutem.
+  To pierwszy przebieg własnego kodu, bez przenoszenia PASS wcześniejszych PR.
+  Końcowy head/merge/tree oraz rzeczywiste FULL i niezależny main push CI
+  są kwalifikowane po aktualizacjach gałęzi i przekazywane w tym samym PR;
+  sam start jobów nie oznacza PASS. Przegląd początkowy:0reviews/0threads.
+  [Przekazanie PR146/6412450247](https://github.com/Roseru/aplikacja-mobilna/pull/146#issuecomment-6412450247)
+  ma identyczny GET-readback, livechat36 odnotowuje odblokowanie i osobne
+  wyniki A1. Niepotwierdzona wysyłka poprzedniego statusu miała błąd transportu.
+  Host artefaktów nadal zrywa pobranie ZIP; ograniczenie kontroli bajtów pozostaje.
+- **Niezależny odczyt dowodów po przywróceniu transferu:** oba neutralne ZIP
+  pobrano do pamięci ze świeżych odnośników konektora, bez zapisu archiwów/logów.
+  Oryginalny12635632074:3393B i powyższy SHA256 zgodne; recovery FAIL,
+  7checks, issuance_closed421,0s, ścieżka845→235→38 i wspólny stage potwierdzone.
+  rollback FAIL/CalledProcessError, nadal bez action/returncode; restore PASS
+  z traffic_reopened=false. Nowy12638315032:4465B i powyższy SHA256 zgodne;
+  recovery8checks/PASS/wait421,0s, rollback complete/PASS/wait421,05s,
+  paired_globals_rehearsalPASS. Ruch tylko owned_scratch_only, AI/Nemesisfalse;
+  osobny restore PASS/trafficfalse. **Historical actual cause nadal UNKNOWN.**
+  Ten odczyt zastępuje wcześniejsze ograniczenie weryfikacji bajtów, zachowując
+  historię nieudanych prób pobrania i pierwotny negatywny wynik.
+- **Własna bramka Androida, osobna od diagnostyki rollbacku:** pierwszy
+  FULL40297959657/d99e4ff i końcowy przed integracją bazy
+  FULL40298566128/41a0da3 mają android-build FAILURE w istniejącym
+  NetworkOperationCancellationTest, przypadek
+  disposedOldSubscriptionCannotCloseNewOperationAndThreadContextDoesNotLeak,
+  1z435JVM/lokalizacja39. Kod Androida identyczny z baząa867ef8, bez edycji O3.
+  Odczyt logów wyłącznie w pamięci z wycięciem nazwy/liczności/lokalizacji.
+  Nie anulowano przebiegu po FAIL i nie rerunujemy losowo niezmienionego JVM.
+  [Komentarz zachowujący FAIL](https://github.com/Roseru/aplikacja-mobilna/pull/181#issuecomment-6412539713),
+  przekazanie w PR146/6412450247 i livechat37. Końcowe contracts/quality/PKCE
+  SUCCESS; quality1742backend i655infra/5skip/14nowych bezskip, reszta jeszcze
+  w toku przy tym wpisie. O1 opublikował2ce0782/PR178 po normalnym merge main
+  i prowadzi własny FULL40299180316. O3 czeka na właściwy scalony main/pin
+  fixture, aby dołączyć go normalnym merge i zakwalifikować nowe drzewo FULL;
+  nie przejmuje PR178 lub Androida ani nie osłabia bramki. Nowe4APK O1
+  odczytano jako osobne przekazanie; nie są odbierane w O3-107.
+- **Terminalny wynik własnych przebiegów na starej bazie:**40297959657
+  i40298566128 zakończyły się6SUCCESS+2FAILURE (JVM i zależny agregat).
+  Rzeczywiste local-integration w obu SUCCESS, bez ponawiania lub skracania.
+  Neutralny receipt40298566128/12639754358 zweryfikowano niezależnie w pamięci:
+  4460B/SHA256`0ce997a8f783d722dd91db7b36876fa3bc11aca435ecade54193eedfc443e212`.
+  commitd962577 zgodny z testowanym merge, recovery PASS/wait421,0s,
+  rollback complete/PASS/wait421,05s/paired_globals_rehearsalPASS,
+  predecessor a522471 bez zmiany. AI/Nemesisfalse, ruch owned_scratch_only;
+  osobny restore PASS/trafficfalse. Udane komendy nie dodają command_failure.
+  To rzeczywisty odbiór narzędzia na tym drzewie, **nie FULL8PASS** ani
+  zastępstwo końcowej kwalifikacji po integracji właściwej bazy.
+- **Integracja zaakceptowanej bazy:** O1 uzyskał8SUCCESS
+  FULL40299180316/2ce0782, bez review/threads, i sam scalił PR178 jako
+  `db800877882d76965c3aa8e6b52aa99ec1a6e3da`; O3 nie wykonał jego scalenia
+  ani nie edytował Androida. Tree main`2fb3705ff59dcf3e32dee18be08972a9a4a100f5`
+  odpowiada testowanemu merge`da094ad76b4ddc2592904c181a3498c63821590b`.
+  W czystym wydzielonym checkoutcie O3 dołączył origin/main zwykłym merge
+  `4d0f9cf`, bez konfliktów. Zachowano pełne wpisy O1 z PR178 oraz O3-105/106/107;
+  fixture A1 pochodzi wyłącznie z zaakceptowanego main. Własny diff do nowej
+  bazy nadal obejmuje tylko4pliki diagnostyki/testów/instrukcji/dziennika,
+  a kod/testy rollbacku są identyczne z18b1b94. Następny FULL kwalifikuje to
+  rzeczywiste nowe drzewo; oba wcześniejsze JVM FAIL pozostają historią.
+
 ### O1-001 — Android 0.3.0 przekazany do recenzji
 
 - Data / autor: 2026-10-09, **agent 1 / O1**.
