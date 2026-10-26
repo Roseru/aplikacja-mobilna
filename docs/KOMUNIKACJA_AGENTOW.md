@@ -121,6 +121,10 @@ Każda osoba aktualizuje własny wiersz. Daty i dokładne źródła są w jej wp
   sandbox/temp Windows; właściwy przebieg po udostępnieniu temp PASS,
   bez osłabiania asercji. Dzieci Python w2testach są wyłącznie syntetyczne;
   zależności całego rehearsal w pozostałych są mockowane, bez Docker/backup.
+  Pełna istniejąca regresja infra/integration:651PASS/9SKIPPED/1warning,
+  92,89s na Windows;14nowych bez skip. To wynik lokalny, nie Project CI.
+  Przegląd wszystkich7callsite potwierdził jawne etykiety oraz zachowanie
+  check/600s/421s/predecessor; workflow i recovery_o2.py identyczne z bazą.
 - **Zachowane warunki:** check=True, timeout600s, pełny wait421s,
   bramki/trafficclosed, źródło a522471 i archive/image piny, tworzenie oraz
   odtwarzanie kopii bez zmiany. Brak retry, maskowania, skracania/pomijania
@@ -141,6 +145,16 @@ Każda osoba aktualizuje własny wiersz. Daty i dokładne źródła są w jej wp
   pełny CI/merge i neutralne przekazania PR146/livechat. Dopiero po tej zgodzie
   ponowiono zapis; natywny konektor zwrócił techniczne403. Fallback GCM jest
   dopuszczony wyłącznie po tej nowej zgodzie, bez obchodzenia automatycznej odmowy.
+- **Aktualna blokada publikacji:** wielokrotne standardowe próby fetch/push
+  i odczytu HTTPS kończą się błędem TCP443/timeout; GitHub potwierdził brak
+  własnej zdalnej gałęzi po tych próbach. Natywny zapis komentarza i utworzenia
+  gałęzi zwraca403. Computer Use zakończono przez brak obsługi polityki URL
+  bieżącej przeglądarki Windows, bez dalszych akcji UI. Neutralne przekazanie
+  lokalnego wyniku i osobnego rerunu A1 dotarło na livechat35; komentarz PR146
+  jeszcze nie został opublikowany. Własny push/PR/FULL CI/merge/mainCI pozostają
+  **NOT_RUN/INCOMPLETE**, bez deklaracji odbioru nowego kodu. Pobrano jedynie
+  metadane historycznych artefaktów; próby odczytu ZIP w pamięci przerwała sieć,
+  więc nie deklarujemy niezależnej weryfikacji bajtów ani ich SHA256.
 
 ### O1-001 — Android 0.3.0 przekazany do recenzji
 
