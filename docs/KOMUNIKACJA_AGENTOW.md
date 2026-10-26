@@ -205,6 +205,17 @@ Każda osoba aktualizuje własny wiersz. Daty i dokładne źródła są w jej wp
   osobny restore PASS/trafficfalse. Udane komendy nie dodają command_failure.
   To rzeczywisty odbiór narzędzia na tym drzewie, **nie FULL8PASS** ani
   zastępstwo końcowej kwalifikacji po integracji właściwej bazy.
+- **Integracja zaakceptowanej bazy:** O1 uzyskał8SUCCESS
+  FULL40299180316/2ce0782, bez review/threads, i sam scalił PR178 jako
+  `db800877882d76965c3aa8e6b52aa99ec1a6e3da`; O3 nie wykonał jego scalenia
+  ani nie edytował Androida. Tree main`2fb3705ff59dcf3e32dee18be08972a9a4a100f5`
+  odpowiada testowanemu merge`da094ad76b4ddc2592904c181a3498c63821590b`.
+  W czystym wydzielonym checkoutcie O3 dołączył origin/main zwykłym merge
+  `4d0f9cf`, bez konfliktów. Zachowano pełne wpisy O1 z PR178 oraz O3-105/106/107;
+  fixture A1 pochodzi wyłącznie z zaakceptowanego main. Własny diff do nowej
+  bazy nadal obejmuje tylko4pliki diagnostyki/testów/instrukcji/dziennika,
+  a kod/testy rollbacku są identyczne z18b1b94. Następny FULL kwalifikuje to
+  rzeczywiste nowe drzewo; oba wcześniejsze JVM FAIL pozostają historią.
 
 ### O1-001 — Android 0.3.0 przekazany do recenzji
 
