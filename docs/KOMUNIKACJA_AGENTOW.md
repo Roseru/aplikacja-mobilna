@@ -194,6 +194,17 @@ Każda osoba aktualizuje własny wiersz. Daty i dokładne źródła są w jej wp
   fixture, aby dołączyć go normalnym merge i zakwalifikować nowe drzewo FULL;
   nie przejmuje PR178 lub Androida ani nie osłabia bramki. Nowe4APK O1
   odczytano jako osobne przekazanie; nie są odbierane w O3-107.
+- **Terminalny wynik własnych przebiegów na starej bazie:**40297959657
+  i40298566128 zakończyły się6SUCCESS+2FAILURE (JVM i zależny agregat).
+  Rzeczywiste local-integration w obu SUCCESS, bez ponawiania lub skracania.
+  Neutralny receipt40298566128/12639754358 zweryfikowano niezależnie w pamięci:
+  4460B/SHA256`0ce997a8f783d722dd91db7b36876fa3bc11aca435ecade54193eedfc443e212`.
+  commitd962577 zgodny z testowanym merge, recovery PASS/wait421,0s,
+  rollback complete/PASS/wait421,05s/paired_globals_rehearsalPASS,
+  predecessor a522471 bez zmiany. AI/Nemesisfalse, ruch owned_scratch_only;
+  osobny restore PASS/trafficfalse. Udane komendy nie dodają command_failure.
+  To rzeczywisty odbiór narzędzia na tym drzewie, **nie FULL8PASS** ani
+  zastępstwo końcowej kwalifikacji po integracji właściwej bazy.
 
 ### O1-001 — Android 0.3.0 przekazany do recenzji
 
