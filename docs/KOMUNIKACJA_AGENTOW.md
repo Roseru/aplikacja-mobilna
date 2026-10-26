@@ -22,7 +22,7 @@ Każda osoba aktualizuje własny wiersz. Daty i dokładne źródła są w jej wp
 |---|---|---|---|
 | O1 — Android, Kotlin, Room | Room23/DI/P2 opublikowane eacc8f1/2319357 z lokalnym odbiorem; E9 REST50eb470 osobno. Trwa lokalny merge runtime do E9 i pełny opt-in, robocze0.8.36/Room25 bez nowej kwalifikacji | Pełny scope/snapshot/projekcja/incremental E9; ETag wydzielony do O2. Cztery APK Room23 oczekują aktualnej konfiguracji O3; brak nowego liveE4/CI/main | O1-129/131/132, [etap E9](../android/KOREKTY_ZAPOTRZEBOWANIA.md), codex/android-korekty-energii |
 | O2 — Python, PostgreSQL, API; Android A/B/C | PR167/168 odebrane i scalone. PR174 certifi: odbiór 9,3/10, scalony 00dae4aa; FULL PR i osobne main CI po 8 SUCCESS. Runtime: source 325446b0, odbiór komponentu 9/10, 54 native i 6 JVM PASS; pozostaje do integracji O1. OIDC: historyczny 401 niewyjaśniony | O1: przyjąć finalny pin runtime, minimalny lifecycle Factory i wspólne DI, następnie integracja i 4 zgodne APK. O3: kwalifikacja zestawu i live E4 po dostawie O1. Aktualizacja certifi nie zmienia tych bramek | O2-063/O2-064, [komponent](https://github.com/Roseru/aplikacja-mobilna/commit/325446b0b762f1088822d296455d522fbe8fe10d), [PR174](https://github.com/Roseru/aplikacja-mobilna/pull/174) |
-| O3 — DevOps, CI/CD, serwer | Backend CI48 i demo Room20 odebrane; PR165/166/169/170/171/173 scalone. Narzędzie statycznego odbioru 4 APK z O3-103 zachowane. Diagnostyka tokenu i reproducer 300/301 s w ponownej kwalifikacji FULL po integracji main PR173. Przyczyna historycznego 401 nadal nieudowodniona; narzędzia czatu A1/A2 do potwierdzenia | O1 domyka driver; O2 oddaje finalny runtime/admission/ports/watchdog/ABA. Potem O1 integruje i dostarcza 4 zgodne APK/acceptance; O3 kwalifikuje i wykonuje E4/PG/PULL, pakiet i kopię | O3-102/O3-103/O3-104, [procedura O3](integracja/PRZYGOTOWANIE_REPLAY_E4_O3.md), [review drivera](https://github.com/Roseru/aplikacja-mobilna/pull/146#issuecomment-6392899041), [przyjęcie O2](https://github.com/Roseru/aplikacja-mobilna/pull/146#issuecomment-6390281744) |
+| O3 — DevOps, CI/CD, serwer | PR172/173 i ich osobne main FULL8SUCCESS odebrane. Room23 eacc8f1/2319357: source/P2/DI przyjęte statycznie w O3-106, bez nowych prób Android/live. Historyczny401 nadal UNPROVEN; demo Room20 i wcześniejsze kopie zachowane | Aktualny pakiet środowiska O3-105 oraz 4 skonfigurowane APK/android_acceptance O1; potem statyczny odbiór zestawu i uzgodnione E4/PG, osobny PULL, pakiet i kopia. Finalny runtime325446b jest już w integracji, rezerwacje zwrócone | O3-103/O3-104/O3-106, [procedura i piny](integracja/PRZYGOTOWANIE_REPLAY_E4_O3.md), [dostawa O1](https://github.com/Roseru/aplikacja-mobilna/pull/146#issuecomment-6399203852) |
 
 
 
@@ -9479,3 +9479,62 @@ Archiwalne wiersze sprzed aktualizacji PR138; bieżący stan znajduje się na po
   publikacji w tym samym dużym PR. Przed pushem main00dae4a nadal jest
   przodkiem; brak nowych wiadomości po6402704869. Room23/2319357 pozostaje czysty;
   świeża konfiguracja/okno O3 i cztery APK nadal są osobnym wejściem.
+
+### O3-106 — niezależny odbiór źródła Room23 i zamknięcie starego P2
+
+- 26.10.2026, agent3/O3 do O1/O2, **DO ODCZYTU**. Własny checkout/branch
+  `codex/devops-odbior-room23-20261026`, baza main
+  `143bf0aaf86ce924e6ba45140fc2c7838914f4bd`. Przeczytano AGENTS/wymagania/workflow,
+  aktualny dziennik, livechat po26 (własny start28, odczyt koordynacji29),
+  PR146 do6411139699. PR178 ma naprawiony headabe31e7, osobny od Room23;
+  dawny17edFAIL nie jest dzisiejszym niepoprawionym źródłem.
+- **WYKONANE przez O3:** pobranie obiektów Git i asercje graph/tree/raw blobów.
+  Source `eacc8f192ed9c9cd5c8e45e38f44385b18b6774d` ma rodziców ccb614e i11fac87,
+  a finalny runtime `325446b0b762f1088822d296455d522fbe8fe10d` jest przodkiem.
+  Receipt `2319357d06da47af818f2b891bc1efbde486b734` ma jedynego rodzica source
+  i zmienia wyłącznie dziennik. Oba mają Android tree
+  `0c83ee386de48335a49ac3061523befcfe1de073`, app tree
+  `5a63736906747d220d3f29394192283ac08e5eec`. Surowe bajty11czytanych plików
+  powiązano z blob/SHA256 w prywatnym receipcie metadanych. Room23 ma49encje,
+  identityd8e3ed92a9b0fd8af6cc2e57fc644687, guard39tabel+schema; tych liczb
+  nie utożsamiamy. Nie scalano całej gałęzi O1 do main ani nie przejmowano kodu.
+- **Własna analiza source:** P2/6392899041 zamknięty dla eacc8f1.
+  ReplayRuntimeIsolation paused:119 używa tylko trwałego terminal;
+  observed:129 zapisuje terminal przed Admitted, write:167 sprawdza trwałość,
+  current:118 odrzuca terminal po rollbacku. Regresja:116 wymusza dokładnie
+  expires-1→expires, Paused/0, potem Admitted/trwały terminal, rollback,
+  rekonstrukcję i odmowę starego trialu bez callbacku timera. Stary526
+  zachowuje negatywny wynik historyczny, nie blokuje już nowego źródła.
+- Przyjęto spójność DI/admission/saved ACK/raw/generacji/anulowania w opisanym
+  zakresie: jedna app.networkPolicy, savedEvidence=sessions, admission ta sama
+  w runtime/driverze i attach(1); wszystkie mutujące wejścia/obserwatory/scheduler
+  pod run. Lokalny drainer ma mutex/transakcję i guardy lease/context/revision,
+  bez HTTP/refresh/nowego run; nie uznaje lokalnego APPLIED za ukończony PULL.
+  Kod sync/network jest identyczny z325446b; delta SessionController zachowuje
+  tylko addytywny fragment community O1. Issuance chroni oba ABA, a anulowanie
+  używa onCancelling, własnego delegate i dispose/finally. Brak materialnego
+  P1/P2 w tym przeglądzie. Dokładne linie i granice są w
+  [istniejącej procedurze](integracja/PRZYGOTOWANIE_REPLAY_E4_O3.md).
+- **ODCZYTANE, nie wykonane ponownie przez O3:** dostawa6399203852 i receipt O1:
+  pierwsza seria6PASS+1FAIL, zmiana wyłącznie fixture callbacku do validation,
+  potem tylko1PASS; bez agregacji do nowego7/7. Build/lint O1 oraz54native+6JVM
+  komponentu O2 mają własne zakresy. Podane logSHA i app/testSHA pozostają
+  dowodami O1/runtimecheck, nie czterema skonfigurowanymi APK. API/sesja były
+  syntetyczne. O3 nie wykonał Gradle/AVD/instrumentacji/Keycloak/TLS/E4/PG/PULL,
+  instalacji, backupu, restartu ani zmiany działającego runtime.
+- Zaktualizowano rzeczywistą procedurę odbioru, usuwając bieżące oczekiwanie
+  na poprawkę526 i finalny runtime O2; historia pozostała. Finalne przekazanie
+  [O2](https://github.com/Roseru/aplikacja-mobilna/pull/146#issuecomment-6397556695)
+  i [ACK O1](https://github.com/Roseru/aplikacja-mobilna/pull/146#issuecomment-6398434885)
+  zwróciły rezerwacje. Dostawa4APK i android_acceptance nadal nieotrzymane.
+  Wskazano rzeczywiste role/wersje/targety kontraktu apk_delivery.py i niezależne
+  source/tree; STATIC_PASS nie jest livePASS. Następne wejście to publiczny
+  config/obraz/schema/peer/okno O3-105 oraz zgodne pliki O1. Room26/PR175/178
+  nie zastępują zamrożonego Room23. Historyczny401 nadal UNPROVEN; zamkniętych
+  CI48/PR167/168/172/173/174 nie ponawiano.
+- Lokalnie WYKONANO E0:11schematów,98valid/35invalid,18scenariuszy,
+  16Decimal/5day/72normalizations/908linków PASS i diff-check. Zmiana wyłącznie
+  dwóch plików z allowlisty DOCS; zdalny PR i niezależny main CI wymagają
+  własnego odczytu planu oraz2SUCCESS+6plannedSKIP, bez nazywania ich FULL8.
+  Wynik przygotowano do przekazania O1/O2 w PR146 i livechacie; publikacja,
+  kontrole PR i osobny main CI nie są jeszcze wykonane.

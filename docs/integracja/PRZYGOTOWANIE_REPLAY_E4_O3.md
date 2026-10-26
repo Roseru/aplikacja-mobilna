@@ -1,39 +1,112 @@
 # Przygotowanie obserwacji PostgreSQL dla replay E4 — O3
 
-## Procedura operatora Room23 — 25.10.2026
+## Procedura operatora Room23 — odbiór źródła 26.10.2026
 
 Ta procedura opisuje odbiór nowego drivera z trwałą izolacją runtime.
 Jej opublikowanie nie oznacza wykonania próby ani przyjęcia nowych APK.
 Poniższe historyczne wyniki Room14/17–20 zachowują swoje źródła i zakresy.
 
-Podstawą interfejsu jest [kontrakt drivera ccb614e](https://github.com/Roseru/aplikacja-mobilna/blob/ccb614ed6ffeff314a17e8a4d65cac012fb1624b/android/DRIVER_REPLAY_E4.md).
-Kod `526deb402ccb190976c4dbc5265bfa11620935fc` pozostaje **niedopuszczony do live**:
-[przegląd O3](https://github.com/Roseru/aplikacja-mobilna/pull/146#issuecomment-6392899041)
-wykazał możliwość dopuszczenia pracy przy przekroczeniu terminu między
-`observed()` i `paused()` bez trwałego zakończenia izolacji. Wymagany jest
-kolejny poprawiony pin i odbiór regresji tej granicy. Samo pole `terminal`
-oraz komponentowy receipt jednej próby A1 nie zamykają tego warunku.
+Podstawą jest [zamrożony kontrakt Room23](https://github.com/Roseru/aplikacja-mobilna/blob/2319357d06da47af818f2b891bc1efbde486b734/android/DRIVER_REPLAY_E4.md).
+O3 przyjął poniżej źródło integracji i poprawkę P2 w zakresie statycznego
+przeglądu. Nie otwiera to okna live: nadal wymagane są rzeczywiste cztery
+skonfigurowane APK, `android_acceptance` i uzgodniony pakiet środowiska.
+
+### Przyjęte źródło i zakres odbioru O3-106
+
+Własny odbiór O3 z26.10 obejmuje surowe obiekty Git, graph/tree, odczyt kodu,
+kontraktu i regresji. [Dostawa O1](https://github.com/Roseru/aplikacja-mobilna/pull/146#issuecomment-6399203852)
+oraz zapisane wyniki O1/O2 są dowodami odczytanymi, nie własnym wykonaniem
+Androida przez O3. W tym odbiorze nie uruchamiano Gradle, AVD, instrumentacji,
+Keycloak/TLS, E4/PG/PULL ani instalacji. Nie znaleziono materialnego P1/P2
+w opisanym niżej zakresie; nie jest to pełny odbiór native/live lub projektu.
+
+| Pin | Wartość niezależnie sprawdzona przez O3 |
+|---|---|
+| Source integracji | `eacc8f192ed9c9cd5c8e45e38f44385b18b6774d` |
+| Rodzice source | `ccb614ed6ffeff314a17e8a4d65cac012fb1624b` + `11fac87ab9c3e01b793671ff5fdf1f0599854f29` |
+| Finalny runtime O2 w historii source | `325446b0b762f1088822d296455d522fbe8fe10d` |
+| Receipt O1, jedyny rodzic = source | `2319357d06da47af818f2b891bc1efbde486b734`; delta wyłącznie dziennika |
+| Android tree obu pinów | `0c83ee386de48335a49ac3061523befcfe1de073` |
+| App tree obu pinów | `5a63736906747d220d3f29394192283ac08e5eec` |
+| Wersje źródła | regularny `0.8.35`/46, validation `0.8.35.validation`/1046; Room23 |
+| Eksport Room23 | 49 encji, identity `d8e3ed92a9b0fd8af6cc2e57fc644687`; guard obejmuje39 jawnych tabel oraz `__schema__`, nie49 tabel |
+
+**P2/6392899041 zamknięty dla tego źródła w przeglądzie O3.** Historyczny
+[source526 i kontrprzykład](https://github.com/Roseru/aplikacja-mobilna/pull/146#issuecomment-6392899041)
+pozostają nieprzyjęte i zachowane jako historia. W nowym
+[paused:119](https://github.com/Roseru/aplikacja-mobilna/blob/eacc8f192ed9c9cd5c8e45e38f44385b18b6774d/android/app/src/validation/java/pl/roseru/kalorie/sync/ReplayRuntimeIsolation.kt#L119)
+nie ma drugiego odczytu czasu: istniejący nieterminalny fence zawsze blokuje.
+[observed:129](https://github.com/Roseru/aplikacja-mobilna/blob/eacc8f192ed9c9cd5c8e45e38f44385b18b6774d/android/app/src/validation/java/pl/roseru/kalorie/sync/ReplayRuntimeIsolation.kt#L129)
+przed dopuszczeniem pracy zapisuje `ready=false, terminal=true`; błąd zapisu
+propaguje wyjątek. `write:167` używa AtomicFile, fsync i odczytu kontrolnego.
+`current:118` odrzuca terminal także po rollbacku, a `read:162` odrzuca
+ciągłość dawnego v1. Rekonstrukcja nie odnawia terminu ani tego samego trialu.
+[Regresja:116](https://github.com/Roseru/aplikacja-mobilna/blob/eacc8f192ed9c9cd5c8e45e38f44385b18b6774d/android/app/src/androidTest/java/pl/roseru/kalorie/ReplayRuntimeIsolationTest.kt#L116)
+wymusza `expires-1 → expires`: najpierw Paused/0 zapisów, potem Admitted/1
+i trwały terminal, rollback, rekonstrukcję, odmowę requireHeld/arm starego
+trialu i dalszą pracę bez odżycia izolacji. Nie wymaga callbacku timera.
+O3 odczytał kod i receipt wykonania O1; nie powtórzył tej regresji native.
+
+**Złożenie runtime:** [Application:24–36](https://github.com/Roseru/aplikacja-mobilna/blob/eacc8f192ed9c9cd5c8e45e38f44385b18b6774d/android/app/src/main/java/pl/roseru/kalorie/CalorieApplication.kt#L24)
+ma jedną networkPolicy, `savedEvidence=sessions` oraz jedną admission dla
+SyncWorkRuntime i drivera (`LiveMealReplayTest:68`).
+[SyncWork:79](https://github.com/Roseru/aplikacja-mobilna/blob/eacc8f192ed9c9cd5c8e45e38f44385b18b6774d/android/app/src/main/java/pl/roseru/kalorie/sync/SyncWork.kt#L79)
+wykonuje `attach(1)`; current/signal/manual/execute/reschedule, oba obserwatory
+i operacje schedulera pozostają wewnątrz admission, bez zagnieżdżania osłon.
+Paused nie konsumuje zdarzenia ani nie planuje retry poza granicą.
+`changes` umożliwia ponowną ocenę po otwarciu. Scheduler oczekuje na zakończenie
+enqueue/cancel. Testy admission obejmują także pustą bazę bez ensureGuest.
+
+[Drainer sesji:756](https://github.com/Roseru/aplikacja-mobilna/blob/eacc8f192ed9c9cd5c8e45e38f44385b18b6774d/android/app/src/main/java/pl/roseru/kalorie/session/SessionController.kt#L756)
+pracuje pod istniejącym mutexem i transakcją, sprawdza lease/kontekst/revision
+sesji oraz cancellation. Recovery korzysta z już kompletnego raw i zapisanego
+ACK z dowodem targetu; bez nowego run/koperty, refresh lub HTTP. Ordinary
+stosuje istniejącą pełną kopię, bez ponawiania historycznych atomowych ACK.
+Coordinator drenuje przed blokadą sieci/Retry-After, ale APPLIED nie kończy
+PULL ani cyklu. O3 porównał kod sync/network z325446b: identyczny; delta
+SessionController dodaje tylko zachowany fragment community O1. NetworkIssuance
+wiąże permit/ticket z instancją i generacją także przy conflated ABA, a helper
+NetworkOperationCancellation reaguje na onCancelling i zamyka własny
+PolicyConnection przy stałym Allowed, z dispose/finally i przywróceniem ThreadLocal.
+To przyjęcie integracji źródeł, nie nowy test rzeczywistego transportu/AppAuth.
+
+**Rozdzielone dowody O1/O2:** O1 zachował pierwsze **6PASS+1FAIL**, poprawił
+wyłącznie fixture callbacku do logicznego validation i ponowił tylko **1PASS**.
+Pierwszy FAIL przed replay i oba zakresy pozostają widoczne; nie zapisujemy
+nowego7/7. LogSHA serii: `967e1f4a65534af84ca967e7601a03000d27176011fe9a39c9b91912562630f8`
+i `7ab796dd1ef08d534ef725fc45e49720627352ec93d08feebafb25030ac3b598`.
+Build/lint O1 i54native+6JVM komponentu O2 pozostają osobnymi odczytanymi
+wynikami. Podane przez O1 app/test SHA i zachowanie danych dotyczą jego
+izolowanego runtimecheck, nie wymaganej dostawy4APK. Granica API/sesji była
+syntetyczna. Receipt nie zmienia Android tree; późniejsze Room26/PR175/178
+oraz ich CI nie kwalifikują nowej dostawy zamrożonego Room23.
 
 ### Warunki otwarcia nowego okna
 
 Przed instalacją i nową próbą operator zbiera następujące dowody:
 
-- **O1:** poprawiony driver, jego dokładny source/tree oraz wynik regresji
-  przekroczenia terminu, dopuszczenia pracy, rollbacku i rekonstrukcji.
-  Wygasła izolacja nie może odżyć po mutacji runtime.
-- **O2 i O1:** finalne porty saved ACK/raw, oba ABA, anulowanie/mutex,
-  watchdog i pełna granica `SyncRuntimeAdmission`. O1 przekazuje jedną
-  instancję z Application; runtime wykonuje `attach(1)`, obserwuje `changes`
-  i obejmuje przez `run` wszystkie mutujące wejścia, obserwatory oraz scheduler.
-  Wynik `Paused` nie może powodować zapisu ani retry poza tą granicą.
-  [Przyjęcie O2](https://github.com/Roseru/aplikacja-mobilna/pull/146#issuecomment-6390281744)
-  i [zgoda na watchdog](https://github.com/Roseru/aplikacja-mobilna/pull/146#issuecomment-6390371437)
-  ustalają zakres prac; do odbioru potrzebny jest także finalny pin i wyniki.
+- **Źródło:** powyższy zamrożony pin, przyjęty przez O3 w zakresie source/P2/DI.
+  [Finalna dostawa O2](https://github.com/Roseru/aplikacja-mobilna/pull/146#issuecomment-6397556695)
+  i [ACK O1](https://github.com/Roseru/aplikacja-mobilna/pull/146#issuecomment-6398434885)
+  kończą dawne WAITING_O1_PORTS i rezerwacje runtime. Nie są już oczekiwaniem
+  na implementację; zgodność wykonania nadal musi wynikać z nowych artefaktów.
 - **O1:** spójna dostawa czterech APK: regularny debug, skonfigurowany validation,
   domyślny testAPK oraz opt-in liveReplay testAPK. Manifest wiąże ich source/tree,
   applicationId, target instrumentacji, wersję/code/Room, rozmiar, SHA-256 i podpis.
   Operator sprawdza skompilowane API/issuer/CA i nowy `android_acceptance`.
   Nieskonfigurowane pary `replaycheck` lub `expirycheck` nie są tą dostawą.
+  Statyczny odbiór rzeczywistych plików wykonuje
+  [apk_delivery.py](../../infra/integration/apk_delivery.py) z niezależnymi
+  `--source-commit eacc8f192ed9c9cd5c8e45e38f44385b18b6774d` i
+  `--source-android-tree 0c83ee386de48335a49ac3061523befcfe1de073`. Role kontraktu to
+  `debug`, `validation-configured`, `test-default`, `test-liveReplay-optin`.
+  Opt-in musi celować w skonfigurowane `pl.roseru.kalorie.validation`/1046,
+  a każda instrumentacja jawnie deklarować target_role/target_package/runner
+  oraz zgodny podpis celu. Regularny debug to `pl.roseru.kalorie`/46;
+  wersje aplikacji odpowiednio0.8.35 i0.8.35.validation. Wersje testAPK odczytuje
+  się z plików, nie wyprowadza z wersji aplikacji. Manifest wiąże aktualny
+  publiczny config i dokładne wpisy CA/XML; nie wystarczają deklaracje buildera.
+  `STATIC_PASS` nie zastępuje `android_acceptance` ani live E4.
 - **O3 z zespołem:** aktualny obraz API, schemat, epoka i prywatne powiązanie
   konta syntetycznego z właścicielem PG, uzgodniony peer oraz ograniczone okno.
   Dane logowania pozostają poza Git i argumentami instrumentacji. Odbiór
@@ -131,7 +204,7 @@ konta i prywatne pliki dowodowe pozostają poza repozytorium i publicznymi logam
 
 Android Room23 chroni39 tabel oraz dodatkowy `__schema__`: wszystkie wiersze,
 kolumny, rowid, konta/gościa, wspólny katalog i definicje tabel/indeksów/triggerów,
-także przy pustych tabelach. Listę definiuje [MealReplayFingerprint](https://github.com/Roseru/aplikacja-mobilna/blob/526deb402ccb190976c4dbc5265bfa11620935fc/android/app/src/validation/java/pl/roseru/kalorie/session/MealReplayFingerprint.kt).
+także przy pustych tabelach. Listę definiuje [MealReplayFingerprint](https://github.com/Roseru/aplikacja-mobilna/blob/eacc8f192ed9c9cd5c8e45e38f44385b18b6774d/android/app/src/validation/java/pl/roseru/kalorie/session/MealReplayFingerprint.kt).
 `sync_work_state`, pozostałe nowe ledgery i `diary_days` pozostają ścisłe.
 Normalizacja dotyczy wyłącznie wybranych pól ACK:
 
