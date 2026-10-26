@@ -221,6 +221,51 @@ historycznego checkpointu. Historyczny ServerDiaryApplication zwraca zapisany
 wynik przed odczytem raw i nie cofa późniejszej lokalnej edycji. Stary receipt
 nie zastępuje świeżej typed kopii potrzebnej po recovery ACK.
 
+### Jawne przerwanie starych pobierań
+
+Od0.8.37 ustawienia profilu konta udostępniają lokalny przegląd niedokończonych
+ordinary odczytów z nieaktualnej dzierżawy/kontekstu. Sam przegląd nie zmienia
+danych. Użytkownik może anulować lub jawnie zatwierdzić konkretną listę prób.
+Zatwierdzenie ponownie sprawdza dzierżawę, binding, pełne wiersze i aktualny graf
+dowodów w jednej transakcji. Zmiana konta A→gość→A, kontekstu, strony lub nowy
+dowód odrzucają całą decyzję. Bieżące pending, wszystkie recovery pulls i próby
+powiązane z dowodami/batches nawet draft/historycznych planów są wyłączone.
+
+Jedyną zmianą jest pending→expired wybranych prób. Ich UUID, zakres, query,
+body, hash, strony i identities zostają. Domyślne reserve nadal chroni każde
+pending; dopiero późniejsza presja może skompaktować wycofany, niechroniony run
+do istniejącego niezmiennego manifestu z hashami. Nie ma czyszczenia dziennika,
+kolejki, potwierdzeń, zmiany forceFull albo automatycznej akceptacji recovery.
+Nie powstaje nowy schemat. Operacja nie wykonuje HTTP i działa także przy
+blokadzie poligonowej. Kolejna próba synchronizacji wymaga działania na ekranie
+konta i przechodzi dotychczasowy wspólny gate, Retry-After oraz bariery sesji.
+
+### Centrum synchronizacji konta
+
+Od0.8.38 ekran konta prowadzi do centrum stanu i pomocy. Samo otwarcie
+obserwuje lokalną bazę i niczego nie wysyła. Jedna transakcja sprawdza aktywną
+dzierżawę i zbiera liczbę niepotwierdzonych operacji, podział domen, oczekujące
+kroki, konflikty/odmowy, starszy format, wysłaną próbę bez końcowego wyniku,
+datę ostatniego zastosowania kopii i liczbę niedokończonych pobierań. ACK,
+superseded i local_only nie zwiększają kolejki. Liczniki dotyczą operacji,
+nie liczby posiłków; pusta kolejka nie jest dowodem aktualności kopii serwera.
+
+Stan zadania wymaga zgodności owner/lease/context, a data zastosowania kopii
+zgodności bieżącego kontekstu. Stary wynik idle po A→gość→A lub zmianie epoki
+nie potwierdza nowej synchronizacji. Główny banner również filtruje lease i
+pełny kontekst. Wiadomość zadania ma datę zapisu i jest osobna od bieżącej
+blokady poligonowej. Po pięciu sekundach bez subskrypcji obserwator zatrzymuje
+się i usuwa poprzedni podgląd. Powrót po zmianie kontekstu zaczyna się od
+odczytu bieżącego stanu zamiast odtworzenia starego wyniku idle z pamięci.
+
+Pomoc kieruje do logowania, połączenia konta, uzgadniania, wspólnych ustawień
+sieci lub lokalnego przeglądu pobierań0.8.37. Retry jest jawny, dostępny również
+przy pustej kolejce i wywołuje istniejący driver, bez drugiego gate/admission.
+Przycisk nie omija blokady konta/recovery, braku sesji/konfiguracji, polityki
+sieci, aktywnej pracy lub najpóźniejszego zapisanego Retry-After. Zegar terminu
+działa tylko przy STARTED; poza ekranem nie wykonuje dodatkowego odpytywania.
+Przejście do lokalnego przeglądu, powrót i anulowanie decyzji nie wysyłają HTTP.
+
 Addytywne20→21 dodaje stan pracy i receipts archiwum;21→22 dodaje nullable
 granicę blokady oraz niezmienny ledger zakończeń. Użyty schemat21 i migracja
 20→21 pozostają zachowane; blob21=`1c8b2f9458bdc4d80fef222c14aa82f4a81607b0`.

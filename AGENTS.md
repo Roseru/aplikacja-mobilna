@@ -77,6 +77,28 @@
   Pin ETag4cc2d4d jest gotowy do zwykłego merge; Room23/2319357 nadal
   pozostaje osobnym czystym źródłem uzgodnionej dostawy czterech APK.
 
+## O1 po scaleniu PR175 — 25.10.2026
+
+- PR175/08884f7 jest scalony zwykłym merge143bf0a do main po ośmiu zielonych
+  kontrolach ProjectCI40233320875. ETag4cc2d4d O2 i runtime są zintegrowane;
+  wcześniejsze opisy WIP i niezwróconych rezerwacji pozostają historią.
+- O1 kontynuuje codex/android-wznowienie-kopii od main143bf0a: nowe
+  SnapshotMaintenanceStore.kt, sync/SnapshotMaintenanceViewModel.kt,
+  ui/SnapshotMaintenancePanel.kt, ich test SQLite/UI oraz addytywne
+  MainActivity/ui App/Settings. W SnapshotArchiveStore wyodrębnia wspólny graf
+  dowodów; domyślna ochrona wszystkich pending w reserve pozostaje. Nie
+  edytujemy równolegle tych plików do zwrotu zakresu w jedynym dzienniku.
+- To lokalna, jawna decyzja użytkownika bez transportu lub nowego schematu.
+  Nie zmienia SyncWork O2, gate lub recovery ACK. Room23/2319357 jest nadal
+  osobnym czystym źródłem dostawy4APK po aktualnej konfiguracji/oknie O3;
+  scalenie175 nie potwierdza live E9 ani pełnego wydania1.0.
+- Kontynuacja tego samego większego etapu O1: AccountSyncOverviewStore.kt,
+  sync/AccountSyncOverviewViewModel.kt, ui/AccountSyncOverviewScreen.kt,
+  androidTest/AccountSyncOverviewFlowTest.kt oraz addytywne SessionScreen/
+  MainActivity/ui App. O1 nie zmienia SyncWork/SyncCoordinator ani prezentacji
+  O2; nowe centrum tylko odczytuje istniejące fakty i wywołuje już podłączony
+  driver po jawnym działaniu użytkownika. Bez nowego schematu/gate/preferencji.
+
 - Aktualizacja integracji ETag: cztery pliki pina4cc2d4d włączone zwykłym
   merge do Room26, bez konfliktów. Odbiór złożenia: oba warianty i APK testowe
   PASS, lint0Error/0Fatal, tylko dwa wybrane przypadki zgód2PASS/0FAIL/0SKIP.
