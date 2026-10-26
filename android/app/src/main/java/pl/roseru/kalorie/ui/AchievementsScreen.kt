@@ -28,7 +28,9 @@ import java.util.Locale
 
 @Composable fun AchievementsScreen(model: DiaryViewModel, session: SessionView, actions: SessionActions, onAccount: () -> Unit, onBack: () -> Unit, onRanking: () -> Unit = {}) {
     val state by model.achievements.collectAsStateWithLifecycle()
-    AchievementsContent(state, onBack, model::retryAchievements) { ServerMotivationPanel(session, actions.readMotivation, onAccount, onRanking) }
+    AchievementsContent(state, onBack, model::retryAchievements) { ServerMotivationPanel(session, actions.readMotivation, onAccount, onRanking,
+        onRestore={session.binding?.lease?.let {actions.restorePrivatePreview(it,PrivatePreviewKind.MOTIVATION,null)}},
+        onClearSaved={session.binding?.lease?.let {actions.clearSavedPrivatePreview(it,PrivatePreviewKind.MOTIVATION)}}) }
 }
 
 @Composable internal fun AchievementsContent(state: AchievementState, onBack: () -> Unit, onRetry: () -> Unit = {}, serverPanel: (@Composable () -> Unit)? = null) {

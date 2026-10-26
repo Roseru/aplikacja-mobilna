@@ -38,6 +38,9 @@ sealed interface NemesisState {
     data object Loading : NemesisState
     class ListReady(val page: NemesisPage) : NemesisState
     class DetailReady(val challenge: NemesisChallenge, val statistics: NemesisStatistics?) : NemesisState
+    sealed interface Saved:NemesisState {val fetchedAtMillis:Long;val warning:String?}
+    class ListSaved(val page:NemesisPage,override val fetchedAtMillis:Long,val cachedDetails:Set<String>,override val warning:String?=null):Saved
+    class DetailSaved(val challenge:NemesisChallenge,val statistics:NemesisStatistics?,override val fetchedAtMillis:Long,override val warning:String?=null):Saved
     data class Failed(val message: String, val canRetry: Boolean) : NemesisState
 }
 internal sealed class NemesisQuery {

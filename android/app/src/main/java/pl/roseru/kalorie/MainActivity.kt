@@ -103,7 +103,23 @@ class MainActivity : ComponentActivity() {
                         pl.roseru.kalorie.importing.ImportViewModel(app.database,app.syncSchema,binding.lease,app.sessions,createSavedStateHandle())
                     }})
             } else null
-            val syncFlow=remember(ownerKey) {app.database.syncWorkDao().observe(binding.lease.storageScope)}
+            val snapshotMaintenanceModel:pl.roseru.kalorie.sync.SnapshotMaintenanceViewModel? = if(binding.owner.kind=="account") {
+                viewModel(viewModelStoreOwner=store,key="$ownerKey:snapshot-maintenance",extras=defaultViewModelCreationExtras,
+                    factory=viewModelFactory {initializer {
+                        pl.roseru.kalorie.sync.SnapshotMaintenanceViewModel(pl.roseru.kalorie.data.SnapshotMaintenanceStore(app.database),binding.lease)
+                    }})
+            } else null
+            val syncFlow=remember(ownerKey) {kotlinx.coroutines.flow.combine(
+                app.database.syncWorkDao().observe(binding.lease.storageScope),app.database.syncWorkDao().contexts()) {work,current->
+                    work?.takeIf {current!=null && current.lease()==binding.lease && it.ownerScope==binding.lease.storageScope &&
+                        it.leaseGeneration==binding.lease.generation && it.wireContext==pl.roseru.kalorie.data.CanonicalMealRows.context(current.binding)}
+                }}
+            val syncOverviewModel:pl.roseru.kalorie.sync.AccountSyncOverviewViewModel? = if(binding.owner.kind=="account") {
+                viewModel(viewModelStoreOwner=store,key="$ownerKey:sync-overview",extras=defaultViewModelCreationExtras,
+                    factory=viewModelFactory {initializer {
+                        pl.roseru.kalorie.sync.AccountSyncOverviewViewModel(binding.lease,pl.roseru.kalorie.data.AccountSyncOverviewStore(app.database))
+                    }})
+            } else null
             val syncState by syncFlow.collectAsStateWithLifecycle(initialValue=null)
             val mode by model.theme.collectAsStateWithLifecycle()
             val dark = when (mode) { ThemeMode.SYSTEM -> isSystemInDarkTheme(); ThemeMode.LIGHT -> false; ThemeMode.DARK -> true }
@@ -137,6 +153,9 @@ class MainActivity : ComponentActivity() {
                 openConflict = { lease,key -> app.sessionScope.launch { app.sessions.openConflict(lease,key) } },
                 closeConflict = { lease -> app.sessionScope.launch { app.sessions.closeConflict(lease) } },
                 resolveConflict = { lease,key,choice -> app.sessionScope.launch { app.sessions.resolveConflict(lease,key,choice) } },
+                enterNemesisPreview = { lease -> app.sessionScope.launch { app.sessions.enterNemesisPreview(lease) } },
+                restorePrivatePreview = { lease,kind,resource -> app.sessionScope.launch { app.sessions.restorePrivatePreview(lease,kind,resource) } },
+                clearSavedPrivatePreview = { lease,kind -> app.sessionScope.launch { app.sessions.clearSavedPrivatePreview(lease,kind) } },
                 readMotivation = { app.sessionScope.launch { app.sessions.readMotivation() } },
                 readRankingConsents = { app.sessionScope.launch { app.sessions.readRankingConsents() } },
                 confirmRankingConsent = { id, enabled -> consentChange(app,binding.lease) {app.sessions.confirmRankingConsent(id, enabled)} },
@@ -177,7 +196,7 @@ class MainActivity : ComponentActivity() {
                     confirm={id,revision,edit->app.sessionScope.launch {app.sessions.confirmPhotoMeal(binding.lease,id,revision,edit)}},
                     retryConfirmation={id->app.sessionScope.launch {app.sessions.retryPhotoConfirmation(binding.lease,id)}},
                     reopen={id,revision,edit->app.sessionScope.launch {app.sessions.reopenPhotoConfirmation(binding.lease,id,revision,edit)}}))
-            CalorieTheme(dark) { CalorieApp(model, session, actions, photoModel, importModel, syncState?.userStatus(),deviceModels,communityModel,energyModel) }
+            CalorieTheme(dark) { CalorieApp(model, session, actions, photoModel, importModel, syncState?.userStatus(),deviceModels,communityModel,energyModel,snapshotMaintenanceModel,syncOverviewModel) }
             }
         }
     }
