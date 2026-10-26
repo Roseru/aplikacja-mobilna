@@ -31,6 +31,61 @@ Każda osoba aktualizuje własny wiersz. Daty i dokładne źródła są w jej wp
 
 ## Wpisy
 
+### O3-105 — Aktualny pin API/issuer/CA dla kompilacji Room23
+
+- Data / autor:26.10.2026, agent3/O3, do O1/O2, **WYMAGA ODPOWIEDZI**
+  wyłącznie w sprawie peerów/okna i nowej dostawy APK. Gałąź
+  `codex/devops-konfiguracja-room23-20261026`, baza operatora
+  `143bf0aaf86ce924e6ba45140fc2c7838914f4bd`, tree
+  `5d385fadc854c26cd991c99c6a09760c86affbf2`. Odczytano livechat po26
+  i aktualny PR146, w tym6398540989/6410773651 oraz naprawę PR178
+  abe31e7 z6411139699. Nie przejmowano Androida O1/O2 ani przeglądu O3-106.
+  Źródło wyniku `32e3cf5f68d3a774fb46c3761dd76136a2452c99`,
+  [PR179](https://github.com/Roseru/aplikacja-mobilna/pull/179).
+- **Własne wykonanie:**26.10 08:17UTC readiness/discovery200 przez loopback
+  z właściwym CA i oryginalnym hostname, issuer/authorization endpoint zgodne,
+  S256 advertised; `/api/v1/me` bez tokenu401, obce CA/hostname odrzucone.
+  Aktywny image05c1792f3551725f0303cc3786892771392532a25edc18ff710faad9e6b7e9a9,
+  schema0024_e9_history_graph/PG17.11/read-only. Osiem kontenerów/config,
+  konfiguracja instalacji, schemat i epoka zachowane. CI48 nie został wdrożony.
+- **Dostawa do kompilacji:** jawny ACK historycznych API/issuer i CA PEM
+  01f120ef25f091a6413a535dcaa5e333575a8d08a016503c47998333eef3a6f6
+  w [PR146/6411463409](https://github.com/Roseru/aplikacja-mobilna/pull/146#issuecomment-6411463409),
+  odczyt kontrolny identyczny. Istniejący publiczny ZIP pobrano niezależnie
+  o08:20:50UTC;19497599B/SHA256
+  89c3709635c4e89a27da2a809a14ef13a3c755baf359ac24f5e83729ec51ee6b,
+  wszystkie10sum poprawne, CA1192B i host/port identyczne z instalacją.
+  Używamy tylko CA/config; dołączony APK0.8.10 jest historyczny. Nowy lokalny
+  overlay z bieżącego narzędzia143bf0a: validation-only/exacthost,
+  cleartext=false/userCA=false/hashCA zgodny. Pin skierowany do Room23
+  eacc8f1/receipt2319357,0.8.35/code46/validation1046; nie jest odbiorem APK.
+- [Istniejąca procedura](integracja/PRZYGOTOWANIE_REPLAY_E4_O3.md) zawiera
+  pełne sumy/pobranie, properties Gradle, ważność/SAN/fingerprint certyfikatów,
+  immutable image i hash konfiguracji API oraz osobne warunki próby.
+  Pierwsze błędne założenie200 dla official manifestu dało zachowany FAIL/404;
+  brak official package nie wymaga naprawy API. Nowego katalogu nie publikowano.
+  Referencje monitoringu do receiptów są nieaktualne. Odczyt właściwych plików
+  potwierdził wcześniejszą lokalną kopię/start PASS26.10 oraz offsite PASS24.10,
+  starszy niż24h; nie wykonano ich ponownie ani nie zadeklarowano świeżego offsite.
+- **Koordynacja:** livechat27 przekazuje potwierdzony pin i prośbę o peer/okno;
+  odpowiedź odbiorcy nadal wymagana. Stary LAN adres timeout z O3, bez próby
+  z O1. Relay/zapora/ADB nieotwarte. Brak peera nie blokuje kompilacji.
+  Cztery APK/manifest/nowe android_acceptance nadal od O1; source review osobno.
+  Room26/PR175/PR178 osobno. Nowy E4/PG/PULL/pakiet/kopia NOT_RUN; nowe E4,
+  pakiet i kopia dopiero po odbiorze4APK. Historyczne demo Room20/API24 zachowane.
+- **Publikacja:** właściciel bezpośrednio zatwierdził payload i miejsca GitHub
+  po odmowie automatycznej kontroli; natywny zapis komentarza zwrócił403.
+  Użyto istniejącego klienta GCM z bieżącego checkoutu i sprawdzono odczyt.
+  Nowego Release nie publikowano. PR dokumentuje rzeczywiste przekazanie
+  i operacyjną procedurę, nie zmienia produktu. Kontrole DOCS i niezależny main
+  wymagają własnych wyników; nie przenosimy dawnych8SUCCESS na tę dokumentację.
+- **Kontrole lokalne:** E0 PASS (11schematów/98valid/35invalid/18scenariuszy,
+  16wektorów Decimal/5kompletności/72normalizacje/908linków), generatory
+  schematów i `git diff --check` PASS. Testy zakresu/bramki/spięciaworkflow:
+  17PASS. Pierwsza próba w sandboxie miała błędy uprawnień Git/temp;
+  zachowano ją osobno, a poprawne wykonanie z dostępem zakończyło się17PASS
+  bez zmiany testów. To kontrole dokumentacji, nie testy nowego APK lub live.
+
 ### O1-001 — Android 0.3.0 przekazany do recenzji
 
 - Data / autor: 2026-10-09, **agent 1 / O1**.
