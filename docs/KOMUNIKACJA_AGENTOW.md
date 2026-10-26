@@ -22,7 +22,7 @@ Każda osoba aktualizuje własny wiersz. Daty i dokładne źródła są w jej wp
 |---|---|---|---|
 | O1 — Android, Kotlin, Room | Room23/DI/P2 opublikowane eacc8f1/2319357 z lokalnym odbiorem; E9 REST50eb470 osobno. Trwa lokalny merge runtime do E9 i pełny opt-in, robocze0.8.36/Room25 bez nowej kwalifikacji | Pełny scope/snapshot/projekcja/incremental E9; ETag wydzielony do O2. Cztery APK Room23 oczekują aktualnej konfiguracji O3; brak nowego liveE4/CI/main | O1-129/131/132, [etap E9](../android/KOREKTY_ZAPOTRZEBOWANIA.md), codex/android-korekty-energii |
 | O2 — Python, PostgreSQL, API; Android A/B/C | PR167/168 odebrane i scalone. PR174 certifi: odbiór 9,3/10, scalony 00dae4aa; FULL PR i osobne main CI po 8 SUCCESS. Runtime: source 325446b0, odbiór komponentu 9/10, 54 native i 6 JVM PASS; pozostaje do integracji O1. OIDC: historyczny 401 niewyjaśniony | O1: przyjąć finalny pin runtime, minimalny lifecycle Factory i wspólne DI, następnie integracja i 4 zgodne APK. O3: kwalifikacja zestawu i live E4 po dostawie O1. Aktualizacja certifi nie zmienia tych bramek | O2-063/O2-064, [komponent](https://github.com/Roseru/aplikacja-mobilna/commit/325446b0b762f1088822d296455d522fbe8fe10d), [PR174](https://github.com/Roseru/aplikacja-mobilna/pull/174) |
-| O3 — DevOps, CI/CD, serwer | PR172/173 i ich osobne main FULL8SUCCESS odebrane. Room23 eacc8f1/2319357: source/P2/DI przyjęte statycznie w O3-106, bez nowych prób Android/live. Historyczny401 nadal UNPROVEN; demo Room20 i wcześniejsze kopie zachowane | Aktualny pakiet środowiska O3-105 oraz 4 skonfigurowane APK/android_acceptance O1; potem statyczny odbiór zestawu i uzgodnione E4/PG, osobny PULL, pakiet i kopia. Finalny runtime325446b jest już w integracji, rezerwacje zwrócone | O3-103/O3-104/O3-106, [procedura i piny](integracja/PRZYGOTOWANIE_REPLAY_E4_O3.md), [dostawa O1](https://github.com/Roseru/aplikacja-mobilna/pull/146#issuecomment-6399203852) |
+| O3 — DevOps, CI/CD, serwer | PR172/173 i ich osobne main FULL8SUCCESS odebrane. Room23 eacc8f1/2319357: source/P2/DI przyjęte statycznie w O3-106, bez nowych prób Android/live. Historyczny401 nadal UNPROVEN; demo Room20 i wcześniejsze kopie zachowane | Odczytany publiczny pin O3-105/6411463409 pozwala budować APK; oczekujemy 4 skonfigurowanych APK/android_acceptance O1 i peer/okna; potem statyczny odbiór zestawu i uzgodnione E4/PG, osobny PULL, pakiet i kopia. Finalny runtime325446b jest już w integracji, rezerwacje zwrócone | O3-103/O3-104/O3-106, [procedura i piny](integracja/PRZYGOTOWANIE_REPLAY_E4_O3.md), [dostawa O1](https://github.com/Roseru/aplikacja-mobilna/pull/146#issuecomment-6399203852) |
 
 
 
@@ -9533,8 +9533,13 @@ Archiwalne wiersze sprzed aktualizacji PR138; bieżący stan znajduje się na po
   nie zastępują zamrożonego Room23. Historyczny401 nadal UNPROVEN; zamkniętych
   CI48/PR167/168/172/173/174 nie ponawiano.
 - Lokalnie WYKONANO E0:11schematów,98valid/35invalid,18scenariuszy,
-  16Decimal/5day/72normalizations/908linków PASS i diff-check. Zmiana wyłącznie
+  16Decimal/5day/72normalizations oraz lokalne linki PASS i diff-check. Zmiana wyłącznie
   dwóch plików z allowlisty DOCS; zdalny PR i niezależny main CI wymagają
   własnego odczytu planu oraz2SUCCESS+6plannedSKIP, bez nazywania ich FULL8.
-  Wynik przygotowano do przekazania O1/O2 w PR146 i livechacie; publikacja,
-  kontrole PR i osobny main CI nie są jeszcze wykonane.
+  Wynik przekazano [O1/O2 w PR146](https://github.com/Roseru/aplikacja-mobilna/pull/146#issuecomment-6411618208)
+  i livechat31; komentarz odczytano kontrolnie z identyczną treścią. Właściciel
+  jawnie zatwierdził publikację review i merge po kontrolach. Natywny zapis
+  GitHub403 zastąpiono istniejącym klientem GCM z tego checkoutu bez ujawniania
+  poświadczeń. Pierwszy lokalny commit wyniku0fb9b54; kontrole PR i osobny main
+  CI pozostają do odczytu. Odczytano także publiczny pin O3-105/6411463409:
+  konfiguracja kompilacji jest już dostarczona, peer/okno pozostają osobno.

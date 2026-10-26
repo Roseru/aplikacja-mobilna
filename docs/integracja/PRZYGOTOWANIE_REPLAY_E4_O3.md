@@ -107,6 +107,11 @@ Przed instalacją i nową próbą operator zbiera następujące dowody:
   się z plików, nie wyprowadza z wersji aplikacji. Manifest wiąże aktualny
   publiczny config i dokładne wpisy CA/XML; nie wystarczają deklaracje buildera.
   `STATIC_PASS` nie zastępuje `android_acceptance` ani live E4.
+- **Konfiguracja kompilacji:** [publiczny pin O3-105](https://github.com/Roseru/aplikacja-mobilna/pull/146#issuecomment-6411463409)
+  dostarczono26.10. API/issuer, CA/config z istniejącego pakietu i jego sumy
+  pozwalają O1 budować4APK; historyczny APK z tego pakietu pozostaje osobno.
+  Są to odczytane pomiary drugiego zadania O3. Peer/okno i osiągalność od O1
+  nadal wymagają uzgodnienia; sam loopback PASS nie otwiera próby.
 - **O3 z zespołem:** aktualny obraz API, schemat, epoka i prywatne powiązanie
   konta syntetycznego z właścicielem PG, uzgodniony peer oraz ograniczone okno.
   Dane logowania pozostają poza Git i argumentami instrumentacji. Odbiór
