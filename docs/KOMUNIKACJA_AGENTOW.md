@@ -10086,3 +10086,74 @@ Kontynuacja O1-146 — odbiór pierwszego CI i poprawka17oczekiwań migracji:
   Baza końcowego FULL CI jest nową bazą integracji, nie historyczną bazą prób;
   dokładny final-head/base root odbierze po publikacji. E0/diff-check dokumentacji
   sprawdzono osobno po integracji. Bez nowego odbioru usług lub Androida.
+
+
+### O3-113 — odbiór setup-uv10.3.2 w istniejącym PR183
+
+- 26.10.2026, agent3/O3. Kontynuacja `dependabot/github_actions/astral-sh/setup-uv-10.3.2`
+  i [PR183](https://github.com/Roseru/aplikacja-mobilna/pull/183), bez duplikatu.
+  Odczytano AGENTS/wymagania/workflow/dziennik i nowe PR146/livechat.
+  Source Dependabot `0f0ff51c3ba37f5f0f684cb3a599f25a74773a47` zmienia dokładnie
+  pięć pinów w backend.yml: setup-uv7.6.0/37802adc→10.3.2/07a047e6.
+  Binarny uv pozostaje0.9.5; Python3.13, permissions contents:read, lockfile,
+  wydarzenia i bramki FULL/DOCS zachowane. Main/PR182 dołączono zwykłym merge;
+  surowe bloby potwierdzają zachowanie siedmiu pinów setup-python i historii.
+- Oficjalne release/tag/commity [7.6.0](https://github.com/astral-sh/setup-uv/releases/tag/v7.6.0)
+  i [10.3.2](https://github.com/astral-sh/setup-uv/releases/tag/v10.3.2) mają wskazane
+  pełne SHA i GitHub verified signatures; nowe wydanie immutable. Nie wykonano
+  niezależnej reprodukcji bundle dist. [v8](https://github.com/astral-sh/setup-uv/releases/tag/v8.0.0)
+  usuwa nieużywane tutaj legacy manifest/tagi major-minor.
+  [v9](https://github.com/astral-sh/setup-uv/releases/tag/v9.0.0) zmienia prune-cache
+  true→false (większy cache/mniej pobrań, osobny sufiks klucza), bez zmiany
+  zależności. [v10](https://github.com/astral-sh/setup-uv/releases/tag/v10.0.0)
+  i przypięte inputs.ts zachowują cache dla naszych pull_request i branch push;
+  save-cache auto wyłącza zapis tylko dla nieużywanego merge_group.
+- Download mirror Astral był domyślny już w7.6.0; nowy input true zachowuje
+  to źródło, bez przekazywania mu GitHub tokenu. Fallback GitHub nadal podlega
+  checksum przed extract. Obie akcje zawierają ten sam znany SHA256 binarnego
+  x86_64-unknown-linux-gnu0.9.5:2cf10babba653310606f8b49876cfb679928669e7ddaa1fb41fb00ce73e64f66.
+  Node24 było już wcześniej. Post-cache nadal success(), exact key bez resave;
+  oceniane są całe zakończone joby z post-step, nie tylko kroki testowe.
+  [Przypięte źródło akcji](https://github.com/astral-sh/setup-uv/tree/07a047e608db84b3d8c06cd9a7c7dcc9c355c18e).
+  Dodatkowe inputy nie mają uzasadnienia dla naszego workflow i nie zostały dodane.
+- Lokalnie WYKONANO17scope/gate/YAML PASS oraz E0PASS:11schematów,
+  98valid/35invalid/18scenariuszy,16Decimal/5day/72normalizations, lokalne linki
+  i diff-check. Pierwsza próba scope w ograniczonej piaskownicy miała błędy
+  git init/Temp permissions; właściwa próba z dostępem17PASS, bez zmiany testów.
+  Stary PRCI40300594040/merge72e64d26 miał8SUCCESS na baziea867ef8;
+  nie zastępuje końcowego FULL po PR182. Końcowe SHA/tree/base, FULL PR i osobny
+  push/main oraz receipt są odbierane i publikowane w tym samym PR183.
+- Zakres wyłącznie repo/izolowane CI. Nie zmieniano działającego demo,
+  APK/AVD/relay, API05c1792f/schema0024, kont/realm ani kopii. CI nie jest
+  android_acceptance/livePASS. Historyczne FAIL i nieustalone przyczyny pozostają.
+
+- Właściwe wejście kolejki: PR182 po FULL PR40362464917 i niezależnym
+  push/main40367664827, każdy8SUCCESS; merge
+  `9a2f9a7f373356f7b855e4026940ffe5febc990f`, tree
+  `5475ce949d59553c69d352b900af0ede2ccb7efb`. Marker PASS odczytano po
+  rzeczywistym odbiorze obu runów/receiptów i zwolnieniu main.lock;
+  osiem jobów main dodatkowo sprawdzono bezpośrednio przez API.
+  Dependabot opublikował nowy head `ad423cdb9d89a89898bd837789fe57741d95dab4`
+  z jedynym rodzicem tego main i nadal dokładnie5pinami. Zwykły merge
+  `05536cbde4f7ae7a32c27169ff0fd9c0c05fd2fe` zachował oba źródła0f0ff51/ad423cd;
+  jego tree `da10a0d303ffc4b619a9198b0354ef992165c484` jest identyczny z nowym
+  headem bota. Bez force-push lub zmiany opublikowanej historii przez O3.
+  Merytoryczny audyt i granice opublikowano w
+  [tym samym PR183](https://github.com/Roseru/aplikacja-mobilna/pull/183#issuecomment-6421789567),
+  GET-readback zgodny. Konektor zapisu miał techniczne403; GCM użyty wyłącznie
+  w pamięci w ramach jawnego zlecenia. Finalne CI/receipty dotyczą nowego
+  headu po tym wpisie; starszego40300594040 nie przestemplowano.
+
+- Aktualizacja bazy przed scaleniem: odczytano przekazania O2 PR177, w tym
+  [końcowe](https://github.com/Roseru/aplikacja-mobilna/pull/146#issuecomment-6425078747).
+  Odebrany main `59a68fc94a44c510763f21cdbfefc603a4565fe2` ma FULL PR40377351663
+  i niezależny main40380998737, każdy8SUCCESS; osiem jobów main sprawdzono
+  także bezpośrednio. Dołączono go zwykłym merge; pełny nowy dziennik O2-067
+  i cały O3-113 zachowano, tak jak jego lockfile bez własnych zmian backendu.
+  [ACK i aktualny slot](https://github.com/Roseru/aplikacja-mobilna/pull/146#issuecomment-6425582003).
+  Własny FULL40372181921/head0286947/testedd2d9058/tree feb20cca miał8SUCCESS,
+  a ZIP12673604019/4464B/SHA75dcf9b79d3350d789b9697fd97d14762bebb59df7e7d1810072720b09e69c18
+  miał7JSON PASS, source i wait421,0+421,051 zweryfikowane. Ten dowód pozostaje
+  przypisany do wcześniejszej bazy9a2f9a7f; nie zastępuje nowego FULL po59a.
+  Nie zajmowano main.lock ani nie scalano przestarzałego drzewa. Nowe head/base/
+  tested tree i późniejszy niezależny push/main mają własny odbiór w PR183.
