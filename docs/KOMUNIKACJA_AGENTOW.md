@@ -21,7 +21,7 @@ Każda osoba aktualizuje własny wiersz. Daty i dokładne źródła są w jej wp
 | Rola | Ostatni znany rezultat | Następny krok / zależność | Źródło |
 |---|---|---|---|
 | O1 — Android, Kotlin, Room | PR178 scalony db800 po FULL8SUCCESS. Cztery skonfigurowane APK Room23 dostarczone/static47PASS. Duży etap0.8.39/Room27: trwałe podglądy motywacji/rankingu/Nemesis,9unikalnych native PASS w zakresach4+5 | CI nowego dużego PR; osobno android_acceptance Room23 i peer/okno O3. Main db800 miał osobny FAIL fixture; test-only poprawka w nowym etapie | O1-145/O1-146, [raport0.8.39](../android/RAPORT_0_8_39.md), [dostawa Room23](https://github.com/Roseru/aplikacja-mobilna/pull/146#issuecomment-6412479102) |
-| O2 — Python, PostgreSQL, API; przejęty Android MRE | PR177 scalony i osobny main odebrany. MRE 0.8.40 odebrane lokalnie: build/lint/4 JVM, celowane native i ekran po restarcie PASS. PG/eksport/assets/import/sync/read zgodne. Niezależny przegląd 9,3/10, brak otwartych materialnych P1/P2. Własny branch codex/android-o2-mre-2026 | Jeden duży PR, FULL aktualnego head/base i osobny main. O3: rzeczywisty import MRE przed account push, poza zamrożonym Room23. O1/O3 zachowują configured acceptance/live; to nadal nie pełne 1.0 | O2-067/O2-068, [opis i zakres MRE](../android/MRE_2026.md), [przejęcie i dalszy wynik](https://github.com/Roseru/aplikacja-mobilna/pull/146#issuecomment-6427243458) |
+| O2 — Python, PostgreSQL, API; przejęty Android MRE | MRE 0.8.40: lokalny odbiór 9,3/10; PG/eksport/Room/UI zgodne. PR188 pierwszy FULL: 6 kontroli roboczych PASS, 1 stary test viewportu FAIL wśród 558 native. Przyczynę odtworzono; jawne przewinięcie do tej samej racji oraz 3 testy regresji PASS. Własny branch codex/android-o2-mre-2026 | Końcowy przegląd delty i nowy FULL aktualnego head/base w tym samym PR188; potem merge i osobny main. O3: import MRE na docelowym runtime przed account push, poza zamrożonym Room23. O1/O3 zachowują configured acceptance/live; nie pełne 1.0 | O2-068, [PR188](https://github.com/Roseru/aplikacja-mobilna/pull/188), [opis MRE](../android/MRE_2026.md), [przekazanie O3](https://github.com/Roseru/aplikacja-mobilna/pull/146#issuecomment-6428725053) |
 | O3 — DevOps, CI/CD, serwer | PR172/173 i ich osobne main FULL8SUCCESS odebrane. Room23 eacc8f1/2319357: source/P2/DI przyjęte statycznie w O3-106, bez nowych prób Android/live. Historyczny401 nadal UNPROVEN; demo Room20 i wcześniejsze kopie zachowane | Odczytany publiczny pin O3-105/6411463409 pozwala budować APK; oczekujemy 4 skonfigurowanych APK/android_acceptance O1 i peer/okna; potem statyczny odbiór zestawu i uzgodnione E4/PG, osobny PULL, pakiet i kopia. Finalny runtime325446b jest już w integracji, rezerwacje zwrócone | O3-103/O3-104/O3-106, [procedura i piny](integracja/PRZYGOTOWANIE_REPLAY_E4_O3.md), [dostawa O1](https://github.com/Roseru/aplikacja-mobilna/pull/146#issuecomment-6399203852) |
 
 
@@ -10315,3 +10315,21 @@ Kontynuacja O1-146 — odbiór pierwszego CI i poprawka17oczekiwań migracji:
   Zweryfikowano 461 plików manifestu końcowych źródeł, rzeczywiste XML,
   zawartość APK, eksport PG, czyste kadry i samodzielny odczyt wszystkich
   tabel z kopii Room/WAL/SHM. Nie jest to deklaracja zdalnego CI lub merge.
+- **Pierwszy FULL PR188**, head `1bc169920e955d18deb41a5657a1e2431da2389d`,
+  baza `2d7fb0738dd4b7a17ae918b20cbf9d671f383da1`,
+  [run40411682697](https://github.com/Roseru/aplikacja-mobilna/actions/runs/40411682697):
+  sześć kontroli roboczych SUCCESS; Android miał 557 PASS / 1 FAIL / 0 SKIP,
+  więc bramka zbiorcza prawidłowo odmówiła. PR nie został scalony.
+  `choosePartialRationAndRestoreSelectionBeforeSaving` czekał na kartę legacy
+  poza początkowym viewportem listy. Rzeczywiste Room wskazuje pozycję 25/27;
+  lokalna reprodukcja niezmienionego testu dała ten sam timeout, a pomiar
+  potwierdził brak węzła przed przewinięciem i widoczność po przewinięciu.
+- Poprawka wyłącznie testu: czeka na faktyczny wiersz katalogu, przewija
+  do tego samego `ration-demo-ration-a` i sprawdza widoczność przed kliknięciem.
+  Bez zmiany timeoutów, ilości, oczekiwanych 222 kcal i asercji odtworzenia.
+  Ten przypadek oraz dwa sąsiednie przepływy E2/restore mają **3 PASS / 0 FAIL /
+  0 SKIP**. Produkcyjny APK i pakiet danych pozostają niezmienione.
+  Kontynuacja 27.10.2026: niezależny przegląd tej delty **9,3/10**,
+  brak otwartych P1/P2; 461 plików zgodnych z nowym manifestem źródeł.
+  Zapisano cały pierwszy FAIL; nowy commit wymaga własnego FULL CI,
+  a sześć wcześniejszych sukcesów nie jest jego zastępczym odbiorem.
