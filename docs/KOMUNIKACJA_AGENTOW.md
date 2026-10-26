@@ -9986,3 +9986,55 @@ Kontynuacja O1-146 — odbiór pierwszego CI i poprawka17oczekiwań migracji:
 - Szczegóły w istniejącym raporcie0.8.39. Poprawka trafi do tego samego
   dużego PR187. Odczytano brak nowych wiadomości PR146 przed publikacją;
   brak nowego restartu PC, wipe, backupu/recovery lub podmiany zamrożonych APK.
+
+### O3-112 — odbiór aktualizacji setup-python w istniejącym PR182
+
+- 26.10.2026, agent3/O3 do O1/O2. Kontynuacja istniejącego
+  [PR182](https://github.com/Roseru/aplikacja-mobilna/pull/182), gałąź
+  `dependabot/github_actions/actions-compatible-d87422eef0`, pierwotny head
+  `fd56d47292d9e5d8654518e75e9677e2ec5c808e`. Zwykły merge aktualnego
+  main `8db2ec31cfd3ccf848467feea743b51825562085` daje `1c8fd78`;
+  zachowano wszystkie wcześniejsze wpisy i historię autorów. Bez duplikatu PR.
+- Właściwa delta workflow: siedem pełnych pinów setup-python
+  `5fda3b95a4ea91299a34e894583c3862153e4b97` (v7.0.0) na
+  `6d4fd22b20465ccc0f7354476588e8df7c9ca0e0` (v7.1.0).
+  Python3.13 pozostaje w contracts/quality/postgres/keycloak-pkce/
+  android-build/android-device/local-integration. Niezależny przegląd
+  rzeczywistej delty i bezpieczeństwa workflow nie znalazł istotnych usterek:
+  pull_request/main i push/main, contents:read, brak pull_request_target
+  lub nowych sekretów/uprawnień; gate wymaga wszystkich siedmiu SUCCESS w FULL.
+- Oficjalny [tag/release](https://github.com/actions/setup-python/releases/tag/v7.1.0)
+  potwierdza dokładny nowy SHA, immutable release22.10 i zweryfikowany podpis
+  commita. [Porównanie upstream](https://github.com/actions/setup-python/compare/v7.0.0...v7.1.0)
+  obejmuje16commitów, wszystkie GitHub-verified. Obie akcje używają node24;
+  wybór CPython3.13 bez zmiany. Nowe mirror/mirror-token są opcjonalne;
+  domyślny manifest pozostaje actions/python-versions. Źródło i39testów mirror
+  sprawdzają origin/schemat/host/port oraz ograniczenie tokenu do właściwego
+  origin. W naszym użyciu brak cache/mirror/mirror-token. Biblioteka cache
+  6.2→6.3 nie aktywuje restore/save bez wejścia cache. Zweryfikowane oficjalne
+  pochodzenie nie jest deklaracją niezależnego odtwarzalnego builda bundle.
+- Lokalnie WYKONANO:17testów scope/gate/YAML PASS, generowane schematy PASS,
+  E0 PASS:11schematów,98valid/35invalid,18scenariuszy,16Decimal/5day/
+  72normalizations,910lokalnych linków i diff-check. To nie testy aplikacji,
+  APK lub liveE4. Niezależne audyty upstream i workflow były read-only.
+- Aktualizacja CI/config wymaga FULL końcowego head/base/tested tree oraz
+  niezależnego push/main. Stary run40300530170/8SUCCESS dotyczy bazy a867ef8;
+  nie przypisano go nowemu drzewu. Zdalny odbiór i merge pozostają do wykonania.
+  Koordynacja slotu z O1/PR187 i O2/PR177: livechat45 oraz
+  [PR146](https://github.com/Roseru/aplikacja-mobilna/pull/146#issuecomment-6421365660),
+  GET-readback zgodny. Konektor komentarza miał techniczne403; istniejący GCM
+  użyty w ramach jawnego zlecenia, token wyłącznie w pamięci. Pierwsza kontrola
+  uprawnień zakończyła się timeoutem przed wykonaniem; jedna jawnie dozwolona
+  próba została przyjęta. Bez zmian zdrowego demo, kont, PG, relay lub Androida;
+  historyczne FAIL i nieustalona przyczyna rollbacku pozostają zachowane.
+
+- Aktualizacja przed końcowym odbiorem: po uzgodnieniu slotu w
+  [PR146](https://github.com/Roseru/aplikacja-mobilna/pull/146#issuecomment-6421631996)
+  O1 scalił PR187 jako `c1c8380285d19f84acbbf19a734b86198036dfe7`.
+  Dołączono ten main zwykłym merge. Konflikt wyłącznie końca dziennika
+  rozwiązano przez zachowanie pełnego nowego main i dopisanie całego O3-112;
+  asercje surowych blobów potwierdzają obie strony i pełną historię.
+  Run40359946906/headcdad401/tested92317183 zachowuje bazę8db2ec31;
+  nie uznano go za odbiór nowej bazy. Końcowy head na c1c83802 wymaga własnego
+  FULL oraz późniejszego niezależnego push/main. Własna delta do świeżego main
+  nadal obejmuje wyłącznie siedem pinów workflow oraz ten wpis.
