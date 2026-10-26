@@ -1,5 +1,107 @@
 # Przygotowanie obserwacji PostgreSQL dla replay E4 — O3
 
+## Potwierdzony pin kompilacji Room23 — 26.10.2026
+
+**O3-105: wejścia kompilacji potwierdzone; peer/okno i osiągalność O1 nadal
+niepotwierdzone.** [Przekazanie A1 z odczytem kontrolnym](https://github.com/Roseru/aplikacja-mobilna/pull/146#issuecomment-6411463409)
+odpowiada na [prośbę6398540989](https://github.com/Roseru/aplikacja-mobilna/pull/146#issuecomment-6398540989).
+Brak peera nie blokuje budowy. Poniższy pomiar nie kwalifikuje źródeł drivera,
+czterech APK ani wykonania E4; starsze wyniki zachowują swój zakres.
+
+| Wejście | Pin |
+|---|---|
+| `CALORIE_API_BASE_URL` | `https://192.168.3.162:18443/api/v1` |
+| `CALORIE_OIDC_ISSUER` | `https://192.168.3.162:18443/realms/calorie-dev` |
+| client / audience | `calorie-android` / `calorie-api` |
+| callback validation | `pl.roseru.kalorie.validation:/oauth2redirect` |
+| CA PEM | `tls/ca.pem`, 1192 B |
+| SHA-256 dokładnych bajtów CA PEM | `01f120ef25f091a6413a535dcaa5e333575a8d08a016503c47998333eef3a6f6` |
+| źródło Androida / receipt O1 | `eacc8f192ed9c9cd5c8e45e38f44385b18b6774d` / `2319357d06da47af818f2b891bc1efbde486b734` |
+| Android tree / wersja | `0c83ee386de48335a49ac3061523befcfe1de073` / 0.8.35, code46, validation1046, Room23 |
+
+### Pobranie i użycie publicznego CA/config
+
+[Istniejący publiczny ZIP](https://github.com/Roseru/aplikacja-mobilna/releases/download/integration-handoff-20261014/O1-APK-API-20261014.zip)
+ma 19497599 B i SHA-256
+`89c3709635c4e89a27da2a809a14ef13a3c755baf359ac24f5e83729ec51ee6b`.
+O3 pobrał go niezależnie 26.10 o08:20:50UTC: wszystkie10 wpisów `SHA256SUMS`
+zgodne; `config.json` zawiera dokładnie host192.168.3.162/port18443, a CA
+jest identyczny z aktywną instalacją. Używamy z niego CA/config. Dołączony
+`validation.apk`0.8.10 pozostaje historyczny; nie instalować go w celu odbioru
+Room23 i nie przedstawiać jako jednego z czterech nowych APK.
+
+Pobrać ZIP, porównać jego sumę i rozpakować do nowego katalogu. Sprawdzić
+`SHA256SUMS` i osobno pełny hash `tls/ca.pem`. O1 generuje **nowy lokalny overlay**
+z tych dwóch publicznych wejść przez
+[android_overlay.py na przypiętym źródle operatora](https://github.com/Roseru/aplikacja-mobilna/blob/143bf0aaf86ce924e6ba45140fc2c7838914f4bd/infra/integration/android_overlay.py):
+
+```text
+python infra/integration/android_overlay.py --state <rozpakowany-ZIP> --output <nowy-lokalny-overlay>
+```
+
+Użyć istniejącego środowiska Python z cryptography. Przy kompilacji źródła
+Room23 podać **obie** właściwości Gradle z tabeli i własne
+`-I <nowy-lokalny-overlay>/init.gradle`. O3 rzeczywiście wykonał generator
+na source143bf0a/tree5d385fadc854c26cd991c99c6a09760c86affbf2 i sprawdził wynik:
+validation-only, dokładny host, cleartext=false, includeSubdomains=false,
+userCA=false, identyczny hash CA. Nie przenosić absolutnej ścieżki overlay O3.
+Regularny debug i domyślny testAPK zachowują role z kontraktu dostawy;
+O1 przekazuje cztery artefakty z manifestem i nowym `android_acceptance`.
+
+### Aktywna instalacja i granice pomiaru
+
+Własny pomiar O3 26.10 o08:17UTC, bez wdrożenia lub migracji:
+
+- HTTPS przez loopback przy zachowaniu **oryginalnej tożsamości TLS**:
+  readiness200/statusok, discovery200, dokładny issuer i authorization endpoint,
+  reklamowane S256. `/api/v1/me` bez tokenu401; nieznane CA i błędny hostname
+  odrzucone. To odczyt API/TLS, bez nowej sesji PKCE lub próby APK.
+- CA ważny 11.10.2026 09:41:44UTC–10.10.2028 09:46:44UTC; fingerprint DER
+  `52af6be4592f8bf4d21e312670cca2e447e05b4e8ccec7712010bf1272d86ea0`.
+  CA nie ma SAN. Certyfikat serwera ważny 11.10.2026 09:49:31UTC–09.01.2027
+  09:54:31UTC, SAN IP192.168.3.162/DNSgateway, SHA-256 DER
+  `af1bff52f9cb7f877a8f6539d8d9100293e5c3a6a7dcdcd478e0670e67677ac4`.
+  Fingerprint DER różni się od sumy pliku PEM; pin budowy dotyczy PEM z tabeli.
+- Rzeczywisty API image
+  `sha256:05c1792f3551725f0303cc3786892771392532a25edc18ff710faad9e6b7e9a9`,
+  PostgreSQL17.11, schema `0024_e9_history_graph`, odczyt
+  `transaction_read_only=on`. Przyjęcie CI48 nie oznacza wdrożenia tego obrazu.
+  Pin konfiguracji kontenera API: SHA-256 canonical JSON `.Config`
+  (sort_keys=True, separators bez spacji)
+  `9d992a0f414706c0ae759063678582221843df7f1a42cf7f7f26a3415b2caf0e`.
+  Surowa konfiguracja pozostaje prywatna; hash nie dowodzi źródeł całego obrazu.
+- Identyfikatory/obrazy/config8kontenerów, pliki konfiguracji, epoka i schemat
+  zachowane przed/po. API/PG/Keycloak/retention/motivation/lifecycle/TLS OK;
+  finalizer `expected_disabled`. Brak deploy, rotacji CA, zmiany kont lub epoki.
+- Pierwszy skrypt pomiarowy błędnie wymagał200 z publicznego manifestu
+  official; otrzymał404 i zakończył się FAIL. Oryginalny wynik zachowany.
+  Router jawnie zwraca404 przy braku official package; parametr `channel=demo`
+  nie udostępnia demo i także zwrócił404. Nie publikowano pakietu i nie
+  uznawano tych odpowiedzi za PASS pobierania katalogu.
+- Monitoring ma nieaktualne referencje ścieżek do receiptów kopii/startu,
+  więc odczyt według nich daje failed. Odczyt istniejących receiptów z właściwego
+  katalogu: lokalna kopia PASS/verified07:05:43UTC26.10, start PASS/07:04:13UTC,
+  offsite PASS/24.10 09:32:45UTC (starszy niż24h). To odczyt wcześniejszych
+  dowodów, nie nowe wykonanie kopii/restore/startu ani aktualny odbiór offsite.
+  Nie zmieniono prywatnych referencji i nie ponawiano zdrowego demo lub kopii.
+
+### Osobna gotowość transportu i próby
+
+Bezpośredni192.168.3.162:18443 z O3 zakończył się timeoutem. Loopback PASS nie
+potwierdza osiągalności O1. W PR146 i livechat27 poproszono O1 o rzeczywiste,
+osiągalne adresy obu peerów LAN/VPN oraz krótki termin UTC i długość dzierżawy.
+Dopiero po ich potwierdzeniu operator stosuje
+[istniejący transport](../../infra/integration/ANDROID_HANDOFF.md), dokładny
+bind i jeden dopuszczony adres O1 z krótkim TTL, a O1 wykonuje własny preflight.
+Nie zmieniać issuer/API na adres routingu. Nie otwarto relay, zapory, routera,
+anonimowego API/ADB ani tunelu internetowego.
+
+Pin kompilacji jest dostarczony. Peer/okno, transport O1, kwalifikacja źródeł,
+cztery skonfigurowane APK i ich odbiór pozostają odrębnymi wejściami przed live.
+Room26/PR175/PR178 nie zastępują zamrożonego Room23. Historyczne Room20/API24
+i dobre kopie zachowane. Nowe E4/PG C0C1C2/PULL/pakiet/kopia nadal NOT_RUN;
+nowy pakiet i kopia dopiero po dostawie4APK i jej odbiorze.
+
 ## Procedura operatora Room23 — 25.10.2026
 
 Ta procedura opisuje odbiór nowego drivera z trwałą izolacją runtime.
