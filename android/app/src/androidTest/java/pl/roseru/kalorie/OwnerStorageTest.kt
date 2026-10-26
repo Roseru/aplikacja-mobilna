@@ -82,7 +82,7 @@ class OwnerStorageTest {
                 repo.setDayComplete(today, true)
                 assertEquals(6, repo.dao.operationCount(repo.owner))
                 assertEquals(6, repo.dao.pending(repo.owner).first())
-                assertEquals(34, repo.dao.products(repo.owner).first().size)
+                assertEquals(145, repo.dao.products(repo.owner).first().size)
                 assertEquals(1, repo.dao.day(repo.owner, today.toString()).first().size)
                 assertEquals(1, repo.dao.recent(repo.owner).first().size)
                 assertEquals("Konto ${account.subject}", repo.dao.profile(repo.owner).first()!!.nickname)
@@ -95,7 +95,7 @@ class OwnerStorageTest {
             assertEquals(90.0, db.dao().weights(b.storageScope).first().single().kg, 0.0)
             val back = DiaryRepository(db, context, owners.select(guest.id))
             assertEquals(1, back.dao.operationCount(back.owner))
-            assertEquals(33, back.dao.products(back.owner).first().size)
+            assertEquals(144, back.dao.products(back.owner).first().size)
             assertNull(back.dao.profile(back.owner).first())
             assertTrue(back.dao.weights(back.owner).first().isEmpty())
             assertNull(back.dao.diaryDay(back.owner, today.toString()).first())
@@ -145,7 +145,7 @@ class OwnerStorageTest {
             DiaryRepository(db, context).initialize()
             val guest = owners.ensureGuest()
             val account = owners.registerIdentity("https://identity.example", "A")
-            val ration = db.dao().rations().first().single { it.ration.catalogJson != null }
+            val ration = db.dao().rations().first().single { it.ration.catalogJson?.let(::JSONObject)?.optString("ration_id") == "1ed32646-7248-5733-8979-c7cb4f9f25d2" }
             val part = ration.components.minBy { it.position }
             DiaryRepository(db, context, owners.currentLease()).addRation(ration.ration.id,
                 mapOf(part.id to 100.0), MealType.LUNCH, today, "guest-ration")
@@ -163,7 +163,7 @@ class OwnerStorageTest {
             assertTrue(db.dao().day(account.storageScope, today.toString()).first().isEmpty())
             assertEquals(1, db.dao().operationCount(guest.storageScope))
             assertEquals(2, db.dao().operationCount(account.storageScope))
-            assertEquals(3, db.dao().rations().first().size)
+            assertEquals(27, db.dao().rations().first().size)
         } finally { db.close() }
     }
 
@@ -257,7 +257,7 @@ class OwnerStorageTest {
             val repo = DiaryRepository(fixture, context); repo.initialize()
             repo.addCustomProduct(CustomProductDraft("Zachowany", 100.123456789, null, 0.0, 3.0, "Przepis"),
                 12.5, MealType.LUNCH, today, "private-meal", "private-product")
-            val ration = fixture.dao().rations().first().single { it.ration.catalogJson != null }
+            val ration = fixture.dao().rations().first().single { it.ration.catalogJson?.let(::JSONObject)?.optString("ration_id") == "1ed32646-7248-5733-8979-c7cb4f9f25d2" }
             val part = ration.components.minBy { it.position }
             repo.addRation(ration.ration.id, mapOf(part.id to 100.0), MealType.DINNER, today, "exact-meal")
             repo.add("basic-banana", 100.0, MealType.LUNCH, today, "tombstone"); repo.delete("tombstone")

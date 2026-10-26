@@ -85,8 +85,9 @@ class CatalogStorageTest {
         var db = Room.databaseBuilder(context, CalorieDatabase::class.java, name).addCallback(DATABASE_GUARDS).build()
         try {
             var repo = DiaryRepository(db, context); repo.initialize()
-            assertEquals(33, db.dao().products().first().size); assertEquals(3, db.dao().rations().first().size)
-            val ration = db.dao().rations().first().single { it.ration.catalogJson != null }
+            assertEquals(144, db.dao().products().first().size); assertEquals(27, db.dao().rations().first().size)
+            val originalRationId = demo().payload().getJSONArray("rations").getJSONObject(0).getString("ration_id")
+            val ration = db.dao().rations().first().single { it.ration.catalogJson?.let(::JSONObject)?.optString("ration_id") == originalRationId }
             val parts = ration.components.sortedBy { it.position }
             repo.addRation(ration.ration.id, mapOf(parts[0].id to 150.0, parts[2].id to 25.0), MealType.LUNCH, date, "partial")
             repo.addRation(ration.ration.id, mapOf(parts[0].id to 150.0), MealType.LUNCH, date, "partial")
@@ -186,7 +187,7 @@ class CatalogStorageTest {
             assertEquals(1, db.catalogDao().active(CatalogPackageReader.DEMO_ID)!!.release)
             assertNull(db.catalogDao().generation(CatalogPackageReader.DEMO_ID, 2))
             assertEquals(before, db.dao().meal("preserve-meal", DiaryRepository.GUEST)); assertEquals(queue, outbox(db))
-            assertEquals(33, db.dao().products().first().size)
+            assertEquals(144, db.dao().products().first().size)
         } finally { db.close(); context.deleteDatabase(name) }
     }
 
@@ -221,7 +222,7 @@ class CatalogStorageTest {
         val db = Room.inMemoryDatabaseBuilder(context, CalorieDatabase::class.java).addCallback(DATABASE_GUARDS).build()
         try {
             val repo = DiaryRepository(db, context); repo.initialize()
-            val ration = db.dao().rations().first().single { it.ration.catalogJson != null }
+            val ration = db.dao().rations().first().single { it.ration.catalogJson?.let(::JSONObject)?.optString("ration_id") == "1ed32646-7248-5733-8979-c7cb4f9f25d2" }
             val part = ration.components.minBy { it.position }
             try { repo.add(part.productId, 20.0, MealType.LUNCH, date, "mismatch", "30"); fail() } catch (_: IllegalArgumentException) { }
             try { repo.addRation(ration.ration.id, mapOf(part.id to part.packageGrams), MealType.LUNCH, date, "excess",

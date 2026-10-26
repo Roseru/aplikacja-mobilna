@@ -35,7 +35,7 @@ class RationStorageTest {
             db = Room.databaseBuilder(context, CalorieDatabase::class.java, name).addCallback(DATABASE_GUARDS).build()
             repo = DiaryRepository(db, context)
             repo.initialize()
-            assertEquals(3, db.dao().rations().first().size)
+            assertEquals(27, db.dao().rations().first().size) // Three retained demos plus24source menus.
             var recorded = db.dao().meal("partial", DiaryRepository.GUEST)!!
             assertEquals("demo-ration-a", recorded.meal.rationId)
             assertEquals(2, recorded.items.size)
