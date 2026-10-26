@@ -60,6 +60,12 @@ ksp { arg("room.schemaLocation", "$projectDir/schemas") }
 // New migration fixtures must include the schema exported by the application compilation.
 tasks.matching {it.name=="mergeValidationAndroidTestAssets"}.configureEach {dependsOn("kspValidationKotlin")}
 
+// JVM catalogue tests read these files directly, so asset changes must invalidate their results.
+tasks.withType<org.gradle.api.tasks.testing.Test>().configureEach {
+    inputs.dir("src/main/assets/catalog").withPropertyName("catalogAssets")
+        .withPathSensitivity(org.gradle.api.tasks.PathSensitivity.RELATIVE)
+}
+
 dependencies {
     implementation(platform(libs.compose.bom))
     implementation(libs.compose.ui)

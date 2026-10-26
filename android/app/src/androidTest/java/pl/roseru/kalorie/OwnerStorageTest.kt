@@ -145,7 +145,7 @@ class OwnerStorageTest {
             DiaryRepository(db, context).initialize()
             val guest = owners.ensureGuest()
             val account = owners.registerIdentity("https://identity.example", "A")
-            val ration = db.dao().rations().first().single { it.ration.catalogJson != null }
+            val ration = db.dao().rations().first().single { it.ration.catalogJson?.let(::JSONObject)?.optString("ration_id") == "1ed32646-7248-5733-8979-c7cb4f9f25d2" }
             val part = ration.components.minBy { it.position }
             DiaryRepository(db, context, owners.currentLease()).addRation(ration.ration.id,
                 mapOf(part.id to 100.0), MealType.LUNCH, today, "guest-ration")
@@ -257,7 +257,7 @@ class OwnerStorageTest {
             val repo = DiaryRepository(fixture, context); repo.initialize()
             repo.addCustomProduct(CustomProductDraft("Zachowany", 100.123456789, null, 0.0, 3.0, "Przepis"),
                 12.5, MealType.LUNCH, today, "private-meal", "private-product")
-            val ration = fixture.dao().rations().first().single { it.ration.catalogJson != null }
+            val ration = fixture.dao().rations().first().single { it.ration.catalogJson?.let(::JSONObject)?.optString("ration_id") == "1ed32646-7248-5733-8979-c7cb4f9f25d2" }
             val part = ration.components.minBy { it.position }
             repo.addRation(ration.ration.id, mapOf(part.id to 100.0), MealType.DINNER, today, "exact-meal")
             repo.add("basic-banana", 100.0, MealType.LUNCH, today, "tombstone"); repo.delete("tombstone")

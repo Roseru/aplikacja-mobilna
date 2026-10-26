@@ -11,6 +11,7 @@ import androidx.compose.ui.text.AnnotatedString
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.runBlocking
+import org.json.JSONObject
 import org.junit.Rule
 import org.junit.Test
 import org.junit.Assert.*
@@ -288,7 +289,7 @@ class DiaryFlowTest {
     @Test fun importedE2RationPreservesExactQuantityAcrossRecreationAndEdit() {
         compose.waitUntil(15_000) { compose.onAllNodesWithTag("daily-kcal").fetchSemanticsNodes().isNotEmpty() }
         val app = compose.activity.application as CalorieApplication
-        val ration = runBlocking { app.database.dao().rations().first().single { it.ration.catalogJson != null } }
+        val ration = runBlocking { app.database.dao().rations().first().single { it.ration.catalogJson?.let(::JSONObject)?.optString("ration_id") == "1ed32646-7248-5733-8979-c7cb4f9f25d2" } }
         val part = ration.components.minBy { it.position }
         val previousIds = runBlocking { app.database.dao().day(DiaryRepository.GUEST, LocalDate.now().toString()).first().map { it.meal.id }.toSet() }
         compose.onNodeWithText("Dodaj posiłek").performClick()
@@ -334,7 +335,7 @@ class DiaryFlowTest {
     @Test fun restoreRationQuantityOutsideInitialViewportWithoutSavingMeal() {
         compose.waitUntil(15_000) { compose.onAllNodesWithTag("daily-kcal").fetchSemanticsNodes().isNotEmpty() }
         val app = compose.activity.application as CalorieApplication
-        val ration = runBlocking { app.database.dao().rations().first().single { it.ration.catalogJson != null } }
+        val ration = runBlocking { app.database.dao().rations().first().single { it.ration.catalogJson?.let(::JSONObject)?.optString("ration_id") == "1ed32646-7248-5733-8979-c7cb4f9f25d2" } }
         val part = ration.components.maxBy { it.position }
         val tag = "ration-grams-${part.id}"
         val before = runBlocking { app.database.dao().operationCount(DiaryRepository.GUEST) }

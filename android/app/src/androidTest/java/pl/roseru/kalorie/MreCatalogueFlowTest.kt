@@ -40,7 +40,8 @@ class MreCatalogueFlowTest {
             val snapshot = saved.items.single().snapshotJson
             assertNotNull(snapshot)
             assertEquals("145", saved.items.single().consumed().asExact().energy.display)
-            assertTrue(snapshot!!.contains("COMRAD2026/page=1/profile=Nf999ea8e84"))
+            assertEquals("COMRAD2026/page=1/profile=Nf999ea8e84",
+                JSONObject(snapshot!!).getJSONObject("product").getString("source_locator"))
             val cake = menu(repo, 9)
             val policy = repo.mreCatalogue.value.selectionFor(cake.ration.catalogJson)!!
             val alternatives = cake.components.filter { policy.origins[it.position]?.nutritionStatus == "variant_profiles" }
@@ -106,24 +107,27 @@ class MreCatalogueFlowTest {
             val ration = menu(repo, 3)
             val missing = repo.mreCatalogue.value.selectionFor(ration.ration.catalogJson)!!.missing.first { !it.equipment }
             val input = MreManualInput.read("2.5", ExactNutrition.fields.associateWith { "" })
-            repo.addUncertainMre(ration.ration.id, missing.locator, input, MealType.SNACK, day, "account-mre")
-            val saved = db.dao().meal("account-mre", lease.storageScope)!!
+            val mealId = UUID.randomUUID().toString()
+            val rollbackId = UUID.randomUUID().toString()
+            val staleId = UUID.randomUUID().toString()
+            repo.addUncertainMre(ration.ration.id, missing.locator, input, MealType.SNACK, day, mealId)
+            val saved = db.dao().meal(mealId, lease.storageScope)!!
             assertNotNull(saved.meal.wirePayload)
             assertEquals(CanonicalMealRows.context(binding), saved.meal.wireContext)
-            val op = db.dao().canonicalMealOperations(lease.storageScope, "account-mre").single()
+            val op = db.dao().canonicalMealOperations(lease.storageScope, mealId).single()
             assertEquals("sync-v1", op.wireFormat)
             assertNotNull(op.wireJson)
             assertEquals(saved.meal.wirePayload, op.payload)
             assertTrue(JSONObject(saved.items.single().wirePayload!!).getJSONObject("nutrition_per_100").isNull("energy_kcal"))
             db.openHelper.writableDatabase.execSQL("CREATE TRIGGER mre_fail_queue BEFORE INSERT ON outbox BEGIN SELECT RAISE(ABORT,'synthetic failure'); END")
-            try { repo.addUncertainMre(ration.ration.id, missing.locator, input, MealType.SNACK, day, "rolled-back"); fail("Queue failure ignored") }
+            try { repo.addUncertainMre(ration.ration.id, missing.locator, input, MealType.SNACK, day, rollbackId); fail("Queue failure ignored") }
             catch (_: Exception) { }
-            assertNull(db.dao().meal("rolled-back", lease.storageScope))
+            assertNull(db.dao().meal(rollbackId, lease.storageScope))
             db.openHelper.writableDatabase.execSQL("DROP TRIGGER mre_fail_queue")
             owners.select(owners.ensureGuest().id)
-            try { repo.addUncertainMre(ration.ration.id, missing.locator, input, MealType.SNACK, day, "stale"); fail("Old owner wrote") }
+            try { repo.addUncertainMre(ration.ration.id, missing.locator, input, MealType.SNACK, day, staleId); fail("Old owner wrote") }
             catch (_: StaleOwnerException) { }
-            assertNull(db.dao().meal("stale", lease.storageScope))
+            assertNull(db.dao().meal(staleId, lease.storageScope))
         } finally { db.close(); context.deleteDatabase(name) }
     }
 }

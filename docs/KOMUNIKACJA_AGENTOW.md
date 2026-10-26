@@ -21,7 +21,7 @@ Każda osoba aktualizuje własny wiersz. Daty i dokładne źródła są w jej wp
 | Rola | Ostatni znany rezultat | Następny krok / zależność | Źródło |
 |---|---|---|---|
 | O1 — Android, Kotlin, Room | PR178 scalony db800 po FULL8SUCCESS. Cztery skonfigurowane APK Room23 dostarczone/static47PASS. Duży etap0.8.39/Room27: trwałe podglądy motywacji/rankingu/Nemesis,9unikalnych native PASS w zakresach4+5 | CI nowego dużego PR; osobno android_acceptance Room23 i peer/okno O3. Main db800 miał osobny FAIL fixture; test-only poprawka w nowym etapie | O1-145/O1-146, [raport0.8.39](../android/RAPORT_0_8_39.md), [dostawa Room23](https://github.com/Roseru/aplikacja-mobilna/pull/146#issuecomment-6412479102) |
-| O2 — Python, PostgreSQL, API; Android A/B/C | Runtime325 i ETag4cc2d4db przyjęte przez O1 i włączone w PR175. PR177 FastAPI/Alembic/Ruff: lokalny odbiór i niezależny przegląd 9,4/10; finalny CI oczekiwany | Root odbiera aktualny head/base FULL CI PR177 i osobny main po merge. O1/O3 osobno: configured APK Room23, peer/okno i rzeczywisty E4. Bez zmian Room27, recovery lub zdrowego demo | O2-067, [PR177](https://github.com/Roseru/aplikacja-mobilna/pull/177), [wcześniejszy odbiór ETag](https://github.com/Roseru/aplikacja-mobilna/pull/146#issuecomment-6400515465) |
+| O2 — Python, PostgreSQL, API; przejęty Android MRE | PR177 scalony i osobny main odebrany. MRE 0.8.40 odebrane lokalnie: build/lint/4 JVM, celowane native i ekran po restarcie PASS. PG/eksport/assets/import/sync/read zgodne. Niezależny przegląd 9,3/10, brak otwartych materialnych P1/P2. Własny branch codex/android-o2-mre-2026 | Jeden duży PR, FULL aktualnego head/base i osobny main. O3: rzeczywisty import MRE przed account push, poza zamrożonym Room23. O1/O3 zachowują configured acceptance/live; to nadal nie pełne 1.0 | O2-067/O2-068, [opis i zakres MRE](../android/MRE_2026.md), [przejęcie i dalszy wynik](https://github.com/Roseru/aplikacja-mobilna/pull/146#issuecomment-6427243458) |
 | O3 — DevOps, CI/CD, serwer | PR172/173 i ich osobne main FULL8SUCCESS odebrane. Room23 eacc8f1/2319357: source/P2/DI przyjęte statycznie w O3-106, bez nowych prób Android/live. Historyczny401 nadal UNPROVEN; demo Room20 i wcześniejsze kopie zachowane | Odczytany publiczny pin O3-105/6411463409 pozwala budować APK; oczekujemy 4 skonfigurowanych APK/android_acceptance O1 i peer/okna; potem statyczny odbiór zestawu i uzgodnione E4/PG, osobny PULL, pakiet i kopia. Finalny runtime325446b jest już w integracji, rezerwacje zwrócone | O3-103/O3-104/O3-106, [procedura i piny](integracja/PRZYGOTOWANIE_REPLAY_E4_O3.md), [dostawa O1](https://github.com/Roseru/aplikacja-mobilna/pull/146#issuecomment-6399203852) |
 
 
@@ -10233,3 +10233,85 @@ Kontynuacja O1-146 — odbiór pierwszego CI i poprawka17oczekiwań migracji:
   przypisany do wcześniejszej bazy9a2f9a7f; nie zastępuje nowego FULL po59a.
   Nie zajmowano main.lock ani nie scalano przestarzałego drzewa. Nowe head/base/
   tested tree i późniejszy niezależny push/main mają własny odbiór w PR183.
+
+### O2-068 — przejęcie całego MRE 0.8.40 i dalszego backlogu O1
+
+- 26.10.2026, **agent 2 / O2**, do O1/O3, **DO ODCZYTU**.
+  Właściciel bezpośrednio zlecił przejęcie i rozpoczęcie pracy.
+  [ACK](https://github.com/Roseru/aplikacja-mobilna/pull/146#issuecomment-6427243458)
+  dotyczy dokładnego źródła `e73f3581537c50c40bcf0b71fbf48682102fc90a`,
+  rodzica `c1c8380285d19f84acbbf19a734b86198036dfe7` i manifestu 30 plików.
+  Wszystkie źródłowe Git blob SHA-256 i rozmiary są zgodne; to kontrola
+  przekazania, a nie funkcjonalny odbiór kodu.
+- Własny odseparowany checkout `android-o2-mre-2026`, gałąź
+  `codex/android-o2-mre-2026`. Zwykły merge `4426d22d` dołącza main
+  `2d7fb0738dd4b7a17ae918b20cbf9d671f383da1`; zachowano całe nowe wpisy
+  obu stron dziennika oraz aktualizacje workflow i lockfile O3/O2.
+  Jeden wykonawca edytuje produkt i uruchamia Gradle/AVD, koordynator
+  prowadzi dziennik i odbiór. O1 nie edytuje równolegle przekazanych plików.
+- Najbliższy rezultat to cały MRE, następnie właściwe kontrole i poprawki,
+  niezależny przegląd oraz jeden duży PR. Nie tworzymy PR dla samego ACK.
+  Źródła Random Data, stare DEMO1, historia i schematy Room 1–27 pozostają
+  chronione. Pakiet MRE pozostaje osobnym, niepotwierdzonym demo;
+  odłożonej przez właściciela bramki producentów/official dla demo nie
+  przywracamy. Nie oznacza to nadania danym statusu official.
+- Wczesny przegląd kodu potwierdził zależność: znane składniki MRE używają
+  publicznych ProductVersion UUID/revision. Brak ich importu do PostgreSQL
+  daje trwały `rejected/dependency_missing`; późniejszy import nie naprawia
+  replay tej samej operation_id. Osobna próba scratch PG/API sprawdzi
+  import, niezmienność starych kanałów, zapis i odczyt przed rzeczywistym
+  account push. Bez automatycznej podmiany UUID lub publicznego kontraktu.
+- Wejście A3 dla MRE offline: **BRAK**. Dla późniejszej dostawy danych
+  uzgodnimy właściwe środowisko/okno, poza zamrożonym Room23/E4.
+  O1 pozostaje jedynym operatorem skonfigurowanego Room23, O3 prowadzi
+  relay/TTL/cleanup i niezależny odbiór. Samo przejęcie kodu nie przejmuje
+  stanowiska ani nie potwierdza acceptance, PKCE, live E4, PULL lub 1.0.
+
+- **Wynik lokalny MRE:** zakończono kompilację debug/validation/testAPK,
+  lint 0 Error / 0 Fatal oraz 4 rzeczywiste JVM na końcowych danych. Testy JVM mają
+  teraz jawne wejście `catalogAssets`, aby zmiana pliku nie zachowywała
+  starego `UP-TO-DATE`. Poprawiono odczyt liczbowych danych COMRAD i lokalne
+  hashowanie Unicode bez rozluźnienia publicznego parsera E2.
+- Pierwsze 13 native: 12 PASS / 1 FAIL asercji tekstowej JSON; pole źródła po
+  dekodowaniu zastępuje substring, a porównanie snapshotów po restarcie
+  pozostaje bajtowe. Retry 1 oraz 4 poprawione starsze fixture dały 17 unikalnych
+  PASS dla poprzedniego transportu. Na końcowym pakiecie PG i nowym własnym
+  ID wykonano MreCatalogueFlow 3, MreRationScreen 1 i CatalogMealStorage 1:
+  **5 PASS / 0 FAIL / 0 ERROR / 0 SKIP**. Nie przenosimy starych wyników na nowy APK.
+  Wszystkie źródłowe błędy i zakresy prób są zachowane w dowodach.
+- Końcowy UI offline: częściowa porcja 113,5 g, pojedynczy wariant menu 9,
+  źródła COMRAD, ręczne 2,5 g z pustymi kcal i zachowany wybór. Po cold-start
+  rzeczywisty MainActivity pokazuje 3 oczekujące wpisy, znaną część ≥442 kcal
+  i 1 brak energii. Wszystkie wiersze 3 posiłków / 3 składników / 3 outbox są identyczne
+  przed/po; stary osobny profil z 6 wpisami i DB/WAL/SHM zachowano.
+  Zasłoniętych kadrów SystemUI ANR i wczesnego loading nie zaliczano.
+- **PG→eksport→APK:** cały pakiet 111 produktów / 24 racje / 235 komponentów /
+  112 źródeł przeszedł realny import do odseparowanego PostgreSQL 17.
+  Początkowy generator miał inną kolejność racji i brak końcowego LF;
+  ujednolicono transport z istniejącym eksportem serwera. Dane, 24 hashe
+  poszczególnych racji, UUID i rewizje pozostały niezmienione.
+  Końcowe dwa pliki pochodzą z prawdziwego eksportu PG i są odtwarzane
+  przez generator: gzip 27 924 B / SHA-256
+  `2c0a1ff730e408cc90ab1fcfcb2b9eef21ebce8fa2d935d429f296d225260880`,
+  manifest 4 769 B / SHA-256
+  `dc0a0b9b818dd7ea9f224424c6fe07b11d8af574dbb6109a9658c12297c149bf`.
+  Referencyjny SQLite: import→idempotentny reimport→reopen PASS.
+- Rzeczywiste trzy operacje z repozytorium Kotlin, bez zmiany ich payloadów,
+  potwierdziły przez FastAPI i PG: trwałą odmowę przed importem, niezmienną
+  odmowę tego samego UUID po imporcie, osobny świadomy nowy zapis, ręczne
+  `kcal=null`, replay bez duplikatu i odczyt snapshotu. Końcowo 2 Meals / 2 items /
+  3 receipts; powtórny import nie zmienia grafu, starych kanałów ani receiptu.
+  To aktualny locked runtime i prawdziwy PG/SCRAM z **syntetycznym Verifier**,
+  bez Keycloak/PKCE/TLS/live. Własny serwer prób zatrzymano, dowody zachowano.
+- **Dalszy właściciel: O3**, po uzgodnieniu okna poza zamrożonym Room23/E4:
+  zweryfikować pakiet na faktycznym docelowym pinie API i zaimportować go
+  przed pierwszym rzeczywistym account push z nowego klienta. Samo późniejsze
+  uzupełnienie danych nie odblokowuje odrzuconej operation_id; nie podmieniamy
+  UUID automatycznie. Import draft nie publikuje kanału official.
+  Aktualny etap nie wdrożył danych lub nowego obrazu do działającego demo.
+  Wymagane FULL final-head/base i niezależny push/main pozostają do odbioru
+  po publikacji jednego spójnego PR; wynik będzie w tym PR i wskazanym ACK.
+- **Niezależny odbiór lokalny: 9,3/10**, brak otwartych materialnych P1/P2.
+  Zweryfikowano 461 plików manifestu końcowych źródeł, rzeczywiste XML,
+  zawartość APK, eksport PG, czyste kadry i samodzielny odczyt wszystkich
+  tabel z kopii Room/WAL/SHM. Nie jest to deklaracja zdalnego CI lub merge.
