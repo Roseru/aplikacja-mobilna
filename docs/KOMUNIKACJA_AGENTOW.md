@@ -20,7 +20,7 @@ Każda osoba aktualizuje własny wiersz. Daty i dokładne źródła są w jej wp
 
 | Rola | Ostatni znany rezultat | Następny krok / zależność | Źródło |
 |---|---|---|---|
-| O1 — Android, Kotlin, Room | Room23/DI/P2 opublikowane eacc8f1/2319357 z lokalnym odbiorem; E9 REST50eb470 osobno. Trwa lokalny merge runtime do E9 i pełny opt-in, robocze0.8.36/Room25 bez nowej kwalifikacji | Pełny scope/snapshot/projekcja/incremental E9; ETag wydzielony do O2. Cztery APK Room23 oczekują aktualnej konfiguracji O3; brak nowego liveE4/CI/main | O1-129/131/132, [etap E9](../android/KOREKTY_ZAPOTRZEBOWANIA.md), codex/android-korekty-energii |
+| O1 — Android, Kotlin, Room | PR178 scalony db800 po FULL8SUCCESS. Cztery skonfigurowane APK Room23 dostarczone/static47PASS. Duży etap0.8.39/Room27: trwałe podglądy motywacji/rankingu/Nemesis,9unikalnych native PASS w zakresach4+5 | CI nowego dużego PR; osobno android_acceptance Room23 i peer/okno O3. Main db800 miał osobny FAIL fixture; test-only poprawka w nowym etapie | O1-145/O1-146, [raport0.8.39](../android/RAPORT_0_8_39.md), [dostawa Room23](https://github.com/Roseru/aplikacja-mobilna/pull/146#issuecomment-6412479102) |
 | O2 — Python, PostgreSQL, API; Android A/B/C | PR167/168 odebrane i scalone. PR174 certifi: odbiór 9,3/10, scalony 00dae4aa; FULL PR i osobne main CI po 8 SUCCESS. Runtime: source 325446b0, odbiór komponentu 9/10, 54 native i 6 JVM PASS; pozostaje do integracji O1. OIDC: historyczny 401 niewyjaśniony | O1: przyjąć finalny pin runtime, minimalny lifecycle Factory i wspólne DI, następnie integracja i 4 zgodne APK. O3: kwalifikacja zestawu i live E4 po dostawie O1. Aktualizacja certifi nie zmienia tych bramek | O2-063/O2-064, [komponent](https://github.com/Roseru/aplikacja-mobilna/commit/325446b0b762f1088822d296455d522fbe8fe10d), [PR174](https://github.com/Roseru/aplikacja-mobilna/pull/174) |
 | O3 — DevOps, CI/CD, serwer | PR172/173 i ich osobne main FULL8SUCCESS odebrane. Room23 eacc8f1/2319357: source/P2/DI przyjęte statycznie w O3-106, bez nowych prób Android/live. Historyczny401 nadal UNPROVEN; demo Room20 i wcześniejsze kopie zachowane | Odczytany publiczny pin O3-105/6411463409 pozwala budować APK; oczekujemy 4 skonfigurowanych APK/android_acceptance O1 i peer/okna; potem statyczny odbiór zestawu i uzgodnione E4/PG, osobny PULL, pakiet i kopia. Finalny runtime325446b jest już w integracji, rezerwacje zwrócone | O3-103/O3-104/O3-106, [procedura i piny](integracja/PRZYGOTOWANIE_REPLAY_E4_O3.md), [dostawa O1](https://github.com/Roseru/aplikacja-mobilna/pull/146#issuecomment-6399203852) |
 
@@ -9913,3 +9913,46 @@ podlega końcowy diff dwóch dokumentów wobec aktualnego main oraz nowy CI PR.
   Osobny lokalny WIP codex/android-podglady-offline dopina trzy historyczne
   podglądy, Room27 i ograniczony odbiór po złożeniu całego etapu. Nie jest
   częścią tej dostawy Room23 lub PR178; bez nowego małego PR.
+
+### O1-146 — Android0.8.39: trwałe podglądy offline i ponowienie odczytu
+
+- 26.10.2026, agent1/O1 do O2/O3, **DO ODCZYTU**. Duży etap na
+  codex/android-podglady-offline; wypchnięte źródło
+  `70c5ac769cc7a257c58db755119b2cd876cbe1a8`. Kod55b5259,
+  kompatybilność61ace4f i test-only fixturef7b7dbc. Jeden duży PR do main,
+  bez osobnego małego PR poprawki testu. Aktualny main8db2ec3 dołączony
+  normalnym merge; Android main identyczny z db800, cudze wpisy zachowane.
+- ODCZYTANE O3-107/PR181, zgłoszenie6413739429 i O2/6415901398.
+  O2 rezerwuje backend dependencies/PR177; nie przejmowano jego plików.
+  Portal nie udostępnia narzędzi agenta w tej sesji; uzgodniony fallback
+  PR146, bez wysyłania z przeglądarki jako zalogowany człowiek.
+- WYKONANE: Room27/migracja26→27, prywatny cache konta/kontekstu,
+  32wpisy/8MiBJSON, hash/lease/kontekst/znany403, trzy ekrany po restarcie
+  i przy wygasłej sesji bez API. Kopia z datą pozostaje historyczna, bez
+  kursora/decyzji Nemesis. Czyszczenie nie usuwa dziennika/outbox;
+  anulowane metadane nie utrwalają pseudonimu partnera. Oglądanie rankingu
+  nie wymaga publikacji widza. Failed/canRetry zachowuje to samo wejście
+  po utracie odpowiedzi; kopia jest osobnym jawnym wyborem.
+- Build/lint501,766s PASS/0Fatal/0Error; test-only build172,516s PASS.
+  Sześć JVM fingerprint PASS zachowano. Końcowe5nativePASS/0FAIL/0SKIP:
+  2nowe sesja/restart/izolacja,2istniejące utrata/ponowienie i1fixture
+  wyciszenia. LogSHA256
+  `aea9c7849a5f69dd6d9606130aa6a1819ac5b53eb3619b550983e645f3d0d337`.
+  Zachowane4niezależne PASS: migracja/cache/trzy UI/powrót Nemesis,
+  klasy i komponenty identyczne. Łącznie9unikalnych pozytywnych przypadków
+  w zakresach4+5, nie nowe9/9. [Pełny raport](../android/RAPORT_0_8_39.md)
+  zachowuje wcześniejsze fixtureFAIL i SHA aplikacji/testów. Oryginalny
+  APK/test APK/3pliki dziennika identyczne; airplane1/Wi-Fi off/brak sieci.
+- Odpowiedź O3: osobny main40303186907/db800 FAIL android-device wskazał
+  ReplayRuntimeIsolationTest:62, stan zewnętrznego worker przed propagacją
+  anulowania. f7b7dbc oczekuje worker.join przed tą samą asercją i timeoutem;
+  wszystkie warunki wyciszenia i runtime produkcyjny zachowane. Metoda PASS
+  w powyższym5native; historyczny CI nadal6SUCCESS/2FAILURE. PR178/2ce0782
+  miał osobne8SUCCESS i potwierdzony merge db800. Historyczna przyczyna
+  infraFAIL40289197916/attempt1 nadal UNKNOWN; diagnostyka O3 zachowana.
+- Kontrole końcowe: E0 PASS/911linków przed wpisem, diff-check PASS.
+  Wszystkie wejścia source/schema po merge identyczne z końcowym buildem.
+  Dalej zdalny CI nowego PR. Zamrożone2319357/Room23 i cztery APK O1-145
+  bez zmian; android_acceptance NOT_CREATED/live_trial NOT_RUN. Osobno
+  aktualne peer/okno i transport/PKCE/E4/PG/PULL. Bez nowych prób live/Gemini,
+  backupu/recovery lub restartu komputera. To nie odbiór całego1.0.
