@@ -32,10 +32,12 @@ class SnapshotArchiveStore(private val db:CalorieDatabase) {
         val current=checkNotNull(db.bootstrapDao().binding(lease.storageScope))
         if(CanonicalMealRows.context(current)!=CanonicalMealRows.context(expected))throw SnapshotConflictException()
     }
-    private suspend fun protectedRaw(owner:String):Set<String> {
+    /** Shared proof graph. Omitting pending is allowed only for an explicit, fenced user decision. */
+    internal suspend fun requiredEvidence(owner:String):Set<String> = protectedRaw(owner,protectPending=false)
+    private suspend fun protectedRaw(owner:String,protectPending:Boolean=true):Set<String> {
         val result=mutableSetOf<String>()
         db.snapshotDao().access(owner)?.activeRunId?.let(result::add)
-        result+=db.snapshotDao().runs(owner).filter {it.state=="pending"}.map {it.id}
+        if(protectPending)result+=db.snapshotDao().runs(owner).filter {it.state=="pending"}.map {it.id}
         val binding=db.bootstrapDao().binding(owner)
         result+=db.snapshotDao().runs(owner).filter {binding!=null && it.state=="complete" &&
             it.protocolScope==pl.roseru.kalorie.core.sync.SyncProtocolScope.ENERGY_V1.installationId &&
