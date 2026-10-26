@@ -131,6 +131,127 @@ Nie zastępują odbioru nowszego Room22, WorkManagera z docelową polityką siec
 fizycznego telefonu, Gemini, pełnego KO32 lub wdrożenia produkcyjnego.
 Historyczny FAIL E4 Room17 pozostaje osobnym wynikiem.
 
+## Złożenie kolejnego pakietu po odbiorze APK, E4 i osobnego PULL
+
+Poniższa procedura przygotowuje lokalny pakiet `channel=integration`,
+`scope=localdemo`. Nie nadaje nowego PASS historycznemu Room20 ani nowszemu
+Room23. Podstawą są rzeczywiste receipty z
+[procedury E4](../../docs/integracja/PRZYGOTOWANIE_REPLAY_E4_O3.md).
+Przed składaniem muszą istnieć niezależny STATIC_PASS dostawy czterech APK,
+kwalifikowane `android_acceptance`, wynik E4 z niezależnymi PG C0/C1/C2
+i trwałym ACK oraz oddzielny późniejszy PULL. FAIL lub NOT_RUN któregokolwiek
+wymaganego odbioru zatrzymuje składanie nowego finalnego pakietu.
+
+Operator potwierdza zakończenie transportu poprzedniej próby i zwolnienie jej
+dzierżawy. Następnie atomowo tworzy własny `runtime.lock`, bez odbierania
+cudzego locka. Zachowuje go do końca kontrolowanej operacji, także podczas
+kopii. Blokada koordynacji nie zastępuje OS locka istniejącego utrzymania.
+
+### Manifest zachowujący tożsamość zestawu
+
+W nowym, nieistniejącym wcześniej prywatnym folderze na uzgodnionym dysku
+zachowaj dostawę czterech APK, jej oryginalny manifest i raport statyczny,
+publiczny CA, katalog demo, neutralne receipty i instrukcję START.
+Nie nadpisuj wcześniejszych pakietów. Manifest pakietu zapisuje osobno:
+
+| Część | Wymagane powiązanie |
+|---|---|
+| Android | source commit i receipt commit, Android tree, Room, cztery role/wersje/applicationId/podpisy/rozmiary/SHA256 oraz hash manifestu dostawy |
+| Uruchamiana aplikacja | dokładny APK zaakceptowany w android_acceptance; validation-configured jest osobną aplikacją, regularny debug bez endpointów nie zastępuje jej |
+| API | faktyczny immutable image, schema i rzeczywiste pochodzenie; brak OCI revision pozostaje jawny, archiwalna zgodność wybranych plików nie dowodzi commita całego obrazu |
+| TLS | API base URL, dokładny issuer, publiczny PEM i jego SHA256, bez klucza prywatnego CA |
+| Katalog | package ID/kind/release/schema/reader, SHA256 i rozmiar gzip oraz manifestu; zgodność z assetem odebranego APK i oddzielny dowód aktywnej generacji Room |
+| Odbiory | źródła, hashe, rzeczywiste zakresy i ograniczenia android_acceptance/E4/PG/osobnego PULL; zgodna instalacja, API/schema i epoka |
+| Kopia | hash manifestu nowej kopii, wynik integralności i izolowanego rehearsal, hash zaszyfrowanego pliku; zachowanie epoki i usług źródłowych |
+
+Pełne tożsamości instalacji/konta, epoka, ścieżki prywatne i raw dowody pozostają
+w prywatnym przekazaniu. Publiczny opis zawiera tylko zatwierdzoną projekcję.
+Nie przepisuj receiptów w celu uzyskania wspólnego commita. Istniejący
+[`release.py`](release.py) waliduje inny kontrakt: jeden wspólny commit APK,
+OCI revision i pięciu odbiorów opisanych w [WYDANIE.md](WYDANIE.md).
+Nie jest generatorem tego wieloźródłowego pakietu i nie kwalifikuje go przez
+zmianę etykiet. Zachowaj jego dotychczasowe wymagania.
+
+### Rzeczywisty kanał katalogu demo
+
+Katalog startowy jest assetem APK `assets/catalog/e2/manifest.json` oraz
+`assets/catalog/e2/base-pl.1.json.gz.bin`. Rozszerzenie `.bin` chroni gzip
+przed automatycznym rozpakowaniem podczas budowania APK. Eksport referencyjny
+leży w [`backend/data/demo/export`](../../backend/data/demo/export/manifest.json).
+Reader sprawdza manifest i importuje tę generację do Room. Hashe plików w repo
+sprawdź również wewnątrz faktycznie odebranego APK; same źródła nie dowodzą
+instalacji lub importu. Pakiet `kind=demo` pozostaje oznaczony jako demo.
+
+`GET /api/v1/offline-package/manifest` zwraca manifest opublikowanego **official**.
+Przy braku official zwraca404; demo dostarczone w APK nie pochodzi z tej ścieżki.
+Nie opisuj404 jako pobrania katalogu albo awarii całego API. Odbiór katalogu
+demo wymaga jego rzeczywistych bajtów i aktywnej generacji. Jeżeli uzgodniony
+scenariusz wymaga konkretnego official, brak przekazania zgłoś O2; nie publikuj
+fikcyjnego katalogu w ramach pakowania.
+
+### Jedna kopia zmienionego stanu i lokalny plik szyfrowany
+
+Nową kopię uzasadnia zaakceptowana zmiana danych po E4/PULL. Zdrowa wcześniejsza
+kopia i startup nie wymagają ponawiania z powodu czasu spędzonego w czacie.
+Użyj zainstalowanego, przypiętego runtime zgodnego ze schematem działającego
+API, jego interpretera i oryginalnego prywatnego settings utrzymania. Bieżący
+main może oczekiwać innego schematu; nie przeinstalowuj runtime dla tej kopii.
+
+[`maintenance.py`](maintenance.py) `perform_backup` wykonuje capture,
+integralność, wznowienie tych samych usług w finally, izolowany restore
+i ponowną integralność. Wywołanie operatora używa `due_only=False`, dopiero
+po wejściach odbioru. Sam `backup.py capture` pozostawia usługi zatrzymane
+i nie bierze OS locka automatyzacji; nie uruchamiaj go równolegle.
+
+Przy wymaganiu zachowania wszystkich starszych kopii standardowa retencja14
+nie jest odpowiednia. Pod tym samym `maintenance.lock(directory)` odczytaj
+oryginalne settings do kopii słownika w pamięci i ustaw jej `keep` na
+`max(stored_keep, liczba_wszystkich_bezpośrednich_wpisów_root + 1)`.
+Wywołaj istniejące `perform_backup` z tą kopią settings, bez zmiany zapisanego
+pliku i bez podmiany funkcji retencji. Kandydaci usunięcia są podzbiorem tych
+wpisów; jedna nowa kopia mieści się w tak dobranej granicy. Po wykonaniu
+wymagaj `removed=0`, obecności wcześniejszych wpisów i niezmienionych settings.
+Sprawdź też zgodne identyfikatory usług przed/po, `resume_pending=false`,
+niezmieniony image/schema/CA i epokę żywej instalacji. Nieznany lub nieudany
+stan kończy operację z rzeczywistym FAIL; nie wykonuj automatycznie drugiej kopii.
+
+Próba odtworzenia używa wyłącznie nowego PG bez sieci i portów gospodarza.
+Nowa epoka oraz fencing AI/Nemesis dotyczą wyłącznie tej izolowanej kopii.
+Nie przywracaj jej na działające demo. Zachowaj wynik i cleanup własnego
+kontenera zgodnie z [runbookiem utrzymania](UTRZYMANIE_LOKALNE.md).
+
+Z tej samej, już sprawdzonej kopii przygotuj istniejącym
+[`offsite_package.py`](offsite_package.py) jeden nowy plik szyfrowany:
+`pack --backup <nowa-kopia> --output <nowy-plik.enc> --key <istniejący-klucz>`.
+Następnie `verify --package <nowy-plik.enc> --key <istniejący-klucz>` potwierdza
+uwierzytelnienie i sumy wszystkich członków. Użyj rzeczywiście zainstalowanej
+pary interpreter/skrypt szyfrowania w osobnych procesach. Starszy runtime
+utrzymania może nie zawierać tego modułu; nie mieszaj importów różnych runtime
+w jednym procesie ani nie naprawiaj zdrowego środowiska. Klucz pozostaje osobno, prywatnie,
+w już uzgodnionym miejscu. Nie twórz/nie rotuj go ani nie kopiuj do pakietu.
+Ten lokalny eksport na dysk nie jest uploadem offsite; `offsite_verified=false`
+pozostaje prawdziwą granicą wyniku i nie blokuje uzgodnionego lokalnego demo.
+
+### Instrukcja START i końcowe przekazanie
+
+START podaje rzeczywiście odebrany AVD/serial/applicationId, właściwy APK,
+prywatną lokalizację danych konta i drogę wznowienia sesji. Zachowaj dane AVD,
+bez wipe lub odinstalowania. Przed połączeniem operator sprawdza hash APK i CA,
+image/API/issuer oraz tożsamość AVD; komendy i wyniki tego preflight zapisuje
+w START i dowodach. Następnie używa istniejącego transportu `ensure` z własnym
+lease; zakończenie używa `disconnect` z tym samym lease. Sam transport nie
+sprawdza APK ani image i nie zastępuje tych odczytów operatora.
+Nie otwieraj nowego transportu podczas aktywnego okna poprzedniego operatora.
+
+Zapisz sumy i rozmiary dokładnego zbioru zwykłych plików pakietu (lista sum
+wyłącza samą siebie), odmów symlinków/junctions i wyjścia poza nowy folder.
+Zweryfikuj brak brakujących/dodatkowych plików i ponownie odczytaj sumy.
+START, transport, konta i pliki wyników mają odpowiadać temu samemu zestawowi.
+Końcowe prywatne przekazanie podaje faktyczny folder, hashe paczek i receiptów,
+zakończenie lease/runtime oraz ograniczenia. Brak E4/PULL oznacza oczekiwanie,
+bez nowego finalnego pakietu lub kopii. Wynik tego zakresu nie zamyka całego
+v1, AI, telefonu fizycznego ani wdrożenia produkcyjnego.
+
 Źródła konfiguracji Mailpit: [Docker](https://mailpit.axllent.org/docs/install/docker/),
 [API skrzynki](https://mailpit.axllent.org/docs/api-v1/),
 [wydanie 1.32.0](https://github.com/axllent/mailpit/releases/tag/v1.32.0).

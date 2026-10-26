@@ -9913,3 +9913,69 @@ podlega końcowy diff dwóch dokumentów wobec aktualnego main oraz nowy CI PR.
   Osobny lokalny WIP codex/android-podglady-offline dopina trzy historyczne
   podglądy, Room27 i ograniczony odbiór po złożeniu całego etapu. Nie jest
   częścią tej dostawy Room23 lub PR178; bez nowego małego PR.
+
+### O3-111 — przygotowanie spójnego pakietu lokalnego i jednej kopii
+
+- 26.10.2026, agent3/O3 do O1/O2, **WYMAGA WEJŚCIA O3-110**.
+  Własna gałąź `codex/devops-pakiet-kopia-demo-20261026`, baza
+  `8db2ec31cfd3ccf848467feea743b51825562085`. Odczytano zasady koordynacji,
+  wymagania/workflow, PR146 do6420299343, livechat oraz rzeczywisty postęp
+  poprzednika E4/PULL. Przygotowanie jest niezależne; finalny pakiet i nowa
+  kopia pozostają NOT_RUN do kwalifikowanego android_acceptance/E4/PG oraz
+  osobnego PULL i potwierdzonego zakończenia lease. Nie przejmowano runtime.
+- **WYKONANE read-only:** niezależne porównanie bajtów czterech APK i manifestu
+  z dostawą6412479102. ZIP SHA256
+  `6efcae4fa9c4eb881b44edf320fbbcabd2ace9f6405d0ee528013d9272160f0b`,
+  manifest SHA256
+  `3e15eb0ad4a657a9f6ead4137c2a55e09f6e95d25d7c0dd4d0289470b072fcc1`.
+  Katalog w faktycznych debug i validation-configured APK jest identyczny
+  bajtowo z zamrożonym2319357/Android tree0c83ee3, nie tylko z bieżącym main.
+  `kind=demo`, package47bdff67-e58b-5437-919b-ec00159afbc5, release/schema/reader1,
+  gzip3099B/JSON15691B,18produktów/1racja/18składników/1źródło.
+  Gzip SHA256 `65f4aae8002fd5522d0edb4689e05682103b80fbe3e6dbc68f4bf02c645b2bef`,
+  manifest SHA256 `fee1d2c9f96922c0c16ea35170a4c19c65ce96c3a0ecf0b6a74bf30d7f74048e`.
+  Aktywna generacja Room pozostaje NOT_MEASURED; kontrola assetów nie jest
+  android_acceptance, importem urządzenia ani live PASS.
+- **Kanał katalogu ustalony w kodzie:** APK zawiera gzip jako `.bin`, importer
+  odczytuje asset. Endpoint manifestu udostępnia official i przy jego braku
+  zwraca404; klient aktualizacji mapuje to na NotPublished. Brak official nie
+  jest awarią całego API ani dowodem pobrania demo. Nie utworzono nowego
+  katalogu lub official release; samo404 nie uzasadnia takiego żądania O2.
+- Odczyt silnika Docker potwierdził działający image05c1792f3551725f0303cc3786892771392532a25edc18ff710faad9e6b7e9a9;
+  etykieta OCI revision jest pusta. Znana referencja14plików8ff7c0c pozostaje
+  częściową zgodnością źródeł, nie commitem budowy całego obrazu. Osobne piny
+  Android/API muszą pozostać w manifeście localdemo. `release.py` wymaga jednego
+  commita i pięciu receiptów; nie zmieniano jego kontraktu ani źródeł receiptów.
+  Stary pakiet Room20 zachowany, SHA APK ponownie zgodny z jego manifestem.
+- Read-only odczyt właściwych receiptów utrzymania potwierdził poprzedni backup
+  PASS26.10 07:05:43UTC, integrity/rehearsal/resume=true, startup PASS07:04UTC
+  i resume_pending=false. To historyczny zdrowy stan, nie kopia nowego odbioru.
+  Zainstalowany runtime8ff7c0c i jego interpreter są zgodne ze schema0024.
+  Domyślne keep14 może usunąć starsze kopie; przygotowano zachowanie wszystkich
+  wpisów przez kopię settings w pamięci pod tym samym OS lockiem, bez zmiany
+  zapisanych ustawień lub implementacji retencji. Kopia wymaga removed0,
+  zachowania wcześniejszych katalogów, usług, epoki i settings przed/po.
+- [Funkcjonalna instrukcja pakowania](../infra/integration/LOKALNE_DEMO.md)
+  opisuje wieloźródłowy manifest, katalog, kolejność receiptów, jeden capture
+  z izolowanym restore i szyfrowanym eksportem lokalnym, START/lease/sumy.
+  Dysk i istniejący prywatny klucz są uzgodnione; nie dodano bramki nośnika
+  offsite, VPS lub domeny. Nie wykonano backupu/rehearsal, szyfrowania, restartu,
+  migracji, zmiany CA/credentiali/epoki ani zapisu nowego pakietu na dysk.
+  Nowa instrukcja poza allowlistą wymaga FULL PR oraz niezależnego FULL main;
+  tego odbioru jeszcze nie wykonano. Lokalny wynik przygotowawczy zostaje
+  na własnej gałęzi do jednego spójnego PR po wejściu O3-110, bez mikroPR statusu.
+- O3-110 zakończył przygotowanie z rzeczywistym NOT_RUN: brak configured
+  android_acceptance, zaakceptowanego profilu i osiągalnego transportu/lease.
+  Nie ma kwalifikowanego E4 ani osobnego PULL do skonsumowania. Nie utworzono
+  finalnego folderu lub nowej kopii. Prywatny handoff O3-111 zachowuje ten brak,
+  hashe istniejących dowodów przygotowania i konkretne następne wejście.
+  Osobny runtime szyfrowania baa48c5f ma sprawdzony plik/interpreter/owner i
+  zgodność modułu z blobem Git; starszy runtime utrzymania8ff nie zawiera go.
+  Pack/verify mają działać w osobnych procesach, bez mieszania importów.
+- Kontrole przygotowania: E0 PASS —11schematów,98valid/35invalid,18scenariuszy,
+  16Decimal/5day/72normalizations/911lokalnych linków; diff-check PASS.
+  Niezależny przegląd instrukcji poprawił przypisanie preflight operatorowi:
+  transport sam nie sprawdza APK/image. Kontrola katalogu rzeczywistych APK
+  ma osobny PASS tylko bajtów, aktywny Room nadal NOT_MEASURED. Nie uruchamiano
+  testów aplikacji dla samego tekstu. PR/FULL/main oraz finalny odbiór pozostają
+  do wykonania po zależnym wejściu; całego O3-111 nie oznaczamy ukończonym.
