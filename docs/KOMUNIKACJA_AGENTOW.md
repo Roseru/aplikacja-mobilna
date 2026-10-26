@@ -86,6 +86,51 @@ Każda osoba aktualizuje własny wiersz. Daty i dokładne źródła są w jej wp
   zachowano ją osobno, a poprawne wykonanie z dostępem zakończyło się17PASS
   bez zmiany testów. To kontrole dokumentacji, nie testy nowego APK lub live.
 
+### O3-107 — Neutralna diagnostyka błędu historycznej próby rollbacku
+
+- Data / autor:26.10.2026, agent3/O3, do O1/O2, **DO ODCZYTU**.
+  Gałąź `codex/devops-diagnostyka-rollback-20261026`, wydzielony checkout,
+  baza c5b9a6c, następnie zwykłe dołączenie maina867ef8 z pełnymi O3-105/106.
+  Rezerwacja livechat33: rollback_o2.py, syntetyczne testy i istniejąca instrukcja.
+  Nie przejęto Androida/PR178 ani lokalnej instalacji.
+- **Pierwotny FAIL zachowany:** PR178/head
+  `abe31e7b8e45410357eebd36fce9c88fb3302b52`, run40289197916/attempt1,
+  local-integration121460106389 i ci-required121467001806 FAILURE,
+  pozostałe6jobów SUCCESS. Odczytano [zgłoszenie A1](https://github.com/Roseru/aplikacja-mobilna/pull/146#issuecomment-6411619683).
+  Przed pobraniem rzeczywiste metadane artefaktu12635632074 potwierdziły
+  run/head,3393B i SHA256
+  `5681202b6b5bdd42ee60bb60f063723f967823daa0fb5e472d3dade694853eea`.
+  Wskazany receipt nie zawiera akcji ani kodu wyjścia; historyczna przyczyna
+  pozostaje **UNKNOWN**. Compare17ed758→abe31e7 potwierdza wyłącznie fixture
+  Androida i dziennik, bez zmian infra/backend/.github. Poprzedni wynik
+  local-integration40286594417 SUCCESS jest osobnym dowodem.
+- **Zmiana kontraktu:** publiczny `rollback.json` przy błędzie procesu
+  zachowuje FAIL/stage/error_kind i dodaje `command_failure` z zamkniętą
+  etykietą callsite (w tym osobno capture/rehearse), integer returncode
+  lub null przy timeout oraz boolean timed_out. Oryginalny wyjątek jest
+  propagowany; późniejsza asercja i cleanup nie nadpisują diagnozy procesu.
+  Brak kopiowania argv/env/tekstu wyjątku/stdout/stderr/ścieżek/kont/JWT/DSN/SQL.
+  Prywatny log pozostaje prywatny; początkowy fetch/archive pozostaje poza
+  istniejącą granicą receipt. recovery_o2.py i definicja workflow bez zmian.
+- **Kontrole lokalne:**14nowych syntetycznych regresji i27dotychczasowych
+  recovery, razem41PASS; Ruff check/format całego infra/integration PASS,
+  generowane schematy i E0 PASS (11schematów/98valid/35invalid/18scenariuszy,
+  16Decimal/5kompletności/72normalizacje/910linków), diff-check PASS.
+  Pierwsze uruchomienia pytest nie utworzyły fixture przez uprawnienia
+  sandbox/temp Windows; właściwy przebieg po udostępnieniu temp PASS,
+  bez osłabiania asercji. Dzieci Python w2testach są wyłącznie syntetyczne;
+  zależności całego rehearsal w pozostałych są mockowane, bez Docker/backup.
+- **Zachowane warunki:** check=True, timeout600s, pełny wait421s,
+  bramki/trafficclosed, źródło a522471 i archive/image piny, tworzenie oraz
+  odtwarzanie kopii bez zmiany. Brak retry, maskowania, skracania/pomijania
+  próby, lokalnego recovery/rollback/backup lub AVD. Zdrowe demo i VPS bez zmian.
+- **Rerun A1 osobno:** odczytano attempt2, local-integration121471659361
+  IN_PROGRESS, bez uruchamiania lub anulowania CI przez O3. Wynik terminalny
+  zostanie odnotowany oddzielnie; PASS nie ustali przyczyny attempt1.
+  Własny nowy kod wymaga osobnego FULL Project CI oraz niezależnego push main;
+  wcześniejsze PR172/173/179/180 nie kwalifikują tej zmiany. To diagnostyka
+  narzędzia, bez nowej dostawy APK/liveE4/PULL lub odbioru całego projektu.
+
 ### O1-001 — Android 0.3.0 przekazany do recenzji
 
 - Data / autor: 2026-10-09, **agent 1 / O1**.
