@@ -1234,7 +1234,7 @@ class SessionSecurityTest {
         val db = memory(); val vault = SessionVault(context, name()); val fixture = FixtureGateway(); val api = ApiFixture(); val motivation = MotivationFixture()
         val ranking = RankingFixture { call, q -> if (call == 2) throw java.io.IOException("fixture loss") else rankingAnswer(fixture.time, q.pageToken == null) }
         try {
-            val c = client(db, vault, fixture, api, motivation = motivation, ranking = ranking); c.start(); login(c, fixture, "fixture-A"); c.bootstrap(); c.readRanking()
+            val c = client(db, vault, fixture, api, motivation = motivation, ranking = ranking, oidcApplicationId="pl.roseru.kalorie.validation"); c.start(); login(c, fixture, "fixture-A"); c.bootstrap(); c.readRanking()
             c.nextRankingPage(); assertTrue((c.view.value.ranking as RankingState.Failed).canRetry)
             val lost = ranking.calls.last().second; c.retryRankingPage(); assertEquals(lost.encoded(), ranking.calls.last().second.encoded())
             assertEquals(3, (c.view.value.ranking as RankingState.Ready).page.items.size)
@@ -1356,7 +1356,7 @@ class SessionSecurityTest {
         val db = memory(); val vault = SessionVault(context, name()); val fixture = FixtureGateway(); val api = ApiFixture(); val motivation = MotivationFixture()
         var lost = true; val nemesis = NemesisFixture { query -> if (query is NemesisQuery.Statistics && lost) { lost = false; throw java.io.IOException("fixture loss") } else nemesisAnswer(query) }
         try {
-            val c = client(db, vault, fixture, api, motivation = motivation, nemesis = nemesis); c.start(); login(c, fixture, "fixture-A"); c.bootstrap()
+            val c = client(db, vault, fixture, api, motivation = motivation, nemesis = nemesis, oidcApplicationId="pl.roseru.kalorie.validation"); c.start(); login(c, fixture, "fixture-A"); c.bootstrap()
             c.readNemesisChallenge(nemesisId); assertTrue((c.view.value.nemesis as NemesisState.Failed).canRetry)
             c.retryNemesis(); assertTrue(c.view.value.nemesis is NemesisState.DetailReady); assertEquals(4, nemesis.calls.size)
             assertEquals(nemesis.calls[0].third.path(), nemesis.calls[2].third.path()); assertEquals(nemesis.calls[1].third.path(), nemesis.calls[3].third.path())

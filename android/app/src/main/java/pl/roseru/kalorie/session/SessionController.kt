@@ -1167,7 +1167,12 @@ class SessionController internal constructor(private val db: CalorieDatabase, pr
     /** Screen entry restores local data only. Saved DTOs never mint live cursors or decision sources. */
     suspend fun restorePrivatePreview(expected:OwnerLease,kind:PrivatePreviewKind,resource:String?=null)=mutex.withLock {
         if(owners.currentLease()!=expected)return@withLock false
-        var restored=restoreSavedLocked(expected,kind,resource)
+        val warning=when(kind) {
+            PrivatePreviewKind.MOTIVATION->(motivationState as? MotivationState.Failed)?.message
+            PrivatePreviewKind.RANKING->(rankingState as? RankingState.Failed)?.message
+            else->(nemesisState as? NemesisState.Failed)?.message
+        }
+        var restored=restoreSavedLocked(expected,kind,resource,warning)
         if(!restored && kind==PrivatePreviewKind.NEMESIS_LIST && nemesisState !is NemesisState.ListReady && nemesisState !is NemesisState.DetailReady) {
             val server=db.bootstrapDao().binding(expected.storageScope)
             if(server!=null)try {privatePreviews.availableNemesisDetails(expected,server).lastOrNull()?.let {
@@ -1230,17 +1235,6 @@ class SessionController internal constructor(private val db: CalorieDatabase, pr
             clearNemesis()
         }
         publish("Usunięto zapisany podgląd z tego urządzenia. Dziennik zachowany.")
-    }
-    private suspend fun restoreFailedPrivate(lease:OwnerLease,kind:PrivateReadKind,message:String) {
-        when(kind) {
-            PrivateReadKind.MOTIVATION->restoreSavedLocked(lease,PrivatePreviewKind.MOTIVATION,warning=message)
-            PrivateReadKind.RANKING->restoreSavedLocked(lease,PrivatePreviewKind.RANKING,warning=message)
-            PrivateReadKind.NEMESIS->{
-                val detail=(nemesisRetryQuery as? NemesisQuery.Detail)?.id
-                restoreSavedLocked(lease,if(detail==null)PrivatePreviewKind.NEMESIS_LIST else PrivatePreviewKind.NEMESIS_DETAIL,detail,message)
-            }
-            else->Unit
-        }
     }
     suspend fun readPhotoCapabilities() = readPrivate(PrivateReadKind.PHOTO)
     suspend fun readProfile() = readPrivate(PrivateReadKind.PROFILE)
@@ -1586,7 +1580,7 @@ class SessionController internal constructor(private val db: CalorieDatabase, pr
                                 else->emptySet()
                             }
                             privatePreviews.clearCurrent(lease,server,kinds)
-                        } else if(result.status !in setOf(400,404,409,410,422)) restoreFailedPrivate(lease,kind,message)
+                        }
                         publish(message)
                     }
                 }
@@ -1609,7 +1603,6 @@ class SessionController internal constructor(private val db: CalorieDatabase, pr
                 if (kind == PrivateReadKind.CONSENTS) consentState = RankingConsentState.Failed(message)
                 if (kind == PrivateReadKind.RANKING) rankingState = RankingState.Failed(message, rankingRetryQuery != null)
                 if (kind == PrivateReadKind.NEMESIS) nemesisState = NemesisState.Failed(message, nemesisRetryQuery != null)
-                restoreFailedPrivate(lease,kind,message)
                 publish(message)
             }
             else publish()
