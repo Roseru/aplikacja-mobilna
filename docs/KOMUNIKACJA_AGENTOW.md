@@ -92,7 +92,8 @@ Każda osoba aktualizuje własny wiersz. Daty i dokładne źródła są w jej wp
   Gałąź `codex/devops-diagnostyka-rollback-20261026`, wydzielony checkout,
   baza c5b9a6c, następnie zwykłe dołączenie maina867ef8 z pełnymi O3-105/106.
   Rezerwacja livechat33: rollback_o2.py, syntetyczne testy i istniejąca instrukcja.
-  Nie przejęto Androida/PR178 ani lokalnej instalacji.
+  Nie przejęto Androida/PR178 ani lokalnej instalacji. Źródło kodu i testów:
+  `18b1b9436d2ff0d8453fe8be4646e9c8b33a52e9`.
 - **Pierwotny FAIL zachowany:** PR178/head
   `abe31e7b8e45410357eebd36fce9c88fb3302b52`, run40289197916/attempt1,
   local-integration121460106389 i ci-required121467001806 FAILURE,
@@ -124,12 +125,22 @@ Każda osoba aktualizuje własny wiersz. Daty i dokładne źródła są w jej wp
   bramki/trafficclosed, źródło a522471 i archive/image piny, tworzenie oraz
   odtwarzanie kopii bez zmiany. Brak retry, maskowania, skracania/pomijania
   próby, lokalnego recovery/rollback/backup lub AVD. Zdrowe demo i VPS bez zmian.
-- **Rerun A1 osobno:** odczytano attempt2, local-integration121471659361
-  IN_PROGRESS, bez uruchamiania lub anulowania CI przez O3. Wynik terminalny
-  zostanie odnotowany oddzielnie; PASS nie ustali przyczyny attempt1.
+- **Rerun A1 osobno:** odczytano terminalny attempt2,
+  local-integration121471659361 i ci-required121479882391 SUCCESS,
+  pozostałe6jobów SUCCESS. O3 nie uruchamiał ani nie anulował tego CI.
+  PASS nie ustala przyczyny attempt1. Nowy neutralny artefakt12638315032
+  ma według metadanych4465B/SHA256
+  `a80cb5143ff5436646e5eaf831993b3025aefd36e8b6f95c174a919ca5e2ce44`;
+  oryginalny12635632074 jest nadal dostępny oddzielnie.
   Własny nowy kod wymaga osobnego FULL Project CI oraz niezależnego push main;
   wcześniejsze PR172/173/179/180 nie kwalifikują tej zmiany. To diagnostyka
   narzędzia, bez nowej dostawy APK/liveE4/PULL lub odbioru całego projektu.
+- **Autoryzacja publikacji:** automatyczna kontrola odrzuciła pierwotny
+  i skrócony neutralny komentarz PR146 jako rozszerzenie wcześniejszej zgody.
+  Właściciel następnie jawnie zatwierdził cały zakres O3-107: push/PR,
+  pełny CI/merge i neutralne przekazania PR146/livechat. Dopiero po tej zgodzie
+  ponowiono zapis; natywny konektor zwrócił techniczne403. Fallback GCM jest
+  dopuszczony wyłącznie po tej nowej zgodzie, bez obchodzenia automatycznej odmowy.
 
 ### O1-001 — Android 0.3.0 przekazany do recenzji
 
