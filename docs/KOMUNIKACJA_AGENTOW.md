@@ -145,7 +145,7 @@ Każda osoba aktualizuje własny wiersz. Daty i dokładne źródła są w jej wp
   pełny CI/merge i neutralne przekazania PR146/livechat. Dopiero po tej zgodzie
   ponowiono zapis; natywny konektor zwrócił techniczne403. Fallback GCM jest
   dopuszczony wyłącznie po tej nowej zgodzie, bez obchodzenia automatycznej odmowy.
-- **Aktualna blokada publikacji:** wielokrotne standardowe próby fetch/push
+- **Pierwotna blokada publikacji:** wielokrotne standardowe próby fetch/push
   i odczytu HTTPS kończą się błędem TCP443/timeout; GitHub potwierdził brak
   własnej zdalnej gałęzi po tych próbach. Natywny zapis komentarza i utworzenia
   gałęzi zwraca403. Computer Use zakończono przez brak obsługi polityki URL
@@ -155,6 +155,18 @@ Każda osoba aktualizuje własny wiersz. Daty i dokładne źródła są w jej wp
   **NOT_RUN/INCOMPLETE**, bez deklaracji odbioru nowego kodu. Pobrano jedynie
   metadane historycznych artefaktów; próby odczytu ZIP w pamięci przerwała sieć,
   więc nie deklarujemy niezależnej weryfikacji bajtów ani ich SHA256.
+- **Publikacja przywrócona:** gałąź wypchnięta, [PR181](https://github.com/Roseru/aplikacja-mobilna/pull/181)
+  utworzony klientem GCM po technicznym403. Własny [Project CI40297959657](https://github.com/Roseru/aplikacja-mobilna/actions/runs/40297959657)
+  uruchomił FULL dla d99e4ff/merge5d87c12, rodzice a867ef8+d99e4ff,
+  treef5b77b4af2fa76a767372d4355e3e8682bb51b0c zgodny z checkoutem.
+  To pierwszy przebieg własnego kodu, bez przenoszenia PASS wcześniejszych PR.
+  Końcowy head/merge/tree oraz rzeczywiste FULL i niezależny main push CI
+  są kwalifikowane po aktualizacjach gałęzi i przekazywane w tym samym PR;
+  sam start jobów nie oznacza PASS. Przegląd początkowy:0reviews/0threads.
+  [Przekazanie PR146/6412450247](https://github.com/Roseru/aplikacja-mobilna/pull/146#issuecomment-6412450247)
+  ma identyczny GET-readback, livechat36 odnotowuje odblokowanie i osobne
+  wyniki A1. Niepotwierdzona wysyłka poprzedniego statusu miała błąd transportu.
+  Host artefaktów nadal zrywa pobranie ZIP; ograniczenie kontroli bajtów pozostaje.
 
 ### O1-001 — Android 0.3.0 przekazany do recenzji
 
