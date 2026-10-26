@@ -167,6 +167,33 @@ Każda osoba aktualizuje własny wiersz. Daty i dokładne źródła są w jej wp
   ma identyczny GET-readback, livechat36 odnotowuje odblokowanie i osobne
   wyniki A1. Niepotwierdzona wysyłka poprzedniego statusu miała błąd transportu.
   Host artefaktów nadal zrywa pobranie ZIP; ograniczenie kontroli bajtów pozostaje.
+- **Niezależny odczyt dowodów po przywróceniu transferu:** oba neutralne ZIP
+  pobrano do pamięci ze świeżych odnośników konektora, bez zapisu archiwów/logów.
+  Oryginalny12635632074:3393B i powyższy SHA256 zgodne; recovery FAIL,
+  7checks, issuance_closed421,0s, ścieżka845→235→38 i wspólny stage potwierdzone.
+  rollback FAIL/CalledProcessError, nadal bez action/returncode; restore PASS
+  z traffic_reopened=false. Nowy12638315032:4465B i powyższy SHA256 zgodne;
+  recovery8checks/PASS/wait421,0s, rollback complete/PASS/wait421,05s,
+  paired_globals_rehearsalPASS. Ruch tylko owned_scratch_only, AI/Nemesisfalse;
+  osobny restore PASS/trafficfalse. **Historical actual cause nadal UNKNOWN.**
+  Ten odczyt zastępuje wcześniejsze ograniczenie weryfikacji bajtów, zachowując
+  historię nieudanych prób pobrania i pierwotny negatywny wynik.
+- **Własna bramka Androida, osobna od diagnostyki rollbacku:** pierwszy
+  FULL40297959657/d99e4ff i końcowy przed integracją bazy
+  FULL40298566128/41a0da3 mają android-build FAILURE w istniejącym
+  NetworkOperationCancellationTest, przypadek
+  disposedOldSubscriptionCannotCloseNewOperationAndThreadContextDoesNotLeak,
+  1z435JVM/lokalizacja39. Kod Androida identyczny z baząa867ef8, bez edycji O3.
+  Odczyt logów wyłącznie w pamięci z wycięciem nazwy/liczności/lokalizacji.
+  Nie anulowano przebiegu po FAIL i nie rerunujemy losowo niezmienionego JVM.
+  [Komentarz zachowujący FAIL](https://github.com/Roseru/aplikacja-mobilna/pull/181#issuecomment-6412539713),
+  przekazanie w PR146/6412450247 i livechat37. Końcowe contracts/quality/PKCE
+  SUCCESS; quality1742backend i655infra/5skip/14nowych bezskip, reszta jeszcze
+  w toku przy tym wpisie. O1 opublikował2ce0782/PR178 po normalnym merge main
+  i prowadzi własny FULL40299180316. O3 czeka na właściwy scalony main/pin
+  fixture, aby dołączyć go normalnym merge i zakwalifikować nowe drzewo FULL;
+  nie przejmuje PR178 lub Androida ani nie osłabia bramki. Nowe4APK O1
+  odczytano jako osobne przekazanie; nie są odbierane w O3-107.
 
 ### O1-001 — Android 0.3.0 przekazany do recenzji
 
