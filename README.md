@@ -1,5 +1,7 @@
 # Wojskowy licznik kalorii
 
+Android **0.8.39** dodaje trwałe podglądy osiągnięć, rankingu i Nemesis z datą pobrania i usuwaniem własnej kopii. Osobne stany historyczne nie nadają uprawnień do zgód, decyzji lub kolejnych stron. [Raport](android/RAPORT_0_8_39.md): Room26→27 zachował wszystkie54 poprzednie tabele/rowid/treści; dziewięć unikalnych native PASS w zakresach4+5, sześć testów zmienionego guardu JVM i lint0Error/0Fatal. Wcześniejsze błędy fixture i ograniczenia rzeczywistego API pozostają opisane osobno.
+
 Android **0.8.12** dodaje lokalne zdjęcia z aparatu i galerii, trwały podgląd/usuwanie w aktywnym profilu oraz ręczny fallback. Poprawia Done w edycji gramatury. [Raport](android/RAPORT_0_8_12.md):165 JVM/21 końcowych zmienionych testów PASS; wcześniejsze188/186PASS+2RED zachowane osobno. Room8→9 zachował wszystkie stare kolumny22tabel/5posiłków. Upload/Gemini/confirm/sync i rzeczywisty APK/API nadal mają dalsze odbiory.
 
 Android **0.8.11** dodaje kody i zaproszenia Nemesis, świadomą akceptację zakresów oraz zakończenie udostępniania. Dokładna decyzja jest zapisana przed HTTP i ponawiana ręcznie tym samym kluczem po utracie odpowiedzi. [Raport i podglądy](android/RAPORT_0_8_11.md):165 JVM/179 pełny device dla pierwszego źródła, końcowe4 formularze po poprawce klawiatury osobno; Room8 bez migracji,22tabele/5posiłków zachowane. Gęstszy ranking, osiągnięcia i Postępy pozostają zachowane. Rzeczywisty pairing APK/API, E4/recovery i klientE9 wymagają dalszych odbiorów.
