@@ -187,7 +187,7 @@ class CommunityWorkflowTest {
                 old.execSQL("INSERT INTO room_master_table VALUES (42,?)",arrayOf(schema.getString("identityHash")))
                 old.version=22
             }
-            migrated=Room.databaseBuilder(context,CalorieDatabase::class.java,oldName).addMigrations(MIGRATION_22_23, pl.roseru.kalorie.data.MIGRATION_23_24, pl.roseru.kalorie.energy.MIGRATION_24_25, pl.roseru.kalorie.data.MIGRATION_25_26).addCallback(DATABASE_GUARDS).build()
+            migrated=Room.databaseBuilder(context,CalorieDatabase::class.java,oldName).addMigrations(MIGRATION_22_23, pl.roseru.kalorie.data.MIGRATION_23_24, pl.roseru.kalorie.energy.MIGRATION_24_25, pl.roseru.kalorie.data.MIGRATION_25_26, pl.roseru.kalorie.data.MIGRATION_26_27).addCallback(DATABASE_GUARDS).build()
             val sql=migrated.openHelper.readableDatabase
             assertEquals(26,sql.version);assertEquals(before,dump {sql.query(it)})
             assertFalse(sql.query("PRAGMA foreign_key_check").use {it.moveToFirst()})

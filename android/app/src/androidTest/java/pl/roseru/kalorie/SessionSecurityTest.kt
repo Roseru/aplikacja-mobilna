@@ -96,6 +96,72 @@ class SessionSecurityTest {
         assertEquals(subject, client.view.value.binding!!.owner.subject)
     }
 
+    // Fixture OIDC uses its supported logical callback; physical storage stays in the isolated APK.
+    @Test fun privatePreviewsSurviveDatabaseAndControllerRestartWithoutNetworkOrDecisionAuthority()=runBlocking<Unit> {
+        val databaseName="private-preview-${UUID.randomUUID()}"
+        fun open()=Room.databaseBuilder(context,CalorieDatabase::class.java,databaseName).addCallback(DATABASE_GUARDS).build()
+        var db=open();val vault=SessionVault(context,name());val fixture=FixtureGateway();val api=ApiFixture()
+        val motivation=MotivationFixture {rankingMotivationAnswer(false)}
+        val ranking=RankingFixture {_,_->rankingAnswer(fixture.time,true)};val nemesis=NemesisFixture()
+        try {
+            val c=client(db,vault,fixture,api,motivation=motivation,ranking=ranking,nemesis=nemesis,oidcApplicationId="pl.roseru.kalorie.validation")
+            c.start();login(c,fixture,"fixture-A");c.bootstrap()
+            val lease=c.view.value.binding!!.lease
+            DiaryRepository(db,context,lease).apply {initialize();setGoal(2400.0,null,null,null);add("basic-banana",100.0,MealType.LUNCH,LocalDate.now(),"preview-diary-preserved")}
+            c.readMotivation();c.readRanking();c.readNemesis();c.readNemesisChallenge(nemesisId)
+            assertTrue(c.view.value.nemesis is NemesisState.DetailReady)
+            val queue=db.dao().operationCount(lease.storageScope)
+            val reads=listOf(fixture.calls,api.calls.size,motivation.calls.size,ranking.calls.size,nemesis.calls.size)
+            val fetchedAt=fixture.time
+            db.close();db=open();fixture.time+=700_000
+            // No API gateways exist in this restarted controller, and the access token has expired.
+            val offline=client(db,vault,fixture,oidcApplicationId="pl.roseru.kalorie.validation");offline.start()
+            val active=offline.view.value.binding!!.lease
+            assertFalse(offline.view.value.hasSession)
+            offline.restorePrivatePreview(active,PrivatePreviewKind.MOTIVATION)
+            assertEquals(fetchedAt,(offline.view.value.motivation as MotivationState.Saved).fetchedAtMillis)
+            offline.restorePrivatePreview(active,PrivatePreviewKind.RANKING)
+            val page=offline.view.value.ranking as RankingState.Saved
+            assertEquals(25,page.page.items.size);assertEquals(rankingToken,page.page.nextPageToken)
+            offline.nextRankingPage();offline.retryRankingPage()
+            offline.restorePrivatePreview(active,PrivatePreviewKind.NEMESIS_LIST)
+            assertTrue(nemesisId in (offline.view.value.nemesis as NemesisState.ListSaved).cachedDetails)
+            offline.restorePrivatePreview(active,PrivatePreviewKind.NEMESIS_DETAIL,nemesisId)
+            assertNotNull((offline.view.value.nemesis as NemesisState.DetailSaved).statistics)
+            assertNull(offline.view.value.nemesisDecision)
+            assertEquals(reads,listOf(fixture.calls,api.calls.size,motivation.calls.size,ranking.calls.size,nemesis.calls.size))
+            assertEquals(queue,db.dao().operationCount(active.storageScope))
+            assertEquals("preview-diary-preserved",db.dao().day(active.storageScope,LocalDate.now().toString()).first().single().meal.id)
+            offline.clearSavedPrivatePreview(active,PrivatePreviewKind.NEMESIS_LIST)
+            assertFalse(db.privatePreviewDao().refs(active.storageScope,CanonicalMealRows.context(db.bootstrapDao().binding(active.storageScope)!!)).any {it.kind.startsWith("NEMESIS")})
+            assertNotNull(PrivatePreviewStore(db).read(active,db.bootstrapDao().binding(active.storageScope)!!,PrivatePreviewKind.RANKING,"latest"))
+        } finally {vault.clear();db.close();context.deleteDatabase(databaseName)}
+    }
+    @Test fun privatePreviewRejectsOldLeasesNewContextsAndKnownViewerAccessRevocation()=runBlocking<Unit> {
+        val db=memory();val vault=SessionVault(context,name());val fixture=FixtureGateway();val api=ApiFixture()
+        val motivation=MotivationFixture {rankingMotivationAnswer(true)};val ranking=RankingFixture {_,_->rankingAnswer(fixture.time)}
+        try {
+            val c=client(db,vault,fixture,api,motivation=motivation,ranking=ranking,oidcApplicationId="pl.roseru.kalorie.validation")
+            c.start();login(c,fixture,"fixture-A");c.bootstrap();c.readRanking()
+            val old=c.view.value.binding!!.lease
+            c.logout();login(c,fixture,"fixture-B");val b=c.view.value.binding!!.lease
+            c.restorePrivatePreview(old,PrivatePreviewKind.RANKING);c.restorePrivatePreview(b,PrivatePreviewKind.RANKING)
+            assertEquals(RankingState.NotRequested,c.view.value.ranking)
+            c.logout();login(c,fixture,"fixture-A");val a=c.view.value.binding!!.lease
+            c.restorePrivatePreview(old,PrivatePreviewKind.RANKING);assertEquals(RankingState.NotRequested,c.view.value.ranking)
+            c.restorePrivatePreview(a,PrivatePreviewKind.RANKING);assertTrue(c.view.value.ranking is RankingState.Saved)
+            c.clearSavedPrivatePreview(old,PrivatePreviewKind.RANKING);assertTrue(c.view.value.ranking is RankingState.Saved)
+            motivation.answer={rankingMotivationAnswer(false)};c.readMotivation();c.clearRankingPreview()
+            c.restorePrivatePreview(a,PrivatePreviewKind.RANKING);assertTrue(c.view.value.ranking is RankingState.Saved)
+            ranking.answer={_,_->denied(403,"account_bootstrap_required")};c.readRanking();c.clearRankingPreview()
+            c.restorePrivatePreview(a,PrivatePreviewKind.RANKING);assertEquals(RankingState.NotRequested,c.view.value.ranking)
+            ranking.answer={_,_->rankingAnswer(fixture.time)};c.readRanking();c.clearRankingPreview()
+            val binding=db.bootstrapDao().binding(a.storageScope)!!
+            db.bootstrapDao().update(binding.copy(contextRevision=binding.contextRevision+1))
+            c.restorePrivatePreview(a,PrivatePreviewKind.RANKING);assertEquals(RankingState.NotRequested,c.view.value.ranking)
+            assertTrue(db.privatePreviewDao().refs(a.storageScope,CanonicalMealRows.context(binding)).isNotEmpty())
+        }finally{vault.clear();db.close()}
+    }
     @Test fun pendingPkceSurvivesRestartAndCallbacksAreSingleUse() = runBlocking<Unit> {
         val db = memory(); val vault = SessionVault(context, name()); val fixture = FixtureGateway()
         try {

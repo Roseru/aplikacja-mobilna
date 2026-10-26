@@ -106,7 +106,7 @@ class EnergyStorageTest {
                 old.execSQL("DETACH DATABASE origin");old.execSQL("CREATE TABLE room_master_table (id INTEGER PRIMARY KEY,identity_hash TEXT)")
                 old.execSQL("INSERT INTO room_master_table VALUES (42,?)",arrayOf(fixture.getString("identityHash")));old.version=24
             }
-            migrated=androidx.room.Room.databaseBuilder(context,CalorieDatabase::class.java,name).addMigrations(MIGRATION_24_25, pl.roseru.kalorie.data.MIGRATION_25_26).addCallback(DATABASE_GUARDS).build()
+            migrated=androidx.room.Room.databaseBuilder(context,CalorieDatabase::class.java,name).addMigrations(MIGRATION_24_25, pl.roseru.kalorie.data.MIGRATION_25_26, pl.roseru.kalorie.data.MIGRATION_26_27).addCallback(DATABASE_GUARDS).build()
             val sql=migrated.openHelper.readableDatabase;assertEquals(26,sql.version);assertEquals(before,dump {sql.query(it)})
             for(table in listOf("energy_cache","energy_attempts","energy_backoff"))assertEquals(0,sql.query("SELECT count(*) FROM $table").use {it.moveToFirst();it.getInt(0)})
             assertFalse(sql.query("PRAGMA foreign_key_check").use {it.moveToFirst()})
