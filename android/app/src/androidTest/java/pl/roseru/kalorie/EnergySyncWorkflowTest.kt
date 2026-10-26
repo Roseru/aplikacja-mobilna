@@ -220,7 +220,7 @@ class EnergySyncWorkflowTest {
             }
             migrated=Room.databaseBuilder(context,CalorieDatabase::class.java,name).addMigrations(MIGRATION_25_26, pl.roseru.kalorie.data.MIGRATION_26_27).addCallback(DATABASE_GUARDS).build()
             val sql=migrated.openHelper.readableDatabase
-            assertEquals(26,sql.version);assertEquals(before,dump {sql.query(it)})
+            assertEquals(27,sql.version);assertEquals(before,dump {sql.query(it)})
             for(table in listOf("server_snapshot_runs","sync_push_batches","reconciliation_batches")) {
                 assertTrue(sql.query("SELECT count(*) FROM $table WHERE protocolScope='calorie-app'").use {it.moveToFirst();it.getInt(0)>0})
                 rejected {sql.execSQL("UPDATE $table SET protocolScope='calorie-app:energy_estimates_v1'")}

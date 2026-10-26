@@ -206,7 +206,7 @@ class PhotoAnalysisStorageTest {
             }
             val migrated=Room.databaseBuilder(context,CalorieDatabase::class.java,name).addMigrations(MIGRATION_9_10, pl.roseru.kalorie.data.MIGRATION_10_11, pl.roseru.kalorie.data.MIGRATION_11_12, pl.roseru.kalorie.photo.MIGRATION_12_13, pl.roseru.kalorie.data.MIGRATION_13_14, pl.roseru.kalorie.data.MIGRATION_14_15, pl.roseru.kalorie.data.MIGRATION_15_16, pl.roseru.kalorie.data.MIGRATION_16_17, pl.roseru.kalorie.data.MIGRATION_17_18, pl.roseru.kalorie.data.MIGRATION_18_19, pl.roseru.kalorie.data.MIGRATION_19_20, pl.roseru.kalorie.data.MIGRATION_20_21, pl.roseru.kalorie.data.MIGRATION_21_22, pl.roseru.kalorie.data.MIGRATION_22_23, pl.roseru.kalorie.data.MIGRATION_23_24, pl.roseru.kalorie.energy.MIGRATION_24_25, pl.roseru.kalorie.data.MIGRATION_25_26, pl.roseru.kalorie.data.MIGRATION_26_27).addCallback(DATABASE_GUARDS).build()
             try {
-                assertEquals(26,migrated.openHelper.readableDatabase.version)
+                assertEquals(27,migrated.openHelper.readableDatabase.version)
                 assertEquals(before,snapshot(migrated.openHelper.readableDatabase))
                 assertEquals(itemRowids,migrated.openHelper.readableDatabase.query("SELECT id,rowid FROM meal_items").use {cursor->buildMap<String,Long> {while(cursor.moveToNext())put(cursor.getString(0),cursor.getLong(1))}})
                 if(from==12) {

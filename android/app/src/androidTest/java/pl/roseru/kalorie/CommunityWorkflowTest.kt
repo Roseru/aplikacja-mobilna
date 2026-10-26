@@ -189,7 +189,7 @@ class CommunityWorkflowTest {
             }
             migrated=Room.databaseBuilder(context,CalorieDatabase::class.java,oldName).addMigrations(MIGRATION_22_23, pl.roseru.kalorie.data.MIGRATION_23_24, pl.roseru.kalorie.energy.MIGRATION_24_25, pl.roseru.kalorie.data.MIGRATION_25_26, pl.roseru.kalorie.data.MIGRATION_26_27).addCallback(DATABASE_GUARDS).build()
             val sql=migrated.openHelper.readableDatabase
-            assertEquals(26,sql.version);assertEquals(before,dump {sql.query(it)})
+            assertEquals(27,sql.version);assertEquals(before,dump {sql.query(it)})
             assertFalse(sql.query("PRAGMA foreign_key_check").use {it.moveToFirst()})
             listOf("community_cache","community_attempts","community_backoff").forEach {table ->
                 assertEquals(0,sql.query("SELECT count(*) FROM $table").use {it.moveToFirst();it.getInt(0)})

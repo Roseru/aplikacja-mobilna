@@ -180,7 +180,7 @@ class AchievementStorageTest {
         try {
             assertEquals(22, expected.size)
             queries.forEach { (table, query) -> assertEquals(table, expected.getValue(table), migrated.openHelper.readableDatabase.query(query).use(::rows)) }
-            assertEquals(26,migrated.openHelper.readableDatabase.version)
+            assertEquals(27,migrated.openHelper.readableDatabase.version)
             assertNull(migrated.dao().meal("legacy", "guest")!!.items.single().rationComponentPosition)
             assertEquals(1, preview(migrated).legacyRationMeals)
             assertEquals(0, preview(migrated).badge(AchievementCode.RATION_DAYS).progress)

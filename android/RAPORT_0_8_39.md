@@ -105,7 +105,46 @@ To nie rerun/naprawa historycznego CI na main; właściwy zdalny CI nowego head
 pozostaje do wykonania. Zamrożone źródło2319357 i cztery APK Room23 bez zmian.
 
 Aplikacja: SHA256 `07a273ad9363dbc653a0c08f2f7c432f3deb41b73e044d7ccd9266490afbf923`.
-Końcowy test APK: `6c47b623ecbfe1c64e4a2e9847c984bdc92e45b0b1cc737261fbe443181c69a9`.
+Test APK zakresu4+5: `6c47b623ecbfe1c64e4a2e9847c984bdc92e45b0b1cc737261fbe443181c69a9`.
 Buildy i prywatne logi pozostają poza Git. Nie wykonano tu nowych prób
 TLS/PKCE/Gemini/E4 lub odbioru1.0. Cztery skonfigurowane APK Room23 dla O3
 są odrębną, przypiętą dostawą opisaną w jedynym dzienniku zespołu.
+
+## Pierwszy CI oraz poprawka oczekiwań migracji
+
+FULL40351721905/head8611fa2 (testowany merge53204df) zakończył się
+6SUCCESS/2FAILURE. android-build, contracts, quality, PKCE, PostgreSQL
+oraz local-integration SUCCESS; android-device i zależny agregat FAILURE.
+Raport12664188508,1379052B, ZIP SHA256
+`293d6dab1b50ab3a8e0add07a1e7add74c01915c82ff6d82a51a524e8649d90b`:
+554testy,537PASS/17FAIL/0ERROR/0SKIP. Wszystkie17 FAIL to oczekiwanie26
+zamiast faktycznej27 w11asercjach końcowej wersji. Historyczne wejściowe
+wersje/schema JSON oraz porównania wszystkich danych/rowid/body/kolejek
+pozostały zachowane. Zmieniono wyłącznie te11oczekiwań na27; aplikacja
+produkcyjna jest identyczna bajtowo ze wcześniejszym odbiorem.
+
+Przebudowano tylko test APK:334,141s PASS, logSHA256
+`5088c9248cec224cbc5bb8bf3ea99288e905e0e2f8ac4893b20d9547eaf89455`.
+Aktualny test APK SHA256
+`c36945bc379f3f53db67cf285b930f80eebd9c5951b20455783e7faefbbacb16`.
+Ponowiono wyłącznie17wskazanych przypadków:17PASS/0FAIL/0SKIP,
+46,937s z instalacją/kontrolą (39,028s testów), logSHA256
+`e55578ad65b965f6f0fb8920cc7c245b93be7f6a46495087e1f5580d09935ccd`.
+Oryginalny APK/test APK/3pliki dziennika i stan offline identyczne.
+Nie ponawiano pozostałych537, poprzednich zakresów4+5, JVM lub lint.
+To nie nowe wspólne554/554; nowy head wymaga własnego zdalnego CI.
+
+## Osobny smoke skonfigurowanej dostawy Room23
+
+Cztery dostarczone APK O1-145 zainstalowano na nowym niezależnym AVD API35;
+sumy faktycznie zainstalowanych bajtów zgodne z manifestem. Obie aplikacje
+uruchomiono offline; domyślny testAPK sprawdzono przed jawną zamianą na opt-in.
+W skonfigurowanym validation przez zwykły UI dodano Banan120g:107kcal,
+B/T/W1,3/0,4/27,4g i1zmiana w kolejce. Po force-stop i potwierdzonym COLD
+starcie wartości i kolejka zachowane. Rzeczywisty SQLite: Room23,
+49tabel, identityd8e3ed92a9b0fd8af6cc2e57fc644687. Oryginalny profil O1
+pozostał identyczny. Prywatny receiptSHA256
+`336a48085c60a0db69ae93628ff3a5567ff0f699db47caf3a50332538c30ceda`.
+To **OFFLINE_CLIENT_SMOKE PASS**, katalog DEMO v1; bez wykonania drivera
+lub live API/PKCE/E4/PG/PULL/Gemini. android_acceptance nadal NOT_CREATED,
+live_trial NOT_RUN. Nie zastępuje pełnego odbioru APK/API lub wydania1.0.

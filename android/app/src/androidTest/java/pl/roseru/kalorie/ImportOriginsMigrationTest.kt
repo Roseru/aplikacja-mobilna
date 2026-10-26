@@ -92,7 +92,7 @@ class ImportOriginsMigrationTest {
                 assertFalse(old.rawQuery("PRAGMA foreign_key_check",null).use {it.moveToFirst()})
             }
             target=Room.databaseBuilder(context,CalorieDatabase::class.java,name).addMigrations(MIGRATION_18_19,MIGRATION_19_20, pl.roseru.kalorie.data.MIGRATION_20_21, pl.roseru.kalorie.data.MIGRATION_21_22, pl.roseru.kalorie.data.MIGRATION_22_23, pl.roseru.kalorie.data.MIGRATION_23_24, pl.roseru.kalorie.energy.MIGRATION_24_25, pl.roseru.kalorie.data.MIGRATION_25_26, pl.roseru.kalorie.data.MIGRATION_26_27).addCallback(DATABASE_GUARDS).build()
-            val db=target!!;assertEquals(26,db.openHelper.readableDatabase.version)
+            val db=target!!;assertEquals(27,db.openHelper.readableDatabase.version)
             if(version==21) {
                 val migratedState=db.syncWorkDao().state(lease.storageScope)!!
                 assertNull(migratedState.reconciliationBaseline)

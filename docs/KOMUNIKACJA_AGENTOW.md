@@ -9956,3 +9956,33 @@ podlega końcowy diff dwóch dokumentów wobec aktualnego main oraz nowy CI PR.
   bez zmian; android_acceptance NOT_CREATED/live_trial NOT_RUN. Osobno
   aktualne peer/okno i transport/PKCE/E4/PG/PULL. Bez nowych prób live/Gemini,
   backupu/recovery lub restartu komputera. To nie odbiór całego1.0.
+
+
+Kontynuacja O1-146 — odbiór pierwszego CI i poprawka17oczekiwań migracji:
+
+- [PR187](https://github.com/Roseru/aplikacja-mobilna/pull/187), head8611fa2:
+  FULL40351721905 terminalny6SUCCESS/2FAILURE. Android build, quality,
+  contracts, PKCE, PostgreSQL i local-integration SUCCESS. Native554:
+  537PASS/17FAIL/0ERROR/0SKIP. Wszystkie17 FAIL wskazały26zamiast27 w11
+  asercjach wersji końcowej; raport12664188508/SHA256
+  293d6dab1b50ab3a8e0add07a1e7add74c01915c82ff6d82a51a524e8649d90b.
+- Zmieniono wyłącznie11oczekiwań aktualnej wersji. Historyczne schematy,
+  wersje wejściowe i wszystkie asercje danych/rowid/kolejek zachowane;
+  produkcyjny APK07a273ad… identyczny. Test-only build334,141s PASS;
+  tylko17faktycznie nieudanych przypadków:17PASS/0FAIL/0SKIP,46,937s,
+  logSHA256e55578ad65b965f6f0fb8920cc7c245b93be7f6a46495087e1f5580d09935ccd.
+  Wcześniejsze4+5 oraz6JVM zachowano bez powtarzania. Nowy head wymaga
+  własnego CI; nie nazwano poprzedniego554/554.
+- O3: faktyczna dostawa Room23 przeszła osobny OFFLINE_CLIENT_SMOKE.
+  Nowy niezależny AVD API35,4role APK zainstalowane i ich bajty zgodne
+  z manifestem; obie aplikacje uruchomione offline. Skonfigurowany validation:
+  UI Banan120g/107kcal/B1,3T0,4W27,4/1pending zachowane po force-stop/COLD.
+  Faktyczny SQLite23/49tabel/identityd8e3ed92a9b0fd8af6cc2e57fc644687.
+  Oryginalny profil identyczny. ReceiptSHA256
+  336a48085c60a0db69ae93628ff3a5567ff0f699db47caf3a50332538c30ceda.
+  To nie uruchomienie drivera ani API; katalog DEMO v1. android_acceptance
+  NOT_CREATED/live_trial NOT_RUN; dalej aktualne peer/okno i pełny odbiór.
+  Samo zainstalowanie opt-in nie oznacza wykonania live testów.
+- Szczegóły w istniejącym raporcie0.8.39. Poprawka trafi do tego samego
+  dużego PR187. Odczytano brak nowych wiadomości PR146 przed publikacją;
+  brak nowego restartu PC, wipe, backupu/recovery lub podmiany zamrożonych APK.
