@@ -29,7 +29,8 @@ import pl.roseru.kalorie.core.catalog.CatalogManifest
         CatalogSourceDetail(selected,onBack={selectedId=null})
         return
     }
-    AlertDialog(onDismissRequest=onClose,title={Text("Źródła bazy v${manifest.release}")},
+    AlertDialog(onDismissRequest=onClose,title={Text(if(manifest.packageId==pl.roseru.kalorie.core.catalog.MreCatalogueRules.PACKAGE_ID)
+        "MRE 2026 · źródła v${manifest.release}" else "Źródła bazy v${manifest.release}")},
         modifier=Modifier.testTag("catalog-sources-dialog"),
         text={when(state) {
             is CatalogSourcesState.Loading->Row(horizontalArrangement=Arrangement.spacedBy(12.dp)) {

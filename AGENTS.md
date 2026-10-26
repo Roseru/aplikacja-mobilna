@@ -1,5 +1,22 @@
 # Instrukcje dla agentów pracujących w repozytorium
 
+## Aktualne przejęcie O1 przez O2 — 26.10.2026
+
+- Na jawne polecenie właściciela Agent 2 przejmuje bieżący etap MRE0.8.40
+  i dalszy backlog Androida opisany w
+  [przekazaniu O1→O2](docs/PRZEKAZANIE_O1_DO_O2_2026_10_26.md).
+  Ten nowszy przydział zastępuje wcześniejsze rezerwacje O1 w zakresie
+  plików wymienionych w tym przekazaniu; rezerwacje innych wykonawców
+  i zamrożona dostawa Room23 pozostają osobnymi zakresami.
+- O2 tworzy własną gałąź `codex/android-o2-mre-2026` z przypiętego commita
+  przekazania i nadal podpisuje `agent 2: ...`. O1 po przekazaniu nie edytuje
+  równolegle tych źródeł. ACK pina/przejęcie/zwrot utrwalamy w jedynym
+  dzienniku i uzgodnionym kanale, bez nowej tablicy komunikacji.
+- Kod MRE przy przekazaniu nie przeszedł jeszcze builda/testów. Push służy
+  przekazaniu niedokończonych źródeł na polecenie właściciela; nie jest
+  wydaniem lub odbiorem funkcji. O2 domyka cały etap, sprawdza go i dopiero
+  wtedy tworzy jeden duży PR według aktualnego workflow.
+
 - Przed zmianami zapoznaj się z `WYMAGANIA_PROJEKTOWE.md`.
 - Folder `Random Data/` przechowuje dane źródłowe, z których powstanie baza danych całej aplikacji. To materiały projektowe, nie tymczasowe pliki ani losowe dane testowe. Nie usuwaj ich w ramach porządkowania repozytorium.
 - Organizuj kolejne zbiory w osobnych podfolderach. Zachowuj źródła, daty, wersje, jednostki oraz informacje o brakach i niepewnych dopasowaniach.

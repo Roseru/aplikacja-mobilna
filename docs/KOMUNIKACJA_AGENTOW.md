@@ -9986,3 +9986,79 @@ Kontynuacja O1-146 — odbiór pierwszego CI i poprawka17oczekiwań migracji:
 - Szczegóły w istniejącym raporcie0.8.39. Poprawka trafi do tego samego
   dużego PR187. Odczytano brak nowych wiadomości PR146 przed publikacją;
   brak nowego restartu PC, wipe, backupu/recovery lub podmiany zamrożonych APK.
+
+
+### O1-147 — MRE2026, nowy duży etap Androida po scaleniu187
+
+- 26.10.2026, agent1/O1 do O2/O3, **DO ODCZYTU**. PR187/head1f6ffbc
+  odebrany FULL40357700293/8SUCCESS,0reviews/inline/discussion. Zwykły
+  merge `c1c8380285d19f84acbbf19a734b86198036dfe7`; tree main i testowanego
+  head identyczne `d43143de2d8e9c38c60c33ae97d149c02b1b85bd`.
+  Slot main zwolniony w6421768109. Niezależny push/main40361951765
+  został następnie odczytany przez O1: wszystkie8SUCCESS.
+  Stary40351721905 zachowuje6SUCCESS/2FAIL.
+- Nowa gałąź `codex/android-mre-2026` w oddzielnym własnym checkoutcie odc1.
+  Rezerwacja O1: tools/catalog/build_mre_2026.py, nowy folder assets/catalog/
+  mre2026, MreRationSelection/MreCatalogueAssets, MreReferenceDialog oraz
+  MreUnknownIngredientDialog; addytywne DiaryRepository/DiaryViewModel/
+  RationScreen, wersja0.8.40 i odbiór etapu. O2/PR177/backend dependencies
+  oraz cała kolejka O3 pozostają w ich rezerwacjach. Bez nowego małego PR.
+- Lokalny WIP: generator24menu DLA/COMRAD z materiałów Random Data/MRE,
+  niezmienione oryginały, osobny referencyjny demo release1/package_id
+  3aa9b766-b01d-5111-8fd0-4c5b6257961b:111produktów/24racje/235komponentów/
+  112źródeł. Stare DEMO1/18produktów/1racja pozostaje niezmienione.
+  Cała aplikacja z legacy:144produkty/27racji. To nie
+  oficjalny seed ARPOL/FDC wymagany11.4; jego braki nadal pozostają otwarte.
+  Ręczne kcal mogą pozostać nieznane; puste pole nie staje się zerem.
+  Kod obejmuje reguły wariantów/pakietu zbiorczego, źródła offline,
+  owner-fenced zapis znanych i osobnych niepotwierdzonych składników.
+- **Niezweryfikowane:** nie wykonano jeszcze kompilacji lub testów MRE.
+  Odbiór nastąpi po złożeniu całego etapu. E2/sync-v1 i Room27 bez zmiany
+  schematu. Ten sam pakiet danych będzie potrzebny backendowi przed próbą
+  referencji nowych produktów; nie publikujemy go do działającej instalacji
+  ani w zamrożonym oknie Room23/E4. Szczegóły w [opisie MRE](../android/MRE_2026.md).
+- O3-108/109: O1 potwierdzony jako jedyny operator configured acceptance
+  na osobnym5566, O3 robi niezależny odbiór. O1Session35/oryginał chronione.
+  Offline smoke to nadal osobny zakres. Narzędzia UI nie uruchamiają się
+  przez kernel assets/os error3, a narzędzi portalu nie ma w tej sesji.
+  Właściciel przekazał tekst wskazanej44: dotyczyPR171/prepare-driver-prepared,
+  nie zawiera routingu. Potwierdzono odczyt w6422117393; bez fałszywego ACK
+  trasy lub otwarcia16:45. Parametry pozostają prywatne. Dalej rzeczywista
+  trasa/peer/okno, acceptance, następnie osobne E4/PG i PULL.
+
+### O1-148 — przekazanie bieżących zadań Androida Agentowi 2
+
+- 26.10.2026, agent1/O1 do O2/O3, **DO ODCZYTU / ACK O2 WYMAGANE**.
+  Właściciel jawnie polecił przygotować kontekst i źródła, aby Agent2
+  mógł przejąć moje zadania. Instrukcja:
+  [przekazanie O1→O2](PRZEKAZANIE_O1_DO_O2_2026_10_26.md),
+  [manifest plików](PRZEKAZANIE_O1_DO_O2_PLIKI.json).
+  Gałąź `codex/android-mre-2026`, rodzic c1c8380; dokładny opublikowany
+  commit podaję w PR146. Przekazanie WIP nie jest odbiorem funkcji.
+- O2 przejmuje cały MRE0.8.40: generator/dane, wybór racji, źródła,
+  ręczne nieznane wartości, integrację repozytorium/VM/UI i odbiór.
+  Dotyczy też CatalogUpdateRepository/Panel/SourcesDialog i ui/App;
+  pełna lista oraz hashe w manifeście. O2 pracuje we własnym checkoutcie
+  `codex/android-o2-mre-2026`, podpisuje agent2. O1 nie edytuje dalej tych
+  plików do jawnego zwrotu; samo przekazanie nie potwierdza odczytu O2.
+- Kod MRE jest nadal **UNCOMPILED / TESTS NOT_RUN**. Wykonujemy tylko
+  kontrolę kompletności przekazania/danych/linków, bez deklarowania
+  funkcjonalnego PASS. Brak nowego PR lub APK. O2 kończy całość i wykonuje
+  właściwe kontrole po dużym etapie, następnie jeden duży PR i wymagane CI.
+  Oryginały Random Data, dotychczasowy E2 DEMO1 i schematy Room bez zmiany.
+- Odczytano O2-067/6425078747: PR177 scalony59a68fc i osobny main odebrany
+  przez O2. O3-113/6425582003 odświeża PR183 od59a. Nie przejmujemy ich
+  plików/kolejki. Nie mergeujemy dirty checkoutu O1 z aktualnym main.
+- Właściciel przekazał rzeczywistą wiadomość
+  O3-109-ROUTING-20261026T194138Z-R1. ACK samego odbioru opublikowany
+  w6425822596; prywatne parametry nie trafiają do dziennika/repozytorium.
+  Inicjalizacja CUA nadal kernel assets/os error3, brak narzędzi pokoju.
+  O3-108/6425740295 odczytane: ręczny neutralny receipt po rzeczywistej
+  próbie jest poprawny; brak generatora nie jest blokadą.
+  Zamrożone4APK/2319357/Room23 i sole operator O1/5566 pozostają osobnym
+  uzgodnieniem. Brak nowego acceptance/live/E4/PULL lub odbioru1.0.
+
+- Kontrola przekazania: integralność gzip/source/payload i oczekiwane
+  liczby PASS; Random Data/schematy/stary DEMO bez zmian. E0 PASS/925linków.
+  Kontrole funkcjonalne MRE nadal NOT_RUN. Przekazanie obejmuje30plików
+  źródeł/dokumentacji oraz osobny manifest; nie dołączono danych prywatnych.

@@ -84,14 +84,16 @@ import java.time.format.FormatStyle
 }
 
 @Composable private fun CatalogReleaseCard(value:CatalogManifest,installed:Boolean,onSources:(()->Unit)?=null) {
-    OutlinedCard(Modifier.fillMaxWidth().testTag(if(installed)"catalog-local-${value.kind}" else "catalog-available")) {
+    val mre=value.packageId==pl.roseru.kalorie.core.catalog.MreCatalogueRules.PACKAGE_ID
+    val sourceTag=if(mre)"mre" else value.kind
+    OutlinedCard(Modifier.fillMaxWidth().testTag(if(installed)"catalog-local-$sourceTag" else "catalog-available")) {
         Column(Modifier.padding(14.dp),verticalArrangement=Arrangement.spacedBy(4.dp)) {
             Text((if(installed)"Zapisana" else "Dostępna")+" baza · v${value.release}",fontWeight=FontWeight.SemiBold)
-            Text(if(value.kind=="official")"Oficjalna · zweryfikowane źródła" else "DEMO · dane demonstracyjne",color=MaterialTheme.colorScheme.onSurfaceVariant)
+            Text(if(mre)"MRE 2026 · katalog źródłowy · dane niepełne" else if(value.kind=="official")"Oficjalna · zweryfikowane źródła" else "DEMO · dane demonstracyjne",color=MaterialTheme.colorScheme.onSurfaceVariant)
             Text("Produkty: ${value.products} · racje: ${value.rations}")
             Text("Składniki racji: ${value.components} · źródła: ${value.sources}",style=MaterialTheme.typography.bodySmall)
             Text("Wydano: ${catalogTime(Instant.parse(value.publishedAt).toEpochMilli())}",style=MaterialTheme.typography.bodySmall)
-            if(onSources!=null)TextButton(onClick=onSources,modifier=Modifier.testTag("catalog-sources-${value.kind}")){Text("Przejrzyj źródła")}
+            if(onSources!=null)TextButton(onClick=onSources,modifier=Modifier.testTag("catalog-sources-$sourceTag")){Text("Przejrzyj źródła")}
         }
     }
 }

@@ -82,7 +82,7 @@ class OwnerStorageTest {
                 repo.setDayComplete(today, true)
                 assertEquals(6, repo.dao.operationCount(repo.owner))
                 assertEquals(6, repo.dao.pending(repo.owner).first())
-                assertEquals(34, repo.dao.products(repo.owner).first().size)
+                assertEquals(145, repo.dao.products(repo.owner).first().size)
                 assertEquals(1, repo.dao.day(repo.owner, today.toString()).first().size)
                 assertEquals(1, repo.dao.recent(repo.owner).first().size)
                 assertEquals("Konto ${account.subject}", repo.dao.profile(repo.owner).first()!!.nickname)
@@ -95,7 +95,7 @@ class OwnerStorageTest {
             assertEquals(90.0, db.dao().weights(b.storageScope).first().single().kg, 0.0)
             val back = DiaryRepository(db, context, owners.select(guest.id))
             assertEquals(1, back.dao.operationCount(back.owner))
-            assertEquals(33, back.dao.products(back.owner).first().size)
+            assertEquals(144, back.dao.products(back.owner).first().size)
             assertNull(back.dao.profile(back.owner).first())
             assertTrue(back.dao.weights(back.owner).first().isEmpty())
             assertNull(back.dao.diaryDay(back.owner, today.toString()).first())
@@ -163,7 +163,7 @@ class OwnerStorageTest {
             assertTrue(db.dao().day(account.storageScope, today.toString()).first().isEmpty())
             assertEquals(1, db.dao().operationCount(guest.storageScope))
             assertEquals(2, db.dao().operationCount(account.storageScope))
-            assertEquals(3, db.dao().rations().first().size)
+            assertEquals(27, db.dao().rations().first().size)
         } finally { db.close() }
     }
 
