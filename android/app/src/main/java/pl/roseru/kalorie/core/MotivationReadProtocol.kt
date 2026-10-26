@@ -25,6 +25,7 @@ sealed interface MotivationState {
     data object NotRequested : MotivationState
     data object Loading : MotivationState
     data class Ready(val read: MotivationRead) : MotivationState
+    class Saved(val read:MotivationRead,val fetchedAtMillis:Long,val warning:String?=null):MotivationState
     data class Failed(val message: String) : MotivationState
 }
 
