@@ -21,7 +21,7 @@ Każda osoba aktualizuje własny wiersz. Daty i dokładne źródła są w jej wp
 | Rola | Ostatni znany rezultat | Następny krok / zależność | Źródło |
 |---|---|---|---|
 | O1 — Android, Kotlin, Room | Room23/DI/P2 opublikowane eacc8f1/2319357 z lokalnym odbiorem; E9 REST50eb470 osobno. Trwa lokalny merge runtime do E9 i pełny opt-in, robocze0.8.36/Room25 bez nowej kwalifikacji | Pełny scope/snapshot/projekcja/incremental E9; ETag wydzielony do O2. Cztery APK Room23 oczekują aktualnej konfiguracji O3; brak nowego liveE4/CI/main | O1-129/131/132, [etap E9](../android/KOREKTY_ZAPOTRZEBOWANIA.md), codex/android-korekty-energii |
-| O2 — Python, PostgreSQL, API; Android A/B/C | PR167/168 odebrane i scalone. PR174 certifi: odbiór 9,3/10, scalony 00dae4aa; FULL PR i osobne main CI po 8 SUCCESS. Runtime: source 325446b0, odbiór komponentu 9/10, 54 native i 6 JVM PASS; pozostaje do integracji O1. OIDC: historyczny 401 niewyjaśniony | O1: przyjąć finalny pin runtime, minimalny lifecycle Factory i wspólne DI, następnie integracja i 4 zgodne APK. O3: kwalifikacja zestawu i live E4 po dostawie O1. Aktualizacja certifi nie zmienia tych bramek | O2-063/O2-064, [komponent](https://github.com/Roseru/aplikacja-mobilna/commit/325446b0b762f1088822d296455d522fbe8fe10d), [PR174](https://github.com/Roseru/aplikacja-mobilna/pull/174) |
+| O2 — Python, PostgreSQL, API; Android A/B/C | Runtime325 i ETag4cc2d4db przyjęte przez O1 i włączone w PR175. PR177 FastAPI/Alembic/Ruff: lokalny odbiór i niezależny przegląd 9,4/10; finalny CI oczekiwany | Root odbiera aktualny head/base FULL CI PR177 i osobny main po merge. O1/O3 osobno: configured APK Room23, peer/okno i rzeczywisty E4. Bez zmian Room27, recovery lub zdrowego demo | O2-067, [PR177](https://github.com/Roseru/aplikacja-mobilna/pull/177), [wcześniejszy odbiór ETag](https://github.com/Roseru/aplikacja-mobilna/pull/146#issuecomment-6400515465) |
 | O3 — DevOps, CI/CD, serwer | PR172/173 i ich osobne main FULL8SUCCESS odebrane. Room23 eacc8f1/2319357: source/P2/DI przyjęte statycznie w O3-106, bez nowych prób Android/live. Historyczny401 nadal UNPROVEN; demo Room20 i wcześniejsze kopie zachowane | Odczytany publiczny pin O3-105/6411463409 pozwala budować APK; oczekujemy 4 skonfigurowanych APK/android_acceptance O1 i peer/okna; potem statyczny odbiór zestawu i uzgodnione E4/PG, osobny PULL, pakiet i kopia. Finalny runtime325446b jest już w integracji, rezerwacje zwrócone | O3-103/O3-104/O3-106, [procedura i piny](integracja/PRZYGOTOWANIE_REPLAY_E4_O3.md), [dostawa O1](https://github.com/Roseru/aplikacja-mobilna/pull/146#issuecomment-6399203852) |
 
 
@@ -9913,3 +9913,40 @@ podlega końcowy diff dwóch dokumentów wobec aktualnego main oraz nowy CI PR.
   Osobny lokalny WIP codex/android-podglady-offline dopina trzy historyczne
   podglądy, Room27 i ograniczony odbiór po złożeniu całego etapu. Nie jest
   częścią tej dostawy Room23 lub PR178; bez nowego małego PR.
+
+
+### O2-067 — Zgodność aktualizacji FastAPI, Alembic i Ruff w istniejącym PR177
+
+- Data / autor: 26.10.2026, **agent 2 / O2**. Do O1/O3, **DO ODCZYTU**.
+  [PR177](https://github.com/Roseru/aplikacja-mobilna/pull/177), lokalna gałąź
+  `codex/backend-deps177`; publikacja na tej samej gałęzi bota, bez nowego PR.
+  Zwykły merge `b2173f08555165d520fc96179b93adf7ffac309b` zachowuje rodziców
+  `a593e2b8a5b3698906ffc69b42fc8e6f47d3bbb2` i main `8db2ec31cfd3ccf848467feea743b51825562085`.
+- Jedyna zmiana produktu względem tej bazy: `backend/uv.lock`, FastAPI
+  0.157.0 → 0.161.1, Alembic 1.20.0 → 1.20.1, Ruff 0.17.1 → 0.17.2.
+  Spośród 44 zainstalowanych dystrybucji zmieniają się tylko te trzy;
+  dependency edges, kod, normatywne OpenAPI, migracje i pozostałe locki zachowane.
+- Baseline i candidate: osobno **37 istniejących testów PASS**, bez failure/error/skip.
+  Osobno po **43 oczekiwane próby HTTP** na rzeczywistych trasach, z syntetyczną
+  granicą przed storage. Poprawna walidacja daje celowy status 209, nie dowodzi
+  odczytu/zapisu PG; błędy query/body/header i auth 422/401/403/503 są zgodne.
+  No-store, challenge, Retry-After i frozen bytes zachowane w sprawdzonym zakresie.
+- Skuteczność eksperymentu: prywatny canary model Query + scalar wykazuje znaną
+  zmianę FastAPI 200 → 422. Obecne 11 modeli Query nie używa tego układu.
+  Pełne wygenerowane OpenAPI jest identyczne między wersjami i zgodne z artefaktem.
+- Alembic ładuje te same 26 rewizji i head `0026_ledger_review`. Render dwóch
+  istniejących migracji daje identyczne sześć instrukcji SQL; offline upgrade
+  prawidłowo odmawia. Nie wykonywano PG lokalnie; pełny odbiór transakcji i migracji
+  pozostaje wymaganym jobem zdalnego CI. Bez nowej migracji lub autogenerate.
+- Ruff check/format PASS po obu stronach, 426 plików bez formatowania. E0
+  i diff-check PASS. Pierwszy HTTP FAIL był identycznym błędem roli fixture;
+  poprawiono ją na `catalog_moderator`, zachowując kontrolę produktu i stare logi.
+  **Niezależny odbiór 9,4/10, brak materialnych P1/P2.**
+- Finalne wymagane FULL CI dokładnego head/base jest na tym etapie **PENDING**;
+  wynik root uzupełni w PR, bez kolejnego commita dla samego statusu CI.
+  Dotychczasowy zielony main lub lokalny PASS nie zastępuje tej kontroli.
+- Runtime/ETag są już przyjęte w PR175, diagnostykę rollbacku dostarczył O3/PR181.
+  Room27 i zgłoszoną diagnostykę urządzenia prowadzi O1. Tych prac nie dublowano;
+  nie uruchamiano lokalnego Androida, live API/OIDC/Gemini, backupu lub deploy.
+  O3 uwzględnia nowe zależności w kolejnym uzgodnionym obrazie; używana instalacja,
+  konfiguracja i zdrowe demo nie zostały podmienione. Odbiorcy potwierdzają odczyt sami.
