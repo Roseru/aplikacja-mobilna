@@ -32,7 +32,7 @@ class DiaryStorageTest {
             db = Room.databaseBuilder(context, CalorieDatabase::class.java, name).addCallback(DATABASE_GUARDS).build()
             repo = DiaryRepository(db, context)
             repo.initialize()
-            assertEquals(33, db.dao().products().first().size)
+            assertEquals(144, db.dao().products().first().size)
             assertEquals(106.8, db.dao().day(DiaryRepository.GUEST, date.toString()).first().single().items.single().consumed().kcal, .00001)
             assertEquals(1, db.dao().operationCount(DiaryRepository.GUEST))
             repo.edit("meal-test", 200.0)

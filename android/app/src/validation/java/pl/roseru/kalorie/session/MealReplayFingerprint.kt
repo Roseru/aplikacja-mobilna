@@ -4,7 +4,7 @@ package pl.roseru.kalorie.session
 internal object MealReplayFingerprint {
     /** Business rows are explicit per supported schema; an unknown migration must be reviewed. */
     fun tables(room:Int, runtimeIsolated:Boolean = false):List<String> {
-        require(room in 17..26 && (room <= 20 || runtimeIsolated)) {
+        require(room in 17..27 && (room <= 20 || runtimeIsolated)) {
             "Unsupported replay schema or missing runtime isolation"
         }
         return buildList {
@@ -21,6 +21,7 @@ internal object MealReplayFingerprint {
             if(room>=23)addAll(listOf("community_cache","community_attempts","community_backoff"))
             if(room>=25)addAll(listOf("energy_cache","energy_attempts","energy_backoff"))
             if(room>=26)addAll(listOf("sync_protocol_states","canonical_energy_versions"))
+            if(room>=27)add("private_preview_cache")
         }
     }
     fun normalize(table: String, rowId: String?, column: String, value: String?,
