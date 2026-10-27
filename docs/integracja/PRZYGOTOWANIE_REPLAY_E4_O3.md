@@ -753,3 +753,221 @@ nie jest odbiorem nowego artefaktu lub używanego runtime. O2-049 w jedynym
 [dzienniku](../KOMUNIKACJA_AGENTOW.md) opisuje aktualizację bazy PR137
 przed scaleniem. Wejścia O3, skonfigurowany APK O1 i rzeczywiste C0/C1/C2
 pozostają wymagane; live E4/E7-R/recovery/KO32 NOT_RUN.
+
+
+## O3-117 — kwalifikacja MRE na dokładnym runtime, 27.10.2026
+
+Wynik: **PASS domeny importu i synchronizacji Meal na zachowanym obrazie**.
+Odczyt aktywnego API przed i po próbie potwierdził image/index
+`sha256:05c1792f3551725f0303cc3786892771392532a25edc18ff710faad9e6b7e9a9`,
+schemat `0024_e9_history_graph` i PostgreSQL17.11. Scratch użył tego samego
+obrazu bez przebudowania źródeł, własnej sieci Docker internal, bez portów,
+świeżego PG17.11 z tmpfs i standardowych ról. Migracje z tego obrazu wykonano
+wyłącznie do0024 na pustej bazie. API użyło rzeczywistej roli
+`calorie_app_api`, sprawdzonej jako non-superuser; importer osobnej roli migratora.
+
+### Tożsamość obrazu i źródła
+
+Istniejące archiwum poprzednika z17.10 zostało ponownie zhashowane:
+96772096B, SHA256 `8f1aa0541c5eeffd5e6bd4ba656d45c50ec956a9be3abb245b5f3d566339b757`.
+Jego index blob05c1792f/856B wskazuje linux/amd64 manifest
+`11c79c833b1a0e98a1d156ecccc60cddef5cdb684cf9c47653180b084f9f0b6e`/2769B,
+ten zaś config `94c8c0e8bdfe9293edef9e060b1dbbdc40540fbe09689e081226a8650a43e7b5`/8318B.
+Wszystkie trzy bloby porównano z digestami. Istniejący receipt ma SHA256
+`2bcf2ea46022c9f317f41ff7aeff961fb7bd4f124cdf81647951068ea3ea7beb`.
+BuildKit attestation wiąże manifest, ale nie zawiera URI/digestu źródła Git.
+Pełne źródło/build Git pozostaje **UNKNOWN**. Historyczna zgodność wybranych
+plików z8ff7c0c nie jest wiązaniem całego obrazu. Kopie69de2fd3/3b803488
+i scratch e6e80d58/schema0026 nie zastępują tego targetu.
+
+### Pakiet, wyniki i powtarzalność
+
+Użyto finalnych assets z `68fe0239fbeb5b00078164c7fbda4065cd1bf0a2`, tree
+`e0c895427869668373d6ee55049ca227162eba4e`, katalog
+`android/app/src/main/assets/catalog/mre2026/`, bez uruchamiania generatora:
+package `3aa9b766-b01d-5111-8fd0-4c5b6257961b`, demo/release1.
+
+| Artefakt | Bajty | SHA256 |
+|---|---:|---|
+| base-pl.1.json.gz.bin | 27924 | `2c0a1ff730e408cc90ab1fcfcb2b9eef21ebce8fa2d935d429f296d225260880` |
+| manifest.json | 4769 | `dc0a0b9b818dd7ea9f224424c6fe07b11d8af574dbb6109a9658c12297c149bf` |
+| rozpakowany payload | 246314 | `0552172f59de3f71597074b88dcb99c22d8c227eba7cb3ce96ac30f3e0a9d967` |
+
+| Próba na obrazie05c / schema0024 | Faktyczny wynik |
+|---|---|
+| Izolacja, wersja schematu/PG i rola API | PASS; pusty katalog i konta syntetyczne |
+| Walidacja dokładnych plików i liczności | PASS;111produktów/24racje/235komponentów/112źródeł |
+| Push znanej referencji przed importem | oczekiwane `rejected/dependency_missing` |
+| Import i ponowny import tego samego wydania | PASS; created=true, potem false; liczności PG zgodne |
+| Eksport rzeczywistego PG | PASS; payload, gzip i manifest bajtowo identyczne z assets |
+| Ten sam odrzucony UUID po imporcie | nadal `rejected/dependency_missing`, identyczna odpowiedź |
+| Pierwszy MRE push nowego konta po imporcie | PASS;2znane Product UUID/revision +1ręczny Meal;3accepted/revision1 |
+| Replay tych samych3operacji |3already_applied/revision1, bez duplikatów |
+| Przyrostowy sync pull od checkpointu sprzed push | PASS;3Meal UUID/payload/revision1/deleted=false, checkpoint obecny |
+| Prywatny odczyt i stan PG | PASS;3meals/3items/4receipts; konto negatywne nie odczytuje dodatniego |
+| Ręczne braki i jawne zero | kcal=null i protein=0 zachowane oddzielnie |
+| Cleanup | PASS; własny PG/sieć usunięte,0własnych kontenerów/sieci; tmpfs, bez named volumes/prune |
+
+Końcowy probe: `6a6aa40bf3000feecce50363352f90005e851e8ffd8042f00fac872f9c84d7e4`; hash sprawdzono przed i po wykonaniu,
+a skrypt zapisał ten sam hash w receipcie. Receipt SHA256 `7ee43dc8d20ca3f66252c8e1b84bffeab3f32b138aca5deeb3696a1f0bacc815`,
+fixture `4e0efa4dbc4c601aece04af7d8b9f2cd5abd31bfbc33473d8043bbc950448609`, manifest runtime `ae154c10fbfe69f7ea49d96498e6a9741606a5b4650c7581beebb9d354484bd1`,
+cleanup `41ee7d7290588df111681c12218155df27b4cba60e325def34928e4f562db0c7`. Pierwszy, węższy run8etapówPASS
+zachowano osobno; po dodaniu kontroli roli/proweniencji i sync pull wykonano
+nowy pełny run9etapów na ponownie pustym scratch. Nie przestemplowano starego wyniku.
+
+Verifier i identities są syntetyczne; ASGI TestClient wywołuje prawdziwy kod
+zainstalowany w obrazie. Wire jest jawną rekonstrukcją Python według źródeł
+Kotlin, nie bajtami wyeksportowanymi z APK. Źródła Git68fe, SHA256 blobów LF:
+CatalogMealWire.kt `04cee279e0978d9a9c2fdd7f5d81a8877ad22184dfeec9bf6769902943f3e731`,
+ManualMealWire.kt `5b1aafd34f65be1bec4a31bba3729aed1c8d32c0d9731b7db50e09c02118d497`,
+MealWire.kt `96aa52d27b4478246711f75e26d9d26e5495bad0629450041dd9eea24a7d42b7`;
+pliki są w `android/app/src/main/java/pl/roseru/kalorie/core/sync/`.
+Kwalifikacja nie obejmuje Android execution, PKCE/TLS/live/Gemini ani pełnego1.0.
+
+### Warunki i komendy kontrolowanego importu O3-118
+
+Ten wynik pozwala przygotować import dokładnego pakietu na tym targetcie.
+Operator118 potwierdza ponownie immutable image/schema, uzgadnia osobne okno
+i atomowy runtime.lock poza zamrożonym Room23/E4. Przed importem zachowuje
+baseline istniejących DEMO1/official, wersji/aktywacji i ich hashy oraz po
+imporcie je porównuje. Scratch117 zaczynał od pustego katalogu i nie testował
+zachowania istniejących danych żywej instalacji. Import jest wymagany przed
+pierwszym rzeczywistym account push nowych referencji MRE. Późniejszy import
+nie naprawia receiptu starego UUID; klient nie może zastępować go automatycznie.
+
+Do kontenera jednorazowego z dokładnego obrazu05c przekazuje się wyłącznie
+zweryfikowany rozpakowany payload jako `/input/package.json` read-only
+i właściwy prywatny DATABASE_URL roli migratora; nie podaje się DSN w logach.
+Polecenia CLI odpowiadające implementacjom sprawdzonym w scratch:
+
+```text
+/app/.venv/bin/python -m calorie_app.modules.catalog.cli validate --input /input/package.json
+/app/.venv/bin/python -m calorie_app.modules.catalog.cli import --input /input/package.json
+/app/.venv/bin/python -m calorie_app.modules.catalog.cli import --input /input/package.json
+/app/.venv/bin/python -m calorie_app.modules.catalog.cli export --package-id 3aa9b766-b01d-5111-8fd0-4c5b6257961b --release 1 --output /output
+```
+
+W probe użyto bezpośrednio tych samych implementacji `validate_package`,
+`import_catalog` i `export_package`; CLI validate uruchomiono dodatkowo osobno.
+Oczekiwane created=true/false oraz eksport o powyższych hashach. Krok `publish`
+nie należy do tej procedury. Rzeczywisty import118 wymaga własnego receiptu;
+117 nie wykonał importu do demo, rolloutu, migracji0026, zmiany epoki/CA/credentials
+ani próby Room23. Zachowane APK0.8.35/Room23/2319357 pozostają osobną dostawą.
+
+### Manifest faktycznych plików obrazu
+
+Odczyt wykonano jednorazowym kontenerem05c z network=none/read-only.
+Allowlista obejmuje bezpośrednie pliki katalogu/importera/walidacji, diary,
+sync/identity oraz wskazane pliki core/db/profiles. To nie manifest wszystkich
+plików obrazu. Nie wyeksportowano środowiska, DSN, prywatnych plików ani danych.
+Ścieżki poniżej są względne do zainstalowanego `calorie_app` w site-packages.
+
+| Plik | Bajty | SHA256 |
+|---|---:|---|
+| `core/config.py` | 4445 | `dda68e3bc4f63c3592ff9b1f67b421f80ab6c5d64084b1bacf24e806a8fc3176` |
+| `db/base.py` | 506 | `0955918ecace2437a23c7bcc27f1ed3d05979bef544d6f9060413dbee9c95d2f` |
+| `db/models.py` | 260 | `3c2583b20c7f2b029cef113b0ad5469fb5ff1425dab4bc55f0392f5dc433c009` |
+| `db/session.py` | 816 | `9dbab573d5b685e0c5ca6cc89d9e74ca0f680dbae7b372a236a33b33d63dc237` |
+| `main.py` | 5632 | `9d6c17a880a3d76700b9bf86c9775340a713e85fa6083b5b77106d47c58526ab` |
+| `modules/catalog/__init__.py` | 304 | `97c57b4dcca5e69bede8b5aa8decc113150209dfc046286c19aa54f4f049a96c` |
+| `modules/catalog/cli.py` | 4121 | `1107661e4896306f4e54460a5f053e8ffbd1f3d25a53f30d4eb74c954afd73e0` |
+| `modules/catalog/export.py` | 7417 | `51360bf18f6a5383dfde2fdb26bc571d77da86197adec3452d9face4245673ab` |
+| `modules/catalog/locking.py` | 517 | `7ca214ae8f9ea83e72b3ead51fc5f1a39878d3ab8460bba7d78d7e00debbc7f8` |
+| `modules/catalog/matching.py` | 10943 | `ee8e69fdad0d610105d09733f31fb7aa224dfbe5a73b1a7b1c3afff3f683186c` |
+| `modules/catalog/models.py` | 16708 | `bf63c4daaca3dbf803d6268f811034b767c502d0382c9102ed4cf6d6d39728fb` |
+| `modules/catalog/nutrition.py` | 4985 | `55256c1def82829cf535dae13f1e1a0198f868fa224b3a48953a935bf232264b` |
+| `modules/catalog/offline_import.py` | 22591 | `cdd635a70186f3f4371455f26c73a1657fd568affe0b4a53b98a51824c26593e` |
+| `modules/catalog/pagination.py` | 4302 | `2892cad4d56254e9cb2983bb04122d344b249de47de24779c71d9daba5379ccf` |
+| `modules/catalog/product_pages.py` | 2479 | `cecc5a831e3356d8d8bd1d79a9718642e00f34cea30b8c16edda65dfd584230a` |
+| `modules/catalog/protected_router.py` | 7758 | `c39b3f1fd8dfc94c8e956456958661529e7c7cf46e5d8322ce94330a29b42c03` |
+| `modules/catalog/repository.py` | 8876 | `c991d18aa6ba64258e4a10c353531b07873e2fd7bbd653bd99f504c7ee789343` |
+| `modules/catalog/router.py` | 11364 | `b2939337736a643f02da35c7460a55ddc1d8600ed8f92b39a8d04526ca5b2c69` |
+| `modules/catalog/schemas.py` | 6432 | `b28406a8a37a93f55ceb063b06b83fce541a0212edf87637e7fbf66f35b21834` |
+| `modules/catalog/search_metadata.py` | 1503 | `8ba13e08554dac97f577a741bfca4ff71b445504084a1010c054baccc669c727` |
+| `modules/catalog/service.py` | 15338 | `b988bd9b0f486c9aacbb5ee4d5ffa9f7a5647a4cef88e08a97e71651379a8fec` |
+| `modules/catalog/timestamps.py` | 457 | `c0925e36ba4088bf5ed53c02c707ac2a89143b5d08d81a000f465ad84d078790` |
+| `modules/catalog/validation.py` | 11089 | `d9cce0c34ca949352aee9076031dd3dc9957bd6bd0f1966d5a4c87ed996fe7c0` |
+| `modules/diary/__init__.py` | 79 | `4f517c8d9edafea544b140aa444d0ccca77b4c0927ec0dea9a1c268732684d66` |
+| `modules/diary/models.py` | 9335 | `77793ea9ff601a753fe94e92ebff7d3241774f63fe1e1620e1dda2346316c3a6` |
+| `modules/diary/read_models.py` | 2972 | `3f2f95d98eb33c960f71a8c69cfa11256f88f9a739438cfb7562261f533bfbae` |
+| `modules/diary/read_repository.py` | 4930 | `d7e3ffd5274e2764f1f7b7dfd91fd1522c20c4cf78491268fe1cd4710d3b3579` |
+| `modules/diary/read_router.py` | 3122 | `ea5ce9e7ea4f5d8cb06109a4ac730e6c913bee88a34706b8aa434369757494bc` |
+| `modules/diary/read_schemas.py` | 2821 | `12aadfe1653c76058b4d48ad7796be9477e6bfa42d7ff67945ba26ab0669449e` |
+| `modules/diary/read_service.py` | 9583 | `a843934a1fc9d56114377e951943f2eb6f462b1a3db5d4a9feff88f8ca922188` |
+| `modules/diary/read_tokens.py` | 1270 | `46b41edd720f62d87c601068f739f569fe335dfac10dacba43a9579f076f9b09` |
+| `modules/diary/repository.py` | 1662 | `56e74687e1238808d376667a3e2a5f805e5b1458ab690a9fee9ee493d7bd4f51` |
+| `modules/diary/service.py` | 12424 | `a1acc7e33c1e6e9fb6dbe7c2ba27ff94a6e66d31369abb361f66a8c943cb7364` |
+| `modules/diary/validation.py` | 4306 | `c2ad3349a1f327e2300d72dc5a89afd4bff89bc2b1209b5d3451bf364a2b15a8` |
+| `modules/identity/__init__.py` | 78 | `5ae57655dcebcdb02442ec972f59805f6f08251b7b6de6e2800dc9901baad0ba` |
+| `modules/identity/deletion.py` | 4808 | `2d361e5482d87de8f88c98526f455e32d00b2f157ae3bc92b01434152efe535d` |
+| `modules/identity/deletion_models.py` | 3289 | `d053e681392dd7846d6dc1b1204e56ea30f37a6a0fd85957c6b079a1cb913d8a` |
+| `modules/identity/dependencies.py` | 991 | `b8e09670750bb14a2067a888327cf9dca07b3fbb6b11101161084ab177e78ca4` |
+| `modules/identity/models.py` | 2901 | `194b7f96d9e54fc64262ba6b4327698f104229d76175e60d3f04935bc12531da` |
+| `modules/identity/router.py` | 1851 | `7243822df7edbcd626785339f4f57067ea91e3ffd64d4820129da5f825720ade` |
+| `modules/identity/service.py` | 4858 | `14d3b7d14e8db9458d26f2b89b5495d024626ca0fd1e87a82593e98fca1ec95c` |
+| `modules/profiles/models.py` | 5712 | `f9e161e18606d2891bdb9d4a5b1dc9a1ee437c7413df5f770441d67ae23afbe4` |
+| `modules/profiles/service.py` | 13856 | `163e302ef2de0ddc4a54af7ccb177a83b34f8db2ddb798bde69371c4aece5ec8` |
+| `modules/sync/__init__.py` | 50 | `3a00b4cc5474069dc849f40779ac86ef092d921438fb3d6d0a11e26cbb08fff3` |
+| `modules/sync/errors.py` | 267 | `770152323d44fb76aefd6cb6ce4bde1fded20932fbd0e2f3db32a74c34a80ad2` |
+| `modules/sync/models.py` | 3255 | `373e7465a25bf6235e1c28a1c21829a636cb2f4fbf1504777c1e3c960f9d407d` |
+| `modules/sync/repository.py` | 3814 | `7aa458b6bed7d47ed59c2db18833317877b9475ed6b8b2f3e5e561060a8f8627` |
+| `modules/sync/retention.py` | 1485 | `6fddce41c81709daf6701c9ec55ac77af89fb6478bbf61a33aec911e52caa4b2` |
+| `modules/sync/router.py` | 7085 | `2c5f2f7cc47e7849746fb6ce31bdfd87f3fc83dca266683c15b4e25d15cc8615` |
+| `modules/sync/schemas.py` | 4163 | `585f4cac8a1cc13e3e8b94e3588773dce578458eccf6f21dad8cbb04228da226` |
+| `modules/sync/service.py` | 20756 | `bc99047b07d43211182db37664ae3968a17fa53d074f70d6624c9d217af09e2e` |
+| `modules/sync/snapshot_models.py` | 3122 | `edac0dddd1e24cbaf3d6a1506caa762aa41bef2649ff8c82a77f874fb49a47e3` |
+| `modules/sync/snapshots.py` | 16936 | `f680121e491e9b5d8bfbb529e43529090c185006ddafbb0dcca2c3fbf62409df` |
+| `modules/sync/tokens.py` | 5882 | `58bf90b96c0e046ac20f2e9db04d166e06918504ef496f10780a4b1feebb600e` |
+| `modules/sync/transport.py` | 4448 | `97a3e4cecacff4930d716cf66eb980955e22753be5fc3102462d0a5b188aca92` |
+
+Hashes wejść z `/app` (nie dowodzą rewizji całego obrazu):
+
+| Plik | Bajty | SHA256 |
+|---|---:|---|
+| `uv.lock` | 84188 | `bd3ae944a0eff27e89e2d8099b3940c84985f10fa457d7ea258a4fb646d84605` |
+| `pyproject.toml` | 1172 | `632651ab034efb8bfc79ae7e7ef44c810e39d755862b925da023808cfe540a1e` |
+| `alembic.ini` | 104 | `8705441b0b3f4d627356aebdc816217aae8d43f58caa30a96a5eeb54d1b403c7` |
+| `migrations/env.py` | 4317 | `9cce9946ceedb466471ec64abcce097d7d40fc1de08aac2694ff08c75b5b096b` |
+
+Runtime Python3.13.16/x86_64; rzeczywiste38dystrybucji:
+
+```text
+Mako==1.4.3
+MarkupSafe==3.0.4
+PyJWT==2.15.1
+SQLAlchemy==2.0.54
+alembic==1.20.0
+annotated-doc==0.0.5
+annotated-types==0.8.0
+anyio==4.15.1
+attrs==26.1.0
+calorie-backend==0.1.0
+certifi==2026.7.22
+cffi==2.1.1
+click==8.5.0
+cryptography==50.0.2
+fastapi==0.143.0
+greenlet==3.5.6
+h11==0.16.0
+httpcore==1.0.9
+httpx==0.28.1
+idna==3.20
+jsonschema-specifications==2025.9.1
+jsonschema==4.26.0
+opentelemetry-api==1.45.1
+pillow==12.3.0
+psycopg-binary==3.3.6
+psycopg==3.3.6
+pycparser==3.11
+pydantic-settings==2.15.0
+pydantic==2.14.0
+pydantic_core==2.50.0
+python-dotenv==1.2.4
+referencing==0.37.0
+rpds-py==2026.9.1
+starlette==1.7.0
+typing-inspection==0.4.4
+typing_extensions==4.16.0
+tzdata==2026.5
+uvicorn==0.54.0
+```
