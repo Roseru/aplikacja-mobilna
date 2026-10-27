@@ -8,6 +8,8 @@ import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.flowOf
 import kotlinx.coroutines.flow.map
+import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.asStateFlow
 import org.json.JSONArray
 import org.json.JSONObject
 import pl.roseru.kalorie.core.*
@@ -19,6 +21,8 @@ import java.util.UUID
 
 class DiaryRepository(private val db: CalorieDatabase, private val context: Context, lease: OwnerLease? = null) {
     val dao = db.dao()
+    private val mreState = MutableStateFlow<MreCatalogueState>(MreCatalogueState.Loading)
+    val mreCatalogue = mreState.asStateFlow()
     fun achievements(clock: LocalDayClock) = AchievementRepository(db, clock).observe(owner)
     /** Old immutable rows can expose their already archived exact audit without backfilling a value. */
     fun observeGoalEstimate(row: GoalEntity?): Flow<GoalEntity?> {
@@ -91,6 +95,16 @@ class DiaryRepository(private val db: CalorieDatabase, private val context: Cont
         // MergeAssets auto-inflates .gz assets; .bin preserves the signed APK's original gzip bytes.
         val packageValue = reader.read(context.assets.open("catalog/e2/manifest.json"), context.assets.open("catalog/e2/base-pl.1.json.gz.bin"))
         CatalogStore(db).import(packageValue)
+        try {
+            val mre = MreCatalogueAssets(context).read(schema)
+            ownerTransaction { CatalogStore(db).import(mre.catalog) }
+            mreState.value = MreCatalogueState.Ready(mre.rules)
+        } catch (error: kotlinx.coroutines.CancellationException) { throw error }
+        catch (error: StaleOwnerException) { throw error }
+        catch (_: Exception) {
+            // Keep the last complete catalogue usable; source menus without verified rules stay read-only.
+            mreState.value = MreCatalogueState.Unavailable
+        }
     }
 
     private fun readCatalog(file: String) = JSONObject(context.assets.open("catalog/$file").bufferedReader().use { it.readText() })
@@ -193,9 +207,11 @@ class DiaryRepository(private val db: CalorieDatabase, private val context: Cont
         if (dao.meal(id, owner) != null) return@ownerTransaction
         val ration = requireNotNull(dao.ration(rationId))
         require(quantities.isNotEmpty() && quantities.keys.all { key -> ration.components.any { it.id == key } })
+        val selection = mreCatalogue.value.selectionFor(ration.ration.catalogJson)
+        require(selection == null || selection.accepts(quantities.keys.map { key -> ration.components.single { it.id == key }.position }.toSet()))
         require(exactQuantities.keys.all { it in quantities })
         val zone = ZoneId.systemDefault()
-        val meal = MealEntity(id, owner, date.toString(), date.atTime(LocalTime.now()).atZone(zone).toInstant().toString(),
+        val meal = MealEntity(id, owner, date.toString(), date.atTime(LocalTime.now()).atZone(zone).toInstant().truncatedTo(java.time.temporal.ChronoUnit.MICROS).toString(),
             zone.id, type.name, rationId = ration.ration.id, rationName = ration.ration.name)
         val items = ration.components.sortedBy { it.position }.mapNotNull { component ->
             val grams = quantities[component.id] ?: return@mapNotNull null
@@ -214,6 +230,40 @@ class DiaryRepository(private val db: CalorieDatabase, private val context: Cont
         dao.insertMeal(meal)
         items.forEach { dao.insertItem(it) }
         enqueue(meal, items, "create")
+    }
+
+    /** An unmatched source ingredient is an explicit manual entry, never its comparison profile. */
+    suspend fun addUncertainMre(rationId: String, locator: String, input: MreManualInput,
+        type: MealType, date: LocalDate, id: String = UUID.randomUUID().toString()) = ownerTransaction {
+        if (dao.meal(id, owner) != null) return@ownerTransaction
+        input.validate()
+        val ration = requireNotNull(dao.ration(rationId))
+        val policy = requireNotNull(mreCatalogue.value.selectionFor(ration.ration.catalogJson))
+        val ingredient = policy.missing.single { it.locator == locator && !it.equipment }
+        val name = "${ration.ration.name} · ${ingredient.name} · dane własne"
+        val zone = ZoneId.systemDefault()
+        val time = date.atTime(LocalTime.now()).atZone(zone).toInstant().truncatedTo(java.time.temporal.ChronoUnit.MICROS).toString()
+        val wire = ManualMealWire.create(name, UUID.randomUUID().toString(), input.amount, "g", input.nutrition,
+            time, zone.id, type.name.lowercase(java.util.Locale.ROOT), CanonicalMealRows.schema(context))
+        val binding = db.bootstrapDao().binding(owner)?.takeIf {
+            !it.requiresRecovery && db.ownerDao().byScope(owner)?.kind == "account"
+        }
+        if (binding != null) {
+            val contextId = CanonicalMealRows.context(binding)
+            val operationId = UUID.randomUUID().toString()
+            val operation = MealWire.operation(operationId, id, binding.syncEpoch, null, wire.canonical, CanonicalMealRows.schema(context))
+            dao.insertMeal(CanonicalMealRows.meal(id, owner, wire, contextId))
+            CanonicalMealRows.items(id, wire).forEach { dao.insertItem(it) }
+            dao.enqueue(OutboxEntity(operationId, owner, "meal", id, "upsert", null, wire.canonical,
+                Instant.now().toString(), "pending", "sync-v1", operation, contextId))
+        } else {
+            val meal = MealEntity(id, owner, date.toString(), time, zone.id, type.name)
+            // Legacy/import preserves nullable cells; exact wire is the local calculator authority.
+            val item = CanonicalMealRows.items(id, wire).single()
+            dao.insertMeal(meal)
+            dao.insertItem(item)
+            enqueue(meal, listOf(item), "create")
+        }
     }
 
     /** Catalogue consumption keeps the local package/source snapshot and queues only the Meal. */

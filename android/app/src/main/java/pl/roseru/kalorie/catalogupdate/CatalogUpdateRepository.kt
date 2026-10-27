@@ -71,9 +71,10 @@ class CatalogUpdateRepository internal constructor(private val db:CalorieDatabas
     }
 
     private fun description(row:CatalogGenerationEntity):CatalogManifest {
-        val expected=when(row.kind) {
-            "demo"->CatalogPackageReader.DEMO_ID
-            "official"->CatalogPackageReader.OFFICIAL_ID
+        val expected=when {
+            row.kind=="demo" && row.packageId==MreCatalogueRules.PACKAGE_ID->MreCatalogueRules.PACKAGE_ID
+            row.kind=="demo"->CatalogPackageReader.DEMO_ID
+            row.kind=="official"->CatalogPackageReader.OFFICIAL_ID
             else->throw CatalogTransferRejected("catalog_identity")
         }
         check(row.complete && row.packageId==expected)

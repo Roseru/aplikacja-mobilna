@@ -59,6 +59,8 @@ class ReplayRuntimeIsolationTest {
                 assertEquals(0, writes)
                 finish.complete(Unit)
                 withTimeout(5_000) { arming.await() }
+                // arm joins the admitted block; its caller still needs to observe cancellation.
+                withTimeout(5_000) { worker.join() }
                 assertTrue(worker.isCancelled)
                 gate.requireHeld(trial, "owner", "epoch-1")
                 restarted.requireHeld(trial, "owner", "epoch-1")

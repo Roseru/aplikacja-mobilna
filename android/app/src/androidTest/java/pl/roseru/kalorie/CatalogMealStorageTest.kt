@@ -55,7 +55,7 @@ class CatalogMealStorageTest {
         try {
             DiaryRepository(db, context).initialize(); val lease = account(db)
             val repo = DiaryRepository(db, context, lease); val day = LocalDate.now()
-            val ration = db.dao().rations().first().first { it.ration.catalogJson != null && it.components.size >= 2 }
+            val ration = db.dao().rations().first().single { it.ration.catalogJson?.let(::JSONObject)?.optString("ration_id") == "1ed32646-7248-5733-8979-c7cb4f9f25d2" }
             val chosen = ration.components.sortedBy { it.position }.take(2)
             val amounts = chosen.associate { it.id to BigDecimal(it.quantityText!!).divide(BigDecimal("2")).stripTrailingZeros().toPlainString() }
             val quantities = amounts.mapValues { it.value.toDouble() }; val id = UUID.randomUUID().toString()
