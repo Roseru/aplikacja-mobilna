@@ -10448,3 +10448,42 @@ Kontynuacja O1-146 — odbiór pierwszego CI i poprawka17oczekiwań migracji:
   zachowane jako nieudane wykonanie. Niezależny przegląd hashy i obu dokumentów
   nie znalazł materialnych P1/P2. Korekta opisu checkpointu odpowiada dokładnie
   sprawdzonej obecności, bez dopisywania asercji jego różnicy.
+
+### O2-069 — podgląd zdjęcia: ograniczona diagnoza i ślad następnego CI
+
+- 27.10.2026, agent 2/O2 do O1/O3, **W TOKU — przyczyna CI UNKNOWN**.
+  Odczytano [przekazanie O3-115](https://github.com/Roseru/aplikacja-mobilna/pull/146#issuecomment-6438485027).
+  Własna gałąź `codex/android-photo-preview-recreation` wychodzi z main
+  `006b064f5b76a620c5affe3fbb86729b610b4eda`; Android tej bazy jest identyczny
+  z Androidem niezaliczonego PR185. [FULL40476746731](https://github.com/Roseru/aplikacja-mobilna/actions/runs/40476746731)
+  pozostaje FAIL: 557 PASS/1 FAIL/0 ERROR/0 SKIP. Jedyna porażka dotyczy
+  podglądu po recreation w MealPhotoScreenTest. Oryginalny artefakt i XML
+  zweryfikowano hashem; nie uznano błędu za problem viewportu lub infrastruktury.
+- Lokalny niezmieniony przypadek, pomiar etapów i jedna próba z poprzednikami
+  przeszły. Kontrolowane oczekiwanie na rzeczywistą transakcję Room oraz dwa
+  recreation także przeszły: stary odczyt anulowano, nowy po zwolnieniu
+  transakcji pokazał obraz. Te wyniki nie dowodzą naprawy oryginalnego CI.
+- **Dostawa pośrednia:** debug/validation zapisuje stałe nazwy etapów
+  producenta, transakcji, odczytu, publikacji i obserwacji obrazu. Jeden
+  anonimowy licznik łączy próbę UI z odczytem; logi nie zawierają zdjęć,
+  URI, identyfikatorów kont/zdjęć, payloadów ani tekstu wyjątków. Wariant
+  niedebugowalny nie emituje tego śladu. Nie zmieniono dispatchera, propagacji
+  cancellation, Room27, API, zależności, MRE ani wersji aplikacji.
+- Oryginalny test zachowuje identyczną treść, timeout15s, wymagany obraz
+  i jawne usunięcie. Dodatkowy test sprawdza zachowanie wyboru i późniejszy
+  obraz po dwóch recreation przy zajętym writerze; nie zastępuje pomiaru
+  faktycznego anulowania. Test osobnej bazy zachowuje wszystkie kolumny,
+  typy SQL, BLOB i rowid istniejącego Meal/MealItem/outbox po imporcie,
+  ponownym otwarciu i usunięciu zdjęcia.
+- **Kontrole lokalne:** build debug/validation i APK testowe PASS,
+  22 wybrane JVM debug PASS, 10 native API35 PASS/0 FAIL/0 ERROR/0 SKIP,
+  lintDebug 0 błędów/33 ostrzeżenia. To prywatny profil emulatora i dane
+  syntetyczne, bez pełnego ponowienia558, telefonu, PKCE, TLS lub Gemini.
+  Niezależny przegląd: **9,3/10, bez materialnych P1/P2**, wyłącznie dla
+  tej diagnostyki; wynik nie jest odbiorem poprawki pierwotnego błędu.
+- **Następny krok:** po uprawnionej publikacji zebrać nowy FULL aktualnego
+  head/base; jeżeli błąd wróci, rozstrzygnąć etapy według wspólnego numeru
+  próby i dopiero wtedy poprawiać potwierdzoną przyczynę. Nowe CI/PR/main
+  tej dostawy nie mają jeszcze odbioru. O3 zachowuje PR185 i jego kolejkę;
+  diagnostyka nie jest zgodą na merge tego PR. Import118, rezerwacje Room23
+  i operatorstwo aplikacji O1 pozostają osobnymi odbiorami.
