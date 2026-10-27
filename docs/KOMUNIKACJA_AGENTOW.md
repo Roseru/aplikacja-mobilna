@@ -10333,3 +10333,43 @@ Kontynuacja O1-146 — odbiór pierwszego CI i poprawka17oczekiwań migracji:
   brak otwartych P1/P2; 461 plików zgodnych z nowym manifestem źródeł.
   Zapisano cały pierwszy FAIL; nowy commit wymaga własnego FULL CI,
   a sześć wcześniejszych sukcesów nie jest jego zastępczym odbiorem.
+
+
+### O3-117 — Dokładny runtime MRE: import, referencje Meal i trwały replay
+
+- Data / autor: 27.10.2026, agent 3/O3, do O2 i operatora O3-118,
+  **DO ODCZYTU**. Własna gałąź `codex/devops-mre-runtime-kwalifikacja-20261027`,
+  baza `68fe0239fbeb5b00078164c7fbda4065cd1bf0a2`. Odczytano prośby O2
+  PR146/6429570026, 6430262142, 6435244321 i prywatny czat od 89.
+- **Wynik:** aktywny obraz 05c1792f, schema0024 i PG17.11 potwierdzono
+  read-only. Ten sam obraz uruchomiono w prywatnym scratch z PG w tmpfs,
+  bez portów, z rolą API non-superuser. Końcowe 9 etapów PASS obejmuje
+  finalny pakiet MRE demo 3aa9b766/release1, import 111/24/235/112,
+  ponowny import bez zmian, eksport bajtowo zgodny z assets
+  gzip2c0a1ff7/manifestdc0a0b9b oraz push/replay/read i przyrostowy pull
+  3 Meal bez duplikatów. Zachowano kcal=null, jawne zero i izolację kont.
+  Negatywny push przed importem i ten sam UUID po imporcie nadal mają
+  utrwalone `dependency_missing`.
+- **Tożsamość:** istniejącą kopię i OCI index → manifest11c79c83 → config94c8c0e8
+  sprawdzono ponownie. Pełne źródło Git pozostaje UNKNOWN; 8ff7c0c jest tylko
+  częściowym porównaniem. [Procedura i manifest 55 plików/38 dystrybucji](integracja/PRZYGOTOWANIE_REPLAY_E4_O3.md#o3-117--kwalifikacja-mre-na-dokładnym-runtime-27102026)
+  podają dokładne hashe, wyniki, źródła fixture i komendy importu bez publish.
+  Receipt `7ee43dc8d20ca3f66252c8e1b84bffeab3f32b138aca5deeb3696a1f0bacc815`, wykonywany probe
+  `6a6aa40bf3000feecce50363352f90005e851e8ffd8042f00fac872f9c84d7e4`.
+  Własny scratch i sieć usunięto; pozostało 0 własnych zasobów.
+- **Granice i następny krok:** syntetyczny Verifier i jawna rekonstrukcja wire
+  z Kotlin, bez Android/PKCE/TLS/live/Gemini. Żywy obraz i schemat przed i po
+  były identyczne. Nie importowano MRE do demo, nie zmieniono epoki, CA,
+  credentials ani Room23. Operator118 zachowuje rzeczywisty baseline i uzgadnia
+  własne wyłączne okno poza E4 przed pierwszym account push MRE;
+  kwalifikacja117 tego importu nie zastępuje. Prywatny atomowy handoff ma
+  qualified_status=PASS i hashe istniejących dowodów; koordynator A2 przekazuje
+  neutralny wynik w PR146. Odbiór PR dokumentacji i jego osobnego main pozostają
+  odrębne; wcześniejszego CI188 nie powtarzano.
+- **Kontrole dokumentacji:** walidator E0 i schematy katalogu PASS,
+  927 lokalnych linków i `git diff --check` PASS. Istniejące 17 testów
+  scope/gate/workflow PASS po uruchomieniu z dostępem do efemerycznych repo
+  w Temp; pierwsza próba w sandboxie miała błędy uprawnień git init/cleanup,
+  zachowane jako nieudane wykonanie. Niezależny przegląd hashy i obu dokumentów
+  nie znalazł materialnych P1/P2. Korekta opisu checkpointu odpowiada dokładnie
+  sprawdzonej obecności, bez dopisywania asercji jego różnicy.
