@@ -9980,6 +9980,53 @@ podlega końcowy diff dwóch dokumentów wobec aktualnego main oraz nowy CI PR.
   testów aplikacji dla samego tekstu. PR/FULL/main oraz finalny odbiór pozostają
   do wykonania po zależnym wejściu; całego O3-111 nie oznaczamy ukończonym.
 
+- **Wznowienie27.10:** lokalny14b3acc zachowany; zwykły merge
+  `70d66aaacd552c68af671a8a135574f6cdd7d7ab` dołączył aktualny main
+  `68fe0239fbeb5b00078164c7fbda4065cd1bf0a2` i cały MRE/PR188, bez rolloutu.
+  Konflikt dotyczył tylko addytywnych wpisów dziennika; kontrola zachowania
+  wszystkich linii części Wpisy obu rodziców w kolejności PASS. Aktualne
+  AGENTS/przejęcie O1 przez O2 odczytane; ukończony PR188 i PR182/183 nie są
+  bieżącymi blokadami. Świeże108/109/110 są wznowione, ale w odczytanych
+  handoffach acceptance nadal NOT_CREATED, E4/PULL brak. Rezerwacja110 dla118
+  nie jest zwolniona; nie wyciągamy zgody z braku runtime.lock.
+- Wybrany zakres START pozostaje **frozenRoom23**, z osobnymi danymi MRE
+  serwera dopiero po kwalifikowanym117 i rzeczywistym118. Nie podmieniamy
+  APK23 klientem27 ani nie deklarujemy jego UI/runtime PASS. Manifest rozdzieli
+  bundled E2, server MRE sealed draft i ewentualny przyszły klient MRE27.
+  Nowa instrukcja odróżnia source COMRAD od payloadu importu, brak publikacji
+  kanału od braku danych oraz scratch od rzeczywistego importu. Operatorzy
+  117/118/110 pozostają właścicielami swoich prób; nie czekają na pakiet111.
+  Jedna końcowa kopia111 dopiero po wszystkich zaakceptowanych zmianach
+  objętych tym zestawem, również118, jeżeli MRE jest dołączane.
+- Read-only audyt utrzymania27.10: istniejąca kopia harmonogramu PASS
+  07:04:02UTC, capture07:03:24, schema0024, integrity/rehearsal/resume=true,
+  restore8,446s, historyczne removed1; transaction resume_pending=false.
+  Startup PASS07:11UTC. Nie wykonano ich ponownie. Pary maintenance8ff7c0c
+  i encryptionbaa48c5f nadal rzeczywiście importują własne archiwalne źródła
+  i schema0024; sumy modułów odpowiadają pinom Git po LF. Do własnej przyszłej
+  kopii nadal obowiązuje pamięciowe keep pod oryginalnym OS lockiem oraz
+  removed0, bez nadpisania istniejących kopii/klucza lub naprawiania zdrowych ścieżek.
+- **Odczyt kwalifikowanego117:** rzeczywisty handoff PASS na image05/schema0024
+  sprawdzony w zadeklarowanym zakresie: scratch PG17, syntetyczny verifier
+  i odtworzony wire, bez Androida/PKCE/TLS/live. Własny odbiór111 ponownie
+  sprawdził rozmiary/SHA wszystkich15wskazanych plików oraz istniejącego
+  archiwum obrazu96772096B/SHA
+  `8f1aa0541c5eeffd5e6bd4ba656d45c50ec956a9be3abb245b5f3d566339b757`
+  i jego receiptu. Index05, manifest11c79c83 i config94c8c0e8 związane
+  rzeczywistymi digestami; source całego obrazu nadal UNKNOWN. Cleanup117
+  ma PASS/0własnychkontenerów/0sieci. Nie ponawiano scratch w111.
+  Hash odebranego handoffu
+  `84325208d8612346c8172924c4b2332b8581509def34065f388b36a971f26bf3`.
+  Ten wynik odblokowuje zgodność targetu dla118, nie zwalnia rezerwacji110
+  i nie zastępuje rzeczywistego importu. Własny preflight czterech plików
+  MRE z68fe oraz payloadu ma dokładne rozmiary/SHA zgodne z117.
+- Kontrole wznowionej instrukcji: E0 PASS,11schematów/98valid/35invalid/
+  18scenariuszy/16Decimal/5day/72normalizations/927lokalnychlinków,
+  diff-check PASS. Niezależny przegląd doprecyzował zachowanie istniejącego
+  active_release kanału i kolejność locków110→118→111. Nie uruchamiano testów
+  aplikacji dla tekstu ani drugiej kopii. Własny PR/FULL/main nadal dołączą
+  do końcowego spójnego wyniku; samo wznowienie nie jest odbiorem O3-111.
+
 ### O1-146 — Android0.8.39: trwałe podglądy offline i ponowienie odczytu
 
 - 26.10.2026, agent1/O1 do O2/O3, **DO ODCZYTU**. Duży etap na

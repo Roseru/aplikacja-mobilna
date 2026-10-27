@@ -160,7 +160,7 @@ Nie nadpisuj wcześniejszych pakietów. Manifest pakietu zapisuje osobno:
 | Uruchamiana aplikacja | dokładny APK zaakceptowany w android_acceptance; validation-configured jest osobną aplikacją, regularny debug bez endpointów nie zastępuje jej |
 | API | faktyczny immutable image, schema i rzeczywiste pochodzenie; brak OCI revision pozostaje jawny, archiwalna zgodność wybranych plików nie dowodzi commita całego obrazu |
 | TLS | API base URL, dokładny issuer, publiczny PEM i jego SHA256, bez klucza prywatnego CA |
-| Katalog | package ID/kind/release/schema/reader, SHA256 i rozmiar gzip oraz manifestu; zgodność z assetem odebranego APK i oddzielny dowód aktywnej generacji Room |
+| Katalogi | osobna pozycja dla każdego package ID/kind/release/schema/reader, miejsca użycia, SHA256 i rozmiaru gzip/manifestu; asset APK i aktywna generacja Room są oddzielne od zapieczętowanego draftu serwera |
 | Odbiory | źródła, hashe, rzeczywiste zakresy i ograniczenia android_acceptance/E4/PG/osobnego PULL; zgodna instalacja, API/schema i epoka |
 | Kopia | hash manifestu nowej kopii, wynik integralności i izolowanego rehearsal, hash zaszyfrowanego pliku; zachowanie epoki i usług źródłowych |
 
@@ -189,9 +189,60 @@ demo wymaga jego rzeczywistych bajtów i aktywnej generacji. Jeżeli uzgodniony
 scenariusz wymaga konkretnego official, brak przekazania zgłoś O2; nie publikuj
 fikcyjnego katalogu w ramach pakowania.
 
+### Zakres MRE po PR188
+
+Zamrożone APK Room23 `2319357` zawierają tylko pierwotny pakiet E2
+`47bdff67-e58b-5437-919b-ec00159afbc5`, bez assetów MRE. Nowy
+[katalog MRE](../../android/MRE_2026.md) jest osobnym demo release1:
+`3aa9b766-b01d-5111-8fd0-4c5b6257961b`, 111 produktów / 24 racje / 235 komponentów /
+112 źródeł. Nie zmienia źródła APK23 ani nie ustala commita starszego obrazu API.
+
+Manifest i START nazywają dokładny wariant. Dla pakietu uruchamiającego
+odebrany Room23 zapisują jego własne wyniki i katalog E2. Jeżeli dołączamy
+przygotowanie MRE na serwerze, jest ono osobnym zakresem danych, bez obietnicy
+UI MRE w APK23. Wariant uruchamiający klienta MRE Room27 wymaga odrębnej
+dostawy APK/source/tree/hashów i właściwego odbioru runtime tego klienta;
+wyniki Room23 nie kwalifikują go automatycznie.
+
+Serwerowy zakres MRE wymaga kwalifikowanego scratch O3-117 na dokładnym
+image/schema i osobnego wyniku rzeczywistego importu O3-118. Sam scratch
+nie jest odbiorem zmiany żywej instalacji. Import wykonuje wyłącznie jego
+operator, po jawnym zwolnieniu rezerwacji Room23/E4 i w uzgodnionym oknie.
+Brak runtime.lock, wygaśnięcie transportu lub NOT_RUN nie zwalniają tej
+rezerwacji. Przygotowanie scratch117 nie czeka na finalny pakiet lub kopię111.
+Po zwolnieniu110 operator118 przejmuje własny runtime.lock. Jeżeli MRE wchodzi
+do finalnego zestawu, operator111 przejmuje swój lock dopiero po zakończeniu118
+i potwierdzonym zwolnieniu jego zasobów oraz locka; nie blokuje118 podczas oczekiwania.
+
+Nowy pakiet otrzymuje `state=draft`, `sealed=true`. Import nie publikuje ani
+nie aktywuje kanału. Dla nowego kanału `active_release=null`; istniejącego
+wskaźnika import nie zeruje, a zgodny istniejący release może zostać zwrócony
+bez nowego zapisu. Rzeczywisty stan potwierdza odbiór118, bez `publish`.
+Nie oczekuj nowej aktywacji kanału serwera lub pliku gzip w wolumenie
+publikacji. Właściwy dowód obejmuje identyczne wejście, membership i zawartość
+rekordów, idempotentny ponowny import oraz rzeczywisty eksport/hash.
+`catalog.tar` i official404 nie zastępują tych dowodów.
+Aktywna generacja Room jest odrębnym wynikiem klienta korzystającego z MRE.
+
+W manifeście zapisz także hashe reguł wyboru i materiału pochodzenia, jeżeli
+pakiet je zawiera. `source.json` opisuje pochodzenie COMRAD; wejściem CLI
+importu jest rozpakowany payload E2 z właściwego gzip. Dla zatwierdzonego
+release1: manifest4769B/SHA256
+`dc0a0b9b818dd7ea9f224424c6fe07b11d8af574dbb6109a9658c12297c149bf`,
+gzip27924B/SHA256
+`2c0a1ff730e408cc90ab1fcfcb2b9eef21ebce8fa2d935d429f296d225260880`,
+payload246314B/SHA256
+`0552172f59de3f71597074b88dcb99c22d8c227eba7cb3ce96ac30f3e0a9d967`.
+Każdy receipt zachowuje własny zakres, rzeczywisty target i hashe dowodów;
+nie przepisuj pinu API na commit katalogu z PR188.
+
 ### Jedna kopia zmienionego stanu i lokalny plik szyfrowany
 
-Nową kopię uzasadnia zaakceptowana zmiana danych po E4/PULL. Zdrowa wcześniejsza
+Jedną końcową kopię wykonaj po wszystkich zaakceptowanych zmianach objętych
+pakietem: E4/PULL oraz imporcie118, jeżeli MRE wchodzi do tego zestawu.
+Nie wykonuj kopii111 przed importem i drugiej po nim; już istniejąca kopia
+harmonogramowa może stanowić odrębne zabezpieczenie operatora118.
+Nową kopię uzasadnia zaakceptowana zmiana danych. Zdrowa wcześniejsza
 kopia i startup nie wymagają ponawiania z powodu czasu spędzonego w czacie.
 Użyj zainstalowanego, przypiętego runtime zgodnego ze schematem działającego
 API, jego interpretera i oryginalnego prywatnego settings utrzymania. Bieżący
