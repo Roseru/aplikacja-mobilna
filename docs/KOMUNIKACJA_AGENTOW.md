@@ -10057,6 +10057,30 @@ podlega końcowy diff dwóch dokumentów wobec aktualnego main oraz nowy CI PR.
   historycznie. Nowe acceptance/E4 muszą wskazać rzeczywisty receipt118 i jego
   hash, nie samo READY. Bez nowych testów aplikacji dla tekstu, statusowego PR
   lub deklaracji finalnego PASS; właściwy spójny PR/FULL/main nadal wymagany.
+- **Rzeczywisty import118 odebrany28.10:** faza katalogowa zakończona
+  09:01:36–09:02:24UTC, z jawnym zwrotem własnego slotu przez operatora118.
+  Handoff katalogowy4960B/SHA
+  `59117e9936f1f57d5d374629208c791f62237110ef9b5fd15267a99163ce1fbc`
+  i autentyczny receipt18697B/SHA
+  `19737ff453cfa3434241cacaf5d5e00732852e1de78315c010f0346dfd82d65c`
+  powiązano i zachowano jako prywatne snapshoty wejścia111. Ponownie sprawdzono
+  rozmiary/SHA46wskazanych dowodów bez ponawiania importu lub testów runtime.
+  Pierwszy import created=true, drugi created=false i ścisły brak dodatków;
+  zachowane stare wiersze86tabel, niezmieniona epoka, oba rzeczywiste eksporty
+  mają zatwierdzone hashe MRE. Katalog po zmianie:129produktów/25racji/
+  253komponenty/113źródeł. Obraz05/schema0024 i UNKNOWN źródła całego obrazu
+  pozostają oddzielne od źródła APK/katalogu.
+- Receipt118 potwierdza wznowienie writerów, brak własnych jobów, zwolnienie
+  locka i dotrzymanie hardend. Zwrot przez118 nie jest automatycznym startem
+  E4; osobne ACK koordynatora/109/110 i stan O1 muszą zostać rozliczone.
+  Faza obejmuje wyłącznie katalog; pełny118 pozostaje PARTIAL z oddzielnym
+  authenticated push/read NOT_RUN. Świeże natywne archiwa APP/KC/globals
+  i TOC przed zmianą nie oznaczają nowego isolated restore lub kopii111.
+  Pierwszy start09:00 miał ModuleNotFoundError cryptography przed quiesce/DB;
+  jego FAIL zachowany, późniejszy sukces go nie przestemplowuje.
+  Nowy handoff111 oczekuje rzeczywistego postimport acceptance108 oraz nowego
+  E4/PG/osobnego PULL110 i closure. Finalny pakietD/kopia111 nadal NOT_RUN;
+  brak ponowienia zdrowych kopii lub zmiany usług/profilu przez111.
 
 ### O1-146 — Android0.8.39: trwałe podglądy offline i ponowienie odczytu
 
