@@ -253,6 +253,8 @@ Odbiór119 obejmuje rzeczywiste TLS/PKCE/logowanie z tego APK i nowy Meal na
 zaimportowanych referencjach MRE: push, trwały wynik, replay tego samego wire
 (UUID/body/fingerprint), `already_applied`, read/pull i brak duplikatów.
 Receipt119 wiąże hash rzeczywistego importu118 oraz zakończoną próbę110/zwrot.
+Dowody110 zawierają rzeczywiste `released.json` po C2 i przed osobnym PULL;
+nie wyprowadzaj tego z ogólnego closure, timeoutu lub braku locka.
 Syntetyczny serwerowy probe117 ani sam import118 nie zastępują tej próby.
 Nie zmieniaj UUID utrwalonej odmowy `dependency_missing`, aby uzyskać PASS.
 Wymagaj dowodu zachowania istniejących danych/epoki, cleanupu119, zamknięcia
@@ -363,9 +365,18 @@ Po stagingu jednego zestawu na D: wykonaj jedną kopię końcowego zmienionego
 stanu, szyfrowany eksport i rzeczywisty izolowany restore. Dopiero następnie
 domknij manifest/powiązania i przekaż je niezależnemu audytorowi O3-120.
 Audyt120 nie zastępuje operatorstwa111 ani brakującego receiptu119.
-Przed ostatecznym zamknięciem backlogu rozlicz kwalifikowane odbiory źródeł
-PR185→PR184 i własnego funkcjonalnego PR/main. To osobna zgodność repozytorium;
+Przed stagingiem końcowego pakietu wymagane są także kwalifikowane odbiory
+źródeł PR185→PR184 z rootowego closeout-plan; mogą postępować równolegle do
+prób aplikacji. Przed zamknięciem backlogu odbierz własny funkcjonalny PR/main.
+To osobna zgodność repozytorium;
 nie oznacza rolloutu tych pinów ani zmiany pełnego źródła obrazu05 z UNKNOWN.
+
+Finalna kopia obejmuje spójne APP, Keycloak i globals oraz wymagane ustawienia
+i artefakty instalacji. Wymagaj rzeczywistego isolated restore z porównaniem
+odtworzonego dziennika, katalogu i tożsamości oraz uwierzytelnionej weryfikacji
+zaszyfrowanego eksportu. Sam TOC, poprawne hashe dumpów lub receipt wcześniejszej
+kopii harmonogramu nie kwalifikują tego odtworzenia końcowego stanu. Zachowaj
+faktyczne granice: ten wynik nie oznacza pełnego KO32 z odzyskiwaniem telefonu.
 
 Źródła konfiguracji Mailpit: [Docker](https://mailpit.axllent.org/docs/install/docker/),
 [API skrzynki](https://mailpit.axllent.org/docs/api-v1/),
