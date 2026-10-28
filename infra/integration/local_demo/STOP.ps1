@@ -71,4 +71,3 @@ if ($result.integrity -cne 'PASS' -or
 if (-not $CheckOnly) {
     throw 'Preparation gate cannot authorize operational execution.'
 }
-
