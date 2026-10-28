@@ -142,6 +142,14 @@ kwalifikowane `android_acceptance`, wynik E4 z niezależnymi PG C0/C1/C2
 i trwałym ACK oraz oddzielny późniejszy PULL. FAIL lub NOT_RUN któregokolwiek
 wymaganego odbioru zatrzymuje składanie nowego finalnego pakietu.
 
+Aktualna kolejność zatwierdzona przez właściciela: **rzeczywisty import118
+i cleanup → actual acceptance108 → nowe E4/PG oraz osobny PULL110 i zwrot
+operatorów → finalny pakiet111 oraz jedna końcowa kopia z isolated restore**.
+Wcześniejsze oczekiwanie na E4 przed importem jest historyczne. Techniczne
+zwolnienie rezerwacji110 dla uzgodnionego slotu importu nadal jest wymagane;
+może wynikać z decyzji o zmianie kolejności, bez fikcyjnych receiptów E4/PULL.
+Zakończonych kwalifikacji117/PR189 i PR186 nie ponawia się dla pakowania.
+
 Operator potwierdza zakończenie transportu poprzedniej próby i zwolnienie jej
 dzierżawy. Następnie atomowo tworzy własny `runtime.lock`, bez odbierania
 cudzego locka. Zachowuje go do końca kontrolowanej operacji, także podczas
@@ -207,12 +215,22 @@ wyniki Room23 nie kwalifikują go automatycznie.
 Serwerowy zakres MRE wymaga kwalifikowanego scratch O3-117 na dokładnym
 image/schema i osobnego wyniku rzeczywistego importu O3-118. Sam scratch
 nie jest odbiorem zmiany żywej instalacji. Import wykonuje wyłącznie jego
-operator, po jawnym zwolnieniu rezerwacji Room23/E4 i w uzgodnionym oknie.
-Brak runtime.lock, wygaśnięcie transportu lub NOT_RUN nie zwalniają tej
-rezerwacji. Przygotowanie scratch117 nie czeka na finalny pakiet lub kopię111.
-Po zwolnieniu110 operator118 przejmuje własny runtime.lock. Jeżeli MRE wchodzi
-do finalnego zestawu, operator111 przejmuje swój lock dopiero po zakończeniu118
-i potwierdzonym zwolnieniu jego zasobów oraz locka; nie blokuje118 podczas oczekiwania.
+operator, po skutecznym technicznym przekazaniu rezerwacji przez109/110
+i uzgodnieniu świeżego dokładnego okna. Zgoda właściciela na import przed E4
+pozwala na takie przekazanie mimo E4/PG/PULL NOT_RUN; nie tworzy ich PASS.
+Brak runtime.lock lub wygasły transport nie zastępują skutecznego przekazania.
+Zakończone117 nie czeka na finalny pakiet lub kopię111 i nie wymaga ponowienia.
+Operator118 bierze własne blokady wyłącznie dla swojego zaakceptowanego slotu;
+operator111 nie zajmuje runtime.lock podczas oczekiwania.
+
+Po rzeczywistym receipcie118, cleanupie i jawnym powrocie operatorów następuje
+odbiór aplikacji108, a później nowa próba110. O1 rozlicza zastany stan swojego
+profilu/fence, bez przejmowania stanowiska. Wymagane są świeży bootstrap,
+odrębny pełny snapshot po imporcie, nowy trial/plan PG i rzeczywisty C0.
+Stary baseline sprzed importu nie dowodzi zgodności nowego stanu katalogu.
+Import118 obejmuje katalog; nie jest authenticated push/read ani odbiorem APK.
+Pakowanie i kopia111 czekają również na końcowy E4/PG/osobny PULL110,
+cleanup, zamknięcie lease i jawny zwrot wszystkich operatorów.
 
 Nowy pakiet otrzymuje `state=draft`, `sealed=true`. Import nie publikuje ani
 nie aktywuje kanału. Dla nowego kanału `active_release=null`; istniejącego
@@ -239,7 +257,7 @@ nie przepisuj pinu API na commit katalogu z PR188.
 ### Jedna kopia zmienionego stanu i lokalny plik szyfrowany
 
 Jedną końcową kopię wykonaj po wszystkich zaakceptowanych zmianach objętych
-pakietem: E4/PULL oraz imporcie118, jeżeli MRE wchodzi do tego zestawu.
+pakietem: imporcie118, acceptance108, nowym E4/PG/osobnym PULL110 i closure.
 Nie wykonuj kopii111 przed importem i drugiej po nim; już istniejąca kopia
 harmonogramowa może stanowić odrębne zabezpieczenie operatora118.
 Nową kopię uzasadnia zaakceptowana zmiana danych. Zdrowa wcześniejsza
@@ -298,6 +316,10 @@ Zapisz sumy i rozmiary dokładnego zbioru zwykłych plików pakietu (lista sum
 wyłącza samą siebie), odmów symlinków/junctions i wyjścia poza nowy folder.
 Zweryfikuj brak brakujących/dodatkowych plików i ponownie odczytaj sumy.
 START, transport, konta i pliki wyników mają odpowiadać temu samemu zestawowi.
+Przed zapisem potwierdź rzeczywistą dostępność uzgodnionego dysku D: i jego
+istniejących prywatnych katalogów/klucza, bez odczytywania klucza do logu.
+Jeżeli celu nie ma lub jest nieczytelny, zachowaj stan i wskaż konkretny brak;
+nie wybieraj niejawnie innego dysku ani nie nadpisuj wcześniejszych kopii.
 Końcowe prywatne przekazanie podaje faktyczny folder, hashe paczek i receiptów,
 zakończenie lease/runtime oraz ograniczenia. Brak E4/PULL oznacza oczekiwanie,
 bez nowego finalnego pakietu lub kopii. Wynik tego zakresu nie zamyka całego

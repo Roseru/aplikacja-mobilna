@@ -10027,6 +10027,37 @@ podlega końcowy diff dwóch dokumentów wobec aktualnego main oraz nowy CI PR.
   aplikacji dla tekstu ani drugiej kopii. Własny PR/FULL/main nadal dołączą
   do końcowego spójnego wyniku; samo wznowienie nie jest odbiorem O3-111.
 
+- **Aktualizacja28.10 — zmiana kolejności przez właściciela:** dotychczasowe
+  wpisy i receipty pozostają historyczne. Aktualny plan111 to rzeczywisty
+  receipt118 i cleanup, następnie actual acceptance108, nowe E4/PG i osobny
+  PULL110 z closure/zwrotem operatorów, potem jeden finalny pakietD i jedna
+  końcowa kopia z odizolowanym restore. Import nie czeka już na E4 PASS.
+  Wymaga nadal skutecznego technicznego przekazania rezerwacji109/110
+  w świeżym dokładnym slocie; zmiana kolejności nie jest fikcyjnym E4/PULL.
+  Po imporcie O1 rozlicza własny stan/fence; świeży bootstrap i odrębny pełny
+  postimport snapshot, nowy trial/PGplan/actualC0 nie dziedziczą starego baseline.
+- Własny checkout dołączył zwykłym merge main006b064 z zakończonymi PR186/189,
+  zachowując przygotowanie14b3acc/ab4e521 i historyczne wpisy. Zakończone117,
+  oba jego DOCS odbiory189 oraz FULL186 konsumowane bez ponawiania prób/CI.
+  Działający obraz05/schema0024 i frozenRoom23 nie zostały podmienione
+  nowymi pinami Compose/main. O3-111 nie przejmuje operatorów118/108/110.
+- Read-only stan dysku28.10: D: dostępny, dotychczasowy pakiet Room20,
+  istniejące katalogi kopii i pliki klucza zachowane; treści kluczy nie czytano.
+  Istniejący harmonogram ma backup PASS07:48:16UTC, integralność/izolowany
+  rehearsal/wznowienie=true,11,912s, transaction resume_pending=false;
+  startup PASS07:46UTC. To poprzednia zdrowa kopia, nie finalna kopia nowego
+  odbioru. W111 nie uruchomiono backupu, restore, usługi/AVD lub runtime.lock.
+  Nowy finalny folder i nowa kopia pozostają NOT_CREATED/NOT_RUN do rzeczywistych
+  wejść. Niedostępny D: wymagałby wskazania konkretnego braku, bez zmiany celu.
+- Wznowiona instrukcja przeszła E0:11schematów/98valid/35invalid/18scenariuszy,
+  16Decimal/5day/72normalizations/928lokalnychlinków i diff-check PASS.
+  Niezależny przegląd obu dokumentów bez materialnego błędu. Prywatny bieżący
+  plan i handoff111 rozdzielają techniczny release dla118 od końcowego
+  testowego closure110; wcześniejsze manifesty i pendingreceipty zachowano
+  historycznie. Nowe acceptance/E4 muszą wskazać rzeczywisty receipt118 i jego
+  hash, nie samo READY. Bez nowych testów aplikacji dla tekstu, statusowego PR
+  lub deklaracji finalnego PASS; właściwy spójny PR/FULL/main nadal wymagany.
+
 ### O1-146 — Android0.8.39: trwałe podglądy offline i ponowienie odczytu
 
 - 26.10.2026, agent1/O1 do O2/O3, **DO ODCZYTU**. Duży etap na
