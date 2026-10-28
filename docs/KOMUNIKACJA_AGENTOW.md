@@ -10130,6 +10130,31 @@ podlega końcowy diff dwóch dokumentów wobec aktualnego main oraz nowy CI PR.
   119 nadal NOT_RUN; bramki108/110, operator/konto/fence, nowe okno i rzeczywisty
   receipt119/closure pozostają wymagane.111 nie uruchamiał builda/static28,
   ADB, usług, locka ani nowej kopii; prywatny ACK i plan zachowują te rozdzielenia.
+- **Wykonywalny etap przygotowania28.10:** dodano `local_demo_package.py`,
+  niezależny od single-commit checkera release. Składa wybrane wejścia do
+  nowego stagingu, sprawdza exact file set/SHA/rozmiary i zachowuje oddzielne
+  źródła Android/API z jawnym API GitUNKNOWN. Jeden manifest przygotowania
+  wiąże jeden wariant Androida; Room23 i MRE27 nie są wspólnym odbiorem.
+  Obecny receipt jest dowodem do późniejszej kwalifikacji, nie automatycznym
+  PASS. PREPARATION_ONLY, sealed/runtime_authorizedfalse i bramki pozostają
+  obowiązkowe również po podaniu receiptów z samodeklarowanym PASS.
+- START/STOP/RECOVER w nowym katalogu są kontrolkami przygotowania:
+  CheckOnly sprawdza pakiet i pokazuje konkretne braki, bez niego odmowa.
+  Nie opisujemy ich jako finalnych komend operacyjnych. Nowy kod nie woła
+  Docker/ADB/maintenance, nie tworzy profili, transportu, kopii ani restore.
+  Celowane fixture:48PASS/2SKIP lokalnie (Windows bez symlink privilege),
+  osobno12syntetycznych kontroli wrapperów PASS. Ruff/diff-check PASS.
+  Pierwszy pytest zatrzymany przez niezapisywalny domyślny temp; poprawiono
+  wyłącznie basetemp na własny scratch. Nie powtarzano prób aplikacji.
+  Wstępny review121 uszczelnił walidację claims, qualification i blockerów;
+  jego repro PEM pod rolą APK naprawiono skanowaniem strumienia każdej roli
+  z zachowaniem overlapu granic bloków. Odmówiono także nietypowych nazw
+  Windows device (spacje przed kropką/indeksy górne). Python3.13+ wymagany
+  jawnie, bez pomijania junction guard na starszym interpreterze.
+  Pierwszy FAIL pozostaje w dowodach.
+  Dokładny commit/tree trafia do osobnego zamrożonego odbioru kodu.
+  Publikacja tego funkcjonalnego etapu wymaga FULL PR CI; nie jest finalnym
+  pakietemD, odbiorem live108/110/119 lub finalnym backup/restore111/120.
 
 ### O1-146 — Android0.8.39: trwałe podglądy offline i ponowienie odczytu
 

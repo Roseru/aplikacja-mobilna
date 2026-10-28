@@ -236,6 +236,48 @@ Pakowanie i kopia111 czekają również na końcowy E4/PG/osobny PULL110,
 cleanup, zamknięcie lease i jawny zwrot wszystkich operatorów, a następnie
 na osobny wynik119 opisany poniżej.
 
+### Wykonywalny staging przygotowawczy
+
+[local_demo_package.py](local_demo_package.py) składa jawnie wybrane wejścia
+bez Docker/ADB/sieci i bez instalowania środowiska. Korzysta ze standardowej
+biblioteki istniejącego Pythona3.13+. Jedna recepta opisuje jeden binding
+Androida; przygotowania frozenRoom23 i MRE/Room27 pozostają oddzielne.
+Źródło APK/tree/Room nie jest źródłem obrazu API. `full_git_source: null`
+zachowuje jawne UNKNOWN istniejącego API.
+
+```powershell
+python -I -B infra/integration/local_demo_package.py prepare --recipe recipe.json --output nowy-staging
+python -I -B infra/integration/local_demo_package.py verify --bundle nowy-staging
+./nowy-staging/START.ps1 -Python C:/narzedzia/python.exe -CheckOnly
+```
+
+Prywatna recepta JSON ma `format:1`, `bindings.api` z immutable `image`,
+`schema` i `full_git_source`, oraz `bindings.android` z `source_commit`,
+`android_tree`, `room` i `stage:PRE_SIGN_INPUT` lub `FINAL_OPERATOR_ACCEPTED`.
+`inputs` to lista `{id,role,source,destination,bytes,sha256}`. Ścieżki źródeł
+względne liczymy od recepty. Role to `apk_presign`, `apk_final`, `public_ca`,
+`catalog_manifest`, `catalog_payload`, `evidence` i `instructions`. Każdy plik
+jest wskazany osobno; nie kopiujemy rekurencyjnie prywatnego stanu instalacji.
+Nie dołączaj poświadczeń, kluczy lub operator config.
+
+`gates` zawiera dokładnie108/110/119/185/184/backup_restore/final120. Każdy wpis
+ma `id`, rzeczywistego `owner`, opis konkretnego `required` i `receipt:null`
+albo `{source,bytes,sha256}`. Obecny receipt zostanie przypięty jako dowód;
+narzędzie nie uzna jego tekstu PASS za kwalifikację lub zgodę na uruchomienie.
+Manifest `manifest-demo.json` zachowuje brakujące wejścia i wszystkie bramki
+niezakwalifikowane. Checker odmawia sprzecznych claims, usuniętych blokerów,
+zmienionych/nowych plików, duplikatów, traversal, linków i podmiany podpisanej
+roli na finalną przy bindingu pre-sign. Wyjście musi być nowym katalogiem.
+
+W tym etapie START/STOP/RECOVER są wyłącznie kontrolkami przygotowania.
+`-CheckOnly` potwierdza integralność i pokazuje właścicieli braków; wywołanie
+bez niego odmawia z kodem verifiera3. Nie są odbiorem działających komend
+transportu/maintenance ani restore. Pakiet zawsze ma `PREPARATION_ONLY`,
+`sealed:false`, `runtime_authorized:false`; narzędzie nie posiada komendy seal.
+Finalny adapter wymaga rzeczywiście odebranego profilu/operatora/transportu,
+własnego lease poza pakietem oraz przypiętych istniejących narzędzi. Nie wolno
+kopiować starego adaptera Room20/5594 ani tworzyć nowego profilu zastępczego.
+
 ### Osobna bramka uwierzytelnionego MRE119
 
 Po rzeczywistym108, E4/PG i osobnym PULL110 oraz cleanupie/jawnym zwrocie
