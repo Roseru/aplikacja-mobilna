@@ -10081,6 +10081,15 @@ podlega końcowy diff dwóch dokumentów wobec aktualnego main oraz nowy CI PR.
   Nowy handoff111 oczekuje rzeczywistego postimport acceptance108 oraz nowego
   E4/PG/osobnego PULL110 i closure. Finalny pakietD/kopia111 nadal NOT_RUN;
   brak ponowienia zdrowych kopii lub zmiany usług/profilu przez111.
+- Następny rzeczywisty odczyt potwierdził zwrot slotu:109r14 i110r4 zamknęły
+  zgodę importu (`import_allowed=false`), a koordynatorr26 jawnie zwrócił
+  własny zakres. Snapshoty i wskazane receipty ACK/hash zachowano w wejściu111.
+  Niezależny read-only przegląd cleanupu bez materialnej luki: siedmiu
+  oryginalnych writerów, API running/healthy, końcowy resume_pending=false,
+  zwolnienie obu blokad w controlflow przed terminalnym receiptem.
+  Nie powtarzano46kontroli danych, importu ani próby nabycia blokady.
+  Aktualne pozostałe wejście111 to postimportowe acceptance108 i nowe
+  E4/PG/osobny PULL110 z końcowym closure/zwrotem; nie automatyczny restartE4.
 
 ### O1-146 — Android0.8.39: trwałe podglądy offline i ponowienie odczytu
 
