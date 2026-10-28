@@ -10090,6 +10090,26 @@ podlega końcowy diff dwóch dokumentów wobec aktualnego main oraz nowy CI PR.
   Nie powtarzano46kontroli danych, importu ani próby nabycia blokady.
   Aktualne pozostałe wejście111 to postimportowe acceptance108 i nowe
   E4/PG/osobny PULL110 z końcowym closure/zwrotem; nie automatyczny restartE4.
+- **Domknięcie zakresu28.10 — O3-119:** odczytano rootowy closeout-plan
+  i przydział nowego wykonawcy119. Do finalnego pakietu/kopii111 dodano
+  jawną bramkę po108 i110: osobne wyłączne okno, rzeczywisty authenticated
+  MRE APK/API push → ten sam wire replay → read/pull, brak duplikatów,
+  receipt/SHA, zachowanie danych/epoki oraz cleanup/jawny zwrot119.
+  Sam katalog118 i scratch117 tej luki nie zamykają. Stan119 pozostaje
+  NOT_RUN do rzeczywistego wyniku jego właściciela;111 nie przejmuje próby.
+- Manifest zachowuje osobne bindingi frozenRoom23 i configured MRE0.8.40/
+  Room27: source/tree/SHA/podpis/appId/wersja/compiled APIissuerCA. START
+  wybierze rzeczywiście odebrany końcowy APK/profil; nie zakłada downgrade
+  Room27 do23 ani równoczesnej instalacji. OCI05/schema0024/PG17.11 i pełny
+  Gitbuild UNKNOWN bez zmiany. Zakończone46hashów118, import/CI i kopia
+  harmonogramu nie były powtarzane. Nowa bramka i brakujące wejścia znajdują
+  się w bieżącym prywatnym handoffie i planie111; finalny PASS nadal fałszywy.
+- Rootowe zlecenie domknięcia potwierdza kolejność stagingD → jedna finalna
+  kopia/szyfrowany eksport/rzeczywisty isolated restore → domknięcie manifestu
+  i niezależny odbiór120. PR185→184 muszą mieć kwalifikowany odbiór przed
+  ostatecznym zamknięciem backlogu; nie zmienia to operatorstwa tych zadań
+  i nie jest rolloutem do istniejącego demo. Nowy119 i audytor120 mają własne
+  przydziały w closeout-plan;111 nie tworzy kolejnych wykonawców tych samych prób.
 
 ### O1-146 — Android0.8.39: trwałe podglądy offline i ponowienie odczytu
 

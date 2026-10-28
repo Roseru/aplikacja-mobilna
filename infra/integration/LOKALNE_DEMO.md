@@ -139,12 +139,15 @@ Room23. Podstawą są rzeczywiste receipty z
 [procedury E4](../../docs/integracja/PRZYGOTOWANIE_REPLAY_E4_O3.md).
 Przed składaniem muszą istnieć niezależny STATIC_PASS dostawy czterech APK,
 kwalifikowane `android_acceptance`, wynik E4 z niezależnymi PG C0/C1/C2
-i trwałym ACK oraz oddzielny późniejszy PULL. FAIL lub NOT_RUN któregokolwiek
+i trwałym ACK, oddzielny późniejszy PULL oraz uwierzytelniony wynik MRE119
+z receiptem/SHA i closure. FAIL lub NOT_RUN któregokolwiek
 wymaganego odbioru zatrzymuje składanie nowego finalnego pakietu.
 
 Aktualna kolejność zatwierdzona przez właściciela: **rzeczywisty import118
 i cleanup → actual acceptance108 → nowe E4/PG oraz osobny PULL110 i zwrot
-operatorów → finalny pakiet111 oraz jedna końcowa kopia z isolated restore**.
+operatorów → osobne wyłączne okno i rzeczywisty MRE push/replay/read119
+z cleanupem oraz jawnym zwrotem → finalny pakiet111 oraz jedna końcowa kopia
+z isolated restore**.
 Wcześniejsze oczekiwanie na E4 przed importem jest historyczne. Techniczne
 zwolnienie rezerwacji110 dla uzgodnionego slotu importu nadal jest wymagane;
 może wynikać z decyzji o zmianie kolejności, bez fikcyjnych receiptów E4/PULL.
@@ -164,12 +167,12 @@ Nie nadpisuj wcześniejszych pakietów. Manifest pakietu zapisuje osobno:
 
 | Część | Wymagane powiązanie |
 |---|---|
-| Android | source commit i receipt commit, Android tree, Room, cztery role/wersje/applicationId/podpisy/rozmiary/SHA256 oraz hash manifestu dostawy |
-| Uruchamiana aplikacja | dokładny APK zaakceptowany w android_acceptance; validation-configured jest osobną aplikacją, regularny debug bez endpointów nie zastępuje jej |
+| Android | odrębne bindingi frozenRoom23 i skonfigurowanego MRE0.8.40/Room27: source/receipt commit, Android tree, Room, role/wersje/applicationId/podpisy/rozmiary/SHA256, manifest dostawy i rzeczywiste compiled API/issuer/CA |
+| Uruchamiana aplikacja | dokładny APK z własnym zgodnym receiptem:108 dla frozenRoom23,119 dla configuredMRE27; wynik108 nie kwalifikuje Room27. validation-configured jest osobną aplikacją, regularny debug bez endpointów nie zastępuje jej |
 | API | faktyczny immutable image, schema i rzeczywiste pochodzenie; brak OCI revision pozostaje jawny, archiwalna zgodność wybranych plików nie dowodzi commita całego obrazu |
 | TLS | API base URL, dokładny issuer, publiczny PEM i jego SHA256, bez klucza prywatnego CA |
 | Katalogi | osobna pozycja dla każdego package ID/kind/release/schema/reader, miejsca użycia, SHA256 i rozmiaru gzip/manifestu; asset APK i aktywna generacja Room są oddzielne od zapieczętowanego draftu serwera |
-| Odbiory | źródła, hashe, rzeczywiste zakresy i ograniczenia android_acceptance/E4/PG/osobnego PULL; zgodna instalacja, API/schema i epoka |
+| Odbiory | źródła, hashe, rzeczywiste zakresy i ograniczenia android_acceptance/E4/PG/osobnego PULL oraz osobnego uwierzytelnionego119; zgodna instalacja, API/schema i epoka oraz oddzielny closure każdego okna |
 | Kopia | hash manifestu nowej kopii, wynik integralności i izolowanego rehearsal, hash zaszyfrowanego pliku; zachowanie epoki i usług źródłowych |
 
 Pełne tożsamości instalacji/konta, epoka, ścieżki prywatne i raw dowody pozostają
@@ -230,7 +233,37 @@ odrębny pełny snapshot po imporcie, nowy trial/plan PG i rzeczywisty C0.
 Stary baseline sprzed importu nie dowodzi zgodności nowego stanu katalogu.
 Import118 obejmuje katalog; nie jest authenticated push/read ani odbiorem APK.
 Pakowanie i kopia111 czekają również na końcowy E4/PG/osobny PULL110,
-cleanup, zamknięcie lease i jawny zwrot wszystkich operatorów.
+cleanup, zamknięcie lease i jawny zwrot wszystkich operatorów, a następnie
+na osobny wynik119 opisany poniżej.
+
+### Osobna bramka uwierzytelnionego MRE119
+
+Po rzeczywistym108, E4/PG i osobnym PULL110 oraz cleanupie/jawnym zwrocie
+operatorów wykonawca119 uzgadnia własne nowe wyłączne okno. Nie uruchamia
+próby podczas frozen E4 ani na podstawie wygasłego slotu118. Przygotowanie
+planu i odczyt istniejącej dostawy APK mogą odbywać się równolegle.
+
+Finalny manifest wymaga receiptu119 z hashem i prawdziwym bindingiem
+skonfigurowanego MRE0.8.40/Room27: APK/source/tree/SHA256/podpis/appId/wersja
+oraz compiled API/issuer/CA. Binding Room23 i jego receipty pozostają osobne;
+nie opisuj go jako klienta MRE. Rzeczywisty obraz OCI05/schema0024/PG17.11
+zachowuje pełne źródło Git UNKNOWN. Aktualny main nie jest jego buildem.
+
+Odbiór119 obejmuje rzeczywiste TLS/PKCE/logowanie z tego APK i nowy Meal na
+zaimportowanych referencjach MRE: push, trwały wynik, replay tego samego wire
+(UUID/body/fingerprint), `already_applied`, read/pull i brak duplikatów.
+Receipt119 wiąże hash rzeczywistego importu118 oraz zakończoną próbę110/zwrot.
+Syntetyczny serwerowy probe117 ani sam import118 nie zastępują tej próby.
+Nie zmieniaj UUID utrwalonej odmowy `dependency_missing`, aby uzyskać PASS.
+Wymagaj dowodu zachowania istniejących danych/epoki, cleanupu119, zamknięcia
+lease i jawnego zwrotu jego operatora. Dopiero ten wynik zamyka bramkę119.
+
+START wskazuje faktycznie odebrany końcowy APK/profil ze zgodnego receiptu,
+zachowując artefakty i dowody Room23 oddzielnie. Nie zakładaj równoczesnej
+instalacji obu wersji lub możliwości uruchomienia starszego Room23 na bazie27.
+Nie twórz zastępczego profilu/konta ani nie przejmuj stanowiska O1 w celu
+obejścia brakującego wejścia. Brak configured APK, operatora, rzeczywistego
+konta lub receiptu119 pozostaje konkretnym brakiem finalnego pakietu.
 
 Nowy pakiet otrzymuje `state=draft`, `sealed=true`. Import nie publikuje ani
 nie aktywuje kanału. Dla nowego kanału `active_release=null`; istniejącego
@@ -257,7 +290,8 @@ nie przepisuj pinu API na commit katalogu z PR188.
 ### Jedna kopia zmienionego stanu i lokalny plik szyfrowany
 
 Jedną końcową kopię wykonaj po wszystkich zaakceptowanych zmianach objętych
-pakietem: imporcie118, acceptance108, nowym E4/PG/osobnym PULL110 i closure.
+pakietem: imporcie118, acceptance108, nowym E4/PG/osobnym PULL110 i closure,
+a potem uwierzytelnionej próbie119 i jej closure/zwrocie operatora.
 Nie wykonuj kopii111 przed importem i drugiej po nim; już istniejąca kopia
 harmonogramowa może stanowić odrębne zabezpieczenie operatora118.
 Nową kopię uzasadnia zaakceptowana zmiana danych. Zdrowa wcześniejsza
@@ -324,6 +358,14 @@ Końcowe prywatne przekazanie podaje faktyczny folder, hashe paczek i receiptów
 zakończenie lease/runtime oraz ograniczenia. Brak E4/PULL oznacza oczekiwanie,
 bez nowego finalnego pakietu lub kopii. Wynik tego zakresu nie zamyka całego
 v1, AI, telefonu fizycznego ani wdrożenia produkcyjnego.
+
+Po stagingu jednego zestawu na D: wykonaj jedną kopię końcowego zmienionego
+stanu, szyfrowany eksport i rzeczywisty izolowany restore. Dopiero następnie
+domknij manifest/powiązania i przekaż je niezależnemu audytorowi O3-120.
+Audyt120 nie zastępuje operatorstwa111 ani brakującego receiptu119.
+Przed ostatecznym zamknięciem backlogu rozlicz kwalifikowane odbiory źródeł
+PR185→PR184 i własnego funkcjonalnego PR/main. To osobna zgodność repozytorium;
+nie oznacza rolloutu tych pinów ani zmiany pełnego źródła obrazu05 z UNKNOWN.
 
 Źródła konfiguracji Mailpit: [Docker](https://mailpit.axllent.org/docs/install/docker/),
 [API skrzynki](https://mailpit.axllent.org/docs/api-v1/),
