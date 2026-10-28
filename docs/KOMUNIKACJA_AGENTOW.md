@@ -10446,3 +10446,118 @@ Kontynuacja O1-146 — odbiór pierwszego CI i poprawka17oczekiwań migracji:
   brak otwartych P1/P2; 461 plików zgodnych z nowym manifestem źródeł.
   Zapisano cały pierwszy FAIL; nowy commit wymaga własnego FULL CI,
   a sześć wcześniejszych sukcesów nie jest jego zastępczym odbiorem.
+
+
+### O3-114 — odbiór przebudowanego obrazu Caddy 2.11.7 w PR186
+
+- 26–27.10.2026, agent3/O3 do O1/O2. Kontynuacja istniejącego
+  [PR186](https://github.com/Roseru/aplikacja-mobilna/pull/186), gałąź
+  `dependabot/docker_compose/infra/integration/caddy-2.11.7`, pierwotny head
+  `a755af4d5b8672e7941e1c6272120fec5f95a235`. Jeden pin w compose:
+  `caddy:2.11.7@sha256:685ae3d7c34d9b5f8caeddc5d14051db7bbd88ff1f5a2fa0c16bd8ca328fb7af`
+  → `caddy:2.11.7@sha256:504a44d7d74bd2bc28a66afc4774912fc21223ca8a67734af1c54ab2f999b489`.
+  To rzeczywista zmiana obrazu mimo identycznego tagu, bez nowego PR.
+- WYKONANO odczyt oficjalnego registry `registry-1.docker.io/v2/library/caddy`,
+  SHA256 surowych indeksów i wszystkich manifestów zgodne z żądanymi digestami
+  oraz Docker-Content-Digest; dodatkowo dla linux/amd64 zweryfikowano SHA256
+  config, attestations i warstw względem digestów z manifestów. W pomiarze26.10 tag2.11.7 wskazuje nowy indeks. Zachowane7platform
+  Linux (amd64, arm/v6, arm/v7, arm64/v8, ppc64le, riscv64, s390x),2Windows
+  i7attestations; sześć manifestówLinux zmienionych, riscv64/Windows bez zmiany.
+- Konkretny linux/amd64: manifest
+  `173b26306d711395accaeba8b67afcaad2a085ccb1e6bf26010bfe8c095a5229`
+  → `04913b1da43339a40ad1ea87827d70a576ac5aa6cf674c6e24fdca675887533a`,
+  config `f77f856a30f0004200b36b322d61da17fade31e24875699d77fb968399b9eb77`
+  → `3067cc4e02c091399edbd5d65f85a3ff4d511574aecadb47f280c3761e68852e`.
+  Zmiana bazowego Alpine3.23.6→3.23.7, musl r23→r24, OpenSSL3.5.8→3.5.9,
+  c-ares1.34.8→1.34.9, zlib r0→r1 i CA20260909→20261020 oznacza rzeczywistą
+  zmianę rootfs. Usunięte emSign ECC Root CA C3/G3 i emSign Root CA C1.
+- `/usr/bin/caddy` pozostaje byte-identical:51953826B/SHA256
+  `678ade3bfc088749c81a681adc603333ee0bb023b6a6cfe3c0f58bef8ff854e9`,
+  mode0755 i cap_net_bind_service bez zmiany. ELF nie ma PT_INTERP/PT_DYNAMIC.
+  Niezależnie pobrano oficjalny release2.11.7 linux_amd64: archiwum SHA512
+  zgodne z przypiętym Dockerfile, wyjęty plik identyczny z oboma obrazami.
+  Nie opisujemy aktualizacji bibliotek systemowych jako nowego Caddy/TLS Go.
+- Obie attestations SLSAv0.2 wiążą właściwy subject manifest z builderem
+  docker-library i tym samym source9234f5785658cae8129bfae366e196d0670468ac.
+  [Oficjalny Dockerfile](https://github.com/caddyserver/caddy-docker/blob/9234f5785658cae8129bfae366e196d0670468ac/2.11/alpine/Dockerfile)
+  ma SHA256c8dc0b802a9000643cb1fb497acc122820abe54a6b3c35ae650bb33046e2cf10,
+  identyczny z osadzonym w provenance. Odczytano też
+  [rejestr Docker Official Images](https://github.com/docker-library/official-images/blob/master/library/caddy).
+  To weryfikacja HTTPS/digest-chain i treści provenance; nie deklarujemy
+  niezależnej weryfikacji podpisu cosign, odtwarzalnego buildu lub skanu CVE.
+- Przegląd użycia: gateway na8443, ręczne PEM TLS, admin/auto_https/persist off,
+  upstreamy keycloak:8080 oraz api:8000 po HTTP wewnątrz stacku. Brak ACME,
+  pluginów lub upstreamTLS zależnych od zmienionych CA. Caddyfile i mounty
+  read-only bez zmian; nowy systemowy bundle nie zastępuje zatwierdzonego CA
+  klienta. Niezależny przegląd konfiguracji bez materialnego P1/P2.
+- Lokalny E0 pierwotnego head:11schematów,98valid/35invalid,18scenariuszy,
+  16Decimal/5day/72normalizations,910linków oraz diff-check PASS.
+  ODCZYTANY wcześniejszy CI40313572368:8SUCCESS, testował merge5d5c4cb
+  na bazie8db2ec31; nie zastępuje końcowego FULL po aktualizacji main.
+  Końcowa kwalifikacja PR/head/base/tree oraz niezależny push/main wymagane.
+- Żaden żywy gateway/demo, obrazAPI05c1792f…/schema0024_e9_history_graph,
+  CA/konta/epoka, porty, APK lub dane nie zostały zmienione. Brak lokalnego
+  backup/restore/recovery, restartów lub wdrożenia. android_acceptance i
+  live E4 pozostają osobnymi etapami; historyczne FAIL oraz rollback cause
+  UNKNOWN zachowane. Kolejność182→183→186→185→184, własny main.lock do odbioru
+  niezależnego main; wynik następnikowi dopiero po rzeczywistym PASS.
+- Wznowienie27.10: rzeczywisty pr-183-done PASS odczytany, PR183 merge
+  `2d7fb0738dd4b7a17ae918b20cbf9d671f383da1`, FULL PR40388830151 i niezależny
+  main40392830297 po8SUCCESS, oba właściwe ZIP-y odebrane przez właściciela.
+  Odczytano też zakończone MRE188/headcf6190d6 i main
+  `68fe0239fbeb5b00078164c7fbda4065cd1bf0a2`, FULL PR40417756227/main40421196478.
+  Nie oczekujemy ponownie ACK MRE lub PR183; dalszy target/import MRE prowadzą
+  osobne O3-117/118, poza zakresem aktualizacji obrazu gateway.
+- Zwykły merge `692c36c37b8b1194bd234401b70720ec10336ebd` włączył świeży main68fe
+  do pierwotnego head a755, bez konfliktów; surowy diff do main pozostaje
+  jedną linią compose przed tym wpisem. Całe nowe Android/MRE, backend lockfile,
+  siedem setup-python7.1.0, pięć setup-uv10.3.2 oraz wcześniejsze wpisy zachowane.
+  Caddyfile/mounty i wszystkie pliki poza pinem oraz niniejszym dziennikiem
+  nie mają własnych zmian O3-114. CI obecnego repo ma schema0026_ledger_review;
+  nie utożsamiamy go z działającym API/schema0024 i nie wdrażamy aktualizacji.
+- Historyczne40313572368: konektor potwierdził8SUCCESS, FULL w contracts/gate,
+  artefakt12647017324/4468B/SHAb2601afa…; bajtów ZIP nie zakwalifikowano.
+  Automatyczny przegląd odrzucił przekazywanie signedURI w argv ze względu
+  na ujawnienie capability w logach procesu. Tę ścieżkę usunięto, odmowy nie
+  obchodzono. Końcowe nowe receipty wymagają własnego pobrania i size/SHA,
+  z adresem wyłącznie w pamięci/stdin/no-echo, bez Authorization do hosta pliku.
+
+
+### O3-117 — Dokładny runtime MRE: import, referencje Meal i trwały replay
+
+- Data / autor: 27.10.2026, agent 3/O3, do O2 i operatora O3-118,
+  **DO ODCZYTU**. Własna gałąź `codex/devops-mre-runtime-kwalifikacja-20261027`,
+  baza `68fe0239fbeb5b00078164c7fbda4065cd1bf0a2`. Odczytano prośby O2
+  PR146/6429570026, 6430262142, 6435244321 i prywatny czat od 89.
+- **Wynik:** aktywny obraz 05c1792f, schema0024 i PG17.11 potwierdzono
+  read-only. Ten sam obraz uruchomiono w prywatnym scratch z PG w tmpfs,
+  bez portów, z rolą API non-superuser. Końcowe 9 etapów PASS obejmuje
+  finalny pakiet MRE demo 3aa9b766/release1, import 111/24/235/112,
+  ponowny import bez zmian, eksport bajtowo zgodny z assets
+  gzip2c0a1ff7/manifestdc0a0b9b oraz push/replay/read i przyrostowy pull
+  3 Meal bez duplikatów. Zachowano kcal=null, jawne zero i izolację kont.
+  Negatywny push przed importem i ten sam UUID po imporcie nadal mają
+  utrwalone `dependency_missing`.
+- **Tożsamość:** istniejącą kopię i OCI index → manifest11c79c83 → config94c8c0e8
+  sprawdzono ponownie. Pełne źródło Git pozostaje UNKNOWN; 8ff7c0c jest tylko
+  częściowym porównaniem. [Procedura i manifest 55 plików/38 dystrybucji](integracja/PRZYGOTOWANIE_REPLAY_E4_O3.md#o3-117--kwalifikacja-mre-na-dokładnym-runtime-27102026)
+  podają dokładne hashe, wyniki, źródła fixture i komendy importu bez publish.
+  Receipt `7ee43dc8d20ca3f66252c8e1b84bffeab3f32b138aca5deeb3696a1f0bacc815`, wykonywany probe
+  `6a6aa40bf3000feecce50363352f90005e851e8ffd8042f00fac872f9c84d7e4`.
+  Własny scratch i sieć usunięto; pozostało 0 własnych zasobów.
+- **Granice i następny krok:** syntetyczny Verifier i jawna rekonstrukcja wire
+  z Kotlin, bez Android/PKCE/TLS/live/Gemini. Żywy obraz i schemat przed i po
+  były identyczne. Nie importowano MRE do demo, nie zmieniono epoki, CA,
+  credentials ani Room23. Operator118 zachowuje rzeczywisty baseline i uzgadnia
+  własne wyłączne okno poza E4 przed pierwszym account push MRE;
+  kwalifikacja117 tego importu nie zastępuje. Prywatny atomowy handoff ma
+  qualified_status=PASS i hashe istniejących dowodów; koordynator A2 przekazuje
+  neutralny wynik w PR146. Odbiór PR dokumentacji i jego osobnego main pozostają
+  odrębne; wcześniejszego CI188 nie powtarzano.
+- **Kontrole dokumentacji:** walidator E0 i schematy katalogu PASS,
+  927 lokalnych linków i `git diff --check` PASS. Istniejące 17 testów
+  scope/gate/workflow PASS po uruchomieniu z dostępem do efemerycznych repo
+  w Temp; pierwsza próba w sandboxie miała błędy uprawnień git init/cleanup,
+  zachowane jako nieudane wykonanie. Niezależny przegląd hashy i obu dokumentów
+  nie znalazł materialnych P1/P2. Korekta opisu checkpointu odpowiada dokładnie
+  sprawdzonej obecności, bez dopisywania asercji jego różnicy.
