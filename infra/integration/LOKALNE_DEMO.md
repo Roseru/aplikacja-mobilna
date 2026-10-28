@@ -249,6 +249,17 @@ oraz compiled API/issuer/CA. Binding Room23 i jego receipty pozostają osobne;
 nie opisuj go jako klienta MRE. Rzeczywisty obraz OCI05/schema0024/PG17.11
 zachowuje pełne źródło Git UNKNOWN. Aktualny main nie jest jego buildem.
 
+Dostawa oznaczona `PRE_SIGN_INPUT` wiąże wyłącznie bajty przed podpisaniem.
+Zachowaj osobno jej hashe i certyfikaty obu APK oraz finalne hashe/certyfikaty
+aplikacji i pasującego test APK. O1 sprawdza podpis rzeczywiście zainstalowanej
+aplikacji i istniejącego test package; historyczny certyfikat Room23 ani wspólne
+applicationId/wyższa wersja nie dowodzą zgodności aktualizacji. Jeśli potrzebny
+jest podpis, O1 używa lokalnie istniejącego zgodnego klucza, bez jego eksportu,
+odinstalowania, resetu lub zastępczego profilu.111 nie podpisuje ani nie instaluje.
+Po podpisaniu wymagaj weryfikacji obu finalnych podpisów, nowych hashów oraz
+odczytu zawartości/config/MRE/Room i targetu testu z finalnych bajtów. Raport
+statyczny wejścia nie kwalifikuje zmienionych bajtów ani próby live119.
+
 Odbiór119 obejmuje rzeczywiste TLS/PKCE/logowanie z tego APK i nowy Meal na
 zaimportowanych referencjach MRE: push, trwały wynik, replay tego samego wire
 (UUID/body/fingerprint), `already_applied`, read/pull i brak duplikatów.

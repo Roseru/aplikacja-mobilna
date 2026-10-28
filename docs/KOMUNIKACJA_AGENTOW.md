@@ -10118,6 +10118,18 @@ podlega końcowy diff dwóch dokumentów wobec aktualnego main oraz nowy CI PR.
   PULL. Finalna spójna kopia APP/Keycloak/globals wymaga actual isolatedrestore
   z porównaniem dziennika/katalogu/tożsamości i weryfikacją szyfrowania; TOC
   i harmonogram nie zastępują tego wyniku ani nie oznaczają pełnego KO32.
+- **Odbiór wejścia119r2,28.10:** przyjęto configured build/static jako
+  PRE_SIGN_INPUT, źródło `cf6190d615108b5099586388380e8c3d488d085f`, Androidtree
+  `9e144a5519cdd6bed7df53da67fea4638174316a`, Room27. Oba nowe APK mają zgodne
+  bajty/rozmiary/SHA z manifestem dostawy; app `6f45411a…`, test `262240b0…`.
+  Certyfikat wejścia `313a9f31…` i historyczny Room23 `e1167912…` nie dowodzą
+  podpisu aktualnej instalacji O1. Finalne artefakty/hash/podpis pozostają null;
+  O1 sprawdza zgodność i w razie potrzeby podpisuje oba istniejącym kluczem,
+  bez eksportu/uninstall/resetu/nowego profilu. Potem wymagany jest odczyt
+  finalnych bajtów. Niezależny przegląd potwierdził wyłącznie zakres pre-sign.
+  119 nadal NOT_RUN; bramki108/110, operator/konto/fence, nowe okno i rzeczywisty
+  receipt119/closure pozostają wymagane.111 nie uruchamiał builda/static28,
+  ADB, usług, locka ani nowej kopii; prywatny ACK i plan zachowują te rozdzielenia.
 
 ### O1-146 — Android0.8.39: trwałe podglądy offline i ponowienie odczytu
 
