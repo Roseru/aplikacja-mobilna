@@ -140,7 +140,11 @@ def check_ref(entry, base):
     if not source.is_absolute():
         source = base / source
     source = regular(source.absolute())
-    if source.suffix.lower() in {".key", ".env", ".pfx", ".p12", ".jks", ".keystore"}:
+    if (
+        source.name.casefold() == ".env"
+        or source.name.casefold().startswith(".env.")
+        or source.suffix.lower() in {".key", ".env", ".pfx", ".p12", ".jks", ".keystore"}
+    ):
         raise InvalidPackage("Private key/config input is forbidden")
     if (
         source.stat().st_size != entry["bytes"]

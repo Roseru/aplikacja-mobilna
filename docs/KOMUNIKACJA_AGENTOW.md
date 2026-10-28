@@ -10152,6 +10152,9 @@ podlega końcowy diff dwóch dokumentów wobec aktualnego main oraz nowy CI PR.
   Windows device (spacje przed kropką/indeksy górne). Python3.13+ wymagany
   jawnie, bez pomijania junction guard na starszym interpreterze.
   Pierwszy FAIL pozostaje w dowodach.
+  Dalszy wąski repro121 wykazał `Path('.env').suffix==''`; jawna odmowa
+  basename `.env`/`.env.*` następuje teraz przed odczytem treści. Trzy nowe
+  regresje PASS; wcześniejsze48PASS/2WindowsSKIP zachowują własny zakres.
   Dokładny commit/tree trafia do osobnego zamrożonego odbioru kodu.
   Publikacja tego funkcjonalnego etapu wymaga FULL PR CI; nie jest finalnym
   pakietemD, odbiorem live108/110/119 lub finalnym backup/restore111/120.

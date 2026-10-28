@@ -394,6 +394,24 @@ def test_private_key_marker_across_hashing_blocks_is_refused(candidate):
     assert not candidate["output"].exists()
 
 
+@pytest.mark.parametrize("filename", [".env", ".ENV", ".env.local"])
+def test_dotenv_is_refused_before_reading_contents(candidate, filename, monkeypatch):
+    source = candidate["source"].with_name(filename)
+    source.write_bytes(b"SYNTHETIC_PASSWORD=not-a-secret")
+    candidate["recipe"]["inputs"][0].update(file_reference(source), role="evidence")
+    save_recipe(candidate["path"], candidate["recipe"])
+
+    from infra.integration import local_demo_package
+
+    def forbidden(*args, **kwargs):
+        raise AssertionError("Private config contents should not be opened")
+
+    monkeypatch.setattr(local_demo_package, "checksum", forbidden)
+    with pytest.raises(InvalidPackage, match="Private key/config"):
+        prepare(candidate["path"], candidate["output"])
+    assert not candidate["output"].exists()
+
+
 @pytest.mark.parametrize(
     "field", ["claims", "missing_inputs", "unqualified_gates", "qualification"]
 )
