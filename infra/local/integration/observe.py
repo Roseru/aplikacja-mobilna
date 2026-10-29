@@ -400,7 +400,7 @@ def observation_sql(plan, phase):
         + f"""
 SELECT jsonb_build_object(
  'server_version_num',current_setting('server_version_num')::integer,
- 'address',inet_server_addr()::text,'port',inet_server_port(),'database',current_database(),
+ 'address',host(inet_server_addr()),'port',inet_server_port(),'database',current_database(),
  'user',current_user,'postmaster_started_at',pg_postmaster_start_time(),
  'read_only',current_setting('transaction_read_only'),
  'isolation',current_setting('transaction_isolation'),
