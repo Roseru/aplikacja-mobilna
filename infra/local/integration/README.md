@@ -64,6 +64,8 @@ artefakty i wcześniejsze dowody pozostają. Blokada OS odmawia równoległego
 Generacja startu wiąże dokładny backend/kontrakty z commitem, lock i hashe
 adaptera z działającymi procesami. Weryfikacja odmawia starego źródła,
 zmienionych markerów lub zakończonych procesów przed tworzeniem kont.
+Powiązanie obejmuje też współdzielone `run.py`, `verify.py`, `init-db.sh`
+i szablon realm. Zmiana któregokolwiek wymaga zgodnego pinu i nowej generacji.
 Po zmianie adaptera wymagany jest restart. Nie zmieniaj backendu/kontraktów
 w trakcie próby; przy nowym pinie potrzebne jest osobne jawne uzgodnienie.
 
@@ -105,3 +107,20 @@ z aktualnego APK → PG receipt → osobny PULL → restart. Osobno pozostają
 konflikt/recovery, community, ranking opt-in/out, Nemesis accept/cancel/cache
 i E9 przy mocku. Nie zmieniaj zamrożonych planów Room23/obrazów w celu
 przypisania im tego nowego odbioru natywnego.
+
+## Kontrole źródeł adaptera
+
+Użyj tego samego kwalifikowanego interpretera oraz konfiguracji Ruff backendu.
+Świeży katalog tymczasowy pod własnym `.tools` unika odziedziczonych blokad ACL
+globalnego katalogu pytest. Nie wskazuj istniejącego stanu usług jako `basetemp`.
+
+```powershell
+$TestTemp = Join-Path (Get-Location) ('.tools/native-tests-' + [guid]::NewGuid())
+& $Python -m ruff check --config backend/pyproject.toml infra/local/integration/native.py infra/integration/tests/test_native_runtime.py
+& $Python -m ruff format --check --config backend/pyproject.toml infra/local/integration/native.py infra/integration/tests/test_native_runtime.py
+& $Python -m pytest infra/integration/tests/test_native_runtime.py --basetemp $TestTemp -q
+```
+
+Testy źródeł helperów celowo zmieniają każdy z czterech plików w osobnym
+repozytorium tymczasowym. Wymagają odrzucenia starego pinu i innego skrótu po
+nowym commicie; nie zmieniają działającego checkoutu ani usług.

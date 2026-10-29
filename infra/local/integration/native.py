@@ -25,6 +25,12 @@ sys.path.insert(0, str(ROOT / "infra/integration"))
 from run import initialize, prepare_worker, private_write  # noqa: E402
 
 FLAGS = {"creationflags": subprocess.CREATE_NO_WINDOW} if os.name == "nt" else {}
+SHARED_HELPERS = (
+    "infra/integration/run.py",
+    "infra/integration/verify.py",
+    "infra/local/init-db.sh",
+    "infra/local/keycloak/realm.json",
+)
 
 
 def write_json(path, value):
@@ -77,7 +83,16 @@ def source(pin):
     if len(pin) != 40 or any(c not in "0123456789abcdef" for c in pin):
         raise ValueError("Full source commit required")
     subprocess.run(
-        ["git", "diff", "--exit-code", pin, "--", "backend", "contracts"],
+        [
+            "git",
+            "diff",
+            "--exit-code",
+            pin,
+            "--",
+            "backend",
+            "contracts",
+            *SHARED_HELPERS,
+        ],
         cwd=ROOT,
         check=True,
         capture_output=True,
@@ -107,6 +122,9 @@ def source(pin):
         "packages": packages,
         "adapter_sha256": {
             p.name: hashlib.sha256(p.read_bytes()).hexdigest() for p in sorted(HERE.glob("*.py"))
+        },
+        "shared_helper_sha256": {
+            path: hashlib.sha256((ROOT / path).read_bytes()).hexdigest() for path in SHARED_HELPERS
         },
     }
 
@@ -236,7 +254,9 @@ def prepare(
         (state / name).mkdir()
     write_json(state / "native.json", config)
     shutil.copytree(
-        paths["keycloak_home"], state / "keycloak", ignore=shutil.ignore_patterns("data")
+        paths["keycloak_home"],
+        state / "keycloak",
+        ignore=shutil.ignore_patterns("data"),
     )
     imports = state / "keycloak/data/import"
     imports.mkdir(parents=True)
@@ -372,7 +392,11 @@ class Native:
         markers = {p.name: json.loads(p.read_text()) for p in self.state.glob("*.process.json")}
         if (
             set(markers)
-            != {"postgres.process.json", "keycloak.process.json", "gateway.process.json"}
+            != {
+                "postgres.process.json",
+                "keycloak.process.json",
+                "gateway.process.json",
+            }
             or markers != binding["processes"]
         ):
             raise ValueError("Runtime process generation differs from its binding")
@@ -428,7 +452,15 @@ class Native:
                 + "log_statement='none'\nlog_min_error_statement='panic'\n",
             )
         self.run(
-            [self.pg / "pg_ctl.exe", "-D", data, "-l", self.state / "postgres.log", "-w", "start"],
+            [
+                self.pg / "pg_ctl.exe",
+                "-D",
+                data,
+                "-l",
+                self.state / "postgres.log",
+                "-w",
+                "start",
+            ],
             label="pg-start",
         )
         pg_pid = int((data / "postmaster.pid").read_text().splitlines()[0])
@@ -480,7 +512,9 @@ class Native:
             env,
         )
         self.launch(
-            "gateway", [self.python, "-m", "infra.local.integration.gateway"], self.env("api")
+            "gateway",
+            [self.python, "-m", "infra.local.integration.gateway"],
+            self.env("api"),
         )
         from verify import Probe
 
@@ -572,7 +606,11 @@ def main():
         )
         print(
             json.dumps(
-                {"state": "INITIALIZED", "origin": config["origin"], "source": config["source"]}
+                {
+                    "state": "INITIALIZED",
+                    "origin": config["origin"],
+                    "source": config["source"],
+                }
             )
         )
     else:

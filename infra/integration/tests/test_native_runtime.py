@@ -71,7 +71,12 @@ def owned(tmp_path, monkeypatch):
         native.write_json(state / name, record)
     native.write_json(
         state / "runtime-binding.json",
-        {"state": "RUNNING", "generation": "g1", "source": source, "processes": processes},
+        {
+            "state": "RUNNING",
+            "generation": "g1",
+            "source": source,
+            "processes": processes,
+        },
     )
     by_pid = {record["pid"]: record for record in processes.values()}
     monkeypatch.setattr(native, "identity", lambda pid: by_pid[pid])
@@ -127,7 +132,12 @@ def test_real_foreign_listening_port_refused_without_touching_it():
 
 
 def test_foreign_secrets_and_java_agents_are_not_inherited(monkeypatch):
-    for key in ("GEMINI_API_KEY", "DATABASE_URL", "KC_DB_PASSWORD", "JAVA_TOOL_OPTIONS"):
+    for key in (
+        "GEMINI_API_KEY",
+        "DATABASE_URL",
+        "KC_DB_PASSWORD",
+        "JAVA_TOOL_OPTIONS",
+    ):
         monkeypatch.setenv(key, "synthetic-foreign-value")
     monkeypatch.setenv("OS", "Windows_NT")
     actual = native.clean_env()
@@ -142,6 +152,69 @@ def test_foreign_secrets_and_java_agents_are_not_inherited(monkeypatch):
 def test_inexact_source_pin_refused(pin):
     with pytest.raises(ValueError, match="Full source"):
         native.source(pin)
+
+
+@pytest.mark.parametrize("helper", native.SHARED_HELPERS)
+def test_shared_helper_change_requires_a_new_qualified_source(tmp_path, monkeypatch, helper):
+    repository = tmp_path / "source"
+    repository.mkdir()
+    monkeypatch.setattr(native, "ROOT", repository)
+    adapter = repository / "infra/local/integration"
+    adapter.mkdir(parents=True)
+    monkeypatch.setattr(native, "HERE", adapter)
+    (adapter / "native.py").write_bytes(b"# isolated adapter\n")
+    backend = repository / "backend/src/calorie_app"
+    backend.mkdir(parents=True)
+    (backend / "__init__.py").write_bytes(b"")
+    (repository / "backend/uv.lock").write_bytes(b"package = []\n")
+    contracts = repository / "contracts"
+    contracts.mkdir()
+    (contracts / "fixture.json").write_bytes(b"{}\n")
+    for path in native.SHARED_HELPERS:
+        target = repository / path
+        target.parent.mkdir(parents=True, exist_ok=True)
+        target.write_bytes(b"original helper\n")
+    monkeypatch.setitem(
+        sys.modules,
+        "calorie_app",
+        SimpleNamespace(__file__=str(backend / "__init__.py")),
+    )
+
+    def git(*arguments):
+        return (
+            subprocess.check_output(
+                [
+                    "git",
+                    "-c",
+                    "user.name=Native Test",
+                    "-c",
+                    "user.email=native-test@invalid.example",
+                    "-c",
+                    "commit.gpgsign=false",
+                    "-c",
+                    f"core.hooksPath={repository / 'no-hooks'}",
+                    *arguments,
+                ],
+                cwd=repository,
+                stderr=subprocess.PIPE,
+                **native.FLAGS,
+            )
+            .decode()
+            .strip()
+        )
+
+    git("init", "--quiet")
+    git("add", ".")
+    git("commit", "--quiet", "-m", "isolated source fixture")
+    pin = git("rev-parse", "HEAD")
+    qualified = native.source(pin)
+    (repository / helper).write_bytes(b"changed shared runtime helper\n")
+    with pytest.raises(subprocess.CalledProcessError):
+        native.source(pin)
+    git("add", helper)
+    git("commit", "--quiet", "-m", "change shared helper")
+    refreshed = native.source(git("rev-parse", "HEAD"))
+    assert qualified["shared_helper_sha256"][helper] != refreshed["shared_helper_sha256"][helper]
 
 
 def test_shared_origin_config_cannot_drift(owned):
@@ -172,7 +245,8 @@ def test_stale_generation_is_refused(owned, monkeypatch, damage):
         (stack.state / "gateway.process.json").unlink()
     elif damage == "marker":
         native.write_json(
-            stack.state / "gateway.process.json", processes["gateway.process.json"] | {"created": 7}
+            stack.state / "gateway.process.json",
+            processes["gateway.process.json"] | {"created": 7},
         )
     else:
         monkeypatch.setattr(native, "identity", lambda pid: {"pid": pid, "created": 7})
@@ -184,7 +258,9 @@ def test_down_checks_every_pid_before_stopping_anything(owned, monkeypatch):
     stack, *_ = owned
     monkeypatch.setattr(native, "identity", lambda pid: {"pid": pid, "created": -1})
     monkeypatch.setattr(
-        native, "terminate", lambda record: pytest.fail("stopped before identity checks")
+        native,
+        "terminate",
+        lambda record: pytest.fail("stopped before identity checks"),
     )
     with pytest.raises(RuntimeError, match="reused"):
         stack.down()
@@ -266,7 +342,9 @@ def test_lost_ack_waits_for_pg_witness_without_receiving(monkeypatch):
     assert events[:3] == ["sent", "pg_commit", "disconnect"]
 
 
-def test_gateway_keeps_multiple_cookies_and_replaces_untrusted_proxy_headers(monkeypatch):
+def test_gateway_keeps_multiple_cookies_and_replaces_untrusted_proxy_headers(
+    monkeypatch,
+):
     actual_client = httpx.AsyncClient
 
     def upstream(request):
