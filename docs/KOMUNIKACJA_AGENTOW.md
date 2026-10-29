@@ -10517,3 +10517,57 @@ Kontynuacja O1-146 — odbiór pierwszego CI i poprawka17oczekiwań migracji:
   lokalny podpis, finalne SHA/certSHA/readback i własny ACK. Account push/read,
   frozenRoom23/E4/PULL i instalacja/live119 pozostają odrębne, ze świeżym
   bootstrap/snapshot/trial/C0 i uzgodnionym oknem po imporcie.
+
+### O2-073 — Własny natywny HTTPS/PKCE/PG przed odbiorem aktualnego APK
+
+- 29.10.2026, agent 2/O2 do koordynatora, **BACKEND PASS / WAITING_ANDROID_LEASE**.
+  Na jawne przejęcie właściciela utworzono nowy odseparowany stan i gałąź
+  `codex/devops-demo-native`, z backendem/kontraktami source
+  `26aa82c4abf3a359c9bb1fcdb9a23f3a082b9389`. Istniejące instalacje,
+  dane, klucze i historyczne kwalifikacje O1/O3 pozostają osobnymi zasobami.
+  Nowszy main z samym Compose PG/dziennikiem nie zmienia pinu tej próby.
+- [Adapter i powtarzalne komendy](../infra/local/integration/README.md)
+  współdzielą istniejące initialize/CA/realm, Probe Code-PKCE i overlay.
+  Własny writable home Keycloak, PG i generowane testowe konta; ograniczone
+  porty, ukryte procesy, PID/birth/executable, blokada lifecycle i zachowujące
+  dane down/up. Generacja runtime wiąże rzeczywiście działające procesy
+  z pinem backendu/kontraktów, lockiem i hashami adaptera; stare źródło lub
+  markery odmawiają kwalifikacji. Nie przebudowano Compose, release checkera,
+  zamrożonych planów Room23 ani assemblera PREPARATION_ONLY z PR190.
+- **Rzeczywisty wynik:** HTTPS i dokładny issuer, discovery/JWKS, oba
+  callbacky Androida przez Code-PKCE i podpisany nonce, odmowa obcego CA,
+  hostname, błędnego PKCE, replay kodu i ID tokenu. Bootstrap A/B jest
+  idempotentny. Sześć domen zapisano bez odczytu HTTP ACK; niezależny PG
+  potwierdził commit, a identyczny retry dał sześć already_applied.
+  Osobny PULL zachował UUID/daty/payload/null, z izolacją A/B i odmową
+  obcego checkpointu. SQL oracle: 130,5 + 105 = 235,5 kcal; null nie jest zerem.
+  Po rzeczywistym down/up ponowne logowanie i pełny PULL zachowały dane,
+  epokę, CA oraz dokładne sześć receipts opID/entityID/hash/rewizja.
+- Runtime: PG 17.11, Keycloak 26.8.0, JDK 25.0.4.1, Python 3.13.9;
+  schema **0026_ledger_review**, 44 dystrybucje zgodne z backend/uv.lock.
+  Końcowy receipt SHA256
+  `83450ccecca801af7a6fbe39e7dccaa5c06cf3c948f770016cb97ffc9bd757ff`.
+  Nowy adapter: **27 unit PASS/0 failure/skip**; Ruff check/format, E0 i diff-check PASS.
+  Szerszy przebieg infra zachowany jako 637 PASS/40 FAIL/9 SKIP: 40 przypadków
+  poprawnie odmawiało sekretowych fixture wewnątrz checkoutu. Dokładnie te
+  same 40 nodeIDs przeszło bez zmian kodu w świeżym Temp poza repozytorium.
+  Dziewięć SKIP to 8 braków uprawnień symlink i 1 kontrola POSIX.
+  Odwracalna mutacja kontroli źródła wyłącznie w pamięci dała oczekiwany FAIL.
+- **Niezależny odbiór: 9,3/10, bez materialnych P1/P2.** Recenzent sprawdził
+  finalne pięć plików/hashów, bieżące PID/birth/executable, raw receipts/PULL,
+  fingerprinty PG, epokę, niezależne liczby/null, wersje/binaria oraz XML
+  testów. Wcześniejsze FAIL prób i środowiska zachowano. Przegląd poprawił
+  powiązanie generacji z kodem i dodał jawną asercję epoki po restarcie.
+- **Granice i następne wejście:** pełny przepływ APK nadal NOT_RUN;
+  Gradle/AVD pozostają u B1/B2 do rzeczywistego zwrotu lease i nowego pinu
+  od koordynatora. Publiczny CA i overlay przygotowane, bez instalacji.
+  Świeży katalog ma 0/0/0/0 produktów/racji/komponentów/źródeł: przed MRE sync
+  wymagany jest własny odpowiedzialny import tej samej wersji z Git,
+  z receiptem/eksportem i nowym bootstrap/snapshot/trial/C0 po imporcie.
+  Receipt118 nie kwalifikuje tej nowej bazy. Nemesis pozostaje wyłączone,
+  AI mock; właściwe workery AI/cleanup/punktów/finalizacji, realne Google,
+  restore oraz odbiór wydania nie są zaliczone przez gateway/create_app.
+  Brak narzędzi livechatu zgłoszono w istniejącym
+  [wątku PR146](https://github.com/Roseru/aplikacja-mobilna/pull/146#issuecomment-6492997283).
+  To lokalny pin etapu 1, bez checkpointowego PR; publikacja większego wyniku,
+  final-head/base CI, merge i osobne main CI pozostają u koordynatora.
