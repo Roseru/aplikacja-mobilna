@@ -849,3 +849,47 @@ def test_failed_activation_closes_new_gateway_and_never_publishes_running(world,
     assert set(actual["processes"]) == {"postgres.process.json", "keycloak.process.json"}
     completed = e.stop_existing(state, actual["generation"])
     assert load(completed["path"])["result"] == "STOPPED"
+
+
+def test_stop_receipt_uses_final_sessions_after_inflight_pull_finishes(world, monkeypatch):
+    state, descriptor = bound_target(world, monkeypatch)
+    first = e.start_existing(
+        state,
+        descriptor["path"],
+        descriptor["sha256"],
+        source_pin="e" * 40,
+        source_sha256=world.code_sha,
+    )
+    original = e.native.terminate
+
+    def completed_inflight_request(record):
+        original(record)
+        world.facts[state]["sessions"] = 3
+
+    monkeypatch.setattr(e.native, "terminate", completed_inflight_request)
+    stopped = e.stop_existing(state, first["generation"])
+    assert load(stopped["path"])["database"]["sessions"] == 3
+    resumed = e.start_existing(
+        state, stopped["path"], stopped["sha256"], source_pin="e" * 40, source_sha256=world.code_sha
+    )
+    assert resumed["pg_started"] and world.facts[state]["sessions"] == 3
+
+
+def test_materialized_target_never_repins_config_changed_during_promotion(world, monkeypatch):
+    original = e.shutil.move
+    target = world.root / ".tools/target"
+
+    def changed_after_move(source, destination):
+        result = original(source, destination)
+        if Path(destination) == target / "worker.env":
+            (target / "api.env").write_bytes(b"AI_PROVIDER=foreign\n")
+        return result
+
+    monkeypatch.setattr(e.shutil, "move", changed_after_move)
+    with pytest.raises(ValueError, match="Materialized configuration changed"):
+        bound_target(world, monkeypatch)
+    assert not (target / "existing-target.private.json").exists()
+    assert (target / "postgres/pg_hba.conf").read_bytes() == e.SEALED_HBA
+    assert not any(
+        x[0] == "launch" and x[3]["CALORIE_NATIVE_STATE"] == str(target) for x in world.events
+    )

@@ -713,6 +713,7 @@ def bind_target(
             destination.write_bytes(raw)
             require(digest(destination) == pin, "Copied software differs")
         config.update(state=str(state), pg_port=pg.port, pg_bin=str(pg.pg))
+        derived = {}
         for name, raw in data.items():
             if name in {"native.json", "postgres.env"}:
                 continue
@@ -737,16 +738,19 @@ def bind_target(
             path = folder / "config" / name
             path.parent.mkdir(parents=True, exist_ok=True)
             path.write_bytes(raw)
+            derived[name] = raw
         require(
             re.fullmatch(rb"[0-9a-f]{64}\n", password),
             "Target bootstrap password format differs",
         )
         postgres = env_bytes(data["postgres.env"])
         postgres["POSTGRES_PASSWORD"] = password.decode().strip()
-        (folder / "config/postgres.env").write_text(
+        derived["postgres.env"] = (
             "\n".join(key + "=" + value for key, value in postgres.items()) + "\n"
-        )
-        native.write_json(folder / "config/native.json", config)
+        ).encode()
+        derived["native.json"] = (json.dumps(config, indent=2) + "\n").encode()
+        for name in ("postgres.env", "native.json"):
+            (folder / "config" / name).write_bytes(derived[name])
         require(not (state / "keycloak").exists(), "Existing target software preserved")
         shutil.move(str(folder / "keycloak"), str(state / "keycloak"))
         for path in sorted((folder / "config").rglob("*")):
@@ -756,6 +760,10 @@ def bind_target(
                 destination.parent.mkdir(parents=True, exist_ok=True)
                 shutil.move(str(path), str(destination))
         (state / "photos").mkdir()
+        require(
+            all(sha((state / name).read_bytes()) == sha(raw) for name, raw in derived.items()),
+            "Materialized configuration changed",
+        )
         descriptor = {
             "format": "native-existing-target/v1",
             "kind": "target",
@@ -781,7 +789,7 @@ def bind_target(
             },
         }
         descriptor["configuration_files"] = {
-            name: digest(state / name) for name in data if name != "native.json"
+            name: sha(raw) for name, raw in derived.items() if name != "native.json"
         }
         return write_new(state / "existing-target.private.json", descriptor)
 
@@ -1148,6 +1156,9 @@ def stop_existing(state, expected_generation):
                     require(absent(record), "Service remains after stop")
                     (stack.state / (name + ".process.json")).unlink()
             zero_clients(pg)
+            # Final session/data facts belong to the quiesced cohort, not to an
+            # earlier request which may finish while services are stopping.
+            facts = database_facts(pg)
             stack.run(
                 [
                     stack.pg / "pg_ctl.exe",
