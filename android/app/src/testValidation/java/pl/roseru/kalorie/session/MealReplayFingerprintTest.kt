@@ -18,7 +18,10 @@ class MealReplayFingerprintTest {
         assertThrows(IllegalArgumentException::class.java){MealReplayFingerprint.tables(24)}
         assertThrows(IllegalArgumentException::class.java){MealReplayFingerprint.tables(25)}
         assertThrows(IllegalArgumentException::class.java){MealReplayFingerprint.tables(26)}
-        assertThrows(IllegalArgumentException::class.java){MealReplayFingerprint.tables(27, runtimeIsolated = true)}
+        assertThrows(IllegalArgumentException::class.java){MealReplayFingerprint.tables(27)}
+        assertThrows(IllegalArgumentException::class.java){MealReplayFingerprint.tables(28, runtimeIsolated = true)}
+        assertEquals(45,MealReplayFingerprint.tables(27,runtimeIsolated=true).size)
+        assertEquals("private_preview_cache",MealReplayFingerprint.tables(27,runtimeIsolated=true).last())
         assertEquals(44,MealReplayFingerprint.tables(26, runtimeIsolated = true).size)
         assertEquals(listOf("sync_protocol_states","canonical_energy_versions"),MealReplayFingerprint.tables(26, runtimeIsolated = true).takeLast(2))
         assertEquals(42,MealReplayFingerprint.tables(25, runtimeIsolated = true).size)
@@ -54,9 +57,9 @@ class MealReplayFingerprintTest {
             assertEquals("changed",value("sync_push_batches","batch",column,"changed"))
     }
     @Test fun OtherRowsAndTablesPreserveEvenSimilarColumnNames() {
-        for(table in MealReplayFingerprint.tables(26, runtimeIsolated = true).filterNot{it in setOf("meals","outbox","sync_push_batches")})
+        for(table in MealReplayFingerprint.tables(27, runtimeIsolated = true).filterNot{it in setOf("meals","outbox","sync_push_batches")})
             for(column in listOf("status","serverRevision","attempted","state","wireContext","leaseGeneration","requestJson",
-                "responseJson","requestedVersion","activeVersion","handledVersion","retryAtMillis","reconciliationBaseline","protocolScope","wire","activeScope"))
+                "responseJson","payloadJson","payloadHash","fetchedAtMillis","sequence","requestedVersion","activeVersion","handledVersion","retryAtMillis","reconciliationBaseline","protocolScope","wire","activeScope"))
                 assertEquals("original",value(table,"meal",column,"original"))
         assertEquals("ACK",value("sync_push_batches","other","responseJson","ACK"))
     }

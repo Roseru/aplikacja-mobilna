@@ -31,7 +31,10 @@ data class SessionActions(val login: () -> Unit, val logout: () -> Unit, val ref
     val openConflict:(pl.roseru.kalorie.data.OwnerLease,String)->Unit={_,_->},
     val closeConflict:(pl.roseru.kalorie.data.OwnerLease)->Unit={},
     val resolveConflict:(pl.roseru.kalorie.data.OwnerLease,String,pl.roseru.kalorie.data.ConflictChoice)->Unit={_,_,_->},
-    val applyDiaryCopy:(pl.roseru.kalorie.data.OwnerLease)->Unit={})
+    val applyDiaryCopy:(pl.roseru.kalorie.data.OwnerLease)->Unit={},
+    val restorePrivatePreview:(pl.roseru.kalorie.data.OwnerLease,pl.roseru.kalorie.core.PrivatePreviewKind,String?)->Unit={_,_,_->},
+    val clearSavedPrivatePreview:(pl.roseru.kalorie.data.OwnerLease,pl.roseru.kalorie.core.PrivatePreviewKind)->Unit={_,_->},
+    val enterNemesisPreview:(pl.roseru.kalorie.data.OwnerLease)->Unit={readNemesis()})
 
 @Composable fun SessionScreen(view: SessionView, actions: SessionActions, back: () -> Unit, backLabel: String = "Wróć do profilu", onImport:(()->Unit)?=null,syncStatus:String?=null,
     onSyncOverview:(()->Unit)?=null) {

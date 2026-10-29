@@ -11,6 +11,7 @@ import androidx.compose.ui.text.AnnotatedString
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.runBlocking
+import org.json.JSONObject
 import org.junit.Rule
 import org.junit.Test
 import org.junit.Assert.*
@@ -141,6 +142,7 @@ class DiaryFlowTest {
     @Test fun choosePartialRationAndRestoreSelectionBeforeSaving() {
         compose.waitUntil(15_000) { compose.onAllNodesWithTag("daily-kcal").fetchSemanticsNodes().isNotEmpty() }
         val app = compose.activity.application as CalorieApplication
+        val firstRationTag = runBlocking { "ration-${app.database.dao().rations().first()[0].ration.id}" }
         // The editor deliberately retains its selected day across recreation. A suspended
         // device can cross midnight; validate the same day rather than a later "today".
         val testedDay = LocalDate.now().toString()
@@ -148,8 +150,10 @@ class DiaryFlowTest {
             .flatMap { it.items }.sumOf { it.consumed().kcal } }
         compose.onNodeWithText("Dodaj posiłek").performClick()
         compose.onNodeWithTag("open-rations").performClick()
-        compose.waitUntil(10_000) { compose.onAllNodesWithTag("ration-demo-ration-a").fetchSemanticsNodes().isNotEmpty() }
-        compose.onNodeWithTag("ration-demo-ration-a").performClick()
+        // Wait for the catalogue emission, then compose the exact legacy row outside the initial viewport.
+        compose.waitUntil(10_000) { compose.onAllNodesWithTag(firstRationTag).fetchSemanticsNodes().isNotEmpty() }
+        compose.onNodeWithTag("ration-content").performScrollToNode(hasTestTag("ration-demo-ration-a"))
+        compose.onNodeWithTag("ration-demo-ration-a").assertIsDisplayed().performClick()
         compose.onNodeWithTag("confirm-ration").assertIsNotEnabled()
         compose.onNodeWithTag("ration-content").performScrollToNode(hasTestTag("ration-check-demo-a-meat"))
         compose.onNodeWithTag("ration-check-demo-a-meat").performClick()
@@ -288,7 +292,7 @@ class DiaryFlowTest {
     @Test fun importedE2RationPreservesExactQuantityAcrossRecreationAndEdit() {
         compose.waitUntil(15_000) { compose.onAllNodesWithTag("daily-kcal").fetchSemanticsNodes().isNotEmpty() }
         val app = compose.activity.application as CalorieApplication
-        val ration = runBlocking { app.database.dao().rations().first().single { it.ration.catalogJson != null } }
+        val ration = runBlocking { app.database.dao().rations().first().single { it.ration.catalogJson?.let(::JSONObject)?.optString("ration_id") == "1ed32646-7248-5733-8979-c7cb4f9f25d2" } }
         val part = ration.components.minBy { it.position }
         val previousIds = runBlocking { app.database.dao().day(DiaryRepository.GUEST, LocalDate.now().toString()).first().map { it.meal.id }.toSet() }
         compose.onNodeWithText("Dodaj posiłek").performClick()
@@ -334,7 +338,7 @@ class DiaryFlowTest {
     @Test fun restoreRationQuantityOutsideInitialViewportWithoutSavingMeal() {
         compose.waitUntil(15_000) { compose.onAllNodesWithTag("daily-kcal").fetchSemanticsNodes().isNotEmpty() }
         val app = compose.activity.application as CalorieApplication
-        val ration = runBlocking { app.database.dao().rations().first().single { it.ration.catalogJson != null } }
+        val ration = runBlocking { app.database.dao().rations().first().single { it.ration.catalogJson?.let(::JSONObject)?.optString("ration_id") == "1ed32646-7248-5733-8979-c7cb4f9f25d2" } }
         val part = ration.components.maxBy { it.position }
         val tag = "ration-grams-${part.id}"
         val before = runBlocking { app.database.dao().operationCount(DiaryRepository.GUEST) }

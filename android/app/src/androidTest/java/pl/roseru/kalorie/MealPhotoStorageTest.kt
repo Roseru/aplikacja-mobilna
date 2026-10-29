@@ -33,6 +33,21 @@ class MealPhotoStorageTest {
     }
     private fun reject(action:()->Unit) { try { action();fail("Invalid input accepted") } catch(_:IllegalArgumentException) { } }
 
+    private fun diarySnapshot(db:CalorieDatabase):Map<String,List<List<String?>>> =
+        listOf("meals","meal_items","outbox").associateWith { table ->
+            db.openHelper.readableDatabase.query("SELECT rowid,* FROM \"$table\" ORDER BY rowid").use { cursor ->
+                buildList {
+                    while(cursor.moveToNext()) add((0 until cursor.columnCount).map { column ->
+                        when(cursor.getType(column)) {
+                            android.database.Cursor.FIELD_TYPE_NULL->null
+                            android.database.Cursor.FIELD_TYPE_BLOB->"blob:"+android.util.Base64.encodeToString(cursor.getBlob(column),android.util.Base64.NO_WRAP)
+                            else->"${cursor.getType(column)}:${cursor.getString(column)}"
+                        }
+                    })
+                }
+            }
+        }
+
     @Test fun preparationAppliesExifRotationRemovesGpsFlattensAlphaAndBoundsInput() {
         val source=File(context.cacheDir,"orientation-${UUID.randomUUID()}.jpg")
         try {
@@ -65,27 +80,35 @@ class MealPhotoStorageTest {
         } finally { source.delete() }
     }
 
-    @Test fun persistedCopySurvivesOriginalDeletionAndReopenWithoutMealOrOutboxAndDeletesOnlyItself() = runBlocking {
+    @Test fun persistedCopySurvivesReopenPreservesExistingDiaryAndOutboxAndDeletesOnlyItself() = runBlocking {
         val name="photo-${UUID.randomUUID()}.db"
         var db=Room.databaseBuilder(context,CalorieDatabase::class.java,name).build()
         var draft:MealPhotoDraft?=null
         try {
             val owners=LocalOwnerStore(db);owners.ensureGuest();val lease=owners.currentLease()
             val store=MealPhotoStore(context,db,lease)
+            val repository=DiaryRepository(db,context,lease)
+            repository.initialize()
+            repository.add("basic-banana",120.0,MealType.LUNCH,LocalDate.of(2026,10,12))
+            val before=diarySnapshot(db)
+            assertEquals(1,before.getValue("meals").size)
+            assertEquals(1,before.getValue("meal_items").size)
+            assertEquals(1,before.getValue("outbox").size)
             val id=UUID.randomUUID().toString()
             draft=store.import(ByteArrayInputStream(image()),LocalDate.of(2026,10,13),"gallery",id)
-            assertEquals(0,db.dao().operationCount(lease.storageScope))
-            assertEquals(0,db.openHelper.readableDatabase.query("SELECT COUNT(*) FROM meals").use { it.moveToFirst();it.getInt(0) })
+            assertEquals(before,diarySnapshot(db))
             val saved=draft
             db.close();db=Room.databaseBuilder(context,CalorieDatabase::class.java,name).build()
             val reopened=MealPhotoStore(context,db,LocalOwnerStore(db).currentLease())
             assertEquals(saved,db.photoDao().get(lease.storageScope,id))
+            assertEquals(before,diarySnapshot(db))
             reopened.preview(id).let { assertEquals(32,it.width);it.recycle() }
             try { reopened.import(ByteArrayInputStream("broken".toByteArray()),LocalDate.now(),"gallery");fail() } catch(_:IllegalArgumentException) { }
             assertEquals(saved,db.photoDao().get(lease.storageScope,id))
             val file=File(context.filesDir,"meal-photo-drafts/${lease.storageScope}/$id.jpg")
             try { FileProvider.getUriForFile(context,"${context.packageName}.photo-capture",file);fail("Stored photo exposed by camera provider") } catch(_:IllegalArgumentException) { }
             reopened.delete(id);assertFalse(file.exists());assertNull(db.photoDao().get(lease.storageScope,id))
+            assertEquals(before,diarySnapshot(db))
         } finally {
             draft?.let { File(context.filesDir,"meal-photo-drafts/${it.ownerScope}/${it.id}.jpg").delete() }
             db.close();context.deleteDatabase(name)
@@ -185,9 +208,9 @@ class MealPhotoStorageTest {
                 old.execSQL("INSERT INTO room_master_table VALUES (42,?)",arrayOf(schema.getString("identityHash")))
                 old.version=8
             }
-            val migrated=Room.databaseBuilder(context,CalorieDatabase::class.java,name).addMigrations(MIGRATION_8_9,MIGRATION_9_10, pl.roseru.kalorie.data.MIGRATION_10_11, pl.roseru.kalorie.data.MIGRATION_11_12, pl.roseru.kalorie.photo.MIGRATION_12_13, pl.roseru.kalorie.data.MIGRATION_13_14, pl.roseru.kalorie.data.MIGRATION_14_15, pl.roseru.kalorie.data.MIGRATION_15_16, pl.roseru.kalorie.data.MIGRATION_16_17, pl.roseru.kalorie.data.MIGRATION_17_18, pl.roseru.kalorie.data.MIGRATION_18_19, pl.roseru.kalorie.data.MIGRATION_19_20, pl.roseru.kalorie.data.MIGRATION_20_21, pl.roseru.kalorie.data.MIGRATION_21_22, pl.roseru.kalorie.data.MIGRATION_22_23, pl.roseru.kalorie.data.MIGRATION_23_24, pl.roseru.kalorie.energy.MIGRATION_24_25, pl.roseru.kalorie.data.MIGRATION_25_26).addCallback(DATABASE_GUARDS).build()
+            val migrated=Room.databaseBuilder(context,CalorieDatabase::class.java,name).addMigrations(MIGRATION_8_9,MIGRATION_9_10, pl.roseru.kalorie.data.MIGRATION_10_11, pl.roseru.kalorie.data.MIGRATION_11_12, pl.roseru.kalorie.photo.MIGRATION_12_13, pl.roseru.kalorie.data.MIGRATION_13_14, pl.roseru.kalorie.data.MIGRATION_14_15, pl.roseru.kalorie.data.MIGRATION_15_16, pl.roseru.kalorie.data.MIGRATION_16_17, pl.roseru.kalorie.data.MIGRATION_17_18, pl.roseru.kalorie.data.MIGRATION_18_19, pl.roseru.kalorie.data.MIGRATION_19_20, pl.roseru.kalorie.data.MIGRATION_20_21, pl.roseru.kalorie.data.MIGRATION_21_22, pl.roseru.kalorie.data.MIGRATION_22_23, pl.roseru.kalorie.data.MIGRATION_23_24, pl.roseru.kalorie.energy.MIGRATION_24_25, pl.roseru.kalorie.data.MIGRATION_25_26, pl.roseru.kalorie.data.MIGRATION_26_27).addCallback(DATABASE_GUARDS).build()
             try {
-                assertEquals(26,migrated.openHelper.readableDatabase.version)
+                assertEquals(27,migrated.openHelper.readableDatabase.version)
                 assertEquals(before,snapshot(migrated.openHelper.readableDatabase))
                 assertTrue(migrated.photoDao().observe(lease.storageScope).first().isEmpty())
                 assertFalse(migrated.openHelper.readableDatabase.query("PRAGMA foreign_key_check").use { it.moveToFirst() })

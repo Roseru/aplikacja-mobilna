@@ -56,6 +56,13 @@ class CatalogUpdateScreenTest {
             compose.onNodeWithTag("catalog-source-detail").assertExists()
             compose.onNodeWithText("Wróć do listy źródeł").performClick()
             compose.onNodeWithText("Zamknij źródła").performClick()
+            compose.onNodeWithTag("catalog-sources-mre").performScrollTo().assertIsEnabled().performClick()
+            compose.waitUntil(10_000){compose.onAllNodesWithText("Szczegóły źródła").fetchSemanticsNodes().isNotEmpty()}
+            compose.onNodeWithText("MRE 2026 · źródła v1").assertExists()
+            compose.onAllNodesWithText("Szczegóły źródła")[0].performClick()
+            compose.onNodeWithTag("catalog-source-detail").assertExists()
+            compose.onNodeWithText("Wróć do listy źródeł").performClick()
+            compose.onNodeWithText("Zamknij źródła").performClick()
             assertEquals(0,gateway.checks.get());assertEquals(0,gateway.downloads.get())
             compose.onNodeWithTag("field-mode-switch").performScrollTo().performClick()
             compose.waitUntil(10_000){policy.state.value is NetworkAccessState.Allowed && !network.state.value.saving && catalog.state.value.networkAllowed}

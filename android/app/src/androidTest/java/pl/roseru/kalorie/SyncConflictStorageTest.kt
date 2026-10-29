@@ -268,9 +268,9 @@ class SyncConflictStorageTest {
                 old.execSQL("INSERT INTO room_master_table VALUES (42,?)", arrayOf(schema15.getString("identityHash"))); old.version = 15
                 before = dump { old.rawQuery(it, null) }
             }
-            target = Room.databaseBuilder(context, CalorieDatabase::class.java, name).addMigrations(MIGRATION_15_16, pl.roseru.kalorie.data.MIGRATION_16_17, pl.roseru.kalorie.data.MIGRATION_17_18, pl.roseru.kalorie.data.MIGRATION_18_19, pl.roseru.kalorie.data.MIGRATION_19_20, pl.roseru.kalorie.data.MIGRATION_20_21, pl.roseru.kalorie.data.MIGRATION_21_22, pl.roseru.kalorie.data.MIGRATION_22_23, pl.roseru.kalorie.data.MIGRATION_23_24, pl.roseru.kalorie.energy.MIGRATION_24_25, pl.roseru.kalorie.data.MIGRATION_25_26).addCallback(DATABASE_GUARDS).build()
+            target = Room.databaseBuilder(context, CalorieDatabase::class.java, name).addMigrations(MIGRATION_15_16, pl.roseru.kalorie.data.MIGRATION_16_17, pl.roseru.kalorie.data.MIGRATION_17_18, pl.roseru.kalorie.data.MIGRATION_18_19, pl.roseru.kalorie.data.MIGRATION_19_20, pl.roseru.kalorie.data.MIGRATION_20_21, pl.roseru.kalorie.data.MIGRATION_21_22, pl.roseru.kalorie.data.MIGRATION_22_23, pl.roseru.kalorie.data.MIGRATION_23_24, pl.roseru.kalorie.energy.MIGRATION_24_25, pl.roseru.kalorie.data.MIGRATION_25_26, pl.roseru.kalorie.data.MIGRATION_26_27).addCallback(DATABASE_GUARDS).build()
             val sql = target!!.openHelper.readableDatabase
-            assertEquals(26, sql.version); assertEquals(before, dump { sql.query(it) })
+            assertEquals(27, sql.version); assertEquals(before, dump { sql.query(it) })
             assertEquals(0L, sql.query("SELECT COUNT(*) FROM sync_conflict_decisions").use { assertTrue(it.moveToFirst()); it.getLong(0) })
             assertFalse(sql.query("PRAGMA foreign_key_check").use { it.moveToFirst() })
         } finally { target?.close(); source.close(); context.deleteDatabase(name) }

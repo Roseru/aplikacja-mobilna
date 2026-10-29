@@ -7,6 +7,7 @@ import kotlinx.coroutines.*
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.flow.*
 import pl.roseru.kalorie.core.*
+import pl.roseru.kalorie.core.catalog.MreManualInput
 import pl.roseru.kalorie.data.*
 import java.time.LocalDate
 import java.util.UUID
@@ -31,6 +32,7 @@ class DiaryViewModel(private val repository: DiaryRepository, private val prefer
     val busy = MutableStateFlow(false)
     val weightSaveVersion = MutableStateFlow(0)
     val calculatedGoalSaveVersion = MutableStateFlow(0)
+    val uncertainMreSaveVersion = MutableStateFlow(0)
     private val channel = Channel<DiaryEvent>(Channel.BUFFERED)
     val events = channel.receiveAsFlow()
     private val policy = SharingStarted.WhileSubscribed(5000)
@@ -50,6 +52,7 @@ class DiaryViewModel(private val repository: DiaryRepository, private val prefer
         .stateIn(viewModelScope, policy, AchievementState.Loading)
     fun retryAchievements() { achievementRetry.value += 1 }
     val products = repository.dao.products(repository.owner).stateIn(viewModelScope, policy, emptyList())
+    val mreCatalogue = repository.mreCatalogue
     val rations = repository.dao.rations().stateIn(viewModelScope, policy, emptyList())
     val profile = repository.dao.profile(repository.owner).stateIn(viewModelScope, policy, null)
     val weights = repository.dao.weights(repository.owner).stateIn(viewModelScope, policy, emptyList())
@@ -104,6 +107,15 @@ class DiaryViewModel(private val repository: DiaryRepository, private val prefer
         val date = LocalDate.parse(dateText.value)
         val id = UUID.randomUUID().toString()
         mutate { repository.addRation(rationId, quantities, type, date, id, exactQuantities); channel.send(DiaryEvent.MealSaved) }
+    }
+    fun addUncertainMre(rationId: String, locator: String, input: MreManualInput, type: MealType) {
+        val date = LocalDate.parse(dateText.value)
+        val id = UUID.randomUUID().toString()
+        mutate {
+            repository.addUncertainMre(rationId, locator, input, type, date, id)
+            uncertainMreSaveVersion.value += 1
+            channel.send(DiaryEvent.Message("Zapisano osobny składnik. Możesz dokończyć wybór racji."))
+        }
     }
     fun editItem(mealId: String, itemId: String, grams: Double, amountText: String? = null) = mutate { repository.editItem(mealId, itemId, grams, amountText) }
     fun removeItem(mealId: String, itemId: String) = mutate { repository.removeItem(mealId, itemId) }

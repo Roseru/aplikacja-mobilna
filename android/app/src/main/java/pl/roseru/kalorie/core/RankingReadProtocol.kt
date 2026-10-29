@@ -16,6 +16,7 @@ sealed interface RankingState {
     data object NotRequested : RankingState
     data object Loading : RankingState
     data class Ready(val page: RankingPage) : RankingState
+    class Saved(val page:RankingPage,val fetchedAtMillis:Long,val warning:String?=null):RankingState
     data class Failed(val message: String, val canRetry: Boolean) : RankingState
 }
 internal class RankingQuery(val pageToken: String? = null) {

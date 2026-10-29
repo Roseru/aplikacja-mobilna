@@ -1,0 +1,166 @@
+{
+  "schema_version": 1,
+  "purpose": "owner-requested unfinished Android handoff O1 to O2",
+  "branch": "codex/android-mre-2026",
+  "parent_commit": "c1c8380285d19f84acbbf19a734b86198036dfe7",
+  "state": "WIP_UNCOMPILED_UNTESTED",
+  "mre_functional_acceptance": "NOT_RUN",
+  "room": 27,
+  "files": [
+    {
+      "path": "AGENTS.md",
+      "bytes": 21814,
+      "sha256": "7edf0bd11beb94e16f945897fe65c260fedd638159edbc7d4267a6d7a35023ea"
+    },
+    {
+      "path": "android/MRE_2026.md",
+      "bytes": 3951,
+      "sha256": "1e1c120b560af75826a7047ae22cfc61f4221c329975c3f00fa55122e8297ea4"
+    },
+    {
+      "path": "android/app/build.gradle.kts",
+      "bytes": 4542,
+      "sha256": "e10ebe1cf130548ad33f5fb010cb9056552061620d2235729aa2d62eed9dc916"
+    },
+    {
+      "path": "android/app/src/androidTest/java/pl/roseru/kalorie/CatalogStorageTest.kt",
+      "bytes": 21624,
+      "sha256": "e3d0f46d92f5a7893b3cccd539744de60eb89667d3af51beea19c4c8fb21f99c"
+    },
+    {
+      "path": "android/app/src/androidTest/java/pl/roseru/kalorie/CatalogUpdateScreenTest.kt",
+      "bytes": 5537,
+      "sha256": "09b148815eeed108623314099b347aa585c6fd1c9c5212cebf10f5bf2e4deaaf"
+    },
+    {
+      "path": "android/app/src/androidTest/java/pl/roseru/kalorie/DiaryStorageTest.kt",
+      "bytes": 4751,
+      "sha256": "1d7542b7603341de322feb8d1e481babbd89b49aad00ecefc3023000d49cdfb7"
+    },
+    {
+      "path": "android/app/src/androidTest/java/pl/roseru/kalorie/MreCatalogueFlowTest.kt",
+      "bytes": 8315,
+      "sha256": "90d29cfef20840efab9ce07b7766362c2b0577b16dffba99c51654723d186911"
+    },
+    {
+      "path": "android/app/src/androidTest/java/pl/roseru/kalorie/MreRationScreenTest.kt",
+      "bytes": 4238,
+      "sha256": "dce65a7eaf20ead948931f9994256cf7ab03e8db3b05509ca9db623f46d5c254"
+    },
+    {
+      "path": "android/app/src/androidTest/java/pl/roseru/kalorie/OwnerStorageTest.kt",
+      "bytes": 21317,
+      "sha256": "683c6afd3a42fa5d58c32d18494ee8aff100e300c8e466fc751045dac1aed2f6"
+    },
+    {
+      "path": "android/app/src/androidTest/java/pl/roseru/kalorie/RationStorageTest.kt",
+      "bytes": 10327,
+      "sha256": "6992a2ce5a6ac6b355ba7ca7b789ff8a2646ea0a6daea1d23bd547f21883c1c5"
+    },
+    {
+      "path": "android/app/src/main/assets/catalog/mre2026/.gitattributes",
+      "bytes": 31,
+      "sha256": "b5efa3b16ef00e1900c1927a7b211c276f10706ad888334a879daad6ed455842"
+    },
+    {
+      "path": "android/app/src/main/assets/catalog/mre2026/base-pl.1.json.gz.bin",
+      "bytes": 28179,
+      "sha256": "a5f25f04d47375347b096b51bf3ba556cd11fa13ce703e658f48b3148314e77f"
+    },
+    {
+      "path": "android/app/src/main/assets/catalog/mre2026/manifest.json",
+      "bytes": 4768,
+      "sha256": "464e922ac8212bc654fd6aa741c0021d349d6f7723f192079961b1a3c24c538f"
+    },
+    {
+      "path": "android/app/src/main/assets/catalog/mre2026/selection-rules.json",
+      "bytes": 80082,
+      "sha256": "9d14b51950964865d5de4296d965f43b24355bb9bf69a29fd749ddb1b5fbd674"
+    },
+    {
+      "path": "android/app/src/main/assets/catalog/mre2026/source.json",
+      "bytes": 386831,
+      "sha256": "f519ef7390287c06293e7d45ff65371d5fa5cc68565994c948baebd2b0c2ad94"
+    },
+    {
+      "path": "android/app/src/main/java/pl/roseru/kalorie/DiaryViewModel.kt",
+      "bytes": 10032,
+      "sha256": "9bba5006cfa6ad284f9909bbcd865710e4b6d6a9bb553f7c23714604e2e36399"
+    },
+    {
+      "path": "android/app/src/main/java/pl/roseru/kalorie/catalogupdate/CatalogUpdateRepository.kt",
+      "bytes": 9212,
+      "sha256": "9f4933f695fb6ebe671cff28163c5882285cd2902822fca64b72ea13f5d88ab0"
+    },
+    {
+      "path": "android/app/src/main/java/pl/roseru/kalorie/core/catalog/MreRationSelection.kt",
+      "bytes": 10130,
+      "sha256": "e4a931d315f1661a72f37e822971501b5873ea012a5801297043f973ae8df08b"
+    },
+    {
+      "path": "android/app/src/main/java/pl/roseru/kalorie/data/DiaryRepository.kt",
+      "bytes": 36538,
+      "sha256": "145d0d3f14099c016424e2950f7e4111cc56abcdc6b06d29b32fd0dac4c28bf9"
+    },
+    {
+      "path": "android/app/src/main/java/pl/roseru/kalorie/data/MreCatalogueAssets.kt",
+      "bytes": 1762,
+      "sha256": "4e7ab56bcfcd041307a1d0f55265416a7ea1b844ab0fcebdd9b71cd5adf97630"
+    },
+    {
+      "path": "android/app/src/main/java/pl/roseru/kalorie/ui/App.kt",
+      "bytes": 11488,
+      "sha256": "bc70089c16ea5ad46bcc82226e0f70e155a31d0f643f17a8e26b91ca2709d096"
+    },
+    {
+      "path": "android/app/src/main/java/pl/roseru/kalorie/ui/CatalogSourcesDialog.kt",
+      "bytes": 5903,
+      "sha256": "a01639f3190265bd70b592b35f1c83696eba09944046834808d18fe7bcfa0fbf"
+    },
+    {
+      "path": "android/app/src/main/java/pl/roseru/kalorie/ui/CatalogUpdatePanel.kt",
+      "bytes": 7445,
+      "sha256": "9b3501ec8b5f8631990d6bf2ced3d192c82e7c5f0eddf035219689c5d7f040cb"
+    },
+    {
+      "path": "android/app/src/main/java/pl/roseru/kalorie/ui/MreReferenceDialog.kt",
+      "bytes": 4258,
+      "sha256": "bcf985bf8eed660e517d33307cf985814adefbea8b9db84c4edaf888fd41cf1b"
+    },
+    {
+      "path": "android/app/src/main/java/pl/roseru/kalorie/ui/MreUnknownIngredientDialog.kt",
+      "bytes": 4084,
+      "sha256": "9a6e36d63270e6647a5b4f7281727b75aab94b6ebcdc62fb36283ff2d5ef80c5"
+    },
+    {
+      "path": "android/app/src/main/java/pl/roseru/kalorie/ui/RationScreen.kt",
+      "bytes": 17831,
+      "sha256": "e0ac129ed18419784f8d1480509dc919b64145f8688ec7884a67691e8026d703"
+    },
+    {
+      "path": "android/app/src/test/java/pl/roseru/kalorie/MreRationSelectionTest.kt",
+      "bytes": 6748,
+      "sha256": "ff413f7859c214adf024dbe5bdf6db334016e97ade31700a720793353abf899f"
+    },
+    {
+      "path": "docs/KOMUNIKACJA_AGENTOW.md",
+      "bytes": 1062715,
+      "sha256": "93377ba9bd3e63143bd451d26b91d85949b4c6aaef4d0f066800a55b6df48442"
+    },
+    {
+      "path": "docs/PRZEKAZANIE_O1_DO_O2_2026_10_26.md",
+      "bytes": 16230,
+      "sha256": "cd4a887a8b9d5b371d4f5bd819bde72f2c32b0b1c07a143ce4b8ba93b832d220"
+    },
+    {
+      "path": "tools/catalog/build_mre_2026.py",
+      "bytes": 12069,
+      "sha256": "00b47a6377c5bde1b77631999a2a2cd84f363464a12d146d1c85eca768ff5339"
+    }
+  ],
+  "excluded": [
+    "this manifest (self hash)",
+    "private local environment, logs, credentials, SDK, builds"
+  ],
+  "hash_basis": "Git index/blob bytes, before checkout LF/CRLF conversion"
+}

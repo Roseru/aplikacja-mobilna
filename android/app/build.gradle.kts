@@ -12,8 +12,8 @@ android {
         applicationId = "pl.roseru.kalorie"
         minSdk = 26
         targetSdk = 35
-        versionCode = 49
-        versionName = "0.8.38"
+        versionCode = 51
+        versionName = "0.8.40"
         // Public deployment configuration only. No credentials or client secret in the APK.
         val issuer = providers.gradleProperty("CALORIE_OIDC_ISSUER").orElse("").get()
         require(issuer.none { it == '\n' || it == '\r' || it == '"' || it == '\\' })
@@ -59,6 +59,12 @@ ksp { arg("room.schemaLocation", "$projectDir/schemas") }
 
 // New migration fixtures must include the schema exported by the application compilation.
 tasks.matching {it.name=="mergeValidationAndroidTestAssets"}.configureEach {dependsOn("kspValidationKotlin")}
+
+// JVM catalogue tests read these files directly, so asset changes must invalidate their results.
+tasks.withType<org.gradle.api.tasks.testing.Test>().configureEach {
+    inputs.dir("src/main/assets/catalog").withPropertyName("catalogAssets")
+        .withPathSensitivity(org.gradle.api.tasks.PathSensitivity.RELATIVE)
+}
 
 dependencies {
     implementation(platform(libs.compose.bom))

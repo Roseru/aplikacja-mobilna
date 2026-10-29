@@ -11,7 +11,7 @@ x-backend: &backend
 
 services:
   postgres:
-    image: docker.io/library/postgres:17@sha256:2d2b8998d31037bf721cfdf764d76ba74171b4fab3431b7f72c27c56ddbdf9e3
+    image: docker.io/library/postgres:17@sha256:b8faeff7712663c2773a190181e1246e37e364b887611c04658c28b44e2408fe
     env_file: ${INTEGRATION_STATE}/postgres.env
     volumes:
       - postgres_data:/var/lib/postgresql/data
@@ -100,7 +100,7 @@ services:
     restart: unless-stopped
 
   gateway:
-    image: caddy:2.11.7@sha256:685ae3d7c34d9b5f8caeddc5d14051db7bbd88ff1f5a2fa0c16bd8ca328fb7af
+    image: caddy:2.11.7@sha256:504a44d7d74bd2bc28a66afc4774912fc21223ca8a67734af1c54ab2f999b489
     ports:
       - "${INTEGRATION_HOST}:${INTEGRATION_PORT}:8443"
     volumes:

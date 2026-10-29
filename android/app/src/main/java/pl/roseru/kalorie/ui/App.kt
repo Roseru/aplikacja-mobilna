@@ -35,7 +35,8 @@ import pl.roseru.kalorie.session.*
             state.localReadFailed || state.installed.any{it is pl.roseru.kalorie.catalogupdate.InstalledCatalog.Unreadable}->"Opis zapisanej bazy jest niedostępny"
             !state.localReadComplete->"Odczytuję wersję zapisanej bazy…"
             saved.isEmpty()->"Nie pobrano jeszcze katalogu"
-            else->"Baza: "+saved.joinToString(" · "){(if(it.manifest.kind=="official")"oficjalna" else "DEMO")+" v${it.manifest.release}"}
+            else->"Baza: "+saved.joinToString(" · "){
+                (if(it.manifest.packageId==pl.roseru.kalorie.core.catalog.MreCatalogueRules.PACKAGE_ID)"MRE 2026" else if(it.manifest.kind=="official")"oficjalna" else "DEMO")+" v${it.manifest.release}"}
         }
     }
     LaunchedEffect(model) {
