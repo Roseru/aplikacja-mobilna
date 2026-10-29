@@ -11285,6 +11285,40 @@ Kontynuacja O2-073 — **retencja, zwykły ACK/PULL i ograniczony core replay**:
   do starej kohorty. Anti-enum P2 i rozszerzone przepływy pozostają otwarte.
   Końcowy PR, wymagane CI i odbiór integracyjny są nadal osobnymi krokami.
 
+Kontynuacja O2-073 — **PR193 i poprawki po pierwszym CI**:
+
+- Jeden spójny [PR193](https://github.com/Roseru/aplikacja-mobilna/pull/193)
+  pozostaje draftem. Pełny CI `40965064268` na `805aa2e` zakończył się FAIL:
+  PostgreSQL ma 1428 PASS i jeden FAIL historycznej fixture, Android ma
+  579 PASS i jeden FAIL oczekiwania na dane listy. Pozostałe pięć kontroli
+  przeszło, a bramka prawidłowo odmówiła zaliczenia całości. Tego wyniku
+  nie zastępujemy ponowieniem starego pinu ani sumą zielonych komponentów.
+- Poprawka testów backendu `c2cf88a9` używa przypiętego, opublikowanego
+  algorytmu E4 `83f2feeb` przy przygotowaniu rzeczywistego schematu 0011.
+  Dzisiejszy czytnik wymaga funkcji admission dodanej w E5; nie dodano do
+  produkcji obejścia dla starego schematu. Oryginalny nieukończony graf
+  pozostaje niezmieniony, a osobny trzeci graf sprawdza kanoniczne odpowiedzi
+  JSON middle/final. Po upgrade i reupgrade czyta je bieżący kod, po
+  downgrade historyczny E4. Zachowano wszystkie stare asercje całych
+  wierszy, ACL i readiness. Trzy powiązane testy przeszły na własnym PG,
+  który następnie poprawnie zatrzymano. To rzeczywisty przebieg do
+  historycznego aliasu head/0024, bez deklaracji osobnego endpointu 0012
+  lub pomiaru surowych bajtów HTTP. Niezależny odbiór: 0 P1/P2.
+- Poprawka Androida `fd467cc8` dotyczy wyłącznie testu listy racji. Test
+  czeka na pierwszą skomponowaną kartę z tej samej pełnej listy DAO,
+  zanim zacznie przewijanie do racji spoza widoku. Zachowano odtworzenie
+  ilości 0,1, obsługę klawiatury i dowód braku operacji zapisu. Bez sleep,
+  filtrowania katalogu i zmian kodu produkcyjnego. Root oraz niezależny
+  recenzent przyjęli źródło; wykonanie tego testu po poprawce pozostaje
+  bramką nowego CI. Całe drzewo testów Androida zmieniło się, więc nie
+  przypisujemy go wstecz do już zbudowanego APK1052.
+- Obie delty są składane zwykłymi merge do tej samej gałęzi integracji.
+  Wymagamy CI nowego head/base oraz nowego rzeczywistego odbioru Native:
+  kontrolowany stop starym kodem, wznowienie istniejących danych, cztery
+  kwalifikowane procesy, spójna próba E4, osobny PULL i restart APK.
+  Wcześniejszych kohort nie łączymy w nowy dowód. D2/Room27, dalsze ścieżki
+  AI i pełne wydanie 1.0 pozostają oddzielnymi zakresami.
+
 ### O2-074 — PR190: bezpieczne ścieżki źródeł lokalnego pakietu demo
 
 - 29.10.2026, agent 2, tymczasowa koordynacja całości według O2-071.
