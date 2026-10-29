@@ -30,6 +30,7 @@ SHARED_HELPERS = (
     "infra/integration/verify.py",
     "infra/local/init-db.sh",
     "infra/local/keycloak/realm.json",
+    "infra/integration/e4_observer.py",
 )
 
 
@@ -125,6 +126,9 @@ def source(pin):
         },
         "shared_helper_sha256": {
             path: hashlib.sha256((ROOT / path).read_bytes()).hexdigest() for path in SHARED_HELPERS
+        },
+        "adapter_profile_sha256": {
+            p.name: hashlib.sha256(p.read_bytes()).hexdigest() for p in sorted(HERE.glob("*.json"))
         },
     }
 
@@ -383,12 +387,31 @@ class Native:
         write_json(marker, identity(process.pid))
         return process
 
+    def configuration_binding(self):
+        path = confined(self.state / "config-generation/provider-profile.json")
+        if not path.exists():
+            return {}
+        if not path.is_file() or path.stat().st_size > 65536:
+            raise ValueError("Invalid provider configuration record")
+        raw = path.read_bytes()
+        value = json.loads(raw)
+        if value.get("format") != "calorie-native-provider-profile/v1" or value.get(
+            "result"
+        ) not in {"CONFIGURED", "PARTIAL", "FAIL"}:
+            raise ValueError("Invalid provider configuration result")
+        return {
+            "provider_profile_sha256": hashlib.sha256(raw).hexdigest(),
+            "provider_profile_result": value["result"],
+        }
+
     def require_running(self):
         binding = json.loads((self.state / "runtime-binding.json").read_text())
         if binding["state"] != "RUNNING" or binding["source"] != source(
             self.config["source"]["commit"]
         ):
             raise ValueError("Runtime generation is stale; restart this owned stack explicitly")
+        if binding.get("configuration", {}) != self.configuration_binding():
+            raise ValueError("Runtime provider configuration differs from its binding")
         markers = {p.name: json.loads(p.read_text()) for p in self.state.glob("*.process.json")}
         if (
             set(markers)
@@ -415,6 +438,7 @@ class Native:
             "generation": str(uuid4()),
             "state": "STARTING",
             "source": source(self.config["source"]["commit"]),
+            "configuration": self.configuration_binding(),
         }
         if list(self.state.glob("*.process.json")):
             raise RuntimeError("Existing process markers require an explicit down before up")

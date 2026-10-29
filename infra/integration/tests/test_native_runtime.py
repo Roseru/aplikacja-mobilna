@@ -232,6 +232,35 @@ def test_live_generation_is_bound_to_source_and_exact_processes(owned):
     assert stack.require_running()["generation"] == "g1"
 
 
+@pytest.mark.parametrize("result", ["CONFIGURED", "PARTIAL", "FAIL"])
+def test_provider_configuration_change_requires_explicit_generation_binding(owned, result):
+    stack, *_ = owned
+    assert stack.configuration_binding() == {}
+    path = stack.state / "config-generation/provider-profile.json"
+    path.parent.mkdir()
+    native.write_json(path, {"format": "calorie-native-provider-profile/v1", "result": result})
+    with pytest.raises(ValueError, match="provider configuration"):
+        stack.require_running()
+    binding_path = stack.state / "runtime-binding.json"
+    binding = json.loads(binding_path.read_text())
+    native.write_json(binding_path, binding | {"configuration": stack.configuration_binding()})
+    assert stack.require_running()["configuration"]["provider_profile_result"] == result
+    native.write_json(
+        path, {"format": "calorie-native-provider-profile/v1", "result": result, "changed": True}
+    )
+    with pytest.raises(ValueError, match="provider configuration"):
+        stack.require_running()
+
+
+def test_malformed_provider_configuration_cannot_be_qualified(owned):
+    stack, *_ = owned
+    path = stack.state / "config-generation/provider-profile.json"
+    path.parent.mkdir()
+    path.write_bytes(b"\0" * 40)
+    with pytest.raises(ValueError):
+        stack.require_running()
+
+
 @pytest.mark.parametrize("damage", ["source", "stopped", "missing", "marker", "reused"])
 def test_stale_generation_is_refused(owned, monkeypatch, damage):
     stack, source, processes = owned

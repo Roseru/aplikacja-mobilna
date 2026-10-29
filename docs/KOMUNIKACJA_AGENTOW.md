@@ -10986,6 +10986,54 @@ Kontynuacja O1-146 — odbiór pierwszego CI i poprawka17oczekiwań migracji:
   To lokalny pin etapu 1, bez checkpointowego PR; publikacja większego wyniku,
   final-head/base CI, merge i osobne main CI pozostają u koordynatora.
 
+Kontynuacja O2-073 — **minimalny realny przepływ APK odebrany przez koordynatora**:
+
+- Pierwszy wynik i oczekiwanie na lease powyżej są historyczne. Po przekazaniu
+  własnego AVD i zaakceptowanego pinu B1/B2 zbudowano i zainstalowano
+  `pl.roseru.kalorie.validation`, 0.8.40.validation/code1051, bez zmiany Androida.
+  Źródło Androida `405c32e63c9cb199982c361fbb2b476a6533e2bd` ma ten sam tree
+  co odebrany pin B1/B2. APK SHA256
+  `f3518e697a80cce4dde892397506f52c8ff5b41523b05650463410d14802c1c2`;
+  test APK `2f2f8824af6d3a8d6666a05022355b83c2a64fc0e388b8deacc7dab959b481dc`.
+  Rzeczywiste zasoby, certyfikat, package/version i dokładny CA/host zmierzono
+  w APK; osobny readback z PackageManager potwierdził identyczne zainstalowane
+  bajty obu plików, bez ponownej instalacji. Receipt SHA256
+  `569160302535699a0c06eb118ebd2b143a087b98ecfca29aff35a38850ffa0aa`.
+- Przed przepływem odpowiedzialnie zaimportowano dokładne DEMO1 E2 i MRE
+  z zachowaniem źródeł oraz eksportów. Własny PG: 129 produktów/25 racji/
+  253 komponenty/113 źródeł; oba pakiety SEALED DRAFT, bez publikacji kanału.
+  Receipt importu `4eac41f425fb4389f9a2315272173b73832d8e5427c497d8aec1e7432ba48300`.
+- **Wykonany przepływ:** zablokowana sieć → gość offline → dwa posiłki,
+  korekta banana z null/0 → zwykły restart i B2 → jawne zezwolenie sieci →
+  rzeczywisty formularz Chrome/AppAuth Code-S256 → bootstrap i początkowy
+  PULL/apply → jawna zgoda przypisania → dwa ACK i niezależny PG → osobny
+  PULL/apply → restart oraz ponownie zablokowana sieć/B2. Niepełny stary cel
+  gościa pozostawiono lokalnie zgodnie z decyzją UI; nie wymyślono daty decyzji.
+  Rzeczywiste zachowane wire UUID/daty/strefa GMT i snapshoty dają 209,4 kcal;
+  brak białka banana pozostaje null. Historyczne kolumny/snapshot gościa
+  zachowują pierwotną wartość, korektę niesie aktualny wirePayload.
+- Receipt danych `580a861c7f86e5a3e37b441650a97e10432ea2b747880fe29ec7f051d4600efc`;
+  niezależny odbiór 9,3/10 bez materialnych P1/P2. Koordynator zakończył osobny
+  odbiór 49 kontroli danych, APK/installed APK, rzeczywistego Code/S256,
+  dostępnościowego `security_button` Chrome „Connection is secure” i UI.
+  Końcowy root receipt SHA256
+  `154d54e7236af91654443c16b88401a4f85df29f56e84b0f25e259c42080ec29`.
+  Screenshot formularza nie jest panelem szczegółów TLS.
+- Po dwóch nagłych przerwaniach hosta zachowano prywatne kopie stanu i raw
+  logi. Aktualny R2 uruchomił się po pełnej kopii przed rozruchem; read-only
+  Room ma ponownie ten sam SHA256
+  `b6027bb3761421901d3b09bd52ef1d0348876bf5f4955730f3b292b24e2ca7b8`
+  i integralność OK. Zimne pliki własnego PG zachowano przed kolejnym recovery;
+  nie oznacza to zaliczenia restore. Bez diagnozy sprzętu i globalnych napraw.
+- **Granice:** ten odbiór dotyczy minimalnego własnego przepływu, nie pełnych
+  sześciu domen APK, WF01 rejestracja/reset, E4 lost-ACK, konflikt/recovery,
+  community/rankingu/Nemesis/E9, realnego Google, wydania ani zamrożonych
+  Room23/receipt119. `release_authorized=false` pozostaje obowiązujące.
+  Nowe zakresy dostają osobne receipts. Sprawdzony pin źródeł
+  `2100335fcc5e706866874b8263f2cd18cd2d7dac` zabezpieczono normalnym pushem
+  na tę samą `codex/devops-demo-native`, bez PR i bez zmiany main; jest to
+  backup WIP, nie zielone CI ani końcowa publikacja całej integracji.
+
 ### O2-074 — PR190: bezpieczne ścieżki źródeł lokalnego pakietu demo
 
 - 29.10.2026, agent 2, tymczasowa koordynacja całości według O2-071.

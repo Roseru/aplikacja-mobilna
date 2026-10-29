@@ -65,7 +65,9 @@ Generacja startu wiąże dokładny backend/kontrakty z commitem, lock i hashe
 adaptera z działającymi procesami. Weryfikacja odmawia starego źródła,
 zmienionych markerów lub zakończonych procesów przed tworzeniem kont.
 Powiązanie obejmuje też współdzielone `run.py`, `verify.py`, `init-db.sh`
-i szablon realm. Zmiana któregokolwiek wymaga zgodnego pinu i nowej generacji.
+i szablon realm oraz współdzielony SQL obserwatora E4. Zmiana któregokolwiek
+wymaga zgodnego pinu i nowej generacji. Wersjonowane profile JSON adaptera
+mają osobne hashe; zastosowana konfiguracja providera jest związana z generacją.
 Po zmianie adaptera wymagany jest restart. Nie zmieniaj backendu/kontraktów
 w trakcie próby; przy nowym pinie potrzebne jest osobne jawne uzgodnienie.
 
@@ -121,6 +123,59 @@ $TestTemp = Join-Path (Get-Location) ('.tools/native-tests-' + [guid]::NewGuid()
 & $Python -m pytest infra/integration/tests/test_native_runtime.py --basetemp $TestTemp -q
 ```
 
-Testy źródeł helperów celowo zmieniają każdy z czterech plików w osobnym
+Testy źródeł helperów celowo zmieniają każdy z pięciu plików w osobnym
 repozytorium tymczasowym. Wymagają odrzucenia starego pinu i innego skrótu po
 nowym commicie; nie zmieniają działającego checkoutu ani usług.
+
+## Jawny profil rejestracji i resetu
+
+Domyślny realm nadal ma zamkniętą rejestrację i reset. Na własnym działającym
+stanie można jawnie zastosować wersjonowany `provider-registration.json`.
+Najpierw przygotuj nowy, prywatny [sink SMTP](MAIL_SINK.md), korzystając
+z kwalifikowanego archiwum Mailpit; nie używaj zewnętrznej skrzynki.
+
+```powershell
+& $Python -m infra.local.integration.mail_sink init --state $MailState --archive $MailpitZip
+& $Python -m infra.local.integration.mail_sink up --state $MailState
+& $Python -m infra.local.integration.provider configure --state $NativeState --mail-state $MailState --opt-in-registration-reset
+& $Python -m infra.local.integration.provider status --state $NativeState
+```
+
+Profil obejmuje weryfikację e-mail, formularze pl/en i wyłącznie podstawową
+domyślną rolę API `user`. Odczyt przed/po chroni istniejący issuer, realm,
+publiczne klucze, użytkowników, klienta Code/S256/callbacks i epokę aplikacji.
+Narzędzie zapisuje próby i częściowe skutki bez automatycznego resetowania.
+`CONFIGURED` oznacza konfigurację; `PARTIAL` i `FAIL` pozostają widoczne.
+Żaden z tych wyników nie potwierdza WF01. Rejestrację, wiadomość/link,
+logowanie, reset i zachowanie historii trzeba odebrać przez rzeczywisty UI.
+Nie publikuj skrzynki, haseł, linków akcji ani prywatnych descriptorów.
+
+Descriptor pod `config-generation/provider-profile.json` i nowa generacja
+runtime wiążą konfigurację z istniejącymi źródłami/procesami. Kolejne `up`
+uwzględnia zachowany descriptor. Zmiana źródłowego JSON lub helpera wymaga
+nowego sprawdzonego pinu i jawnego restartu własnego stanu.
+
+## Własny świadek serwera dla Room27
+
+`observe.py` przyjmuje nowy format `calorie-native-meal-plan/v1` z rzeczywistego
+`LiveMealReplayTest` guard2/Room27. Nie przyjmuje kwalifikacji starego Room23
+ani zastępczego `api_image`. Wszystkie wyjścia muszą być nowymi plikami
+wewnątrz prywatnego `$NativeState`; przygotuj tam katalog dowodów przed poleceniem.
+
+```powershell
+& $Python -m infra.local.integration.observe --state $NativeState prepare --driver-prepared $DriverPrepared --trial $Trial --output $Plan
+& $Python -m infra.local.integration.observe --state $NativeState capture --plan $Plan --phase C0 --output $C0
+# C1: dopiero po realnym commit i przed zabiciem procesu z zatrzymanym ACK.
+& $Python -m infra.local.integration.observe --state $NativeState capture --plan $Plan --phase C1 --output $C1
+# C2: dopiero po replay tego samego zapisanego batcha w nowym procesie APK.
+& $Python -m infra.local.integration.observe --state $NativeState capture --plan $Plan --phase C2 --output $C2
+& $Python -m infra.local.integration.observe --state $NativeState compare --plan $Plan $C0 $C1 $C2 --output $Verdict
+```
+
+Każda faza wymaga tej samej aktualnej generacji, źródeł/binarnych plików/PID,
+schematu, epoki i niewygasłego triala. PG jest read-only od połączenia;
+osobno porównywane są obce konta i niezmieniane domeny właściciela.
+`server_observations=PASS` obejmuje wyłącznie świadectwa serwera C0/C1/C2.
+Rzeczywisty HTTP/Room/bariera/kill/replay/osobny PULL oraz zwolnienie izolacji
+wymagają własnych dowodów. Publiczny validator i SQL starego obserwatora
+pozostają zgodne; nie przypisuj nowych wyników zamrożonym próbom.

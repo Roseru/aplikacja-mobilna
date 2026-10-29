@@ -1,0 +1,25 @@
+{
+  "format": "calorie-native-provider-profile/v1",
+  "name": "registration-reset-local",
+  "realm": {
+    "registrationAllowed": true,
+    "resetPasswordAllowed": true,
+    "verifyEmail": true,
+    "registrationEmailAsUsername": true,
+    "loginWithEmailAllowed": true,
+    "duplicateEmailsAllowed": false,
+    "internationalizationEnabled": true,
+    "supportedLocales": ["pl", "en"],
+    "defaultLocale": "pl",
+    "smtpServer": {
+      "host": "127.0.0.1",
+      "port": "26525",
+      "from": "noreply@calorie-demo.test",
+      "fromDisplayName": "Calorie Native Test",
+      "auth": "false",
+      "ssl": "false",
+      "starttls": "false"
+    }
+  },
+  "default_client_role": {"client_id": "calorie-api", "role": "user"}
+}
