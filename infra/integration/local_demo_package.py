@@ -128,6 +128,22 @@ def checksum(path, *, reject_private=False):
         return digest.hexdigest()
 
 
+def source_path(value):
+    """Reject Win32 aliases/streams lexically, even when preparing on another OS."""
+    if not isinstance(value, str) or not value:
+        raise InvalidPackage("Expected an explicit source path")
+    spelling = value.replace("\\", "/")
+    if spelling.startswith(("//?/", "//./")):
+        raise InvalidPackage("Device namespace source paths are forbidden")
+    # A normal leading drive designator is not an alternate data stream.
+    spelling = re.sub(r"^[A-Za-z]:", "", spelling, count=1)
+    if ":" in spelling or any(
+        part not in {".", ".."} and part[-1:] in {".", " "} for part in spelling.split("/")
+    ):
+        raise InvalidPackage("Source path aliases and alternate streams are forbidden")
+    return Path(value)
+
+
 def check_ref(entry, base):
     if (
         type(entry.get("bytes")) is not int
@@ -136,10 +152,11 @@ def check_ref(entry, base):
         or not SHA.fullmatch(entry["sha256"])
     ):
         raise InvalidPackage("Invalid size or SHA256 reference")
-    source = Path(entry["source"])
+    source = source_path(entry["source"])
     if not source.is_absolute():
         source = base / source
-    source = regular(source.absolute())
+    # Check the recipe's parent as well, before absolute() can normalize components.
+    source = regular(source_path(str(source)).absolute())
     if (
         source.name.casefold() == ".env"
         or source.name.casefold().startswith(".env.")

@@ -260,6 +260,15 @@ względne liczymy od recepty. Role to `apk_presign`, `apk_final`, `public_ca`,
 jest wskazany osobno; nie kopiujemy rekurencyjnie prywatnego stanu instalacji.
 Nie dołączaj poświadczeń, kluczy lub operator config.
 
+Przed odczytem pliku narzędzie odmawia źródłowych komponentów z końcową
+kropką/spacją i strumieni ADS (`:stream`, `::$DATA`), również w komponentach
+nadrzędnych oraz ścieżce recepty dziedziczonej przez względne źródło. Reguła
+obowiązuje na każdym systemie, żeby recepta nie zmieniała znaczenia na Windows.
+Nie normalizujemy aliasu do dopuszczonej nazwy. Zwykłe ścieżki względne,
+POSIX, dyskowe Windows i UNC pozostają obsługiwane; przestrzenie urządzeń
+`\\?\` i `\\.\` są odmawiane. Odmowa nazw `.env`/keystore i skan markerów
+prywatnego PEM pozostają osobnymi kontrolami.
+
 `gates` zawiera dokładnie108/110/119/185/184/backup_restore/final120. Każdy wpis
 ma `id`, rzeczywistego `owner`, opis konkretnego `required` i `receipt:null`
 albo `{source,bytes,sha256}`. Obecny receipt zostanie przypięty jako dowód;

@@ -3,10 +3,18 @@
 import hashlib
 import json
 import subprocess
+import sys
+from pathlib import Path
 
 import pytest
 
-from infra.integration.local_demo_package import InvalidPackage, prepare, verify
+from infra.integration.local_demo_package import (
+    InvalidPackage,
+    check_ref,
+    prepare,
+    source_path,
+    verify,
+)
 
 GATE_IDS = {"108", "110", "119", "185", "184", "backup_restore", "final120"}
 MANIFEST = "manifest-demo.json"
@@ -408,6 +416,128 @@ def test_dotenv_is_refused_before_reading_contents(candidate, filename, monkeypa
 
     monkeypatch.setattr(local_demo_package, "checksum", forbidden)
     with pytest.raises(InvalidPackage, match="Private key/config"):
+        prepare(candidate["path"], candidate["output"])
+    assert not candidate["output"].exists()
+
+
+@pytest.mark.parametrize(
+    "source",
+    [
+        ".env ",
+        "private.pfx.",
+        "sources /app.input",
+        "sources./app.input",
+        r"sources \app.input",
+        r"sources.\app.input",
+        "sources./../app.input",
+        ".env::$DATA",
+        "private.pfx:review",
+        "app.input:review",
+        "nested:review/app.input",
+        "C:/sources/app.input:review",
+        r"C:\sources\app.input::$DATA",
+        "//server/share./app.input",
+        r"\\server\share \app.input",
+    ],
+)
+def test_source_aliases_and_streams_are_refused_before_file_inspection(
+    candidate, source, monkeypatch
+):
+    from infra.integration import local_demo_package
+
+    entry = {**candidate["recipe"]["inputs"][0], "source": source}
+
+    def forbidden(*args, **kwargs):
+        raise AssertionError("Ambiguous source must be refused before filesystem inspection")
+
+    monkeypatch.setattr(local_demo_package, "regular", forbidden)
+    with pytest.raises(InvalidPackage, match="Source path"):
+        check_ref(entry, candidate["path"].parent)
+    assert not candidate["output"].exists()
+
+
+@pytest.mark.parametrize("parent", ["parent.", "parent "])
+def test_relative_source_does_not_inherit_an_aliased_recipe_parent(candidate, parent, monkeypatch):
+    from infra.integration import local_demo_package
+
+    entry = {**candidate["recipe"]["inputs"][0], "source": "app.input"}
+
+    def forbidden(*args, **kwargs):
+        raise AssertionError("Aliased recipe parent must be refused before filesystem inspection")
+
+    monkeypatch.setattr(local_demo_package, "regular", forbidden)
+    with pytest.raises(InvalidPackage, match="Source path"):
+        check_ref(entry, candidate["path"].parent / parent)
+
+
+@pytest.mark.parametrize(
+    "value",
+    [
+        "sources/app.input",
+        "../sources/app.input",
+        "./sources/app.input",
+        "sources with spaces/v1.2/app.input",
+        "/tmp/demo/app.input",
+        "C:/sources with spaces/app.input",
+        r"C:\sources\app.input",
+        "//server/share/sources/app.input",
+        r"\\server\share\sources\app.input",
+    ],
+)
+def test_canonical_source_spellings_remain_supported(value):
+    assert source_path(value) == Path(value)
+
+
+@pytest.mark.parametrize("value", [r"\\?\C:\sources\app.input", r"\\.\C:\sources\app.input"])
+def test_device_namespace_cannot_change_source_path_interpretation(value):
+    with pytest.raises(InvalidPackage, match="Device namespace"):
+        source_path(value)
+
+
+@pytest.mark.skipif(sys.platform != "win32", reason="Requires actual Win32 path/stream semantics")
+@pytest.mark.parametrize(
+    "case",
+    [
+        "dotenv-space",
+        "pfx-dot",
+        "parent-dot",
+        "dotenv-default-stream",
+        "pfx-default-stream",
+        "pfx-named-stream",
+    ],
+)
+def test_actual_win32_aliases_cannot_copy_private_or_alternate_stream_inputs(
+    candidate, case, monkeypatch
+):
+    from infra.integration import local_demo_package
+
+    filename = ".env" if case.startswith("dotenv") else "synthetic-private.pfx"
+    source = candidate["source"].with_name(filename)
+    payload = b"SYNTHETIC_REVIEW_ONLY=not-a-secret\n"
+    source.write_bytes(payload)
+    if case == "dotenv-space":
+        requested = Path(str(source) + " ")
+    elif case == "pfx-dot":
+        requested = Path(str(source) + ".")
+    elif case == "parent-dot":
+        requested = Path(str(source.parent) + ".") / filename
+    elif case.endswith("default-stream"):
+        requested = Path(str(source) + "::$DATA")
+    else:
+        requested = Path(str(source) + ":review")
+        requested.write_bytes(payload)
+    # Confirm real Windows resolution against known dummy bytes, independently of the guard.
+    assert requested.read_bytes() == payload
+    candidate["recipe"]["inputs"][0].update(
+        file_reference(source, source=requested), role="evidence"
+    )
+    save_recipe(candidate["path"], candidate["recipe"])
+
+    def forbidden(*args, **kwargs):
+        raise AssertionError("Forbidden source contents must not be read")
+
+    monkeypatch.setattr(local_demo_package, "checksum", forbidden)
+    with pytest.raises(InvalidPackage, match="Source path"):
         prepare(candidate["path"], candidate["output"])
     assert not candidate["output"].exists()
 
