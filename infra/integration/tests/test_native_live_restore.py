@@ -29,10 +29,7 @@ def test_closed_user_routes_never_reach_handler(path):
             base_url="https://test",
         ) as client:
             response = await client.post(path)
-            assert (
-                response.status_code == 503
-                and response.headers["cache-control"] == "no-store"
-            )
+            assert response.status_code == 503 and response.headers["cache-control"] == "no-store"
 
     asyncio.run(run())
 
@@ -139,18 +136,14 @@ def test_maintenance_aliases_never_reach_proxy(path, raw):
 def test_maintenance_exact_operator_routes_only(method, path):
     scope = {"method": method, "path": path, "raw_path": path.encode()}
     assert Maintenance.operator_route(scope)
-    assert not Maintenance.operator_route(
-        scope | {"query_string": b"redirect=elsewhere"}
-    )
+    assert not Maintenance.operator_route(scope | {"query_string": b"redirect=elsewhere"})
     assert not Maintenance.operator_route(scope | {"method": "DELETE"})
 
 
 def test_fresh_native_startup_failure_stops_own_pg_marker(tmp_path):
     (tmp_path / "postgres.process.json").write_text("owned marker fixture")
     calls = []
-    stack = SimpleNamespace(
-        state=tmp_path, down=lambda: calls.append("qualified_native_down")
-    )
+    stack = SimpleNamespace(state=tmp_path, down=lambda: calls.append("qualified_native_down"))
     receipt = {"result": "FAIL"}
     cleanup_owned(stack, None, None, receipt)
     assert calls == ["qualified_native_down"]

@@ -19,9 +19,6 @@ from . import native  # isort: skip
 
 import httpx
 from backup import digest, private_directory
-from calorie_app.modules.sync.schemas import preflight_structure
-from calorie_app.modules.sync.service import fingerprint
-from calorie_app.modules.sync.tokens import validate_checkpoint
 from pydantic import SecretStr
 from recovery_o2 import (
     admin,
@@ -34,6 +31,10 @@ from recovery_o2 import (
 from sqlalchemy import create_engine
 from starlette.responses import Response
 from verify import Probe, expect
+
+from calorie_app.modules.sync.schemas import preflight_structure
+from calorie_app.modules.sync.service import fingerprint
+from calorie_app.modules.sync.tokens import validate_checkpoint
 
 from . import (
     gateway,
@@ -56,9 +57,9 @@ class Maintenance:
     @staticmethod
     def operator_route(scope):
         path, method = scope["path"], scope["method"]
-        if scope.get("raw_path", path.encode("ascii")) != path.encode(
-            "ascii"
-        ) or scope.get("query_string", b""):
+        if scope.get("raw_path", path.encode("ascii")) != path.encode("ascii") or scope.get(
+            "query_string", b""
+        ):
             return False
         return (method, path) in {
             ("POST", "/realms/master/protocol/openid-connect/token"),
@@ -66,9 +67,7 @@ class Maintenance:
             ("GET", "/realms/calorie-dev/protocol/openid-connect/certs"),
         } or (
             method == "GET"
-            and re.fullmatch(
-                r"/admin/realms/calorie-dev/users/[0-9a-f-]{36}/sessions", path
-            )
+            and re.fullmatch(r"/admin/realms/calorie-dev/users/[0-9a-f-]{36}/sessions", path)
             is not None
         )
 
@@ -94,9 +93,7 @@ def cleanup_owned(stack, source, target, receipt):
         stack.down()  # Fresh source only; qualified Native PID/birth/exe/datadir stop.
         receipt["startup_failure_native_down"] = True
     remaining = [
-        pg
-        for pg in (source, target)
-        if pg is not None and pg.config["status"] != "STOPPED"
+        pg for pg in (source, target) if pg is not None and pg.config["status"] != "STOPPED"
     ]
     if rehearse_restore.stop_owned_clusters(remaining, receipt):
         raise RuntimeError("C own cleanup failed")
@@ -108,9 +105,7 @@ def serve():
     state = Path(os.environ["CALORIE_NATIVE_STATE"])
     config = json.loads((state / "native.json").read_text())
     gateway._configuration(config)
-    app = Maintenance(
-        gateway.application(), os.environ.get("RESTORE_MAINTENANCE") == "1"
-    )
+    app = Maintenance(gateway.application(), os.environ.get("RESTORE_MAINTENANCE") == "1")
     sockets = []
     try:
         for host in {"127.0.0.1", config["host"]}:
@@ -138,9 +133,7 @@ def stop_services(stack):
         path = stack.state / f"{name}.process.json"
         if path.exists():
             record = json.loads(path.read_text())
-            native.terminate(
-                record
-            )  # Existing qualified exact PID/birth/exe/owned-tree lifecycle.
+            native.terminate(record)  # Existing qualified exact PID/birth/exe/owned-tree lifecycle.
             stopped[name] = record
             path.unlink()
     return stopped
@@ -175,12 +168,9 @@ def owned_source(stack):
     """Bind only Native source freshly created by run(), never accept an existing state."""
     check(not (stack.state / "owner.json").exists(), "Unexpected source owner")
     values = dict(
-        line.split("=", 1)
-        for line in (stack.state / "postgres.env").read_text().splitlines()
+        line.split("=", 1) for line in (stack.state / "postgres.env").read_text().splitlines()
     )
-    native.private_write(
-        stack.state / "password.private", values["POSTGRES_PASSWORD"] + "\n"
-    )
+    native.private_write(stack.state / "password.private", values["POSTGRES_PASSWORD"] + "\n")
     binaries = {}
     for name in (
         "initdb",
@@ -192,11 +182,7 @@ def owned_source(stack):
         "pg_restore",
     ):
         path = stack.pg / (name + ".exe")
-        version = (
-            subprocess.check_output([str(path), "--version"], **native.FLAGS)
-            .decode()
-            .strip()
-        )
+        version = subprocess.check_output([str(path), "--version"], **native.FLAGS).decode().strip()
         check("(PostgreSQL) 17." in version, "PG17 required")
         binaries[path.name] = {"sha256": digest(path), "version": version}
     native.write_json(
@@ -226,10 +212,7 @@ def allow_roles(pg, *roles):
     )
     native.private_write(
         pg.data / "pg_hba.conf",
-        "".join(
-            f"host all {role} 127.0.0.1/32 scram-sha-256\n"
-            for role in ("postgres", *roles)
-        )
+        "".join(f"host all {role} 127.0.0.1/32 scram-sha-256\n" for role in ("postgres", *roles))
         + "host all all 0.0.0.0/0 reject\nhost all all ::0/0 reject\n",
     )
     pg.sql("postgres", "SELECT pg_reload_conf();")
@@ -242,9 +225,7 @@ def tls_and_peer(probe):
         with httpx.Client(trust_env=False, timeout=5) as untrusted:
             untrusted.get(probe.stack.origin + "/health/live")
     except httpx.ConnectError as error:
-        check(
-            "CERTIFICATE_VERIFY_FAILED" in str(error), "Unknown CA failed outside TLS"
-        )
+        check("CERTIFICATE_VERIFY_FAILED" in str(error), "Unknown CA failed outside TLS")
     else:
         raise RuntimeError("Unknown CA accepted")
     # Real socket peer127.0.0.2, verified certificate for the configured host.
@@ -252,13 +233,12 @@ def tls_and_peer(probe):
         raw.settimeout(10)
         raw.bind(("127.0.0.2", 0))
         raw.connect(("127.0.0.1", probe.stack.config["port"]))
-        with probe.trust.wrap_socket(
-            raw, server_hostname=probe.stack.config["host"]
-        ) as secured:
+        with probe.trust.wrap_socket(raw, server_hostname=probe.stack.config["host"]) as secured:
             secured.sendall(
                 (
                     "POST /realms/master/protocol/openid-connect/token HTTP/1.1\r\n"
-                    f"Host: {probe.stack.config['host']}\r\nContent-Length: 0\r\nConnection: close\r\n\r\n"
+                    f"Host: {probe.stack.config['host']}\r\n"
+                    "Content-Length: 0\r\nConnection: close\r\n\r\n"
                 ).encode()
             )
             response = secured.recv(4096)
@@ -281,9 +261,7 @@ def maintenance_ready(probe):
         try:
             with probe.client() as client:
                 expect(client.get(probe.stack.origin + "/api/v1/me"), 503)
-                expect(
-                    client.post(probe.issuer + "/protocol/openid-connect/token"), 503
-                )
+                expect(client.post(probe.issuer + "/protocol/openid-connect/token"), 503)
                 keys = client.get(probe.issuer + "/protocol/openid-connect/certs")
             if keys.status_code == 200:
                 return
@@ -337,8 +315,7 @@ def http_recovery(probe, sessions, keys, scenario, pg):
     ).json()
     epoch = pg.sql("calorie_app", "SELECT sync_epoch FROM app.installation_state;")
     check(
-        boot["account_id"] == scenario["boot"]["account_id"]
-        and boot["sync_epoch"] == epoch,
+        boot["account_id"] == scenario["boot"]["account_id"] and boot["sync_epoch"] == epoch,
         "Owner or epoch changed",
     )
     denied = expect(
@@ -365,9 +342,7 @@ def http_recovery(probe, sessions, keys, scenario, pg):
         for row in source["graph"]["sync_receipts"]
         if row["operation_id"] == lost["operation_id"]
     )
-    check(
-        source_receipt["owner_id"] == boot["account_id"], "Source receipt owner differs"
-    )
+    check(source_receipt["owner_id"] == boot["account_id"], "Source receipt owner differs")
     old_operation = old_operation_epoch_probe(
         probe,
         token,
@@ -409,9 +384,12 @@ def http_recovery(probe, sessions, keys, scenario, pg):
         pg.sql(
             "calorie_app",
             "SELECT json_build_object('meals',"
-            "(SELECT json_agg(json_build_object('id',id,'owner',owner_id,'revision',revision,'deleted',deleted_at IS NOT NULL)) FROM app.meals),"
-            "'mappings',(SELECT json_agg(json_build_object('owner',owner_id,'source_epoch',source_epoch,'source_entity_id',source_entity_id,"
-            "'entity_type',entity_type,'target_entity_id',target_entity_id,'target_revision',target_revision)) FROM app.sync_recovery_mappings));",
+            "(SELECT json_agg(json_build_object('id',id,'owner',owner_id,'revision',revision,"
+            "'deleted',deleted_at IS NOT NULL)) FROM app.meals),"
+            "'mappings',(SELECT json_agg(json_build_object('owner',owner_id,'source_epoch',"
+            "source_epoch,'source_entity_id',source_entity_id,"
+            "'entity_type',entity_type,'target_entity_id',target_entity_id,"
+            "'target_revision',target_revision)) FROM app.sync_recovery_mappings));",
         )
     )
     verify_recovered_state(
@@ -454,7 +432,8 @@ def http_recovery(probe, sessions, keys, scenario, pg):
 SNAPSHOT = (
     "SELECT json_build_object("
     + ",".join(
-        f"'{table}',(SELECT coalesce(jsonb_agg(to_jsonb(t) ORDER BY to_jsonb(t)::text),'[]') FROM app.{table} t)"
+        f"'{table}',(SELECT coalesce(jsonb_agg(to_jsonb(t) ORDER BY to_jsonb(t)::text),'[]') "
+        f"FROM app.{table} t)"
         for table in (
             "meals",
             "sync_changes",
@@ -481,7 +460,8 @@ def full_app_graph(pg):
         "BEGIN ISOLATION LEVEL REPEATABLE READ READ ONLY; "
         "SELECT jsonb_object_agg(name,rows) FROM (VALUES "
         + ",".join(
-            f"('{name}',(SELECT coalesce(jsonb_agg(to_jsonb(t) ORDER BY to_jsonb(t)::text),'[]') FROM app.{name} t))"
+            f"('{name}',(SELECT coalesce(jsonb_agg(to_jsonb(t) ORDER BY to_jsonb(t)::text),'[]') "
+            f"FROM app.{name} t))"
             for name in names
         )
         + ") g(name,rows); COMMIT;"
@@ -577,8 +557,7 @@ def old_operation_epoch_probe(
 
 def run(state, pg_bin, keycloak_home, java_home, host):
     check(
-        ipaddress.IPv4Address(host).is_private
-        and not ipaddress.IPv4Address(host).is_loopback,
+        ipaddress.IPv4Address(host).is_private and not ipaddress.IPv4Address(host).is_loopback,
         "RFC1918 host required",
     )
     state = restore.owned_path(state)
@@ -605,8 +584,7 @@ def run(state, pg_bin, keycloak_home, java_home, host):
     stack = native.Native(state / "services")
     native.private_write(
         stack.state / "keycloak.env",
-        (stack.state / "keycloak.env").read_text()
-        + "JAVA_OPTS_KC_HEAP=-Xms64m -Xmx512m\n",
+        (stack.state / "keycloak.env").read_text() + "JAVA_OPTS_KC_HEAP=-Xms64m -Xmx512m\n",
     )
     receipt = {
         "format": "native-live-restore-C/v1",
@@ -623,9 +601,7 @@ def run(state, pg_bin, keycloak_home, java_home, host):
     for path in native.HERE.glob("*.py"):
         shutil.copy2(path, snapshots / path.name)
     receipt["head"] = (
-        subprocess.check_output(
-            ["git", "rev-parse", "HEAD"], cwd=native.ROOT, **native.FLAGS
-        )
+        subprocess.check_output(["git", "rev-parse", "HEAD"], cwd=native.ROOT, **native.FLAGS)
         .decode()
         .strip()
     )
@@ -652,7 +628,8 @@ def run(state, pg_bin, keycloak_home, java_home, host):
         subjects = json.loads(
             source.sql(
                 "keycloak",
-                "SELECT json_object_agg(username,id) FROM user_entity WHERE username IN ('integration-a','integration-b');",
+                "SELECT json_object_agg(username,id) FROM user_entity "
+                "WHERE username IN ('integration-a','integration-b');",
             )
         )
         engine = create_engine(source.url(), hide_parameters=True)
@@ -740,9 +717,7 @@ def run(state, pg_bin, keycloak_home, java_home, host):
             path = stack.state / f"{name}.env"
             native.private_write(
                 path,
-                path.read_text().replace(
-                    f"127.0.0.1:{oldport}", f"127.0.0.1:{target.port}"
-                ),
+                path.read_text().replace(f"127.0.0.1:{oldport}", f"127.0.0.1:{target.port}"),
             )
         start_services(stack, maintenance=True)
         maintenance_ready(probe)
@@ -754,9 +729,7 @@ def run(state, pg_bin, keycloak_home, java_home, host):
         receipt["provider_user_session_counts"] = {}
         for name in ("a", "b"):
             subject = subjects["integration-" + name]
-            remaining_sessions = admin(
-                probe, "GET", f"/users/{subject}/sessions"
-            ).json()
+            remaining_sessions = admin(probe, "GET", f"/users/{subject}/sessions").json()
             check(
                 isinstance(remaining_sessions, list) and not remaining_sessions,
                 "Provider SSO sessions remain after logout-all",

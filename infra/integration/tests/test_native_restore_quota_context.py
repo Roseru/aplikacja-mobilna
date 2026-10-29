@@ -6,9 +6,10 @@ from uuid import uuid4
 from infra.local.integration import restore_quota_oracle as quota  # isort: skip
 
 import pytest
+from pydantic import SecretStr
+
 from calorie_app.modules.sync.errors import SyncFailure
 from calorie_app.modules.sync.tokens import context_claims, micros, sign_token
-from pydantic import SecretStr
 
 
 @pytest.fixture

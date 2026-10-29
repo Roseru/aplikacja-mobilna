@@ -111,26 +111,18 @@ def refuse_before_create(archive, monkeypatch, match, target=None):
             Path("unused"),
             55432,
             checkpoint=archive.parent / "trusted-checkpoint.json",
-            checkpoint_sha256=restore.digest(
-                archive.parent / "trusted-checkpoint.json"
-            ),
+            checkpoint_sha256=restore.digest(archive.parent / "trusted-checkpoint.json"),
         )
 
 
-def test_self_consistent_archive_replacement_refuses_independent_pin(
-    archive, monkeypatch
-):
-    (archive / "roles.sql").write_text(
-        "CREATE ROLE postgres;\n-- replaced privileged SQL\n"
-    )
+def test_self_consistent_archive_replacement_refuses_independent_pin(archive, monkeypatch):
+    (archive / "roles.sql").write_text("CREATE ROLE postgres;\n-- replaced privileged SQL\n")
     rehash(archive, update_pin=False)
     refuse_before_create(archive, monkeypatch, "independently captured pin")
 
 
 @pytest.mark.parametrize("field", ["backup_point", "cutoff", "fence_pin", "envelopes"])
-def test_trusted_checkpoint_invalid_ledger_refuses_before_create(
-    archive, monkeypatch, field
-):
+def test_trusted_checkpoint_invalid_ledger_refuses_before_create(archive, monkeypatch, field):
     path = archive.parent / "trusted-checkpoint.json"
     value = json.loads(path.read_text())
     if field == "envelopes":
@@ -147,9 +139,7 @@ def test_checkpoint_tamper_cannot_change_external_sha(archive, monkeypatch):
     path = archive.parent / "trusted-checkpoint.json"
     expected = restore.digest(path)
     path.write_bytes(path.read_bytes() + b" ")
-    monkeypatch.setattr(
-        restore.OwnedPG, "create", lambda *_: pytest.fail("Create reached")
-    )
+    monkeypatch.setattr(restore.OwnedPG, "create", lambda *_: pytest.fail("Create reached"))
     with pytest.raises(ValueError, match="checkpoint checksum"):
         restore.restore(
             archive,
@@ -163,9 +153,7 @@ def test_checkpoint_tamper_cannot_change_external_sha(archive, monkeypatch):
 
 
 def test_missing_checkpoint_pin_refuses_before_any_target(archive, monkeypatch):
-    monkeypatch.setattr(
-        restore.OwnedPG, "create", lambda *_: pytest.fail("Create reached")
-    )
+    monkeypatch.setattr(restore.OwnedPG, "create", lambda *_: pytest.fail("Create reached"))
     with pytest.raises(ValueError, match="SHA256 required"):
         restore.restore(
             archive,
@@ -179,9 +167,7 @@ def test_missing_checkpoint_pin_refuses_before_any_target(archive, monkeypatch):
 
 
 def test_missing_external_checkpoint_file_refuses_before_create(archive, monkeypatch):
-    monkeypatch.setattr(
-        restore.OwnedPG, "create", lambda *_: pytest.fail("Create reached")
-    )
+    monkeypatch.setattr(restore.OwnedPG, "create", lambda *_: pytest.fail("Create reached"))
     with pytest.raises(FileNotFoundError):
         restore.restore(
             archive,
@@ -213,9 +199,7 @@ def test_linked_manifest_refuses_before_manifest_digest(archive, monkeypatch):
     refuse_before_create(archive, monkeypatch, "Linked state paths")
 
 
-def test_independently_valid_ledger_cannot_be_mixed_with_other_capture(
-    archive, monkeypatch
-):
+def test_independently_valid_ledger_cannot_be_mixed_with_other_capture(archive, monkeypatch):
     path = archive / "manifest.json"
     value = json.loads(path.read_text())
     value["ledger_backup"]["stream_id"] = str(uuid4())
@@ -228,9 +212,7 @@ def test_independently_valid_ledger_cannot_be_mixed_with_other_capture(
     refuse_before_create(archive, monkeypatch, "trusted ledger backup point")
 
 
-def test_valid_independent_checkpoint_reaches_only_new_target_creation(
-    archive, monkeypatch
-):
+def test_valid_independent_checkpoint_reaches_only_new_target_creation(archive, monkeypatch):
     class ReachedNewTarget(Exception):
         pass
 
@@ -254,9 +236,7 @@ def test_valid_native_archive_reuses_shared_verifier(archive):
     assert restore.verify_native_archive(archive)["transport"] == restore.FORMAT
 
 
-@pytest.mark.parametrize(
-    "name", ["roles.sql", "calorie_app.dump", "keycloak.dump", "catalog.tar"]
-)
+@pytest.mark.parametrize("name", ["roles.sql", "calorie_app.dump", "keycloak.dump", "catalog.tar"])
 def test_missing_pair_member_refuses_before_create(archive, monkeypatch, name):
     (archive / name).unlink()
     rehash(archive)
@@ -340,9 +320,7 @@ def test_unexpected_manifest_path_never_read(archive, monkeypatch):
     pin = json.loads(pinpath.read_text())
     pin["archive_manifest_sha256"] = restore.digest(path)
     pinpath.write_text(json.dumps(pin))
-    monkeypatch.setattr(
-        restore, "verify_archive", lambda *_: pytest.fail("Unsafe shared read")
-    )
+    monkeypatch.setattr(restore, "verify_archive", lambda *_: pytest.fail("Unsafe shared read"))
     refuse_before_create(archive, monkeypatch, "archive member")
 
 
@@ -372,9 +350,7 @@ def test_reused_pid_refuses_before_stop(archive, monkeypatch):
     pg.state = archive
     pg.data = archive
     pg.config = {"process": {"pid": 12, "created": 10, "executable": "postgres.exe"}}
-    monkeypatch.setattr(
-        restore.native, "identity", lambda _: {"pid": 12, "created": 11}
-    )
+    monkeypatch.setattr(restore.native, "identity", lambda _: {"pid": 12, "created": 11})
     pg.command = lambda *_args, **_kw: pytest.fail("Foreign stop reached command")
     with pytest.raises(ValueError, match="PID identity"):
         pg.stop()
@@ -429,9 +405,7 @@ def test_payload_replaced_during_copy_refuses_before_target(archive, monkeypatch
     assert not (archive.parent / "target").exists()
 
 
-def test_original_swap_after_sealing_cannot_change_executed_inputs(
-    archive, monkeypatch
-):
+def test_original_swap_after_sealing_cannot_change_executed_inputs(archive, monkeypatch):
     expected = {
         name: (archive / name).read_bytes()
         for name in ("roles.sql", "calorie_app.dump", "keycloak.dump", "catalog.tar")
@@ -442,9 +416,7 @@ def test_original_swap_after_sealing_cannot_change_executed_inputs(
 
     def create(*_args):
         for name in expected:
-            (archive / name).write_bytes(
-                b"untrusted original replacement after sealed snapshot"
-            )
+            (archive / name).write_bytes(b"untrusted original replacement after sealed snapshot")
         (archive / "manifest.json").write_bytes(b"invalid original manifest")
         checkpoint.write_bytes(b"invalid original checkpoint")
         return dummy
@@ -452,9 +424,7 @@ def test_original_swap_after_sealing_cannot_change_executed_inputs(
     def execute_into(pg, staged, manifest, roles, pin):
         assert staged != archive
         assert roles.encode() == expected["roles.sql"]
-        assert all(
-            (staged / name).read_bytes() == raw for name, raw in expected.items()
-        )
+        assert all((staged / name).read_bytes() == raw for name, raw in expected.items())
         return pg, {"result": "PASS", "only_trusted_sealed_bytes_used": True}
 
     monkeypatch.setattr(restore.OwnedPG, "create", create)
@@ -490,9 +460,7 @@ def test_witness_hash_and_parse_use_one_read(archive, monkeypatch):
         return raw
 
     monkeypatch.setattr(Path, "read_bytes", replace_after_read)
-    assert restore_trust.read_witness(state, path.name) == {
-        "fact": "original trusted witness"
-    }
+    assert restore_trust.read_witness(state, path.name) == {"fact": "original trusted witness"}
     assert reads == [path]
 
 
@@ -535,10 +503,7 @@ def test_late_source_mismatch_cannot_preserve_pass(monkeypatch):
     )
     with pytest.raises(ValueError, match="Source changed"):
         rehearse_restore.finish_checks(receipt, binding, paired={"result": "PASS"})
-    assert (
-        receipt["result"] == "FAIL"
-        and receipt["stage"] == "verify_final_source_binding"
-    )
+    assert receipt["result"] == "FAIL" and receipt["stage"] == "verify_final_source_binding"
     assert "paired" not in receipt
 
 
@@ -550,9 +515,7 @@ def test_cleanup_failure_is_preserved_and_other_own_cleanup_continues():
         raise PermissionError("identity differs")
 
     clusters = [
-        SimpleNamespace(
-            config={"owner": "first"}, stop=lambda: stopped.append("first")
-        ),
+        SimpleNamespace(config={"owner": "first"}, stop=lambda: stopped.append("first")),
         SimpleNamespace(config={"owner": "second"}, stop=fail),
     ]
     errors = rehearse_restore.stop_owned_clusters(clusters, receipt)

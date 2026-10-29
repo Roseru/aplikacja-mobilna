@@ -19,6 +19,13 @@ from uuid import UUID, uuid4
 from . import native  # isort: skip
 
 from backup import digest, private_directory, private_write
+from pydantic import SecretStr
+from recovery_o2 import check, envelope, meal
+from sqlalchemy import create_engine, text
+from sqlalchemy.engine import make_url
+from sqlalchemy.exc import DBAPIError
+from sqlalchemy.orm import sessionmaker
+
 from calorie_app.core.config import Settings
 from calorie_app.core.errors import DomainError
 from calorie_app.integrations.keycloak import Principal
@@ -30,12 +37,6 @@ from calorie_app.modules.sync.router import execute_one, preflight
 from calorie_app.modules.sync.schemas import preflight_structure
 from calorie_app.modules.sync.snapshots import pull
 from calorie_app.modules.sync.tokens import validate_checkpoint
-from pydantic import SecretStr
-from recovery_o2 import check, envelope, meal
-from sqlalchemy import create_engine, text
-from sqlalchemy.engine import make_url
-from sqlalchemy.exc import DBAPIError
-from sqlalchemy.orm import sessionmaker
 
 
 def _support():
@@ -203,7 +204,8 @@ def _snapshot(engine):
         return {
             table: connection.scalar(
                 text(
-                    f"SELECT coalesce(jsonb_agg(to_jsonb(t) ORDER BY to_jsonb(t)::text),'[]') FROM app.{table} t"
+                    "SELECT coalesce(jsonb_agg(to_jsonb(t) ORDER BY to_jsonb(t)::text),'[]') "
+                    f"FROM app.{table} t"
                 )
             )
             for table in (
@@ -264,7 +266,8 @@ def prepare(engine, witness_directory, *, owner=None, sync_context=None):
         row = (
             connection.execute(
                 text(
-                    "SELECT id,issuer,subject,generation FROM app.user_accounts WHERE state='active' "
+                    "SELECT id,issuer,subject,generation FROM app.user_accounts "
+                    "WHERE state='active' "
                     + ("AND id=:owner " if owner is not None else "")
                     + "ORDER BY id LIMIT 1"
                 ),
@@ -275,8 +278,7 @@ def prepare(engine, witness_directory, *, owner=None, sync_context=None):
         )
         epoch = connection.scalar(text("SELECT sync_epoch FROM app.installation_state"))
         check(
-            connection.scalar(text("SELECT dispatch_open FROM app.ai_controls"))
-            is True,
+            connection.scalar(text("SELECT dispatch_open FROM app.ai_controls")) is True,
             "Source AI gate must already be open",
         )
         validated_scope = None
@@ -298,18 +300,14 @@ def prepare(engine, witness_directory, *, owner=None, sync_context=None):
         "source_epoch": str(epoch),
         "worker_login": login,
         "worker_url_private": worker.url.render_as_string(hide_password=False),
-        "secret_private": sync_context["secret"]
-        if sync_context is not None
-        else secrets_token(),
+        "secret_private": sync_context["secret"] if sync_context is not None else secrets_token(),
         "evidence_sha256": {},
     }
     if sync_context is not None:
         state["sync_context_private"] = sync_context
         state["validated_sync_scope"] = validated_scope
     counter = DurableCounter(directory / "provider-counter.jsonl", create=True)
-    counter.append(
-        "created-before-capture", fixture="synthetic-mock-only", source_epoch=str(epoch)
-    )
+    counter.append("created-before-capture", fixture="synthetic-mock-only", source_epoch=str(epoch))
     state["counter_t0_sha256"] = digest(counter.path)
     _evidence(state, "quota-state-before-admission-private.json", state)
     result = create_analysis(
@@ -384,9 +382,7 @@ def after_capture(engine, state):
     with _observed_provider(counter, "source-after-capture") as fake:
         state["source_mock_port"] = fake.server.server_port
         worker = _worker(engine, state, fake)
-        check(
-            worker["handled"] is True, "Original worker did not handle its queued job"
-        )
+        check(worker["handled"] is True, "Original worker did not handle its queued job")
         check(
             fake.counts() == {"countTokens": 1, "generateContent": 1},
             "Postbackup mock IO differs",
@@ -406,9 +402,7 @@ def after_capture(engine, state):
     analysis = read_analysis(factory, _principal(state), UUID(state["analysis"]))
     check(analysis["state"] == "succeeded", "Postbackup mock proposal not committed")
     item = analysis["proposal"]["items"][0]
-    operation = meal(
-        {"sync_epoch": state["source_epoch"]}, "Synthetic postbackup mock estimate"
-    )
+    operation = meal({"sync_epoch": state["source_epoch"]}, "Synthetic postbackup mock estimate")
     operation["payload"]["items"] = [
         {
             "item_id": str(uuid4()),
@@ -463,9 +457,7 @@ def after_capture(engine, state):
     state["counter_postbackup_sha256"] = digest(counter.path)
     _evidence(state, "quota-state-after-ack-private.json", state)
     after = pull(factory, owner, {}, secret)
-    actual = next(
-        e for e in after["entities"] if e["entity_id"] == operation["entity_id"]
-    )
+    actual = next(e for e in after["entities"] if e["entity_id"] == operation["entity_id"])
     check(
         actual["payload"] == operation["payload"],
         "Postbackup AI meal read-back differs",
@@ -496,9 +488,7 @@ def verify(engine, state):
     before = _snapshot(engine)
     check(before["ai_attempts"] == [], "T0 unexpectedly contains postbackup attempts")
     with engine.connect() as connection:
-        current = connection.scalar(
-            text("SELECT sync_epoch FROM app.installation_state")
-        )
+        current = connection.scalar(text("SELECT sync_epoch FROM app.installation_state"))
         lost = connection.scalar(
             text("SELECT count(*) FROM app.meals WHERE id=:id"),
             {"id": UUID(state["acked_operation"]["entity_id"])},
@@ -538,9 +528,7 @@ def verify(engine, state):
             with engine.begin() as connection:
                 connection.exec_driver_sql("SET LOCAL ROLE calorie_app_migrator")
                 result = connection.scalar(
-                    text(
-                        "SELECT app.e7_reserve(:scope,:purpose,:kind,NULL,0,:attempt,:worker)"
-                    ),
+                    text("SELECT app.e7_reserve(:scope,:purpose,:kind,NULL,0,:attempt,:worker)"),
                     {
                         "scope": "mock:local:mock-food-v1:local",
                         "purpose": purpose,
@@ -576,9 +564,7 @@ def verify(engine, state):
     with engine.connect() as connection:
         age = float(
             connection.scalar(
-                text(
-                    "SELECT extract(epoch FROM clock_timestamp()-closed_at) FROM app.ai_controls"
-                )
+                text("SELECT extract(epoch FROM clock_timestamp()-closed_at) FROM app.ai_controls")
             )
         )
     check(0 <= age < 336 * 3600, "Unexpected actual restore hold age")

@@ -64,9 +64,7 @@ def stop_owned_clusters(clusters, receipt):
             receipt["stopped_owned_clusters"].append(pg.config["owner"])
         except Exception as error:  # noqa: BLE001 - record every stop failure, then fail caller
             receipt["result"] = "FAIL"
-            errors.append(
-                {"owner": pg.config["owner"], "error_kind": type(error).__name__}
-            )
+            errors.append({"owner": pg.config["owner"], "error_kind": type(error).__name__})
     if errors:
         receipt["cleanup_errors"] = errors
     return errors
@@ -155,9 +153,10 @@ def run(state, pg_bin, keycloak_home, java_home):
             .render_as_string(hide_password=False),
             "PYTHONDONTWRITEBYTECODE": "1",
         }
-        execute = lambda args, label, environment=env: private_command(
-            state, args, label, environment
-        )
+
+        def execute(args, label, environment=env):
+            return private_command(state, args, label, environment)
+
         receipt["stage"] = "migrate_catalog"
         execute(
             [
@@ -201,9 +200,7 @@ def run(state, pg_bin, keycloak_home, java_home):
         receipt["stage"] = "offline_keycloak_import"
         kc = state / "keycloak-home"
         shutil.copytree(keycloak_home, kc, ignore=shutil.ignore_patterns("data"))
-        realm = json.loads(
-            (native.ROOT / "infra/local/keycloak/realm.json").read_text()
-        )
+        realm = json.loads((native.ROOT / "infra/local/keycloak/realm.json").read_text())
         realm["users"] = [
             {
                 "username": "restore-" + name,
@@ -242,7 +239,8 @@ def run(state, pg_bin, keycloak_home, java_home):
         subjects = json.loads(
             source.sql(
                 "keycloak",
-                "SELECT json_object_agg(username,id) FROM user_entity WHERE username LIKE 'restore-%';",
+                "SELECT json_object_agg(username,id) FROM user_entity "
+                "WHERE username LIKE 'restore-%';",
             )
         )
         if set(subjects) != {"restore-a", "restore-b"}:
@@ -296,9 +294,7 @@ def run(state, pg_bin, keycloak_home, java_home):
             if p.is_file()
         }
         restored_files = {
-            p.relative_to(target.state / "catalog-restored/catalog").as_posix(): digest(
-                p
-            )
+            p.relative_to(target.state / "catalog-restored/catalog").as_posix(): digest(p)
             for p in (target.state / "catalog-restored/catalog").rglob("*")
             if p.is_file()
         }
@@ -326,9 +322,7 @@ def run(state, pg_bin, keycloak_home, java_home):
         receipt["ended_at"] = datetime.now(UTC).isoformat()
         native.write_json(state / "execution.json", receipt)
         if cleanup_errors:
-            raise RuntimeError(
-                "Owned cluster cleanup failed; inspect execution receipt"
-            )
+            raise RuntimeError("Owned cluster cleanup failed; inspect execution receipt")
     return receipt
 
 

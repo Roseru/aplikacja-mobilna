@@ -84,14 +84,11 @@ def test_command_is_loopback_bounded_and_without_external_features(owned):
     assert "--ui-auth-file" in command and "--allowed-hosts" in command
     assert "--disable-version-check" in command and "--smtp-disable-rdns" in command
     assert not any(
-        "relay" in value or "forward" in value or "webhook" in value
-        for value in command
+        "relay" in value or "forward" in value or "webhook" in value for value in command
     )
 
 
-@pytest.mark.parametrize(
-    "domain", ["invalid.example", "example.test", "calorie-demo.test"]
-)
+@pytest.mark.parametrize("domain", ["invalid.example", "example.test", "calorie-demo.test"])
 def test_exact_allowed_domains(domain):
     assert re.fullmatch(mail.RECIPIENTS, "test@" + domain)
 
@@ -161,9 +158,7 @@ def test_missing_wildcard_or_foreign_ports_block_stop(owned, monkeypatch, rows):
 
 def test_stale_record_with_foreign_listener_blocks_up(owned, monkeypatch):
     state, _ = owned
-    monkeypatch.setattr(
-        mail, "identity", lambda _: (_ for _ in ()).throw(ProcessLookupError())
-    )
+    monkeypatch.setattr(mail, "identity", lambda _: (_ for _ in ()).throw(ProcessLookupError()))
     with pytest.raises(RuntimeError, match="Foreign listener"):
         mail.up(state)
 
@@ -171,9 +166,7 @@ def test_stale_record_with_foreign_listener_blocks_up(owned, monkeypatch):
 def test_down_stopped_process_preserves_mail_and_history(owned, monkeypatch):
     state, _ = owned
     (state / "mailpit.db").write_bytes(b"retained database")
-    monkeypatch.setattr(
-        mail, "identity", lambda _: (_ for _ in ()).throw(ProcessLookupError())
-    )
+    monkeypatch.setattr(mail, "identity", lambda _: (_ for _ in ()).throw(ProcessLookupError()))
     monkeypatch.setattr(mail, "listeners", list)
     assert mail.down(state) == {"running": False, "preserved": True}
     assert (state / "mailpit.db").read_bytes() == b"retained database"
@@ -183,9 +176,7 @@ def test_down_stopped_process_preserves_mail_and_history(owned, monkeypatch):
 def test_up_is_idempotent_for_exact_owned_process(owned, monkeypatch):
     state, _ = owned
     monkeypatch.setattr(mail, "_mailbox_json", lambda _: {"total": 2})
-    monkeypatch.setattr(
-        mail.subprocess, "Popen", lambda *_a, **_k: pytest.fail("duplicate start")
-    )
+    monkeypatch.setattr(mail.subprocess, "Popen", lambda *_a, **_k: pytest.fail("duplicate start"))
     assert mail.up(state)["messages"] == 2
 
 
@@ -222,9 +213,7 @@ def test_private_reader_cannot_send_or_redirect_to_arbitrary_endpoint(owned, end
 def test_cli_never_renders_untrusted_secret_exception(owned, monkeypatch, capsys):
     state, _ = owned
     secret = "secret-action-link-and-password"
-    monkeypatch.setattr(
-        mail, "status", lambda _: (_ for _ in ()).throw(RuntimeError(secret))
-    )
+    monkeypatch.setattr(mail, "status", lambda _: (_ for _ in ()).throw(RuntimeError(secret)))
     assert mail.main(["status", "--state", str(state)]) == 1
     output = capsys.readouterr()
     assert secret not in output.out + output.err
@@ -251,18 +240,12 @@ def test_real_smtp_read_refusal_restart_and_foreign_process_preservation():
         ).encode()
         with smtplib.SMTP("127.0.0.1", mail.SMTP_PORT, timeout=5) as smtp:
             assert (
-                smtp.sendmail(
-                    "noreply@calorie-demo.test", ["synthetic@example.test"], wire
-                )
-                == {}
+                smtp.sendmail("noreply@calorie-demo.test", ["synthetic@example.test"], wire) == {}
             )
             smtp.mail("noreply@calorie-demo.test")
             assert smtp.rcpt("synthetic@outside.invalid")[0] == 550
             smtp.rset()
-            assert (
-                smtp.mail("noreply@calorie-demo.test", options=["SIZE=1048577"])[0]
-                == 552
-            )
+            assert smtp.mail("noreply@calorie-demo.test", options=["SIZE=1048577"])[0] == 552
         listing = mail.mailbox_json(state)
         assert listing["total"] == first["messages"] + 1
         message_id = listing["messages"][0]["ID"]

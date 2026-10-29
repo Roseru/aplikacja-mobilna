@@ -8,6 +8,7 @@ from pathlib import Path
 from . import native  # isort: skip
 
 from backup import private_write
+
 from calorie_app.modules.identity.ledger_contract import (
     FencePin,
     Trust,
@@ -35,10 +36,7 @@ def load_evidence(state):
     observation = read_witness(state, "fence-observation.json")
     fence = read_witness(state, "fence-pin.json")
     expected = state["witness_files"]["fence-observation.json"]
-    if (
-        fence["fence_sha256"] != expected
-        or fence["fence_id"] != observation["observation_id"]
-    ):
+    if fence["fence_sha256"] != expected or fence["fence_id"] != observation["observation_id"]:
         raise ValueError("Independent fence observation mismatch")
     return {
         "trust": raw,
@@ -51,9 +49,7 @@ def load_evidence(state):
 
 def validate_evidence(evidence):
     raw = evidence["trust"]
-    trust = Trust(
-        **(raw | {k: bytes.fromhex(raw[k]) for k in ("source_key", "ack_key")})
-    )
+    trust = Trust(**(raw | {k: bytes.fromhex(raw[k]) for k in ("source_key", "ack_key")}))
     fence = FencePin(**evidence["fence_pin"])
     result = validate_restore(
         trust,
@@ -102,9 +98,7 @@ def write_checkpoint(path, captured, ledger_state):
 
 def preflight(archive, checkpoint, expected_sha256):
     """No DB/process calls: refuse every untrusted input before target creation."""
-    if not isinstance(expected_sha256, str) or not re.fullmatch(
-        r"[0-9a-f]{64}", expected_sha256
-    ):
+    if not isinstance(expected_sha256, str) or not re.fullmatch(r"[0-9a-f]{64}", expected_sha256):
         raise ValueError("Independent checkpoint SHA256 required")
     path = native.confined(checkpoint)
     if path.is_symlink() or path.is_junction():

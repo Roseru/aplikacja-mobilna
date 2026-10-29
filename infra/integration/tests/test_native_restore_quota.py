@@ -19,18 +19,13 @@ def test_counter_reopens_without_reset_and_preserves_exact_http_byte_hashes(tmp_
     ):
         for kind in ("countTokens", "generateContent"):
             raw = b'{ "synthetic": true, "spaces": "preserved" }'
-            response = client.post(
-                fake.url + "/v1beta/models/mock:" + kind, content=raw
-            )
+            response = client.post(fake.url + "/v1beta/models/mock:" + kind, content=raw)
             assert response.status_code == 200
             dispatch, outcome = counter.read()[-2:]
             assert dispatch["request_bytes"] == len(raw)
             assert dispatch["request_sha256"] == hashlib.sha256(raw).hexdigest()
             assert outcome["response_bytes"] == len(response.content)
-            assert (
-                outcome["response_sha256"]
-                == hashlib.sha256(response.content).hexdigest()
-            )
+            assert outcome["response_sha256"] == hashlib.sha256(response.content).hexdigest()
     reopened = quota.DurableCounter(path)
     assert reopened.counts() == {"countTokens": 1, "generateContent": 1}
     assert len(reopened.read()) == 5
@@ -44,9 +39,7 @@ def test_counter_rejects_modified_content_gap_partial_record_and_tail_rollback(
     path = tmp_path / "counter.jsonl"
     counter = quota.DurableCounter(path, create=True)
     counter.append("created-before-capture", fixture="synthetic-only")
-    counter.append(
-        "dispatch", kind="countTokens", request_bytes=2, request_sha256="a" * 64
-    )
+    counter.append("dispatch", kind="countTokens", request_bytes=2, request_sha256="a" * 64)
     original = path.read_bytes()
     changed = [json.loads(line) for line in original.splitlines()]
     changed[1]["request_bytes"] = 3

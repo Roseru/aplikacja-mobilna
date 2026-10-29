@@ -18,6 +18,17 @@ from infra.local.integration import restore_trust  # isort: skip
 
 from backup import digest as file_digest
 from backup import private_directory, private_write
+from pydantic import SecretStr
+from recovery_o2 import (
+    check,
+    envelope,
+    meal,
+    verify_recovered_state,
+    verify_recovery_result,
+)
+from sqlalchemy import text
+from sqlalchemy.orm import Session, sessionmaker
+
 from calorie_app.core.errors import DomainError
 from calorie_app.integrations.keycloak import Principal
 from calorie_app.modules.identity.deletion import begin
@@ -33,16 +44,6 @@ from calorie_app.modules.sync.errors import SyncFailure
 from calorie_app.modules.sync.router import execute_one, preflight
 from calorie_app.modules.sync.schemas import preflight_structure
 from calorie_app.modules.sync.snapshots import pull
-from pydantic import SecretStr
-from recovery_o2 import (
-    check,
-    envelope,
-    meal,
-    verify_recovered_state,
-    verify_recovery_result,
-)
-from sqlalchemy import text
-from sqlalchemy.orm import Session, sessionmaker
 
 
 def _ledger(engine, directory, issuer):
@@ -80,10 +81,7 @@ def _push(engine, state, boot, checkpoint, operations):
     data = envelope(boot, checkpoint, operations)
     preflight_structure(data)
     owner, generation = preflight(factory, _principal(state), data, secret)
-    return [
-        execute_one(factory, owner, generation, data, op, secret)[0]
-        for op in operations
-    ]
+    return [execute_one(factory, owner, generation, data, op, secret)[0] for op in operations]
 
 
 def _refused(call, code, kind=SyncFailure):
@@ -104,9 +102,7 @@ def _checkpoint(ledger):
     return envelopes, ack
 
 
-def prepare(
-    engine, issuer, subject, *, deleted_subject=None, witness_directory, secret=None
-):
+def prepare(engine, issuer, subject, *, deleted_subject=None, witness_directory, secret=None):
     """Create a real committed baseline and independent contract-test witness.
 
     ``subject`` and optional ``deleted_subject`` must come from the caller's own
@@ -140,9 +136,7 @@ def prepare(
     owner = UUID(state["boot"]["account_id"])
     first_page = pull(factory, owner, {}, SecretStr(state["secret"]))
     state["baseline"] = meal(state["boot"], "Synthetic baseline before paired backup")
-    accepted = _push(
-        engine, state, state["boot"], first_page["checkpoint"], [state["baseline"]]
-    )
+    accepted = _push(engine, state, state["boot"], first_page["checkpoint"], [state["baseline"]])
     check(accepted[0]["status"] == "accepted", "Baseline was not committed")
     page = pull(factory, owner, {}, SecretStr(state["secret"]))
     check(page["page_token"] is None, "Baseline snapshot is incomplete")
@@ -156,12 +150,8 @@ def prepare(
             "source_key": trust.source_key.hex(),
             "ack_key": trust.ack_key.hex(),
         }
-        state["witness_files"]["trust-private.json"] = _save(
-            directory, "trust-private.json", raw
-        )
-        state["witness_files"]["backup-point.json"] = _save(
-            directory, "backup-point.json", ack
-        )
+        state["witness_files"]["trust-private.json"] = _save(directory, "trust-private.json", raw)
+        state["witness_files"]["backup-point.json"] = _save(directory, "backup-point.json", ack)
     finally:
         ledger.close()
     _evidence(
@@ -189,12 +179,8 @@ def after_capture(engine, state, *, push=None, fence_observation=None):
     factory = sessionmaker(engine, expire_on_commit=False)
     owner = UUID(state["boot"]["account_id"])
     page = pull(factory, owner, {}, SecretStr(state["secret"]))
-    actual = next(
-        e for e in page["entities"] if e["entity_id"] == state["lost"]["entity_id"]
-    )
-    check(
-        actual["payload"] == state["lost"]["payload"], "Post-backup read-back differs"
-    )
+    actual = next(e for e in page["entities"] if e["entity_id"] == state["lost"]["entity_id"])
+    check(actual["payload"] == state["lost"]["payload"], "Post-backup read-back differs")
     if "deleted_boot" in state:
         state["deletion_operation"] = str(uuid4())
         with engine.begin() as connection:
@@ -205,9 +191,7 @@ def after_capture(engine, state, *, push=None, fence_observation=None):
                 UUID(state["deletion_operation"]),
                 state["deleted_boot"]["account_generation"],
             )
-        check(
-            result["identity_confirmed_at"] is None, "Unexpected provider confirmation"
-        )
+        check(result["identity_confirmed_at"] is None, "Unexpected provider confirmation")
     directory = native.confined(Path(state["witness_directory"]))
     ledger = _ledger(engine, directory, state["issuer"])
     try:
@@ -229,9 +213,7 @@ def after_capture(engine, state, *, push=None, fence_observation=None):
         artifacts = {
             "fence-observation.json": observed_hash,
             "fence-pin.json": _save(directory, "fence-pin.json", pin.fields()),
-            "cutoff.json": _save(
-                directory, "cutoff.json", make_cutoff(ledger.trust, ack, pin)
-            ),
+            "cutoff.json": _save(directory, "cutoff.json", make_cutoff(ledger.trust, ack, pin)),
             "prefix-private.json": _save(directory, "prefix-private.json", envelopes),
         }
         state["witness_files"].update(artifacts)
@@ -265,7 +247,8 @@ def _sync_snapshot(engine):
         return {
             name: connection.scalar(
                 text(
-                    f"SELECT coalesce(jsonb_agg(to_jsonb(t) ORDER BY to_jsonb(t)::text),'[]') FROM app.{name} t"
+                    "SELECT coalesce(jsonb_agg(to_jsonb(t) ORDER BY to_jsonb(t)::text),'[]') "
+                    f"FROM app.{name} t"
                 )
             )
             for name in (
@@ -293,17 +276,13 @@ def _verify_ledger(engine, state):
         )
 
     first = json.loads(envelopes[0]["body"])
-    events = [
-        event for batch in envelopes for event in json.loads(batch["body"])["events"]
-    ]
+    events = [event for batch in envelopes for event in json.loads(batch["body"])["events"]]
     first["events"] = events[1:]
     gap_body = json.dumps(first)
     gap = [
         {
             "body": gap_body,
-            "mac": hmac.digest(
-                trust.source_key, SOURCE_DOMAIN + gap_body.encode(), "sha256"
-            ).hex(),
+            "mac": hmac.digest(trust.source_key, SOURCE_DOMAIN + gap_body.encode(), "sha256").hex(),
         }
     ]
     refused = []
@@ -331,21 +310,16 @@ def _verify_ledger(engine, state):
         try:
             reconcile(batch, fence)
         except LedgerInvalid as error:
-            check(
-                str(error) == expected_error, "Ledger refused at an unexpected boundary"
-            )
+            check(str(error) == expected_error, "Ledger refused at an unexpected boundary")
             refused.append(name)
         else:
             raise RuntimeError("Invalid ledger witness was accepted")
-        check(
-            _ledger_snapshot(engine) == before, "Invalid ledger mutated restored state"
-        )
+        check(_ledger_snapshot(engine) == before, "Invalid ledger mutated restored state")
     result = reconcile(envelopes)
     check(result["reopen_authorized"] is False, "Ledger authorized reopening")
     with engine.connect() as connection:
         check(
-            connection.scalar(text("SELECT enabled FROM app.deletion_ledger_source"))
-            is False,
+            connection.scalar(text("SELECT enabled FROM app.deletion_ledger_source")) is False,
             "Restored ledger source is not frozen",
         )
         if "deleted_boot" in state:
@@ -354,8 +328,7 @@ def _verify_ledger(engine, state):
                 {"id": UUID(state["deleted_boot"]["account_id"])},
             ).one()
             check(
-                account
-                == ("deleting", state["deleted_boot"]["account_generation"] + 1),
+                account == ("deleting", state["deleted_boot"]["account_generation"] + 1),
                 "Pending deletion target was resurrected",
             )
             check(len(result["targets"]) == 1, "Wrong ledger target count")
@@ -372,17 +345,14 @@ def verify(engine, state):
     boot, baseline, lost = state["boot"], state["baseline"], state["lost"]
     owner, secret = UUID(boot["account_id"]), SecretStr(state["secret"])
     with engine.connect() as connection:
-        epoch = str(
-            connection.scalar(text("SELECT sync_epoch FROM app.installation_state"))
-        )
+        epoch = str(connection.scalar(text("SELECT sync_epoch FROM app.installation_state")))
         check(epoch != boot["sync_epoch"], "Restore reused the source epoch")
         check(
             connection.scalar(text("SELECT count(*) FROM app.sync_sessions")) == 0,
             "Old sessions remain",
         )
         check(
-            connection.scalar(text("SELECT dispatch_open FROM app.ai_controls"))
-            is False,
+            connection.scalar(text("SELECT dispatch_open FROM app.ai_controls")) is False,
             "AI reopened",
         )
         check(
@@ -399,8 +369,7 @@ def verify(engine, state):
     )
     check(page["sync_epoch"] == epoch, "Pull epoch mismatch")
     check(
-        {r["operation_id"] for r in page["operation_receipts"]}
-        == {baseline["operation_id"]},
+        {r["operation_id"] for r in page["operation_receipts"]} == {baseline["operation_id"]},
         "Restored receipt graph differs",
     )
     check(
@@ -478,9 +447,7 @@ def verify(engine, state):
                 "'target_revision',target_revision)), '[]') FROM app.sync_recovery_mappings))"
             )
         )
-    verify_recovered_state(
-        recovery, second, baseline, str(owner), final["entities"], stored
-    )
+    verify_recovered_state(recovery, second, baseline, str(owner), final["entities"], stored)
     _evidence(
         state,
         "restored-after-recovery-private.json",

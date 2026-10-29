@@ -21,7 +21,9 @@ from uuid import uuid4
 
 ROOT = Path(__file__).resolve().parents[3]
 VERSION = "1.32.0"
-ASSET_URL = f"https://github.com/axllent/mailpit/releases/download/v{VERSION}/mailpit-windows-amd64.zip"
+ASSET_URL = (
+    f"https://github.com/axllent/mailpit/releases/download/v{VERSION}/mailpit-windows-amd64.zip"
+)
 # Official GitHub release asset 667222096.digest (there is no checksums.txt asset).
 ZIP_SHA256 = "16915767a6c95dca569336e8f561f91cf355e9a33c57b91deedcc10a4bba7fd4"
 EXE_SHA256 = "9276bbcd182565f2acd594ca1178da667c6b5b716a75e8da979c103c38fc1280"
@@ -153,9 +155,7 @@ def initialize(state, archive=None, download=False):
     else:
         payload = Path(archive).read_bytes()
     if hashlib.sha256(payload).hexdigest() != ZIP_SHA256:
-        raise ValueError(
-            "Pinned archive checksum mismatch; state preserved for diagnosis"
-        )
+        raise ValueError("Pinned archive checksum mismatch; state preserved for diagnosis")
     (state / "mailpit-windows-amd64.zip").write_bytes(payload)
     with zipfile.ZipFile(io.BytesIO(payload)) as bundle:
         # Never extract archive paths, and never execute before both hash checks.
@@ -163,9 +163,7 @@ def initialize(state, archive=None, download=False):
         (state / "LICENSE").write_bytes(bundle.read("LICENSE"))
     if digest(state / "mailpit.exe") != EXE_SHA256:
         raise ValueError("Pinned executable checksum mismatch")
-    (state / "auth.txt").write_text(
-        "local:" + secrets.token_urlsafe(32) + "\n", encoding="utf-8"
-    )
+    (state / "auth.txt").write_text("local:" + secrets.token_urlsafe(32) + "\n", encoding="utf-8")
     write_json(
         state / "config.json",
         {
@@ -250,9 +248,7 @@ def process_handle(pid, terminate=False):
             raise ProcessLookupError("Owned process is stopped")
         raise PermissionError("Cannot open owned process")
     times = [wintypes.FILETIME() for _ in range(4)]
-    kernel.GetProcessTimes.argtypes = [wintypes.HANDLE] + [
-        ctypes.POINTER(wintypes.FILETIME)
-    ] * 4
+    kernel.GetProcessTimes.argtypes = [wintypes.HANDLE] + [ctypes.POINTER(wintypes.FILETIME)] * 4
     if not kernel.GetProcessTimes(handle, *(ctypes.byref(t) for t in times)):
         kernel.CloseHandle(handle)
         raise OSError("Cannot qualify owned process birth time")
@@ -278,20 +274,15 @@ def qualify(state, record):
         or record["command"] != expected_command
         or identity(record["pid"]) != record
     ):
-        raise RuntimeError(
-            "Saved process identity or exact command mismatch; no stop authorized"
-        )
+        raise RuntimeError("Saved process identity or exact command mismatch; no stop authorized")
 
 
 def owned_ports(record):
     expected = [
-        {"address": "127.0.0.1", "port": p, "pid": record["pid"]}
-        for p in (SMTP_PORT, HTTP_PORT)
+        {"address": "127.0.0.1", "port": p, "pid": record["pid"]} for p in (SMTP_PORT, HTTP_PORT)
     ]
     if sorted(listeners(), key=lambda p: p["port"]) != expected:
-        raise RuntimeError(
-            "Mailbox ports do not belong exclusively to the exact saved process"
-        )
+        raise RuntimeError("Mailbox ports do not belong exclusively to the exact saved process")
 
 
 def available():
@@ -320,9 +311,7 @@ def _mailbox_json(state, endpoint="/api/v1/messages"):
     credential = (state / "auth.txt").read_text(encoding="utf-8").strip()
     request = urllib.request.Request(
         f"http://127.0.0.1:{HTTP_PORT}{endpoint}",
-        headers={
-            "Authorization": "Basic " + base64.b64encode(credential.encode()).decode()
-        },
+        headers={"Authorization": "Basic " + base64.b64encode(credential.encode()).decode()},
     )
 
     # Ignore machine proxy settings even for loopback. No redirects to other hosts.
@@ -343,9 +332,7 @@ def saved_record(state):
 def event(state, action, record):
     directory = state / "history"
     directory.mkdir(exist_ok=True)
-    write_json(
-        directory / (uuid4().hex + ".json"), {"action": action, "process": record}
-    )
+    write_json(directory / (uuid4().hex + ".json"), {"action": action, "process": record})
 
 
 def stop_exact(state, record):
@@ -425,9 +412,7 @@ def up(state):
         event(state, "started", record)
         for _ in range(50):
             if child.poll() is not None:
-                raise RuntimeError(
-                    "Owned Mailpit exited; private log and mailbox preserved"
-                )
+                raise RuntimeError("Owned Mailpit exited; private log and mailbox preserved")
             try:
                 owned_ports(record)
                 _mailbox_json(state)
