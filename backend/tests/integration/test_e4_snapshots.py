@@ -8,7 +8,7 @@ from uuid import UUID, uuid4
 
 import pytest
 from pydantic import SecretStr
-from sqlalchemy import event, func, insert, select, text
+from sqlalchemy import create_engine, event, func, insert, select, text
 from sqlalchemy.exc import ProgrammingError
 from sqlalchemy.orm import Session, sessionmaker
 
@@ -531,7 +531,7 @@ def test_single_page_initial_reads_leave_no_retained_copy(owners):
         assert session.scalar(select(func.count()).select_from(SyncSessionItem)) == 0
 
 
-def graph_fingerprint(engine, owner):
+def graph_fingerprint(engine, owner, session_ids=None):
     with engine.connect() as connection:
         return {
             table: tuple(
@@ -539,13 +539,140 @@ def graph_fingerprint(engine, owner):
                     text(
                         "SELECT count(*),encode(sha256(convert_to(COALESCE("
                         "jsonb_agg(to_jsonb(t) ORDER BY to_jsonb(t)::text),'[]'::jsonb)::text,"
-                        "'UTF8')),'hex') FROM app." + table + " t WHERE owner_id=:owner"
+                        "'UTF8')),'hex') FROM app."
+                        + table
+                        + " t WHERE owner_id=:owner"
+                        + (
+                            " AND "
+                            + ("id" if table == "sync_sessions" else "session_id")
+                            + "=ANY(:ids)"
+                            if session_ids is not None
+                            else ""
+                        )
                     ),
-                    {"owner": owner},
+                    {"owner": owner, "ids": session_ids},
                 ).one()
             )
             for table in ("sync_sessions", "sync_session_items")
         }
+
+
+@pytest.mark.parametrize(
+    "marker_exists", [True, False], ids=["existing-marker", "legacy-no-marker"]
+)
+def test_concurrent_retained_admission_retries_stale_rr_without_fifth_graph(
+    owners, monkeypatch, marker_exists
+):
+    engine, factory, owner, _ = owners
+    for _ in range(2):
+        add_weight(engine, owner)
+    first_pages = [snapshots.pull(factory, owner, {"limit": 1}, SECRET) for _ in range(3)]
+    with engine.begin() as connection:
+        ids = list(
+            connection.execute(
+                select(SyncSession.id).where(SyncSession.owner_id == owner)
+            ).scalars()
+        )
+        if not marker_exists:
+            # Model graphs retained by the former sync code, before it used E5.
+            connection.execute(
+                text("DELETE FROM app.read_admissions WHERE owner_id=:owner"), {"owner": owner}
+            )
+        counter_before = connection.execute(
+            text("SELECT position,xmin::text FROM app.sync_counters WHERE owner_id=:owner"),
+            {"owner": owner},
+        ).one()
+    original_graphs = graph_fingerprint(engine, owner, ids)
+    api = create_engine(
+        engine.url, connect_args={"options": "-c role=calorie_app_api"}, hide_parameters=True
+    )
+    locked, entered, release = Event(), Event(), Event()
+    release_second = Event()
+    sessions, pids, errors = {"A": [], "B": []}, {}, []
+    original_context = snapshots._context
+
+    def tagged_factory(label):
+        def create():
+            session = Session(api)
+            session.info["race_label"] = label
+            sessions[label].append(session)
+            return session
+
+        return create
+
+    def pause_context(session, *args):
+        label = session.info.get("race_label")
+        if label is None:
+            return original_context(session, *args)
+        connection = session.connection()
+        assert connection.get_execution_options()["isolation_level"] == "REPEATABLE READ"
+        pids[label] = connection.connection.driver_connection.info.backend_pid
+        if label == "B":
+            entered.set()
+        result = original_context(session, *args)
+        if label == "A":
+            locked.set()
+            assert release.wait(10)
+        elif len(sessions["B"]) == 1:
+            assert release_second.wait(10)
+        return result
+
+    def record_error(context):
+        errors.append(getattr(context.original_exception, "sqlstate", None))
+
+    monkeypatch.setattr(snapshots, "_context", pause_context)
+    event.listen(api, "handle_error", record_error)
+    try:
+        with api.connect() as connection:
+            assert connection.scalar(text("SELECT current_user")) == "calorie_app_api"
+        with ThreadPoolExecutor(max_workers=2) as pool:
+            a = pool.submit(snapshots.pull, tagged_factory("A"), owner, {"limit": 1}, SECRET)
+            try:
+                assert locked.wait(10)
+                b = pool.submit(snapshots.pull, tagged_factory("B"), owner, {"limit": 1}, SECRET)
+                assert entered.wait(10)
+                blocked, deadline = False, monotonic() + 5
+                with engine.connect() as connection:
+                    while monotonic() < deadline:
+                        blockers = connection.scalar(
+                            text("SELECT pg_blocking_pids(:pid)"), {"pid": pids["B"]}
+                        )
+                        if pids["A"] in blockers:
+                            blocked = True
+                            break
+                assert blocked, "B must establish its RR while waiting on A's real account lock"
+                release.set()
+                accepted = a.result(timeout=10)
+                assert accepted["page_token"] and accepted["checkpoint"] is None
+                assert graph_fingerprint(engine, owner)["sync_sessions"][0] == 4
+                release_second.set()
+                with pytest.raises(SyncFailure, match="sync_resources_exhausted") as refusal:
+                    b.result(timeout=10)
+                assert refusal.value.status == 503
+            finally:
+                release.set()
+                release_second.set()
+        assert errors == ["40001"]
+        assert len(sessions["A"]) == 1 and len(sessions["B"]) == 2
+        assert sessions["B"][0] is not sessions["B"][1]
+    finally:
+        event.remove(api, "handle_error", record_error)
+        api.dispose()
+    assert graph_fingerprint(engine, owner)["sync_sessions"][0] == 4
+    assert graph_fingerprint(engine, owner)["sync_session_items"][0] == 8
+    assert graph_fingerprint(engine, owner, ids) == original_graphs
+    with engine.connect() as connection:
+        assert (
+            connection.execute(
+                text("SELECT position,xmin::text FROM app.sync_counters WHERE owner_id=:owner"),
+                {"owner": owner},
+            ).one()
+            == counter_before
+        )
+    # A retained final page still supports byte-equivalent retry after admission.
+    final = follow(factory, owner, first_pages[0], 1)
+    assert final["checkpoint"] and final["page_token"] is None
+    assert follow(factory, owner, first_pages[0], 1) == final
 
 
 @pytest.mark.parametrize("scope", ["calorie-app", "calorie-app:energy_estimates_v1"])
@@ -558,11 +685,14 @@ def test_small_reads_at_four_live_graphs_preserve_them_without_writes(owners, mo
     frozen = graph_fingerprint(engine, owner)
     assert frozen["sync_sessions"][0] == 4 and frozen["sync_session_items"][0] == 40
     graph_writes = []
+    admissions = []
 
     def record(_connection, _cursor, statement, _parameters, _context, _many):
         sql = statement.lower().lstrip()
         if sql.startswith(("insert", "update", "delete")) and "sync_session" in sql:
             graph_writes.append(sql)
+        if "app.admit_read_session" in sql:
+            admissions.append(sql)
 
     event.listen(engine, "before_cursor_execute", record)
     try:
@@ -577,6 +707,7 @@ def test_small_reads_at_four_live_graphs_preserve_them_without_writes(owners, mo
             installation_id=scope,
         )
         assert read["entities"] == [] and read["checkpoint"] and read["page_token"] is None
+        assert admissions == []
         with pytest.raises(SyncFailure, match="sync_resources_exhausted"):
             snapshots.pull(factory, owner, {"limit": 1}, SECRET, installation_id=scope)
         # Count exactly fits; byte packing alone requires continuation.

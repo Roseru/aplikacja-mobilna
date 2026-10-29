@@ -101,8 +101,8 @@ def _context(session, owner_id, query):
         account = lock_account(session, owner_id)
     except DomainError as error:
         raise SyncFailure(error.status, error.code) from None
-    # All writers use account -> counter -> aggregate. The account lock also
-    # serializes creation/resource accounting across concurrent pull requests.
+    # All writers use account -> counter -> aggregate. Retained admission below
+    # also writes a tuple, so stale RR waiters retry before resource accounting.
     counter = session.scalar(
         select(SyncCounter).where(SyncCounter.owner_id == owner_id).with_for_update()
     )
@@ -210,9 +210,9 @@ def _items(session, owner_id, query, claims, high, installation_id):
                 text(
                     "SELECT app.e9_entity(id) FROM app.energy_versions WHERE owner_id="
                     ":owner ORDER BY revision"
-                ),
+                ).execution_options(yield_per=1),
                 {"owner": owner_id},
-            ).yield_per(1)
+            )
         ) as values:
             for value in values:
                 yield "entities", value
@@ -362,6 +362,9 @@ def _materialize(session, owner_id, query, secret, installation_id):
     response = _single_page(session, state, query, claims, secret, installation_id)
     if response is not None:
         return response
+    # Share E5's owner marker: its tuple write rejects a stale RR snapshot with
+    # 40001. A row lock alone would let concurrent reads exceed the graph cap.
+    session.execute(text("SELECT app.admit_read_session(:owner)"), {"owner": owner_id})
     count = session.scalar(
         select(func.count()).select_from(SyncSession).where(SyncSession.owner_id == owner_id)
     )
