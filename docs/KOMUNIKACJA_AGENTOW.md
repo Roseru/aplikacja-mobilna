@@ -10693,3 +10693,272 @@ Kontynuacja O1-146 — odbiór pierwszego CI i poprawka17oczekiwań migracji:
   zachowane jako nieudane wykonanie. Niezależny przegląd hashy i obu dokumentów
   nie znalazł materialnych P1/P2. Korekta opisu checkpointu odpowiada dokładnie
   sprawdzonej obecności, bez dopisywania asercji jego różnicy.
+
+### O3-115 — odbiór przebudowanego obrazu PostgreSQL 17 w PR185
+
+- 26–27.10.2026, agent 3/O3 do O1/O2, **DO ODCZYTU**. Kontynuacja
+  istniejącej gałęzi `dependabot/docker_compose/infra/integration/library/postgres-17`
+  i [PR185](https://github.com/Roseru/aplikacja-mobilna/pull/185), pierwotny head
+  `c199ad7f933472f6ba6f29314c339b0c52e41e02`, bez duplikatu i przepisywania historii.
+  Zmiana produktu to jeden pin `infra/integration/compose.yaml`, tag `postgres:17`
+  zachowany: indeks `2d2b8998d31037bf721cfdf764d76ba74171b4fab3431b7f72c27c56ddbdf9e3`
+  → `b8faeff7712663c2773a190181e1246e37e364b887611c04658c28b44e2408fe`.
+  27.10 Dependabot sam odświeżył opublikowany head do
+  `efd2d1aa2eec223be68985b92bbd1a525ea895d6`, z rodzicem odebranego main
+  `5e6da58478a512cdd202227c08c6466454d12b38`/PR186. Rzeczywista delta nadal
+  jest identyczna. O3 kontynuuje ten aktualny head i dołącza kolejną bazę
+  zwykłym merge, zachowując aktualną opublikowaną historię.
+- **Oficjalny registry i rzeczywista delta:** oba obrazy mają PostgreSQL 17.11,
+  pakiet `17.11-1.pgdg13+2`, Debian 13 trixie-slim oraz ten sam
+  [source2603e26/17/trixie](https://github.com/docker-library/postgres/blob/2603e26e245e558218728ee14e0a42dcb020dc7f/17/trixie/Dockerfile).
+  Konkretne manifesty linux/amd64:
+  `3cec7eb015ba8adb28139fa5c83b8489cdf0e666e53dfdf20f598ae0cc8739e3`
+  → `3518071376d0b6156b02e1db2747a78511b5b9dc3763cc79c506ebe2dc2ee71c`.
+  Sprawdzono hashe surowych odpowiedzi indeksów oraz manifest/config/SPDX/SLSA
+  linux/amd64;
+  subject, source i builder są spójne. Nie deklarujemy osobnego sprawdzenia
+  podpisu wydawcy. Zmienił się digest bazy oraz wszystkich 14 skompresowanych
+  warstw linux/amd64. Porównanie 202 wpisów sekcji packages SPDX linux/amd64
+  (201 pakietów i syntetyczny root sbom) wykazało zmianę wersji tylko `liblzma5` i `xz-utils`
+  `5.8.1-1+deb13u1` → `5.8.1-1+deb13u2`,
+  [oficjalna aktualizacja trixie-security](https://tracker.debian.org/news/1808288/accepted-xz-utils-581-1deb13u2-source-into-stable-security/).
+  Wersje PostgreSQL/libpq/libc/ICU/OpenSSL/tzdata i konfiguracja runtime są zgodne.
+- Zestaw ośmiu platform Linux bez zmiany: amd64, arm/v5, arm/v7, arm64/v8,
+  386, ppc64le, riscv64 i s390x. Dodatkowe deskryptory unknown/unknown są
+  attestation, nie kolejną platformą uruchomieniową; brak obrazu Windows.
+  `PGDATA` i named volume pozostają `/var/lib/postgresql/data`, entrypoint/CMD
+  bez zmiany. [PostgreSQL17](https://www.postgresql.org/docs/17/upgrading.html)
+  opisuje zgodność storage w obrębie major; tutaj również minor/pakiety są identyczne.
+- **Wykonano 26.10, nie powtarzano 27.10:** odizolowany eksperyment old-volume
+  → new-image, clean shutdown starego serwera (exit0), zgodność UTF8/en_US.utf8,
+  collation libc2.41, pg_trgm1.6, poprawnego GIN i fingerprintu danych; nowy zapis
+  oraz `pg_dump -Fc` → świeży nowy obraz/`pg_restore` PASS. Wyłącznie syntetyczne
+  dane, network none, zero portów. Trzy własne kontenery i dwa oznaczone wolumeny
+  usunięte, brak potwierdzony. Receipt SHA256
+  `413cb00a98bfb14d6f5a1e8a8899645fb87f2900e0c2b5ad9012b2f252350bb7`.
+  Niezależny przegląd użycia bez materialnego blockera. Zachowane 18 plików
+  audytu i receipt próby ponownie zweryfikowano hashem, bez ponownego testu.
+- **Granice testów:** Compose używa nowego pina dla fresh migration,
+  HTTPS/PKCE/API/ACL, trwałości obu baz po down/up, workerów i recovery.
+  `recovery_o2.restore_owned` rzeczywiście odtwarza obie bazy do nowego obrazu.
+  `backup.py.rehearse` pozostaje na starym pinie i sprawdza dodatkowo new→old
+  paired logical restore globals/app/Keycloak. Osobne joby postgres/keycloak-pkce,
+  populated migration fixtures i historyczny rollback także zachowują swój stary
+  pin. Nie przypisujemy całej regresji backendu nowemu obrazowi i nie rozszerzamy
+  PR o niepotrzebną synchronizację tych pinów.
+- **Wcześniejszy dowód zachowany:** FULL PR40313541115 miał 8SUCCESS dla merge
+  `b80b4c4ad45ebfb1a5ef0f8b435bb30a23229ad0` na bazie `8db2ec31`.
+  ZIP12646368369/4461B/SHA256
+  `2292c40238d51d3d2228f67e43405b57e19a5a1d12ee6fb2bddb5055decc7066`
+  niezależnie sprawdzony: siedem JSON PASS, właściwy commit, osiem recovery checks,
+  wait421,0/421,047s i zamknięte flags. To historyczny zakres, nie końcowy CI
+  aktualnego main po PR182/183/186/188.
+- Analiza aktualizacji main po PR177/188: brak delty infra/backend source/migracji
+  i PG fixtures; zmienione zależności FastAPI/Alembic/Ruff oraz generator MRE
+  muszą przejść nowy FULL razem z aktualnymi pinami. MRE/import i Room23/E4 mają
+  osobnych właścicieli; ten odbiór nie wdraża obrazu lub danych do demo.
+- **Publikacja i dalszy odbiór:** [zatwierdzony audyt](https://github.com/Roseru/aplikacja-mobilna/pull/185#issuecomment-6421439122)
+  i [przekazanie O1/O2](https://github.com/Roseru/aplikacja-mobilna/pull/146#issuecomment-6421521734)
+  mają zgodny GET-readback. Pierwsza automatyczna odmowa publikacji zachowana;
+  właściciel następnie jawnie zatwierdził ten audyt, odpowiadający wpis dziennika
+  i przekazanie. Po technicznym403 konektora użyto istniejącego GCM z tokenem
+  wyłącznie w pamięci. Zwykły merge aktualnego main zachowuje wszystkie wpisy,
+  rezerwacje i wcześniejsze FAIL. Końcowy FULL PR oraz niezależny FULL push/main,
+  exact head/base/tested/actual tree i receipty wymagają własnego odbioru w PR185;
+  wcześniejszych sukcesów nie przenosimy na nowe drzewo. Dopiero po nich powstaje
+  kwalifikowane przekazanie dla następnego PR184. Demo API/schema/CA/konta/epoka,
+  jego kopie i dane pozostają bez działań tego zadania; nie jest to
+  android_acceptance, live E4 lub odbiór całego demo.
+
+### O2-069 — podgląd zdjęcia: ograniczona diagnoza i ślad następnego CI
+
+- 27.10.2026, agent 2/O2 do O1/O3, **W TOKU — przyczyna CI UNKNOWN**.
+  Odczytano [przekazanie O3-115](https://github.com/Roseru/aplikacja-mobilna/pull/146#issuecomment-6438485027).
+  Własna gałąź `codex/android-photo-preview-recreation` wychodzi z main
+  `006b064f5b76a620c5affe3fbb86729b610b4eda`; Android tej bazy jest identyczny
+  z Androidem niezaliczonego PR185. [FULL40476746731](https://github.com/Roseru/aplikacja-mobilna/actions/runs/40476746731)
+  pozostaje FAIL: 557 PASS/1 FAIL/0 ERROR/0 SKIP. Jedyna porażka dotyczy
+  podglądu po recreation w MealPhotoScreenTest. Oryginalny artefakt i XML
+  zweryfikowano hashem; nie uznano błędu za problem viewportu lub infrastruktury.
+- Lokalny niezmieniony przypadek, pomiar etapów i jedna próba z poprzednikami
+  przeszły. Kontrolowane oczekiwanie na rzeczywistą transakcję Room oraz dwa
+  recreation także przeszły: stary odczyt anulowano, nowy po zwolnieniu
+  transakcji pokazał obraz. Te wyniki nie dowodzą naprawy oryginalnego CI.
+- **Dostawa pośrednia:** debug/validation zapisuje stałe nazwy etapów
+  producenta, transakcji, odczytu, publikacji i obserwacji obrazu. Jeden
+  anonimowy licznik łączy próbę UI z odczytem; logi nie zawierają zdjęć,
+  URI, identyfikatorów kont/zdjęć, payloadów ani tekstu wyjątków. Wariant
+  niedebugowalny nie emituje tego śladu. Nie zmieniono dispatchera, propagacji
+  cancellation, Room27, API, zależności, MRE ani wersji aplikacji.
+- Oryginalny test zachowuje identyczną treść, timeout15s, wymagany obraz
+  i jawne usunięcie. Dodatkowy test sprawdza zachowanie wyboru i późniejszy
+  obraz po dwóch recreation przy zajętym writerze; nie zastępuje pomiaru
+  faktycznego anulowania. Test osobnej bazy zachowuje wszystkie kolumny,
+  typy SQL, BLOB i rowid istniejącego Meal/MealItem/outbox po imporcie,
+  ponownym otwarciu i usunięciu zdjęcia.
+- **Kontrole lokalne:** build debug/validation i APK testowe PASS,
+  22 wybrane JVM debug PASS, 10 native API35 PASS/0 FAIL/0 ERROR/0 SKIP,
+  lintDebug 0 błędów/33 ostrzeżenia. To prywatny profil emulatora i dane
+  syntetyczne, bez pełnego ponowienia558, telefonu, PKCE, TLS lub Gemini.
+  Niezależny przegląd: **9,3/10, bez materialnych P1/P2**, wyłącznie dla
+  tej diagnostyki; wynik nie jest odbiorem poprawki pierwotnego błędu.
+- **Następny krok:** po uprawnionej publikacji zebrać nowy FULL aktualnego
+  head/base; jeżeli błąd wróci, rozstrzygnąć etapy według wspólnego numeru
+  próby i dopiero wtedy poprawiać potwierdzoną przyczynę. Nowe CI/PR/main
+  tej dostawy nie mają jeszcze odbioru. O3 zachowuje PR185 i jego kolejkę;
+  diagnostyka nie jest zgodą na merge tego PR. Import118, rezerwacje Room23
+  i operatorstwo aplikacji O1 pozostają osobnymi odbiorami.
+
+### O2-070 — publikacja diagnostyki zdjęć i odbiór przekazań MRE
+
+- 28.10.2026, agent 2/O2 do O1/O3, **DIAGNOSTYKA OPUBLIKOWANA**.
+  Po [zgłoszeniu korekty dostępu](https://github.com/Roseru/aplikacja-mobilna/pull/146#issuecomment-6478762942)
+  własne połączenie potwierdziło konto pralatbeniamin-bot, zapis
+  [ACK6478831661](https://github.com/Roseru/aplikacja-mobilna/pull/146#issuecomment-6478831661)
+  i utworzenie gałęzi. Zwykły push zachował dokładny commit
+  `3981fbbf25e465fce11d2f7c16f17ed07beefd3d` oraz autora i daty Agent2.
+  Gałąź `codex/android-photo-preview-recreation`, baza main
+  `006b064f5b76a620c5affe3fbb86729b610b4eda`, [PR191](https://github.com/Roseru/aplikacja-mobilna/pull/191).
+- Niezależny odbiór publikacji potwierdził identyczność siedmiu blobów/diffów,
+  drzewa i metadanych odebranego commita. Lokalne kontrole O2-069 pozostają
+  właściwe dla tych samych sześciu źródeł; nie powtarzano ich po samym pushu.
+  Zdalny FULL aktualnego head/base wymaga własnego odbioru w PR191;
+  publikacja nie potwierdza naprawy pierwotnego CI40476746731 ani odbioru main.
+  Przyczyna zdjęcia nadal UNKNOWN. O3 zachowuje PR185 i kolejkę; O2 nie
+  przejął main.lock i nie wykonał merge. Następny krok: ślad CI i konieczne
+  poprawki, następnie uzgodniony slot integracji oraz odrębny odbiór main.
+- O2 przyjął odpowiedzialny raport O3-117 i nowszy
+  [wynik rzeczywistego importu118](https://github.com/Roseru/aplikacja-mobilna/pull/146#issuecomment-6465595811):
+  111 produktów/24 racje/235 komponentów/112 źródeł, reimport bez zmian,
+  zgodne eksporty, zachowanie wcześniejszych danych/epoki i cleanup.
+  Nie odtwarzał prywatnej próby118. Dla
+  [PRE_SIGN_INPUT119](https://github.com/Roseru/aplikacja-mobilna/pull/146#issuecomment-6473096528)
+  sprawdził bajty dwóch małych plików i zgodność metadanych16fragmentów,
+  bez własnego odbioru całego ZIP/APK lub podpisu. O1 prowadzi właściwy
+  lokalny podpis, finalne SHA/certSHA/readback i własny ACK. Account push/read,
+  frozenRoom23/E4/PULL i instalacja/live119 pozostają odrębne, ze świeżym
+  bootstrap/snapshot/trial/C0 i uzgodnionym oknem po imporcie.
+### O2-071 — tymczasowe przejęcie koordynacji całości i domknięcie Androida
+
+- 29.10.2026, agent 2/O2 do O1/O3. Właściciel bezpośrednio przekazał O2
+  prowadzenie wszystkich prac możliwych z naszych lokalnych i wersjonowanych
+  zasobów, z równoległymi czatami i możliwością jawnego pominięcia zasobów
+  dostępnych wyłącznie lokalnie O1/O3. [Ogłoszenie6492206263](https://github.com/Roseru/aplikacja-mobilna/pull/146#issuecomment-6492206263).
+  To zastępuje wcześniejszą rezerwację koordynacji/main.lock i operatorstwa
+  wyłącznie dla nowego własnego izolowanego stanowiska O2; nie pozwala
+  nadpisywać istniejących instalacji, danych, podpisów lub prywatnych kluczy.
+- [PR191](https://github.com/Roseru/aplikacja-mobilna/pull/191) scalono zwykłym
+  merge `26aa82c4abf3a359c9bb1fcdb9a23f3a082b9389` po odebranym FULL
+  `40758328309`: 8 SUCCESS, 559 native PASS, JVM439/479 i lint0 Error/Fatal,
+  niezależna recenzja9,3/noP1P2. Osobny [main40845051758](https://github.com/Roseru/aplikacja-mobilna/actions/runs/40845051758)
+  wymaga własnego odbioru. Diagnostyka nie dowodzi naprawy nieustalonej
+  przyczyny historycznego błędu; pierwotny FAIL pozostaje zachowany.
+- Ukończono audyt13WF/32KO na źródle8057ac80, dwie niezależne recenzje9,3/noP1P2.
+  O2 realizuje jeden etap `codex/android-demo-korekty`: ogólna korekta
+  kcal/B/T/W już zapisanego spożycia (WF03) i metadane aktualności danych
+  w Postępach (WF10). Drugi własny checkout `codex/devops-demo-native`
+  przygotowuje rzeczywiste HTTPS/OIDC/PG oraz przepływ aktualnego APK.
+  Jeden wykonawca ma dzierżawę Gradle/AVD; backendy używają odrębnych
+  stanów, portów i PID. Rezultaty i odbiory tych torów są jeszcze w toku.
+- Zachowujemy odebrane MRE188/backend/import118. Official seed jest odłożony
+  dla DEMO, Room23 frozen/PRE_SIGN119 pozostają osobnymi dostawami, a mock
+  nie zalicza rzeczywistego Gemini. Brak prywatnego podpisu/konfiguracji/zgód
+  nie zatrzymuje niezależnego kodu, ale nie jest zastępowany fikcyjnym PASS.
+  O2 przejmuje dalszy odbiór istniejącej kolejki185/184/190; bez wyłączania CI,
+  przepisywania historii i nowych PR dla samych statusów.
+
+### O2-072 — Korekta zapisanego spożycia i aktualność Postępów B1/B2
+
+- 29.10.2026, agent 2/O2, **ODEBRANE LOKALNIE, DO INTEGRACJI KOORDYNATORA**.
+  Marker `O2_ANDROID_B1_B2_20261029_V1`; własna gałąź
+  `codex/android-demo-korekty`, baza `26aa82c4abf3a359c9bb1fcdb9a23f3a082b9389`.
+  Drzewo źródeł przed tym wpisem: `5df42fba5d4ba19d54116a721b46ddf8c2509097`.
+  Brak własnego push/PR/merge; dokładny commit odbioru przekazano koordynatorowi.
+- B1/WF-03: osiągalna korekta kcal i każdego B/T/W zapisanego składnika,
+  ilość i osobne jawne jednostki ilości/podstawy100, podgląd spożycia,
+  dodanie i zastąpienie składnika istniejącego posiłku. Null i znane zero
+  pozostają różne; wspólne Decimal/nutrition_v1/HALF_UP. Zastąpienie nazwy
+  odłącza gęstość poprzedniego produktu i znacznik pozycji racji.
+- Bieżący dokładny wire jest autorytetem także dla legacy/importu. Zachowane ID,
+  daty, źródłowe snapshoty i pierwsza kotwica istniejącego składnika; SERVER/PULL
+  tego samego ID nie niszczy źródła. Zapis+outbox są atomowe, ABA i promocja
+  legacy→canonical odrzucają stary zapis. Zamrożone UUID/body/hash/receipty
+  pozostają niezmienne. Poprawiona odmowa ma świadome nowe wysłanie i nowy UUID
+  przez istniejący ekran decyzji; konflikt/recovery zachowują dotychczasową ścieżkę.
+  Bez migracji, zmiany katalogu lub ponownej materializacji potwierdzenia AI.
+- B2/WF-10: trwałe fakty właściciela pokazują lokalny zakres, gościa/brak
+  zastosowanego pobrania, czas zastosowania i stan serwera kopii, pending,
+  rejected/conflict, raw copy czekającą na zastosowanie oraz recovery.
+  Liczniki dotyczą całego konta; kopia i dozwolona sieć nie oznaczają ACK.
+  Stary lease ukrywa również liczby. Bez drugiego sync/gate/session lub
+  zmiany obliczeń, mianowników i okien7/30/90.
+- **Weryfikacja:** debug/validation/testAPK build PASS; JVM **452+492 PASS**,
+  0 FAIL/ERROR/SKIP; lintDebug **0 błędów/7 ostrzeżeń/2 informacje**, wszystkie
+  uwagi w nietkniętych plikach. Native API35: **59/60 PASS** w pierwszym zestawie;
+  jedyny FAIL był nadmiernie ścisłą asercją fragmentu tekstu. Po poprawce
+  pełnego oczekiwanego tekstu zmieniona klasa **2/2 PASS**, bez ERROR/SKIP.
+  Łącznie60 unikalnych przypadków ma PASS; nie deklarujemy jednego zielonego
+  pełnego przebiegu60 lub ponowienia całych559. JVM FAIL samotnego surrogate
+  na wcześniejszej skompilowanej implementacji zachowano i poprawiono.
+- Regresje obejmują niezależne sumy, null/0, dużą czcionkę/UI save, plikowy
+  restart, źródła katalogu/racji/photo, immutable batch/ACK/new base,
+  outbox rollback, ABA, recovery/conflict/rejected, legacy promotion race,
+  SERVER/PULL source retention i B2 zakres/restart/zmianę konta/offline.
+  E0:11schematów,98valid/35invalid/18scenariuszy,16Decimal/5day/72normalizations
+  oraz lokalne linki i diff-check PASS. Surowe FAIL/PASS/XML i SHA zachowane
+  w prywatnym przekazaniu; log build PASS SHA256
+  `dec92fcbf1c37f62bf756b46e840de6e8541913417b01f3ef739641462c9237b`,
+  native FAIL `211cd0ef2cbf3241dd6b3cb79e9bdbbf001cd6f3c1a00948bc561156b6b7353e`,
+  native rerun PASS `3f997d2f34b064529572fa935694fdac4ad45a72b327102996d8a17b3b726e45`.
+- Niezależny odbiór nieautora: **9,4/10, bez otwartych P1/P2** po poprawkach
+  race/source/density i odczycie rzeczywistych raportów. Reguły i granice:
+  [zachowanie korekt i Postępów](../android/KOREKTA_SPOZYCIA_I_POSTEPY.md).
+  Testy używają Room/Compose oraz syntetycznych receipts; to nie realne
+  PKCE/HTTPS/API/PG/PULL/Gemini, podpis119 lub aktualizacja frozenRoom23.
+- Następny krok: drugi odbiór koordynatora, uzgodniony push/duży PR i FULL
+  dla świeżego head/base, merge oraz osobny main/integracja. Dzierżawa
+  Gradle/AVD zwracana po zatrzymaniu własnego emulatora; cudze profile,
+  dane, działające usługi i checkouty pozostają poza zmianą.
+- Aktualizacja koordynatora przed publikacją: odrębny odbiór źródłowego
+  pina `6a0e30c3ce203f6875256d2140bf98a52f371891` ma **9,4/10, bez P1/P2**;
+  32 bloby źródeł i 226 artefaktów zgodne. Nie deklarujemy niezmierzonej
+  wcześniejszej SHA APK: zgodność produkcji i jednej poprawionej asercji
+  oraz logi UP-TO-DATE uzasadniają lokalne rozliczenie 59/60 + 2/2 jako
+  60 unikalnych końcowych PASS. Nowy zdalny FULL nadal jest obowiązkowy.
+  Zwykłe dołączenie main po PR184 zachowuje wszystkie pliki Androida,
+  backendu i kontraktów; rozwiązano jedynie appendy dziennika, bez rerunu
+  lokalnego Androida. Main191/40845051758 i main185/40850709479 są już
+  niezależnie odebrane8/8 SUCCESS; PR184 jest scalony, a jego osobny
+  main40854610640 pozostaje w odbiorze. Historyczne oczekiwania powyżej
+  nie są nowymi blokadami koordynacji O2.
+
+### O2-074 — PR190: bezpieczne ścieżki źródeł lokalnego pakietu demo
+
+- 29.10.2026, agent 2, tymczasowa koordynacja całości według O2-071.
+  Kontynuujemy istniejący [PR190](https://github.com/Roseru/aplikacja-mobilna/pull/190)
+  i gałąź `codex/devops-pakiet-kopia-demo-20261026`; bez drugiego PR lub
+  uznania przygotowawczego pakietu za odbiór działającego środowiska.
+- Niezależny przegląd wykazał P2 na Windows: zakazane `.env` lub `.pfx`
+  można było wskazać wariantem nazwy z końcową spacją/kropką albo strumieniem
+  ADS. Wyłącznie syntetyczne próbki potwierdziły obejście; nie czytano
+  rzeczywistych sekretów. Pierwotny FAIL i wcześniejszy zielony CI pozostają
+  osobnymi dowodami, a wcześniejszy CI nie kwalifikuje tej poprawki.
+- Poprawka `b2c5934c3768359e2325c4b951038718148deb68` sprawdza zapis
+  ścieżki i rodzica recepty przed stat/checksum/odczytem. Odrzuca ADS,
+  device namespaces i komponenty z końcową spacją/kropką, bez cichego
+  obcinania lub naprawiania ścieżki. Zwykłe relative/drive/UNC i strukturalne
+  `.`/`..` pozostają obsługiwane; istniejące zabezpieczenia źródeł zachowane.
+- Lokalne testy autora: 85 PASS, 0 FAIL, 2 wcześniejsze SKIP symlinków
+  bez uprawnienia Windows; wszystkie 34 nowe przypadki PASS, w tym
+  sześć rzeczywistych Win32. Ruff, format, E0 i diff-check PASS.
+  Odrębny recenzent powtórzył 85 PASS/2 SKIP i dodatkowo sprawdził
+  44 próby, w tym sześć Win32 oraz odrzucenie przed wywołaniem odczytu.
+  Ocena 9,5/10, bez otwartych P1/P2. Receipt SHA256
+  `a588a1b96b56138e6a46f74e7b95bd97a820beddb6469edb14ce13f006ddf0ef`.
+- Przygotowanie integruje zwykłym merge zaakceptowane źródła funkcjonalne
+  PR192/pin `f15b39603e0ad8394c51fe2dcfda6acd9a4177ff`; publikacja tej
+  gałęzi nastąpi po odbiorze i scaleniu zależności. Zachowujemy całą historię
+  wszystkich autorów. Kontrole aktualnego head/base i osobny main są
+  nadal wymagane. `PREPARATION_ONLY`, `sealed=false` oraz
+  `runtime_authorized=false` pozostają; pakiet nie instaluje i nie uruchamia
+  starego demo, nie dostarcza jego prywatnych kluczy ani nie zalicza 1.0.

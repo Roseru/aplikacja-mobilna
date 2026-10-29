@@ -286,6 +286,49 @@ object LegacyImportWire {
         item.has("exact_snapshot") && !item.isNull("exact_snapshot") -> item.getJSONObject("exact_snapshot")
         else -> null
     }
+    private fun rationPosition(ration: JSONObject?, raw: Any?, product: JSONObject?, amount: Any, unit: String,
+        metadata: LegacyImportMetadata, positions: MutableSet<Int>, path: String): Any {
+        // A manually added/replaced ingredient has no component association, even in a ration meal.
+        if (ration == null || raw == null || raw === JSONObject.NULL) return JSONObject.NULL
+        val proof = product?.let { "${it.getString("product_id")}:${it.getString("revision")}" }
+        if (proof == null || !metadata.confirmed || proof !in metadata.provenCatalogProducts)
+            review("ration_proof_review", path)
+        val provenProduct = checkNotNull(product)
+        val position = raw.toString().toInt()
+        require(positions.add(position))
+        val components = ration.getJSONArray("components")
+        val component = (0 until components.length()).map { components.getJSONObject(it) }
+            .single { it.getInt("position") == position }
+        val reference = component.getJSONObject("product")
+        require(reference.getString("product_id") == provenProduct.getString("product_id") &&
+            reference.getInt("revision") == provenProduct.getString("revision").toInt())
+        val pack = component.getJSONObject("quantity")
+        require(pack.getString("unit") == unit && BigDecimal(amount.toString()) <= BigDecimal(pack.getString("amount")))
+        return position
+    }
+
+    /** The current exact consumption is a derivative; the source snapshot remains historical evidence. */
+    private fun currentMealItem(item: JSONObject, ids: LegacyImportIds, metadata: LegacyImportMetadata,
+        ration: JSONObject?, positions: MutableSet<Int>, path: String): JSONObject? {
+        val raw = optional(item, "wirePayload") ?: return null
+        val current = StrictJson.read(raw.toByteArray(Charsets.UTF_8))
+        val product = current.optJSONObject("product")
+        val proof = product?.let { "${it.getString("product_id")}:${it.getInt("revision")}" }
+        val proven = proof != null && metadata.confirmed && proof in metadata.provenCatalogProducts
+        // A correction may clear ProductRef while retaining a proven association to its original component.
+        val snap = if (product == null && ration != null && !current.isNull("ration_component_position")) snapshot(item) else null
+        val originalProduct = snap?.optJSONObject("product")
+            ?: snap?.optJSONObject("original_consumption")?.optJSONObject("product")
+        val quantity = current.getJSONObject("quantity")
+        val position = rationPosition(ration, current.opt("ration_component_position"), product ?: originalProduct,
+            quantity.get("amount"), quantity.getString("unit"), metadata, positions, path)
+        current.put("item_id", itemId(ids, text(item, "id"))).put("ration_component_position", position)
+        if (!proven) {
+            current.put("product", JSONObject.NULL)
+            if (current.getString("nutrition_origin") == "catalog_snapshot") current.put("nutrition_origin", "manual")
+        }
+        return current
+    }
     private fun meal(source: LegacyImportSource, row: JSONObject, ids: LegacyImportIds,
         metadata: LegacyImportMetadata, dependencies: MutableList<LegacyImportDependency>): JSONObject {
         val items = if (source.items.isNotEmpty()) source.items.map(::legacy) else {
@@ -298,6 +341,7 @@ object LegacyImportWire {
         }
         val positions = mutableSetOf<Int>()
         val wireItems = items.mapIndexed { index, item ->
+            currentMealItem(item, ids, metadata, ration, positions, "items[$index]")?.let { return@mapIndexed it }
             val path = "items[$index]"; val snap = snapshot(item)
             val privateProduct = snap?.optJSONObject("private_product")
             val catalog = snap?.optJSONObject("product")
@@ -322,22 +366,8 @@ object LegacyImportWire {
                 val sources = snap!!.optJSONArray("sources") ?: review("density_source_review", "$path.sources")
                 require((0 until sources.length()).any { sources.getJSONObject(it).getString("source_id") == densitySource })
             }
-            val position = if (ration == null) JSONObject.NULL else {
-                if (!proven) review("ration_proof_review", path)
-                val raw = optional(item, "rationComponentPosition", "ration_component_position")
-                    ?: review("ration_proof_review", "$path.rationComponentPosition")
-                val position = raw.toInt()
-                require(positions.add(position))
-                val components = ration.getJSONArray("components")
-                val component = (0 until components.length()).map { components.getJSONObject(it) }
-                    .single { it.getInt("position") == position }
-                val reference = component.getJSONObject("product")
-                require(reference.getString("product_id") == catalog!!.getString("product_id") &&
-                    reference.getInt("revision") == catalog.getString("revision").toInt())
-                val pack = component.getJSONObject("quantity")
-                require(pack.getString("unit") == unit && BigDecimal(amount.toString()) <= BigDecimal(pack.getString("amount")))
-                position
-            }
+            val position = rationPosition(ration, optional(item, "rationComponentPosition", "ration_component_position"),
+                catalog, amount, unit, metadata, positions, path)
             JSONObject().put("item_id", itemId(ids, text(item, "id")))
                 .put("name", product?.getString("name") ?: text(item, "productName", "product_name"))
                 .put("product", if (proven) JSONObject().put("product_id", catalog!!.getString("product_id"))

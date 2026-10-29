@@ -7,6 +7,7 @@ import androidx.room.*
 import androidx.room.migration.Migration
 import androidx.sqlite.db.SupportSQLiteDatabase
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.NonCancellable
 import kotlinx.coroutines.withContext
 import pl.roseru.kalorie.data.*
@@ -70,25 +71,50 @@ class MealPhotoStore(private val context: Context, private val db: CalorieDataba
             }
         }
     }
-    suspend fun preview(id: String) = withContext(Dispatchers.IO) {
-        val row=db.withTransaction {
-            owners.requireCurrent(lease)
-            requireNotNull(db.photoDao().get(lease.storageScope,id))
-        }
-        // File IO, hashing and image decoding must not hold the database writer.
-        val bytes=AtomicFile(imageFile(id)).openRead().use {MealPhotoPreparation.bounded(it,MealPhotoPreparation.OUTPUT_BYTES)}
-        require(bytes.size==row.byteCount && sha(bytes)==row.sha256)
-        val bitmap=requireNotNull(BitmapFactory.decodeByteArray(bytes,0,bytes.size))
+    suspend fun preview(id: String) = loadPreview(id,null)
+    internal suspend fun preview(id: String, diagnosticRequest: Long) = loadPreview(id,diagnosticRequest)
+    private suspend fun loadPreview(id: String, diagnosticRequest: Long?) = withContext(Dispatchers.IO) {
+        fun trace(phase:PhotoPreviewDiagnostics.Phase)=PhotoPreviewDiagnostics.record(context,diagnosticRequest,phase)
+        trace(PhotoPreviewDiagnostics.Phase.STORE_START)
         try {
-            require(bitmap.width==row.width && bitmap.height==row.height)
-            db.withTransaction {
+            trace(PhotoPreviewDiagnostics.Phase.TX1_WAIT)
+            val row=db.withTransaction {
+                trace(PhotoPreviewDiagnostics.Phase.TX1_ENTER)
                 owners.requireCurrent(lease)
-                check(db.photoDao().get(lease.storageScope,id)==row)
+                requireNotNull(db.photoDao().get(lease.storageScope,id))
             }
-            bitmap
-        }catch(error:Throwable){
-            bitmap.recycle()
+            trace(PhotoPreviewDiagnostics.Phase.TX1_END)
+            // File IO, hashing and image decoding must not hold the database writer.
+            trace(PhotoPreviewDiagnostics.Phase.READ_START)
+            val bytes=AtomicFile(imageFile(id)).openRead().use {MealPhotoPreparation.bounded(it,MealPhotoPreparation.OUTPUT_BYTES)}
+            require(bytes.size==row.byteCount && sha(bytes)==row.sha256)
+            trace(PhotoPreviewDiagnostics.Phase.READ_END)
+            trace(PhotoPreviewDiagnostics.Phase.DECODE_START)
+            val bitmap=requireNotNull(BitmapFactory.decodeByteArray(bytes,0,bytes.size))
+            trace(PhotoPreviewDiagnostics.Phase.DECODE_END)
+            try {
+                require(bitmap.width==row.width && bitmap.height==row.height)
+                trace(PhotoPreviewDiagnostics.Phase.TX2_WAIT)
+                db.withTransaction {
+                    trace(PhotoPreviewDiagnostics.Phase.TX2_ENTER)
+                    owners.requireCurrent(lease)
+                    check(db.photoDao().get(lease.storageScope,id)==row)
+                }
+                trace(PhotoPreviewDiagnostics.Phase.TX2_END)
+                trace(PhotoPreviewDiagnostics.Phase.STORE_RETURN)
+                bitmap
+            } catch(error:Throwable) {
+                bitmap.recycle()
+                throw error
+            }
+        } catch(error:CancellationException) {
+            trace(PhotoPreviewDiagnostics.Phase.STORE_CANCEL)
             throw error
+        } catch(error:Exception) {
+            trace(PhotoPreviewDiagnostics.Phase.STORE_FAILED)
+            throw error
+        } finally {
+            trace(PhotoPreviewDiagnostics.Phase.STORE_FINALLY)
         }
     }
     /** Stable prepared image for a separately persisted upload; IO never holds a Room transaction. */

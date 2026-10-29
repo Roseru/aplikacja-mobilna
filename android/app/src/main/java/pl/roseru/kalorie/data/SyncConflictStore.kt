@@ -48,6 +48,11 @@ class ConflictTicket internal constructor(internal val lease: OwnerLease, intern
     val restoresAsCopy get() = serverState == ConflictServerState.DELETED && !localDeleted
     val canChoose get() = serverState != ConflictServerState.UNAVAILABLE &&
         evidence.code in setOf("revision_conflict", "entity_deleted", "entity_id_reserved")
+    /** An explicit new intent after a final rejection, never a retry of the rejected UUID/body. */
+    val canRetryCorrected get() = evidence.entityType == "meal" && evidence.status == "rejected" &&
+        evidence.code !in setOf("revision_conflict", "entity_deleted", "entity_id_reserved") &&
+        evidence.originalAction == "upsert" && !localDeleted && serverState != ConflictServerState.DELETED &&
+        localPayload != evidence.originalPayload
     override fun toString() = "ConflictTicket(redacted)"
 }
 
@@ -138,7 +143,8 @@ class SyncConflictStore(private val db: CalorieDatabase, private val schema: Syn
 
     /** The entire decision is one transaction, including replacement identity and queue changes. */
     suspend fun choose(ticket: ConflictTicket, choice: ConflictChoice): String? = withContext(Dispatchers.IO) {
-        check(ticket.canChoose)
+        val retryCorrected = choice == ConflictChoice.LOCAL && ticket.canRetryCorrected
+        check(ticket.canChoose || retryCorrected)
         val source = ticket.source; val lease = ticket.lease
         val restore = choice == ConflictChoice.LOCAL && ticket.restoresAsCopy
         val target = if (restore) UUID.randomUUID().toString() else source.entity.id
@@ -150,9 +156,11 @@ class SyncConflictStore(private val db: CalorieDatabase, private val schema: Syn
             for (i in 0 until items.length()) items.getJSONObject(i).put("item_id", UUID.randomUUID().toString())
             payload = MealWire.read(StrictJson.canonical(value), schema).canonical
         }
-        val base = if (restore) null else ticket.serverRevision
+        // A rejection did not apply the old mutation. With no observed current version, retain
+        // its original base (including null for create) instead of inventing an acknowledgement.
+        val base = if (restore) null else if (retryCorrected) ticket.serverRevision ?: source.operation.baseRevision else ticket.serverRevision
         val send = localWins && !(deleted && ticket.serverState == ConflictServerState.DELETED)
-        if (send && !restore) checkNotNull(base)
+        if (send && !restore && !retryCorrected) checkNotNull(base)
         val operationId = if (send) UUID.randomUUID().toString() else null
         val wire = operationId?.let { id -> when (source.operation.entityType) {
             "meal" -> MealWire.operation(id, target, ticket.evidence.epoch, base, payload.takeUnless { deleted }, schema)
@@ -186,7 +194,11 @@ class SyncConflictStore(private val db: CalorieDatabase, private val schema: Syn
                     if (mealWire != null) {
                         val items = db.localMealItems(lease.storageScope,localTarget,mealWire).map { fresh ->
                             val original = entity.meal.items.singleOrNull { it.id == fresh.id }
-                            if (localWins && !restore && original != null) original.copy(grams = fresh.grams, wirePayload = fresh.wirePayload) else fresh
+                            when {
+                                localWins && !restore && original != null -> original.copy(grams = fresh.grams, wirePayload = fresh.wirePayload)
+                                !restore && original != null -> fresh.copy(snapshotJson = original.snapshotJson)
+                                else -> fresh
+                            }
                         }
                         items.forEach { fresh -> check(db.dao().itemById(fresh.id)?.mealId.let { it == null || it == localTarget }) }
                         if (!restore) entity.meal.items.forEach { db.dao().removeItem(it) }

@@ -48,7 +48,8 @@ internal object CanonicalMealRows {
 
 /** Local edits remain possible during recovery. Never reinterpret a legacy outbox row as wire JSON. */
 internal class CanonicalMealEditor(private val db:CalorieDatabase,private val context:android.content.Context,private val lease:OwnerLease) {
-    suspend fun change(id:String,itemId:String?=null,amount:String?=null,remove:Boolean=false):Boolean=withContext(Dispatchers.IO) {
+    suspend fun change(id:String,itemId:String?=null,amount:String?=null,remove:Boolean=false,
+        ingredient:MealIngredientInput?=null,add:Boolean=false):Boolean=withContext(Dispatchers.IO) {
         val dao=db.dao();val owners=LocalOwnerStore(db)
         val source=db.withTransaction {
             owners.requireCurrent(lease)
@@ -62,7 +63,9 @@ internal class CanonicalMealEditor(private val db:CalorieDatabase,private val co
         val schema=CanonicalMealRows.schema(context)
         val original=MealWire.read(checkNotNull(current.meal.wirePayload),schema)
         val wireItemId=itemId?.let {local->db.importDao().items(lease.storageScope,id).firstOrNull {it.localId==local}?.wireId ?: local}
-        val next=if(wireItemId==null)null else if(remove)original.without(wireItemId,schema) else original.withAmount(wireItemId,checkNotNull(amount),schema)
+        val next=if(wireItemId==null)null else if(remove)original.without(wireItemId,schema)
+            else if(ingredient!=null)original.withIngredient(wireItemId,ingredient,schema,add)
+            else original.withAmount(wireItemId,checkNotNull(amount),schema)
         val deleted=next==null;val wire=next?:original
         val wireContext=checkNotNull(current.meal.wireContext)
         val contextCurrent=binding!=null && !binding.requiresRecovery && wireContext==CanonicalMealRows.context(binding)
@@ -77,8 +80,12 @@ internal class CanonicalMealEditor(private val db:CalorieDatabase,private val co
         val meal=current.meal.copy(localRevision=Math.addExact(current.meal.localRevision,1),deleted=deleted,wirePayload=wire.canonical)
         val items=if(deleted)current.items else db.localMealItems(lease.storageScope,id,wire).map { fresh ->
             // Editing a wire snapshot must retain local private-product/source associations.
-            val original=current.items.single {it.id==fresh.id}
-            original.copy(grams=fresh.grams,wirePayload=fresh.wirePayload)
+            val prior=current.items.singleOrNull {it.id==fresh.id}
+            if(prior==null) {check(add && ingredient!=null);fresh}
+            else if(ingredient!=null && fresh.id==itemId)prior.copy(productName=fresh.productName,grams=fresh.grams,
+                wirePayload=fresh.wirePayload,rationComponentPosition=fresh.rationComponentPosition,
+                snapshotJson=prior.sourceSnapshot())
+            else prior.copy(grams=fresh.grams,wirePayload=fresh.wirePayload)
         }
         val outbox=OutboxEntity(operationId,lease.storageScope,"meal",wireId,if(deleted)"delete" else "upsert",base,payload?:"null",Instant.now().toString(),status,"sync-v1",operation,wireContext)
         db.withTransaction {
@@ -87,7 +94,7 @@ internal class CanonicalMealEditor(private val db:CalorieDatabase,private val co
             dao.updateMeal(meal)
             if(!deleted) {
                 val ids=items.map {it.id}.toSet();current.items.filter {it.id !in ids}.forEach {dao.removeItem(it)}
-                items.forEach {dao.updateItem(it)}
+                items.forEach {if(current.items.any {old->old.id==it.id})dao.updateItem(it) else dao.insertItem(it)}
             }
             queued.filter {!it.attempted}.forEach {dao.updateOperation(it.copy(status="superseded"))}
             dao.enqueue(outbox)
