@@ -11166,6 +11166,32 @@ Aktualizacja O2-073 — **wykryty rzeczywisty brak startu obserwatorów APK**:
   Sam build nie zalicza E4. Nowy trial dopiero na odebranym nowym APK;
   backend pozostaje osobnym aktorem na pinie 8638 / generacji afda.
 
+Kontynuacja O2-073 — **nowy aktor APK i rzeczywiste kontrole zimnego startu**:
+
+- Źródła zamrożono na `d19f85552f3f29fe3da4205d0c63b8e9372cafd0`, Android tree
+  `82daf6fee0f84c98e7b3c8f53584fe291f12e499`; po commicie assemble PASS.
+  Manifest zapisuje SHA faktycznie kompilowanych plików i blobów Git oraz
+  jawną normalizację CRLF. App 0.8.41.validation / 1052 ma SHA256
+  `116a546f6677716131f003111c67dff3ef91e6006f704e6fcb0df146ba99abba`,
+  test APK `3009d8e7eafbee3ebc50fe27774e5da9886979e5d62e671905b0734a799c345b`.
+- Ten sam nowy cold test dał osobno: stary app 1051 EXPECTED_FAIL/count0,
+  prywatny pojedynczy mutant early-ctor+sequential EXPECTED_FAIL/count0,
+  właściwy GREEN 1052 PASS/count2. Każdy ma rzeczywisty nowy PID po force-stop,
+  odczyt zainstalowanych base.apk i brak UI/manual sync/gettera runtime.
+  Oba negatywy pozostają FAIL; nie dodajemy ich do PASS. Osobno trzy istniejące
+  przypadki cancellation oraz motivation/private-context invalidation PASS.
+- Użyto wyłącznie update-r, tego samego podpisu, bez downgrade/clear/uninstall.
+  Historyczne artefakty, surowe FAIL i pełne prywatne kopie danych zachowano.
+  Po negatywach wszystkie 57 tabel Room identyczne; po GREEN 56/57 identyczne.
+  Zmieniła się tylko koordynacja `sync_work_state` (aktualna lease/cycle,
+  liczniki i status login). Faktyczne outbox, 6 meals/6 items/7 outbox,
+  trzech ownerów, cele, profil i wagi identyczne; Room nadal 27, bez migracji.
+- Pakiet do niezależnego odbioru ma SHA256
+  `01df05be09f818e7f8940b632bffdc48272ee09ed1a03b6b56106abd38a0f174`.
+  To jeszcze nie E4 PASS: następny krok po odbiorze to zwykłe odnowienie sesji
+  i nowy trial na faktycznie zainstalowanym 1052. Backend nadal 8638/afda;
+  anti-enum P2 pozostaje OPEN. Bez nowego PR, merge lub odbioru wydania.
+
 ### O2-074 — PR190: bezpieczne ścieżki źródeł lokalnego pakietu demo
 
 - 29.10.2026, agent 2, tymczasowa koordynacja całości według O2-071.
