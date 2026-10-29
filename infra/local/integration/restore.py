@@ -7,6 +7,7 @@ import re
 import secrets
 import subprocess
 import tarfile
+from dataclasses import dataclass
 from datetime import UTC, datetime
 from functools import wraps
 from pathlib import Path
@@ -32,6 +33,16 @@ DATABASES = ("calorie_app", "keycloak")
 FORMAT = "calorie-native-restore/v1"
 
 
+@dataclass(frozen=True)
+class CaptureIdentity:
+    """Runtime ownership; independent of the deletion ledger installation/stream."""
+
+    owner: str
+    binaries: dict
+    process: dict
+    native_generation: dict | None = None
+
+
 def owned_path(value):
     # Reject Win32 aliases before resolving or reading any path.
     raw = str(value).replace("\\", "/")
@@ -39,9 +50,7 @@ def owned_path(value):
     if re.fullmatch(r"[a-zA-Z]:", parts[0]):
         parts = parts[1:]
     if raw.startswith("//") or any(
-        part.endswith((" ", ".")) or ":" in part
-        for part in parts
-        if part not in ("", ".", "..")
+        part.endswith((" ", ".")) or ":" in part for part in parts if part not in ("", ".", "..")
     ):
         raise ValueError("Ambiguous state path")
     return native.confined(value)
@@ -76,14 +85,21 @@ class OwnedPG:
 
     operation = native.Native.operation
 
+    @property
+    def catalog(self):
+        return self.state / "catalog"
+
+    def capture_identity(self):
+        return CaptureIdentity(
+            self.config["owner"], self.config["binaries"], self.config["process"]
+        )
+
     def __init__(self, state):
         self.state = owned_path(state)
         self.marker = self.state / "owner.json"
         self.config = json.loads(self.marker.read_text())
         UUID(self.config["owner"])
-        if self.config.get("format") != FORMAT or self.config["state"] != str(
-            self.state
-        ):
+        if self.config.get("format") != FORMAT or self.config["state"] != str(self.state):
             raise ValueError("Not this owned restore state")
         self.pg = Path(self.config["pg_bin"])
         self.port = self.config["port"]
@@ -117,9 +133,7 @@ class OwnedPG:
         ):
             path = pg_bin / (name + ".exe")
             version = (
-                subprocess.check_output([str(path), "--version"], **native.FLAGS)
-                .decode()
-                .strip()
+                subprocess.check_output([str(path), "--version"], **native.FLAGS).decode().strip()
             )
             if "(PostgreSQL) 17." not in version:
                 raise ValueError("PG17 tools required")
@@ -180,9 +194,7 @@ class OwnedPG:
             "PGCLIENTENCODING": "UTF8",
         }
 
-    def command(
-        self, name, args, *, input_path=None, output_path=None, environment=None
-    ):
+    def command(self, name, args, *, input_path=None, output_path=None, environment=None):
         return execute(
             self.state,
             [str(self.pg / (name + ".exe")), *map(str, args)],
@@ -335,10 +347,15 @@ class OwnedPG:
 
 @locked
 def capture(pg, destination):
+    return _capture_locked(pg, destination)
+
+
+def _capture_locked(pg, destination):
+    """Common paired capture body; the caller holds the source's one native.lock."""
     destination = owned_path(destination)
     disjoint(pg.state, destination)
     pg.offline()
-    catalog = pg.state / "catalog"
+    catalog = pg.catalog
     check_tree(catalog)
     revision = pg.sql("calorie_app", "SELECT version_num FROM app.alembic_version;")
     if revision != EXPECTED_REVISION:
@@ -358,35 +375,33 @@ def capture(pg, destination):
     with tarfile.open(destination / "catalog.tar", "w") as archive:
         archive.add(catalog, arcname="catalog")
     pg.offline()
+    identity = pg.capture_identity()
+    UUID(identity.owner)
     manifest = {
         "format": 1,
         "transport": FORMAT,
         "captured_at": datetime.now(UTC).isoformat(),
-        "source_owner": pg.config["owner"],
-        "source_epoch": pg.sql(
-            "calorie_app", "SELECT sync_epoch FROM app.installation_state;"
-        ),
+        "source_owner": identity.owner,
+        "source_epoch": pg.sql("calorie_app", "SELECT sync_epoch FROM app.installation_state;"),
         "revision": revision,
         "ledger_backup": json.loads(
             pg.sql(
                 "calorie_app",
                 "SELECT json_build_object('installation_id',installation_id,'stream_id',stream_id,"
                 "'anchor_id',anchor_id,'receiver_id',receiver_id,'issuer',issuer,"
-                "'sequence',next_sequence-1,'chain_hash',head_hash) FROM app.deletion_ledger_source;",
+                "'sequence',next_sequence-1,'chain_hash',head_hash) "
+                "FROM app.deletion_ledger_source;",
             )
         ),
         "writers_stopped": True,
-        "accounts": int(
-            pg.sql("calorie_app", "SELECT count(*) FROM app.user_accounts;")
-        ),
+        "accounts": int(pg.sql("calorie_app", "SELECT count(*) FROM app.user_accounts;")),
         "identities": int(pg.sql("keycloak", "SELECT count(*) FROM user_entity;")),
         "fingerprints": {
-            db: hashlib.sha256(pg.sql(db, q).encode()).hexdigest()
-            for db, q in FINGERPRINTS.items()
+            db: hashlib.sha256(pg.sql(db, q).encode()).hexdigest() for db, q in FINGERPRINTS.items()
         },
         "native_source": {
-            "binaries": pg.config["binaries"],
-            "process": pg.config["process"],
+            "binaries": identity.binaries,
+            "process": identity.process,
         },
         "files": {
             p.name: {"size": p.stat().st_size, "sha256": digest(p)}
@@ -394,14 +409,14 @@ def capture(pg, destination):
             if p.is_file()
         },
     }
+    if identity.native_generation is not None:
+        manifest["native_source"]["generation"] = identity.native_generation
     # pg_dumpall may include diagnostics in the source private log, never in the archive.
     encoded_manifest = json.dumps(manifest, indent=2) + "\n"
     native.private_write(destination / "manifest.json", encoded_manifest)
     verify_native_archive(destination)
     return manifest | {
-        "trusted_manifest_sha256": hashlib.sha256(
-            encoded_manifest.encode("utf-8")
-        ).hexdigest()
+        "trusted_manifest_sha256": hashlib.sha256(encoded_manifest.encode("utf-8")).hexdigest()
     }
 
 
@@ -441,9 +456,7 @@ def preflight_catalog(path):
                     or part.endswith((" ", "."))
                     or any(c in part for c in '\\:<>"|?*')
                     or any(ord(c) < 32 for c in part)
-                    or re.fullmatch(
-                        r"(?i)(con|prn|aux|nul|com[0-9]|lpt[0-9])(\..*)?", part
-                    )
+                    or re.fullmatch(r"(?i)(con|prn|aux|nul|com[0-9]|lpt[0-9])(\..*)?", part)
                     for part in parts
                 )
             ):
@@ -520,8 +533,7 @@ def _restore_into(pg, archive, manifest, roles, checkpoint_sha256):
     roles = "\n".join(
         line
         for line in roles.splitlines()
-        if line != "CREATE ROLE postgres;"
-        and not line.startswith("ALTER ROLE postgres ")
+        if line != "CREATE ROLE postgres;" and not line.startswith("ALTER ROLE postgres ")
     )
     native.private_write(target / "roles.private.sql", roles)
     try:
@@ -556,8 +568,10 @@ def _restore_into(pg, archive, manifest, roles, checkpoint_sha256):
         pg.sql(
             "calorie_app",
             "BEGIN; UPDATE app.nemesis_control SET enabled=false; "
-            f"UPDATE app.installation_state SET sync_epoch='{epoch}'; DELETE FROM app.sync_sessions; "
-            "UPDATE app.ai_controls SET dispatch_open=false,closed_at=coalesce(closed_at,clock_timestamp()); COMMIT;",
+            f"UPDATE app.installation_state SET sync_epoch='{epoch}'; "
+            "DELETE FROM app.sync_sessions; "
+            "UPDATE app.ai_controls SET dispatch_open=false,"
+            "closed_at=coalesce(closed_at,clock_timestamp()); COMMIT;",
         )
         for _ in range(10000):
             cleanup = json.loads(
@@ -574,7 +588,8 @@ def _restore_into(pg, archive, manifest, roles, checkpoint_sha256):
             pg.sql(
                 "calorie_app",
                 "SELECT json_build_object('epoch',sync_epoch,"
-                "'sessions',(SELECT count(*) FROM app.sync_sessions),'ai',(SELECT dispatch_open FROM app.ai_controls),"
+                "'sessions',(SELECT count(*) FROM app.sync_sessions),"
+                "'ai',(SELECT dispatch_open FROM app.ai_controls),"
                 "'nemesis',(SELECT enabled FROM app.nemesis_control)) FROM app.installation_state;",
             )
         )
@@ -611,9 +626,7 @@ def _restore_into(pg, archive, manifest, roles, checkpoint_sha256):
         native.write_json(target / "receipt.json", receipt)
         return pg, receipt
     except Exception:
-        native.write_json(
-            target / "receipt.json", {"result": "FAIL", "traffic_reopened": False}
-        )
+        native.write_json(target / "receipt.json", {"result": "FAIL", "traffic_reopened": False})
         pg._stop()
         raise
 
@@ -636,8 +649,7 @@ def main():
         pg.seal()
         captured = capture(pg, args.archive)
         output["captured_pin"] = {
-            k: captured[k]
-            for k in ("trusted_manifest_sha256", "source_owner", "ledger_backup")
+            k: captured[k] for k in ("trusted_manifest_sha256", "source_owner", "ledger_backup")
         }
     elif args.action == "restore":
         if not args.checkpoint or not args.checkpoint_sha256:
