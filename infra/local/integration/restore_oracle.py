@@ -14,6 +14,7 @@ from pathlib import Path
 from uuid import UUID, uuid4
 
 from infra.local.integration import native  # isort: skip
+from infra.local.integration import restore_trust  # isort: skip
 
 from backup import digest as file_digest
 from backup import private_directory, private_write
@@ -24,7 +25,6 @@ from calorie_app.modules.identity.ledger_contract import (
     SOURCE_DOMAIN,
     FencePin,
     LedgerInvalid,
-    Trust,
     make_cutoff,
 )
 from calorie_app.modules.identity.ledger_restore import reconcile_restore
@@ -62,11 +62,7 @@ def _save(directory, name, value):
 
 
 def _read(state, name):
-    directory = native.confined(Path(state["witness_directory"]))
-    path = directory / name
-    if path.is_symlink() or file_digest(path) != state["witness_files"][name]:
-        raise ValueError("Independent witness changed")
-    return json.loads(path.read_text(encoding="utf-8"))
+    return restore_trust.read_witness(state, name)
 
 
 def _evidence(state, name, value):
@@ -108,7 +104,9 @@ def _checkpoint(ledger):
     return envelopes, ack
 
 
-def prepare(engine, issuer, subject, *, deleted_subject=None, witness_directory):
+def prepare(
+    engine, issuer, subject, *, deleted_subject=None, witness_directory, secret=None
+):
     """Create a real committed baseline and independent contract-test witness.
 
     ``subject`` and optional ``deleted_subject`` must come from the caller's own
@@ -125,7 +123,7 @@ def prepare(engine, issuer, subject, *, deleted_subject=None, witness_directory)
         "format": "native-offline-restore-oracle/v1",
         "issuer": issuer,
         "subject": subject,
-        "secret": secrets.token_hex(32),
+        "secret": secret or secrets.token_hex(32),
         "bootstrap_key": str(key),
         "witness_directory": str(directory),
         "witness_files": {},
@@ -175,14 +173,18 @@ def prepare(engine, issuer, subject, *, deleted_subject=None, witness_directory)
     return state
 
 
-def after_capture(engine, state):
+def after_capture(engine, state, *, push=None, fence_observation=None):
     """Commit a post-backup meal and optional pending deletion, then close writers.
 
     The witness covers the synchronous owned service writes only. It does not
     attest production processes, provider deletion, or provider session fencing.
     """
     state["lost"] = meal(state["boot"], "Synthetic ACKed meal after paired backup")
-    accepted = _push(engine, state, state["boot"], state["checkpoint"], [state["lost"]])
+    accepted = (
+        push([state["lost"]])
+        if push
+        else _push(engine, state, state["boot"], state["checkpoint"], [state["lost"]])
+    )
     check(accepted[0]["status"] == "accepted", "Post-backup meal was not committed")
     factory = sessionmaker(engine, expire_on_commit=False)
     owner = UUID(state["boot"]["account_id"])
@@ -210,7 +212,7 @@ def after_capture(engine, state):
     ledger = _ledger(engine, directory, state["issuer"])
     try:
         # Independently supplied controller fact, before inspecting received tail.
-        observed = {
+        observed = fence_observation or {
             "scope": "contract-test",
             "synchronous_owned_writes_finished": True,
             "network_issuer_api_workers_created": False,
@@ -276,14 +278,13 @@ def _sync_snapshot(engine):
 
 
 def _verify_ledger(engine, state):
-    raw = _read(state, "trust-private.json")
-    trust = Trust(
-        **(raw | {k: bytes.fromhex(raw[k]) for k in ("source_key", "ack_key")})
+    evidence = restore_trust.load_evidence(state)
+    trust, pin, _ = restore_trust.validate_evidence(evidence)
+    backup, cutoff, envelopes = (
+        evidence["backup_point"],
+        evidence["cutoff"],
+        evidence["envelopes"],
     )
-    backup, cutoff = _read(state, "backup-point.json"), _read(state, "cutoff.json")
-    pin = FencePin(**_read(state, "fence-pin.json"))
-    _read(state, "fence-observation.json")
-    envelopes = _read(state, "prefix-private.json")
     before = _ledger_snapshot(engine)
 
     def reconcile(batch, fence=pin):
@@ -359,6 +360,11 @@ def _verify_ledger(engine, state):
             )
             check(len(result["targets"]) == 1, "Wrong ledger target count")
     return refused
+
+
+def verify_ledger(engine, state):
+    """Reuse the same independent prefix/fence oracle before controlled HTTP reopen."""
+    return _verify_ledger(engine, state)
 
 
 def verify(engine, state):

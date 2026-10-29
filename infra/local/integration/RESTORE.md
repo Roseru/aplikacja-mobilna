@@ -55,7 +55,7 @@ ten adapter nigdy nie otwiera ruchu ani nie skraca tego czasu.
 & $Python -m infra.local.integration.restore init --state "$PWD/.tools/source-NOWY" --pg-bin $Pg17Bin --port 55432
 # Provisionowanie tylko własnego nowego klastra; nie wskazuj aktywnego Native.
 & $Python -m infra.local.integration.restore capture --state "$PWD/.tools/source-NOWY" --archive "$PWD/.tools/archive-NOWY"
-& $Python -m infra.local.integration.restore restore --archive "$PWD/.tools/archive-NOWY" --state "$PWD/.tools/target-NOWY" --pg-bin $Pg17Bin --port 55433
+& $Python -m infra.local.integration.restore restore --archive "$PWD/.tools/archive-NOWY" --state "$PWD/.tools/target-NOWY" --pg-bin $Pg17Bin --port 55433 --checkpoint $TrustedCheckpoint --checkpoint-sha256 $TrustedCheckpointSha
 & $Python -m infra.local.integration.restore stop --state "$PWD/.tools/target-NOWY"
 ```
 
@@ -72,6 +72,20 @@ ACL-private pod ignorowanym `.tools`. **Nie publikuj tego katalogu.** Receipt
 nie zawiera haseł, kluczy ani surowych checkpointów. Natywne binaria/PID są
 oznaczone osobno; adapter nie wymyśla kontenerowego image digest. Zdjęcia są
 wykluczone: archiwizowany jest wyłącznie jawny katalog `catalog/`.
+
+Publiczny `restore` wymaga **zewnętrznego checkpointu i niezależnego SHA-256**.
+Hashe zapisane w samym archiwum nie są dowodem jego autentyczności. Zaufany
+kontroler zachowuje zwrócony podczas capture `trusted_manifest_sha256` poza
+cofanym zestawem (CLI zwraca `captured_pin`; nie wyliczaj go ponownie przy restore).
+Po fizycznym odcięciu własnych producentów kontroler wywołuje
+`restore_trust.write_checkpoint(path, captured, ledger_state)`, a zwrócony SHA
+przekazuje osobno do restore. Oba harnessy wykonują te kroki automatycznie.
+Checkpoint zawiera prywatne klucze kontraktowego ledgeru: pozostaje ACL-private,
+poza archiwum; nie publikuj go ani `ledger_state`. SHA można przekazać neutralnie.
+Przed utworzeniem celu czysty verifier sprawdza zewnętrzny SHA, pełny
+uwierzytelniony prefix, backup-point/cutoff/FencePin, powiązanie strumienia,
+sekwencji i head z rzeczywistą kopią oraz niezależny pin manifestu. Brak lub
+zmiana któregokolwiek wejścia odmawia przed `initdb`, SQL i `pg_restore`.
 
 ## Weryfikacja granic
 

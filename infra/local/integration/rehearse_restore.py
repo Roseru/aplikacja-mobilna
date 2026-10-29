@@ -14,7 +14,7 @@ from pathlib import Path
 
 # native establishes the existing shared helper/backend import roots.
 # isort: off
-from . import native, restore
+from . import native, restore, restore_trust
 from backup import digest, private_directory
 # isort: on
 
@@ -274,8 +274,15 @@ def run(state, pg_bin, keycloak_home, java_home):
         }
         clusters.remove(source)
         receipt["stage"] = "restore_pair_new_target"
+        checkpoint = state / "trusted-checkpoint.private.json"
+        checkpoint_sha = restore_trust.write_checkpoint(checkpoint, manifest, scenario)
         target, paired = restore.restore(
-            state / "paired-backup", state / "target", pg_bin, free_port()
+            state / "paired-backup",
+            state / "target",
+            pg_bin,
+            free_port(),
+            checkpoint=checkpoint,
+            checkpoint_sha256=checkpoint_sha,
         )
         clusters.append(target)
         engine = create_engine(target.url(), hide_parameters=True)

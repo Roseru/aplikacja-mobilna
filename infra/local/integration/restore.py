@@ -15,6 +15,7 @@ from uuid import UUID, uuid4
 # native establishes the existing shared helper/backend import roots.
 # isort: off
 from . import native
+from . import restore_trust
 from backup import (
     FINGERPRINTS,
     digest,
@@ -311,9 +312,25 @@ class OwnedPG:
 
     def _stop(self):
         self.qualify()  # Re-check immediately before the one datadir-specific stop.
-        self.command("pg_ctl", ["-D", self.data, "-w", "-m", "fast", "stop"])
+        self.command(
+            "pg_ctl",
+            ["-D", self.data, "-w", "-m", "fast", "stop"],
+            output_path=self.state / "pg-stop.private.log",
+        )
         self.config["status"] = "STOPPED"
         native.write_json(self.marker, self.config)
+        native.write_json(
+            self.state / "stop-receipt.json",
+            {
+                "process": self.config["process"],
+                "port": self.port,
+                "datadir": str(self.data),
+                "exit_code": 0,
+                "checked_subprocess": True,
+                "identity_revalidated": True,
+                "stdout_sha256": digest(self.state / "pg-stop.private.log"),
+            },
+        )
 
 
 @locked
@@ -350,6 +367,14 @@ def capture(pg, destination):
             "calorie_app", "SELECT sync_epoch FROM app.installation_state;"
         ),
         "revision": revision,
+        "ledger_backup": json.loads(
+            pg.sql(
+                "calorie_app",
+                "SELECT json_build_object('installation_id',installation_id,'stream_id',stream_id,"
+                "'anchor_id',anchor_id,'receiver_id',receiver_id,'issuer',issuer,"
+                "'sequence',next_sequence-1,'chain_hash',head_hash) FROM app.deletion_ledger_source;",
+            )
+        ),
         "writers_stopped": True,
         "accounts": int(
             pg.sql("calorie_app", "SELECT count(*) FROM app.user_accounts;")
@@ -372,7 +397,7 @@ def capture(pg, destination):
     # pg_dumpall may include diagnostics in the source private log, never in the archive.
     native.write_json(destination / "manifest.json", manifest)
     verify_native_archive(destination)
-    return manifest
+    return manifest | {"trusted_manifest_sha256": digest(destination / "manifest.json")}
 
 
 def verify_native_archive(directory):
@@ -429,10 +454,14 @@ def preflight_catalog(path):
             raise ValueError("Catalog file is a parent directory")
 
 
-def restore(archive, target, pg_bin, port):
+def restore(archive, target, pg_bin, port, *, checkpoint, checkpoint_sha256):
     archive, target = owned_path(archive), owned_path(target)
-    disjoint(archive, target)
+    checkpoint = owned_path(checkpoint)
+    disjoint(archive, target, checkpoint)
+    trusted = restore_trust.preflight(archive, checkpoint, checkpoint_sha256)
     manifest = verify_native_archive(archive)
+    if manifest["source_owner"] != trusted["source_owner"]:
+        raise ValueError("Trusted capture owner differs")
     if target.exists():
         raise FileExistsError("Existing target preserved")
     roles = (archive / "roles.sql").read_text(encoding="utf-8")
@@ -441,10 +470,10 @@ def restore(archive, target, pg_bin, port):
     pg = OwnedPG.create(target, pg_bin, port)
     pg.seal()
     with pg.operation():
-        return restore_into(pg, archive, manifest, roles)
+        return _restore_into(pg, archive, manifest, roles, checkpoint_sha256)
 
 
-def restore_into(pg, archive, manifest, roles):
+def _restore_into(pg, archive, manifest, roles, checkpoint_sha256):
     target = pg.state
     # Keep target postgres credential rather than archive's credential; restore all
     # other role attributes/passwords. pg_dumpall's SETs and grants still execute.
@@ -511,12 +540,23 @@ def restore_into(pg, archive, manifest, roles):
         )
         if fence != {"epoch": epoch, "sessions": 0, "ai": False, "nemesis": False}:
             raise ValueError("Restored gates are not closed")
+        native.write_json(
+            target / "post-fence-system-neutral.json",
+            {
+                "actual_sql_readback": fence,
+                "revision": manifest["revision"],
+                "cleanup": cleanup,
+                "traffic_reopened": False,
+            },
+        )
         restore_catalog(archive / "catalog.tar", target / "catalog-restored")
         pg.offline()
         receipt = {
             "format": FORMAT,
             "result": "PASS",
             "paired_restore": True,
+            "trusted_checkpoint_sha256": checkpoint_sha256,
+            "external_evidence_validated_before_target_create": True,
             "source_epoch": manifest["source_epoch"],
             "restored_epoch": epoch,
             "fingerprints_verified_before_fence": True,
@@ -545,20 +585,36 @@ def main():
     parser.add_argument("--archive", type=Path)
     parser.add_argument("--pg-bin", type=Path)
     parser.add_argument("--port", type=int)
+    parser.add_argument("--checkpoint", type=Path)
+    parser.add_argument("--checkpoint-sha256")
     args = parser.parse_args()
+    output = {"result": "PASS", "action": args.action, "traffic_reopened": False}
     if args.action == "init":
         OwnedPG.create(args.state, args.pg_bin, args.port)
     elif args.action == "capture":
         pg = OwnedPG(args.state)
         pg.seal()
-        capture(pg, args.archive)
+        captured = capture(pg, args.archive)
+        output["captured_pin"] = {
+            k: captured[k]
+            for k in ("trusted_manifest_sha256", "source_owner", "ledger_backup")
+        }
     elif args.action == "restore":
-        restore(args.archive, args.state, args.pg_bin, args.port)
+        if not args.checkpoint or not args.checkpoint_sha256:
+            parser.error(
+                "restore requires an external --checkpoint and independent --checkpoint-sha256"
+            )
+        restore(
+            args.archive,
+            args.state,
+            args.pg_bin,
+            args.port,
+            checkpoint=args.checkpoint,
+            checkpoint_sha256=args.checkpoint_sha256,
+        )
     else:
         OwnedPG(args.state).stop()
-    print(
-        json.dumps({"result": "PASS", "action": args.action, "traffic_reopened": False})
-    )
+    print(json.dumps(output))
 
 
 if __name__ == "__main__":

@@ -2,6 +2,9 @@
 
 import io
 import json
+import os
+import subprocess
+import sys
 import tarfile
 from pathlib import Path
 from types import SimpleNamespace
@@ -9,7 +12,10 @@ from uuid import uuid4
 
 import pytest
 
-from infra.local.integration import rehearse_restore, restore
+from infra.local.integration import rehearse_restore, restore, restore_trust
+
+sys.path.insert(0, str(Path(__file__).resolve().parents[3] / "backend"))
+from tests.unit.test_deletion_ledger_contract import fence_pin, fixtures
 
 
 @pytest.fixture
@@ -49,7 +55,7 @@ def write_tar(path, member, *, kind=tarfile.REGTYPE, second=None):
             archive.addfile(item, io.BytesIO(b"{}") if item.size else None)
 
 
-def rehash(folder):
+def rehash(folder, *, update_pin=True):
     path = folder / "manifest.json"
     manifest = json.loads(path.read_text())
     manifest["files"] = {
@@ -60,7 +66,36 @@ def rehash(folder):
         for name in ("roles.sql", "calorie_app.dump", "keycloak.dump", "catalog.tar")
         if (folder / name).exists()
     }
+    trust, batch, backup, cutoff = fixtures()
+    manifest.setdefault(
+        "ledger_backup",
+        trust.identity()
+        | {
+            "issuer": trust.issuer,
+            "sequence": backup["sequence"],
+            "chain_hash": backup["chain_hash"],
+        },
+    )
     path.write_text(json.dumps(manifest))
+    if update_pin:
+        raw = trust.identity() | {
+            "issuer": trust.issuer,
+            "source_key": trust.source_key.hex(),
+            "ack_key": trust.ack_key.hex(),
+        }
+        value = {
+            "format": restore_trust.FORMAT,
+            "archive_manifest_sha256": restore.digest(path),
+            "source_owner": manifest["source_owner"],
+            "ledger": {
+                "trust": raw,
+                "envelopes": [batch],
+                "backup_point": backup,
+                "cutoff": cutoff,
+                "fence_pin": fence_pin(trust).fields(),
+            },
+        }
+        (folder.parent / "trusted-checkpoint.json").write_text(json.dumps(value))
 
 
 def refuse_before_create(archive, monkeypatch, match, target=None):
@@ -70,7 +105,147 @@ def refuse_before_create(archive, monkeypatch, match, target=None):
     monkeypatch.setattr(restore.OwnedPG, "create", forbidden)
     with pytest.raises((ValueError, FileExistsError), match=match):
         restore.restore(
-            archive, target or archive.parent / "target", Path("unused"), 55432
+            archive,
+            target or archive.parent / "target",
+            Path("unused"),
+            55432,
+            checkpoint=archive.parent / "trusted-checkpoint.json",
+            checkpoint_sha256=restore.digest(
+                archive.parent / "trusted-checkpoint.json"
+            ),
+        )
+
+
+def test_self_consistent_archive_replacement_refuses_independent_pin(
+    archive, monkeypatch
+):
+    (archive / "roles.sql").write_text(
+        "CREATE ROLE postgres;\n-- replaced privileged SQL\n"
+    )
+    rehash(archive, update_pin=False)
+    refuse_before_create(archive, monkeypatch, "independently captured pin")
+
+
+@pytest.mark.parametrize("field", ["backup_point", "cutoff", "fence_pin", "envelopes"])
+def test_trusted_checkpoint_invalid_ledger_refuses_before_create(
+    archive, monkeypatch, field
+):
+    path = archive.parent / "trusted-checkpoint.json"
+    value = json.loads(path.read_text())
+    if field == "envelopes":
+        value["ledger"][field] = []
+    elif field == "fence_pin":
+        value["ledger"][field]["fence_id"] = str(uuid4())
+    else:
+        value["ledger"][field]["chain_hash"] = "f" * 64
+    path.write_text(json.dumps(value))
+    refuse_before_create(archive, monkeypatch, "unauthenticated|missing|mismatch")
+
+
+def test_checkpoint_tamper_cannot_change_external_sha(archive, monkeypatch):
+    path = archive.parent / "trusted-checkpoint.json"
+    expected = restore.digest(path)
+    path.write_bytes(path.read_bytes() + b" ")
+    monkeypatch.setattr(
+        restore.OwnedPG, "create", lambda *_: pytest.fail("Create reached")
+    )
+    with pytest.raises(ValueError, match="checkpoint checksum"):
+        restore.restore(
+            archive,
+            archive.parent / "target",
+            Path("unused"),
+            55432,
+            checkpoint=path,
+            checkpoint_sha256=expected,
+        )
+    assert not (archive.parent / "target").exists()
+
+
+def test_missing_checkpoint_pin_refuses_before_any_target(archive, monkeypatch):
+    monkeypatch.setattr(
+        restore.OwnedPG, "create", lambda *_: pytest.fail("Create reached")
+    )
+    with pytest.raises(ValueError, match="SHA256 required"):
+        restore.restore(
+            archive,
+            archive.parent / "target",
+            Path("unused"),
+            55432,
+            checkpoint=archive.parent / "missing.json",
+            checkpoint_sha256=None,
+        )
+    assert not (archive.parent / "target").exists()
+
+
+def test_missing_external_checkpoint_file_refuses_before_create(archive, monkeypatch):
+    monkeypatch.setattr(
+        restore.OwnedPG, "create", lambda *_: pytest.fail("Create reached")
+    )
+    with pytest.raises(FileNotFoundError):
+        restore.restore(
+            archive,
+            archive.parent / "target",
+            Path("unused"),
+            55432,
+            checkpoint=archive.parent / "missing.json",
+            checkpoint_sha256="0" * 64,
+        )
+    assert not (archive.parent / "target").exists()
+
+
+def test_linked_manifest_refuses_before_manifest_digest(archive, monkeypatch):
+    original = restore_trust.native.confined
+    original_digest = restore_trust.digest
+
+    def confined(path):
+        if Path(path) == archive / "manifest.json":
+            raise ValueError("Linked state paths are refused")
+        return original(path)
+
+    def no_manifest_read(path):
+        if Path(path) == archive / "manifest.json":
+            pytest.fail("Linked manifest was read before refusal")
+        return original_digest(path)
+
+    monkeypatch.setattr(restore_trust.native, "confined", confined)
+    monkeypatch.setattr(restore_trust, "digest", no_manifest_read)
+    refuse_before_create(archive, monkeypatch, "Linked state paths")
+
+
+def test_independently_valid_ledger_cannot_be_mixed_with_other_capture(
+    archive, monkeypatch
+):
+    path = archive / "manifest.json"
+    value = json.loads(path.read_text())
+    value["ledger_backup"]["stream_id"] = str(uuid4())
+    path.write_text(json.dumps(value))
+    # Trusted outer digest still cannot combine independently valid stream B with DB A.
+    pinpath = archive.parent / "trusted-checkpoint.json"
+    pin = json.loads(pinpath.read_text())
+    pin["archive_manifest_sha256"] = restore.digest(path)
+    pinpath.write_text(json.dumps(pin))
+    refuse_before_create(archive, monkeypatch, "trusted ledger backup point")
+
+
+def test_valid_independent_checkpoint_reaches_only_new_target_creation(
+    archive, monkeypatch
+):
+    class ReachedNewTarget(Exception):
+        pass
+
+    def create(*_args):
+        raise ReachedNewTarget
+
+    monkeypatch.setattr(restore.OwnedPG, "create", create)
+    with pytest.raises(ReachedNewTarget):
+        pin = archive.parent / "trusted-checkpoint.json"
+        restore.restore(
+            archive,
+            archive.parent / "target",
+            Path("unused"),
+            55432,
+            checkpoint=pin,
+            checkpoint_sha256=restore.digest(pin),
         )
 
 
@@ -160,6 +335,10 @@ def test_unexpected_manifest_path_never_read(archive, monkeypatch):
     manifest = json.loads(path.read_text())
     manifest["files"]["../secret"] = {"size": 1, "sha256": "0" * 64}
     path.write_text(json.dumps(manifest))
+    pinpath = archive.parent / "trusted-checkpoint.json"
+    pin = json.loads(pinpath.read_text())
+    pin["archive_manifest_sha256"] = restore.digest(path)
+    pinpath.write_text(json.dumps(pin))
     monkeypatch.setattr(
         restore, "verify_archive", lambda *_: pytest.fail("Unsafe shared read")
     )
@@ -205,6 +384,35 @@ def test_lifecycle_lock_refuses_overlap(archive):
     pg.state = archive
     with pg.operation(), pytest.raises(OSError), pg.operation():
         pytest.fail("Concurrent operation admitted")
+
+
+def test_restore_cli_has_no_missing_checkpoint_bypass(archive):
+    root = Path(__file__).resolve().parents[3]
+    environment = restore.native.clean_env() | {
+        "PYTHONPATH": os.pathsep.join((str(root), str(root / "backend/src")))
+    }
+    target = archive.parent / "cli-target"
+    result = subprocess.run(
+        [
+            sys.executable,
+            "-m",
+            "infra.local.integration.restore",
+            "restore",
+            "--archive",
+            str(archive),
+            "--state",
+            str(target),
+        ],
+        cwd=root,
+        env=environment,
+        capture_output=True,
+        text=True,
+        timeout=20,
+        check=False,
+        **restore.native.FLAGS,
+    )
+    assert result.returncode == 2 and "external --checkpoint" in result.stderr
+    assert not target.exists()
 
 
 def test_late_source_mismatch_cannot_preserve_pass(monkeypatch):
