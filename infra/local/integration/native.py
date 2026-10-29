@@ -25,12 +25,25 @@ sys.path.insert(0, str(ROOT / "infra/integration"))
 from run import initialize, prepare_worker, private_write  # noqa: E402
 
 FLAGS = {"creationflags": subprocess.CREATE_NO_WINDOW} if os.name == "nt" else {}
+
+
+class WorkerLaunchFailed(RuntimeError):
+    """Internal handoff of durable evidence from the original owned child handle."""
+
+    def __init__(self, generation, reference, exit_observed):
+        super().__init__("Owned worker launch failed before qualified identity publication")
+        self.generation = generation
+        self.reference = reference
+        self.exit_observed = exit_observed
+
+
 SHARED_HELPERS = (
     "infra/integration/run.py",
     "infra/integration/verify.py",
     "infra/local/init-db.sh",
     "infra/local/keycloak/realm.json",
     "infra/integration/e4_observer.py",
+    "infra/integration/worker.py",
 )
 
 
@@ -133,42 +146,98 @@ def source(pin):
     }
 
 
-def identity(pid):
-    """Exact Windows process birth time and executable, never process-wide enumeration."""
+def process_kernel():
     from ctypes import wintypes
 
-    if type(pid) is not int or pid <= 0:
-        raise ValueError("Invalid owned PID")
     kernel = ctypes.WinDLL("kernel32", use_last_error=True)
     kernel.OpenProcess.restype = wintypes.HANDLE
     kernel.OpenProcess.argtypes = [wintypes.DWORD, wintypes.BOOL, wintypes.DWORD]
     kernel.CloseHandle.argtypes = [wintypes.HANDLE]
+    kernel.WaitForSingleObject.argtypes = [wintypes.HANDLE, wintypes.DWORD]
+    kernel.WaitForSingleObject.restype = wintypes.DWORD
+    kernel.TerminateProcess.argtypes = [wintypes.HANDLE, wintypes.UINT]
+    kernel.GetExitCodeProcess.argtypes = [wintypes.HANDLE, ctypes.POINTER(wintypes.DWORD)]
+    return kernel
+
+
+def handle_identity(kernel, handle, pid):
+    from ctypes import wintypes
+
+    times = [wintypes.FILETIME() for _ in range(4)]
+    kernel.GetProcessTimes.argtypes = [wintypes.HANDLE] + [ctypes.POINTER(wintypes.FILETIME)] * 4
+    if not kernel.GetProcessTimes(handle, *(ctypes.byref(t) for t in times)):
+        raise OSError("Cannot qualify owned process creation time")
+    name = ctypes.create_unicode_buffer(32768)
+    size = wintypes.DWORD(len(name))
+    kernel.QueryFullProcessImageNameW.argtypes = [
+        wintypes.HANDLE,
+        wintypes.DWORD,
+        wintypes.LPWSTR,
+        ctypes.POINTER(wintypes.DWORD),
+    ]
+    if not kernel.QueryFullProcessImageNameW(handle, 0, name, ctypes.byref(size)):
+        raise OSError("Cannot qualify owned process executable")
+    return {
+        "pid": pid,
+        "created": (times[0].dwHighDateTime << 32) + times[0].dwLowDateTime,
+        "executable": name.value,
+    }
+
+
+def identity(pid):
+    """Exact Windows process birth time and executable, never process-wide enumeration."""
+    if type(pid) is not int or pid <= 0:
+        raise ValueError("Invalid owned PID")
+    kernel = process_kernel()
     handle = kernel.OpenProcess(0x1000, False, pid)
     if not handle:
         if ctypes.get_last_error() == 87:
             raise ProcessLookupError("Owned process is unavailable")
         raise PermissionError("Cannot qualify saved process; no stop authorized")
     try:
-        times = [wintypes.FILETIME() for _ in range(4)]
-        kernel.GetProcessTimes.argtypes = [wintypes.HANDLE] + [
-            ctypes.POINTER(wintypes.FILETIME)
-        ] * 4
-        if not kernel.GetProcessTimes(handle, *(ctypes.byref(t) for t in times)):
-            raise OSError("Cannot qualify owned process creation time")
-        name = ctypes.create_unicode_buffer(32768)
-        size = wintypes.DWORD(len(name))
-        kernel.QueryFullProcessImageNameW.argtypes = [
-            wintypes.HANDLE,
-            wintypes.DWORD,
-            wintypes.LPWSTR,
-            ctypes.POINTER(wintypes.DWORD),
-        ]
-        if not kernel.QueryFullProcessImageNameW(handle, 0, name, ctypes.byref(size)):
-            raise OSError("Cannot qualify owned process executable")
+        return handle_identity(kernel, handle, pid)
+    finally:
+        kernel.CloseHandle(handle)
+
+
+def stop_owned(record):
+    """Windows forced stop on one qualified retained handle; never taskkill exit."""
+    from ctypes import wintypes
+
+    kernel = process_kernel()
+    handle = kernel.OpenProcess(0x1000 | 0x100000 | 1, False, record["pid"])
+    if not handle:
+        if ctypes.get_last_error() == 87:
+            return {
+                "method": "already_absent",
+                "forced": False,
+                "graceful": False,
+                "wait": "NOT_OBSERVED",
+                "exit_observed": False,
+                "exit_code": None,
+            }
+        raise PermissionError("Cannot acquire owned stop handle")
+    try:
+        if handle_identity(kernel, handle, record["pid"]) != record:
+            raise RuntimeError("Saved PID was reused; no process stopped")
+        wait = kernel.WaitForSingleObject(handle, 0)
+        forced = wait == 0x102
+        if forced:
+            if not kernel.TerminateProcess(handle, 1):
+                raise OSError("Owned process termination failed")
+            wait = kernel.WaitForSingleObject(handle, 10000)
+        if wait != 0:
+            raise RuntimeError("Owned process did not confirm termination")
+        code = wintypes.DWORD()
+        if not kernel.GetExitCodeProcess(handle, ctypes.byref(code)):
+            raise OSError("Cannot observe owned process exit")
         return {
-            "pid": pid,
-            "created": (times[0].dwHighDateTime << 32) + times[0].dwLowDateTime,
-            "executable": name.value,
+            "method": "TerminateProcess" if forced else "already_exited_handle",
+            "forced": forced,
+            "graceful": False,
+            "wait": "SIGNALED",
+            "exit_observed": True,
+            "exit_code": code.value,
         }
     finally:
         kernel.CloseHandle(handle)
@@ -370,27 +439,97 @@ class Native:
             label="sql",
         ).strip()
 
-    def launch(self, name, command, env):
+    def launch(self, name, command, env, *, cwd=None, log_path=None):
         marker = self.state / f"{name}.process.json"
         if marker.exists():
             raise RuntimeError("Existing process marker requires an explicit down")
-        with (self.state / f"{name}.log").open("ab") as output:
+        if name == "worker":
+            pending = json.loads((self.state / "runtime-binding.json").read_bytes())
+            pending["retention_launch_unresolved"] = True
+            write_json(self.state / "runtime-binding.json", pending)
+        with (log_path or self.state / f"{name}.log").open("ab") as output:
             process = subprocess.Popen(
                 command,
-                cwd=self.state,
+                cwd=cwd or self.state,
                 env=env,
                 stdin=subprocess.DEVNULL,
                 stdout=output,
                 stderr=subprocess.STDOUT,
                 **FLAGS,
             )
-        write_json(marker, identity(process.pid))
+        try:
+            if name == "worker" and process.poll() is not None:
+                raise RuntimeError("Owned child exited before identity publication")
+            record = identity(process.pid)
+            if name == "worker" and process.poll() is not None:
+                raise RuntimeError("Owned child exited during identity publication")
+            write_json(marker, record)
+        except BaseException as launch_error:
+            if name == "worker":
+                # This original Popen handle still owns the child even when no
+                # safe PID marker could be published. Never target a raw PID.
+                failure = {
+                    "pid": process.pid,
+                    "ownership": "original_Popen_handle",
+                    "forced": None,
+                    "graceful": False,
+                    "exit_observed": False,
+                    "exit_code": None,
+                    "unresolved_launch": True,
+                }
+                try:
+                    code = process.poll()
+                    failure["forced"] = code is None
+                    if code is None:
+                        process.terminate()
+                        code = process.wait(timeout=10)
+                    failure.update(exit_observed=True, exit_code=code)
+                except BaseException as cleanup_error:
+                    failure["cleanup_error_kind"] = type(cleanup_error).__name__
+                finally:
+                    failure["generation"] = pending["generation"]
+                    failure["unresolved_launch"] = not failure["exit_observed"]
+                    path = (cwd or self.state) / ("launch-failed-" + uuid4().hex + ".private.json")
+                    encoded = (json.dumps(failure, indent=2) + "\n").encode()
+                    private_write(path, encoded.decode())
+                reference = {"path": str(path), "sha256": hashlib.sha256(encoded).hexdigest()}
+                pending["retention_failed_launch"] = reference
+                pending["retention_launch_unresolved"] = failure["unresolved_launch"]
+                write_json(self.state / "runtime-binding.json", pending)
+                raise WorkerLaunchFailed(
+                    pending["generation"], reference, failure["exit_observed"]
+                ) from launch_error
+            raise
+        if name == "worker":
+            pending["retention_launch_unresolved"] = False
+            write_json(self.state / "runtime-binding.json", pending)
         return process
+
+    def worker_configuration(self, raw=None):
+        from .retention import configuration
+
+        return configuration(self, raw)
+
+    def start_worker(self, binding, **kwargs):
+        from .retention import start
+
+        return start(self, binding, **kwargs)
+
+    def qualify_worker(self, binding):
+        from .retention import qualify
+
+        return qualify(self, binding)
+
+    def stop_worker(self, binding):
+        from .retention import stop
+
+        return stop(self, binding)
 
     def configuration_binding(self):
         path = confined(self.state / "config-generation/provider-profile.json")
+        retention = {"retention": self.worker_configuration()[1]}
         if not path.exists():
-            return {}
+            return retention
         if not path.is_file() or path.stat().st_size > 65536:
             raise ValueError("Invalid provider configuration record")
         raw = path.read_bytes()
@@ -399,7 +538,7 @@ class Native:
             "result"
         ) not in {"CONFIGURED", "PARTIAL", "FAIL"}:
             raise ValueError("Invalid provider configuration result")
-        return {
+        return retention | {
             "provider_profile_sha256": hashlib.sha256(raw).hexdigest(),
             "provider_profile_result": value["result"],
         }
@@ -419,12 +558,14 @@ class Native:
                 "postgres.process.json",
                 "keycloak.process.json",
                 "gateway.process.json",
+                "worker.process.json",
             }
             or markers != binding["processes"]
         ):
             raise ValueError("Runtime process generation differs from its binding")
         if any(identity(record["pid"]) != record for record in markers.values()):
             raise ValueError("Runtime process identity differs from its binding")
+        self.qualify_worker(binding)
         return binding
 
     def up(self):
@@ -514,6 +655,7 @@ class Native:
                 self.state / "provisioned.json",
                 {"source": self.config["source"], "at": datetime.now(UTC).isoformat()},
             )
+        self.start_worker(binding)
         env = self.env("keycloak")
         # Keycloak's code-replay WARN otherwise includes an authorization-code ID.
         env["KC_LOG_LEVEL"] = (
@@ -559,6 +701,15 @@ class Native:
 
     def _down(self):
         # Preserve all DB files, realms, CA, secrets, data and evidence.
+        value = json.loads((self.state / "runtime-binding.json").read_bytes())
+        before = dict(value)
+        markers = {p.name: json.loads(p.read_bytes()) for p in self.state.glob("*.process.json")}
+        if value.get("retention_launch_unresolved", False) and "worker.process.json" not in markers:
+            raise ValueError("Unresolved worker launch; no safe PG stop or resume")
+        if not set(markers) <= {
+            n + ".process.json" for n in ("postgres", "keycloak", "gateway", "worker")
+        }:
+            raise ValueError("Unknown owned process marker")
         for marker in self.state.glob("*.process.json"):
             record = json.loads(marker.read_text())
             try:
@@ -567,16 +718,29 @@ class Native:
                 continue
             if current != record:
                 raise RuntimeError("Saved PID was reused; no process stopped")
-        binding = self.state / "runtime-binding.json"
-        if binding.exists():
-            value = json.loads(binding.read_text())
-            value["state"] = "STOPPED"
-            write_json(binding, value)
-        for name in ("gateway", "keycloak"):
+        if "worker.process.json" in markers:
+            from .retention import descriptor
+
+            descriptor(self, value)
+            if value["retention"]["process"] != markers["worker.process.json"]:
+                raise ValueError("Worker stop binding differs")
+        worker_stop = None
+        for name in ("gateway", "worker", "keycloak"):
             marker = self.state / f"{name}.process.json"
             if marker.exists():
-                terminate(json.loads(marker.read_text()))
-                marker.unlink()
+                if name == "worker":
+                    worker_stop = self.stop_worker(value)
+                else:
+                    record = json.loads(marker.read_text())
+                    terminate(record)
+                    try:
+                        remains = identity(record["pid"]) == record
+                    except ProcessLookupError:
+                        remains = False
+                    if remains:
+                        raise RuntimeError("Owned service remains after stop")
+                    marker.unlink()
+        pg_stop = {"exit_code": None, "observed": False}
         marker = self.state / "postgres.process.json"
         if marker.exists():
             record = json.loads(marker.read_text())
@@ -599,7 +763,41 @@ class Native:
                     ],
                     label="pg-stop",
                 )
+                if (self.state / "postgres/postmaster.pid").exists():
+                    raise RuntimeError("PG stop did not remove its PID file")
+                try:
+                    if identity(record["pid"]) == record:
+                        raise RuntimeError("PG remains after stop")
+                except ProcessLookupError:
+                    pass
+                stdout = (self.state / "pg-stop.log").read_bytes()
+                log = self.state / ("pg-stop-" + uuid4().hex + ".private.log")
+                log.write_bytes(stdout)
+                log.chmod(0o600)
+                pg_stop = {
+                    "exit_code": 0,
+                    "observed": True,
+                    "stdout_file": str(log),
+                    "stdout_sha256": hashlib.sha256(log.read_bytes()).hexdigest(),
+                }
             marker.unlink()
+        known = (
+            pg_stop["observed"]
+            and not value.get("retention_unknown_exit", False)
+            and (worker_stop is None or worker_stop["result"] == "STOPPED")
+        )
+        result = "STOPPED" if known else "STOPPED_UNKNOWN_EXIT"
+        write_json(self.state / "runtime-binding.json", before | {"state": result})
+        receipt = {
+            "result": result,
+            "generation": value["generation"],
+            "processes_before": markers,
+            "worker_stop": worker_stop,
+            "pg_stop": pg_stop,
+            "automatic_resume_authorized": known,
+        }
+        write_json(self.state / ("down-" + uuid4().hex + ".private.json"), receipt)
+        return receipt
 
 
 def main():
@@ -642,9 +840,11 @@ def main():
         if args.action in {"up", "down"}:
             getattr(stack, args.action)()
         qualified = False
+        worker_witness = {"state": "NOT_QUALIFIED"}
         if args.action in {"up", "status"}:
             try:
-                stack.require_running()
+                binding = stack.require_running()
+                worker_witness = stack.qualify_worker(binding)
                 qualified = True
             except (OSError, ValueError):
                 pass
@@ -653,6 +853,7 @@ def main():
                 {
                     "state": args.action,
                     "process_generation_qualified": qualified,
+                    "retention": worker_witness,
                     "origin": stack.origin,
                     "processes": {
                         p.stem: json.loads(p.read_text())

@@ -167,6 +167,7 @@ def runtime(stack):
         "postgres.process.json",
         "keycloak.process.json",
         "gateway.process.json",
+        "worker.process.json",
     }:
         raise ValueError("Exact owned processes required")
     for name, record in binding["processes"].items():
@@ -175,8 +176,10 @@ def runtime(stack):
         positive(record["pid"])
         positive(record["created"])
         paths["process:" + name] = Path(record["executable"])
-    if paths["process:postgres.process.json"].resolve() != paths["postgres"].resolve() or (
-        paths["process:gateway.process.json"].resolve() != paths["python"].resolve()
+    if (
+        paths["process:postgres.process.json"].resolve() != paths["postgres"].resolve()
+        or (paths["process:gateway.process.json"].resolve() != paths["python"].resolve())
+        or (paths["process:worker.process.json"].resolve() != paths["python"].resolve())
     ):
         raise ValueError("Configured runtime and process executables differ")
     binaries = {name: digest(path.read_bytes()) for name, path in paths.items()}
