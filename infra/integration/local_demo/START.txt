@@ -1,0 +1,43 @@
+LOCAL DEMO - PREPARATION GATES
+
+START.ps1, STOP.ps1 and RECOVER.ps1 check a preparation bundle. They do not
+start or stop an application, AVD, transport, Docker service or database.
+RECOVER does not resume maintenance or restore a backup. No operator profile
+or account is created, replaced or taken from O1.
+
+Review the package and its verifier before running supplied code. The local
+manifest SHA256/byte binding detects inconsistency; it does not establish
+the authenticity of an untrusted manifest or authorize its code.
+
+From PowerShell, using an existing reviewed Python interpreter:
+  .\START.ps1 -Python '<absolute-python.exe>' -Bundle '<absolute-bundle>' -CheckOnly
+  .\STOP.ps1 -Python '<absolute-python.exe>' -Bundle '<absolute-bundle>' -CheckOnly
+  .\RECOVER.ps1 -Python '<absolute-python.exe>' -Bundle '<absolute-bundle>' -CheckOnly
+
+Bundle defaults to this script's directory. Each script checks that
+manifest-demo.json binds the package-local local_demo_package.py by SHA256
+and bytes, then invokes only that verifier with Python -I -B.
+No ADB, Docker, transport, maintenance, backup or restore command is invoked.
+
+CheckOnly exit success means package integrity passed. Readiness remains
+PREPARATION_ONLY and action_authorized=false. Read missing_inputs and
+unqualified_gates in the verifier's JSON; integrity is not runtime acceptance.
+Without CheckOnly the verifier refuses the action (exit3); the wrapper raises
+an error containing that native exit code. No operational execution follows.
+
+Final qualification remains separate and must bind actual evidence:
+  import118 receipt and cleanup;
+  Android acceptance108;
+  new E4/PG C0/C1/C2, actual release before separate PULL110, and closure;
+  authenticated configured MRE119 push/replay/read and closure;
+  required source PR185 then PR184 acceptance;
+  final111 package, one final backup/integrity/isolated restore, and audit120.
+Provided files, declared results or a manual label do not substitute for
+qualified receipts, actual operator return or final package sealing.
+
+Operational bindings are deferred: accepted host/AVD/serial/application ID,
+final installed APK/signature/config, exact API/image/schema/issuer/CA,
+private state, transport owner/lease and pinned recovery tools must be bound
+and reviewed before operational wrappers can be supplied. Preserve existing
+data, profiles, earlier packages, keys, epoch and services. These gates make
+no production, VPS, domain, offsite delivery, full v1 or AI completion claim.
