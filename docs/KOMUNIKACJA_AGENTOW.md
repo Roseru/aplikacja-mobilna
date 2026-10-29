@@ -11192,6 +11192,81 @@ Kontynuacja O2-073 — **nowy aktor APK i rzeczywiste kontrole zimnego startu**:
   i nowy trial na faktycznie zainstalowanym 1052. Backend nadal 8638/afda;
   anti-enum P2 pozostaje OPEN. Bez nowego PR, merge lub odbioru wydania.
 
+Kontynuacja O2-073 — **retencja, zwykły ACK/PULL i ograniczony core replay**:
+
+- 29.10.2026, ten sam duży etap na `codex/devops-demo-native`. Root przyjął
+  źródła i rzeczywiste kontrole aktora 1052 oraz neutralne addendum zachowania
+  danych; niezależnie przeliczono 228/228 tabelowych odcisków czterech kopii.
+  Trwałe outbox i wcześniejsze kompletne partie zachowały identyczne bajty.
+  Addendum SHA256
+  `7ee004cfca06a017d933b51d3274928d2ff926387caa08d52307db24cbd6a1a6`.
+- Pierwsza dalsza próba po prepare początkowo odmówiła C0 na formacie adresu
+  PG z `/32`; odebrano wąską metrologię `host()`, po czym hold odmówił przed
+  HTTP z powodu braku świeżej sesji. Oba wyniki pozostają zachowane; pending
+  nie usunięto ani nie podniesiono go do wyniku replay. Następny zwykły PULL ujawnił wypełniony
+  limit przez wygasłe techniczne kopie. Po bezpośredniej zgodzie właściciela
+  wykonano dokładnie jeden istniejący bounded worker `once`: 14 syntetycznych
+  właścicieli, 0 błędów, 29 sesji i 41 pozycji usuniętych, pozostałe kategorie
+  0, `pending=false`. Osobny pomiar przed/po wykazał zmianę tylko tych dwóch
+  tabel; pozostałe 90 tabel, epoka i schemat identyczne. Root niezależnie
+  odebrał ten wąski zakres; zgoda jednorazowa została wykorzystana.
+- Po rzeczywistym ponownym Code/S256 aplikacja dostarczyła zachowaną partię
+  zwykłą ścieżką produkcyjną: identyczny zapisany HTTP body, batch
+  pending/attempted0 → complete/attempted1, outbox `acked`, Meal revision1
+  i jeden zgodny accepted receipt w PG. Osobny przyrostowy PULL po PUSH
+  zawierał ten sam nowy Meal; 1 strona/1 rekord, zastosowanie 3 rekordów,
+  0 wstrzymanych. Lokalnie pozostało 223,1 kcal, w tym świadomie nieprzeniesiony
+  starszy wpis 89 kcal; serwer miał 134,1 kcal. To nie nowy pełny snapshot,
+  mimo etykiety „pełna kopia” w UI. Dwa późniejsze puste odczyty po restarcie
+  i nieukończony dodatkowy ręczny PULL mają osobne wyniki.
+- Root odebrał zwykły zapis i osobny INCREMENTAL, bez P1/P2 w tym ograniczonym
+  zakresie. Receipt SHA256
+  `c0abf11707724301f5645aca02f95ea9cfcc241547b404f34d22b449b351ca10`.
+  Neutralny pakiet tego odbioru ma SHA256
+  `efe3e0915b71c4bf5f00fd8ced5d43bce70080746e56b43af815eda12e169a0c`.
+  Wiąże faktycznie zainstalowane 1052, źródła, trzy kopie Room, zamrożone
+  bajty partii oraz ograniczone projekcje PG/stron. Opaque checkpoint i context
+  występują wyłącznie jako odciski; prywatne dane i archiwa pozostają poza Git.
+  Pomiar PM wykonano później niż zwykły cykl. Powiązanie znormalizowanego hash
+  operacji częściowo opiera się na źródle i projekcji, bez ponownego parsowania
+  prywatnego body.
+- W nowej spójnej próbie autor uzyskał rzeczywiste isolate/prepare, nowy Meal
+  z UI, C0 → HTTP200/zweryfikowany ACK zatrzymany przed Room → niezależny C1
+  → rzeczywisty kill własnego procesu przed terminem → nowy proces i identyczne
+  ponowienie → `already_applied`/revision1/trwały ACK → C2. Oryginalny
+  niezmieniony compare zwrócił `server_observations=PASS`,
+  `full_user_flow=false`; dopiero potem wykonano jawny osobny release.
+  Świadek używał odebranej metrologii SQL `host(inet_server_addr())`, z
+  osobnymi odciskami źródła/planu/wykonanego SQL i bez zmiany checkera.
+  Root przyjął ograniczony stan Room i serwera oraz addendum, 32/32 kontroli;
+  receipt SHA256
+  `a7559c68d949f7f71613637075b639a96e8eb459ea28797331c1af8c99ad4984`.
+  Nowy PID i późniejszy start replay były asercjami rzeczywistego drivera,
+  lecz ich wartości nie trafiły do osobnego receiptu operatora. SIGKILL
+  dokumentuje źródło operatora, bez niezależnego pomiaru wykonanych argv.
+  Zakończenie syscall i brak starego PID mają odrębny pomiar. Te granice
+  historycznego bindingu pozostają jawne. Nowa próba końcowego pinu zapisze
+  neutralne dane procesu i wywołań przy wykonaniu, bez zmiany reguł.
+  Przyjęty w tym zakresie pakiet ograniczonego core ma SHA256
+  `c4e4a2ec19bad8a034cff25fd037733e4e29c1575fe0b4c119e5590651d33b2e`.
+- Dwa zwykłe cykle `PULL_before → PUSH → PULL_after` wypełniły następnie pulę
+  czterech jeszcze ważnych sesji odczytu. To inna sytuacja niż wcześniejsze
+  wygasłe wiersze i nie jest dowodem niekontrolowanej pętli. Samo osiągnięcie
+  TTL nie usuwa wierszy. Dalsze źródłowe prace nad istniejącą retencją oraz
+  ograniczonym fastpath są wydzielone do jednego wykonawcy i niezależnego
+  odbioru; bieżący runtime pozostaje bez podmiany źródeł.
+  R1 `3a50f4028f3ba4b3babe85618ff972ee9c0c1202` ma Root SOURCE PASS
+  (`d224329f27424eef65ebe7bd1065c98ac5b49fd6980864700e196aaa4fd46a8b`),
+  bez zaliczenia runtime, CI i D2. Backend fastpath pozostaje źródłowym
+  NEEDS_FIX dla strumieniowania full E9 przed execute; wąski własny eksperyment
+  współbieżności limitu sesji jest w toku, bez odbioru lub uruchomienia go tutaj.
+- Core powyżej dotyczy wyłącznie źródła Native `8638dbcead2b97ac915ae676b85dc99e3ac551e7`.
+  Nie zamyka pełnego E4: osobny PULL po C2 i odczyt po restarcie pozostają
+  bramką. Po kwalifikowanym down i integracji poprawek wykonamy nową spójną
+  próbę na końcowym pinie; późniejszego PULL innej generacji nie dopisujemy
+  do starej kohorty. Anti-enum P2 i rozszerzone przepływy pozostają otwarte.
+  Końcowy PR, wymagane CI i odbiór integracyjny są nadal osobnymi krokami.
+
 ### O2-074 — PR190: bezpieczne ścieżki źródeł lokalnego pakietu demo
 
 - 29.10.2026, agent 2, tymczasowa koordynacja całości według O2-071.
