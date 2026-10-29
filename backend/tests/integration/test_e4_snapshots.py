@@ -1,3 +1,4 @@
+import json
 from concurrent.futures import ThreadPoolExecutor
 from datetime import UTC, date, datetime, timedelta
 from decimal import Decimal
@@ -7,10 +8,11 @@ from uuid import UUID, uuid4
 
 import pytest
 from pydantic import SecretStr
-from sqlalchemy import func, insert, select, text
+from sqlalchemy import event, func, insert, select, text
 from sqlalchemy.exc import ProgrammingError
 from sqlalchemy.orm import Session, sessionmaker
 
+from calorie_app.integrations.keycloak import Principal
 from calorie_app.modules.catalog.pagination import database_now
 from calorie_app.modules.diary.models import Weight
 from calorie_app.modules.diary.service import save_weight
@@ -21,8 +23,11 @@ from calorie_app.modules.sync.errors import SyncFailure
 from calorie_app.modules.sync.models import RecoveryMapping, SyncChange, SyncReceipt
 from calorie_app.modules.sync.repository import append_change, entity, lock_counter
 from calorie_app.modules.sync.retention import prune
+from calorie_app.modules.sync.router import execute_one, preflight
+from calorie_app.modules.sync.schemas import preflight_structure, validate_wire
 from calorie_app.modules.sync.snapshot_models import SyncSession, SyncSessionItem
 from calorie_app.modules.sync.tokens import read_token, sign_checkpoint, timestamp
+from tests.integration.test_e4_push import operation, request
 from tests.support.deletion_regression import begin as begin_deletion
 
 pytestmark = pytest.mark.integration
@@ -246,10 +251,12 @@ def test_byte_pages_do_not_drop_elements_and_resource_failure_rolls_back(owners,
 
 def test_account_session_limit_is_serialized_and_expired_copies_are_bounded_pruned(owners):
     engine, factory, a, _ = owners
+    for _ in range(2):
+        add_weight(engine, a)
     for _ in range(4):
-        snapshots.pull(factory, a, {}, SECRET)
+        assert snapshots.pull(factory, a, {"limit": 1}, SECRET)["page_token"]
     with pytest.raises(SyncFailure, match="sync_resources_exhausted"):
-        snapshots.pull(factory, a, {}, SECRET)
+        snapshots.pull(factory, a, {"limit": 1}, SECRET)
     with engine.begin() as connection:
         connection.execute(
             text(
@@ -260,8 +267,8 @@ def test_account_session_limit_is_serialized_and_expired_copies_are_bounded_prun
         )
         connection.exec_driver_sql("SET LOCAL ROLE calorie_app_worker")
         result = connection.scalar(text("SELECT app.prune_sync(:owner,2)"), {"owner": a})
-        assert result["sessions"] == 2
-    snapshots.pull(factory, a, {}, SECRET)
+        assert result["items"] == 2 and result["sessions"] == 1
+    snapshots.pull(factory, a, {"limit": 1}, SECRET)
 
 
 def test_retention_minimizes_receipts_preserves_mapping_and_active_incremental(owners):
@@ -379,7 +386,7 @@ def test_snapshot_materialization_failure_leaves_no_published_copy(owners, monke
 
     monkeypatch.setattr(snapshots, "_add_item", abort)
     with pytest.raises(SyncFailure, match="service_unavailable"):
-        snapshots.pull(factory, a, {}, SECRET)
+        snapshots.pull(factory, a, {"limit": 1}, SECRET)
     with Session(engine) as session:
         assert session.scalar(select(func.count()).select_from(SyncSession)) == 0
         assert session.scalar(select(func.count()).select_from(SyncSessionItem)) == 0
@@ -449,15 +456,16 @@ def test_materialization_blocks_writer_and_captures_one_repeatable_read(owners, 
     original_id = add_weight(engine, a)
     copying, release, writer_ready = Event(), Event(), Event()
     pid = []
-    original = snapshots._add_item
+    original = snapshots._item_size
 
-    def pause(session, state, kind, value):
-        original(session, state, kind, value)
-        if state.item_count == 1:
+    def pause(state, value):
+        size = original(state, value)
+        if state.item_count == 0:
             copying.set()
             assert release.wait(10), "test did not release materializer"
+        return size
 
-    monkeypatch.setattr(snapshots, "_add_item", pause)
+    monkeypatch.setattr(snapshots, "_item_size", pause)
 
     def writer():
         with Session(engine) as session, session.begin():
@@ -510,3 +518,239 @@ def test_materialization_blocks_writer_and_captures_one_repeatable_read(owners, 
         factory, a, {"checkpoint": response["checkpoint"], "sync_epoch": str(epoch)}, SECRET
     )
     assert current["entities"][0]["revision"] == 2
+
+
+def test_single_page_initial_reads_leave_no_retained_copy(owners):
+    engine, factory, owner, _ = owners
+    for _ in range(6):
+        response = snapshots.pull(factory, owner, {}, SECRET)
+        assert response["page_token"] is None and response["checkpoint"]
+        assert response["snapshot_token"] and response["entities"] == []
+    with Session(engine) as session:
+        assert session.scalar(select(func.count()).select_from(SyncSession)) == 0
+        assert session.scalar(select(func.count()).select_from(SyncSessionItem)) == 0
+
+
+def graph_fingerprint(engine, owner):
+    with engine.connect() as connection:
+        return {
+            table: tuple(
+                connection.execute(
+                    text(
+                        "SELECT count(*),encode(sha256(convert_to(COALESCE("
+                        "jsonb_agg(to_jsonb(t) ORDER BY to_jsonb(t)::text),'[]'::jsonb)::text,"
+                        "'UTF8')),'hex') FROM app." + table + " t WHERE owner_id=:owner"
+                    ),
+                    {"owner": owner},
+                ).one()
+            )
+            for table in ("sync_sessions", "sync_session_items")
+        }
+
+
+@pytest.mark.parametrize("scope", ["calorie-app", "calorie-app:energy_estimates_v1"])
+def test_small_reads_at_four_live_graphs_preserve_them_without_writes(owners, monkeypatch, scope):
+    engine, factory, owner, _ = owners
+    for _ in range(10):
+        add_weight(engine, owner)
+    pages = [snapshots.pull(factory, owner, {"limit": 1}, SECRET) for _ in range(4)]
+    assert all(page["page_token"] and page["checkpoint"] is None for page in pages)
+    frozen = graph_fingerprint(engine, owner)
+    assert frozen["sync_sessions"][0] == 4 and frozen["sync_session_items"][0] == 40
+    graph_writes = []
+
+    def record(_connection, _cursor, statement, _parameters, _context, _many):
+        sql = statement.lower().lstrip()
+        if sql.startswith(("insert", "update", "delete")) and "sync_session" in sql:
+            graph_writes.append(sql)
+
+    event.listen(engine, "before_cursor_execute", record)
+    try:
+        small = snapshots.pull(factory, owner, {}, SECRET, installation_id=scope)
+        assert small["page_token"] is None and small["checkpoint"]
+        assert len(small["entities"]) == 10 and small["snapshot_token"]
+        read = snapshots.pull(
+            factory,
+            owner,
+            {"sync_epoch": small["sync_epoch"], "checkpoint": small["checkpoint"]},
+            SECRET,
+            installation_id=scope,
+        )
+        assert read["entities"] == [] and read["checkpoint"] and read["page_token"] is None
+        with pytest.raises(SyncFailure, match="sync_resources_exhausted"):
+            snapshots.pull(factory, owner, {"limit": 1}, SECRET, installation_id=scope)
+        # Count exactly fits; byte packing alone requires continuation.
+        monkeypatch.setattr(snapshots, "MAX_RESPONSE_BYTES", 5500)
+        with pytest.raises(SyncFailure, match="sync_resources_exhausted"):
+            snapshots.pull(factory, owner, {"limit": 10}, SECRET, installation_id=scope)
+    finally:
+        event.remove(engine, "before_cursor_execute", record)
+    assert graph_writes == []
+    assert graph_fingerprint(engine, owner) == frozen
+    assert follow(factory, owner, pages[0], 1)["entities"][0]["revision"] == 1
+
+
+def test_six_ordinary_write_cycles_use_stateless_checkpoints_and_stable_retry(owners):
+    engine, factory, owner, _ = owners
+    who = Principal("https://snapshot.test", str(owner), frozenset({"user"}))
+    checkpoint = None
+    epoch = None
+    for _ in range(6):
+        query = {} if checkpoint is None else {"checkpoint": checkpoint, "sync_epoch": epoch}
+        before = snapshots.pull(factory, owner, query, SECRET)
+        epoch = before["sync_epoch"]
+        op = operation({"sync_epoch": epoch})
+        data = request({"sync_epoch": epoch}, before["checkpoint"], [op])
+        frozen = snapshots._json(data)
+        preflight_structure(data)
+        actual_owner, generation = preflight(factory, who, data, SECRET)
+        accepted, _at = execute_one(factory, actual_owner, generation, data, op, SECRET)
+        assert accepted["status"] == "accepted" and accepted["revision"] == 1
+        retried, _at = execute_one(factory, actual_owner, generation, data, op, SECRET)
+        assert retried["status"] == "already_applied" and retried["revision"] == 1
+        assert snapshots._json(data) == frozen
+        after = snapshots.pull(
+            factory, owner, {"sync_epoch": epoch, "checkpoint": before["checkpoint"]}, SECRET
+        )
+        validate_wire(before, "PullResponse")
+        validate_wire(after, "PullResponse")
+        assert len(after["entities"]) == 1 and after["page_token"] is None
+        checkpoint = after["checkpoint"]
+    assert graph_fingerprint(engine, owner)["sync_sessions"][0] == 0
+    assert graph_fingerprint(engine, owner)["sync_session_items"][0] == 0
+    with Session(engine) as session:
+        assert session.scalar(select(func.count()).select_from(SyncReceipt)) == 6
+        assert session.scalar(select(func.count()).select_from(Weight)) == 6
+
+
+def test_single_page_recovery_proof_keeps_requested_receipts_and_mappings(owners):
+    engine, factory, owner, _ = owners
+    target = add_weight(engine, owner)
+    found, missing, source_epoch, source_id = (uuid4() for _ in range(4))
+    with Session(engine) as session, session.begin():
+        epoch = current_epoch(session)
+        session.add(
+            RecoveryMapping(
+                owner_id=owner,
+                source_epoch=source_epoch,
+                source_entity_id=source_id,
+                entity_type="weight",
+                target_entity_id=target,
+            )
+        )
+        session.add(
+            SyncReceipt(
+                owner_id=owner,
+                operation_id=found,
+                request_hash="d" * 64,
+                source_epoch=epoch,
+                entity_type="weight",
+                entity_id=target,
+                status="accepted",
+                revision=1,
+                response={"unneeded_blob": "x" * 600000},
+            )
+        )
+    response = snapshots.pull(
+        factory, owner, {"limit": 3, "recovery_operation_ids": [str(found), str(missing)]}, SECRET
+    )
+    validate_wire(response, "PullResponse")
+    assert response["page_token"] is None and response["checkpoint"]
+    assert len(response["entities"]) == len(response["recovery_mappings"]) == 1
+    assert [r["operation_id"] for r in response["operation_receipts"]] == [str(found)]
+    assert response["operation_receipts"][0]["code"] is None
+    assert response["recovery_mappings"][0]["target_revision"] == 1
+    assert graph_fingerprint(engine, owner)["sync_sessions"][0] == 0
+
+
+def push_one(factory, owner, checkpoint, epoch, op):
+    data = request({"sync_epoch": epoch}, checkpoint, [op])
+    preflight_structure(data)
+    who = Principal("https://snapshot.test", str(owner), frozenset({"user"}))
+    actual_owner, generation = preflight(factory, who, data, SECRET)
+    return execute_one(factory, actual_owner, generation, data, op, SECRET)[0]
+
+
+def test_single_page_keeps_null_zero_and_incremental_tombstone(owners):
+    engine, factory, owner, _ = owners
+    initial = snapshots.pull(factory, owner, {}, SECRET)
+    epoch = initial["sync_epoch"]
+    meal = operation({"sync_epoch": epoch}, "meal")
+    meal["payload"]["items"][0]["nutrition_per_100"] = {
+        "energy_kcal": "100",
+        "protein_g": None,
+        "fat_g": "0",
+        "carbs_g": "20",
+    }
+    assert push_one(factory, owner, initial["checkpoint"], epoch, meal)["status"] == "accepted"
+    full = snapshots.pull(factory, owner, {}, SECRET)
+    copied = next(v for v in full["entities"] if v["entity_id"] == meal["entity_id"])
+    assert copied["payload"]["items"][0]["nutrition_per_100"] == {
+        "energy_kcal": "100",
+        "protein_g": None,
+        "fat_g": "0",
+        "carbs_g": "20",
+    }
+    deleted = operation(
+        {"sync_epoch": epoch}, "meal", entity_id=UUID(meal["entity_id"]), base=1, action="delete"
+    )
+    assert push_one(factory, owner, full["checkpoint"], epoch, deleted)["status"] == "accepted"
+    after = snapshots.pull(
+        factory, owner, {"checkpoint": full["checkpoint"], "sync_epoch": epoch}, SECRET
+    )
+    tombstone = next(v for v in after["entities"] if v["entity_id"] == meal["entity_id"])
+    assert tombstone["deleted"] is True and tombstone["payload"] is None
+    assert after["page_token"] is None and after["checkpoint"]
+    validate_wire(full, "PullResponse")
+    validate_wire(after, "PullResponse")
+    assert graph_fingerprint(engine, owner)["sync_sessions"][0] == 0
+
+
+def test_single_page_rechecks_starting_checkpoint_age_after_copy(owners, monkeypatch):
+    engine, factory, owner, _ = owners
+    with Session(engine) as session:
+        epoch, now = current_epoch(session), database_now(session)
+    checkpoint = sign_checkpoint(
+        SECRET, owner_id=owner, generation=1, epoch=epoch, position=0, now=now - timedelta(days=30)
+    )
+    times = iter([now, now + timedelta(microseconds=1)])
+    monkeypatch.setattr(snapshots, "database_now", lambda _: next(times))
+    with pytest.raises(SyncFailure, match="sync_cursor_expired"):
+        snapshots.pull(factory, owner, {"checkpoint": checkpoint, "sync_epoch": str(epoch)}, SECRET)
+    assert graph_fingerprint(engine, owner)["sync_sessions"][0] == 0
+
+
+def test_utf8_byte_budget_can_split_an_exact_count_limit(owners, monkeypatch):
+    engine, factory, owner, _ = owners
+    initial = snapshots.pull(factory, owner, {}, SECRET)
+    epoch = initial["sync_epoch"]
+    for _ in range(2):
+        meal = operation({"sync_epoch": epoch}, "meal")
+        meal["payload"]["title"] = "漢" * 60
+        meal["payload"]["items"][0]["item_id"] = str(uuid4())
+        assert push_one(factory, owner, initial["checkpoint"], epoch, meal)["status"] == "accepted"
+    full = snapshots.pull(factory, owner, {}, SECRET)
+
+    # Independent UTF-8 oracle over the wire DTO; no production size helper.
+    def encoded(value):
+        return len(
+            json.dumps(value, ensure_ascii=False, sort_keys=True, separators=(",", ":")).encode(
+                "utf-8"
+            )
+        )
+
+    envelope = full | {"entities": [], "checkpoint": None}
+    largest_size = max(encoded(value) for value in full["entities"])
+    monkeypatch.setattr(
+        snapshots, "MAX_RESPONSE_BYTES", encoded(envelope) + 4096 + largest_size + 1
+    )
+    first = snapshots.pull(factory, owner, {"limit": len(full["entities"])}, SECRET)
+    assert len(first["entities"]) == 1 and first["checkpoint"] is None and first["page_token"]
+    assert len("漢".encode()) == 3
+    values = first["entities"][:]
+    page = first
+    while page["page_token"]:
+        page = follow(factory, owner, page, len(full["entities"]))
+        values.extend(page["entities"])
+    assert {v["entity_id"] for v in values} == {v["entity_id"] for v in full["entities"]}
+    assert page["checkpoint"]
