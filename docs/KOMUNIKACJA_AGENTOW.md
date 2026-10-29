@@ -11257,9 +11257,27 @@ Kontynuacja O2-073 — **retencja, zwykły ACK/PULL i ograniczony core replay**:
   odbioru; bieżący runtime pozostaje bez podmiany źródeł.
   R1 `3a50f4028f3ba4b3babe85618ff972ee9c0c1202` ma Root SOURCE PASS
   (`d224329f27424eef65ebe7bd1065c98ac5b49fd6980864700e196aaa4fd46a8b`),
-  bez zaliczenia runtime, CI i D2. Backend fastpath pozostaje źródłowym
-  NEEDS_FIX dla strumieniowania full E9 przed execute; wąski własny eksperyment
-  współbieżności limitu sesji jest w toku, bez odbioru lub uruchomienia go tutaj.
+  bez zaliczenia runtime, CI i D2. Pierwotny backend `2fa7` otrzymał NEEDS_FIX:
+  odczyt E9 wymagał strumieniowania przed wykonaniem SQL, a dwa równoczesne
+  odczyty wielostronicowe mogły przekroczyć limit czterech kopii. Oba błędy
+  odtworzono wyłącznie na odseparowanym PostgreSQL. Poprawka `0cb19` ustawia
+  opcję kursora przed SQL oraz wykorzystuje istniejące `app.admit_read_session`
+  z E5 po zamknięciu sondy, przed liczeniem utrwalonych kopii. Małe kompletne
+  odczyty i kontynuacje nie zapisują tego markera; licznik i jego `xmin`,
+  historia, checkpointy, TTL, limit i protokół pozostają bez zmiany.
+- Root odebrał kod `0cb19` i dowody własnego PG: 0 P1/P2, 81 PASS na tym kodzie
+  (58 integracyjnych PG i 23 testy tokenów), w tym trzy istniejące kontrole E5.
+  Testy potwierdzają nazwany kursor i jego zamknięcie oraz oba warianty race:
+  200/503, rzeczywisty błąd `40001`, nowy Session/RR przy retry, najwyżej cztery
+  kopie i brak tokenów w odmowie. Stary zakres 1743 testów jednostkowych
+  pozostaje osobną fazą; nie opisujemy unii jako pełnego ponowienia na `0cb19`.
+  Własny klaster testowy zatrzymano po kwalifikacji z kodem 0; aktywnego Native
+  nie zmieniano. Receipt SHA256
+  `1ad1f1771a0aeac1fa7de5d4d2921bb0edbd1a15ae16e3f41338468749d63be3`.
+  Późniejszy `38ba` zmienia wyłącznie opis wyników; backend jest identyczny.
+  R1, normalizacja adresu PG i poprawki backendu są składane zwykłymi merge
+  w jednym kandydacie `codex/devops-integration-1-0`. Rzeczywisty rollout,
+  nowa spójna próba APK i zdalne CI nadal nie są zaliczone.
 - Core powyżej dotyczy wyłącznie źródła Native `8638dbcead2b97ac915ae676b85dc99e3ac551e7`.
   Nie zamyka pełnego E4: osobny PULL po C2 i odczyt po restarcie pozostają
   bramką. Po kwalifikowanym down i integracji poprawek wykonamy nową spójną
