@@ -46,11 +46,27 @@ ważny dokładnie 30×24 h; sesja materializacji wygasa w chwili 60 min. Tylko
 końcowa strona wydaje checkpoint, a jej wynik i pierwszy czas wystawienia
 pozostają trwałe. Page/snapshot tokens nie uprawniają do push.
 
-Snapshot i incremental materializują kopię w repeatable read z H i rewizją osi
-jednego odczytu. Limity: cztery sesje na owner, 100000 elementów i 64 MiB
-na sesję, 1 MiB odpowiedzi i wspólne 1–500 elementów trzech tablic. Zasoby
-przekroczone dają sync_resources_exhausted bez checkpointu. Prune jest
+Snapshot i incremental czytają stan w repeatable read z H i rewizją osi
+jednego odczytu. Jeśli całość mieści się na pierwszej stronie, odpowiedź
+kończy odczyt bez utrwalania sesji i jej elementów. Zachowuje pełny DTO,
+snapshot_token w trybie snapshot oraz podpisany checkpoint. Nie wydaje
+page_token, więc nie istnieje żądanie kontynuacji tej kopii; powtórzenie
+pierwszego żądania rozpoczyna nowy spójny odczyt. Checkpoint nie odwołuje
+się do wiersza sesji i nadal działa dla push oraz następnego incremental.
+
+Odczyt wymagający kontynuacji materializuje niezmienną kopię. Limity:
+cztery utrwalone sesje na owner, 100000 elementów i 64 MiB na sesję,
+1 MiB odpowiedzi i wspólne 1–500 elementów trzech tablic. Sonda pierwszej
+strony jest ograniczona tym samym licznikiem i budżetem UTF-8 oraz jednym
+nadmiarowym elementem; zamyka strumień przed ewentualną materializacją.
+Przy zajętych czterech slotach mały kompletny odczyt nie zużywa nowego,
+a odczyt wymagający kolejnej strony daje sync_resources_exhausted bez
+checkpointu i bez piątej kopii. Istniejące kopie nie są usuwane ani
+zmieniane, również po wydaniu ich ostatniej strony; retry wcześniejszych
+i końcowych stron oraz TTL pozostają bez zmian. Prune jest
 ograniczone i respektuje aktywne kopie; minimalne dowody nie wygasają.
+Zakres poprawki i lokalne sprawdzenia opisuje
+[odbiór jednostronicowego PULL](JEDNOSTRONICOWY_PULL.md).
 Rodzice/tombstones pozostają konserwatywnie do usunięcia konta, także gdy
 szczegóły receipts/ChangeLog zostały po 60 dniach zminimalizowane. To świadomy
 wybór chroniący FK i historię, nie obietnica usunięcia wszystkich szczegółów

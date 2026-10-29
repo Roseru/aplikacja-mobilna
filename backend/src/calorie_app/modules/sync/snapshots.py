@@ -1,6 +1,7 @@
 """Repeatable-read materialization and durable, bounded private pull pagination."""
 
 import json
+from contextlib import closing
 from uuid import UUID, uuid4
 
 from sqlalchemy import func, select, text
@@ -100,8 +101,8 @@ def _context(session, owner_id, query):
         account = lock_account(session, owner_id)
     except DomainError as error:
         raise SyncFailure(error.status, error.code) from None
-    # All writers use account -> counter -> aggregate. The account lock also
-    # serializes creation/resource accounting across concurrent pull requests.
+    # All writers use account -> counter -> aggregate. Retained admission below
+    # also writes a tuple, so stale RR waiters retry before resource accounting.
     counter = session.scalar(
         select(SyncCounter).where(SyncCounter.owner_id == owner_id).with_for_update()
     )
@@ -131,7 +132,7 @@ def _claims(state, kind, installation_id, offset=None):
     return value
 
 
-def _add_item(session, state, kind, value):
+def _item_size(state, value):
     size = len(_json(value))
     if (
         size > MAX_ITEM_BYTES
@@ -139,6 +140,11 @@ def _add_item(session, state, kind, value):
         or state.byte_count + size > MAX_SESSION_BYTES
     ):
         raise SyncFailure(503, "sync_resources_exhausted")
+    return size
+
+
+def _add_item(session, state, kind, value):
+    size = _item_size(state, value)
     state.item_count += 1
     state.byte_count += size
     session.add(
@@ -156,6 +162,171 @@ def _add_item(session, state, kind, value):
         session.flush()
 
 
+def _items(session, owner_id, query, claims, high, installation_id):
+    """One payload at a time, shared by the first-page probe and durable copy."""
+    if claims:
+        with closing(
+            session.scalars(
+                select(SyncChange)
+                .where(
+                    SyncChange.owner_id == owner_id,
+                    SyncChange.position > claims["position"],
+                    SyncChange.position <= high,
+                )
+                .order_by(SyncChange.position)
+                .execution_options(yield_per=1)
+            )
+        ) as changes:
+            for change in changes:
+                if change.entity is not None:
+                    yield "entities", change.entity
+                elif installation_id == "calorie-app:energy_estimates_v1":
+                    value = session.scalar(
+                        text(
+                            "SELECT app.e9_entity(version_id) FROM app.energy_changes "
+                            "WHERE owner_id=:owner AND position=:position"
+                        ),
+                        {"owner": owner_id, "position": change.position},
+                    )
+                    if value is not None:
+                        yield "entities", value
+
+    else:
+        for entity_type, model in MODELS.items():
+            ids = select(model.id).where(model.owner_id == owner_id)
+            if hasattr(model, "deleted_at"):
+                ids = ids.where(model.deleted_at.is_(None))
+            with closing(
+                session.scalars(ids.order_by(model.id).execution_options(yield_per=1))
+            ) as values:
+                for entity_id in values:
+                    value = entity(session, owner_id, entity_type, entity_id)
+                    if value is None or value["deleted"]:
+                        raise SyncFailure(503, "service_unavailable")
+                    yield "entities", value
+    if not claims and installation_id == "calorie-app:energy_estimates_v1":
+        with closing(
+            session.scalars(
+                text(
+                    "SELECT app.e9_entity(id) FROM app.energy_versions WHERE owner_id="
+                    ":owner ORDER BY revision"
+                ).execution_options(yield_per=1),
+                {"owner": owner_id},
+            )
+        ) as values:
+            for value in values:
+                yield "entities", value
+    # Maps are copied with the target revision from this same frozen read. They
+    # are harmlessly repeated in incremental pulls so deleted targets remain
+    # associated with their original source without a second recreate.
+    with closing(
+        session.scalars(
+            select(RecoveryMapping)
+            .where(RecoveryMapping.owner_id == owner_id)
+            .order_by(RecoveryMapping.source_epoch, RecoveryMapping.source_entity_id)
+            .execution_options(yield_per=1)
+        )
+    ) as mappings:
+        for mapping in mappings:
+            yield "recovery_mappings", mapping_data(session, mapping)
+    if "recovery_operation_ids" in query:
+        with closing(
+            session.execute(
+                select(
+                    SyncReceipt.source_epoch,
+                    SyncReceipt.operation_id,
+                    SyncReceipt.entity_id,
+                    SyncReceipt.status,
+                    SyncReceipt.revision,
+                    SyncReceipt.code,
+                )
+                .where(
+                    SyncReceipt.owner_id == owner_id,
+                    SyncReceipt.operation_id.in_(
+                        [UUID(x) for x in query["recovery_operation_ids"]]
+                    ),
+                )
+                .order_by(SyncReceipt.operation_id)
+                .execution_options(yield_per=1)
+            )
+        ) as receipts:
+            for receipt in receipts:
+                yield (
+                    "operation_receipts",
+                    {
+                        "source_epoch": str(receipt.source_epoch),
+                        "operation_id": str(receipt.operation_id),
+                        "entity_id": str(receipt.entity_id),
+                        "status": receipt.status,
+                        "revision": receipt.revision,
+                        "code": receipt.code,
+                    },
+                )
+
+
+def _check_age(state, now):
+    if now >= state.expires_at:
+        raise SyncFailure(410, "snapshot_expired")
+    if state.base_issued_at is not None and now - state.base_issued_at > CHECKPOINT_TTL:
+        raise SyncFailure(
+            410,
+            "sync_cursor_expired",
+            details={"current_sync_epoch": str(state.epoch), "recovery_required": "full_snapshot"},
+        )
+
+
+def _response(state, secret, installation_id):
+    return {
+        "sync_epoch": str(state.epoch),
+        "mode": state.mode,
+        "snapshot_token": sign_token(_claims(state, "snapshot", installation_id), secret)
+        if state.mode == "snapshot"
+        else None,
+        "page_token": None,
+        "checkpoint": None,
+        "server_time": utc_text(state.created_at),
+        "entities": [],
+        "goal_timeline_revision": state.timeline_revision,
+        "recovery_mappings": [],
+        "operation_receipts": [],
+    }
+
+
+def _checkpoint(response, state, secret, installation_id, now):
+    response["checkpoint"] = sign_checkpoint(
+        secret,
+        owner_id=state.owner_id,
+        generation=state.generation,
+        epoch=state.epoch,
+        position=state.high_position,
+        now=now,
+        installation_id=installation_id,
+    )
+
+
+def _single_page(session, state, query, claims, secret, installation_id):
+    response = _response(state, secret, installation_id)
+    size = len(_json(response)) + 4096
+    with closing(
+        _items(session, state.owner_id, query, claims, state.high_position, installation_id)
+    ) as items:
+        for kind, value in items:
+            item_size = _item_size(state, value)
+            if state.item_count >= state.page_limit or size + item_size + 1 > MAX_RESPONSE_BYTES:
+                return None
+            response[kind].append(value)
+            state.item_count += 1
+            state.byte_count += item_size
+            size += item_size + 1
+    now = database_now(session)
+    _check_age(state, now)
+    _checkpoint(response, state, secret, installation_id, now)
+    if len(_json(response)) > MAX_RESPONSE_BYTES:
+        raise SyncFailure(503, "sync_resources_exhausted")
+    # Offset zero publishes no page token: only its stateless checkpoint is usable.
+    return response
+
+
 def _materialize(session, owner_id, query, secret, installation_id):
     account, epoch, high, now = _context(session, owner_id, query)
     claims = None
@@ -171,11 +342,6 @@ def _materialize(session, owner_id, query, secret, installation_id):
         )
         if claims["position"] > high:
             raise SyncFailure(422, "invalid_sync_token")
-    count = session.scalar(
-        select(func.count()).select_from(SyncSession).where(SyncSession.owner_id == owner_id)
-    )
-    if count >= MAX_SESSIONS:
-        raise SyncFailure(503, "sync_resources_exhausted")
     timeline = session.get(GoalTimeline, owner_id)
     state = SyncSession(
         id=uuid4(),
@@ -193,119 +359,32 @@ def _materialize(session, owner_id, query, secret, installation_id):
         item_count=0,
         byte_count=0,
     )
+    response = _single_page(session, state, query, claims, secret, installation_id)
+    if response is not None:
+        return response
+    # Share E5's owner marker: its tuple write rejects a stale RR snapshot with
+    # 40001. A row lock alone would let concurrent reads exceed the graph cap.
+    session.execute(text("SELECT app.admit_read_session(:owner)"), {"owner": owner_id})
+    count = session.scalar(
+        select(func.count()).select_from(SyncSession).where(SyncSession.owner_id == owner_id)
+    )
+    if count >= MAX_SESSIONS:
+        raise SyncFailure(503, "sync_resources_exhausted")
+    state.item_count = state.byte_count = 0
     session.add(state)
     session.flush()
-    if claims:
-        changes = session.scalars(
-            select(SyncChange)
-            .where(
-                SyncChange.owner_id == owner_id,
-                SyncChange.position > state.base_position,
-                SyncChange.position <= high,
-            )
-            .order_by(SyncChange.position)
-            .execution_options(yield_per=64)
-        )
-        for change in changes:
-            if change.entity is not None:
-                _add_item(session, state, "entities", change.entity)
-            elif installation_id == "calorie-app:energy_estimates_v1":
-                value = session.scalar(
-                    text(
-                        "SELECT app.e9_entity(version_id) FROM app.energy_changes "
-                        "WHERE owner_id=:owner AND position=:position"
-                    ),
-                    {"owner": owner_id, "position": change.position},
-                )
-                if value is not None:
-                    _add_item(session, state, "entities", value)
-
-    else:
-        for entity_type, model in MODELS.items():
-            ids = select(model.id).where(model.owner_id == owner_id)
-            if hasattr(model, "deleted_at"):
-                ids = ids.where(model.deleted_at.is_(None))
-            for entity_id in session.scalars(
-                ids.order_by(model.id).execution_options(yield_per=64)
-            ):
-                value = entity(session, owner_id, entity_type, entity_id)
-                if value is None or value["deleted"]:
-                    raise SyncFailure(503, "service_unavailable")
-                _add_item(session, state, "entities", value)
-    if not claims and installation_id == "calorie-app:energy_estimates_v1":
-        for value in session.scalars(
-            text(
-                "SELECT app.e9_entity(id) FROM app.energy_versions WHERE owner_id="
-                ":owner ORDER BY revision"
-            ),
-            {"owner": owner_id},
-        ).yield_per(64):
-            _add_item(session, state, "entities", value)
-    # Maps are copied with the target revision from this same frozen read. They
-    # are harmlessly repeated in incremental pulls so deleted targets remain
-    # associated with their original source without a second recreate.
-    mappings = session.scalars(
-        select(RecoveryMapping)
-        .where(RecoveryMapping.owner_id == owner_id)
-        .order_by(RecoveryMapping.source_epoch, RecoveryMapping.source_entity_id)
-        .execution_options(yield_per=64)
-    )
-    for mapping in mappings:
-        _add_item(session, state, "recovery_mappings", mapping_data(session, mapping))
-    if "recovery_operation_ids" in query:
-        receipts = session.scalars(
-            select(SyncReceipt)
-            .where(
-                SyncReceipt.owner_id == owner_id,
-                SyncReceipt.operation_id.in_([UUID(x) for x in query["recovery_operation_ids"]]),
-            )
-            .order_by(SyncReceipt.operation_id)
-            .execution_options(yield_per=64)
-        )
-        for receipt in receipts:
-            _add_item(
-                session,
-                state,
-                "operation_receipts",
-                {
-                    "source_epoch": str(receipt.source_epoch),
-                    "operation_id": str(receipt.operation_id),
-                    "entity_id": str(receipt.entity_id),
-                    "status": receipt.status,
-                    "revision": receipt.revision,
-                    "code": receipt.code,
-                },
-            )
+    with closing(_items(session, owner_id, query, claims, high, installation_id)) as items:
+        for kind, value in items:
+            _add_item(session, state, kind, value)
     session.flush()
-    # No page is published before the entire materialization has succeeded.
     return _page(session, state, 0, secret, installation_id, database_now(session))
 
 
 def _page(session, state, offset, secret, installation_id, now):
-    if now >= state.expires_at:
-        raise SyncFailure(410, "snapshot_expired")
-    if state.base_issued_at is not None and now - state.base_issued_at > CHECKPOINT_TTL:
-        raise SyncFailure(
-            410,
-            "sync_cursor_expired",
-            details={"current_sync_epoch": str(state.epoch), "recovery_required": "full_snapshot"},
-        )
+    _check_age(state, now)
     if state.final_offset == offset and state.final_response is not None:
         return state.final_response
-    response = {
-        "sync_epoch": str(state.epoch),
-        "mode": state.mode,
-        "snapshot_token": sign_token(_claims(state, "snapshot", installation_id), secret)
-        if state.mode == "snapshot"
-        else None,
-        "page_token": None,
-        "checkpoint": None,
-        "server_time": utc_text(state.created_at),
-        "entities": [],
-        "goal_timeline_revision": state.timeline_revision,
-        "recovery_mappings": [],
-        "operation_receipts": [],
-    }
+    response = _response(state, secret, installation_id)
     items = session.scalars(
         select(SyncSessionItem)
         .where(
@@ -330,15 +409,7 @@ def _page(session, state, offset, secret, installation_id, now):
             raise SyncFailure(503, "sync_resources_exhausted")
         response["page_token"] = sign_token(_claims(state, "page", installation_id, end), secret)
     else:
-        response["checkpoint"] = sign_checkpoint(
-            secret,
-            owner_id=state.owner_id,
-            generation=state.generation,
-            epoch=state.epoch,
-            position=state.high_position,
-            now=now,
-            installation_id=installation_id,
-        )
+        _checkpoint(response, state, secret, installation_id, now)
         state.final_offset, state.final_response = offset, response
         session.flush()
     if len(_json(response)) > MAX_RESPONSE_BYTES:
