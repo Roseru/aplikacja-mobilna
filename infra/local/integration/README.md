@@ -54,6 +54,23 @@ przekazuje ścieżki Keycloak do jego stałego upstreamu loopback; pozostały ru
 obsługuje istniejące `create_app()`, wraz z jego lifecycle. Nie ma access logów.
 Nie instaluje CA w Windows ani na urządzeniu i nie wyłącza walidacji TLS.
 
+Bramka dopuszcza połączenia HTTP i WebSocket wyłącznie z dokładnego
+`127.0.0.1` oraz wybranego IPv4 stanowiska, zgodnego z origin. Sprawdza
+rzeczywisty ASGI `client` przed odczytem body, wywołaniem API lub proxy.
+Brakujący, błędny lub obcy peer otrzymuje HTTP 403 z `no-store` albo zamknięcie
+WebSocket 1008. Nagłówki Host/Forwarded/X-Forwarded-For nie rozszerzają dostępu;
+`proxy_headers=False` pozostaje obowiązujące. Tylko wewnętrzny lifespan
+deleguje bez peer; nieznany typ scope nie trafia do backendu. To izolacja
+pomocnika, bez globalnej zapory lub dodatkowego mechanizmu logowania.
+
+Sam adres RFC1918 nie dowodzi izolacji od LAN. Przed próbą zmierz peer
+własnego hosta, emulatora/Chrome i APK; przy przekierowaniu ADB zapisz również
+bieżący listener, PID/birth/executable, dokładny AVD/serial i własną lease.
+Nie dodawaj zdalnych klientów do allowlist. Po zmianie kodu wykonaj jawny
+restart i rekwalifikację, zachowując CA, bazy, realm, użytkowników i epokę.
+Oddziel testy symulowanego ASGI od rzeczywistych połączeń. Odmowa połączenia
+z niewymienionego lokalnego adresu nie jest testem zdalnego klienta LAN.
+
 Każdy helper działa z ukrytym oknem. Markery wiążą PID, czas utworzenia i plik
 wykonywalny; `down` sprawdza cały zestaw przed zatrzymaniem pierwszego procesu.
 Własne drzewo Keycloak/gateway jest zatrzymywane wyłącznie po tej kontroli,
@@ -118,14 +135,22 @@ globalnego katalogu pytest. Nie wskazuj istniejącego stanu usług jako `basetem
 
 ```powershell
 $TestTemp = Join-Path (Get-Location) ('.tools/native-tests-' + [guid]::NewGuid())
-& $Python -m ruff check --config backend/pyproject.toml infra/local/integration/native.py infra/integration/tests/test_native_runtime.py
-& $Python -m ruff format --check --config backend/pyproject.toml infra/local/integration/native.py infra/integration/tests/test_native_runtime.py
-& $Python -m pytest infra/integration/tests/test_native_runtime.py --basetemp $TestTemp -q
+$NativeFiles = @(
+  'infra/local/integration/native.py', 'infra/local/integration/gateway.py',
+  'infra/integration/tests/test_native_runtime.py', 'infra/integration/tests/test_native_gateway.py'
+)
+& $Python -m ruff check --config backend/pyproject.toml $NativeFiles
+& $Python -m ruff format --check --config backend/pyproject.toml $NativeFiles
+& $Python -m pytest infra/integration/tests/test_native_runtime.py `
+  infra/integration/tests/test_native_gateway.py --basetemp $TestTemp -q
 ```
 
 Testy źródeł helperów celowo zmieniają każdy z pięciu plików w osobnym
 repozytorium tymczasowym. Wymagają odrzucenia starego pinu i innego skrótu po
 nowym commicie; nie zmieniają działającego checkoutu ani usług.
+Testy guardu używają sentinelów, które obalają próbę przy jakimkolwiek
+odczycie body, wywołaniu backendu lub utworzeniu klienta proxy dla odmówionego
+peer. Sam wynik jednostkowy nie zastępuje pomiaru rzeczywistych połączeń.
 
 ## Jawny profil rejestracji i resetu
 
@@ -149,6 +174,22 @@ Narzędzie zapisuje próby i częściowe skutki bez automatycznego resetowania.
 Żaden z tych wyników nie potwierdza WF01. Rejestrację, wiadomość/link,
 logowanie, reset i zachowanie historii trzeba odebrać przez rzeczywisty UI.
 Nie publikuj skrzynki, haseł, linków akcji ani prywatnych descriptorów.
+
+Odebrany funkcjonalnie przepływ rejestracji/resetu nie oznacza odbioru
+bezpieczeństwa publicznego providera. W rzeczywistej próbie przypiętego
+Keycloak 26.8.0 powtórna rejestracja pokazała „E-mail już istnieje.”:
+`FAIL_PUBLIC_ACCOUNT_ENUMERATION` / P2 pozostaje otwarte. Ograniczenie peer
+zmniejsza dostęp do własnego DEMO; nie naprawia tej odpowiedzi. Do czasu
+osobnej decyzji i naprawy używaj wyłącznie kontrolowanych syntetycznych kont,
+prywatnego SMTP i egzekwowanej granicy pomocnika. Pełny odbiór bezpieczeństwa
+oraz publiczne wydanie pozostają niezaliczone. Nie osłabiaj unikalności adresu,
+nie maskuj samego tekstu i nie dodawaj własnego SPI w ramach tego helpera.
+
+W próbie niedostępnego SMTP formularz resetu pokazał ten sam ogólny komunikat
+co po rzeczywistym dostarczeniu. Komunikat nie jest dowodem wysyłki. Osobno
+sprawdź brak wiadomości i zmiany hasła podczas awarii, zachowanie historii
+oraz rzeczywiste ponowienie po przywróceniu tego samego sinka. Nie podnoś
+częściowego wyniku do pełnego WF01 lub odbioru UX sygnalizacji awarii poczty.
 
 Descriptor pod `config-generation/provider-profile.json` i nowa generacja
 runtime wiążą konfigurację z istniejącymi źródłami/procesami. Kolejne `up`
