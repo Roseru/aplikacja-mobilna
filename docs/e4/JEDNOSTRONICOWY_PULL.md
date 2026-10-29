@@ -77,10 +77,12 @@ oczekiwane porażki przed poprawką:
   i jego zamknięcie; RED→PASS. Cały sześcioprzypadkowy zakres E9 sync
   przeszedł po tej zmianie. Iterator nadal zamyka wynik przy wczesnym spill.
 
-Surowe porażki i wynik1794 pozostają historią pina2fa7. Nowy zakres
-powiązanych regresji obejmuje także współdzielenie admission z E5;
-pełnego1743 unit nie uruchamiano ponownie. Wznowiono wyłącznie własny
-kwalifikowany klaster testowy; aktywne dane Native pozostały nietknięte.
+Surowe porażki i wynik1794 pozostają historią pina2fa7. Końcowy zakres na
+nowym kodzie dał81 PASS/0 FAIL/0 SKIP: 58 integracyjnych PG i23 tokenów,
+w tym istniejące przypadki współbieżności, RR i ACL E5. Pełnego1743 unit
+nie uruchamiano ponownie. Ruff/format, zgodność schematów, E0 (930 lokalnych
+odnośników) i diff-check przeszły. Wznowiono i zatrzymano z kodem0 wyłącznie
+własny kwalifikowany klaster testowy; aktywne dane Native pozostały nietknięte.
 
 To odbiór komponentu z syntetycznymi granicami tożsamości/dostawców, nie
 potwierdzenie Keycloak/TLS/Androida, Gemini, E4 lub wydania1.0. Duże odczyty
