@@ -395,9 +395,14 @@ def capture(pg, destination):
         },
     }
     # pg_dumpall may include diagnostics in the source private log, never in the archive.
-    native.write_json(destination / "manifest.json", manifest)
+    encoded_manifest = json.dumps(manifest, indent=2) + "\n"
+    native.private_write(destination / "manifest.json", encoded_manifest)
     verify_native_archive(destination)
-    return manifest | {"trusted_manifest_sha256": digest(destination / "manifest.json")}
+    return manifest | {
+        "trusted_manifest_sha256": hashlib.sha256(
+            encoded_manifest.encode("utf-8")
+        ).hexdigest()
+    }
 
 
 def verify_native_archive(directory):
@@ -459,11 +464,9 @@ def restore(archive, target, pg_bin, port, *, checkpoint, checkpoint_sha256):
     checkpoint = owned_path(checkpoint)
     disjoint(archive, target, checkpoint)
     trusted = restore_trust.preflight(archive, checkpoint, checkpoint_sha256)
-    manifest = verify_native_archive(archive)
-    if manifest["source_owner"] != trusted["source_owner"]:
-        raise ValueError("Trusted capture owner differs")
     if target.exists():
         raise FileExistsError("Existing target preserved")
+    archive, manifest = stage_archive(archive, trusted)
     roles = (archive / "roles.sql").read_text(encoding="utf-8")
     if roles.count("CREATE ROLE postgres;") != 1:
         raise ValueError("Unexpected bootstrap role archive")
@@ -471,6 +474,43 @@ def restore(archive, target, pg_bin, port, *, checkpoint, checkpoint_sha256):
     pg.seal()
     with pg.operation():
         return _restore_into(pg, archive, manifest, roles, checkpoint_sha256)
+
+
+def copy_payload(source, destination, expected):
+    """Hash the bytes actually copied from one open input handle."""
+    total, checksum = 0, hashlib.sha256()
+    with source.open("rb") as incoming, destination.open("xb") as outgoing:
+        while block := incoming.read(1024 * 1024):
+            total += len(block)
+            checksum.update(block)
+            outgoing.write(block)
+    if total != expected["size"] or checksum.hexdigest() != expected["sha256"]:
+        raise ValueError("Archive checksum mismatch: changed while copying payload")
+    destination.chmod(0o400)
+
+
+def stage_archive(archive, trusted):
+    """Seal four payloads before target creation; never execute from the original."""
+    manifest = trusted["_manifest"]
+    if (
+        manifest.get("transport") != FORMAT
+        or manifest.get("revision") != EXPECTED_REVISION
+        or set(manifest["files"])
+        != {"roles.sql", "calorie_app.dump", "keycloak.dump", "catalog.tar"}
+    ):
+        raise ValueError("Unexpected native archive member or format")
+    if manifest["source_owner"] != trusted["source_owner"]:
+        raise ValueError("Trusted capture owner differs")
+    stage = owned_path(archive.parent / ("restore-input-" + uuid4().hex))
+    private_directory(stage)
+    (stage / "manifest.json").write_bytes(trusted["_manifest_bytes"])
+    (stage / "manifest.json").chmod(0o400)
+    for name, expected in manifest["files"].items():
+        source = owned_path(archive / name)
+        copy_payload(source, stage / name, expected)
+    # Reuse the existing verifier solely on the private, read-only sealed inputs.
+    # No later manifest/SQL/dump/catalog reads use an untrusted original path.
+    return stage, verify_native_archive(stage)
 
 
 def _restore_into(pg, archive, manifest, roles, checkpoint_sha256):

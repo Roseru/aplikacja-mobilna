@@ -6,6 +6,7 @@ import os
 import subprocess
 import sys
 import tarfile
+from contextlib import nullcontext
 from pathlib import Path
 from types import SimpleNamespace
 from uuid import uuid4
@@ -23,7 +24,7 @@ def archive(tmp_path, monkeypatch):
     monkeypatch.setattr(restore.native, "ROOT", tmp_path)
     folder = tmp_path / ".tools/archive"
     folder.mkdir(parents=True)
-    (folder / "roles.sql").write_text("CREATE ROLE postgres;\n")
+    (folder / "roles.sql").write_text("CREATE ROLE postgres;\n", newline="\n")
     for name in ("calorie_app.dump", "keycloak.dump"):
         (folder / name).write_bytes(b"synthetic dump boundary fixture")
     write_tar(folder / "catalog.tar", "catalog/manifest.json")
@@ -195,7 +196,7 @@ def test_missing_external_checkpoint_file_refuses_before_create(archive, monkeyp
 
 def test_linked_manifest_refuses_before_manifest_digest(archive, monkeypatch):
     original = restore_trust.native.confined
-    original_digest = restore_trust.digest
+    original_read = Path.read_bytes
 
     def confined(path):
         if Path(path) == archive / "manifest.json":
@@ -205,10 +206,10 @@ def test_linked_manifest_refuses_before_manifest_digest(archive, monkeypatch):
     def no_manifest_read(path):
         if Path(path) == archive / "manifest.json":
             pytest.fail("Linked manifest was read before refusal")
-        return original_digest(path)
+        return original_read(path)
 
     monkeypatch.setattr(restore_trust.native, "confined", confined)
-    monkeypatch.setattr(restore_trust, "digest", no_manifest_read)
+    monkeypatch.setattr(Path, "read_bytes", no_manifest_read)
     refuse_before_create(archive, monkeypatch, "Linked state paths")
 
 
@@ -384,6 +385,115 @@ def test_lifecycle_lock_refuses_overlap(archive):
     pg.state = archive
     with pg.operation(), pytest.raises(OSError), pg.operation():
         pytest.fail("Concurrent operation admitted")
+
+
+def test_checkpoint_and_manifest_hash_parse_same_single_read(archive, monkeypatch):
+    checkpoint = archive.parent / "trusted-checkpoint.json"
+    expected = restore.digest(checkpoint)
+    manifest = archive / "manifest.json"
+    original_read = Path.read_bytes
+    counts = {checkpoint: 0, manifest: 0}
+
+    def read_once(path):
+        raw = original_read(path)
+        if path in counts:
+            counts[path] += 1
+            path.write_bytes(b"untrusted replacement after first read")
+        return raw
+
+    original_text = Path.read_text
+
+    def no_reopen(path, *args, **kwargs):
+        if path in counts:
+            pytest.fail("Authenticated input reopened for parsing")
+        return original_text(path, *args, **kwargs)
+
+    monkeypatch.setattr(Path, "read_bytes", read_once)
+    monkeypatch.setattr(Path, "read_text", no_reopen)
+    verified = restore_trust.preflight(archive, checkpoint, expected)
+    assert verified["_manifest"]["transport"] == restore.FORMAT
+    assert counts == {checkpoint: 1, manifest: 1}
+
+
+def test_payload_replaced_during_copy_refuses_before_target(archive, monkeypatch):
+    original = restore.copy_payload
+
+    def swapped(source, destination, expected):
+        if source.name == "roles.sql":
+            source.write_text("CREATE ROLE postgres;\n-- attacker substitution")
+            rehash(source.parent, update_pin=False)
+        return original(source, destination, expected)
+
+    monkeypatch.setattr(restore, "copy_payload", swapped)
+    refuse_before_create(archive, monkeypatch, "changed while copying")
+    assert not (archive.parent / "target").exists()
+
+
+def test_original_swap_after_sealing_cannot_change_executed_inputs(
+    archive, monkeypatch
+):
+    expected = {
+        name: (archive / name).read_bytes()
+        for name in ("roles.sql", "calorie_app.dump", "keycloak.dump", "catalog.tar")
+    }
+    checkpoint = archive.parent / "trusted-checkpoint.json"
+    checkpoint_sha = restore.digest(checkpoint)
+    dummy = SimpleNamespace(seal=lambda: None, operation=lambda: nullcontext())
+
+    def create(*_args):
+        for name in expected:
+            (archive / name).write_bytes(
+                b"untrusted original replacement after sealed snapshot"
+            )
+        (archive / "manifest.json").write_bytes(b"invalid original manifest")
+        checkpoint.write_bytes(b"invalid original checkpoint")
+        return dummy
+
+    def execute_into(pg, staged, manifest, roles, pin):
+        assert staged != archive
+        assert roles.encode() == expected["roles.sql"]
+        assert all(
+            (staged / name).read_bytes() == raw for name, raw in expected.items()
+        )
+        return pg, {"result": "PASS", "only_trusted_sealed_bytes_used": True}
+
+    monkeypatch.setattr(restore.OwnedPG, "create", create)
+    monkeypatch.setattr(restore, "_restore_into", execute_into)
+    _, result = restore.restore(
+        archive,
+        archive.parent / "target",
+        Path("unused"),
+        55432,
+        checkpoint=checkpoint,
+        checkpoint_sha256=checkpoint_sha,
+    )
+    assert result["only_trusted_sealed_bytes_used"]
+
+
+def test_witness_hash_and_parse_use_one_read(archive, monkeypatch):
+    folder = archive.parent / "witness"
+    folder.mkdir()
+    path = folder / "observation.json"
+    path.write_bytes(b'{"fact":"original trusted witness"}')
+    state = {
+        "witness_directory": str(folder),
+        "witness_files": {path.name: restore.digest(path)},
+    }
+    original = Path.read_bytes
+    reads = []
+
+    def replace_after_read(item):
+        raw = original(item)
+        if item == path:
+            reads.append(item)
+            item.write_bytes(b'{"fact":"replacement after hash"}')
+        return raw
+
+    monkeypatch.setattr(Path, "read_bytes", replace_after_read)
+    assert restore_trust.read_witness(state, path.name) == {
+        "fact": "original trusted witness"
+    }
+    assert reads == [path]
 
 
 def test_restore_cli_has_no_missing_checkpoint_bypass(archive):

@@ -86,6 +86,12 @@ Przed utworzeniem celu czysty verifier sprawdza zewnętrzny SHA, pełny
 uwierzytelniony prefix, backup-point/cutoff/FencePin, powiązanie strumienia,
 sekwencji i head z rzeczywistą kopią oraz niezależny pin manifestu. Brak lub
 zmiana któregokolwiek wejścia odmawia przed `initdb`, SQL i `pg_restore`.
+Checkpoint, świadki i manifest są odczytywane raz; hash i parser używają tych
+samych bajtów. Przed utworzeniem PG cztery payloady trafiają do nowego własnego
+katalogu ACL-private; sprawdzane są bajty faktycznie skopiowane. Sealed input
+jest tylko do odczytu. SQL, dumpy i katalog są następnie używane wyłącznie z tej
+kopii, bez ponownych odczytów nieufnych oryginałów. Podmiana podczas kopiowania
+odmawia; późniejsza zmiana oryginału nie zmienia wykonywanych wejść.
 
 ## Weryfikacja granic
 

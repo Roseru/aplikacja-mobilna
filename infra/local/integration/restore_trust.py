@@ -1,12 +1,13 @@
 """Pure pre-restore authentication, rooted in the controller's external SHA pin."""
 
+import hashlib
 import json
 import re
 from pathlib import Path
 
 from . import native  # isort: skip
 
-from backup import digest, private_write
+from backup import private_write
 from calorie_app.modules.identity.ledger_contract import (
     FencePin,
     Trust,
@@ -19,13 +20,12 @@ FORMAT = "native-external-restore-checkpoint/v1"
 def read_witness(state, name):
     folder = native.confined(Path(state["witness_directory"]))
     path = native.confined(folder / name)
-    if (
-        path.is_symlink()
-        or path.is_junction()
-        or digest(path) != state["witness_files"][name]
-    ):
+    if path.is_symlink() or path.is_junction():
+        raise ValueError("Linked independent witness")
+    raw = path.read_bytes()
+    if hashlib.sha256(raw).hexdigest() != state["witness_files"][name]:
         raise ValueError("Independent witness changed")
-    return json.loads(path.read_text(encoding="utf-8"))
+    return json.loads(raw)
 
 
 def load_evidence(state):
@@ -34,13 +34,7 @@ def load_evidence(state):
     raw = read_witness(state, "trust-private.json")
     observation = read_witness(state, "fence-observation.json")
     fence = read_witness(state, "fence-pin.json")
-    from calorie_app.modules.identity.ledger_contract import digest as value_digest
-
-    expected = value_digest(
-        (
-            native.confined(Path(state["witness_directory"])) / "fence-observation.json"
-        ).read_bytes()
-    )
+    expected = state["witness_files"]["fence-observation.json"]
     if (
         fence["fence_sha256"] != expected
         or fence["fence_id"] != observation["observation_id"]
@@ -101,8 +95,9 @@ def write_checkpoint(path, captured, ledger_state):
         "source_owner": captured["source_owner"],
         "ledger": evidence,
     }
-    private_write(path, json.dumps(value, sort_keys=True, indent=2) + "\n")
-    return digest(path)
+    encoded = json.dumps(value, sort_keys=True, indent=2) + "\n"
+    private_write(path, encoded)
+    return hashlib.sha256(encoded.encode("utf-8")).hexdigest()
 
 
 def preflight(archive, checkpoint, expected_sha256):
@@ -112,14 +107,19 @@ def preflight(archive, checkpoint, expected_sha256):
     ):
         raise ValueError("Independent checkpoint SHA256 required")
     path = native.confined(checkpoint)
-    if path.is_symlink() or path.is_junction() or digest(path) != expected_sha256:
+    if path.is_symlink() or path.is_junction():
+        raise ValueError("Linked trusted checkpoint")
+    checkpoint_bytes = path.read_bytes()
+    if hashlib.sha256(checkpoint_bytes).hexdigest() != expected_sha256:
         raise ValueError("Trusted checkpoint checksum mismatch")
-    value = json.loads(path.read_text(encoding="utf-8"))
+    value = json.loads(checkpoint_bytes)
     if value.get("format") != FORMAT:
         raise ValueError("Unsupported trusted checkpoint")
     validate_evidence(value["ledger"])
     manifest_path = native.confined(archive / "manifest.json")
-    if digest(manifest_path) != value["archive_manifest_sha256"]:
+    manifest_bytes = manifest_path.read_bytes()
+    if hashlib.sha256(manifest_bytes).hexdigest() != value["archive_manifest_sha256"]:
         raise ValueError("Archive differs from independently captured pin")
-    bind_capture(json.loads(manifest_path.read_text()), value["ledger"])
-    return value
+    manifest = json.loads(manifest_bytes)
+    bind_capture(manifest, value["ledger"])
+    return value | {"_manifest_bytes": manifest_bytes, "_manifest": manifest}
