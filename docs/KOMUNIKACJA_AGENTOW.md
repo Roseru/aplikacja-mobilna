@@ -11034,6 +11034,77 @@ Kontynuacja O2-073 — **minimalny realny przepływ APK odebrany przez koordynat
   na tę samą `codex/devops-demo-native`, bez PR i bez zmiany main; jest to
   backup WIP, nie zielone CI ani końcowa publikacja całej integracji.
 
+Kontynuacja O2-073 — **funkcjonalny WF01 i izolacja własnego pomocnika**:
+
+- Źródła profilu providera i świadka Room27 zabezpieczono normalnym pushem
+  `ee7d2da2db6fc5bca1d9dacd5b1bbca4281030d7` na tę samą
+  `codex/devops-demo-native`, bez PR i bez zmiany main. Profil jest jawnie
+  opt-in, domyślny realm pozostaje zamknięty. Osobne niezależne odbiory źródeł
+  profilu, obserwatora i powiązania konfiguracji nie wykazały P1/P2 w tych
+  zakresach. Nie oznacza to pełnego odbioru bezpieczeństwa providera.
+- Na generacji `86966bd3-7880-422f-810c-82222b20d173` wykonano rzeczywistą
+  samodzielną rejestrację nowego syntetycznego użytkownika, wiadomość SMTP,
+  link w Chrome, wymagane pierwsze hasło, Code/S256, bootstrap i osobny
+  PULL/apply. Wpis E2 20 g dał ACK i 89,4 kcal w PG; drugi wpis 89 kcal
+  pozostaje świadomie lokalnym legacy intentem. Lokalny dziennik ma 178,4 kcal.
+  Reset wiadomością, odmowa starego hasła i świeży login nowym zachowały
+  subject, konto PG oraz całe lokalne meal/item/outbox wszystkich ownerów.
+  Pozytywny receipt SHA256
+  `91cfe9d52adadad4be6ba4f286dc239aafa0739c026fd894e53e8753361f6bd7`;
+  niezależny odbiór koordynatora 39 kontroli ma SHA256
+  `d007c0a354e5dfa8cd859eebf00e530337a702d0dc29d4ebad040bb69a83b05a`.
+- Osobne negatywne próby: nieistniejący adres otrzymał neutralny tekst bez
+  użytkownika lub wiadomości; wykorzystany link odrzucono przed upływem
+  ważności, a nowy niewykorzystany link po rzeczywistym oczekiwaniu ponad
+  pięciu minut. Jawny gate aplikacji zatrzymał akcję loginu lokalnie; przycisk
+  pozostał enabled, nie twierdzimy jego wyłączenia. Dziennik i kolejka
+  przetrwały zwykły restart; read-only Room zachował dokładnie 6 meals,
+  6 items i 7 outbox trzech ownerów. Nie jest to jeszcze próba fizycznej
+  niedostępności providera. Końcowy świeży login aktualnym hasłem po drugiej
+  próbie resetu pozostaje do wykonania po nowej granicy dostępu.
+- Przy zatrzymanym własnym SMTP nie dostarczono wiadomości, konto i dane PG
+  pozostały identyczne. Publiczny formularz pokazał ten sam ogólny tekst
+  co po sukcesie; `delivery_error_visible=false`, bez kwalifikowania UX
+  sygnalizacji awarii lub pełnego WF01 jako PASS. Po przywróceniu tej samej
+  bazy rzeczywiste ponowienie dało liczbę wiadomości 5 → 5 → 6. Neutralny
+  receipt SHA256
+  `0896ac4b5fbab28bd2f7a3c903df21bef55f11443591ecbedfa423cb54655169`.
+- **Otwarty P2:** rzeczywista powtórna rejestracja pokazała „E-mail już istnieje.”,
+  `FAIL_PUBLIC_ACCOUNT_ENUMERATION`; nie utworzyła drugiego konta. Decyzja
+  koordynatora: bez własnego FormAction/Auth SPI, bez osłabienia unikalności
+  i bez samego maskowania tekstu. Wynik anti-enum pozostaje FAIL/OPEN,
+  `full_security=false`, `public_release=false`, `release_authorized=false`.
+  Funkcjonalne dowody i ograniczenie dostępu pomocnika nie naprawiają P2.
+- Pomiar przed guardem potwierdził rzeczywisty peer hosta 172.16.0.2 oraz
+  127.0.0.1, a Chrome przez własny ADB reverse — 127.0.0.1. Sockety należą
+  do potomnego interpretera gateway, nie samego launchera. Historyczny pomiar
+  SHA256 `727050d996571b042953d8432414bdd5f77b0decde4c878bd44506eb6f9f9711`
+  ma ograniczony zakres; nie dopisujemy mu brakującego historycznego birth
+  ADB ani dowodu całej ścieżki APK. Bieżący odczyt własnych portów potwierdził
+  loopback-only PG, Keycloak i Mailpit; management port nie nasłuchiwał.
+- Na jawne zlecenie koordynatora dodano wąski guard `gateway.py`: dokładny
+  loopback i wybrany host na podstawie rzeczywistego ASGI client, przed
+  receive/API/httpx, także dla WebSocket. `proxy_headers=False`; tylko
+  wewnętrzny lifespan ma wyjątek. Brak globalnej zapory, nowego logowania,
+  zdalnego forwardera lub zmian Androida/backendu/kontraktów. Autor zaliczył
+  132 nowe przypadki i jeden istniejący test proxy; Ruff i diff-check PASS.
+  Dwie mutacje wyłącznie w pamięci prawidłowo obaliły testy. Sam ten wynik
+  jednostkowy nie kwalifikuje jeszcze nowej generacji działającego serwera.
+  Osobny łączny zakres guard + istniejący Native lifecycle zaliczył
+  168 przypadków bez błędów i pominięć; powtórzenia nie są nowymi testami.
+  E0 na osobnym istniejącym interpreterze kontraktów PASS; brakującego PyYAML
+  nie doinstalowywano do przypiętego środowiska działającego backendu.
+- Przed planowanym restartem zachowano prywatne zrzuty obu baz, konfiguracje
+  i stary binding. Sześć pierwotnych receipts oraz dane WF01 pozostały
+  identyczne. Receipt zachowania stanu SHA256
+  `16caf968bf90b53c5e9a15c347722f9e2bc03e4bdc0f18a7b722a80f1f985107`.
+  Odczyt listy archiwum nie jest odtworzeniem; `restore=NOT_RUN`.
+  Następny krok: jawny restart/rekwalifikacja na nowym pinie,
+  rzeczywiste host/Chrome/APK i odmowa niewymienionego peer, potem pozostałe
+  negatywy, APK lost-ACK/retry i osiągalne rozszerzone przepływy. Historia
+  powyższych prób pozostaje na swoim źródle i generacji. Jeden spójny PR,
+  kontrole końcowe oraz merge/main CI pozostają u koordynatora.
+
 ### O2-074 — PR190: bezpieczne ścieżki źródeł lokalnego pakietu demo
 
 - 29.10.2026, agent 2, tymczasowa koordynacja całości według O2-071.

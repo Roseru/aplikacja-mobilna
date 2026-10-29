@@ -1,5 +1,6 @@
 """One private HTTPS listener; unchanged API and loopback-only Keycloak upstream."""
 
+import ipaddress
 import json
 import os
 import socket
@@ -24,14 +25,62 @@ HOP = {
 }
 
 
+def _origin(value):
+    if type(value) is not str:
+        raise ValueError("A canonical private IPv4 HTTPS origin is required")
+    parsed = urlsplit(value)
+    host = ipaddress.IPv4Address(parsed.hostname)
+    if (
+        not any(
+            host in ipaddress.ip_network(network)
+            for network in ("10.0.0.0/8", "172.16.0.0/12", "192.168.0.0/16")
+        )
+        or parsed.port is None
+        or not 1024 <= parsed.port <= 65535
+        or value != f"https://{host}:{parsed.port}"
+    ):
+        raise ValueError("A canonical private IPv4 HTTPS origin is required")
+    return parsed
+
+
+def _configuration(config):
+    if type(config["host"]) is not str or config["host"] != _origin(config["origin"]).hostname:
+        raise ValueError("Configured native host and HTTPS origin differ")
+
+
 class Gateway:
     def __init__(self, backend, origin, keycloak_port):
         self.backend = backend
-        self.origin = urlsplit(origin)
+        self.origin = _origin(origin)
+        self.allowed_peers = frozenset(("127.0.0.1", self.origin.hostname))
         self.keycloak_port = keycloak_port
 
+    def allowed_client(self, client):
+        return (
+            type(client) in (tuple, list)
+            and len(client) == 2
+            and type(client[0]) is str
+            and client[0] in self.allowed_peers
+            and type(client[1]) is int
+            and 1 <= client[1] <= 65535
+        )
+
     async def __call__(self, scope, receive, send):
-        if scope["type"] != "http":
+        kind = scope.get("type")
+        if kind == "lifespan":
+            await self.backend(scope, receive, send)
+            return
+        if kind not in ("http", "websocket"):
+            raise ValueError("Unsupported ASGI scope")
+        if not self.allowed_client(scope.get("client")):
+            if kind == "websocket":
+                await send({"type": "websocket.close", "code": 1008})
+            else:
+                await Response(status_code=403, headers={"Cache-Control": "no-store"})(
+                    scope, receive, send
+                )
+            return
+        if kind == "websocket":
             await self.backend(scope, receive, send)
             return
         if not scope["path"].startswith(("/realms/", "/resources/", "/admin/")):
@@ -91,6 +140,7 @@ class Gateway:
 def application():
     state = Path(os.environ["CALORIE_NATIVE_STATE"])
     config = json.loads((state / "native.json").read_text())
+    _configuration(config)
     return Gateway(create_app(), config["origin"], config["keycloak_port"])
 
 
@@ -99,6 +149,7 @@ def serve():
 
     state = Path(os.environ["CALORIE_NATIVE_STATE"])
     config = json.loads((state / "native.json").read_text())
+    _configuration(config)
     sockets = []
     try:
         for host in {"127.0.0.1", config["host"]}:
