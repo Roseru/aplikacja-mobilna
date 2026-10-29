@@ -46,6 +46,10 @@ SERVICE_HBA = (
     b"host all keycloak 127.0.0.1/32 scram-sha-256\n"
     b"host all all 0.0.0.0/0 reject\nhost all all ::0/0 reject\n"
 )
+RUNNING_HBA = SERVICE_HBA.replace(
+    b"host all all 0.0.0.0/0 reject",
+    b"host all calorie_app_worker 127.0.0.1/32 scram-sha-256\nhost all all 0.0.0.0/0 reject",
+)
 PG_TOOLS = (
     "initdb",
     "pg_ctl",
@@ -294,15 +298,20 @@ def zero_clients(pg):
     )
 
 
-def stop_services(stack, processes):
+def stop_services(stack, binding):
     stopped = {}
-    for name in ("gateway", "keycloak"):
+    processes = binding["processes"]
+    for name in ("gateway", "worker", "keycloak"):
         path = stack.state / (name + ".process.json")
         record = json.loads(path.read_bytes())
         require(
             record == processes[path.name] and native.identity(record["pid"]) == record,
             "Service marker/identity changed",
         )
+        if name == "worker":
+            stopped[name] = stack.stop_worker(binding)
+            require(stopped[name]["result"] == "STOPPED", "Worker exit is unknown; capture refused")
+            continue
         native.terminate(record)  # Existing exact-identity checked owned-tree stop.
         require(absent(record), "Service remains after checked stop")
         path.unlink()
@@ -359,7 +368,10 @@ class NativeCaptureSource(NativePG):
         )
         require((self.data / "pg_hba.conf").read_bytes() == SEALED_HBA, "Source not sealed")
         require(
-            not any((self.state / (n + ".process.json")).exists() for n in ("gateway", "keycloak")),
+            not any(
+                (self.state / (n + ".process.json")).exists()
+                for n in ("gateway", "worker", "keycloak")
+            ),
             "Source services remain",
         )
         zero_clients(self)
@@ -400,7 +412,9 @@ def capture_native(state, expected_generation, destination):
                 stack.require_running() == source.binding,
                 "Generation changed before seal",
             )
-            stop_services(stack, source.binding["processes"])
+            source.binding["state"] = "QUIESCING"
+            publish(stack, source.binding)
+            receipt["service_stops"] = stop_services(stack, source.binding)
             (source.data / "pg_hba.conf").write_bytes(SEALED_HBA)
             require(source.sql("postgres", "SELECT pg_reload_conf();") == "t", "HBA reload failed")
             source.offline()
@@ -968,6 +982,10 @@ def start_existing(state, handoff_path, handoff_sha256, *, source_pin, source_sh
         if kind == "target":
             control["target_binding"] = reference
         binding["lifecycle"] = control
+        if kind == "source":
+            binding["retention_resume"] = handoff["runtime"].get(
+                "retention", handoff["runtime"].get("retention_resume")
+            )
         if not pg_started:
             process = pg.process if kind == "source" else pg.config["process"]
             native.write_json(stack.state / "postgres.process.json", process)
@@ -1098,7 +1116,9 @@ PARTIAL_PHASES = {
     "ACTIVATION_FAILED",
     "CAPTURE_FAILED",
     "MAINTENANCE",
+    "QUIESCING",
 }
+CLEANUP_PHASES = PARTIAL_PHASES | {"RUNNING"}
 
 
 def runtime_metadata(stack, phases):
@@ -1113,7 +1133,12 @@ def runtime_metadata(stack, phases):
     require(
         actual == binding["processes"]
         and set(actual)
-        <= {"postgres.process.json", "keycloak.process.json", "gateway.process.json"},
+        <= {
+            "postgres.process.json",
+            "keycloak.process.json",
+            "gateway.process.json",
+            "worker.process.json",
+        },
         "Existing process marker set differs",
     )
     return binding, actual
@@ -1134,12 +1159,24 @@ def qualified_runtime(stack, phases):
         all(native.identity(r["pid"]) == r for r in actual.values()),
         "Existing process generation differs",
     )
+    if "worker.process.json" in actual:
+        stack.qualify_worker(binding)
+    if binding["state"] == "RUNNING":
+        require(
+            set(actual)
+            == {n + ".process.json" for n in ("postgres", "keycloak", "gateway", "worker")},
+            "Running worker missing",
+        )
     return binding, files
 
 
 def qualified_cleanup(stack):
     """Stop only: dead markers/drift never authorize admission or a fresh launch."""
-    binding, actual = runtime_metadata(stack, PARTIAL_PHASES)
+    binding, actual = runtime_metadata(stack, CLEANUP_PHASES)
+    require(
+        not binding.get("retention_launch_unresolved", False) or "worker.process.json" in actual,
+        "Unresolved worker launch; no safe PG stop or resume",
+    )
     expected = binding["configuration_files"]
     require(
         set(expected)
@@ -1189,6 +1226,13 @@ def qualified_cleanup(stack):
             or int(pidfile.read_text().splitlines()[0]) == dead["postgres.process.json"]["pid"],
             "Untracked postmaster PID; cleanup refused",
         )
+    if "worker.process.json" in actual:
+        from .retention import descriptor
+
+        metadata, _path = descriptor(stack, binding)
+        require(
+            metadata["process"] == actual["worker.process.json"], "Worker cleanup marker differs"
+        )
     return binding, files, dead, drift
 
 
@@ -1197,7 +1241,7 @@ def stop_existing(state, expected_generation):
     with stack.operation():
         phase = json.loads((stack.state / "runtime-binding.json").read_bytes())["state"]
         dead, drift = {}, {}
-        if phase in PARTIAL_PHASES:
+        if phase in CLEANUP_PHASES:
             binding, files, dead, drift = qualified_cleanup(stack)
         else:
             binding, files = qualified_runtime(stack, {"RUNNING", "CAPTURE_SEALED"})
@@ -1228,9 +1272,12 @@ def stop_existing(state, expected_generation):
         folder = operation_directory(stack)
         service_stops = {}
         try:
-            for name in ("gateway", "keycloak"):
+            for name in ("gateway", "worker", "keycloak"):
                 if (stack.state / (name + ".process.json")).exists():
                     record = binding["processes"][name + ".process.json"]
+                    if name == "worker":
+                        service_stops[name] = stack.stop_worker(binding)
+                        continue
                     already_dead = name + ".process.json" in dead
                     if not already_dead:
                         native.terminate(record)
@@ -1293,7 +1340,17 @@ def stop_existing(state, expected_generation):
             if kind == "target":
                 pg.config["status"] = "STOPPED"
                 native.write_json(pg.marker, pg.config)
-            result = "STOPPED_COHORT_DRIFT" if drift else "STOPPED"
+            worker_unknown = (
+                binding.get("retention_unknown_exit", False)
+                or service_stops.get("worker", {}).get("result", "STOPPED") != "STOPPED"
+            )
+            result = (
+                "STOPPED_COHORT_DRIFT"
+                if drift
+                else "STOPPED_WORKER_UNKNOWN_EXIT"
+                if worker_unknown
+                else "STOPPED"
+            )
             native.write_json(stack.state / "runtime-binding.json", binding | {"state": result})
         except BaseException as error:
             failed = binding | {"state": "STOP_FAILED"}
@@ -1319,7 +1376,7 @@ def stop_existing(state, expected_generation):
             "database": facts,
             "configuration_files": binding["configuration_files"],
             "configuration_drift": drift,
-            "automatic_resume_authorized": not bool(drift),
+            "automatic_resume_authorized": result == "STOPPED",
             "service_stops": service_stops,
             "qualified_binary_hashes": runtime_binaries(stack),
             "original_hba_hex": control["original_hba_hex"],
@@ -1439,6 +1496,18 @@ def activate(state, expected_generation, fence_path, fence_sha256):
         }
         publish(stack, opened)
         try:
+            if control["kind"] == "target":
+                (pg.data / "pg_hba.conf").write_bytes(RUNNING_HBA)
+                require(
+                    pg.sql("postgres", "SELECT pg_reload_conf();") == "t",
+                    "Retention HBA reload failed",
+                )
+                pg.config.update(hba_sha256=sha(RUNNING_HBA))
+                native.write_json(pg.marker, pg.config)
+            stack.start_worker(
+                opened, raw=files["worker.env"], resume=opened.get("retention_resume")
+            )
+            publish(stack, opened)
             stack.launch(
                 "gateway",
                 [stack.python, "-m", "infra.local.integration.gateway"],
@@ -1451,12 +1520,27 @@ def activate(state, expected_generation, fence_path, fence_sha256):
             publish(stack, opened)
             stack.require_running()
         except BaseException:
+            cleanup_errors = []
+            if (stack.state / "worker.process.json").exists():
+                try:
+                    stack.stop_worker(opened)
+                except BaseException as cleanup_error:
+                    cleanup_errors.append(
+                        {"service": "worker", "error_kind": type(cleanup_error).__name__}
+                    )
             if marker.exists():
-                failed_gateway = json.loads(marker.read_bytes())
-                native.terminate(failed_gateway)
-                require(absent(failed_gateway), "Failed activation gateway remains")
-                marker.unlink()
-            publish(stack, opened | {"state": "ACTIVATION_FAILED"})
+                try:
+                    failed_gateway = json.loads(marker.read_bytes())
+                    native.terminate(failed_gateway)
+                    require(absent(failed_gateway), "Failed activation gateway remains")
+                    marker.unlink()
+                except BaseException as cleanup_error:
+                    cleanup_errors.append(
+                        {"service": "gateway", "error_kind": type(cleanup_error).__name__}
+                    )
+            publish(
+                stack, opened | {"state": "ACTIVATION_FAILED", "cleanup_errors": cleanup_errors}
+            )
             raise
         return {
             "generation": opened["generation"],

@@ -11,6 +11,7 @@ from uuid import uuid4
 
 import pytest
 
+from infra.integration.tests.native_retention_fixture import seed_worker, worker_files
 from infra.local.integration import native_existing as e
 
 
@@ -23,6 +24,7 @@ def world(tmp_path, monkeypatch):
     monkeypatch.setattr(e, "ready", lambda _stack: None)
     monkeypatch.setattr(e, "private_directory", lambda p: p.mkdir(parents=True))
     monkeypatch.setattr(e.restore, "private_directory", lambda p: p.mkdir(parents=True))
+    monkeypatch.setattr("backup.private_directory", lambda p: p.mkdir(parents=True))
     w = SimpleNamespace(
         root=tmp_path,
         code=source_code,
@@ -77,11 +79,47 @@ def world(tmp_path, monkeypatch):
         assert w.live.pop(record["pid"]) == record
         w.events.append(("stop-service", record["pid"]))
 
-    def launch(stack, name, arguments, env):
+    def stop_owned(record):
+        if record["pid"] not in w.live:
+            return {
+                "method": "already_absent",
+                "forced": False,
+                "graceful": False,
+                "wait": "NOT_OBSERVED",
+                "exit_observed": False,
+                "exit_code": None,
+            }
+        assert w.live[record["pid"]] == record
+        terminate(record)
+        return {
+            "method": "TerminateProcess",
+            "forced": True,
+            "graceful": False,
+            "wait": "SIGNALED",
+            "exit_observed": True,
+            "exit_code": 1,
+        }
+
+    def launch(stack, name, arguments, env, **kwargs):
         assert "--import-realm" not in arguments
-        record = process(Path(stack.python) if name == "gateway" else tmp_path / "cmd.exe")
+        record = process(
+            Path(stack.python) if name in {"gateway", "worker"} else tmp_path / "cmd.exe"
+        )
         e.native.write_json(stack.state / (name + ".process.json"), record)
         w.events.append(("launch", name, list(map(str, arguments)), dict(env)))
+        if name == "worker":
+            worker_state = Path(kwargs["cwd"])
+            (worker_state / "stdout.private.log").write_bytes(b"synthetic own retention pass")
+            e.native.write_json(
+                worker_state / "status.json",
+                {
+                    "state": "pending",
+                    "last_attempt": datetime.now(e.UTC).isoformat(),
+                    "last_success": datetime.now(e.UTC).isoformat(),
+                    "errors": 0,
+                    "pending": True,
+                },
+            )
         return SimpleNamespace(pid=record["pid"])
 
     def run(stack, arguments, **kwargs):
@@ -114,6 +152,7 @@ def world(tmp_path, monkeypatch):
 
     monkeypatch.setattr(e.native, "identity", identity)
     monkeypatch.setattr(e.native, "terminate", terminate)
+    monkeypatch.setattr(e.native, "stop_owned", stop_owned)
     monkeypatch.setattr(e.native.Native, "launch", launch)
     monkeypatch.setattr(e.native.Native, "run", run)
     monkeypatch.setattr(e.native.Native, "operation", operation)
@@ -182,6 +221,7 @@ def world(tmp_path, monkeypatch):
             f"{pg_record['pid']}\n{state / 'postgres'}\n0\n{config['pg_port']}\n"
         )
         stack = e.native.Native(state)
+        worker_files(stack)
         records = {
             "postgres.process.json": pg_record,
             "gateway.process.json": process(Path(sys.executable)),
@@ -194,7 +234,7 @@ def world(tmp_path, monkeypatch):
             "generation": generation,
             "state": "RUNNING",
             "source": source_code,
-            "configuration": {},
+            "configuration": stack.configuration_binding(),
             "processes": records,
             "binary_sha256": e.runtime_binaries(stack),
             "configuration_files": {k: e.sha(v) for k, v in e.cohort(stack).items()},
@@ -206,6 +246,7 @@ def world(tmp_path, monkeypatch):
                 "parent_handoff": None,
             },
         }
+        seed_worker(stack, binding, process(Path(sys.executable)))
         e.native.write_json(state / "runtime-binding.json", binding)
         w.facts[state] = {
             "data": str(state / "postgres"),

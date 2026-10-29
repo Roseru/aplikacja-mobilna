@@ -158,7 +158,9 @@ def stop_old(native, observer, state, destination, expected_generation, binding_
         stack.run = checked_run
         try:
             # _down is the OLD implementation, already under its single native.lock.
-            stack._down()
+            down_result = stack._down()
+            if down_result is not None and down_result["result"] != "STOPPED":
+                raise ValueError("OLD stop has unknown process exit; no resume handoff")
             if (
                 len(stops) != 1
                 or (data / "postmaster.pid").exists()

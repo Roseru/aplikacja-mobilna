@@ -117,7 +117,8 @@ partial markers; no successful stop/ready status is fabricated. An unqualifiable
 PG PID file is explicitly reported for operator investigation, never guessed/killed.
 
 Stop has a separate cleanup qualifier for partial/failed or unadmitted MAINTENANCE
-generations. Confirmed absent own processes have UNKNOWN exits; stale markers do
+generations and unhealthy RUNNING stop, distinct from strict admission.
+Confirmed absent own processes have UNKNOWN exits; stale markers do
 not block stopping other verified own resources. A live reused PID/birth/exe
 mismatch still refuses before any stop. RUNNING/admission qualification remains
 strict. API/TLS/provider-only drift is recorded rather than used as launch input;
@@ -138,3 +139,14 @@ auth/fence. Target-observing clients stay isolated. Original data/quota/ledger a
 T0 remain; target AI stays closed. No epoch/`closed_at` rollback or336h exception.
 Android recovery uses existing production ImportScreen/ViewModel under Native;
 this adapter does not modify the replay driver, APK or AVD.
+
+R1 adds the existing retention runner as the fourth required normal process.
+MAINTENANCE still has exactly PG/KC/gateway and no worker. Capture transitions
+through QUIESCING, confirms worker death before HBA/zero-clients, and preserves
+its unique actual stop receipt. UNKNOWN worker exit is sticky across partial
+cleanup and cannot become an ordinary resume handoff. Activation starts a fresh
+retention generation and waits for its successful bounded pass before RUNNING;
+target HBA admits that role only at this release point, with target AI closed.
+Only the original physical source can retain its fairness progress; neither
+target nor a new generation inherits old health/status. See README Native for
+the env/target/handle/forced-stop and rollout contract. Actual rollout is separate.

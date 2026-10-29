@@ -13,6 +13,7 @@ from uuid import uuid4
 
 import pytest
 
+from infra.integration.tests.native_retention_fixture import seed_worker
 from infra.local.integration import native, observe
 
 
@@ -80,6 +81,8 @@ def stack(tmp_path, monkeypatch):
     }
     for name, value in processes.items():
         (state / name).write_text(json.dumps(value))
+    owned = native.Native(state)
+    seed_worker(owned, binding, {"pid": 104, "created": 1104, "executable": str(paths["python"])})
     (state / "runtime-binding.json").write_text(json.dumps(binding))
     monkeypatch.setattr(native, "source", lambda pin: source)
     monkeypatch.setattr(

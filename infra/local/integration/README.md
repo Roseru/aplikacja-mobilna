@@ -220,3 +220,62 @@ osobno porównywane są obce konta i niezmieniane domeny właściciela.
 Rzeczywisty HTTP/Room/bariera/kill/replay/osobny PULL oraz zwolnienie izolacji
 wymagają własnych dowodów. Publiczny validator i SQL starego obserwatora
 pozostają zgodne; nie przypisuj nowych wyników zamrożonym próbom.
+
+## Retencja w lifecycle Native
+
+Normalny `RUNNING` wymaga czterech rzeczywistych procesów: PG, Keycloak,
+gateway i istniejącego `infra/integration/worker.py serve`. Ten ostatni uruchamia
+wyłącznie istniejące funkcje retencji; nie jest dispatcherem AI/Nemesis. Native
+nie dodaje supervisora, automatycznego restartu ani usługi systemowej.
+
+Worker otrzymuje raz odczytany i sprawdzony `worker.env`: dokładny
+`postgresql+psycopg`, `127.0.0.1`, port własnego PG, baza `calorie_app` i rola
+`calorie_app_worker`. Hasło pozostaje oryginalne i trafia tylko do env procesu.
+Query URL, dziedziczone PG overrides i obce klucze środowiska są odrzucane.
+Dozwolone są tylko DATABASE_URL, ENVIRONMENT oraz pięć istniejących RETENTION_*
+z runnera. Jawne lokalne domyślne interval/retry to 60s/60s; bounded pass120s,
+batch1000 i maxowners1000 pozostają bez zmian. Sprawdzone operacyjne overrides
+tych pięciu ustawień zachowujemy w granicach runnera; nie zmieniamy reguł
+usuwania, TTL, limitu kopii ani zegara.
+
+Każda generacja ma nowy prywatny `retention-worker/<generation>` jako state/cwd
+bez `.env` i własny log. Marker zachowuje PID/birth/exe; niejawny DSN nie trafia
+do argv lub dowodów. Stały descriptor runtime wiąże argv, entrypoint/source SHA,
+hash env/konfiguracji, fizyczny datadir i cel. `native.py status` sprawdza żywy
+proces i świeży udany bounded pass po uruchomieniu tej generacji. Nie ufa staremu
+`last_success`, przyszłym/starym statusom ani martwemu PID. Świadek health jest
+oddzielony od stałego bindingu. `pending` może być zdrowe, lecz nie znaczy pustego
+backlogu ani gwarantowanego PULL200; do następnego ograniczonego przebiegu i przy
+rzeczywiście żywych zasobach odmowa limitu może być nadal prawidłowa.
+
+Integracja ze źródłami D1 wymaga kontrolowanego down jeszcze kwalifikowanym
+STARYM kodem i jego niezmiennego receiptu PRZED dodaniem nowych źródeł. Potem
+Root/Native wznawia istniejące dane przez `native_existing`, bez provision,
+migration, realm import lub regeneracji CA. Tworzy prawdziwą nową generację;
+nie przepisuje source hash starego RUNNING. MAINTENANCE jest jawnie bez workera.
+Target dopuszcza rolę retencji przez HBA i startuje świeży worker dopiero w fazie
+release po rzeczywistych bramkach auth/fence. Target ma własny state/cursor,
+właściwy port i odtworzone hasło roli worker, odrębne od password.private PG.
+AI targetu pozostaje zamknięte. Własne źródło zachowuje dokładny HBA/env/epokę;
+tylko ono może przenieść poprawny fairness cursor z tej samej fizycznej bazy,
+nigdy status/health starej generacji.
+
+Capture przechodzi do QUIESCING, zatrzymuje ingress i worker oraz potwierdza jego
+śmierć przed HBA seal, zero-clients i dump. Sam brak aktywnego pass lub odmowa HBA
+nie dowodzi zatrzymania pętli. Stop Windows otwiera konkretny process handle,
+sprawdza na nim birth/exe, utrzymuje go przez TerminateProcess/wait i odczytuje
+rzeczywisty exit na tym samym handle. Jest to wymuszone zakończenie, nie graceful.
+Już martwy proces bez zachowanego handle/exit ma UNKNOWN, nigdy wymyślone0.
+Każdy stop ma nowy prywatny receipt z metodą, wait, exit i hash logu; poprzednie
+pliki pozostają nietknięte. Drift lub UNKNOWN workera nie daje zwykłego
+automatycznego handoffu resume. Żywy reused PID/birth/exe i obcy argv odmawiają
+przed ingerencją; cleanup nie osłabia wymagań normalnego RUNNING/admission.
+Jeśli child wystartował, lecz publikacja tożsamości i zamknięcie jego pierwotnego
+Popen handle nie zostały potwierdzone, trwały unresolved-launch blokuje stop PG
+oraz normalny resume. Nie zgaduj markera ani PID; potrzebna jest osobna
+kwalifikacja operatora. Awaria zapisu receiptu nie usuwa stale markera i nie
+gubi UNKNOWN. Przy nowym `up` świeży pass workera poprzedza otwarcie gateway.
+
+Źródłowe testy R1 używają atrap. Rzeczywisty rollout/own-PG bounded fixture,
+provider/fence i Room27 wymagają osobnego odebranego okna Native; nie uruchamiaj
+samodzielnego `serve` obok lifecycle ani Dockerowego `prepare_worker` jako skrótu.

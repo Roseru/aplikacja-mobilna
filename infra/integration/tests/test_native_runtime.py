@@ -12,6 +12,7 @@ from types import SimpleNamespace
 import httpx
 import pytest
 
+from infra.integration.tests.native_retention_fixture import seed_worker
 from infra.local.integration import gateway, native, verify_runtime
 
 
@@ -53,6 +54,7 @@ def owned(tmp_path, monkeypatch):
             "state": str(state),
             "pg_bin": str(state / "pg-bin"),
             "python": "python.exe",
+            "pg_port": 25432,
             "source": {"commit": "a" * 40},
         },
     )
@@ -69,14 +71,16 @@ def owned(tmp_path, monkeypatch):
     }
     for name, record in processes.items():
         native.write_json(state / name, record)
+    binding = {
+        "state": "RUNNING",
+        "generation": "00000000-0000-4000-8000-000000000001",
+        "source": source,
+        "processes": processes,
+    }
+    seed_worker(stack, binding, {"pid": 104, "created": 1104, "executable": stack.python})
     native.write_json(
         state / "runtime-binding.json",
-        {
-            "state": "RUNNING",
-            "generation": "g1",
-            "source": source,
-            "processes": processes,
-        },
+        binding,
     )
     by_pid = {record["pid"]: record for record in processes.values()}
     monkeypatch.setattr(native, "identity", lambda pid: by_pid[pid])
@@ -229,13 +233,13 @@ def test_shared_origin_config_cannot_drift(owned):
 
 def test_live_generation_is_bound_to_source_and_exact_processes(owned):
     stack, *_ = owned
-    assert stack.require_running()["generation"] == "g1"
+    assert stack.require_running()["generation"] == "00000000-0000-4000-8000-000000000001"
 
 
 @pytest.mark.parametrize("result", ["CONFIGURED", "PARTIAL", "FAIL"])
 def test_provider_configuration_change_requires_explicit_generation_binding(owned, result):
     stack, *_ = owned
-    assert stack.configuration_binding() == {}
+    assert "retention" in stack.configuration_binding()
     path = stack.state / "config-generation/provider-profile.json"
     path.parent.mkdir()
     native.write_json(path, {"format": "calorie-native-provider-profile/v1", "result": result})
@@ -293,7 +297,7 @@ def test_down_checks_every_pid_before_stopping_anything(owned, monkeypatch):
     )
     with pytest.raises(RuntimeError, match="reused"):
         stack.down()
-    assert len(list(stack.state.glob("*.process.json"))) == 3
+    assert len(list(stack.state.glob("*.process.json"))) == 4
 
 
 def test_concurrent_lifecycle_is_refused(owned):
