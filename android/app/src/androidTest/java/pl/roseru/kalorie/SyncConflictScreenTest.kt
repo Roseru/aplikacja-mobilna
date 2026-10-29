@@ -52,4 +52,20 @@ class SyncConflictScreenTest {
         compose.onNodeWithTag("sync-conflicts-panel").assertDoesNotExist()
         compose.onNodeWithTag("conflict-local").assertDoesNotExist()
     }
+    @Test fun correctedRejectionEnablesOnlyNewLocalIntentAndStillNeedsConfirmation() {
+        val choices = mutableListOf<Triple<OwnerLease, String, ConflictChoice>>()
+        val initial = view()
+        val preview = initial.conflicts.preview!!.copy(canChoose = false, restoresAsCopy = false, needsRefresh = false,
+            canRetryCorrected = true, server = ConflictVersionView("Wersja serwera niedostępna", listOf("Poprzednia operacja została odrzucona.")))
+        compose.setContent { Panel(initial.copy(conflicts = initial.conflicts.copy(preview = preview)),
+            SessionActions({}, {}, {}, {}, {}, {}, resolveConflict = { owner, key, choice -> choices += Triple(owner, key, choice) })) }
+        compose.onNodeWithText("Wyślij poprawioną wersję").assertExists()
+        compose.onNodeWithTag("conflict-keep-server").assertIsNotEnabled()
+        compose.onNodeWithTag("conflict-download-fresh").assertDoesNotExist()
+        compose.onNodeWithTag("conflict-keep-local").performScrollTo().assertIsEnabled().performClick()
+        compose.runOnIdle { assertTrue(choices.isEmpty()) }
+        compose.onNodeWithText("Poprzednia odmowa i wysłana próba pozostaną zachowane.", substring = true).assertExists()
+        compose.onNodeWithTag("conflict-confirm-choice").performClick()
+        compose.runOnIdle { assertEquals(listOf(Triple(lease, "held", ConflictChoice.LOCAL)), choices) }
+    }
 }

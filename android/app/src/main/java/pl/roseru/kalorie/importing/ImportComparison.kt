@@ -104,9 +104,10 @@ object ImportComparison {
                     val prefix = "Składnik ${i + 1}: "
                     try {
                         val item = items.getJSONObject(i)
-                        val snap = if (item.has("snapshotJson") && !item.isNull("snapshotJson")) read(item.getString("snapshotJson")) else null
-                        val product = snap?.optJSONObject("private_product") ?: snap?.optJSONObject("product") ?: item
-                        val quantity = snap?.optJSONObject("quantity") ?: item.optJSONObject("quantity")
+                        val current = if (!item.isNull("wirePayload")) read(item.getString("wirePayload")) else null
+                        val snap = if (current == null && !item.isNull("snapshotJson")) read(item.getString("snapshotJson")) else null
+                        val product = current ?: snap?.optJSONObject("private_product") ?: snap?.optJSONObject("product") ?: item
+                        val quantity = current?.optJSONObject("quantity") ?: snap?.optJSONObject("quantity") ?: item.optJSONObject("quantity")
                         add(prefix + "nazwa", scalar(product, "name", "productName"))
                         add(prefix + "ilość", if (quantity != null) scalar(quantity, "amount") else scalar(item, "quantityText") ?: scalar(item, "grams"), if (quantity != null) scalar(quantity, "unit") ?: "" else "g")
                         nutrition(product, prefix, legacy = product === item && !item.has("nutrition_per_100"), basis = scalar(product, "basis_unit") ?: "g")

@@ -58,6 +58,8 @@ class DiaryViewModel(private val repository: DiaryRepository, private val prefer
     val weights = repository.dao.weights(repository.owner).stateIn(viewModelScope, policy, emptyList())
     val recent = repository.dao.recent(repository.owner).stateIn(viewModelScope, policy, emptyList())
     val pending = repository.dao.pending(repository.owner).stateIn(viewModelScope, policy, 0)
+    val analyticsSync = repository.analyticsSyncFacts().stateIn(viewModelScope,
+        SharingStarted.WhileSubscribed(5000,replayExpirationMillis=0),AnalyticsSyncState.Loading)
     val todayGoal = currentDay.flatMapLatest { repository.dao.goal(repository.owner, it.toString()) }
         .flatMapLatest {repository.observeGoalEstimate(it)}.stateIn(viewModelScope, policy, null)
     val day = dateText.flatMapLatest { text ->
@@ -118,6 +120,11 @@ class DiaryViewModel(private val repository: DiaryRepository, private val prefer
         }
     }
     fun editItem(mealId: String, itemId: String, grams: Double, amountText: String? = null) = mutate { repository.editItem(mealId, itemId, grams, amountText) }
+    fun correctIngredient(mealId:String,itemId:String,input:MealIngredientInput) = mutate {
+        repository.correctIngredient(mealId,itemId,input)
+        channel.send(DiaryEvent.Message("Korekta zapisana lokalnie. Oczekujące zmiany i uzgadnianie są na ekranie konta."))
+    }
+    fun addIngredient(mealId:String,input:MealIngredientInput) = mutate {repository.addIngredient(mealId,input)}
     fun removeItem(mealId: String, itemId: String) = mutate { repository.removeItem(mealId, itemId) }
     fun addCustom(draft: CustomProductDraft, grams: Double, type: MealType) {
         val date = LocalDate.parse(dateText.value)

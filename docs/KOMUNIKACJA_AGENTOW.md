@@ -10621,3 +10621,68 @@ Kontynuacja O1-146 — odbiór pierwszego CI i poprawka17oczekiwań migracji:
   nie zatrzymuje niezależnego kodu, ale nie jest zastępowany fikcyjnym PASS.
   O2 przejmuje dalszy odbiór istniejącej kolejki185/184/190; bez wyłączania CI,
   przepisywania historii i nowych PR dla samych statusów.
+
+### O2-072 — Korekta zapisanego spożycia i aktualność Postępów B1/B2
+
+- 29.10.2026, agent 2/O2, **ODEBRANE LOKALNIE, DO INTEGRACJI KOORDYNATORA**.
+  Marker `O2_ANDROID_B1_B2_20261029_V1`; własna gałąź
+  `codex/android-demo-korekty`, baza `26aa82c4abf3a359c9bb1fcdb9a23f3a082b9389`.
+  Drzewo źródeł przed tym wpisem: `5df42fba5d4ba19d54116a721b46ddf8c2509097`.
+  Brak własnego push/PR/merge; dokładny commit odbioru przekazano koordynatorowi.
+- B1/WF-03: osiągalna korekta kcal i każdego B/T/W zapisanego składnika,
+  ilość i osobne jawne jednostki ilości/podstawy100, podgląd spożycia,
+  dodanie i zastąpienie składnika istniejącego posiłku. Null i znane zero
+  pozostają różne; wspólne Decimal/nutrition_v1/HALF_UP. Zastąpienie nazwy
+  odłącza gęstość poprzedniego produktu i znacznik pozycji racji.
+- Bieżący dokładny wire jest autorytetem także dla legacy/importu. Zachowane ID,
+  daty, źródłowe snapshoty i pierwsza kotwica istniejącego składnika; SERVER/PULL
+  tego samego ID nie niszczy źródła. Zapis+outbox są atomowe, ABA i promocja
+  legacy→canonical odrzucają stary zapis. Zamrożone UUID/body/hash/receipty
+  pozostają niezmienne. Poprawiona odmowa ma świadome nowe wysłanie i nowy UUID
+  przez istniejący ekran decyzji; konflikt/recovery zachowują dotychczasową ścieżkę.
+  Bez migracji, zmiany katalogu lub ponownej materializacji potwierdzenia AI.
+- B2/WF-10: trwałe fakty właściciela pokazują lokalny zakres, gościa/brak
+  zastosowanego pobrania, czas zastosowania i stan serwera kopii, pending,
+  rejected/conflict, raw copy czekającą na zastosowanie oraz recovery.
+  Liczniki dotyczą całego konta; kopia i dozwolona sieć nie oznaczają ACK.
+  Stary lease ukrywa również liczby. Bez drugiego sync/gate/session lub
+  zmiany obliczeń, mianowników i okien7/30/90.
+- **Weryfikacja:** debug/validation/testAPK build PASS; JVM **452+492 PASS**,
+  0 FAIL/ERROR/SKIP; lintDebug **0 błędów/7 ostrzeżeń/2 informacje**, wszystkie
+  uwagi w nietkniętych plikach. Native API35: **59/60 PASS** w pierwszym zestawie;
+  jedyny FAIL był nadmiernie ścisłą asercją fragmentu tekstu. Po poprawce
+  pełnego oczekiwanego tekstu zmieniona klasa **2/2 PASS**, bez ERROR/SKIP.
+  Łącznie60 unikalnych przypadków ma PASS; nie deklarujemy jednego zielonego
+  pełnego przebiegu60 lub ponowienia całych559. JVM FAIL samotnego surrogate
+  na wcześniejszej skompilowanej implementacji zachowano i poprawiono.
+- Regresje obejmują niezależne sumy, null/0, dużą czcionkę/UI save, plikowy
+  restart, źródła katalogu/racji/photo, immutable batch/ACK/new base,
+  outbox rollback, ABA, recovery/conflict/rejected, legacy promotion race,
+  SERVER/PULL source retention i B2 zakres/restart/zmianę konta/offline.
+  E0:11schematów,98valid/35invalid/18scenariuszy,16Decimal/5day/72normalizations
+  oraz lokalne linki i diff-check PASS. Surowe FAIL/PASS/XML i SHA zachowane
+  w prywatnym przekazaniu; log build PASS SHA256
+  `dec92fcbf1c37f62bf756b46e840de6e8541913417b01f3ef739641462c9237b`,
+  native FAIL `211cd0ef2cbf3241dd6b3cb79e9bdbbf001cd6f3c1a00948bc561156b6b7353e`,
+  native rerun PASS `3f997d2f34b064529572fa935694fdac4ad45a72b327102996d8a17b3b726e45`.
+- Niezależny odbiór nieautora: **9,4/10, bez otwartych P1/P2** po poprawkach
+  race/source/density i odczycie rzeczywistych raportów. Reguły i granice:
+  [zachowanie korekt i Postępów](../android/KOREKTA_SPOZYCIA_I_POSTEPY.md).
+  Testy używają Room/Compose oraz syntetycznych receipts; to nie realne
+  PKCE/HTTPS/API/PG/PULL/Gemini, podpis119 lub aktualizacja frozenRoom23.
+- Następny krok: drugi odbiór koordynatora, uzgodniony push/duży PR i FULL
+  dla świeżego head/base, merge oraz osobny main/integracja. Dzierżawa
+  Gradle/AVD zwracana po zatrzymaniu własnego emulatora; cudze profile,
+  dane, działające usługi i checkouty pozostają poza zmianą.
+- Aktualizacja koordynatora przed publikacją: odrębny odbiór źródłowego
+  pina `6a0e30c3ce203f6875256d2140bf98a52f371891` ma **9,4/10, bez P1/P2**;
+  32 bloby źródeł i 226 artefaktów zgodne. Nie deklarujemy niezmierzonej
+  wcześniejszej SHA APK: zgodność produkcji i jednej poprawionej asercji
+  oraz logi UP-TO-DATE uzasadniają lokalne rozliczenie 59/60 + 2/2 jako
+  60 unikalnych końcowych PASS. Nowy zdalny FULL nadal jest obowiązkowy.
+  Zwykłe dołączenie main po PR184 zachowuje wszystkie pliki Androida,
+  backendu i kontraktów; rozwiązano jedynie appendy dziennika, bez rerunu
+  lokalnego Androida. Main191/40845051758 i main185/40850709479 są już
+  niezależnie odebrane8/8 SUCCESS; PR184 jest scalony, a jego osobny
+  main40854610640 pozostaje w odbiorze. Historyczne oczekiwania powyżej
+  nie są nowymi blokadami koordynacji O2.

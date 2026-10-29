@@ -215,7 +215,9 @@ class ServerDiaryStore(private val db: CalorieDatabase, private val schema: Sync
             val prior = current?.items?.find { it.id == item.id }
             if (prior == null) dao.insertItem(item) else dao.updateItem(
                 if (prior.wirePayload == item.wirePayload) item.copy(productId = prior.productId,
-                    rationComponentId = prior.rationComponentId, snapshotJson = prior.snapshotJson) else item)
+                    rationComponentId = prior.rationComponentId, snapshotJson = prior.snapshotJson)
+                // The latest wire owns current values; the same item's retained source is archival.
+                else item.copy(snapshotJson = prior.snapshotJson))
         }
         return localId
     }
