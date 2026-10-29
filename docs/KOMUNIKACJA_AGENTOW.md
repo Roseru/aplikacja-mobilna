@@ -11105,6 +11105,47 @@ Kontynuacja O2-073 — **funkcjonalny WF01 i izolacja własnego pomocnika**:
   powyższych prób pozostaje na swoim źródle i generacji. Jeden spójny PR,
   kontrole końcowe oraz merge/main CI pozostają u koordynatora.
 
+Aktualizacja O2-073 — **guard i rzeczywisty powrót logowania odebrane lokalnie**:
+
+- Kod guardu i regresje zapisano na
+  `8638dbcead2b97ac915ae676b85dc99e3ac551e7`. Niezależny przegląd źródła
+  nie znalazł nowych P1/P2; 17 własnych grup asercji potwierdziło odmowę
+  przed odczytem path/headers/body i wywołaniem backendu/proxy. Powtórzone
+  przypadki autora pozostają tymi samymi testami. Review SHA256
+  `0a72c5dc1254f5db5240e99e4d85445f90844a143b51c1cc16ce8eab5e88db2d`.
+- Wykonano kontrolowany down/up na tym pinie, bez init/restore. Generacja
+  `8fa21372-2c33-43df-9046-daeb47de8cfb` ma ten sam CA i descriptor profilu.
+  Rzeczywisty host i Chrome/R2 przeszły HTTPS; zapisano bezpieczne tuple,
+  listener/birth/executable ADB5067, dokładny AVD/serial i własną lease.
+  Rzeczywisty nieallowlistowany lokalny peer 127.0.0.2 otrzymał 403/no-store
+  na API oraz token path mimo sfałszowanych nagłówków. Klient zadeklarował
+  1 MiB body, wysłał zero jego bajtów i dostał pustą odmowę bez oczekiwania.
+  To nie test klienta LAN; WebSocket ma osobny jednostkowy dowód ASGI.
+  PG/KC/Mailpit pozostają loopback-only, bez nowego zdalnego forwardera.
+  Receipt rzeczywistego smoke SHA256
+  `89dd73ec5d7227cdff4d44a97f8fdc9209ea0a9990d9e2e9e1cb9355f9027600`.
+- Po guardzie prawdziwy świeży formularz przyjął aktualne hasło z drugiego
+  resetu; Code/S256 zakończył się dostępną sesją APK także po restarcie.
+  Pełne meal/item/outbox wszystkich ownerów i dane PG pozostały identyczne.
+  Osobny addendum SHA256
+  `c779a9ff94d42dca2653a9c405daac223a125ceb276bc5f24874233ce8d64ad6`
+  domyka wcześniejsze pending aktualnego hasła, bez przepisywania receipts.
+- Następnie rzeczywiście zatrzymano wyłącznie własny Native. Przy dozwolonej
+  sieci APK pokazał błąd rozpoczęcia loginu; dziennik 178,4 kcal, kolejka
+  i wszystkie lokalne dane pozostały. Po zwykłym up i rzeczywistym ponowieniu
+  Code/S256 wróciła dostępna sesja tego samego konta. Nowa generacja
+  `afda5269-20a6-468d-ac3e-be8edf679ef1` zachowuje ten sam pin, konfigurację,
+  stan i epokę. Pełne porównanie przed/awaria/po ponowieniu: 6 meals,
+  6 items, 7 outbox trzech ownerów identyczne; PG nadal 1 meal/1 item/1 receipt
+  tego konta. Receipt SHA256
+  `01a1197c8e17796b3f5c868d212cfdc56b04a7bfd1fc3bc46758f403825fca13`.
+- Koordynator przekazał potwierdzenie właściciela: oba wcześniejsze restarty
+  hosta były wymuszone ręcznie. Jest to przypisanie operatorowi, bez diagnozy
+  sprzętu lub aplikacji; historyczne ograniczone dowody recovery pozostają.
+  Anti-enum P2 nadal FAIL/OPEN, pełne bezpieczeństwo i publiczne wydanie
+  niezaliczone. Kolejny zakres to rzeczywisty APK lost-ACK/retry i osobny PULL,
+  następnie osiągalne przepływy rozszerzone. Bez checkpointowego PR.
+
 ### O2-074 — PR190: bezpieczne ścieżki źródeł lokalnego pakietu demo
 
 - 29.10.2026, agent 2, tymczasowa koordynacja całości według O2-071.
