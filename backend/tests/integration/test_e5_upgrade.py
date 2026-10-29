@@ -24,6 +24,7 @@ from calorie_app.modules.profiles.service import put_consents
 from calorie_app.modules.sync.models import RecoveryMapping
 from calorie_app.modules.sync.router import execute_one, preflight
 from calorie_app.modules.sync.schemas import preflight_structure
+from calorie_app.modules.sync.snapshot_models import SyncSession
 from calorie_app.modules.sync.snapshots import pull as current_pull
 from tests.support.deletion_regression import begin
 from tests.support.historical_e4_snapshots import published_e4_snapshots
@@ -258,13 +259,26 @@ def _seed_e4_sources(engine, artifact_root):
         SECRET,
     )
     assert frozen["snapshot_token"] and frozen["page_token"] and frozen["checkpoint"] is None
+    with engine.connect() as connection:
+        original_nonfinal_id = connection.scalar(
+            text("SELECT id FROM app.sync_sessions WHERE owner_id=:owner AND page_limit=1"),
+            {"owner": owner},
+        )
+    # Preserve the original non-final graph. A separate third graph proves
+    # completed middle/final retries without replacing that original coverage.
+    page = historical.pull(
+        factory,
+        owner,
+        {"limit": 1, "recovery_operation_ids": [op["operation_id"] for op in operations]},
+        SECRET,
+    )
     retries = []
-    page = frozen
+    proof_snapshot = page["snapshot_token"]
     while page["page_token"]:
         query = {
             "limit": 1,
             "sync_epoch": frozen["sync_epoch"],
-            "snapshot_token": frozen["snapshot_token"],
+            "snapshot_token": proof_snapshot,
             "page_token": page["page_token"],
         }
         page = historical.pull(factory, owner, query, SECRET)
@@ -286,6 +300,17 @@ def _seed_e4_sources(engine, artifact_root):
     with engine.begin() as connection:
         connection.execute(text("SET LOCAL ROLE calorie_app_deletion_operator"))
         begin(connection, other_id, uuid4(), 1)
+    with Session(engine) as session:
+        original_nonfinal = session.get(SyncSession, original_nonfinal_id)
+        assert original_nonfinal is not None and original_nonfinal.owner_id == owner
+        assert original_nonfinal.final_offset is None and original_nonfinal.final_response is None
+        assert (
+            session.scalar(
+                text("SELECT count(*) FROM app.sync_sessions WHERE owner_id=:owner"),
+                {"owner": owner},
+            )
+            == 3
+        )
     # Freeze the final response before taking the entire-rowset baseline.
     # Reusing middle/final cursors after each migration must not change a row.
     return factory, owner, (retries[0], retries[-1])
