@@ -116,6 +116,16 @@ and preserves its own immutable stop/stdout evidence. START_FAILED retains actua
 partial markers; no successful stop/ready status is fabricated. An unqualifiable
 PG PID file is explicitly reported for operator investigation, never guessed/killed.
 
+Stop has a separate cleanup qualifier for partial/failed or unadmitted MAINTENANCE
+generations. Confirmed absent own processes have UNKNOWN exits; stale markers do
+not block stopping other verified own resources. A live reused PID/birth/exe
+mismatch still refuses before any stop. RUNNING/admission qualification remains
+strict. API/TLS/provider-only drift is recorded rather than used as launch input;
+state/source/binaries/PG/bootstrap remain bound. `STOPPED_COHORT_DRIFT` is not a
+resume handoff: restore the pinned cohort and obtain explicit requalification.
+If PG itself was already dead, cleanup leaves its PID file intact and records
+`CLEANED_UNKNOWN_EXIT`, without pg_ctl/exit0 or automatic restart authority.
+
 Keycloak starts with schema **validation**, `initialize-empty=false` and no realm
 import; application migration/provision/init/prepare is absent. These provider
 options are documented in [Keycloak provider configuration](https://www.keycloak.org/server/all-provider-config)

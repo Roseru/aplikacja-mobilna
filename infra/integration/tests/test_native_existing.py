@@ -825,6 +825,24 @@ def test_service_launch_uses_admitted_bytes_when_env_file_changes_after_admissio
     assert gateway[3]["AI_PROVIDER"] == "mock" and "untrusted" not in gateway[3]["PYTHONPATH"]
     with pytest.raises(ValueError, match="cohort stale"):
         e.qualified_runtime(e.native.Native(world.source.state), {"MAINTENANCE"})
+    generation = load(world.source.state / "runtime-binding.json")["generation"]
+    stopped = e.stop_existing(world.source.state, generation)
+    receipt = load(stopped["path"])
+    assert (
+        receipt["result"] == "STOPPED_COHORT_DRIFT" and not receipt["automatic_resume_authorized"]
+    )
+    assert "api.env" in receipt["configuration_drift"]
+    assert receipt["configuration_files"]["api.env"] != e.digest(world.source.state / "api.env")
+    world.events.clear()
+    with pytest.raises(ValueError, match="Incomplete source handoff"):
+        e.start_existing(
+            world.source.state,
+            stopped["path"],
+            stopped["sha256"],
+            source_pin="e" * 40,
+            source_sha256=world.code_sha,
+        )
+    assert world.events == []
 
 
 @pytest.mark.parametrize("suffix", [" ", ".", ":stream"])

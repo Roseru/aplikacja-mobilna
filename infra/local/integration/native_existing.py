@@ -867,6 +867,11 @@ def start_existing(state, handoff_path, handoff_sha256, *, source_pin, source_sh
             descriptor = handoff
             stopped = handoff["format"] == "native-existing-stop/v1"
             if stopped:
+                require(
+                    handoff["result"] == "STOPPED"
+                    and handoff.get("automatic_resume_authorized", True),
+                    "Cleanup handoff is not eligible for automatic resume",
+                )
                 reference = handoff["target_binding"]
                 descriptor = read_pinned(reference["path"], reference["sha256"])
                 require(
@@ -947,6 +952,7 @@ def start_existing(state, handoff_path, handoff_sha256, *, source_pin, source_sh
             "source": new_source,
             "configuration": stack.configuration_binding(),
             "binary_sha256": runtime_binaries(stack),
+            "bootstrap_sha256": sha(env_bytes(files["postgres.env"])["POSTGRES_PASSWORD"].encode()),
             "configuration_files": {name: sha(raw) for name, raw in files.items()},
             "parent": {"path": str(handoff_path), "sha256": handoff_sha256},
         }
@@ -1085,48 +1091,116 @@ def verify_source_stopped(descriptor):
     )
 
 
-def qualified_runtime(stack, phases):
+PARTIAL_PHASES = {
+    "STARTING",
+    "START_FAILED",
+    "STOP_FAILED",
+    "ACTIVATION_FAILED",
+    "CAPTURE_FAILED",
+    "MAINTENANCE",
+}
+
+
+def runtime_metadata(stack, phases):
     binding = json.loads((stack.state / "runtime-binding.json").read_bytes())
     require(binding["state"] in phases, "Existing runtime phase differs")
     require(
-        binding["source"] == native.source(stack.config["source"]["commit"])
-        and binding["configuration"] == stack.configuration_binding(),
-        "Existing runtime source/config stale",
+        binding["source"] == native.source(stack.config["source"]["commit"]),
+        "Existing runtime source stale",
     )
-    require(
-        binding.get("binary_sha256") == runtime_binaries(stack),
-        "Existing runtime binaries stale",
-    )
-    files = cohort(stack)
-    require(
-        binding.get("configuration_files") == {name: sha(raw) for name, raw in files.items()},
-        "Existing runtime credential cohort stale",
-    )
+    require(binding["binary_sha256"] == runtime_binaries(stack), "Existing runtime binaries stale")
     actual = {p.name: json.loads(p.read_bytes()) for p in stack.state.glob("*.process.json")}
     require(
         actual == binding["processes"]
-        and all(native.identity(r["pid"]) == r for r in actual.values()),
+        and set(actual)
+        <= {"postgres.process.json", "keycloak.process.json", "gateway.process.json"},
+        "Existing process marker set differs",
+    )
+    return binding, actual
+
+
+def qualified_runtime(stack, phases):
+    """Admission stays strict, including every live process and full config cohort."""
+    binding, actual = runtime_metadata(stack, phases)
+    require(
+        binding["configuration"] == stack.configuration_binding(), "Existing runtime config stale"
+    )
+    files = cohort(stack)
+    require(
+        binding["configuration_files"] == {name: sha(raw) for name, raw in files.items()},
+        "Existing runtime credential cohort stale",
+    )
+    require(
+        all(native.identity(r["pid"]) == r for r in actual.values()),
         "Existing process generation differs",
     )
     return binding, files
 
 
+def qualified_cleanup(stack):
+    """Stop only: dead markers/drift never authorize admission or a fresh launch."""
+    binding, actual = runtime_metadata(stack, PARTIAL_PHASES)
+    expected = binding["configuration_files"]
+    require(
+        set(expected)
+        in (set(CONFIG_FILES), set(CONFIG_FILES) | {"config-generation/provider-profile.json"}),
+        "Unknown configuration member",
+    )
+    files, drift = {}, {}
+    names = set(expected)
+    if (stack.state / "config-generation/provider-profile.json").exists():
+        names.add("config-generation/provider-profile.json")
+    for name in names:
+        try:
+            raw = (stack.state / name).read_bytes()
+        except OSError:
+            raw = None
+        observed = sha(raw) if raw is not None else "UNAVAILABLE"
+        if observed != expected.get(name):
+            drift[name] = {"expected": expected.get(name), "observed": observed}
+        else:
+            files[name] = raw
+        if name in {"native.json", "config.json"}:
+            require(observed == expected[name], "Cleanup critical state/config differs")
+        if name == "postgres.env":
+            require(raw is not None, "Cleanup bootstrap unavailable")
+            password = env_bytes(raw)["POSTGRES_PASSWORD"]
+            if "bootstrap_sha256" in binding:
+                require(
+                    sha(password.encode()) == binding["bootstrap_sha256"],
+                    "Cleanup bootstrap differs",
+                )
+            else:
+                require(observed == expected[name], "Legacy cleanup bootstrap cohort differs")
+            # Ignore other fields; never pass unverified env keys to a process.
+            files[name] = ("POSTGRES_PASSWORD=" + password + "\n").encode()
+    dead = {}
+    for name, record in actual.items():
+        try:
+            observed = native.identity(record["pid"])
+        except ProcessLookupError:
+            dead[name] = record
+        else:
+            require(observed == record, "Live reused PID/birth/exe differs; cleanup refused")
+    if "postgres.process.json" in dead:
+        pidfile = stack.state / "postgres/postmaster.pid"
+        require(
+            not pidfile.exists()
+            or int(pidfile.read_text().splitlines()[0]) == dead["postgres.process.json"]["pid"],
+            "Untracked postmaster PID; cleanup refused",
+        )
+    return binding, files, dead, drift
+
+
 def stop_existing(state, expected_generation):
     stack = stack_at(state)
     with stack.operation():
-        binding, files = qualified_runtime(
-            stack,
-            {
-                "RUNNING",
-                "MAINTENANCE",
-                "START_FAILED",
-                "STARTING",
-                "CAPTURE_SEALED",
-                "CAPTURE_FAILED",
-                "STOP_FAILED",
-                "ACTIVATION_FAILED",
-            },
-        )
+        phase = json.loads((stack.state / "runtime-binding.json").read_bytes())["state"]
+        dead, drift = {}, {}
+        if phase in PARTIAL_PHASES:
+            binding, files, dead, drift = qualified_cleanup(stack)
+        else:
+            binding, files = qualified_runtime(stack, {"RUNNING", "CAPTURE_SEALED"})
         require(binding["generation"] == expected_generation, "Stop generation differs")
         control = binding["lifecycle"]
         kind = control["kind"]
@@ -1145,16 +1219,55 @@ def stop_existing(state, expected_generation):
                 pg.config["process"] == binding["processes"]["postgres.process.json"],
                 "Target marker families differ",
             )
-        pg.qualify()
-        facts = database_facts(pg)
+        pg_dead = "postgres.process.json" in dead
+        if not pg_dead:
+            pg.qualify()
+            facts = database_facts(pg)
+        else:
+            facts = binding.get("database")
         folder = operation_directory(stack)
+        service_stops = {}
         try:
             for name in ("gateway", "keycloak"):
                 if (stack.state / (name + ".process.json")).exists():
                     record = binding["processes"][name + ".process.json"]
-                    native.terminate(record)
+                    already_dead = name + ".process.json" in dead
+                    if not already_dead:
+                        native.terminate(record)
                     require(absent(record), "Service remains after stop")
                     (stack.state / (name + ".process.json")).unlink()
+                    service_stops[name] = {
+                        "process": record,
+                        "already_dead": already_dead,
+                        "termination_helper_called": not already_dead,
+                        "process_exit": "UNKNOWN",
+                    }
+            if pg_dead:
+                # Remove only our stale lifecycle marker, never the postmaster
+                # PID file or a guessed process. This is not a resume handoff.
+                (stack.state / "postgres.process.json").unlink()
+                if kind == "target":
+                    pg.config["status"] = "DEAD_UNKNOWN_EXIT"
+                    native.write_json(pg.marker, pg.config)
+                publish(stack, binding | {"state": "CLEANED_UNKNOWN_EXIT"})
+                return write_new(
+                    folder / "cleanup-unknown.private.json",
+                    {
+                        "format": "native-existing-stop/v1",
+                        "kind": kind,
+                        "state": str(stack.state),
+                        "result": "CLEANED_UNKNOWN_EXIT",
+                        "runtime": binding,
+                        "configuration_drift": drift,
+                        "service_stops": service_stops,
+                        "pg_stop": {
+                            "exit_code": None,
+                            "process_exit": "UNKNOWN",
+                            "command_attempted": False,
+                        },
+                        "automatic_resume_authorized": False,
+                    },
+                )
             zero_clients(pg)
             # Final session/data facts belong to the quiesced cohort, not to an
             # earlier request which may finish while services are stopping.
@@ -1180,7 +1293,8 @@ def stop_existing(state, expected_generation):
             if kind == "target":
                 pg.config["status"] = "STOPPED"
                 native.write_json(pg.marker, pg.config)
-            native.write_json(stack.state / "runtime-binding.json", binding | {"state": "STOPPED"})
+            result = "STOPPED_COHORT_DRIFT" if drift else "STOPPED"
+            native.write_json(stack.state / "runtime-binding.json", binding | {"state": result})
         except BaseException as error:
             failed = binding | {"state": "STOP_FAILED"}
             publish(stack, failed)
@@ -1189,6 +1303,8 @@ def stop_existing(state, expected_generation):
                 {
                     "result": "FAIL",
                     "runtime": failed,
+                    "runtime_before": binding,
+                    "service_stops": service_stops,
                     "error_kind": type(error).__name__,
                     "successful_stop_claim": False,
                 },
@@ -1198,10 +1314,13 @@ def stop_existing(state, expected_generation):
             "format": "native-existing-stop/v1",
             "kind": kind,
             "state": str(stack.state),
-            "result": "STOPPED",
+            "result": result,
             "runtime": binding,
             "database": facts,
-            "configuration_files": {name: sha(raw) for name, raw in files.items()},
+            "configuration_files": binding["configuration_files"],
+            "configuration_drift": drift,
+            "automatic_resume_authorized": not bool(drift),
+            "service_stops": service_stops,
             "qualified_binary_hashes": runtime_binaries(stack),
             "original_hba_hex": control["original_hba_hex"],
             "original_hba_sha256": sha(bytes.fromhex(control["original_hba_hex"])),
