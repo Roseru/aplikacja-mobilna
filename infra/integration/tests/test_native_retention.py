@@ -189,7 +189,7 @@ def test_fast_worker_exit_cannot_publish_reused_pid(world, monkeypatch):
     monkeypatch.setattr(
         native, "identity", lambda _pid: {"pid": 987, "created": 999, "executable": "foreign"}
     )
-    with pytest.raises(RuntimeError, match="during identity"):
+    with pytest.raises(native.WorkerLaunchFailed, match="identity publication"):
         REAL_LAUNCH(world.source, "worker", [world.source.python], {}, cwd=state)
     assert not (state / "worker.process.json").exists()
     receipt = load(next(state.glob("launch-failed-*.private.json")))
@@ -481,7 +481,7 @@ def test_unresolved_popen_child_blocks_pg_stop_without_forging_marker(
     monkeypatch.setattr(native, "identity", identity)
     monkeypatch.setattr(native.subprocess, "Popen", lambda *_a, **_k: child)
     monkeypatch.setattr(native.Native, "launch", REAL_LAUNCH)
-    with pytest.raises(PermissionError, match="identity publication"):
+    with pytest.raises(native.WorkerLaunchFailed, match="identity publication"):
         stack.start_worker(binding)
     assert not (stack.state / "worker.process.json").exists()
     failed = load(stack.state / "runtime-binding.json")
@@ -494,6 +494,155 @@ def test_unresolved_popen_child_blocks_pg_stop_without_forging_marker(
     with pytest.raises(ValueError, match="Unresolved worker launch"):
         stack.down()
     assert world.events == [] and (stack.state / "postgres/postmaster.pid").exists()
+
+
+@pytest.mark.parametrize("exit_kind", ["poll", "forced-wait"])
+@pytest.mark.parametrize("cleanup", ["native-down", "existing-stop"])
+def test_known_original_child_exit_allows_partial_cleanup(world, monkeypatch, exit_kind, cleanup):
+    stack = world.source
+    binding = load(stack.state / "runtime-binding.json")
+    stack.stop_worker(binding)
+    binding["state"] = "STARTING"
+    binding["generation"] = str(__import__("uuid").uuid4())
+    events = []
+    child = SimpleNamespace(
+        pid=987,
+        poll=lambda: 2 if exit_kind == "poll" else None,
+        terminate=lambda: events.append("original-handle-terminate"),
+        wait=lambda **_k: events.append("original-handle-wait") or 37,
+    )
+    original_identity = native.identity
+
+    def identity(pid):
+        if pid == 987:
+            raise PermissionError("Synthetic identity publication failure")
+        return original_identity(pid)
+
+    monkeypatch.setattr(native, "identity", identity)
+    monkeypatch.setattr(native.subprocess, "Popen", lambda *_a, **_k: child)
+    monkeypatch.setattr(native.Native, "launch", REAL_LAUNCH)
+    with pytest.raises((RuntimeError, PermissionError)):
+        stack.start_worker(binding)
+    failed = load(stack.state / "runtime-binding.json")
+    assert not (stack.state / "worker.process.json").exists()
+    assert not failed["retention_launch_unresolved"]
+    reference = failed["retention_failed_launch"]
+    receipt = load(reference["path"])
+    assert e.sha(Path(reference["path"]).read_bytes()) == reference["sha256"]
+    assert receipt["exit_observed"] and receipt["exit_code"] == (2 if exit_kind == "poll" else 37)
+    assert receipt["forced"] == (exit_kind == "forced-wait") and not receipt["graceful"]
+    if exit_kind == "forced-wait":
+        assert events == ["original-handle-terminate", "original-handle-wait"]
+    world.events.clear()
+    if cleanup == "native-down":
+        stack.down()
+    else:
+        stopped = e.stop_existing(stack.state, failed["generation"])
+        assert load(stopped["path"])["result"] == "STOPPED"
+    assert load(stack.state / "runtime-binding.json")["state"] == "STOPPED"
+    assert not list(stack.state.glob("*.process.json"))
+    assert not (stack.state / "postgres/postmaster.pid").exists()
+
+
+def test_known_exit_without_durable_receipt_does_not_clear_unresolved(world, monkeypatch):
+    stack = world.source
+    binding = load(stack.state / "runtime-binding.json")
+    stack.stop_worker(binding)
+    binding["state"] = "STARTING"
+    binding["generation"] = str(__import__("uuid").uuid4())
+    monkeypatch.setattr(native.Native, "launch", REAL_LAUNCH)
+    monkeypatch.setattr(
+        native.subprocess, "Popen", lambda *_a, **_k: SimpleNamespace(pid=987, poll=lambda: 2)
+    )
+    write = native.private_write
+
+    def io_failure(path, text, **kwargs):
+        if path.name.startswith("launch-failed-"):
+            raise OSError("Synthetic durable launch receipt failure")
+        return write(path, text, **kwargs)
+
+    monkeypatch.setattr(native, "private_write", io_failure)
+    with pytest.raises(OSError, match="durable launch receipt"):
+        stack.start_worker(binding)
+    failed = load(stack.state / "runtime-binding.json")
+    assert (
+        failed["retention_launch_unresolved"] and not (stack.state / "worker.process.json").exists()
+    )
+    world.events.clear()
+    with pytest.raises(ValueError, match="Unresolved worker launch"):
+        e.stop_existing(stack.state, failed["generation"])
+    assert world.events == []
+
+
+@pytest.mark.parametrize("exit_kind", ["poll", "forced-wait"])
+def test_known_exit_cleanup_source_restarts_full_path_with_previous_progress(
+    world, monkeypatch, exit_kind
+):
+    old = load(world.source.state / "runtime-binding.json")["retention"]
+    progress = b'{"cursor":"00000000-0000-4000-8000-000000000009","sweep_pending":true}\n'
+    (Path(old["state"]) / "progress.json").write_bytes(progress)
+    hba = (world.source.state / "postgres/pg_hba.conf").read_bytes()
+    epoch = world.facts[world.source.state]["epoch"]
+    state, binding, proof = maintenance_proof(world, monkeypatch)
+    fixture_launch, fixture_identity = native.Native.launch, native.identity
+    child = SimpleNamespace(
+        pid=987,
+        poll=lambda: 2 if exit_kind == "poll" else None,
+        terminate=lambda: None,
+        wait=lambda **_k: 37,
+    )
+    monkeypatch.setattr(native.subprocess, "Popen", lambda *_a, **_k: child)
+
+    def failed_identity(pid):
+        if pid == 987:
+            raise PermissionError("Synthetic worker identity failure")
+        return fixture_identity(pid)
+
+    monkeypatch.setattr(native, "identity", failed_identity)
+
+    def only_worker_real(stack, name, arguments, env, **kwargs):
+        if name == "worker":
+            return REAL_LAUNCH(stack, name, arguments, env, **kwargs)
+        return fixture_launch(stack, name, arguments, env, **kwargs)
+
+    monkeypatch.setattr(native.Native, "launch", only_worker_real)
+    ref = e.write_new(state / "known-first-fence.private.json", proof)
+    with pytest.raises(native.WorkerLaunchFailed):
+        e.activate(state, binding["generation"], ref["path"], ref["sha256"])
+    failed = load(state / "runtime-binding.json")
+    stopped = e.stop_existing(state, failed["generation"])
+    assert load(stopped["path"])["result"] == "STOPPED"
+    monkeypatch.setattr(native.Native, "launch", fixture_launch)
+    monkeypatch.setattr(native, "identity", fixture_identity)
+    e.start_existing(
+        state, stopped["path"], stopped["sha256"], source_pin="e" * 40, source_sha256=world.code_sha
+    )
+    resumed = load(state / "runtime-binding.json")
+    control = resumed["lifecycle"]
+    closed_at = datetime.fromisoformat(control["started_at"]) + timedelta(seconds=1)
+    closed_mono = control["started_monotonic"] + 1
+
+    class Clock(datetime):
+        @classmethod
+        def now(cls, tz=None):
+            return closed_at + timedelta(seconds=500)
+
+    monkeypatch.setattr(e, "datetime", Clock)
+    monkeypatch.setattr(e.time, "monotonic", lambda: closed_mono + 500)
+    next_proof = proof | {
+        "generation": resumed["generation"],
+        "closed_after_logout_at": closed_at.isoformat(),
+        "closed_after_logout_monotonic": closed_mono,
+    }
+    ref2 = e.write_new(state / "known-second-fence.private.json", next_proof)
+    e.activate(state, resumed["generation"], ref2["path"], ref2["sha256"])
+    running = world.source.require_running()
+    assert (Path(running["retention"]["state"]) / "progress.json").read_bytes() == progress
+    assert len(running["processes"]) == 4 and running["state"] == "RUNNING"
+    assert (
+        world.facts[state]["epoch"] == epoch
+        and (state / "postgres/pg_hba.conf").read_bytes() == hba
+    )
 
 
 def test_target_retention_release_uses_own_port_restored_role_and_fresh_state(world, monkeypatch):

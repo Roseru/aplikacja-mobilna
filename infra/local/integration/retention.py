@@ -246,6 +246,11 @@ def start(stack, binding, *, raw=None, resume=None):
     try:
         stack.launch("worker", value["argv"], env, cwd=path, log_path=Path(value["log"]))
         binding["retention_launch_unresolved"] = False
+    except native.WorkerLaunchFailed as failure:
+        require(failure.generation == generation, "Foreign worker launch outcome")
+        binding["retention_failed_launch"] = failure.reference
+        binding["retention_launch_unresolved"] = not failure.exit_observed
+        raise
     finally:
         marker = stack.state / "worker.process.json"
         if marker.exists():

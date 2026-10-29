@@ -25,6 +25,18 @@ sys.path.insert(0, str(ROOT / "infra/integration"))
 from run import initialize, prepare_worker, private_write  # noqa: E402
 
 FLAGS = {"creationflags": subprocess.CREATE_NO_WINDOW} if os.name == "nt" else {}
+
+
+class WorkerLaunchFailed(RuntimeError):
+    """Internal handoff of durable evidence from the original owned child handle."""
+
+    def __init__(self, generation, reference, exit_observed):
+        super().__init__("Owned worker launch failed before qualified identity publication")
+        self.generation = generation
+        self.reference = reference
+        self.exit_observed = exit_observed
+
+
 SHARED_HELPERS = (
     "infra/integration/run.py",
     "infra/integration/verify.py",
@@ -452,7 +464,7 @@ class Native:
             if name == "worker" and process.poll() is not None:
                 raise RuntimeError("Owned child exited during identity publication")
             write_json(marker, record)
-        except BaseException:
+        except BaseException as launch_error:
             if name == "worker":
                 # This original Popen handle still owns the child even when no
                 # safe PID marker could be published. Never target a raw PID.
@@ -475,10 +487,18 @@ class Native:
                 except BaseException as cleanup_error:
                     failure["cleanup_error_kind"] = type(cleanup_error).__name__
                 finally:
-                    write_json(
-                        (cwd or self.state) / ("launch-failed-" + uuid4().hex + ".private.json"),
-                        failure,
-                    )
+                    failure["generation"] = pending["generation"]
+                    failure["unresolved_launch"] = not failure["exit_observed"]
+                    path = (cwd or self.state) / ("launch-failed-" + uuid4().hex + ".private.json")
+                    encoded = (json.dumps(failure, indent=2) + "\n").encode()
+                    private_write(path, encoded.decode())
+                reference = {"path": str(path), "sha256": hashlib.sha256(encoded).hexdigest()}
+                pending["retention_failed_launch"] = reference
+                pending["retention_launch_unresolved"] = failure["unresolved_launch"]
+                write_json(self.state / "runtime-binding.json", pending)
+                raise WorkerLaunchFailed(
+                    pending["generation"], reference, failure["exit_observed"]
+                ) from launch_error
             raise
         if name == "worker":
             pending["retention_launch_unresolved"] = False

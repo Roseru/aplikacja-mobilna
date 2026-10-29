@@ -983,9 +983,13 @@ def start_existing(state, handoff_path, handoff_sha256, *, source_pin, source_sh
             control["target_binding"] = reference
         binding["lifecycle"] = control
         if kind == "source":
-            binding["retention_resume"] = handoff["runtime"].get(
-                "retention", handoff["runtime"].get("retention_resume")
-            )
+            previous = handoff["runtime"]
+            cursor_source = previous.get("retention")
+            # A markerless failed launch never qualified this fresh slot. Keep
+            # only the last qualified original-source cursor, or start fresh.
+            if cursor_source is None or cursor_source.get("process") is None:
+                cursor_source = previous.get("retention_resume")
+            binding["retention_resume"] = cursor_source
         if not pg_started:
             process = pg.process if kind == "source" else pg.config["process"]
             native.write_json(stack.state / "postgres.process.json", process)
