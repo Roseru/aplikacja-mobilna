@@ -338,12 +338,17 @@ class DiaryFlowTest {
     @Test fun restoreRationQuantityOutsideInitialViewportWithoutSavingMeal() {
         compose.waitUntil(15_000) { compose.onAllNodesWithTag("daily-kcal").fetchSemanticsNodes().isNotEmpty() }
         val app = compose.activity.application as CalorieApplication
-        val ration = runBlocking { app.database.dao().rations().first().single { it.ration.catalogJson?.let(::JSONObject)?.optString("ration_id") == "1ed32646-7248-5733-8979-c7cb4f9f25d2" } }
+        val rations = runBlocking { app.database.dao().rations().first() }
+        val ration = rations.single { it.ration.catalogJson?.let(::JSONObject)?.optString("ration_id") == "1ed32646-7248-5733-8979-c7cb4f9f25d2" }
+        val firstRationTag = "ration-${rations.first().ration.id}"
         val part = ration.components.maxBy { it.position }
         val tag = "ration-grams-${part.id}"
         val before = runBlocking { app.database.dao().operationCount(DiaryRepository.GUEST) }
         compose.onNodeWithText("Dodaj posiłek").performClick()
         compose.onNodeWithTag("open-rations").performClick()
+        // The screen first subscribes to Room here; Compose idleness can still expose
+        // stateIn's empty initial list. Wait for a visible row, not the offscreen target.
+        compose.waitUntil(10_000) { compose.onAllNodesWithTag(firstRationTag).fetchSemanticsNodes().isNotEmpty() }
         compose.onNodeWithTag("ration-content").performScrollToNode(hasTestTag("ration-${ration.ration.id}"))
         compose.onNodeWithTag("ration-${ration.ration.id}").performClick()
         compose.onNodeWithTag("ration-content").performScrollToNode(hasTestTag("ration-check-${part.id}"))
