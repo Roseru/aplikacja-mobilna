@@ -144,3 +144,14 @@ osobne neutralne receipts. Kod wykonanej próby i surowe dane pozostają prywatn
 To nadal przypadek serwerowy/syntetyczny, bez Room27, realnego Gemini,
 produkcyjnego RPO/RTO i zgody na wydanie. Wynik określa receipt konkretnego ID;
 sam opis harnessu nie stanowi PASS. AVD/Gradle/aktywne Native pozostają poza nim.
+
+Raport rozróżnia `old_bootstrap_key_refused`, `old_checkpoint_refused` oraz
+`old_operation_epoch_refused`. Ostatni probe wysyła zachowaną operację bez zmian
+(UUID, payload, stara epoka) ze świeżą autoryzacją i poprawnym bieżącym
+checkpointem. Fingerprint musi odpowiadać zaakceptowanemu receipt źródła;
+walidator produkcyjny sprawdza checkpoint dla PUSH. Pełny graf wszystkich tabel
+`app`, także liczników/rezerwacji/sesji, jest mierzony po setup/auth/PULL i przed
+oraz po tym jednym żądaniu. Exact body nowej próby i graf pozostają prywatne.
+Historyczny łączny boolean z wersji `5eac426` nie izolował odmowy operacji;
+oryginalny C02 zachowuje tę granicę, a oddzielny supplement02 dostarcza dowód.
+Zmiana harnessu nie oznacza, że historyczna próba wykonała nową wersję kodu.

@@ -13,12 +13,16 @@ import time
 import traceback
 from datetime import UTC, datetime
 from pathlib import Path
-from uuid import uuid4
+from uuid import UUID, uuid4
 
 from . import native  # isort: skip
 
 import httpx
 from backup import digest, private_directory
+from calorie_app.modules.sync.schemas import preflight_structure
+from calorie_app.modules.sync.service import fingerprint
+from calorie_app.modules.sync.tokens import validate_checkpoint
+from pydantic import SecretStr
 from recovery_o2 import (
     admin,
     check,
@@ -347,23 +351,31 @@ def http_recovery(probe, sessions, keys, scenario, pg):
         409,
     )
     check(denied.json()["code"] == "sync_epoch_changed", "Old checkpoint accepted")
-    old = scenario["lost"] | {"sync_epoch": epoch}
-    expect(
-        probe.api(
-            "POST",
-            "/api/v1/sync/push",
-            token=token,
-            json=envelope(boot, scenario["checkpoint"], [old]),
-        ),
-        409,
-    )
     after = json.loads(pg.sql("calorie_app", SNAPSHOT))
-    check(before == after, "Refused HTTP requests mutated sync graph")
+    check(before == after, "Refused old bootstrap/checkpoint mutated sync graph")
     page = expect(probe.api("GET", "/api/v1/sync/pull", token=token), 200).json()
     lost = scenario["lost"]
     check(
         lost["entity_id"] not in {e["entity_id"] for e in page["entities"]},
         "Lost meal silently replayed",
+    )
+    source = restore_oracle._read(scenario, "source-after-capture-private.json")
+    source_receipt = next(
+        row
+        for row in source["graph"]["sync_receipts"]
+        if row["operation_id"] == lost["operation_id"]
+    )
+    check(
+        source_receipt["owner_id"] == boot["account_id"], "Source receipt owner differs"
+    )
+    old_operation = old_operation_epoch_probe(
+        probe,
+        token,
+        boot,
+        page,
+        lost,
+        pg,
+        expected_source_fingerprint=source_receipt["request_hash"],
     )
     recovery = meal(boot, lost["payload"]["title"])
     recovery["payload"] = lost["payload"]
@@ -428,7 +440,10 @@ def http_recovery(probe, sessions, keys, scenario, pg):
         "old_access_401": 2,
         "old_refresh_invalid_grant": 2,
         "fresh_code_s256": True,
-        "old_bootstrap_checkpoint_operation_refused": True,
+        "old_bootstrap_key_refused": True,
+        "old_checkpoint_refused": True,
+        "old_operation_epoch_refused": old_operation["refused"],
+        "old_operation_epoch_proof": old_operation,
         "refused_sync_graph_equal": True,
         "one_recovery_mapping": True,
         "complete_separate_pull": True,
@@ -449,6 +464,115 @@ SNAPSHOT = (
     )
     + ");"
 )
+
+
+def full_app_graph(pg):
+    """One read-only snapshot of every application table, including sync bookkeeping."""
+    names = pg.sql(
+        "calorie_app",
+        "SELECT tablename FROM pg_tables WHERE schemaname='app' ORDER BY tablename;",
+    ).splitlines()
+    check(
+        names and all(re.fullmatch(r"[a-z_][a-z0-9_]*", name) for name in names),
+        "Unexpected graph table",
+    )
+    # VALUES avoids json_build_object's function-argument limit for the full schema.
+    statement = (
+        "BEGIN ISOLATION LEVEL REPEATABLE READ READ ONLY; "
+        "SELECT jsonb_object_agg(name,rows) FROM (VALUES "
+        + ",".join(
+            f"('{name}',(SELECT coalesce(jsonb_agg(to_jsonb(t) ORDER BY to_jsonb(t)::text),'[]') FROM app.{name} t))"
+            for name in names
+        )
+        + ") g(name,rows); COMMIT;"
+    )
+    return json.loads(pg.sql("calorie_app", statement))
+
+
+def old_operation_epoch_probe(
+    probe,
+    token,
+    boot,
+    page,
+    operation,
+    pg,
+    *,
+    expected_source_fingerprint,
+):
+    """Isolate old-operation refusal from stale checkpoint/authentication failures.
+
+    Reuse the persisted operation unchanged. Its canonical fingerprint must match
+    the accepted source receipt. The historical HTTP body need not have been
+    archived; only this supplemental request's exact body bytes are captured.
+    """
+    evidence = pg.state / "old-operation-epoch.private.json"
+    pg.qualify()
+    check(not evidence.exists(), "Existing epoch-probe evidence preserved")
+    check(page["page_token"] is None, "Fresh full snapshot required")
+    check(operation["sync_epoch"] != boot["sync_epoch"], "Old operation epoch required")
+    original_fingerprint = fingerprint(operation)
+    check(
+        original_fingerprint == expected_source_fingerprint,
+        "Operation differs from accepted source receipt",
+    )
+    epoch = pg.sql("calorie_app", "SELECT sync_epoch FROM app.installation_state;")
+    check(boot["sync_epoch"] == epoch, "Fresh outer epoch required")
+    account = json.loads(
+        pg.sql(
+            "calorie_app",
+            "SELECT json_build_object('generation',generation,'now',clock_timestamp()) "
+            "FROM app.user_accounts WHERE id='" + str(UUID(boot["account_id"])) + "';",
+        )
+    )
+    claims = validate_checkpoint(
+        page["checkpoint"],
+        SecretStr(probe.stack.env("api")["CATALOG_PAGE_TOKEN_SECRET"]),
+        owner_id=UUID(boot["account_id"]),
+        generation=account["generation"],
+        epoch=UUID(epoch),
+        now=datetime.fromisoformat(account["now"]),
+        push=True,
+    )
+    request = envelope(boot, page["checkpoint"], [operation])
+    preflight_structure(request)  # Real minItems=1 contract; no empty-PUSH workaround.
+    before = full_app_graph(pg)  # Bootstrap/authentication/PULL precede this baseline.
+    response = probe.api("POST", "/api/v1/sync/push", token=token, json=request)
+    after = full_app_graph(pg)
+    sent = json.loads(response.request.content)
+    native.write_json(
+        evidence,
+        {
+            "expected_source_fingerprint": expected_source_fingerprint,
+            "validated_checkpoint_claims": claims,
+            "request_bytes_utf8": response.request.content.decode("utf-8"),
+            "response_status": response.status_code,
+            "response_bytes_utf8": response.content.decode("utf-8"),
+            "before": before,
+            "after": after,
+            "authorization_header_excluded": True,
+            "historical_raw_HTTP_body_identity_claim": False,
+        },
+    )
+    check(
+        sent["operations"] == [operation]
+        and fingerprint(sent["operations"][0]) == original_fingerprint
+        and sent["checkpoint"] == page["checkpoint"]
+        and sent["sync_epoch"] == epoch,
+        "Actual wire changed the historical operation or fresh context",
+    )
+    check(
+        response.status_code == 409 and response.json()["code"] == "sync_epoch_changed",
+        "Old operation epoch barrier not isolated",
+    )
+    check(before == after, "Refused old operation mutated application graph")
+    return {
+        "refused": True,
+        "code": "sync_epoch_changed",
+        "operation_unchanged": True,
+        "fresh_checkpoint_validated_for_push": True,
+        "all_app_tables_equal": len(before),
+        "evidence_sha256": digest(evidence),
+    }
 
 
 def run(state, pg_bin, keycloak_home, java_home, host):
