@@ -109,6 +109,7 @@ class MealPhotoViewModel(private val context: Application, private val store: Me
         }
     }
     suspend fun preview(id: String) = store.preview(id)
+    internal suspend fun preview(id: String, diagnosticRequest: Long) = store.preview(id, diagnosticRequest)
     private fun clearPending() {
         mutableSelection.value = false
         listOf("photo-owner","photo-generation","photo-date","photo-id","photo-source").forEach { saved.remove<Any>(it) }
