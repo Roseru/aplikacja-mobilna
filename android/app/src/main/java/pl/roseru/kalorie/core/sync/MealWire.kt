@@ -23,8 +23,33 @@ class MealWire private constructor(val canonical:String) {
         require(kept.size==items.length()-1)
         return if(kept.isEmpty())null else read(StrictJson.canonical(value.put("items",JSONArray(kept))),schema)
     }
+    /** A user's correction is a manual consumption value, never a catalogue revision. */
+    fun withIngredient(itemId:String,input:MealIngredientInput,schema:SyncWireSchema,add:Boolean=false):MealWire {
+        input.validate()
+        val value=json();val items=value.getJSONArray("items")
+        val index=(0 until items.length()).singleOrNull {items.getJSONObject(it).getString("item_id")==itemId}
+        require((index==null)==add)
+        val old=index?.let {items.getJSONObject(it)}
+        val row=manualIngredient(itemId,input,
+            if(old!=null && old.getString("name")==input.name)old.get("ration_component_position") else JSONObject.NULL)
+        if(index==null)items.put(row) else items.put(index,row)
+        return read(StrictJson.canonical(value),schema)
+    }
     override fun toString()="MealWire(redacted)"
     companion object {
+        fun manualIngredient(itemId:String,input:MealIngredientInput,position:Any=JSONObject.NULL):JSONObject {
+            input.validate()
+            val nutrition=JSONObject()
+            ExactNutrition.fields.zip(input.nutrition.values()).forEach {(field,number)->
+                nutrition.put(field,number?.let(ContractDecimal::canonical)?:JSONObject.NULL)
+            }
+            return JSONObject().put("item_id",itemId).put("name",input.name).put("product",JSONObject.NULL)
+                .put("quantity",JSONObject().put("amount",input.amount).put("unit",input.unit.wire))
+                .put("basis_unit",input.basisUnit.wire).put("nutrition_per_100",nutrition)
+                .put("density_g_per_ml",input.density?.gramsPerMl?.let(ContractDecimal::canonical)?:JSONObject.NULL)
+                .put("density_source",input.density?.sourceId?:JSONObject.NULL).put("nutrition_origin","manual")
+                .put("formula_version",NutritionV1.FORMULA).put("ration_component_position",position)
+        }
         fun read(text:String,schema:SyncWireSchema):MealWire = safe {
             val bytes=text.toByteArray(Charsets.UTF_8);schema.validateMeal(bytes)
             val value=StrictJson.read(bytes);val date=LocalDate.parse(value.getString("local_date"))

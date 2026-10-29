@@ -166,9 +166,12 @@ data class LegacyImportForm(val fields: List<ImportFormField>, val standaloneGoa
                     for (i in 0 until items.length()) {
                         val item = items.getJSONObject(i); val id = item.getString("id")
                         val prefix = "item:" + Base64.getUrlEncoder().withoutPadding().encodeToString(id.toByteArray(Charsets.UTF_8)) + ":"
-                        val snapshot = display(item, "snapshotJson").takeIf(String::isNotEmpty)?.let(::parse)
-                        val product = snapshot?.optJSONObject("private_product") ?: snapshot?.optJSONObject("product")
-                        val quantity = snapshot?.optJSONObject("quantity")
+                        val current = display(item, "wirePayload").takeIf(String::isNotEmpty)?.let(::parse)
+                        val snapshot = display(item, "snapshotJson").takeIf(String::isNotEmpty)?.let {
+                            if (current == null) parse(it) else runCatching { parse(it) }.getOrNull()
+                        }
+                        val product = current ?: snapshot?.optJSONObject("private_product") ?: snapshot?.optJSONObject("product")
+                        val quantity = current?.optJSONObject("quantity") ?: snapshot?.optJSONObject("quantity")
                         fun itemField(key: String, label: String, value: String, required: Boolean = false,
                             decimal: Boolean = false, options: List<Pair<String, String>> = emptyList()) =
                             field(prefix + key, "Składnik ${i + 1}: $label", value, required, decimal, options)

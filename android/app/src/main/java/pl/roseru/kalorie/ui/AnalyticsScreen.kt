@@ -34,6 +34,8 @@ import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import pl.roseru.kalorie.DiaryViewModel
 import pl.roseru.kalorie.core.*
+import pl.roseru.kalorie.core.network.NetworkAccessState
+import pl.roseru.kalorie.data.AnalyticsSyncState
 import java.math.BigDecimal
 import java.math.RoundingMode
 import java.time.LocalDate
@@ -48,16 +50,18 @@ private fun BigDecimal.display(scale: Int = 1): String = setScale(scale, Roundin
 private fun FieldAggregate.label(unit: String) = (if (complete) "" else "≥ ") + display.replace('.', ',') + " $unit" +
     (if (complete) "" else " · brak danych: $missingCount")
 
-@Composable fun AnalyticsScreen(model: DiaryViewModel, onDay: (LocalDate) -> Unit) {
+@Composable fun AnalyticsScreen(model: DiaryViewModel, networkState: NetworkAccessState? = null, onDay: (LocalDate) -> Unit) {
     val window by model.analyticsWindow.collectAsStateWithLifecycle()
     val today by model.currentDay.collectAsStateWithLifecycle()
     val result by model.analytics.collectAsStateWithLifecycle()
+    val sync by model.analyticsSync.collectAsStateWithLifecycle()
     val current = result?.takeIf { it.window == window }
-    AnalyticsContent(window, today, current, model::setAnalyticsPeriod, model::moveAnalyticsWindow, model::analyticsToday, onDay)
+    AnalyticsContent(window, today, current, model::setAnalyticsPeriod, model::moveAnalyticsWindow, model::analyticsToday, onDay, sync, networkState)
 }
 
 @Composable internal fun AnalyticsContent(window: AnalyticsWindow, today: LocalDate, current: AnalyticsResult?,
-    onPeriod: (AnalyticsPeriod) -> Unit, onMove: (Int) -> Unit, onToday: () -> Unit, onDay: (LocalDate) -> Unit) {
+    onPeriod: (AnalyticsPeriod) -> Unit, onMove: (Int) -> Unit, onToday: () -> Unit, onDay: (LocalDate) -> Unit,
+    sync: AnalyticsSyncState = AnalyticsSyncState.Loading, networkState: NetworkAccessState? = null) {
     var metric by rememberSaveable { mutableIntStateOf(0) }
     LazyColumn(Modifier.fillMaxSize().testTag("analytics-content"), contentPadding = PaddingValues(20.dp),
         verticalArrangement = Arrangement.spacedBy(16.dp)) {
@@ -90,13 +94,20 @@ private fun FieldAggregate.label(unit: String) = (if (complete) "" else "≥ ") 
             }
         }
         item {
-            Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp), verticalAlignment = Alignment.CenterVertically) {
-                Icon(Icons.Outlined.CloudOff, null, tint = MaterialTheme.colorScheme.onSurfaceVariant, modifier = Modifier.size(18.dp))
-                Text("Lokalny raport · obejmuje dziennik na tym urządzeniu", style = MaterialTheme.typography.bodySmall,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant)
+            val notice = analyticsSyncNotice(sync, networkState)
+            Surface(shape = RoundedCornerShape(20.dp), color = MaterialTheme.colorScheme.surface) {
+                Column(Modifier.fillMaxWidth().padding(12.dp).testTag("analytics-sync"), verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                    Row(horizontalArrangement = Arrangement.spacedBy(8.dp), verticalAlignment = Alignment.CenterVertically) {
+                        Icon(Icons.Outlined.CloudOff, null, tint = MaterialTheme.colorScheme.onSurfaceVariant, modifier = Modifier.size(18.dp))
+                        Text(notice.scope, style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                    }
+                    notice.lines.forEach { text -> Text(text, style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant) }
+                }
             }
         }
-        if (current == null) {
+        if (sync == AnalyticsSyncState.Stale) {
+            // A stale owner lease must hide the old owner's numbers as well as their metadata.
+        } else if (current == null) {
             item { Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.Center) { CircularProgressIndicator() } }
         } else {
             item { PeriodSummary(current) }

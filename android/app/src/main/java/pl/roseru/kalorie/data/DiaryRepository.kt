@@ -24,6 +24,10 @@ class DiaryRepository(private val db: CalorieDatabase, private val context: Cont
     private val mreState = MutableStateFlow<MreCatalogueState>(MreCatalogueState.Loading)
     val mreCatalogue = mreState.asStateFlow()
     fun achievements(clock: LocalDayClock) = AchievementRepository(db, clock).observe(owner)
+    fun analyticsSyncFacts(): Flow<AnalyticsSyncState> = kotlinx.coroutines.flow.flow {
+        val lease=boundLease?:owners.currentLease().also {check(it.storageScope==owner);boundLease=it}
+        AnalyticsSyncRepository(db,lease).observe().collect {emit(it)}
+    }
     /** Old immutable rows can expose their already archived exact audit without backfilling a value. */
     fun observeGoalEstimate(row: GoalEntity?): Flow<GoalEntity?> {
         if(row==null)return flowOf(null)
@@ -309,6 +313,7 @@ class DiaryRepository(private val db: CalorieDatabase, private val context: Cont
         ownerTransaction {
         require(grams.isFinite() && grams > 0 && grams <= Nutrients.MAX_GRAMS)
         val current = requireNotNull(dao.meal(id, owner))
+        check(current.meal.wirePayload==null) {"Meal representation changed; retry edit"}
         require(!current.meal.deleted)
         val meal = current.meal.copy(localRevision = current.meal.localRevision + 1)
         val oldItem = current.items.single { it.id == itemId }
@@ -319,10 +324,44 @@ class DiaryRepository(private val db: CalorieDatabase, private val context: Cont
         }
     }
 
+    suspend fun correctIngredient(id:String,itemId:String,input:MealIngredientInput) {
+        input.validate()
+        if(canonicalEditor().change(id,itemId,ingredient=input))return
+        ownerTransaction {
+            val current=requireNotNull(dao.meal(id,owner));require(!current.meal.deleted)
+            check(current.meal.wirePayload==null) {"Meal representation changed; retry correction"}
+            val prior=current.items.single {it.id==itemId}
+            val position=prior.rationComponentPosition?.takeIf {input.name==prior.productName}
+            val item=prior.copy(productName=input.name,grams=input.amount.toDouble(),
+                wirePayload=StrictJson.canonical(MealWire.manualIngredient(itemId,input,position?:JSONObject.NULL)),
+                rationComponentPosition=position,snapshotJson=prior.sourceSnapshot())
+            val meal=current.meal.copy(localRevision=Math.addExact(current.meal.localRevision,1))
+            dao.updateMeal(meal);dao.updateItem(item)
+            enqueue(meal,current.items.map {if(it.id==itemId)item else it},"update")
+        }
+    }
+
+    /** Manual ingredient in an existing meal; it does not create/publish a product. */
+    suspend fun addIngredient(id:String,input:MealIngredientInput,itemId:String=UUID.randomUUID().toString()) {
+        input.validate()
+        if(canonicalEditor().change(id,itemId,ingredient=input,add=true))return
+        ownerTransaction {
+            val current=requireNotNull(dao.meal(id,owner));require(!current.meal.deleted)
+            check(current.meal.wirePayload==null) {"Meal representation changed; retry addition"}
+            val item=MealItemEntity(itemId,id,null,input.name,input.amount.toDouble(),input.nutrition.energy?.toDouble(),
+                input.nutrition.protein?.toDouble(),input.nutrition.fat?.toDouble(),input.nutrition.carbs?.toDouble(),
+                wirePayload=StrictJson.canonical(MealWire.manualIngredient(itemId,input)))
+            val meal=current.meal.copy(localRevision=Math.addExact(current.meal.localRevision,1))
+            dao.updateMeal(meal);dao.insertItem(item)
+            enqueue(meal,current.items+item,"update")
+        }
+    }
+
     suspend fun removeItem(id:String,itemId:String) {
         if(canonicalEditor().change(id,itemId,remove=true))return
         ownerTransaction {
         val current = requireNotNull(dao.meal(id, owner))
+        check(current.meal.wirePayload==null) {"Meal representation changed; retry removal"}
         require(!current.meal.deleted)
         val item = current.items.single { it.id == itemId }
         if (current.items.size == 1) { delete(id); return@ownerTransaction }
@@ -337,6 +376,7 @@ class DiaryRepository(private val db: CalorieDatabase, private val context: Cont
         if(canonicalEditor().change(id))return
         ownerTransaction {
         val current = requireNotNull(dao.meal(id, owner))
+        check(current.meal.wirePayload==null) {"Meal representation changed; retry deletion"}
         if (current.meal.deleted) return@ownerTransaction
         val meal = current.meal.copy(deleted = true, localRevision = current.meal.localRevision + 1)
         dao.updateMeal(meal)
@@ -554,6 +594,7 @@ class DiaryRepository(private val db: CalorieDatabase, private val context: Cont
                 .put("ration_component_id", item.rationComponentId ?: JSONObject.NULL)
                 .put("ration_component_position", item.rationComponentPosition ?: JSONObject.NULL)
                 .put("exact_snapshot", item.snapshotJson?.let(::JSONObject) ?: JSONObject.NULL)
+                .put("wirePayload",item.wirePayload?:JSONObject.NULL)
                 .put("protein_per_100", item.proteinPer100 ?: JSONObject.NULL)
                 .put("fat_per_100", item.fatPer100 ?: JSONObject.NULL).put("carbs_per_100", item.carbsPer100 ?: JSONObject.NULL))
         }
