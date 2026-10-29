@@ -21,9 +21,12 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.graphics.asImageBitmap
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.testTag
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import pl.roseru.kalorie.photo.MealPhotoViewModel
+import pl.roseru.kalorie.photo.PhotoPreviewDiagnostics
+import pl.roseru.kalorie.photo.PhotoPreviewDiagnostics.Phase
 import java.time.LocalDate
 import pl.roseru.kalorie.core.PhotoCapabilitiesState
 import pl.roseru.kalorie.session.PhotoUploadConsent
@@ -75,12 +78,32 @@ private sealed interface LocalPhotoPreview {
     val gallery = rememberLauncherForActivityResult(ActivityResultContracts.PickVisualMedia(), model::galleryResult)
     val camera = rememberLauncherForActivityResult(ActivityResultContracts.TakePicture(), model::cameraResult)
     var previewAttempt by remember(model,selected) { mutableIntStateOf(0) }
+    val diagnosticContext=LocalContext.current.applicationContext
+    val diagnosticRequest=remember(model,selected,previewAttempt) {PhotoPreviewDiagnostics.request(diagnosticContext)}
+    fun trace(phase:Phase)=PhotoPreviewDiagnostics.record(diagnosticContext,diagnosticRequest,phase)
+    DisposableEffect(diagnosticRequest) {
+        trace(Phase.COMPOSITION_ENTER)
+        onDispose {trace(Phase.COMPOSITION_DISPOSE)}
+    }
     val preview by key(model,selected,previewAttempt) {
         produceState<LocalPhotoPreview>(LocalPhotoPreview.Loading) {
-            selected?.let { id ->
-                value=try {LocalPhotoPreview.Ready(model.preview(id))}
-                    catch(error:CancellationException){throw error}
-                    catch(_:Exception){LocalPhotoPreview.Failed}
+            trace(Phase.PRODUCER_START)
+            try {
+                val id=selected
+                if(id==null) trace(Phase.NO_SELECTION)
+                else {
+                    val result=try {
+                        val bitmap=if(diagnosticRequest==null) model.preview(id) else model.preview(id,diagnosticRequest)
+                        trace(Phase.PRODUCER_RETURN)
+                        LocalPhotoPreview.Ready(bitmap)
+                    } catch(error:CancellationException) {trace(Phase.PRODUCER_CANCEL);throw error}
+                    catch(_:Exception) {trace(Phase.PRODUCER_FAILED);LocalPhotoPreview.Failed}
+                    trace(Phase.ASSIGN_BEGIN)
+                    value=result
+                    trace(Phase.ASSIGN_END)
+                }
+            } finally {
+                trace(Phase.PRODUCER_FINALLY)
             }
         }
     }
@@ -131,7 +154,15 @@ private sealed interface LocalPhotoPreview {
                     OutlinedButton(onClick={approval=row.id},enabled=canCreate,
                         modifier=Modifier.fillMaxWidth().testTag("photo-analyze-${row.id}")) { Text("Analizuj to zdjęcie") }
                     if(selected==row.id) {
-                        when(val current=preview) {
+                        val current=preview
+                        SideEffect {
+                            trace(when(current) {
+                                LocalPhotoPreview.Loading->Phase.OBSERVED_LOADING
+                                LocalPhotoPreview.Failed->Phase.OBSERVED_FAILED
+                                is LocalPhotoPreview.Ready->Phase.OBSERVED_READY
+                            })
+                        }
+                        when(current) {
                             LocalPhotoPreview.Loading->Text("Otwieranie zdjęcia…")
                             LocalPhotoPreview.Failed->{
                                 Text("Nie udało się otworzyć lokalnego zdjęcia. Możesz spróbować ponownie lub wybrać je z galerii.",

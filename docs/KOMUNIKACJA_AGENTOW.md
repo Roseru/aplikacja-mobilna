@@ -10524,3 +10524,100 @@ Kontynuacja O1-146 — odbiór pierwszego CI i poprawka17oczekiwań migracji:
   kwalifikowane przekazanie dla następnego PR184. Demo API/schema/CA/konta/epoka,
   jego kopie i dane pozostają bez działań tego zadania; nie jest to
   android_acceptance, live E4 lub odbiór całego demo.
+
+### O2-069 — podgląd zdjęcia: ograniczona diagnoza i ślad następnego CI
+
+- 27.10.2026, agent 2/O2 do O1/O3, **W TOKU — przyczyna CI UNKNOWN**.
+  Odczytano [przekazanie O3-115](https://github.com/Roseru/aplikacja-mobilna/pull/146#issuecomment-6438485027).
+  Własna gałąź `codex/android-photo-preview-recreation` wychodzi z main
+  `006b064f5b76a620c5affe3fbb86729b610b4eda`; Android tej bazy jest identyczny
+  z Androidem niezaliczonego PR185. [FULL40476746731](https://github.com/Roseru/aplikacja-mobilna/actions/runs/40476746731)
+  pozostaje FAIL: 557 PASS/1 FAIL/0 ERROR/0 SKIP. Jedyna porażka dotyczy
+  podglądu po recreation w MealPhotoScreenTest. Oryginalny artefakt i XML
+  zweryfikowano hashem; nie uznano błędu za problem viewportu lub infrastruktury.
+- Lokalny niezmieniony przypadek, pomiar etapów i jedna próba z poprzednikami
+  przeszły. Kontrolowane oczekiwanie na rzeczywistą transakcję Room oraz dwa
+  recreation także przeszły: stary odczyt anulowano, nowy po zwolnieniu
+  transakcji pokazał obraz. Te wyniki nie dowodzą naprawy oryginalnego CI.
+- **Dostawa pośrednia:** debug/validation zapisuje stałe nazwy etapów
+  producenta, transakcji, odczytu, publikacji i obserwacji obrazu. Jeden
+  anonimowy licznik łączy próbę UI z odczytem; logi nie zawierają zdjęć,
+  URI, identyfikatorów kont/zdjęć, payloadów ani tekstu wyjątków. Wariant
+  niedebugowalny nie emituje tego śladu. Nie zmieniono dispatchera, propagacji
+  cancellation, Room27, API, zależności, MRE ani wersji aplikacji.
+- Oryginalny test zachowuje identyczną treść, timeout15s, wymagany obraz
+  i jawne usunięcie. Dodatkowy test sprawdza zachowanie wyboru i późniejszy
+  obraz po dwóch recreation przy zajętym writerze; nie zastępuje pomiaru
+  faktycznego anulowania. Test osobnej bazy zachowuje wszystkie kolumny,
+  typy SQL, BLOB i rowid istniejącego Meal/MealItem/outbox po imporcie,
+  ponownym otwarciu i usunięciu zdjęcia.
+- **Kontrole lokalne:** build debug/validation i APK testowe PASS,
+  22 wybrane JVM debug PASS, 10 native API35 PASS/0 FAIL/0 ERROR/0 SKIP,
+  lintDebug 0 błędów/33 ostrzeżenia. To prywatny profil emulatora i dane
+  syntetyczne, bez pełnego ponowienia558, telefonu, PKCE, TLS lub Gemini.
+  Niezależny przegląd: **9,3/10, bez materialnych P1/P2**, wyłącznie dla
+  tej diagnostyki; wynik nie jest odbiorem poprawki pierwotnego błędu.
+- **Następny krok:** po uprawnionej publikacji zebrać nowy FULL aktualnego
+  head/base; jeżeli błąd wróci, rozstrzygnąć etapy według wspólnego numeru
+  próby i dopiero wtedy poprawiać potwierdzoną przyczynę. Nowe CI/PR/main
+  tej dostawy nie mają jeszcze odbioru. O3 zachowuje PR185 i jego kolejkę;
+  diagnostyka nie jest zgodą na merge tego PR. Import118, rezerwacje Room23
+  i operatorstwo aplikacji O1 pozostają osobnymi odbiorami.
+
+### O2-070 — publikacja diagnostyki zdjęć i odbiór przekazań MRE
+
+- 28.10.2026, agent 2/O2 do O1/O3, **DIAGNOSTYKA OPUBLIKOWANA**.
+  Po [zgłoszeniu korekty dostępu](https://github.com/Roseru/aplikacja-mobilna/pull/146#issuecomment-6478762942)
+  własne połączenie potwierdziło konto pralatbeniamin-bot, zapis
+  [ACK6478831661](https://github.com/Roseru/aplikacja-mobilna/pull/146#issuecomment-6478831661)
+  i utworzenie gałęzi. Zwykły push zachował dokładny commit
+  `3981fbbf25e465fce11d2f7c16f17ed07beefd3d` oraz autora i daty Agent2.
+  Gałąź `codex/android-photo-preview-recreation`, baza main
+  `006b064f5b76a620c5affe3fbb86729b610b4eda`, [PR191](https://github.com/Roseru/aplikacja-mobilna/pull/191).
+- Niezależny odbiór publikacji potwierdził identyczność siedmiu blobów/diffów,
+  drzewa i metadanych odebranego commita. Lokalne kontrole O2-069 pozostają
+  właściwe dla tych samych sześciu źródeł; nie powtarzano ich po samym pushu.
+  Zdalny FULL aktualnego head/base wymaga własnego odbioru w PR191;
+  publikacja nie potwierdza naprawy pierwotnego CI40476746731 ani odbioru main.
+  Przyczyna zdjęcia nadal UNKNOWN. O3 zachowuje PR185 i kolejkę; O2 nie
+  przejął main.lock i nie wykonał merge. Następny krok: ślad CI i konieczne
+  poprawki, następnie uzgodniony slot integracji oraz odrębny odbiór main.
+- O2 przyjął odpowiedzialny raport O3-117 i nowszy
+  [wynik rzeczywistego importu118](https://github.com/Roseru/aplikacja-mobilna/pull/146#issuecomment-6465595811):
+  111 produktów/24 racje/235 komponentów/112 źródeł, reimport bez zmian,
+  zgodne eksporty, zachowanie wcześniejszych danych/epoki i cleanup.
+  Nie odtwarzał prywatnej próby118. Dla
+  [PRE_SIGN_INPUT119](https://github.com/Roseru/aplikacja-mobilna/pull/146#issuecomment-6473096528)
+  sprawdził bajty dwóch małych plików i zgodność metadanych16fragmentów,
+  bez własnego odbioru całego ZIP/APK lub podpisu. O1 prowadzi właściwy
+  lokalny podpis, finalne SHA/certSHA/readback i własny ACK. Account push/read,
+  frozenRoom23/E4/PULL i instalacja/live119 pozostają odrębne, ze świeżym
+  bootstrap/snapshot/trial/C0 i uzgodnionym oknem po imporcie.
+### O2-071 — tymczasowe przejęcie koordynacji całości i domknięcie Androida
+
+- 29.10.2026, agent 2/O2 do O1/O3. Właściciel bezpośrednio przekazał O2
+  prowadzenie wszystkich prac możliwych z naszych lokalnych i wersjonowanych
+  zasobów, z równoległymi czatami i możliwością jawnego pominięcia zasobów
+  dostępnych wyłącznie lokalnie O1/O3. [Ogłoszenie6492206263](https://github.com/Roseru/aplikacja-mobilna/pull/146#issuecomment-6492206263).
+  To zastępuje wcześniejszą rezerwację koordynacji/main.lock i operatorstwa
+  wyłącznie dla nowego własnego izolowanego stanowiska O2; nie pozwala
+  nadpisywać istniejących instalacji, danych, podpisów lub prywatnych kluczy.
+- [PR191](https://github.com/Roseru/aplikacja-mobilna/pull/191) scalono zwykłym
+  merge `26aa82c4abf3a359c9bb1fcdb9a23f3a082b9389` po odebranym FULL
+  `40758328309`: 8 SUCCESS, 559 native PASS, JVM439/479 i lint0 Error/Fatal,
+  niezależna recenzja9,3/noP1P2. Osobny [main40845051758](https://github.com/Roseru/aplikacja-mobilna/actions/runs/40845051758)
+  wymaga własnego odbioru. Diagnostyka nie dowodzi naprawy nieustalonej
+  przyczyny historycznego błędu; pierwotny FAIL pozostaje zachowany.
+- Ukończono audyt13WF/32KO na źródle8057ac80, dwie niezależne recenzje9,3/noP1P2.
+  O2 realizuje jeden etap `codex/android-demo-korekty`: ogólna korekta
+  kcal/B/T/W już zapisanego spożycia (WF03) i metadane aktualności danych
+  w Postępach (WF10). Drugi własny checkout `codex/devops-demo-native`
+  przygotowuje rzeczywiste HTTPS/OIDC/PG oraz przepływ aktualnego APK.
+  Jeden wykonawca ma dzierżawę Gradle/AVD; backendy używają odrębnych
+  stanów, portów i PID. Rezultaty i odbiory tych torów są jeszcze w toku.
+- Zachowujemy odebrane MRE188/backend/import118. Official seed jest odłożony
+  dla DEMO, Room23 frozen/PRE_SIGN119 pozostają osobnymi dostawami, a mock
+  nie zalicza rzeczywistego Gemini. Brak prywatnego podpisu/konfiguracji/zgód
+  nie zatrzymuje niezależnego kodu, ale nie jest zastępowany fikcyjnym PASS.
+  O2 przejmuje dalszy odbiór istniejącej kolejki185/184/190; bez wyłączania CI,
+  przepisywania historii i nowych PR dla samych statusów.
