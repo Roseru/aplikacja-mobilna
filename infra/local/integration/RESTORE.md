@@ -105,3 +105,42 @@ git diff --check
 `execution.json` oraz prywatne snapshoty witness zapisują wynik i zakres.
 FAIL pozostaje zachowany; nowe wykonanie dostaje nowe ID. Zmiana wyłącznie
 etykiet/metadanych po próbie nie uprawnia do przepisywania starego wyniku.
+
+## Oddzielny eksperyment C z własnym HTTPS/OIDC i mockiem
+
+`live_restore.py` jest harnesssem operatora, osobnym od adaptera offline.
+Wymaga odebranego guardu Native `8638dbce`, nowego własnego stanu i zasobów:
+
+```powershell
+& $Python -m infra.local.integration.live_restore `
+  --state "$PWD/.tools/live-C-NOWY-ID" --host $OwnPrivateIPv4 `
+  --pg-bin $Pg17Bin --keycloak-home $KeycloakHome --java-home $JavaHome
+```
+
+Źródło powstaje przez Native wyłącznie przed kopią; target zawsze przez
+uwierzytelniony transport restore, bez `native up`/provisionowania/migracji.
+Przed PKCE mierzone są własny TLS i rzeczywisty odmówiony peer127.0.0.2.
+Po T0 rzeczywisty minimalny worker używa istniejącego FakeProvider; oddzielny
+fsync witness zachowuje hashe dokładnych bajtów IO i odpowiedzi. Fixture zapisuje
+syntetyczną decyzję i ACK. Nigdy nie jest to ludzka zgoda lub wywołanie Google.
+
+Reużywany checkpoint pochodzi z wcześniejszego PULL tego samego właściciela;
+walidacja obejmuje podpis, generację/epokę, protokół i zakres zwykłego sync
+(`calorie-app`, bez opt-in E9). Token nie jest przepisywany/podpisywany ponownie.
+After-ACK PULL pozostaje oddzielny; limit czterech snapshotów nie jest zwiększany.
+
+Po restore nowa epoka zamyka AI. Próby starych i nowych zadań/rezerwacji muszą
+odmówić bez nowego IO, nawet gdy późniejsze użycie nie istnieje w starej bazie.
+Zewnętrzny counter nie podlega rollbackowi. `e7_reconcile` ma odmówić przy
+rzeczywistym wieku blokady; nie zmieniamy czasu ani `closed_at` dla jej skrócenia.
+Maintenance pozostawia tylko dokładne metody/kanoniczne ścieżki operatora
+(master token, logout-all, JWKS i odczyt własnych sesji). Peer gate działa przed
+proxy także dla tych ścieżek. Issuance użytkowników i API pozostają503.
+Rzeczywiste logout-all i puste sesje providera poprzedzają pełny fence≥421s.
+Dopiero potem testowane są stare JWT/refresh, nowy Code+S256 oraz HTTP recovery
+z jedną mapą i osobnym pełnym PULL. SQL systemowych bramek i stop-exit mają
+osobne neutralne receipts. Kod wykonanej próby i surowe dane pozostają prywatne.
+
+To nadal przypadek serwerowy/syntetyczny, bez Room27, realnego Gemini,
+produkcyjnego RPO/RTO i zgody na wydanie. Wynik określa receipt konkretnego ID;
+sam opis harnessu nie stanowi PASS. AVD/Gradle/aktywne Native pozostają poza nim.
