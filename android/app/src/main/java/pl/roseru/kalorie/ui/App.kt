@@ -132,7 +132,7 @@ import pl.roseru.kalorie.session.*
             composable("analytics") { AnalyticsScreen(model, onDay = { date ->
                 model.selectDate(date)
                 nav.navigate("diary") { popUpTo("diary"); launchSingleTop = true }
-            }) }
+            }, networkState = networkState) }
         }
     }
     if (route in listOf("photo", "settings", "maintenance", "profile", "analytics", "account", "import", "achievements", "ranking-consent", "ranking", "nemesis")) BackHandler { nav.popBackStack() }

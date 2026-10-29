@@ -20,13 +20,18 @@ import pl.roseru.kalorie.data.*
 data class ConflictListEntry(val key: String, val label: String)
 data class ConflictVersionView(val title: String, val lines: List<String>, val deleted: Boolean = false)
 data class ConflictPreviewView(val key: String, val local: ConflictVersionView, val server: ConflictVersionView,
-    val canChoose: Boolean, val restoresAsCopy: Boolean, val needsRefresh: Boolean)
+    val canChoose: Boolean, val restoresAsCopy: Boolean, val needsRefresh: Boolean, val canRetryCorrected: Boolean = false)
 data class ConflictListView(val entries: List<ConflictListEntry> = emptyList(), val hasMore: Boolean = false,
     val loaded: Boolean = false, val preview: ConflictPreviewView? = null, val message: String? = null, val page: Int = 0)
 
 /** Only user-facing values leave the private ticket map; never an epoch, receipt or checkpoint. */
 internal fun conflictPreview(key: String, ticket: ConflictTicket): ConflictPreviewView {
+    val correctableRejection = ticket.evidence.entityType == "meal" && ticket.evidence.status == "rejected" &&
+        ticket.evidence.originalAction == "upsert" && !ticket.localDeleted && ticket.serverState != ConflictServerState.DELETED
     fun version(payload: String?, deleted: Boolean, unavailable: Boolean = false): ConflictVersionView {
+        if (unavailable && correctableRejection) return ConflictVersionView("Wersja serwera niedostępna", listOf(
+            if (ticket.canRetryCorrected) "Odmowa nie potwierdziła zapisu poprzedniej operacji. Poprawiona wersja lokalna może zostać wysłana jako nowa operacja."
+            else "Popraw składniki, ilości lub wartości posiłku w dzienniku, a następnie otwórz ten wpis ponownie. Poprzednia odmowa pozostanie zachowana."))
         if (unavailable) return ConflictVersionView("Potrzebna świeża kopia", listOf("Pobierz aktualne dane serwera i otwórz porównanie ponownie."))
         if (deleted) return ConflictVersionView("Wpis usunięty", listOf("Ta wersja oznacza usunięcie wpisu."), true)
         val value = StrictJson.read(checkNotNull(payload).toByteArray(Charsets.UTF_8))
@@ -48,7 +53,8 @@ internal fun conflictPreview(key: String, ticket: ConflictTicket): ConflictPrevi
     }
     return ConflictPreviewView(key, version(ticket.localPayload, ticket.localDeleted),
         version(ticket.serverPayload, ticket.serverState == ConflictServerState.DELETED, ticket.serverState == ConflictServerState.UNAVAILABLE),
-        ticket.canChoose, ticket.restoresAsCopy, ticket.serverState == ConflictServerState.UNAVAILABLE)
+        ticket.canChoose, ticket.restoresAsCopy, ticket.serverState == ConflictServerState.UNAVAILABLE && !correctableRejection,
+        ticket.canRetryCorrected)
 }
 
 @Composable internal fun SyncConflictPanel(view: SessionView, actions: SessionActions) {
@@ -77,19 +83,19 @@ internal fun conflictPreview(key: String, ticket: ConflictTicket): ConflictPrevi
     }
     state.preview?.let { preview ->
         AlertDialog(onDismissRequest = { if (!busy) actions.closeConflict(lease) },
-            title = { Text("Porównaj wersje") },
+            title = { Text(if (preview.canRetryCorrected) "Poprawiona wersja posiłku" else "Porównaj wersje") },
             text = {
                 Column(Modifier.verticalScroll(rememberScrollState()), verticalArrangement = Arrangement.spacedBy(12.dp)) {
                     ConflictVersionCard("Na urządzeniu", preview.local, "conflict-local")
                     ConflictVersionCard("Na serwerze", preview.server, "conflict-server")
                     if (preview.restoresAsCopy) Text("Wersja lokalna zostanie odtworzona jako nowy wpis. Usunięty wpis serwera pozostanie usunięty.")
-                    if (!preview.canChoose && !preview.needsRefresh) Text("Ten wpis wymaga poprawy danych lub połączenia z serwerem. Zapisane wersje pozostają zachowane.")
+                    if (!preview.canChoose && !preview.canRetryCorrected && !preview.needsRefresh) Text("Ten wpis wymaga poprawy danych lub połączenia z serwerem. Zapisane wersje pozostają zachowane.")
                     if (preview.needsRefresh) OutlinedButton(onClick = { actions.closeConflict(lease); actions.downloadSnapshot() },
                         enabled = !busy && view.apiConfigured && view.hasSession,
                         modifier = Modifier.testTag("conflict-download-fresh")) { Text("Pobierz świeżą kopię") }
-                    Button(onClick = { confirmation = ConflictChoice.LOCAL }, enabled = !busy && preview.canChoose,
+                    Button(onClick = { confirmation = ConflictChoice.LOCAL }, enabled = !busy && (preview.canChoose || preview.canRetryCorrected),
                         modifier = Modifier.fillMaxWidth().testTag("conflict-keep-local")) {
-                        Text(if (preview.restoresAsCopy) "Odtwórz lokalną wersję" else "Zachowaj wersję lokalną")
+                        Text(if (preview.canRetryCorrected) "Wyślij poprawioną wersję" else if (preview.restoresAsCopy) "Odtwórz lokalną wersję" else "Zachowaj wersję lokalną")
                     }
                     OutlinedButton(onClick = { confirmation = ConflictChoice.SERVER }, enabled = !busy && preview.canChoose,
                         modifier = Modifier.fillMaxWidth().testTag("conflict-keep-server")) { Text("Przyjmij wersję serwera") }
@@ -97,7 +103,8 @@ internal fun conflictPreview(key: String, ticket: ConflictTicket): ConflictPrevi
             }, confirmButton = { TextButton(onClick = { actions.closeConflict(lease) }, enabled = !busy) { Text("Zamknij") } })
         confirmation?.let { choice ->
             AlertDialog(onDismissRequest = { confirmation = null }, title = { Text("Potwierdź wybór wersji") },
-                text = { Text(if (choice == ConflictChoice.LOCAL) "Zapisz lokalny wynik i przygotuj go do wysłania przy najbliższej synchronizacji?"
+                text = { Text(if (choice == ConflictChoice.LOCAL && preview.canRetryCorrected) "Przygotuj poprawioną wersję posiłku do wysłania jako nową operację? Poprzednia odmowa i wysłana próba pozostaną zachowane."
+                    else if (choice == ConflictChoice.LOCAL) "Zapisz lokalny wynik i przygotuj go do wysłania przy najbliższej synchronizacji?"
                     else "Zastąp bieżący lokalny wpis wersją serwera? Obie porównane wersje pozostaną w historii decyzji.") },
                 confirmButton = { TextButton(onClick = { confirmation = null; actions.resolveConflict(lease, preview.key, choice) },
                     enabled = !busy, modifier = Modifier.testTag("conflict-confirm-choice")) { Text("Zapisz wybór") } },

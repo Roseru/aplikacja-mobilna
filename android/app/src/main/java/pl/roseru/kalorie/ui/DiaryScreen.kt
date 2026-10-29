@@ -42,6 +42,8 @@ import java.util.Locale
     val pending by model.pending.collectAsStateWithLifecycle()
     val busy by model.busy.collectAsStateWithLifecycle()
     var editing by remember { mutableStateOf<EditingItem?>(null) }
+    var correcting by remember { mutableStateOf<EditingItem?>(null) }
+    var addingIngredient by remember { mutableStateOf<MealWithItems?>(null) }
     var deleting by remember { mutableStateOf<EditingItem?>(null) }
     var deletingRation by remember { mutableStateOf<MealWithItems?>(null) }
     var datePicker by rememberSaveable { mutableStateOf(false) }
@@ -152,6 +154,10 @@ import java.util.Locale
                                 Icon(Icons.Outlined.Edit, "Popraw ${product.productName}", modifier = Modifier.size(18.dp))
                             }
                             }
+                            TextButton(onClick={addingIngredient=meal},enabled=!busy,
+                                modifier=Modifier.testTag("add-ingredient-${meal.meal.id}")) {
+                                Icon(Icons.Outlined.Add,null);Text("Dodaj składnik do posiłku")
+                            }
                         }
                     }
                 }
@@ -165,7 +171,17 @@ import java.util.Locale
     }
     editing?.let { target ->
         EditMealDialog(target.item, busy, onDismiss = { editing = null }, onSave = { grams, text -> model.editItem(target.meal.meal.id, target.item.id, grams, text); editing = null },
-            onDelete = { editing = null; deleting = target })
+            onDelete = { editing = null; deleting = target },onCorrect={editing=null;correcting=target})
+    }
+    correcting?.let {target->
+        MealIngredientDialog(target.item,busy,onDismiss={correcting=null},onSave={input->
+            model.correctIngredient(target.meal.meal.id,target.item.id,input);correcting=null
+        })
+    }
+    addingIngredient?.let {meal->
+        MealIngredientDialog(null,busy,onDismiss={addingIngredient=null},onSave={input->
+            model.addIngredient(meal.meal.id,input);addingIngredient=null
+        })
     }
     deleting?.let { target ->
         AlertDialog(onDismissRequest = { deleting = null }, title = { Text("Usunąć składnik?") }, text = { Text(target.item.productName) },
@@ -191,7 +207,7 @@ import java.util.Locale
 
 private data class EditingItem(val meal: MealWithItems, val item: MealItemEntity)
 
-@Composable private fun EditMealDialog(item: MealItemEntity, busy: Boolean, onDismiss: () -> Unit, onSave: (Double, String) -> Unit, onDelete: () -> Unit) {
+@Composable private fun EditMealDialog(item: MealItemEntity, busy: Boolean, onDismiss: () -> Unit, onSave: (Double, String) -> Unit, onDelete: () -> Unit,onCorrect:()->Unit) {
     var grams by rememberSaveable(item.id) { mutableStateOf(quantityText(item.amountText)) }
     val amount = ContractDecimal.userQuantity(grams, if(item.wirePayload!=null)6 else 12)
     val saveFocus = remember { FocusRequester() }
@@ -207,6 +223,9 @@ private data class EditingItem(val meal: MealWithItems, val item: MealItemEntity
                     keyboard?.hide()
                 }))
             Text(amount?.let { "${item.withAmount(ContractDecimal.canonical(it)).consumed().energyText()} kcal" } ?: "Podaj dodatnią ilość, najwyżej 10 000 ${item.unit}.")
+            TextButton(onClick=onCorrect,enabled=!busy,modifier=Modifier.testTag("correct-ingredient")) {
+                Text("Popraw składnik, kcal i B/T/W")
+            }
         }
     }, confirmButton = { TextButton(onClick = { amount?.let { onSave(it.toDouble(), ContractDecimal.canonical(it)) } },
         enabled = amount != null && !busy, modifier = Modifier.focusRequester(saveFocus).testTag("confirm-edit-item")) { Text("Zapisz") } },

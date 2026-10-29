@@ -41,6 +41,25 @@ internal object LegacyImportCorrections {
             val change=changes.getJSONObject(i);val id=change.getString("id");require(seen.add(id))
             require(change.keys().asSequence().all {it in setOf("id","amount","unit","name","basis_unit","energy_kcal","protein_g","fat_g","carbs_g","density","density_source")})
             val item=(0 until items.length()).map {items.getJSONObject(it)}.single {it.getString("id")==id}
+            if(!item.isNull("wirePayload")) {
+                val current=StrictJson.read(item.getString("wirePayload").toByteArray(Charsets.UTF_8))
+                val renamed=change.has("name") && change.getString("name")!=current.getString("name")
+                if(change.has("amount"))current.getJSONObject("quantity").put("amount",change.get("amount"))
+                if(change.has("unit")) {
+                    require(change.getString("unit") in setOf("g","ml"))
+                    current.getJSONObject("quantity").put("unit",change.getString("unit"))
+                }
+                if(change.has("basis_unit"))require(change.getString("basis_unit") in setOf("g","ml"))
+                for(key in listOf("name","basis_unit","density_source"))if(change.has(key))current.put(key,change.get(key))
+                if(change.has("density"))current.put("density_g_per_ml",change.get("density"))
+                for(key in NUTRIENTS.values)if(change.has(key))current.getJSONObject("nutrition_per_100").put(key,change.get(key))
+                if(change.keys().asSequence().any {it !in setOf("id","amount","unit")}) {
+                    current.put("product",JSONObject.NULL).put("nutrition_origin","manual")
+                    if(renamed)current.put("ration_component_position",JSONObject.NULL)
+                }
+                item.put("wirePayload",StrictJson.canonical(current))
+                continue
+            }
             val existing=item.optString("snapshotJson").takeIf {it.isNotEmpty() && !item.isNull("snapshotJson")}
                 ?.let(LegacyImportWire::readSource)
             val snap=existing ?: JSONObject().put("quantity",JSONObject().put("amount",item.get("grams")).put("unit","g"))
