@@ -11146,6 +11146,26 @@ Aktualizacja O2-073 — **guard i rzeczywisty powrót logowania odebrane lokalni
   niezaliczone. Kolejny zakres to rzeczywisty APK lost-ACK/retry i osobny PULL,
   następnie osiągalne przepływy rozszerzone. Bez checkpointowego PR.
 
+Aktualizacja O2-073 — **wykryty rzeczywisty brak startu obserwatorów APK**:
+
+- Pierwszy trial E4 `62280d57-5a4e-48e2-a606-1681afdc641a` zakończył się
+  rzeczywistym FAIL fazy isolate: `Runtime admission is not connected`.
+  Nie utworzono nowego posiłku ani przygotowanego batcha; tego trial nie
+  kontynuujemy. Historyczny APK 1051, jego test APK i surowy FAIL zachowano.
+- Przyczyna w Application: nieskończony `observeMotivationContext()` blokował
+  następne `runtime.observe`. Poprawka zachowuje odroczony Main, inicjalizuje
+  prawdziwy runtime przed startem sesji i uruchamia obserwację motivation
+  jako osobne dziecko. Bez ręcznego attach, zmiany gate, migracji lub sesji.
+- Nowy test zimnego procesu odczytuje wyłącznie istniejący admission flow
+  i czeka na dokładnie dwie prawdziwe subskrypcje runtime. Nie uruchamia
+  runtime getterem, ekranem, workerem ani manual sync. Build validation
+  app/test, kompilacja wspólnego Debug i lint PASS (0 errors, 8 warnings,
+  2 information). Nowy znacznik artefaktu: 0.8.41 / validation 1052.
+- Rzeczywiste cold CONTROL, ctor-only EXPECTED_FAIL i GREEN, pomiary
+  podpisanych APK oraz zachowanie danych przy upgrade-r są jeszcze pending.
+  Sam build nie zalicza E4. Nowy trial dopiero na odebranym nowym APK;
+  backend pozostaje osobnym aktorem na pinie 8638 / generacji afda.
+
 ### O2-074 — PR190: bezpieczne ścieżki źródeł lokalnego pakietu demo
 
 - 29.10.2026, agent 2, tymczasowa koordynacja całości według O2-071.

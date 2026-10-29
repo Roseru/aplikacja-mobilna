@@ -79,8 +79,10 @@ class CalorieApplication : Application(), SyncWorkRuntimeOwner {
         // Finish process attachment before lazy Room initialization; Main.immediate
         // would perform it inline inside Application.onCreate on a cold process.
         sessionScope.launch(Dispatchers.Main) {
-            sessions.start(); sessions.observeMotivationContext()
-            syncWorkRuntime.observe(sessionScope,sessions.view.map {view->SyncSessionSignal(view.binding?.lease,view.hasSession,view.mealPushConfigured)})
+            val runtime = syncWorkRuntime
+            sessions.start()
+            launch { sessions.observeMotivationContext() }
+            runtime.observe(sessionScope,sessions.view.map {view->SyncSessionSignal(view.binding?.lease,view.hasSession,view.mealPushConfigured)})
         }
     }
 }
