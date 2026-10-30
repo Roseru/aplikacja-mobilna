@@ -1,6 +1,6 @@
 # Android — Racje i kalorie
 
-Bieżące źródło: **0.8.41 / code52 / Room27**, wariant validation code1052.
+Bieżące źródło: **0.8.42 / code53 / Room27**, wariant validation code1053.
 Instrukcja lokalnego uruchomienia jest w rozdziale
 [Uruchomienie w Android Studio](#uruchomienie-w-android-studio).
 Własny backend do pełnej ścieżki opisuje

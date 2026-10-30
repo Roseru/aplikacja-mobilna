@@ -11408,8 +11408,27 @@ Kontynuacja O2-073 — **zdjęcie MOCK i naprawa projekcji czasu posiłku**:
   zachowaną kopię bez HTTP i bez nowego wywołania AI. Stary run i wszystkie
   jego strony pozostały identyczne; nowa projekcja przyjęła kanoniczny zapis
   czasu serwera. Poprzednie wpisy i ACK oraz lokalne 89 kcal zachowano.
-  Nie deklarujemy automatycznego zastosowania przy starcie. Osobny PULL,
-  restart offline i końcowy odbiór tej naprawy pozostają w toku.
+  Nie deklarujemy automatycznego zastosowania przy starcie.
+- Kolejne cztery kompletne odczyty przyrostowe po zwykłym logowaniu
+  zachowały powiązane checkpointy i nowy rekord w projekcji kumulatywnej.
+  Puste strony nie są przedstawiane jako surowe strony zawierające ten wpis.
+  Restart offline pokazał 107 kcal przy rzeczywistej blokadzie UID aplikacji;
+  odrzucono dwa pakiety IPv4, a własne reguły IPv4/IPv6 przywrócono.
+  Wybrane dane Room i wszystkie 92 fingerprinty PG przed/po były identyczne.
+  Pierwszą próbę zatrzymał guard pozostawionego własnego procesu testowego,
+  zanim dodano reguły; zachowano ten FAIL, normalnie zatrzymano tylko proces
+  testowy i wykonano tę samą kontrolę ponownie bez osłabienia warunków.
+- Rzeczywisty UI 1053 potwierdził poprawione podpisy; dla tej kontroli
+  utworzono wyłącznie dodatkową lokalną kopię własnej fixture, bez nowej
+  analizy lub posiłku. Niezależny odbiór 48 referencji, pięciu zamrożonych
+  baz Room oraz dowodów wykonania: 0 P1/P2. Root odebrał ograniczoną ścieżkę
+  MOCK po aktualizacji 1052→1053, receipt SHA256
+  `dcbf501f75329386712c2ee24cc1938648ef884d41bc71469eb8ac1734f0b24b`.
+  To jawnie odbiór naprawy podczas aktualizacji, nie próba na jednym APK.
+  Historyczne błędy 1052 pozostają. Nie deklarujemy nowego kernel trace,
+  rzeczywistego Gemini, pełnego E9/D2 ani wydania 1.0. Native otrzymał
+  osobny master rzeczywistego E9 na odseparowanych syntetycznych kontach;
+  Root prowadzi publikację i CI tej spójnej poprawki klienta.
 
 ### O2-074 — PR190: bezpieczne ścieżki źródeł lokalnego pakietu demo
 

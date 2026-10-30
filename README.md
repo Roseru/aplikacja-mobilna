@@ -17,14 +17,18 @@ importowany do bazy i zachowuje pochodzenie danych.
   [workflow](docs/WORKFLOW.md) oraz
   [jedyny dziennik zespołu](docs/KOMUNIKACJA_AGENTOW.md).
 
-Bieżące źródło Androida to **0.8.41 / code52 / Room27**; oddzielny wariant
-validation ma code1052. [PR193](https://github.com/Roseru/aplikacja-mobilna/pull/193)
+Bieżące źródło Androida to **0.8.42 / code53 / Room27**; oddzielny wariant
+validation ma code1053. Klient porównuje równoważne zapisy czasu UTC przy
+projekcji potwierdzonego posiłku i rzetelnie opisuje lokalną kopię zdjęcia.
+[PR193](https://github.com/Roseru/aplikacja-mobilna/pull/193)
 łączy poprawkę zimnego startu, odczyty synchronizacji i własne środowisko
 integracyjne. Odebrano w nim rzeczywistą ścieżkę APK/API: przerwanie po
 otrzymaniu ACK przed jego lokalnym zapisem, ponowienie bez duplikatu,
 PULL i restart offline. CI tego PR przeszedł
-8/8 kontroli. Nie oznacza to odbioru całego wydania 1.0: scenariusze AI,
-pełne E9, odtwarzanie i warunki wydania mają osobne dowody i bramki
+8/8 kontroli. Techniczny przepływ zdjęcia MOCK ma osobny odbiór po naprawie
+klienta 0.8.42, obejmujący zapis, PULL i odczyt offline. Nie oznacza to
+odbioru całego wydania 1.0: rzeczywiste Gemini, pełne E9, odtwarzanie
+i warunki wydania mają osobne dowody i bramki
 opisane w dzienniku. Znana granica standardowej rejestracji Keycloak
 pozostaje ograniczeniem kontrolowanego demo.
 
