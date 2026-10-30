@@ -20,6 +20,7 @@ import org.junit.Assert.*
 import org.junit.Rule
 import org.junit.Test
 import pl.roseru.kalorie.core.BootstrapResponse
+import pl.roseru.kalorie.core.MaintenanceEstimate
 import pl.roseru.kalorie.core.sync.SnapshotProtocol
 import pl.roseru.kalorie.data.*
 import pl.roseru.kalorie.photo.*
@@ -33,7 +34,10 @@ import java.util.concurrent.atomic.AtomicInteger
 class FirstAccountGoalNavigationTest {
     @get:Rule val compose=createComposeRule()
 
-    @Test fun emptyAccountCanSaveProfileThenExplicitFirstGoalWithoutGuestFallbackOrFakeAck() {
+    @Test fun emptyAccountCanSaveProfileThenExplicitFirstGoalWithoutGuestFallbackOrFakeAck() = firstAccountFlow(false)
+    @Test fun firstProfileWithDefaultChoicesKeepsCalculatedGoalAuditVisibleAndQueuesOnlyProfile() = firstAccountFlow(true)
+
+    private fun firstAccountFlow(calculatedFirst:Boolean) {
         val context=InstrumentationRegistry.getInstrumentation().targetContext
         val db=Room.inMemoryDatabaseBuilder(context,CalorieDatabase::class.java).addCallback(DATABASE_GUARDS).build()
         val views=ViewModelStore();val vault=SessionVault(context,"first-goal-"+UUID.randomUUID())
@@ -75,6 +79,52 @@ class FirstAccountGoalNavigationTest {
             }
             compose.setContent {CalorieTheme(false){CalorieApp(diary,controller.view.collectAsState().value,SessionActions({}, {}, {}, {}, {}, {}),photo)}}
             compose.waitUntil(10_000){compose.onAllNodesWithTag("open-profile").fetchSemanticsNodes().isNotEmpty()}
+            if(calculatedFirst) {
+                fun maintenance(tag:String)=compose.onNodeWithTag("maintenance-screen").performScrollToNode(hasTestTag(tag))
+                    .let {compose.onNodeWithTag(tag).performScrollTo()}
+                fun dismissMessage(text:String) {
+                    compose.waitUntil(5_000){compose.onAllNodesWithText(text).fetchSemanticsNodes().isNotEmpty()}
+                    val feedback=hasText(text)
+                    compose.onNode(SemanticsMatcher.keyIsDefined(SemanticsActions.Dismiss) and (feedback or hasAnyDescendant(feedback)),useUnmergedTree=true)
+                        .performSemanticsAction(SemanticsActions.Dismiss){it()}
+                }
+                compose.onNodeWithTag("open-settings").performClick()
+                compose.onNodeWithTag("open-maintenance").performScrollTo().performClick()
+                maintenance("maintenance-age").performTextReplacement("30")
+                maintenance("maintenance-height").performTextReplacement("180")
+                maintenance("maintenance-weight").performTextReplacement("75")
+                maintenance("equation-plus_5").performClick();maintenance("maintenance-activity-GARRISON").performClick()
+                maintenance("maintenance-qualified").performClick();maintenance("calculate-maintenance").performClick()
+                maintenance("maintenance-result").assertTextEquals("2595 kcal / dzień")
+                maintenance("maintenance-goal").performTextReplacement("2200")
+                maintenance("maintenance-protein").performTextReplacement("150")
+                maintenance("maintenance-fat").performTextReplacement("80")
+                maintenance("maintenance-carbs").performTextReplacement("220")
+                maintenance("review-calculated-goal").performClick();compose.onNodeWithTag("confirm-calculated-goal").performClick()
+                compose.waitUntil(10_000){compose.onAllNodesWithTag("settings-content").fetchSemanticsNodes().isNotEmpty()}
+                dismissMessage("Cel i oszacowanie zapisane od dzisiaj. Wcześniejsze wersje są zachowane.")
+                val original=runBlocking {checkNotNull(db.dao().goalOn(lease.storageScope,LocalDate.now().toString()))}
+                assertEquals("2595",MaintenanceEstimate.read(checkNotNull(original.estimateJson)).maintenance.stripTrailingZeros().toPlainString())
+                val originalOperation=runBlocking {db.serverDiaryDao().unsettled(lease.storageScope)}.single {it.entityType=="goal"}
+                assertNull(runBlocking {db.dao().currentProfile(lease.storageScope)})
+                compose.onNodeWithTag("open-profile").performClick()
+                compose.onNodeWithTag("profile-nickname").performScrollTo().performTextInput("Synthetic profile")
+                compose.onNodeWithTag("profile-height").performScrollTo().performTextInput("180")
+                compose.onNodeWithTag("activity-GARRISON").assertIsSelected()
+                compose.onNodeWithTag("confirm-profile").performScrollTo().performClick()
+                compose.waitUntil(10_000){runBlocking {db.dao().currentProfile(lease.storageScope)}?.nickname=="Synthetic profile"}
+                dismissMessage("Profil zapisany na urządzeniu.")
+                assertEquals(original,runBlocking {db.dao().goalOn(lease.storageScope,LocalDate.now().toString())})
+                assertEquals(listOf(original),runBlocking {db.serverDiaryDao().allGoals(lease.storageScope)})
+                val queue=runBlocking {db.serverDiaryDao().unsettled(lease.storageScope)}
+                assertEquals(originalOperation,queue.single {it.entityType=="goal"});assertEquals(1,queue.count {it.entityType=="profile"})
+                compose.onNodeWithTag("open-settings").performClick()
+                compose.onNodeWithTag("saved-maintenance").performScrollTo().assertExists()
+                compose.onNodeWithText("2595 kcal / dzień").assertExists()
+                assertEquals(guestBefore,runBlocking {db.dao().goalsThrough("guest",LocalDate.now().toString()).first()})
+                assertEquals(0,calls.get())
+                return
+            }
             compose.onNodeWithTag("open-profile").performClick()
             compose.onNodeWithTag("profile-content").performScrollToNode(hasTestTag("profile-nickname"))
             compose.onNodeWithTag("profile-nickname").performTextInput("Nowe konto")
