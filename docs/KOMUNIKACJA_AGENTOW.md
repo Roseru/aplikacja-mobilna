@@ -11319,6 +11319,61 @@ Kontynuacja O2-073 — **PR193 i poprawki po pierwszym CI**:
   Wcześniejszych kohort nie łączymy w nowy dowód. D2/Room27, dalsze ścieżki
   AI i pełne wydanie 1.0 pozostają oddzielnymi zakresami.
 
+Kontynuacja O2-073 — **PR193 scalony, rzeczywista ścieżka synchronizacji odebrana**:
+
+- 30.10.2026, agent 2. [PR193](https://github.com/Roseru/aplikacja-mobilna/pull/193)
+  scalono zwykłym merge `0dc70af35d6cf963320155be87c130ce3986ddbc`.
+  Jego tree jest identyczny z odebranym `2fd28ef`; wszyscy autorzy i historia
+  zachowani. Pełny CI tego PR `40969546296` ma 8/8 PASS: 1429 PG,
+  580 urządzenia, 452/492 JVM osobnych wariantów, 1743 unit backendu,
+  1232 infra i 28 PKCE. Dwanaście SKIP infra pozostaje pominięciami.
+  Oba wcześniej nieudane przypadki przeszły na nowym pinie; stary FAIL
+  `805aa2e` pozostaje osobnym wynikiem. Osobny CI po merge na main jest
+  prowadzony niezależnie i nie jest zastępowany przebiegiem PR.
+- Późniejszy osobny CI main `0dc70af`, run `40977103011`, zakończył się
+  6 SUCCESS i 2 FAIL. Jedyna nieudana asercja urządzenia to natychmiastowe
+  `pending.isCancelled` po zakończeniu wewnętrznego joba admission.
+  Poprawka [PR194](https://github.com/Roseru/aplikacja-mobilna/pull/194),
+  pin `9e92639`, czeka też na caller Deferred w tym samym limicie 3000 ms.
+  Nie zmienia kodu produkcyjnego, nie anuluje zadania z testu i zachowuje
+  wszystkie asercje I/O oraz ACK. Root i niezależny recenzent przyjęli
+  źródło z 0 P1/P2; nowy CI tego pina pozostaje bramką, bez ponawiania
+  starego main i bez przepisania jego FAIL na PASS.
+- Własny runtime wznowiono z zachowaniem danych, kluczy i epoki. Pełny
+  rzeczywisty okres blokady uwierzytelniania miał 421,559 s; retencja ruszyła
+  przed API. Porównanie 92 tabel potwierdziło niezmienność 90 oraz wyłącznie
+  usunięcie wygasłych kopii technicznych z pozostałych dwóch. Pierwsza
+  próba kontroli połączenia z timeoutem pozostaje zachowana; jej przyczyny
+  nie uznano za wyjaśnioną. Niezależny odbiór tego zakresu: 0 P1/P2.
+- Nowa spójna próba APK1052: świeży HTTPS/PKCE i PULL, zwykły zapis posiłku
+  10 g / 44,7 kcal, C0, zweryfikowany ACK zatrzymany przed Room, niezależny
+  C1, przerwanie procesu przed terminem, nowy proces i identyczne ponowienie,
+  C2 bez duplikatu oraz osobny release. Po nim ukończono PULL i odczyt po
+  restarcie z rzeczywiście odrzuconym ruchem UID aplikacji. Reguły przywrócono;
+  podczas kroku offline wszystkie 92 projekcje PG były identyczne.
+  Root odczytał trzy zamrożone bazy Room27; posiłek, rewizja 1, partia,
+  trwały ACK i ilość/energia zachowały się. Niezależne przeglądy core oraz
+  PULL/offline: 0 P1/P2. Produkcja i driver APK są zgodne ze źródłem `2fd`;
+  całe drzewo Androida różni poprawka testu Diary, zweryfikowana nowym CI.
+- Oryginalny ograniczony compare nadal ma `full_user_flow=false`; osobny
+  odbiór klienta go nie przepisuje. HTTP200 i powodzenie polecenia kill mają
+  potwierdzenie warunkami zapisu przypiętego producenta, bez niezależnego
+  kernel trace. Pierwszą stronę PULL legalnie skompaktowano przed zachowaniem
+  Room: członkostwo potwierdza materializacja i kompletna powiązana historia,
+  bez odtwarzania usuniętej surowej strony. Cold start offline ma potwierdzenie
+  producenta, guardu zatrzymania, UI i blokady UID, bez osobnego AMbirth.
+  Root przyjął z tymi granicami całą badaną ścieżkę; receipt SHA256
+  `a5d7259495dc7f180521e2a3ca91a31f6fd7015fe383a952c11bbd251a3077e9`.
+- Siedem późniejszych pustych PULL pozostaje odnotowanych. Odczyt kodu
+  oraz istniejących znaczników DiaryWorker/WatchWorker nie dał podstaw do P2
+  pętli lub spekulacyjnej poprawki; nie odtworzono każdego callbacka.
+  Backend nie pozostawił sesji paginacji po tych małych odczytach.
+- To odbiór konkretnej ścieżki własnej integracji. Pełne wydanie 1.0,
+  rzeczywiste Gemini/E7-R, pełne E9, D2/Room27 i produkcyjny odbiór pozostają
+  oddzielnymi zakresami. Następny krok O2 to gotowość przepływu AI mock,
+  potem pozostałe możliwe testy z własnych zasobów. Nie podmieniamy źródeł
+  działającej generacji tylko dlatego, że main dostał nowy commit merge.
+
 ### O2-074 — PR190: bezpieczne ścieżki źródeł lokalnego pakietu demo
 
 - 29.10.2026, agent 2, tymczasowa koordynacja całości według O2-071.

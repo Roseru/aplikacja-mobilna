@@ -1,6 +1,14 @@
 # Android — Racje i kalorie
 
-Integracja O1 na O2-B/Room20 obejmuje pierwszy cel pustego konta, lokalne
+Bieżące źródło: **0.8.41 / code52 / Room27**, wariant validation code1052.
+Instrukcja lokalnego uruchomienia jest w rozdziale
+[Uruchomienie w Android Studio](#uruchomienie-w-android-studio).
+Własny backend do pełnej ścieżki opisuje
+[instrukcja integracji](../infra/local/integration/README.md), a odebrane
+scenariusze i otwarte bramki — [dziennik zespołu](../docs/KOMUNIKACJA_AGENTOW.md).
+Wynik samego modułu lub builda nie zastępuje odbioru całego APK/API.
+
+Historyczna integracja O1 na O2-B/Room20 obejmuje pierwszy cel pustego konta, lokalne
 dokończenie kopii recovery i poprawiony driver E4. [Stan odbioru](SESJA_SYNCHRONIZACJI.md)
 oddziela starsze dowody od bieżącego kodu przed końcową kwalifikacją.
 
