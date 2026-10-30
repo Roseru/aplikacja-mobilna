@@ -1,6 +1,7 @@
 package pl.roseru.kalorie
 
 import androidx.room.Room
+import androidx.room.withTransaction
 import android.database.Cursor
 import android.database.sqlite.SQLiteDatabase
 import androidx.test.platform.app.InstrumentationRegistry
@@ -10,6 +11,7 @@ import org.json.JSONObject
 import org.junit.Assert.*
 import org.junit.Test
 import pl.roseru.kalorie.core.BootstrapResponse
+import pl.roseru.kalorie.core.ExactNutrition
 import pl.roseru.kalorie.core.catalog.StrictJson
 import pl.roseru.kalorie.core.sync.*
 import pl.roseru.kalorie.data.*
@@ -59,6 +61,81 @@ class EnergySyncWorkflowTest {
         store.apply(first,page(listOf(weight(1,"80"),EnergyFixture.sample("version"))))
         ServerDiaryStore(db,schema,energy).apply(lease,first.runId)
         return first.runId
+    }
+    @Test fun acknowledgedMealAcceptsEquivalentUtcPrecisionInSavedDeltaAfterRestart()=runBlocking<Unit> {
+        acknowledgedMealProjection("precision")
+    }
+    @Test fun acknowledgedMealStillRejectsChangedInstantOrContentAtSameRevision()=runBlocking<Unit> {
+        for(change in listOf("instant","quantity"))acknowledgedMealProjection(change)
+    }
+    private suspend fun acknowledgedMealProjection(change:String) {
+        val name="energy-meal-timestamp-${UUID.randomUUID()}";var db=open(name)
+        try {
+            var lease=account(db);val base=full(db,lease)
+            val binding=checkNotNull(db.bootstrapDao().binding(lease.storageScope));val wireContext=CanonicalMealRows.context(binding)
+            val mealId=UUID.randomUUID().toString();val operationId=UUID.randomUUID().toString()
+            val wire=ManualMealWire.create("Synthetic banana",UUID.randomUUID().toString(),"120","g",
+                ExactNutrition(java.math.BigDecimal("89"),null,null,null),"2026-10-24T09:30:00.630Z","UTC","snack",schema)
+            db.withTransaction {
+                db.dao().insertMeal(CanonicalMealRows.meal(mealId,lease.storageScope,wire,wireContext))
+                CanonicalMealRows.items(mealId,wire).forEach {db.dao().insertItem(it)}
+                db.dao().enqueue(OutboxEntity(operationId,lease.storageScope,"meal",mealId,"upsert",null,wire.canonical,
+                    "2026-10-24T09:30:00.630Z","pending","sync-v1",
+                    MealWire.operation(operationId,mealId,epoch,null,wire.canonical,schema),wireContext))
+            }
+            val push=MealPushStore(db,schema);val request=checkNotNull(push.prepare(lease));push.markAttempted(request)
+            val frozen=checkNotNull(db.pushDao().batch(request.id))
+            val ack=StrictJson.canonical(JSONObject().put("sync_epoch",epoch).put("server_time","2026-10-24T10:00:00Z")
+                .put("results",JSONArray().put(JSONObject().put("operation_id",operationId).put("entity_id",mealId)
+                    .put("status","accepted").put("revision",1).put("recovery_mapping",JSONObject.NULL))))
+            push.applyAck(push.prepareAck(request,200,ack.toByteArray(Charsets.UTF_8)))
+            val acknowledged=checkNotNull(db.dao().operation(operationId));assertEquals("acked",acknowledged.status)
+            val acceptedBatch=checkNotNull(db.pushDao().batch(request.id))
+            assertEquals(frozen.requestJson,acceptedBatch.requestJson);assertEquals(frozen.requestHash,acceptedBatch.requestHash)
+            val local=checkNotNull(db.dao().meal(mealId,lease.storageScope));assertEquals(1,local.meal.serverRevision)
+            val oldAxis=db.canonicalEnergyDao().all(lease.storageScope,wireContext)
+            val payload=wire.json().put("occurred_at",if(change=="instant")"2026-10-24T09:30:00.630001Z" else "2026-10-24T09:30:00.630000Z")
+            if(change=="quantity")payload.getJSONArray("items").getJSONObject(0).getJSONObject("quantity").put("amount","121")
+            val incoming=JSONObject().put("entity_type","meal").put("entity_id",mealId).put("revision",1)
+                .put("deleted",false).put("payload",payload)
+            val day=JSONObject().put("entity_type","diary_day").put("entity_id",UUID.randomUUID().toString()).put("revision",1)
+                .put("deleted",false).put("payload",JSONObject().put("local_date","2026-10-24").put("time_zone","UTC").put("declared_complete",false))
+            var snapshots=ServerSnapshotStore(db,protocol);val delta=snapshots.beginRead(lease,SyncProtocolScope.ENERGY_V1)
+            assertEquals(base,db.snapshotDao().run(delta.runId)!!.baseRunId)
+            assertNull(snapshots.apply(delta,page(listOf(incoming,day),"meal-delta-checkpoint",mode="incremental")))
+            val savedPages=db.snapshotDao().pages(delta.runId)
+            val savedRun=checkNotNull(db.snapshotDao().run(delta.runId))
+            assertEquals("complete",savedRun.state);assertEquals(lease.generation,savedRun.leaseGeneration)
+            assertNull(db.serverDiaryDao().application(delta.runId));assertEquals(base,snapshots.active(lease)!!.id)
+            db.close();db=open(name);snapshots=ServerSnapshotStore(db,protocol)
+            val oldLease=lease
+            lease=LocalOwnerStore(db).select(checkNotNull(db.ownerDao().byScope(lease.storageScope)).id)
+            assertEquals(oldLease.generation+1,lease.generation);assertEquals(binding,db.bootstrapDao().binding(lease.storageScope))
+            assertEquals(delta.runId,snapshots.pendingProjection(lease)!!.id)
+            val diary=ServerDiaryStore(db,schema,energy)
+            var staleRejected=false
+            try {diary.apply(oldLease,delta.runId)}catch(_:StaleOwnerException){staleRejected=true}
+            assertTrue("The renewed lease can consume saved evidence; the old caller remains fenced",staleRejected)
+            assertNull(db.serverDiaryDao().application(delta.runId))
+            if(change=="precision") {
+                assertEquals(0,diary.apply(lease,delta.runId).held)
+                assertEquals(delta.runId,snapshots.active(lease)!!.id);assertNull(snapshots.pendingProjection(lease))
+                assertNotNull(db.serverDiaryDao().application(delta.runId))
+                val projected=checkNotNull(db.dao().meal(mealId,lease.storageScope))
+                assertEquals(StrictJson.canonical(payload),projected.meal.wirePayload)
+                assertEquals(local.meal.localRevision,projected.meal.localRevision);assertEquals(1,projected.meal.serverRevision)
+                assertEquals(local.items,projected.items)
+            }else {
+                var rejected=false
+                try {diary.apply(lease,delta.runId)}catch(_:DiaryProjectionChangedException){rejected=true}
+                assertTrue("A real same-revision change must remain an atomic conflict",rejected)
+                assertEquals(base,snapshots.active(lease)!!.id);assertNull(db.serverDiaryDao().application(delta.runId))
+                assertEquals(local,db.dao().meal(mealId,lease.storageScope));assertEquals(delta.runId,snapshots.pendingProjection(lease)!!.id)
+            }
+            assertEquals(acknowledged,db.dao().operation(operationId));assertEquals(acceptedBatch,db.pushDao().batch(request.id))
+            assertEquals(savedRun,db.snapshotDao().run(delta.runId))
+            assertEquals(savedPages,db.snapshotDao().pages(delta.runId));assertEquals(oldAxis,db.canonicalEnergyDao().all(lease.storageScope,wireContext))
+        }finally {db.close();context.deleteDatabase(name)}
     }
     @Test fun legacyFrozenRequestDrainsThenSevenDomainsCommitTogetherAndDeltaPreservesLaterLocalEdit()=runBlocking<Unit> {
         val name="energy-sync-${UUID.randomUUID()}";var db=open(name)

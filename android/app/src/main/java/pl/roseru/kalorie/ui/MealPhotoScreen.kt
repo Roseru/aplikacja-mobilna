@@ -146,7 +146,7 @@ private sealed interface LocalPhotoPreview {
             OutlinedCard(Modifier.fillMaxWidth().testTag("photo-draft-${row.id}")) {
                 Column(Modifier.padding(12.dp), verticalArrangement=Arrangement.spacedBy(4.dp)) {
                     Text(row.localDate,style=MaterialTheme.typography.titleMedium)
-                    Text("${if(row.source=="camera") "Aparat" else "Galeria"} · ${(row.byteCount/1024).coerceAtLeast(1)} KB · tylko lokalnie",style=MaterialTheme.typography.bodySmall)
+                    Text("${if(row.source=="camera") "Aparat" else "Galeria"} · ${(row.byteCount/1024).coerceAtLeast(1)} KB · kopia na telefonie",style=MaterialTheme.typography.bodySmall)
                     Row {
                         TextButton(onClick={selected=if(selected==row.id) null else row.id}, modifier=Modifier.testTag("photo-preview-${row.id}")) { Text(if(selected==row.id) "Zwiń" else "Pokaż zdjęcie") }
                         TextButton(onClick={removal=row.id}, enabled=!busy) { Text("Usuń") }
