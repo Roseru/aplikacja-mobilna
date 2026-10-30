@@ -73,6 +73,7 @@ class PhotoUploadScreenTest {
                     assertEquals(id,selected);assertTrue(accepted);approved=consent;count++
                 })}}}
             compose.waitUntil(10_000) {photoModel.drafts.value.any {it.id==id}}
+            assertEquals(0,count)
             fun open() {
                 compose.onNodeWithTag("photo-content").performScrollToNode(hasTestTag("photo-analyze-$id"))
                 compose.onNodeWithTag("photo-analyze-$id").assertIsEnabled().performClick()
@@ -99,6 +100,13 @@ class PhotoUploadScreenTest {
             assertEquals("food-photo-notice-v1",approved!!.noticeVersion)
             assertEquals(0,runBlocking {db.dao().operationCount(lease.storageScope)})
             assertTrue(runBlocking {db.dao().achievementMeals(lease.storageScope).isEmpty()})
+            compose.runOnIdle {session.value=session.value.copy(
+                photoUpload=PhotoUploadStatus("synthetic-operation",checkNotNull(id),"mock","mock-food-v2",true,true,0,false))}
+            compose.onNodeWithTag("photo-content").performScrollToNode(hasTestTag("photo-upload-state"))
+            compose.onNodeWithTag("photo-upload-state").assertTextEquals("Zdjęcie przyjęte do analizy. Posiłek nie został jeszcze zapisany.")
+            compose.onNodeWithTag("photo-content").performScrollToNode(hasTestTag("photo-draft-$id"))
+            compose.onNodeWithText("kopia na telefonie",substring=true).assertExists()
+            compose.onNodeWithText("tylko lokalnie",substring=true).assertDoesNotExist()
         } finally {
             compose.runOnIdle {show.value=false};compose.waitForIdle()
             compose.runOnIdle {model?.viewModelScope?.cancel()}

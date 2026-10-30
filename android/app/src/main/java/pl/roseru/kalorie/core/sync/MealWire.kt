@@ -9,6 +9,13 @@ import java.time.*
 /** Exact domain data, never an invented catalogue product or a provider payload. */
 class MealWire private constructor(val canonical:String) {
     fun json()=StrictJson.read(canonical.toByteArray(Charsets.UTF_8))
+    /** UTC fractional-second spelling is not a domain change; frozen wire bytes stay intact. */
+    fun hasSameContent(other:MealWire):Boolean {
+        if(canonical==other.canonical)return true
+        val value=json();val otherTime=other.json().getString("occurred_at")
+        if(Instant.parse(value.getString("occurred_at"))!=Instant.parse(otherTime))return false
+        return StrictJson.canonical(value.put("occurred_at",otherTime))==other.canonical
+    }
     fun withAmount(itemId:String,text:String,schema:SyncWireSchema):MealWire {
         val amount=ContractDecimal.userQuantity(text)?:throw NutritionError("quantity_range")
         val value=json();val items=value.getJSONArray("items");var found=false

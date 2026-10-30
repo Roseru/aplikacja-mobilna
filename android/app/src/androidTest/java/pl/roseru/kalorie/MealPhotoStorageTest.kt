@@ -242,6 +242,7 @@ class MealPhotoStorageTest {
             val deadline=System.nanoTime()+java.util.concurrent.TimeUnit.SECONDS.toNanos(5)
             while((File(context.cacheDir,"photo-captures/$id.jpg").exists() || restored.busy.value) && System.nanoTime()<deadline) Thread.sleep(20)
             assertFalse(File(context.cacheDir,"photo-captures/$id.jpg").exists());assertFalse(restored.busy.value)
+            assertEquals("Zdjęcie zapisane na telefonie.",restored.message.value)
             InstrumentationRegistry.getInstrumentation().runOnMainSync { restored.cameraResult(true) }
             assertEquals(1,store.drafts.first().size);assertEquals(0,db.dao().operationCount(lease.storageScope))
             store.preview(id).recycle();store.delete(id)
