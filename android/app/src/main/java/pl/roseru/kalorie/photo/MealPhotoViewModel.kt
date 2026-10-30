@@ -81,7 +81,7 @@ class MealPhotoViewModel(private val context: Application, private val store: Me
         viewModelScope.launch {
             try {
                 withContext(Dispatchers.IO) { open().use { store.import(it,date,source,id) } }
-                mutableMessage.value = "Zdjęcie zapisane na telefonie. Nie zostało wysłane."
+                mutableMessage.value = "Zdjęcie zapisane na telefonie."
             } catch (error: CancellationException) { throw error }
             catch (_: Exception) { mutableMessage.value = "Nie udało się zapisać zdjęcia. Wybierz pojedynczy obraz do 20 MB lub dodaj posiłek ręcznie." }
             finally {
