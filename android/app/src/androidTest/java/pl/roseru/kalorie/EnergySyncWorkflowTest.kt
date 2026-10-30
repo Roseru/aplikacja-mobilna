@@ -71,7 +71,7 @@ class EnergySyncWorkflowTest {
     private suspend fun acknowledgedMealProjection(change:String) {
         val name="energy-meal-timestamp-${UUID.randomUUID()}";var db=open(name)
         try {
-            val lease=account(db);val base=full(db,lease)
+            var lease=account(db);val base=full(db,lease)
             val binding=checkNotNull(db.bootstrapDao().binding(lease.storageScope));val wireContext=CanonicalMealRows.context(binding)
             val mealId=UUID.randomUUID().toString();val operationId=UUID.randomUUID().toString()
             val wire=ManualMealWire.create("Synthetic banana",UUID.randomUUID().toString(),"120","g",
@@ -104,11 +104,19 @@ class EnergySyncWorkflowTest {
             assertEquals(base,db.snapshotDao().run(delta.runId)!!.baseRunId)
             assertNull(snapshots.apply(delta,page(listOf(incoming,day),"meal-delta-checkpoint",mode="incremental")))
             val savedPages=db.snapshotDao().pages(delta.runId)
-            assertEquals("complete",db.snapshotDao().run(delta.runId)!!.state)
+            val savedRun=checkNotNull(db.snapshotDao().run(delta.runId))
+            assertEquals("complete",savedRun.state);assertEquals(lease.generation,savedRun.leaseGeneration)
             assertNull(db.serverDiaryDao().application(delta.runId));assertEquals(base,snapshots.active(lease)!!.id)
             db.close();db=open(name);snapshots=ServerSnapshotStore(db,protocol)
+            val oldLease=lease
+            lease=LocalOwnerStore(db).select(checkNotNull(db.ownerDao().byScope(lease.storageScope)).id)
+            assertEquals(oldLease.generation+1,lease.generation);assertEquals(binding,db.bootstrapDao().binding(lease.storageScope))
             assertEquals(delta.runId,snapshots.pendingProjection(lease)!!.id)
             val diary=ServerDiaryStore(db,schema,energy)
+            var staleRejected=false
+            try {diary.apply(oldLease,delta.runId)}catch(_:StaleOwnerException){staleRejected=true}
+            assertTrue("The renewed lease can consume saved evidence; the old caller remains fenced",staleRejected)
+            assertNull(db.serverDiaryDao().application(delta.runId))
             if(change=="precision") {
                 assertEquals(0,diary.apply(lease,delta.runId).held)
                 assertEquals(delta.runId,snapshots.active(lease)!!.id);assertNull(snapshots.pendingProjection(lease))
@@ -125,6 +133,7 @@ class EnergySyncWorkflowTest {
                 assertEquals(local,db.dao().meal(mealId,lease.storageScope));assertEquals(delta.runId,snapshots.pendingProjection(lease)!!.id)
             }
             assertEquals(acknowledged,db.dao().operation(operationId));assertEquals(acceptedBatch,db.pushDao().batch(request.id))
+            assertEquals(savedRun,db.snapshotDao().run(delta.runId))
             assertEquals(savedPages,db.snapshotDao().pages(delta.runId));assertEquals(oldAxis,db.canonicalEnergyDao().all(lease.storageScope,wireContext))
         }finally {db.close();context.deleteDatabase(name)}
     }
