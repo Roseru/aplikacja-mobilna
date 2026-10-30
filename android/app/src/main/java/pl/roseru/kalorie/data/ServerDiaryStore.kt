@@ -205,7 +205,8 @@ class ServerDiaryStore(private val db: CalorieDatabase, private val schema: Sync
         val fresh = CanonicalMealRows.meal(localId, row.ownerScope, wire, row.wireContext,
             row.knownRevision, current?.meal?.localRevision ?: 1)
         if (current != null && current.meal.serverRevision == row.knownRevision &&
-            (current.meal.wirePayload != wire.canonical || current.meal.deleted)) throw DiaryProjectionChangedException()
+            (current.meal.deleted || (current.meal.wirePayload != wire.canonical &&
+                !MealWire.read(checkNotNull(current.meal.wirePayload), schema).hasSameContent(wire)))) throw DiaryProjectionChangedException()
         val items = db.localMealItems(row.ownerScope,localId,wire)
         items.forEach { item -> check(dao.itemById(item.id)?.mealId.let { it == null || it == localId }) }
         if (current == null) dao.insertMeal(fresh) else dao.updateMeal(fresh)

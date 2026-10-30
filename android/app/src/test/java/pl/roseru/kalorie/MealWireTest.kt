@@ -67,4 +67,22 @@ class MealWireTest {
         val value=payload();val wire=read(value);first(value).put("name","Mutated");assertEquals("Poprawiony banan",first(wire.json()).getString("name"))
         val copy=wire.json();copy.put("title","Mutated");assertEquals("Posiłek ze zdjęcia",wire.json().getString("title"))
     }
+    @Test fun timestampSpellingComparisonPreservesWireAndRejectsOtherContentChanges() {
+        for((localTime,serverTime) in listOf("12:00:00.630Z" to "12:00:00.630000Z",
+            "12:00:00.1Z" to "12:00:00.100000Z","12:00:00Z" to "12:00:00.000000Z")) {
+            val local=read(payload().put("occurred_at","2026-10-17T$localTime"))
+            val server=read(local.json().put("occurred_at","2026-10-17T$serverTime"))
+            val before=local.canonical;val operationBefore=MealWire.operation(operation,id,epoch,null,before,schema)
+            assertNotEquals(local.canonical,server.canonical)
+            assertTrue(local.hasSameContent(server));assertTrue(server.hasSameContent(local))
+            assertEquals(before,local.canonical)
+            assertEquals(operationBefore,MealWire.operation(operation,id,epoch,null,local.canonical,schema))
+            assertFalse(local.hasSameContent(read(server.json().put("occurred_at","2026-10-17T12:00:00.630001Z"))))
+            assertFalse(local.hasSameContent(read(server.json().put("title","Changed title"))))
+            val changed=server.json();first(changed).getJSONObject("quantity").put("amount","151")
+            assertFalse(local.hasSameContent(read(changed)))
+            val missing=server.json();first(missing).getJSONObject("nutrition_per_100").put("protein_g",JSONObject.NULL)
+            assertFalse(local.hasSameContent(read(missing)))
+        }
+    }
 }
