@@ -458,7 +458,12 @@ class SyncNetworkPolicyStorageTest {
                     owners.select(owners.ensureGuest().id);h.lease=owners.select(id)
                 }
                 "context"->{h.binding=h.binding.copy(accountGeneration=h.binding.accountGeneration+1);h.db.bootstrapDao().update(h.binding)}
-                "pause"->{pause=async {trial.pause()};withTimeout(3000){pause.await()}}
+                "pause"->{
+                    pause=async {trial.pause()}
+                    // Admission joins its inner scope; cancellation can still be unwinding
+                    // through runtime.manual to this caller. Join both within the same bound.
+                    withTimeout(3000){pause.await();pending.join()}
+                }
                 else->error("Unknown lifecycle fixture")
             }
             if(mode=="pause")assertTrue(pending.isCancelled)
