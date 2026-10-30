@@ -24,8 +24,10 @@ from calorie_app.modules.profiles.service import put_consents
 from calorie_app.modules.sync.models import RecoveryMapping
 from calorie_app.modules.sync.router import execute_one, preflight
 from calorie_app.modules.sync.schemas import preflight_structure
-from calorie_app.modules.sync.snapshots import pull
+from calorie_app.modules.sync.snapshot_models import SyncSession
+from calorie_app.modules.sync.snapshots import pull as current_pull
 from tests.support.deletion_regression import begin
+from tests.support.historical_e4_snapshots import published_e4_snapshots
 
 pytestmark = pytest.mark.integration
 ROOT = Path(__file__).resolve().parents[3]
@@ -141,6 +143,17 @@ def _rowsets(connection, tables):
     }
 
 
+def _wire_bytes(value):
+    return json.dumps(value, ensure_ascii=False, sort_keys=True, separators=(",", ":")).encode()
+
+
+def _assert_e4_snapshot_retries(proof, *, historical=False):
+    factory, owner, retries = proof
+    reader = published_e4_snapshots().pull if historical else current_pull
+    for query, expected in retries:
+        assert _wire_bytes(reader(factory, owner, query, SECRET)) == expected
+
+
 def _example(kind):
     name = "diary-day" if kind == "diary_day" else kind.replace("_", "-")
     return json.loads((ROOT / f"contracts/examples/valid/{name}.json").read_text(encoding="utf-8"))
@@ -178,7 +191,8 @@ def _push(factory, principal, owner, boot, checkpoint, op):
 def _seed_e4(engine, artifact_root):
     # Only the additional E8 projection/probe seams are absent in these exact
     # historical schemas. Source validation, transactions, counters, receipts,
-    # snapshots and publication still execute their real E4 implementations.
+    # snapshots and publication execute their real E4 implementations. The
+    # snapshot algorithm is pinned pre-E5, not today's schema-dependent reader.
     with engine.connect() as connection:
         revision = connection.scalar(text("SELECT version_num FROM app.alembic_version"))
     assert revision in {E4_REVISION, "0014_catalog_search"}, revision
@@ -186,16 +200,17 @@ def _seed_e4(engine, artifact_root):
         patch("calorie_app.modules.analytics.motivation.repository.goal_probe", return_value=[]),
         patch("calorie_app.modules.analytics.motivation.service.source_mutated", return_value=None),
     ):
-        _seed_e4_sources(engine, artifact_root)
+        return _seed_e4_sources(engine, artifact_root)
 
 
 def _seed_e4_sources(engine, artifact_root):
+    historical = published_e4_snapshots()
     who = Principal("https://e5-upgrade.test/realms/fixture", str(uuid4()), frozenset({"user"}))
     with Session(engine) as session, session.begin():
         boot = bootstrap(session, who, uuid4())
     owner = UUID(boot["account_id"])
     factory = sessionmaker(engine, expire_on_commit=False)
-    checkpoint = pull(factory, owner, {}, SECRET)["checkpoint"]
+    checkpoint = historical.pull(factory, owner, {}, SECRET)["checkpoint"]
     operations = []
     for kind in ("profile", "goal", "meal", "weight", "product_draft"):
         payload = _example(kind)
@@ -237,13 +252,38 @@ def _seed_e4_sources(engine, artifact_root):
         )
     # Keep a non-final E4 snapshot with actual entities, mappings, receipts and
     # their immutable materialization, rather than fabricating a SyncSession row.
-    frozen = pull(
+    frozen = historical.pull(
         factory,
         owner,
         {"limit": 1, "recovery_operation_ids": [op["operation_id"] for op in operations]},
         SECRET,
     )
     assert frozen["snapshot_token"] and frozen["page_token"] and frozen["checkpoint"] is None
+    with engine.connect() as connection:
+        original_nonfinal_id = connection.scalar(
+            text("SELECT id FROM app.sync_sessions WHERE owner_id=:owner AND page_limit=1"),
+            {"owner": owner},
+        )
+    # Preserve the original non-final graph. A separate third graph proves
+    # completed middle/final retries without replacing that original coverage.
+    page = historical.pull(
+        factory,
+        owner,
+        {"limit": 1, "recovery_operation_ids": [op["operation_id"] for op in operations]},
+        SECRET,
+    )
+    retries = []
+    proof_snapshot = page["snapshot_token"]
+    while page["page_token"]:
+        query = {
+            "limit": 1,
+            "sync_epoch": frozen["sync_epoch"],
+            "snapshot_token": proof_snapshot,
+            "page_token": page["page_token"],
+        }
+        page = historical.pull(factory, owner, query, SECRET)
+        retries.append((query, _wire_bytes(page)))
+    assert len(retries) > 1 and page["checkpoint"]
     package = json.loads((ROOT / "backend/data/demo/seed.json").read_text(encoding="utf-8"))
     imported = import_catalog(engine, package)
     # This fixture seeds the actual pre-E6 schema (0011). E6 catalogue
@@ -260,6 +300,20 @@ def _seed_e4_sources(engine, artifact_root):
     with engine.begin() as connection:
         connection.execute(text("SET LOCAL ROLE calorie_app_deletion_operator"))
         begin(connection, other_id, uuid4(), 1)
+    with Session(engine) as session:
+        original_nonfinal = session.get(SyncSession, original_nonfinal_id)
+        assert original_nonfinal is not None and original_nonfinal.owner_id == owner
+        assert original_nonfinal.final_offset is None and original_nonfinal.final_response is None
+        assert (
+            session.scalar(
+                text("SELECT count(*) FROM app.sync_sessions WHERE owner_id=:owner"),
+                {"owner": owner},
+            )
+            == 3
+        )
+    # Freeze the final response before taking the entire-rowset baseline.
+    # Reusing middle/final cursors after each migration must not change a row.
+    return factory, owner, (retries[0], retries[-1])
 
 
 def _assert_new_acl(connection):
@@ -365,7 +419,7 @@ def test_e4_entire_rowsets_survive_e5_upgrade_downgrade_reupgrade(
     )
     try:
         migrate("downgrade", E4_REVISION)
-        _seed_e4(engine, tmp_path / "catalog-demo")
+        snapshot_proof = _seed_e4(engine, tmp_path / "catalog-demo")
         with engine.connect() as connection:
             tables = _tables(connection)
             before = _rowsets(connection, tables)
@@ -411,6 +465,7 @@ def test_e4_entire_rowsets_survive_e5_upgrade_downgrade_reupgrade(
             assert client.get("/health/ready").status_code == 503
             migrate("upgrade", "head")
             assert client.get("/health/ready").status_code == 200
+            _assert_e4_snapshot_retries(snapshot_proof)
             with engine.connect() as connection:
                 assert set(_tables(connection)) == set(tables) | NEW_TABLES
                 assert _rowsets(connection, tables) == before
@@ -419,6 +474,7 @@ def test_e4_entire_rowsets_survive_e5_upgrade_downgrade_reupgrade(
                 _discard_e8_upgrade_placeholders(connection)
             migrate("downgrade", E4_REVISION)
             assert client.get("/health/ready").status_code == 503
+            _assert_e4_snapshot_retries(snapshot_proof, historical=True)
             with engine.connect() as connection:
                 assert _tables(connection) == tables
                 assert _rowsets(connection, tables) == before
@@ -435,6 +491,7 @@ def test_e4_entire_rowsets_survive_e5_upgrade_downgrade_reupgrade(
                     )
             migrate("upgrade", "head")
             assert client.get("/health/ready").status_code == 200
+            _assert_e4_snapshot_retries(snapshot_proof)
             with engine.connect() as connection:
                 assert _rowsets(connection, tables) == before
                 _assert_new_acl(connection)

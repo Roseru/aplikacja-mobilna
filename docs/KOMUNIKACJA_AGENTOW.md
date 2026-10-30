@@ -10932,6 +10932,393 @@ Kontynuacja O1-146 — odbiór pierwszego CI i poprawka17oczekiwań migracji:
   main40854610640 pozostaje w odbiorze. Historyczne oczekiwania powyżej
   nie są nowymi blokadami koordynacji O2.
 
+### O2-073 — Własny natywny HTTPS/PKCE/PG przed odbiorem aktualnego APK
+
+- 29.10.2026, agent 2/O2 do koordynatora, **BACKEND PASS / WAITING_ANDROID_LEASE**.
+  Na jawne przejęcie właściciela utworzono nowy odseparowany stan i gałąź
+  `codex/devops-demo-native`, z backendem/kontraktami source
+  `26aa82c4abf3a359c9bb1fcdb9a23f3a082b9389`. Istniejące instalacje,
+  dane, klucze i historyczne kwalifikacje O1/O3 pozostają osobnymi zasobami.
+  Nowszy main z samym Compose PG/dziennikiem nie zmienia pinu tej próby.
+- [Adapter i powtarzalne komendy](../infra/local/integration/README.md)
+  współdzielą istniejące initialize/CA/realm, Probe Code-PKCE i overlay.
+  Własny writable home Keycloak, PG i generowane testowe konta; ograniczone
+  porty, ukryte procesy, PID/birth/executable, blokada lifecycle i zachowujące
+  dane down/up. Generacja runtime wiąże rzeczywiście działające procesy
+  z pinem backendu/kontraktów, lockiem i hashami adaptera; stare źródło lub
+  markery odmawiają kwalifikacji. Nie przebudowano Compose, release checkera,
+  zamrożonych planów Room23 ani assemblera PREPARATION_ONLY z PR190.
+- **Rzeczywisty wynik:** HTTPS i dokładny issuer, discovery/JWKS, oba
+  callbacky Androida przez Code-PKCE i podpisany nonce, odmowa obcego CA,
+  hostname, błędnego PKCE, replay kodu i ID tokenu. Bootstrap A/B jest
+  idempotentny. Sześć domen zapisano bez odczytu HTTP ACK; niezależny PG
+  potwierdził commit, a identyczny retry dał sześć already_applied.
+  Osobny PULL zachował UUID/daty/payload/null, z izolacją A/B i odmową
+  obcego checkpointu. SQL oracle: 130,5 + 105 = 235,5 kcal; null nie jest zerem.
+  Po rzeczywistym down/up ponowne logowanie i pełny PULL zachowały dane,
+  epokę, CA oraz dokładne sześć receipts opID/entityID/hash/rewizja.
+- Runtime: PG 17.11, Keycloak 26.8.0, JDK 25.0.4.1, Python 3.13.9;
+  schema **0026_ledger_review**, 44 dystrybucje zgodne z backend/uv.lock.
+  Końcowy receipt SHA256
+  `83450ccecca801af7a6fbe39e7dccaa5c06cf3c948f770016cb97ffc9bd757ff`.
+  Nowy adapter: **27 unit PASS/0 failure/skip**; Ruff check/format, E0 i diff-check PASS.
+  Szerszy przebieg infra zachowany jako 637 PASS/40 FAIL/9 SKIP: 40 przypadków
+  poprawnie odmawiało sekretowych fixture wewnątrz checkoutu. Dokładnie te
+  same 40 nodeIDs przeszło bez zmian kodu w świeżym Temp poza repozytorium.
+  Dziewięć SKIP to 8 braków uprawnień symlink i 1 kontrola POSIX.
+  Odwracalna mutacja kontroli źródła wyłącznie w pamięci dała oczekiwany FAIL.
+- **Niezależny odbiór: 9,3/10, bez materialnych P1/P2.** Recenzent sprawdził
+  finalne pięć plików/hashów, bieżące PID/birth/executable, raw receipts/PULL,
+  fingerprinty PG, epokę, niezależne liczby/null, wersje/binaria oraz XML
+  testów. Wcześniejsze FAIL prób i środowiska zachowano. Przegląd poprawił
+  powiązanie generacji z kodem i dodał jawną asercję epoki po restarcie.
+- **Granice i następne wejście:** pełny przepływ APK nadal NOT_RUN;
+  Gradle/AVD pozostają u B1/B2 do rzeczywistego zwrotu lease i nowego pinu
+  od koordynatora. Publiczny CA i overlay przygotowane, bez instalacji.
+  Świeży katalog ma 0/0/0/0 produktów/racji/komponentów/źródeł: przed MRE sync
+  wymagany jest własny odpowiedzialny import tej samej wersji z Git,
+  z receiptem/eksportem i nowym bootstrap/snapshot/trial/C0 po imporcie.
+  Receipt118 nie kwalifikuje tej nowej bazy. Nemesis pozostaje wyłączone,
+  AI mock; właściwe workery AI/cleanup/punktów/finalizacji, realne Google,
+  restore oraz odbiór wydania nie są zaliczone przez gateway/create_app.
+  Brak narzędzi livechatu zgłoszono w istniejącym
+  [wątku PR146](https://github.com/Roseru/aplikacja-mobilna/pull/146#issuecomment-6492997283).
+  To lokalny pin etapu 1, bez checkpointowego PR; publikacja większego wyniku,
+  final-head/base CI, merge i osobne main CI pozostają u koordynatora.
+
+Kontynuacja O2-073 — **minimalny realny przepływ APK odebrany przez koordynatora**:
+
+- Pierwszy wynik i oczekiwanie na lease powyżej są historyczne. Po przekazaniu
+  własnego AVD i zaakceptowanego pinu B1/B2 zbudowano i zainstalowano
+  `pl.roseru.kalorie.validation`, 0.8.40.validation/code1051, bez zmiany Androida.
+  Źródło Androida `405c32e63c9cb199982c361fbb2b476a6533e2bd` ma ten sam tree
+  co odebrany pin B1/B2. APK SHA256
+  `f3518e697a80cce4dde892397506f52c8ff5b41523b05650463410d14802c1c2`;
+  test APK `2f2f8824af6d3a8d6666a05022355b83c2a64fc0e388b8deacc7dab959b481dc`.
+  Rzeczywiste zasoby, certyfikat, package/version i dokładny CA/host zmierzono
+  w APK; osobny readback z PackageManager potwierdził identyczne zainstalowane
+  bajty obu plików, bez ponownej instalacji. Receipt SHA256
+  `569160302535699a0c06eb118ebd2b143a087b98ecfca29aff35a38850ffa0aa`.
+- Przed przepływem odpowiedzialnie zaimportowano dokładne DEMO1 E2 i MRE
+  z zachowaniem źródeł oraz eksportów. Własny PG: 129 produktów/25 racji/
+  253 komponenty/113 źródeł; oba pakiety SEALED DRAFT, bez publikacji kanału.
+  Receipt importu `4eac41f425fb4389f9a2315272173b73832d8e5427c497d8aec1e7432ba48300`.
+- **Wykonany przepływ:** zablokowana sieć → gość offline → dwa posiłki,
+  korekta banana z null/0 → zwykły restart i B2 → jawne zezwolenie sieci →
+  rzeczywisty formularz Chrome/AppAuth Code-S256 → bootstrap i początkowy
+  PULL/apply → jawna zgoda przypisania → dwa ACK i niezależny PG → osobny
+  PULL/apply → restart oraz ponownie zablokowana sieć/B2. Niepełny stary cel
+  gościa pozostawiono lokalnie zgodnie z decyzją UI; nie wymyślono daty decyzji.
+  Rzeczywiste zachowane wire UUID/daty/strefa GMT i snapshoty dają 209,4 kcal;
+  brak białka banana pozostaje null. Historyczne kolumny/snapshot gościa
+  zachowują pierwotną wartość, korektę niesie aktualny wirePayload.
+- Receipt danych `580a861c7f86e5a3e37b441650a97e10432ea2b747880fe29ec7f051d4600efc`;
+  niezależny odbiór 9,3/10 bez materialnych P1/P2. Koordynator zakończył osobny
+  odbiór 49 kontroli danych, APK/installed APK, rzeczywistego Code/S256,
+  dostępnościowego `security_button` Chrome „Connection is secure” i UI.
+  Końcowy root receipt SHA256
+  `154d54e7236af91654443c16b88401a4f85df29f56e84b0f25e259c42080ec29`.
+  Screenshot formularza nie jest panelem szczegółów TLS.
+- Po dwóch nagłych przerwaniach hosta zachowano prywatne kopie stanu i raw
+  logi. Aktualny R2 uruchomił się po pełnej kopii przed rozruchem; read-only
+  Room ma ponownie ten sam SHA256
+  `b6027bb3761421901d3b09bd52ef1d0348876bf5f4955730f3b292b24e2ca7b8`
+  i integralność OK. Zimne pliki własnego PG zachowano przed kolejnym recovery;
+  nie oznacza to zaliczenia restore. Bez diagnozy sprzętu i globalnych napraw.
+- **Granice:** ten odbiór dotyczy minimalnego własnego przepływu, nie pełnych
+  sześciu domen APK, WF01 rejestracja/reset, E4 lost-ACK, konflikt/recovery,
+  community/rankingu/Nemesis/E9, realnego Google, wydania ani zamrożonych
+  Room23/receipt119. `release_authorized=false` pozostaje obowiązujące.
+  Nowe zakresy dostają osobne receipts. Sprawdzony pin źródeł
+  `2100335fcc5e706866874b8263f2cd18cd2d7dac` zabezpieczono normalnym pushem
+  na tę samą `codex/devops-demo-native`, bez PR i bez zmiany main; jest to
+  backup WIP, nie zielone CI ani końcowa publikacja całej integracji.
+
+Kontynuacja O2-073 — **funkcjonalny WF01 i izolacja własnego pomocnika**:
+
+- Źródła profilu providera i świadka Room27 zabezpieczono normalnym pushem
+  `ee7d2da2db6fc5bca1d9dacd5b1bbca4281030d7` na tę samą
+  `codex/devops-demo-native`, bez PR i bez zmiany main. Profil jest jawnie
+  opt-in, domyślny realm pozostaje zamknięty. Osobne niezależne odbiory źródeł
+  profilu, obserwatora i powiązania konfiguracji nie wykazały P1/P2 w tych
+  zakresach. Nie oznacza to pełnego odbioru bezpieczeństwa providera.
+- Na generacji `86966bd3-7880-422f-810c-82222b20d173` wykonano rzeczywistą
+  samodzielną rejestrację nowego syntetycznego użytkownika, wiadomość SMTP,
+  link w Chrome, wymagane pierwsze hasło, Code/S256, bootstrap i osobny
+  PULL/apply. Wpis E2 20 g dał ACK i 89,4 kcal w PG; drugi wpis 89 kcal
+  pozostaje świadomie lokalnym legacy intentem. Lokalny dziennik ma 178,4 kcal.
+  Reset wiadomością, odmowa starego hasła i świeży login nowym zachowały
+  subject, konto PG oraz całe lokalne meal/item/outbox wszystkich ownerów.
+  Pozytywny receipt SHA256
+  `91cfe9d52adadad4be6ba4f286dc239aafa0739c026fd894e53e8753361f6bd7`;
+  niezależny odbiór koordynatora 39 kontroli ma SHA256
+  `d007c0a354e5dfa8cd859eebf00e530337a702d0dc29d4ebad040bb69a83b05a`.
+- Osobne negatywne próby: nieistniejący adres otrzymał neutralny tekst bez
+  użytkownika lub wiadomości; wykorzystany link odrzucono przed upływem
+  ważności, a nowy niewykorzystany link po rzeczywistym oczekiwaniu ponad
+  pięciu minut. Jawny gate aplikacji zatrzymał akcję loginu lokalnie; przycisk
+  pozostał enabled, nie twierdzimy jego wyłączenia. Dziennik i kolejka
+  przetrwały zwykły restart; read-only Room zachował dokładnie 6 meals,
+  6 items i 7 outbox trzech ownerów. Nie jest to jeszcze próba fizycznej
+  niedostępności providera. Końcowy świeży login aktualnym hasłem po drugiej
+  próbie resetu pozostaje do wykonania po nowej granicy dostępu.
+- Przy zatrzymanym własnym SMTP nie dostarczono wiadomości, konto i dane PG
+  pozostały identyczne. Publiczny formularz pokazał ten sam ogólny tekst
+  co po sukcesie; `delivery_error_visible=false`, bez kwalifikowania UX
+  sygnalizacji awarii lub pełnego WF01 jako PASS. Po przywróceniu tej samej
+  bazy rzeczywiste ponowienie dało liczbę wiadomości 5 → 5 → 6. Neutralny
+  receipt SHA256
+  `0896ac4b5fbab28bd2f7a3c903df21bef55f11443591ecbedfa423cb54655169`.
+- **Otwarty P2:** rzeczywista powtórna rejestracja pokazała „E-mail już istnieje.”,
+  `FAIL_PUBLIC_ACCOUNT_ENUMERATION`; nie utworzyła drugiego konta. Decyzja
+  koordynatora: bez własnego FormAction/Auth SPI, bez osłabienia unikalności
+  i bez samego maskowania tekstu. Wynik anti-enum pozostaje FAIL/OPEN,
+  `full_security=false`, `public_release=false`, `release_authorized=false`.
+  Funkcjonalne dowody i ograniczenie dostępu pomocnika nie naprawiają P2.
+- Pomiar przed guardem potwierdził rzeczywisty peer hosta 172.16.0.2 oraz
+  127.0.0.1, a Chrome przez własny ADB reverse — 127.0.0.1. Sockety należą
+  do potomnego interpretera gateway, nie samego launchera. Historyczny pomiar
+  SHA256 `727050d996571b042953d8432414bdd5f77b0decde4c878bd44506eb6f9f9711`
+  ma ograniczony zakres; nie dopisujemy mu brakującego historycznego birth
+  ADB ani dowodu całej ścieżki APK. Bieżący odczyt własnych portów potwierdził
+  loopback-only PG, Keycloak i Mailpit; management port nie nasłuchiwał.
+- Na jawne zlecenie koordynatora dodano wąski guard `gateway.py`: dokładny
+  loopback i wybrany host na podstawie rzeczywistego ASGI client, przed
+  receive/API/httpx, także dla WebSocket. `proxy_headers=False`; tylko
+  wewnętrzny lifespan ma wyjątek. Brak globalnej zapory, nowego logowania,
+  zdalnego forwardera lub zmian Androida/backendu/kontraktów. Autor zaliczył
+  132 nowe przypadki i jeden istniejący test proxy; Ruff i diff-check PASS.
+  Dwie mutacje wyłącznie w pamięci prawidłowo obaliły testy. Sam ten wynik
+  jednostkowy nie kwalifikuje jeszcze nowej generacji działającego serwera.
+  Osobny łączny zakres guard + istniejący Native lifecycle zaliczył
+  168 przypadków bez błędów i pominięć; powtórzenia nie są nowymi testami.
+  E0 na osobnym istniejącym interpreterze kontraktów PASS; brakującego PyYAML
+  nie doinstalowywano do przypiętego środowiska działającego backendu.
+- Przed planowanym restartem zachowano prywatne zrzuty obu baz, konfiguracje
+  i stary binding. Sześć pierwotnych receipts oraz dane WF01 pozostały
+  identyczne. Receipt zachowania stanu SHA256
+  `16caf968bf90b53c5e9a15c347722f9e2bc03e4bdc0f18a7b722a80f1f985107`.
+  Odczyt listy archiwum nie jest odtworzeniem; `restore=NOT_RUN`.
+  Następny krok: jawny restart/rekwalifikacja na nowym pinie,
+  rzeczywiste host/Chrome/APK i odmowa niewymienionego peer, potem pozostałe
+  negatywy, APK lost-ACK/retry i osiągalne rozszerzone przepływy. Historia
+  powyższych prób pozostaje na swoim źródle i generacji. Jeden spójny PR,
+  kontrole końcowe oraz merge/main CI pozostają u koordynatora.
+
+Aktualizacja O2-073 — **guard i rzeczywisty powrót logowania odebrane lokalnie**:
+
+- Kod guardu i regresje zapisano na
+  `8638dbcead2b97ac915ae676b85dc99e3ac551e7`. Niezależny przegląd źródła
+  nie znalazł nowych P1/P2; 17 własnych grup asercji potwierdziło odmowę
+  przed odczytem path/headers/body i wywołaniem backendu/proxy. Powtórzone
+  przypadki autora pozostają tymi samymi testami. Review SHA256
+  `0a72c5dc1254f5db5240e99e4d85445f90844a143b51c1cc16ce8eab5e88db2d`.
+- Wykonano kontrolowany down/up na tym pinie, bez init/restore. Generacja
+  `8fa21372-2c33-43df-9046-daeb47de8cfb` ma ten sam CA i descriptor profilu.
+  Rzeczywisty host i Chrome/R2 przeszły HTTPS; zapisano bezpieczne tuple,
+  listener/birth/executable ADB5067, dokładny AVD/serial i własną lease.
+  Rzeczywisty nieallowlistowany lokalny peer 127.0.0.2 otrzymał 403/no-store
+  na API oraz token path mimo sfałszowanych nagłówków. Klient zadeklarował
+  1 MiB body, wysłał zero jego bajtów i dostał pustą odmowę bez oczekiwania.
+  To nie test klienta LAN; WebSocket ma osobny jednostkowy dowód ASGI.
+  PG/KC/Mailpit pozostają loopback-only, bez nowego zdalnego forwardera.
+  Receipt rzeczywistego smoke SHA256
+  `89dd73ec5d7227cdff4d44a97f8fdc9209ea0a9990d9e2e9e1cb9355f9027600`.
+- Po guardzie prawdziwy świeży formularz przyjął aktualne hasło z drugiego
+  resetu; Code/S256 zakończył się dostępną sesją APK także po restarcie.
+  Pełne meal/item/outbox wszystkich ownerów i dane PG pozostały identyczne.
+  Osobny addendum SHA256
+  `c779a9ff94d42dca2653a9c405daac223a125ceb276bc5f24874233ce8d64ad6`
+  domyka wcześniejsze pending aktualnego hasła, bez przepisywania receipts.
+- Następnie rzeczywiście zatrzymano wyłącznie własny Native. Przy dozwolonej
+  sieci APK pokazał błąd rozpoczęcia loginu; dziennik 178,4 kcal, kolejka
+  i wszystkie lokalne dane pozostały. Po zwykłym up i rzeczywistym ponowieniu
+  Code/S256 wróciła dostępna sesja tego samego konta. Nowa generacja
+  `afda5269-20a6-468d-ac3e-be8edf679ef1` zachowuje ten sam pin, konfigurację,
+  stan i epokę. Pełne porównanie przed/awaria/po ponowieniu: 6 meals,
+  6 items, 7 outbox trzech ownerów identyczne; PG nadal 1 meal/1 item/1 receipt
+  tego konta. Receipt SHA256
+  `01a1197c8e17796b3f5c868d212cfdc56b04a7bfd1fc3bc46758f403825fca13`.
+- Koordynator przekazał potwierdzenie właściciela: oba wcześniejsze restarty
+  hosta były wymuszone ręcznie. Jest to przypisanie operatorowi, bez diagnozy
+  sprzętu lub aplikacji; historyczne ograniczone dowody recovery pozostają.
+  Anti-enum P2 nadal FAIL/OPEN, pełne bezpieczeństwo i publiczne wydanie
+  niezaliczone. Kolejny zakres to rzeczywisty APK lost-ACK/retry i osobny PULL,
+  następnie osiągalne przepływy rozszerzone. Bez checkpointowego PR.
+
+Aktualizacja O2-073 — **wykryty rzeczywisty brak startu obserwatorów APK**:
+
+- Pierwszy trial E4 `62280d57-5a4e-48e2-a606-1681afdc641a` zakończył się
+  rzeczywistym FAIL fazy isolate: `Runtime admission is not connected`.
+  Nie utworzono nowego posiłku ani przygotowanego batcha; tego trial nie
+  kontynuujemy. Historyczny APK 1051, jego test APK i surowy FAIL zachowano.
+- Przyczyna w Application: nieskończony `observeMotivationContext()` blokował
+  następne `runtime.observe`. Poprawka zachowuje odroczony Main, inicjalizuje
+  prawdziwy runtime przed startem sesji i uruchamia obserwację motivation
+  jako osobne dziecko. Bez ręcznego attach, zmiany gate, migracji lub sesji.
+- Nowy test zimnego procesu odczytuje wyłącznie istniejący admission flow
+  i czeka na dokładnie dwie prawdziwe subskrypcje runtime. Nie uruchamia
+  runtime getterem, ekranem, workerem ani manual sync. Build validation
+  app/test, kompilacja wspólnego Debug i lint PASS (0 errors, 8 warnings,
+  2 information). Nowy znacznik artefaktu: 0.8.41 / validation 1052.
+- Rzeczywiste cold CONTROL, ctor-only EXPECTED_FAIL i GREEN, pomiary
+  podpisanych APK oraz zachowanie danych przy upgrade-r są jeszcze pending.
+  Sam build nie zalicza E4. Nowy trial dopiero na odebranym nowym APK;
+  backend pozostaje osobnym aktorem na pinie 8638 / generacji afda.
+
+Kontynuacja O2-073 — **nowy aktor APK i rzeczywiste kontrole zimnego startu**:
+
+- Źródła zamrożono na `d19f85552f3f29fe3da4205d0c63b8e9372cafd0`, Android tree
+  `82daf6fee0f84c98e7b3c8f53584fe291f12e499`; po commicie assemble PASS.
+  Manifest zapisuje SHA faktycznie kompilowanych plików i blobów Git oraz
+  jawną normalizację CRLF. App 0.8.41.validation / 1052 ma SHA256
+  `116a546f6677716131f003111c67dff3ef91e6006f704e6fcb0df146ba99abba`,
+  test APK `3009d8e7eafbee3ebc50fe27774e5da9886979e5d62e671905b0734a799c345b`.
+- Ten sam nowy cold test dał osobno: stary app 1051 EXPECTED_FAIL/count0,
+  prywatny pojedynczy mutant early-ctor+sequential EXPECTED_FAIL/count0,
+  właściwy GREEN 1052 PASS/count2. Każdy ma rzeczywisty nowy PID po force-stop,
+  odczyt zainstalowanych base.apk i brak UI/manual sync/gettera runtime.
+  Oba negatywy pozostają FAIL; nie dodajemy ich do PASS. Osobno trzy istniejące
+  przypadki cancellation oraz motivation/private-context invalidation PASS.
+- Użyto wyłącznie update-r, tego samego podpisu, bez downgrade/clear/uninstall.
+  Historyczne artefakty, surowe FAIL i pełne prywatne kopie danych zachowano.
+  Po negatywach wszystkie 57 tabel Room identyczne; po GREEN 56/57 identyczne.
+  Zmieniła się tylko koordynacja `sync_work_state` (aktualna lease/cycle,
+  liczniki i status login). Faktyczne outbox, 6 meals/6 items/7 outbox,
+  trzech ownerów, cele, profil i wagi identyczne; Room nadal 27, bez migracji.
+- Pakiet do niezależnego odbioru ma SHA256
+  `01df05be09f818e7f8940b632bffdc48272ee09ed1a03b6b56106abd38a0f174`.
+  To jeszcze nie E4 PASS: następny krok po odbiorze to zwykłe odnowienie sesji
+  i nowy trial na faktycznie zainstalowanym 1052. Backend nadal 8638/afda;
+  anti-enum P2 pozostaje OPEN. Bez nowego PR, merge lub odbioru wydania.
+
+Kontynuacja O2-073 — **retencja, zwykły ACK/PULL i ograniczony core replay**:
+
+- 29.10.2026, ten sam duży etap na `codex/devops-demo-native`. Root przyjął
+  źródła i rzeczywiste kontrole aktora 1052 oraz neutralne addendum zachowania
+  danych; niezależnie przeliczono 228/228 tabelowych odcisków czterech kopii.
+  Trwałe outbox i wcześniejsze kompletne partie zachowały identyczne bajty.
+  Addendum SHA256
+  `7ee004cfca06a017d933b51d3274928d2ff926387caa08d52307db24cbd6a1a6`.
+- Pierwsza dalsza próba po prepare początkowo odmówiła C0 na formacie adresu
+  PG z `/32`; odebrano wąską metrologię `host()`, po czym hold odmówił przed
+  HTTP z powodu braku świeżej sesji. Oba wyniki pozostają zachowane; pending
+  nie usunięto ani nie podniesiono go do wyniku replay. Następny zwykły PULL ujawnił wypełniony
+  limit przez wygasłe techniczne kopie. Po bezpośredniej zgodzie właściciela
+  wykonano dokładnie jeden istniejący bounded worker `once`: 14 syntetycznych
+  właścicieli, 0 błędów, 29 sesji i 41 pozycji usuniętych, pozostałe kategorie
+  0, `pending=false`. Osobny pomiar przed/po wykazał zmianę tylko tych dwóch
+  tabel; pozostałe 90 tabel, epoka i schemat identyczne. Root niezależnie
+  odebrał ten wąski zakres; zgoda jednorazowa została wykorzystana.
+- Po rzeczywistym ponownym Code/S256 aplikacja dostarczyła zachowaną partię
+  zwykłą ścieżką produkcyjną: identyczny zapisany HTTP body, batch
+  pending/attempted0 → complete/attempted1, outbox `acked`, Meal revision1
+  i jeden zgodny accepted receipt w PG. Osobny przyrostowy PULL po PUSH
+  zawierał ten sam nowy Meal; 1 strona/1 rekord, zastosowanie 3 rekordów,
+  0 wstrzymanych. Lokalnie pozostało 223,1 kcal, w tym świadomie nieprzeniesiony
+  starszy wpis 89 kcal; serwer miał 134,1 kcal. To nie nowy pełny snapshot,
+  mimo etykiety „pełna kopia” w UI. Dwa późniejsze puste odczyty po restarcie
+  i nieukończony dodatkowy ręczny PULL mają osobne wyniki.
+- Root odebrał zwykły zapis i osobny INCREMENTAL, bez P1/P2 w tym ograniczonym
+  zakresie. Receipt SHA256
+  `c0abf11707724301f5645aca02f95ea9cfcc241547b404f34d22b449b351ca10`.
+  Neutralny pakiet tego odbioru ma SHA256
+  `efe3e0915b71c4bf5f00fd8ced5d43bce70080746e56b43af815eda12e169a0c`.
+  Wiąże faktycznie zainstalowane 1052, źródła, trzy kopie Room, zamrożone
+  bajty partii oraz ograniczone projekcje PG/stron. Opaque checkpoint i context
+  występują wyłącznie jako odciski; prywatne dane i archiwa pozostają poza Git.
+  Pomiar PM wykonano później niż zwykły cykl. Powiązanie znormalizowanego hash
+  operacji częściowo opiera się na źródle i projekcji, bez ponownego parsowania
+  prywatnego body.
+- W nowej spójnej próbie autor uzyskał rzeczywiste isolate/prepare, nowy Meal
+  z UI, C0 → HTTP200/zweryfikowany ACK zatrzymany przed Room → niezależny C1
+  → rzeczywisty kill własnego procesu przed terminem → nowy proces i identyczne
+  ponowienie → `already_applied`/revision1/trwały ACK → C2. Oryginalny
+  niezmieniony compare zwrócił `server_observations=PASS`,
+  `full_user_flow=false`; dopiero potem wykonano jawny osobny release.
+  Świadek używał odebranej metrologii SQL `host(inet_server_addr())`, z
+  osobnymi odciskami źródła/planu/wykonanego SQL i bez zmiany checkera.
+  Root przyjął ograniczony stan Room i serwera oraz addendum, 32/32 kontroli;
+  receipt SHA256
+  `a7559c68d949f7f71613637075b639a96e8eb459ea28797331c1af8c99ad4984`.
+  Nowy PID i późniejszy start replay były asercjami rzeczywistego drivera,
+  lecz ich wartości nie trafiły do osobnego receiptu operatora. SIGKILL
+  dokumentuje źródło operatora, bez niezależnego pomiaru wykonanych argv.
+  Zakończenie syscall i brak starego PID mają odrębny pomiar. Te granice
+  historycznego bindingu pozostają jawne. Nowa próba końcowego pinu zapisze
+  neutralne dane procesu i wywołań przy wykonaniu, bez zmiany reguł.
+  Przyjęty w tym zakresie pakiet ograniczonego core ma SHA256
+  `c4e4a2ec19bad8a034cff25fd037733e4e29c1575fe0b4c119e5590651d33b2e`.
+- Dwa zwykłe cykle `PULL_before → PUSH → PULL_after` wypełniły następnie pulę
+  czterech jeszcze ważnych sesji odczytu. To inna sytuacja niż wcześniejsze
+  wygasłe wiersze i nie jest dowodem niekontrolowanej pętli. Samo osiągnięcie
+  TTL nie usuwa wierszy. Dalsze źródłowe prace nad istniejącą retencją oraz
+  ograniczonym fastpath są wydzielone do jednego wykonawcy i niezależnego
+  odbioru; bieżący runtime pozostaje bez podmiany źródeł.
+  R1 `3a50f4028f3ba4b3babe85618ff972ee9c0c1202` ma Root SOURCE PASS
+  (`d224329f27424eef65ebe7bd1065c98ac5b49fd6980864700e196aaa4fd46a8b`),
+  bez zaliczenia runtime, CI i D2. Pierwotny backend `2fa7` otrzymał NEEDS_FIX:
+  odczyt E9 wymagał strumieniowania przed wykonaniem SQL, a dwa równoczesne
+  odczyty wielostronicowe mogły przekroczyć limit czterech kopii. Oba błędy
+  odtworzono wyłącznie na odseparowanym PostgreSQL. Poprawka `0cb19` ustawia
+  opcję kursora przed SQL oraz wykorzystuje istniejące `app.admit_read_session`
+  z E5 po zamknięciu sondy, przed liczeniem utrwalonych kopii. Małe kompletne
+  odczyty i kontynuacje nie zapisują tego markera; licznik i jego `xmin`,
+  historia, checkpointy, TTL, limit i protokół pozostają bez zmiany.
+- Root odebrał kod `0cb19` i dowody własnego PG: 0 P1/P2, 81 PASS na tym kodzie
+  (58 integracyjnych PG i 23 testy tokenów), w tym trzy istniejące kontrole E5.
+  Testy potwierdzają nazwany kursor i jego zamknięcie oraz oba warianty race:
+  200/503, rzeczywisty błąd `40001`, nowy Session/RR przy retry, najwyżej cztery
+  kopie i brak tokenów w odmowie. Stary zakres 1743 testów jednostkowych
+  pozostaje osobną fazą; nie opisujemy unii jako pełnego ponowienia na `0cb19`.
+  Własny klaster testowy zatrzymano po kwalifikacji z kodem 0; aktywnego Native
+  nie zmieniano. Receipt SHA256
+  `1ad1f1771a0aeac1fa7de5d4d2921bb0edbd1a15ae16e3f41338468749d63be3`.
+  Późniejszy `38ba` zmienia wyłącznie opis wyników; backend jest identyczny.
+  R1, normalizacja adresu PG i poprawki backendu są składane zwykłymi merge
+  w jednym kandydacie `codex/devops-integration-1-0`. Rzeczywisty rollout,
+  nowa spójna próba APK i zdalne CI nadal nie są zaliczone.
+- Core powyżej dotyczy wyłącznie źródła Native `8638dbcead2b97ac915ae676b85dc99e3ac551e7`.
+  Nie zamyka pełnego E4: osobny PULL po C2 i odczyt po restarcie pozostają
+  bramką. Po kwalifikowanym down i integracji poprawek wykonamy nową spójną
+  próbę na końcowym pinie; późniejszego PULL innej generacji nie dopisujemy
+  do starej kohorty. Anti-enum P2 i rozszerzone przepływy pozostają otwarte.
+  Końcowy PR, wymagane CI i odbiór integracyjny są nadal osobnymi krokami.
+
+Kontynuacja O2-073 — **PR193 i poprawki po pierwszym CI**:
+
+- Jeden spójny [PR193](https://github.com/Roseru/aplikacja-mobilna/pull/193)
+  pozostaje draftem. Pełny CI `40965064268` na `805aa2e` zakończył się FAIL:
+  PostgreSQL ma 1428 PASS i jeden FAIL historycznej fixture, Android ma
+  579 PASS i jeden FAIL oczekiwania na dane listy. Pozostałe pięć kontroli
+  przeszło, a bramka prawidłowo odmówiła zaliczenia całości. Tego wyniku
+  nie zastępujemy ponowieniem starego pinu ani sumą zielonych komponentów.
+- Poprawka testów backendu `c2cf88a9` używa przypiętego, opublikowanego
+  algorytmu E4 `83f2feeb` przy przygotowaniu rzeczywistego schematu 0011.
+  Dzisiejszy czytnik wymaga funkcji admission dodanej w E5; nie dodano do
+  produkcji obejścia dla starego schematu. Oryginalny nieukończony graf
+  pozostaje niezmieniony, a osobny trzeci graf sprawdza kanoniczne odpowiedzi
+  JSON middle/final. Po upgrade i reupgrade czyta je bieżący kod, po
+  downgrade historyczny E4. Zachowano wszystkie stare asercje całych
+  wierszy, ACL i readiness. Trzy powiązane testy przeszły na własnym PG,
+  który następnie poprawnie zatrzymano. To rzeczywisty przebieg do
+  historycznego aliasu head/0024, bez deklaracji osobnego endpointu 0012
+  lub pomiaru surowych bajtów HTTP. Niezależny odbiór: 0 P1/P2.
+- Poprawka Androida `fd467cc8` dotyczy wyłącznie testu listy racji. Test
+  czeka na pierwszą skomponowaną kartę z tej samej pełnej listy DAO,
+  zanim zacznie przewijanie do racji spoza widoku. Zachowano odtworzenie
+  ilości 0,1, obsługę klawiatury i dowód braku operacji zapisu. Bez sleep,
+  filtrowania katalogu i zmian kodu produkcyjnego. Root oraz niezależny
+  recenzent przyjęli źródło; wykonanie tego testu po poprawce pozostaje
+  bramką nowego CI. Całe drzewo testów Androida zmieniło się, więc nie
+  przypisujemy go wstecz do już zbudowanego APK1052.
+- Obie delty są składane zwykłymi merge do tej samej gałęzi integracji.
+  Wymagamy CI nowego head/base oraz nowego rzeczywistego odbioru Native:
+  kontrolowany stop starym kodem, wznowienie istniejących danych, cztery
+  kwalifikowane procesy, spójna próba E4, osobny PULL i restart APK.
+  Wcześniejszych kohort nie łączymy w nowy dowód. D2/Room27, dalsze ścieżki
+  AI i pełne wydanie 1.0 pozostają oddzielnymi zakresami.
+
 ### O2-074 — PR190: bezpieczne ścieżki źródeł lokalnego pakietu demo
 
 - 29.10.2026, agent 2, tymczasowa koordynacja całości według O2-071.

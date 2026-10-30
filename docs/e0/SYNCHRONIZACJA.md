@@ -47,6 +47,17 @@ Serwer blokuje licznik konta do końca transakcji i razem zapisuje encję, rewiz
 
 Pierwszy snapshot powstaje w repeatable read z granicą H. Odpowiedzi paginują łącznie najwyżej 500 elementów `entities`, `recovery_mappings`, `operation_receipts`; ich porządek i granice są utrwalone. Pełny snapshot zawiera wszystkie żywe encje, bieżącą rewizję osi celu i trwałe mapowania; tombstone’y nie są wymagane, gdy ich szczegóły już usunięto. `operation_receipts` obejmują tylko żądane zachowane potwierdzenia. Po ostatniej stronie `page_token=null`, a `checkpoint` staje się nie-null. Wcześniejsze strony mają `checkpoint=null`. Po ukończeniu klient pobiera zmiany większe niż H. Retencja nie narusza aktywnego snapshotu.
 
+Jeżeli cały odczyt mieści się od razu w jednej stronie (wspólny limit trzech
+tablic oraz budżet bajtów UTF-8), odpowiedź nadal ma ten sam format i podpisy,
+ale nie utrwala grafu sesji potrzebnego tylko kontynuacji. Sam `snapshot_token`
+nie jest poprawnym żądaniem; w tym przypadku nie wydano `page_token`.
+Kolejny incremental i push korzystają z niezależnego checkpointu. Nie zmienia
+to 60-minutowego TTL ani trwałego retry grafów, dla których wydano strony
+kontynuacji. Limit czterech sesji dotyczy tych utrwalonych grafów; kompletny
+jednostronicowy odczyt może zadziałać przy czterech zajętych slotach bez
+zmiany istniejących kopii. Sonda przerywa na pierwszym nadmiarowym elemencie,
+więc odmowa kolejnej materializacji nie tworzy piątego grafu.
+
 Odczyt przyrostowy zamraża H przy pierwszej stronie; dopiero ostatnia wystawia nowy checkpoint. Zegar serwera ocenia wiek poprzedniego ukończonego checkpointu: **dokładnie 30 × 24 h nadal działa**, +1 s daje 410 `sync_cursor_expired`. Token strony nie odnawia tego okresu. Wygasły snapshot daje 410 `snapshot_expired`: zaczynamy pełny odczyt ponownie, zachowując lokalną bazę i outbox.
 
 ## Powrót po 30 dniach a restore

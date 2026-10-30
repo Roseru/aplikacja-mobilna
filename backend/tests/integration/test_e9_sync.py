@@ -1,6 +1,7 @@
 """Capability upgrade preserves the legacy protocol, ACKs and frozen snapshots."""
 
 import pytest
+from sqlalchemy import event
 
 from calorie_app.modules.sync.schemas import PullResponse
 from tests.integration.test_e4_push import operation
@@ -100,3 +101,25 @@ def test_incremental_opt_in_emits_new_e_without_goal_mutation(e7):
     assert page.status_code == 200, page.text
     assert [v["entity_type"] for v in page.json()["entities"]] == ["energy_estimate"]
     assert page.json()["entities"][0] == accepted.json()
+
+
+@pytest.mark.parametrize("limit", [500, 1], ids=["single-page", "durable-fallback"])
+def test_full_energy_payloads_use_a_server_cursor_before_execution(e7, limit):
+    seed(e7)
+    observed = []
+
+    def inspect_cursor(_connection, cursor, statement, _parameters, context, _many):
+        if "SELECT app.e9_entity(id) FROM app.energy_versions" in statement:
+            observed.append((cursor, context.execution_options.get("yield_per")))
+
+    event.listen(e7["api"], "after_cursor_execute", inspect_cursor)
+    try:
+        response = pull(e7, {"limit": limit}, OPT_IN)
+    finally:
+        event.remove(e7["api"], "after_cursor_execute", inspect_cursor)
+    assert response.status_code == 200, response.text
+    assert observed, "The real full-energy payload query must execute"
+    # psycopg creates this named server cursor from pre-execution options.
+    # Result.yield_per() after execute would leave an ordinary buffered cursor.
+    assert all(getattr(cursor, "name", None) and batch == 1 for cursor, batch in observed)
+    assert all(cursor.closed for cursor, _batch in observed)

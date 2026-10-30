@@ -169,6 +169,11 @@ def validate_plan(plan):
 
 def observation_sql(plan, phase):
     plan_hash = validate_plan(plan)
+    return _observation_sql(plan, phase, plan_hash)
+
+
+def _observation_sql(plan, phase, plan_hash):
+    """Internal SQL renderer; callers must qualify their own plan and runtime first."""
     if phase not in {"C0", "C1", "C2"}:
         raise ValueError("Invalid observation phase")
     owner, meal, operation = (plan[k] for k in ("owner_id", "entity_id", "operation_id"))
