@@ -28,6 +28,13 @@ pełne E9, odtwarzanie i warunki wydania mają osobne dowody i bramki
 opisane w dzienniku. Znana granica standardowej rejestracji Keycloak
 pozostaje ograniczeniem kontrolowanego demo.
 
+Przed testem zdjęć przygotuj prywatny katalog z wymaganymi prawami,
+osobny minimalny login workera i zgodny profil oraz pulę MOCK według
+[instrukcji E7](docs/e7/KONFIGURACJA_O3.md#prywatny-mount-i-worker).
+Na Windows katalog zdjęć wymaga własnego chronionego DACL; samo utworzenie
+podfolderu nie spełnia tej kontroli. API pokazuje dostępność dopiero po
+poprawnej konfiguracji.
+
 ## Historia wybranych dostaw Androida
 
 Poniższe wersje i liczby testów opisują ich własne historyczne zakresy.

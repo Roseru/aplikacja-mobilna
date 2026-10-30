@@ -11337,8 +11337,14 @@ Kontynuacja O2-073 — **PR193 scalony, rzeczywista ścieżka synchronizacji ode
   pin `9e92639`, czeka też na caller Deferred w tym samym limicie 3000 ms.
   Nie zmienia kodu produkcyjnego, nie anuluje zadania z testu i zachowuje
   wszystkie asercje I/O oraz ACK. Root i niezależny recenzent przyjęli
-  źródło z 0 P1/P2; nowy CI tego pina pozostaje bramką, bez ponawiania
-  starego main i bez przepisania jego FAIL na PASS.
+  źródło z 0 P1/P2. Nowy pełny CI `40979802335` przeszedł 8/8 kontroli,
+  w tym 580/580 urządzenia i poprawiony przypadek oraz 1429 PG;
+  dwanaście SKIP infra zachowano. PR194 scalono zwykłym merge `3385cc12`.
+  Jego tree jest identyczny ze sprawdzonym merge PR. Oddzielny push CI
+  nowego main `40982678468` także przeszedł FULL 8/8: 580 urządzenia,
+  1429 PG i pozostałe wymagane kontrole; dwanaście SKIP infra pozostaje
+  pominięciami. Root zweryfikował aktualny ref i wszystkie osiem checków
+  dokładnego `3385cc12`. Starego FAIL nie przepisano i nie ponawiano.
 - Własny runtime wznowiono z zachowaniem danych, kluczy i epoki. Pełny
   rzeczywisty okres blokady uwierzytelniania miał 421,559 s; retencja ruszyła
   przed API. Porównanie 92 tabel potwierdziło niezmienność 90 oraz wyłącznie
@@ -11374,6 +11380,37 @@ Kontynuacja O2-073 — **PR193 scalony, rzeczywista ścieżka synchronizacji ode
   potem pozostałe możliwe testy z własnych zasobów. Nie podmieniamy źródeł
   działającej generacji tylko dlatego, że main dostał nowy commit merge.
 
+Kontynuacja O2-073 — **zdjęcie MOCK i naprawa projekcji czasu posiłku**:
+
+- Rzeczywisty przepływ galerii na własnym APK/API potwierdził niewybraną
+  domyślnie zgodę, jawne wysłanie jednego zdjęcia, HTTP 202 oraz pojedynczy
+  przebieg oryginalnego workera MOCK zakończony kodem 0. Po jawnym
+  zatwierdzeniu klient utworzył posiłek 120 g × 89 kcal/100 g = 106,8 kcal;
+  zwykły push otrzymał ACK rewizji 1. Niezależne PG i Room potwierdziły
+  jeden nowy wpis oraz zachowanie wcześniejszych danych. To wynik
+  technicznego mocka, bez odbioru rozpoznawania obrazu przez Gemini.
+- Późniejsza kompletna kopia nie zastosowała się lokalnie. Odczyt
+  zamrożonego Room wykazał jedyną różnicę: `occurred_at` miało zapis
+  `.630Z` lokalnie i `.630000Z` na serwerze. Ten sam instant powodował
+  fałszywy konflikt przy tej samej rewizji. Nie był to błąd logowania
+  ani potwierdzony błąd treści propozycji AI.
+- Poprawka klienta `22e7d8f8`, 0.8.42/code53/validation1053, porównuje
+  semantycznie wyłącznie ten czas. Pozostała treść, kontekst, rewizje
+  i ochrona usunięć pozostają ścisłe; literalne request/ACK nie zmieniają się.
+  Usunięto też dwa mylące podpisy lokalnego zdjęcia, które po przyjęciu
+  analizy nadal sugerowały brak wysłania. Room27 i migracje pozostają.
+- Niezależny przegląd źródła: 0 P1/P2. Nowa regresja rzeczywiście wykryła
+  poprzedni błąd na niezmienionym APK 1052. Na 1053 przeszło 11 testów JVM
+  i 9 dotkniętych testów urządzenia, w tym bieżący/stary lease i zachowanie
+  saved run/pages/frozen ACK. Testy używają osobnej bazy; nie zastępują
+  odbioru rzeczywistego dziennika.
+- Jawny publiczny przycisk uzupełnienia dziennika zastosował następnie
+  zachowaną kopię bez HTTP i bez nowego wywołania AI. Stary run i wszystkie
+  jego strony pozostały identyczne; nowa projekcja przyjęła kanoniczny zapis
+  czasu serwera. Poprzednie wpisy i ACK oraz lokalne 89 kcal zachowano.
+  Nie deklarujemy automatycznego zastosowania przy starcie. Osobny PULL,
+  restart offline i końcowy odbiór tej naprawy pozostają w toku.
+
 ### O2-074 — PR190: bezpieczne ścieżki źródeł lokalnego pakietu demo
 
 - 29.10.2026, agent 2, tymczasowa koordynacja całości według O2-071.
@@ -11404,3 +11441,7 @@ Kontynuacja O2-073 — **PR193 scalony, rzeczywista ścieżka synchronizacji ode
   nadal wymagane. `PREPARATION_ONLY`, `sealed=false` oraz
   `runtime_authorized=false` pozostają; pakiet nie instaluje i nie uruchamia
   starego demo, nie dostarcza jego prywatnych kluczy ani nie zalicza 1.0.
+- Aktualizacja 30.10: PR190 jest już scalony; GitHub potwierdza zamknięty
+  PR z head `43e23cf2`. Powyższy plan publikacji opisuje wcześniejszy stan.
+  Przygotowawczy zakres pakietu i jego granice nie stają się przez merge
+  odbiorem prywatnego środowiska ani wydania.
