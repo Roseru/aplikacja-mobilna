@@ -11588,6 +11588,57 @@ Kontynuacja O2-073 — **zdjęcie MOCK i naprawa projekcji czasu posiłku**:
   przekazuje schemat. Przygotowanie źródeł nie oznacza jeszcze wykonanego RED,
   GREEN, builda, nowego APK lub D2. Ich wykonanie wymaga uzgodnionego okna;
   obecne dane/ACK i odebrany APK1055 pozostają osobnymi dowodami.
+
+- Wykonano następnie rzeczywisty native RED publicznego ViewModel na
+  niezmienionym zainstalowanym APK1055/`817f3e21`: po kompletnym zaakceptowanym
+  ENERGY_V1 proof test zakończył się dokładnie `UNVERIFIED/proof=null`,
+  1 FAIL/3,154s. Pierwszy wcześniejszy build testu miał błąd odczytu
+  EnergyVersion.entityId; poprawiono go na id w test-only `1acec94`.
+  Ten błąd kompilacji jest zachowany i nie jest liczony jako runtime RED.
+  RED receipt SHA256
+  `f267f6338d30ff943968f1ab017b5d333d1ce9e823c95f02daf531c203884663`.
+- Przegląd ujawnił pokrewny brak w LegacyImportStore.preview/resume:
+  pełny ENERGY_V1 oraz przyrostowy active run były czytane jak legacy FULL.
+  Pin `0d025e7645d53fc8af497574ed00a5251f820683` dodaje wąski entity-only
+  ServerDiaryProof i jawne przekazanie schema. Zastosowany wynik delty jest
+  związany z current application/run/context/scope/checkpoint/timeline/limit;
+  sześć domen ma current row.runId, a niezmienne E własne historyczne
+  sourceRun/application. Bez rekonstrukcji dawnego base z końcowych tabel,
+  fabrykowania stron/receipt/mapping lub nieograniczonego chodzenia historii.
+  Oba źródła przeszły niezależne review bez pozostawionego P1/P2.
+- Dwie nowe regresje importu rzeczywiście odtworzyły odmowę starej produkcji:
+  2 FAIL/6,092s w LegacyImportStore.preview, pełny i przyrostowy proof.
+  Testowe kopie RED jawnie pomijają nowo dodany parametr schema; nie
+  deklarujemy identycznego wywołania konstruktora RED i GREEN. Źródła i logi
+  porażek zachowano. Receipt SHA256
+  `6e2f91ee3e13193939c9a259a461a147790cf7789258fd5dc69939fb8ed61a1f`.
+- Normalnie zintegrowany build source
+  `4cf9bd11819d4470f83bb489e031b219bce1ab15`: validation1056/0.8.45,
+  niezmieniony Room27. Oba APK build PASS/3m11s, ten sam signer co1055.
+  App SHA256 `73edcf983af64653f16d46fd6dbc33475daa35c0d644a4ea538894e039bc7227`;
+  prywatny test APK `858d9289f92275b7bb73dbb700d52c9c4ff214d96f1b62f3b4d5e3c672e95c41`.
+  Zwykła aktualizacja1055→1056 zachowała Room tar identyczny bajtowo:
+  `a0bd607dfcad31cff09f11c015d75150f28bba26baf95173cfa35dce30d0e1a0`.
+  Bez odinstalowania, clear/reset lub zmiany schematu.
+- Native na zainstalowanym1056: **19 PASS/0 FAIL/0 SKIP/27,222s**,
+  siedem nowych metod oraz dwanaście dotychczasowych kompatybilności
+  LegacyImportStorageTest/ImportViewModelTest. Pełna/przyrostowa kopia,
+  wspólny UUID celu/E, publiczne preview/approve/proof/decision/finish,
+  import/niezmienne body/ACK, reopen i faktyczna kompaktacja oraz odmowy
+  niepełnego, unapplied, blocked, wrong-limit, stale shadow i foreign owner
+  zostały sprawdzone. To prawdziwy Room i produkcyjne callbacki/store,
+  lecz syntetyczne wire/odpowiedzi ACK; nie dowód serwerowego przyjęcia.
+  Receipt SHA256
+  `8fe9892b846a79f576565375e12610be18be74cd3176be95bc2fd65dbdf2d5cd`.
+- Po native57 z58 tabel rzeczywistego dziennika, wraz z rowid, pozostało
+  identycznych. Zmienił się tylko sync_work_state; integrity/FK PASS.
+  Prywatny comparison SHA256
+  `5bdbdbce501df2b8d0b0719678a101486d9caea7206d48a3e8fefa48bd3d57d2`.
+  CI `41229509318` 8/8 oraz main `41229364491` są zielone dla starszych
+  odpowiednio e609e7e/922e32b. Nowe źródło wymaga własnego FULL CI przed
+  merge. Rzeczywisty readback/MRE/odtwarzanie D2 i końcowa paczka mają
+  odrębne odbiory; powyższe19 nie zalicza ich ani rzeczywistego Gemini.
+
 ### O3-121 — PR197: rejestracja po dowodzie posiadania e-mail
 
 - 31.10.2026, agent 3, na zlecenie właściciela pełnego lokalnego dokończenia.

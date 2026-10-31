@@ -18,8 +18,17 @@ Publiczny ekran uzgadniania otrzymuje teraz ten sam schemat osi E co transport
 aplikacji. Pełny dowód ENERGY_V1 z celem i E może trafić do porównania, świadomej
 decyzji i zakończenia planu; wcześniej jego zapisane strony były odrzucane przez
 czytnik ViewModel bez tego schematu. Bez zmiany reguł recovery, Room27 i ACK.
-Regresja publicznego ViewModel używa jawnie syntetycznego proof; wykonanie testu
-oraz późniejszy odbiór rzeczywistego D2 są osobnymi krokami.
+Regresja publicznego ViewModel używa jawnie syntetycznego proof. Lokalnie
+wykonano rzeczywisty RED starej ścieżki i 19 native PASS po poprawkach,
+w tym siedem nowych regresji oraz dwanaście dotychczasowych przypadków.
+Odbiór rzeczywistego D2 pozostaje osobnym krokiem.
+
+Import gościa i starszych danych korzysta także z właściwego zakresu pełnej
+lub zastosowanej przyrostowej kopii ENERGY_V1. Odczytuje zwalidowany wynik
+aktualnej aplikacji danych wraz z jej rzeczywistymi świadkami, zamiast
+ponownie nakładać deltę na końcowy stan albo wymyślać brakujące stare strony.
+Regresje obejmują ponowne otwarcie bazy i rzeczywiste kompaktowanie archiwum;
+błędny, niepełny lub obcy dowód nadal nie tworzy planu ani kolejki.
 
 Historyczna integracja O1 na O2-B/Room20 obejmuje pierwszy cel pustego konta, lokalne
 dokończenie kopii recovery i poprawiony driver E4. [Stan odbioru](SESJA_SYNCHRONIZACJI.md)
