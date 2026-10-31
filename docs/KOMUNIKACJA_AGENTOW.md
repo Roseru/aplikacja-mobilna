@@ -11573,6 +11573,21 @@ Kontynuacja O2-073 — **zdjęcie MOCK i naprawa projekcji czasu posiłku**:
   Surowe strony E zostały już skompaktowane i nie udajemy ich obecności.
   To odbiór lokalnego A2/update/PULL/offline; aktualny zdalny FULL CI,
   przyjęcie E9 w UI, rzeczywisty D2 oraz Gemini mają odrębne zakresy.
+- Dalszy przegląd publicznego recovery UI ujawnił brak energySchema w
+  ImportViewModel, choć rzeczywisty transport zapisywał poprawny ENERGY_V1 proof.
+  Czytnik modelu odrzucał taki zakres i pokazywał UNVERIFIED/brak proofRunId;
+  decyzja i finish nie mogły użyć tej kopii. MainActivity przekazuje teraz
+  app.energySchema do tego samego ReconciliationStore modelu. Parametr jest
+  jawny we wszystkich czterech miejscach konstrukcji; dotychczasowe fixture
+  legacy przekazują null, regresja osi E przekazuje jej schemat. Nie zmieniono
+  decyzji, transportu, żadnej migracji, raw wire, kolejki ani reguł ACK.
+- Source 0.8.45/code56/validation1056 dodaje regresję publicznych callbacków
+  preview/approve/downloadProof/acceptServer/finish na realnym Room i jawnie
+  syntetycznej pełnej kopii celu oraz E o wspólnym UUID. Oddzielny test-only
+  pin używa starego pięcioargumentowego API; wersja po poprawce jawnie
+  przekazuje schemat. Przygotowanie źródeł nie oznacza jeszcze wykonanego RED,
+  GREEN, builda, nowego APK lub D2. Ich wykonanie wymaga uzgodnionego okna;
+  obecne dane/ACK i odebrany APK1055 pozostają osobnymi dowodami.
 ### O3-121 — PR197: rejestracja po dowodzie posiadania e-mail
 
 - 31.10.2026, agent 3, na zlecenie właściciela pełnego lokalnego dokończenia.

@@ -1,6 +1,6 @@
 # Android — Racje i kalorie
 
-Bieżące źródło: **0.8.44 / code55 / Room27**, wariant validation code1055.
+Bieżące źródło: **0.8.45 / code56 / Room27**, wariant validation code1056.
 Instrukcja lokalnego uruchomienia jest w rozdziale
 [Uruchomienie w Android Studio](#uruchomienie-w-android-studio).
 Własny backend do pełnej ścieżki opisuje
@@ -13,6 +13,13 @@ celu, z którego powstało. Pełna kopia i delta nie traktują tej pary jako
 duplikatu, a wcześniejsze ograniczenia UUID sześciu domen pozostają. Starszy
 indeks zapisanej częściowej kopii Room27 jest odczytywany zgodnie z jej
 oryginalnymi stronami; nie wymaga resetu, migracji ani przepisania ACK/kursorów.
+
+Publiczny ekran uzgadniania otrzymuje teraz ten sam schemat osi E co transport
+aplikacji. Pełny dowód ENERGY_V1 z celem i E może trafić do porównania, świadomej
+decyzji i zakończenia planu; wcześniej jego zapisane strony były odrzucane przez
+czytnik ViewModel bez tego schematu. Bez zmiany reguł recovery, Room27 i ACK.
+Regresja publicznego ViewModel używa jawnie syntetycznego proof; wykonanie testu
+oraz późniejszy odbiór rzeczywistego D2 są osobnymi krokami.
 
 Historyczna integracja O1 na O2-B/Room20 obejmuje pierwszy cel pustego konta, lokalne
 dokończenie kopii recovery i poprawiony driver E4. [Stan odbioru](SESJA_SYNCHRONIZACJI.md)

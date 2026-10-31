@@ -62,7 +62,7 @@ class ImportEnergyRecoveryViewModelTest {
             val factory = object : ViewModelProvider.Factory {
                 @Suppress("UNCHECKED_CAST")
                 override fun <T : ViewModel> create(modelClass: Class<T>): T =
-                    ImportViewModel(db, schema, lease, executor, SavedStateHandle()) as T
+                    ImportViewModel(db, schema, lease, executor, SavedStateHandle(), energySchema = energy) as T
             }
             value = ViewModelProvider(models, factory)[ImportViewModel::class.java]
         }
