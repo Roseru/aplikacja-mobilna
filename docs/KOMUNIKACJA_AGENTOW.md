@@ -11612,3 +11612,64 @@ Kontynuacja O2-073 — **zdjęcie MOCK i naprawa projekcji czasu posiłku**:
   brak/błędny czas, przyszły/przeterminowany sukces i sukces sprzed startu
   procesu. Wymagany nowy bind/profile/status operatora; poprzedni wynik
   pozostaje dowodem odmowy, bez deklaracji wykonania start/stop/backup.
+Kontynuacja O3-121 — zgodność narzędzi z rejestracją email-as-username:
+
+- Operator odebrał osobno istniejący PostgreSQL/HTTPS z tym samym JAR:
+  11 kontroli, SPI_READY SHA256
+  `e86a1567ea5b8bd7f2d765021644a5d04c38a7491b1419443f1612550d7e9d22`.
+  Nie importowano realm ponownie; wcześniejsze konta, subject, klucze,
+  klienci, dane aplikacji i sesje A2 zachowano. To lokalny zakres PG/TLS.
+- Nowe własne konta administracyjnego Probe były poprawnie tworzone,
+  lecz helper zapisywał requested bare username zamiast rzeczywistego
+  username po wymuszeniu e-mail. `6f99b5c` odczytuje wyłącznie subject
+  z Location, wiąże id i dokładną syntetyczną tożsamość przed rolą/zapisem
+  i zachowuje rzeczywisty username oraz to samo hasło. Bez wyszukiwania,
+  resetu lub aktualizacji istniejących kont. Autor i peer: po 9/9 regresji PASS.
+- Przed T0 wykonano realny ograniczony smoke przez dokładny nowy helper:
+  dwa nowe syntetyczne konta, persisted username=ich requested email,
+  POST Location=GET id=podpisany ID/access sub, S256/issuer/audience/nonce
+  i wyłącznie podstawowa rola API. GET /me prawidłowo zwrócił dla obu
+  403 account_bootstrap_required; nie wykonywano bootstrap lub zapisów
+  aplikacyjnych. Konfiguracja/CA i wcześniejsze credentials bez zmiany.
+  Receipt SHA256
+  `8410be96d98d4b980b64de65e93f2dcfd9601c1b8ee0fb6862f683ebbd6355a5`.
+  Prywatne hasła/tokeny/bindings pozostają poza Git.
+- Bazowy SyncWakeStorageTest jest identycznym blobem `cc96a302` na e64f18b
+  i cd3658a. Do tej samej kontynuacji PR197 włączono wyłącznie testowe
+  `48aafc0` i `3e457f6` przez zwykły cherry-pick -x z zachowaniem autorów
+  oraz pełny wpis O3-124. Nie zmieniono produkcyjnego workera lub limitu15s.
+  Stary CI41219974507 pozostaje FAIL581/582; lokalne4/4 z O3-124 nie
+  zastępują nowego FULL CI aktualnego head/base. Bez nowego PR lub merge.
+
+### O3-124 — domknięcie fixture i diagnostyka rzeczywistego wyniku workera
+
+- 31.10.2026, Agent 3 / O3. Gałąź `codex/android-wakecheck-fixture`,
+  baza `cd3658aeb1fe46da87c3fc19791d4f68b858cf29`, źródło testu
+  `3e457f6457de98005f5e0527535e1fe240ae3bcf`. Koordynator włączy te
+  testowe commity do istniejącego PR197; bez osobnego PR lub pusha tutaj.
+- CI197 na `e64f18ba`, run `41219974507`, zachowuje wynik 581 native PASS
+  i jeden FAIL `SyncWakeStorageTest`: po uruchomieniu ograniczonego zadania
+  i jego `SUCCESS` upłynęło 15 s oczekiwania na stan `login`. Log nie ujawniał
+  wyniku koordynatora; dokładna przyczyna tego wcześniejszego FAIL pozostaje
+  nieustalona. Nie przypisujemy go parserowi wspólnego celu/E.
+- Fixture dołącza anulowanych obserwatorów, atomowo zamyka nowe wejścia,
+  dołącza własne rzeczywiste coroutineScope/Job wszystkich wejść runtime,
+  a osobno oczekuje postprocessingu WorkManagera przed zamknięciem obu baz.
+  Ręczny caller nie staje się oczekiwanym rodzicem JUnit. Callbacki są
+  rozdzielone przez WorkGenerationalId; ponowne użycie UUID jawnie odmawia
+  zamiast nadpisywać potwierdzenie. Testowa admission obserwuje prawdziwy
+  Outcome bez zastępowania DiarySyncWorker. Produkcyjne SyncWork/Coordinator,
+  globalny mutex, warunek sieci, wymaganie jednego wywołania i `login` oraz
+  granica 15 s pozostają. Niezależny przegląd domknął uwagi dotyczące
+  rzeczywistego zakończenia coroutine i diagnostyki; nie pozostawił P1/P2.
+- Lokalny build obu APK: PASS, 64 zadania, jeden worker/heap1000m.
+  Prywatny init wydzielił wyłącznie pakiet `.wakecheck` i `.wakecheck.test`;
+  aapt oraz podpis obu artefaktów sprawdzono. Root wykonał na własnym AVD
+  cztery metody: **4 PASS, 0 FAIL, 0 SKIP, 8,602 s**. Terminalny odczyt:
+  `SUCCEEDED`, `calls=1`, `Stopped(reason=login)`, zgodny ticket/runtime,
+  `requested=3`, `retryAt=0`; następca był BLOCKED do zakończenia poprzednika.
+  SHA256 pełnego prywatnego logcat:
+  `e202fe06c422769abc3ab665f9dfe3565f6bd9cab2c04e771f97462490f225dd`.
+  Pakiet i dziennik `.validation` pozostały odseparowane. To lokalny odbiór
+  poprawionego fixture, bez nowego wyniku CI197, dowodu przyczyny starego
+  timeoutu lub zaliczenia E9/D2.
