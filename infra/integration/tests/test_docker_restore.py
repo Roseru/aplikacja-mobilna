@@ -298,3 +298,43 @@ def test_partial_gateway_activation_error_closes_ingress(monkeypatch, tmp_path):
         restore.activate(tmp_path, sessions, restore.digest(sessions))
     assert calls[-1] == ("stop", "gateway", "api")
     assert owned.record["phase"] == "ADMISSION_FAILED_CLOSED"
+
+
+def test_source_password_or_role_drift_refuses_cutover_with_readonly_source_sql(
+    monkeypatch, tmp_path
+):
+    (tmp_path / "paired-input").mkdir()
+    restore.write(
+        tmp_path / "paired-input/manifest.json",
+        {"fingerprints": {"calorie_app": restore.sha(b"[]"), "keycloak": restore.sha(b"[]")}},
+    )
+    queries = []
+
+    class Owned:
+        state = tmp_path
+        record = {"source_project": "owned-source"}
+
+        def sql(self, database, query):
+            assert database == "keycloak"
+            assert query.startswith("SELECT")
+            return '["changed target credentials"]'
+
+    def command(*args):
+        if args[0] == "ps":
+            return "owned-source-pg-id"
+        if args[0] == "inspect":
+            return "postgres"
+        pytest.fail("No Docker mutation")
+
+    def execute(directory, args, *, input_path):
+        query = input_path.read_text()
+        queries.append(query)
+        assert query.startswith("BEGIN READ ONLY;") and query.endswith("ROLLBACK;")
+        assert args[0:3] == ["docker", "exec", "-i"]
+        return b"0" if "pg_stat_activity" in query else b"[]"
+
+    monkeypatch.setattr(restore, "docker", command)
+    monkeypatch.setattr(restore, "execute", execute)
+    with pytest.raises(ValueError, match="credentials/roles/profile drift"):
+        restore.source_closed(Owned())
+    assert len(queries) == 4
