@@ -21,20 +21,24 @@ w chronionym stanie; wynik `hold-sessions` podaje tylko SHA osobnego pliku.
   --state $Source --sessions "$Source/old-sessions.private.json"
 ```
 
-W uzgodnionym oknie odetnij klienta i zatrzymaj **wszystkich** writerów.
-Prywatny override MOCK wymaga jawnego zatrzymania także `ai-worker`;
-`backup.py` sam go nie zna. Sprawdź rzeczywisty stan procesów, brak fizycznego
-IO i połączeń PG. Nie usuwaj sesji lub danych, aby wymusić poprawny wynik.
+W uzgodnionym oknie odetnij klienta. Dla nowej lokalnej dostawy użyj odebranego
+[prywatnego profilu](LOCAL_RELEASE.md), przypiętego do rzeczywistych kontenerów
+i pełnej chain base→MOCK→SPI→E8. Bound BACKUP zamyka **wszystkich** writerów,
+także AI, E8 i SMTP, sprawdza zakończenie procesów oraz brak innych klientów PG.
+Nie usuwaj sesji lub danych, aby wymusić poprawny wynik.
 
 ```powershell
-& $Python infra/integration/backup.py capture --state $Source --backup $ArchiveT0
+& $Python infra/integration/local_release.py backup --profile $SourceProfile --backup $ArchiveT0
 & $Python infra/integration/backup.py verify --backup $ArchiveT0
 ```
 
 Zachowaj SHA-256 surowego `manifest.json` **teraz**, w niezależnym dzienniku
 operatora poza cofanym zestawem. Nie wyliczaj nowego pinu przy odtwarzaniu.
-Źródło pozostaje zatrzymane po `capture`; wznowienie obejmuje pełny własny
-Compose i override MOCK. Dopiero potem wykonaj późniejszy posiłek/ACK i AI,
+Źródło pozostaje zatrzymane po BACKUP. Wznów je przez `local_release.py start
+--profile $SourceProfile`, który zachowuje pełną przypiętą konfigurację i wymaga
+świeżych sukcesów workerów. Dawny bezpośredni `backup.py capture` pozostaje
+oddzielnym kontraktem i nie jest nowym bound trybem archiwizacji.
+Dopiero potem wykonaj późniejszy posiłek/ACK i AI,
 zachowując dokładne dane Room, receipt serwera i osobny świadek poza T0.
 
 ## Nowa fizyczna kopia PostgreSQL i Keycloak
