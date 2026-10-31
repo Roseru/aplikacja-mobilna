@@ -49,7 +49,7 @@ class ImportViewModelTest {
             val factory=object:ViewModelProvider.Factory {
                 @Suppress("UNCHECKED_CAST") override fun <T:ViewModel> create(modelClass:Class<T>):T=
                     ImportViewModel(db,CanonicalMealRows.schema(context),lease,ReconciliationStepExecutor {_,_,_,_->
-                        calls.incrementAndGet();SyncStepResult.NotConfigured},SavedStateHandle()) as T
+                        calls.incrementAndGet();SyncStepResult.NotConfigured},SavedStateHandle(),energySchema=null) as T
             }
             model=ViewModelProvider(store,factory)[ImportViewModel::class.java]
         }

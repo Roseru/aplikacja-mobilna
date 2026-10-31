@@ -13,13 +13,15 @@ import pl.roseru.kalorie.core.catalog.StrictJson
 import pl.roseru.kalorie.core.sync.PrivateDomainsWire
 import pl.roseru.kalorie.core.sync.SyncWireSchema
 import pl.roseru.kalorie.data.*
+import pl.roseru.kalorie.energy.EnergySchema
 import pl.roseru.kalorie.sync.*
 
 /** Every action carries the lease captured by this owner-scoped ViewModel. No credentials in saved state. */
 class ImportViewModel(private val db:CalorieDatabase,private val schema:SyncWireSchema,
-    private val lease:OwnerLease,private val executor:ReconciliationStepExecutor,private val saved:SavedStateHandle):ViewModel() {
-    private val imports=LegacyImportStore(db,schema)
-    private val reconciliation=ReconciliationStore(db,schema)
+    private val lease:OwnerLease,private val executor:ReconciliationStepExecutor,private val saved:SavedStateHandle,
+    energySchema:EnergySchema?):ViewModel() {
+    private val imports=LegacyImportStore(db,schema,energySchema)
+    private val reconciliation=ReconciliationStore(db,schema,energySchema)
     private val mutex=Mutex()
     private val mutable=MutableStateFlow(ImportUiState())
     val state=mutable.asStateFlow()

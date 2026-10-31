@@ -36,7 +36,7 @@ class ReconciliationStore(internal val db:CalorieDatabase,internal val schema:Sy
         db.withTransaction {
             val binding=context(lease,expected);check(binding.requiresRecovery)
             val owner=checkNotNull(db.ownerDao().byScope(lease.storageScope))
-            val captured=LegacyImportStore(db,schema).capture(lease.storageScope,true)
+            val captured=LegacyImportStore(db,schema,energySchema).capture(lease.storageScope,true)
             val fingerprint=LegacyImportStore.digest(captured.joinToString("\n"){it.first+":"+it.second})
             val wireContext=CanonicalMealRows.context(binding)
             dao.plans(lease.storageScope).firstOrNull {it.kind.startsWith("reconcile_") && it.fingerprint==fingerprint && it.wireContext==wireContext}

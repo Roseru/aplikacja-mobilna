@@ -67,13 +67,13 @@ internal class ServerDiaryProtocol(private val schema: SyncWireSchema,private va
             if (timeline == null) timeline = revision.toInt() else require(timeline == revision.toInt())
             if (firstTime == null) firstTime = value.getString("server_time")
             lastTime = value.getString("server_time")
-            for ((field, keys) in SnapshotProtocol.IDENTITIES) {
+            for (field in SnapshotProtocol.IDENTITIES.keys) {
                 val rows = value.getJSONArray(field)
                 totalRecords = Math.addExact(totalRecords, rows.length())
                 require(totalRecords <= 100_000)
                 for (i in 0 until rows.length()) {
                     val row = rows.getJSONObject(i)
-                    val identity = keys.joinToString(":") { row.getString(it) }
+                    val identity = SnapshotProtocol.identity(field,row)
                     require(identities.getValue(field).add(identity))
                     if(field=="recovery_mappings")mappings+=StrictJson.canonical(row)
                     if(field=="operation_receipts") {

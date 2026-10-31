@@ -60,7 +60,7 @@ class ImportNavigationTest {
             compose.runOnUiThread {
                 diary=DiaryViewModel(DiaryRepository(db,context,lease),Preferences(context),SavedStateHandle())
                 photo=MealPhotoViewModel(context.applicationContext as Application,MealPhotoStore(context,db,lease),SavedStateHandle())
-                importModel=ImportViewModel(db,schema,lease,controller,SavedStateHandle())
+                importModel=ImportViewModel(db,schema,lease,controller,SavedStateHandle(),energySchema=null)
                 views.put("diary",diary);views.put("photo",photo);views.put("import",importModel)
             }
             val original=runBlocking {db.dao().weight("historical-guest-weight","guest")!!}

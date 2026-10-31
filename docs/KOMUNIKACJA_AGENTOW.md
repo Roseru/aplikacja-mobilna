@@ -11465,6 +11465,180 @@ Kontynuacja O2-073 — **zdjęcie MOCK i naprawa projekcji czasu posiłku**:
   Przygotowawczy zakres pakietu i jego granice nie stają się przez merge
   odbiorem prywatnego środowiska ani wydania.
 
+### O2-075 — pierwszy profil zachowuje oszacowanie celu — osoba 2
+
+- 30.10.2026, agent 2, dalszy własny odbiór E9 według O2-071.
+  Źródło poprawki: `18e699baeb452f9bf61d4d121658d6e00f3e2f26`, gałąź
+  `codex/android-profile-estimate-preservation`, baza main `66653d7c`.
+  PR195 i osobny push CI tego main są odebrane: po 8/8 kontroli,
+  582 native PASS, JVM 453/493 dla dwóch wariantów; 12 wcześniejszych
+  pominięć infra pozostaje jawnych. Merge nie zmieniał działającego API.
+- Rzeczywiste E9 wykryło P2 po poprawnym zapisie kalkulatora:
+  1730 × PAL 1,5 = E 2595 kcal przy osobnym celu 2200 kcal.
+  Pierwszy zapis profilu z domyślnymi GARRISON/MAINTAIN utworzył dodatkową
+  wersję niezmienionego celu bez audytu. Pierwotny cel i ACK pozostawały
+  poprawne. Przyczyną było porównanie braku wcześniejszego zamiaru z
+  jawnym MAINTAIN, zamiast z efektywną wartością domyślną formularza.
+- Poprawka rozdziela zmianę samego profilu od rzeczywistej zmiany klasy
+  aktywności lub zamiaru. Domyślny pierwszy profil i zmiana nazwy/wzrostu
+  zachowują UUID, cel i audyt. Rzeczywiste zmiany oraz ręczny cel nadal
+  tworzą nowe wersje; audyt pozostaje niezmiennym zapisem wcześniejszego
+  obliczenia. Room27, migracje, konto, lease oraz zamrożone wire/ACK nie
+  zmieniają kontraktów. Wersja klienta: 0.8.43/code54/validation1054.
+- Wadliwe konto testowe zatrzymano przed wysłaniem dwóch operacji.
+  Pod osłoną UID wykonano publiczny poligon i wylogowanie do gościa.
+  Niezależny odczyt potwierdził identyczne payloady/wire/ACK/audyt,
+  statusy pending/attempted0 i zachowanie pozostałych danych.
+  Własne reguły IPv4/IPv6 usunięto. To zachowany FAIL, bez heurystycznej
+  naprawy, usunięcia lub przepisania jego kolejki. Dalszy odbiór używa
+  odrębnych kont A2/B. Przed instrumentacją ponownie potwierdzono gościa
+  i publiczną blokadę sieci.
+- Niezależny przegląd źródła: 0 P1/P2. JVM ActivityGoalTest: 3 PASS,
+  w tym nowa reguła z siedmioma wektorami. Nowy pozytywny test naprawdę
+  wykrył błąd na niezmienionym APK1053. Na1054 oba wskazane zbiory
+  MaintenanceStorageTest i FirstAccountGoalNavigationTest dały 7/7 PASS
+  w jednym przebiegu, obejmując nowe zachowania oraz wcześniejsze ręczne
+  zmiany celu. Testy mają odrębne Room/vault; nie zastępują pełnego E9.
+  Pięć kopii głównego Room przed/po testach i aktualizacji było identycznych
+  bajtowo, a stan serwera wadliwego konta nie zmienił się.
+- Niezależny odbiór kwalifikacji zweryfikował 27 referencji, pliki APK
+  i ich rzeczywiste kopie PM, JVM XML, pięć kopii Room oraz świeże XML
+  gościa z blokadą przed RED/GREEN i po testach: 0 P1/P2.
+  Wyniki native pochodzą z klasyfikacji producenta powiązanej z hashem
+  surowego logu; nie deklarujemy nowego kernel trace ani osobnego native XML.
+  Root odebrał ten zakres, receipt SHA256
+  `9aedc639d40e7d46210c112c1a612de27e2c29d112da2d49e9ccf32f965444cf`.
+- Ten wpis opisuje naprawę i lokalną kwalifikację klienta. Rzeczywiste A2
+  oraz B z 14 dniami, pełny E9, odtwarzanie D2, Gemini i wydanie 1.0 mają
+  własne bramki. Publikacja tej gałęzi oraz CI jej aktualnego head/base
+  wymagają odrębnego potwierdzenia; wcześniejszy main CI nie jest ich wynikiem.
+
+### O3-122 — cel i początkowe E we wspólnym PULL bez resetu Room27
+
+- Data: 31.10.2026, Agent 3 / O3. Kontynuacja PR196, własna gałąź
+  `codex/android-profile-goal-energy-pull` z dokładnego rodzica
+  `9b471c76b45bac0e6067c6456a83361053ea7a04`; publikacja i CI pozostają
+  po stronie koordynatora po odbiorze lokalnego commita.
+- Rzeczywista próba kalkulatora na pustym koncie wykazała poprawny zapis
+  jednego celu i ACK, po którym przyrostowy PULL odrzucał cel oraz początkowe
+  E o wspólnym UUID. Jest to zgodny wynik adaptera legacy na serwerze.
+  Zamrożone Room/wire zachowano; porównanie payloadu celu z przyjętą operacją
+  nie wykazało różnic. Wyjątek wynikał z założenia rozłącznych przestrzeni ID
+  w parserze, a pełny fallback miał to samo ograniczenie w kontroli duplikatów.
+- Pełny i przyrostowy odczyt rozdzielają teraz tożsamość dziennika oraz osi E.
+  Jeden pomocnik wyznacza klucz w parserach, indeksie zapisanych stron i przy
+  wznowieniu starszego indeksu Room27. Poprzednie ograniczenia UUID sześciu
+  domen dziennika, rewizje, tombstone, niezmienność E, jego unikalne rewizje
+  oraz klucze receipt/mapping pozostają. Ogólne kolizje UUID sześciu domen
+  wymagają osobnego kontraktu recovery i nie są częścią tej zmiany.
+- Starsze indeksy bare-UUID są sprawdzane przez odczyt oryginalnych stron
+  jedynie przy trafieniu takiego klucza. Nowy zapis nie przepisuje wcześniejszych
+  stron, zapytań, indeksów, checkpointów, kolejki lub ACK. Room27 i jej eksport
+  schematu pozostają bez migracji; klient ma 0.8.44/code55/validation1055.
+- Regresja na niezmienionej produkcji9b była RED: dokładnie dwie oczekiwane
+  odmowy poprawnej pary goal/legacyE, dla delty i pełnej kopii. Po poprawce
+  24/24 celowane JVM w sześciu klasach są GREEN, w tym pięć nowych testów
+  obejmujących obie kolejności, wiele stron oraz zachowanie odmów duplikatów
+  i zmiany niezmiennej osi. Niezależny przegląd końcowej produkcji: 0 P1/P2.
+  `lintDebug`: 0 Error/0 Fatal (33 Warning, 2 Information); testAPK zbudowany
+  i jego podpis zweryfikowany, bez instalacji lub podmiany aplikacji.
+- Trzy nowe native testy Room (osiem wariantów) kompilują się; pokrywają
+  reopen częściowej kopii ze starym indeksem, dokładne zachowanie saved wire
+  i rollback strony/run/index po duplikacie oraz wspólną projekcję celu/E.
+  Wykonanie native na urządzeniu i zwykła aktualizacja skonfigurowanego APK
+  z rzeczywistym readback/offline są odrębnym następnym odbiorem Roota.
+  Nie zapisujemy tu PASS dla aktualnego APK/API, E9 lub D2.
+
+- Aktualizacja odbioru 31.10, Root/Agent3: trzy nowe native Room mają
+  3/3 PASS (osiem wariantów) na API35. Rzeczywisty odbiór A2 obejmuje
+  pierwszy profil na1054, następnie zwykłą aktualizację1054→1055 i odczyt
+  na tym samym syntetycznym koncie. Nie przedstawiamy tej sekwencji jako
+  całego scenariusza wykonanego od zera na jednym APK.
+  Installed/PM APK1055 ma SHA256
+  `817f3e2149aab75055508061e336d735d5e6c52de8ef0b85ce2990bd5e120512`;
+  główny Room przed/po instalacji był bajtowo identyczny. Bez resetu danych.
+- Po rzeczywistym AppAuth/PKCE i zwykłym PUSH/PULL/applied readback konto A2
+  zachowało dokładnie jeden cel2200 oraz audyt E2595 o niezmiennym hashu.
+  PostgreSQL potwierdza niezmieniony pełny wiersz celu i jego receipt,
+  jeden przyjęty profil i łącznie dwa sync receipts. Nowy proces z publiczną
+  blokadą sieci aplikacji pokazał ten sam profil/cel/audyt. Siedem wybranych
+  pełnych tabel Room z rowid pozostało identycznych przed/po odczycie offline
+  oraz po testach fixture. Nie deklarujemy nowego kernel/UID packet trace.
+- Niezależny odczyt55artefaktów/17kontroli wiąże source, APK/PM/podpis,
+  tar/SQLite, zamrożone requesty z PG receipt oraz applied źródło osi E.
+  Receipt kwalifikacji ma SHA256
+  `8d18fe7d4f2c88935376cd715cbcec69c764828c1babc1c87f7941c2b6605c3b`.
+  Zachowano timeout pierwszego browser run, późniejszy XML z SystemUI ANR
+  oraz drugi pozytywny run; nie przypisujemy timeoutowi udowodnionej przyczyny.
+  Surowe strony E zostały już skompaktowane i nie udajemy ich obecności.
+  To odbiór lokalnego A2/update/PULL/offline; aktualny zdalny FULL CI,
+  przyjęcie E9 w UI, rzeczywisty D2 oraz Gemini mają odrębne zakresy.
+- Dalszy przegląd publicznego recovery UI ujawnił brak energySchema w
+  ImportViewModel, choć rzeczywisty transport zapisywał poprawny ENERGY_V1 proof.
+  Czytnik modelu odrzucał taki zakres i pokazywał UNVERIFIED/brak proofRunId;
+  decyzja i finish nie mogły użyć tej kopii. MainActivity przekazuje teraz
+  app.energySchema do tego samego ReconciliationStore modelu. Parametr jest
+  jawny we wszystkich czterech miejscach konstrukcji; dotychczasowe fixture
+  legacy przekazują null, regresja osi E przekazuje jej schemat. Nie zmieniono
+  decyzji, transportu, żadnej migracji, raw wire, kolejki ani reguł ACK.
+- Source 0.8.45/code56/validation1056 dodaje regresję publicznych callbacków
+  preview/approve/downloadProof/acceptServer/finish na realnym Room i jawnie
+  syntetycznej pełnej kopii celu oraz E o wspólnym UUID. Oddzielny test-only
+  pin używa starego pięcioargumentowego API; wersja po poprawce jawnie
+  przekazuje schemat. Przygotowanie źródeł nie oznacza jeszcze wykonanego RED,
+  GREEN, builda, nowego APK lub D2. Ich wykonanie wymaga uzgodnionego okna;
+  obecne dane/ACK i odebrany APK1055 pozostają osobnymi dowodami.
+
+- Wykonano następnie rzeczywisty native RED publicznego ViewModel na
+  niezmienionym zainstalowanym APK1055/`817f3e21`: po kompletnym zaakceptowanym
+  ENERGY_V1 proof test zakończył się dokładnie `UNVERIFIED/proof=null`,
+  1 FAIL/3,154s. Pierwszy wcześniejszy build testu miał błąd odczytu
+  EnergyVersion.entityId; poprawiono go na id w test-only `1acec94`.
+  Ten błąd kompilacji jest zachowany i nie jest liczony jako runtime RED.
+  RED receipt SHA256
+  `f267f6338d30ff943968f1ab017b5d333d1ce9e823c95f02daf531c203884663`.
+- Przegląd ujawnił pokrewny brak w LegacyImportStore.preview/resume:
+  pełny ENERGY_V1 oraz przyrostowy active run były czytane jak legacy FULL.
+  Pin `0d025e7645d53fc8af497574ed00a5251f820683` dodaje wąski entity-only
+  ServerDiaryProof i jawne przekazanie schema. Zastosowany wynik delty jest
+  związany z current application/run/context/scope/checkpoint/timeline/limit;
+  sześć domen ma current row.runId, a niezmienne E własne historyczne
+  sourceRun/application. Bez rekonstrukcji dawnego base z końcowych tabel,
+  fabrykowania stron/receipt/mapping lub nieograniczonego chodzenia historii.
+  Oba źródła przeszły niezależne review bez pozostawionego P1/P2.
+- Dwie nowe regresje importu rzeczywiście odtworzyły odmowę starej produkcji:
+  2 FAIL/6,092s w LegacyImportStore.preview, pełny i przyrostowy proof.
+  Testowe kopie RED jawnie pomijają nowo dodany parametr schema; nie
+  deklarujemy identycznego wywołania konstruktora RED i GREEN. Źródła i logi
+  porażek zachowano. Receipt SHA256
+  `6e2f91ee3e13193939c9a259a461a147790cf7789258fd5dc69939fb8ed61a1f`.
+- Normalnie zintegrowany build source
+  `4cf9bd11819d4470f83bb489e031b219bce1ab15`: validation1056/0.8.45,
+  niezmieniony Room27. Oba APK build PASS/3m11s, ten sam signer co1055.
+  App SHA256 `73edcf983af64653f16d46fd6dbc33475daa35c0d644a4ea538894e039bc7227`;
+  prywatny test APK `858d9289f92275b7bb73dbb700d52c9c4ff214d96f1b62f3b4d5e3c672e95c41`.
+  Zwykła aktualizacja1055→1056 zachowała Room tar identyczny bajtowo:
+  `a0bd607dfcad31cff09f11c015d75150f28bba26baf95173cfa35dce30d0e1a0`.
+  Bez odinstalowania, clear/reset lub zmiany schematu.
+- Native na zainstalowanym1056: **19 PASS/0 FAIL/0 SKIP/27,222s**,
+  siedem nowych metod oraz dwanaście dotychczasowych kompatybilności
+  LegacyImportStorageTest/ImportViewModelTest. Pełna/przyrostowa kopia,
+  wspólny UUID celu/E, publiczne preview/approve/proof/decision/finish,
+  import/niezmienne body/ACK, reopen i faktyczna kompaktacja oraz odmowy
+  niepełnego, unapplied, blocked, wrong-limit, stale shadow i foreign owner
+  zostały sprawdzone. To prawdziwy Room i produkcyjne callbacki/store,
+  lecz syntetyczne wire/odpowiedzi ACK; nie dowód serwerowego przyjęcia.
+  Receipt SHA256
+  `8fe9892b846a79f576565375e12610be18be74cd3176be95bc2fd65dbdf2d5cd`.
+- Po native57 z58 tabel rzeczywistego dziennika, wraz z rowid, pozostało
+  identycznych. Zmienił się tylko sync_work_state; integrity/FK PASS.
+  Prywatny comparison SHA256
+  `5bdbdbce501df2b8d0b0719678a101486d9caea7206d48a3e8fefa48bd3d57d2`.
+  CI `41229509318` 8/8 oraz main `41229364491` są zielone dla starszych
+  odpowiednio e609e7e/922e32b. Nowe źródło wymaga własnego FULL CI przed
+  merge. Rzeczywisty readback/MRE/odtwarzanie D2 i końcowa paczka mają
+  odrębne odbiory; powyższe19 nie zalicza ich ani rzeczywistego Gemini.
+
 ### O3-121 — PR197: rejestracja po dowodzie posiadania e-mail
 
 - 31.10.2026, agent 3, na zlecenie właściciela pełnego lokalnego dokończenia.

@@ -37,7 +37,7 @@ class ImportOriginsMigrationTest {
                 .put("goal_timeline_revision",0).put("entities",JSONArray()).put("recovery_mappings",JSONArray()).put("operation_receipts",JSONArray())
             assertNull(snapshots.apply(snapshots.begin(lease),page.toString().toByteArray()))
             val plan=if(version>=19) {
-                val importer=LegacyImportStore(source,wire);val preview=importer.preview(lease,"guest")
+                val importer=LegacyImportStore(source,wire,null);val preview=importer.preview(lease,"guest")
                 importer.approve(lease,preview.planId,preview.account,preview.issuer,preview.subject);importer.resume(lease,preview.planId)
                 preview
             } else {
@@ -113,7 +113,7 @@ class ImportOriginsMigrationTest {
             assertEquals(original,db.dao().operation(original.operationId))
             assertArrayEquals(body,db.pushDao().batch(frozen.id)!!.requestJson.toByteArray());assertEquals(hash,db.pushDao().batch(frozen.id)!!.requestHash)
             db.dao().saveWeight(WeightEntity("new-after-migration","guest","2001-01-03","2001-01-03T12:00:00Z","UTC",81.0))
-            val importer2=LegacyImportStore(db,wire);val second=importer2.preview(lease,"guest")
+            val importer2=LegacyImportStore(db,wire,null);val second=importer2.preview(lease,"guest")
             if(version>=19)assertEquals("already_imported",db.importDao().source(second.planId,"meal",id)!!.state)
             else assertEquals(7,second.total)
             if(version>=19){importer2.approve(lease,second.planId,second.account,second.issuer,second.subject);importer2.resume(lease,second.planId)}
