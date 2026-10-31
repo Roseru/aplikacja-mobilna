@@ -11507,3 +11507,36 @@ Kontynuacja O2-073 — **zdjęcie MOCK i naprawa projekcji czasu posiłku**:
   kont/subject/sesji. Bez ponownego importu realm. D2 wymaga właściwego
   provider image przed startem przywróconej bazy; README opisuje tę zgodność.
   Powyższy odbiór H2/HTTP nie jest odbiorem PG/TLS/Android ani wydania1.0.
+
+### O3-124 — domknięcie fixture i diagnostyka rzeczywistego wyniku workera
+
+- 31.10.2026, Agent 3 / O3. Gałąź `codex/android-wakecheck-fixture`,
+  baza `cd3658aeb1fe46da87c3fc19791d4f68b858cf29`, źródło testu
+  `3e457f6457de98005f5e0527535e1fe240ae3bcf`. Koordynator włączy te
+  testowe commity do istniejącego PR197; bez osobnego PR lub pusha tutaj.
+- CI197 na `e64f18ba`, run `41219974507`, zachowuje wynik 581 native PASS
+  i jeden FAIL `SyncWakeStorageTest`: po uruchomieniu ograniczonego zadania
+  i jego `SUCCESS` upłynęło 15 s oczekiwania na stan `login`. Log nie ujawniał
+  wyniku koordynatora; dokładna przyczyna tego wcześniejszego FAIL pozostaje
+  nieustalona. Nie przypisujemy go parserowi wspólnego celu/E.
+- Fixture dołącza anulowanych obserwatorów, atomowo zamyka nowe wejścia,
+  dołącza własne rzeczywiste coroutineScope/Job wszystkich wejść runtime,
+  a osobno oczekuje postprocessingu WorkManagera przed zamknięciem obu baz.
+  Ręczny caller nie staje się oczekiwanym rodzicem JUnit. Callbacki są
+  rozdzielone przez WorkGenerationalId; ponowne użycie UUID jawnie odmawia
+  zamiast nadpisywać potwierdzenie. Testowa admission obserwuje prawdziwy
+  Outcome bez zastępowania DiarySyncWorker. Produkcyjne SyncWork/Coordinator,
+  globalny mutex, warunek sieci, wymaganie jednego wywołania i `login` oraz
+  granica 15 s pozostają. Niezależny przegląd domknął uwagi dotyczące
+  rzeczywistego zakończenia coroutine i diagnostyki; nie pozostawił P1/P2.
+- Lokalny build obu APK: PASS, 64 zadania, jeden worker/heap1000m.
+  Prywatny init wydzielił wyłącznie pakiet `.wakecheck` i `.wakecheck.test`;
+  aapt oraz podpis obu artefaktów sprawdzono. Root wykonał na własnym AVD
+  cztery metody: **4 PASS, 0 FAIL, 0 SKIP, 8,602 s**. Terminalny odczyt:
+  `SUCCEEDED`, `calls=1`, `Stopped(reason=login)`, zgodny ticket/runtime,
+  `requested=3`, `retryAt=0`; następca był BLOCKED do zakończenia poprzednika.
+  SHA256 pełnego prywatnego logcat:
+  `e202fe06c422769abc3ab665f9dfe3565f6bd9cab2c04e771f97462490f225dd`.
+  Pakiet i dziennik `.validation` pozostały odseparowane. To lokalny odbiór
+  poprawionego fixture, bez nowego wyniku CI197, dowodu przyczyny starego
+  timeoutu lub zaliczenia E9/D2.
