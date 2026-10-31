@@ -29,17 +29,40 @@ class SyncWakeStorageTest {
     /** Observe the real runtime outcome without replacing a worker or changing admission. */
     private class Probe:SyncRuntimeAdmission,ExecutionListener {
         override val changes:StateFlow<Long> = MutableStateFlow(0L)
+        private val monitor=Any()
+        private var closing=false
+        private val entries=mutableSetOf<Job>()
         data class Created(val runtimeId:Int,val ticket:SyncWorkTicket?)
         val created=ConcurrentHashMap<UUID,Created>()
         val outcomes=ConcurrentLinkedQueue<SyncCoordinator.Outcome>()
-        val finished=ConcurrentHashMap<UUID,CompletableDeferred<Unit>>()
-        override fun onExecuted(id:WorkGenerationalId,needsReschedule:Boolean) {finished[UUID.fromString(id.workSpecId)]?.complete(Unit)}
+        val finished=ConcurrentLinkedQueue<CompletableDeferred<Unit>>()
+        private val pending=ConcurrentHashMap<WorkGenerationalId,ConcurrentLinkedQueue<CompletableDeferred<Unit>>>()
+        fun constructed(parameters:WorkerParameters,active:SyncWorkRuntime) {
+            val done=CompletableDeferred<Unit>()
+            finished.add(done)
+            pending.computeIfAbsent(WorkGenerationalId(parameters.id.toString(),parameters.generation)) {ConcurrentLinkedQueue()}.add(done)
+            // These four fixtures drive each UUID at most once (including the one
+            // watch tick). Refuse reuse explicitly instead of overwriting a receipt.
+            check(created.putIfAbsent(parameters.id,Created(System.identityHashCode(active),SyncWorkTicket.read(parameters.inputData)))==null) {"SyncWake fixture reused a worker UUID"}
+        }
+        override fun onExecuted(id:WorkGenerationalId,needsReschedule:Boolean) {pending[id]?.poll()?.complete(Unit)}
         override fun attach(contractVersion:Int) {require(contractVersion==1)}
-        override suspend fun <T> run(block:suspend ()->T):SyncRuntimeEntry<T> {
+        override suspend fun <T> run(block:suspend ()->T):SyncRuntimeEntry<T> = coroutineScope {
+            // Own a bounded child even if a manual caller is a JUnit runBlocking job.
+            val entry=currentCoroutineContext().job
+            synchronized(monitor) {
+                if(closing)throw CancellationException("SyncWake fixture closing")
+                entries.add(entry)
+                // run's finally is earlier than completion of this ScopeCoroutine.
+                // Completion includes all its children and cancellation/DB finally blocks.
+                entry.invokeOnCompletion {synchronized(monitor) {entries.remove(entry)}}
+            }
+            currentCoroutineContext().ensureActive()
             val value=block()
             if(value is SyncCoordinator.Outcome)outcomes.add(value)
-            return SyncRuntimeEntry.Admitted(value)
+            SyncRuntimeEntry.Admitted(value)
         }
+        fun closeEntries():List<Job> = synchronized(monitor) {closing=true;entries.toList()}
     }
     private val context get()=InstrumentationRegistry.getInstrumentation().targetContext
     private val schema get()=CanonicalMealRows.schema(context)
@@ -56,8 +79,7 @@ class SyncWakeStorageTest {
             override fun createWorker(appContext:android.content.Context,workerClassName:String,parameters:WorkerParameters):ListenableWorker? {
                 if(workerClassName !in setOf(DiarySyncWorker::class.java.name,DiarySyncWatchWorker::class.java.name))return null
                 val active=runtime()
-                probe.created[parameters.id]=Probe.Created(System.identityHashCode(active),SyncWorkTicket.read(parameters.inputData))
-                probe.finished[parameters.id]=CompletableDeferred()
+                probe.constructed(parameters,active)
                 return when(workerClassName) {
                     DiarySyncWorker::class.java.name->DiarySyncWorker(appContext,parameters,active)
                     else->DiarySyncWatchWorker(appContext,parameters,active)
@@ -85,10 +107,13 @@ class SyncWakeStorageTest {
         // No observer may enqueue after cancellation, and no WorkManager coroutine may
         // touch either database after it closes. Never close another test's delegate.
         scope.coroutineContext.job.cancelAndJoin()
+        // Atomically reject new execute/signal/reschedule entries before snapshotting
+        // the actual runtime ScopeCoroutine jobs. Wrapper completion is not their join.
+        val entries=probe.closeEntries()
         withContext(Dispatchers.IO) {work.cancelAllWork().result.get(5,TimeUnit.SECONDS)}
-        // CANCELLED is persisted before a CoroutineWorker finishes. The execution
-        // listener fires after its actual future and WorkManager post-processing.
-        withTimeout(15_000) {probe.finished.values.toList().awaitAll()}
+        withTimeout(15_000) {entries.forEach {it.join()}}
+        // Independently drain wrapper post-processing before its own database closes.
+        withTimeout(15_000) {probe.finished.toList().awaitAll()}
         withContext(Dispatchers.IO) {
             check(WorkManager.getInstance(context)===work)
             (work as WorkManagerImpl).processor.removeExecutionListener(probe)
