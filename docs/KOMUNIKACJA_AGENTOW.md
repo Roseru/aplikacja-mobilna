@@ -11464,3 +11464,46 @@ Kontynuacja O2-073 — **zdjęcie MOCK i naprawa projekcji czasu posiłku**:
   PR z head `43e23cf2`. Powyższy plan publikacji opisuje wcześniejszy stan.
   Przygotowawczy zakres pakietu i jego granice nie stają się przez merge
   odbiorem prywatnego środowiska ani wydania.
+
+### O3-121 — PR197: rejestracja po dowodzie posiadania e-mail
+
+- 31.10.2026, agent 3, na zlecenie właściciela pełnego lokalnego dokończenia.
+  Gałąź `codex/backend-rejestracja-email-proof`, produkcyjne źródła
+  `f4418e4673d972540443a0f543c58db69bc1c3cc`, odebrana końcowa delta harnessu
+  `7c483a901af90adf3b2fa61d4b228eac55fbcacd`,
+  [PR197](https://github.com/Roseru/aplikacja-mobilna/pull/197) do main.
+  Publikacja zwykłym push zachowuje trzy commity; bez merge i bez zmiany
+  dotychczasowych środowisk przez autora. Livechat odczytano przed pushem.
+- Osobny provider Keycloak26.8.1 wymaga posiadania skrzynki przed lookup/create.
+  Podpisany token bez subject jest związany z bieżącą sesją i wykonaniem;
+  GET nie zużywa, POST zużywa atomowo. Guard przed stock tworzeniem odmawia
+  bez proof, przy zmianie email/username i przy wielokrotnych polach.
+  Unikalność, standardowy login/reset i minimalne role pozostają wymagane.
+  Nie dodano tabel ani automatycznej instalacji do istniejącego realm.
+- JUnit15/15, Python14/14 na3.13 i3.14, scope CI17/17, Ruff/format, E0
+  i diff-check PASS. Istniejący android-build uruchamia testy/JAR modułu
+  i testy odmów harnessu oraz zachowuje JUnit/JAR; bez nowego joba lub
+  osłabienia ci-required. Zdalne CI wymaga osobnego odczytu aktualnego head.
+- Rzeczywisty nowy Keycloak26.8.1/H2/HTTP/Mailpit: neutralność existing/new,
+  zero kont przed proof, dwukrotny GET, jawny POST, jedna rejestracja, role,
+  Code/S256, podpis/nonce/issuer/audience, login/reset, direct POST,
+  email/username/podwójne pola, obcy tab/przeglądarka, zły podpis, replay,
+  rzeczywiste300s expiry i awaria SMTP odebrane. Dwie niezależnie potwierdzone
+  sesje tego samego adresu po rzeczywistym61s cooldown miały nakładające się
+  końcowe POST: jedno konto,302/400, ukończony PKCE zwycięzcy. Równoległy
+  confirm tej samej formy nie stworzył konta; nie deklarujemy dwóch wejść
+  do consume ani jednoczesnego wykonania SQL. Prywatny raw/state poza Git.
+  Testowany JAR SHA256
+  `8e9af85336d78b38b68f4cda97481caefbb88c7211357425f366928824f88a2d`.
+- Niezależny review SPI i dowodów nie zostawił P1/P2. Wykryte P2 harnessu
+  (pierwszeństwo DOCKER_CONTEXT nad DOCKER_HOST) naprawiono: kwalifikowany
+  lokalny endpoint jest przypięty przez --host dla każdej operacji silnika,
+  również inspect/logs/stop, z usunięciem zmiennych wyboru/TLS. Nowe regresje
+  i odczyt rzeczywistego lokalnego silnika PASS. Własne testowe kontenery
+  zatrzymano z zachowaniem stanu; nie użyto prawdziwych skrzynek lub danych.
+- Następny krok: zdalne CI oraz odrębny odbiór istniejącego PostgreSQL/HTTPS
+  przez jedynego operatora runtime w uzgodnionym oknie. Przekazano dokładny
+  JAR i nowy kontekst obrazu, flow/SMTP/defaultRole oraz świadki zachowania
+  kont/subject/sesji. Bez ponownego importu realm. D2 wymaga właściwego
+  provider image przed startem przywróconej bazy; README opisuje tę zgodność.
+  Powyższy odbiór H2/HTTP nie jest odbiorem PG/TLS/Android ani wydania1.0.
