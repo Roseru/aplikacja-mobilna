@@ -33,6 +33,9 @@ katalog MRE/DEMO oraz obecne trzy workery E8. Używa istniejących
 compose.e8.yaml, run_e8.py, provisionerów i e8_worker.py, z pełną chain.
 Codzienne skrypty nie wykonują init/build/import/migrate/provision/activate.
 Po restore nie powtarzają provisioningu LOGIN, związanego z databaseOID.
+Zdrowy działający zestaw nie jest restartowany przy ponownym START.
+Przy wznowieniu E8 wymagany jest świeży sukces z czasem nie wcześniejszym
+niż start rzeczywistego procesu kontenera, zanim otworzy się gateway.
 
 Z czystego, zapisanego źródła, kwalifikowanym Pythonem backendu, operator
 tworzy NOWY prywatny folder z profilem:
@@ -70,7 +73,17 @@ zanim ręcznie usuwa pozostałą blokadę.
 BACKUP zatrzymuje gateway, API, issuer, AI, retencję, SMTP i wszystkie E8.
 Sprawdza fizyczne zakończenie procesów oraz brak innych klientów PostgreSQL.
 Zachowuje obie bazy, globals/SCRAM, katalog, konfigurację/TLS, pełne overrides
-i piny obrazów. Ruch pozostaje zamknięty również przy błędzie.
+i piny obrazów. Wynik sukcesu wymaga potwierdzonego zamknięcia; kod nie
+wznawia ruchu lub writerów również wtedy, gdy kopia zakończy się błędem.
+
+Katalog i zdjęcia czyta osobny jednorazowy helper z dokładnym, już istniejącym
+backend imageId. Ma pull=never, network=none, UID10001, read-only i jeden
+wskazany własny volume RO; nie dostaje migrate.env lub danych logowania DB.
+Przesunięcie taga backend:local nie zmienia kodu archiwizacji. Po timeout
+cleanup sprawdza dokładną losową nazwę, Image ID i własny label przed stop.
+Żywy osierocony helper blokuje następną operację do wyjaśnienia fizycznego IO.
+Stare bezpośrednie wywołanie backup.capture bez profilu zachowuje dawny
+kontrakt; nowy pakiet nie uruchamia dla archiwizacji usługi migrate.
 
 Opcjonalne photos.tar ma jawny marker optional_photos i hash/bytes w
 tym samym manifest. Przechowuje tylko prywatne przygotowane JPG/staging,

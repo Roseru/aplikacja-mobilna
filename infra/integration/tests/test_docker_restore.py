@@ -150,6 +150,130 @@ def test_mutable_tag_refused_before_any_resource(tmp_path):
         restore.configuration(tmp_path, "owned-target", {}, bad, "owner")
 
 
+def test_optional_photo_topology_changes_only_private_new_volume_initialization(tmp_path):
+    original = restore.configuration(tmp_path, "owned-target", {}, images(), "owner")
+    changed = restore.configuration(tmp_path, "owned-target", {}, images(), "owner", photos=True)
+    assert original["services"]["api"] == changed["services"]["api"]
+    assert original["services"]["keycloak"] == changed["services"]["keycloak"]
+    assert original["volumes"] == changed["volumes"]
+    assert not any(
+        "/photo-input" in mount for mount in original["services"]["catalog-init"]["volumes"]
+    )
+    assert changed["services"]["catalog-init"]["volumes"][-1].endswith(
+        "/photos-restored/photos:/photo-input:ro"
+    )
+    command = changed["services"]["catalog-init"]["command"][-1]
+    compile(command, "photo-copy-command", "exec")
+    assert "shutil.copytree('/photo-input','/photos'" in command
+    assert "ai-worker" not in changed["services"]
+    assert not any("ports" in service for service in changed["services"].values())
+
+
+@pytest.mark.parametrize("has_photos", [False, True])
+def test_materialize_optional_photo_payload_before_init_preserves_old_path_and_closed_jobs(
+    paired, tmp_path, monkeypatch, has_photos
+):
+    import io
+    import re
+    import tarfile
+
+    from calorie_app.health import EXPECTED_REVISION
+
+    folder, _ = paired
+    manifest = restore.read(folder / "manifest.json")
+    manifest["revision"] = EXPECTED_REVISION
+    (folder / "roles.sql").write_text("CREATE ROLE postgres;\n")
+    manifest["files"]["roles.sql"] = {
+        "size": (folder / "roles.sql").stat().st_size,
+        "sha256": restore.digest(folder / "roles.sql"),
+    }
+    payload = b"\xff\xd8prepared-private-fixture\xff\xd9"
+    photo_name = "a" * 32 + ".jpg"
+    if has_photos:
+        archive = folder / "photos.tar"
+        with tarfile.open(archive, "w") as output:
+            root = tarfile.TarInfo("photos")
+            root.type, root.mode = tarfile.DIRTYPE, 0o700
+            output.addfile(root)
+            item = tarfile.TarInfo("photos/" + photo_name)
+            item.mode, item.size, item.mtime = 0o600, len(payload), 1_700_000_000
+            output.addfile(item, io.BytesIO(payload))
+        manifest["optional_photos"] = {"format": 1, "archive": "photos.tar", "root": "photos"}
+        manifest["files"]["photos.tar"] = {
+            "size": archive.stat().st_size,
+            "sha256": restore.digest(archive),
+        }
+    restore.write(folder / "manifest.json", manifest)
+    events = []
+    queries = []
+
+    class Offline:
+        def __init__(self, state):
+            self.state = state
+            self.record = restore.read(state / "restore-target.json")
+            self.epoch = manifest["source_epoch"]
+
+        def save(self):
+            restore.write(self.state / "restore-target.json", self.record)
+
+        def compose(self, *args):
+            events.append(args)
+            if args[-1] == "catalog-init":
+                staged = self.state / "photos-restored" / "photos" / photo_name
+                assert staged.exists() is has_photos
+                if has_photos:
+                    assert staged.read_bytes() == payload
+                    assert staged.stat().st_mtime == 1_700_000_000
+            return "new-owned-postgres"
+
+        def sql(self, database, query):
+            queries.append(query)
+            if "version_num" in query:
+                return EXPECTED_REVISION
+            if query in restore.FINGERPRINTS.values():
+                return "[]"
+            if "UPDATE app.installation_state SET sync_epoch=" in query:
+                self.epoch = re.search(r"sync_epoch='([^']+)'", query).group(1)
+                return ""
+            if "SELECT sync_epoch" in query:
+                return self.epoch
+            if "e8n_restore_maintain" in query:
+                return '{"pending":0}'
+            if "SELECT dispatch_open" in query or "SELECT enabled" in query:
+                return "f"
+            if "SELECT count(*) FROM app.sync_sessions" in query:
+                return "0"
+            return ""
+
+    def catalog(archive, target):
+        (target / "catalog").mkdir(parents=True)
+
+    monkeypatch.setattr(restore, "empty_project", lambda _: None)
+    monkeypatch.setattr(restore, "docker", lambda *args: args[-1])
+    monkeypatch.setattr(restore, "execute", lambda *args, **kwargs: b"")
+    monkeypatch.setattr(restore, "Target", Offline)
+    monkeypatch.setattr(restore, "restore_catalog", catalog)
+    target = tmp_path / "brand-new"
+    result = restore.materialize(
+        folder, target, "owned-target", restore.digest(folder / "manifest.json"), images()
+    )
+    assert result["phase"] == "OFFLINE_TARGET_READY"
+    assert result["api_started"] is result["ports_published"] is result["ai_started"] is False
+    assert all(command[-1] not in {"api", "ai-worker", "gateway"} for command in events)
+    assert any("dispatch_open=false" in query for query in queries)
+    assert not any("dispatch_open=true" in query or "configure-pool" in query for query in queries)
+    if has_photos:
+        assert result["optional_photos"] == {
+            "files": 1,
+            "bytes": len(payload),
+            "archive_sha256": manifest["files"]["photos.tar"]["sha256"],
+            "jobs_resumed": False,
+        }
+    else:
+        assert "optional_photos" not in result
+        assert not (target / "photos-restored").exists()
+
+
 def test_target_loader_refuses_changed_compose(tmp_path):
     cfg = {"project": "owned-target", "origin": "https://127.0.0.1:28443"}
     restore.write(tmp_path / "config.json", cfg)

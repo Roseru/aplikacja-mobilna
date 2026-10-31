@@ -11555,3 +11555,51 @@ Kontynuacja O2-073 — **zdjęcie MOCK i naprawa projekcji czasu posiłku**:
   oraz B z 14 dniami, pełny E9, odtwarzanie D2, Gemini i wydanie 1.0 mają
   własne bramki. Publikacja tej gałęzi oraz CI jej aktualnego head/base
   wymagają odrębnego potwierdzenia; wcześniejszy main CI nie jest ich wynikiem.
+
+### O3-123 — obsługa nowej instalacji lokalnej i sparowane zdjęcia
+
+- 31.10.2026, agent 3, jawny zakres właściciela: końcowa dostawa lokalna
+  MRE/DEMO, ręczne ścieżki i MOCK. ARPOL, VPS/domena i rzeczywiste Gemini
+  pozostają na później; teraz bez kluczy Gemini, Google lub billing.
+  Zachowano historyczne wymagania, dodając datowane rozstrzygnięcie
+  w WYMAGANIA_PROJEKTOWE.md oraz bieżącą instrukcję w README.
+- Gałąź `codex/devops-lokalne-wydanie`: pierwszy commit
+  `6f2228ad6f182a00e4e5dcdfc6bdc9ea69601338` ma dokładnego rodzica
+  `e64f18ba51d1e63efb5f6670e641d9780147d86c` z PR197. Zwykły merge
+  `41a104c` dołącza adapter D2 `f86bd9b` i jego bazę PR196/9b471c7;
+  zachowano oba kompletne wpisy O3-121 i O2-075. Publikacja nowego zakresu
+  wymaga integracji aktualnego main po PR196/197, bez przepisywania historii.
+- Nowy local_release.py i cztery cienkie START/STATUS/STOP/BACKUP korzystają
+  z jednego prywatnego powiązania istniejącego projektu, engine/socket,
+  containerId/imageId, konfiguracji, wolumenów, issuer/CA i pełnej chain
+  base→MOCK→SPI→E8. Start nie buduje, nie importuje, nie migruje i nie
+  provisionuje; zdrowy zestaw pozostaje bez restartu. Stop nie usuwa danych.
+  Świeży sukces E8 musi następować po starcie procesu kontenera. Dawne
+  prep gates i ich PREPARATION_ONLY pozostają historycznymi narzędziami.
+- BACKUP zamyka ingress i wszystkich writerów, także AI/E8/SMTP, potwierdza
+  PID0 i brak innych klientów PG, zachowuje parę DB/globals/katalog/config/TLS
+  i nie wznawia ruchu. Opcjonalne photos.tar ma jawny marker i wspólny
+  manifest/hash; restore trafia tylko do nowego własnego photo_data,
+  zachowuje prywatne prawa/mtime i nie zmienia quota/retencji ani nie
+  wznawia jobów. Stare T0 bez markera zachowuje dotychczasowy zakres.
+- Review wykrył P2 jednorazowej archiwizacji po mutable tagu migratora.
+  Nowy bound tryb używa dokładnego backend Image ID, pull=never,
+  network=none, UID10001, read-only i pojedynczego volume RO, bez migrate.env
+  oraz uprawnionych danych DB. Cleanup po timeout sprawdza dokładną nazwę,
+  obraz i własny label; żywy osierocony helper blokuje kolejną operację.
+  Legacy capture bez callback zachowuje własny dawny kontrakt i nie jest
+  objęty deklaracją przypięcia nowego helpera.
+- Wykonane lokalnie: wcześniejszy szeroki komplet infra 1260 PASS/12 SKIP;
+  końcowe cztery zmienione obszary 110 PASS/0 FAIL/0 SKIP, JUnit SHA256
+  `932aeb5c15c8cce17ef1f5fc9864746ca944e79051c96d40070ffcfd2131b1bc`.
+  Ruff/format, E0, parser pięciu skryptów PowerShell, CLI Python -I i
+  diff-check PASS. Testy obejmują ownership/drift, pełną chain, fizyczne
+  zamknięcie, zmieniony tag, cleanup helpera, stare i nowe kopie zdjęć oraz
+  brak uruchomienia API/AI podczas materializacji. Dowody pozostają prywatne.
+- Backend .env.example zachowuje AI_PROVIDER=mock i zakomentowane późniejsze
+  ustawienia Gemini. Wymagania datowanego potwierdzenia, configure-pool,
+  rzeczywistych limitów i historii pozostają w instrukcjach E7/E9; klucz
+  nie trafia do APK. Autor nie uruchamiał nowych skryptów na runtime.
+  Następny krok to niezależny odbiór zamrożonego źródła i jedno uzgodnione
+  okno operatora po bieżącym D2 na realny start/stop/kopię/optional photo
+  restore. Profil jest konfiguracją operacyjną, nie seal lub odbiorem 1.0.

@@ -65,7 +65,12 @@ def installed(tmp_path, monkeypatch):
             },
             "HostConfig": {"PortBindings": {}},
             "NetworkSettings": {"Networks": {project + "_default": {}}},
-            "State": {"Running": True, "Pid": 100 + index, "Health": {"Status": "healthy"}},
+            "State": {
+                "Running": True,
+                "Pid": 100 + index,
+                "Health": {"Status": "healthy"},
+                "StartedAt": "2000-01-01T00:00:00Z",
+            },
             "Mounts": [],
         }
     for service in ("api", "ai-worker"):
@@ -80,7 +85,15 @@ def installed(tmp_path, monkeypatch):
             "RW": True,
         }
     ]
-    volume_names = {photo, project + "_postgres_data"}
+    values["api"]["Mounts"].append(
+        {
+            "Type": "volume",
+            "Name": project + "_catalog_data",
+            "Destination": "/catalog",
+            "RW": False,
+        }
+    )
+    volume_names = {photo, project + "_postgres_data", project + "_catalog_data"}
     profile = {
         "format": 1,
         "project": project,
@@ -122,7 +135,11 @@ def installed(tmp_path, monkeypatch):
         if args[0] == "info":
             return "engine-fixture"
         if args[0] == "ps":
+            if any(release.ARCHIVE_LABEL in argument for argument in args):
+                return ""
             return "\n".join(value["Id"] for value in values.values())
+        if args[:2] == ("image", "inspect"):
+            return args[-1]
         if args[0] == "inspect":
             return json.dumps(list(values.values()))
         if args[:2] == ("volume", "inspect"):
@@ -283,6 +300,8 @@ def test_writer_closure_requires_no_physical_pid_even_when_running_false(install
 
 def test_start_reuses_existing_containers_and_does_not_provision_or_activate(installed):
     identifiers = {name: value["Id"] for name, value in installed.values.items()}
+    installed.stack.stop()
+    installed.calls.clear()
     report = installed.stack.start()
     assert report["https_api_issuer_ready"] is True
     assert identifiers == {name: value["Id"] for name, value in installed.values.items()}
@@ -290,6 +309,53 @@ def test_start_reuses_existing_containers_and_does_not_provision_or_activate(ins
     forbidden = {"build", "up", "run", "down", "rm", "provision", "activate", "--import-realm"}
     assert not any(forbidden & set(command) for command in commands)
     assert all(report["services"][name]["worker"]["fresh_success"] for name in release.E8)
+
+
+def test_start_of_already_healthy_installation_does_not_restart_ingress(installed):
+    assert installed.stack.start()["https_api_issuer_ready"] is True
+    assert not any(
+        call[:2] in {("compose", "start"), ("compose", "stop")} for call in installed.calls
+    )
+
+
+def test_old_worker_success_does_not_qualify_a_new_process(installed):
+    from datetime import UTC, datetime, timedelta
+
+    # A status can be fresh in wall time yet precede this container's new process.
+    installed.values["motivation"]["State"]["StartedAt"] = (
+        datetime.now(UTC) + timedelta(seconds=1)
+    ).isoformat()
+    report = installed.stack.status()
+    assert report["services"]["motivation"]["worker"]["fresh_success"] is False
+
+
+def test_disabled_finalizer_is_reported_truthfully_without_invented_success(installed, monkeypatch):
+    monkeypatch.setattr(
+        installed.stack,
+        "compose",
+        lambda *args: json.dumps(
+            {
+                "state": "disabled",
+                "last_success": None,
+                "metrics": {"processed": 0, "finalized": 0, "backlog": 0, "ready": False},
+            }
+        ),
+    )
+    result = installed.stack.worker_status(
+        "nemesis-finalizer", installed.values["nemesis-finalizer"]["State"]
+    )
+    assert result["state"] == "disabled" and result["fresh_success"] is False
+    assert result["metrics"]["ready"] is False
+
+
+def test_worker_wait_does_not_open_ingress_on_timeout(installed, monkeypatch):
+    monkeypatch.setattr(installed.stack, "worker_status", lambda *args: {"fresh_success": False})
+    ticks = iter([0, 0, 2])
+    monkeypatch.setattr(release.time, "monotonic", lambda: next(ticks))
+    monkeypatch.setattr(release.time, "sleep", lambda _: None)
+    with pytest.raises(ValueError, match="after process start"):
+        installed.stack.wait_workers(timeout=1)
+    assert not any(call[:2] == ("compose", "start") for call in installed.calls)
 
 
 def test_start_failure_keeps_ingress_and_all_writers_closed(installed, monkeypatch):
@@ -317,6 +383,94 @@ def test_operation_lock_refuses_overlap_without_deleting_existing_lock(installed
                 pytest.fail("second writer entered")
         assert installed.path.with_suffix(".operation.lock").is_file()
     assert not installed.path.with_suffix(".operation.lock").exists()
+
+
+def test_new_destinations_refuse_checkout_relative_and_live_state_paths(installed, tmp_path):
+    for path in (Path("relative"), installed.source / "backup", installed.path):
+        with pytest.raises(ValueError):
+            release.new_private_target(path)
+    with pytest.raises(ValueError, match="disjoint"):
+        installed.stack.backup(installed.state / "new-backup")
+    assert not any(call[0] == "compose" for call in installed.calls)
+    other = tmp_path / "another-repository"
+    (other / ".git").mkdir(parents=True)
+    with pytest.raises(ValueError, match="outside"):
+        release.new_private_target(other / "private-backup")
+
+
+def test_failed_quiescence_never_reads_database_or_archives_payload(
+    installed, tmp_path, monkeypatch
+):
+    monkeypatch.setattr(installed.stack, "compose", lambda *args, **kwargs: "")
+    monkeypatch.setattr(
+        installed.stack, "sql", lambda *args, **kwargs: pytest.fail("No SQL before closed writers")
+    )
+    monkeypatch.setattr(
+        backup, "execute", lambda *args, **kwargs: pytest.fail("No archive before closed writers")
+    )
+    target = tmp_path / "refused-copy"
+    with pytest.raises(ValueError, match="processes"):
+        installed.stack.backup(target)
+    assert not (target / "manifest.json").exists()
+    assert not (target / "photos.tar").exists()
+
+
+def test_binding_only_reads_existing_runtime_pins_host_inputs_and_creates_private_launcher(
+    installed, tmp_path, monkeypatch
+):
+    folder = installed.source / "local_release"
+    folder.mkdir()
+    for name in release.LAUNCH_FILES:
+        (folder / name).write_text("operator supplied wrapper")
+    extra = installed.state / "actual-ai-runner.py"
+    extra.write_text("private mount source")
+    subprocess_calls = []
+
+    def metadata(command, **kwargs):
+        subprocess_calls.append(command)
+        if command[:3] == ["git", "rev-parse", "HEAD"]:
+            return SimpleNamespace(stdout="b" * 40 + "\n")
+        if command[:3] == ["git", "status", "--porcelain"]:
+            return SimpleNamespace(stdout="")
+        assert command[:4] == ["docker", "--host", "unix:///qualified.sock", "compose"]
+        assert command[-3:] == ["config", "--format", "json"]
+        assert kwargs["env"] == release.transport_environment()
+        return SimpleNamespace(
+            stdout=json.dumps(
+                {
+                    "services": {
+                        "ai-worker": {"volumes": [{"type": "bind", "source": str(extra)}]},
+                    }
+                }
+            )
+        )
+
+    monkeypatch.setattr(release.subprocess, "run", metadata)
+    monkeypatch.setattr(release, "private_directory", lambda path: path.mkdir(mode=0o700))
+    profile = tmp_path / "new-private-launcher" / "runtime.json"
+    args = SimpleNamespace(
+        profile=profile,
+        state=installed.state,
+        project="owned-local",
+        docker_endpoint="unix:///qualified.sock",
+        engine_id="engine-fixture",
+        provider="mock",
+        compose_file=[Path(item["path"]) for item in installed.profile["compose_files"]],
+    )
+    result = release.bind(args)
+    assert result["runtime_mutated"] is False
+    saved = json.loads(profile.read_text())
+    assert str(extra) in {item["path"] for item in saved["files"]}
+    assert "never-print-this" not in profile.read_text() + json.dumps(result)
+    assert (profile.parent / "launcher.private.json").is_file()
+    assert all((profile.parent / name).is_file() for name in release.LAUNCH_FILES)
+    assert all(
+        command[0] == "git" or command[-3:] == ["config", "--format", "json"]
+        for command in subprocess_calls
+    )
+    extra.write_text("drifted runner")
+    with pytest.raises(ValueError, match="changed"):
+        release.ReleaseStack(profile)
 
 
 def photo_tar(path, *, name=None, kind=tarfile.REGTYPE, size=None, mode=0o600):
@@ -400,6 +554,7 @@ def test_capture_full_chain_closure_photo_hash_and_legacy_required_archives(
 
     monkeypatch.setattr(stack, "sql", sql)
     monkeypatch.setattr(backup, "execute", execute)
+    monkeypatch.setattr(release, "execute", execute)
     target = tmp_path / "paired"
     result = stack.backup(target)
     assert result["writers_stopped"] is True and result["traffic_reopened"] is False
@@ -411,10 +566,120 @@ def test_capture_full_chain_closure_photo_hash_and_legacy_required_archives(
     assert "release/runtime.json" in {name.removeprefix("config/") for name in manifest["files"]}
     for command in streams:
         assert command[:3] == ["docker", "--host", "unix:///qualified.sock"]
-        assert command.count("-f") == 4
-    assert any("photos:ro" in " ".join(command) for command in streams)
+        if "compose" in command:
+            assert command.count("-f") == 4
+        else:
+            assert "--network=none" in command and "--pull=never" in command
+            assert "--read-only" in command and "--user=10001:10001" in command
+            assert "sha256:" + "a" * 64 in command
+            assert "--env-file" not in command and "migrate" not in command
+            assert any(
+                "target=/photos,readonly" in item or "target=/catalog,readonly" in item
+                for item in command
+            )
+    assert any("target=/photos,readonly" in " ".join(command) for command in streams)
     assert installed.values["postgres"]["State"]["Running"] is True
     assert not any("e8n_activate" in query for query in queries)
+
+
+def test_archive_helper_ignores_moved_mutable_tag_and_has_no_privileged_environment(
+    installed, tmp_path, monkeypatch
+):
+    for name, item in installed.values.items():
+        if name != "postgres":
+            item["State"].update(Running=False, Pid=0)
+    commands = []
+    # The installation's mutable backend tag now points elsewhere; existing
+    # long-lived containers correctly retain the old immutable Image ID.
+    moved_tag = {"owned-local-backend:local": "sha256:" + "e" * 64}
+    monkeypatch.setattr(
+        release, "execute", lambda directory, command, **kwargs: commands.append((command, kwargs))
+    )
+    installed.stack.archive_volume(
+        tmp_path,
+        "owned-local_catalog_data",
+        "/catalog",
+        "print('fixture')",
+        tmp_path / "catalog.tar",
+    )
+    command, options = commands[0]
+    assert moved_tag["owned-local-backend:local"] not in command
+    assert "sha256:" + "a" * 64 in command and "owned-local-backend:local" not in command
+    assert "--network=none" in command and "--pull=never" in command
+    assert "--entrypoint=/app/.venv/bin/python" in command
+    assert "--env-file" not in command and "-e" not in command and "--env" not in command
+    assert "never-print-this" not in json.dumps(command)
+    assert options["environment"] == installed.stack.compose_environment()
+    with pytest.raises(ValueError, match="bound archive"):
+        installed.stack.archive_volume(
+            tmp_path, "foreign_volume", "/photos", "fixture", tmp_path / "photos.tar"
+        )
+
+
+def test_live_orphan_archive_helper_refuses_next_mutation(installed, monkeypatch):
+    original = release.docker
+
+    def docker(endpoint, *args):
+        if args[0] == "ps" and any(release.ARCHIVE_LABEL in value for value in args):
+            return "owned-orphan-with-physical-io"
+        return original(endpoint, *args)
+
+    monkeypatch.setattr(release, "docker", docker)
+    with pytest.raises(ValueError, match="physical IO"):
+        installed.stack.start()
+    assert not any(call[0] == "compose" for call in installed.calls)
+
+
+@pytest.mark.parametrize("correct_owner", [True, False])
+def test_timed_out_archive_helper_cleanup_checks_exact_name_image_and_owner(
+    installed, tmp_path, monkeypatch, correct_owner
+):
+    import subprocess
+
+    for name, item in installed.values.items():
+        if name != "postgres":
+            item["State"].update(Running=False, Pid=0)
+    original = release.docker
+    current = {}
+    stopped = []
+
+    def execute(directory, command, **kwargs):
+        current["name"] = command[command.index("--name") + 1]
+        raise subprocess.TimeoutExpired("private command not logged", 300)
+
+    def docker(endpoint, *args):
+        if args[0] == "inspect" and args[-1] == current.get("name"):
+            return json.dumps(
+                [
+                    {
+                        "Name": "/" + current["name"],
+                        "Image": "sha256:" + "a" * 64,
+                        "Config": {
+                            "Labels": {
+                                release.ARCHIVE_LABEL: installed.stack.profile_sha256
+                                if correct_owner
+                                else "foreign"
+                            }
+                        },
+                        "State": {"Running": True, "Pid": 123},
+                    }
+                ]
+            )
+        if args[0] == "stop":
+            stopped.append(args)
+            return ""
+        return original(endpoint, *args)
+
+    monkeypatch.setattr(release, "execute", execute)
+    monkeypatch.setattr(release, "docker", docker)
+    expected = subprocess.TimeoutExpired if correct_owner else ValueError
+    with pytest.raises(expected):
+        installed.stack.archive_volume(
+            tmp_path, "owned-local_catalog_data", "/catalog", "fixture", tmp_path / "catalog.tar"
+        )
+    assert bool(stopped) is correct_owner
+    if correct_owner:
+        assert stopped == [("stop", "--time", "5", current["name"])]
 
 
 def test_photo_marker_cannot_silently_ignore_or_invent_payload(tmp_path):

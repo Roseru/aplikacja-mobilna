@@ -5,20 +5,23 @@ import hashlib
 import json
 import os
 import re
+import secrets
 import shutil
 import ssl
 import subprocess
 import sys
+import time
 import urllib.error
 import urllib.parse
 import urllib.request
 from contextlib import contextmanager
+from datetime import datetime
 from pathlib import Path
 
 # -I ignores ambient PYTHONPATH; import only these reviewed sibling tools.
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 
-from backup import capture, digest, private_directory  # noqa: E402
+from backup import capture, digest, execute, private_directory  # noqa: E402
 from e8_worker import aggregate, healthy  # noqa: E402
 from run import HERE, ROOT, private_write  # noqa: E402
 from run_e8 import E8Stack  # noqa: E402
@@ -44,6 +47,7 @@ E8 = {
     "nemesis-finalizer": "finalizer",
 }
 HEX = re.compile(r"[0-9a-f]{64}")
+ARCHIVE_LABEL = "pl.roseru.calorie.local-archive-owner"
 PROFILE_KEYS = {
     "format",
     "project",
@@ -98,6 +102,27 @@ def ordinary(path, *, directory=False):
     if directory and not path.is_dir() or not directory and not path.is_file():
         reject("Required ordinary path missing")
     return path.resolve()
+
+
+def new_private_target(path):
+    path = Path(path)
+    if not path.is_absolute() or str(path).startswith(("\\\\?\\", "\\\\.\\")):
+        reject("Absolute new private destination required")
+    if any(part.endswith((" ", ".")) or ":" in part for part in path.parts[1:]):
+        reject("Ambiguous private destination")
+    for parent in (path, *path.parents):
+        if parent.is_symlink() or (
+            parent.exists() and getattr(parent.stat(), "st_file_attributes", 0) & 0x400
+        ):
+            reject("Private destination redirection refused")
+    target = path.resolve()
+    if (
+        target.exists()
+        or target.is_relative_to(ROOT)
+        or any((parent / ".git").exists() for parent in target.parents)
+    ):
+        reject("Destination must be new and outside the source checkout")
+    return target
 
 
 def pairs(items):
@@ -346,6 +371,7 @@ class ReleaseStack(E8Stack):
     def __init__(self, profile):
         self.profile_path = ordinary(profile)
         self.profile = validate_profile(read_json(self.profile_path))
+        self.profile_sha256 = digest(self.profile_path)
         value = self.profile
         super().__init__(
             Path(value["state"]),
@@ -376,9 +402,19 @@ class ReleaseStack(E8Stack):
 
     def owned(self):
         value = self.profile
+        if digest(self.profile_path) != self.profile_sha256:
+            reject("Operational profile changed during this operation")
         validate_profile(value)
         if docker(self.docker_endpoint, "info", "--format", "{{.ID}}") != value["engine_id"]:
             reject("Docker engine changed")
+        if docker(
+            self.docker_endpoint,
+            "ps",
+            "--quiet",
+            "--filter",
+            "label=" + ARCHIVE_LABEL + "=" + self.profile_sha256,
+        ):
+            reject("Previous archive helper still has physical IO")
         observed = inspect_project(self.docker_endpoint, value["project"])
         for service, expected in value["containers"].items():
             actual = observed[service]
@@ -432,6 +468,49 @@ class ReleaseStack(E8Stack):
         except (OSError, ValueError, KeyError, urllib.error.URLError):
             return False
 
+    def worker_status(self, service, state):
+        try:
+            result = json.loads(
+                self.compose(
+                    "exec",
+                    "-T",
+                    service,
+                    ".venv/bin/python",
+                    "-I",
+                    "-c",
+                    "from pathlib import Path; print(Path('/worker/status.json').read_text())",
+                )
+            )
+            metrics = aggregate(E8[service], result["metrics"]) if "metrics" in result else None
+            success = (
+                datetime.fromisoformat(result["last_success"].replace("Z", "+00:00"))
+                if result.get("last_success") is not None
+                else None
+            )
+            started = datetime.fromisoformat(state["StartedAt"].replace("Z", "+00:00"))
+            return {
+                "state": result["state"]
+                if result["state"]
+                in {"running", "ok", "pending", "disabled", "timeout", "stopped", "failed"}
+                else "unknown",
+                "fresh_success": healthy(result) and success is not None and success >= started,
+                "last_success": success.isoformat() if success is not None else None,
+                "metrics": metrics,
+            }
+        except (RuntimeError, ValueError, KeyError, TypeError, AttributeError):
+            return {"state": "unavailable", "fresh_success": False}
+
+    def wait_workers(self, timeout=90):
+        deadline = time.monotonic() + timeout
+        while time.monotonic() < deadline:
+            observed = self.owned()
+            if all(
+                self.worker_status(name, observed[name]["State"])["fresh_success"] for name in E8
+            ):
+                return
+            time.sleep(1)
+        reject("E8 successful cycles after process start not observed")
+
     def status(self):
         observed = self.owned()
         services = {}
@@ -442,30 +521,7 @@ class ReleaseStack(E8Stack):
                 "health": state.get("Health", {}).get("Status", "not_configured"),
             }
             if service in E8 and state["Running"]:
-                try:
-                    result = json.loads(
-                        self.compose(
-                            "exec",
-                            "-T",
-                            service,
-                            ".venv/bin/python",
-                            "-I",
-                            "-c",
-                            "from pathlib import Path; "
-                            "print(Path('/worker/status.json').read_text())",
-                        )
-                    )
-                    metrics = aggregate(E8[service], result["metrics"])
-                    item["worker"] = {
-                        "state": result["state"]
-                        if result["state"]
-                        in {"running", "ok", "pending", "disabled", "timeout", "stopped", "failed"}
-                        else "unknown",
-                        "fresh_success": healthy(result),
-                        "metrics": metrics,
-                    }
-                except (RuntimeError, ValueError, KeyError, TypeError):
-                    item["worker"] = {"state": "unavailable", "fresh_success": False}
+                item["worker"] = self.worker_status(service, state)
             services[service] = item
         return {
             "scope": "LOCAL_BOUND_INSTALLATION",
@@ -474,7 +530,13 @@ class ReleaseStack(E8Stack):
         }
 
     def start(self):
-        self.owned()
+        observed = self.owned()
+        if all(value["State"]["Running"] for value in observed.values()):
+            current = self.status()
+            if current["https_api_issuer_ready"] and all(
+                current["services"][name].get("worker", {}).get("fresh_success") for name in E8
+            ):
+                return current
         # Hold ingress while restarting existing processes. Never create/build/import/migrate.
         self.compose("stop", "gateway")
         try:
@@ -489,10 +551,12 @@ class ReleaseStack(E8Stack):
                     "nemesis-lifecycle",
                     "nemesis-finalizer",
                 ),
-                ("gateway",),
             ):
                 self.owned()
                 self.compose("start", "--wait", "--wait-timeout", "180", *services)
+            self.wait_workers()
+            self.owned()
+            self.compose("start", "--wait", "--wait-timeout", "180", "gateway")
             if not self.https_ready():
                 reject("HTTPS API or issuer is not ready")
             report = self.status()
@@ -512,10 +576,68 @@ class ReleaseStack(E8Stack):
         self.assert_closed(database=True)
         return {"scope": "LOCAL_BOUND_INSTALLATION", "result": "STOPPED", "data_removed": False}
 
+    def archive_volume(self, directory, volume, mount, source, output):
+        """A pinned read-only helper has no network or privileged service environment."""
+        self.assert_closed()
+        if volume not in self.profile["volumes"] or mount not in {"/catalog", "/photos"}:
+            reject("Only bound archive volumes are permitted")
+        image = self.profile["containers"]["api"]["image"]
+        if docker(self.docker_endpoint, "image", "inspect", "--format", "{{.Id}}", image) != image:
+            reject("Pinned archive helper image unavailable")
+        name = self.profile["project"] + "-archive-" + secrets.token_hex(12)
+        command = [
+            "docker",
+            "--host",
+            self.docker_endpoint,
+            "run",
+            "--rm",
+            "--name",
+            name,
+            "--label",
+            ARCHIVE_LABEL + "=" + self.profile_sha256,
+            "--pull=never",
+            "--network=none",
+            "--read-only",
+            "--user=10001:10001",
+            "--cap-drop=ALL",
+            "--security-opt=no-new-privileges",
+            "--memory=256m",
+            "--pids-limit=64",
+            "--mount",
+            "type=volume,source=" + volume + ",target=" + mount + ",readonly",
+            "--workdir=/app",
+            "--entrypoint=/app/.venv/bin/python",
+            image,
+            "-I",
+            "-B",
+            "-c",
+            source,
+        ]
+        try:
+            execute(directory, command, output_path=output, environment=self.compose_environment())
+        except Exception:
+            # Killing the Docker CLI on timeout is not proof that its container died.
+            # Inspect exact random name/image/owner before stopping only this helper.
+            try:
+                observed = json.loads(docker(self.docker_endpoint, "inspect", name))[0]
+            except RuntimeError:
+                raise
+            if (
+                observed.get("Name") != "/" + name
+                or observed.get("Image") != image
+                or observed.get("Config", {}).get("Labels", {}).get(ARCHIVE_LABEL)
+                != self.profile_sha256
+            ):
+                reject("Archive helper cleanup ownership mismatch")
+            if observed.get("State", {}).get("Running") or observed.get("State", {}).get("Pid"):
+                docker(self.docker_endpoint, "stop", "--time", "5", name)
+            raise
+
     def backup(self, destination):
         observed = self.owned()
-        if destination.exists():
-            reject("New backup directory required")
+        destination = new_private_target(destination)
+        if destination.is_relative_to(self.state) or self.state.is_relative_to(destination):
+            reject("Backup and live state must be disjoint")
         files = {"release/runtime.json": self.profile_path}
         for index, item in enumerate(self.profile["compose_files"]):
             files[f"release/compose-{index:02d}.yaml"] = Path(item["path"])
@@ -530,6 +652,7 @@ class ReleaseStack(E8Stack):
             verify_closed=self.assert_closed,
             extra_config=files,
             photo_volume=photo_volume(observed),
+            volume_archiver=self.archive_volume,
         )
         return {
             **result,
@@ -541,6 +664,9 @@ class ReleaseStack(E8Stack):
 
 def bind(args):
     """One-time operator binding after acceptance; reads Docker, writes only NEW private config."""
+    destination = new_private_target(args.profile)
+    if destination.parent.exists():
+        reject("Binding requires a new private directory")
     endpoint = local_endpoint(args.docker_endpoint)
     state = ordinary(args.state, directory=True)
     config = read_json(state / "config.json")
@@ -616,8 +742,8 @@ def bind(args):
         "volumes": sorted(volumes),
     }
     validate_profile(value)
-    destination = args.profile.absolute()
-    if destination.exists() or destination.parent.exists():
+    destination = new_private_target(destination)
+    if destination.parent.exists():
         reject("Binding requires a new private directory")
     private_directory(destination.parent)
     private_write(destination, json.dumps(value, indent=2))

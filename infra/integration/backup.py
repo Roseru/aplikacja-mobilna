@@ -152,9 +152,14 @@ def capture(
     verify_closed=None,
     extra_config=None,
     photo_volume=None,
+    volume_archiver=None,
 ):
     """Capture the legacy stack or an explicitly qualified complete installation."""
     stack = stack if stack is not None else E8Stack(state)
+    if photo_volume is not None and not re.fullmatch(
+        re.escape(stack.config["project"]) + r"_[a-z0-9_-]+", photo_volume
+    ):
+        raise ValueError("Photo archive requires an owned named volume")
     host_address(stack.config["host"])
     private_directory(destination)  # Never overwrite an earlier backup.
     started = time.monotonic()
@@ -193,6 +198,31 @@ def capture(
         stack.compose("exec", "-T", "postgres", "pg_dumpall", "-U", "postgres", "--globals-only"),
     )
     command = stack.compose_command()
+
+    def archive_volume(volume, mount, source, name):
+        if volume_archiver is not None:
+            volume_archiver(destination, volume, mount, source, destination / name)
+        else:
+            execute(
+                destination,
+                command
+                + [
+                    "run",
+                    "--rm",
+                    "-T",
+                    "--no-deps",
+                    "-v",
+                    volume + ":" + mount + ":ro",
+                    "migrate",
+                    ".venv/bin/python",
+                    "-I",
+                    "-c",
+                    source,
+                ],
+                output_path=destination / name,
+                environment=stack.compose_environment(),
+            )
+
     for database in ("calorie_app", "keycloak"):
         execute(
             destination,
@@ -226,28 +256,8 @@ def capture(
         "import sys,tarfile; t=tarfile.open(fileobj=sys.stdout.buffer,mode='w|'); "
         "t.add('/catalog',arcname='catalog'); t.close()"
     )
-    execute(
-        destination,
-        command
-        + [
-            "run",
-            "--rm",
-            "-T",
-            "--no-deps",
-            "-v",
-            stack.config["project"] + "_catalog_data:/catalog:ro",
-            "migrate",
-            ".venv/bin/python",
-            "-I",
-            "-c",
-            code,
-        ],
-        output_path=destination / "catalog.tar",
-        environment=stack.compose_environment(),
-    )
+    archive_volume(stack.config["project"] + "_catalog_data", "/catalog", code, "catalog.tar")
     if photo_volume is not None:
-        if not re.fullmatch(re.escape(stack.config["project"]) + r"_[a-z0-9_-]+", photo_volume):
-            raise ValueError("Photo archive requires an owned named volume")
         # Read the durable payload after all writers are physically closed. Preserve
         # JPEG/staging names and mtimes; do not run retention, change quota or jobs.
         photo_code = """
@@ -268,25 +278,7 @@ with tarfile.open(fileobj=sys.stdout.buffer,mode='w|') as target:
         assert item.suffix=='.staging' or info.st_size>0
         target.add(item,arcname='photos/'+item.name,recursive=False)
 """
-        execute(
-            destination,
-            command
-            + [
-                "run",
-                "--rm",
-                "-T",
-                "--no-deps",
-                "-v",
-                photo_volume + ":/photos:ro",
-                "migrate",
-                ".venv/bin/python",
-                "-I",
-                "-c",
-                photo_code,
-            ],
-            output_path=destination / "photos.tar",
-            environment=stack.compose_environment(),
-        )
+        archive_volume(photo_volume, "/photos", photo_code, "photos.tar")
     if verify_closed is not None:
         verify_closed()
     paths = [destination / name for name in ARCHIVES] + [
@@ -339,7 +331,8 @@ def restore_photos(archive, destination):
                 continue
             if (
                 not root.exists()
-                or not member.isfile()
+                or member.type not in (tarfile.REGTYPE, tarfile.AREGTYPE)
+                or member.sparse is not None
                 or member.mode != 0o600
                 or not re.fullmatch(r"photos/[0-9a-f]{32}\.(jpg|staging)", member.name)
                 or not 0 <= member.size <= MAX_IMAGE_BYTES

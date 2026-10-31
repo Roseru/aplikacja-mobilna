@@ -53,7 +53,18 @@ Odmowa istniejącego katalogu, projektu, kontenera, sieci lub wolumenu poprzedza
 mutacje. Dane są najpierw kopiowane i ponownie weryfikowane w prywatnym wejściu
 celu. Odtwarzane są globals/SCRAM, obie bazy i katalog. Cel zachowuje issuer,
 CA i klucz serwera oraz role T0. Nowa epoka zamyka AI/Nemesis i stare sesje;
-historia limitów AI nie jest resetowana. Zdjęcia nie są odtwarzane ani wysyłane.
+historia limitów AI nie jest resetowana. Historyczna kopia bez markera zdjęć
+tworzy pusty własny photo_data; nie domniemywa obecności plików.
+
+Nowa sparowana kopia może zawierać jawne optional_photos/format1 i photos.tar,
+objęte tym samym trzymanym zewnętrznie hashem manifestu. Tylko wtedy adapter
+sprawdza prywatne regularne JPG/staging, rozmiar zgodny z PhotoStore i mtime,
+a następnie kopiuje je do NOWEGO target photo_data przed dopuszczeniem API.
+Zachowuje mtime dla istniejącej retencji i nadaje UID10001/0700/0600.
+Nie zmienia quota, terminów, historii lub cleanup DB, nie wznawia jobów,
+nie wysyła zdjęć i nie otwiera AI. Stary format i bieżący T0 bez markera
+zachowują dotychczasowe zachowanie. Rzeczywisty odbiór opcjonalnego formatu
+jest osobny od wcześniejszego odtworzenia pustego magazynu zdjęć.
 
 Cel uruchamia tylko własne PG i Keycloak. Nie publikuje portu, nie uruchamia API,
 AI lub retencji. Nie montuje `init-db.sh`, nie uruchamia Alembica, nie importuje

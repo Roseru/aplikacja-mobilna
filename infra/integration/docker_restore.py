@@ -24,6 +24,7 @@ from backup import (
     execute,
     private_directory,
     restore_catalog,
+    restore_photos,
     verify_archive,
 )
 from maintenance import lock
@@ -147,7 +148,7 @@ def empty_project(project):
     )
 
 
-def configuration(state, project, source, images, owner):
+def configuration(state, project, source, images, owner, *, photos=False):
     """Only immutable existing images; no build, migrate, import or init-app."""
     require(
         set(images) == {"postgres", "keycloak", "backend", "gateway"}, "Exact image set required"
@@ -244,6 +245,16 @@ def configuration(state, project, source, images, owner):
             ],
         },
     }
+    if photos:
+        # Only a new private staged input and the NEW target photo_data volume.
+        # copytree/copy2 preserve mtime; the existing permission pass sets 0700/0600.
+        services["catalog-init"]["volumes"].append(p("photos-restored/photos") + ":/photo-input:ro")
+        command = services["catalog-init"]["command"][-1]
+        services["catalog-init"]["command"][-1] = command.replace(
+            "[(os.chown",
+            "shutil.copytree('/photo-input','/photos',dirs_exist_ok=True); [(os.chown",
+            1,
+        )
     return {
         "name": project,
         "services": services,
@@ -357,7 +368,8 @@ def materialize(archive, state, project, manifest_sha256, images):
     )
     empty_project(project)
     # Validate all image pins before creating state or Docker resources.
-    configuration(state, project, source, images, "preflight")
+    photos = manifest.get("optional_photos") is not None
+    configuration(state, project, source, images, "preflight", photos=photos)
     for image in images.values():
         require(
             docker("image", "inspect", "--format", "{{.Id}}", image) == image,
@@ -380,7 +392,10 @@ def materialize(archive, state, project, manifest_sha256, images):
         config = source | {"project": project}
         write(state / "config.json", config)
         owner = str(uuid4())
-        write(state / "compose.restore.json", configuration(state, project, source, images, owner))
+        write(
+            state / "compose.restore.json",
+            configuration(state, project, source, images, owner, photos=photos),
+        )
         private_write(state / "gateway-open.Caddyfile", (HERE / "Caddyfile").read_text())
         record = {
             "format": FORMAT,
@@ -474,6 +489,13 @@ def materialize(archive, state, project, manifest_sha256, images):
                 "Restored epoch/session/Nemesis fencing incomplete",
             )
             restore_catalog(sealed / "catalog.tar", state / "catalog-restored")
+            if photos:
+                payload = restore_photos(sealed / "photos.tar", state / "photos-restored")
+                target.record["optional_photos"] = {
+                    **payload,
+                    "archive_sha256": manifest["files"]["photos.tar"]["sha256"],
+                    "jobs_resumed": False,
+                }
             target.compose("run", "--rm", "--no-deps", "catalog-init")
             target.compose(
                 "up", "--detach", "--no-deps", "--wait", "--wait-timeout", "360", "keycloak"
