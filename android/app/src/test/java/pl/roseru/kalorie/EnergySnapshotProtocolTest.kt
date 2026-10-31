@@ -28,7 +28,9 @@ class EnergySnapshotProtocolTest {
         assertFalse(read.toString().contains("s".repeat(100)))
 
         val duplicate=StrictJson.read(read.wire.toByteArray(Charsets.UTF_8))
-        duplicate.getJSONArray("entities").getJSONObject(1).put("entity_id",weightId)
+        // Only repeating the same wire domain/UUID is ambiguous. Different
+        // domains may share a UUID, including a goal and its initial legacy E.
+        duplicate.getJSONArray("entities").put(version)
         assertThrows(IllegalArgumentException::class.java) {
             protocol.response(query,StrictJson.canonical(duplicate).toByteArray(Charsets.UTF_8))
         }

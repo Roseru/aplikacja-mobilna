@@ -422,7 +422,7 @@ class ReconciliationStorageTest {
                     assertNotEquals(original.id,finalSource.localId)
                     assertEquals(2600.0,db.dao().goalById(lease.storageScope,finalSource.localId)!!.kcal,0.0)
                     assertTrue(db.resolvedOriginalGoals(lease.storageScope).contains(original.id))
-                    assertEquals("Resolved immutable history must not become a second legacy import",0,LegacyImportStore(db,schema).preview(lease,lease.storageScope).total)
+                    assertEquals("Resolved immutable history must not become a second legacy import",0,LegacyImportStore(db,schema,null).preview(lease,lease.storageScope).total)
                 }
                 repo.setGoal(2700.0,null,0.0,null)
                 val following=ordinary.prepare(lease)!!

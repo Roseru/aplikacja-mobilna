@@ -11465,49 +11465,6 @@ Kontynuacja O2-073 — **zdjęcie MOCK i naprawa projekcji czasu posiłku**:
   Przygotowawczy zakres pakietu i jego granice nie stają się przez merge
   odbiorem prywatnego środowiska ani wydania.
 
-### O3-121 — PR197: rejestracja po dowodzie posiadania e-mail
-
-- 31.10.2026, agent 3, na zlecenie właściciela pełnego lokalnego dokończenia.
-  Gałąź `codex/backend-rejestracja-email-proof`, produkcyjne źródła
-  `f4418e4673d972540443a0f543c58db69bc1c3cc`, odebrana końcowa delta harnessu
-  `7c483a901af90adf3b2fa61d4b228eac55fbcacd`,
-  [PR197](https://github.com/Roseru/aplikacja-mobilna/pull/197) do main.
-  Publikacja zwykłym push zachowuje trzy commity; bez merge i bez zmiany
-  dotychczasowych środowisk przez autora. Livechat odczytano przed pushem.
-- Osobny provider Keycloak26.8.1 wymaga posiadania skrzynki przed lookup/create.
-  Podpisany token bez subject jest związany z bieżącą sesją i wykonaniem;
-  GET nie zużywa, POST zużywa atomowo. Guard przed stock tworzeniem odmawia
-  bez proof, przy zmianie email/username i przy wielokrotnych polach.
-  Unikalność, standardowy login/reset i minimalne role pozostają wymagane.
-  Nie dodano tabel ani automatycznej instalacji do istniejącego realm.
-- JUnit15/15, Python14/14 na3.13 i3.14, scope CI17/17, Ruff/format, E0
-  i diff-check PASS. Istniejący android-build uruchamia testy/JAR modułu
-  i testy odmów harnessu oraz zachowuje JUnit/JAR; bez nowego joba lub
-  osłabienia ci-required. Zdalne CI wymaga osobnego odczytu aktualnego head.
-- Rzeczywisty nowy Keycloak26.8.1/H2/HTTP/Mailpit: neutralność existing/new,
-  zero kont przed proof, dwukrotny GET, jawny POST, jedna rejestracja, role,
-  Code/S256, podpis/nonce/issuer/audience, login/reset, direct POST,
-  email/username/podwójne pola, obcy tab/przeglądarka, zły podpis, replay,
-  rzeczywiste300s expiry i awaria SMTP odebrane. Dwie niezależnie potwierdzone
-  sesje tego samego adresu po rzeczywistym61s cooldown miały nakładające się
-  końcowe POST: jedno konto,302/400, ukończony PKCE zwycięzcy. Równoległy
-  confirm tej samej formy nie stworzył konta; nie deklarujemy dwóch wejść
-  do consume ani jednoczesnego wykonania SQL. Prywatny raw/state poza Git.
-  Testowany JAR SHA256
-  `8e9af85336d78b38b68f4cda97481caefbb88c7211357425f366928824f88a2d`.
-- Niezależny review SPI i dowodów nie zostawił P1/P2. Wykryte P2 harnessu
-  (pierwszeństwo DOCKER_CONTEXT nad DOCKER_HOST) naprawiono: kwalifikowany
-  lokalny endpoint jest przypięty przez --host dla każdej operacji silnika,
-  również inspect/logs/stop, z usunięciem zmiennych wyboru/TLS. Nowe regresje
-  i odczyt rzeczywistego lokalnego silnika PASS. Własne testowe kontenery
-  zatrzymano z zachowaniem stanu; nie użyto prawdziwych skrzynek lub danych.
-- Następny krok: zdalne CI oraz odrębny odbiór istniejącego PostgreSQL/HTTPS
-  przez jedynego operatora runtime w uzgodnionym oknie. Przekazano dokładny
-  JAR i nowy kontekst obrazu, flow/SMTP/defaultRole oraz świadki zachowania
-  kont/subject/sesji. Bez ponownego importu realm. D2 wymaga właściwego
-  provider image przed startem przywróconej bazy; README opisuje tę zgodność.
-  Powyższy odbiór H2/HTTP nie jest odbiorem PG/TLS/Android ani wydania1.0.
-
 ### O2-075 — pierwszy profil zachowuje oszacowanie celu — osoba 2
 
 - 30.10.2026, agent 2, dalszy własny odbiór E9 według O2-071.
@@ -11555,6 +11512,204 @@ Kontynuacja O2-073 — **zdjęcie MOCK i naprawa projekcji czasu posiłku**:
   oraz B z 14 dniami, pełny E9, odtwarzanie D2, Gemini i wydanie 1.0 mają
   własne bramki. Publikacja tej gałęzi oraz CI jej aktualnego head/base
   wymagają odrębnego potwierdzenia; wcześniejszy main CI nie jest ich wynikiem.
+
+### O3-122 — cel i początkowe E we wspólnym PULL bez resetu Room27
+
+- Data: 31.10.2026, Agent 3 / O3. Kontynuacja PR196, własna gałąź
+  `codex/android-profile-goal-energy-pull` z dokładnego rodzica
+  `9b471c76b45bac0e6067c6456a83361053ea7a04`; publikacja i CI pozostają
+  po stronie koordynatora po odbiorze lokalnego commita.
+- Rzeczywista próba kalkulatora na pustym koncie wykazała poprawny zapis
+  jednego celu i ACK, po którym przyrostowy PULL odrzucał cel oraz początkowe
+  E o wspólnym UUID. Jest to zgodny wynik adaptera legacy na serwerze.
+  Zamrożone Room/wire zachowano; porównanie payloadu celu z przyjętą operacją
+  nie wykazało różnic. Wyjątek wynikał z założenia rozłącznych przestrzeni ID
+  w parserze, a pełny fallback miał to samo ograniczenie w kontroli duplikatów.
+- Pełny i przyrostowy odczyt rozdzielają teraz tożsamość dziennika oraz osi E.
+  Jeden pomocnik wyznacza klucz w parserach, indeksie zapisanych stron i przy
+  wznowieniu starszego indeksu Room27. Poprzednie ograniczenia UUID sześciu
+  domen dziennika, rewizje, tombstone, niezmienność E, jego unikalne rewizje
+  oraz klucze receipt/mapping pozostają. Ogólne kolizje UUID sześciu domen
+  wymagają osobnego kontraktu recovery i nie są częścią tej zmiany.
+- Starsze indeksy bare-UUID są sprawdzane przez odczyt oryginalnych stron
+  jedynie przy trafieniu takiego klucza. Nowy zapis nie przepisuje wcześniejszych
+  stron, zapytań, indeksów, checkpointów, kolejki lub ACK. Room27 i jej eksport
+  schematu pozostają bez migracji; klient ma 0.8.44/code55/validation1055.
+- Regresja na niezmienionej produkcji9b była RED: dokładnie dwie oczekiwane
+  odmowy poprawnej pary goal/legacyE, dla delty i pełnej kopii. Po poprawce
+  24/24 celowane JVM w sześciu klasach są GREEN, w tym pięć nowych testów
+  obejmujących obie kolejności, wiele stron oraz zachowanie odmów duplikatów
+  i zmiany niezmiennej osi. Niezależny przegląd końcowej produkcji: 0 P1/P2.
+  `lintDebug`: 0 Error/0 Fatal (33 Warning, 2 Information); testAPK zbudowany
+  i jego podpis zweryfikowany, bez instalacji lub podmiany aplikacji.
+- Trzy nowe native testy Room (osiem wariantów) kompilują się; pokrywają
+  reopen częściowej kopii ze starym indeksem, dokładne zachowanie saved wire
+  i rollback strony/run/index po duplikacie oraz wspólną projekcję celu/E.
+  Wykonanie native na urządzeniu i zwykła aktualizacja skonfigurowanego APK
+  z rzeczywistym readback/offline są odrębnym następnym odbiorem Roota.
+  Nie zapisujemy tu PASS dla aktualnego APK/API, E9 lub D2.
+
+- Aktualizacja odbioru 31.10, Root/Agent3: trzy nowe native Room mają
+  3/3 PASS (osiem wariantów) na API35. Rzeczywisty odbiór A2 obejmuje
+  pierwszy profil na1054, następnie zwykłą aktualizację1054→1055 i odczyt
+  na tym samym syntetycznym koncie. Nie przedstawiamy tej sekwencji jako
+  całego scenariusza wykonanego od zera na jednym APK.
+  Installed/PM APK1055 ma SHA256
+  `817f3e2149aab75055508061e336d735d5e6c52de8ef0b85ce2990bd5e120512`;
+  główny Room przed/po instalacji był bajtowo identyczny. Bez resetu danych.
+- Po rzeczywistym AppAuth/PKCE i zwykłym PUSH/PULL/applied readback konto A2
+  zachowało dokładnie jeden cel2200 oraz audyt E2595 o niezmiennym hashu.
+  PostgreSQL potwierdza niezmieniony pełny wiersz celu i jego receipt,
+  jeden przyjęty profil i łącznie dwa sync receipts. Nowy proces z publiczną
+  blokadą sieci aplikacji pokazał ten sam profil/cel/audyt. Siedem wybranych
+  pełnych tabel Room z rowid pozostało identycznych przed/po odczycie offline
+  oraz po testach fixture. Nie deklarujemy nowego kernel/UID packet trace.
+- Niezależny odczyt55artefaktów/17kontroli wiąże source, APK/PM/podpis,
+  tar/SQLite, zamrożone requesty z PG receipt oraz applied źródło osi E.
+  Receipt kwalifikacji ma SHA256
+  `8d18fe7d4f2c88935376cd715cbcec69c764828c1babc1c87f7941c2b6605c3b`.
+  Zachowano timeout pierwszego browser run, późniejszy XML z SystemUI ANR
+  oraz drugi pozytywny run; nie przypisujemy timeoutowi udowodnionej przyczyny.
+  Surowe strony E zostały już skompaktowane i nie udajemy ich obecności.
+  To odbiór lokalnego A2/update/PULL/offline; aktualny zdalny FULL CI,
+  przyjęcie E9 w UI, rzeczywisty D2 oraz Gemini mają odrębne zakresy.
+- Dalszy przegląd publicznego recovery UI ujawnił brak energySchema w
+  ImportViewModel, choć rzeczywisty transport zapisywał poprawny ENERGY_V1 proof.
+  Czytnik modelu odrzucał taki zakres i pokazywał UNVERIFIED/brak proofRunId;
+  decyzja i finish nie mogły użyć tej kopii. MainActivity przekazuje teraz
+  app.energySchema do tego samego ReconciliationStore modelu. Parametr jest
+  jawny we wszystkich czterech miejscach konstrukcji; dotychczasowe fixture
+  legacy przekazują null, regresja osi E przekazuje jej schemat. Nie zmieniono
+  decyzji, transportu, żadnej migracji, raw wire, kolejki ani reguł ACK.
+- Source 0.8.45/code56/validation1056 dodaje regresję publicznych callbacków
+  preview/approve/downloadProof/acceptServer/finish na realnym Room i jawnie
+  syntetycznej pełnej kopii celu oraz E o wspólnym UUID. Oddzielny test-only
+  pin używa starego pięcioargumentowego API; wersja po poprawce jawnie
+  przekazuje schemat. Przygotowanie źródeł nie oznacza jeszcze wykonanego RED,
+  GREEN, builda, nowego APK lub D2. Ich wykonanie wymaga uzgodnionego okna;
+  obecne dane/ACK i odebrany APK1055 pozostają osobnymi dowodami.
+
+- Wykonano następnie rzeczywisty native RED publicznego ViewModel na
+  niezmienionym zainstalowanym APK1055/`817f3e21`: po kompletnym zaakceptowanym
+  ENERGY_V1 proof test zakończył się dokładnie `UNVERIFIED/proof=null`,
+  1 FAIL/3,154s. Pierwszy wcześniejszy build testu miał błąd odczytu
+  EnergyVersion.entityId; poprawiono go na id w test-only `1acec94`.
+  Ten błąd kompilacji jest zachowany i nie jest liczony jako runtime RED.
+  RED receipt SHA256
+  `f267f6338d30ff943968f1ab017b5d333d1ce9e823c95f02daf531c203884663`.
+- Przegląd ujawnił pokrewny brak w LegacyImportStore.preview/resume:
+  pełny ENERGY_V1 oraz przyrostowy active run były czytane jak legacy FULL.
+  Pin `0d025e7645d53fc8af497574ed00a5251f820683` dodaje wąski entity-only
+  ServerDiaryProof i jawne przekazanie schema. Zastosowany wynik delty jest
+  związany z current application/run/context/scope/checkpoint/timeline/limit;
+  sześć domen ma current row.runId, a niezmienne E własne historyczne
+  sourceRun/application. Bez rekonstrukcji dawnego base z końcowych tabel,
+  fabrykowania stron/receipt/mapping lub nieograniczonego chodzenia historii.
+  Oba źródła przeszły niezależne review bez pozostawionego P1/P2.
+- Dwie nowe regresje importu rzeczywiście odtworzyły odmowę starej produkcji:
+  2 FAIL/6,092s w LegacyImportStore.preview, pełny i przyrostowy proof.
+  Testowe kopie RED jawnie pomijają nowo dodany parametr schema; nie
+  deklarujemy identycznego wywołania konstruktora RED i GREEN. Źródła i logi
+  porażek zachowano. Receipt SHA256
+  `6e2f91ee3e13193939c9a259a461a147790cf7789258fd5dc69939fb8ed61a1f`.
+- Normalnie zintegrowany build source
+  `4cf9bd11819d4470f83bb489e031b219bce1ab15`: validation1056/0.8.45,
+  niezmieniony Room27. Oba APK build PASS/3m11s, ten sam signer co1055.
+  App SHA256 `73edcf983af64653f16d46fd6dbc33475daa35c0d644a4ea538894e039bc7227`;
+  prywatny test APK `858d9289f92275b7bb73dbb700d52c9c4ff214d96f1b62f3b4d5e3c672e95c41`.
+  Zwykła aktualizacja1055→1056 zachowała Room tar identyczny bajtowo:
+  `a0bd607dfcad31cff09f11c015d75150f28bba26baf95173cfa35dce30d0e1a0`.
+  Bez odinstalowania, clear/reset lub zmiany schematu.
+- Native na zainstalowanym1056: **19 PASS/0 FAIL/0 SKIP/27,222s**,
+  siedem nowych metod oraz dwanaście dotychczasowych kompatybilności
+  LegacyImportStorageTest/ImportViewModelTest. Pełna/przyrostowa kopia,
+  wspólny UUID celu/E, publiczne preview/approve/proof/decision/finish,
+  import/niezmienne body/ACK, reopen i faktyczna kompaktacja oraz odmowy
+  niepełnego, unapplied, blocked, wrong-limit, stale shadow i foreign owner
+  zostały sprawdzone. To prawdziwy Room i produkcyjne callbacki/store,
+  lecz syntetyczne wire/odpowiedzi ACK; nie dowód serwerowego przyjęcia.
+  Receipt SHA256
+  `8fe9892b846a79f576565375e12610be18be74cd3176be95bc2fd65dbdf2d5cd`.
+- Po native57 z58 tabel rzeczywistego dziennika, wraz z rowid, pozostało
+  identycznych. Zmienił się tylko sync_work_state; integrity/FK PASS.
+  Prywatny comparison SHA256
+  `5bdbdbce501df2b8d0b0719678a101486d9caea7206d48a3e8fefa48bd3d57d2`.
+  CI `41229509318` 8/8 oraz main `41229364491` są zielone dla starszych
+  odpowiednio e609e7e/922e32b. Nowe źródło wymaga własnego FULL CI przed
+  merge. Rzeczywisty readback/MRE/odtwarzanie D2 i końcowa paczka mają
+  odrębne odbiory; powyższe19 nie zalicza ich ani rzeczywistego Gemini.
+
+### O3-121 — PR197: rejestracja po dowodzie posiadania e-mail
+
+- 31.10.2026, agent 3, na zlecenie właściciela pełnego lokalnego dokończenia.
+  Gałąź `codex/backend-rejestracja-email-proof`, produkcyjne źródła
+  `f4418e4673d972540443a0f543c58db69bc1c3cc`, odebrana końcowa delta harnessu
+  `7c483a901af90adf3b2fa61d4b228eac55fbcacd`,
+  [PR197](https://github.com/Roseru/aplikacja-mobilna/pull/197) do main.
+  Publikacja zwykłym push zachowuje trzy commity; bez merge i bez zmiany
+  dotychczasowych środowisk przez autora. Livechat odczytano przed pushem.
+- Osobny provider Keycloak26.8.1 wymaga posiadania skrzynki przed lookup/create.
+  Podpisany token bez subject jest związany z bieżącą sesją i wykonaniem;
+  GET nie zużywa, POST zużywa atomowo. Guard przed stock tworzeniem odmawia
+  bez proof, przy zmianie email/username i przy wielokrotnych polach.
+  Unikalność, standardowy login/reset i minimalne role pozostają wymagane.
+  Nie dodano tabel ani automatycznej instalacji do istniejącego realm.
+- JUnit15/15, Python14/14 na3.13 i3.14, scope CI17/17, Ruff/format, E0
+  i diff-check PASS. Istniejący android-build uruchamia testy/JAR modułu
+  i testy odmów harnessu oraz zachowuje JUnit/JAR; bez nowego joba lub
+  osłabienia ci-required. Zdalne CI wymaga osobnego odczytu aktualnego head.
+- Rzeczywisty nowy Keycloak26.8.1/H2/HTTP/Mailpit: neutralność existing/new,
+  zero kont przed proof, dwukrotny GET, jawny POST, jedna rejestracja, role,
+  Code/S256, podpis/nonce/issuer/audience, login/reset, direct POST,
+  email/username/podwójne pola, obcy tab/przeglądarka, zły podpis, replay,
+  rzeczywiste300s expiry i awaria SMTP odebrane. Dwie niezależnie potwierdzone
+  sesje tego samego adresu po rzeczywistym61s cooldown miały nakładające się
+  końcowe POST: jedno konto,302/400, ukończony PKCE zwycięzcy. Równoległy
+  confirm tej samej formy nie stworzył konta; nie deklarujemy dwóch wejść
+  do consume ani jednoczesnego wykonania SQL. Prywatny raw/state poza Git.
+  Testowany JAR SHA256
+  `8e9af85336d78b38b68f4cda97481caefbb88c7211357425f366928824f88a2d`.
+- Niezależny review SPI i dowodów nie zostawił P1/P2. Wykryte P2 harnessu
+  (pierwszeństwo DOCKER_CONTEXT nad DOCKER_HOST) naprawiono: kwalifikowany
+  lokalny endpoint jest przypięty przez --host dla każdej operacji silnika,
+  również inspect/logs/stop, z usunięciem zmiennych wyboru/TLS. Nowe regresje
+  i odczyt rzeczywistego lokalnego silnika PASS. Własne testowe kontenery
+  zatrzymano z zachowaniem stanu; nie użyto prawdziwych skrzynek lub danych.
+- Następny krok: zdalne CI oraz odrębny odbiór istniejącego PostgreSQL/HTTPS
+  przez jedynego operatora runtime w uzgodnionym oknie. Przekazano dokładny
+  JAR i nowy kontekst obrazu, flow/SMTP/defaultRole oraz świadki zachowania
+  kont/subject/sesji. Bez ponownego importu realm. D2 wymaga właściwego
+  provider image przed startem przywróconej bazy; README opisuje tę zgodność.
+  Powyższy odbiór H2/HTTP nie jest odbiorem PG/TLS/Android ani wydania1.0.
+
+Kontynuacja O3-121 — zgodność narzędzi z rejestracją email-as-username:
+
+- Operator odebrał osobno istniejący PostgreSQL/HTTPS z tym samym JAR:
+  11 kontroli, SPI_READY SHA256
+  `e86a1567ea5b8bd7f2d765021644a5d04c38a7491b1419443f1612550d7e9d22`.
+  Nie importowano realm ponownie; wcześniejsze konta, subject, klucze,
+  klienci, dane aplikacji i sesje A2 zachowano. To lokalny zakres PG/TLS.
+- Nowe własne konta administracyjnego Probe były poprawnie tworzone,
+  lecz helper zapisywał requested bare username zamiast rzeczywistego
+  username po wymuszeniu e-mail. `6f99b5c` odczytuje wyłącznie subject
+  z Location, wiąże id i dokładną syntetyczną tożsamość przed rolą/zapisem
+  i zachowuje rzeczywisty username oraz to samo hasło. Bez wyszukiwania,
+  resetu lub aktualizacji istniejących kont. Autor i peer: po 9/9 regresji PASS.
+- Przed T0 wykonano realny ograniczony smoke przez dokładny nowy helper:
+  dwa nowe syntetyczne konta, persisted username=ich requested email,
+  POST Location=GET id=podpisany ID/access sub, S256/issuer/audience/nonce
+  i wyłącznie podstawowa rola API. GET /me prawidłowo zwrócił dla obu
+  403 account_bootstrap_required; nie wykonywano bootstrap lub zapisów
+  aplikacyjnych. Konfiguracja/CA i wcześniejsze credentials bez zmiany.
+  Receipt SHA256
+  `8410be96d98d4b980b64de65e93f2dcfd9601c1b8ee0fb6862f683ebbd6355a5`.
+  Prywatne hasła/tokeny/bindings pozostają poza Git.
+- Bazowy SyncWakeStorageTest jest identycznym blobem `cc96a302` na e64f18b
+  i cd3658a. Do tej samej kontynuacji PR197 włączono wyłącznie testowe
+  `48aafc0` i `3e457f6` przez zwykły cherry-pick -x z zachowaniem autorów
+  oraz pełny wpis O3-124. Nie zmieniono produkcyjnego workera lub limitu15s.
+  Stary CI41219974507 pozostaje FAIL581/582; lokalne4/4 z O3-124 nie
+  zastępują nowego FULL CI aktualnego head/base. Bez nowego PR lub merge.
 
 ### O3-123 — obsługa nowej instalacji lokalnej i sparowane zdjęcia
 
@@ -11612,34 +11767,6 @@ Kontynuacja O2-073 — **zdjęcie MOCK i naprawa projekcji czasu posiłku**:
   brak/błędny czas, przyszły/przeterminowany sukces i sukces sprzed startu
   procesu. Wymagany nowy bind/profile/status operatora; poprzedni wynik
   pozostaje dowodem odmowy, bez deklaracji wykonania start/stop/backup.
-Kontynuacja O3-121 — zgodność narzędzi z rejestracją email-as-username:
-
-- Operator odebrał osobno istniejący PostgreSQL/HTTPS z tym samym JAR:
-  11 kontroli, SPI_READY SHA256
-  `e86a1567ea5b8bd7f2d765021644a5d04c38a7491b1419443f1612550d7e9d22`.
-  Nie importowano realm ponownie; wcześniejsze konta, subject, klucze,
-  klienci, dane aplikacji i sesje A2 zachowano. To lokalny zakres PG/TLS.
-- Nowe własne konta administracyjnego Probe były poprawnie tworzone,
-  lecz helper zapisywał requested bare username zamiast rzeczywistego
-  username po wymuszeniu e-mail. `6f99b5c` odczytuje wyłącznie subject
-  z Location, wiąże id i dokładną syntetyczną tożsamość przed rolą/zapisem
-  i zachowuje rzeczywisty username oraz to samo hasło. Bez wyszukiwania,
-  resetu lub aktualizacji istniejących kont. Autor i peer: po 9/9 regresji PASS.
-- Przed T0 wykonano realny ograniczony smoke przez dokładny nowy helper:
-  dwa nowe syntetyczne konta, persisted username=ich requested email,
-  POST Location=GET id=podpisany ID/access sub, S256/issuer/audience/nonce
-  i wyłącznie podstawowa rola API. GET /me prawidłowo zwrócił dla obu
-  403 account_bootstrap_required; nie wykonywano bootstrap lub zapisów
-  aplikacyjnych. Konfiguracja/CA i wcześniejsze credentials bez zmiany.
-  Receipt SHA256
-  `8410be96d98d4b980b64de65e93f2dcfd9601c1b8ee0fb6862f683ebbd6355a5`.
-  Prywatne hasła/tokeny/bindings pozostają poza Git.
-- Bazowy SyncWakeStorageTest jest identycznym blobem `cc96a302` na e64f18b
-  i cd3658a. Do tej samej kontynuacji PR197 włączono wyłącznie testowe
-  `48aafc0` i `3e457f6` przez zwykły cherry-pick -x z zachowaniem autorów
-  oraz pełny wpis O3-124. Nie zmieniono produkcyjnego workera lub limitu15s.
-  Stary CI41219974507 pozostaje FAIL581/582; lokalne4/4 z O3-124 nie
-  zastępują nowego FULL CI aktualnego head/base. Bez nowego PR lub merge.
 
 ### O3-124 — domknięcie fixture i diagnostyka rzeczywistego wyniku workera
 

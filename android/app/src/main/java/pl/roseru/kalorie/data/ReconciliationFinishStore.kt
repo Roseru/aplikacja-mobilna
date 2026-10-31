@@ -31,7 +31,7 @@ internal class ReconciliationFinishStore(private val owner:ReconciliationStore) 
             // ACK followed by a fresh full read, rather than comparing against its older pre-push snapshot.
             check(dao.batches(id).none {it.snapshotRunId==copy.first.id})
             FinishSource(plan,rows,copy.first,copy.second,db.snapshotDao().pages(copy.first.id),
-                LegacyImportStore(db,owner.schema).capture(lease.storageScope,true))
+                LegacyImportStore(db,owner.schema,owner.energySchema).capture(lease.storageScope,true))
         }
         val current=source.currentRows.associate {entry->val root=StrictJson.read(entry.second.toByteArray())
             (entry.first to root.getJSONObject("row").getString("id")) to root}
@@ -51,7 +51,7 @@ internal class ReconciliationFinishStore(private val owner:ReconciliationStore) 
         db.withTransaction {
             check(owner.plan(lease,expected,id)==source.plan && dao.sources(id)==source.rows &&
                 db.snapshotDao().pages(source.run.id)==source.pages &&
-                LegacyImportStore(db,owner.schema).capture(lease.storageScope,true)==source.currentRows)
+                LegacyImportStore(db,owner.schema,owner.energySchema).capture(lease.storageScope,true)==source.currentRows)
             check(owner.latestCopy(lease,expected,id).first==source.run)
             val capturedOperations=source.rows.flatMap {row->JSONArray(row.outboxesJson).let {ops->
                 (0 until ops.length()).map {ops.getJSONObject(it).getString("operationId")} } }.toSet()+source.rows.mapNotNull {it.operationId}
