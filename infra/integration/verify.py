@@ -83,6 +83,7 @@ class Probe:
             credentials = {}
             for name in ("a", "b"):
                 username = f"integration-probe-{suffix}-{name}"
+                email = username + "@invalid.example"
                 password = secrets.token_hex(32)
                 created = expect(
                     client.post(
@@ -94,7 +95,7 @@ class Probe:
                             "emailVerified": True,
                             "firstName": "Integration",
                             "lastName": name.upper(),
-                            "email": username + "@invalid.example",
+                            "email": email,
                             "requiredActions": [],
                             "credentials": [
                                 {"type": "password", "value": password, "temporary": False}
@@ -109,6 +110,22 @@ class Probe:
                     raise RuntimeError("Untrusted administrative user location")
                 subject = location.removeprefix(prefix)
                 subject = str(UUID(subject))
+                # email-as-username realms persist the email instead of the requested
+                # bare name. Read only this newly created subject; never search/reset
+                # accounts or assume that accepting a POST preserved the login name.
+                persisted = expect(
+                    client.get(base + f"/users/{subject}", headers=headers), 200
+                ).json()
+                if (
+                    persisted.get("id") != subject
+                    or persisted.get("username") not in {username, email}
+                    or persisted.get("email") != email
+                    or persisted.get("firstName") != "Integration"
+                    or persisted.get("lastName") != name.upper()
+                    or persisted.get("enabled") is not True
+                    or persisted.get("emailVerified") is not True
+                ):
+                    raise RuntimeError("Created fixture identity does not match the requested user")
                 expect(
                     client.post(
                         base + f"/users/{subject}/role-mappings/clients/{api_id}",
@@ -117,7 +134,7 @@ class Probe:
                     ),
                     204,
                 )
-                credentials[name] = {"username": username, "password": password}
+                credentials[name] = {"username": persisted["username"], "password": password}
         self.credentials = credentials
         private_write(
             self.stack.state / f"probe-credentials-{suffix}.json", json.dumps(credentials)
