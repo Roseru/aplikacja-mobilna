@@ -11508,6 +11508,35 @@ Kontynuacja O2-073 — **zdjęcie MOCK i naprawa projekcji czasu posiłku**:
   provider image przed startem przywróconej bazy; README opisuje tę zgodność.
   Powyższy odbiór H2/HTTP nie jest odbiorem PG/TLS/Android ani wydania1.0.
 
+Kontynuacja O3-121 — zgodność narzędzi z rejestracją email-as-username:
+
+- Operator odebrał osobno istniejący PostgreSQL/HTTPS z tym samym JAR:
+  11 kontroli, SPI_READY SHA256
+  `e86a1567ea5b8bd7f2d765021644a5d04c38a7491b1419443f1612550d7e9d22`.
+  Nie importowano realm ponownie; wcześniejsze konta, subject, klucze,
+  klienci, dane aplikacji i sesje A2 zachowano. To lokalny zakres PG/TLS.
+- Nowe własne konta administracyjnego Probe były poprawnie tworzone,
+  lecz helper zapisywał requested bare username zamiast rzeczywistego
+  username po wymuszeniu e-mail. `6f99b5c` odczytuje wyłącznie subject
+  z Location, wiąże id i dokładną syntetyczną tożsamość przed rolą/zapisem
+  i zachowuje rzeczywisty username oraz to samo hasło. Bez wyszukiwania,
+  resetu lub aktualizacji istniejących kont. Autor i peer: po 9/9 regresji PASS.
+- Przed T0 wykonano realny ograniczony smoke przez dokładny nowy helper:
+  dwa nowe syntetyczne konta, persisted username=ich requested email,
+  POST Location=GET id=podpisany ID/access sub, S256/issuer/audience/nonce
+  i wyłącznie podstawowa rola API. GET /me prawidłowo zwrócił dla obu
+  403 account_bootstrap_required; nie wykonywano bootstrap lub zapisów
+  aplikacyjnych. Konfiguracja/CA i wcześniejsze credentials bez zmiany.
+  Receipt SHA256
+  `8410be96d98d4b980b64de65e93f2dcfd9601c1b8ee0fb6862f683ebbd6355a5`.
+  Prywatne hasła/tokeny/bindings pozostają poza Git.
+- Bazowy SyncWakeStorageTest jest identycznym blobem `cc96a302` na e64f18b
+  i cd3658a. Do tej samej kontynuacji PR197 włączono wyłącznie testowe
+  `48aafc0` i `3e457f6` przez zwykły cherry-pick -x z zachowaniem autorów
+  oraz pełny wpis O3-124. Nie zmieniono produkcyjnego workera lub limitu15s.
+  Stary CI41219974507 pozostaje FAIL581/582; lokalne4/4 z O3-124 nie
+  zastępują nowego FULL CI aktualnego head/base. Bez nowego PR lub merge.
+
 ### O3-124 — domknięcie fixture i diagnostyka rzeczywistego wyniku workera
 
 - 31.10.2026, Agent 3 / O3. Gałąź `codex/android-wakecheck-fixture`,
