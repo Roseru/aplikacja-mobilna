@@ -25,20 +25,15 @@ import org.keycloak.sessions.AuthenticationSessionModel;
 public final class EmailProofAuthenticator implements Authenticator, AuthenticatorFactory {
     public static final String ID = "calorie-registration-email-proof";
     @Override public void authenticate(AuthenticationFlowContext context) {
-        if (Proof.verified(context.getAuthenticationSession()) != null) context.success();
+        String linkToken = context.getUriInfo().getQueryParameters().getFirst("email_proof");
+        if (linkToken != null) showLinkConfirmation(context, linkToken);
+        else if (Proof.verified(context.getAuthenticationSession()) != null) context.success();
         else context.challenge(context.form().createForm("calorie-email-proof.ftl"));
     }
 
     @Override public void action(AuthenticationFlowContext context) {
         MultivaluedMap<String, String> query = context.getUriInfo().getQueryParameters();
         MultivaluedMap<String, String> form = context.getHttpRequest().getDecodedFormParameters();
-        String linkToken = query.getFirst("email_proof");
-        if (linkToken != null) {
-            // A mail scanner GET cannot consume the token or create a user. Require an explicit form POST.
-            context.challenge(context.form().setAttribute("emailProofToken", linkToken)
-                    .createForm("calorie-email-proof-confirm.ftl"));
-            return;
-        }
         String proof = form.getFirst("email_proof");
         if (proof != null) {
             try {
@@ -53,7 +48,22 @@ public final class EmailProofAuthenticator implements Authenticator, Authenticat
             }
             return;
         }
+        String linkToken = query.getFirst("email_proof");
+        if (linkToken != null) {
+            showLinkConfirmation(context, linkToken);
+            return;
+        }
         requestProof(context, form.getFirst("email"));
+    }
+
+    private void showLinkConfirmation(AuthenticationFlowContext context, String token) {
+        // Registration GET re-enters authenticate(), not action(). Both paths remain read-only.
+        if (token.length() > 8192) {
+            context.challenge(context.form().setError("calorieEmailProofExpired").createForm("calorie-email-proof.ftl"));
+            return;
+        }
+        context.challenge(context.form().setAttribute("emailProofToken", token)
+                .createForm("calorie-email-proof-confirm.ftl"));
     }
 
     void requestProof(AuthenticationFlowContext context, String input) {
@@ -79,7 +89,10 @@ public final class EmailProofAuthenticator implements Authenticator, Authenticat
             auth.setAuthNote(Proof.PENDING_ID, token.getId());
             auth.setAuthNote(Proof.PENDING_EMAIL, email);
             session.singleUseObjects().put(Proof.singleUseKey(realm, token), Proof.LIFETIME, Map.of());
-            URI link = UriBuilder.fromUri(context.getActionUrl(context.generateAccessCode()))
+            // A GET link must not carry a one-use form session_code: a mail scanner/refresh
+            // would otherwise invalidate it before the user confirms. The confirmation page
+            // itself receives the ordinary CSRF-protected POST action from context.form().
+            URI link = UriBuilder.fromUri(context.getRefreshExecutionUrl())
                     .queryParam("email_proof", encoded).build();
             try {
                 session.getProvider(EmailSenderProvider.class).send(realm.getSmtpConfig(), email,

@@ -21,6 +21,7 @@ import org.keycloak.authentication.ValidationContext;
 import org.keycloak.common.util.Time;
 import org.keycloak.crypto.SignatureProvider;
 import org.keycloak.crypto.SignatureVerifierContext;
+import org.keycloak.crypto.SignatureSignerContext;
 import org.keycloak.email.EmailException;
 import org.keycloak.email.EmailSenderProvider;
 import org.keycloak.forms.login.LoginFormsProvider;
@@ -94,14 +95,18 @@ class EmailProofTest {
         when(context.getUriInfo()).thenReturn(uri);when(context.form()).thenReturn(forms);
         when(context.generateAccessCode()).thenReturn("csrf");
         when(context.getActionUrl("csrf")).thenReturn(URI.create("https://provider.test/realms/calorie-dev/login-actions/registration?session_code=csrf&execution=exec-one&tab_id=tab-one"));
+        when(context.getRefreshExecutionUrl()).thenReturn(URI.create("https://provider.test/realms/calorie-dev/login-actions/registration?execution=exec-one&tab_id=tab-one&client_id=calorie-android"));
         AuthenticationExecutionModel execution=new AuthenticationExecutionModel();execution.setId("exec-one");
         when(context.getExecution()).thenReturn(execution);
         when(forms.createForm(anyString())).thenReturn(Response.ok().build());
         when(session.getProvider(EmailSenderProvider.class)).thenReturn(sender);
         TokenManager tokens=mock(TokenManager.class);when(session.tokens()).thenReturn(tokens);
-        when(tokens.encode(any())).thenAnswer(a->sign(a.getArgument(0),keys));
+        when(tokens.encode(any())).thenThrow(new AssertionError("Do not use default INTERNAL HS512 token encoding"));
         SignatureProvider provider=mock(SignatureProvider.class);SignatureVerifierContext verifier=mock(SignatureVerifierContext.class);
         when(session.getProvider(SignatureProvider.class,"RS256")).thenReturn(provider);when(provider.verifier("test")).thenReturn(verifier);
+        SignatureSignerContext signer=mock(SignatureSignerContext.class);when(provider.signer()).thenReturn(signer);
+        when(signer.getKid()).thenReturn("test");when(signer.getAlgorithm()).thenReturn("RS256");
+        when(signer.sign(any())).thenAnswer(a->{Signature sig=Signature.getInstance("SHA256withRSA");sig.initSign(keys.getPrivate());sig.update((byte[])a.getArgument(0));return sig.sign();});
         when(verifier.verify(any(),any())).thenAnswer(a->{Signature sig=Signature.getInstance("SHA256withRSA");sig.initVerify(keys.getPublic());sig.update((byte[])a.getArgument(0));return sig.verify(a.getArgument(1));});
         doAnswer(a->{emailed=a.getArgument(3);return null;}).when(sender).send(anyMap(),anyString(),anyString(),anyString(),isNull());
         // A production change that adds even a lookup before proof will fail the initiation tests.
@@ -126,6 +131,7 @@ class EmailProofTest {
         verify(sender).send(anyMap(),eq("person@example.test"),anyString(),contains("email_proof="),isNull());
         verify(session,never()).users();verify(context,never()).setUser(any());verify(context,never()).success();
         assertNotNull(notes.get(Proof.PENDING_ID));assertNull(Proof.verified(auth));
+        assertFalse(emailed.contains("session_code="));verify(context).getRefreshExecutionUrl();
     }
     @Test void accountExistenceCannotInfluenceInitialResponseOrDispatch() throws Exception {
         // There is no dependency on an existing/missing user. Both paths use only the address and SMTP.
@@ -177,6 +183,12 @@ class EmailProofTest {
         query.putSingle("email_proof",token.serialize(session,realm,uri));when(uri.getQueryParameters()).thenReturn(query);
         when(request.getDecodedFormParameters()).thenReturn(new MultivaluedHashMap<>());
         new EmailProofAuthenticator().action(context);verify(forms).createForm("calorie-email-proof-confirm.ftl");
+        assertTrue(singleUse.containsKey(Proof.singleUseKey(realm,token)));assertNull(Proof.verified(auth));verify(context,never()).success();
+    }
+    @Test void realRegistrationGetReentersAuthenticateAndStillShowsTheExplicitConfirmation() {
+        EmailProofToken token=issued(Time.currentTime()+300);MultivaluedMap<String,String> query=new MultivaluedHashMap<>();
+        query.putSingle("email_proof",token.serialize(session,realm,uri));when(uri.getQueryParameters()).thenReturn(query);
+        new EmailProofAuthenticator().authenticate(context);verify(forms).createForm("calorie-email-proof-confirm.ftl");
         assertTrue(singleUse.containsKey(Proof.singleUseKey(realm,token)));assertNull(Proof.verified(auth));verify(context,never()).success();
     }
     @Test void directFormPostWithoutProofDoesNotReachStockUniquenessLookup() {

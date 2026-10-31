@@ -11,8 +11,9 @@ etap potwierdzenia przed jakimkolwiek wyszukiwaniem lub tworzeniem użytkownika:
 1. Dla każdego poprawnego składniowo adresu wykonuje tę samą operację SMTP,
    bez `session.users()`. Publiczna odpowiedź i limit wysyłki nie zależą od
    istnienia konta. Wymagany jest ten sam oryginalny profil przeglądarki.
-2. Wiadomość zawiera podpisany token akcji i standardowy adres akcji flow
-   rejestracji. GET pokazuje formularz potwierdzenia; dopiero jego jawny POST
+2. Wiadomość zawiera podpisany token akcji i standardowy adres odświeżenia
+   wykonania flow rejestracji, bez jednorazowego formowego `session_code`.
+   GET pokazuje formularz potwierdzenia; dopiero jego jawny POST
    sprawdza RS256, podpis, issuer/audience, czas, typ, klienta, root session,
    tab, execution oraz bieżący challenge. Token nie ma `sub` i nie tworzy
    tymczasowego użytkownika. Jednorazowość korzysta z atomowego
@@ -30,7 +31,7 @@ etap potwierdzenia przed jakimkolwiek wyszukiwaniem lub tworzeniem użytkownika:
 Domyślny login i reset haseł pozostają standardowymi flow Keycloak.
 Unikalność email pozostaje włączona (`duplicateEmailsAllowed=false`),
 `registrationEmailAsUsername=true` i `loginWithEmailAllowed=true` są wymagane.
-Guard odmawia, jeśli te pierwsze dwa ustawienia nie odpowiadają kontraktowi.
+Guard odmawia, jeśli te ustawienia nie odpowiadają kontraktowi.
 Link wygasa po 300 s; kolejną wiadomość na ten adres można zamówić po 60 s.
 Nie ma logowania linków, tokenów, haseł ani wyjątków transportu przez moduł.
 W konfiguracji serwera nadal należy wyłączyć logowanie pełnych URL zapytań.
@@ -51,6 +52,41 @@ Windows można dodać `-PcalorieBuildDir=C:\prywatny-krotki-build` oraz
 
 JAR: `build/libs/calorie-keycloak-email-proof-1.0.0.jar` (albo wybrany buildDir).
 Zależności Keycloak są `compileOnly`; JAR nie pakuje serwera lub bibliotek.
+Istniejący job `android-build` wykonuje testy/JAR tego modułu oraz testy odmów
+harnessu i zachowuje raporty/JAR jako oddzielny artefakt. Nie dodano joba
+ani wyjątku od `ci-required`; wynik zdalnego CI wymaga własnego odbioru.
+
+## Powtarzalny odbiór opt-in
+
+`live_acceptance.py` używa wyłącznie biblioteki standardowej Python 3.12+ oraz
+lokalnego silnika Docker. Wymaga jawnej flagi i NOWEGO prywatnego katalogu
+poza repozytorium. Nie przyjmuje adresu istniejącego serwera/realm ani danych
+logowania. Sam tworzy syntetyczne konta, hasła, nowy realm, sieć i oznaczone
+kontenery Keycloak26.8.1/Mailpit z przypiętych obrazów. Porty są publikowane
+wyłącznie na `127.0.0.1`; nie wysyła poczty poza własny sink i nie używa proxy
+ze zmiennych środowiska. Limity pamięci kontenerów to 768/64 MiB, heap384 MiB.
+
+Po zbudowaniu JAR, z katalogu repozytorium:
+
+```powershell
+$TrialState = Join-Path $env:TEMP ('calorie-email-proof-' + [guid]::NewGuid())
+python infra/keycloak-email-proof/live_acceptance.py --run-isolated-http-h2 --state $TrialState --jar infra/keycloak-email-proof/build/libs/calorie-keycloak-email-proof-1.0.0.jar
+```
+
+Próba trwa kilka minut, w tym rzeczywiste 300 s ważności linku. Sprawdza
+neutralną inicjację, proof, tampering, jednorazowość, rejestrację, podstawową rolę,
+Code/S256, podpis/nonce/issuer/audience, reset, prawdziwą awarię SMTP i expiry.
+Domyślna sekwencja nie jest testem równoczesnego finalnego tworzenia konta.
+Końcowe raporty mają zakres `ISOLATED_H2_HTTP_FUNCTIONAL_ONLY`, nigdy odbiór
+produkcji/PG/TLS. Kontenery są zatrzymywane po sprawdzeniu właściciela obu;
+ich dane i prywatne dowody pozostają do przeglądu. Nie publikuj katalogu stanu:
+zawiera rzeczywiste efemeryczne tokeny, cookies, pocztę i hasła tej próby.
+
+Testy odmów przed operacjami i dostępu do oracles bez Docker:
+
+```powershell
+python -m unittest discover -s infra/keycloak-email-proof/tests -p test_live_acceptance.py -v
+```
 
 ## Izolowany odbiór i konfiguracja
 
@@ -88,6 +124,17 @@ W nowym realm sprawdź i zachowaj rzeczywiste dowody:
 
 **Stan dostawy źródłowej:** testy komponentu są osobne od powyższego live
 odbioru. Nie kwalifikują publicznej produkcji ani nie zamykają historycznego P2.
+31.10.2026: lokalny JUnit15/15 oraz rzeczywisty powtarzalny odbiór nowego
+H2/HTTP/SMTP/PKCE zakończono pozytywnie, łącznie z faktycznym 300 s expiry.
+Podpis i jednorazowość sprawdzono także negatywnie. Hash JAR i prywatne
+raw/receipty zachowano poza Git; nie podmieniono istniejącego środowiska.
+Osobna próba dwóch niezależnie potwierdzonych flow tego samego adresu,
+po rzeczywistym 61 s cooldown, dała nakładające się końcowe żądania HTTP:
+jedno konto, odpowiedzi 302/400 i ukończony PKCE zwycięskiego flow. Równoległe
+potwierdzenie tego samego formularza nie utworzyło konta. Nie przypisujemy tym
+obserwacjom dwóch wejść do `consume` ani jednoczesnego wykonania SQL.
+Odbiór istniejącego `calorie-final`/PostgreSQL/HTTPS i publikacja CI pozostają
+odrębnymi krokami integracji.
 
 ## Oficjalne źródła API i ograniczenie stockowego action handlera
 
@@ -101,3 +148,6 @@ Zwykły `ActionTokenHandler` wymaga już istniejącego użytkownika. Dlatego tok
 bez użytkownika jest sprawdzany w wspieranym `Authenticator.action()` pod
 standardową akcją rejestracji; nie omijamy checków istniejących handlerów,
 nie tworzymy konta pozornego i nie dodajemy własnego endpointu przyjmującego hasła.
+Keycloak oznacza SPI authenticator/form-action jako wewnętrzne i ostrzega o tym
+przy rozruchu. Moduł jest przypięty do 26.8.1; aktualizacja serwera wymaga
+ponownej kompilacji, przeglądu oraz odbioru rzeczywistych stron i wiadomości.
