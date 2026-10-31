@@ -1,0 +1,33 @@
+{
+  "registrationAllowed": true,
+  "resetPasswordAllowed": true,
+  "verifyEmail": true,
+  "registrationEmailAsUsername": true,
+  "loginWithEmailAllowed": true,
+  "duplicateEmailsAllowed": false,
+  "registrationFlow": "calorie-email-proof-v1",
+  "loginTheme": "calorie-email-proof",
+  "authenticationFlows": [
+    {
+      "alias": "calorie-email-proof-v1",
+      "description": "Email possession before any registration user lookup",
+      "providerId": "basic-flow",
+      "topLevel": true,
+      "builtIn": false,
+      "authenticationExecutions": [
+        {"authenticator": "calorie-registration-email-proof", "requirement": "REQUIRED", "priority": 10, "authenticatorFlow": false},
+        {"authenticator": "registration-page-form", "flowAlias": "calorie-email-proof-form-v1", "requirement": "REQUIRED", "priority": 20, "authenticatorFlow": true}
+      ]
+    },
+    {
+      "alias": "calorie-email-proof-form-v1",
+      "providerId": "form-flow",
+      "topLevel": false,
+      "builtIn": false,
+      "authenticationExecutions": [
+        {"authenticator": "calorie-proven-email-user-creation", "requirement": "REQUIRED", "priority": 10, "authenticatorFlow": false},
+        {"authenticator": "registration-password-action", "requirement": "REQUIRED", "priority": 20, "authenticatorFlow": false}
+      ]
+    }
+  ]
+}

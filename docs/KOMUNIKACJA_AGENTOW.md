@@ -11464,3 +11464,108 @@ Kontynuacja O2-073 — **zdjęcie MOCK i naprawa projekcji czasu posiłku**:
   PR z head `43e23cf2`. Powyższy plan publikacji opisuje wcześniejszy stan.
   Przygotowawczy zakres pakietu i jego granice nie stają się przez merge
   odbiorem prywatnego środowiska ani wydania.
+
+### O3-121 — PR197: rejestracja po dowodzie posiadania e-mail
+
+- 31.10.2026, agent 3, na zlecenie właściciela pełnego lokalnego dokończenia.
+  Gałąź `codex/backend-rejestracja-email-proof`, produkcyjne źródła
+  `f4418e4673d972540443a0f543c58db69bc1c3cc`, odebrana końcowa delta harnessu
+  `7c483a901af90adf3b2fa61d4b228eac55fbcacd`,
+  [PR197](https://github.com/Roseru/aplikacja-mobilna/pull/197) do main.
+  Publikacja zwykłym push zachowuje trzy commity; bez merge i bez zmiany
+  dotychczasowych środowisk przez autora. Livechat odczytano przed pushem.
+- Osobny provider Keycloak26.8.1 wymaga posiadania skrzynki przed lookup/create.
+  Podpisany token bez subject jest związany z bieżącą sesją i wykonaniem;
+  GET nie zużywa, POST zużywa atomowo. Guard przed stock tworzeniem odmawia
+  bez proof, przy zmianie email/username i przy wielokrotnych polach.
+  Unikalność, standardowy login/reset i minimalne role pozostają wymagane.
+  Nie dodano tabel ani automatycznej instalacji do istniejącego realm.
+- JUnit15/15, Python14/14 na3.13 i3.14, scope CI17/17, Ruff/format, E0
+  i diff-check PASS. Istniejący android-build uruchamia testy/JAR modułu
+  i testy odmów harnessu oraz zachowuje JUnit/JAR; bez nowego joba lub
+  osłabienia ci-required. Zdalne CI wymaga osobnego odczytu aktualnego head.
+- Rzeczywisty nowy Keycloak26.8.1/H2/HTTP/Mailpit: neutralność existing/new,
+  zero kont przed proof, dwukrotny GET, jawny POST, jedna rejestracja, role,
+  Code/S256, podpis/nonce/issuer/audience, login/reset, direct POST,
+  email/username/podwójne pola, obcy tab/przeglądarka, zły podpis, replay,
+  rzeczywiste300s expiry i awaria SMTP odebrane. Dwie niezależnie potwierdzone
+  sesje tego samego adresu po rzeczywistym61s cooldown miały nakładające się
+  końcowe POST: jedno konto,302/400, ukończony PKCE zwycięzcy. Równoległy
+  confirm tej samej formy nie stworzył konta; nie deklarujemy dwóch wejść
+  do consume ani jednoczesnego wykonania SQL. Prywatny raw/state poza Git.
+  Testowany JAR SHA256
+  `8e9af85336d78b38b68f4cda97481caefbb88c7211357425f366928824f88a2d`.
+- Niezależny review SPI i dowodów nie zostawił P1/P2. Wykryte P2 harnessu
+  (pierwszeństwo DOCKER_CONTEXT nad DOCKER_HOST) naprawiono: kwalifikowany
+  lokalny endpoint jest przypięty przez --host dla każdej operacji silnika,
+  również inspect/logs/stop, z usunięciem zmiennych wyboru/TLS. Nowe regresje
+  i odczyt rzeczywistego lokalnego silnika PASS. Własne testowe kontenery
+  zatrzymano z zachowaniem stanu; nie użyto prawdziwych skrzynek lub danych.
+- Następny krok: zdalne CI oraz odrębny odbiór istniejącego PostgreSQL/HTTPS
+  przez jedynego operatora runtime w uzgodnionym oknie. Przekazano dokładny
+  JAR i nowy kontekst obrazu, flow/SMTP/defaultRole oraz świadki zachowania
+  kont/subject/sesji. Bez ponownego importu realm. D2 wymaga właściwego
+  provider image przed startem przywróconej bazy; README opisuje tę zgodność.
+  Powyższy odbiór H2/HTTP nie jest odbiorem PG/TLS/Android ani wydania1.0.
+
+Kontynuacja O3-121 — zgodność narzędzi z rejestracją email-as-username:
+
+- Operator odebrał osobno istniejący PostgreSQL/HTTPS z tym samym JAR:
+  11 kontroli, SPI_READY SHA256
+  `e86a1567ea5b8bd7f2d765021644a5d04c38a7491b1419443f1612550d7e9d22`.
+  Nie importowano realm ponownie; wcześniejsze konta, subject, klucze,
+  klienci, dane aplikacji i sesje A2 zachowano. To lokalny zakres PG/TLS.
+- Nowe własne konta administracyjnego Probe były poprawnie tworzone,
+  lecz helper zapisywał requested bare username zamiast rzeczywistego
+  username po wymuszeniu e-mail. `6f99b5c` odczytuje wyłącznie subject
+  z Location, wiąże id i dokładną syntetyczną tożsamość przed rolą/zapisem
+  i zachowuje rzeczywisty username oraz to samo hasło. Bez wyszukiwania,
+  resetu lub aktualizacji istniejących kont. Autor i peer: po 9/9 regresji PASS.
+- Przed T0 wykonano realny ograniczony smoke przez dokładny nowy helper:
+  dwa nowe syntetyczne konta, persisted username=ich requested email,
+  POST Location=GET id=podpisany ID/access sub, S256/issuer/audience/nonce
+  i wyłącznie podstawowa rola API. GET /me prawidłowo zwrócił dla obu
+  403 account_bootstrap_required; nie wykonywano bootstrap lub zapisów
+  aplikacyjnych. Konfiguracja/CA i wcześniejsze credentials bez zmiany.
+  Receipt SHA256
+  `8410be96d98d4b980b64de65e93f2dcfd9601c1b8ee0fb6862f683ebbd6355a5`.
+  Prywatne hasła/tokeny/bindings pozostają poza Git.
+- Bazowy SyncWakeStorageTest jest identycznym blobem `cc96a302` na e64f18b
+  i cd3658a. Do tej samej kontynuacji PR197 włączono wyłącznie testowe
+  `48aafc0` i `3e457f6` przez zwykły cherry-pick -x z zachowaniem autorów
+  oraz pełny wpis O3-124. Nie zmieniono produkcyjnego workera lub limitu15s.
+  Stary CI41219974507 pozostaje FAIL581/582; lokalne4/4 z O3-124 nie
+  zastępują nowego FULL CI aktualnego head/base. Bez nowego PR lub merge.
+
+### O3-124 — domknięcie fixture i diagnostyka rzeczywistego wyniku workera
+
+- 31.10.2026, Agent 3 / O3. Gałąź `codex/android-wakecheck-fixture`,
+  baza `cd3658aeb1fe46da87c3fc19791d4f68b858cf29`, źródło testu
+  `3e457f6457de98005f5e0527535e1fe240ae3bcf`. Koordynator włączy te
+  testowe commity do istniejącego PR197; bez osobnego PR lub pusha tutaj.
+- CI197 na `e64f18ba`, run `41219974507`, zachowuje wynik 581 native PASS
+  i jeden FAIL `SyncWakeStorageTest`: po uruchomieniu ograniczonego zadania
+  i jego `SUCCESS` upłynęło 15 s oczekiwania na stan `login`. Log nie ujawniał
+  wyniku koordynatora; dokładna przyczyna tego wcześniejszego FAIL pozostaje
+  nieustalona. Nie przypisujemy go parserowi wspólnego celu/E.
+- Fixture dołącza anulowanych obserwatorów, atomowo zamyka nowe wejścia,
+  dołącza własne rzeczywiste coroutineScope/Job wszystkich wejść runtime,
+  a osobno oczekuje postprocessingu WorkManagera przed zamknięciem obu baz.
+  Ręczny caller nie staje się oczekiwanym rodzicem JUnit. Callbacki są
+  rozdzielone przez WorkGenerationalId; ponowne użycie UUID jawnie odmawia
+  zamiast nadpisywać potwierdzenie. Testowa admission obserwuje prawdziwy
+  Outcome bez zastępowania DiarySyncWorker. Produkcyjne SyncWork/Coordinator,
+  globalny mutex, warunek sieci, wymaganie jednego wywołania i `login` oraz
+  granica 15 s pozostają. Niezależny przegląd domknął uwagi dotyczące
+  rzeczywistego zakończenia coroutine i diagnostyki; nie pozostawił P1/P2.
+- Lokalny build obu APK: PASS, 64 zadania, jeden worker/heap1000m.
+  Prywatny init wydzielił wyłącznie pakiet `.wakecheck` i `.wakecheck.test`;
+  aapt oraz podpis obu artefaktów sprawdzono. Root wykonał na własnym AVD
+  cztery metody: **4 PASS, 0 FAIL, 0 SKIP, 8,602 s**. Terminalny odczyt:
+  `SUCCEEDED`, `calls=1`, `Stopped(reason=login)`, zgodny ticket/runtime,
+  `requested=3`, `retryAt=0`; następca był BLOCKED do zakończenia poprzednika.
+  SHA256 pełnego prywatnego logcat:
+  `e202fe06c422769abc3ab665f9dfe3565f6bd9cab2c04e771f97462490f225dd`.
+  Pakiet i dziennik `.validation` pozostały odseparowane. To lokalny odbiór
+  poprawionego fixture, bez nowego wyniku CI197, dowodu przyczyny starego
+  timeoutu lub zaliczenia E9/D2.
