@@ -49,7 +49,7 @@ class LegacyImportStorageTest {
             val point=WeightEntity("old-weight","guest","2001-01-02","2001-01-02T12:00:00Z","UTC",80.125)
             db.dao().insertMeal(meal);db.dao().insertItem(item);db.dao().saveWeight(point)
             assertEquals(0,db.dao().operationCount("guest"))
-            var lease=account(db);var store=LegacyImportStore(db,schema)
+            var lease=account(db);var store=LegacyImportStore(db,schema,null)
             val preview=store.preview(lease,"guest");assertEquals(2,preview.total)
             assertEquals(preview.planId,store.preview(lease,"guest").planId)
             assertEquals("draft",preview.state);assertEquals(0,db.dao().operationCount(lease.storageScope))
@@ -59,7 +59,7 @@ class LegacyImportStorageTest {
             assertEquals(1,db.dao().operationCount(lease.storageScope))
             val first=db.importDao().sources(preview.planId).first {it.state=="queued"}
             val firstOperation=first.operationId
-            db.close();db=open();lease=LocalOwnerStore(db).currentLease();store=LegacyImportStore(db,schema)
+            db.close();db=open();lease=LocalOwnerStore(db).currentLease();store=LegacyImportStore(db,schema,null)
             store.resume(lease,preview.planId,1);store.resume(lease,preview.planId,1)
             assertEquals(2,db.dao().operationCount(lease.storageScope))
             assertEquals(firstOperation,db.importDao().source(preview.planId,first.entityType,first.sourceId)!!.operationId)
@@ -91,7 +91,7 @@ class LegacyImportStorageTest {
         try {
             LocalOwnerStore(db).ensureGuest()
             db.dao().saveWeight(WeightEntity("legacy","guest","2000-01-02","2000-01-02T12:00:00Z","UTC",80.125))
-            val a=account(db);val store=LegacyImportStore(db,schema);val plan=store.preview(a,"guest");approve(store,a,plan)
+            val a=account(db);val store=LegacyImportStore(db,schema,null);val plan=store.preview(a,"guest");approve(store,a,plan)
             val b=account(db)
             rejects {store.preview(b,"guest")};rejects {store.resume(a,plan.planId)}
             val again=LocalOwnerStore(db).select(db.ownerDao().byScope(a.storageScope)!!.id)
@@ -110,7 +110,7 @@ class LegacyImportStorageTest {
             db.dao().saveWeight(row)
             val legacy=OutboxEntity("old-operation","guest","weight",row.id,"create",null,"{\"kg\":80.123456789}","2000-01-02T12:00:00Z")
             db.dao().enqueue(legacy)
-            val lease=account(db);val store=LegacyImportStore(db,schema);val plan=store.preview(lease,"guest");approve(store,lease,plan)
+            val lease=account(db);val store=LegacyImportStore(db,schema,null);val plan=store.preview(lease,"guest");approve(store,lease,plan)
             val progress=store.resume(lease,plan.planId)
             assertEquals("precision_review",progress.decisions.single().code)
             val source=store.source(lease,plan.planId,"weight",row.id)
@@ -128,7 +128,7 @@ class LegacyImportStorageTest {
             LocalOwnerStore(db).ensureGuest()
             val old=WeightEntity("precise","guest","2000-01-02","2000-01-02T12:00:00Z","UTC",80.123456789)
             db.dao().saveWeight(old)
-            val lease=account(db);val store=LegacyImportStore(db,schema);val plan=store.preview(lease,"guest")
+            val lease=account(db);val store=LegacyImportStore(db,schema,null);val plan=store.preview(lease,"guest")
             assertEquals("precision_review",plan.decisions.single().code);assertEquals(0,plan.pending)
             approve(store,lease,plan)
             val source=store.source(lease,plan.planId,"weight",old.id)
@@ -148,7 +148,7 @@ class LegacyImportStorageTest {
             val lease=account(db)
             val old=GoalEntity("old-goal",lease.storageScope,"2001-01-02",2000.123456789,null,0.0,100.0)
             db.dao().saveGoal(old)
-            val store=LegacyImportStore(db,schema);val plan=store.preview(lease,lease.storageScope)
+            val store=LegacyImportStore(db,schema,null);val plan=store.preview(lease,lease.storageScope)
             assertEquals(1,plan.decisions.size);approve(store,lease,plan)
             val source=store.source(lease,plan.planId,"goal",old.id)
             val choice=JSONObject().put("choice","metadata").put("goal_decided_at","2001-01-02T12:00:00Z")
@@ -182,7 +182,7 @@ class LegacyImportStorageTest {
             val weight=WeightEntity("legacy-weight","guest","2001-01-02","2001-01-02T12:00:00Z","UTC",80.125)
             db.dao().saveGoal(goal);db.dao().saveProfile(profile);db.dao().insertProduct(product);db.dao().saveDiaryDay(day)
             db.dao().insertMeal(meal);db.dao().insertItem(item);db.dao().saveWeight(weight)
-            val lease=account(db);val store=LegacyImportStore(db,schema);val plan=store.preview(lease,"guest")
+            val lease=account(db);val store=LegacyImportStore(db,schema,null);val plan=store.preview(lease,"guest")
             assertEquals(6,plan.total);assertEquals(setOf("goal","diary_day"),plan.decisions.map {it.type}.toSet())
             assertEquals(0,db.dao().operationCount(lease.storageScope));approve(store,lease,plan)
             val archived=db.importDao().sources(plan.planId).associateBy {it.entityType}
@@ -234,7 +234,7 @@ class LegacyImportStorageTest {
         return id
     }
     private suspend fun imported(db:CalorieDatabase,lease:OwnerLease):Pair<ImportProgress,ImportSource> {
-        val store=LegacyImportStore(db,schema);val plan=store.preview(lease,"guest");approve(store,lease,plan);store.resume(lease,plan.planId)
+        val store=LegacyImportStore(db,schema,null);val plan=store.preview(lease,"guest");approve(store,lease,plan);store.resume(lease,plan.planId)
         return plan to db.importDao().sources(plan.planId).single {it.entityType=="meal"}
     }
     @Test fun newPlansNeverReinstallUnchangedOriginAfterTargetEditLostAckRestartAndFullPull()=runBlocking<Unit> {
@@ -250,7 +250,7 @@ class LegacyImportStorageTest {
             val target=db.dao().meal(source.localId,lease.storageScope)!!;val operation=db.dao().operation(frozen.operations.single().operationId)!!
             val bytes=frozen.batch.body();val hash=frozen.batch.sha256
             db.dao().saveWeight(WeightEntity("guest-new-1","guest","2001-01-03","2001-01-03T12:00:00Z","UTC",81.125))
-            db.close();db=open();var store=LegacyImportStore(db,schema)
+            db.close();db=open();var store=LegacyImportStore(db,schema,null)
             val second=store.preview(lease,"guest");assertNotEquals(first.planId,second.planId)
             val same=db.importDao().source(second.planId,"meal",guestId)!!
             assertEquals("already_imported",same.state);assertNull(same.decisionCode)
@@ -266,7 +266,7 @@ class LegacyImportStorageTest {
             assertNull(snapshots.apply(request,page.toString().toByteArray()));ServerDiaryStore(db,schema).apply(lease,request.runId)
             assertEquals(target,db.dao().meal(source.localId,lease.storageScope))
             db.dao().saveWeight(WeightEntity("guest-new-2","guest","2001-01-04","2001-01-04T12:00:00Z","UTC",82.125))
-            store=LegacyImportStore(db,schema);val third=store.preview(lease,"guest");assertNotEquals(second.planId,third.planId)
+            store=LegacyImportStore(db,schema,null);val third=store.preview(lease,"guest");assertNotEquals(second.planId,third.planId)
             assertEquals("already_imported",db.importDao().source(third.planId,"meal",guestId)!!.state)
             assertEquals("already_imported",db.importDao().source(third.planId,"weight","guest-new-1")!!.state)
             approve(store,lease,third);store.resume(lease,third.planId)
@@ -291,7 +291,7 @@ class LegacyImportStorageTest {
             db.dao().updateMeal(guest.meal.copy(localRevision=2));db.dao().updateItem(guest.items.single().copy(grams=75.0))
             val sourceEdit=OutboxEntity(uuid(),"guest","meal",guestId,"update",null,"{\"grams\":75}","2026-10-23T12:00:00Z")
             db.dao().enqueue(sourceEdit)
-            val store=LegacyImportStore(db,schema);val second=store.preview(lease,"guest");approve(store,lease,second)
+            val store=LegacyImportStore(db,schema,null);val second=store.preview(lease,"guest");approve(store,lease,second)
             val changed=db.importDao().source(second.planId,"meal",guestId)!!
             assertEquals("previously_imported_source_changed",changed.decisionCode)
             assertNotEquals(originalSource.originFingerprint,changed.originFingerprint)

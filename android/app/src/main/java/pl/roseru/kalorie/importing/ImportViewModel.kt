@@ -20,7 +20,7 @@ import pl.roseru.kalorie.sync.*
 class ImportViewModel(private val db:CalorieDatabase,private val schema:SyncWireSchema,
     private val lease:OwnerLease,private val executor:ReconciliationStepExecutor,private val saved:SavedStateHandle,
     energySchema:EnergySchema?):ViewModel() {
-    private val imports=LegacyImportStore(db,schema)
+    private val imports=LegacyImportStore(db,schema,energySchema)
     private val reconciliation=ReconciliationStore(db,schema,energySchema)
     private val mutex=Mutex()
     private val mutable=MutableStateFlow(ImportUiState())

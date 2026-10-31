@@ -142,7 +142,7 @@ class MaintenanceStorageTest {
             repo.setGoal(2400.0,null,60.0,0.0)
             assertEquals(selected,db.dao().goalById(lease.storageScope,id));assertEquals(wireBefore,frozen())
             assertNull(db.dao().goalOn(lease.storageScope,LocalDate.now().toString())!!.estimateJson)
-            val captured=LegacyImportStore(db,schema()).capture(lease.storageScope,true).single {entry->
+            val captured=LegacyImportStore(db,schema(),null).capture(lease.storageScope,true).single {entry->
                 entry.first=="goal" && StrictJson.read(entry.second.toByteArray()).getJSONObject("row").getString("id")==id}
             val source=StrictJson.read(captured.second.toByteArray())
             val originals=source.getJSONArray("outboxes")
