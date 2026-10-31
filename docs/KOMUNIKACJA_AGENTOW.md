@@ -11815,3 +11815,33 @@ Kontynuacja O3-121 — zgodność narzędzi z rejestracją email-as-username:
   Pakiet i dziennik `.validation` pozostały odseparowane. To lokalny odbiór
   poprawionego fixture, bez nowego wyniku CI197, dowodu przyczyny starego
   timeoutu lub zaliczenia E9/D2.
+
+### O3-125 — końcowy odbiór lokalnej dostawy MRE/DEMO
+
+- 31.10.2026, Agent 3. PR197 przyjęto do main922e32b po FULL41227231224
+  (8/8 SUCCESS), a PR196 do main5d75fe2 po FULL41235945332 (8/8 SUCCESS).
+  Publiczny klient 0.8.45/code56, validation1056 i Room27 zachowują cel,
+  historię E oraz dowody pełnej/przyrostowej kopii w uzgadnianiu i imporcie.
+- Następny push CI main41238173222 zachowuje osobny FAIL: 594 native PASS,
+  jeden FAIL, zero SKIP/ERROR. persistedBlockSurvivesProviderRuntimeAndFileRoomReopenWithFrozenBytesAndDeadline
+  dostał Busy zamiast ścisłego Stopped(network_blocked). To inny przypadek
+  niż dawny wake timeout. Log nie wskazuje właściciela mutexu; zapis stanu
+  nie dowodzi zakończenia obserwatora, a po reopen może już istnieć w Room.
+  ZIP SHA256 `8333305b70adecc4bfd729b9e082e826c3ed1f3c8c768b171308f7f38ebed630`;
+  niezależna diagnoza SHA256 `736df849411b3edd05e32abccfa515b1d4de903260567ef2bc610d60227365e8`.
+- Testowa poprawka a82d0c360945b38858ecfb19e43c201ac84eb5ef dołącza Job
+  obserwatora przez cancelAndJoin przed jednym manual i zachowuje ścisły wynik,
+  zamrożone row/op/wire, deadline oraz zero sieciowych wywołań. Osobna próba
+  z drainer-barrier odtwarza Busy przy trzymanym mutexie i wymaga Stopped po
+  join. Produkcyjny coordinator/mutex/gate/deadlines pozostają identyczne.
+  Review i diff-check PASS; lokalne compile/native NOT_RUN podczas wyłącznego
+  okna D2. Wymagany nowy FULL aktualnego head PR198, bez ślepego rerun starego.
+- Gałąź codex/devops-lokalne-wydanie, PR198, łączy ten odbiór ze skryptami
+  lokalnej dostawy oraz poprawką transportu435b421 z O3-123. Rzeczywisty bound
+  T0 BACKUP i ponowny START wykonano na czystym źródle0a3 i profiluR2.
+  Manifest sparowanej kopii SHA256
+  `6f047737ecbee5fa9d82d8a45928a1f8acac495abc2f00c521d3f900ddf950a6`
+  przeszedł niezależny verify. Odtworzony NOWY cel ma nową epokę, zamknięte
+  AI/Nemesis i rzeczywisty fence421.0001472s. Oryginał nie został odtworzony.
+  Aplikacyjny recovery, fizyczne zdjęcie T1 i końcowe skrypty użytkownika
+  pozostają osobnymi, jeszcze niezaliczonymi etapami w tej chwili.
