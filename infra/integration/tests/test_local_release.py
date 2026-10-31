@@ -165,7 +165,6 @@ def installed(tmp_path, monkeypatch):
             task = release.E8[args[2]]
             metrics = {
                 "motivation": {
-                    "status": "ok",
                     "owners_handled": 0,
                     "dates_processed": 0,
                     "backlog": {
@@ -327,6 +326,103 @@ def test_old_worker_success_does_not_qualify_a_new_process(installed):
     ).isoformat()
     report = installed.stack.status()
     assert report["services"]["motivation"]["worker"]["fresh_success"] is False
+
+
+@pytest.fixture
+def stored_motivation(installed, monkeypatch):
+    from datetime import datetime
+
+    from e8_worker import healthy
+
+    # Exact producer JSON from the first read-only operator receipt, not raw CLI output.
+    # Source SHA256: 767042a7a817e1845e7268990d1142ece446a2a56e99c9f3079b3ac4d62bef28.
+    payload = {
+        "elapsed_seconds": 1.935,
+        "finished_at": "2026-10-31T18:03:31.907038+00:00",
+        "last_attempt": "2026-10-31T18:03:29.971899+00:00",
+        "last_success": "2026-10-31T18:03:31.907018+00:00",
+        "metrics": {
+            "backlog": {
+                "oldest_matures_at": None,
+                "pending_backfill": 0,
+                "pending_materialization": 0,
+            },
+            "dates_processed": 0,
+            "owners_handled": 0,
+        },
+        "state": "ok",
+        "task": "motivation",
+    }
+    process = {"StartedAt": "2026-10-31T16:40:38.678316863Z"}
+    observed = SimpleNamespace(at=datetime.fromisoformat(payload["finished_at"]))
+    monkeypatch.setattr(release, "healthy", lambda status: healthy(status, at=observed.at))
+    monkeypatch.setattr(installed.stack, "compose", lambda *args: json.dumps(payload))
+    return SimpleNamespace(
+        payload=payload,
+        process=process,
+        observed=observed,
+        read=lambda: installed.stack.worker_status("motivation", process),
+    )
+
+
+def test_worker_status_reads_actual_stored_metrics_without_raw_cli_status(stored_motivation):
+    before = copy.deepcopy(stored_motivation.payload)
+    result = stored_motivation.read()
+    assert result == {
+        "state": "ok",
+        "fresh_success": True,
+        "last_success": before["last_success"],
+        "metrics": before["metrics"],
+    }
+    assert stored_motivation.payload == before
+    assert "status" not in result["metrics"]
+
+
+@pytest.mark.parametrize(
+    ("path", "value"),
+    [
+        (("owners_handled",), True),
+        (("dates_processed",), -1),
+        (("backlog",), []),
+        (("backlog", "pending_backfill"), "0"),
+        (("backlog", "pending_materialization"), False),
+        (("backlog", "oldest_matures_at"), "invalid"),
+    ],
+)
+def test_stored_worker_metrics_still_refuse_malformed_values(stored_motivation, path, value):
+    target = stored_motivation.payload["metrics"]
+    for part in path[:-1]:
+        target = target[part]
+    target[path[-1]] = value
+    assert stored_motivation.read() == {"state": "unavailable", "fresh_success": False}
+
+
+@pytest.mark.parametrize("state", ["failed", "stopped", "disabled", "timeout", "unknown"])
+def test_stored_metrics_cannot_turn_an_unsuccessful_state_green(stored_motivation, state):
+    stored_motivation.payload["state"] = state
+    assert stored_motivation.read()["fresh_success"] is False
+
+
+@pytest.mark.parametrize("seconds", [-1, 131])
+def test_stored_success_must_not_be_future_or_stale(stored_motivation, seconds):
+    from datetime import timedelta
+
+    stored_motivation.observed.at += timedelta(seconds=seconds)
+    result = stored_motivation.read()
+    assert result["state"] == "ok" and result["fresh_success"] is False
+    assert result["last_success"] == stored_motivation.payload["last_success"]
+
+
+def test_actual_stored_success_must_follow_current_process_start(stored_motivation):
+    stored_motivation.process["StartedAt"] = "2026-10-31T18:03:32+00:00"
+    result = stored_motivation.read()
+    assert result["state"] == "ok" and result["fresh_success"] is False
+
+
+@pytest.mark.parametrize("timestamp", [None, "invalid", "2026-10-31T18:03:31.907018"])
+def test_stored_metrics_do_not_replace_missing_or_invalid_success(stored_motivation, timestamp):
+    stored_motivation.payload["last_success"] = timestamp
+    assert stored_motivation.read()["fresh_success"] is False
 
 
 def test_disabled_finalizer_is_reported_truthfully_without_invented_success(installed, monkeypatch):

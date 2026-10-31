@@ -11603,3 +11603,12 @@ Kontynuacja O2-073 — **zdjęcie MOCK i naprawa projekcji czasu posiłku**:
   Następny krok to niezależny odbiór zamrożonego źródła i jedno uzgodnione
   okno operatora po bieżącym D2 na realny start/stop/kopię/optional photo
   restore. Profil jest konfiguracją operacyjną, nie seal lub odbiorem 1.0.
+- Pierwszy rzeczywisty read-only bind/status zachowano z odmową motivation:
+  czytnik wymagał surowego CLI `status`, choć zapisane canonical metrics
+  celowo już go nie zawierają. Korekta czytnika waliduje zapisany DTO bez
+  dopisywania sukcesu i bez zmiany zamontowanego e8_worker.py. Regresja
+  odtwarza odmowę na niezmienionym producer JSON i jego czasie; po poprawce
+  plik test_local_release.py: 57 PASS, w tym błędne metryki, stan bez sukcesu,
+  brak/błędny czas, przyszły/przeterminowany sukces i sukces sprzed startu
+  procesu. Wymagany nowy bind/profile/status operatora; poprzedni wynik
+  pozostaje dowodem odmowy, bez deklaracji wykonania start/stop/backup.

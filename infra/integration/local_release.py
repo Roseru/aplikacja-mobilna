@@ -85,6 +85,31 @@ def reject(message):
     raise ValueError(message)
 
 
+def stored_worker_metrics(task, payload):
+    """Validate the persisted DTO; motivation's raw CLI status was already consumed."""
+    if task != "motivation":
+        return aggregate(task, payload)
+    if not isinstance(payload, dict) or not isinstance(payload.get("backlog"), dict):
+        reject("Invalid stored metrics")
+    result = {}
+    for field in ("owners_handled", "dates_processed"):
+        value = payload[field]
+        if type(value) is not int or value < 0:
+            reject("Invalid stored aggregate")
+        result[field] = value
+    result["backlog"] = {}
+    for field in ("pending_backfill", "pending_materialization"):
+        value = payload["backlog"][field]
+        if type(value) is not int or value < 0:
+            reject("Invalid stored backlog")
+        result["backlog"][field] = value
+    oldest = payload["backlog"]["oldest_matures_at"]
+    if oldest is not None:
+        oldest = datetime.fromisoformat(oldest).isoformat()
+    result["backlog"]["oldest_matures_at"] = oldest
+    return result
+
+
 def ordinary(path, *, directory=False):
     path = Path(path)
     if not path.is_absolute():
@@ -481,7 +506,11 @@ class ReleaseStack(E8Stack):
                     "from pathlib import Path; print(Path('/worker/status.json').read_text())",
                 )
             )
-            metrics = aggregate(E8[service], result["metrics"]) if "metrics" in result else None
+            metrics = (
+                stored_worker_metrics(E8[service], result["metrics"])
+                if "metrics" in result
+                else None
+            )
             success = (
                 datetime.fromisoformat(result["last_success"].replace("Z", "+00:00"))
                 if result.get("last_success") is not None
