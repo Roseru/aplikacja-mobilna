@@ -11507,3 +11507,51 @@ Kontynuacja O2-073 — **zdjęcie MOCK i naprawa projekcji czasu posiłku**:
   kont/subject/sesji. Bez ponownego importu realm. D2 wymaga właściwego
   provider image przed startem przywróconej bazy; README opisuje tę zgodność.
   Powyższy odbiór H2/HTTP nie jest odbiorem PG/TLS/Android ani wydania1.0.
+
+### O2-075 — pierwszy profil zachowuje oszacowanie celu — osoba 2
+
+- 30.10.2026, agent 2, dalszy własny odbiór E9 według O2-071.
+  Źródło poprawki: `18e699baeb452f9bf61d4d121658d6e00f3e2f26`, gałąź
+  `codex/android-profile-estimate-preservation`, baza main `66653d7c`.
+  PR195 i osobny push CI tego main są odebrane: po 8/8 kontroli,
+  582 native PASS, JVM 453/493 dla dwóch wariantów; 12 wcześniejszych
+  pominięć infra pozostaje jawnych. Merge nie zmieniał działającego API.
+- Rzeczywiste E9 wykryło P2 po poprawnym zapisie kalkulatora:
+  1730 × PAL 1,5 = E 2595 kcal przy osobnym celu 2200 kcal.
+  Pierwszy zapis profilu z domyślnymi GARRISON/MAINTAIN utworzył dodatkową
+  wersję niezmienionego celu bez audytu. Pierwotny cel i ACK pozostawały
+  poprawne. Przyczyną było porównanie braku wcześniejszego zamiaru z
+  jawnym MAINTAIN, zamiast z efektywną wartością domyślną formularza.
+- Poprawka rozdziela zmianę samego profilu od rzeczywistej zmiany klasy
+  aktywności lub zamiaru. Domyślny pierwszy profil i zmiana nazwy/wzrostu
+  zachowują UUID, cel i audyt. Rzeczywiste zmiany oraz ręczny cel nadal
+  tworzą nowe wersje; audyt pozostaje niezmiennym zapisem wcześniejszego
+  obliczenia. Room27, migracje, konto, lease oraz zamrożone wire/ACK nie
+  zmieniają kontraktów. Wersja klienta: 0.8.43/code54/validation1054.
+- Wadliwe konto testowe zatrzymano przed wysłaniem dwóch operacji.
+  Pod osłoną UID wykonano publiczny poligon i wylogowanie do gościa.
+  Niezależny odczyt potwierdził identyczne payloady/wire/ACK/audyt,
+  statusy pending/attempted0 i zachowanie pozostałych danych.
+  Własne reguły IPv4/IPv6 usunięto. To zachowany FAIL, bez heurystycznej
+  naprawy, usunięcia lub przepisania jego kolejki. Dalszy odbiór używa
+  odrębnych kont A2/B. Przed instrumentacją ponownie potwierdzono gościa
+  i publiczną blokadę sieci.
+- Niezależny przegląd źródła: 0 P1/P2. JVM ActivityGoalTest: 3 PASS,
+  w tym nowa reguła z siedmioma wektorami. Nowy pozytywny test naprawdę
+  wykrył błąd na niezmienionym APK1053. Na1054 oba wskazane zbiory
+  MaintenanceStorageTest i FirstAccountGoalNavigationTest dały 7/7 PASS
+  w jednym przebiegu, obejmując nowe zachowania oraz wcześniejsze ręczne
+  zmiany celu. Testy mają odrębne Room/vault; nie zastępują pełnego E9.
+  Pięć kopii głównego Room przed/po testach i aktualizacji było identycznych
+  bajtowo, a stan serwera wadliwego konta nie zmienił się.
+- Niezależny odbiór kwalifikacji zweryfikował 27 referencji, pliki APK
+  i ich rzeczywiste kopie PM, JVM XML, pięć kopii Room oraz świeże XML
+  gościa z blokadą przed RED/GREEN i po testach: 0 P1/P2.
+  Wyniki native pochodzą z klasyfikacji producenta powiązanej z hashem
+  surowego logu; nie deklarujemy nowego kernel trace ani osobnego native XML.
+  Root odebrał ten zakres, receipt SHA256
+  `9aedc639d40e7d46210c112c1a612de27e2c29d112da2d49e9ccf32f965444cf`.
+- Ten wpis opisuje naprawę i lokalną kwalifikację klienta. Rzeczywiste A2
+  oraz B z 14 dniami, pełny E9, odtwarzanie D2, Gemini i wydanie 1.0 mają
+  własne bramki. Publikacja tej gałęzi oraz CI jej aktualnego head/base
+  wymagają odrębnego potwierdzenia; wcześniejszy main CI nie jest ich wynikiem.

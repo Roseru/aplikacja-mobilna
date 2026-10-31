@@ -23,8 +23,9 @@ odebranego zestawu Docker i zachowanie danych są opisane w
   [workflow](docs/WORKFLOW.md) oraz
   [jedyny dziennik zespołu](docs/KOMUNIKACJA_AGENTOW.md).
 
-Bieżące źródło Androida to **0.8.42 / code53 / Room27**; oddzielny wariant
-validation ma code1053. Klient porównuje równoważne zapisy czasu UTC przy
+Bieżące źródło Androida to **0.8.43 / code54 / Room27**; oddzielny wariant
+validation ma code1054. Pierwszy zapis domyślnego profilu zachowuje istniejący
+cel i jego audyt. Klient porównuje też równoważne zapisy czasu UTC przy
 projekcji potwierdzonego posiłku i rzetelnie opisuje lokalną kopię zdjęcia.
 [PR193](https://github.com/Roseru/aplikacja-mobilna/pull/193)
 łączy poprawkę zimnego startu, odczyty synchronizacji i własne środowisko
