@@ -11767,6 +11767,21 @@ Kontynuacja O3-121 — zgodność narzędzi z rejestracją email-as-username:
   brak/błędny czas, przyszły/przeterminowany sukces i sukces sprzed startu
   procesu. Wymagany nowy bind/profile/status operatora; poprzedni wynik
   pozostaje dowodem odmowy, bez deklaracji wykonania start/stop/backup.
+- Kontynuacja po zwykłym merge PR196/main5d75fe2, baza operacyjna708666f:
+  niezależny review wykrył P2 adaptera D2, który dziedziczył wybór daemona
+  Docker z otoczenia. Adapter wymaga teraz jawnego lokalnego socket/engineID,
+  usuwa odziedziczone context/HOST/TLS i sprawdza engine przed każdą komendą,
+  także Compose, binarnym pg_restore i odczytem źródłowego PG. Target record
+  zachowuje binding; fence/activate oraz już utworzony obiekt celu odmawiają
+  jego zmiany. Brak configure_transport w API nie wywołuje Docker.
+  Ownership, zamknięcie źródła i rzeczywisty fence421s pozostają bez zmian.
+- Celowane testy docker_restore/backup/recovery_o2/local_release: 156 PASS,
+  JUnit SHA256 `ba5b8eb7f91b1359544f07b0cd8f143da7e7a25f34f7c5ca9d9d0b9bf04df4cc`.
+  Obejmują obcy context/HOST/TLS, brak/błędny binding, zmianę engine i ponowne
+  użycie obiektu celu po reconfigure. Ruff/format, E0 i diff-check PASS.
+  To testy z mockowanym transportem, bez Docker/ADB/Gradle. Działające źródło
+  operatorowego D2 i profil runtime nie zostały zmienione; rzeczywiste D2,
+  T1 zdjęć oraz końcowy start/stop/launcher mają odrębne odbiory.
 
 ### O3-124 — domknięcie fixture i diagnostyka rzeczywistego wyniku workera
 
