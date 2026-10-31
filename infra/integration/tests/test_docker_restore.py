@@ -261,7 +261,8 @@ def test_fence_observes_real_monotonic_and_wall_bound(monkeypatch, tmp_path, wal
     assert owned.record["phase"] == expected
 
 
-def test_partial_gateway_activation_error_closes_ingress(monkeypatch, tmp_path):
+@pytest.mark.parametrize("stop_fails", [False, True])
+def test_partial_gateway_activation_error_closes_ingress(monkeypatch, tmp_path, stop_fails):
     (tmp_path / "tls").mkdir()
     (tmp_path / "tls/ca.pem").write_bytes(b"own public CA fixture")
     restore.write(tmp_path / "compose.restore.json", {"services": {"gateway": {}}})
@@ -290,14 +291,25 @@ def test_partial_gateway_activation_error_closes_ingress(monkeypatch, tmp_path):
             calls.append(args)
             if args[0] == "up" and args[-1] == "gateway":
                 raise RuntimeError("partial owned gateway start")
+            if args[0] == "stop" and stop_fails:
+                raise RuntimeError("own stop failed")
 
     owned = Owned()
     monkeypatch.setattr(restore, "Target", lambda state: owned)
     monkeypatch.setattr(restore, "source_closed", lambda target: None)
-    with pytest.raises(RuntimeError, match="partial owned gateway"):
+    with pytest.raises(
+        RuntimeError, match="own stop failed" if stop_fails else "partial owned gateway"
+    ):
         restore.activate(tmp_path, sessions, restore.digest(sessions))
     assert calls[-1] == ("stop", "gateway", "api")
-    assert owned.record["phase"] == "ADMISSION_FAILED_CLOSED"
+    if stop_fails:
+        assert owned.record["phase"] == "ADMISSION_CLOSE_FAILED"
+        assert owned.record["api_started"] == "UNKNOWN"
+        assert owned.record["ports_published"] == "UNKNOWN"
+    else:
+        assert owned.record["phase"] == "ADMISSION_FAILED_CLOSED"
+        assert owned.record["api_started"] is False
+        assert owned.record["ports_published"] is False
 
 
 def test_source_password_or_role_drift_refuses_cutover_with_readonly_source_sql(

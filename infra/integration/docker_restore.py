@@ -713,12 +713,15 @@ def fence(state):
         source_closed(target)
         maintenance_configuration(target)
         target.record["phase"] = "MAINTENANCE"
+        target.record["ports_published"] = "PENDING_OR_UNKNOWN"
         target.save()
         target.compose(
             "up", "--detach", "--no-deps", "--force-recreate", "gateway", maintenance=True
         )
         probe = Probe(target)
         wait_maintenance(probe)
+        target.record["ports_published"] = True
+        target.save()
         # The issuer and verifier use at most 300s access lifetime and 60s skew.
         lifetime = int(
             target.sql(
@@ -791,6 +794,7 @@ def activate(state, sessions_path, sessions_sha256):
         target.record["files"]["compose.restore.json"] = digest(
             target.state / "compose.restore.json"
         )
+        target.record["api_started"] = "PENDING_OR_UNKNOWN"
         target.save()
         try:
             target.compose("up", "--detach", "--no-deps", "api")
@@ -814,6 +818,8 @@ def activate(state, sessions_path, sessions_sha256):
                     require(result.json().get("error") == "invalid_grant", "Old refresh accepted")
             target.record.update(
                 phase="TARGET_AUTH_QUALIFIED",
+                api_started=True,
+                ports_published=True,
                 old_access_refresh="REFUSED",
                 client_recovery="NOT_RUN",
                 ai_started=False,
@@ -822,9 +828,19 @@ def activate(state, sessions_path, sessions_sha256):
             return {"phase": "TARGET_AUTH_QUALIFIED", "client_recovery": "NOT_RUN"}
         except Exception:
             # Close ingress again on any failed admission; preserve all target data.
-            target.compose("stop", "gateway", "api")
-            target.record["phase"] = "ADMISSION_FAILED_CLOSED"
-            target.save()
+            try:
+                target.compose("stop", "gateway", "api")
+            except Exception:
+                target.record.update(
+                    phase="ADMISSION_CLOSE_FAILED", api_started="UNKNOWN", ports_published="UNKNOWN"
+                )
+                target.save()
+                raise
+            else:
+                target.record.update(
+                    phase="ADMISSION_FAILED_CLOSED", api_started=False, ports_published=False
+                )
+                target.save()
             raise
 
 
