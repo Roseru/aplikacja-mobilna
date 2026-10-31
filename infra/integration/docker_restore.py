@@ -8,6 +8,7 @@ this module never stops, restores, drops or migrates its databases.
 import argparse
 import hashlib
 import json
+import os
 import re
 import shutil
 import subprocess
@@ -15,6 +16,8 @@ import time
 import traceback
 from datetime import UTC, datetime
 from pathlib import Path, PureWindowsPath
+from types import SimpleNamespace
+from urllib.parse import urlsplit
 from uuid import UUID, uuid4
 
 from backup import (
@@ -30,7 +33,7 @@ from backup import (
 from maintenance import lock
 from monitor import console_options
 from recovery_o2 import admin, wait_maintenance
-from run import HERE, Stack, host_address, private_write
+from run import HERE, host_address, private_write
 from verify import Probe, expect
 
 FORMAT = "calorie-owned-docker-restore/v1"
@@ -42,6 +45,7 @@ KC_VALIDATE = [
     "--spi-connections-jpa--quarkus--migration-strategy=validate",
     "--spi-connections-jpa--quarkus--initialize-empty=false",
 ]
+_transport = None
 
 
 def read(path):
@@ -118,10 +122,89 @@ def pinned_archive(archive, expected):
     return archive, raw, manifest
 
 
+class DockerTransport:
+    """An explicit local daemon; ambient contexts and TLS never select the target."""
+
+    def __init__(self, endpoint, engine_id):
+        require(isinstance(endpoint, str), "Explicit local Docker endpoint required")
+        local_pipe = re.fullmatch(r"npipe:/{4}\./pipe/[A-Za-z0-9_.-]+", endpoint)
+        uri = urlsplit(endpoint)
+        local_unix = (
+            endpoint.startswith("unix:///")
+            and uri.scheme == "unix"
+            and not uri.netloc
+            and uri.path.startswith("/")
+            and not uri.query
+            and not uri.fragment
+            and not any(character.isspace() for character in endpoint)
+        )
+        require(local_pipe or local_unix, "Explicit local Docker socket required")
+        require(
+            isinstance(engine_id, str)
+            and re.fullmatch(r"[A-Za-z0-9][A-Za-z0-9_.:-]{0,199}", engine_id),
+            "Explicit Docker engine identity required",
+        )
+        self.endpoint, self.engine_id = endpoint, engine_id
+
+    @staticmethod
+    def environment():
+        excluded = {
+            "DOCKER_CONTEXT",
+            "DOCKER_HOST",
+            "DOCKER_TLS",
+            "DOCKER_TLS_VERIFY",
+            "DOCKER_CERT_PATH",
+        }
+        return {key: value for key, value in os.environ.items() if key.upper() not in excluded}
+
+    def command(self, *args):
+        return ["docker", "--host", self.endpoint, *args]
+
+    def check_engine(self):
+        observed = subprocess.check_output(
+            self.command("info", "--format", "{{.ID}}"),
+            env=self.environment(),
+            text=True,
+            encoding="utf-8",
+            timeout=30,
+            **console_options(),
+        ).strip()
+        require(observed == self.engine_id, "Docker engine identity changed")
+
+    def record(self):
+        return {"docker_endpoint": self.endpoint, "engine_id": self.engine_id}
+
+
+def configure_transport(endpoint, engine_id):
+    """Required for CLI and programmatic callers; failed configuration revokes the old binding."""
+    global _transport
+    _transport = None
+    candidate = DockerTransport(endpoint, engine_id)
+    candidate.check_engine()
+    _transport = candidate
+
+
+def transport():
+    require(_transport is not None, "Configure an explicit local Docker transport first")
+    _transport.check_engine()
+    return _transport
+
+
 def docker(*args):
+    bound = transport()
     return subprocess.check_output(
-        ["docker", *args], text=True, encoding="utf-8", timeout=30, **console_options()
+        bound.command(*args),
+        env=bound.environment(),
+        text=True,
+        encoding="utf-8",
+        timeout=30,
+        **console_options(),
     ).strip()
+
+
+def execute_docker(directory, *args, **kwargs):
+    bound = transport()
+    return execute(directory, bound.command(*args), environment=bound.environment(), **kwargs)
 
 
 def empty_project(project):
@@ -271,16 +354,25 @@ class Target:
         self.state = unlinked(state).resolve(strict=True)
         self.record = read(self.state / "restore-target.json")
         require(self.record["format"] == FORMAT, "Owned target marker required")
+        self.require_transport()
         self.config = read(self.state / "config.json")
         self.origin = self.config["origin"]
         require(self.config["project"] == self.record["project"], "Target project drift")
         for name, expected in self.record["files"].items():
             require(digest(self.state / name) == expected, "Target configuration drift")
 
+    def require_transport(self):
+        bound = transport()
+        require(
+            all(self.record.get(key) == value for key, value in bound.record().items()),
+            "Target Docker transport binding changed or missing",
+        )
+
     def save(self):
         write(self.state / "restore-target.json", self.record)
 
     def compose(self, *args, maintenance=False):
+        self.require_transport()
         selector = "label=com.docker.compose.project=" + self.config["project"]
         for kind, listing in (
             ("container", ("ps", "-aq")),
@@ -301,7 +393,6 @@ class Target:
                     "Foreign target resource refused",
                 )
         command = [
-            "docker",
             "compose",
             "--project-name",
             self.config["project"],
@@ -310,7 +401,7 @@ class Target:
         ]
         if maintenance:
             command += ["-f", str(self.state / "compose.maintenance.json")]
-        return execute(self.state, command + list(args)).decode().strip()
+        return execute_docker(self.state, *command, *args).decode().strip()
 
     def sql(self, database, statement):
         container = self.compose("ps", "-q", "postgres")
@@ -323,10 +414,9 @@ class Target:
         query = self.state / "query-private.sql"
         private_write(query, statement)
         return (
-            execute(
+            execute_docker(
                 self.state,
-                [
-                    "docker",
+                *[
                     "exec",
                     "-i",
                     container,
@@ -410,6 +500,7 @@ def materialize(archive, state, project, manifest_sha256, images):
             "files": {},
             "full_ko32": False,
             "created_at": datetime.now(UTC).isoformat(),
+            **transport().record(),
         }
         for path in state.iterdir():
             if path.is_file() and path.name not in ("operation.lock", "restore-target.json"):
@@ -425,10 +516,9 @@ def materialize(archive, state, project, manifest_sha256, images):
             require(roles.count("CREATE ROLE postgres;") == 1, "Unexpected bootstrap role archive")
             target.sql("postgres", roles.replace("CREATE ROLE postgres;", "-- initdb postgres", 1))
             for database in ("calorie_app", "keycloak"):
-                execute(
+                execute_docker(
                     state,
-                    [
-                        "docker",
+                    *[
                         "exec",
                         "-i",
                         container,
@@ -522,7 +612,10 @@ def read_result(value):
 
 
 def hold_sessions(source_state, output):
-    source = Stack(Path(source_state).resolve(strict=True))
+    transport()
+    state = unlinked(source_state).resolve(strict=True)
+    # Probe only needs HTTPS configuration. Do not expose an ambient Stack executor.
+    source = SimpleNamespace(state=state, origin=read(state / "config.json")["origin"])
     probe = Probe(source)
     output = unlinked(output).resolve()
     require(output.is_relative_to(source.state), "Old tokens must remain in private source state")
@@ -571,10 +664,9 @@ def source_closed(target):
         "backend_type='client backend' AND pid<>pg_backend_pid(); ROLLBACK;",
     )
     count = (
-        execute(
+        execute_docker(
             target.state,
-            [
-                "docker",
+            *[
                 "exec",
                 "-i",
                 pg,
@@ -599,10 +691,9 @@ def source_closed(target):
         path = target.state / "source-readonly-query.sql"
         private_write(path, "BEGIN READ ONLY; " + query + " ROLLBACK;")
         observed = (
-            execute(
+            execute_docker(
                 target.state,
-                [
-                    "docker",
+                *[
                     "exec",
                     "-i",
                     pg,
@@ -635,10 +726,9 @@ def source_closed(target):
         path = target.state / "source-identity-readonly.sql"
         private_write(path, "BEGIN READ ONLY; " + query + " ROLLBACK;")
         observed = (
-            execute(
+            execute_docker(
                 target.state,
-                [
-                    "docker",
+                *[
                     "exec",
                     "-i",
                     pg,
@@ -876,8 +966,11 @@ def main():
     parser.add_argument("--images", type=Path)
     parser.add_argument("--sessions", type=Path)
     parser.add_argument("--sessions-sha256")
+    parser.add_argument("--docker-endpoint", required=True)
+    parser.add_argument("--engine-id", required=True)
     args = parser.parse_args()
     try:
+        configure_transport(args.docker_endpoint, args.engine_id)
         if args.action == "materialize":
             result = materialize(
                 args.archive, args.state, args.project, args.manifest_sha256, read(args.images)

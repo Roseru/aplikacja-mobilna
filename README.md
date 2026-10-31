@@ -23,8 +23,8 @@ odebranego zestawu Docker i zachowanie danych są opisane w
   [workflow](docs/WORKFLOW.md) oraz
   [jedyny dziennik zespołu](docs/KOMUNIKACJA_AGENTOW.md).
 
-Bieżące źródło Androida to **0.8.44 / code55 / Room27**; oddzielny wariant
-validation ma code1055. Pierwszy zapis domyślnego profilu zachowuje istniejący
+Bieżące źródło Androida to **0.8.45 / code56 / Room27**; oddzielny wariant
+validation ma code1056. Pierwszy zapis domyślnego profilu zachowuje istniejący
 cel i jego audyt. Pełny i przyrostowy PULL oddzielają oś E od dotychczasowych
 domen dziennika, więc cel i wyprowadzone z niego początkowe E mogą mieć ten sam identyfikator.
 Zapisane strony i potwierdzenia Room27 pozostają zachowane.

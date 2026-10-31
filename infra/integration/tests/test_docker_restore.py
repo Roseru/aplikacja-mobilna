@@ -10,6 +10,19 @@ sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 import docker_restore as restore  # noqa: E402
 
 
+@pytest.fixture(autouse=True)
+def clear_transport(monkeypatch):
+    monkeypatch.setattr(restore, "_transport", None)
+
+
+@pytest.fixture
+def bound_transport(monkeypatch):
+    bound = restore.DockerTransport("npipe:////./pipe/owned-fixture", "held-engine")
+    monkeypatch.setattr(bound, "check_engine", lambda: None)
+    monkeypatch.setattr(restore, "_transport", bound)
+    return bound
+
+
 @pytest.fixture
 def paired(tmp_path):
     folder = tmp_path / "paired"
@@ -171,7 +184,7 @@ def test_optional_photo_topology_changes_only_private_new_volume_initialization(
 
 @pytest.mark.parametrize("has_photos", [False, True])
 def test_materialize_optional_photo_payload_before_init_preserves_old_path_and_closed_jobs(
-    paired, tmp_path, monkeypatch, has_photos
+    paired, tmp_path, monkeypatch, has_photos, bound_transport
 ):
     import io
     import re
@@ -259,6 +272,7 @@ def test_materialize_optional_photo_payload_before_init_preserves_old_path_and_c
     )
     assert result["phase"] == "OFFLINE_TARGET_READY"
     assert result["api_started"] is result["ports_published"] is result["ai_started"] is False
+    assert {key: result[key] for key in bound_transport.record()} == bound_transport.record()
     assert all(command[-1] not in {"api", "ai-worker", "gateway"} for command in events)
     assert any("dispatch_open=false" in query for query in queries)
     assert not any("dispatch_open=true" in query or "configure-pool" in query for query in queries)
@@ -274,7 +288,7 @@ def test_materialize_optional_photo_payload_before_init_preserves_old_path_and_c
         assert not (target / "photos-restored").exists()
 
 
-def test_target_loader_refuses_changed_compose(tmp_path):
+def test_target_loader_refuses_changed_compose(tmp_path, bound_transport):
     cfg = {"project": "owned-target", "origin": "https://127.0.0.1:28443"}
     restore.write(tmp_path / "config.json", cfg)
     restore.write(tmp_path / "compose.restore.json", {"services": {}})
@@ -283,6 +297,7 @@ def test_target_loader_refuses_changed_compose(tmp_path):
         "project": "owned-target",
         "owner": "own",
         "files": {"compose.restore.json": restore.digest(tmp_path / "compose.restore.json")},
+        **bound_transport.record(),
     }
     restore.write(tmp_path / "restore-target.json", record)
     restore.write(tmp_path / "compose.restore.json", {"services": {"foreign": {}}})
@@ -437,7 +452,7 @@ def test_partial_gateway_activation_error_closes_ingress(monkeypatch, tmp_path, 
 
 
 def test_source_password_or_role_drift_refuses_cutover_with_readonly_source_sql(
-    monkeypatch, tmp_path
+    monkeypatch, tmp_path, bound_transport
 ):
     (tmp_path / "paired-input").mkdir()
     restore.write(
@@ -462,11 +477,12 @@ def test_source_password_or_role_drift_refuses_cutover_with_readonly_source_sql(
             return "postgres"
         pytest.fail("No Docker mutation")
 
-    def execute(directory, args, *, input_path):
+    def execute(directory, args, *, input_path, environment):
         query = input_path.read_text()
         queries.append(query)
         assert query.startswith("BEGIN READ ONLY;") and query.endswith("ROLLBACK;")
-        assert args[0:3] == ["docker", "exec", "-i"]
+        assert args[0:5] == ["docker", "--host", bound_transport.endpoint, "exec", "-i"]
+        assert not {"DOCKER_HOST", "DOCKER_CONTEXT", "DOCKER_TLS_VERIFY"} & environment.keys()
         return b"0" if "pg_stat_activity" in query else b"[]"
 
     monkeypatch.setattr(restore, "docker", command)
@@ -474,3 +490,242 @@ def test_source_password_or_role_drift_refuses_cutover_with_readonly_source_sql(
     with pytest.raises(ValueError, match="credentials/roles/profile drift"):
         restore.source_closed(Owned())
     assert len(queries) == 4
+
+
+@pytest.mark.parametrize("operation", ["read", "stream", "target", "hold", "materialize"])
+def test_programmatic_api_without_configuration_never_uses_ambient_docker(
+    monkeypatch, tmp_path, paired, operation
+):
+    from calorie_app.health import EXPECTED_REVISION
+
+    folder, _ = paired
+    manifest = restore.read(folder / "manifest.json")
+    restore.write(folder / "manifest.json", manifest | {"revision": EXPECTED_REVISION})
+    monkeypatch.setenv("DOCKER_CONTEXT", "foreign-daemon")
+    monkeypatch.setenv("DOCKER_HOST", "tcp://foreign.invalid:2376")
+    monkeypatch.setattr(
+        restore.subprocess, "check_output", lambda *a, **k: pytest.fail("No daemon without binding")
+    )
+    monkeypatch.setattr(
+        restore, "execute", lambda *a, **k: pytest.fail("No stream without binding")
+    )
+    restore.write(tmp_path / "restore-target.json", {"format": restore.FORMAT})
+    calls = {
+        "read": lambda: restore.docker("ps", "-aq"),
+        "stream": lambda: restore.execute_docker(tmp_path, "exec", "-i", "owned-pg"),
+        "target": lambda: restore.Target(tmp_path),
+        "hold": lambda: restore.hold_sessions(tmp_path, tmp_path / "tokens.private.json"),
+        "materialize": lambda: restore.materialize(
+            folder,
+            tmp_path / "new-target",
+            "owned-target",
+            restore.digest(folder / "manifest.json"),
+            images(),
+        ),
+    }
+    with pytest.raises(ValueError, match="Configure an explicit"):
+        calls[operation]()
+
+
+@pytest.mark.parametrize(
+    "endpoint,engine",
+    [
+        (None, "engine"),
+        ("", "engine"),
+        ("tcp://127.0.0.1:2375", "engine"),
+        ("ssh://remote", "engine"),
+        ("npipe:////remote/pipe/docker", "engine"),
+        ("unix://remote/docker.sock", "engine"),
+        ("unix:///tmp/docker.sock?remote=1", "engine"),
+        ("unix:///tmp/docker.sock", None),
+        ("unix:///tmp/docker.sock", ""),
+    ],
+)
+def test_invalid_or_missing_binding_refused_without_daemon(monkeypatch, endpoint, engine):
+    monkeypatch.setattr(
+        restore.subprocess, "check_output", lambda *a, **k: pytest.fail("No daemon for bad binding")
+    )
+    with pytest.raises(ValueError):
+        restore.configure_transport(endpoint, engine)
+    assert restore._transport is None
+
+
+def test_wrong_engine_refuses_configuration_and_revokes_previous_binding(
+    monkeypatch, bound_transport
+):
+    calls = []
+
+    def daemon(command, **kwargs):
+        calls.append(command)
+        return "different-engine\n"
+
+    monkeypatch.setattr(restore.subprocess, "check_output", daemon)
+    with pytest.raises(ValueError, match="engine identity changed"):
+        restore.configure_transport(bound_transport.endpoint, bound_transport.engine_id)
+    assert calls == [["docker", "--host", bound_transport.endpoint, "info", "--format", "{{.ID}}"]]
+    assert restore._transport is None
+
+
+@pytest.mark.parametrize(
+    "endpoint", ["npipe:////./pipe/owned-fixture", "unix:///var/run/owned.sock"]
+)
+def test_explicit_local_transport_ignores_foreign_context_host_and_tls(
+    monkeypatch, tmp_path, endpoint
+):
+    excluded = {
+        "DOCKER_CONTEXT",
+        "DOCKER_HOST",
+        "DOCKER_TLS",
+        "DOCKER_TLS_VERIFY",
+        "DOCKER_CERT_PATH",
+    }
+    for name in excluded:
+        monkeypatch.setenv(name, "foreign-fixture")
+    calls = []
+
+    def daemon(command, **kwargs):
+        calls.append((command, kwargs["env"]))
+        assert command[:3] == ["docker", "--host", endpoint]
+        assert not excluded & kwargs["env"].keys()
+        return "held-engine\n" if command[3:] == ["info", "--format", "{{.ID}}"] else "owned\n"
+
+    def streamed(directory, command, *, environment, **kwargs):
+        calls.append((command, environment))
+        assert command[:3] == ["docker", "--host", endpoint]
+        assert not excluded & environment.keys()
+        return b"private streamed payload"
+
+    monkeypatch.setattr(restore.subprocess, "check_output", daemon)
+    monkeypatch.setattr(restore, "execute", streamed)
+    restore.configure_transport(endpoint, "held-engine")
+    assert restore.docker("volume", "ls", "-q") == "owned"
+    assert (
+        restore.execute_docker(tmp_path, "exec", "-i", "owned-pg", "pg_restore")
+        == b"private streamed payload"
+    )
+    assert [command[3] for command, _ in calls] == ["info", "info", "volume", "info", "exec"]
+
+
+@pytest.mark.parametrize("operation", ["read", "stream"])
+def test_engine_drift_is_checked_again_before_each_daemon_operation(
+    monkeypatch, tmp_path, operation
+):
+    observed = {"engine": "held-engine"}
+    calls = []
+
+    def daemon(command, **kwargs):
+        calls.append(command)
+        assert command[3:] == ["info", "--format", "{{.ID}}"]
+        return observed["engine"]
+
+    monkeypatch.setattr(restore.subprocess, "check_output", daemon)
+    monkeypatch.setattr(restore, "execute", lambda *a, **k: pytest.fail("No IO after engine drift"))
+    restore.configure_transport("unix:///var/run/owned.sock", "held-engine")
+    observed["engine"] = "new-engine-at-same-socket"
+    with pytest.raises(ValueError, match="engine identity changed"):
+        if operation == "read":
+            restore.docker("run", "immutable-fixture")
+        else:
+            restore.execute_docker(tmp_path, "exec", "-i", "owned-pg", "pg_restore")
+    assert len(calls) == 2
+
+
+@pytest.mark.parametrize("action", ["fence", "activate"])
+@pytest.mark.parametrize("drift", ["missing", "endpoint", "engine"])
+def test_target_transport_drift_blocks_reentry_before_any_mutation(
+    monkeypatch, tmp_path, bound_transport, action, drift
+):
+    record = {"format": restore.FORMAT, **bound_transport.record()}
+    if drift == "missing":
+        del record["engine_id"]
+    elif drift == "endpoint":
+        record["docker_endpoint"] = "unix:///another/socket"
+    else:
+        record["engine_id"] = "another-engine"
+    restore.write(tmp_path / "restore-target.json", record)
+    monkeypatch.setattr(
+        restore, "docker", lambda *a: pytest.fail("No target/source command on drift")
+    )
+    monkeypatch.setattr(restore, "execute", lambda *a, **k: pytest.fail("No mutation on drift"))
+    with pytest.raises(ValueError, match="transport binding changed or missing"):
+        if action == "fence":
+            restore.fence(tmp_path)
+        else:
+            restore.activate(tmp_path, tmp_path / "old-sessions.private.json", "0" * 64)
+    assert not (tmp_path / "operation.lock").exists()
+
+
+def test_target_compose_and_sql_use_bound_transport(monkeypatch, tmp_path, bound_transport):
+    restore.write(
+        tmp_path / "config.json", {"project": "owned-target", "origin": "https://127.0.0.1:28443"}
+    )
+    restore.write(
+        tmp_path / "restore-target.json",
+        {
+            "format": restore.FORMAT,
+            "project": "owned-target",
+            "owner": "owned-label",
+            "files": {},
+            **bound_transport.record(),
+        },
+    )
+    commands = []
+
+    def daemon(command, **kwargs):
+        commands.append(command)
+        assert command[:3] == ["docker", "--host", bound_transport.endpoint]
+        return "owned-label" if command[3:5] == ["inspect", "--format"] else ""
+
+    def streamed(directory, command, *, environment, **kwargs):
+        commands.append(command)
+        assert command[:3] == ["docker", "--host", bound_transport.endpoint]
+        if command[3] == "compose":
+            return b"owned-pg-id"
+        assert command[3:6] == ["exec", "-i", "owned-pg-id"]
+        assert kwargs["input_path"].read_text() == "SELECT 1;"
+        return b"1\n"
+
+    monkeypatch.setattr(restore.subprocess, "check_output", daemon)
+    monkeypatch.setattr(restore, "execute", streamed)
+    target = restore.Target(tmp_path)
+    assert target.sql("calorie_app", "SELECT 1;") == "1"
+    assert any(command[3] == "compose" for command in commands)
+    assert any(command[3] == "exec" for command in commands)
+
+
+def test_existing_target_object_refuses_reconfigured_binding(
+    monkeypatch, tmp_path, bound_transport
+):
+    restore.write(
+        tmp_path / "config.json", {"project": "owned-target", "origin": "https://127.0.0.1:28443"}
+    )
+    restore.write(
+        tmp_path / "restore-target.json",
+        {
+            "format": restore.FORMAT,
+            "project": "owned-target",
+            "owner": "owned-label",
+            "files": {},
+            **bound_transport.record(),
+        },
+    )
+    target = restore.Target(tmp_path)
+    monkeypatch.setattr(
+        restore, "_transport", restore.DockerTransport("unix:///other.sock", "other-engine")
+    )
+    monkeypatch.setattr(restore._transport, "check_engine", lambda: None)
+    monkeypatch.setattr(restore, "docker", lambda *a: pytest.fail("No daemon after rebind"))
+    monkeypatch.setattr(restore, "execute", lambda *a, **k: pytest.fail("No mutation after rebind"))
+    with pytest.raises(ValueError, match="transport binding changed or missing"):
+        target.compose("up", "--detach", "api")
+
+
+def test_cli_requires_explicit_transport_before_any_daemon(monkeypatch, tmp_path, capsys):
+    monkeypatch.setattr(sys, "argv", ["docker_restore.py", "fence", "--state", str(tmp_path)])
+    monkeypatch.setattr(
+        restore.subprocess, "check_output", lambda *a, **k: pytest.fail("No ambient daemon")
+    )
+    with pytest.raises(SystemExit) as error:
+        restore.main()
+    assert error.value.code == 2
+    assert "--docker-endpoint" in capsys.readouterr().err

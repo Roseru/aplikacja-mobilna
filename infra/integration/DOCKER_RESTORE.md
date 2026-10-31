@@ -15,10 +15,21 @@ i `client_recovery=NOT_RUN` pozostają do rzeczywistego odbioru klienta.
 Użyj kwalifikowanego Pythona backendu oraz `PYTHONPATH=backend/src`.
 Istniejące konta A/B muszą mieć ukończony bootstrap. Hasła i tokeny pozostają
 w chronionym stanie; wynik `hold-sessions` podaje tylko SHA osobnego pliku.
+Każda komenda wymaga jawnych `--docker-endpoint $HeldLocalSocket` oraz
+`--engine-id $HeldEngineID`, odczytanych i zachowanych przez operatora przed
+oknem. Akceptowany jest lokalny named pipe albo unix socket. Adapter usuwa
+odziedziczone DOCKER_CONTEXT/HOST/TLS z procesów Docker, używa jawnego
+`--host` i sprawdza engine ID przed każdą operacją, również binarnym restore
+i odczytem źródłowego PG. Endpoint i ID trafiają do target record; fence/activate
+odmawiają innego lub brakującego bindingu. Nie podmieniaj źródła adaptera
+w trwającej próbie ani nie dopisuj bindingu do starego target record ręcznie.
+Programmatyczne wywołanie wymaga najpierw
+`configure_transport(endpoint, engine_id)`; bez niego Docker nie jest wywoływany.
 
 ```powershell
 & $Python infra/integration/docker_restore.py hold-sessions `
-  --state $Source --sessions "$Source/old-sessions.private.json"
+  --state $Source --sessions "$Source/old-sessions.private.json" `
+  --docker-endpoint $HeldLocalSocket --engine-id $HeldEngineID
 ```
 
 W uzgodnionym oknie odetnij klienta. Dla nowej lokalnej dostawy użyj odebranego
@@ -50,7 +61,8 @@ tagów `latest` ani nie buduj nowego API podczas odtwarzania.
 ```powershell
 & $Python infra/integration/docker_restore.py materialize `
   --archive $ArchiveT0 --manifest-sha256 $HeldManifestSHA `
-  --state $NewTarget --project $NewProject --images $Images
+  --state $NewTarget --project $NewProject --images $Images `
+  --docker-endpoint $HeldLocalSocket --engine-id $HeldEngineID
 ```
 
 Odmowa istniejącego katalogu, projektu, kontenera, sieci lub wolumenu poprzedza
@@ -66,8 +78,9 @@ sprawdza prywatne regularne JPG/staging, rozmiar zgodny z PhotoStore i mtime,
 a następnie kopiuje je do NOWEGO target photo_data przed dopuszczeniem API.
 Zachowuje mtime dla istniejącej retencji i nadaje UID10001/0700/0600.
 Nie zmienia quota, terminów, historii lub cleanup DB, nie wznawia jobów,
-nie wysyła zdjęć i nie otwiera AI. Stary format i bieżący T0 bez markera
-zachowują dotychczasowe zachowanie. Rzeczywisty odbiór opcjonalnego formatu
+nie wysyła zdjęć i nie otwiera AI. Stary format bez markera zachowuje
+dotychczasowe zachowanie. Bound BACKUP zapisuje marker także dla pustego magazynu.
+Rzeczywisty odbiór opcjonalnego formatu
 jest osobny od wcześniejszego odtworzenia pustego magazynu zdjęć.
 
 Cel uruchamia tylko własne PG i Keycloak. Nie publikuje portu, nie uruchamia API,
@@ -83,9 +96,11 @@ inne połączenia PG powodują odmowę. Adapter wymaga identycznych od T0
 fingerprintów kont i tożsamości; przy różnicy pozostawia cel zamknięty.
 
 ```powershell
-& $Python infra/integration/docker_restore.py fence --state $NewTarget
+& $Python infra/integration/docker_restore.py fence --state $NewTarget `
+  --docker-endpoint $HeldLocalSocket --engine-id $HeldEngineID
 & $Python infra/integration/docker_restore.py activate --state $NewTarget `
-  --sessions "$Source/old-sessions.private.json" --sessions-sha256 $HeldSessionSHA
+  --sessions "$Source/old-sessions.private.json" --sessions-sha256 $HeldSessionSHA `
+  --docker-endpoint $HeldLocalSocket --engine-id $HeldEngineID
 ```
 
 Fence publikuje wyłącznie maintenance na **tym samym** issuer/porcie po odcięciu
