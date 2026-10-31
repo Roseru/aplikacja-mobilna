@@ -128,7 +128,7 @@ class ImportEnergyRecoveryViewModelTest {
             assertEquals(2, run.itemCount)
             val validated = reconciliation.latestCopy(lease, restored, model.state.value.plan!!.planId).second
             assertEquals(sharedId, validated.entities.single().id)
-            assertEquals(sharedId, validated.energyVersions.single().entityId)
+            assertEquals(sharedId, validated.energyVersions.single().id)
             assertEquals(original, db.dao().goalById(lease.storageScope, sharedId))
             assertEquals(1, calls.get())
 
