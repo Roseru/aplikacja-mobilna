@@ -50,6 +50,8 @@ data class ServerSnapshotIdentity(val runId: String, val field: String, val iden
     @Insert suspend fun insert(page: ServerSnapshotPage)
     @Insert suspend fun insert(identities: List<ServerSnapshotIdentity>)
     @Query("SELECT COUNT(*) FROM server_snapshot_pages WHERE runId = :run AND queryJson = :query") suspend fun querySeen(run: String, query: String): Int
+    @Query("SELECT identity FROM server_snapshot_identities WHERE runId=:run AND field='entities' AND identity IN (:ids)")
+    suspend fun bareEntityIdentities(run:String,ids:List<String>):List<String>
     @Upsert suspend fun save(access: ServerSnapshotAccess)
 }
 
@@ -182,12 +184,13 @@ class ServerSnapshotStore(private val db: CalorieDatabase, private val protocol:
             }
             requireCurrent(request)
             val json = page.json()
+            requireCompatibleEntityIdentities(run,json)
             val identities = mutableListOf<ServerSnapshotIdentity>()
-            for ((field, keys) in SnapshotProtocol.IDENTITIES) {
+            for (field in SnapshotProtocol.IDENTITIES.keys) {
                 val records = json.getJSONArray(field)
                 for (i in 0 until records.length()) identities.add(ServerSnapshotIdentity(run.id, field,
                     (if(run.readMode=="incremental" && field=="entities")"${request.pageIndex}:$i:" else "")+
-                    keys.joinToString(":") { records.getJSONObject(i).getString(it) }))
+                    SnapshotProtocol.identity(field,records.getJSONObject(i))))
             }
             val timeline = json.getLong("goal_timeline_revision")
             if (run.timelineRevision != null && run.timelineRevision != timeline) throw SnapshotConflictException()
@@ -219,6 +222,25 @@ class ServerSnapshotStore(private val db: CalorieDatabase, private val protocol:
             }
             nextRequest
         }
+    }
+    /** Room27 archives from older APKs used bare UUIDs in this derived index.
+     * Preserve those rows and exact saved wire/query bytes. A matching old UUID
+     * requires checking its diary/E plane in raw pages before appending a page.
+     * New plane keys and the final full reader still reject duplicate identities.
+     */
+    private suspend fun requireCompatibleEntityIdentities(run:ServerSnapshotRun,incoming:org.json.JSONObject) {
+        if(run.readMode!="snapshot" || run.pageCount==0)return
+        val rows=incoming.getJSONArray("entities")
+        if(rows.length()==0)return
+        val ids=(0 until rows.length()).map {rows.getJSONObject(it).getString("entity_id")}
+        val old=dao.bareEntityIdentities(run.id,ids).toSet()
+        if(old.isEmpty())return
+        fun identity(row:org.json.JSONObject)=SnapshotProtocol.identity("entities",row)
+        val previous=dao.pages(run.id).flatMap {page->
+            val saved=pl.roseru.kalorie.core.catalog.StrictJson.read(page.responseJson.toByteArray(Charsets.UTF_8)).getJSONArray("entities")
+            (0 until saved.length()).map {saved.getJSONObject(it)}.filter {it.getString("entity_id") in old}.map(::identity)
+        }.toSet()
+        require((0 until rows.length()).none {identity(rows.getJSONObject(it)) in previous})
     }
     suspend fun expire(request: SnapshotRequest,fullRequired:Boolean=false) = db.withTransaction {
         requireCurrent(request)

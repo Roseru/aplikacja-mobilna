@@ -17,8 +17,12 @@ importowany do bazy i zachowuje pochodzenie danych.
   [workflow](docs/WORKFLOW.md) oraz
   [jedyny dziennik zespołu](docs/KOMUNIKACJA_AGENTOW.md).
 
-Bieżące źródło Androida to **0.8.42 / code53 / Room27**; oddzielny wariant
-validation ma code1053. Klient porównuje równoważne zapisy czasu UTC przy
+Bieżące źródło Androida to **0.8.44 / code55 / Room27**; oddzielny wariant
+validation ma code1055. Pierwszy zapis domyślnego profilu zachowuje istniejący
+cel i jego audyt. Pełny i przyrostowy PULL oddzielają oś E od dotychczasowych
+domen dziennika, więc cel i wyprowadzone z niego początkowe E mogą mieć ten sam identyfikator.
+Zapisane strony i potwierdzenia Room27 pozostają zachowane.
+Klient porównuje też równoważne zapisy czasu UTC przy
 projekcji potwierdzonego posiłku i rzetelnie opisuje lokalną kopię zdjęcia.
 [PR193](https://github.com/Roseru/aplikacja-mobilna/pull/193)
 łączy poprawkę zimnego startu, odczyty synchronizacji i własne środowisko

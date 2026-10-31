@@ -60,14 +60,12 @@ internal class IncrementalDiaryProtocol(private val schema:SyncWireSchema,privat
             for(i in 0 until rows.length()) {
                 val row=rows.getJSONObject(i);val id=row.getString("entity_id");val type=row.getString("entity_type")
                 if(type=="energy_estimate") {
-                    require(id !in entities)
                     val version=EnergyProtocol(energySchema).version(row)
                     versions[id]?.let {require(it.wire==version.wire)}
                     revisionIds[version.revision]?.let {require(it==id)}
                     versions[id]=version;revisionIds[version.revision]=id
                     continue
                 }
-                require(id !in versions)
                 val deleted=row.getBoolean("deleted")
                 val payload=if(deleted)null else StrictJson.canonical(row.getJSONObject("payload"))
                 if(payload!=null)when(type) {

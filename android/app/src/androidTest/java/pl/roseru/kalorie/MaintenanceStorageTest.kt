@@ -47,6 +47,78 @@ class MaintenanceStorageTest {
         assertNotNull("Expected refusal without a partial write",failure)
     }
 
+    private suspend fun acknowledge(push:MealPushStore,lease:OwnerLease):MealPushRequest {
+        val request=checkNotNull(push.prepare(lease));push.markAttempted(request)
+        val results=JSONArray(request.operations.map {operation->JSONObject().put("operation_id",operation.operationId)
+            .put("entity_id",operation.entityId).put("status","accepted").put("revision",(operation.baseRevision?:0)+1)
+            .put("recovery_mapping",JSONObject.NULL)})
+        val response=JSONObject().put("sync_epoch",request.batch.json().getString("sync_epoch"))
+            .put("server_time","2026-10-24T12:00:00Z").put("results",results).toString().toByteArray()
+        push.applyAck(push.prepareAck(request,200,response));return request
+    }
+    @Test fun firstDefaultProfileAndLaterRenamePreserveAcknowledgedGoalAuditAndFrozenEvidence()=runBlocking<Unit> {
+        profileAfterCalculatedGoal("profile")
+    }
+    @Test fun explicitActivityAimAndManualGoalChangesKeepTheirOwnVersionAndTheOriginalAudit()=runBlocking<Unit> {
+        for(change in listOf("activity","aim","manual"))profileAfterCalculatedGoal(change)
+    }
+    private suspend fun profileAfterCalculatedGoal(change:String) {
+        val db=memory()
+        try {
+            val lease=account(db);val repo=DiaryRepository(db,context,lease);val push=MealPushStore(db,schema())
+            val audit=MaintenanceEstimate.calculate(MaintenanceInput(30,BigDecimal("180"),BigDecimal("75"),
+                EquationVariant.PLUS_5,ActivityClass.GARRISON),Instant.parse("2026-10-24T12:00:00Z"))
+            assertEquals("2595",audit.maintenance.stripTrailingZeros().toPlainString())
+            val id=uuid();repo.setCalculatedGoal(audit,2200.0,150.0,80.0,220.0,DietAim.MAINTAIN,true,id)
+            val request=acknowledge(push,lease)
+            val original=checkNotNull(db.dao().goalById(lease.storageScope,id))
+            val operation=checkNotNull(db.dao().operation(request.operations.single().operationId))
+            val frozen=checkNotNull(db.pushDao().batch(request.id))
+            val canonical=checkNotNull(db.domainSyncDao().local(lease.storageScope,"goal",id))
+            val timeline=db.domainSyncDao().timeline(lease.storageScope)
+            assertEquals("acked",operation.status);assertNull(db.dao().currentProfile(lease.storageScope))
+            repo.setProfileAndActivityGoal("Synthetic profile",180.0,ActivityClass.GARRISON,DietAim.MAINTAIN)
+            assertEquals(original,db.dao().goalOn(lease.storageScope,LocalDate.now().toString()))
+            assertEquals(listOf(original),db.serverDiaryDao().allGoals(lease.storageScope))
+            assertEquals(listOf("profile"),db.domainSyncDao().unsettled(lease.storageScope).map {it.entityType})
+            if(change=="profile") {
+                repo.setProfileAndActivityGoal("Renamed profile",181.0,ActivityClass.GARRISON,DietAim.MAINTAIN)
+                assertEquals(original,db.dao().goalOn(lease.storageScope,LocalDate.now().toString()))
+                assertEquals(listOf(original),db.serverDiaryDao().allGoals(lease.storageScope))
+                assertEquals(timeline,db.domainSyncDao().timeline(lease.storageScope))
+                val currentProfile=db.dao().currentProfile(lease.storageScope)
+                val queue=db.domainSyncDao().unsettled(lease.storageScope)
+                val owners=LocalOwnerStore(db);val other=owners.registerIdentity("https://fixture.example/realms/maintenance",uuid())
+                owners.select(other.id)
+                val error=runCatching {repo.setProfileAndActivityGoal("Stale edit",182.0,ActivityClass.LINE,DietAim.REDUCE)}.exceptionOrNull()
+                assertTrue(error is StaleOwnerException)
+                assertEquals(currentProfile,db.dao().currentProfile(lease.storageScope));assertNull(db.dao().currentProfile(other.storageScope))
+                assertEquals(queue,db.domainSyncDao().unsettled(lease.storageScope))
+            }else {
+                when(change) {
+                    "activity"->repo.setProfileAndActivityGoal("Synthetic profile",180.0,ActivityClass.LINE,DietAim.MAINTAIN)
+                    "aim"->repo.setProfileAndActivityGoal("Synthetic profile",180.0,ActivityClass.GARRISON,DietAim.REDUCE)
+                    "manual"->repo.setGoal(2100.0,150.0,null,220.0)
+                }
+                val updated=checkNotNull(db.dao().goalOn(lease.storageScope,LocalDate.now().toString()))
+                assertNotEquals(id,updated.id);assertEquals(id,updated.correctionOf);assertEquals(original.localSequence+1,updated.localSequence)
+                assertEquals(if(change=="activity")2750.0 else if(change=="manual")2100.0 else 2200.0,updated.kcal,0.0)
+                assertEquals(original.protein,updated.protein);assertEquals(original.carbs,updated.carbs)
+                assertEquals(if(change=="manual")null else original.fat,updated.fat);assertNull(updated.estimateJson)
+                val next=db.domainSyncDao().unsettled(lease.storageScope).single {it.entityType=="goal"}
+                val payload=JSONObject(next.payload)
+                assertEquals(if(change=="aim")"reduce" else "maintain",payload.getString("goal_type"))
+                assertEquals(if(change=="activity")"line" else "stationary",payload.getString("activity_class"))
+                assertEquals(1,payload.getInt("timeline_base_revision"));assertEquals(id,payload.getString("correction_of"))
+                acknowledge(push,lease);assertEquals(2,db.domainSyncDao().timeline(lease.storageScope)!!.revision)
+                assertEquals(2,db.serverDiaryDao().allGoals(lease.storageScope).size)
+            }
+            assertEquals(original,db.dao().goalById(lease.storageScope,id));assertEquals(audit.stored(),original.estimateJson)
+            assertEquals(operation,db.dao().operation(operation.operationId));assertEquals(frozen,db.pushDao().batch(request.id))
+            assertEquals(canonical,db.domainSyncDao().local(lease.storageScope,"goal",id))
+        }finally{db.close()}
+    }
+
     @Test fun guestAuditSurvivesReopenAndManualGoalCorrectionPreservesOriginalRequestAndHistory()=runBlocking<Unit> {
         val name="maintenance-history-${uuid()}"
         var db=Room.databaseBuilder(context,CalorieDatabase::class.java,name).addCallback(DATABASE_GUARDS).build()
@@ -70,7 +142,7 @@ class MaintenanceStorageTest {
             repo.setGoal(2400.0,null,60.0,0.0)
             assertEquals(selected,db.dao().goalById(lease.storageScope,id));assertEquals(wireBefore,frozen())
             assertNull(db.dao().goalOn(lease.storageScope,LocalDate.now().toString())!!.estimateJson)
-            val captured=LegacyImportStore(db,schema()).capture(lease.storageScope,true).single {entry->
+            val captured=LegacyImportStore(db,schema(),null).capture(lease.storageScope,true).single {entry->
                 entry.first=="goal" && StrictJson.read(entry.second.toByteArray()).getJSONObject("row").getString("id")==id}
             val source=StrictJson.read(captured.second.toByteArray())
             val originals=source.getJSONArray("outboxes")

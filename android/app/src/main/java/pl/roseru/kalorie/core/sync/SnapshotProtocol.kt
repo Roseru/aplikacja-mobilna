@@ -63,11 +63,11 @@ class SnapshotProtocol(private val schema: SyncWireSchema,private val energySche
             value.getJSONArray("operation_receipts").length() <= request.getInt("limit"))
         if (!value.isNull("page_token")) require(value.getString("page_token") != request.optString("page_token"))
         // Duplicate identities in a full snapshot are ambiguous even if their payloads match.
-        for ((field, keys) in IDENTITIES) {
+        for (field in IDENTITIES.keys) {
             val records = value.getJSONArray(field)
             val ids = (0 until records.length()).map { index ->
                 val record = records.getJSONObject(index)
-                keys.joinToString(":") { record.getString(it) }
+                identity(field, record)
             }
             require(ids.toSet().size == ids.size)
         }
@@ -91,5 +91,11 @@ class SnapshotProtocol(private val schema: SyncWireSchema,private val energySche
         internal val IDENTITIES = mapOf("entities" to listOf("entity_id"),
             "recovery_mappings" to listOf("source_epoch", "source_entity_id"),
             "operation_receipts" to listOf("source_epoch", "operation_id"))
+        // E is a separate immutable axis and legacy E reuses its source goal UUID.
+        // Keep the original six-domain UUID guard; general diary collisions also
+        // require a separate recovery contract, not just a different parser key.
+        internal fun identity(field:String,record:JSONObject):String = if(field=="entities") {
+            (if(record.getString("entity_type")=="energy_estimate")"energy_estimate:" else "diary:")+record.getString("entity_id")
+        }else IDENTITIES.getValue(field).joinToString(":"){record.getString(it)}
     }
 }

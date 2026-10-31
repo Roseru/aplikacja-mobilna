@@ -17,6 +17,15 @@ fun activityCalorieGoal(currentKcal: Double, previous: ActivityClass, selected: 
 }
 enum class DietAim(val label: String) { REDUCE("Redukcja"), MAINTAIN("Utrzymanie"), SURPLUS("Nadwyżka") }
 
+/** Null means profile-only: compare the same initial choices as the profile editor. */
+fun profileGoalCalories(currentKcal: Double, previousActivity: ActivityClass?, previousAim: DietAim?,
+    selectedActivity: ActivityClass, selectedAim: DietAim): Double? {
+    val previous = previousActivity ?: ActivityClass.GARRISON
+    val aim = previousAim ?: DietAim.MAINTAIN
+    val kcal = activityCalorieGoal(currentKcal, previous, selectedActivity)
+    return kcal.takeIf { previous != selectedActivity || aim != selectedAim }
+}
+
 data class CustomProductDraft(val name: String, val kcal: Double, val protein: Double?, val fat: Double?,
     val carbs: Double?, val source: String) {
     fun validate() {

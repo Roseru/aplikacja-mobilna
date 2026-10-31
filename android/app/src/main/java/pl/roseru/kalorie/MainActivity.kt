@@ -100,7 +100,7 @@ class MainActivity : ComponentActivity() {
             val importModel: pl.roseru.kalorie.importing.ImportViewModel? = if(binding.owner.kind=="account") {
                 viewModel(viewModelStoreOwner=store,key="$ownerKey:import",extras=defaultViewModelCreationExtras,
                     factory=viewModelFactory {initializer {
-                        pl.roseru.kalorie.importing.ImportViewModel(app.database,app.syncSchema,binding.lease,app.sessions,createSavedStateHandle())
+                        pl.roseru.kalorie.importing.ImportViewModel(app.database,app.syncSchema,binding.lease,app.sessions,createSavedStateHandle(),energySchema=app.energySchema)
                     }})
             } else null
             val snapshotMaintenanceModel:pl.roseru.kalorie.sync.SnapshotMaintenanceViewModel? = if(binding.owner.kind=="account") {

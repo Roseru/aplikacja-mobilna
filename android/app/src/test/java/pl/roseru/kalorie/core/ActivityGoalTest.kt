@@ -21,4 +21,13 @@ class ActivityGoalTest {
             catch (_: IllegalArgumentException) { }
         }
     }
+    @Test fun initialProfileDefaultsDoNotDecideAGoalButActivityAndAimChangesDo() {
+        assertNull(profileGoalCalories(2200.0,null,null,ActivityClass.GARRISON,DietAim.MAINTAIN))
+        assertNull(profileGoalCalories(2200.25,ActivityClass.GARRISON,DietAim.MAINTAIN,ActivityClass.GARRISON,DietAim.MAINTAIN))
+        assertEquals(2750.0,profileGoalCalories(2200.0,null,null,ActivityClass.LINE,DietAim.MAINTAIN)!!,0.0)
+        assertEquals(2200.0,profileGoalCalories(2200.0,null,null,ActivityClass.GARRISON,DietAim.REDUCE)!!,0.0)
+        assertEquals(2200.0,profileGoalCalories(2200.0,ActivityClass.LINE,DietAim.MAINTAIN,ActivityClass.LINE,DietAim.REDUCE)!!,0.0)
+        assertNull(profileGoalCalories(2200.0,ActivityClass.LINE,DietAim.REDUCE,ActivityClass.LINE,DietAim.REDUCE))
+        assertEquals(2640.0,profileGoalCalories(2200.0,ActivityClass.LINE,DietAim.REDUCE,ActivityClass.COMMANDO,DietAim.REDUCE)!!,0.0)
+    }
 }

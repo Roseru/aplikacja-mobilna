@@ -487,13 +487,13 @@ class DiaryRepository(private val db: CalorieDatabase, private val context: Cont
 
     suspend fun setProfileAndActivityGoal(nickname: String, heightCm: Double, activity: ActivityClass, aim: DietAim) = ownerTransaction {
         val previousProfile = dao.currentProfile(owner)
-        val previous = previousProfile?.activityClass?.let(ActivityClass::valueOf) ?: ActivityClass.GARRISON
         val goal = dao.goal(owner, LocalDate.now().toString()).first()
-        val kcal = goal?.let { activityCalorieGoal(it.kcal, previous, activity) }
+        val kcal = goal?.let { profileGoalCalories(it.kcal, previousProfile?.activityClass?.let(ActivityClass::valueOf),
+            previousProfile?.dietAim?.let(DietAim::valueOf), activity, aim) }
         setProfile(nickname, heightCm, activity, aim)
         // A new account's absent goal is not the guest's demonstration target.
         // The user sets the first goal explicitly; profile editing remains independent.
-        if (goal != null && kcal != null && (previous != activity || previousProfile?.dietAim != aim.name))
+        if (goal != null && kcal != null)
             setGoal(kcal, goal.protein, goal.fat, goal.carbs)
     }
 
