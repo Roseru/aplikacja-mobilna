@@ -19,6 +19,7 @@ spec.loader.exec_module(live)
 class AcceptanceFencesTest(unittest.TestCase):
     def setUp(self):
         live.ROOT = None
+        live.DOCKER_ENDPOINT = "unix:///var/run/docker.sock"
         live.OWNER = "own-test-nonce"
         live.HTTP_PORT = 29480
         live.MAIL_PORT = 29425
@@ -55,12 +56,145 @@ class AcceptanceFencesTest(unittest.TestCase):
             jar = root / "provider.jar"
             jar.write_bytes(b"test-only")
             target = root / "new-private-state"
-            context = [{"Endpoints": {"docker": {"Host": "tcp://remote.example:2376"}}}]
-            with patch.object(live, "docker", return_value=json.dumps(context)):
+            with patch.object(live, "context_endpoint", return_value="tcp://remote.example:2376"):
                 with patch.dict("os.environ", {}, clear=True):
                     with self.assertRaisesRegex(ValueError, "local Docker"):
                         live.configure(self.args(target, jar))
             self.assertFalse(target.exists())
+
+    def test_context_environment_takes_precedence_over_conflicting_host(self):
+        with (
+            patch.dict(
+                "os.environ",
+                {"DOCKER_CONTEXT": "remote", "DOCKER_HOST": "unix:///local.sock"},
+                clear=True,
+            ),
+            patch.object(
+                live, "context_endpoint", return_value="tcp://remote.example:2376"
+            ) as context,
+            patch.object(live, "docker_process") as daemon,
+        ):
+            with self.assertRaisesRegex(ValueError, "local Docker"):
+                live.local_docker_endpoint()
+            context.assert_called_once_with("remote")
+            daemon.assert_not_called()
+        with (
+            patch.dict(
+                "os.environ",
+                {"DOCKER_CONTEXT": "local", "DOCKER_HOST": "tcp://remote.example:2376"},
+                clear=True,
+            ),
+            patch.object(live, "context_endpoint", return_value="unix:///local.sock") as context,
+        ):
+            self.assertEqual("unix:///local.sock", live.local_docker_endpoint())
+            context.assert_called_once_with("local")
+
+    def test_host_environment_precedes_current_context_and_empty_selection_falls_back(self):
+        with (
+            patch.dict("os.environ", {"DOCKER_HOST": "unix:///explicit.sock"}, clear=True),
+            patch.object(live, "context_endpoint") as context,
+        ):
+            self.assertEqual("unix:///explicit.sock", live.local_docker_endpoint())
+            context.assert_not_called()
+        with (
+            patch.dict("os.environ", {"DOCKER_HOST": "", "DOCKER_CONTEXT": ""}, clear=True),
+            patch.object(live, "context_endpoint", return_value="unix:///current.sock") as context,
+        ):
+            self.assertEqual("unix:///current.sock", live.local_docker_endpoint())
+            context.assert_called_once_with()
+
+    def test_context_inspection_clears_selection_and_transport_environment(self):
+        result = SimpleNamespace(
+            returncode=0,
+            stdout=json.dumps([{"Endpoints": {"docker": {"Host": "unix:///local.sock"}}}]),
+        )
+        with (
+            patch.dict(
+                "os.environ",
+                {
+                    "DOCKER_CONTEXT": "remote",
+                    "DOCKER_HOST": "tcp://remote.example:2376",
+                    "DOCKER_TLS": "1",
+                    "DOCKER_TLS_VERIFY": "1",
+                    "DOCKER_CERT_PATH": "/remote/certs",
+                },
+                clear=True,
+            ),
+            patch.object(live.subprocess, "run", return_value=result) as run,
+        ):
+            self.assertEqual("unix:///local.sock", live.context_endpoint("local"))
+            self.assertEqual(["docker", "context", "inspect", "local"], run.call_args.args[0])
+            self.assertEqual({}, run.call_args.kwargs["env"])
+
+    def test_every_daemon_operation_pins_qualified_endpoint_and_ignores_environment(self):
+        result = SimpleNamespace(returncode=0, stdout="[]", stderr="")
+        with (
+            patch.dict(
+                "os.environ",
+                {
+                    "DOCKER_CONTEXT": "remote",
+                    "DOCKER_HOST": "tcp://remote.example:2376",
+                    "DOCKER_TLS": "1",
+                    "DOCKER_TLS_VERIFY": "1",
+                    "DOCKER_CERT_PATH": "/remote/certs",
+                },
+                clear=True,
+            ),
+            patch.object(live.subprocess, "run", return_value=result) as run,
+        ):
+            for args in (
+                ("run", "test-image"),
+                ("inspect", "own"),
+                ("logs", "own"),
+                ("stop", "own"),
+            ):
+                live.docker(*args)
+                self.assertEqual(
+                    ["docker", "--host", "unix:///var/run/docker.sock", *args],
+                    run.call_args.args[0],
+                )
+                self.assertEqual({}, run.call_args.kwargs["env"])
+        live.DOCKER_ENDPOINT = None
+        with patch.object(live.subprocess, "run") as run:
+            with self.assertRaisesRegex(ValueError, "not been qualified"):
+                live.docker("run", "test-image")
+            run.assert_not_called()
+
+    def test_cleanup_inspect_and_logs_use_the_pinned_process(self):
+        live.KC = "own-keycloak"
+        live.SMTP = "own-mail"
+
+        def result(*args):
+            if args[0] == "inspect":
+                return SimpleNamespace(
+                    returncode=0,
+                    stdout=json.dumps(
+                        [
+                            {
+                                "Name": "/" + args[1],
+                                "Config": {"Labels": {live.LABEL: live.OWNER}},
+                                "State": {"Running": True},
+                            }
+                        ]
+                    ),
+                )
+            return SimpleNamespace(returncode=0, stdout="", stderr="")
+
+        with tempfile.TemporaryDirectory() as directory:
+            live.ROOT = Path(directory)
+            with patch.object(live, "docker_process", side_effect=result) as process:
+                live.stop_owned()
+                self.assertEqual(
+                    [
+                        ("inspect", live.KC),
+                        ("inspect", live.SMTP),
+                        ("logs", live.KC),
+                        ("stop", live.KC),
+                        ("logs", live.SMTP),
+                        ("stop", live.SMTP),
+                    ],
+                    [call.args for call in process.call_args_list],
+                )
 
     def test_only_exact_owned_loopback_endpoints_are_permitted(self):
         live.check_url("http://127.0.0.1:29480/realms/test")

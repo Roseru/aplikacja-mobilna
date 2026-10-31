@@ -65,6 +65,11 @@ logowania. Sam tworzy syntetyczne konta, hasła, nowy realm, sieć i oznaczone
 kontenery Keycloak26.8.1/Mailpit z przypiętych obrazów. Porty są publikowane
 wyłącznie na `127.0.0.1`; nie wysyła poczty poza własny sink i nie używa proxy
 ze zmiennych środowiska. Limity pamięci kontenerów to 768/64 MiB, heap384 MiB.
+Wybór Dockera uwzględnia `DOCKER_CONTEXT` przed `DOCKER_HOST`, następnie
+bieżący kontekst. Odrzuca zdalny endpoint przed utworzeniem stanu. Każde
+wywołanie silnika, również inspect/logs/stop, przypina sprawdzony lokalny
+socket przez `--host` i usuwa zmienne wyboru kontekstu/hosta oraz TLS.
+Regresje sprawdzają obie sprzeczne konfiguracje zmiennych i cleanup.
 
 Po zbudowaniu JAR, z katalogu repozytorium:
 
@@ -136,6 +141,43 @@ obserwacjom dwóch wejść do `consume` ani jednoczesnego wykonania SQL.
 Odbiór istniejącego `calorie-final`/PostgreSQL/HTTPS i publikacja CI pozostają
 odrębnymi krokami integracji.
 
+## Ograniczone wdrożenie do istniejącego PostgreSQL/TLS
+
+Operator wykonuje je w uzgodnionym oknie, po świadku istniejących kont,
+subject, sesji/refresh, kluczy, klientów i grafu ról. Zachowuje poprzedni image
+oraz spójną kopię danych do rollbacku. Buduje NOWY obraz na tym samym
+przypiętym 26.8.1, dodając wyłącznie sprawdzony JAR do `/opt/keycloak/providers/`
+przed `kc.sh build --db=postgres --health-enabled=true`. Zapisuje SHA źródła,
+JAR i immutable imageId. Override uruchamia `start --optimized` bez
+`--import-realm`; dotychczasowa baza, realm i konfiguracje pozostałych usług
+nie są odtwarzane ani generowane na nowo.
+
+Po restarcie Keycloak operator tworzy przez Admin REST API oba nowe flow
+według `realm-flow.json`, sprawdza kolejność oraz REQUIRED każdego wykonania,
+a dopiero potem ustawia registrationFlow/theme i wymienione flagi na istniejącym
+realm. Nie importuje całego fragmentu jako realmu. SMTP wskazuje wyłącznie
+własny lokalny Mailpit w sieci testowanego stosu, bez publikacji portu SMTP.
+DefaultRole zachowuje ID; jego rekurencyjny graf może dodać jedynie podstawowe
+`calorie-api/user`, bez uprawnień administracyjnych i bez zmiany bezpośrednich
+przypisań/credentials istniejących kont. Nieprawidłowy graf wymaga osobnego
+rozstrzygnięcia przed bindingiem. Standardowe browser/reset i klient Androida
+Code/S256 pozostają zachowane.
+
+Odbiór po wdrożeniu obejmuje istniejący subject i refresh/sesję oraz nową
+syntetyczną rejestrację na prawdziwym PostgreSQL/HTTPS. Restart może przerwać
+rozpoczęty flow logowania; nie obiecujemy zachowania go na podstawie próby H2.
+Świadome wylogowanie wymaga osobnego zaplanowania. Receipt musi oddzielać ten
+odbiór od powyższego testu HTTP/H2.
+
+Provider nie dodaje tabel ani własnego trwałego magazynu użytkowników, więc
+jest zgodny z offline DB restore D2. Kopia bazy po wdrożeniu zawiera jednak
+bindingi nowych factory/theme: właściwy obraz z JAR musi być dostępny PRZED
+startem przywróconego serwera. Kopia sprzed wdrożenia wymaga zgodnego
+poprzednika lub jawnego odtworzenia bindingów. Nie importuj realm ponownie
+jako obejścia restore. Challenge i dowód w sesji nie są danymi do przenoszenia;
+stare linki mają odmówić po utracie sesji/expiry. Nie zmieniaj epok aplikacji
+poza istniejącym protokołem D2.
+
 ## Oficjalne źródła API i ograniczenie stockowego action handlera
 
 - [Authenticator SPI i adresy akcji](https://github.com/keycloak/keycloak/blob/26.8.1/server-spi-private/src/main/java/org/keycloak/authentication/Authenticator.java).
@@ -143,6 +185,7 @@ odrębnymi krokami integracji.
 - [Obowiązkowy existing-user check standardowych action token handlerów](https://github.com/keycloak/keycloak/blob/26.8.1/services/src/main/java/org/keycloak/services/resources/LoginActionsServiceChecks.java).
 - [Domyślne wykonania registration flow](https://github.com/keycloak/keycloak/blob/26.8.1/server-spi-private/src/main/java/org/keycloak/models/utils/DefaultAuthenticationFlows.java).
 - [Atomowa jednorazowość w SPI](https://github.com/keycloak/keycloak/blob/26.8.1/server-spi/src/main/java/org/keycloak/models/SingleUseObjectProvider.java).
+- [Pierwszeństwo kontekstu i zmiennych Docker CLI](https://docs.docker.com/reference/cli/docker/#environment-variables).
 
 Zwykły `ActionTokenHandler` wymaga już istniejącego użytkownika. Dlatego token
 bez użytkownika jest sprawdzany w wspieranym `Authenticator.action()` pod

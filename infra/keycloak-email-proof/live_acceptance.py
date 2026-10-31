@@ -32,13 +32,13 @@ IMAGE = (
     "a78d6b79572168cb25886b80a8b5b8d4ed4390743e3eecb810538683e209dd6b"
 )
 MAIL_IMAGE = (
-    "axllent/mailpit@sha256:"
-    "0790692be935ea4420d085694f7985b1f692ca6a8771ab0e0bd8ba75ac180498"
+    "axllent/mailpit@sha256:0790692be935ea4420d085694f7985b1f692ca6a8771ab0e0bd8ba75ac180498"
 )
 LABEL = "pl.roseru.calorie.emailproof.owner"
 ROOT = JAR = HTTP_DIR = None
 ORIGIN = ISSUER = MAIL = CALLBACK = REALM = NET = KC = SMTP = OWNER = None
 HTTP_PORT = MAIL_PORT = None
+DOCKER_ENDPOINT = None
 UA = (
     "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/605.1.15 "
     "(KHTML, like Gecko) Version/17.0 Safari/605.1.15"
@@ -53,20 +53,67 @@ def save(name, value):
     path.write_text(json.dumps(value, ensure_ascii=False, indent=2), encoding="utf-8")
 
 
-def docker(*args):
+def docker_environment():
+    # The qualified endpoint must remain fixed even if selection variables change.
+    return {
+        key: value
+        for key, value in os.environ.items()
+        if key
+        not in {
+            "DOCKER_CONTEXT",
+            "DOCKER_HOST",
+            "DOCKER_TLS",
+            "DOCKER_TLS_VERIFY",
+            "DOCKER_CERT_PATH",
+        }
+    }
+
+
+def context_endpoint(name=None):
+    # Context inspection reads local metadata only; never contact its daemon.
+    args = ["docker", "context", "inspect"]
+    if name:
+        args.append(name)
     result = subprocess.run(
-        ["docker", *args],
+        args,
+        env=docker_environment(),
+        capture_output=True,
+        text=True,
+        encoding="utf-8",
+        errors="replace",
+        check=True,
+    )
+    return json.loads(result.stdout)[0]["Endpoints"]["docker"]["Host"]
+
+
+def local_docker_endpoint():
+    # Docker precedence: explicit context env, host env, then current context.
+    context = os.environ.get("DOCKER_CONTEXT")
+    host = os.environ.get("DOCKER_HOST")
+    endpoint = context_endpoint(context) if context else (host or context_endpoint())
+    if not isinstance(endpoint, str) or not endpoint.startswith(("npipe://", "unix://")):
+        raise ValueError("Only a local Docker engine is permitted")
+    return endpoint
+
+
+def docker_process(*args):
+    if DOCKER_ENDPOINT is None:
+        raise ValueError("Docker endpoint has not been qualified")
+    return subprocess.run(
+        ["docker", "--host", DOCKER_ENDPOINT, *args],
+        env=docker_environment(),
         capture_output=True,
         text=True,
         encoding="utf-8",
         errors="replace",
     )
+
+
+def docker(*args):
+    result = docker_process(*args)
     if result.returncode:
         raise RuntimeError(
-            "Docker operation failed: "
-            + " ".join(args[:2])
-            + ": "
-            + result.stderr[:1000]
+            "Docker operation failed: " + " ".join(args[:2]) + ": " + result.stderr[:1000]
         )
     return result.stdout.strip()
 
@@ -90,9 +137,7 @@ def prepare():
         encoding="utf-8",
     )
     realm = json.loads(
-        (REPO / "infra/keycloak-email-proof/realm-flow.json").read_text(
-            encoding="utf-8"
-        )
+        (REPO / "infra/keycloak-email-proof/realm-flow.json").read_text(encoding="utf-8")
     )
     realm.update(
         {
@@ -275,10 +320,7 @@ class Forms(HTMLParser):
         found = [x for x in self.forms if name is None or x["id"] == name]
         if len(found) != 1:
             raise AssertionError(
-                "Expected form "
-                + str(name)
-                + "; found "
-                + str([x["id"] for x in self.forms])
+                "Expected form " + str(name) + "; found " + str([x["id"] for x in self.forms])
             )
         return found[0]
 
@@ -304,11 +346,7 @@ class Browser:
         global counter
         url = urllib.parse.urljoin(ORIGIN, url)
         for _ in range(12):
-            body = (
-                urllib.parse.urlencode(data, doseq=True).encode()
-                if data is not None
-                else None
-            )
+            body = urllib.parse.urlencode(data, doseq=True).encode() if data is not None else None
             check_url(url)
             req = urllib.request.Request(
                 url, data=body, headers={"User-Agent": UA, **(headers or {})}
@@ -345,9 +383,7 @@ class Browser:
         raise AssertionError("Too many redirects")
 
     def begin(self, registration=False):
-        path = "/protocol/openid-connect/" + (
-            "registrations" if registration else "auth"
-        )
+        path = "/protocol/openid-connect/" + ("registrations" if registration else "auth")
         challenge = (
             base64.urlsafe_b64encode(hashlib.sha256(self.verifier.encode()).digest())
             .decode()
@@ -425,9 +461,7 @@ def admin_token(creds):
 def provider_users(base, token):
     status, value = api(base + "/users", token=token)
     if status != 200 or not isinstance(value, list):
-        raise ValueError(
-            "The provider user-count oracle did not return a successful list"
-        )
+        raise ValueError("The provider user-count oracle did not return a successful list")
     return value
 
 
@@ -476,10 +510,7 @@ def basic_acceptance():
     creds = json.loads((ROOT / "credentials.json").read_text())
     token = admin_token(creds)
     base = ORIGIN + "/admin/realms/" + REALM
-    assert (
-        api(ORIGIN + "/admin/serverinfo", token=token)[1]["systemInfo"]["version"]
-        == "26.8.1"
-    )
+    assert api(ORIGIN + "/admin/serverinfo", token=token)[1]["systemInfo"]["version"] == "26.8.1"
     RESULTS["actual_keycloak_26_8_1"] = True
     existing = "existing-" + secrets.token_hex(5) + "@proof.test"
     new = "new-" + secrets.token_hex(5) + "@proof.test"
@@ -566,9 +597,7 @@ def basic_acceptance():
         assert len(users()) == baseline
         RESULTS["tampering_" + name + "_blocked"] = True
     status, done, callback = b2.post_form(register, "kc-register-form", values)
-    if status == 200 and any(
-        x["id"] == "kc-passwd-update-form" for x in Forms(done).forms
-    ):
+    if status == 200 and any(x["id"] == "kc-passwd-update-form" for x in Forms(done).forms):
         # Keycloak26.8.1 deliberately defers password entry until the verification stage.
         status, done, callback = b2.post_form(
             done,
@@ -666,9 +695,7 @@ def jwt(token, audience, nonce=None):
         encoded,
         b"\x00\x01" + b"\xff" * (size - 3 - len(digest_info)) + b"\x00" + digest_info,
     )
-    assert (
-        p["iss"] == ISSUER and p["exp"] > time.time() and p["iat"] <= time.time() + 60
-    )
+    assert p["iss"] == ISSUER and p["exp"] > time.time() and p["iat"] <= time.time() + 60
     assert audience in ([p["aud"]] if isinstance(p["aud"], str) else p["aud"])
     if nonce is not None:
         assert p["nonce"] == nonce
@@ -679,9 +706,7 @@ def login(address, password):
     b = Browser()
     status, page, _ = b.begin()
     assert status == 200
-    return b, b.post_form(
-        page, "kc-form-login", {"username": address, "password": password}
-    )
+    return b, b.post_form(page, "kc-form-login", {"username": address, "password": password})
 
 
 def exchange(b, callback, verifier=None):
@@ -714,9 +739,7 @@ def extended_acceptance():
     expiry = Browser()
     expiry_email = "expiry-" + secrets.token_hex(5) + "@proof.test"
     _, expiry_link, _ = request_email(expiry, expiry_email)
-    expiry_token = urllib.parse.parse_qs(urllib.parse.urlsplit(expiry_link).query)[
-        "email_proof"
-    ][0]
+    expiry_token = urllib.parse.parse_qs(urllib.parse.urlsplit(expiry_link).query)["email_proof"][0]
     expiry_claims = json.loads(decode(expiry_token.split(".")[1]))
     deadline = expiry_claims["exp"]
     assert 295 <= deadline - time.time() <= 300
@@ -815,9 +838,7 @@ def extended_acceptance():
     )
     assert status == 200
     target = next(
-        x["id"]
-        for x in executions
-        if x.get("providerId") == "calorie-proven-email-user-creation"
+        x["id"] for x in executions if x.get("providerId") == "calorie-proven-email-user-creation"
     )
     direct = Browser()
     status, first, _ = direct.begin(True)
@@ -885,15 +906,11 @@ def extended_acceptance():
     reset = Browser()
     status, login_page, _ = reset.begin()
     assert status == 200
-    reset_url = next(
-        x for x in Forms(login_page).links if "/login-actions/reset-credentials" in x
-    )
+    reset_url = next(x for x in Forms(login_page).links if "/login-actions/reset-credentials" in x)
     status, reset_page, _ = reset.request(reset_url)
     assert status == 200
     old_message_ids = {x["ID"] for x in api(MAIL + "/api/v1/messages")[1]["messages"]}
-    status, sent, _ = reset.post_form(
-        reset_page, "kc-reset-password-form", {"username": existing}
-    )
+    status, sent, _ = reset.post_form(reset_page, "kc-reset-password-form", {"username": existing})
     assert status == 200
     reset_mail = message(existing, old_message_ids)
     reset_link = re.findall(r"http://[^\s]+", reset_mail["Text"])[-1]
@@ -915,9 +932,7 @@ def extended_acceptance():
     good, (_, _, callback) = login(existing, creds["reset_password"])
     assert callback.startswith(CALLBACK)
     status, data = exchange(good, callback)
-    assert (
-        status == 200 and jwt(data["access_token"], "calorie-api")["sub"] == existing_id
-    )
+    assert status == 200 and jwt(data["access_token"], "calorie-api")["sub"] == existing_id
     assert len(users()) == count
     checks["standard_reset_then_fresh_pkce_same_subject"] = True
     # A stopped owned SMTP container causes an explicit error without creating a user.
@@ -931,11 +946,7 @@ def extended_acceptance():
             "calorie-email-proof",
             {"email": "outage-" + secrets.token_hex(5) + "@proof.test"},
         )
-        assert (
-            status == 200
-            and "The message could not be sent" in page
-            and len(users()) == count
-        )
+        assert status == 200 and "The message could not be sent" in page and len(users()) == count
         checks["real_smtp_outage_visible_no_account"] = True
     finally:
         docker("start", SMTP)
@@ -991,17 +1002,16 @@ def is_callback(url):
 
 def local_open(request):
     check_url(request.full_url)
-    return urllib.request.build_opener(
-        urllib.request.ProxyHandler({}), NoRedirect()
-    ).open(request, timeout=20)
+    return urllib.request.build_opener(urllib.request.ProxyHandler({}), NoRedirect()).open(
+        request, timeout=20
+    )
 
 
 def source_digest():
     h = hashlib.sha256()
     for path in sorted(MODULE.rglob("*")):
         if path.is_file() and not any(
-            part in {"build", ".gradle", "__pycache__"}
-            for part in path.relative_to(MODULE).parts
+            part in {"build", ".gradle", "__pycache__"} for part in path.relative_to(MODULE).parts
         ):
             h.update(path.relative_to(MODULE).as_posix().encode())
             h.update(b"\0")
@@ -1010,13 +1020,7 @@ def source_digest():
 
 
 def owned_container(name):
-    result = subprocess.run(
-        ["docker", "inspect", name],
-        capture_output=True,
-        text=True,
-        encoding="utf-8",
-        errors="replace",
-    )
+    result = docker_process("inspect", name)
     if result.returncode:
         return None
     value = json.loads(result.stdout)[0]
@@ -1033,16 +1037,8 @@ def stop_owned():
     observed = [(name, owned_container(name)) for name in (KC, SMTP)]
     for name, value in observed:
         if value:
-            logs = subprocess.run(
-                ["docker", "logs", name],
-                capture_output=True,
-                text=True,
-                encoding="utf-8",
-                errors="replace",
-            )
-            (ROOT / (name + ".log")).write_text(
-                logs.stdout + logs.stderr, encoding="utf-8"
-            )
+            logs = docker_process("logs", name)
+            (ROOT / (name + ".log")).write_text(logs.stdout + logs.stderr, encoding="utf-8")
             save(name + "-inspection.json", value)
             if value.get("State", {}).get("Running"):
                 docker("stop", name)
@@ -1087,7 +1083,8 @@ def configure(args):
         SMTP, \
         OWNER, \
         HTTP_PORT, \
-        MAIL_PORT
+        MAIL_PORT, \
+        DOCKER_ENDPOINT
     if not args.run_isolated_http_h2:
         raise ValueError("The explicit isolated test flag is required")
     if not args.state.is_absolute():
@@ -1103,10 +1100,7 @@ def configure(args):
         or len({args.http_port, args.http_port + 1, args.mail_port}) != 3
     ):
         raise ValueError("Distinct nonprivileged test ports required")
-    context = json.loads(docker("context", "inspect"))[0]["Endpoints"]["docker"]["Host"]
-    endpoint = os.environ.get("DOCKER_HOST", context)
-    if not endpoint.startswith(("npipe://", "unix://")):
-        raise ValueError("Only a local Docker engine is permitted")
+    DOCKER_ENDPOINT = local_docker_endpoint()
     for port in (args.http_port, args.mail_port):
         with socket.socket() as probe:
             probe.bind(("127.0.0.1", port))
@@ -1141,7 +1135,13 @@ def configure(args):
     HTTP_DIR = ROOT / "http"
     save(
         "ownership.json",
-        {"owner": OWNER, "containers": [KC, SMTP], "network": NET, "realm": REALM},
+        {
+            "owner": OWNER,
+            "containers": [KC, SMTP],
+            "network": NET,
+            "realm": REALM,
+            "docker_endpoint": DOCKER_ENDPOINT,
+        },
     )
 
 
