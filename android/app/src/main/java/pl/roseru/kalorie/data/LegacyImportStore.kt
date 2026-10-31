@@ -18,7 +18,9 @@ data class ImportProgress(val planId:String,val account:String,val issuer:String
 data class ImportIssue(val type:String,val sourceId:String,val code:String)
 
 /** Consent, source capture and each materialized chunk commit in independent durable transactions. */
-class LegacyImportStore(private val db:CalorieDatabase,private val schema:SyncWireSchema) {
+class LegacyImportStore(private val db:CalorieDatabase,private val schema:SyncWireSchema,
+    energySchema:pl.roseru.kalorie.energy.EnergySchema?) {
+    private val proof=ServerDiaryProof(db,schema,energySchema)
     private val dao get()=db.importDao()
     private val owners=LocalOwnerStore(db)
     private suspend fun binding(lease:OwnerLease):AccountBindingEntity {
@@ -40,8 +42,7 @@ class LegacyImportStore(private val db:CalorieDatabase,private val schema:SyncWi
             val source=checkNotNull(db.ownerDao().byScope(sourceScope))
             require(source.kind=="guest" || source.storageScope==lease.storageScope)
             dao.assignment(sourceScope)?.let { require(it.targetScope==lease.storageScope && it.accountId==context.accountId) }
-            val gate=MealPushStore(db,schema).gate(lease)
-            val serverCopy=ServerDiaryProtocol(schema).read(context.syncEpoch,db.snapshotDao().pages(gate.run.id).map {ArchivedDiaryPage(it.queryJson,it.responseJson)})
+            val serverCopy=proof.active(lease)
             val captured=capture(sourceScope,source.kind=="guest")
             val fingerprint=digest(captured.joinToString("\n") {it.first+":"+it.second})
             val wireContext=CanonicalMealRows.context(context)
@@ -150,8 +151,8 @@ class LegacyImportStore(private val db:CalorieDatabase,private val schema:SyncWi
         db.withTransaction {
             val plan=current(lease,planId);check(plan.approvedAt!=null && plan.kind in setOf("guest","legacy"))
             val context=binding(lease);check(!context.requiresRecovery)
-            val gate=MealPushStore(db,schema).gate(lease)
-            val copy=ServerDiaryProtocol(schema).read(context.syncEpoch,db.snapshotDao().pages(gate.run.id).map {ArchivedDiaryPage(it.queryJson,it.responseJson)})
+            val copy=proof.active(lease)
+            val gate=copy.gate
             val rows=dao.sources(planId)
             val ids=rows.associate {"${it.entityType}:${it.sourceId}" to it.wireId}
             val timeline=db.domainSyncDao().timeline(lease.storageScope)
