@@ -11548,3 +11548,28 @@ Kontynuacja O2-073 — **zdjęcie MOCK i naprawa projekcji czasu posiłku**:
   Wykonanie native na urządzeniu i zwykła aktualizacja skonfigurowanego APK
   z rzeczywistym readback/offline są odrębnym następnym odbiorem Roota.
   Nie zapisujemy tu PASS dla aktualnego APK/API, E9 lub D2.
+
+- Aktualizacja odbioru 31.10, Root/Agent3: trzy nowe native Room mają
+  3/3 PASS (osiem wariantów) na API35. Rzeczywisty odbiór A2 obejmuje
+  pierwszy profil na1054, następnie zwykłą aktualizację1054→1055 i odczyt
+  na tym samym syntetycznym koncie. Nie przedstawiamy tej sekwencji jako
+  całego scenariusza wykonanego od zera na jednym APK.
+  Installed/PM APK1055 ma SHA256
+  `817f3e2149aab75055508061e336d735d5e6c52de8ef0b85ce2990bd5e120512`;
+  główny Room przed/po instalacji był bajtowo identyczny. Bez resetu danych.
+- Po rzeczywistym AppAuth/PKCE i zwykłym PUSH/PULL/applied readback konto A2
+  zachowało dokładnie jeden cel2200 oraz audyt E2595 o niezmiennym hashu.
+  PostgreSQL potwierdza niezmieniony pełny wiersz celu i jego receipt,
+  jeden przyjęty profil i łącznie dwa sync receipts. Nowy proces z publiczną
+  blokadą sieci aplikacji pokazał ten sam profil/cel/audyt. Siedem wybranych
+  pełnych tabel Room z rowid pozostało identycznych przed/po odczycie offline
+  oraz po testach fixture. Nie deklarujemy nowego kernel/UID packet trace.
+- Niezależny odczyt55artefaktów/17kontroli wiąże source, APK/PM/podpis,
+  tar/SQLite, zamrożone requesty z PG receipt oraz applied źródło osi E.
+  Receipt kwalifikacji ma SHA256
+  `8d18fe7d4f2c88935376cd715cbcec69c764828c1babc1c87f7941c2b6605c3b`.
+  Zachowano timeout pierwszego browser run, późniejszy XML z SystemUI ANR
+  oraz drugi pozytywny run; nie przypisujemy timeoutowi udowodnionej przyczyny.
+  Surowe strony E zostały już skompaktowane i nie udajemy ich obecności.
+  To odbiór lokalnego A2/update/PULL/offline; aktualny zdalny FULL CI,
+  przyjęcie E9 w UI, rzeczywisty D2 oraz Gemini mają odrębne zakresy.
