@@ -41,11 +41,11 @@ internal class EnergySnapshotProtocol(private val legacy:SnapshotProtocol,privat
         val entities=value.getJSONArray("entities")
         val total=entities.length()+value.getJSONArray("recovery_mappings").length()+value.getJSONArray("operation_receipts").length()
         require(total<=request.getInt("limit"))
-        for((field,keys) in SnapshotProtocol.IDENTITIES) {
+        for(field in SnapshotProtocol.IDENTITIES.keys) {
             val records=value.getJSONArray(field)
             val identities=(0 until records.length()).map {index->
                 val record=records.getJSONObject(index)
-                keys.joinToString(":"){record.getString(it)}
+                SnapshotProtocol.identity(field,record)
             }
             require(identities.distinct().size==identities.size)
         }

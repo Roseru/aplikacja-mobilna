@@ -11512,3 +11512,39 @@ Kontynuacja O2-073 — **zdjęcie MOCK i naprawa projekcji czasu posiłku**:
   oraz B z 14 dniami, pełny E9, odtwarzanie D2, Gemini i wydanie 1.0 mają
   własne bramki. Publikacja tej gałęzi oraz CI jej aktualnego head/base
   wymagają odrębnego potwierdzenia; wcześniejszy main CI nie jest ich wynikiem.
+
+### O3-122 — cel i początkowe E we wspólnym PULL bez resetu Room27
+
+- Data: 31.10.2026, Agent 3 / O3. Kontynuacja PR196, własna gałąź
+  `codex/android-profile-goal-energy-pull` z dokładnego rodzica
+  `9b471c76b45bac0e6067c6456a83361053ea7a04`; publikacja i CI pozostają
+  po stronie koordynatora po odbiorze lokalnego commita.
+- Rzeczywista próba kalkulatora na pustym koncie wykazała poprawny zapis
+  jednego celu i ACK, po którym przyrostowy PULL odrzucał cel oraz początkowe
+  E o wspólnym UUID. Jest to zgodny wynik adaptera legacy na serwerze.
+  Zamrożone Room/wire zachowano; porównanie payloadu celu z przyjętą operacją
+  nie wykazało różnic. Wyjątek wynikał z założenia rozłącznych przestrzeni ID
+  w parserze, a pełny fallback miał to samo ograniczenie w kontroli duplikatów.
+- Pełny i przyrostowy odczyt rozdzielają teraz tożsamość dziennika oraz osi E.
+  Jeden pomocnik wyznacza klucz w parserach, indeksie zapisanych stron i przy
+  wznowieniu starszego indeksu Room27. Poprzednie ograniczenia UUID sześciu
+  domen dziennika, rewizje, tombstone, niezmienność E, jego unikalne rewizje
+  oraz klucze receipt/mapping pozostają. Ogólne kolizje UUID sześciu domen
+  wymagają osobnego kontraktu recovery i nie są częścią tej zmiany.
+- Starsze indeksy bare-UUID są sprawdzane przez odczyt oryginalnych stron
+  jedynie przy trafieniu takiego klucza. Nowy zapis nie przepisuje wcześniejszych
+  stron, zapytań, indeksów, checkpointów, kolejki lub ACK. Room27 i jej eksport
+  schematu pozostają bez migracji; klient ma 0.8.44/code55/validation1055.
+- Regresja na niezmienionej produkcji9b była RED: dokładnie dwie oczekiwane
+  odmowy poprawnej pary goal/legacyE, dla delty i pełnej kopii. Po poprawce
+  24/24 celowane JVM w sześciu klasach są GREEN, w tym pięć nowych testów
+  obejmujących obie kolejności, wiele stron oraz zachowanie odmów duplikatów
+  i zmiany niezmiennej osi. Niezależny przegląd końcowej produkcji: 0 P1/P2.
+  `lintDebug`: 0 Error/0 Fatal (33 Warning, 2 Information); testAPK zbudowany
+  i jego podpis zweryfikowany, bez instalacji lub podmiany aplikacji.
+- Trzy nowe native testy Room (osiem wariantów) kompilują się; pokrywają
+  reopen częściowej kopii ze starym indeksem, dokładne zachowanie saved wire
+  i rollback strony/run/index po duplikacie oraz wspólną projekcję celu/E.
+  Wykonanie native na urządzeniu i zwykła aktualizacja skonfigurowanego APK
+  z rzeczywistym readback/offline są odrębnym następnym odbiorem Roota.
+  Nie zapisujemy tu PASS dla aktualnego APK/API, E9 lub D2.

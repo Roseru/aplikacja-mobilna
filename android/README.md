@@ -1,12 +1,18 @@
 # Android — Racje i kalorie
 
-Bieżące źródło: **0.8.43 / code54 / Room27**, wariant validation code1054.
+Bieżące źródło: **0.8.44 / code55 / Room27**, wariant validation code1055.
 Instrukcja lokalnego uruchomienia jest w rozdziale
 [Uruchomienie w Android Studio](#uruchomienie-w-android-studio).
 Własny backend do pełnej ścieżki opisuje
 [instrukcja integracji](../infra/local/integration/README.md), a odebrane
 scenariusze i otwarte bramki — [dziennik zespołu](../docs/KOMUNIKACJA_AGENTOW.md).
 Wynik samego modułu lub builda nie zastępuje odbioru całego APK/API.
+
+PULL oddziela tożsamość osi E od sześciu domen dziennika: początkowe E zachowuje UUID
+celu, z którego powstało. Pełna kopia i delta nie traktują tej pary jako
+duplikatu, a wcześniejsze ograniczenia UUID sześciu domen pozostają. Starszy
+indeks zapisanej częściowej kopii Room27 jest odczytywany zgodnie z jej
+oryginalnymi stronami; nie wymaga resetu, migracji ani przepisania ACK/kursorów.
 
 Historyczna integracja O1 na O2-B/Room20 obejmuje pierwszy cel pustego konta, lokalne
 dokończenie kopii recovery i poprawiony driver E4. [Stan odbioru](SESJA_SYNCHRONIZACJI.md)
