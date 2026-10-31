@@ -6,6 +6,12 @@ importowany do bazy i zachowuje pochodzenie danych.
 
 ## Od czego zacząć
 
+Decyzja właściciela z31.10.2026: bieżącą dostawą jest działająca instalacja
+**lokalna, MRE/DEMO, ręczne ścieżki i MOCK**. ARPOL, VPS/domena i rzeczywiste
+Gemini są odłożone; obecnie nie podłączamy Gemini ani billing. Prosta obsługa
+odebranego zestawu Docker i zachowanie danych są opisane w
+[instrukcji lokalnego wydania](infra/integration/LOCAL_RELEASE.md).
+
 - **Gość offline:** otwórz `android/` w Android Studio według
   [instrukcji Androida](android/README.md#uruchomienie-w-android-studio).
   Bez adresów API/OIDC działa lokalny dziennik.
@@ -17,8 +23,8 @@ importowany do bazy i zachowuje pochodzenie danych.
   [workflow](docs/WORKFLOW.md) oraz
   [jedyny dziennik zespołu](docs/KOMUNIKACJA_AGENTOW.md).
 
-Bieżące źródło Androida to **0.8.44 / code55 / Room27**; oddzielny wariant
-validation ma code1055. Pierwszy zapis domyślnego profilu zachowuje istniejący
+Bieżące źródło Androida to **0.8.45 / code56 / Room27**; oddzielny wariant
+validation ma code1056. Pierwszy zapis domyślnego profilu zachowuje istniejący
 cel i jego audyt. Pełny i przyrostowy PULL oddzielają oś E od dotychczasowych
 domen dziennika, więc cel i wyprowadzone z niego początkowe E mogą mieć ten sam identyfikator.
 Zapisane strony i potwierdzenia Room27 pozostają zachowane.
@@ -33,8 +39,9 @@ PULL i restart offline. CI tego PR przeszedł
 klienta 0.8.42, obejmujący zapis, PULL i odczyt offline. Nie oznacza to
 odbioru całego wydania 1.0: rzeczywiste Gemini, pełne E9, odtwarzanie
 i warunki wydania mają osobne dowody i bramki
-opisane w dzienniku. Znana granica standardowej rejestracji Keycloak
-pozostaje ograniczeniem kontrolowanego demo.
+opisane w dzienniku. Osobny [provider rejestracji](infra/keycloak-email-proof/README.md)
+wymaga potwierdzenia e-mail przed sprawdzaniem konta; jego instalacja i odbiór
+istniejącego realm są świadomym krokiem operatora.
 
 Przed testem zdjęć przygotuj prywatny katalog z wymaganymi prawami,
 osobny minimalny login workera i zgodny profil oraz pulę MOCK według

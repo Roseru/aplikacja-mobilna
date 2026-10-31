@@ -310,26 +310,48 @@ def initialize(state, host="127.0.0.1", port=18443, project="calorie-integration
 
 
 class Stack:
-    def __init__(self, state):
+    def __init__(self, state, *, compose_files=None, docker_endpoint=None):
         self.state = state.resolve()
         self.config = json.loads((self.state / "config.json").read_text())
         self.origin = self.config["origin"]
+        self.compose_files = tuple(compose_files or (HERE / "compose.yaml",))
+        self.docker_endpoint = docker_endpoint
 
-    def compose(self, *arguments, input_text=None):
-        prepare_worker(self.state)
-        command = [
+    def compose_command(self, *arguments):
+        """One builder also used by binary backup streams; defaults stay compatible."""
+        return [
             "docker",
+            *(["--host", self.docker_endpoint] if self.docker_endpoint else []),
             "compose",
             "--env-file",
             str(self.state / "compose.env"),
             "--project-name",
             self.config["project"],
-            "-f",
-            str(HERE / "compose.yaml"),
+            *[value for path in self.compose_files for value in ("-f", str(path))],
             *arguments,
         ]
+
+    def compose_environment(self):
+        if not self.docker_endpoint:
+            return None
+        return {
+            key: value
+            for key, value in os.environ.items()
+            if key
+            not in {
+                "DOCKER_CONTEXT",
+                "DOCKER_HOST",
+                "DOCKER_TLS",
+                "DOCKER_TLS_VERIFY",
+                "DOCKER_CERT_PATH",
+            }
+        }
+
+    def compose(self, *arguments, input_text=None):
+        prepare_worker(self.state)
         result = subprocess.run(
-            command,
+            self.compose_command(*arguments),
+            env=self.compose_environment(),
             cwd=ROOT,
             input=input_text,
             text=True,

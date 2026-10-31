@@ -83,6 +83,12 @@ class SyncNetworkPolicyStorageTest {
             assertSame(gate,coordinator.networkGate);assertSame(gate,runtime.networkGate)
         }
         fun observe()=runtime.observe(scope,sessions)
+        suspend fun joinBlockedObserver(observer:Job) {
+            state {it.status=="network_blocked"}
+            // A persisted row can predate this observer, and a new commit is earlier
+            // than coordinator.run's finally. Join before asserting one manual result.
+            withTimeout(15_000){observer.cancelAndJoin()}
+        }
         fun ticket(revision:Long?=coordinator.captureNetworkPermit()?.revision)=SyncWorkTicket(lease.storageScope,lease.generation,CanonicalMealRows.context(binding),revision,gate.changes.value.issuance)
         suspend fun state(predicate:(SyncWorkState)->Boolean)=withTimeout(15_000){db.syncWorkDao().observe(lease.storageScope).filterNotNull().first(predicate)}
         suspend fun jobs(ticket:SyncWorkTicket,predicate:(List<WorkInfo>)->Boolean)=withTimeout(15_000){work.getWorkInfosForUniqueWorkFlow(ticket.uniqueName()).first(predicate)}
@@ -240,12 +246,34 @@ class SyncNetworkPolicyStorageTest {
             h.runtime.manual(h.lease);val row=h.db.pushDao().batch(frozen.id)!!;val op=h.db.dao().operation(frozen.operations.single().operationId)!!
             h.close();p.close(delete=false)
             second=PolicyFixture(p.folder);withTimeout(10_000){second.policy.state.first {it==NetworkAccessState.Blocked}}
-            h=Harness(second.policy,name);h.start(reuse=true);h.observe();h.state {it.status=="network_blocked"}
+            h=Harness(second.policy,name);h.start(reuse=true);val observer=h.observe();h.joinBlockedObserver(observer)
             assertEquals(SyncCoordinator.Outcome.Stopped("network_blocked"),h.runtime.manual(h.lease))
             val state=h.coordinator.state(h.lease)!!;assertEquals("push",state.phase);assertEquals(90000L,state.retryAtMillis);assertEquals(2,state.consecutiveFailures)
             assertEquals(row,h.db.pushDao().batch(frozen.id));assertEquals(op,h.db.dao().operation(op.operationId));assertEquals(0,h.calls.get())
             assertArrayEquals(frozen.batch.body(),h.db.pushDao().batch(frozen.id)!!.requestJson.toByteArray())
         }finally{h.close();second?.close()?:p.close();context.deleteDatabase(name)}
+    }
+    @Test fun persistedBlockedStateDoesNotJoinObserverButCancellationReleasesMutexBeforeManual()=runBlocking<Unit> {
+        val p=PolicyFixture();p.ready();val h=Harness(p.policy)
+        val entered=CompletableDeferred<Unit>();val released=CompletableDeferred<Unit>();val entries=AtomicInteger()
+        try {
+            h.start();val frozen=h.frozen();MealPushStore(h.db,schema).defer(frozen,90000)
+            h.checkpoint(deadline=90000);p.policy.setBlocked(true)
+            val row=h.db.pushDao().batch(frozen.id)!!;val op=h.db.dao().operation(frozen.operations.single().operationId)!!
+            h.drain={_,_->if(entries.incrementAndGet()==1) {
+                entered.complete(Unit);try{awaitCancellation()}finally{released.complete(Unit)}
+            } else SavedSyncEvidenceResult.NO_LOCAL_WORK}
+            val observer=h.observe();withTimeout(10_000){entered.await()}
+            // The observer has committed network_blocked but still owns execution.
+            h.state {it.status=="network_blocked"}
+            assertEquals(SyncCoordinator.Outcome.Busy,h.runtime.manual(h.lease))
+            withTimeout(10_000){h.joinBlockedObserver(observer)}
+            assertTrue(observer.isCompleted);assertTrue(released.isCompleted)
+            assertEquals(SyncCoordinator.Outcome.Stopped("network_blocked"),h.runtime.manual(h.lease))
+            val state=h.coordinator.state(h.lease)!!;assertEquals("push",state.phase);assertEquals(90000L,state.retryAtMillis);assertEquals(2,state.consecutiveFailures)
+            assertEquals(row,h.db.pushDao().batch(frozen.id));assertEquals(op,h.db.dao().operation(op.operationId));assertEquals(0,h.calls.get())
+            assertArrayEquals(frozen.batch.body(),h.db.pushDao().batch(frozen.id)!!.requestJson.toByteArray())
+        }finally{h.close();p.close()}
     }
     @Test fun revocationAndRapidAbaDiscardLateCompletionWithoutAckOrPhaseReset()=runBlocking<Unit> {
         val p=PolicyFixture();p.ready();val h=Harness(p.policy);val entered=CompletableDeferred<Unit>();val release=CompletableDeferred<Unit>();var pending:Deferred<SyncCoordinator.Outcome>?=null

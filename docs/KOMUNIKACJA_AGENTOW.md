@@ -11711,6 +11711,78 @@ Kontynuacja O3-121 — zgodność narzędzi z rejestracją email-as-username:
   Stary CI41219974507 pozostaje FAIL581/582; lokalne4/4 z O3-124 nie
   zastępują nowego FULL CI aktualnego head/base. Bez nowego PR lub merge.
 
+### O3-123 — obsługa nowej instalacji lokalnej i sparowane zdjęcia
+
+- 31.10.2026, agent 3, jawny zakres właściciela: końcowa dostawa lokalna
+  MRE/DEMO, ręczne ścieżki i MOCK. ARPOL, VPS/domena i rzeczywiste Gemini
+  pozostają na później; teraz bez kluczy Gemini, Google lub billing.
+  Zachowano historyczne wymagania, dodając datowane rozstrzygnięcie
+  w WYMAGANIA_PROJEKTOWE.md oraz bieżącą instrukcję w README.
+- Gałąź `codex/devops-lokalne-wydanie`: pierwszy commit
+  `6f2228ad6f182a00e4e5dcdfc6bdc9ea69601338` ma dokładnego rodzica
+  `e64f18ba51d1e63efb5f6670e641d9780147d86c` z PR197. Zwykły merge
+  `41a104c` dołącza adapter D2 `f86bd9b` i jego bazę PR196/9b471c7;
+  zachowano oba kompletne wpisy O3-121 i O2-075. Publikacja nowego zakresu
+  wymaga integracji aktualnego main po PR196/197, bez przepisywania historii.
+- Nowy local_release.py i cztery cienkie START/STATUS/STOP/BACKUP korzystają
+  z jednego prywatnego powiązania istniejącego projektu, engine/socket,
+  containerId/imageId, konfiguracji, wolumenów, issuer/CA i pełnej chain
+  base→MOCK→SPI→E8. Start nie buduje, nie importuje, nie migruje i nie
+  provisionuje; zdrowy zestaw pozostaje bez restartu. Stop nie usuwa danych.
+  Świeży sukces E8 musi następować po starcie procesu kontenera. Dawne
+  prep gates i ich PREPARATION_ONLY pozostają historycznymi narzędziami.
+- BACKUP zamyka ingress i wszystkich writerów, także AI/E8/SMTP, potwierdza
+  PID0 i brak innych klientów PG, zachowuje parę DB/globals/katalog/config/TLS
+  i nie wznawia ruchu. Opcjonalne photos.tar ma jawny marker i wspólny
+  manifest/hash; restore trafia tylko do nowego własnego photo_data,
+  zachowuje prywatne prawa/mtime i nie zmienia quota/retencji ani nie
+  wznawia jobów. Stare T0 bez markera zachowuje dotychczasowy zakres.
+- Review wykrył P2 jednorazowej archiwizacji po mutable tagu migratora.
+  Nowy bound tryb używa dokładnego backend Image ID, pull=never,
+  network=none, UID10001, read-only i pojedynczego volume RO, bez migrate.env
+  oraz uprawnionych danych DB. Cleanup po timeout sprawdza dokładną nazwę,
+  obraz i własny label; żywy osierocony helper blokuje kolejną operację.
+  Legacy capture bez callback zachowuje własny dawny kontrakt i nie jest
+  objęty deklaracją przypięcia nowego helpera.
+- Wykonane lokalnie: wcześniejszy szeroki komplet infra 1260 PASS/12 SKIP;
+  końcowe cztery zmienione obszary 110 PASS/0 FAIL/0 SKIP, JUnit SHA256
+  `932aeb5c15c8cce17ef1f5fc9864746ca944e79051c96d40070ffcfd2131b1bc`.
+  Ruff/format, E0, parser pięciu skryptów PowerShell, CLI Python -I i
+  diff-check PASS. Testy obejmują ownership/drift, pełną chain, fizyczne
+  zamknięcie, zmieniony tag, cleanup helpera, stare i nowe kopie zdjęć oraz
+  brak uruchomienia API/AI podczas materializacji. Dowody pozostają prywatne.
+- Backend .env.example zachowuje AI_PROVIDER=mock i zakomentowane późniejsze
+  ustawienia Gemini. Wymagania datowanego potwierdzenia, configure-pool,
+  rzeczywistych limitów i historii pozostają w instrukcjach E7/E9; klucz
+  nie trafia do APK. Autor nie uruchamiał nowych skryptów na runtime.
+  Następny krok to niezależny odbiór zamrożonego źródła i jedno uzgodnione
+  okno operatora po bieżącym D2 na realny start/stop/kopię/optional photo
+  restore. Profil jest konfiguracją operacyjną, nie seal lub odbiorem 1.0.
+- Pierwszy rzeczywisty read-only bind/status zachowano z odmową motivation:
+  czytnik wymagał surowego CLI `status`, choć zapisane canonical metrics
+  celowo już go nie zawierają. Korekta czytnika waliduje zapisany DTO bez
+  dopisywania sukcesu i bez zmiany zamontowanego e8_worker.py. Regresja
+  odtwarza odmowę na niezmienionym producer JSON i jego czasie; po poprawce
+  plik test_local_release.py: 57 PASS, w tym błędne metryki, stan bez sukcesu,
+  brak/błędny czas, przyszły/przeterminowany sukces i sukces sprzed startu
+  procesu. Wymagany nowy bind/profile/status operatora; poprzedni wynik
+  pozostaje dowodem odmowy, bez deklaracji wykonania start/stop/backup.
+- Kontynuacja po zwykłym merge PR196/main5d75fe2, baza operacyjna708666f:
+  niezależny review wykrył P2 adaptera D2, który dziedziczył wybór daemona
+  Docker z otoczenia. Adapter wymaga teraz jawnego lokalnego socket/engineID,
+  usuwa odziedziczone context/HOST/TLS i sprawdza engine przed każdą komendą,
+  także Compose, binarnym pg_restore i odczytem źródłowego PG. Target record
+  zachowuje binding; fence/activate oraz już utworzony obiekt celu odmawiają
+  jego zmiany. Brak configure_transport w API nie wywołuje Docker.
+  Ownership, zamknięcie źródła i rzeczywisty fence421s pozostają bez zmian.
+- Celowane testy docker_restore/backup/recovery_o2/local_release: 156 PASS,
+  JUnit SHA256 `ba5b8eb7f91b1359544f07b0cd8f143da7e7a25f34f7c5ca9d9d0b9bf04df4cc`.
+  Obejmują obcy context/HOST/TLS, brak/błędny binding, zmianę engine i ponowne
+  użycie obiektu celu po reconfigure. Ruff/format, E0 i diff-check PASS.
+  To testy z mockowanym transportem, bez Docker/ADB/Gradle. Działające źródło
+  operatorowego D2 i profil runtime nie zostały zmienione; rzeczywiste D2,
+  T1 zdjęć oraz końcowy start/stop/launcher mają odrębne odbiory.
+
 ### O3-124 — domknięcie fixture i diagnostyka rzeczywistego wyniku workera
 
 - 31.10.2026, Agent 3 / O3. Gałąź `codex/android-wakecheck-fixture`,
@@ -11743,3 +11815,33 @@ Kontynuacja O3-121 — zgodność narzędzi z rejestracją email-as-username:
   Pakiet i dziennik `.validation` pozostały odseparowane. To lokalny odbiór
   poprawionego fixture, bez nowego wyniku CI197, dowodu przyczyny starego
   timeoutu lub zaliczenia E9/D2.
+
+### O3-125 — końcowy odbiór lokalnej dostawy MRE/DEMO
+
+- 31.10.2026, Agent 3. PR197 przyjęto do main922e32b po FULL41227231224
+  (8/8 SUCCESS), a PR196 do main5d75fe2 po FULL41235945332 (8/8 SUCCESS).
+  Publiczny klient 0.8.45/code56, validation1056 i Room27 zachowują cel,
+  historię E oraz dowody pełnej/przyrostowej kopii w uzgadnianiu i imporcie.
+- Następny push CI main41238173222 zachowuje osobny FAIL: 594 native PASS,
+  jeden FAIL, zero SKIP/ERROR. persistedBlockSurvivesProviderRuntimeAndFileRoomReopenWithFrozenBytesAndDeadline
+  dostał Busy zamiast ścisłego Stopped(network_blocked). To inny przypadek
+  niż dawny wake timeout. Log nie wskazuje właściciela mutexu; zapis stanu
+  nie dowodzi zakończenia obserwatora, a po reopen może już istnieć w Room.
+  ZIP SHA256 `8333305b70adecc4bfd729b9e082e826c3ed1f3c8c768b171308f7f38ebed630`;
+  niezależna diagnoza SHA256 `736df849411b3edd05e32abccfa515b1d4de903260567ef2bc610d60227365e8`.
+- Testowa poprawka a82d0c360945b38858ecfb19e43c201ac84eb5ef dołącza Job
+  obserwatora przez cancelAndJoin przed jednym manual i zachowuje ścisły wynik,
+  zamrożone row/op/wire, deadline oraz zero sieciowych wywołań. Osobna próba
+  z drainer-barrier odtwarza Busy przy trzymanym mutexie i wymaga Stopped po
+  join. Produkcyjny coordinator/mutex/gate/deadlines pozostają identyczne.
+  Review i diff-check PASS; lokalne compile/native NOT_RUN podczas wyłącznego
+  okna D2. Wymagany nowy FULL aktualnego head PR198, bez ślepego rerun starego.
+- Gałąź codex/devops-lokalne-wydanie, PR198, łączy ten odbiór ze skryptami
+  lokalnej dostawy oraz poprawką transportu435b421 z O3-123. Rzeczywisty bound
+  T0 BACKUP i ponowny START wykonano na czystym źródle0a3 i profiluR2.
+  Manifest sparowanej kopii SHA256
+  `6f047737ecbee5fa9d82d8a45928a1f8acac495abc2f00c521d3f900ddf950a6`
+  przeszedł niezależny verify. Odtworzony NOWY cel ma nową epokę, zamknięte
+  AI/Nemesis i rzeczywisty fence421.0001472s. Oryginał nie został odtworzony.
+  Aplikacyjny recovery, fizyczne zdjęcie T1 i końcowe skrypty użytkownika
+  pozostają osobnymi, jeszcze niezaliczonymi etapami w tej chwili.
