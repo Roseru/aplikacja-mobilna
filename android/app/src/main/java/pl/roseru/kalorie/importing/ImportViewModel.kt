@@ -146,6 +146,8 @@ class ImportViewModel(private val db:CalorieDatabase,private val schema:SyncWire
         val recovery=selected.kind !in setOf("guest","legacy")
         val progress=if(recovery)reconciliation.status(lease,context,selected.id) else imports.status(lease,selected.id)
         val evidence=db.importDao().evidence(selected.id)
+        val proofGroups=if(recovery)reconciliation.groups(selected).size else 0
+        val provedGroups=evidence.filter {it.kind=="receipt_group"}.map {it.identity}.toSet()
         val verified=if(recovery && reconciliation.groupsComplete(selected)) {
             try {reconciliation.latestCopy(lease,context,selected.id)}
             catch(cancelled:CancellationException){throw cancelled}
@@ -171,8 +173,8 @@ class ImportViewModel(private val db:CalorieDatabase,private val schema:SyncWire
                 proofRunId=verified?.first?.id,formFailure=formFailure)
         }
         mutable.value=mutable.value.copy(plan=progress,requiresRecovery=context.requiresRecovery,recovery=recovery,
-            approved=selected.approvedAt!=null,rows=rows,proofGroups=if(recovery)reconciliation.groups(selected).size else 0,
-            provedGroups=evidence.filter {it.kind=="receipt_group"}.map {it.identity}.distinct().size,plans=plans.map {ImportPlanChoice(it.id,it.kind,it.createdAt,it.state)})
+            approved=selected.approvedAt!=null,rows=rows,proofGroups=proofGroups,
+            provedGroups=(0 until proofGroups).count {it.toString() in provedGroups},plans=plans.map {ImportPlanChoice(it.id,it.kind,it.createdAt,it.state)})
     }
 }
 
