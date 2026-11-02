@@ -11845,3 +11845,78 @@ Kontynuacja O3-121 — zgodność narzędzi z rejestracją email-as-username:
   AI/Nemesis i rzeczywisty fence421.0001472s. Oryginał nie został odtworzony.
   Aplikacyjny recovery, fizyczne zdjęcie T1 i końcowe skrypty użytkownika
   pozostają osobnymi, jeszcze niezaliczonymi etapami w tej chwili.
+
+- Kontynuacja 02.11.2026: FULL PR198 na dokładnym cfc50fa, run41240212698,
+  zakończył wszystkie 8 kontroli SUCCESS. Oryginalny artefakt native zawiera
+  596 unikalnych class#method: 596 PASS, 0 FAIL, 0 ERROR, 0 SKIP.
+  Obejmuje ścisły przypadek reopen oraz nową próbę z barierą drainer.
+  ZIP SHA256 `50c6d1c9b175b076da9ccb1d27d579543b88da56f9b7ec07b7a8349dfc8b0dfd`;
+  niezależny odbiór SHA256
+  `183e722cc7d574bb2443d3b5a9d46b892d45973e7deda702cf18f4ab3d291d94`.
+  Porównanie Git potwierdziło brak zmiany kwalifikowanych wejść obrazu
+  backendu, mountów workera, providera SPI i produkcyjnych źródeł APK.
+  Nie oznacza to przebudowy obrazu: jego historyczne pochodzenie pozostaje.
+- Pierwszą osobną kopię AVD zachowano po nieudanym coldboot bez APK.
+  Brak autentycznego version_num.cache jest zgodny z mechanizmem odnowienia
+  overlayu w źródle Android Emulator; nie przypisano tego źródła dokładnemu
+  lokalnemu buildowi SDK. Nowa, oddzielna kopia zachowała oba markery wersji
+  i wszystkie pliki źródła. Pierwszy techniczny boot potwierdził dokładne
+  APK/test APK oraz bajtowo identyczne Room DB/WAL/SHM i baseline noBackup,
+  bez uruchamiania Activity lub API. Oryginalnego AVD nie nadpisano.
+  Końcowy receipt techniczny SHA256
+  `5722bc233e47529ef6059947c27afcc672937ef10d87a04720877ee941099371`.
+- Na poprawnej kopii wykonano zwykły PKCE oraz publiczne wykrycie nowej
+  epoki, przygotowanie planu i pełny odczyt serwera. Sześć indywidualnych
+  decyzji UI otrzymało PASS: cel, profil, dzień i posiłek10g accept_server;
+  utracony po T0 posiłek11g i niewysłany12g recreate_missing. Każda decyzja
+  wiąże source/payload/proof/serverObservation i zachowuje starą kolejkę.
+  Niepowodzenie testu producenta11g po jego rzeczywistym automatycznym ACK
+  zachowano; wpisu nie tworzono ponownie. ACK potwierdzono osobno w Room/PG.
+- Po przerwie i restarcie hosta 02.11 sprawdzono istniejące kontenery,
+  obrazy, mounty i epoki. Wznowiono te same cztery usługi testowego celu,
+  bez materialize/init/migrate/provision i bez AI/E8/Nemesis; źródło pozostało
+  PG-only. Historycznego fence421s nie przedstawiamy jako ciągłego okresu
+  podczas przerwy. PG zachował wszystkie chronione rekordy. Zachowany fork
+  wznowiono po zabezpieczeniu jego dysków i kontroli nieaktywnego locka SDK,
+  bez reinstalacji, kasowania locka lub danych. Room potwierdził sześć decyzji,
+  recovery=true i oryginalny12g nadal pending/unattempted; PUSH jeszcze nie
+  wykonano w chwili tego odczytu. Sesję odświeżamy zwykłą ścieżką aplikacji,
+  bez zmiany zegara, deadline lub wstrzykiwania tokenów.
+- Po zwykłym ponownym PKCE próba wymagająca NOWEGO proof przed PUSH
+  zachowała FAIL helpera: aktywny run nie zmienił się. Odczyt produkcyjnego
+  nextSnapshot wykazał celowy no-op: receipt_group są kompletne, ten sam
+  aktywny plan ma już pełną kopię, a nie utworzono jeszcze batchy wymagających
+  następnego snapshot. To nie jest dowód błędu sieci ani nowego odczytu.
+  Świeża transakcja PG potwierdziła niezmienione chronione rekordy i brak
+  obu nowych target IDs; decyzji i pierwotnych wpisów nie powtarzano.
+  Właściwy kolejny krok to zatwierdzony PUSH, a potem wymagana nowa kopia.
+- Produkcyjny protokół przygotowuje po jednej zatwierdzonej operacji na etap.
+  Dwa osobne publiczne PUSH przyjęły posiłki11g i12g z nowymi identyfikatorami:
+  `8ea678cc-32c7-4ad0-82fa-8d498e5194a8` oraz
+  `d00e3fff-f3f0-4f30-9c97-949569297a67`. Niezależny PG wykazał26/26 PASS:
+  dokładnie3 posiłki,2 mapowania, nowe accepted/revision1 oraz zachowanie celu,
+  profilu, osi i historii E, dnia, posiłku10g oraz trzech starych receipt.
+  Stare ordinary11/12 nie otrzymały fałszywych potwierdzeń na nowym celu.
+  Witness SHA256 `9f2e65e91ea9ff75e0fb3731def99c9e993acc42b4f1ae87912607d9491189f0`.
+- Po drugim PUSH pobrano kompletny run c2f8340f, ale pierwsza próba jego
+  lokalnej akceptacji zachowała FAIL helpera. Przyczyna tej odmowy pozostaje
+  nieustalona. Jeden jawny etap wznowienia istniejącej kompletnej kopii przeszedł
+  PASS, bez następnego request_complete API lub ponawiania PUSH. Końcowy
+  readback potwierdził tę właśnie kopię,4 accept_server+2 acked, niezmienne
+  źródła i maintenance2595. Receipt wznowienia SHA256
+  `5adf3028da2b746ae3b65d5d52607c4fb3e8ff79db6f3b7a24f3050ed2e8843a`.
+- Rzeczywisty FINISH na1056 zatrzymał się PRZED kliknięciem: przycisk Disabled.
+  ImportViewModel liczył dodatkowy receipt_group pełnej kopii po ACK jako
+  obowiązkową część dowodu. W UI powstało2/1, a warunek równości zablokował
+  zakończenie mimo wszystkich rozstrzygnięć. Zachowany RED SHA256
+  `a4674dbbc1fff2a2628d7ba4390f4653ce7bbf431001c6e2d625f52fc301a7cb`.
+  Store finish nie wywołano i nie obchodzimy publicznego przycisku.
+- Poprawka źródła edaeda5146ead4231ffcf28e1a6189d261bec74a na
+  codex/android-reconcile-proof-finish liczy wyłącznie wymagane indeksy grup.
+  Version0.8.46/code57/validation1057, bez migracji Room27. Nowy regression
+  test prowadzi dwie wagi przez realne Room/VM/Compose/store, dwa oddzielne
+  recovery PUSH i trzy kopie, następnie publiczny FINISH i zachowanie starego
+  ACK/wire oraz obu pomiarów. HTTP jest w nim jawnie syntetyczne. Dwa niezależne
+  review nie znalazły P1/P2; build/native i rzeczywisty upgrade pozostają
+  osobnymi krokami. Bazy i dyski zabezpieczono; fork normalnie zamknięto,
+  a te same cztery usługi D2 zatrzymano z PID0 bez source START lub restore.

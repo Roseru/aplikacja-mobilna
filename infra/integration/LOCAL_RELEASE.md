@@ -62,8 +62,11 @@ wolumenów, konfigurację i SHA używanych plików. Pełna uporządkowana chain
 obowiązuje także dla binarnych pg_dump i archiwizacji. Sekrety są haszowane
 w konfiguracji i kopiowane wyłącznie do prywatnej kopii, nie do wynikowego JSON.
 
-Zmiana źródła, obrazu, CA, ustawień lub kontenera wymaga osobnego odbioru
-operatora i nowego bindingu; skrypt nie przyjmuje zmiany automatycznie.
+Zmiana przypiętego pliku źródłowego, obrazu, CA, ustawień lub kontenera
+wymaga osobnego odbioru operatora i nowego bindingu; skrypt nie przyjmuje
+zmiany automatycznie. source_commit zapisuje pochodzenie przy tworzeniu
+profilu; codzienne operacje sprawdzają hashe używanych plików i konfigurację,
+nie samą zmianę Git HEAD, na przykład po dopisaniu dokumentacji.
 Blokada .operation.lock wyklucza nakładające się start/stop/backup.
 Po awarii operator najpierw sprawdza zakończenie poprzedniego procesu i IO,
 zanim ręcznie usuwa pozostałą blokadę.
