@@ -11920,3 +11920,59 @@ Kontynuacja O3-121 — zgodność narzędzi z rejestracją email-as-username:
   review nie znalazły P1/P2; build/native i rzeczywisty upgrade pozostają
   osobnymi krokami. Bazy i dyski zabezpieczono; fork normalnie zamknięto,
   a te same cztery usługi D2 zatrzymano z PID0 bez source START lub restore.
+- Build skonfigurowanych APK1057 z czystego edaeda5 przeszedł w188.875s.
+  Core SHA256 `b8376cdfeff4ccb3b8d6352e003c93c3de89337eb46d348a1704060dd03ce777`,
+  test APK `c929b563c0c8311559ad3384c8d304c440c0bd69661a53bdbc5d8994cc2a5ea5`.
+  Odczyt package/version/certyfikatu/DEX i zasobów potwierdził1057/0.8.46,
+  poprzedni podpis313a9f31, tę samą publiczną CA/API/issuer oraz nową regresję.
+  Jedna nowa metoda native przeszła PASS; jej Room/VM/UI/store są rzeczywiste,
+  HTTP jawnie syntetyczne. Po regresji treść57/58 tabel faktycznego forka
+  pozostała identyczna; zmienił się tylko oddzielny sync_work_state.
+- Normalny install-r1056→1057 zachował literalnie wszystkie3 pliki Room;
+  nawet pełne tars przed/po mają identyczny SHA256
+  `b7c78b8dc16459b0cf7deccc7894a269a5a175b5880d1681e46210f15f34c27e`.
+  Pierwsza komenda core rzeczywiście zakończyła się Success, ale parser
+  operatora nie dopuścił poprzedzającego komunikatu Performing Streamed Install.
+  Odmowę zachowano, odczytano stan i nie powtórzono instalacji core; następnie
+  raz zainstalowano test APK. UID i wszystkie wcześniejsze noBackup bytes,
+  historyczny baseline73, plan i proof pozostały. Dopiero po porównaniu
+  utworzono immutable upgrade receipt SHA256
+  `8712e9b77d05070b1e7a77147c7028dba41f6859b8b639d8c68817738f8e35cb`.
+- Prywatny R8r2 dopuszcza wyłącznie readback/finish/cold tej jawnej aktualizacji,
+  z dokładnym source edaeda5, starym/nowym APK, podpisem, hashami baseline/plan,
+  porównaniem Room i bieżącym proof/state. Nie dopuszcza nowych decyzji/PUSH
+  ani zmiany historycznego baseline. Niezależny review domknął ścisły pin źródła.
+  Te same4 kontenery D2 wznowiono bez restore/fence. PG ponownie26/26 PASS.
+  Cały readback1057 był identyczny z zaakceptowanym1056, poza2 referencjami
+  upgrade. Publiczny FINISH1057 następnie przeszedł PASS, receipt SHA256
+  `233136195f131bb6fedc1c7def2cf52b52021098dab11d6b255246aff64fcc07`.
+- Po publicznym Blocked i rzeczywistym force-stop cold-readback potwierdził
+  inny proces, complete/requiresRecovery=false i FK0; receipt SHA256
+  `1bd1b9b43034cf0af1af72bcc06cd086ffea88c2b1e641b4b0b2f076b1fa0e20`.
+  Dawna niewysłana b338 ma teraz zgodnie z protokołem local_only/attempted=false,
+  bez fikcyjnego ACK; oryginał źródłowy pozostaje oddzielny i niezmieniony.
+  Dodatkowy prywatny offlineRead profilu zachował FAIL przez użycie goalOn
+  z LocalDate.now() po zmianie daty próbki. Produkcyjny goal odczytuje validFrom
+  <=data i nie wymaga takiej równości; nie zmieniono daty/celu ani nie powtarzano
+  tego dodatkowego helpera. Właściwe odczyty dotyczą jawnie dnia31.10/ID celu.
+- Zwykły końcowy start zwrócił StatusOK, lecz nad aplikacją był aktualny ANR
+  SystemUI (PID807); blok procesu Kalorii nie miał flag ANR/crash.
+  Zapisano pełne window/activities/process/logcat, zamknięto własne4 usługi
+  D2 i wybrano raz publiczne Wait. Dialog zniknął, a Kalorie pozostały
+  w tym samym PID4946, bez kolejnego am start lub kill/reinstalacji.
+  Przyczyny ANR SystemUI nie przypisano aplikacji lub zasobom bez dowodu.
+  Widok31.10 następnie potwierdził42kcal/2200 i wszystkie3 ilości10/11/12g;
+  zegar Androida nadal wskazywał02.11. Receipt UI SHA256
+  `a64a744e82d9a1d3cd2ed2d440d4958e88973b15d79f6d6ae179476ae491a827`.
+  Końcowy launcher będzie sprawdzał rzeczywiste okno także po StatusOK,
+  aby sam wynik am start nie udawał dostępnego interfejsu.
+- Końcowy odczyt po konkretnych ID potwierdził cel2200/B150/T80/W220,
+  niezmienny estimate699/zapotrzebowanie2595 i profil180. Widoczne3 posiłki
+  mają ilości10/11/12g i sumę42.12951534kcal, dokładnie1 completion,
+  recovery=false,2 nowe ACK oraz dawne12 local_only/unattempted.
+  Receipt danych SHA256 `78f960f2cf486a6e1fdf9d3bdb1d8b776bcaae2f882f320688686e777a6e1552`.
+  Fork normalnie zamknięto; nie pozostały emulator/qemu. Wszystkie17 plików
+  oryginału i jego INI zachowały bytes/mtime, bez przekopiowania danych celu.
+  Stop receipt SHA256 `7a478797774061be9657e55b40aaa0434785d332691ebcab5eaa7c27ec9d42b0`.
+  Tym zamknięto rzeczywisty D2 Room27 na1057. Następny zakres obejmuje powrót
+  oryginalnego serwera, niepustą kopię zdjęcia T1 i końcowy launcher.
