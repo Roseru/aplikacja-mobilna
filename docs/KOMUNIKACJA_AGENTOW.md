@@ -11976,3 +11976,80 @@ Kontynuacja O3-121 — zgodność narzędzi z rejestracją email-as-username:
   Stop receipt SHA256 `7a478797774061be9657e55b40aaa0434785d332691ebcab5eaa7c27ec9d42b0`.
   Tym zamknięto rzeczywisty D2 Room27 na1057. Następny zakres obejmuje powrót
   oryginalnego serwera, niepustą kopię zdjęcia T1 i końcowy launcher.
+- Powrót źródła zachował rzeczywistą odmowę starego R2 przed START: wszystkie
+ 10 raw configuration hashes różniły się mimo tych samych ID/obrazów.
+  Nie znaleziono historycznego pełnego inspect; przyczyna różnicy pozostaje
+  nieustalona, bez przypisywania jej kolejności mountów, wersji lub API.
+  Jawny audyt bieżącego zamiaru e056eee4 dał434/434 PASS względem pełnej
+  przypiętej Compose chain,5 immutable obrazów,10 service config-hash,
+  ENV/CMD/user/healthchecks/mountów/RO/portów/sieci/security/resources,
+  CA/SPI i pełnych danych źródła. Semantyka null jako dziedziczenia CMD/entrypoint
+  i domyślnego RAM+swap była sprawdzona w [dokumentacji Compose](https://docs.docker.com/reference/compose-file/services/)
+  i [Docker Engine](https://docs.docker.com/engine/containers/resource_constraints/).
+  Nie znormalizowano nieznanych różnic i nie edytowano R2. NOWY profil
+ 9ffc6e89 przeszedł oficjalny START/STATUS, świeże E8 i pełne zachowanie danych;
+  receipt SHA256 `d84932ead6d65d394d419747753639ec047786b191f0a676ec25640b984556d0`.
+- Zwykły merge do runtime32fdc2b zachował wszystkie dawne linie dziennika;
+  jego tree jest dokładnie równy odebranemu47a7990. Nowy R3c285796e wiąże ten
+  czysty commit i zaakceptowane bieżące piny. Stary R2 nadal odmawia.
+  R3 bind/status SHA256 `2df89bb6e18be0a1002953c4d55d34c31a8916119ceaf1bb6baaeb4772bf0d5e`.
+- T1 wykonał jeden zwykły upload przy zatrzymanym wyłącznie własnym workerze.
+  Bound BACKUP i niezależny verify zachowały rzeczywisty JPEG646B SHA961fb6a4,
+  UID10001/GID999/file0600/root0700. Manifest sparowanej kopii SHA256
+  `7089f32b2d788534e4317491e2a5a92b7aec58e95793c89ff592ba9e3ee2103a`.
+  PAX zachował reprezentowalne mtime; różnicę−51ns względem source_ns zapisano
+  jawnie. Natychmiastowy START źródła zachował epokę/dane/piny. Ten konkretny
+  job zakończył się succeeded, z jednym count_tokens i jednym generate,
+  rzeczywistym io_finished_at, settled768 i zerem held permits.
+  Bez Google/billing, retry/reupload lub zmiany zegara, deadline i limitów.
+  Receipt T1 SHA256 `d79ff85310fefc56ee2df17590b16224bf4c55d4d20791dcc361cf2402057620`.
+- Osobny NOWY cel d38416dc otrzymał identyczny JPEG i dokładne queued
+  job/analysis/consent/receipt/admissions/pool/attempts/permits z T1.
+  UID/GID znormalizowano zgodnie z initializer do10001; mtime target jest
+  dokładnie równe archiwum. Uruchomiono tylko PG/KC, bez portów/API/AI/E8/
+  retencji, fence lub activate. Żadnego resume i nowych prób. Źródło działało.
+  Roundtrip SHA256 `88c19183e66351a1c960fde1d15c9fa4985e6d2b5959a6ceeb8bca879cb2413b`.
+  Cel następnie normalnie zamknięto. Prawdziwy STOP wszystkich10 usług źródła
+  wykazał każdy PID0; START zachował10 ID/obrazów, wymagał nowych starttimes
+  i świeżych E8 oraz zachował pełne dane A2 i historię tego konkretnego jobu.
+  Receipt SHA256 `97877c763ee6429e52b8f84cf2d0bebb0d3af0ea4d184bfce33c34653a59dc8d`.
+- R7 prywatnego launchera wymaga rzeczywistego foreground/drawn okna po
+  jednym am start zarówno dla ok, jak i timeout. Zachowuje piny procesu,
+  SDK/AVD, ADB/loopback, limity oraz odmowę bieżącego ANR. Testy pure:
+ 45 readiness,16 server,5 busy,3 deadline PASS. Rzeczywisty pierwszy CMD
+  odmówił przed SDK przez odziedziczony PSModulePath z cache PS7 w WinPS5.1;
+  pause dodatkowo maskował exitcode. Zachowano odmowę bez drugiego startu.
+  Oddzielne poprawione wejścia CMD używają procesowego standardowego modułu
+  WinPS i zachowują kod przed pause. Rzeczywiste testy10/10 ze stubami bez SDK
+  potwierdziły systemowy Utility, ścieżki ze spacjami/Polskimi znakami oraz
+  kody0/17 i brak trwałej zmiany środowiska. Odbiór R7 na oryginale jest kolejnym
+  krokiem; nie zaliczamy samych testów pure za wykonanie codziennego START.
+- Odbiór oryginału03.11: rzeczywisty zimny CMD/R7 zakończył się kodem0,
+  uruchomił własny ADB i AVD oraz potwierdził widoczne okno aplikacji1056.
+  Następnie zwykłe install-r do1057 zachowało dosłownie trzy pliki Room
+  oraz wszystkie sześć plików noBackup. Receipt aktualizacji SHA256
+  `49bda280ae8cf5ba0cab831ad8572f38192b17aa7e16982af6bd66fbb748440a`.
+  Kolejny warm CMD1057 odmówił w limicie60s; odmowę zachowano, przyczyny
+  nie ustalono. Osobny bieżący observer bez am start wykazał dwa stabilne
+  odczyty zdrowego, narysowanego okna. To nie zalicza poprzedniego CMD.
+- Po normalnym odblokowaniu sieci wykonano publiczne PKCE z właściwym
+  kontem. Bez manualnego wysłania lub nowej intencji zwykły auto-sync
+  przyjął dawny12g b338 do25ba, revision1, w oryginalnej epoce677.
+  Room zachował sealed wire09eb, stare ACK/batches, pozostałe posiłki/items,
+  profil/cel/historię i energię. Jedyna dodatkowa zmiana projekcji meal12
+  to lokalny alias rationId na ten sam kanoniczny UUID z niezmiennego wire;
+  wynika z CanonicalMealRows/ServerDiaryStore. Pierwszą zbyt ścisłą odmowę
+  zachowano, a osobny przegląd frozen copies ma SHA256
+  `c55b4ef5e17511eb8b94ba522cc9b40e62a308bd9de74c116c1916d146eaa187`.
+- Niezależny PG witness potwierdził ten sam ordinary ACK i dokładnie trzy
+  posiłki10/11/12g, bez recovery mappings lub ACK z celu D2. Pełne dawne
+  rows/items/receipts oraz cel/profil/oś/historia/energia są zachowane.
+  Semantyka payload jest identyczna; odtworzenie kluczy i Android slash-escaping
+  daje dawny SHA09eb. Nie jest to twierdzenie o przechwyconych bytes HTTP.
+  Pierwszy guard odmówił przez różnicę serializacji Europe\\/Warsaw względem
+  Europe/Warsaw; zachowano go i diagnozę, bez replay lub zmiany danych.
+  Końcowy PG/READY receipt SHA256
+  `e0dff425163fc6af94ae6da7707fa121a3eabe5337bdc6747541b6d89b30f45c`.
+  Pozostają końcowy FULL nowego head PR198, normalny merge, trwały binding
+  oraz rzeczywisty łączny ROOT START1057. Starsze zielone CI cfc50fa
+  nie kwalifikuje nowej poprawki UI.

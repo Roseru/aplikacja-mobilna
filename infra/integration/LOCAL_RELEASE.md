@@ -8,8 +8,9 @@ billing. Docelowe historyczne wymagania pozostają w
 
 Po jednorazowym przygotowaniu przez operatora używaj prywatnego folderu:
 
-- **START.ps1** — uruchom istniejące kontenery, potem otwórz zachowaną aplikację
-  Androida. Skrypt nie instaluje APK i nie usuwa Room lub konta.
+- **START.ps1** — uruchom istniejące kontenery. W odebranym pakiecie nadrzędny
+  **START.cmd** otwiera następnie zachowaną aplikację Androida; sam profil
+  serwera nie instaluje APK i nie usuwa Room lub konta.
 - **STATUS.ps1** — odczytaj API/HTTPS/issuer, procesy i rzeczywiste agregaty E8.
   Disabled, brak świeżego sukcesu lub brak healthcheck nie oznacza gotowości.
 - **STOP.ps1** — zatrzymaj procesy, zachowując kontenery, wolumeny i klucze.
@@ -122,7 +123,18 @@ warunków. Bez nich backend/worker nadal odmawia pracy.
 
 Testy źródeł obejmują konfigurację/ownership, odmowę driftu, pełną chain,
 fizyczne zamknięcie writerów i prywatny opcjonalny photo archive.
-Jednorazowy rzeczywisty start/stop/backup oraz restore nowego formatu
-wymagają osobnego okna po bieżącym D2. Sam profil nie jest pieczęcią wydania
-lub dowodem wykonania tych kontroli; końcowy wynik trafia do
-[istniejącego dziennika](../../docs/KOMUNIKACJA_AGENTOW.md).
+Rzeczywisty odbiór 02.11.2026 obejmuje start/stop wszystkich dziesięciu usług,
+sparowaną kopię z niepustym przygotowanym zdjęciem oraz jego odtworzenie do
+nowego, izolowanego celu. Porównano bytes/SHA, uprawnienia i rzeczywistą
+precyzję mtime; źródło zachowało kontenery, epokę, dane i historię limitów.
+Po wznowieniu wymagano świeżych sukcesów wszystkich trzech E8. Osobny D2
+Room27 zakończył uzgadnianie przez publiczny interfejs aplikacji1057,
+z odczytem offline po restarcie. Dokładne granice i zachowane odmowy opisuje
+[istniejący dziennik](../../docs/KOMUNIKACJA_AGENTOW.md).
+
+Profil sprzed przerwy zachował odmowę pełnego fingerprintu konfiguracji.
+Brak historycznego pełnego inspect nie pozwolił przypisać przyczyny różnicy.
+Operator porównał aktualne kontenery z przypiętą pełną Compose chain,
+konfiguracją immutable obrazów oraz dotychczasowymi danymi i utworzył NOWY
+profil po zgodnym odbiorze. Nie edytowano starego profilu ani nie zmniejszono
+kontroli. Także w przyszłości nie przyjmuj driftu automatycznie.
