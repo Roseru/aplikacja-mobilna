@@ -1,9 +1,12 @@
 [CmdletBinding()]
 param(
     [Parameter(Mandatory = $true)][ValidateSet('start','status','stop','backup')][string]$Action,
-    [string]$Profile = (Join-Path $PSScriptRoot 'runtime.json'),
+    [string]$Profile,
     [string]$Destination
 )
+if (-not $PSBoundParameters.ContainsKey('Profile')) {
+    $Profile = Join-Path $PSScriptRoot 'runtime.json'
+}
 $ErrorActionPreference = 'Stop'
 Set-StrictMode -Version Latest
 $launcher = Get-Content -LiteralPath (Join-Path $PSScriptRoot 'launcher.private.json') -Raw -Encoding UTF8 | ConvertFrom-Json
