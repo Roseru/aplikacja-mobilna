@@ -57,6 +57,8 @@ import pl.roseru.kalorie.session.*
         text={Column(Modifier.heightIn(max=320.dp).verticalScroll(rememberScrollState()),verticalArrangement=Arrangement.spacedBy(8.dp)) {
             Text(draft.title);Text("Dzień: ${draft.localDate}")
             Text("Zatwierdzisz zapisane składniki, porcje i wartości. Po potwierdzeniu serwera dodamy posiłek do dziennika na telefonie.")
+            Text("Brakujące produkty zapiszemy jako Twoje prywatne szkice z oznaczeniem szacunku AI. Publikacja w katalogu wymaga osobnego zatwierdzenia.",
+                modifier=Modifier.testTag("photo-confirmation-private-drafts"))
             Text("Brakujące wartości pozostaną oznaczone jako brak danych. Wpis do synchronizacji będzie oczekiwał na osobne potwierdzenie.")
         }},
         confirmButton={TextButton(onClick={approve=false;actions.confirm(status.operationId,status.revision,status.editRevision)},

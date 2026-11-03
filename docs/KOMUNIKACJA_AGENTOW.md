@@ -12079,3 +12079,35 @@ Kontynuacja O3-121 — zgodność narzędzi z rejestracją email-as-username:
   Bez Dockera/SDK i operacji na danych.
   Walidacja E0 i git diff --check: PASS.
   Ten odbiór wejść nie zastępuje rzeczywistego BACKUP/START nowego pakietu.
+
+### O3-127 — domknięcie zaległości po niezależnym audycie lokalnej edycji
+
+- 03.11.2026, Agent3, na polecenie właściciela domyka A1/A2/A3 z audytu,
+  następnie dopiero po pełnym odbiorze przekazuje Kamilowi ostatni etap Gemini.
+  Gałąź `codex/devops-domkniecie-lokalne`, baza main63777a5.
+  Przebieg main41680837292 pozostaje niezaliczony:596/597 native,
+  jeden timeout podglądu po odtworzeniu Activity. Wcześniejsze zielone PR
+  nie zastępują odbioru main; nie wykonano ślepego rerun.
+- Podgląd odczytuje State.value w kompozycji ekranu przed LazyColumn.
+  Szybko zakończone dekodowanie po odtworzeniu nie czeka na pierwszą
+  obserwację wiersza; klucze żądania i anulowanie pozostają.
+  Nowe regresje obejmują Ready/Failed przed lazy-odczytem oraz spóźniony
+  wynik starego wyboru/właściciela. Wyniki kompilacji i native jeszcze wymagane.
+- Nowe potwierdzenia zdjęcia zawierają prywatne product_draft templates.
+  ACK materializuje produkty, canonical_domains, meal/items, outbox i ledger
+  w jednej transakcji. Stabilne UUID operacji zachowują retry; ledger chroni
+  późniejsze edycje/usunięcia. Stare zamrożone decyzje drafts=[] pozostają
+  odtwarzalne bez zmiany body. Brak automatycznej publikacji, nowej migracji
+  lub nielegalnego ProductRef do prywatnego szkicu.
+- BACKUP sprawdza żywy PG przed tworzeniem kopii i zamykaniem writerów,
+  bez automatycznego startu. Dokumentacja opisuje START→BACKUP i stan PG-only.
+  Testy local_release:60 PASS; Ruff/format/diff-check PASS. Nowe niezależne
+  fixtures potwierdzenia przechodzą rzeczywisty backendowy parser i
+  validate_choices bez DB.
+- Android0.8.47/code58/validation1058, Room27. Nadal lokalne MRE/DEMO i MOCK;
+  rzeczywiste Gemini bez połączenia Google/billing podczas tych prac.
+  [Przekazanie Kamila](PRZEKAZANIE_GEMINI_KAMIL.md) wylicza wejścia, limitery,
+  zgody i testy końcowego okna. Aktualne warunki EOG/Paid Services są sprzeczne
+  z obecnym free-only przy udostępnianiu innym użytkownikom; nie obchodzimy
+  tego flagą ani zagranicznym projektem. Lokalny odbiór nie jest wynikiem
+  live Gemini/E7-R/E9. Oryginalne dane i historyczne odmowy zostają zachowane.

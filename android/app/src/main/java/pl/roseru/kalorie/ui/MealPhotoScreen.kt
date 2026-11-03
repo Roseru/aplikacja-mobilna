@@ -1,6 +1,5 @@
 package pl.roseru.kalorie.ui
 
-import android.graphics.Bitmap
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.PickVisualMediaRequest
 import androidx.activity.result.contract.ActivityResultContracts
@@ -33,13 +32,6 @@ import pl.roseru.kalorie.session.PhotoUploadConsent
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.LifecycleEventObserver
 import androidx.lifecycle.compose.LocalLifecycleOwner
-import kotlinx.coroutines.CancellationException
-
-private sealed interface LocalPhotoPreview {
-    data object Loading:LocalPhotoPreview
-    data object Failed:LocalPhotoPreview
-    data class Ready(val bitmap:Bitmap):LocalPhotoPreview
-}
 
 @Composable fun MealPhotoScreen(model: MealPhotoViewModel, date: LocalDate, onBack: () -> Unit, onManual: () -> Unit,
     session: pl.roseru.kalorie.session.SessionView = pl.roseru.kalorie.session.SessionView(), onReadCapabilities: () -> Unit = {},
@@ -85,28 +77,8 @@ private sealed interface LocalPhotoPreview {
         trace(Phase.COMPOSITION_ENTER)
         onDispose {trace(Phase.COMPOSITION_DISPOSE)}
     }
-    val preview by key(model,selected,previewAttempt) {
-        produceState<LocalPhotoPreview>(LocalPhotoPreview.Loading) {
-            trace(Phase.PRODUCER_START)
-            try {
-                val id=selected
-                if(id==null) trace(Phase.NO_SELECTION)
-                else {
-                    val result=try {
-                        val bitmap=if(diagnosticRequest==null) model.preview(id) else model.preview(id,diagnosticRequest)
-                        trace(Phase.PRODUCER_RETURN)
-                        LocalPhotoPreview.Ready(bitmap)
-                    } catch(error:CancellationException) {trace(Phase.PRODUCER_CANCEL);throw error}
-                    catch(_:Exception) {trace(Phase.PRODUCER_FAILED);LocalPhotoPreview.Failed}
-                    trace(Phase.ASSIGN_BEGIN)
-                    value=result
-                    trace(Phase.ASSIGN_END)
-                }
-            } finally {
-                trace(Phase.PRODUCER_FINALLY)
-            }
-        }
-    }
+    val preview=rememberLocalPhotoPreview(model,selected,previewAttempt,
+        load={id->if(diagnosticRequest==null) model.preview(id) else model.preview(id,diagnosticRequest)},trace=::trace)
     LazyColumn(Modifier.fillMaxSize().testTag("photo-content"), contentPadding=PaddingValues(16.dp), verticalArrangement=Arrangement.spacedBy(12.dp)) {
         item {
             TextButton(onClick=onBack, modifier=Modifier.testTag("photo-back")) { Text("Wróć do wyboru posiłku") }

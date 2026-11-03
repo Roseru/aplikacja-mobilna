@@ -8,8 +8,12 @@ Android ani kont, aby ponownie uruchomic projekt.
 2. STATUS.ps1 pokazuje stan API/HTTPS/issuer i istniejacych procesow.
 3. STOP.ps1 zatrzymuje instalacje, zachowujac kontenery, dane, konta i klucze.
 4. BACKUP.ps1 tworzy nowa prywatna pare kopii baz/katalogu/zdjec i konfiguracji.
-   Na czas kopii zamyka ruch i procesy. Po kopii pozostawia je zatrzymane.
-   Wznow zwyklym START.ps1. Kopie sa w podfolderze backups, chyba ze wskazano
+   Najpierw START.ps1, potem BACKUP.ps1: PostgreSQL musi dzialac. Przy zatrzymanym
+   PG BACKUP odmawia przed utworzeniem folderu kopii i nie uruchamia PG sam.
+   Zamyka gateway i wszystkich writerow; PostgreSQL zostaje uruchomiony do dumpow
+   i po kopii. STATUS pokazuje wtedy tylko PG running, dziewiec uslug stopped
+   oraz brak gotowosci HTTPS/issuer. Wznow zwyklym START.ps1 albo zatrzymaj takze
+   PG przez STOP.ps1. Kopie sa w podfolderze backups, chyba ze wskazano
    -Destination z nowa pelna sciezka.
 
 Skrypty nie instaluja APK, nie czyszcza Room, nie importuja katalogu ponownie,
@@ -27,5 +31,6 @@ zadaniami AI i kontrola sesji/epoki. START nie odtwarza kopii w miejscu.
 
 Obecna konfiguracja AI uzywa MOCK. Pozniejsze Gemini konfiguruje sie wylacznie
 na backendzie wedlug LOCAL_RELEASE.md i docs/e7/KONFIGURACJA_O3.md.
+Plan dla Kamila i bramka EEA/Free Tier: docs/PRZEKAZANIE_GEMINI_KAMIL.md.
 Klucz nigdy nie trafia do APK. Ten pakiet nie potwierdza realnego Gemini,
 publicznego VPS, pelnego katalogu ARPOL ani calego wydania 1.0.

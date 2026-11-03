@@ -8,6 +8,7 @@ import java.time.Instant
 import java.time.ZoneId
 import java.time.temporal.ChronoUnit
 import java.util.Collections
+import java.util.UUID
 
 /** Form input only. Empty nutrition means missing, never zero. No action authorizes HTTP. */
 class PhotoDraftInput(val name:String,val amount:String,val unit:String,val energy:String,
@@ -75,7 +76,7 @@ internal class PhotoMealDraft private constructor(val analysisId:String,val sour
         confirmationTemplate(read.revision)
     }
     /** Pure template for restoring a frozen decision; this does not authorize HTTP. */
-    internal fun confirmationTemplate(revision:Long):ByteArray = safe {
+    internal fun confirmationTemplate(revision:Long,legacyWithoutProductDrafts:Boolean=false):ByteArray = safe {
         require(revision in sourceRevision..Int.MAX_VALUE.toLong())
         val rows=items.map {item->
             text(item.name,200)
@@ -88,8 +89,18 @@ internal class PhotoMealDraft private constructor(val analysisId:String,val sour
         val meal=JSONObject().put("title",title).put("occurred_at",occurredAt.toString()).put("time_zone",zone.id)
             .put("local_date",localDate.toString()).put("meal_type",mealType?:JSONObject.NULL).put("goal_id",JSONObject.NULL)
             .put("ration",JSONObject.NULL).put("items",JSONArray(rows))
+        // These are private sync-v1 templates. The server receipt freezes them, and only the
+        // atomic local materialization queues them; catalogue publication remains separate.
+        val drafts=if(legacyWithoutProductDrafts)emptyList() else items.map {item->
+            val id=UUID.nameUUIDFromBytes("photo-product-draft-v1:$analysisId:$mealId:${item.id}".toByteArray(Charsets.UTF_8)).toString()
+            val payload=JSONObject().put("name",item.name).put("brand",JSONObject.NULL).put("variant",JSONObject.NULL)
+                .put("basis_unit",item.portion.basisUnit.wire).put("nutrition_per_100",nutrition(item.portion.per100))
+                .put("package_quantity",JSONObject.NULL).put("density_g_per_ml",JSONObject.NULL).put("density_source",JSONObject.NULL)
+                .put("source_description","Szacunek AI ze zdjęcia, poprawiony i zatwierdzony przez użytkownika")
+            JSONObject().put("draft_id",id).put("payload",payload)
+        }
         StrictJson.canonical(JSONObject().put("expected_revision",revision)
-            .put("meal",JSONObject().put("meal_id",mealId).put("payload",meal)).put("drafts",JSONArray())).toByteArray(Charsets.UTF_8)
+            .put("meal",JSONObject().put("meal_id",mealId).put("payload",meal)).put("drafts",JSONArray(drafts))).toByteArray(Charsets.UTF_8)
     }
     fun journal():JSONObject = safe {
         val rows=items.map {item->JSONObject().put("id",item.id).put("source_component_id",item.sourceComponentId?:JSONObject.NULL)

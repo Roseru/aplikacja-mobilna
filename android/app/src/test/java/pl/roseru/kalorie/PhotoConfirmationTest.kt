@@ -24,7 +24,7 @@ class PhotoConfirmationTest {
     private fun frozen()=base().prepareConfirmation(key,2,2)
     private fun attempted()=frozen().markConfirmationAttempted()
     private fun restart(s:PhotoAnalysisSnapshot)=PhotoAnalysisSnapshot.read(s.serialized,"mock")
-    private fun receipt()=json("corrected-meal-confirmed")
+    private fun receipt()=json("private-draft-meal-confirmed")
     private fun mealItem(value:JSONObject)=value.getJSONObject("meal").getJSONObject("payload").getJSONArray("items").getJSONObject(0)
     private fun rejected(action:()->Unit) {val e=assertThrows(IllegalArgumentException::class.java,action);assertNull(e.cause)}
     private fun cancelled()=json("analysis-read-succeeded").put("revision",3).put("state","failed").put("decision_state","cancelled").put("proposal",JSONObject.NULL).put("error_code","analysis_cancelled")
@@ -35,7 +35,7 @@ class PhotoConfirmationTest {
         assertEquals(key,r.key);assertEquals(epoch,r.epoch);assertEquals(2L,r.expectedRevision)
         assertEquals("/ai/food-analyses/${s.receipt.analysisId}/confirm",r.path);assertEquals("POST",r.method)
         assertEquals("application/json; charset=utf-8",r.contentType)
-        assertEquals(StrictJson.canonical(json("corrected-meal-confirm")),StrictJson.canonical(StrictJson.read(r.body())))
+        assertEquals(StrictJson.canonical(json("private-draft-meal-confirm")),StrictJson.canonical(StrictJson.read(r.body())))
         assertFalse(s.canEditProposal);assertFalse(s.confirmation.attempted);assertFalse(s.confirmed)
     }
     @Test fun lostAckRestartKeepsExactKeyBodyAndIdsAndReturnedBodyIsDefensive() {
@@ -43,6 +43,27 @@ class PhotoConfirmationTest {
         assertTrue(restored.confirmation!!.attempted);assertSame(restored.confirmation,restored.confirmation.markAttempted())
         val retry=restored.confirmation.request(epoch);assertEquals(first.key,retry.key);assertArrayEquals(first.body(),retry.body())
         val copy=first.body();copy[0]=0;assertArrayEquals(retry.body(),first.body())
+    }
+    @Test fun legacyEmptyDraftDecisionRestoresAndRetriesItsOriginalBodyAndReceipt() {
+        val old=JSONObject(attempted().serialized)
+        old.getJSONObject("confirmation").put("request",json("corrected-meal-confirm"))
+        val restored=PhotoAnalysisSnapshot.read(old.toString(),"mock")
+        val expected=StrictJson.canonical(json("corrected-meal-confirm")).toByteArray(Charsets.UTF_8)
+        assertEquals(key,restored.confirmation!!.key);assertArrayEquals(expected,restored.confirmation.request(epoch).body())
+        val retry=restart(restored.markConfirmationAttempted())
+        assertArrayEquals(expected,retry.confirmation!!.request(epoch).body())
+        val ack=bytes(json("corrected-meal-confirmed"))
+        val accepted=restart(retry.withConfirmationReceipt(ack))
+        assertTrue(accepted.confirmed);assertEquals(0,JSONObject(accepted.confirmation!!.receiptJson!!).getJSONArray("drafts").length())
+        assertArrayEquals(expected,accepted.confirmation.request(epoch).body())
+    }
+    @Test fun receiptCannotRemoveOrChangePrivateDraftIdentityNutritionOrSource() {
+        val edits:List<(JSONObject)->Unit> = listOf(
+            {it.put("drafts",org.json.JSONArray())},
+            {it.getJSONArray("drafts").getJSONObject(0).put("draft_id",key)},
+            {it.getJSONArray("drafts").getJSONObject(0).getJSONObject("payload").getJSONObject("nutrition_per_100").put("fat_g","0")},
+            {it.getJSONArray("drafts").getJSONObject(0).getJSONObject("payload").put("source_description","Invented source")})
+        edits.forEach {edit->val ack=receipt();edit(ack);rejected {attempted().withConfirmationReceipt(bytes(ack))}}
     }
     @Test fun independentReceiptBindsTemplateAndProvenanceAndIsIdempotent() {
         val s=attempted().withConfirmationReceipt(bytes(receipt()));val restored=restart(s)
