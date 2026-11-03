@@ -1,5 +1,9 @@
 # Lokalne środowisko integracyjne — osoba 3
 
+[Nowy cel Docker po odtworzeniu](DOCKER_RESTORE.md) opisuje sparowane T0,
+odseparowaną materializację PG/Keycloak, rzeczywisty fence providera i osobną
+bramkę odzyskania Room27. Nie odtwarza aktywnego źródła w miejscu.
+
 [Lokalne demo i skrzynka do resetowania hasła](LOKALNE_DEMO.md) opisują
 opcjonalną pocztę Mailpit oraz wykonany odbiór. Uruchamia się ją jako osobny
 projekt w istniejącej sieci, bez przebudowy API lub migracji.

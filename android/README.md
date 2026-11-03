@@ -1,12 +1,18 @@
 # Android — Racje i kalorie
 
-Bieżące źródło: **0.8.45 / code56 / Room27**, wariant validation code1056.
+Bieżące źródło: **0.8.46 / code57 / Room27**, wariant validation code1057.
 Instrukcja lokalnego uruchomienia jest w rozdziale
 [Uruchomienie w Android Studio](#uruchomienie-w-android-studio).
 Własny backend do pełnej ścieżki opisuje
 [instrukcja integracji](../infra/local/integration/README.md), a odebrane
 scenariusze i otwarte bramki — [dziennik zespołu](../docs/KOMUNIKACJA_AGENTOW.md).
 Wynik samego modułu lub builda nie zastępuje odbioru całego APK/API.
+
+Licznik wymaganych części dowodów uzgadniania obejmuje tylko ich obowiązkowe
+indeksy. Dodatkowe pełne kopie po wysłaniu kolejnych decyzji pozostają zapisane,
+ale nie zwiększają tego licznika i nie blokują przycisku zakończenia.
+Końcowy store nadal wymaga aktualnej pełnej kopii, rozstrzygniętych źródeł
+i potwierdzonych operacji. Aktualizacja zachowuje Room27 i historyczne dowody.
 
 PULL oddziela tożsamość osi E od sześciu domen dziennika: początkowe E zachowuje UUID
 celu, z którego powstało. Pełna kopia i delta nie traktują tej pary jako
@@ -18,10 +24,12 @@ Publiczny ekran uzgadniania otrzymuje teraz ten sam schemat osi E co transport
 aplikacji. Pełny dowód ENERGY_V1 z celem i E może trafić do porównania, świadomej
 decyzji i zakończenia planu; wcześniej jego zapisane strony były odrzucane przez
 czytnik ViewModel bez tego schematu. Bez zmiany reguł recovery, Room27 i ACK.
-Regresja publicznego ViewModel używa jawnie syntetycznego proof. Lokalnie
+Regresja publicznego ViewModel używa jawnie syntetycznego proof. Dla0.8.45 lokalnie
 wykonano rzeczywisty RED starej ścieżki i 19 native PASS po poprawkach,
 w tym siedem nowych regresji oraz dwanaście dotychczasowych przypadków.
-Odbiór rzeczywistego D2 pozostaje osobnym krokiem.
+Późniejszy rzeczywisty D2 oraz aktualizacja1056→1057 są opisane osobno
+w dzienniku; dodatkowy test0.8.46 prowadzi dwa recovery PUSH i ich kolejne
+kopie przez publiczny przycisk zakończenia, z rzeczywistymi Room/VM/store.
 
 Import gościa i starszych danych korzysta także z właściwego zakresu pełnej
 lub zastosowanej przyrostowej kopii ENERGY_V1. Odczytuje zwalidowany wynik

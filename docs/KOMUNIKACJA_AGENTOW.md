@@ -11711,6 +11711,78 @@ Kontynuacja O3-121 — zgodność narzędzi z rejestracją email-as-username:
   Stary CI41219974507 pozostaje FAIL581/582; lokalne4/4 z O3-124 nie
   zastępują nowego FULL CI aktualnego head/base. Bez nowego PR lub merge.
 
+### O3-123 — obsługa nowej instalacji lokalnej i sparowane zdjęcia
+
+- 31.10.2026, agent 3, jawny zakres właściciela: końcowa dostawa lokalna
+  MRE/DEMO, ręczne ścieżki i MOCK. ARPOL, VPS/domena i rzeczywiste Gemini
+  pozostają na później; teraz bez kluczy Gemini, Google lub billing.
+  Zachowano historyczne wymagania, dodając datowane rozstrzygnięcie
+  w WYMAGANIA_PROJEKTOWE.md oraz bieżącą instrukcję w README.
+- Gałąź `codex/devops-lokalne-wydanie`: pierwszy commit
+  `6f2228ad6f182a00e4e5dcdfc6bdc9ea69601338` ma dokładnego rodzica
+  `e64f18ba51d1e63efb5f6670e641d9780147d86c` z PR197. Zwykły merge
+  `41a104c` dołącza adapter D2 `f86bd9b` i jego bazę PR196/9b471c7;
+  zachowano oba kompletne wpisy O3-121 i O2-075. Publikacja nowego zakresu
+  wymaga integracji aktualnego main po PR196/197, bez przepisywania historii.
+- Nowy local_release.py i cztery cienkie START/STATUS/STOP/BACKUP korzystają
+  z jednego prywatnego powiązania istniejącego projektu, engine/socket,
+  containerId/imageId, konfiguracji, wolumenów, issuer/CA i pełnej chain
+  base→MOCK→SPI→E8. Start nie buduje, nie importuje, nie migruje i nie
+  provisionuje; zdrowy zestaw pozostaje bez restartu. Stop nie usuwa danych.
+  Świeży sukces E8 musi następować po starcie procesu kontenera. Dawne
+  prep gates i ich PREPARATION_ONLY pozostają historycznymi narzędziami.
+- BACKUP zamyka ingress i wszystkich writerów, także AI/E8/SMTP, potwierdza
+  PID0 i brak innych klientów PG, zachowuje parę DB/globals/katalog/config/TLS
+  i nie wznawia ruchu. Opcjonalne photos.tar ma jawny marker i wspólny
+  manifest/hash; restore trafia tylko do nowego własnego photo_data,
+  zachowuje prywatne prawa/mtime i nie zmienia quota/retencji ani nie
+  wznawia jobów. Stare T0 bez markera zachowuje dotychczasowy zakres.
+- Review wykrył P2 jednorazowej archiwizacji po mutable tagu migratora.
+  Nowy bound tryb używa dokładnego backend Image ID, pull=never,
+  network=none, UID10001, read-only i pojedynczego volume RO, bez migrate.env
+  oraz uprawnionych danych DB. Cleanup po timeout sprawdza dokładną nazwę,
+  obraz i własny label; żywy osierocony helper blokuje kolejną operację.
+  Legacy capture bez callback zachowuje własny dawny kontrakt i nie jest
+  objęty deklaracją przypięcia nowego helpera.
+- Wykonane lokalnie: wcześniejszy szeroki komplet infra 1260 PASS/12 SKIP;
+  końcowe cztery zmienione obszary 110 PASS/0 FAIL/0 SKIP, JUnit SHA256
+  `932aeb5c15c8cce17ef1f5fc9864746ca944e79051c96d40070ffcfd2131b1bc`.
+  Ruff/format, E0, parser pięciu skryptów PowerShell, CLI Python -I i
+  diff-check PASS. Testy obejmują ownership/drift, pełną chain, fizyczne
+  zamknięcie, zmieniony tag, cleanup helpera, stare i nowe kopie zdjęć oraz
+  brak uruchomienia API/AI podczas materializacji. Dowody pozostają prywatne.
+- Backend .env.example zachowuje AI_PROVIDER=mock i zakomentowane późniejsze
+  ustawienia Gemini. Wymagania datowanego potwierdzenia, configure-pool,
+  rzeczywistych limitów i historii pozostają w instrukcjach E7/E9; klucz
+  nie trafia do APK. Autor nie uruchamiał nowych skryptów na runtime.
+  Następny krok to niezależny odbiór zamrożonego źródła i jedno uzgodnione
+  okno operatora po bieżącym D2 na realny start/stop/kopię/optional photo
+  restore. Profil jest konfiguracją operacyjną, nie seal lub odbiorem 1.0.
+- Pierwszy rzeczywisty read-only bind/status zachowano z odmową motivation:
+  czytnik wymagał surowego CLI `status`, choć zapisane canonical metrics
+  celowo już go nie zawierają. Korekta czytnika waliduje zapisany DTO bez
+  dopisywania sukcesu i bez zmiany zamontowanego e8_worker.py. Regresja
+  odtwarza odmowę na niezmienionym producer JSON i jego czasie; po poprawce
+  plik test_local_release.py: 57 PASS, w tym błędne metryki, stan bez sukcesu,
+  brak/błędny czas, przyszły/przeterminowany sukces i sukces sprzed startu
+  procesu. Wymagany nowy bind/profile/status operatora; poprzedni wynik
+  pozostaje dowodem odmowy, bez deklaracji wykonania start/stop/backup.
+- Kontynuacja po zwykłym merge PR196/main5d75fe2, baza operacyjna708666f:
+  niezależny review wykrył P2 adaptera D2, który dziedziczył wybór daemona
+  Docker z otoczenia. Adapter wymaga teraz jawnego lokalnego socket/engineID,
+  usuwa odziedziczone context/HOST/TLS i sprawdza engine przed każdą komendą,
+  także Compose, binarnym pg_restore i odczytem źródłowego PG. Target record
+  zachowuje binding; fence/activate oraz już utworzony obiekt celu odmawiają
+  jego zmiany. Brak configure_transport w API nie wywołuje Docker.
+  Ownership, zamknięcie źródła i rzeczywisty fence421s pozostają bez zmian.
+- Celowane testy docker_restore/backup/recovery_o2/local_release: 156 PASS,
+  JUnit SHA256 `ba5b8eb7f91b1359544f07b0cd8f143da7e7a25f34f7c5ca9d9d0b9bf04df4cc`.
+  Obejmują obcy context/HOST/TLS, brak/błędny binding, zmianę engine i ponowne
+  użycie obiektu celu po reconfigure. Ruff/format, E0 i diff-check PASS.
+  To testy z mockowanym transportem, bez Docker/ADB/Gradle. Działające źródło
+  operatorowego D2 i profil runtime nie zostały zmienione; rzeczywiste D2,
+  T1 zdjęć oraz końcowy start/stop/launcher mają odrębne odbiory.
+
 ### O3-124 — domknięcie fixture i diagnostyka rzeczywistego wyniku workera
 
 - 31.10.2026, Agent 3 / O3. Gałąź `codex/android-wakecheck-fixture`,
@@ -11743,3 +11815,241 @@ Kontynuacja O3-121 — zgodność narzędzi z rejestracją email-as-username:
   Pakiet i dziennik `.validation` pozostały odseparowane. To lokalny odbiór
   poprawionego fixture, bez nowego wyniku CI197, dowodu przyczyny starego
   timeoutu lub zaliczenia E9/D2.
+
+### O3-125 — końcowy odbiór lokalnej dostawy MRE/DEMO
+
+- 31.10.2026, Agent 3. PR197 przyjęto do main922e32b po FULL41227231224
+  (8/8 SUCCESS), a PR196 do main5d75fe2 po FULL41235945332 (8/8 SUCCESS).
+  Publiczny klient 0.8.45/code56, validation1056 i Room27 zachowują cel,
+  historię E oraz dowody pełnej/przyrostowej kopii w uzgadnianiu i imporcie.
+- Następny push CI main41238173222 zachowuje osobny FAIL: 594 native PASS,
+  jeden FAIL, zero SKIP/ERROR. persistedBlockSurvivesProviderRuntimeAndFileRoomReopenWithFrozenBytesAndDeadline
+  dostał Busy zamiast ścisłego Stopped(network_blocked). To inny przypadek
+  niż dawny wake timeout. Log nie wskazuje właściciela mutexu; zapis stanu
+  nie dowodzi zakończenia obserwatora, a po reopen może już istnieć w Room.
+  ZIP SHA256 `8333305b70adecc4bfd729b9e082e826c3ed1f3c8c768b171308f7f38ebed630`;
+  niezależna diagnoza SHA256 `736df849411b3edd05e32abccfa515b1d4de903260567ef2bc610d60227365e8`.
+- Testowa poprawka a82d0c360945b38858ecfb19e43c201ac84eb5ef dołącza Job
+  obserwatora przez cancelAndJoin przed jednym manual i zachowuje ścisły wynik,
+  zamrożone row/op/wire, deadline oraz zero sieciowych wywołań. Osobna próba
+  z drainer-barrier odtwarza Busy przy trzymanym mutexie i wymaga Stopped po
+  join. Produkcyjny coordinator/mutex/gate/deadlines pozostają identyczne.
+  Review i diff-check PASS; lokalne compile/native NOT_RUN podczas wyłącznego
+  okna D2. Wymagany nowy FULL aktualnego head PR198, bez ślepego rerun starego.
+- Gałąź codex/devops-lokalne-wydanie, PR198, łączy ten odbiór ze skryptami
+  lokalnej dostawy oraz poprawką transportu435b421 z O3-123. Rzeczywisty bound
+  T0 BACKUP i ponowny START wykonano na czystym źródle0a3 i profiluR2.
+  Manifest sparowanej kopii SHA256
+  `6f047737ecbee5fa9d82d8a45928a1f8acac495abc2f00c521d3f900ddf950a6`
+  przeszedł niezależny verify. Odtworzony NOWY cel ma nową epokę, zamknięte
+  AI/Nemesis i rzeczywisty fence421.0001472s. Oryginał nie został odtworzony.
+  Aplikacyjny recovery, fizyczne zdjęcie T1 i końcowe skrypty użytkownika
+  pozostają osobnymi, jeszcze niezaliczonymi etapami w tej chwili.
+
+- Kontynuacja 02.11.2026: FULL PR198 na dokładnym cfc50fa, run41240212698,
+  zakończył wszystkie 8 kontroli SUCCESS. Oryginalny artefakt native zawiera
+  596 unikalnych class#method: 596 PASS, 0 FAIL, 0 ERROR, 0 SKIP.
+  Obejmuje ścisły przypadek reopen oraz nową próbę z barierą drainer.
+  ZIP SHA256 `50c6d1c9b175b076da9ccb1d27d579543b88da56f9b7ec07b7a8349dfc8b0dfd`;
+  niezależny odbiór SHA256
+  `183e722cc7d574bb2443d3b5a9d46b892d45973e7deda702cf18f4ab3d291d94`.
+  Porównanie Git potwierdziło brak zmiany kwalifikowanych wejść obrazu
+  backendu, mountów workera, providera SPI i produkcyjnych źródeł APK.
+  Nie oznacza to przebudowy obrazu: jego historyczne pochodzenie pozostaje.
+- Pierwszą osobną kopię AVD zachowano po nieudanym coldboot bez APK.
+  Brak autentycznego version_num.cache jest zgodny z mechanizmem odnowienia
+  overlayu w źródle Android Emulator; nie przypisano tego źródła dokładnemu
+  lokalnemu buildowi SDK. Nowa, oddzielna kopia zachowała oba markery wersji
+  i wszystkie pliki źródła. Pierwszy techniczny boot potwierdził dokładne
+  APK/test APK oraz bajtowo identyczne Room DB/WAL/SHM i baseline noBackup,
+  bez uruchamiania Activity lub API. Oryginalnego AVD nie nadpisano.
+  Końcowy receipt techniczny SHA256
+  `5722bc233e47529ef6059947c27afcc672937ef10d87a04720877ee941099371`.
+- Na poprawnej kopii wykonano zwykły PKCE oraz publiczne wykrycie nowej
+  epoki, przygotowanie planu i pełny odczyt serwera. Sześć indywidualnych
+  decyzji UI otrzymało PASS: cel, profil, dzień i posiłek10g accept_server;
+  utracony po T0 posiłek11g i niewysłany12g recreate_missing. Każda decyzja
+  wiąże source/payload/proof/serverObservation i zachowuje starą kolejkę.
+  Niepowodzenie testu producenta11g po jego rzeczywistym automatycznym ACK
+  zachowano; wpisu nie tworzono ponownie. ACK potwierdzono osobno w Room/PG.
+- Po przerwie i restarcie hosta 02.11 sprawdzono istniejące kontenery,
+  obrazy, mounty i epoki. Wznowiono te same cztery usługi testowego celu,
+  bez materialize/init/migrate/provision i bez AI/E8/Nemesis; źródło pozostało
+  PG-only. Historycznego fence421s nie przedstawiamy jako ciągłego okresu
+  podczas przerwy. PG zachował wszystkie chronione rekordy. Zachowany fork
+  wznowiono po zabezpieczeniu jego dysków i kontroli nieaktywnego locka SDK,
+  bez reinstalacji, kasowania locka lub danych. Room potwierdził sześć decyzji,
+  recovery=true i oryginalny12g nadal pending/unattempted; PUSH jeszcze nie
+  wykonano w chwili tego odczytu. Sesję odświeżamy zwykłą ścieżką aplikacji,
+  bez zmiany zegara, deadline lub wstrzykiwania tokenów.
+- Po zwykłym ponownym PKCE próba wymagająca NOWEGO proof przed PUSH
+  zachowała FAIL helpera: aktywny run nie zmienił się. Odczyt produkcyjnego
+  nextSnapshot wykazał celowy no-op: receipt_group są kompletne, ten sam
+  aktywny plan ma już pełną kopię, a nie utworzono jeszcze batchy wymagających
+  następnego snapshot. To nie jest dowód błędu sieci ani nowego odczytu.
+  Świeża transakcja PG potwierdziła niezmienione chronione rekordy i brak
+  obu nowych target IDs; decyzji i pierwotnych wpisów nie powtarzano.
+  Właściwy kolejny krok to zatwierdzony PUSH, a potem wymagana nowa kopia.
+- Produkcyjny protokół przygotowuje po jednej zatwierdzonej operacji na etap.
+  Dwa osobne publiczne PUSH przyjęły posiłki11g i12g z nowymi identyfikatorami:
+  `8ea678cc-32c7-4ad0-82fa-8d498e5194a8` oraz
+  `d00e3fff-f3f0-4f30-9c97-949569297a67`. Niezależny PG wykazał26/26 PASS:
+  dokładnie3 posiłki,2 mapowania, nowe accepted/revision1 oraz zachowanie celu,
+  profilu, osi i historii E, dnia, posiłku10g oraz trzech starych receipt.
+  Stare ordinary11/12 nie otrzymały fałszywych potwierdzeń na nowym celu.
+  Witness SHA256 `9f2e65e91ea9ff75e0fb3731def99c9e993acc42b4f1ae87912607d9491189f0`.
+- Po drugim PUSH pobrano kompletny run c2f8340f, ale pierwsza próba jego
+  lokalnej akceptacji zachowała FAIL helpera. Przyczyna tej odmowy pozostaje
+  nieustalona. Jeden jawny etap wznowienia istniejącej kompletnej kopii przeszedł
+  PASS, bez następnego request_complete API lub ponawiania PUSH. Końcowy
+  readback potwierdził tę właśnie kopię,4 accept_server+2 acked, niezmienne
+  źródła i maintenance2595. Receipt wznowienia SHA256
+  `5adf3028da2b746ae3b65d5d52607c4fb3e8ff79db6f3b7a24f3050ed2e8843a`.
+- Rzeczywisty FINISH na1056 zatrzymał się PRZED kliknięciem: przycisk Disabled.
+  ImportViewModel liczył dodatkowy receipt_group pełnej kopii po ACK jako
+  obowiązkową część dowodu. W UI powstało2/1, a warunek równości zablokował
+  zakończenie mimo wszystkich rozstrzygnięć. Zachowany RED SHA256
+  `a4674dbbc1fff2a2628d7ba4390f4653ce7bbf431001c6e2d625f52fc301a7cb`.
+  Store finish nie wywołano i nie obchodzimy publicznego przycisku.
+- Poprawka źródła edaeda5146ead4231ffcf28e1a6189d261bec74a na
+  codex/android-reconcile-proof-finish liczy wyłącznie wymagane indeksy grup.
+  Version0.8.46/code57/validation1057, bez migracji Room27. Nowy regression
+  test prowadzi dwie wagi przez realne Room/VM/Compose/store, dwa oddzielne
+  recovery PUSH i trzy kopie, następnie publiczny FINISH i zachowanie starego
+  ACK/wire oraz obu pomiarów. HTTP jest w nim jawnie syntetyczne. Dwa niezależne
+  review nie znalazły P1/P2; build/native i rzeczywisty upgrade pozostają
+  osobnymi krokami. Bazy i dyski zabezpieczono; fork normalnie zamknięto,
+  a te same cztery usługi D2 zatrzymano z PID0 bez source START lub restore.
+- Build skonfigurowanych APK1057 z czystego edaeda5 przeszedł w188.875s.
+  Core SHA256 `b8376cdfeff4ccb3b8d6352e003c93c3de89337eb46d348a1704060dd03ce777`,
+  test APK `c929b563c0c8311559ad3384c8d304c440c0bd69661a53bdbc5d8994cc2a5ea5`.
+  Odczyt package/version/certyfikatu/DEX i zasobów potwierdził1057/0.8.46,
+  poprzedni podpis313a9f31, tę samą publiczną CA/API/issuer oraz nową regresję.
+  Jedna nowa metoda native przeszła PASS; jej Room/VM/UI/store są rzeczywiste,
+  HTTP jawnie syntetyczne. Po regresji treść57/58 tabel faktycznego forka
+  pozostała identyczna; zmienił się tylko oddzielny sync_work_state.
+- Normalny install-r1056→1057 zachował literalnie wszystkie3 pliki Room;
+  nawet pełne tars przed/po mają identyczny SHA256
+  `b7c78b8dc16459b0cf7deccc7894a269a5a175b5880d1681e46210f15f34c27e`.
+  Pierwsza komenda core rzeczywiście zakończyła się Success, ale parser
+  operatora nie dopuścił poprzedzającego komunikatu Performing Streamed Install.
+  Odmowę zachowano, odczytano stan i nie powtórzono instalacji core; następnie
+  raz zainstalowano test APK. UID i wszystkie wcześniejsze noBackup bytes,
+  historyczny baseline73, plan i proof pozostały. Dopiero po porównaniu
+  utworzono immutable upgrade receipt SHA256
+  `8712e9b77d05070b1e7a77147c7028dba41f6859b8b639d8c68817738f8e35cb`.
+- Prywatny R8r2 dopuszcza wyłącznie readback/finish/cold tej jawnej aktualizacji,
+  z dokładnym source edaeda5, starym/nowym APK, podpisem, hashami baseline/plan,
+  porównaniem Room i bieżącym proof/state. Nie dopuszcza nowych decyzji/PUSH
+  ani zmiany historycznego baseline. Niezależny review domknął ścisły pin źródła.
+  Te same4 kontenery D2 wznowiono bez restore/fence. PG ponownie26/26 PASS.
+  Cały readback1057 był identyczny z zaakceptowanym1056, poza2 referencjami
+  upgrade. Publiczny FINISH1057 następnie przeszedł PASS, receipt SHA256
+  `233136195f131bb6fedc1c7def2cf52b52021098dab11d6b255246aff64fcc07`.
+- Po publicznym Blocked i rzeczywistym force-stop cold-readback potwierdził
+  inny proces, complete/requiresRecovery=false i FK0; receipt SHA256
+  `1bd1b9b43034cf0af1af72bcc06cd086ffea88c2b1e641b4b0b2f076b1fa0e20`.
+  Dawna niewysłana b338 ma teraz zgodnie z protokołem local_only/attempted=false,
+  bez fikcyjnego ACK; oryginał źródłowy pozostaje oddzielny i niezmieniony.
+  Dodatkowy prywatny offlineRead profilu zachował FAIL przez użycie goalOn
+  z LocalDate.now() po zmianie daty próbki. Produkcyjny goal odczytuje validFrom
+  <=data i nie wymaga takiej równości; nie zmieniono daty/celu ani nie powtarzano
+  tego dodatkowego helpera. Właściwe odczyty dotyczą jawnie dnia31.10/ID celu.
+- Zwykły końcowy start zwrócił StatusOK, lecz nad aplikacją był aktualny ANR
+  SystemUI (PID807); blok procesu Kalorii nie miał flag ANR/crash.
+  Zapisano pełne window/activities/process/logcat, zamknięto własne4 usługi
+  D2 i wybrano raz publiczne Wait. Dialog zniknął, a Kalorie pozostały
+  w tym samym PID4946, bez kolejnego am start lub kill/reinstalacji.
+  Przyczyny ANR SystemUI nie przypisano aplikacji lub zasobom bez dowodu.
+  Widok31.10 następnie potwierdził42kcal/2200 i wszystkie3 ilości10/11/12g;
+  zegar Androida nadal wskazywał02.11. Receipt UI SHA256
+  `a64a744e82d9a1d3cd2ed2d440d4958e88973b15d79f6d6ae179476ae491a827`.
+  Końcowy launcher będzie sprawdzał rzeczywiste okno także po StatusOK,
+  aby sam wynik am start nie udawał dostępnego interfejsu.
+- Końcowy odczyt po konkretnych ID potwierdził cel2200/B150/T80/W220,
+  niezmienny estimate699/zapotrzebowanie2595 i profil180. Widoczne3 posiłki
+  mają ilości10/11/12g i sumę42.12951534kcal, dokładnie1 completion,
+  recovery=false,2 nowe ACK oraz dawne12 local_only/unattempted.
+  Receipt danych SHA256 `78f960f2cf486a6e1fdf9d3bdb1d8b776bcaae2f882f320688686e777a6e1552`.
+  Fork normalnie zamknięto; nie pozostały emulator/qemu. Wszystkie17 plików
+  oryginału i jego INI zachowały bytes/mtime, bez przekopiowania danych celu.
+  Stop receipt SHA256 `7a478797774061be9657e55b40aaa0434785d332691ebcab5eaa7c27ec9d42b0`.
+  Tym zamknięto rzeczywisty D2 Room27 na1057. Następny zakres obejmuje powrót
+  oryginalnego serwera, niepustą kopię zdjęcia T1 i końcowy launcher.
+- Powrót źródła zachował rzeczywistą odmowę starego R2 przed START: wszystkie
+ 10 raw configuration hashes różniły się mimo tych samych ID/obrazów.
+  Nie znaleziono historycznego pełnego inspect; przyczyna różnicy pozostaje
+  nieustalona, bez przypisywania jej kolejności mountów, wersji lub API.
+  Jawny audyt bieżącego zamiaru e056eee4 dał434/434 PASS względem pełnej
+  przypiętej Compose chain,5 immutable obrazów,10 service config-hash,
+  ENV/CMD/user/healthchecks/mountów/RO/portów/sieci/security/resources,
+  CA/SPI i pełnych danych źródła. Semantyka null jako dziedziczenia CMD/entrypoint
+  i domyślnego RAM+swap była sprawdzona w [dokumentacji Compose](https://docs.docker.com/reference/compose-file/services/)
+  i [Docker Engine](https://docs.docker.com/engine/containers/resource_constraints/).
+  Nie znormalizowano nieznanych różnic i nie edytowano R2. NOWY profil
+ 9ffc6e89 przeszedł oficjalny START/STATUS, świeże E8 i pełne zachowanie danych;
+  receipt SHA256 `d84932ead6d65d394d419747753639ec047786b191f0a676ec25640b984556d0`.
+- Zwykły merge do runtime32fdc2b zachował wszystkie dawne linie dziennika;
+  jego tree jest dokładnie równy odebranemu47a7990. Nowy R3c285796e wiąże ten
+  czysty commit i zaakceptowane bieżące piny. Stary R2 nadal odmawia.
+  R3 bind/status SHA256 `2df89bb6e18be0a1002953c4d55d34c31a8916119ceaf1bb6baaeb4772bf0d5e`.
+- T1 wykonał jeden zwykły upload przy zatrzymanym wyłącznie własnym workerze.
+  Bound BACKUP i niezależny verify zachowały rzeczywisty JPEG646B SHA961fb6a4,
+  UID10001/GID999/file0600/root0700. Manifest sparowanej kopii SHA256
+  `7089f32b2d788534e4317491e2a5a92b7aec58e95793c89ff592ba9e3ee2103a`.
+  PAX zachował reprezentowalne mtime; różnicę−51ns względem source_ns zapisano
+  jawnie. Natychmiastowy START źródła zachował epokę/dane/piny. Ten konkretny
+  job zakończył się succeeded, z jednym count_tokens i jednym generate,
+  rzeczywistym io_finished_at, settled768 i zerem held permits.
+  Bez Google/billing, retry/reupload lub zmiany zegara, deadline i limitów.
+  Receipt T1 SHA256 `d79ff85310fefc56ee2df17590b16224bf4c55d4d20791dcc361cf2402057620`.
+- Osobny NOWY cel d38416dc otrzymał identyczny JPEG i dokładne queued
+  job/analysis/consent/receipt/admissions/pool/attempts/permits z T1.
+  UID/GID znormalizowano zgodnie z initializer do10001; mtime target jest
+  dokładnie równe archiwum. Uruchomiono tylko PG/KC, bez portów/API/AI/E8/
+  retencji, fence lub activate. Żadnego resume i nowych prób. Źródło działało.
+  Roundtrip SHA256 `88c19183e66351a1c960fde1d15c9fa4985e6d2b5959a6ceeb8bca879cb2413b`.
+  Cel następnie normalnie zamknięto. Prawdziwy STOP wszystkich10 usług źródła
+  wykazał każdy PID0; START zachował10 ID/obrazów, wymagał nowych starttimes
+  i świeżych E8 oraz zachował pełne dane A2 i historię tego konkretnego jobu.
+  Receipt SHA256 `97877c763ee6429e52b8f84cf2d0bebb0d3af0ea4d184bfce33c34653a59dc8d`.
+- R7 prywatnego launchera wymaga rzeczywistego foreground/drawn okna po
+  jednym am start zarówno dla ok, jak i timeout. Zachowuje piny procesu,
+  SDK/AVD, ADB/loopback, limity oraz odmowę bieżącego ANR. Testy pure:
+ 45 readiness,16 server,5 busy,3 deadline PASS. Rzeczywisty pierwszy CMD
+  odmówił przed SDK przez odziedziczony PSModulePath z cache PS7 w WinPS5.1;
+  pause dodatkowo maskował exitcode. Zachowano odmowę bez drugiego startu.
+  Oddzielne poprawione wejścia CMD używają procesowego standardowego modułu
+  WinPS i zachowują kod przed pause. Rzeczywiste testy10/10 ze stubami bez SDK
+  potwierdziły systemowy Utility, ścieżki ze spacjami/Polskimi znakami oraz
+  kody0/17 i brak trwałej zmiany środowiska. Odbiór R7 na oryginale jest kolejnym
+  krokiem; nie zaliczamy samych testów pure za wykonanie codziennego START.
+- Odbiór oryginału03.11: rzeczywisty zimny CMD/R7 zakończył się kodem0,
+  uruchomił własny ADB i AVD oraz potwierdził widoczne okno aplikacji1056.
+  Następnie zwykłe install-r do1057 zachowało dosłownie trzy pliki Room
+  oraz wszystkie sześć plików noBackup. Receipt aktualizacji SHA256
+  `49bda280ae8cf5ba0cab831ad8572f38192b17aa7e16982af6bd66fbb748440a`.
+  Kolejny warm CMD1057 odmówił w limicie60s; odmowę zachowano, przyczyny
+  nie ustalono. Osobny bieżący observer bez am start wykazał dwa stabilne
+  odczyty zdrowego, narysowanego okna. To nie zalicza poprzedniego CMD.
+- Po normalnym odblokowaniu sieci wykonano publiczne PKCE z właściwym
+  kontem. Bez manualnego wysłania lub nowej intencji zwykły auto-sync
+  przyjął dawny12g b338 do25ba, revision1, w oryginalnej epoce677.
+  Room zachował sealed wire09eb, stare ACK/batches, pozostałe posiłki/items,
+  profil/cel/historię i energię. Jedyna dodatkowa zmiana projekcji meal12
+  to lokalny alias rationId na ten sam kanoniczny UUID z niezmiennego wire;
+  wynika z CanonicalMealRows/ServerDiaryStore. Pierwszą zbyt ścisłą odmowę
+  zachowano, a osobny przegląd frozen copies ma SHA256
+  `c55b4ef5e17511eb8b94ba522cc9b40e62a308bd9de74c116c1916d146eaa187`.
+- Niezależny PG witness potwierdził ten sam ordinary ACK i dokładnie trzy
+  posiłki10/11/12g, bez recovery mappings lub ACK z celu D2. Pełne dawne
+  rows/items/receipts oraz cel/profil/oś/historia/energia są zachowane.
+  Semantyka payload jest identyczna; odtworzenie kluczy i Android slash-escaping
+  daje dawny SHA09eb. Nie jest to twierdzenie o przechwyconych bytes HTTP.
+  Pierwszy guard odmówił przez różnicę serializacji Europe\\/Warsaw względem
+  Europe/Warsaw; zachowano go i diagnozę, bez replay lub zmiany danych.
+  Końcowy PG/READY receipt SHA256
+  `e0dff425163fc6af94ae6da7707fa121a3eabe5337bdc6747541b6d89b30f45c`.
+  Pozostają końcowy FULL nowego head PR198, normalny merge, trwały binding
+  oraz rzeczywisty łączny ROOT START1057. Starsze zielone CI cfc50fa
+  nie kwalifikuje nowej poprawki UI.

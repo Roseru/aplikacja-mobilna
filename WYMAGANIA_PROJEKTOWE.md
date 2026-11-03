@@ -1,5 +1,15 @@
 # Wojskowy licznik kalorii — wymagania projektowe - osoba 2
 
+**Zakres bieżącej dostawy — decyzja właściciela 31.10.2026:** kończymy działającą
+instalację lokalną z katalogiem MRE/DEMO, ręcznymi ścieżkami oraz AI w trybie
+MOCK. Pełny katalog ARPOL pozostaje na później. Właściciel nie ma obecnie
+VPS/domeny ani kluczy Gemini i nie zezwala na podłączanie teraz rzeczywistego
+Gemini lub billing. Późniejsza konfiguracja AI odbywa się wyłącznie na backendzie,
+z dotychczasowymi potwierdzeniami, pulą i limitami. Historyczne wymagania
+publicznego wdrożenia, ARPOL i realnego AI pozostają docelowe; nie są
+warunkiem tej zatwierdzonej edycji lokalnej. Obsługa lokalna:
+[start/status/stop/kopia](infra/integration/LOCAL_RELEASE.md).
+
 Wersja: 1.3, 9 października 2026 r. Zespół: 3 osoby. Ustalenia backendu: Osoba 2.
 
 Dokument łączy bazowy opis projektu z wymaganiami dotyczącymi trybu poligonowego, analityki, społeczności, rywalizacji i Gemini. Opisuje zakres do wykonania; nie oznacza, że aplikacja została już zaimplementowana. Na polecenie użytkownika maksymalny wspierany okres offline wynosi 30 dni. Rozdział 11 ustala decyzje Osoby 2 dla wersji v1; zmiana tych zasad wymaga aktualizacji dokumentacji, kontraktu i odpowiednich testów.

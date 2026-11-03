@@ -16,7 +16,7 @@ from pathlib import Path
 from uuid import UUID, uuid4
 
 from monitor import console_options
-from run import HERE, ROOT, host_address, private_write
+from run import ROOT, host_address, private_write
 from run_e8 import SERVICES, E8Stack
 
 IMAGE = (
@@ -126,6 +126,11 @@ def verify_archive(directory):
     files = manifest["files"]
     if not ARCHIVES <= set(files):
         raise ValueError("Missing paired archive")
+    photos = manifest.get("optional_photos")
+    if photos is not None and photos != {"format": 1, "archive": "photos.tar", "root": "photos"}:
+        raise ValueError("Unsupported optional photo archive")
+    if (photos is not None) != ("photos.tar" in files):
+        raise ValueError("Photo payload and explicit format marker must be paired")
     for name, expected in files.items():
         relative = Path(name)
         path = directory / relative
@@ -138,15 +143,34 @@ def verify_archive(directory):
     return manifest
 
 
-def capture(state, destination):
-    stack = E8Stack(state)
+def capture(
+    state,
+    destination,
+    *,
+    stack=None,
+    writers=(),
+    verify_closed=None,
+    extra_config=None,
+    photo_volume=None,
+    volume_archiver=None,
+):
+    """Capture the legacy stack or an explicitly qualified complete installation."""
+    stack = stack if stack is not None else E8Stack(state)
+    if photo_volume is not None and not re.fullmatch(
+        re.escape(stack.config["project"]) + r"_[a-z0-9_-]+", photo_volume
+    ):
+        raise ValueError("Photo archive requires an owned named volume")
     host_address(stack.config["host"])
     private_directory(destination)  # Never overwrite an earlier backup.
     started = time.monotonic()
     stack.compose("stop", "gateway")
     if (state / "e8-admin.env").exists():
         stack.e8("stop", *SERVICES.values())
+    if writers:
+        stack.compose("stop", *writers)
     stack.compose("stop", "api", "retention", "keycloak")
+    if verify_closed is not None:
+        verify_closed()
     if (
         stack.sql(
             "postgres",
@@ -173,22 +197,39 @@ def capture(state, destination):
         destination / "roles.sql",
         stack.compose("exec", "-T", "postgres", "pg_dumpall", "-U", "postgres", "--globals-only"),
     )
-    command = [
-        "docker",
-        "compose",
-        "--env-file",
-        str(state / "compose.env"),
-        "--project-name",
-        stack.config["project"],
-        "-f",
-        str(HERE / "compose.yaml"),
-    ]
+    command = stack.compose_command()
+
+    def archive_volume(volume, mount, source, name):
+        if volume_archiver is not None:
+            volume_archiver(destination, volume, mount, source, destination / name)
+        else:
+            execute(
+                destination,
+                command
+                + [
+                    "run",
+                    "--rm",
+                    "-T",
+                    "--no-deps",
+                    "-v",
+                    volume + ":" + mount + ":ro",
+                    "migrate",
+                    ".venv/bin/python",
+                    "-I",
+                    "-c",
+                    source,
+                ],
+                output_path=destination / name,
+                environment=stack.compose_environment(),
+            )
+
     for database in ("calorie_app", "keycloak"):
         execute(
             destination,
             command
             + ["exec", "-T", "postgres", "pg_dump", "-U", "postgres", "-Fc", "--create", database],
             output_path=destination / (database + ".dump"),
+            environment=stack.compose_environment(),
         )
     config = destination / "config"
     config.mkdir(mode=0o700)
@@ -202,31 +243,49 @@ def capture(state, destination):
         if any(p.is_symlink() for p in (state / name).rglob("*")):
             raise ValueError("Unexpected configuration symlink")
         shutil.copytree(state / name, config / name)
+    for name, source in (extra_config or {}).items():
+        relative = Path(name)
+        if relative.is_absolute() or ".." in relative.parts or ":" in name or "\\" in name:
+            raise ValueError("Invalid extra backup configuration path")
+        target = config / relative
+        target.parent.mkdir(parents=True, exist_ok=True, mode=0o700)
+        if source.is_symlink() or not source.is_file() or target.exists():
+            raise ValueError("Extra backup configuration must be a new ordinary file")
+        shutil.copy2(source, target)
     code = (
         "import sys,tarfile; t=tarfile.open(fileobj=sys.stdout.buffer,mode='w|'); "
         "t.add('/catalog',arcname='catalog'); t.close()"
     )
-    execute(
-        destination,
-        command
-        + [
-            "run",
-            "--rm",
-            "-T",
-            "--no-deps",
-            "-v",
-            stack.config["project"] + "_catalog_data:/catalog:ro",
-            "migrate",
-            ".venv/bin/python",
-            "-I",
-            "-c",
-            code,
-        ],
-        output_path=destination / "catalog.tar",
-    )
+    archive_volume(stack.config["project"] + "_catalog_data", "/catalog", code, "catalog.tar")
+    if photo_volume is not None:
+        # Read the durable payload after all writers are physically closed. Preserve
+        # JPEG/staging names and mtimes; do not run retention, change quota or jobs.
+        photo_code = """
+import os,re,stat,sys,tarfile
+from pathlib import Path
+from calorie_app.modules.ai.storage import MAX_IMAGE_BYTES
+root=Path('/photos')
+info=root.stat()
+assert stat.S_IMODE(info.st_mode)==0o700 and info.st_uid==10001
+with tarfile.open(fileobj=sys.stdout.buffer,mode='w|') as target:
+    target.add(root,arcname='photos',recursive=False)
+    for item in sorted(root.iterdir()):
+        info=item.lstat()
+        assert re.fullmatch(r'[0-9a-f]{32}\\.(jpg|staging)',item.name)
+        assert stat.S_ISREG(info.st_mode) and info.st_nlink==1
+        assert stat.S_IMODE(info.st_mode)==0o600 and info.st_uid==10001
+        assert 0<=info.st_size<=MAX_IMAGE_BYTES
+        assert item.suffix=='.staging' or info.st_size>0
+        target.add(item,arcname='photos/'+item.name,recursive=False)
+"""
+        archive_volume(photo_volume, "/photos", photo_code, "photos.tar")
+    if verify_closed is not None:
+        verify_closed()
     paths = [destination / name for name in ARCHIVES] + [
         p for p in config.rglob("*") if p.is_file()
     ]
+    if photo_volume is not None:
+        paths.append(destination / "photos.tar")
     manifest = {
         "format": 1,
         "captured_at": captured_at,
@@ -242,10 +301,58 @@ def capture(state, destination):
             for p in paths
         },
     }
+    if photo_volume is not None:
+        manifest["optional_photos"] = {"format": 1, "archive": "photos.tar", "root": "photos"}
     private_write(destination / "manifest.json", json.dumps(manifest, indent=2))
     verify_archive(destination)
     # Keep ingress and all writers stopped. Resuming is an explicit operator action.
     return {"result": "PASS", "paired_backup": True, "writers_stopped": True}
+
+
+def restore_photos(archive, destination):
+    """Stage optional payload privately; no DB/queue/quota/retention mutation or job resume."""
+    import tarfile
+
+    from calorie_app.modules.ai.storage import MAX_IMAGE_BYTES
+
+    private_directory(destination)
+    root = destination / "photos"
+    seen = set()
+    files = total = 0
+    with tarfile.open(archive) as source:
+        for member in source:
+            if member.name in seen:
+                raise ValueError("Duplicate photo archive member")
+            seen.add(member.name)
+            if member.name == "photos":
+                if not member.isdir() or member.mode != 0o700:
+                    raise ValueError("Private photo directory required")
+                root.mkdir(mode=0o700)
+                continue
+            if (
+                not root.exists()
+                or member.type not in (tarfile.REGTYPE, tarfile.AREGTYPE)
+                or member.sparse is not None
+                or member.mode != 0o600
+                or not re.fullmatch(r"photos/[0-9a-f]{32}\.(jpg|staging)", member.name)
+                or not 0 <= member.size <= MAX_IMAGE_BYTES
+                or member.name.endswith(".jpg")
+                and member.size == 0
+            ):
+                raise ValueError("Photo archive must contain bounded private prepared objects")
+            target = destination / member.name
+            with source.extractfile(member) as incoming, target.open("xb") as output:
+                target.chmod(0o600)
+                shutil.copyfileobj(incoming, output, length=1024 * 1024)
+            if target.stat().st_size != member.size:
+                raise ValueError("Photo payload size mismatch")
+            # Retention's orphan grace must not be extended by restoring a file.
+            os.utime(target, (member.mtime, member.mtime))
+            files += 1
+            total += member.size
+    if not root.is_dir():
+        raise ValueError("Photo archive root missing")
+    return {"files": files, "bytes": total}
 
 
 def rehearse(directory):
