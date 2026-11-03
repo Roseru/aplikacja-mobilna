@@ -1,3 +1,6 @@
 [CmdletBinding()]
-param([string]$Profile = (Join-Path $PSScriptRoot 'runtime.json'))
+param([string]$Profile)
+if (-not $PSBoundParameters.ContainsKey('Profile')) {
+    $Profile = Join-Path $PSScriptRoot 'runtime.json'
+}
 & (Join-Path $PSScriptRoot 'Invoke-LocalRelease.ps1') -Action status -Profile $Profile

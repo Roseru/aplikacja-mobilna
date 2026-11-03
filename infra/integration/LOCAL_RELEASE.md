@@ -23,6 +23,14 @@ przez BACKUP.ps1 -Destination '<pełna-nowa-ścieżka>'. Archiwa zawierają dane
 hasła serwisowe i klucze — zachowaj je prywatnie. Osobny backup/eksport Androida
 pozostaje obsługą klienta; serwerowa kopia nie zastępuje lokalnego Room/outbox.
 
+Skrypty obsługują Windows PowerShell 5.1. Domyślny runtime.json wybierają
+w treści skryptu względem jego własnego folderu, po związaniu parametrów.
+Dotyczy to także wywołania przez nadrzędny START.ps1: profil pozostaje
+w podfolderze serwer, niezależnie od bieżącego katalogu roboczego.
+Jawne -Profile i -Destination zachowują wskazane ścieżki. Sukces Pythona
+zwraca kod 0; jego błąd nadal przerywa skrypt wyjątkiem i zwraca kod 1
+Windows PowerShell, zatrzymując nadrzędny START przed otwarciem aplikacji.
+
 ## Jednorazowe przygotowanie operatora
 
 To nowa obsługa już istniejącego zestawu. Dawne skrypty local_demo i verifier
@@ -123,6 +131,13 @@ warunków. Bez nich backend/worker nadal odmawia pracy.
 
 Testy źródeł obejmują konfigurację/ownership, odmowę driftu, pełną chain,
 fizyczne zamknięcie writerów i prywatny opcjonalny photo archive.
+Osobny rzeczywisty test Windows PowerShell 5.1 sprawdził 22 przypadki kopii
+wszystkich pięciu skryptów z bezpieczną atrapą wejścia Pythona: profile
+domyślne/jawne, ścieżki ze spacjami i polskimi znakami, Destination oraz
+zagnieżdżony START. Kod 0 Pythona dawał kod 0 Windows PowerShell, a kod 17
+przerywał z kodem 1,
+bez otwarcia atrapy aplikacji. Ten test nie uruchamiał Dockera/SDK ani
+nie zastępuje odbioru rzeczywistego pakietu po nowym bindingu.
 Rzeczywisty odbiór 02.11.2026 obejmuje start/stop wszystkich dziesięciu usług,
 sparowaną kopię z niepustym przygotowanym zdjęciem oraz jego odtworzenie do
 nowego, izolowanego celu. Porównano bytes/SHA, uprawnienia i rzeczywistą

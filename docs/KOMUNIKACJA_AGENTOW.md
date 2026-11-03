@@ -12053,3 +12053,29 @@ Kontynuacja O3-121 — zgodność narzędzi z rejestracją email-as-username:
   Pozostają końcowy FULL nowego head PR198, normalny merge, trwały binding
   oraz rzeczywisty łączny ROOT START1057. Starsze zielone CI cfc50fa
   nie kwalifikuje nowej poprawki UI.
+
+### O3-126 — zgodność domyślnego profilu skryptów z Windows PowerShell 5.1
+
+- 03.11.2026, Agent3, gałąź `codex/devops-skrypty-windows`, baza main
+  `d04a59af625598dbea7346d0a6dfc1eec8fa387f` po PR198. Rzeczywisty ROOT BACKUP
+  odmówił przed Pythonem/Dockerem: Windows PowerShell 5.1 obliczał domyślny
+  Join-Path, gdy PSScriptRoot w bloku parametrów był jeszcze pusty.
+  Zachowano odmowę. Minimalne odtworzenie potwierdziło błąd również dla
+  innej nazwy parametru oraz sukces po ustawieniu domyślnej ścieżki w body.
+- Wszystkie pięć źródłowych PS1 wybiera domyślny profil po bloku param,
+  tylko gdy nie przekazano -Profile. Jawne Profile/Destination i historyczny
+  kontrakt nonzero Pythona → wyjątek → kod 1 Windows PowerShell pozostają.
+  Nie zmieniono silnika operacji, pinów, trwałego R4, źródła runtime ani
+  programu Androida. Po normalnym PR/FULL/merge wymagany jest nowy binding;
+  istniejący profil nie przyjmuje zmiany źródeł automatycznie.
+- Rzeczywisty Windows PowerShell 5.1.26100.9711: 22/22 prywatne przypadki PASS.
+  Kopie wszystkich pięciu skryptów użyły prawdziwego Pythona z izolowanym
+  stubem, profilu domyślnego i jawnego, obcego cwd oraz ścieżek ze spacjami
+  i polskimi znakami. Sprawdzono domyślny/jawny Destination dla backupu.
+  Kod 0 Pythona dawał 0, kod 17 dawał 1, bez fałszywego sukcesu.
+  Osobna kopia rzeczywistego ROOT START wybrała serwer/runtime.json;
+  po kodzie 17 zatrzymała się przed atrapą aplikacji, a po 0 ją wywołała.
+  Receipt SHA256 `9c57926f7b48a635d9326f4023874041fd3e679a1100fd49fe9e191814973bd6`.
+  Bez Dockera/SDK i operacji na danych.
+  Walidacja E0 i git diff --check: PASS.
+  Ten odbiór wejść nie zastępuje rzeczywistego BACKUP/START nowego pakietu.
