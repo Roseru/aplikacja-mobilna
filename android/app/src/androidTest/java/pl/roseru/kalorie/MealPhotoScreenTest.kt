@@ -26,7 +26,27 @@ class MealPhotoScreenTest {
     private fun ready() {
         val app=compose.activity.application as CalorieApplication
         runBlocking { app.sessions.logout() }
-        compose.waitUntil(15_000) { compose.onAllNodesWithTag("daily-kcal").fetchSemanticsNodes().isNotEmpty() }
+        val expected=runBlocking {LocalOwnerStore(app.database).currentLease()}
+        assertEquals(pl.roseru.kalorie.data.DiaryRepository.GUEST,expected.storageScope)
+        try {
+            // Calories are in a lazy item below the network/catalogue card. First wait
+            // for the ready diary root of this guest lease, then reveal that item.
+            compose.waitUntil(15_000) {
+                val view=app.sessions.view.value
+                view.binding?.lease==expected && view.binding?.owner?.kind=="guest" &&
+                    !view.busy && !view.hasSession && !view.pendingLogin &&
+                    compose.onAllNodesWithTag("diary-content").fetchSemanticsNodes().isNotEmpty()
+            }
+            compose.onNodeWithTag("diary-content").performScrollToNode(hasTestTag("daily-kcal"))
+            compose.onNodeWithTag("daily-kcal").assertExists().assertIsDisplayed()
+        } catch(error:Throwable) {
+            val view=app.sessions.view.value
+            android.util.Log.d("PhotoReadyState","bindingPresent=${view.binding!=null} "+
+                "leaseMatches=${view.binding?.lease==expected} guest=${view.binding?.owner?.kind=="guest"} "+
+                "busy=${view.busy} hasSession=${view.hasSession} pendingLogin=${view.pendingLogin}")
+            runCatching {compose.onRoot(useUnmergedTree=true).printToLog("PhotoReadyState")}
+            throw error
+        }
     }
     private fun open() {
         compose.onNodeWithText("Dodaj posiłek").performClick()
