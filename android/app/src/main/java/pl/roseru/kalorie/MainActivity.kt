@@ -63,7 +63,7 @@ class MainActivity : ComponentActivity() {
             val session by app.sessions.view.collectAsStateWithLifecycle()
             val binding = session.binding
             if (binding == null) {
-                ownerModels.clearOwner()
+                ownerModels.clearOwner(this@MainActivity)
                 CalorieTheme(isSystemInDarkTheme()) {
                     androidx.compose.material3.Surface {
                         androidx.compose.foundation.layout.Column(androidx.compose.ui.Modifier.padding(24.dp)) {
@@ -78,11 +78,12 @@ class MainActivity : ComponentActivity() {
             }
             val ownerKey = "${binding.lease.storageScope}:${binding.lease.generation}"
             key(ownerKey) {
-            val store = ownerModels.forOwner(ownerKey)
+            val store = ownerModels.forOwner(ownerKey,this@MainActivity)
             val model: DiaryViewModel = viewModel(viewModelStoreOwner = store, key = ownerKey,
                 extras = defaultViewModelCreationExtras, factory = viewModelFactory {
                 initializer { DiaryViewModel(DiaryRepository(app.database, app, binding.lease), app.preferences, createSavedStateHandle()) }
             })
+            SideEffect {ownerModels.traceModel(model)}
             val photoModel: pl.roseru.kalorie.photo.MealPhotoViewModel = viewModel(viewModelStoreOwner = store, key = "$ownerKey:photo",
                 extras = defaultViewModelCreationExtras, factory = viewModelFactory {
                 initializer { pl.roseru.kalorie.photo.MealPhotoViewModel(app,
@@ -205,12 +206,35 @@ class MainActivity : ComponentActivity() {
 /** Retained across rotation, cleared before handing a new lease to any diary screen. */
 class OwnerViewModels : ViewModel() {
     private var ownerKey: String? = null
+    private var diagnosticStoreId:Long?=null
     private val store = ViewModelStore()
     private val owner = object : ViewModelStoreOwner { override val viewModelStore = store }
-    fun forOwner(key: String): ViewModelStoreOwner {
-        if (ownerKey != key) { store.clear(); ownerKey = key }
+    private fun traceStore(context:android.content.Context?) {
+        if(diagnosticStoreId==null && context!=null) {
+            diagnosticStoreId=DiaryStartupDiagnostics.request(context)
+            DiaryStartupDiagnostics.store(diagnosticStoreId,"CREATE","OWNER_MODELS")
+        }
+    }
+    fun forOwner(key: String,diagnosticContext:android.content.Context?=null): ViewModelStoreOwner {
+        traceStore(diagnosticContext)
+        if (ownerKey != key) {
+            val reason=if(ownerKey==null)"FIRST_BIND" else "OWNER_CHANGED"
+            DiaryStartupDiagnostics.store(diagnosticStoreId,"CLEAR",reason)
+            store.clear(); ownerKey = key
+            DiaryStartupDiagnostics.store(diagnosticStoreId,"BOUND",reason)
+        }
         return owner
     }
-    fun clearOwner() { store.clear(); ownerKey = null }
-    override fun onCleared() = clearOwner()
+    internal fun traceModel(model:DiaryViewModel) {
+        DiaryStartupDiagnostics.attached(diagnosticStoreId,model.startupDiagnosticId)
+    }
+    fun clearOwner(diagnosticContext:android.content.Context?=null) {
+        traceStore(diagnosticContext)
+        clearOwner("BINDING_ABSENT")
+    }
+    private fun clearOwner(reason:String) {
+        DiaryStartupDiagnostics.store(diagnosticStoreId,"CLEAR",reason)
+        store.clear(); ownerKey = null
+    }
+    override fun onCleared() = clearOwner("OWNER_MODELS_CLEARED")
 }

@@ -15,6 +15,7 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.navigation.compose.*
 import pl.roseru.kalorie.DiaryEvent
 import pl.roseru.kalorie.DiaryViewModel
+import pl.roseru.kalorie.DiaryStartupDiagnostics
 import pl.roseru.kalorie.session.*
 
 @Composable fun CalorieApp(model: DiaryViewModel, session: SessionView, actions: SessionActions, photoModel: pl.roseru.kalorie.photo.MealPhotoViewModel, importModel:pl.roseru.kalorie.importing.ImportViewModel?=null,syncStatus:String?=null,
@@ -23,6 +24,9 @@ import pl.roseru.kalorie.session.*
     syncOverviewModel:pl.roseru.kalorie.sync.AccountSyncOverviewViewModel?=null) {
     val ready by model.ready.collectAsStateWithLifecycle()
     val error by model.startupError.collectAsStateWithLifecycle()
+    val renderedReady=ready
+    val renderedError=if(renderedReady)false else error!=null
+    SideEffect {DiaryStartupDiagnostics.rendered(model.startupDiagnosticId,renderedReady,renderedError)}
     val nav = rememberNavController()
     val snackbar = remember { SnackbarHostState() }
     val backStack by nav.currentBackStackEntryAsState()

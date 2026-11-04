@@ -11,6 +11,7 @@ import pl.roseru.kalorie.core.catalog.MreManualInput
 import pl.roseru.kalorie.data.*
 import java.time.LocalDate
 import java.util.UUID
+import java.util.concurrent.atomic.AtomicLong
 
 data class DayState(val date: LocalDate = LocalDate.now(), val meals: List<MealWithItems> = emptyList(), val goal: GoalEntity? = null, val status: DiaryDayEntity? = null) {
     val totals: Nutrients get() = meals.flatMap { it.items }.map { it.consumed() }.total()
@@ -24,6 +25,8 @@ sealed interface DiaryEvent {
 @OptIn(ExperimentalCoroutinesApi::class)
 class DiaryViewModel(private val repository: DiaryRepository, private val preferences: Preferences, saved: SavedStateHandle,
     private val clock: LocalDayClock = LocalDayClock()) : ViewModel() {
+    internal val startupDiagnosticId=repository.startupDiagnosticRequest()
+    private val startupAttempts=AtomicLong()
     val isGuest: Boolean = repository.owner == DiaryRepository.GUEST
     private val dateText = saved.getStateFlow("date", clock.today().toString())
     private val savedState = saved
@@ -69,12 +72,29 @@ class DiaryViewModel(private val repository: DiaryRepository, private val prefer
 
     init { initialize() }
     fun initialize() {
+        val attempt=startupAttempts.incrementAndGet()
         startupError.value = null
         viewModelScope.launch {
-            try { repository.initialize(); ready.value = true }
-            catch (error: CancellationException) { throw error }
-            catch (_: Exception) { startupError.value = "Nie udało się otworzyć lokalnego dziennika. Spróbuj ponownie." }
+            DiaryStartupDiagnostics.model(startupDiagnosticId,attempt,"START")
+            try {
+                repository.initialize {phase->DiaryStartupDiagnostics.model(startupDiagnosticId,attempt,phase.name)}
+                ready.value = true
+                DiaryStartupDiagnostics.model(startupDiagnosticId,attempt,"READY")
+            }
+            catch (error: CancellationException) {
+                DiaryStartupDiagnostics.model(startupDiagnosticId,attempt,"CANCEL")
+                throw error
+            }
+            catch (error: Exception) {
+                DiaryStartupDiagnostics.model(startupDiagnosticId,attempt,"FAILED",error.javaClass)
+                startupError.value = "Nie udało się otworzyć lokalnego dziennika. Spróbuj ponownie."
+            }
+            finally {DiaryStartupDiagnostics.model(startupDiagnosticId,attempt,"FINALLY")}
         }
+    }
+    override fun onCleared() {
+        DiaryStartupDiagnostics.model(startupDiagnosticId,startupAttempts.get(),"CLEARED")
+        super.onCleared()
     }
     fun changeDay(days: Long) { savedState["date"] = LocalDate.parse(dateText.value).plusDays(days).toString() }
     fun today() { savedState["date"] = clock.today().toString() }

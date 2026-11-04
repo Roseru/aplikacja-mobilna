@@ -18,6 +18,13 @@ import pl.roseru.kalorie.core.sync.*
 import java.math.BigDecimal
 import java.time.*
 import java.util.UUID
+import pl.roseru.kalorie.DiaryStartupDiagnostics
+
+enum class DiaryInitializationPhase {
+    LEGACY_READ_START,LEGACY_READ_END,LEGACY_SEED_START,LEGACY_SEED_END,
+    DEMO_READ_START,DEMO_READ_END,DEMO_IMPORT_START,DEMO_IMPORT_END,
+    MRE_READ_START,MRE_READ_END,MRE_IMPORT_START,MRE_IMPORT_END,MRE_UNAVAILABLE
+}
 
 class DiaryRepository(private val db: CalorieDatabase, private val context: Context, lease: OwnerLease? = null) {
     val dao = db.dao()
@@ -69,7 +76,10 @@ class DiaryRepository(private val db: CalorieDatabase, private val context: Cont
         val lease = boundLease ?: owners.currentLease().also { check(it.storageScope == owner); boundLease = it }
         return CanonicalDomainEditor(db, context, lease)
     }
-    suspend fun initialize() = withContext(Dispatchers.IO) {
+    internal fun startupDiagnosticRequest():Long?=DiaryStartupDiagnostics.request(context)
+
+    suspend fun initialize(onPhase:(DiaryInitializationPhase)->Unit={}) = withContext(Dispatchers.IO) {
+        onPhase(DiaryInitializationPhase.LEGACY_READ_START)
         val catalog = readCatalog("products-v1.json")
         val rationCatalog = readCatalog("rations-v1.json")
         val entries = readProducts(catalog) + readProducts(rationCatalog)
@@ -87,6 +97,8 @@ class DiaryRepository(private val db: CalorieDatabase, private val context: Cont
                 components += RationComponentEntity(part.getString("id"), id, part.getString("productId"), part.getDouble("packageGrams"), j)
             }
         }
+        onPhase(DiaryInitializationPhase.LEGACY_READ_END)
+        onPhase(DiaryInitializationPhase.LEGACY_SEED_START)
         ownerTransaction {
             dao.seedProducts(entries)
             dao.seedRations(rations)
@@ -94,18 +106,28 @@ class DiaryRepository(private val db: CalorieDatabase, private val context: Cont
             if (owner == GUEST && dao.goalById(owner, "guest-initial-goal") == null)
                 dao.seedGoal(GoalEntity("guest-initial-goal", owner, "1970-01-01", 2800.0, 160.0, 90.0, 330.0))
         }
+        onPhase(DiaryInitializationPhase.LEGACY_SEED_END)
+        onPhase(DiaryInitializationPhase.DEMO_READ_START)
         val schema = CatalogSchema(readCatalog("e2/common.schema.json"), readCatalog("e2/catalog.schema.json"))
         val reader = CatalogPackageReader(schema, CatalogPackageReader.DEMO_ID, "demo")
         // MergeAssets auto-inflates .gz assets; .bin preserves the signed APK's original gzip bytes.
         val packageValue = reader.read(context.assets.open("catalog/e2/manifest.json"), context.assets.open("catalog/e2/base-pl.1.json.gz.bin"))
+        onPhase(DiaryInitializationPhase.DEMO_READ_END)
+        onPhase(DiaryInitializationPhase.DEMO_IMPORT_START)
         CatalogStore(db).import(packageValue)
+        onPhase(DiaryInitializationPhase.DEMO_IMPORT_END)
         try {
+            onPhase(DiaryInitializationPhase.MRE_READ_START)
             val mre = MreCatalogueAssets(context).read(schema)
+            onPhase(DiaryInitializationPhase.MRE_READ_END)
+            onPhase(DiaryInitializationPhase.MRE_IMPORT_START)
             ownerTransaction { CatalogStore(db).import(mre.catalog) }
+            onPhase(DiaryInitializationPhase.MRE_IMPORT_END)
             mreState.value = MreCatalogueState.Ready(mre.rules)
         } catch (error: kotlinx.coroutines.CancellationException) { throw error }
         catch (error: StaleOwnerException) { throw error }
         catch (_: Exception) {
+            onPhase(DiaryInitializationPhase.MRE_UNAVAILABLE)
             // Keep the last complete catalogue usable; source menus without verified rules stay read-only.
             mreState.value = MreCatalogueState.Unavailable
         }
