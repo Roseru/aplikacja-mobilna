@@ -3,12 +3,15 @@
 import base64
 import json
 import re
+from dataclasses import replace
 from decimal import ROUND_CEILING, Decimal
+from typing import get_args
 from urllib.parse import urlsplit
 
 import httpx
 
 from calorie_app.integrations.gemini.protocol import (
+    ErrorStatus,
     ProviderOutcome,
     parse_count_response,
     parse_generate_response,
@@ -31,6 +34,20 @@ from calorie_app.modules.ai.result import (
 MAX_IMAGE_BYTES = 5 * 1024 * 1024
 MAX_REQUEST_BYTES = 8 * 1024 * 1024
 HOST = "generativelanguage.googleapis.com"
+
+
+def http_error(outcome: ProviderOutcome, status: int, raw: bytes = b"") -> ProviderOutcome:
+    """Retain only bounded, allowlisted diagnostics, with no effect on retry/IO policy."""
+    diagnostic = {"http_status": status}
+    try:
+        error = parse_bounded_json(raw).get("error")
+        if not isinstance(error, dict):
+            return replace(outcome, **diagnostic)
+        if error.get("status") in get_args(ErrorStatus):
+            diagnostic["error_status"] = error["status"]
+    except (ProviderResultError, ValueError, TypeError, AttributeError):
+        pass
+    return replace(outcome, **diagnostic)
 
 
 def build_generate_request(image: bytes) -> dict:
@@ -236,7 +253,9 @@ def rest_call(
                 },
             ) as response:
                 if response.status_code >= 500:
-                    return ProviderOutcome("provider_result_unknown")
+                    return http_error(
+                        ProviderOutcome("provider_result_unknown"), response.status_code
+                    )
                 if response.headers.get("content-encoding", "identity") != "identity":
                     return ProviderOutcome("provider_response_size")
                 raw = bytearray()
@@ -245,9 +264,15 @@ def rest_call(
                         return ProviderOutcome("provider_response_size")
                     raw.extend(chunk)
                 if response.status_code == 429:
-                    return classify_quota(bytes(raw), config, response.headers.get("retry-after"))
+                    return http_error(
+                        classify_quota(bytes(raw), config, response.headers.get("retry-after")),
+                        response.status_code,
+                        bytes(raw),
+                    )
                 if response.status_code != 200:
-                    return ProviderOutcome("provider_unavailable")
+                    return http_error(
+                        ProviderOutcome("provider_unavailable"), response.status_code, bytes(raw)
+                    )
                 if (
                     response.headers.get("content-type", "").split(";", 1)[0].strip()
                     != "application/json"

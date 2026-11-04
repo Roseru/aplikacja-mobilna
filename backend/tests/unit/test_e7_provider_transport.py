@@ -16,6 +16,7 @@ import pytest
 from calorie_app.integrations.gemini import transport
 from calorie_app.integrations.gemini.adapter import _endpoint
 from calorie_app.integrations.gemini.mock import generate_envelope, sample_food
+from calorie_app.integrations.gemini.protocol import ProviderOutcome
 from calorie_app.integrations.gemini.transport import execute
 from calorie_app.modules.ai.prompts import MODEL
 from calorie_app.modules.ai.result import MAX_PROVIDER_BYTES, ProviderResultError
@@ -149,6 +150,65 @@ def test_redirect_is_not_followed():
     ):
         outcome = execute("gemini", "generateContent", IMAGE, config, 10)
         assert len(records) == 1 and outcome.code == "provider_unavailable"
+
+
+@pytest.mark.parametrize(
+    "status,rpc,message",
+    [
+        (
+            400,
+            "INVALID_ARGUMENT",
+            'Unknown name "responseFormat"',
+        ),
+        (
+            400,
+            "FAILED_PRECONDITION",
+            "Free tier is unavailable in this country",
+        ),
+        (403, "PERMISSION_DENIED", "Billing is required"),
+    ],
+)
+def test_http_error_diagnostics_cross_child_as_fixed_values_without_retry_or_body(
+    status, rpc, message, caplog, capfd
+):
+    payload = json.dumps(
+        {
+            "error": {
+                "status": rpc,
+                "message": message
+                + " fixture-secret-only synthetic-prepared-image private-user-data",
+                "details": [{"secret": "private-user-data"}],
+            }
+        }
+    ).encode()
+    with fake_provider(status=status, response=payload) as (config, records, _, _):
+        outcome = execute("gemini", "generateContent", IMAGE, config, 10)
+    assert len(records) == 1 and outcome.code == "provider_unavailable" and outcome.sent
+    assert outcome.retry_kind is None
+    assert (outcome.http_status, outcome.error_status) == (status, rpc)
+    captured = capfd.readouterr()
+    serialized = json.dumps(outcome.to_wire()) + captured.out + captured.err + caplog.text
+    for private in ("fixture-secret-only", "synthetic-prepared-image", "private-user-data"):
+        assert private not in serialized
+
+
+def test_unrecognized_provider_error_text_and_status_never_cross_boundary():
+    payload = b'{"error":{"status":"PRIVATE_USER_DATA","message":"PRIVATE_USER_DATA"}}'
+    with fake_provider(status=403, response=payload) as (config, records, _, _):
+        outcome = execute("gemini", "generateContent", IMAGE, config, 10)
+    assert len(records) == 1 and outcome.http_status == 403
+    assert outcome.error_status is None
+    assert "PRIVATE_USER_DATA" not in json.dumps(outcome.to_wire())
+    invalid = outcome.to_wire() | {"error_status": "PRIVATE_USER_DATA"}
+    with pytest.raises(ValueError):
+        ProviderOutcome.from_wire(invalid)
+
+
+def test_malformed_error_response_preserves_failure_and_http_status():
+    with fake_provider(status=400, response=b"not-json") as (config, records, _, _):
+        outcome = execute("gemini", "generateContent", IMAGE, config, 10)
+    assert len(records) == 1 and outcome.code == "provider_unavailable"
+    assert outcome.http_status == 400 and outcome.error_status is None
 
 
 def test_unknown_429_free_text_is_terminal_with_one_connection():

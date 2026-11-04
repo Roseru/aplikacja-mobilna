@@ -4,7 +4,7 @@ from importlib.resources import files
 
 MODEL = "gemini-3.5-flash-lite"
 PROMPT_VERSION = "food-photo-prompt-v1"
-SCHEMA_VERSION = "food-photo-schema-v1"
+SCHEMA_VERSION = "food-photo-schema-v2"
 REST_PROFILE_VERSION = "gemini-rest-v1beta-2026-10-11"
 INPUT_TOKEN_LIMIT = 8192
 OUTPUT_TOKEN_LIMIT = 2048
@@ -18,7 +18,9 @@ def provider_schema() -> dict:
     """Google's supported JSON Schema subset, deliberately separate from DTO.
 
     Decimal syntax, Unicode/text limits, identity state/value coherence and
-    unit coherence remain enforced by the strict backend parser.
+    unit coherence remain enforced by the strict backend parser. Array length
+    limits also stay there: the live model rejected the v1 bounded-array schema
+    with HTTP 400 while the otherwise identical unbounded schema succeeded.
     """
     text = {"type": "string"}
     decimal = {"type": ["string", "null"]}
@@ -55,12 +57,12 @@ def provider_schema() -> dict:
             ),
             "density": {"type": "null"},
             "uncertainty": {"type": "string", "enum": ["low", "medium", "high"]},
-            "notes": {"type": "array", "items": text.copy(), "maxItems": 5},
+            "notes": {"type": "array", "items": text.copy()},
         }
     )
     return obj(
         {
-            "items": {"type": "array", "items": item, "maxItems": 30},
-            "notes": {"type": "array", "items": text.copy(), "maxItems": 10},
+            "items": {"type": "array", "items": item},
+            "notes": {"type": "array", "items": text.copy()},
         }
     )

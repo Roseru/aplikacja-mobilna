@@ -2,8 +2,15 @@
 
 Odczyt primary documentation: 11 października 2026. Profil:
 `gemini-rest-v1beta-2026-10-11`, model `gemini-3.5-flash-lite`,
-prompt `food-photo-prompt-v1`, schema `food-photo-schema-v1`.
-To gotowy adapter E7-O2; nie wykonano prawdziwych wywołań ani E7-R.
+prompt `food-photo-prompt-v1`, historyczny schema `food-photo-schema-v1`.
+W tamtym odbiorze adaptera E7-O2 nie wykonano prawdziwych wywołań ani E7-R.
+
+Aktualizacja 04.11.2026: Gemini używa schema `food-photo-schema-v2`.
+[Rzeczywisty odbiór dev](ODBIOR_GEMINI_DEV_2026_11_04.md) wykazał odmowę HTTP400
+dla poprzednich trzech maxItems i sukces po ich usunięciu ze schematu dostawcy.
+Ścisłe limity długości tablic nadal egzekwuje backend. Model, prompt, REST,
+budżety, quota, consent i MOCK v1 pozostają zgodne z wcześniejszymi ustaleniami.
+Operacyjny smoke nie jest zaliczeniem dokładności E7-R.
 
 ## Źródła i przyjęte znaczenie
 

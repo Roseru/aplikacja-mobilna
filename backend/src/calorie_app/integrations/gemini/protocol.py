@@ -39,6 +39,24 @@ ProviderCode = Literal[
     "provider_rate_limited",
 ]
 RetryKind = Literal["minute", "daily", "unknown"]
+ErrorStatus = Literal[
+    "INVALID_ARGUMENT",
+    "FAILED_PRECONDITION",
+    "PERMISSION_DENIED",
+    "UNAUTHENTICATED",
+    "NOT_FOUND",
+    "RESOURCE_EXHAUSTED",
+    "UNAVAILABLE",
+    "DEADLINE_EXCEEDED",
+    "INTERNAL",
+    "ABORTED",
+    "OUT_OF_RANGE",
+    "UNIMPLEMENTED",
+    "CANCELLED",
+    "UNKNOWN",
+    "DATA_LOSS",
+    "ALREADY_EXISTS",
+]
 Token = Annotated[StrictInt, Field(ge=0, le=INPUT_TOKEN_LIMIT + OUTPUT_TOKEN_LIMIT)]
 ModelVersion = Annotated[
     str, Field(strict=True, min_length=1, max_length=200, pattern=r"^[A-Za-z0-9._:/-]+$")
@@ -57,6 +75,8 @@ class _OutcomeDTO(CatalogDTO):
     retry_after_seconds: Annotated[StrictInt, Field(ge=0, le=120)] | None
     token_count: Annotated[StrictInt, Field(ge=0, le=INPUT_TOKEN_LIMIT)] | None
     sent: StrictBool
+    http_status: Annotated[StrictInt, Field(ge=100, le=599)] | None = None
+    error_status: ErrorStatus | None = None
 
 
 @dataclass(frozen=True, slots=True)
@@ -72,6 +92,9 @@ class ProviderOutcome:
     retry_after_seconds: int | None = None
     token_count: int | None = None
     sent: bool = True
+    # Only fixed enums/status cross the process boundary, never provider error text.
+    http_status: int | None = None
+    error_status: ErrorStatus | None = None
 
     def to_wire(self) -> dict:
         return _OutcomeDTO(
@@ -84,6 +107,12 @@ class ProviderOutcome:
             value = parse_bounded_json(value)
         dto = _OutcomeDTO.model_validate(value)
         result = cls(**{key: getattr(dto, key) for key in cls.__dataclass_fields__})
+        if result.code == "ok" and any(
+            item is not None for item in (result.http_status, result.error_status)
+        ):
+            raise ProviderResultError("provider_result_invalid")
+        if result.http_status is None and result.error_status is not None:
+            raise ProviderResultError("provider_result_invalid")
         usage = (
             result.input_tokens,
             result.output_tokens,

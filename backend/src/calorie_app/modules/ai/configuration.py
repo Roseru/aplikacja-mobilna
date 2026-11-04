@@ -5,6 +5,7 @@ from dataclasses import dataclass
 from datetime import UTC, datetime
 
 from calorie_app.core.errors import DomainError
+from calorie_app.modules.ai.prompts import SCHEMA_VERSION as GEMINI_SCHEMA_VERSION
 from calorie_app.modules.ai.result import parse_bounded_json
 
 NOTICE_VERSION = "food-photo-notice-v1"
@@ -35,7 +36,7 @@ def configuration(settings):
         "model": model,
         "pool_scope": ":".join(names),
         "prompt_version": PROMPT_VERSION,
-        "schema_version": SCHEMA_VERSION,
+        "schema_version": GEMINI_SCHEMA_VERSION if provider == "gemini" else SCHEMA_VERSION,
         "preparation_version": PREPARATION_VERSION,
         "rest_profile_version": REST_PROFILE_VERSION,
         "mock_scenario": settings.ai_mock_scenario if provider == "mock" else None,

@@ -1,6 +1,7 @@
 """Durable dispatch before subprocess IO; stale fences can never publish a result."""
 
 import hashlib
+import logging
 from time import monotonic
 from uuid import uuid4
 
@@ -20,6 +21,8 @@ from calorie_app.modules.ai.storage import PhotoStorage
 from calorie_app.modules.energy.schemas import Explanation
 from calorie_app.modules.energy.service import energy_configuration
 from calorie_app.modules.jobs import repository as repo
+
+logger = logging.getLogger(__name__)
 
 
 class Runner:
@@ -179,6 +182,13 @@ class Runner:
                 with self.factory() as session:
                     repo.physical_finish(session, attempt, self.worker_token, outcome)
                     session.commit()
+                if outcome.http_status is not None:
+                    logger.warning(
+                        "ai_provider_http_error kind=%s status=%s rpc=%s",
+                        kind,
+                        outcome.http_status,
+                        outcome.error_status,
+                    )
                 if kind == "count_tokens" and outcome.code == "ok":
                     with self.factory() as session:
                         ok = ai_repo.call(

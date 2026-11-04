@@ -7,6 +7,7 @@ from decimal import Decimal
 import pytest
 from jsonschema import Draft202012Validator
 
+from calorie_app.core.config import Settings
 from calorie_app.integrations.gemini.adapter import build_generate_request, classify_quota
 from calorie_app.integrations.gemini.mock import generate_envelope, sample_food
 from calorie_app.integrations.gemini.protocol import (
@@ -14,6 +15,7 @@ from calorie_app.integrations.gemini.protocol import (
     parse_count_response,
     parse_generate_response,
 )
+from calorie_app.modules.ai.configuration import configuration
 from calorie_app.modules.ai.prompts import MODEL, provider_schema, system_prompt
 from calorie_app.modules.ai.result import (
     MAX_RESULT_BYTES,
@@ -284,6 +286,31 @@ def test_provider_schema_is_supported_subset_and_never_weakens_runtime():
     assert list(Draft202012Validator(schema).iter_errors(food)) == []
     with pytest.raises(ProviderResultError):
         parse_food_result(raw(food))
+
+
+@pytest.mark.parametrize("limit", ["items", "item_notes", "notes"])
+def test_provider_array_workaround_keeps_runtime_limits(limit):
+    schema = provider_schema()
+    assert "maxItems" not in json.dumps(schema)
+    food = sample_food()
+    if limit == "items":
+        food["items"] *= 31
+    elif limit == "item_notes":
+        food["items"][0]["notes"] = ["note"] * 6
+    else:
+        food["notes"] = ["note"] * 11
+    assert list(Draft202012Validator(schema).iter_errors(food)) == []
+    with pytest.raises(ProviderResultError, match="provider_result_invalid"):
+        parse_food_result(raw(food))
+
+
+def test_gemini_schema_version_changes_without_invalidating_existing_mock_profile():
+    settings = {"database_url": "postgresql+psycopg://unused@localhost/unused"}
+    mock = configuration(Settings(**settings, ai_provider="mock"))
+    gemini = configuration(Settings(**settings, ai_provider="gemini"))
+    assert mock.profile["schema_version"] == "food-photo-schema-v1"
+    assert gemini.profile["schema_version"] == "food-photo-schema-v2"
+    assert mock.profile["rest_profile_version"] == gemini.profile["rest_profile_version"]
 
 
 def test_fixed_request_has_no_external_tools_or_private_metadata():
