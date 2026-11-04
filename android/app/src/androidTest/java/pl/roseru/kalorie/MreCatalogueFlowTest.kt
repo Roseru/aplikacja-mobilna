@@ -5,6 +5,10 @@ import androidx.room.Room
 import androidx.test.core.app.ApplicationProvider
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.runBlocking
+import kotlinx.coroutines.async
+import kotlinx.coroutines.cancel
+import kotlinx.coroutines.currentCoroutineContext
+import kotlinx.coroutines.CancellationException
 import org.json.JSONObject
 import org.junit.Assert.*
 import org.junit.Test
@@ -25,6 +29,32 @@ class MreCatalogueFlowTest {
         val index = context.assets.open("catalog/mre2026/selection-rules.json").use { JSONObject(String(it.readBytes())) }
         val id = index.getJSONArray("menus").objects().single { it.getInt("number") == number }.getString("ration_id")
         return repo.dao.rations().first().single { it.ration.catalogJson?.let(::JSONObject)?.optString("ration_id") == id }
+    }
+
+    @Test fun cancelledStartupStopsBeforeReadingOrImportingMreAndDoesNotPublishFallback() = runBlocking {
+        val name="mre-cancel-${UUID.randomUUID()}.db"
+        val db=database(name)
+        try {
+            val repo=DiaryRepository(db,context)
+            val phases=java.util.concurrent.ConcurrentLinkedQueue<DiaryInitializationPhase>()
+            val startup=async {
+                val startupContext=currentCoroutineContext()
+                repo.initialize {phase->
+                    phases.add(phase)
+                    if(phase==DiaryInitializationPhase.MRE_READ_START) startupContext.cancel()
+                }
+            }
+            try {startup.await();fail("Cancelled initialization returned successfully")}
+            catch(_:CancellationException) { }
+            assertTrue(phases.contains(DiaryInitializationPhase.MRE_READ_START))
+            assertFalse(phases.contains(DiaryInitializationPhase.MRE_READ_END))
+            assertFalse(phases.contains(DiaryInitializationPhase.MRE_IMPORT_START))
+            assertFalse(phases.contains(DiaryInitializationPhase.MRE_UNAVAILABLE))
+            assertEquals(MreCatalogueState.Loading,repo.mreCatalogue.value)
+            assertNull(db.catalogDao().active(MreCatalogueRules.PACKAGE_ID))
+            assertNull(db.catalogDao().generation(MreCatalogueRules.PACKAGE_ID,1))
+            assertEquals(0,db.dao().operationCount(DiaryRepository.GUEST))
+        } finally {db.close();context.deleteDatabase(name)}
     }
 
     @Test fun sourceMenusRejectDoubleVariantAndKeepPartialNutritionSnapshotAcrossReopen() = runBlocking {

@@ -51,6 +51,8 @@ class PhotoConfirmationScreenTest {
         val state=mutableStateOf(view());val calls=mutableListOf<Triple<String,Long,Long>>()
         compose.setContent {Panel(state.value,PhotoDraftActions(confirm={id,rev,edit->calls+=Triple(id,rev,edit)}))}
         compose.onNodeWithTag("photo-confirmation-start").performScrollTo().performClick()
+        compose.onNodeWithTag("photo-confirmation-private-drafts").assertTextContains("Twoje prywatne szkice",substring=true)
+            .assertTextContains("osobnego zatwierdzenia",substring=true)
         compose.onNodeWithTag("photo-confirmation-approve").assertExists();assertTrue(calls.isEmpty())
         compose.onNodeWithTag("photo-confirmation-dismiss").performClick();assertTrue(calls.isEmpty())
         compose.onNodeWithTag("photo-confirmation-start").performClick()

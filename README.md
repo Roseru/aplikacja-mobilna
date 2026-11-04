@@ -23,13 +23,18 @@ odebranego zestawu Docker i zachowanie danych są opisane w
   [workflow](docs/WORKFLOW.md) oraz
   [jedyny dziennik zespołu](docs/KOMUNIKACJA_AGENTOW.md).
 
-Bieżące źródło Androida to **0.8.46 / code57 / Room27**; oddzielny wariant
-validation ma code1057. Dodatkowe pełne kopie po wysłaniu decyzji uzgadniania
+Bieżące źródło Androida to **0.8.47 / code58 / Room27**; oddzielny wariant
+validation ma code1058. Dodatkowe pełne kopie po wysłaniu decyzji uzgadniania
 nie blokują już przycisku zakończenia przez zawyżenie licznika wymaganych
 części dowodów. Pierwszy zapis domyślnego profilu zachowuje istniejący
 cel i jego audyt. Pełny i przyrostowy PULL oddzielają oś E od dotychczasowych
 domen dziennika, więc cel i wyprowadzone z niego początkowe E mogą mieć ten sam identyfikator.
 Zapisane strony i potwierdzenia Room27 pozostają zachowane.
+Wersja0.8.47 domyka podgląd zdjęcia po odtworzeniu ekranu oraz prywatne szkice
+produktów tworzone po zatwierdzeniu analizy. Szkice i posiłek trafiają do jednej
+transakcji i istniejącej kolejki; nic nie publikuje się automatycznie.
+Ostatnią zewnętrzną integrację opisuje
+[przekazanie Gemini dla Kamila](docs/PRZEKAZANIE_GEMINI_KAMIL.md).
 Klient porównuje też równoważne zapisy czasu UTC przy
 projekcji potwierdzonego posiłku i rzetelnie opisuje lokalną kopię zdjęcia.
 [PR193](https://github.com/Roseru/aplikacja-mobilna/pull/193)

@@ -1,6 +1,11 @@
 # Android — Racje i kalorie
 
-Bieżące źródło: **0.8.46 / code57 / Room27**, wariant validation code1057.
+Bieżące źródło: **0.8.47 / code58 / Room27**, wariant validation code1058.
+Podgląd lokalnego zdjęcia obserwuje wynik w kompozycji ekranu przed odczytem
+przez wiersz listy. Potwierdzenie analizy tworzy prywatne szkice brakujących
+produktów atomowo z posiłkiem i jego kolejką. Starsze zapisane decyzje
+z pustą listą szkiców zachowują dotychczasową treść przy ponowieniu.
+Publikacja produktu wymaga osobnego zatwierdzenia.
 Instrukcja lokalnego uruchomienia jest w rozdziale
 [Uruchomienie w Android Studio](#uruchomienie-w-android-studio).
 Własny backend do pełnej ścieżki opisuje

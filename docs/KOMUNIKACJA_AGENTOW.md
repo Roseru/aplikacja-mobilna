@@ -12080,6 +12080,138 @@ Kontynuacja O3-121 — zgodność narzędzi z rejestracją email-as-username:
   Walidacja E0 i git diff --check: PASS.
   Ten odbiór wejść nie zastępuje rzeczywistego BACKUP/START nowego pakietu.
 
+### O3-127 — domknięcie zaległości po niezależnym audycie lokalnej edycji
+
+- 03.11.2026, Agent3, na polecenie właściciela domyka A1/A2/A3 z audytu,
+  następnie dopiero po pełnym odbiorze przekazuje Kamilowi ostatni etap Gemini.
+  Gałąź `codex/devops-domkniecie-lokalne`, baza main63777a5.
+  Przebieg main41680837292 pozostaje niezaliczony:596/597 native,
+  jeden timeout podglądu po odtworzeniu Activity. Wcześniejsze zielone PR
+  nie zastępują odbioru main; nie wykonano ślepego rerun.
+- Podgląd odczytuje State.value w kompozycji ekranu przed LazyColumn.
+  Szybko zakończone dekodowanie po odtworzeniu nie czeka na pierwszą
+  obserwację wiersza; klucze żądania i anulowanie pozostają.
+  Nowe regresje obejmują Ready/Failed przed lazy-odczytem oraz spóźniony
+  wynik starego wyboru/właściciela. Wyniki kompilacji i native jeszcze wymagane.
+- Nowe potwierdzenia zdjęcia zawierają prywatne product_draft templates.
+  ACK materializuje produkty, canonical_domains, meal/items, outbox i ledger
+  w jednej transakcji. Stabilne UUID operacji zachowują retry; ledger chroni
+  późniejsze edycje/usunięcia. Stare zamrożone decyzje drafts=[] pozostają
+  odtwarzalne bez zmiany body. Brak automatycznej publikacji, nowej migracji
+  lub nielegalnego ProductRef do prywatnego szkicu.
+- BACKUP sprawdza żywy PG przed tworzeniem kopii i zamykaniem writerów,
+  bez automatycznego startu. Dokumentacja opisuje START→BACKUP i stan PG-only.
+  Testy local_release:60 PASS; Ruff/format/diff-check PASS. Nowe niezależne
+  fixtures potwierdzenia przechodzą rzeczywisty backendowy parser i
+  validate_choices bez DB.
+- Android0.8.47/code58/validation1058, Room27. Nadal lokalne MRE/DEMO i MOCK;
+  rzeczywiste Gemini bez połączenia Google/billing podczas tych prac.
+  [Przekazanie Kamila](PRZEKAZANIE_GEMINI_KAMIL.md) wylicza wejścia, limitery,
+  zgody i testy końcowego okna. Aktualne warunki EOG/Paid Services są sprzeczne
+  z obecnym free-only przy udostępnianiu innym użytkownikom; nie obchodzimy
+  tego flagą ani zagranicznym projektem. Lokalny odbiór nie jest wynikiem
+  live Gemini/E7-R/E9. Oryginalne dane i historyczne odmowy zostają zachowane.
+- Aktualizacja04.11: build1d3b12d, 40/40 JVM i lint0Error/0Fatal PASS.
+  Core1058 SHA256 `02ba2429d9060bc7d14973943f0e24b6f46f0b3b873ea922b67fd31ef1366df5`.
+  Pierwsza grupa native zachowała wynik7/9: pięć nowych regresji, dawny
+  zawodzący scenariusz odtworzenia i adaptive PASS; dwa inne testy zatrzymały się
+  w ready(), przed zdjęciem/odtworzeniem/transakcją. Brak ówczesnego zrzutu UI
+  nie pozwala uznać historycznej przyczyny obu timeoutów za potwierdzoną.
+  Wykazano natomiast błędny predykat: daily-kcal jest czwartym lazy-itemem,
+  więc jego nieobecność nie dowodzi braku gotowości całego dziennika.
+  Pin6fa11b4 czeka na zgodną sesję gościa i nieleniwy diary-content, jawnie
+  przewija do kalorii i zachowuje assert widoczności. Przy błędzie zapisuje
+  bezpieczne flagi/semantykę i ponownie rzuca ten sam wyjątek. Nadal15s,
+  bez retry lub zmian produkcyjnego startu. Test-APK-only build PASS;
+  core02ba identyczny bajtowo. Nowe native i FULL pozostają bramkami odbioru.
+- R2 na poprawionej fixture zachował 7/9 PASS, dwa timeouty ready():34 przed
+  otwarciem zdjęcia. Pełny logcat odtworzył obie diagnostyki: zgodny guest lease,
+  busy/hasSession/pendingLogin=false oraz wyłącznie spinner lokalnego dziennika.
+  Zatem viewport nie wyjaśnia tych nowych porażek. Zależne 48 testów wstrzymano.
+  Pin19b53e1 dodaje wyłącznie debugowe, anonimowe fazy inicjalizacji i tożsamość
+  faktycznie renderowanego modelu, bez danych właściciela, zmiany zachowania,
+  czasu lub retry. R3 jest diagnozą; sam PASS po dodaniu logów nie oznacza naprawy.
+- R3 zachował 7/9 PASS i oba timeouty, dostarczając pełną korelację:
+  faktycznie renderowane modele oczekiwały w MRE_READ przez 30,029s i 22,330s.
+  CLEARED nastąpiło dopiero po porażce. Starszy model kontynuował odczyt
+  przez około29,9s po CLEARED, a anulowanie dotarło przy późniejszej transakcji.
+  Trzeci model zakończył MRE_READ w8,676s i osiągnął READY. To dowód ciężkiego,
+  nieprzerywanego odczytu; nie przypisujemy go przedwczesnemu clear modelu.
+  Indeks R3 SHA256 `5731bc565d00c859967bc5e82c47e8f93d3b074f4e1c8e3381edfac01006c676`.
+- Pin4769d3f zastępuje osobny Regex.find na całym źródle dla każdej liczby
+  liniowym skanerem JSON. Zachowuje lexemy/limit64, UTF-8, quoted strings,
+  odrzucanie kluczy liczbowych, StrictJson i pełną walidację katalogu.
+  Odczyt MRE przyjmuje okresowe checkActive z kontekstu inicjalizacji;
+  CancellationException przechodzi bez zamiany na fallback. Bez cache,
+  globalnego joba, zmiany lease, importu, transakcji lub timeoutów.
+  Nowy zakres do wykonania:6 JVM parsera +4 istniejące MRE, natywne9 z tym
+  samym limitem15s oraz nowa regresja anulowania przed importem/staniem Ready.
+  Następnie dopiero zależne48, pełne CI i odbiór rzeczywistej instalacji.
+- R4 build na4769d3f:10/10 unikalnych JVM (6 nowych +4 MRE) PASS,
+  zero failure/error/skip; lint0Error/0Fatal. Core1058 SHA256
+  `3cbeb137ee4bb53a34ed08d9af22022e72b579d05734d8eace7db358c4920d97`.
+  Odbiór native/czasów nadal wymagany; wcześniejsze7/9 nie staje się PASS
+  przez samą kompilację. Niezależny przegląd parsera nie znalazł P1/P2.
+- Natywny R4:9/9 preview oraz osobny1/1 anulowania PASS, zero fail/skip/crash.
+  Receipt9 SHA256 `931019841b3352e261f16305214a98c39221f7509e4c42cacc123d9f80cc358e`;
+  receipt1 SHA256 `935b8a1e9d482163829543c30d0dd83fc52976c44c8ea064ac02b91941e1ac9b`.
+  Faktycznie renderowane modele kończą MRE_READ w3,713/2,372/1,608s wobec
+  30,029/22,330/8,676s R3; wszystkie osiągają READY. Skasowany model kończy się
+  CANCEL po3,120s zamiast29,928s, przed MRE_READ_END/importem. Nadal limit15s.
+  Przed testami bootowy host guard zachował odmowę cardinality ADB; brakowało
+  dokładnego historycznego snapshotu, więc przyczyna pozostaje UNKNOWN.
+  Nowa oddzielna kwalifikacja tej samej instancji zachowała guard i zapisała
+  snapshot przed sprawdzeniem: jeden znany ADB, przypięte procesy/porty PASS.
+  Bez nowego bootu, kill-server, adopcji lub uznania dawnej odmowy za PASS.
+  Po tych wynikach odblokowano zależne48; ich wynik i odbiór API jeszcze wymagane.
+- Grupa48 zachowała47/48 PASS: wszystkie43 PhotoAnalysisStorageTest i4/5
+  PhotoConfirmationScreenTest. Jedyny FAIL to assertTextContains w linii54:
+  tekst ekranu zawierał obie poprawne frazy w pełnym objaśnieniu, a domyślna
+  asercja porównywała cały tekst. Pin9145da0 ustawia substring=true dla obu
+  fraz. Bez zmiany ekranu/core3cbe lub limitów. Następny przebieg obejmuje
+  wyłącznie ten jeden naprawiony test; pozostałych47/9/1 nie ponawiamy.
+  Receipt pierwszej grupy SHA256
+  `934f7964192babb325e00205615dc154ca9a62e43d690db21b47018cc8784260`.
+- R5 test-APK-only na9145da0 zachował core3cbe identyczny bajtowo. Jeden
+  uprzednio zawodzący PhotoConfirmationScreenTest PASS,1 start/1 terminal,
+  zero fail/skip/crash; receipt SHA256
+  `43d58839a4579f2dc827f30cfa6dde8455697910d35775bf1aac8b3bdbe1bbe8`.
+  Lokalny zakres zamknięty:9 preview +1 anulowania +43 storage +5 UI,
+  łącznie58 unikalnych native; to jawnie47 z R4 i1 poprawiony w R5,
+  nie nowy rzekomy48/48 run.10 JVM MRE/40 wcześniejszych JVM domen i lint PASS.
+  E0 po złożeniu z PR203:11 schematów,98 valid/35 invalid,18 scenarios,
+  953 local links PASS. Źródło czeka na właściwy FULL PR oraz docelowego main,
+  następnie rzeczywisty flow APK/API i nowy pakiet. Nie wysłano jeszcze
+  końcowego przekazania Kamilowi; warunkiem są wszystkie te odbiory.
+- [PR204](https://github.com/Roseru/aplikacja-mobilna/pull/204), head45d00b3,
+  pierwszy FULL [CI41812896120](https://github.com/Roseru/aplikacja-mobilna/actions/runs/41812896120)
+  zachował FAIL:6 jobów SUCCESS, android-device i gate FAILURE. Native607
+  unikalnych:602 PASS/5 FAIL/0 ERROR/0 SKIP; wszystkie58 wskazanych przypadków
+  PASS. Pięć SessionSecurityTest nadal oczekiwało łącznej liczby ops1;
+  prawidłowy nowy ACK zapisał1meal +1privateproduct_draft, bez drugiego posiłku.
+  Źródło6408b9f kontroluje teraz typed ops/IDs/exact payload/source/ledger,
+  owner/context i identyczne rows po retry; zachowuje dawne zero-op/fence/key/body
+  oraz historię odrzuconej decyzji. Bez zmiany produkcji/core3cbe, CI lub limitów.
+  Lokalne nowe APK testowe i tylko pięć dotychczasowych bad_cases są następne;
+  stary run pozostaje niezaliczony, bez rerun.
+- Natywny R7 na6408b9f: dokładnie pięć dotychczasowych bad_cases PASS,
+  5 unikalnych startów/terminali, zero fail/skip/crash. Receipt SHA256
+  `e16ef900e39ff1061466d5126ab6fdaba0f5cb22d1a2a8e631adef9b439fbe25`.
+  Core3cbe z4769d3f pozostał identyczny; nowe APK testowe79bfe3bb obejmuje
+  wyłącznie korektę testów sesji. Pozostałych602 ani58 lokalnych przypadków
+  nie ponawiano. Następny push tego samego PR204 uruchamia nowy FULL dla
+  nowego head; nie jest rerun starego niezaliczonego CI.
+- Osobny [PR203 O1](https://github.com/Roseru/aplikacja-mobilna/pull/203)
+  opisuje backendowy smoke Gemini i poprawkę schematu dostawcy. Nie zastępuje
+  odbioru nowego APK i nie zmienia instalacji MOCK. Przekazanie Kamila
+  uwzględnia tę zależność; nie przypisujemy sobie jego live ani prywatnych dowodów.
+- Odczyt Root04.11 potwierdził scalenie PR203 do main1aee090 oraz osiem
+  SUCCESS w CI41794971737 dla headf67d573. Dalsze źródło przyjmuje ten main
+  zwykłym merge; nie zmienia to pinu trwającego R4, ponieważ PR203 nie zmienia
+  Androida. Dotychczasowe obrazy MOCK i R5 pozostają odebrane osobno;
+  przyszły provider Gemini wymaga normalnego obrazu z aktualnego źródła
+  i nowego bindingu. Nie podłączono Google do tej instalacji.
+
 ### O1-149 — działający developerski przepływ Gemini, schemat v2
 
 - 04.11.2026, Agent 1, `codex/android-gemini-odbior`, baza main `63777a5`.

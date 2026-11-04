@@ -667,6 +667,9 @@ class ReleaseStack(E8Stack):
         destination = new_private_target(destination)
         if destination.is_relative_to(self.state) or self.state.is_relative_to(destination):
             reject("Backup and live state must be disjoint")
+        postgres = observed["postgres"]["State"]
+        if not postgres.get("Running") or postgres.get("Pid", 0) <= 0:
+            reject("BACKUP requires running PostgreSQL; run START first")
         files = {"release/runtime.json": self.profile_path}
         for index, item in enumerate(self.profile["compose_files"]):
             files[f"release/compose-{index:02d}.yaml"] = Path(item["path"])

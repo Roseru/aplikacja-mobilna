@@ -15,8 +15,11 @@ Po jednorazowym przygotowaniu przez operatora używaj prywatnego folderu:
   Disabled, brak świeżego sukcesu lub brak healthcheck nie oznacza gotowości.
 - **STOP.ps1** — zatrzymaj procesy, zachowując kontenery, wolumeny i klucze.
 - **BACKUP.ps1** — zamknij ruch i wszystkich writerów; wykonaj sparowaną kopię
-  PostgreSQL/Keycloak/katalogu/zdjęć oraz prywatnej konfiguracji. Po kopii
-  instalacja pozostaje zatrzymana. Wznów ją zwykłym START.ps1.
+  PostgreSQL/Keycloak/katalogu/zdjęć oraz prywatnej konfiguracji. Najpierw uruchom
+  **START.ps1**, potem **BACKUP.ps1**. PostgreSQL musi działać; BACKUP sam go nie
+  uruchamia. Po kopii działa tylko PostgreSQL, a gateway i wszyscy writerzy
+  pozostają zatrzymani. Wznów aplikację zwykłym START.ps1 albo zatrzymaj także
+  PostgreSQL przez STOP.ps1.
 
 Domyślne kopie powstają w podfolderze backups. Możesz wskazać nowy katalog
 przez BACKUP.ps1 -Destination '<pełna-nowa-ścieżka>'. Archiwa zawierają dane,
@@ -84,6 +87,13 @@ zanim ręcznie usuwa pozostałą blokadę.
 
 BACKUP zatrzymuje gateway, API, issuer, AI, retencję, SMTP i wszystkie E8.
 Sprawdza fizyczne zakończenie procesów oraz brak innych klientów PostgreSQL.
+Wejściowy PostgreSQL musi mieć działający proces: po STOP najpierw wykonaj START,
+dopiero potem BACKUP. Odmowa przy zatrzymanym PostgreSQL następuje przed
+utworzeniem folderu kopii lub zatrzymaniem writerów; nie ma automatycznego START.
+Sam PostgreSQL pozostaje uruchomiony do dumpów i po zakończeniu kopii.
+STATUS po udanym BACKUP pokazuje PostgreSQL running, pozostałe dziewięć usług
+stopped i brak gotowości HTTPS/issuer. Jest to oczekiwany stan zamkniętej kopii,
+nie pełny STOP wszystkich dziesięciu usług.
 Zachowuje obie bazy, globals/SCRAM, katalog, konfigurację/TLS, pełne overrides
 i piny obrazów. Wynik sukcesu wymaga potwierdzonego zamknięcia; kod nie
 wznawia ruchu lub writerów również wtedy, gdy kopia zakończy się błędem.
@@ -127,6 +137,8 @@ tej dostawy, istniejącego profilu operatora ani zainstalowanego APK.
 Przy osobno uzgodnionej konfiguracji operator stosuje istniejące
 [E7 — konfiguracja, datowane potwierdzenie i configure-pool](../../docs/e7/KONFIGURACJA_O3.md)
 oraz [E9 — wspólna pula i energia](../../docs/e9/KONFIGURACJA_O3.md).
+Kamil otrzymuje osobne [przekazanie Gemini](../../docs/PRZEKAZANIE_GEMINI_KAMIL.md)
+z bieżącą bramką EEA/Free Tier oraz jednym oknem konfiguracji i odbioru.
 Dotychczasowe wymagania modelu, rzeczywistych limitów, historii i restore
 pozostają. Zmiana konfiguracji ma osobne okno i odbiór; nowy binding
 --provider gemini nie wykonuje połączenia z Google ani nie omija tych

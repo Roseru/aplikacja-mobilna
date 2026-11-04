@@ -494,6 +494,21 @@ def test_new_destinations_refuse_checkout_relative_and_live_state_paths(installe
         release.new_private_target(other / "private-backup")
 
 
+@pytest.mark.parametrize("running,pid", [(False, 0), (True, 0), (False, 123)])
+def test_backup_requires_running_postgres_before_destination_or_writer_mutation(
+    installed, tmp_path, monkeypatch, running, pid
+):
+    installed.values["postgres"]["State"].update(Running=running, Pid=pid)
+    monkeypatch.setattr(
+        release, "capture", lambda *args, **kwargs: pytest.fail("No capture before live PG")
+    )
+    target = tmp_path / "refused-stopped-pg-copy"
+    with pytest.raises(ValueError, match="running PostgreSQL; run START first"):
+        installed.stack.backup(target)
+    assert not target.exists()
+    assert not any(call[0] == "compose" for call in installed.calls)
+
+
 def test_failed_quiescence_never_reads_database_or_archives_payload(
     installed, tmp_path, monkeypatch
 ):

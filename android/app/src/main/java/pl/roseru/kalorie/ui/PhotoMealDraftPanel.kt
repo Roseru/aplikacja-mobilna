@@ -47,6 +47,7 @@ import java.time.LocalDate
             Text(draft.title,style=MaterialTheme.typography.titleMedium,maxLines=3,overflow=TextOverflow.Ellipsis)
             Text(draft.localDate,style=MaterialTheme.typography.bodySmall)
             Text("Szkic zapisany na tym telefonie. Posiłek nie został jeszcze dodany do dziennika.")
+            Text("Po zatwierdzeniu brakujące produkty zapiszemy jako Twoje prywatne szkice z oznaczeniem szacunku AI. Publikację zatwierdzasz osobno.")
             if(!session.photoCanEditProposal)Text("Szkic zachowano do odczytu. Sprawdź stan analizy przed dalszą edycją.")
             val totals=draft.nutrition
             Text("${if(totals.energy.missingCount>0) "Znana suma" else "Razem"}: ${draftNutrient(totals.energy,"kcal")}",

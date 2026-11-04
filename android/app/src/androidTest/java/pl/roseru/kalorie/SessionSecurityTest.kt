@@ -2459,12 +2459,14 @@ class SessionSecurityTest {
             }
         }
         lateinit var c:SessionController;lateinit var lease:OwnerLease;lateinit var id:String;lateinit var image:String
+        lateinit var analysisId:String
         fun clientAgain()=client(db,vault,fixture,ApiFixture(),photos=uploadReader(),photoWrites=transport)
         suspend fun prepare() {
             c=clientAgain();c.start();login(c,fixture,"fixture-A");c.bootstrap();c.readPhotoCapabilities()
             lease=c.view.value.binding!!.lease;image=uploadImage(db,lease)
             c.uploadPhoto(lease,image,uploadConsent(c),true);c.readPhotoAnalysis(lease)
             id=db.photoAnalysisDao().get(lease.storageScope)!!.operationId
+            analysisId=PhotoAnalysisStore(context,db,lease).stored(id).receipt.analysisId
             c.startPhotoMealDraft(lease,id,2,LocalDate.of(2026,10,18))
             assertTrue(c.view.value.photoConfirmation!!.canStart)
         }
@@ -2474,6 +2476,65 @@ class SessionSecurityTest {
             return JSONObject().put("analysis_id",snapshot.receipt.analysisId).put("meal",body.getJSONObject("meal"))
                 .put("drafts",body.getJSONArray("drafts")).put("provenance",snapshot.confirmation!!.journal().getJSONObject("expected_provenance"))
                 .toString().toByteArray()
+        }
+        /** One confirmed diary snapshot plus each real private draft, never two meals or a publication. */
+        suspend fun assertMaterialized(request:PhotoHttpRequest.Confirm=calls.last()):List<OutboxEntity> {
+            val scope=lease.storageScope;val body=StrictJson.read(request.body())
+            val meal=body.getJSONObject("meal");val mealId=meal.getString("meal_id");val payload=meal.getJSONObject("payload")
+            val items=payload.getJSONArray("items");val drafts=body.getJSONArray("drafts")
+            val missing=(0 until items.length()).map {items.getJSONObject(it)}.filter {it.isNull("product")}
+            assertEquals(missing.size,drafts.length())
+            val meals=db.dao().achievementMeals(scope);assertEquals(1,meals.size);assertEquals(mealId,meals.single().meal.id)
+            assertEquals(StrictJson.canonical(payload),db.dao().meal(mealId,scope)!!.meal.wirePayload)
+            val record=db.materializationDao().get(scope,analysisId)!!
+            assertEquals(scope,record.ownerScope);assertEquals(id,record.sourceOperationId)
+            assertEquals(mealId,record.mealId);assertEquals(request.key,record.confirmationKey)
+            val receipt=StrictJson.read(record.receiptJson.toByteArray())
+            assertEquals(StrictJson.canonical(meal),StrictJson.canonical(receipt.getJSONObject("meal")))
+            assertEquals(StrictJson.canonical(drafts),StrictJson.canonical(receipt.getJSONArray("drafts")))
+            val binding=db.bootstrapDao().binding(scope)!!;val wireContext=StrictJson.read(record.wireContext.toByteArray())
+            assertEquals(binding.accountId,wireContext.getString("account_id"))
+            assertEquals(binding.accountGeneration,wireContext.getInt("generation"))
+            assertEquals(binding.contextRevision,wireContext.getLong("context_revision"))
+            assertEquals(request.epoch,wireContext.getString("sync_epoch"))
+            val operations=db.pushDao().eligible(scope).sortedBy {it.operationId}
+            assertEquals(1+drafts.length(),db.dao().operationCount(scope));assertEquals(1+drafts.length(),operations.size)
+            assertEquals(operations.size,operations.map {it.operationId}.toSet().size)
+            val mealOperation=operations.single {it.entityType=="meal"}
+            assertEquals(mealId,mealOperation.entityId);assertEquals(record.firstOutboxId,mealOperation.operationId)
+            assertEquals(StrictJson.canonical(payload),mealOperation.payload)
+            val draftIds=(0 until drafts.length()).map {drafts.getJSONObject(it).getString("draft_id")}
+            assertEquals(draftIds.size,draftIds.toSet().size)
+            assertEquals(draftIds.toSet(),operations.filter {it.entityType=="product_draft"}.map {it.entityId}.toSet())
+            assertEquals(draftIds.toSet(),db.dao().products(scope).first().filter {it.ownerScope==scope}.map {it.id}.toSet())
+            for(index in 0 until drafts.length()) {
+                val draft=drafts.getJSONObject(index);val draftId=draft.getString("draft_id");val value=draft.getJSONObject("payload")
+                assertTrue(missing.any {item->listOf("name","basis_unit","nutrition_per_100","density_g_per_ml","density_source").all {
+                    field->StrictJson.canonical(item.get(field))==StrictJson.canonical(value.get(field))}})
+                val operation=operations.single {it.entityType=="product_draft" && it.entityId==draftId}
+                assertEquals(StrictJson.canonical(value),operation.payload)
+                val product=db.dao().product(draftId,scope)!!
+                assertEquals(scope,product.ownerScope);assertNull(product.catalogJson);assertNull(db.dao().product(draftId,"guest"))
+                assertEquals(operation.payload,product.wirePayload);assertEquals(value.getString("source_description"),product.source)
+                assertTrue(product.source.contains("AI"))
+                val state=db.domainSyncDao().state(scope,"product_draft",draftId)!!
+                assertEquals(draftId,state.localId);assertEquals(operation.payload,state.wirePayload)
+                assertEquals(record.wireContext,state.wireContext);assertEquals(0,state.serverRevision);assertFalse(state.deleted)
+            }
+            for(operation in operations) {
+                PhotoHttpRequest.uuid(operation.operationId)
+                assertEquals(scope,operation.ownerScope);assertEquals("sync-v1",operation.wireFormat)
+                assertEquals("pending",operation.status);assertFalse(operation.attempted);assertNull(operation.baseRevision)
+                assertEquals(record.wireContext,operation.wireContext)
+                val wire=StrictJson.read(operation.wireJson!!.toByteArray())
+                assertEquals(operation.operationId,wire.getString("operation_id"));assertEquals(operation.entityType,wire.getString("entity_type"))
+                assertEquals(operation.entityId,wire.getString("entity_id"));assertEquals("upsert",wire.getString("action"))
+                assertEquals(request.epoch,wire.getString("sync_epoch"));assertTrue(wire.isNull("base_revision"))
+                assertEquals(operation.payload,StrictJson.canonical(wire.getJSONObject("payload")))
+            }
+            val community=CommunityStore(db);val communityScope=community.scope(lease)!!
+            assertTrue(community.attempts(communityScope).isEmpty())
+            return operations
         }
         fun close(){vault.clear();db.close();if(::lease.isInitialized)cleanUpload(lease.storageScope)}
     }
@@ -2490,12 +2551,12 @@ class SessionSecurityTest {
             assertEquals(1,h.calls.size);assertEquals(1,h.reads);assertTrue(restarted.view.value.photoConfirmation!!.canRetry)
             restarted.retryPhotoConfirmation(h.lease,h.id)
             assertEquals(2,h.calls.size);assertEquals(h.calls[0].key,h.calls[1].key);assertArrayEquals(h.calls[0].body(),h.calls[1].body())
-            assertEquals(1,h.db.dao().achievementMeals(h.lease.storageScope).size);assertEquals(1,h.db.dao().operationCount(h.lease.storageScope))
+            val materialized=h.assertMaterialized()
             assertNull(h.db.photoAnalysisDao().get(h.lease.storageScope));assertNull(restarted.view.value.photoMealDraft)
             assertTrue(MealPhotoStore(context,h.db,h.lease).uploadBytes(h.image).isNotEmpty())
             assertFalse(File(context.filesDir,"photo-analysis-inputs/${h.lease.storageScope}/${h.id}.jpg").exists())
             restarted.retryPhotoConfirmation(h.lease,h.id);assertEquals(2,h.calls.size)
-            assertEquals(1,h.db.dao().operationCount(h.lease.storageScope))
+            assertEquals(materialized,h.assertMaterialized())
         } finally {h.close()}
     }
     @Test fun photoConfirm401RefreshesOnlyOnceAndRetainsTheSameRequest()=runBlocking<Unit> {
@@ -2530,7 +2591,9 @@ class SessionSecurityTest {
             assertTrue(h.c.view.value.photoConfirmation!!.canRetry);assertEquals(0,h.db.dao().operationCount(h.lease.storageScope))
             assertTrue(h.db.dao().achievementMeals(h.lease.storageScope).isEmpty())
             h.handler={BootstrapHttpResult(200,h.ack(it))};h.c.retryPhotoConfirmation(h.lease,h.id)
-            assertEquals(1,h.db.dao().operationCount(h.lease.storageScope));assertEquals(h.calls[0].key,h.calls[1].key)
+            assertEquals(h.calls[0].key,h.calls[1].key);assertArrayEquals(h.calls[0].body(),h.calls[1].body())
+            val materialized=h.assertMaterialized();h.c.retryPhotoConfirmation(h.lease,h.id)
+            assertEquals(2,h.calls.size);assertEquals(materialized,h.assertMaterialized())
         } finally {h.close()}
     }
     @Test fun photoConfirmOldDialogAndEditsCannotReplaceAnUncertainDecision()=runBlocking<Unit> {
@@ -2574,7 +2637,9 @@ class SessionSecurityTest {
             h.readDecision="confirmed";h.c.readPhotoAnalysis(h.lease)
             assertTrue(h.c.view.value.photoConfirmation!!.canRetry);assertEquals(0,h.db.dao().operationCount(h.lease.storageScope))
             h.handler={BootstrapHttpResult(200,h.ack(it))};h.c.retryPhotoConfirmation(h.lease,h.id)
-            assertEquals(1,h.db.dao().operationCount(h.lease.storageScope));assertArrayEquals(h.calls[0].body(),h.calls[1].body())
+            assertArrayEquals(h.calls[0].body(),h.calls[1].body());assertEquals(h.calls[0].key,h.calls[1].key)
+            val materialized=h.assertMaterialized();h.c.retryPhotoConfirmation(h.lease,h.id)
+            assertEquals(2,h.calls.size);assertEquals(materialized,h.assertMaterialized())
         } finally {h.close()}
     }
     @Test fun photoConfirmConflictNeverCreatesANewKeyOrMealAndRecoveryIsExplicit()=runBlocking<Unit> {
@@ -2603,7 +2668,9 @@ class SessionSecurityTest {
             h.c.loadPhotoAnalysis(h.lease);assertTrue(h.c.view.value.photoConfirmation!!.canRetry)
             h.handler={BootstrapHttpResult(200,h.ack(it))};h.c.retryPhotoConfirmation(h.lease,h.id)
             assertEquals(2,h.calls.size);assertEquals(h.calls[0].key,h.calls[1].key)
-            assertArrayEquals(h.calls[0].body(),h.calls[1].body());assertEquals(1,h.db.dao().operationCount(h.lease.storageScope))
+            assertArrayEquals(h.calls[0].body(),h.calls[1].body())
+            val materialized=h.assertMaterialized();h.c.retryPhotoConfirmation(h.lease,h.id)
+            assertEquals(2,h.calls.size);assertEquals(materialized,h.assertMaterialized())
         } finally {release.complete(Unit);h.close()}
     }
     @Test fun photoReopenRequiresPostRejectionGetThenExplicitLocalReviewAndANewApprovedKey()=runBlocking<Unit> {
@@ -2625,7 +2692,13 @@ class SessionSecurityTest {
             restarted.renamePhotoMealDraft(h.lease,h.id,2,"Nowa sprawdzona porcja")
             h.handler={BootstrapHttpResult(200,h.ack(it))};restarted.confirmPhotoMeal(h.lease,h.id,3,3)
             assertEquals(2,h.calls.size);assertNotEquals(h.calls[0].key,h.calls[1].key)
-            assertEquals(1,h.db.dao().operationCount(h.lease.storageScope));assertEquals(1,h.db.dao().achievementMeals(h.lease.storageScope).size)
+            val rejected=StrictJson.read(h.calls[0].body());val approved=StrictJson.read(h.calls[1].body())
+            assertEquals(rejected.getJSONObject("meal").getString("meal_id"),approved.getJSONObject("meal").getString("meal_id"))
+            fun draftIds(body:JSONObject)=body.getJSONArray("drafts").let {rows->
+                (0 until rows.length()).map {rows.getJSONObject(it).getString("draft_id")}}
+            assertEquals(draftIds(rejected),draftIds(approved))
+            val materialized=h.assertMaterialized();restarted.retryPhotoConfirmation(h.lease,h.id)
+            assertEquals(2,h.calls.size);assertEquals(materialized,h.assertMaterialized())
             assertNull(h.db.photoAnalysisDao().get(h.lease.storageScope))
             assertEquals(original.decisionJson,h.db.photoConfirmationHistoryDao().get(h.lease.storageScope,h.calls[0].key!!)!!.decisionJson)
         } finally {h.close()}

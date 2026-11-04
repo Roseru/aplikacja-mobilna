@@ -108,14 +108,35 @@ class PhotoMealDraftTest {
         assertEquals(300,value.items.single().name.length);bad {value.confirmBody(changed)}
         assertTrue(value.replace(item,input(name="Poprawiona nazwa")).confirmBody(changed).isNotEmpty())
     }
-    @Test fun strictConfirmTemplateHasIndependentExpectedShapeAndDoesNotPublishProducts() {
+    @Test fun strictConfirmTemplateIncludesPrivateDraftsWithoutPublishingProducts() {
         val value=draft().replace(item,input())
         val body=StrictJson.read(value.confirmBody(base().latest!!))
-        val expected=StrictJson.read(fixture("corrected-meal-confirm").toByteArray())
+        val expected=StrictJson.read(fixture("private-draft-meal-confirm").toByteArray())
         assertEquals(StrictJson.canonical(expected),StrictJson.canonical(body))
-        assertEquals(0,body.getJSONArray("drafts").length())
+        assertEquals(1,body.getJSONArray("drafts").length())
+        val product=body.getJSONArray("drafts").getJSONObject(0)
+        assertEquals("fb159810-5a9e-3a0b-a3e0-230d438fa453",product.getString("draft_id"))
+        assertEquals("91.2",product.getJSONObject("payload").getJSONObject("nutrition_per_100").getString("energy_kcal"))
+        assertTrue(product.getJSONObject("payload").getJSONObject("nutrition_per_100").isNull("fat_g"))
+        assertTrue(product.getJSONObject("payload").getString("source_description").contains("AI"))
         val row=body.getJSONObject("meal").getJSONObject("payload").getJSONArray("items").getJSONObject(0)
         assertTrue(row.isNull("product"));assertEquals("ai_estimate",row.getString("nutrition_origin"));assertTrue(row.isNull("density_g_per_ml"))
+    }
+    @Test fun privateDraftIdsSurviveEditsAndRestartAndOnlyRetainedItemsBecomeDrafts() {
+        val first=draft().replace(item,input())
+        fun drafts(value:PhotoMealDraft)=StrictJson.read(value.confirmBody(base().latest!!)).getJSONArray("drafts")
+        val id=drafts(first).getJSONObject(0).getString("draft_id")
+        val added=PhotoMealDraft.restore(first.add(other,input(name="Napój",amount="250",unit="ml",energy="",protein="0",carbs="")).journal())
+        val products=drafts(added)
+        assertEquals(2,products.length());assertEquals(id,products.getJSONObject(0).getString("draft_id"))
+        assertNotEquals(id,products.getJSONObject(1).getString("draft_id"))
+        val drink=products.getJSONObject(1).getJSONObject("payload")
+        assertEquals("ml",drink.getString("basis_unit"));assertTrue(drink.isNull("package_quantity"))
+        assertTrue(drink.isNull("density_g_per_ml"));assertTrue(drink.getJSONObject("nutrition_per_100").isNull("energy_kcal"))
+        assertEquals("0",drink.getJSONObject("nutrition_per_100").getString("protein_g"))
+        val remaining=drafts(added.remove(item))
+        assertEquals(1,remaining.length());assertEquals(products.getJSONObject(1).getString("draft_id"),remaining.getJSONObject(0).getString("draft_id"))
+        assertEquals(id,drafts(first.replace(item,input(name="Inna nazwa",energy="98"))).getJSONObject(0).getString("draft_id"))
     }
     @Test fun snapshotCasRequiresNextLocalRevisionAndPreservesDraftAcrossARead() {
         val saved=saved();assertTrue(saved.canEditProposal)

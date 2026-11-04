@@ -360,20 +360,43 @@ internal class PhotoAnalysisStore(private val context:Context,private val db:Cal
         val (source,snapshot)=cancellationSource(id);confirmationRequestMatches(source,snapshot,sent)
         val accepted=snapshot.withConfirmationReceipt(bytes)
         val receipt=StrictJson.read(checkNotNull(accepted.confirmation!!.receiptJson).toByteArray(Charsets.UTF_8))
-        check(receipt.getJSONArray("drafts").length()==0) // current editor explicitly chooses no product drafts
         val mealValue=receipt.getJSONObject("meal");val schema=CanonicalMealRows.schema(context)
         val wire=pl.roseru.kalorie.core.sync.MealWire.read(StrictJson.canonical(mealValue.getJSONObject("payload")),schema)
-        val mealId=mealValue.getString("meal_id");val operationId=UUID.randomUUID().toString();val createdAt=Instant.now().toString()
+        val mealId=mealValue.getString("meal_id");val createdAt=Instant.now().toString()
         val wireContext=CanonicalMealRows.context(source.accountId,source.accountGeneration,source.syncEpoch,source.contextRevision)
+        fun materializationOperationId(type:String,id:String)=UUID.nameUUIDFromBytes(
+            "photo-materialization-v1:${source.ownerScope}:$wireContext:${accepted.confirmation.key}:$type:$id"
+                .toByteArray(Charsets.UTF_8)).toString()
+        val operationId=materializationOperationId("meal",mealId)
         val meal=CanonicalMealRows.meal(mealId,source.ownerScope,wire,wireContext)
         val items=CanonicalMealRows.items(mealId,wire)
         val operation=pl.roseru.kalorie.core.sync.MealWire.operation(operationId,mealId,source.syncEpoch,null,wire.canonical,schema)
         val outbox=OutboxEntity(operationId,source.ownerScope,"meal",mealId,"upsert",null,wire.canonical,createdAt,
             wireFormat="sync-v1",wireJson=operation,wireContext=wireContext)
+        val drafts=receipt.getJSONArray("drafts")
+        val products=(0 until drafts.length()).map {index->
+            val draft=drafts.getJSONObject(index);val id=draft.getString("draft_id")
+            val payload=pl.roseru.kalorie.core.sync.PrivateDomainsWire.read("product_draft",
+                StrictJson.canonical(draft.getJSONObject("payload")),schema)
+            val value=StrictJson.read(payload.toByteArray(Charsets.UTF_8));val nutrients=value.getJSONObject("nutrition_per_100")
+            fun nutrient(name:String):Double?=if(nutrients.isNull(name))null else nutrients.getString(name).toDouble()
+            val name=value.getString("name")
+            // REAL columns are only the search projection; exact payload owns units and nulls.
+            val product=ProductEntity(id,name,normalizeSearch(name),nutrient("energy_kcal")?:0.0,
+                nutrient("protein_g"),nutrient("fat_g"),nutrient("carbs_g"),100.0,"Twoje produkty",
+                value.getString("source_description"),0,source.ownerScope,wirePayload=payload)
+            val state=CanonicalDomainState(source.ownerScope,"product_draft",id,id,payload,wireContext)
+            val opId=materializationOperationId("product_draft",id)
+            val wireOperation=pl.roseru.kalorie.core.sync.PrivateDomainsWire.operation(opId,"product_draft",id,
+                source.syncEpoch,null,payload,schema)
+            val queued=OutboxEntity(opId,source.ownerScope,"product_draft",id,"upsert",null,payload,createdAt,
+                wireFormat="sync-v1",wireJson=wireOperation,wireContext=wireContext)
+            PreparedPhotoProductMaterialization(product,state,queued)
+        }
         val record=PhotoMaterialization(source.ownerScope,accepted.receipt.analysisId,mealId,source.operationId,
             source.sourcePhotoId,checkNotNull(accepted.confirmation.key),StrictJson.canonical(receipt),accepted.serialized,
             StrictJson.canonical(receipt.getJSONObject("provenance")),wireContext,operationId,createdAt)
-        PreparedPhotoConfirmationReceipt(source,accepted,lease,PreparedPhotoMealMaterialization(meal,items,outbox,record))
+        PreparedPhotoConfirmationReceipt(source,accepted,lease,PreparedPhotoMealMaterialization(meal,items,outbox,record,products))
     }
     /** DB-only transaction: ledger, exact diary, canonical outbox and queue release are inseparable.
      * Replaying the same receipt never restores a later edited/deleted diary or allocates another operation.
@@ -387,6 +410,12 @@ internal class PhotoAnalysisStore(private val context:Context,private val db:Cal
             record.receiptJson==prepared.snapshot.confirmation?.receiptJson && record.snapshotJson==prepared.snapshot.serialized &&
             record.mealId==plan.meal.id && plan.outbox.entityId==plan.meal.id && record.firstOutboxId==plan.outbox.operationId)
         check(plan.items.all {it.mealId==plan.meal.id})
+        check(plan.products.map {it.product.id}.toSet().size==plan.products.size)
+        check(plan.products.all {it.product.ownerScope==lease.storageScope && it.product.catalogJson==null &&
+            it.state.ownerScope==lease.storageScope && it.state.entityType=="product_draft" && it.state.entityId==it.product.id &&
+            it.state.localId==it.product.id && it.state.wireContext==record.wireContext && it.state.wirePayload==it.product.wirePayload &&
+            it.outbox.ownerScope==lease.storageScope && it.outbox.entityType=="product_draft" && it.outbox.entityId==it.product.id &&
+            it.outbox.wireContext==record.wireContext && it.outbox.payload==it.product.wirePayload})
         val existing=db.materializationDao().get(lease.storageScope,record.analysisId)
         if(existing!=null) {
             check(existing.receiptJson==record.receiptJson && existing.confirmationKey==record.confirmationKey &&
@@ -394,6 +423,17 @@ internal class PhotoAnalysisStore(private val context:Context,private val db:Cal
             return@withTransaction existing
         }
         val row=checked(prepared.source.operationId);check(row==prepared.source && row.attempted && row.blockedCode==null)
+        plan.products.forEach {draft->
+            // New private identities never overwrite a catalogue entry, another owner or a
+            // previously edited/deleted draft. A receipt replay exits via the ledger above.
+            check(db.serverDiaryDao().product(draft.product.id)==null)
+            check(db.domainSyncDao().state(lease.storageScope,"product_draft",draft.product.id)==null)
+            check(db.domainSyncDao().local(lease.storageScope,"product_draft",draft.product.id)==null)
+            check(db.domainSyncDao().operations(lease.storageScope,"product_draft",draft.product.id).isEmpty())
+            db.dao().insertProduct(draft.product)
+            db.domainSyncDao().save(draft.state)
+            db.dao().enqueue(draft.outbox)
+        }
         db.dao().insertMeal(plan.meal)
         plan.items.forEach {db.dao().insertItem(it)}
         db.dao().enqueue(plan.outbox)
@@ -477,7 +517,13 @@ internal class PreparedPhotoConfirmationReceipt internal constructor(internal va
 }
 
 internal class PreparedPhotoMealMaterialization internal constructor(internal val meal:MealEntity,items:List<MealItemEntity>,
-    internal val outbox:OutboxEntity,internal val record:PhotoMaterialization) {
+    internal val outbox:OutboxEntity,internal val record:PhotoMaterialization,products:List<PreparedPhotoProductMaterialization>) {
     internal val items:List<MealItemEntity> = java.util.Collections.unmodifiableList(ArrayList(items))
+    internal val products:List<PreparedPhotoProductMaterialization> = java.util.Collections.unmodifiableList(ArrayList(products))
     override fun toString()="PreparedPhotoMealMaterialization(redacted)"
+}
+
+internal class PreparedPhotoProductMaterialization internal constructor(internal val product:ProductEntity,
+    internal val state:CanonicalDomainState,internal val outbox:OutboxEntity) {
+    override fun toString()="PreparedPhotoProductMaterialization(redacted)"
 }
