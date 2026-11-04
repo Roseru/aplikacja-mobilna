@@ -20,14 +20,17 @@ fun MreCatalogueState.selectionFor(rationJson: String?): MreRationSelection? {
 internal class MreCatalogueAssets(private val context: Context) {
     data class Loaded(val catalog: ValidatedCatalog, val rules: MreCatalogueRules)
 
-    fun read(schema: CatalogSchema): Loaded {
+    fun read(schema: CatalogSchema,checkActive:()->Unit={}): Loaded {
+        checkActive()
         val root = "catalog/mre2026/"
         val value = CatalogPackageReader(schema, MreCatalogueRules.PACKAGE_ID, "demo").read(
             context.assets.open(root + "manifest.json"), context.assets.open(root + "base-pl.1.json.gz.bin"))
+        checkActive()
         fun bounded(name: String): ByteArray = context.assets.open(root + name).use { input ->
             val output = ByteArrayOutputStream()
             val buffer = ByteArray(8192)
             while (true) {
+                checkActive()
                 val read = input.read(buffer)
                 if (read < 0) break
                 require(read > 0 && output.size() + read <= 1024 * 1024)
@@ -35,6 +38,11 @@ internal class MreCatalogueAssets(private val context: Context) {
             }
             output.toByteArray()
         }
-        return Loaded(value, MreCatalogueRules.read(value, bounded("selection-rules.json"), bounded("source.json")))
+        val rulesBytes=bounded("selection-rules.json")
+        val sourceBytes=bounded("source.json")
+        checkActive()
+        val rules=MreCatalogueRules.read(value,rulesBytes,sourceBytes,checkActive)
+        checkActive()
+        return Loaded(value,rules)
     }
 }

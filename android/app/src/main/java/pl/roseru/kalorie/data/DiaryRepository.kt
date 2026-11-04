@@ -4,6 +4,8 @@ import android.content.Context
 import androidx.room.withTransaction
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
+import kotlinx.coroutines.currentCoroutineContext
+import kotlinx.coroutines.ensureActive
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.flowOf
@@ -118,7 +120,8 @@ class DiaryRepository(private val db: CalorieDatabase, private val context: Cont
         onPhase(DiaryInitializationPhase.DEMO_IMPORT_END)
         try {
             onPhase(DiaryInitializationPhase.MRE_READ_START)
-            val mre = MreCatalogueAssets(context).read(schema)
+            val startupContext=currentCoroutineContext()
+            val mre = MreCatalogueAssets(context).read(schema) {startupContext.ensureActive()}
             onPhase(DiaryInitializationPhase.MRE_READ_END)
             onPhase(DiaryInitializationPhase.MRE_IMPORT_START)
             ownerTransaction { CatalogStore(db).import(mre.catalog) }

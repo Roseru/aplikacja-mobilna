@@ -7,19 +7,26 @@ import java.math.BigDecimal
 import java.nio.ByteBuffer
 import java.nio.charset.CodingErrorAction
 import java.security.MessageDigest
+import java.util.concurrent.CancellationException
 
 /** The collected COMRAD document uses JSON numbers, unlike the E2 decimal-string protocol. */
 internal object MreSourceJson {
-    fun read(bytes: ByteArray): JSONObject {
+    fun read(bytes: ByteArray,checkActive:()->Unit={}): JSONObject {
+        checkActive()
         require(bytes.size <= 1024 * 1024)
         val source = Charsets.UTF_8.newDecoder().onMalformedInput(CodingErrorAction.REPORT)
             .onUnmappableCharacter(CodingErrorAction.REPORT).decode(ByteBuffer.wrap(bytes)).toString()
-        val decimal = Regex("-?(0|[1-9][0-9]*)(\\.[0-9]+)?([eE][+-]?[0-9]+)?")
+        checkActive()
         val normalized = StringBuilder(source.length)
         var offset = 0
+        var nextCheck = 0
+        fun checkpoint() {
+            if(offset>=nextCheck) {checkActive();nextCheck=offset+1024}
+        }
         var quoted = false
         var escaped = false
         while (offset < source.length) {
+            checkpoint()
             val char = source[offset]
             if (quoted) {
                 normalized.append(char); offset++
@@ -29,21 +36,48 @@ internal object MreSourceJson {
             } else if (char == '"') {
                 quoted = true; normalized.append(char); offset++
             } else if (char == '-' || char in '0'..'9') {
-                val token = decimal.find(source, offset) ?: throw MreCatalogueException()
-                require(token.range.first == offset && token.value.length <= 64)
-                offset += token.value.length
+                val start=offset
+                offset=numberEnd(source,start)
+                normalized.append('"').append(source,start,offset).append('"')
                 // Quoting a numeric object key must not turn invalid source JSON into valid JSON.
-                var next = offset
-                while (source.getOrNull(next) in listOf(' ', '\t', '\r', '\n')) next++
-                require(source.getOrNull(next) != ':')
-                normalized.append('"').append(token.value).append('"')
+                val gap=offset
+                while (source.getOrNull(offset) in listOf(' ', '\t', '\r', '\n')) {checkpoint();offset++}
+                require(source.getOrNull(offset) != ':')
+                normalized.append(source,gap,offset)
             } else {
                 normalized.append(char); offset++
             }
         }
         // The existing preflight still checks syntax, duplicate keys, escapes, UTF-8 and depth.
         // Numeric lexemes remain exact source text rather than passing through Double.
-        return StrictJson.read(normalized.toString().toByteArray(Charsets.UTF_8))
+        checkActive()
+        val value=StrictJson.read(normalized.toString().toByteArray(Charsets.UTF_8))
+        checkActive()
+        return value
+    }
+
+    /** Consume one JSON number without constructing a matcher over the complete source. */
+    private fun numberEnd(source:String,start:Int):Int {
+        var end=start
+        fun digit()=source.getOrNull(end)?.let {it in '0'..'9'}==true
+        fun advance() {end++;require(end-start<=64)}
+        if(source.getOrNull(end)=='-') advance()
+        if(source.getOrNull(end)=='0') advance()
+        else {
+            require(source.getOrNull(end)?.let {it in '1'..'9'}==true)
+            do {advance()} while(digit())
+        }
+        if(source.getOrNull(end)=='.') {
+            advance();require(digit())
+            do {advance()} while(digit())
+        }
+        if(source.getOrNull(end) in listOf('e','E')) {
+            advance()
+            if(source.getOrNull(end) in listOf('+','-')) advance()
+            require(digit())
+            do {advance()} while(digit())
+        }
+        return end
     }
 }
 
@@ -172,10 +206,14 @@ class MreCatalogueRules private constructor(private val entries: Map<String, Ent
             require(list.distinct().size == list.size); list.toSet()
         }
 
-        fun read(packageValue: ValidatedCatalog, rulesBytes: ByteArray, sourceBytes: ByteArray): MreCatalogueRules = try {
+        fun read(packageValue: ValidatedCatalog, rulesBytes: ByteArray, sourceBytes: ByteArray,
+            checkActive:()->Unit={}): MreCatalogueRules = try {
+            checkActive()
             require(rulesBytes.size <= 1024 * 1024 && sourceBytes.size <= 1024 * 1024)
             val rules = StrictJson.read(rulesBytes)
-            val source = MreSourceJson.read(sourceBytes)
+            checkActive()
+            val source = MreSourceJson.read(sourceBytes,checkActive)
+            checkActive()
             require(rules.getInt("format") == 1 && rules.getInt("release") == packageValue.release &&
                 rules.getString("package_id") == packageValue.packageId && rules.getString("kind") == packageValue.kind &&
                 rules.getString("gzip_sha256") == packageValue.sha256 && rules.getString("input_sha256") == hash(sourceBytes))
@@ -186,6 +224,7 @@ class MreCatalogueRules private constructor(private val entries: Map<String, Ent
             val menus = rules.rows("menus", 24)
             require(menus.size == 24 && menus.map { it.getString("ration_id") }.distinct().size == 24)
             val entries = menus.associate { menu ->
+                checkActive()
                 val id = menu.getString("ration_id")
                 val ration = rations[id] ?: throw MreCatalogueException()
                 val rationHash = hash(canonicalRation(ration).toByteArray(Charsets.UTF_8))
@@ -195,6 +234,7 @@ class MreCatalogueRules private constructor(private val entries: Map<String, Ent
                 val bindings = menu.rows("bindings", 1000)
                 require(bindings.size == parts.size && bindings.map { it.getInt("position") }.distinct().size == bindings.size)
                 val origins = bindings.associate { binding ->
+                    checkActive()
                     val position = binding.getInt("position")
                     val part = parts[position] ?: throw MreCatalogueException()
                     val ref = part.getJSONObject("product")
@@ -221,7 +261,9 @@ class MreCatalogueRules private constructor(private val entries: Map<String, Ent
                 id to Entry(ration.getInt("revision"), rationHash, MreRationSelection(
                     "Menu ${menu.getString("case")}${menu.getInt("number")} · MRE2026", menu.texts("warnings"), missing, origins, choices, packets))
             }
+            checkActive()
             MreCatalogueRules(entries)
-        } catch (error: Exception) { throw MreCatalogueException(error) }
+        } catch(error:CancellationException) {throw error}
+        catch (error: Exception) { throw MreCatalogueException(error) }
     }
 }
