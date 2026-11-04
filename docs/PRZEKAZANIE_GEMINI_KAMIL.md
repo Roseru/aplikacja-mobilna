@@ -1,11 +1,22 @@
 # Gemini — przekazanie dla Kamila
 
-Stan sprawdzenia: 3 listopada 2026. Dokument opisuje ostatni zewnętrzny etap
+Stan sprawdzenia: 4 listopada 2026. Dokument opisuje ostatni zewnętrzny etap
 zaakceptowanej edycji lokalnej MRE/DEMO. Do czasu jego osobnego odbioru działają
-MOCK i ręczne wpisy; nie wykonano konfiguracji Google ani połączenia live.
+MOCK i ręczne wpisy; w tej instalacji nie wykonano konfiguracji Google ani
+połączenia live.
 Klucz nie jest całym wdrożeniem: potrzebne są zgodny zakres użycia, rzeczywiste
 limity projektu, wspólna pula E7/E9, aktualne zgody i dowód działania przez aplikację.
 Nie zmieniamy tej edycji w publiczny hosting, ARPOL lub pełne wydanie produkcyjne.
+
+Osobny [PR #203](https://github.com/Roseru/aplikacja-mobilna/pull/203) O1 opisuje
+deweloperski odbiór backendu Gemini na jednym zdjęciu oraz poprawkę schematu
+dostawcy do `food-photo-schema-v2`. Nie jest to odbiór APK, E7-R ani zmiana
+tej instalacji MOCK. PR scalono do main `1aee090` po ośmiu zielonych kontrolach
+[CI41794971737](https://github.com/Roseru/aplikacja-mobilna/actions/runs/41794971737).
+Ten dokument nie potwierdza niezależnie prywatnego smoke testu. Przed oknem
+Kamil przypina aktualny odebrany main zawierający tę poprawkę i przygotowuje
+z niego normalny obraz backendu. Obrazy dotychczasowej instalacji MOCK mają
+własne zachowane piny; konfiguracja Gemini wymaga odbioru nowych obrazów/profilu.
 
 ## Najpierw decyzja o zakresie
 
