@@ -71,6 +71,9 @@ profilu, ponieważ dotychczasowy profil wiąże konfigurację i kontenery MOCK.
    BACKUP pozostawia PostgreSQL running oraz gateway i wszystkich writerów
    zatrzymanych. Nie wykonuj restore lub resetu epoki, aby skonfigurować provider.
    Potwierdź fizyczny brak poprzedniego IO/held permits; brak pewności zamyka okno.
+   Uzgodnij też historię wspólnej puli z odrębnym odbiorem O1 z PR203.
+   Nie uruchamiaj dwóch niezależnych limiterów dla tego samego projektu Google
+   ani nie traktuj nowej instalacji lub environment ID jako wyzerowania limitów.
 2. **Backend i pula.** Ustaw tę samą konfigurację API oraz istniejącego AI workera:
    `ENVIRONMENT=development`, `AI_PROVIDER=gemini`, `AI_PROJECT_ID`,
    `AI_ENVIRONMENT_ID`, `AI_MODEL=gemini-3.5-flash-lite`, prywatny

@@ -12147,6 +12147,42 @@ Kontynuacja O3-121 — zgodność narzędzi z rejestracją email-as-username:
   Nowy zakres do wykonania:6 JVM parsera +4 istniejące MRE, natywne9 z tym
   samym limitem15s oraz nowa regresja anulowania przed importem/staniem Ready.
   Następnie dopiero zależne48, pełne CI i odbiór rzeczywistej instalacji.
+- R4 build na4769d3f:10/10 unikalnych JVM (6 nowych +4 MRE) PASS,
+  zero failure/error/skip; lint0Error/0Fatal. Core1058 SHA256
+  `3cbeb137ee4bb53a34ed08d9af22022e72b579d05734d8eace7db358c4920d97`.
+  Odbiór native/czasów nadal wymagany; wcześniejsze7/9 nie staje się PASS
+  przez samą kompilację. Niezależny przegląd parsera nie znalazł P1/P2.
+- Natywny R4:9/9 preview oraz osobny1/1 anulowania PASS, zero fail/skip/crash.
+  Receipt9 SHA256 `931019841b3352e261f16305214a98c39221f7509e4c42cacc123d9f80cc358e`;
+  receipt1 SHA256 `935b8a1e9d482163829543c30d0dd83fc52976c44c8ea064ac02b91941e1ac9b`.
+  Faktycznie renderowane modele kończą MRE_READ w3,713/2,372/1,608s wobec
+  30,029/22,330/8,676s R3; wszystkie osiągają READY. Skasowany model kończy się
+  CANCEL po3,120s zamiast29,928s, przed MRE_READ_END/importem. Nadal limit15s.
+  Przed testami bootowy host guard zachował odmowę cardinality ADB; brakowało
+  dokładnego historycznego snapshotu, więc przyczyna pozostaje UNKNOWN.
+  Nowa oddzielna kwalifikacja tej samej instancji zachowała guard i zapisała
+  snapshot przed sprawdzeniem: jeden znany ADB, przypięte procesy/porty PASS.
+  Bez nowego bootu, kill-server, adopcji lub uznania dawnej odmowy za PASS.
+  Po tych wynikach odblokowano zależne48; ich wynik i odbiór API jeszcze wymagane.
+- Grupa48 zachowała47/48 PASS: wszystkie43 PhotoAnalysisStorageTest i4/5
+  PhotoConfirmationScreenTest. Jedyny FAIL to assertTextContains w linii54:
+  tekst ekranu zawierał obie poprawne frazy w pełnym objaśnieniu, a domyślna
+  asercja porównywała cały tekst. Pin9145da0 ustawia substring=true dla obu
+  fraz. Bez zmiany ekranu/core3cbe lub limitów. Następny przebieg obejmuje
+  wyłącznie ten jeden naprawiony test; pozostałych47/9/1 nie ponawiamy.
+  Receipt pierwszej grupy SHA256
+  `934f7964192babb325e00205615dc154ca9a62e43d690db21b47018cc8784260`.
+- R5 test-APK-only na9145da0 zachował core3cbe identyczny bajtowo. Jeden
+  uprzednio zawodzący PhotoConfirmationScreenTest PASS,1 start/1 terminal,
+  zero fail/skip/crash; receipt SHA256
+  `43d58839a4579f2dc827f30cfa6dde8455697910d35775bf1aac8b3bdbe1bbe8`.
+  Lokalny zakres zamknięty:9 preview +1 anulowania +43 storage +5 UI,
+  łącznie58 unikalnych native; to jawnie47 z R4 i1 poprawiony w R5,
+  nie nowy rzekomy48/48 run.10 JVM MRE/40 wcześniejszych JVM domen i lint PASS.
+  E0 po złożeniu z PR203:11 schematów,98 valid/35 invalid,18 scenarios,
+  953 local links PASS. Źródło czeka na właściwy FULL PR oraz docelowego main,
+  następnie rzeczywisty flow APK/API i nowy pakiet. Nie wysłano jeszcze
+  końcowego przekazania Kamilowi; warunkiem są wszystkie te odbiory.
 - Osobny [PR203 O1](https://github.com/Roseru/aplikacja-mobilna/pull/203)
   opisuje backendowy smoke Gemini i poprawkę schematu dostawcy. Nie zastępuje
   odbioru nowego APK i nie zmienia instalacji MOCK. Przekazanie Kamila
