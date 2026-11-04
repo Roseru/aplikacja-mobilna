@@ -3,12 +3,20 @@
 **Zakres bieżącej dostawy — decyzja właściciela 31.10.2026:** kończymy działającą
 instalację lokalną z katalogiem MRE/DEMO, ręcznymi ścieżkami oraz AI w trybie
 MOCK. Pełny katalog ARPOL pozostaje na później. Właściciel nie ma obecnie
-VPS/domeny ani kluczy Gemini i nie zezwala na podłączanie teraz rzeczywistego
-Gemini lub billing. Późniejsza konfiguracja AI odbywa się wyłącznie na backendzie,
+VPS/domeny. Domyślny pakiet lokalny nie podłącza rzeczywistego Gemini ani
+billing. Konfiguracja rzeczywistego AI odbywa się wyłącznie na backendzie,
 z dotychczasowymi potwierdzeniami, pulą i limitami. Historyczne wymagania
 publicznego wdrożenia, ARPOL i realnego AI pozostają docelowe; nie są
 warunkiem tej zatwierdzonej edycji lokalnej. Obsługa lokalna:
 [start/status/stop/kopia](infra/integration/LOCAL_RELEASE.md).
+
+**Uzupełnienie 04.11.2026 — osobna próba Gemini:** właściciel odwołał zakaz
+developerskiego testu z zachowanym kluczem, potwierdził aktualny Free Tier,
+brak billing i limity oraz zezwolił na analizę niewrażliwego zdjęcia testowego.
+Dotyczy to wyłącznie izolowanego testu backendu, bez włączania billing.
+Odebrana instalacja lokalna nadal domyślnie używa MOCK. Wynik i granice tej
+próby opisuje [odbiór Gemini dev](docs/e7/ODBIOR_GEMINI_DEV_2026_11_04.md);
+nie zastępuje ona odbioru nowego APK ani E7-R na zbiorze zdjęć.
 
 Wersja: 1.3, 9 października 2026 r. Zespół: 3 osoby. Ustalenia backendu: Osoba 2.
 
