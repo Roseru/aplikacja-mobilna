@@ -12183,6 +12183,24 @@ Kontynuacja O3-121 — zgodność narzędzi z rejestracją email-as-username:
   953 local links PASS. Źródło czeka na właściwy FULL PR oraz docelowego main,
   następnie rzeczywisty flow APK/API i nowy pakiet. Nie wysłano jeszcze
   końcowego przekazania Kamilowi; warunkiem są wszystkie te odbiory.
+- [PR204](https://github.com/Roseru/aplikacja-mobilna/pull/204), head45d00b3,
+  pierwszy FULL [CI41812896120](https://github.com/Roseru/aplikacja-mobilna/actions/runs/41812896120)
+  zachował FAIL:6 jobów SUCCESS, android-device i gate FAILURE. Native607
+  unikalnych:602 PASS/5 FAIL/0 ERROR/0 SKIP; wszystkie58 wskazanych przypadków
+  PASS. Pięć SessionSecurityTest nadal oczekiwało łącznej liczby ops1;
+  prawidłowy nowy ACK zapisał1meal +1privateproduct_draft, bez drugiego posiłku.
+  Źródło6408b9f kontroluje teraz typed ops/IDs/exact payload/source/ledger,
+  owner/context i identyczne rows po retry; zachowuje dawne zero-op/fence/key/body
+  oraz historię odrzuconej decyzji. Bez zmiany produkcji/core3cbe, CI lub limitów.
+  Lokalne nowe APK testowe i tylko pięć dotychczasowych bad_cases są następne;
+  stary run pozostaje niezaliczony, bez rerun.
+- Natywny R7 na6408b9f: dokładnie pięć dotychczasowych bad_cases PASS,
+  5 unikalnych startów/terminali, zero fail/skip/crash. Receipt SHA256
+  `e16ef900e39ff1061466d5126ab6fdaba0f5cb22d1a2a8e631adef9b439fbe25`.
+  Core3cbe z4769d3f pozostał identyczny; nowe APK testowe79bfe3bb obejmuje
+  wyłącznie korektę testów sesji. Pozostałych602 ani58 lokalnych przypadków
+  nie ponawiano. Następny push tego samego PR204 uruchamia nowy FULL dla
+  nowego head; nie jest rerun starego niezaliczonego CI.
 - Osobny [PR203 O1](https://github.com/Roseru/aplikacja-mobilna/pull/203)
   opisuje backendowy smoke Gemini i poprawkę schematu dostawcy. Nie zastępuje
   odbioru nowego APK i nie zmienia instalacji MOCK. Przekazanie Kamila
