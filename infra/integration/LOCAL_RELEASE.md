@@ -1,9 +1,9 @@
 # Lokalna instalacja: start, status, zatrzymanie i kopia
 
 Decyzja właściciela z31.10.2026: dostarczamy MRE/DEMO, ręczne ścieżki i MOCK
-na lokalnym komputerze. ARPOL dołączymy później. Brak VPS/domeny i kluczy
-Gemini oznacza, że obecnie nie podłączamy publicznego hostingu, Google ani
-billing. Docelowe historyczne wymagania pozostają w
+na lokalnym komputerze. ARPOL dołączymy później. Ta dostawa nie podłącza
+publicznego hostingu, Google ani billing. Oddzielną zgodę na developerski
+test Gemini z 03–04.11 opisano poniżej. Docelowe historyczne wymagania pozostają w
 [wymaganiach projektu](../../WYMAGANIA_PROJEKTOWE.md).
 
 Po jednorazowym przygotowaniu przez operatora używaj prywatnego folderu:
@@ -122,14 +122,19 @@ importu realm, Alembica lub provisionerów jako skrótu restore. Odtworzone
 zdjęcia nie są zgodą na wznowienie jobów; dotychczasowe zamknięcie AI/Nemesis,
 retencja, quota i fence epoki/sesji nadal obowiązują.
 
-## Późniejsze Gemini
+## Oddzielny test Gemini
 
 Teraz obowiązuje AI_PROVIDER=mock. [Template backendu](../../backend/.env.example)
 zawiera zakomentowane GEMINI_API_KEY, AI_PROJECT_ID, AI_ENVIRONMENT_ID,
 AI_MODEL i AI_LIVE_CONFIRMATION. Klucz należy wyłącznie do backendu,
 nigdy do APK lub Git. Nie wpisuj demonstracyjnych limitów jako rzeczywistych.
 
-Po przyszłej decyzji właściciela operator stosuje istniejące
+Decyzja właściciela 03–04.11 dopuściła osobny developerski test Free Tier.
+[Raport 04.11](../../docs/e7/ODBIOR_GEMINI_DEV_2026_11_04.md) opisuje rzeczywisty
+odbiór backendu i poprawkę schematu Gemini v2. Nie zmienia domyślnego providera
+tej dostawy, istniejącego profilu operatora ani zainstalowanego APK.
+
+Przy osobno uzgodnionej konfiguracji operator stosuje istniejące
 [E7 — konfiguracja, datowane potwierdzenie i configure-pool](../../docs/e7/KONFIGURACJA_O3.md)
 oraz [E9 — wspólna pula i energia](../../docs/e9/KONFIGURACJA_O3.md).
 Kamil otrzymuje osobne [przekazanie Gemini](../../docs/PRZEKAZANIE_GEMINI_KAMIL.md)

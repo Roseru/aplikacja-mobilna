@@ -12157,3 +12157,26 @@ Kontynuacja O3-121 — zgodność narzędzi z rejestracją email-as-username:
   Androida. Dotychczasowe obrazy MOCK i R5 pozostają odebrane osobno;
   przyszły provider Gemini wymaga normalnego obrazu z aktualnego źródła
   i nowego bindingu. Nie podłączono Google do tej instalacji.
+
+### O1-149 — działający developerski przepływ Gemini, schemat v2
+
+- 04.11.2026, Agent 1, `codex/android-gemini-odbior`, baza main `63777a5`.
+  Kod i rzeczywisty odbiór w commicie `52e4461`, [PR203](https://github.com/Roseru/aplikacja-mobilna/pull/203).
+  Właściciel jawnie zezwolił na test Free Tier i potwierdził aktualne wejścia;
+  dotychczasowa instalacja lokalna nadal używa MOCK.
+- Stary schemat generowania zwracał HTTP 400 INVALID_ARGUMENT. Usunięcie
+  wyłącznie trzech maxItems z provider schema pozwoliło wykonać analizę.
+  Normalny Gemini używa schema-v2, MOCK pozostaje na schema-v1; parser
+  nadal egzekwuje 30/5/10. Bez migracji, zmian Androida, retry lub fencing.
+  Log workera zawiera tylko HTTP status i dozwolony RPC status.
+- Własne izolowane środowisko: prawdziwe PKCE/API/worker/PG/pula; publiczne
+  zdjęcie USDA rozpoznano jako Apple. Testowa korekta do 100 g, confirm/replay,
+  zwykły PUSH, already_applied revision 1 i dokładny PULL: PASS. Końcowy
+  normalny API/worker mają ten sam obraz. Zachowano trzy nieudane analizy,
+  próbę diagnostyczną i finalny sukces v2; jeden Meal, brak aktywnego IO/permits.
+- Jeden końcowy run 171 celowanych testów PASS, Ruff i diff-check PASS.
+  [Raport i granice](e7/ODBIOR_GEMINI_DEV_2026_11_04.md) zawiera SHA receipt.
+  To nie odbiór nowego APK lub 30-zdjęciowy E7-R. Zdalny PR/main CI wymaga
+  odczytu rzeczywistego wyniku. Następnie O1/O3 uzgadniają docelowy runtime
+  i wspólną historię puli, bez równoległych scope tego samego projektu.
+  Opcjonalne powtarzanie posiłków pozostaje lokalnym, nieodebranym WIP.

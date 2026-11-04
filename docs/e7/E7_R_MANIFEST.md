@@ -9,6 +9,11 @@ dowodami E7-O2, nie oceną trafności Gemini. Wymagania określają
 [decyzje v1](DECYZJE_V1.md) i
 [referencje adaptera](REFERENCJE_GEMINI.md).
 
+Aktualizacja 04.11.2026: oddzielny [test developerski backendu](ODBIOR_GEMINI_DEV_2026_11_04.md)
+przeszedł na jednym publicznym zdjęciu. Nie uruchomiono tego runnera na pełnym
+corpus i nie zaliczono E7-R. Nowy manifest musi przypinać Gemini schema-v2;
+stary manifest v1 nie kwalifikuje nowego profilu.
+
 ## Dostarczony runner i aktualna komenda
 
 [tools/ai_reference/run.py](../../tools/ai_reference/run.py) oraz
@@ -55,7 +60,7 @@ odrębnego odbioru kodu E7-O2. Samo `available=true`, mock lub dostarczenie kluc
 bez projektu/limitów/corpus nie spełnia tej bramki.
 
 Obecny runtime ma model `gemini-3.5-flash-lite`, prompt `food-photo-prompt-v1`,
-schema `food-photo-schema-v1`, preparation `food-photo-preparation-v1` i REST
+schema `food-photo-schema-v2`, preparation `food-photo-preparation-v1` i REST
 `gemini-rest-v1beta-2026-10-11`. O3 potwierdza zgodność tego konkretnego modelu
 i środowiska; model/profile są przypięte przy przyjęciu analizy. Zmiana modelu
 lub istotna zmiana profilu wymaga osobnego jawnego odbioru i ponownego pomiaru.
