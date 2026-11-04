@@ -31,7 +31,7 @@ pozostały takie same. Wynik tej próby był poprawny. Nie ustalono, który
 pojedynczy limit lub ich kombinacja wywołuje odmowę Google.
 
 Normalny profil Gemini używa teraz `food-photo-schema-v2`, bez tych ograniczeń
-w schemacie dekodowania. Backend nadal odrzuca ponad30 składników,
+w schemacie dekodowania. Backend nadal odrzuca ponad 30 składników,
 ponad 5 notatek składnika i ponad 10 notatek posiłku. Zachowano walidację
 JSON, jednostek, wartości, tożsamości, rozmiaru i tokenów. Count i generate
 otrzymują ten sam pełny request. MOCK zachowuje schema-v1; dawnych analiz
