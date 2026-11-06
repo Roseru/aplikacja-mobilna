@@ -9,21 +9,18 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import pl.roseru.kalorie.session.*
 
-@Composable fun PhotoAnalysisPanel(preview:PhotoAnalysisPreview?) {
+@Composable fun PhotoAnalysisPanel(preview:PhotoAnalysisPreview?,onManual:(()->Unit)?=null) {
     val result=preview?:return
+    val status=photoAnalysisStatus(result)
     Card(Modifier.fillMaxWidth().testTag("photo-analysis-result")) {
         Column(Modifier.padding(16.dp),verticalArrangement=Arrangement.spacedBy(10.dp)) {
-            Text("Zapisany wynik analizy",style=MaterialTheme.typography.titleMedium)
+            Text(status.title,style=MaterialTheme.typography.titleMedium,modifier=Modifier.testTag("photo-analysis-title"))
             Text(if(result.provider=="mock") "Wynik testowy serwera — bez rozpoznawania zdjęcia."
-                else "Szacunek AI · ${result.model}. Sprawdź skład i porcje.")
-            Text(when {
-                result.decision=="cancelled"->"Analiza została anulowana. Możesz dodać posiłek ręcznie."
-                result.decision=="confirmed"->"Propozycja zatwierdzona na serwerze. Sam odczyt nie dodaje jej do lokalnego dziennika."
-                result.state=="queued"->"Zdjęcie czeka na analizę."
-                result.state=="running"->"Serwer analizuje zdjęcie."
-                result.state=="failed"->"Nie udało się przygotować propozycji. Ręczne dodawanie posiłków jest dostępne."
-                else->"Propozycja do sprawdzenia. Posiłek nie został jeszcze zapisany."
-            },Modifier.testTag("photo-analysis-state"))
+                else if(result.state=="succeeded") "Szacunek AI · ${result.model}. Sprawdź skład i porcje."
+                else "Analiza AI · ${result.model}")
+            Text(status.message,Modifier.testTag("photo-analysis-state"))
+            if(status.manual && onManual!=null) OutlinedButton(onClick=onManual,
+                modifier=Modifier.fillMaxWidth().testTag("photo-analysis-manual")) {Text("Dodaj posiłek ręcznie")}
             Text("To ostatnio zapisany stan. Przycisk „Sprawdź wynik” pobiera aktualizację.",style=MaterialTheme.typography.bodySmall)
             result.nutrition?.let { totals->
                 Text("${if(totals.energy.missingCount>0) "Znana suma" else "Razem"} · ${nutrient(totals.energy,"kcal")}",style=MaterialTheme.typography.titleMedium,

@@ -12234,3 +12234,39 @@ Kontynuacja O3-121 — zgodność narzędzi z rejestracją email-as-username:
   odczytu rzeczywistego wyniku. Następnie O1/O3 uzgadniają docelowy runtime
   i wspólną historię puli, bez równoległych scope tego samego projektu.
   Opcjonalne powtarzanie posiłków pozostaje lokalnym, nieodebranym WIP.
+
+### O1-150 — rzeczywisty APK/Gemini, terminalny błąd i ręczny fallback
+
+- 06.11.2026, Agent 1 → O2/O3, DO ODCZYTU; gałąź
+  `codex/android-gemini-apk`, baza `5f9112e`. [Raport okna](e7/ODBIOR_APK_GEMINI_2026_11_05.md)
+  rozlicza realne publiczne PKCE/odnowę/bootstrap, wybór i upload zdjęcia,
+  generate503/provider_result_unknown oraz ręczny posiłek/ordinary ACK
+  i dokładny archived Room PULL. Nie jest to udane rozpoznanie przez APK.
+- Zachowano błędne zasoby wcześniejszych APK, anulowane logowanie,
+  odmowy obserwatora, terminalną historię puli i ANR. Poprawiony APK50a ma
+  /api/v1 i identyczny DEX względem poprzedniego739e. Nie powtarzano
+  unknown pod nowym UUID/pulą/projektem. Worker/AVD/ADB/Docker zatrzymane;
+  dziewięciu laboratoriów restart=no nie przywracać na polecenie właściciela.
+- Ten etap dodaje czytelne terminalne przyczyny i bezpośredni ręczny fallback
+  w PhotoAnalysisPanel/MealPhotoScreen oraz nowy PhotoAnalysisStatus.
+  Nie zmienia MRE/DiaryVM/App/MainActivity, sesji, migracji, wersji, transportu
+  ani ACK/ledger. Nowy kod nie jest przypisywany starszemu badanemu APK.
+- Wąska kompilacja trzech plików produkcyjnych i dwóch nowych przypadków UI
+  przeciw odebranemu main: PASS14,265s, JVM384MB. Native lokalnie niewykonane;
+  brak pełnego builda/nowego live i brak domniemania zdalnego CI.
+  Host ma ok.2GiB wolnego RAM; dalszy lokalny emulator nie uruchomiony.
+- Osobna diagnoza startu: MRE_READ20,033s, SideEffect ready=true po21,773s,
+  zrzut nadal ładowanie, brak zapisanego ANR. Nie jest to dowód naprawy lub
+  formalnego startup PASS. Prośba o właściciela/zwrot konkretnego zakresu
+  do O2/O3 pozostaje w [6670443562](https://github.com/Roseru/aplikacja-mobilna/pull/146#issuecomment-6670443562).
+  E7-R/E9 live i końcowe wydanie pozostają osobnymi nieodebranymi zakresami.
+- Po publikacji kodu `fa90746223428d1dc92a928547c07a147d27de73` w
+  [PR205](https://github.com/Roseru/aplikacja-mobilna/pull/205) pełny
+  [CI42170046601](https://github.com/Roseru/aplikacja-mobilna/actions/runs/42170046601)
+  zakończył wszystkie osiem kontroli SUCCESS. Testowany merge `6739a389`:
+  468 debug JVM, 508 validation JVM, 609 native API35; zero failures/skips.
+  Raport XML potwierdził osobno oba nowe PhotoAnalysisFailureScreenTest.
+  SHA archiwum `0db1d0e6f0f9a9ab9772e7421b11c8f251a1e8df3bba401d7c08ede7db64350f`.
+  To zdalny odbiór UI/regresji, bez Google i bez nowego startup PASS na O1.
+  Aktualizacja samego dziennika nie zmienia testowanego kodu; osobny wynik
+  docelowego main pozostaje wymagany po merge. Lokalne usługi nadal wyłączone.

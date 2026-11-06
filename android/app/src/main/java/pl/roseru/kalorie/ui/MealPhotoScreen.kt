@@ -111,7 +111,7 @@ import androidx.lifecycle.compose.LocalLifecycleOwner
         item { PhotoUploadPanel(session,onRetryUpload,onDiscardUpload,onReadAnalysis,onStopAnalysis) }
         item { PhotoCancellationPanel(session,onCancelAnalysis,onRetryCancellation,onReleaseCancelled) }
         item { PhotoMealDraftPanel(session,date,draftActions) }
-        if(session.photoMealDraft==null) item { PhotoAnalysisPanel(session.photoAnalysis) }
+        if(session.photoMealDraft==null) item { PhotoAnalysisPanel(session.photoAnalysis,onManual=onManual) }
         item { Text("Zapisane zdjęcia · ${drafts.size}", style=MaterialTheme.typography.titleMedium, modifier=Modifier.testTag("photo-count")) }
         if (drafts.isEmpty()) item { Text("Nie ma jeszcze zapisanych zdjęć.", Modifier.testTag("photo-empty")) }
         items(drafts,key={it.id}) { row ->
