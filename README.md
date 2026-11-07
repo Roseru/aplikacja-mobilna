@@ -6,10 +6,13 @@ importowany do bazy i zachowuje pochodzenie danych.
 
 ## Od czego zacząć
 
-Decyzja właściciela z31.10.2026: bieżącą dostawą jest działająca instalacja
-**lokalna, MRE/DEMO, ręczne ścieżki i MOCK**. ARPOL, VPS/domena i rzeczywiste
-Gemini są odłożone; obecnie nie podłączamy Gemini ani billing. Prosta obsługa
-odebranego zestawu Docker i zachowanie danych są opisane w
+Odebrana 05.11.2026 dostawa to instalacja **lokalna, MRE/DEMO, ręczne ścieżki
+i MOCK**, zgodnie z decyzją właściciela z31.10. Bieżący ostatni etap O1/Kamila
+to osobne podłączenie i odbiór Gemini według
+[przekazania](docs/PRZEKAZANIE_GEMINI_KAMIL.md) i aktualnego [AGENTS.md](AGENTS.md).
+Nie oznacza to ponownego przejęcia całego backlogu Androida. ARPOL i VPS/domena
+pozostają poza zakresem tej edycji; domyślna dostawa nie włącza Google ani billing.
+Prosta obsługa odebranego zestawu Docker i zachowanie danych są opisane w
 [instrukcji lokalnego wydania](infra/integration/LOCAL_RELEASE.md).
 
 - **Gość offline:** otwórz `android/` w Android Studio według

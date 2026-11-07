@@ -1,12 +1,36 @@
 # Gemini — przekazanie dla Kamila
 
-Stan sprawdzenia: 4 listopada 2026. Dokument opisuje ostatni zewnętrzny etap
+Instrukcja przygotowania z 4 listopada 2026; przydział i stan odbiorów
+uzupełniono 7 listopada 2026. Dokument opisuje ostatni zewnętrzny etap
 zaakceptowanej edycji lokalnej MRE/DEMO. Do czasu jego osobnego odbioru działają
 MOCK i ręczne wpisy; w tej instalacji nie wykonano konfiguracji Google ani
 połączenia live.
 Klucz nie jest całym wdrożeniem: potrzebne są zgodny zakres użycia, rzeczywiste
 limity projektu, wspólna pula E7/E9, aktualne zgody i dowód działania przez aplikację.
 Nie zmieniamy tej edycji w publiczny hosting, ARPOL lub pełne wydanie produkcyjne.
+
+## Bieżący przydział i punkt przejęcia — 07.11.2026
+
+**Kamil / O1 pozostaje przy Gemini i jego odbiorach.** Historyczne przekazanie
+MRE0.8.40 do O2 nie jest poleceniem ponownego przejęcia całego Androida.
+Obowiązują aktualne [instrukcje agentów](../AGENTS.md) i wpis O3-128
+[jedynego dziennika](KOMUNIKACJA_AGENTOW.md).
+
+O3/Root odebrał 05.11 lokalny MRE/DEMO/MOCK1058/Room27 z main5f9112e po PR204,
+z rzeczywistym zimnym startem i zachowaniem danych. Odbiór dotyczy konkretnego
+artefaktu i instalacji. Późniejszy [PR205](https://github.com/Roseru/aplikacja-mobilna/pull/205)
+jest scalony i ma osobne zielone PR/main CI, lecz nowy APK nadal wymaga swoich
+dowodów. [Raport próby APK/Gemini](e7/ODBIOR_APK_GEMINI_2026_11_05.md)
+zachowuje generate503/provider_result_unknown oraz otwarty formalny odbiór
+wyświetlonej klatki; nie przedstawia ich jako udanej analizy.
+
+Budowa przypiętego APK i niezbędne poprawki integracji/prezentacji AI pozostają
+w zakresie O1. Przy blokerze współdzielonego kodu, np. startu MRE/DiaryVM,
+zapisz konkretny pin, pliki i dowód oraz uzgodnij wydzielony zakres z O3/Root
+przed równoległą edycją. To nie przywraca dawnego backlogu lub starych rezerwacji.
+Zatrzymane laboratoria z restart=no opisane w raporcie pozostają zatrzymane.
+Przed następnym dozwolonym oknem sprawdź aktualne zewnętrzne wejścia poniżej;
+ta korekta przydziału nie jest nowym odczytem warunków lub limitów Google.
 
 Osobny [PR #203](https://github.com/Roseru/aplikacja-mobilna/pull/203) O1 opisuje
 deweloperski odbiór backendu Gemini na jednym zdjęciu oraz poprawkę schematu

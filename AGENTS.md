@@ -1,6 +1,39 @@
 # Instrukcje dla agentów pracujących w repozytorium
 
-## Aktualne przejęcie O1 przez O2 — 26.10.2026
+## Aktualny etap — Gemini i odbiory, 07.11.2026
+
+- **O1 / Kamil pozostaje przy Gemini i jego odbiorach.** Nie przejmuje ponownie
+  całego backlogu Androida na podstawie delegacji z października. Ten przydział
+  wynika z końcowego przekazania właściciela; szczegóły i granice są w
+  [instrukcji Gemini](docs/PRZEKAZANIE_GEMINI_KAMIL.md) oraz wpisie O3-128
+  [jedynego dziennika](docs/KOMUNIKACJA_AGENTOW.md).
+- Lokalna edycja MRE/DEMO z MOCK, Android0.8.47 / validation1058 / Room27,
+  została odebrana przez O3/Root 05.11 na źródle main5f9112e po PR204.
+  To przypięta dostawa, nie automatyczny odbiór każdego późniejszego APK.
+  ARPOL i publiczny VPS/domena pozostają poza zakresem tej edycji.
+- O1 może kontynuować budowę przypiętego APK, testy oraz niezbędne poprawki
+  integracji Gemini i prezentacji AI. PR205 z obsługą terminalnych błędów
+  jest scalony; jego raport zachowuje generate503/provider_result_unknown
+  i otwarty odbiór rzeczywiście wyświetlonej klatki nowego APK. Zielone CI
+  oraz wcześniejszy odbiór instalacji MOCK nie zastępują tych dowodów.
+- Przed edycją współdzielonych źródeł O1 sprawdza bieżące gałęzie i komunikację,
+  zapisuje konkretny zakres w dzienniku i uzgadnia ewentualny konflikt aktywnej
+  rezerwacji z O3/Root. Bloker MRE/DiaryVM/App/MainActivity zgłasza z pinem,
+  plikiem i dowodem do wydzielonej naprawy; nie uruchamia z tego powodu
+  ponownie całego historycznego backlogu O2. O3/Root koordynuje taki zakres.
+- Poniższe datowane delegacje opisują historię swoich etapów. Nie odnawiają
+  dawnych rezerwacji ani obowiązku oczekiwania na dawnego wykonawcę.
+  Nowe, jawnie uzgodnione rezerwacje pozostają wiążące. Wspólne zasady Git,
+  ochrony danych, komunikacji i CI nadal obowiązują.
+- Odbiór konfiguracji/live prowadź według instrukcji Gemini, zachowując dane,
+  historię puli i aktualne zgody. Zatrzymanych laboratoriów z restart=no
+  opisanych w raporcie O1 nie uruchamiaj. Zmiana instrukcji nie uruchamia
+  środowisk, nie włącza billing i nie potwierdza zakończenia E7-R/E9 live.
+
+## Historyczne przejęcie O1 przez O2 — 26.10.2026
+
+Poniższy opis dotyczy przekazania niedokończonego wówczas MRE0.8.40.
+Bieżący przydział i stan dostawy określa sekcja powyżej.
 
 - Na jawne polecenie właściciela Agent 2 przejmuje bieżący etap MRE0.8.40
   i dalszy backlog Androida opisany w
@@ -16,6 +49,8 @@
   przekazaniu niedokończonych źródeł na polecenie właściciela; nie jest
   wydaniem lub odbiorem funkcji. O2 domyka cały etap, sprawdza go i dopiero
   wtedy tworzy jeden duży PR według aktualnego workflow.
+
+## Stałe zasady pracy ze źródłami
 
 - Przed zmianami zapoznaj się z `WYMAGANIA_PROJEKTOWE.md`.
 - Folder `Random Data/` przechowuje dane źródłowe, z których powstanie baza danych całej aplikacji. To materiały projektowe, nie tymczasowe pliki ani losowe dane testowe. Nie usuwaj ich w ramach porządkowania repozytorium.
@@ -45,7 +80,7 @@
 - Autor wynika z zaproszonego konta. Przeglądarka podpisuje człowieka: A1 — Kamil, A2 — Benek, A3 — Johnny; narzędzia podpisują odpowiednio Agent 1, Agent 2, Agent 3. Nie wybieraj innej roli ani nie wysyłaj jako człowiek, aby zastąpić brakujące narzędzie agenta. Gdy brakuje dostępu lub narzędzi, zgłoś konkretny problem w dotychczasowym wątku GitHub i uzgodnij dostęp z właścicielem. Adresy kont, poświadczenia i przypisania serwerowe pozostają poza repozytorium.
 - Podawaj krótko aktualny commit, wykonywany krok, konkretną blokadę i najbliższą dostawę. Obecność w czacie oznacza niedawny sygnał z klienta, a stan pracy jest deklaracją. Nie potwierdzaj odczytu lub pracy za innego agenta. Ustalenia zmieniające interfejsy, rezerwacje plików albo kryteria odbioru utrwal w dzienniku i właściwym PR; sam wpis na czacie nie jest dowodem testu lub scalenia.
 
-## Przydział Androida O1/O2 — historia i aktualny podział
+## Historia przydziałów Androida O1/O2 do 26.10.2026
 
 - Na jawne zlecenie właściciela z 23 października 2026 Agent 2 otrzymał trzy duże etapy Androida: A — pełna kolejka sześciu domen, B — import gościa/legacy i uzgadnianie, C — WorkManager i zarządzanie archiwami. A/B/C zostały wykonane i scalone do mainb245077 przez PR148/156/157. Agent 1 nadal prowadzi osobny etap E4/integracji z sesją; ukończenie A/B/C nie oznacza pełnego v1 lub live E4. Szczegóły, baza i kryteria odbioru: [pakiet prac O2](docs/ANDROID_O2_PAKIET_PRAC.md), [manifest plików](docs/ANDROID_O2_PLIKI.json).
 - O2 używa `codex/android-o2-domeny-sync`, następnie zależnych gałęzi B/C z pakietu, i nadal podpisuje commity `agent 2: ...`. Jest to jawny wyjątek od wcześniejszego przypisania obszaru Android wyłącznie O1. Każdy korzysta z własnego checkoutu.
@@ -54,7 +89,7 @@
 - Najnowsza decyzja właściciela: najpierw duży spójny etap, potem właściwe testy i poprawki; PR dopiero po dużym ukończonym rezultacie. Nie tworzymy małych PR dla samych checkpointów lub statusów. Wymagane kontrole końcowe i GitHub CI pozostają obowiązujące.
 - Ten pakiet jest instrukcją zadania. Bieżące odpowiedzi i postępy przekazujemy na livechacie, a trwałe decyzje i wyniki utrwalamy w `docs/KOMUNIKACJA_AGENTOW.md` według zasad powyżej.
 
-## Ograniczona delegacja dwóch portów O1 do O2 — 24.10.2026
+## Historia — ograniczona delegacja dwóch portów O1 do O2, 24.10.2026
 
 - Końcowe przekazanie25.10: O2 zwrócił rezerwacje źródłem325446b0b762f1088822d296455d522fbe8fe10d, gałąź odbioru11fac87ab9c3e01b793671ff5fdf1f0599854f29. O1 przyjął pin oraz helper NetworkOperationCancellation i lifecycle konkretnego PolicyConnection w komentarzu6398434885. Rezerwacje są zakończone; poniższe zakazy równoległej edycji opisują okres delegacji. O1 integruje zwykłym merge na rodzicu Room23, zachowując community/session i migracje. DI ma jedną networkPolicy, savedEvidence=sessions i tę samą admission co driver. Room24/25 i lokalny dalszy opt-in E9 pozostają osobno. Wspólny odbiór i4skonfigurowane APK nadal wymagane; wynik komponentu O2 ich nie zastępuje.
 
@@ -69,7 +104,7 @@
 - Następny duży etap O1: codex/android-korekty-energii z dokładnego17c388edfd915355d398d7b33deb65a1f7a0d5d3. O1 prowadzi moduł energy, jego UI/REST/cache/niezmienne próby mutacji, zgodnie z docs/e9/INTEGRACJA_O1.md; rezerwuje addytywną migrację24→25 dla lokalnego stanu tego modułu. To rezerwacja, nie potwierdzenie wykonania migracji lub pełnego E9. Siedem plików O2 nadal zamrożone; bez konkurencyjnej migracji O2, drugiej sesji/gate lub przenoszenia całej nowej gałęzi do jego be6/4f. Integracja energy_estimates_v1 i końcowy odbiór pozostają jawną częścią dalszego etapu, bez cichej zmiany zakresu istniejącego sync-v1.
 - Lokalna aktualizacja etapu E9: REST/cache/UI i migracja24→25,0.8.34/code45/Room25, mają build/lint/4nowe JVM/6zmienionych odcisków/6native PASS w granicach opisanych w android/KOREKTY_ZAPOTRZEBOWANIA.md/O1-129. Granica API/sesji native była syntetyczna. Pełne E9 nadal wymaga encji/capability energy_estimates_v1, migracji signed scope i rzeczywistego odbioru po finalnej dostawie O2; nie uznajemy REST za pełne E9. Przed uruchomieniem definicji EnergyPullResponse O1 poprawi jej wzorzec UnicodeText; obecne ścieżki REST nie używają tej definicji. Siedem rezerwacji O2 nadal obowiązuje.
 
-## Nowa wąska delegacja ETag klienta E9 — 25.10.2026
+## Historia — wąska delegacja ETag klienta E9, 25.10.2026
 
 - Aktualizacja: O2 zwrócił rezerwację pinem4cc2d4db43b5022244772e43313d63e45a7c9b9c, jedyny rodzic e16f317, dokładnie4pliki. Przekazanie6400515465 i ACK O1 6401008024. Podane przez O2:13native PASS i niezależny przegląd9,5/10; to wynik komponentu, bez nowego live/CI O1. O1 włączy pin zwykłym merge po domknięciu aktualnego dużego merge/odbioru synchronizacji. Poniższa rezerwacja opisuje zakończony okres delegacji.
 
@@ -78,7 +113,7 @@
 - EnergySchema, EnergySnapshotProtocol i jego test, dalszy opt-in/scope/projekcja pozostają O1. Istniejące EnergyFixture/JSON tylko do odczytu. Najpierw cała poprawka, potem mały odbiór jej transportu i trwałego retry; bez ponawiania zamkniętych54runtime lub całego REST. Końcowy commit/pin/wyniki wracają do O1 do zwykłego merge.
 - To osobna rezerwacja3istniejących plików i1nowego testu. Wcześniejsze7rezerwacji runtime zakończyło się przyjęciem325446b/11fac87 w6398434885 i nie pozostaje organizacyjną blokadą integracji Room23.
 
-## Kontynuacja pełnej synchronizacji E9 — O1
+## Historia — kontynuacja pełnej synchronizacji E9 przez O1
 
 - O1 kontynuuje codex/android-korekty-energii i rezerwuje migrację25→26: utrwalenie zakresu protokołu w snapshotach/próbach ordinary/recovery, fazy draining/snapshot/active oraz niezależna niezmienna oś canonical_energy_versions. To lokalny WIP; brak nowego odbioru, eksportu26 lub uruchomionego opt-in. Dotychczasowy kwalifikowany Room23 pozostaje osobnym czystym checkoutem do dostawy4APK.
 - O2 nadal ma wąską rezerwację ETag powyżej. O1 nie edytuje tych3plików. Nowa migracja nie przepisuje starego body/hash/UUID/rowid ani nie uznaje parsera lub nowego nagłówka za pełną synchronizację. Aktywacja nowego scope wymaga atomowego pełnego odczytu7domen oraz zachowania starej kolejki i prób.
@@ -94,7 +129,7 @@
   Pin ETag4cc2d4d jest gotowy do zwykłego merge; Room23/2319357 nadal
   pozostaje osobnym czystym źródłem uzgodnionej dostawy czterech APK.
 
-## O1 po scaleniu PR175 — 25.10.2026
+## Historia — O1 po scaleniu PR175, 25.10.2026
 
 - PR175/08884f7 jest scalony zwykłym merge143bf0a do main po ośmiu zielonych
   kontrolach ProjectCI40233320875. ETag4cc2d4d O2 i runtime są zintegrowane;
