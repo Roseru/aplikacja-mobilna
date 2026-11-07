@@ -16,6 +16,21 @@ Decyzją właściciela z 24 października 2026 r. bieżące pytania, blokady i k
 
 ## Stan przekazania
 
+Zestawienie O3 z 07.11.2026 uwzględnia końcowe przekazanie właściciela,
+odbiór lokalny z 05.11 oraz scalony PR205. Jest aktualnym przydziałem etapu,
+nie deklaracją bieżącej aktywności lub odczytu za innego agenta.
+
+| Rola | Odebrany zakres / stan | Następny krok | Źródło |
+|---|---|---|---|
+| O1 / Kamil — Gemini i odbiory | PR203: osobny backendowy test dev. PR205: obsługa terminalnych błędów AI scalona, PR/main FULL8SUCCESS; próba APK zachowała generate503/unknown i otwarty formalny startup | Kontynuować Gemini, budowę przypiętego APK i jego rzeczywiste odbiory według instrukcji; wydzielić ewentualny bloker wspólnych źródeł z O3/Root. Nie przejmować ponownie całego backlogu Androida | O1-149/O1-150/O3-128, [przekazanie Gemini](PRZEKAZANIE_GEMINI_KAMIL.md), [PR205](https://github.com/Roseru/aplikacja-mobilna/pull/205) |
+| O2 / Benek — wcześniejszy etap Android MRE | Delegacje MRE0.8.40 i wcześniejszych portów są historią; lokalna edycja1058 z późniejszego PR204 została odebrana przez Root | Dawne wpisy nie tworzą nowego zadania lub rezerwacji. Nową pracę uzgadniamy osobno na konkretnym pinie, po sprawdzeniu aktywnych gałęzi | [AGENTS.md](../AGENTS.md), O2-071/O3-127/O3-128 |
+| O3 / Root — dostawa lokalna i koordynacja | MRE/DEMO/MOCK1058/Room27 na5f9112e: zimny START, dane/ACK, kopia oraz niezależny audit55/55PASS; przekazanie Gemini opublikowane | Utrzymać granicę przypiętej dostawy i koordynować wydzielone blokery odbioru Gemini. Nowy APK i live E7-R/E9 wymagają osobnych dowodów | O3-128, [PR204](https://github.com/Roseru/aplikacja-mobilna/pull/204), [instrukcja lokalna](../infra/integration/LOCAL_RELEASE.md) |
+
+### Historyczna tabela przekazania do etapu MRE0.8.40
+
+Poniższe wiersze zachowują ówczesne wyniki i następne kroki. Nie nadają
+aktualnych zadań, rezerwacji plików ani polecenia powrotu do dawnych wersji.
+
 Każda osoba aktualizuje własny wiersz. Daty i dokładne źródła są w jej wpisach; data starszego przekazania nie oznacza wspólnego stanu całej tabeli. Odczyt O2 z 13 października 2026 r. rozlicza nowe lokalne wyniki O3 w uzupełnieniu O2-024 poniżej.
 
 | Rola | Ostatni znany rezultat | Następny krok / zależność | Źródło |
@@ -12270,3 +12285,45 @@ Kontynuacja O3-121 — zgodność narzędzi z rejestracją email-as-username:
   To zdalny odbiór UI/regresji, bez Google i bez nowego startup PASS na O1.
   Aktualizacja samego dziennika nie zmienia testowanego kodu; osobny wynik
   docelowego main pozostaje wymagany po merge. Lokalne usługi nadal wyłączone.
+
+### O3-128 — aktualne instrukcje Gemini i zamknięcie lokalnego etapu1058
+
+- 07.11.2026, Agent 3 / Root → O1/O2, **DO ODCZYTU**; gałąź
+  `codex/docs-zakres-gemini-20261107`, baza
+  `dfae9685c8d4981284590f52f15754e441d25947` po scalonym PR205.
+  Właściciel przekazał pytanie Kamila wynikające z nadal „aktualnego”
+  przekazania z26.10 w AGENTS.md i zlecił konieczne działania na GitHubie.
+- **Obowiązujący przydział:** O1/Kamil pozostaje przy Gemini i jego odbiorach,
+  w tym budowie przypiętego APK i potrzebnych poprawkach integracji AI.
+  Dawne delegacje O1/O2 zachowano jako historię; nie nakazują ponownego
+  przejęcia całego Androida i nie odnawiają dawnych rezerwacji. Ewentualny
+  konflikt aktywnych prac lub bloker wspólnych źródeł dostaje konkretny
+  zakres/pin uzgodniony z O3/Root. AGENTS, README i przekazanie Gemini
+  opisują tę samą decyzję, bez nowej tablicy komunikacji.
+- **Własny odbiór zakończony05.11:** lokalny MRE/DEMO/MOCK0.8.47/1058/Room27,
+  źródło main5f9112e po PR204. Osobne FULL8/8 dla PR41837379128 i main41841779844,
+  każde607/607native. Rzeczywisty MOCK: zdjęcie, potwierdzenie prywatnego
+  produktu i posiłku, zwykły ACK/PULL, zimne odczytanie offline. Normalna
+  aktualizacja1057→1058 zachowała dane. Nowy bindingR6 i kopia37payloadów
+  przeszły verify oraz STOP/START. Zimny ROOT START z finalnym prywatnym
+  launcheremR13 zakończył exit0 i cztery nowe READY, z dwiema stabilnymi
+  obserwacjami aplikacji. Publiczny31.10 pokazał10/11/12g,42kcal/cel2200,
+  bez zmian w kolejce; wszystkie17 chronionych projekcji i dawny ACK zachowano.
+- Końcowy receipt urządzenia SHA256
+  `c96ab13babaace9501aa6281fd4de1998533955b0d539060ac7041ef30ea997c`;
+  niezależny audit55/55PASS SHA256
+  `b4ead5aa6f7b430d5b2d60123011e760dc655276e08194e0391be4979d30e279`.
+  Manifest odebranej dostawy SHA256
+  `a6a36c1516dc73b2357d7831aea7715d7dcbcab65235c90aa1a78bdc8ac5c099`.
+  Dane, prywatne dowody i artefakty pozostają poza Git. Historyczne odmowy
+  zachowano. Przekazanie Gemini jako Agent3, wiadomość146, opublikowano
+  i odczytano kontrolnie; nie potwierdzamy odczytu lub pracy Kamila za niego.
+- **Późniejszy stan O1 jest odrębny:** PR205 i jego main CI42174581954 mają
+  osiem SUCCESS; raport opisuje503/unknown, ręczny fallback i nieodebrany
+  formalny startup nowego APK. Nie dziedziczy on PASS starej instalacji MOCK.
+  E7-R/E9 live nadal wymagają własnych dowodów. Nie uruchamiano tu SDK,
+  Dockera, Google ani zatrzymanych laboratoriów O1; ich restart=no pozostaje.
+- Ta korekta naprawia instrukcje wykonawcze i rozbieżny bieżący przydział.
+  Lokalny E0 przeszedł:11schemas,98valid/35invalid,18scenarios,966linków
+  oraz diff-check. Nowy rzeczywisty FULL dla PR/main podlega zwykłemu
+  workflow; nie przypisujemy mu wcześniejszego wyniku PR205.
