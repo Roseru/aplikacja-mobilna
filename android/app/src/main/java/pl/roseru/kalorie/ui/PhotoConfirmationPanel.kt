@@ -43,7 +43,11 @@ import pl.roseru.kalorie.session.*
         if(status.canReopen)OutlinedButton(onClick={reopen=true},
             enabled=idle && session.serverLinked && session.binding?.owner?.kind=="account",
             modifier=Modifier.fillMaxWidth().testTag("photo-confirmation-reopen")){Text("Wróć do poprawek")}
-        if(status.rejected && !status.canReopen)Text("Decyzja odrzucona przez serwer. Sprawdź wynik analizy. Zapisane poprawki pozostają do odczytu.",
+        if(status.catalogChoiceChanged)Text(
+            if(status.canReopen) "Produkt w katalogu się zmienił. Wróć do poprawek i usuń nieaktualne powiązanie."
+            else "Produkt w katalogu się zmienił. Wybierz „Sprawdź wynik”, a potem wróć do poprawek.",
+            modifier=Modifier.testTag("photo-confirmation-catalog-changed"))
+        else if(status.rejected && !status.canReopen)Text("Decyzja odrzucona przez serwer. Sprawdź wynik analizy. Zapisane poprawki pozostają do odczytu.",
             modifier=Modifier.testTag("photo-confirmation-rejected"))
         if(!session.hasSession)Text("Połącz konto, aby zatwierdzić posiłek. Poprawki pozostają na telefonie.")
     }

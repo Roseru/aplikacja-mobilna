@@ -13,9 +13,14 @@ import androidx.compose.ui.test.junit4.createComposeRule
 import androidx.compose.ui.unit.Density
 import androidx.compose.ui.unit.dp
 import androidx.test.platform.app.InstrumentationRegistry
+import org.json.JSONArray
+import org.json.JSONObject
 import org.junit.Assert.*
 import org.junit.Rule
 import org.junit.Test
+import pl.roseru.kalorie.community.CandidatePreview
+import pl.roseru.kalorie.community.CommunityCandidate
+import pl.roseru.kalorie.community.PublicProductRef
 import pl.roseru.kalorie.core.*
 import pl.roseru.kalorie.data.*
 import pl.roseru.kalorie.session.*
@@ -29,18 +34,30 @@ class PhotoMealDraftScreenTest {
     private val op="00000000-0000-4000-8000-000000000001"
     private val meal="00000000-0000-4000-8000-000000000002"
     private val item="00000000-0000-4000-8000-000000000003"
-    private fun source():PhotoAnalysisSnapshot {
+    private fun source(vararg candidates:CommunityCandidate):PhotoAnalysisSnapshot {
         val assets=InstrumentationRegistry.getInstrumentation().context.assets
         val ack=assets.open("create-accepted.json").bufferedReader().use {it.readText()}
         val read=assets.open("analysis-read-succeeded.json").use {it.readBytes()}
-        return PhotoAnalysisSnapshot.read(ack,"mock").withRead(read)
+        val response=if(candidates.isEmpty()) read else {
+            val json=JSONObject(read.toString(Charsets.UTF_8))
+            val matches=json.getJSONObject("proposal").getJSONArray("items").getJSONObject(0).getJSONObject("matches")
+            val rows=candidates.map {candidate->
+                JSONObject().put("product",candidate.product.json()).put("provenance",candidate.provenance)
+                    .put("reasons",JSONArray(candidate.reasons)).put("high_confidence",candidate.confident)
+            }
+            matches.put("candidates",JSONArray(rows))
+            json.toString().toByteArray(Charsets.UTF_8)
+        }
+        return PhotoAnalysisSnapshot.read(ack,"mock").withRead(response)
     }
-    private fun draft()=PhotoMealDraft.create(source().latest!!,meal,listOf(item),Instant.parse("2026-10-17T12:00:00Z"),ZoneId.of("Europe/Warsaw"))
-    private fun view(value:PhotoMealDraft?)=SessionView(
+    private fun draft(snapshot:PhotoAnalysisSnapshot=source())=PhotoMealDraft.create(snapshot.latest!!,meal,listOf(item),
+        Instant.parse("2026-10-17T12:00:00Z"),ZoneId.of("Europe/Warsaw"))
+    private fun view(value:PhotoMealDraft?,snapshot:PhotoAnalysisSnapshot=source())=SessionView(
         binding=SessionBinding(LocalOwnerEntity("A","A","account","https://fixture.example","A"),OwnerLease("A",1)),
         hasSession=false,serverLinked=true,photoUploadConfigured=true,photoCanEditProposal=true,
         photoUpload=PhotoUploadStatus(op,"photo","mock","mock-food-v1",true,true,0,false),
-        photoAnalysis=PhotoAnalysisPreview.from(source().latest!!),photoMealDraft=value?.let {PhotoMealDraftPreview.from(op,source().withMealDraft(it,0))})
+        photoAnalysis=PhotoAnalysisPreview.from(snapshot.latest!!),
+        photoMealDraft=value?.let {PhotoMealDraftPreview.from(op,snapshot.withMealDraft(it,0))})
     private fun snapshot(name:String) {
         compose.waitForIdle()
         val instrumentation=InstrumentationRegistry.getInstrumentation()
@@ -52,11 +69,12 @@ class PhotoMealDraftScreenTest {
         val bytes=ParcelFileDescriptor.AutoCloseInputStream(instrumentation.uiAutomation.executeShellCommand("head -c 8 $path")).use {it.readBytes()}
         assertTrue(bytes.contentEquals(byteArrayOf(0x89.toByte(),0x50,0x4e,0x47,13,10,26,10)))
     }
-    @Composable private fun content(view:SessionView,actions:PhotoDraftActions) {
+    @Composable private fun content(view:SessionView,actions:PhotoDraftActions,
+        lookup:(suspend (CommunityCandidate)->CandidatePreview)?=null) {
         val density=LocalDensity.current
         CompositionLocalProvider(LocalDensity provides Density(density.density,1.5f)) {
             CalorieTheme(true){Surface{Column(Modifier.width(320.dp).verticalScroll(rememberScrollState())) {
-                PhotoMealDraftPanel(view,LocalDate.of(2026,10,17),actions)
+                PhotoMealDraftPanel(view,LocalDate.of(2026,10,17),actions,lookup)
             }}}
         }
     }
@@ -108,5 +126,37 @@ class PhotoMealDraftScreenTest {
         compose.onNodeWithTag("photo-draft-input-save").assertDoesNotExist()
         compose.onNodeWithTag("photo-meal-draft-edit-$item").performScrollTo().assertIsNotEnabled()
         compose.onNodeWithTag("photo-meal-draft-panel").assertExists();assertEquals(0,writes)
+    }
+    @Test fun onlyAnExplicitlyReadCandidateWithTheExpectedRevisionCanBeSelected() {
+        val official=PublicProductRef("00000000-0000-4000-8000-000000000004",2)
+        val community=PublicProductRef("00000000-0000-4000-8000-000000000005",4)
+        val snapshot=source(CommunityCandidate(official,"official",listOf("name"),false),
+            CommunityCandidate(community,"community",listOf("name"),false))
+        val view=view(draft(snapshot),snapshot).copy(hasSession=true)
+        val lookedUp=mutableListOf<PublicProductRef>()
+        val selected=mutableListOf<PublicProductRef>()
+        compose.setContent {
+            content(view,PhotoDraftActions(replace={operation,revision,component,input->
+                assertEquals(op,operation);assertEquals(1L,revision);assertEquals(item,component)
+                selected+=requireNotNull(input.product)
+            })) { candidate->
+                lookedUp+=candidate.product
+                if(candidate.product==official) CandidatePreview(official,"Banan świeży","g","89","catalog")
+                else CandidatePreview(community.copy(revision=5),"Banan społecznościowy","g","91","catalog")
+            }
+        }
+        compose.onNodeWithTag("photo-meal-draft-candidates-$item").performScrollTo().performClick()
+        compose.onNodeWithTag("photo-candidate-select-0").assertDoesNotExist()
+        compose.runOnIdle {assertTrue(lookedUp.isEmpty());assertTrue(selected.isEmpty())}
+        compose.onNodeWithTag("photo-candidate-detail-1").performScrollTo().performClick()
+        compose.onNodeWithText("Szczegóły produktu są teraz niedostępne.").assertExists()
+        compose.onNodeWithTag("photo-candidate-select-1").assertDoesNotExist()
+        compose.onNodeWithTag("photo-candidate-detail-0").performScrollTo().performClick()
+        compose.onNodeWithText("Banan świeży").assertExists()
+        compose.onNodeWithTag("photo-candidate-select-0").performScrollTo().performClick()
+        compose.runOnIdle {
+            assertEquals(listOf(community,official),lookedUp)
+            assertEquals(listOf(official),selected)
+        }
     }
 }

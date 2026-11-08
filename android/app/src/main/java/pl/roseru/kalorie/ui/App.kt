@@ -16,6 +16,8 @@ import androidx.navigation.compose.*
 import pl.roseru.kalorie.DiaryEvent
 import pl.roseru.kalorie.DiaryViewModel
 import pl.roseru.kalorie.DiaryStartupDiagnostics
+import pl.roseru.kalorie.community.CandidatePreview
+import pl.roseru.kalorie.community.CommunityCandidate
 import pl.roseru.kalorie.session.*
 
 @Composable fun CalorieApp(model: DiaryViewModel, session: SessionView, actions: SessionActions, photoModel: pl.roseru.kalorie.photo.MealPhotoViewModel, importModel:pl.roseru.kalorie.importing.ImportViewModel?=null,syncStatus:String?=null,
@@ -89,12 +91,17 @@ import pl.roseru.kalorie.session.*
             composable("rations") { RationScreen(model, onBack = { nav.popBackStack() }) }
             composable("photo") {
                 val day by model.day.collectAsStateWithLifecycle()
+                val lease = session.binding?.lease
+                val lookup: (suspend (CommunityCandidate) -> CandidatePreview)? =
+                    if (communityModel == null || lease == null) null
+                    else { candidate -> communityModel.previewPhotoCandidate(lease, candidate) }
                 MealPhotoScreen(photoModel, day.date, onBack = { nav.popBackStack() }, onManual = { nav.navigate("custom") },
                     session = session, onReadCapabilities = actions.readPhotoCapabilities,
                     onUpload = actions.uploadPhoto,onRetryUpload = actions.retryPhotoUpload,
                     onDiscardUpload = actions.discardUnsentPhotoUpload,onReadAnalysis=actions.readPhotoAnalysis,
                     onRestoreAnalysis=actions.restorePhotoAnalysis,onStopAnalysis=actions.stopPhotoAnalysis,onClearAnalysis=actions.clearPhotoAnalysis,
-                    onCancelAnalysis=actions.cancelPhotoAnalysis,onRetryCancellation=actions.retryPhotoCancellation,onReleaseCancelled=actions.releaseCancelledPhoto,draftActions=actions.photoDraft)
+                    onCancelAnalysis=actions.cancelPhotoAnalysis,onRetryCancellation=actions.retryPhotoCancellation,
+                    onReleaseCancelled=actions.releaseCancelledPhoto,draftActions=actions.photoDraft,lookupCandidate=lookup)
             }
             composable("custom") { CustomFoodScreen(model, onBack = { nav.popBackStack() }) }
             composable("settings") { SettingsScreen(model,deviceNetworkModels?.catalog,deviceNetworkModels?.policy,

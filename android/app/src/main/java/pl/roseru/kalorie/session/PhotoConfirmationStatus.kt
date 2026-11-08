@@ -4,7 +4,8 @@ import pl.roseru.kalorie.core.PhotoAnalysisSnapshot
 
 /** A display-only decision summary. It exposes neither mutation keys nor frozen wire data. */
 class PhotoConfirmationStatus(val operationId:String,val revision:Long,val editRevision:Long,
-    val canStart:Boolean,val canRetry:Boolean,val rejected:Boolean,val canReopen:Boolean=false) {
+    val canStart:Boolean,val canRetry:Boolean,val rejected:Boolean,val canReopen:Boolean=false,
+    val catalogChoiceChanged:Boolean=false) {
     override fun toString()="PhotoConfirmationStatus(redacted)"
     internal companion object {
         fun from(id:String,snapshot:PhotoAnalysisSnapshot,readProof:Boolean=false):PhotoConfirmationStatus? {
@@ -14,7 +15,8 @@ class PhotoConfirmationStatus(val operationId:String,val revision:Long,val editR
             return PhotoConfirmationStatus(id,read.revision,draft.editRevision,snapshot.canEditProposal,
                 !snapshot.cancelled && intent?.pending==true &&
                     (read.decision=="pending" || (read.decision=="confirmed" && intent.attempted)),
-                intent?.rejectedCode!=null,readProof && snapshot.canReopenConfirmation)
+                intent?.rejectedCode!=null,readProof && snapshot.canReopenConfirmation,
+                intent?.rejectedCode=="photo_catalog_choice_changed")
         }
     }
 }

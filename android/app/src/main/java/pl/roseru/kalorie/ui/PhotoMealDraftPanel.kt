@@ -14,11 +14,14 @@ import androidx.compose.ui.unit.dp
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.LifecycleEventObserver
 import androidx.lifecycle.compose.LocalLifecycleOwner
+import pl.roseru.kalorie.community.CandidatePreview
+import pl.roseru.kalorie.community.CommunityCandidate
 import pl.roseru.kalorie.core.*
 import pl.roseru.kalorie.session.*
 import java.time.LocalDate
 
-@Composable fun PhotoMealDraftPanel(session:SessionView,date:LocalDate,actions:PhotoDraftActions) {
+@Composable fun PhotoMealDraftPanel(session:SessionView,date:LocalDate,actions:PhotoDraftActions,
+    lookupCandidate:(suspend (CommunityCandidate)->CandidatePreview)?=null) {
     val row=session.photoUpload?:return
     val draft=session.photoMealDraft
     val idle=!session.photoUploadBusy && !session.busy && !session.pendingLogin && !session.requiresRecovery &&
@@ -35,9 +38,10 @@ import java.time.LocalDate
     var edit by remember(session.binding?.lease,draft.operationId,draft.editRevision,session.photoCanEditProposal) {mutableStateOf<String?>(null)}
     var rename by remember(session.binding?.lease,draft.operationId,draft.editRevision,session.photoCanEditProposal) {mutableStateOf(false)}
     var discard by remember(session.binding?.lease,draft.operationId,draft.editRevision,session.photoCanEditProposal) {mutableStateOf(false)}
+    var compare by remember(session.binding?.lease,draft.operationId,draft.editRevision,session.photoCanEditProposal) {mutableStateOf<String?>(null)}
     val lifecycle=LocalLifecycleOwner.current
     DisposableEffect(lifecycle,session.binding?.lease,draft.operationId,draft.editRevision,session.photoCanEditProposal) {
-        val observer=LifecycleEventObserver {_,event->if(event==Lifecycle.Event.ON_STOP){edit=null;rename=false;discard=false}}
+        val observer=LifecycleEventObserver {_,event->if(event==Lifecycle.Event.ON_STOP){edit=null;rename=false;discard=false;compare=null}}
         lifecycle.lifecycle.addObserver(observer)
         onDispose {lifecycle.lifecycle.removeObserver(observer)}
     }
@@ -60,6 +64,24 @@ import java.time.LocalDate
                     Text(item.input.name,style=MaterialTheme.typography.titleSmall,maxLines=3,overflow=TextOverflow.Ellipsis)
                     Text("${item.input.amount} ${item.input.unit} · ${if(item.energy.missingCount>0) "brak danych kcal" else draftNutrient(item.energy,"kcal")}")
                     Text(if(item.manuallyAdded) "Składnik dodany ręcznie" else "Szacunek AI z Twoimi poprawkami",style=MaterialTheme.typography.bodySmall)
+                    val linked=item.input.product!=null
+                    if(linked || item.suggestedProduct!=null) {
+                        Text(if(linked) "Powiązano z produktem z katalogu. Zapiszesz wartości z tego posiłku."
+                            else "Znaleziono pewne dopasowanie w katalogu.",style=MaterialTheme.typography.bodySmall)
+                        TextButton(
+                            onClick={
+                                val product=if(linked)null else item.suggestedProduct
+                                actions.replace(draft.operationId,draft.editRevision,item.id,item.input.withProduct(product))
+                            },
+                            enabled=editable,modifier=Modifier.testTag("photo-meal-draft-match-${item.id}")
+                        ) {Text(if(linked) "Usuń powiązanie" else "Użyj produktu z katalogu")}
+                    }
+                    if(item.candidates.isNotEmpty()) {
+                        Text("Katalog zawiera możliwe dopasowania. Możesz porównać je z rozpoznanym składnikiem.",
+                            style=MaterialTheme.typography.bodySmall)
+                        TextButton(onClick={compare=item.id},enabled=editable,
+                            modifier=Modifier.testTag("photo-meal-draft-candidates-${item.id}")) {Text("Porównaj produkty")}
+                    }
                     Row(horizontalArrangement=Arrangement.spacedBy(8.dp)) {
                         TextButton(onClick={edit=item.id},enabled=editable,modifier=Modifier.testTag("photo-meal-draft-edit-${item.id}")){Text("Popraw składnik")}
                         TextButton(onClick={actions.remove(draft.operationId,draft.editRevision,item.id)},enabled=editable && draft.items.size>1,
@@ -74,6 +96,14 @@ import java.time.LocalDate
         }
     }
     PhotoConfirmationPanel(session,actions)
+    val comparison=draft.items.firstOrNull {it.id==compare}
+    if(comparison!=null && session.photoCanEditProposal) {
+        PhotoCandidateDialog(comparison,lookupCandidate,editable,session.hasSession && session.serverLinked,
+            onDismiss={compare=null},onChoose={product->
+                compare=null
+                actions.replace(draft.operationId,draft.editRevision,comparison.id,comparison.input.withProduct(product))
+            })
+    }
     edit?.let {target->
         val original=remember(target,draft.operationId,draft.editRevision){if(target.isEmpty())PhotoDraftInput("","100","g","","","","") else draft.items.singleOrNull {it.id==target}?.input}
         if(original!=null && session.photoCanEditProposal) PhotoDraftItemDialog(original,target.isEmpty(),editable,onDismiss={edit=null},onSave={input->
@@ -123,7 +153,7 @@ import java.time.LocalDate
                 color=MaterialTheme.colorScheme.error,modifier=Modifier.testTag("photo-draft-input-error"))
         }},
         confirmButton={TextButton(onClick={
-            val input=PhotoDraftInput(name,amount,unit,energy,protein,fat,carbs)
+            val input=PhotoDraftInput(name,amount,unit,energy,protein,fat,carbs,initial.product)
             val valid=runCatching {PhotoMealDraft.validateInput(input);require(name.trim().codePointCount(0,name.trim().length)<=200)}.isSuccess
             if(valid)onSave(input)else error=true
         },enabled=enabled,modifier=Modifier.testTag("photo-draft-input-save")){Text("Zapisz poprawki")}},

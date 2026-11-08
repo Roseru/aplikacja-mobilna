@@ -125,6 +125,14 @@ i `truncated`. Candidate ma exact `product_id`/`revision`, `provenance`, `reason
 i `high_confidence`. Użytkownik wybiera; matching nie publikuje/scalania produktu
 i nie gwarantuje aktualności wyboru w chwili confirm.
 
+W korekcie Android pozwala użyć jednoznacznego dopasowania lub otworzyć
+porównanie kandydatów. Dane kandydata pobiera dopiero na żądanie użytkownika,
+z katalogu oficjalnego lub społeczności, i udostępnia wybór po sprawdzeniu
+dokładnej rewizji. Powiązanie zachowuje poprawione wartości posiłku jako
+`ai_estimate` i nie tworzy szkicu produktu dla powiązanego składnika. Zmiana
+nazwy albo jednostki usuwa powiązanie. Sam odczyt szczegółów niczego nie
+zatwierdza. Po konflikcie rewizji można wrócić do poprawek i usunąć powiązanie.
+
 Cancel wysyła JSON zawierający jedynie `expected_revision` z ostatniego odczytu
 oraz własny key/epokę. Wynik ma `state="failed"`, `decision_state="cancelled"`
 i `error_code="analysis_cancelled"`. Przed kwalifikacją dispatch cofnięcie blokuje
