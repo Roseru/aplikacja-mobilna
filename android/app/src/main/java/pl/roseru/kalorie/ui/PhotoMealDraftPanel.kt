@@ -60,6 +60,18 @@ import java.time.LocalDate
                     Text(item.input.name,style=MaterialTheme.typography.titleSmall,maxLines=3,overflow=TextOverflow.Ellipsis)
                     Text("${item.input.amount} ${item.input.unit} · ${if(item.energy.missingCount>0) "brak danych kcal" else draftNutrient(item.energy,"kcal")}")
                     Text(if(item.manuallyAdded) "Składnik dodany ręcznie" else "Szacunek AI z Twoimi poprawkami",style=MaterialTheme.typography.bodySmall)
+                    val linked=item.input.product!=null
+                    if(linked || item.suggestedProduct!=null) {
+                        Text(if(linked) "Powiązano z produktem z katalogu. Zapiszesz wartości z tego posiłku."
+                            else "Znaleziono pewne dopasowanie w katalogu.",style=MaterialTheme.typography.bodySmall)
+                        TextButton(
+                            onClick={
+                                val product=if(linked)null else item.suggestedProduct
+                                actions.replace(draft.operationId,draft.editRevision,item.id,item.input.withProduct(product))
+                            },
+                            enabled=editable,modifier=Modifier.testTag("photo-meal-draft-match-${item.id}")
+                        ) {Text(if(linked) "Usuń powiązanie" else "Użyj produktu z katalogu")}
+                    }
                     Row(horizontalArrangement=Arrangement.spacedBy(8.dp)) {
                         TextButton(onClick={edit=item.id},enabled=editable,modifier=Modifier.testTag("photo-meal-draft-edit-${item.id}")){Text("Popraw składnik")}
                         TextButton(onClick={actions.remove(draft.operationId,draft.editRevision,item.id)},enabled=editable && draft.items.size>1,
@@ -123,7 +135,7 @@ import java.time.LocalDate
                 color=MaterialTheme.colorScheme.error,modifier=Modifier.testTag("photo-draft-input-error"))
         }},
         confirmButton={TextButton(onClick={
-            val input=PhotoDraftInput(name,amount,unit,energy,protein,fat,carbs)
+            val input=PhotoDraftInput(name,amount,unit,energy,protein,fat,carbs,initial.product)
             val valid=runCatching {PhotoMealDraft.validateInput(input);require(name.trim().codePointCount(0,name.trim().length)<=200)}.isSuccess
             if(valid)onSave(input)else error=true
         },enabled=enabled,modifier=Modifier.testTag("photo-draft-input-save")){Text("Zapisz poprawki")}},

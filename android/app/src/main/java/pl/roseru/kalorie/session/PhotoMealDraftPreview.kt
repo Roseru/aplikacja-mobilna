@@ -1,5 +1,6 @@
 package pl.roseru.kalorie.session
 
+import pl.roseru.kalorie.community.PublicProductRef
 import pl.roseru.kalorie.core.*
 import java.time.LocalDate
 import java.util.Collections
@@ -11,7 +12,8 @@ data class PhotoDraftActions(val start:(String,Long,LocalDate)->Unit={_,_,_->},
     val confirm:(String,Long,Long)->Unit={_,_,_->},val retryConfirmation:(String)->Unit={},
     val reopen:(String,Long,Long)->Unit={_,_,_->})
 
-class PhotoDraftItemPreview(val id:String,val manuallyAdded:Boolean,val input:PhotoDraftInput,val energy:PhotoNutrientPreview) {
+class PhotoDraftItemPreview(val id:String,val manuallyAdded:Boolean,val input:PhotoDraftInput,
+    val energy:PhotoNutrientPreview,val suggestedProduct:PublicProductRef?) {
     override fun toString()="PhotoDraftItemPreview(redacted)"
 }
 class PhotoMealDraftPreview private constructor(val operationId:String,val editRevision:Long,val title:String,
@@ -22,11 +24,14 @@ class PhotoMealDraftPreview private constructor(val operationId:String,val editR
             val draft=snapshot.mealDraft?:return null
             fun field(value:FieldAggregate)=PhotoNutrientPreview(value.display,value.missingCount)
             val totals=draft.totals
+            val sources=snapshot.latest?.proposal?.items?.associateBy {it.componentId}.orEmpty()
             val items=draft.items.map {item->
                 val values=item.portion.per100.values().map {it?.let(ContractDecimal::canonical)?:""}
                 PhotoDraftItemPreview(item.id,item.sourceComponentId==null,
-                    PhotoDraftInput(item.name,ContractDecimal.canonical(item.portion.amount),item.portion.unit.wire,values[0],values[1],values[2],values[3]),
-                    field(NutritionV1.calculate(listOf(item.portion)).energy))
+                    PhotoDraftInput(item.name,ContractDecimal.canonical(item.portion.amount),item.portion.unit.wire,
+                        values[0],values[1],values[2],values[3],item.product),
+                    field(NutritionV1.calculate(listOf(item.portion)).energy),
+                    item.sourceComponentId?.let {sources[it]?.suggestedProductFor(item)})
             }
             return PhotoMealDraftPreview(id,draft.editRevision,draft.title,draft.localDate.toString(),Collections.unmodifiableList(ArrayList(items)),
                 PhotoNutritionPreview(field(totals.energy),field(totals.protein),field(totals.fat),field(totals.carbs)))

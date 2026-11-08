@@ -1,10 +1,12 @@
 package pl.roseru.kalorie
 
+import org.json.JSONArray
 import org.json.JSONObject
 import org.junit.Assert.*
 import org.junit.Test
 import pl.roseru.kalorie.core.*
 import pl.roseru.kalorie.core.catalog.StrictJson
+import pl.roseru.kalorie.community.PublicProductRef
 import java.time.Instant
 import java.time.ZoneId
 
@@ -137,6 +139,35 @@ class PhotoMealDraftTest {
         val remaining=drafts(added.remove(item))
         assertEquals(1,remaining.length());assertEquals(products.getJSONObject(1).getString("draft_id"),remaining.getJSONObject(0).getString("draft_id"))
         assertEquals(id,drafts(first.replace(item,input(name="Inna nazwa",energy="98"))).getJSONObject(0).getString("draft_id"))
+    }
+    @Test fun confirmedCatalogChoiceSurvivesRestartWithoutCreatingADuplicateDraft() {
+        val reference=PublicProductRef("44444444-4444-4444-8444-444444444444",3)
+        val response=result()
+        val component=response.getJSONObject("proposal").getJSONArray("items").getJSONObject(0)
+        component.getJSONObject("identity").getJSONObject("variant").put("state","known").put("value","dojrzały")
+        component.getJSONObject("matches").put("decision","existing_variant").put("existing_product",reference.json())
+            .put("missing_identity_fields",JSONArray()).put("candidates",JSONArray())
+        val analysis=PhotoAnalysisSnapshot.read(fixture("create-accepted"),"mock").withRead(bytes(response))
+        val read=analysis.latest!!
+        val draft=PhotoMealDraft.create(read,meal,listOf(item),moment,zone)
+        val correction=input(name="Banan").withProduct(reference)
+        val linked=draft.replace(item,correction)
+        val saved=restart(analysis.withMealDraft(draft,0).withMealDraft(linked,1))
+        val restored=saved.mealDraft!!
+        val mixed=restored.add(other,input(name="Ryż"))
+        val request=StrictJson.read(mixed.confirmBody(read))
+        val row=request.getJSONObject("meal").getJSONObject("payload").getJSONArray("items").getJSONObject(0)
+        assertEquals(reference.id,row.getJSONObject("product").getString("product_id"))
+        assertEquals(3,row.getJSONObject("product").getInt("revision"))
+        assertEquals("ai_estimate",row.getString("nutrition_origin"))
+        assertEquals("91.2",row.getJSONObject("nutrition_per_100").getString("energy_kcal"))
+        assertEquals("Ryż",request.getJSONArray("drafts").getJSONObject(0).getJSONObject("payload").getString("name"))
+        assertEquals(1,request.getJSONArray("drafts").length())
+        val confirmation=saved.prepareConfirmation(other,read.revision,restored.editRevision)
+        assertEquals(confirmation.serialized,restart(confirmation).serialized)
+        assertNull(restored.replace(item,correction.withProduct(null)).items.single().product)
+        assertNull(restored.replace(item,input(name="Inny produkt").withProduct(reference)).items.single().product)
+        bad {draft.replace(item,correction.withProduct(reference.copy(revision=4))).confirmBody(read)}
     }
     @Test fun snapshotCasRequiresNextLocalRevisionAndPreservesDraftAcrossARead() {
         val saved=saved();assertTrue(saved.canEditProposal)
