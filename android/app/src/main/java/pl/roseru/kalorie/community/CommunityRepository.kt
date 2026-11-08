@@ -14,7 +14,8 @@ import pl.roseru.kalorie.session.*
 class CommunityUnavailable(val reason:String):IllegalStateException(reason)
 data class CommunityLocalState(val scope:CommunityScope?,val products:List<CommunityProduct>,
     val drafts:List<PublicationDraft>,val attempts:List<CommunityAttemptEntity>,val retryAt:Long)
-data class CandidatePreview(val ref:PublicProductRef,val name:String,val unit:String,val energy:String?,val source:String)
+data class CandidatePreview(val ref:PublicProductRef,val name:String,val unit:String,val energy:String?,val source:String,
+    val brand:String?=null,val variant:String?=null)
 
 internal class CommunityRepository(private val context:Context,private val store:CommunityStore,
     private val sessions:SessionController,private val gate:NetworkAccessGate,private val gateway:CommunityGateway?,
@@ -60,14 +61,22 @@ internal class CommunityRepository(private val context:Context,private val store
         val result=CommunityProtocol.matches(response.result.bytes)
         guard(response,scope){};return result
     }
-    suspend fun preview(scope:CommunityScope,candidate:CommunityCandidate):CandidatePreview {
+    suspend fun preview(lease:OwnerLease,candidate:CommunityCandidate):CandidatePreview =
+        preview(store.scope(lease)?:throw CommunityUnavailable("login_required"),candidate,currentOnly=true)
+
+    suspend fun preview(scope:CommunityScope,candidate:CommunityCandidate,currentOnly:Boolean=false):CandidatePreview {
+        fun optional(value:JSONObject,key:String)=if(value.isNull(key))null else value.getString(key)
         if(candidate.provenance=="community") {
             val product=detail(scope,candidate.product)
+            if(currentOnly)require(product.canonicalRef==product.ref)
+            val value=product.json()
             return CandidatePreview(product.ref,product.name,product.basisUnit,
-                product.json().getJSONObject("nutrition_per_100").let {if(it.isNull("energy_kcal"))null else it.getString("energy_kcal")},product.sourceDescription)
+                optional(value.getJSONObject("nutrition_per_100"),"energy_kcal"),value.getString("source_description"),
+                optional(value,"brand"),optional(value,"variant"))
         }
         val ref=candidate.product
-        val response=read(scope,"GET","/products/${ref.id}?revision=${ref.revision}")
+        val path="/products/${ref.id}"+if(currentOnly)"" else "?revision=${ref.revision}"
+        val response=read(scope,"GET",path)
         val value=CommunityProtocol.read(response.result.bytes)
         val schema=CatalogSchema(context.assets.open("catalog/e2/common.schema.json").use {StrictJson.read(it.readBytes())},
             context.assets.open("catalog/e2/catalog.schema.json").use {StrictJson.read(it.readBytes())})
@@ -75,7 +84,8 @@ internal class CommunityRepository(private val context:Context,private val store
         require(value.getString("product_id")==ref.id && value.getInt("revision")==ref.revision)
         val nutrition=value.getJSONObject("nutrition_per_100")
         val result=CandidatePreview(ref,value.getString("name"),value.getString("basis_unit"),
-            if(nutrition.isNull("energy_kcal"))null else nutrition.getString("energy_kcal"),value.getString("source_locator"))
+            optional(nutrition,"energy_kcal"),value.getString("source_locator"),
+            optional(value,"brand"),optional(value,"variant"))
         guard(response,scope){};return result
     }
     suspend fun publish(scope:CommunityScope,draft:PublicationDraft,matchBody:String,selected:PublicProductRef?,confirmNew:Boolean):CommunityAttemptEntity=writes.withLock {

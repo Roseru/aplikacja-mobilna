@@ -14,11 +14,14 @@ import androidx.compose.ui.unit.dp
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.LifecycleEventObserver
 import androidx.lifecycle.compose.LocalLifecycleOwner
+import pl.roseru.kalorie.community.CandidatePreview
+import pl.roseru.kalorie.community.CommunityCandidate
 import pl.roseru.kalorie.core.*
 import pl.roseru.kalorie.session.*
 import java.time.LocalDate
 
-@Composable fun PhotoMealDraftPanel(session:SessionView,date:LocalDate,actions:PhotoDraftActions) {
+@Composable fun PhotoMealDraftPanel(session:SessionView,date:LocalDate,actions:PhotoDraftActions,
+    lookupCandidate:(suspend (CommunityCandidate)->CandidatePreview)?=null) {
     val row=session.photoUpload?:return
     val draft=session.photoMealDraft
     val idle=!session.photoUploadBusy && !session.busy && !session.pendingLogin && !session.requiresRecovery &&
@@ -35,9 +38,10 @@ import java.time.LocalDate
     var edit by remember(session.binding?.lease,draft.operationId,draft.editRevision,session.photoCanEditProposal) {mutableStateOf<String?>(null)}
     var rename by remember(session.binding?.lease,draft.operationId,draft.editRevision,session.photoCanEditProposal) {mutableStateOf(false)}
     var discard by remember(session.binding?.lease,draft.operationId,draft.editRevision,session.photoCanEditProposal) {mutableStateOf(false)}
+    var compare by remember(session.binding?.lease,draft.operationId,draft.editRevision,session.photoCanEditProposal) {mutableStateOf<String?>(null)}
     val lifecycle=LocalLifecycleOwner.current
     DisposableEffect(lifecycle,session.binding?.lease,draft.operationId,draft.editRevision,session.photoCanEditProposal) {
-        val observer=LifecycleEventObserver {_,event->if(event==Lifecycle.Event.ON_STOP){edit=null;rename=false;discard=false}}
+        val observer=LifecycleEventObserver {_,event->if(event==Lifecycle.Event.ON_STOP){edit=null;rename=false;discard=false;compare=null}}
         lifecycle.lifecycle.addObserver(observer)
         onDispose {lifecycle.lifecycle.removeObserver(observer)}
     }
@@ -72,6 +76,12 @@ import java.time.LocalDate
                             enabled=editable,modifier=Modifier.testTag("photo-meal-draft-match-${item.id}")
                         ) {Text(if(linked) "Usuń powiązanie" else "Użyj produktu z katalogu")}
                     }
+                    if(item.candidates.isNotEmpty()) {
+                        Text("Katalog zawiera możliwe dopasowania. Możesz porównać je z rozpoznanym składnikiem.",
+                            style=MaterialTheme.typography.bodySmall)
+                        TextButton(onClick={compare=item.id},enabled=editable,
+                            modifier=Modifier.testTag("photo-meal-draft-candidates-${item.id}")) {Text("Porównaj produkty")}
+                    }
                     Row(horizontalArrangement=Arrangement.spacedBy(8.dp)) {
                         TextButton(onClick={edit=item.id},enabled=editable,modifier=Modifier.testTag("photo-meal-draft-edit-${item.id}")){Text("Popraw składnik")}
                         TextButton(onClick={actions.remove(draft.operationId,draft.editRevision,item.id)},enabled=editable && draft.items.size>1,
@@ -86,6 +96,14 @@ import java.time.LocalDate
         }
     }
     PhotoConfirmationPanel(session,actions)
+    val comparison=draft.items.firstOrNull {it.id==compare}
+    if(comparison!=null && session.photoCanEditProposal) {
+        PhotoCandidateDialog(comparison,lookupCandidate,editable,session.hasSession && session.serverLinked,
+            onDismiss={compare=null},onChoose={product->
+                compare=null
+                actions.replace(draft.operationId,draft.editRevision,comparison.id,comparison.input.withProduct(product))
+            })
+    }
     edit?.let {target->
         val original=remember(target,draft.operationId,draft.editRevision){if(target.isEmpty())PhotoDraftInput("","100","g","","","","") else draft.items.singleOrNull {it.id==target}?.input}
         if(original!=null && session.photoCanEditProposal) PhotoDraftItemDialog(original,target.isEmpty(),editable,onDismiss={edit=null},onSave={input->

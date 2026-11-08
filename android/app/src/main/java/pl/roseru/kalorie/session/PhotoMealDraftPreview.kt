@@ -1,6 +1,7 @@
 package pl.roseru.kalorie.session
 
 import pl.roseru.kalorie.community.PublicProductRef
+import pl.roseru.kalorie.community.CommunityCandidate
 import pl.roseru.kalorie.core.*
 import java.time.LocalDate
 import java.util.Collections
@@ -13,7 +14,8 @@ data class PhotoDraftActions(val start:(String,Long,LocalDate)->Unit={_,_,_->},
     val reopen:(String,Long,Long)->Unit={_,_,_->})
 
 class PhotoDraftItemPreview(val id:String,val manuallyAdded:Boolean,val input:PhotoDraftInput,
-    val energy:PhotoNutrientPreview,val suggestedProduct:PublicProductRef?) {
+    val energy:PhotoNutrientPreview,val suggestedProduct:PublicProductRef?,
+    val candidates:List<CommunityCandidate>,val candidatesTruncated:Boolean) {
     override fun toString()="PhotoDraftItemPreview(redacted)"
 }
 class PhotoMealDraftPreview private constructor(val operationId:String,val editRevision:Long,val title:String,
@@ -27,11 +29,15 @@ class PhotoMealDraftPreview private constructor(val operationId:String,val editR
             val sources=snapshot.latest?.proposal?.items?.associateBy {it.componentId}.orEmpty()
             val items=draft.items.map {item->
                 val values=item.portion.per100.values().map {it?.let(ContractDecimal::canonical)?:""}
+                val matches=item.sourceComponentId?.let {sources[it]}?.takeIf {it.sameIdentityAs(item)}?.matches
+                val candidates=matches?.takeIf {it.decision=="manual_candidates"}?.candidates.orEmpty()
+                    .map {CommunityCandidate(it.product.publicRef(),it.provenance,it.reasons,it.highConfidence)}
+                    .distinctBy {it.product}
                 PhotoDraftItemPreview(item.id,item.sourceComponentId==null,
                     PhotoDraftInput(item.name,ContractDecimal.canonical(item.portion.amount),item.portion.unit.wire,
                         values[0],values[1],values[2],values[3],item.product),
                     field(NutritionV1.calculate(listOf(item.portion)).energy),
-                    item.sourceComponentId?.let {sources[it]?.suggestedProductFor(item)})
+                    matches?.existing?.publicRef(),Collections.unmodifiableList(candidates),matches?.truncated==true)
             }
             return PhotoMealDraftPreview(id,draft.editRevision,draft.title,draft.localDate.toString(),Collections.unmodifiableList(ArrayList(items)),
                 PhotoNutritionPreview(field(totals.energy),field(totals.protein),field(totals.fat),field(totals.carbs)))

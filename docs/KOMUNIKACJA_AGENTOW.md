@@ -12327,3 +12327,19 @@ Kontynuacja O3-121 — zgodność narzędzi z rejestracją email-as-username:
   Lokalny E0 przeszedł:11schemas,98valid/35invalid,18scenarios,966linków
   oraz diff-check. Nowy rzeczywisty FULL dla PR/main podlega zwykłemu
   workflow; nie przypisujemy mu wcześniejszego wyniku PR205.
+
+### O1-151 — wybór produktu z katalogu po analizie zdjęcia
+
+- 08.11.2026, Agent 1, `codex/android-gemini-dopasowania`, baza main `876f3e8`.
+  Zakres WF-08/WF-09 obejmuje korektę zdjęcia, powiązanie z dokładną rewizją
+  produktu oraz jawny wybór przy kilku kandydatach. W `ui/App.kt` dotyczy
+  wyłącznie przekazania odczytu szczegółów do trasy `photo`. Poprawka startu
+  MRE pozostaje odrębnym zakresem zgłoszonym w PR146.
+- Jednoznaczne dopasowanie i porównanie kandydatów są dostępne w korekcie.
+  Szczegóły oficjalne i społecznościowe są pobierane na żądanie i sprawdzane
+  względem dokładnej rewizji. Powiązany składnik zachowuje szacunek posiłku
+  i nie tworzy kolejnego prywatnego szkicu. Decyzję użytkownika zapisuje
+  dotychczasowy przepływ confirm, a starsze szkice zachowują zgodność odczytu.
+- Odbiór lokalny: kompilacja zmienionych źródeł Kotlin/Compose i 42 testy
+  JUnit dla szkicu i potwierdzenia. Próba na urządzeniu i Gemini live
+  pozostają osobnymi odbiorami. Dla Agenta 2 kontrakt confirm i sync bez zmian.

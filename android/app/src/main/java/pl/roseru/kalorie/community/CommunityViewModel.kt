@@ -64,6 +64,10 @@ class CommunityViewModel internal constructor(private val repository:CommunityRe
         val preview=repository.preview(checkNotNull(mutable.value.scope),candidate)
         mutable.value=mutable.value.copy(previews=mutable.value.previews+(candidate.product to preview))
     }
+    internal suspend fun previewPhotoCandidate(expectedLease:OwnerLease,candidate:CommunityCandidate):CandidatePreview {
+        require(lease==expectedLease)
+        return repository.preview(lease,candidate)
+    }
     fun publish(selected:PublicProductRef?=null,confirmNew:Boolean=false)=run {
         val before=mutable.value
         val result=repository.publish(checkNotNull(before.scope),checkNotNull(before.publication),checkNotNull(before.matchBody),selected,confirmNew)

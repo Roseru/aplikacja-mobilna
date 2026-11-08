@@ -169,6 +169,26 @@ class PhotoMealDraftTest {
         assertNull(restored.replace(item,input(name="Inny produkt").withProduct(reference)).items.single().product)
         bad {draft.replace(item,correction.withProduct(reference.copy(revision=4))).confirmBody(read)}
     }
+    @Test fun ambiguousCandidateChoiceIsBoundToTheProposalAndItsExactRevision() {
+        val reference=PublicProductRef("44444444-4444-4444-8444-444444444444",3)
+        val response=result()
+        val matches=response.getJSONObject("proposal").getJSONArray("items").getJSONObject(0).getJSONObject("matches")
+        matches.put("candidates",JSONArray().put(JSONObject().put("product",reference.json())
+            .put("provenance","official").put("reasons",JSONArray().put("name")).put("high_confidence",false)))
+        val analysis=PhotoAnalysisSnapshot.read(fixture("create-accepted"),"mock").withRead(bytes(response))
+        val read=analysis.latest!!
+        val draft=PhotoMealDraft.create(read,meal,listOf(item),moment,zone)
+        val unlinked=analysis.withMealDraft(draft,0)
+        val correction=input(name="Banan").withProduct(reference)
+        val preview=pl.roseru.kalorie.session.PhotoMealDraftPreview.from(other,unlinked)!!.items.single()
+        assertEquals(reference,preview.candidates.single().product)
+        assertNull(preview.suggestedProduct)
+        val linked=draft.replace(item,correction)
+        val persisted=restart(unlinked.withMealDraft(linked,1)).mealDraft!!
+        assertEquals(reference,persisted.items.single().product)
+        assertEquals(0,StrictJson.read(persisted.confirmBody(read)).getJSONArray("drafts").length())
+        bad {draft.replace(item,correction.withProduct(reference.copy(revision=4))).confirmBody(read)}
+    }
     @Test fun snapshotCasRequiresNextLocalRevisionAndPreservesDraftAcrossARead() {
         val saved=saved();assertTrue(saved.canEditProposal)
         assertThrows(PhotoAnalysisSnapshotException::class.java){saved.withMealDraft(draft().replace(item,input()),0)}

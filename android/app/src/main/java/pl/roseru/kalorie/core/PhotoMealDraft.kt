@@ -76,7 +76,7 @@ internal class PhotoMealDraft private constructor(val analysisId:String,val sour
             items.forEach { item->
                 val source=item.sourceComponentId?.let {checkNotNull(sources[it])}
                 item.product?.let { product->
-                    require(source?.suggestedProductFor(item)==product)
+                    require(source!=null && source.acceptsProductFor(item,product))
                 }
             }
         } else require(read.decision=="cancelled") // retained read-only after terminal GET; never confirmable
@@ -198,6 +198,16 @@ internal class PhotoMealDraft private constructor(val analysisId:String,val sour
     }
 }
 
-internal fun PhotoProposalItem.suggestedProductFor(item:PhotoDraftItem):PublicProductRef? =
-    matches.existing?.takeIf {name.trim()==item.name.trim() && portion.unit==item.portion.unit}
-        ?.let {PublicProductRef(it.productId,Math.toIntExact(it.revision))}
+internal fun PhotoProposalItem.sameIdentityAs(item:PhotoDraftItem) =
+    name.trim()==item.name.trim() && portion.unit==item.portion.unit
+
+internal fun PhotoProductReference.publicRef() = PublicProductRef(productId,Math.toIntExact(revision))
+
+private fun PhotoProposalItem.acceptsProductFor(item:PhotoDraftItem,product:PublicProductRef):Boolean {
+    if(!sameIdentityAs(item))return false
+    return when(matches.decision) {
+        "existing_variant" -> matches.existing?.publicRef()==product
+        "manual_candidates" -> matches.candidates.any {it.product.publicRef()==product}
+        else -> false
+    }
+}

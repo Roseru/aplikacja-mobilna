@@ -28,6 +28,8 @@ import pl.roseru.kalorie.photo.PhotoPreviewDiagnostics
 import pl.roseru.kalorie.photo.PhotoPreviewDiagnostics.Phase
 import java.time.LocalDate
 import pl.roseru.kalorie.core.PhotoCapabilitiesState
+import pl.roseru.kalorie.community.CandidatePreview
+import pl.roseru.kalorie.community.CommunityCandidate
 import pl.roseru.kalorie.session.PhotoUploadConsent
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.LifecycleEventObserver
@@ -37,7 +39,9 @@ import androidx.lifecycle.compose.LocalLifecycleOwner
     session: pl.roseru.kalorie.session.SessionView = pl.roseru.kalorie.session.SessionView(), onReadCapabilities: () -> Unit = {},
     onUpload:(String,PhotoUploadConsent,Boolean)->Unit={_,_,_->},onRetryUpload:()->Unit={},onDiscardUpload:()->Unit={},
     onReadAnalysis:()->Unit={},onRestoreAnalysis:()->Unit={},onStopAnalysis:()->Unit={},onClearAnalysis:()->Unit={},
-    onCancelAnalysis:(String,Long)->Unit={_,_->},onRetryCancellation:(String)->Unit={},onReleaseCancelled:(String)->Unit={},draftActions:pl.roseru.kalorie.session.PhotoDraftActions=pl.roseru.kalorie.session.PhotoDraftActions()) {
+    onCancelAnalysis:(String,Long)->Unit={_,_->},onRetryCancellation:(String)->Unit={},onReleaseCancelled:(String)->Unit={},
+    draftActions:pl.roseru.kalorie.session.PhotoDraftActions=pl.roseru.kalorie.session.PhotoDraftActions(),
+    lookupCandidate:(suspend (CommunityCandidate)->CandidatePreview)?=null) {
     val drafts by model.drafts.collectAsStateWithLifecycle()
     val busy by model.busy.collectAsStateWithLifecycle()
     val message by model.message.collectAsStateWithLifecycle()
@@ -110,7 +114,7 @@ import androidx.lifecycle.compose.LocalLifecycleOwner
         item { PhotoCapabilitiesPanel(session, onReadCapabilities) }
         item { PhotoUploadPanel(session,onRetryUpload,onDiscardUpload,onReadAnalysis,onStopAnalysis) }
         item { PhotoCancellationPanel(session,onCancelAnalysis,onRetryCancellation,onReleaseCancelled) }
-        item { PhotoMealDraftPanel(session,date,draftActions) }
+        item { PhotoMealDraftPanel(session,date,draftActions,lookupCandidate) }
         if(session.photoMealDraft==null) item { PhotoAnalysisPanel(session.photoAnalysis,onManual=onManual) }
         item { Text("Zapisane zdjęcia · ${drafts.size}", style=MaterialTheme.typography.titleMedium, modifier=Modifier.testTag("photo-count")) }
         if (drafts.isEmpty()) item { Text("Nie ma jeszcze zapisanych zdjęć.", Modifier.testTag("photo-empty")) }
