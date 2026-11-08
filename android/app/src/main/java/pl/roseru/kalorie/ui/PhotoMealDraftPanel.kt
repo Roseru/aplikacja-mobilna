@@ -78,7 +78,7 @@ import java.time.LocalDate
                     }
                     if(!linked) {
                         val diaryOnly=item.input.diaryOnly
-                        Text(if(diaryOnly) "Tylko w dzienniku" else "Po zatwierdzeniu powstanie prywatny szkic produktu",
+                        Text(if(diaryOnly) "Tylko w dzienniku" else "Uwzględnij przy tworzeniu prywatnych szkiców",
                             style=MaterialTheme.typography.bodySmall)
                         TextButton(
                             onClick={actions.replace(draft.operationId,draft.editRevision,item.id,item.input.withDiaryOnly(!diaryOnly))},

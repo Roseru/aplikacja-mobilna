@@ -12343,3 +12343,15 @@ Kontynuacja O3-121 — zgodność narzędzi z rejestracją email-as-username:
 - Odbiór lokalny: kompilacja zmienionych źródeł Kotlin/Compose i 42 testy
   JUnit dla szkicu i potwierdzenia. Próba na urządzeniu i Gemini live
   pozostają osobnymi odbiorami. Dla Agenta 2 kontrakt confirm i sync bez zmian.
+
+### O1-152 — prywatne szkice w korekcie zdjęcia
+
+- Agent 1, `codex/android-gemini-szkice`, baza main `e18a9cd` po PR207.
+  Użytkownik może zapisać składnik wyłącznie w dzienniku. Odłączenie
+  nieaktualnego produktu nie tworzy zastępczego szkicu.
+- Identyczne dane produktu dają jeden prywatny szkic w obrębie posiłku.
+  Porcje pozostają oddzielne. Nowszy format lokalny utrzymuje wybór użytkownika;
+  dawne zamrożone decyzje zachowują pierwotne identyfikatory i treść przy retry.
+  Bez zmian w API, schemacie Room i kolejce synchronizacji.
+- Zmienione źródła Kotlin/Compose skompilowano. Zaliczone 44 testy JVM
+  obejmujące korektę i zatwierdzenie. Osobny odbiór Gemini pozostaje wymagany.

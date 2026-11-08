@@ -217,6 +217,37 @@ class PhotoMealDraftTest {
         malformed.getJSONArray("items").getJSONObject(0).put("diary_only","true")
         bad {PhotoMealDraft.restore(malformed)}
     }
+    @Test fun identicalProductDraftsShareOneTemplateWithoutCombiningDiaryPortions() {
+        val read=base().latest!!
+        val original=draft().replace(item,input(name="Banan",amount="100"))
+        val combined=original.add(other,input(name="Banan",amount="250",energy="91.2"))
+        val restored=PhotoMealDraft.restore(combined.journal())
+        val request=StrictJson.read(restored.confirmBody(read))
+        val mealRows=request.getJSONObject("meal").getJSONObject("payload").getJSONArray("items")
+        assertEquals(2,mealRows.length())
+        assertEquals("100",mealRows.getJSONObject(0).getJSONObject("quantity").getString("amount"))
+        assertEquals("250",mealRows.getJSONObject(1).getJSONObject("quantity").getString("amount"))
+        val originalDraft=StrictJson.read(original.confirmBody(read)).getJSONArray("drafts").getJSONObject(0)
+        val productDrafts=request.getJSONArray("drafts")
+        assertEquals(1,restored.privateDraftCount)
+        assertEquals(1,productDrafts.length())
+        assertEquals(originalDraft.getString("draft_id"),productDrafts.getJSONObject(0).getString("draft_id"))
+        assertEquals(2,restored.replace(other,input(name="Banan",amount="250",fat="0")).privateDraftCount)
+
+        val oldJournal=combined.journal().put("format","photo-meal-draft-v1")
+        val oldRows=oldJournal.getJSONArray("items")
+        repeat(oldRows.length()) { index->
+            oldRows.getJSONObject(index).apply {
+                remove("product")
+                remove("diary_only")
+            }
+        }
+        val oldDraft=PhotoMealDraft.restore(oldJournal)
+        val frozen=PhotoConfirmation.prepare("55555555-5555-4555-8555-555555555555",oldDraft,read).journal()
+        assertEquals(2,frozen.getJSONObject("request").getJSONArray("drafts").length())
+        assertEquals(StrictJson.canonical(frozen),StrictJson.canonical(PhotoConfirmation.restore(frozen,oldDraft,read).journal()))
+        assertEquals(1,oldDraft.rename("Dwie porcje banana").privateDraftCount)
+    }
     @Test fun snapshotCasRequiresNextLocalRevisionAndPreservesDraftAcrossARead() {
         val saved=saved();assertTrue(saved.canEditProposal)
         assertThrows(PhotoAnalysisSnapshotException::class.java){saved.withMealDraft(draft().replace(item,input()),0)}

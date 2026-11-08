@@ -19,8 +19,7 @@ class PhotoDraftItemPreview(val id:String,val manuallyAdded:Boolean,val input:Ph
     override fun toString()="PhotoDraftItemPreview(redacted)"
 }
 class PhotoMealDraftPreview private constructor(val operationId:String,val editRevision:Long,val title:String,
-    val localDate:String,val items:List<PhotoDraftItemPreview>,val nutrition:PhotoNutritionPreview) {
-    val privateDraftCount get()=items.count {it.input.product==null && !it.input.diaryOnly}
+    val localDate:String,val items:List<PhotoDraftItemPreview>,val nutrition:PhotoNutritionPreview,val privateDraftCount:Int) {
     override fun toString()="PhotoMealDraftPreview(redacted)"
     internal companion object {
         fun from(id:String,snapshot:PhotoAnalysisSnapshot):PhotoMealDraftPreview? {
@@ -41,7 +40,8 @@ class PhotoMealDraftPreview private constructor(val operationId:String,val editR
                     matches?.existing?.publicRef(),Collections.unmodifiableList(candidates),matches?.truncated==true)
             }
             return PhotoMealDraftPreview(id,draft.editRevision,draft.title,draft.localDate.toString(),Collections.unmodifiableList(ArrayList(items)),
-                PhotoNutritionPreview(field(totals.energy),field(totals.protein),field(totals.fat),field(totals.carbs)))
+                PhotoNutritionPreview(field(totals.energy),field(totals.protein),field(totals.fat),field(totals.carbs)),
+                draft.privateDraftCount)
         }
     }
 }

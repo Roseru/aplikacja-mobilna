@@ -32,7 +32,7 @@ internal class PhotoDraftItem internal constructor(val id:String,val sourceCompo
 /** Unsubmitted, immutable corrections. Stable IDs are allocated once; the source proposal is untouched. */
 internal class PhotoMealDraft private constructor(val analysisId:String,val sourceRevision:Long,val sourceFingerprint:String,
     val mealId:String,val editRevision:Long,val title:String,val occurredAt:Instant,val zone:ZoneId,val mealType:String?,
-    items:List<PhotoDraftItem>) {
+    items:List<PhotoDraftItem>,val usesLegacyDraftRules:Boolean=false) {
     val items:List<PhotoDraftItem> = Collections.unmodifiableList(ArrayList(items))
     val localDate get()=occurredAt.atZone(zone).toLocalDate()
     init {
@@ -48,6 +48,7 @@ internal class PhotoMealDraft private constructor(val analysisId:String,val sour
             PhotoHttpRequest.uuid(item.id);require(item.id!=analysisId && item.id!=mealId)
             item.sourceComponentId?.let(PhotoHttpRequest::uuid);text(item.name,2000)
             require(item.product==null || (item.sourceComponentId!=null && !item.diaryOnly))
+            require(!usesLegacyDraftRules || !item.diaryOnly)
             require(item.portion.unit==item.portion.basisUnit && item.portion.density==null)
             ContractDecimal.read(ContractDecimal.canonical(item.portion.amount))
             item.portion.per100.values().filterNotNull().forEach {ContractDecimal.read(ContractDecimal.canonical(it))}
@@ -55,6 +56,13 @@ internal class PhotoMealDraft private constructor(val analysisId:String,val sour
         NutritionV1.calculate(this.items.map {it.portion})
     }
     val totals get()=NutritionV1.calculate(items.map {it.portion})
+    private val productDraftItems get():List<PhotoDraftItem> {
+        val eligible=items.filter {it.createsProductDraft}
+        if(usesLegacyDraftRules)return eligible
+        // Portion size is part of the diary row, never of the ProductDraft payload.
+        return eligible.distinctBy {Triple(it.name,it.portion.basisUnit,it.portion.per100)}
+    }
+    val privateDraftCount get()=productDraftItems.size
     private fun changed(values:List<PhotoDraftItem>,newTitle:String=title)=PhotoMealDraft(analysisId,sourceRevision,sourceFingerprint,
         mealId,Math.addExact(editRevision,1),newTitle,occurredAt,zone,mealType,values)
     fun replace(id:String,input:PhotoDraftInput):PhotoMealDraft = safe {
@@ -108,7 +116,7 @@ internal class PhotoMealDraft private constructor(val analysisId:String,val sour
             .put("ration",JSONObject.NULL).put("items",JSONArray(rows))
         // These are private sync-v1 templates. The server receipt freezes them, and only the
         // atomic local materialization queues them; catalogue publication remains separate.
-        val drafts=if(legacyWithoutProductDrafts)emptyList() else items.filter {it.createsProductDraft}.map {item->
+        val drafts=if(legacyWithoutProductDrafts)emptyList() else productDraftItems.map {item->
             val id=UUID.nameUUIDFromBytes("photo-product-draft-v1:$analysisId:$mealId:${item.id}".toByteArray(Charsets.UTF_8)).toString()
             val payload=JSONObject().put("name",item.name).put("brand",JSONObject.NULL).put("variant",JSONObject.NULL)
                 .put("basis_unit",item.portion.basisUnit.wire).put("nutrition_per_100",nutrition(item.portion.per100))
@@ -120,10 +128,10 @@ internal class PhotoMealDraft private constructor(val analysisId:String,val sour
             .put("meal",JSONObject().put("meal_id",mealId).put("payload",meal)).put("drafts",JSONArray(drafts))).toByteArray(Charsets.UTF_8)
     }
     fun journal():JSONObject = safe {
-        val hasDiaryOnly=items.any {it.diaryOnly}
-        val hasProductFields=hasDiaryOnly || items.any {it.product!=null}
+        val hasDiaryOnlyField=!usesLegacyDraftRules
+        val hasProductFields=hasDiaryOnlyField || items.any {it.product!=null}
         val format=when {
-            hasDiaryOnly -> "photo-meal-draft-v3"
+            hasDiaryOnlyField -> "photo-meal-draft-v3"
             hasProductFields -> "photo-meal-draft-v2"
             else -> "photo-meal-draft-v1"
         }
@@ -131,7 +139,7 @@ internal class PhotoMealDraft private constructor(val analysisId:String,val sour
             .put("name",item.name).put("amount",ContractDecimal.canonical(item.portion.amount)).put("unit",item.portion.unit.wire)
             .put("nutrition",nutrition(item.portion.per100)).also {row->
                 if(hasProductFields)row.put("product",item.product?.json()?:JSONObject.NULL)
-                if(hasDiaryOnly)row.put("diary_only",item.diaryOnly)
+                if(hasDiaryOnlyField)row.put("diary_only",item.diaryOnly)
             }}
         JSONObject().put("format",format)
             .put("analysis_id",analysisId).put("source_revision",sourceRevision)
@@ -157,11 +165,11 @@ internal class PhotoMealDraft private constructor(val analysisId:String,val sour
             val format=value.get("format")
             require(format in setOf("photo-meal-draft-v1","photo-meal-draft-v2","photo-meal-draft-v3"))
             val hasProductFields=format!="photo-meal-draft-v1"
-            val hasDiaryOnly=format=="photo-meal-draft-v3"
+            val hasDiaryOnlyField=format=="photo-meal-draft-v3"
             val keys=buildSet {
                 addAll(listOf("id","source_component_id","name","amount","unit","nutrition"))
                 if(hasProductFields)add("product")
-                if(hasDiaryOnly)add("diary_only")
+                if(hasDiaryOnlyField)add("diary_only")
             }
             val rows=value.getJSONArray("items");require(rows.length() in 1..30)
             val items=(0 until rows.length()).map {index->
@@ -174,17 +182,17 @@ internal class PhotoMealDraft private constructor(val analysisId:String,val sour
                     exact(it,setOf("product_id","revision"))
                     PublicProductRef(it.get("product_id") as String,Math.toIntExact(integer(it,"revision")))
                 } else null
-                val diaryOnly=hasDiaryOnly && row.get("diary_only") as Boolean
+                val diaryOnly=hasDiaryOnlyField && row.get("diary_only") as Boolean
                 PhotoDraftItem(row.get("id") as String,nullable(row,"source_component_id"),row.get("name") as String,
                     ExactPortion(amount,unit,unit,values),product,diaryOnly)
             }
-            if(hasDiaryOnly)require(items.any {it.diaryOnly})
-            else if(hasProductFields)require(items.any {it.product!=null})
+            if(format=="photo-meal-draft-v2")require(items.any {it.product!=null})
             val time=value.get("occurred_at") as String;val instant=Instant.parse(time)
             require(instant.toString()==time)
             PhotoMealDraft(value.get("analysis_id") as String,integer(value,"source_revision"),value.get("source_fingerprint") as String,
                 value.get("meal_id") as String,integer(value,"edit_revision"),value.get("title") as String,instant,
-                ZoneId.of(value.get("time_zone") as String),nullable(value,"meal_type"),items)
+                ZoneId.of(value.get("time_zone") as String),nullable(value,"meal_type"),items,
+                usesLegacyDraftRules=!hasDiaryOnlyField)
         }
         private fun integer(value:JSONObject,name:String):Long {
             val number=value.get(name);require(number is Int || number is Long);return (number as Number).toLong()
