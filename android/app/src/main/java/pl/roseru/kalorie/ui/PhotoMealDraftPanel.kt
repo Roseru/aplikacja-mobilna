@@ -51,7 +51,7 @@ import java.time.LocalDate
             Text(draft.title,style=MaterialTheme.typography.titleMedium,maxLines=3,overflow=TextOverflow.Ellipsis)
             Text(draft.localDate,style=MaterialTheme.typography.bodySmall)
             Text("Szkic zapisany na tym telefonie. Posiłek nie został jeszcze dodany do dziennika.")
-            Text("Po zatwierdzeniu brakujące produkty zapiszemy jako Twoje prywatne szkice z oznaczeniem szacunku AI. Publikację zatwierdzasz osobno.")
+            Text("Możesz zachować składnik tylko w dzienniku. Szkice produktów pozostają prywatne do chwili osobnego zatwierdzenia publikacji.")
             if(!session.photoCanEditProposal)Text("Szkic zachowano do odczytu. Sprawdź stan analizy przed dalszą edycją.")
             val totals=draft.nutrition
             Text("${if(totals.energy.missingCount>0) "Znana suma" else "Razem"}: ${draftNutrient(totals.energy,"kcal")}",
@@ -74,7 +74,16 @@ import java.time.LocalDate
                                 actions.replace(draft.operationId,draft.editRevision,item.id,item.input.withProduct(product))
                             },
                             enabled=editable,modifier=Modifier.testTag("photo-meal-draft-match-${item.id}")
-                        ) {Text(if(linked) "Usuń powiązanie" else "Użyj produktu z katalogu")}
+                        ) {Text(if(linked) "Odłącz i zachowaj w dzienniku" else "Użyj produktu z katalogu")}
+                    }
+                    if(!linked) {
+                        val diaryOnly=item.input.diaryOnly
+                        Text(if(diaryOnly) "Tylko w dzienniku" else "Po zatwierdzeniu powstanie prywatny szkic produktu",
+                            style=MaterialTheme.typography.bodySmall)
+                        TextButton(
+                            onClick={actions.replace(draft.operationId,draft.editRevision,item.id,item.input.withDiaryOnly(!diaryOnly))},
+                            enabled=editable,modifier=Modifier.testTag("photo-meal-draft-diary-only-${item.id}")
+                        ) {Text(if(diaryOnly) "Utwórz też szkic produktu" else "Zachowaj tylko w dzienniku")}
                     }
                     if(item.candidates.isNotEmpty()) {
                         Text("Katalog zawiera możliwe dopasowania. Możesz porównać je z rozpoznanym składnikiem.",
@@ -153,7 +162,7 @@ import java.time.LocalDate
                 color=MaterialTheme.colorScheme.error,modifier=Modifier.testTag("photo-draft-input-error"))
         }},
         confirmButton={TextButton(onClick={
-            val input=PhotoDraftInput(name,amount,unit,energy,protein,fat,carbs,initial.product)
+            val input=PhotoDraftInput(name,amount,unit,energy,protein,fat,carbs,initial.product,initial.diaryOnly)
             val valid=runCatching {PhotoMealDraft.validateInput(input);require(name.trim().codePointCount(0,name.trim().length)<=200)}.isSuccess
             if(valid)onSave(input)else error=true
         },enabled=enabled,modifier=Modifier.testTag("photo-draft-input-save")){Text("Zapisz poprawki")}},

@@ -71,7 +71,7 @@ internal class PhotoConfirmation private constructor(val key:String,val analysis
             val request=StrictJson.canonical(value.getJSONObject("request"))
             // Older releases froze an empty drafts list. Restore those exact bytes so an
             // uncertain accepted decision is never silently expanded or re-keyed on retry.
-            val legacy=draft.items.none {it.product!=null} &&
+            val legacy=draft.items.all {it.createsProductDraft} &&
                 value.getJSONObject("request").getJSONArray("drafts").length()==0
             require(request==canonical(draft.confirmationTemplate(expected,legacyWithoutProductDrafts=legacy)))
             val provenanceValue=value.getJSONObject("expected_provenance")

@@ -13,14 +13,19 @@ import java.util.UUID
 
 /** Form input only. Empty nutrition means missing, never zero. No action authorizes HTTP. */
 class PhotoDraftInput(val name:String,val amount:String,val unit:String,val energy:String,
-    val protein:String,val fat:String,val carbs:String,val product:PublicProductRef?=null) {
-    fun withProduct(value:PublicProductRef?)=PhotoDraftInput(name,amount,unit,energy,protein,fat,carbs,value)
+    val protein:String,val fat:String,val carbs:String,val product:PublicProductRef?=null,
+    val diaryOnly:Boolean=false) {
+    fun withProduct(value:PublicProductRef?)=PhotoDraftInput(name,amount,unit,energy,protein,fat,carbs,value,
+        diaryOnly=value==null && (diaryOnly || product!=null))
+    fun withDiaryOnly(value:Boolean)=PhotoDraftInput(name,amount,unit,energy,protein,fat,carbs,
+        diaryOnly=value)
     override fun toString()="PhotoDraftInput(redacted)"
 }
 internal class PhotoMealDraftException:IllegalArgumentException("Niepoprawne poprawki posiłku")
 
 internal class PhotoDraftItem internal constructor(val id:String,val sourceComponentId:String?,val name:String,
-    val portion:ExactPortion,val product:PublicProductRef?=null) {
+    val portion:ExactPortion,val product:PublicProductRef?=null,val diaryOnly:Boolean=false) {
+    val createsProductDraft get()=product==null && !diaryOnly
     override fun toString()="PhotoDraftItem(redacted)"
 }
 
@@ -42,7 +47,7 @@ internal class PhotoMealDraft private constructor(val analysisId:String,val sour
         this.items.forEach {item->
             PhotoHttpRequest.uuid(item.id);require(item.id!=analysisId && item.id!=mealId)
             item.sourceComponentId?.let(PhotoHttpRequest::uuid);text(item.name,2000)
-            require(item.product==null || item.sourceComponentId!=null)
+            require(item.product==null || (item.sourceComponentId!=null && !item.diaryOnly))
             require(item.portion.unit==item.portion.basisUnit && item.portion.density==null)
             ContractDecimal.read(ContractDecimal.canonical(item.portion.amount))
             item.portion.per100.values().filterNotNull().forEach {ContractDecimal.read(ContractDecimal.canonical(it))}
@@ -55,7 +60,8 @@ internal class PhotoMealDraft private constructor(val analysisId:String,val sour
     fun replace(id:String,input:PhotoDraftInput):PhotoMealDraft = safe {
         val old=items.single {it.id==id}
         val product=input.product?.takeIf {old.name==input.name.trim() && old.portion.unit.wire==input.unit}
-        val next=item(id,old.sourceComponentId,input,product)
+        val diaryOnly=input.diaryOnly || (input.product!=null && product==null)
+        val next=item(id,old.sourceComponentId,input,product,diaryOnly)
         changed(items.map {if(it.id==id)next else it})
     }
     fun add(id:String,input:PhotoDraftInput):PhotoMealDraft = safe {
@@ -102,7 +108,7 @@ internal class PhotoMealDraft private constructor(val analysisId:String,val sour
             .put("ration",JSONObject.NULL).put("items",JSONArray(rows))
         // These are private sync-v1 templates. The server receipt freezes them, and only the
         // atomic local materialization queues them; catalogue publication remains separate.
-        val drafts=if(legacyWithoutProductDrafts)emptyList() else items.filter {it.product==null}.map {item->
+        val drafts=if(legacyWithoutProductDrafts)emptyList() else items.filter {it.createsProductDraft}.map {item->
             val id=UUID.nameUUIDFromBytes("photo-product-draft-v1:$analysisId:$mealId:${item.id}".toByteArray(Charsets.UTF_8)).toString()
             val payload=JSONObject().put("name",item.name).put("brand",JSONObject.NULL).put("variant",JSONObject.NULL)
                 .put("basis_unit",item.portion.basisUnit.wire).put("nutrition_per_100",nutrition(item.portion.per100))
@@ -114,13 +120,20 @@ internal class PhotoMealDraft private constructor(val analysisId:String,val sour
             .put("meal",JSONObject().put("meal_id",mealId).put("payload",meal)).put("drafts",JSONArray(drafts))).toByteArray(Charsets.UTF_8)
     }
     fun journal():JSONObject = safe {
-        val hasProducts=items.any {it.product!=null}
+        val hasDiaryOnly=items.any {it.diaryOnly}
+        val hasProductFields=hasDiaryOnly || items.any {it.product!=null}
+        val format=when {
+            hasDiaryOnly -> "photo-meal-draft-v3"
+            hasProductFields -> "photo-meal-draft-v2"
+            else -> "photo-meal-draft-v1"
+        }
         val rows=items.map {item->JSONObject().put("id",item.id).put("source_component_id",item.sourceComponentId?:JSONObject.NULL)
             .put("name",item.name).put("amount",ContractDecimal.canonical(item.portion.amount)).put("unit",item.portion.unit.wire)
             .put("nutrition",nutrition(item.portion.per100)).also {row->
-                if(hasProducts)row.put("product",item.product?.json()?:JSONObject.NULL)
+                if(hasProductFields)row.put("product",item.product?.json()?:JSONObject.NULL)
+                if(hasDiaryOnly)row.put("diary_only",item.diaryOnly)
             }}
-        JSONObject().put("format",if(hasProducts)"photo-meal-draft-v2" else "photo-meal-draft-v1")
+        JSONObject().put("format",format)
             .put("analysis_id",analysisId).put("source_revision",sourceRevision)
             .put("source_fingerprint",sourceFingerprint).put("meal_id",mealId).put("edit_revision",editRevision)
             .put("title",title).put("occurred_at",occurredAt.toString()).put("time_zone",zone.id)
@@ -142,24 +155,31 @@ internal class PhotoMealDraft private constructor(val analysisId:String,val sour
             require(StrictJson.canonical(value).toByteArray(Charsets.UTF_8).size<=MAX_BYTES)
             exact(value,setOf("format","analysis_id","source_revision","source_fingerprint","meal_id","edit_revision","title","occurred_at","time_zone","meal_type","items"))
             val format=value.get("format")
-            require(format=="photo-meal-draft-v1" || format=="photo-meal-draft-v2")
-            val hasProducts=format=="photo-meal-draft-v2"
+            require(format in setOf("photo-meal-draft-v1","photo-meal-draft-v2","photo-meal-draft-v3"))
+            val hasProductFields=format!="photo-meal-draft-v1"
+            val hasDiaryOnly=format=="photo-meal-draft-v3"
+            val keys=buildSet {
+                addAll(listOf("id","source_component_id","name","amount","unit","nutrition"))
+                if(hasProductFields)add("product")
+                if(hasDiaryOnly)add("diary_only")
+            }
             val rows=value.getJSONArray("items");require(rows.length() in 1..30)
             val items=(0 until rows.length()).map {index->
                 val row=rows.getJSONObject(index)
-                val keys=setOf("id","source_component_id","name","amount","unit","nutrition")
-                exact(row,if(hasProducts)keys+"product" else keys)
+                exact(row,keys)
                 val fields=row.getJSONObject("nutrition");exact(fields,ExactNutrition.fields.toSet())
                 val values=ExactNutrition.read(ExactNutrition.fields.associateWith {field->nullable(fields,field)})
                 val amount=ContractDecimal.read(row.get("amount") as String);val unit=QuantityUnit.read(row.get("unit") as String)
-                val product=if(hasProducts && !row.isNull("product"))row.getJSONObject("product").let {
+                val product=if(hasProductFields && !row.isNull("product"))row.getJSONObject("product").let {
                     exact(it,setOf("product_id","revision"))
                     PublicProductRef(it.get("product_id") as String,Math.toIntExact(integer(it,"revision")))
                 } else null
+                val diaryOnly=hasDiaryOnly && row.get("diary_only") as Boolean
                 PhotoDraftItem(row.get("id") as String,nullable(row,"source_component_id"),row.get("name") as String,
-                    ExactPortion(amount,unit,unit,values),product)
+                    ExactPortion(amount,unit,unit,values),product,diaryOnly)
             }
-            require(!hasProducts || items.any {it.product!=null})
+            if(hasDiaryOnly)require(items.any {it.diaryOnly})
+            else if(hasProductFields)require(items.any {it.product!=null})
             val time=value.get("occurred_at") as String;val instant=Instant.parse(time)
             require(instant.toString()==time)
             PhotoMealDraft(value.get("analysis_id") as String,integer(value,"source_revision"),value.get("source_fingerprint") as String,
@@ -176,7 +196,8 @@ internal class PhotoMealDraft private constructor(val analysisId:String,val sour
             val value=item("00000000-0000-4000-8000-000000000001",null,input)
             text(value.name,2000);NutritionV1.calculate(listOf(value.portion));Unit
         }
-        private fun item(id:String,component:String?,input:PhotoDraftInput,product:PublicProductRef?=null):PhotoDraftItem {
+        private fun item(id:String,component:String?,input:PhotoDraftInput,product:PublicProductRef?=null,
+            diaryOnly:Boolean=input.diaryOnly):PhotoDraftItem {
             fun number(value:String):BigDecimal? {
                 if(value.isBlank())return null
                 val normalized=value.trim().replace(',','.')
@@ -185,7 +206,7 @@ internal class PhotoMealDraft private constructor(val analysisId:String,val sour
             }
             val amount=checkNotNull(ContractDecimal.userQuantity(input.amount));val unit=QuantityUnit.read(input.unit)
             return PhotoDraftItem(id,component,input.name.trim(),ExactPortion(amount,unit,unit,
-                ExactNutrition(number(input.energy),number(input.protein),number(input.fat),number(input.carbs))),product)
+                ExactNutrition(number(input.energy),number(input.protein),number(input.fat),number(input.carbs))),product,diaryOnly)
         }
         private fun text(value:String,max:Int) {
             require(value.isNotBlank() && '\u0000' !in value && value.codePointCount(0,value.length) in 1..max)

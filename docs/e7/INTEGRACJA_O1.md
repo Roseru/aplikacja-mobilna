@@ -131,7 +131,9 @@ z katalogu oficjalnego lub społeczności, i udostępnia wybór po sprawdzeniu
 dokładnej rewizji. Powiązanie zachowuje poprawione wartości posiłku jako
 `ai_estimate` i nie tworzy szkicu produktu dla powiązanego składnika. Zmiana
 nazwy albo jednostki usuwa powiązanie. Sam odczyt szczegółów niczego nie
-zatwierdza. Po konflikcie rewizji można wrócić do poprawek i usunąć powiązanie.
+zatwierdza. Po konflikcie rewizji można wrócić do poprawek i zachować składnik
+tylko w dzienniku, bez powiązania ani nowego szkicu produktu. Korekta pokazuje
+liczbę prywatnych szkiców, które powstaną po zatwierdzeniu posiłku.
 
 Cancel wysyła JSON zawierający jedynie `expected_revision` z ostatniego odczytu
 oraz własny key/epokę. Wynik ma `state="failed"`, `decision_state="cancelled"`
