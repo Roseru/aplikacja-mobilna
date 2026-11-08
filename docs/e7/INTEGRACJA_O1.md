@@ -131,7 +131,13 @@ z katalogu oficjalnego lub społeczności, i udostępnia wybór po sprawdzeniu
 dokładnej rewizji. Powiązanie zachowuje poprawione wartości posiłku jako
 `ai_estimate` i nie tworzy szkicu produktu dla powiązanego składnika. Zmiana
 nazwy albo jednostki usuwa powiązanie. Sam odczyt szczegółów niczego nie
-zatwierdza. Po konflikcie rewizji można wrócić do poprawek i usunąć powiązanie.
+zatwierdza. Po konflikcie rewizji można wrócić do poprawek i zachować składnik
+tylko w dzienniku, bez powiązania ani nowego szkicu produktu. Korekta pokazuje
+liczbę prywatnych szkiców, które powstaną po zatwierdzeniu posiłku. W ramach
+jednego posiłku identyczna nazwa, jednostka bazowa i komplet identycznych
+wartości na 100 g/ml dają jeden szkic. Porcje i ich ilości są osobnymi
+pozycjami dziennika. Brak wartości i jawne zero dają odrębne szkice.
+Starsza zamrożona decyzja zachowuje pierwotne szkice przy ponowieniu.
 
 Cancel wysyła JSON zawierający jedynie `expected_revision` z ostatniego odczytu
 oraz własny key/epokę. Wynik ma `state="failed"`, `decision_state="cancelled"`

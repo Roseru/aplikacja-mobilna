@@ -46,6 +46,11 @@ class PhotoConfirmationTest {
     }
     @Test fun legacyEmptyDraftDecisionRestoresAndRetriesItsOriginalBodyAndReceipt() {
         val old=JSONObject(attempted().serialized)
+        val oldDraft=old.getJSONObject("meal_draft").put("format","photo-meal-draft-v1")
+        oldDraft.getJSONArray("items").getJSONObject(0).apply {
+            remove("product")
+            remove("diary_only")
+        }
         old.getJSONObject("confirmation").put("request",json("corrected-meal-confirm"))
         val restored=PhotoAnalysisSnapshot.read(old.toString(),"mock")
         val expected=StrictJson.canonical(json("corrected-meal-confirm")).toByteArray(Charsets.UTF_8)

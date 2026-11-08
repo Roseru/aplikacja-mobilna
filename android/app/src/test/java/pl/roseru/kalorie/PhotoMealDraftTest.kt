@@ -165,7 +165,10 @@ class PhotoMealDraftTest {
         assertEquals(1,request.getJSONArray("drafts").length())
         val confirmation=saved.prepareConfirmation(other,read.revision,restored.editRevision)
         assertEquals(confirmation.serialized,restart(confirmation).serialized)
-        assertNull(restored.replace(item,correction.withProduct(null)).items.single().product)
+        val detached=restored.replace(item,correction.withProduct(null))
+        assertNull(detached.items.single().product)
+        assertTrue(detached.items.single().diaryOnly)
+        assertEquals(0,StrictJson.read(detached.confirmBody(read)).getJSONArray("drafts").length())
         assertNull(restored.replace(item,input(name="Inny produkt").withProduct(reference)).items.single().product)
         bad {draft.replace(item,correction.withProduct(reference.copy(revision=4))).confirmBody(read)}
     }
@@ -188,6 +191,62 @@ class PhotoMealDraftTest {
         assertEquals(reference,persisted.items.single().product)
         assertEquals(0,StrictJson.read(persisted.confirmBody(read)).getJSONArray("drafts").length())
         bad {draft.replace(item,correction.withProduct(reference.copy(revision=4))).confirmBody(read)}
+    }
+    @Test fun diaryOnlyChoicePersistsAndOnlyOtherItemsGenerateProductDrafts() {
+        val read=base().latest!!
+        val original=draft()
+        val mixed=original.add(other,input(name="Ryż"))
+        val edited=mixed.replace(item,input(name="Banan").withDiaryOnly(true))
+        val restored=PhotoMealDraft.restore(edited.journal())
+        assertTrue(restored.items.first().diaryOnly)
+        val request=StrictJson.read(restored.confirmBody(read))
+        val mealRows=request.getJSONObject("meal").getJSONObject("payload").getJSONArray("items")
+        assertEquals(2,mealRows.length())
+        assertTrue(mealRows.getJSONObject(0).isNull("product"))
+        val drafts=request.getJSONArray("drafts")
+        assertEquals(1,drafts.length())
+        assertEquals("Ryż",drafts.getJSONObject(0).getJSONObject("payload").getString("name"))
+        val confirmation=PhotoConfirmation.prepare("55555555-5555-4555-8555-555555555555",restored,read)
+        val frozen=confirmation.journal()
+        assertEquals(StrictJson.canonical(frozen),StrictJson.canonical(PhotoConfirmation.restore(frozen,restored,read).journal()))
+        frozen.getJSONObject("request").put("drafts",JSONArray())
+        assertThrows(PhotoConfirmationException::class.java) {PhotoConfirmation.restore(frozen,restored,read)}
+        assertEquals(2,StrictJson.read(restored.replace(item,input(name="Banan")).confirmBody(read))
+            .getJSONArray("drafts").length())
+        val malformed=restored.journal()
+        malformed.getJSONArray("items").getJSONObject(0).put("diary_only","true")
+        bad {PhotoMealDraft.restore(malformed)}
+    }
+    @Test fun identicalProductDraftsShareOneTemplateWithoutCombiningDiaryPortions() {
+        val read=base().latest!!
+        val original=draft().replace(item,input(name="Banan",amount="100"))
+        val combined=original.add(other,input(name="Banan",amount="250",energy="91.2"))
+        val restored=PhotoMealDraft.restore(combined.journal())
+        val request=StrictJson.read(restored.confirmBody(read))
+        val mealRows=request.getJSONObject("meal").getJSONObject("payload").getJSONArray("items")
+        assertEquals(2,mealRows.length())
+        assertEquals("100",mealRows.getJSONObject(0).getJSONObject("quantity").getString("amount"))
+        assertEquals("250",mealRows.getJSONObject(1).getJSONObject("quantity").getString("amount"))
+        val originalDraft=StrictJson.read(original.confirmBody(read)).getJSONArray("drafts").getJSONObject(0)
+        val productDrafts=request.getJSONArray("drafts")
+        assertEquals(1,restored.privateDraftCount)
+        assertEquals(1,productDrafts.length())
+        assertEquals(originalDraft.getString("draft_id"),productDrafts.getJSONObject(0).getString("draft_id"))
+        assertEquals(2,restored.replace(other,input(name="Banan",amount="250",fat="0")).privateDraftCount)
+
+        val oldJournal=combined.journal().put("format","photo-meal-draft-v1")
+        val oldRows=oldJournal.getJSONArray("items")
+        repeat(oldRows.length()) { index->
+            oldRows.getJSONObject(index).apply {
+                remove("product")
+                remove("diary_only")
+            }
+        }
+        val oldDraft=PhotoMealDraft.restore(oldJournal)
+        val frozen=PhotoConfirmation.prepare("55555555-5555-4555-8555-555555555555",oldDraft,read).journal()
+        assertEquals(2,frozen.getJSONObject("request").getJSONArray("drafts").length())
+        assertEquals(StrictJson.canonical(frozen),StrictJson.canonical(PhotoConfirmation.restore(frozen,oldDraft,read).journal()))
+        assertEquals(1,oldDraft.rename("Dwie porcje banana").privateDraftCount)
     }
     @Test fun snapshotCasRequiresNextLocalRevisionAndPreservesDraftAcrossARead() {
         val saved=saved();assertTrue(saved.canEditProposal)

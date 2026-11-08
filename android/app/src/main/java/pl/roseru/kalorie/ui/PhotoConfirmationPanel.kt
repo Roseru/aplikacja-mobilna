@@ -44,7 +44,7 @@ import pl.roseru.kalorie.session.*
             enabled=idle && session.serverLinked && session.binding?.owner?.kind=="account",
             modifier=Modifier.fillMaxWidth().testTag("photo-confirmation-reopen")){Text("Wróć do poprawek")}
         if(status.catalogChoiceChanged)Text(
-            if(status.canReopen) "Produkt w katalogu się zmienił. Wróć do poprawek i usuń nieaktualne powiązanie."
+            if(status.canReopen) "Produkt w katalogu się zmienił. Wróć do poprawek i wybierz „Odłącz i zachowaj w dzienniku”."
             else "Produkt w katalogu się zmienił. Wybierz „Sprawdź wynik”, a potem wróć do poprawek.",
             modifier=Modifier.testTag("photo-confirmation-catalog-changed"))
         else if(status.rejected && !status.canReopen)Text("Decyzja odrzucona przez serwer. Sprawdź wynik analizy. Zapisane poprawki pozostają do odczytu.",
@@ -61,7 +61,8 @@ import pl.roseru.kalorie.session.*
         text={Column(Modifier.heightIn(max=320.dp).verticalScroll(rememberScrollState()),verticalArrangement=Arrangement.spacedBy(8.dp)) {
             Text(draft.title);Text("Dzień: ${draft.localDate}")
             Text("Zatwierdzisz zapisane składniki, porcje i wartości. Po potwierdzeniu serwera dodamy posiłek do dziennika na telefonie.")
-            Text("Brakujące produkty zapiszemy jako Twoje prywatne szkice z oznaczeniem szacunku AI. Publikacja w katalogu wymaga osobnego zatwierdzenia.",
+            Text(if(draft.privateDraftCount==0) "Ten zapis nie utworzy szkiców produktów."
+                else "Twoje prywatne szkice produktów: ${draft.privateDraftCount}. Publikacja w katalogu wymaga osobnego zatwierdzenia.",
                 modifier=Modifier.testTag("photo-confirmation-private-drafts"))
             Text("Brakujące wartości pozostaną oznaczone jako brak danych. Wpis do synchronizacji będzie oczekiwał na osobne potwierdzenie.")
         }},

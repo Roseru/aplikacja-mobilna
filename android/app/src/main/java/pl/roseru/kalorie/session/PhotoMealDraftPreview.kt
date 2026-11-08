@@ -19,7 +19,7 @@ class PhotoDraftItemPreview(val id:String,val manuallyAdded:Boolean,val input:Ph
     override fun toString()="PhotoDraftItemPreview(redacted)"
 }
 class PhotoMealDraftPreview private constructor(val operationId:String,val editRevision:Long,val title:String,
-    val localDate:String,val items:List<PhotoDraftItemPreview>,val nutrition:PhotoNutritionPreview) {
+    val localDate:String,val items:List<PhotoDraftItemPreview>,val nutrition:PhotoNutritionPreview,val privateDraftCount:Int) {
     override fun toString()="PhotoMealDraftPreview(redacted)"
     internal companion object {
         fun from(id:String,snapshot:PhotoAnalysisSnapshot):PhotoMealDraftPreview? {
@@ -35,12 +35,13 @@ class PhotoMealDraftPreview private constructor(val operationId:String,val editR
                     .distinctBy {it.product}
                 PhotoDraftItemPreview(item.id,item.sourceComponentId==null,
                     PhotoDraftInput(item.name,ContractDecimal.canonical(item.portion.amount),item.portion.unit.wire,
-                        values[0],values[1],values[2],values[3],item.product),
+                        values[0],values[1],values[2],values[3],item.product,item.diaryOnly),
                     field(NutritionV1.calculate(listOf(item.portion)).energy),
                     matches?.existing?.publicRef(),Collections.unmodifiableList(candidates),matches?.truncated==true)
             }
             return PhotoMealDraftPreview(id,draft.editRevision,draft.title,draft.localDate.toString(),Collections.unmodifiableList(ArrayList(items)),
-                PhotoNutritionPreview(field(totals.energy),field(totals.protein),field(totals.fat),field(totals.carbs)))
+                PhotoNutritionPreview(field(totals.energy),field(totals.protein),field(totals.fat),field(totals.carbs)),
+                draft.privateDraftCount)
         }
     }
 }
