@@ -12343,3 +12343,32 @@ Kontynuacja O3-121 — zgodność narzędzi z rejestracją email-as-username:
 - Odbiór lokalny: kompilacja zmienionych źródeł Kotlin/Compose i 42 testy
   JUnit dla szkicu i potwierdzenia. Próba na urządzeniu i Gemini live
   pozostają osobnymi odbiorami. Dla Agenta 2 kontrakt confirm i sync bez zmian.
+
+### O1-153 — stan odbioru Gemini w aplikacji
+
+- Agent 1, `codex/docs-odbior-gemini`, baza main `e18a9cd` po
+  [PR207](https://github.com/Roseru/aplikacja-mobilna/pull/207).
+  [Odbiór deweloperski backendu](e7/ODBIOR_GEMINI_DEV_2026_11_04.md)
+  uzyskał poprawną propozycję dla zdjęcia jabłka. W
+  [ostatnim odbiorze z Androida](e7/ODBIOR_APK_GEMINI_2026_11_05.md)
+  API aplikacji przyjęło zdjęcie, ale Google zwróciło HTTP 503
+  i wynik pozostał nieznany. Ręczny zapis i zwykły ACK/PULL przeszły.
+- W aktualnym panelu właściciela wiersz Gemini 3.5 Flash Lite pokazuje
+  Free Tier oraz 15 RPM, 250 000 TPM i 500 RPD. Widoczne „Set up billing”
+  oznacza brak podpiętego konta rozliczeniowego według
+  [dokumentacji Google](https://ai.google.dev/gemini-api/docs/billing#verify-billing-status).
+  Właściciel zatwierdził jedno niewrażliwe zdjęcie testowe. Zdjęcia dotąd
+  nie wysłano i nie uruchomiono nowych wywołań providera.
+- Skonfigurowany APK validation1058 z `e18a9cd` zbudowano i sprawdzono
+  podpis, SHA-256 oraz osadzone API, issuer i certyfikat. W
+  [CI main](https://github.com/Roseru/aplikacja-mobilna/actions/runs/42514133516)
+  zaliczono osiem kontroli i 610 testów emulatora, bez błędów i pominięć.
+  Dwie lokalne kontrole gotowości zatrzymały się przed uruchomieniem
+  emulatora, najpierw przez zajęte porty, a następnie przez wolny RAM
+  poniżej progu 2300 MiB. Nowego APK nie instalowano.
+- Następny krok należy do O1. Na stanowisku z wystarczającą pamięcią
+  uruchomić zachowane środowisko deweloperskie z tą samą pulą i historią,
+  zainstalować APK z zachowaniem danych, sprawdzić gotowość aplikacji
+  i wykonać jedną zatwierdzoną próbę. Dopiero zaobserwowany wynik, decyzja
+  użytkownika i synchronizacja potwierdzą odbiór live. Zakończoną próbę
+  z nieznanym wynikiem zachować w historii.
